@@ -5,9 +5,47 @@ import {
     readyRangedMonsterWeapon, selectRangedWeapon,
 } from '../js/monster_throw.js';
 import { NEED_WEAPON } from '../js/const.js';
-import { ARROW, BOW } from '../js/object_data.js';
+import { ARROW, BOW, DAGGER } from '../js/object_data.js';
+import { game } from '../js/gstate.js';
+import { quietMonsterActionRng } from '../js/monmove.js';
 import { carriedObject } from './support/game-objects.js';
-import { liveMonster } from './support/monsters.js';
+import { floorObjectsAt } from './support/level-state.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { addMonster, addPet, liveMonster } from './support/monsters.js';
+
+function freshRangedPetRoom() {
+    freshObjectRoom({
+        right: 20,
+        heroX: 18,
+        heroY: 12,
+        gameplaySeed: 1n,
+        recalculateVision: false,
+    });
+}
+
+function addOrcPet(inventory, options = {}) {
+    return addPet({
+        species: 'orc',
+        x: 9,
+        y: 10,
+        hitPoints: 30,
+        level: 8,
+        inventory,
+        edog: { hungrytime: 1000 },
+        ...options,
+    });
+}
+
+function addRangedTarget() {
+    return addMonster({
+        species: 'jackal',
+        x: 12,
+        y: 10,
+        hitPoints: 12,
+        level: 8,
+        mac: 20,
+    });
+}
 
 test('a monster readies the launcher required by its ammunition', () => {
     const bow = carriedObject(BOW);
@@ -26,4 +64,44 @@ test('a monster readies the launcher required by its ammunition', () => {
     assert.equal(archer.mw, bow);
     assert.equal(bow.wielded, true);
     assert.equal(selectRangedWeapon(archer), arrows);
+});
+
+test('a tame orc throws a dagger at a distant monster', () => {
+    freshRangedPetRoom();
+    const dagger = carriedObject(DAGGER);
+    const orc = addOrcPet([dagger]);
+    const target = addRangedTarget();
+
+    quietMonsterActionRng(orc, game);
+
+    assert.deepEqual([orc.mx, orc.my], [9, 10]);
+    assert.ok(target.mhp < 12);
+    assert.equal(orc.inventory.includes(dagger), false);
+    assert.equal(
+        floorObjectsAt(game.level, 12, 10).some(
+            object => object.otyp === DAGGER,
+        ),
+        true,
+    );
+});
+
+test('a tame orc shoots an arrow with its bow', () => {
+    freshRangedPetRoom();
+    const arrow = carriedObject(ARROW);
+    const bow = carriedObject(BOW, { wielded: true });
+    const orc = addOrcPet([arrow, bow], { mw: bow });
+    const target = addRangedTarget();
+
+    quietMonsterActionRng(orc, game);
+
+    assert.deepEqual([orc.mx, orc.my], [9, 10]);
+    assert.ok(target.mhp < 12);
+    assert.equal(orc.mw, bow);
+    assert.equal(orc.inventory.includes(arrow), false);
+    assert.equal(
+        floorObjectsAt(game.level, 12, 10).some(
+            object => object.otyp === ARROW,
+        ),
+        true,
+    );
 });

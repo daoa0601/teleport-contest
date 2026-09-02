@@ -1,14 +1,19 @@
 // Weapons thrown or shot by monsters.
 // C refs: weapon.c select_rwep() and mthrowu.c monmulti(), m_throw().
 
-import { NEED_RANGED_WEAPON, NEED_WEAPON } from './const.js';
+import { BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON } from './const.js';
+import { dist2, distmin } from './hacklib.js';
 import { nextIdent } from './ident.js';
 import { stack_object } from './mklev.js';
-import { MONSTER_FLAGS2 } from './monster_data.js';
 import {
-    OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT,
+    MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SIZE,
+} from './monster_data.js';
+import { findMonsterArmorClass } from './monworn.js';
+import {
+    OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE,
+    OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
-import { rnd } from './rng.js';
+import { rn2, rnd } from './rng.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
@@ -205,4 +210,136 @@ export function projectileDamageAgainstHero(object, rollOne = rnd) {
         );
     }
     return Math.max(1, damage);
+}
+
+function projectileDamageAgainstMonster(object, monster, rollOne) {
+    const damageTable = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3
+        ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE;
+    const sides = Math.max(1, damageTable[object.otyp] || 1);
+    let damage = rollOne(sides) + (object.spe ?? 0);
+    if (damage > 0) {
+        damage = Math.max(
+            1,
+            damage - Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0),
+        );
+    }
+    return Math.max(1, damage);
+}
+
+function livingMonsterAt(state, source, x, y) {
+    return state.level?.monsters?.find(monster =>
+        monster !== source && !monster.dead && (monster.mhp ?? 1) > 0
+        && monster.mx === x && monster.my === y) || null;
+}
+
+function positionsAreLinedUp(source, target) {
+    const dx = Math.abs(source.mx - target.mx);
+    const dy = Math.abs(source.my - target.my);
+    return dx === 0 || dy === 0 || dx === dy;
+}
+
+export function throwMonsterWeaponAtMonster(
+    source, target, state, {
+        random = rn2,
+        rollOne = rnd,
+    } = {},
+) {
+    const readiedWeapon = readyRangedMonsterWeapon(source);
+    if (readiedWeapon) {
+        return {
+            attempted: true,
+            launched: false,
+            readiedWeapon,
+        };
+    }
+
+    const weapon = selectRangedWeapon(source);
+    if (!weapon || MONSTER_POLEARMS.has(objectTypeName(weapon))
+        || !positionsAreLinedUp(source, target)) return null;
+
+    const distance = distmin(source.mx, source.my, target.mx, target.my);
+    const hesitationRange = Math.max(BOLT_LIM - distance, 1);
+    if (target.mflee && random(hesitationRange) !== 0) return null;
+
+    const launcher = monsterWieldedWeapon(source);
+    const launcherNames = RANGED_LAUNCHERS.get(objectTypeName(weapon));
+    const launched = !!(launcherNames
+        && launcherNames.has(objectTypeName(launcher)));
+    if (launched
+        && dist2(source.mx, source.my, target.mx, target.my) > 36) {
+        return null;
+    }
+
+    const volley = monsterVolleyCount(source, weapon, launcher, rollOne);
+    const missile = splitMonsterMissile(source, weapon);
+    state._thrownObject = missile;
+    source.weaponCheck = NEED_WEAPON;
+
+    const dx = Math.sign(target.mx - source.mx);
+    const dy = Math.sign(target.my - source.my);
+    const flightPath = [];
+    let x = source.mx;
+    let y = source.my;
+    for (let remaining = distance; remaining > 0; remaining--) {
+        x += dx;
+        y += dy;
+        const defender = livingMonsterAt(state, source, x, y);
+        if (!defender) {
+            random(5);
+            flightPath.push({ x, y });
+            continue;
+        }
+
+        let hitThreshold = 5 + findMonsterArmorClass(defender);
+        const sourceLevel = source.m_lev
+            ?? MONSTER_LEVEL[source.mnum] ?? 0;
+        if (defender === target && sourceLevel > 5)
+            hitThreshold += sourceLevel - 5;
+        const hitRoll = rollOne(20);
+        const hit = hitThreshold >= hitRoll;
+        const damage = hit
+            ? projectileDamageAgainstMonster(missile, defender, rollOne)
+            : 0;
+        if (hit) {
+            defender.msleeping = 0;
+            defender.mhp = Math.max(0, (defender.mhp ?? 1) - damage);
+        } else {
+            random(5);
+            if (remaining > 1) {
+                flightPath.push({ x, y });
+                continue;
+            }
+        }
+        placeAndStackThrownObject(state, missile, x, y);
+        return {
+            attempted: true,
+            madeAttack: true,
+            weapon: missile,
+            appearance: objectTypeName(missile) || 'weapon',
+            target: defender,
+            hit,
+            hitRoll,
+            hitThreshold,
+            damage,
+            volley,
+            launched,
+            flightPath,
+            flightGlyph: ')',
+        };
+    }
+
+    placeAndStackThrownObject(state, missile, x, y);
+    return {
+        attempted: true,
+        madeAttack: true,
+        weapon: missile,
+        appearance: objectTypeName(missile) || 'weapon',
+        target: null,
+        hit: false,
+        damage: 0,
+        volley,
+        launched,
+        flightPath,
+        flightGlyph: ')',
+    };
 }

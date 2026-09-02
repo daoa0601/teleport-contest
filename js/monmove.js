@@ -2918,6 +2918,7 @@ function finishPetMovePlan(
 ) {
     const {
         oldx, oldy, nix, niy, selectedInfo, reluctant, inventoryAction,
+        wieldedWeapon,
     } = plan;
     if (selectedInfo & ALLOW_U) {
         const attack = petAttacksHero(
@@ -2926,6 +2927,7 @@ function finishPetMovePlan(
         return {
             oldx, oldy, x: oldx, y: oldy, moved: false, attack,
             deferredPostFlee: true,
+            wieldedWeapon,
             ...inventoryAction,
         };
     }
@@ -2940,6 +2942,7 @@ function finishPetMovePlan(
     const movement = {
         oldx, oldy, x: nix, y: niy,
         moved: nix !== oldx || niy !== oldy,
+        wieldedWeapon,
         ...inventoryAction,
     };
     if (movement.moved && reluctant) movement.reluctant = true;
@@ -3132,12 +3135,16 @@ function movePet(
             return result;
         },
     });
-    if (rangedAttack.launched) {
+    movePlan.wieldedWeapon = rangedAttack.readiedWeapon;
+    if (rangedAttack.launched || rangedAttack.madeAttack) {
         const attack = rangedAttack.kind === 'spit'
             ? { spitAttack: rangedAttack }
-            : { petBreath: rangedAttack };
+            : rangedAttack.kind === 'weapon'
+                ? { rangedAttack }
+                : { petBreath: rangedAttack };
         return {
             oldx, oldy, x: oldx, y: oldy, moved: false,
+            wieldedWeapon: rangedAttack.readiedWeapon,
             ...attack,
             actionCompleted: true,
         };
@@ -8148,6 +8155,7 @@ export function quietMonsterActionRng(
                 && !movement.deferredPetRangedNoise
                 && !movement.petBreath?.launched
                 && !movement.spitAttack?.launched
+                && !movement.rangedAttack?.madeAttack
                 && !movement.actorDied && !movement.actorLeftLevel)
                 movement.petPostmov = true;
         } else if (monster?.isgd && monster?._egd) {
@@ -8165,6 +8173,7 @@ export function quietMonsterActionRng(
             || movement.deferredPetRangedNoise
             || movement.petBreath?.launched
             || movement.spitAttack?.launched
+            || movement.rangedAttack?.madeAttack
             || movement.deferredAfterRestrictedTenguTeleport)
             return { calls, movement };
         completeMovedMonsterAction(

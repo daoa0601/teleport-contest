@@ -12,13 +12,12 @@ import {
 } from './monster_data.js';
 import {
     AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM,
-    AD_RBRE, AD_SLEE, AT_BREA,
+    AD_RBRE, AD_SLEE, AT_BREA, AT_SPIT, AT_WEAP,
 } from './monster_attack_types.js';
 import { rn2, rnd, d } from './rng.js';
 import { monsterSentenceSubject } from './monster_sound.js';
-import {
-    beginMonsterSpitAttack, monsterSpitAttack,
-} from './monster_spit.js';
+import { beginMonsterSpitAttack } from './monster_spit.js';
+import { throwMonsterWeaponAtMonster } from './monster_throw.js';
 import { clearPath } from './vision.js';
 
 const DOG_HUNGRY = 300;
@@ -200,11 +199,13 @@ export function monsterBreathAttack(monster) {
     ) || null;
 }
 
-function beginBreathAtTarget(monster, target, state, random) {
+function beginBreathAtTarget(
+    monster, target, state, random,
+    declaredAttack = monsterBreathAttack(monster),
+) {
     monster.mlstmv = sourceTurn(state);
     if (target === state.u)
         return { target, launched: false, attackedHero: true };
-    const declaredAttack = monsterBreathAttack(monster);
     if (!declaredAttack) return { target, launched: false };
 
     const attack = resolvedBreathAttack(declaredAttack, random);
@@ -230,27 +231,47 @@ export function beginPetRangedAttack(
         return { target, launched: false, makeNoise: forced };
     }
 
-    if (monsterBreathAttack(pet)) {
-        return {
-            kind: 'breath',
-            ...beginBreathAtTarget(pet, target, state, random),
-        };
-    }
-
-    const spitAttack = monsterSpitAttack(pet);
-    if (spitAttack) {
-        const position = targetPosition(target, state);
-        pet.mlstmv = sourceTurn(state);
-        return {
-            kind: 'spit',
-            target,
-            ...beginMonsterSpitAttack(
+    pet.mlstmv = sourceTurn(state);
+    let readiedWeapon = null;
+    for (const attack of MONSTER_ATTACKS[pet.mnum] || []) {
+        if (attack[0] === AT_WEAP && target !== state.u) {
+            const weaponAttack = throwMonsterWeaponAtMonster(
+                pet, target, state, { random, rollOne },
+            );
+            if (weaponAttack?.readiedWeapon) {
+                readiedWeapon = weaponAttack.readiedWeapon;
+                continue;
+            }
+            if (weaponAttack?.madeAttack) {
+                return {
+                    kind: 'weapon',
+                    readiedWeapon,
+                    ...weaponAttack,
+                };
+            }
+        } else if (attack[0] === AT_BREA) {
+            const breath = beginBreathAtTarget(
+                pet, target, state, random, attack,
+            );
+            if (breath.launched || breath.cough) {
+                return {
+                    kind: 'breath', readiedWeapon, ...breath,
+                };
+            }
+        } else if (attack[0] === AT_SPIT && target !== state.u) {
+            const position = targetPosition(target, state);
+            const spit = beginMonsterSpitAttack(
                 pet, position.x, position.y,
-                { attack: spitAttack, random },
-            ),
-        };
+                { attack, random },
+            );
+            if (spit?.launched || spit?.dryRattle) {
+                return {
+                    kind: 'spit', target, readiedWeapon, ...spit,
+                };
+            }
+        }
     }
-    return { target, launched: false };
+    return { target, launched: false, readiedWeapon };
 }
 
 export function monsterBreathMessage(monster, breath) {
