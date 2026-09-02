@@ -510,9 +510,8 @@ function readyMonsterDiggingWeapon(monster, state, x, y) {
 // Strength exercise have completed.  Keep the same split identity free across
 // that tty boundary, then either destroy or place it here.
 export function finishDeferredRangedProjectileHit(
-    action, state, random = rn2,
+    ranged, state, random = rn2,
 ) {
-    const ranged = action?.movement?.rangedAttack;
     if (!ranged?.deferredFloorResolution || !ranged.weapon) return ranged;
     ranged.deferredFloorResolution = false;
     const object = ranged.weapon;
@@ -530,15 +529,13 @@ export function finishDeferredRangedProjectileHit(
         const chance = 3 + Math.max(
             object.oeroded ?? 0, object.oeroded2 ?? 0,
         ) - (object.spe ?? 0);
-        broken = chance > 1
-            ? recordRandom(random, action.calls, chance) !== 0
-            : recordRandom(random, action.calls, 4) === 0;
+        broken = chance > 1 ? random(chance) !== 0 : random(4) === 0;
         if (object.blessed
-            && recordRandom(random, action.calls, 3) === 0) {
+            && random(3) === 0) {
             broken = false;
         }
         if (object.otyp === FLINT
-            && recordRandom(random, action.calls, 2) === 0) {
+            && random(2) === 0) {
             broken = false;
         }
     }
@@ -548,7 +545,7 @@ export function finishDeferredRangedProjectileHit(
         // zero-percent decision cannot save it, but its rn2(100) call is part
         // of the source transaction before global movement allocation.
         if (!objectResistsWithoutRoll(object))
-            recordRandom(random, action.calls, 100);
+            random(100);
         object.where = 'gone';
         object.ox = object.oy = 0;
         clearThrownObject(state, object);

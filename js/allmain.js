@@ -5842,7 +5842,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         // Strength, so this draw belongs to the continuation
                         // input rather than the launch input.
                         exerciseAttribute(A_STR, false);
-                        finishDeferredRangedProjectileHit(action, game);
+                        finishDeferredRangedProjectileHit(ranged, game);
                         // losehp() dirties the bottom line.  The launch pager
                         // must retain pre-hit HP, but once thitu() resumes the
                         // committed HP is painted before the next input.

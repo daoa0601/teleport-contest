@@ -12,7 +12,9 @@ import {
     ARROW, BOW, CROSSBOW, CROSSBOW_BOLT, DAGGER, ELVEN_ARROW, ELVEN_BOW,
 } from '../js/object_data.js';
 import { game } from '../js/gstate.js';
-import { quietMonsterActionRng } from '../js/monmove.js';
+import {
+    finishDeferredRangedProjectileHit, quietMonsterActionRng,
+} from '../js/monmove.js';
 import { carriedObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import {
@@ -87,7 +89,7 @@ test('a tame orc shoots an arrow with its bow', () => {
     );
 });
 
-test('a hostile monster can throw a dagger at the hero', () => {
+test('a hostile monster can throw a dagger at the hero and land it', () => {
     freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
     const dagger = carriedObject(DAGGER);
     const orc = addMonsterToLevel(liveMonster({
@@ -109,6 +111,13 @@ test('a hostile monster can throw a dagger at the hero', () => {
     assert.equal(shot.hit, true);
     assert.equal(game.u.uhp, hitPointsBefore - 1);
     assert.equal(orc.inventory.includes(dagger), false);
+
+    finishDeferredRangedProjectileHit(shot, game);
+
+    assert.equal(
+        floorObjectsAt(game.level, game.u.ux, game.u.uy).includes(dagger),
+        true,
+    );
 });
 
 test('a missed intervening monster does not hide the later hit', async () => {
