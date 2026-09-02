@@ -4265,9 +4265,7 @@ export function resumeDeferredSpitAttack(
     });
     if (result.target && (result.target.mhp ?? 0) <= 0
         && state.level?.monsters?.includes(result.target)) {
-        finishRangedKilledMonster(
-            result.target, state, random, action.calls,
-        );
+        result.targetDied = true;
     }
     return result;
 }

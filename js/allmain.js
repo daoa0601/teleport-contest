@@ -32,6 +32,7 @@ import {
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import {
     monsterBreathMessage, monsterCoughMessage, resolveMonsterBreathAttack,
+    resolveRangedRetaliation,
 } from './dogmove.js';
 import { monsterDryRattleMessage } from './monster_spit.js';
 import { angerMonster } from './monster_anger.js';
@@ -3643,6 +3644,21 @@ async function resolveMonsterMagicMissileBeam(action) {
     return offensive;
 }
 
+async function resolvePetRangedResponse(monster, target, movement) {
+    if (!target || !(monster.mtame || monster.pet)) return null;
+    const response = await resolveRangedRetaliation(
+        monster, target, game, {
+            publish: queueTurnMessage,
+            finishMonsterKill: (deadMonster, death) =>
+                finishMonsterRayDeath(
+                    deadMonster, death, game, queueTurnMessage,
+                ),
+        },
+    );
+    if (response?.actorDied) movement.actorDied = true;
+    return response;
+}
+
 async function executeLiveQuietMonsterScan(monsterScan) {
     // Run one actor at a time so a tty --More-- inside an action suspends the
     // source transaction before later actors or post-message RNG execute.
@@ -5482,6 +5498,40 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         }
                     }
                 }
+                if (!spit.heroTarget && spit.target) {
+                    const targetVisible = cansee(
+                        spit.target.mx, spit.target.my,
+                    );
+                    if (targetVisible) {
+                        const targetName = quietMonsterName(spit.target);
+                        await queueTurnMessage(spit.hit
+                            ? `The venom hits the ${targetName}.`
+                            : `The venom misses the ${targetName}.`);
+                        if (spit.targetDied) {
+                            await queueTurnMessage(
+                                `The ${targetName} is killed!`,
+                            );
+                        }
+                    }
+                    if (spit.targetDied) {
+                        const death = await finishEnvironmentalMonsterDeath(
+                            spit.target, game, {
+                                visible: targetVisible,
+                                spotted: canProjectMonster(
+                                    spit.target,
+                                    spit.target.mx,
+                                    spit.target.my,
+                                ),
+                                publish: queueTurnMessage,
+                            },
+                        );
+                        spit.targetDied = !death.survived;
+                    }
+                    movement.rangedRetaliation
+                        = await resolvePetRangedResponse(
+                            monster, spit.target, movement,
+                        );
+                }
             }
         }
         if (movement?.offensivePotion) {
@@ -5867,6 +5917,13 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     ranged.targetDied = !death.survived;
                 }
             }
+        }
+        if (rangedAttacks.length && !movement?.petBreath
+            && (monster.mtame || monster.pet)) {
+            const target = rangedAttacks.find(attack => attack.target)?.target;
+            movement.rangedRetaliation = await resolvePetRangedResponse(
+                monster, target, movement,
+            );
         }
         if (movement?.petBreath) {
             if (movement.petBreath.cough) {

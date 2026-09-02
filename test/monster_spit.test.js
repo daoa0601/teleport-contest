@@ -5,6 +5,7 @@ import {
     beginMonsterSpitAttack, resolveMonsterSpitFlight,
 } from '../js/monster_spit.js';
 import { game } from '../js/gstate.js';
+import { resolveRangedRetaliation } from '../js/dogmove.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addMonster, addPet } from './support/monsters.js';
@@ -67,4 +68,30 @@ test('a tame black naga spits at a distant monster instead of moving', () => {
     assert.deepEqual([naga.mx, naga.my], [9, 10]);
     assert.ok(target.mhp < 12);
     assert.equal(naga.edog.hungrytime, 995);
+});
+
+test('a cobra can spit back after a ranged attack', async () => {
+    freshObjectRoom({ heroX: 15, heroY: 12, gameplaySeed: 7n });
+    const pet = addPet({
+        species: 'orc',
+        x: 9,
+        y: 10,
+        hitPoints: 30,
+        level: 8,
+    });
+    const cobra = addMonster({
+        species: 'cobra',
+        x: 12,
+        y: 10,
+        hitPoints: 30,
+        level: 8,
+    });
+
+    await resolveRangedRetaliation(pet, cobra, game, {
+        publish: async () => {},
+        finishMonsterKill: async () => {},
+    });
+
+    assert.equal(pet.mcansee, 0);
+    assert.ok(pet.mblinded > 0);
 });

@@ -163,3 +163,49 @@ test('an iron golem throws before using its breath attack', async () => {
     assert.ok(target.mhp < hitPointsAfterDagger);
     assert.equal(golem.edog.hungrytime, 990);
 });
+
+test('a ranged target can throw weapons back at a pet', async () => {
+    freshObjectRoom({
+        right: 20,
+        heroX: 18,
+        heroY: 12,
+        recalculateVision: false,
+    });
+    const dragon = addRedDragon();
+    const daggers = carriedObject(DAGGER, { quan: 2 });
+    const target = addMonster({
+        species: 'orc-captain',
+        x: 13,
+        y: 10,
+        hitPoints: 200,
+        level: 10,
+        inventory: [daggers],
+    });
+    const action = quietMonsterActionRng(
+        dragon,
+        game,
+        () => 1,
+        (count, sides) => count * sides,
+        range => range,
+    );
+
+    await resolveMonsterBreathAttack(
+        dragon, action.movement.petBreath, game, {
+            publish: async () => {},
+            random: () => 1,
+            rollDice: (count, sides) => count * sides,
+            rollOne: () => 1,
+            finishMonsterKill: (monster, death) =>
+                finishMonsterRayDeath(
+                    monster, death, game, async () => {}, () => 1,
+                ),
+        },
+    );
+
+    assert.ok(target.mhp < 200);
+    assert.ok(dragon.mhp < 100);
+    const returnedDaggers = floorObjectsAt(game.level, 10, 10)
+        .filter(object => object.otyp === DAGGER)
+        .reduce((total, object) => total + object.quan, 0);
+    assert.equal(returnedDaggers, 2);
+});

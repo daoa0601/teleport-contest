@@ -16,7 +16,10 @@ import {
 } from './monster_attack_types.js';
 import { rn2, rnd, d } from './rng.js';
 import { monsterSentenceSubject } from './monster_sound.js';
-import { beginMonsterSpitAttack } from './monster_spit.js';
+import {
+    beginMonsterSpitAttack, monsterDryRattleMessage,
+    resolveMonsterSpitFlight,
+} from './monster_spit.js';
 import { throwMonsterWeaponAtMonster } from './monster_throw.js';
 import { clearPath } from './vision.js';
 
@@ -313,6 +316,130 @@ export function monsterCoughMessage(monster, state) {
         ? `${monsterSentenceSubject(monster)} coughs.` : 'You hear a cough.';
 }
 
+function middleSentenceSubject(monster) {
+    const subject = monsterSentenceSubject(monster);
+    return subject.startsWith('The ')
+        ? `the ${subject.slice(4)}` : subject;
+}
+
+async function presentRetaliationWeapons(
+    monster, attacks, state, publish, finishMonsterKill,
+) {
+    for (const attack of attacks) {
+        if (canProjectMonster(monster, monster.mx, monster.my)) {
+            const article = /^[aeiou]/i.test(attack.appearance) ? 'an' : 'a';
+            await publish(`${monsterSentenceSubject(monster)} ${
+                attack.launched ? 'shoots' : 'throws'
+            } ${article} ${attack.appearance}!`);
+        }
+        for (const shot of attack.shots || [attack]) {
+            if (!shot.target) continue;
+            if (canProjectMonster(
+                shot.target, shot.target.mx, shot.target.my,
+            )) {
+                await publish(`The ${shot.appearance} ${
+                    shot.hit ? 'hits' : 'misses'
+                } ${middleSentenceSubject(shot.target)}.`);
+            }
+            if ((shot.target.mhp ?? 0) <= 0
+                && state.level?.monsters?.includes(shot.target)) {
+                if (canProjectMonster(
+                    shot.target, shot.target.mx, shot.target.my,
+                )) {
+                    await publish(
+                        `${monsterSentenceSubject(shot.target)} is killed!`,
+                    );
+                }
+                await finishMonsterKill(shot.target, { noCorpse: false });
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+async function resolveRetaliationAttack(
+    monster, target, attack, state, {
+        publish, finishMonsterKill, random, rollDice, rollOne,
+    },
+) {
+    const weaponAttacks = attack.kind === 'weapon'
+        ? attack.attacks : attack.weaponAttacks || [];
+    const targetDied = await presentRetaliationWeapons(
+        monster, weaponAttacks, state, publish, finishMonsterKill,
+    );
+    if (targetDied) return attack;
+
+    if (attack.kind === 'breath') {
+        const message = attack.cough
+            ? monsterCoughMessage(monster, state)
+            : monsterBreathMessage(monster, attack);
+        if (message) await publish(message);
+        if (attack.launched) {
+            await resolveMonsterBreathAttack(monster, attack, state, {
+                publish,
+                finishMonsterKill,
+                random,
+                rollDice,
+                rollOne,
+                allowRetaliation: false,
+            });
+        }
+    } else if (attack.kind === 'spit') {
+        const message = attack.dryRattle
+            ? monsterDryRattleMessage(monster, state)
+            : canProjectMonster(monster, monster.mx, monster.my)
+                ? `${monsterSentenceSubject(monster)} spits venom!`
+                : null;
+        if (message) await publish(message);
+        if (attack.launched) {
+            resolveMonsterSpitFlight(monster, attack, state, {
+                random, rollOne,
+            });
+            if ((target.mhp ?? 0) <= 0
+                && state.level?.monsters?.includes(target)) {
+                if (canProjectMonster(target, target.mx, target.my)) {
+                    await publish(
+                        `${monsterSentenceSubject(target)} is killed!`,
+                    );
+                }
+                await finishMonsterKill(target, { noCorpse: false });
+            }
+        }
+    }
+    return attack;
+}
+
+export async function resolveRangedRetaliation(
+    attacker, target, state, {
+        publish,
+        finishMonsterKill,
+        random = rn2,
+        rollDice = d,
+        rollOne = rnd,
+    } = {},
+) {
+    const targetAlive = state.level?.monsters?.includes(target)
+        && (target.mhp ?? 0) > 0;
+    if (!targetAlive || random(4) === 0
+        || target.mcansee === 0 || target.mcansee === false
+        || ((MONSTER_FLAGS1[target.mnum] ?? 0) & M1_NOEYES)) {
+        return null;
+    }
+
+    const response = beginMonsterRangedAttack(
+        target, attacker, state, { random, rollOne },
+    );
+    await resolveRetaliationAttack(
+        target, attacker, response, state, {
+            publish, finishMonsterKill, random, rollDice, rollOne,
+        },
+    );
+    response.actorDied = !state.level?.monsters?.includes(attacker)
+        || (attacker.mhp ?? 0) <= 0;
+    return response;
+}
+
 export async function resolveMonsterBreathAttack(
     monster, breath, state, {
         publish,
@@ -350,30 +477,13 @@ export async function resolveMonsterBreathAttack(
     }
     breath.finished = true;
 
-    const target = breath.target;
-    const targetAlive = state.level?.monsters?.includes(target)
-        && (target.mhp ?? 0) > 0;
-    if (allowRetaliation && targetAlive && random(4) !== 0
-        && target.mcansee !== 0 && target.mcansee !== false
-        && !((MONSTER_FLAGS1[target.mnum] ?? 0) & M1_NOEYES)) {
-        const response = beginBreathAtTarget(target, monster, state, random);
-        breath.retaliation = response;
-        const message = response.cough
-            ? monsterCoughMessage(target, state)
-            : monsterBreathMessage(target, response);
-        if (message) await publish(message);
-        if (response.launched) {
-            await resolveMonsterBreathAttack(target, response, state, {
-                publish,
-                finishMonsterKill,
-                random,
-                rollDice,
-                rollOne,
-                allowRetaliation: false,
-            });
-        }
-        breath.actorDied = !state.level?.monsters?.includes(monster)
-            || (monster.mhp ?? 0) <= 0;
+    if (allowRetaliation) {
+        breath.retaliation = await resolveRangedRetaliation(
+            monster, breath.target, state, {
+                publish, finishMonsterKill, random, rollDice, rollOne,
+            },
+        );
+        breath.actorDied = !!breath.retaliation?.actorDied;
     }
     return breath;
 }
