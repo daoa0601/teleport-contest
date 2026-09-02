@@ -3135,12 +3135,6 @@ function movePet(
             return result;
         },
     });
-    if (rangedAttack.kind === 'weapon'
-        && rangedAttack.target
-        && (rangedAttack.target.mhp ?? 0) <= 0) {
-        rangedAttack.targetDied = true;
-        rangedAttack.attacks.at(-1).targetDied = true;
-    }
     movePlan.wieldedWeapon = rangedAttack.readiedWeapon;
     if (rangedAttack.launched || rangedAttack.madeAttack) {
         const attack = rangedAttack.kind === 'spit'

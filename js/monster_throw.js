@@ -2,11 +2,14 @@
 // C refs: weapon.c select_rwep() and mthrowu.c monmulti(), m_throw().
 
 import { BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON } from './const.js';
+import {
+    canProjectMonster, flush_screen, newsym, show_glyph_cell,
+} from './display.js';
 import { dist2, distmin } from './hacklib.js';
 import { nextIdent } from './ident.js';
 import { stack_object } from './mklev.js';
 import {
-    MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SIZE,
+    MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SIZE, monsterTypeName,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
@@ -14,6 +17,7 @@ import {
     OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
+import { cansee } from './vision.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
@@ -193,6 +197,87 @@ export function placeAndStackThrownObject(state, object, x, y) {
     return object;
 }
 
+export async function presentMonsterProjectileShot(
+    shot, projectileGlyph, state, {
+        publish,
+        showMissWithoutTarget = false,
+    },
+) {
+    let transientFlightCell = null;
+    for (const cell of shot.flightPath || []) {
+        if (transientFlightCell)
+            newsym(transientFlightCell.x, transientFlightCell.y);
+        transientFlightCell = null;
+        const flightVisible = cansee(cell.x, cell.y);
+        if (flightVisible) {
+            show_glyph_cell(
+                cell.x, cell.y, projectileGlyph.ch,
+                projectileGlyph.color, projectileGlyph.decgfx,
+                projectileGlyph.attr,
+            );
+            transientFlightCell = cell;
+        }
+        await flush_screen(1);
+        if (flightVisible)
+            state.nhDisplay?.setCursor(cell.x, cell.y + 1);
+        await state.animationFrame?.();
+    }
+
+    const targetVisible = shot.target
+        ? cansee(shot.target.mx, shot.target.my) : false;
+    try {
+        if (shot.target) {
+            if (targetVisible) {
+                const spotted = canProjectMonster(
+                    shot.target, shot.target.mx, shot.target.my,
+                );
+                const target = spotted
+                    ? `the ${monsterTypeName(
+                        shot.target.mnum, !!shot.target.female,
+                    )}`
+                    : 'it';
+                await publish(shot.hit
+                    ? `The ${shot.appearance} hits ${target}.`
+                    : `The ${shot.appearance} misses ${target}.`);
+                if (shot.targetDied) {
+                    const subject = target === 'it'
+                        ? 'It' : `The ${target.slice(4)}`;
+                    await publish(`${subject} is killed!`);
+                }
+            }
+        } else if (showMissWithoutTarget) {
+            await publish(`The ${shot.appearance} misses.`);
+        }
+
+        if (transientFlightCell)
+            newsym(transientFlightCell.x, transientFlightCell.y);
+        transientFlightCell = null;
+        const impactX = shot.impactX ?? shot.target?.mx;
+        const impactY = shot.impactY ?? shot.target?.my;
+        const impactVisible = Number.isFinite(impactX)
+            && Number.isFinite(impactY) && cansee(impactX, impactY);
+        if (impactVisible) {
+            show_glyph_cell(
+                impactX, impactY, projectileGlyph.ch,
+                projectileGlyph.color, projectileGlyph.decgfx,
+                projectileGlyph.attr,
+            );
+            transientFlightCell = { x: impactX, y: impactY };
+        }
+        const impactCursor = impactVisible
+            ? [impactX, impactY + 1]
+            : [state._pending_message?.length || 0, 0];
+        await flush_screen(1);
+        state.nhDisplay?.setCursor(...impactCursor);
+        await state.animationFrame?.();
+    } finally {
+        if (transientFlightCell)
+            newsym(transientFlightCell.x, transientFlightCell.y);
+    }
+
+    return { targetVisible };
+}
+
 export function projectileDamageAgainstHero(object, rollOne = rnd) {
     const sides = Math.max(1, OBJECT_SMALL_DAMAGE[object.otyp] || 1);
     let damage = rollOne(sides);
@@ -256,7 +341,7 @@ function throwOneMonsterMissile(
         const defender = livingMonsterAt(state, source, x, y);
         if (!defender) {
             random(5);
-            flightPath.push({ x, y });
+            if (remaining > 1) flightPath.push({ x, y });
             continue;
         }
 
@@ -286,12 +371,15 @@ function throwOneMonsterMissile(
             appearance: objectTypeName(missile) || 'weapon',
             target: defender,
             hit,
+            targetDied: hit && (defender.mhp ?? 0) <= 0,
             hitRoll,
             hitThreshold,
             damage,
             launched,
             flightPath,
             flightGlyph: ')',
+            impactX: x,
+            impactY: y,
         };
     }
 
@@ -305,6 +393,8 @@ function throwOneMonsterMissile(
         launched,
         flightPath,
         flightGlyph: ')',
+        impactX: x,
+        impactY: y,
     };
 }
 
@@ -357,6 +447,7 @@ export function throwMonsterWeaponAtMonster(
         hit: shots.some(shot => shot.hit),
         damage: shots.reduce((total, shot) => total + shot.damage, 0),
         target: shots.find(shot => shot.target)?.target || null,
+        aimedAt: target,
         volley,
         shots,
         launched,

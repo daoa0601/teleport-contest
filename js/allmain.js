@@ -72,7 +72,10 @@ import {
     POT_SLEEPING, TALLOW_CANDLE,
     TWO_HANDED_SWORD, WAX_CANDLE, SHIELD_OF_REFLECTION,
 } from './object_data.js';
-import { simpleObjectNameWithArticle } from './object_grammar.js';
+import {
+    makePlural, simpleObjectNameWithArticle,
+} from './object_grammar.js';
+import { presentMonsterProjectileShot } from './monster_throw.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
     BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, SPIKED_PIT,
@@ -5636,6 +5639,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             const rangedAppearance = ranged.appearance || 'weapon';
             const rangedArticle = /^[aeiou]/i.test(rangedAppearance)
                 ? 'an' : 'a';
+            const rangedObject = ranged.volley > 1
+                ? `${ranged.volley} ${makePlural(rangedAppearance)}`
+                : `${rangedArticle} ${rangedAppearance}`;
+            const rangedShots = ranged.shots || [ranged];
             // C mthrowu.c:thrwmu() calls nomul(0) after launching.  The
             // interruption belongs to the shot even when an intervening pet,
             // rather than the hero, is struck; counted search and running
@@ -5651,17 +5658,29 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             if (!actorWasSeen && !monsterIsSeen && ranged.weapon)
                 ranged.weapon.dknown = false;
             if (ranged.weapon && (ranged.heroTarget
-                || (ranged.flightPath || []).some(cell => cansee(cell.x, cell.y))
+                || rangedShots.some(shot => (shot.flightPath || [])
+                    .some(cell => cansee(cell.x, cell.y)))
+                || rangedShots.some(shot => Number.isFinite(shot.impactX)
+                    && Number.isFinite(shot.impactY)
+                    && cansee(shot.impactX, shot.impactY))
                 || (ranged.target
                     && cansee(ranged.target.mx, ranged.target.my)))) {
                 ranged.weapon.dknown = true;
                 recordObjectEncounter(ranged.weapon.otyp);
             }
             if (actorWasSeen || monsterIsSeen) {
+                const aimedAt = ranged.aimedAt
+                    ? ` at ${canProjectMonster(
+                        ranged.aimedAt,
+                        ranged.aimedAt.mx,
+                        ranged.aimedAt.my,
+                    ) ? `the ${quietMonsterName(ranged.aimedAt)}`
+                        : 'something'}`
+                    : '';
                 await queueTurnMessage(
                     `The ${quietMonsterName(monster)} ${
                         ranged.launched ? 'shoots' : 'throws'
-                    } ${rangedArticle} ${rangedAppearance}!`,
+                    } ${rangedObject}${aimedAt}!`,
                 );
             }
             const projectileGlyph = ranged.weapon
@@ -5837,84 +5856,36 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         newsym(transientFlightCell.x, transientFlightCell.y);
                 }
             }
-            if (ranged.target) {
-                // C m_throw() leaves tmp_at's last clear flight cell painted
-                // while ohitmon()->pline() can suspend on the pending throw
-                // line.  Resume and clear it only after that continuation.
-                let transientFlightCell = null;
-                for (const cell of ranged.flightPath || []) {
-                    if (transientFlightCell)
-                        newsym(transientFlightCell.x, transientFlightCell.y);
-                    transientFlightCell = null;
-                    const flightVisible = cansee(cell.x, cell.y);
-                    if (flightVisible) {
-                        show_glyph_cell(
-                            cell.x, cell.y, projectileGlyph.ch,
-                            projectileGlyph.color, projectileGlyph.decgfx,
-                            projectileGlyph.attr,
+            if (!ranged.heroTarget) {
+                for (const shot of rangedShots) {
+                    const shotGlyph = shot.weapon
+                        ? transientObjectGlyph(shot.weapon)
+                        : projectileGlyph;
+                    const impactVisible = Number.isFinite(shot.impactX)
+                        && Number.isFinite(shot.impactY)
+                        && cansee(shot.impactX, shot.impactY);
+                    const { targetVisible } =
+                        await presentMonsterProjectileShot(
+                            shot, shotGlyph, game, {
+                                publish: queueTurnMessage,
+                                showMissWithoutTarget: ranged.volley > 1
+                                    && (actorWasSeen || monsterIsSeen
+                                        || impactVisible),
+                            },
                         );
-                        transientFlightCell = cell;
-                    }
-                    await flush_screen(1);
-                    if (flightVisible)
-                        game.nhDisplay?.setCursor(cell.x, cell.y + 1);
-                    await game.animationFrame?.();
-                }
-                const targetVisible = cansee(
-                    ranged.target.mx, ranged.target.my,
-                );
-                try {
-                    if (targetVisible) {
-                        const target = quietMonsterName(ranged.target);
-                        await queueTurnMessage(ranged.hit
-                            ? `The ${ranged.appearance} hits the ${target}.`
-                            : `The ${ranged.appearance} misses the ${target}.`);
-                        if (ranged.targetDied) {
-                            await queueTurnMessage(
-                                `The ${target} is killed!`,
-                            );
-                        }
-                    } else {
-                        await queueTurnMessage(
-                            ranged.hit ? 'It is hit.' : 'It is missed.',
-                        );
-                    }
-                    if (transientFlightCell)
-                        newsym(transientFlightCell.x, transientFlightCell.y);
-                    transientFlightCell = null;
-                    if (targetVisible) {
-                        show_glyph_cell(
-                            ranged.target.mx, ranged.target.my,
-                            projectileGlyph.ch, projectileGlyph.color,
-                            projectileGlyph.decgfx, projectileGlyph.attr,
-                        );
-                        transientFlightCell = {
-                            x: ranged.target.mx, y: ranged.target.my,
-                        };
-                    }
-                    const impactCursor = targetVisible
-                        ? [ranged.target.mx, ranged.target.my + 1]
-                        : [game._pending_message?.length || 0, 0];
-                    await flush_screen(1);
-                    game.nhDisplay?.setCursor(...impactCursor);
-                    await game.animationFrame?.();
-                } finally {
-                    if (transientFlightCell)
-                        newsym(transientFlightCell.x, transientFlightCell.y);
-                }
-                if (ranged.targetDied) {
+                    if (!shot.targetDied) continue;
                     const death = await finishEnvironmentalMonsterDeath(
-                        ranged.target, game, {
+                        shot.target, game, {
                             visible: targetVisible,
                             spotted: canProjectMonster(
-                                ranged.target,
-                                ranged.target.mx,
-                                ranged.target.my,
+                                shot.target,
+                                shot.target.mx,
+                                shot.target.my,
                             ),
                             publish: queueTurnMessage,
                         },
                     );
-                    ranged.targetDied = !death.survived;
+                    shot.targetDied = !death.survived;
                 }
             }
         }
