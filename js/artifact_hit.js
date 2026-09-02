@@ -2,10 +2,12 @@
 // C ref: artifact.c artifact_hit().
 
 import { artifactById, artifactDamageBonus } from './artifacts.js';
+import { Upolyd } from './const.js';
 import { game } from './gstate.js';
 import { igniteItems } from './light.js';
 import { wakeMonstersNear } from './mon.js';
-import { monsterTypeName } from './monster_data.js';
+import { monsterHitPointsPerLevel } from './monster_hit_points.js';
+import { monsterIsNonliving, monsterTypeName } from './monster_data.js';
 import { rn2, rnd } from './rng.js';
 import {
     destroyMonsterInventoryByElement, INVENTORY_DAMAGE,
@@ -44,6 +46,53 @@ function inventoryDamageChance(damageType) {
     return damageType === 'shock' ? 5 : 4;
 }
 
+function healHeroFromDrain(state, amount) {
+    if (amount <= 0) return;
+    const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';
+    const maximum = Upolyd(state.u) ? 'mhmax' : 'uhpmax';
+    state.u[hitPoints] = Math.min(
+        state.u[maximum] ?? state.u[hitPoints],
+        (state.u[hitPoints] ?? 0) + amount,
+    );
+}
+
+async function applyLifeDrain(
+    artifact, monster, damage, {
+        state, visible, describeTarget, publish, random, rollOne,
+    },
+) {
+    let drain = monsterHitPointsPerLevel(monster, {
+        rollOne,
+        randomBelow: random,
+    });
+    const level = monster.m_lev ?? 0;
+    const maximumHitPoints = monster.mhpmax ?? monster.mhp ?? 1;
+    if (maximumHitPoints - drain <= level) {
+        drain = maximumHitPoints > level
+            ? maximumHitPoints - (level + 1) : 0;
+    }
+
+    if (visible) {
+        const life = monsterIsNonliving(monster.mnum)
+            ? 'animating force' : 'life';
+        const weapon = artifact.name === 'Stormbringer'
+            ? 'The black blade' : artifact.name;
+        await publish(
+            `${weapon} draws the ${life} from ${describeTarget()}!`,
+        );
+    }
+
+    if (level === 0) {
+        damage = 2 * (monster.mhp ?? 1) + 1;
+    } else {
+        damage += drain;
+        monster.mhpmax = maximumHitPoints - drain;
+        monster.m_lev = level - 1;
+    }
+    healHeroFromDrain(state, Math.trunc((drain + 1) / 2));
+    return { damage, specialMessage: visible };
+}
+
 export async function applyArtifactHitToMonster(
     object,
     monster,
@@ -70,6 +119,16 @@ export async function applyArtifactHitToMonster(
     let damage = baseDamage + bonus;
     const damageType = artifact.attack.damageType;
     const inventoryDamage = elementalDamageType(damageType);
+    if (damageType === 'life-drain' && bonus > 0) {
+        return applyLifeDrain(artifact, monster, damage, {
+            state,
+            visible,
+            describeTarget,
+            publish,
+            random,
+            rollOne,
+        });
+    }
     if (!inventoryDamage) {
         return { damage, specialMessage: false };
     }

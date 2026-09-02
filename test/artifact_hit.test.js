@@ -61,3 +61,29 @@ test('Mjollnir wakes monsters near a target struck by lightning', async () => {
     assert.equal(hit.damage, 28);
     assert.equal(sleeper.msleeping, 0);
 });
+
+test('Stormbringer drains a monster level and heals its wielder', async () => {
+    freshObjectRoom({ hero: { uhp: 5, uhpmax: 12 } });
+    const monster = liveMonster({
+        species: 'jackal',
+        x: 12,
+        y: 10,
+        level: 3,
+        hitPoints: 20,
+    });
+
+    const hit = await applyArtifactHitToMonster(
+        artifactObject('Stormbringer'), monster, 4, {
+            state: game,
+            describeTarget: () => 'the jackal',
+            publish: async () => {},
+            random: () => 1,
+            rollOne: maximumRoll,
+        },
+    );
+
+    assert.equal(hit.damage, 14);
+    assert.equal(monster.m_lev, 2);
+    assert.equal(monster.mhpmax, 12);
+    assert.equal(game.u.uhp, 9);
+});

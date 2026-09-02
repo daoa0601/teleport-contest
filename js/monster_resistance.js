@@ -1,13 +1,14 @@
 // Monster resistance checks shared by attacks and item effects.
 // C refs: zap.c resist() and mondata.c Resists_Elem().
 
-import { W_ARMC, W_ARMOR } from './const.js';
+import { W_ARM, W_ARMC, W_ARMOR } from './const.js';
 import {
-    MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS,
+    MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS,
     monsterIsVampireShifter,
 } from './monster_data.js';
 import {
-    ALCHEMY_SMOCK, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
+    ALCHEMY_SMOCK, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES,
+    YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
 } from './object_data.js';
 import { rn2 } from './rng.js';
 
@@ -21,6 +22,13 @@ const M2_UNDEAD = 0x00000002;
 const M2_WERE = 0x00000004;
 const M2_DEMON = 0x00000100;
 const PM_DEATH = 311;
+const PM_BLACK_DRAGON = MONSTER_NAME.indexOf('black dragon');
+
+function monsterWearsOneOf(monster, objectTypes, mask) {
+    return (monster?.minvent || monster?.inventory || []).some(object =>
+        objectTypes.includes(object?.otyp)
+        && !!((object?.owornmask ?? 0) & mask));
+}
 
 function monsterResistanceBits(monster) {
     return (MONSTER_RESISTS[monster?.mnum] ?? 0)
@@ -53,6 +61,11 @@ export function monsterHasDrainResistance(monster) {
     return !!(flags & (M2_UNDEAD | M2_WERE | M2_DEMON))
         || monster?.mnum === PM_DEATH
         || monsterIsVampireShifter(monster)
+        || monster?.mnum === PM_BLACK_DRAGON
+        || monsterWearsOneOf(monster, [
+            BLACK_DRAGON_SCALE_MAIL,
+            BLACK_DRAGON_SCALES,
+        ], W_ARM)
         || !!monster?.drainResistance
         || !!monster?.drain_resistance;
 }
@@ -62,15 +75,21 @@ export function monsterHasAcidResistance(monster) {
     if ((resistanceBits & MR_ACID) || monster?.acidResistance
         || monster?.acid_resistance) return true;
 
-    return (monster?.minvent || monster?.inventory || []).some(object => {
-        const wornMask = object?.owornmask ?? 0;
-        const dragonArmor = [
+    const dragonArmor = monsterWearsOneOf(
+        monster,
+        [
             YELLOW_DRAGON_SCALE_MAIL,
             YELLOW_DRAGON_SCALES,
-        ].includes(object?.otyp) && !!(wornMask & W_ARMOR);
+        ],
+        W_ARMOR,
+    );
+    if (dragonArmor) return true;
+
+    return (monster?.minvent || monster?.inventory || []).some(object => {
+        const wornMask = object?.owornmask ?? 0;
         const smock = object?.otyp === ALCHEMY_SMOCK
             && !!(wornMask & W_ARMC);
-        return dragonArmor || smock;
+        return smock;
     });
 }
 

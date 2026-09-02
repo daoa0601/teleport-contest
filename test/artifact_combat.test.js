@@ -5,9 +5,11 @@ import {
     artifactByName, artifactDamageBonus, artifactToHitBonus,
     resolveHeroArtifactTouch,
 } from '../js/artifacts.js';
+import { W_ARM } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { BLACK_DRAGON_SCALES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { artifactObject } from './support/game-objects.js';
+import { artifactObject, carriedObject } from './support/game-objects.js';
 import { liveMonster } from './support/monsters.js';
 
 const maximumRoll = range => range;
@@ -82,6 +84,31 @@ test('an artifact defense blocks the matching special attack', () => {
     assert.equal(artifactToHitBonus(frostBrand, jackal, maximumRoll), 0);
     assert.equal(
         artifactDamageBonus(frostBrand, jackal, 7, maximumRoll),
+        0,
+    );
+});
+
+test('Stormbringer cannot drain an undead monster', () => {
+    const stormbringer = artifactObject('Stormbringer');
+    const vampire = liveMonster({ species: 'vampire' });
+
+    assert.equal(
+        artifactToHitBonus(stormbringer, vampire, maximumRoll),
+        0,
+    );
+    assert.equal(
+        artifactDamageBonus(stormbringer, vampire, 7, maximumRoll),
+        0,
+    );
+});
+
+test('black dragon scales protect a monster from Stormbringer', () => {
+    const stormbringer = artifactObject('Stormbringer');
+    const scales = carriedObject(BLACK_DRAGON_SCALES, { owornmask: W_ARM });
+    const jackal = liveMonster({ species: 'jackal', inventory: [scales] });
+
+    assert.equal(
+        artifactDamageBonus(stormbringer, jackal, 7, maximumRoll),
         0,
     );
 });
