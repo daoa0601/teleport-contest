@@ -1,5 +1,7 @@
 import { game } from '../../js/gstate.js';
-import { W_BALL, W_CHAIN, W_RINGR } from '../../js/const.js';
+import {
+    P_EXPERT, P_NUM_SKILLS, W_BALL, W_CHAIN, W_RINGR,
+} from '../../js/const.js';
 import { place_object } from '../../js/mklev.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
 import {
@@ -10,6 +12,23 @@ import { freshObjectRoom } from './object-room.js';
 
 const PM_WEREWOLF = 21;
 const PM_HUMAN_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
+
+export function installHeroWeaponSkills(levelBySkill, maximumLevel = P_EXPERT) {
+    const skills = Array.from({ length: P_NUM_SKILLS }, () => ({
+        skill: 0,
+        maxSkill: 0,
+        advance: 0,
+    }));
+    for (const [skill, level] of Object.entries(levelBySkill)) {
+        skills[skill] = {
+            skill: level,
+            maxSkill: maximumLevel,
+            advance: 0,
+        };
+    }
+    game.u.weaponSkills = skills;
+    return skills;
+}
 
 export function installPolymorphedHero(formName, {
     turns = 100,

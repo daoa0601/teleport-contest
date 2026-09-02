@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { W_WEP } from '../js/const.js';
+import { P_BASIC, P_FLAIL, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { GRAPPLING_HOOK, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
 import { floorObject, inventoryObject } from './support/game-objects.js';
+import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -19,12 +20,7 @@ function installHook({ wielded = true, enchantment = 0 } = {}) {
     });
     game.inventory = [hook];
     if (wielded) game.uwep = game.u.uwep = hook;
-    game.u.weaponSkills = [];
-    game.u.weaponSkills[13] = {
-        skill: 2,
-        maxSkill: 4,
-        advance: 0,
-    };
+    installHeroWeaponSkills({ [P_FLAIL]: P_BASIC });
     return hook;
 }
 

@@ -1,12 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { A_DEX, A_STR, ROOM } from '../js/const.js';
+import {
+    A_DEX, A_STR, P_LONG_SWORD, P_SHORT_SWORD, P_TWO_WEAPON_COMBAT,
+    P_UNSKILLED, ROOM,
+} from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { inventoryObject } from './support/game-objects.js';
+import { installHeroWeaponSkills } from './support/hero-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -65,14 +69,11 @@ async function twoWeaponLichenOutcome(role) {
     );
     game.u.acurr.a[A_STR] = 18;
     game.u.acurr.a[A_DEX] = 14;
-    game.u.weaponSkills = Array.from({ length: 38 }, () => ({
-        skill: 0, maxSkill: 0, advance: 0,
-    }));
-    for (const skill of [5, 7, 36]) {
-        game.u.weaponSkills[skill] = {
-            skill: 1, maxSkill: 4, advance: 0,
-        };
-    }
+    installHeroWeaponSkills({
+        [P_SHORT_SWORD]: P_UNSKILLED,
+        [P_LONG_SWORD]: P_UNSKILLED,
+        [P_TWO_WEAPON_COMBAT]: P_UNSKILLED,
+    });
     game.inventory = [katana, wakizashi];
     game.uswapwep = wakizashi;
     game.u.twoweap = true;

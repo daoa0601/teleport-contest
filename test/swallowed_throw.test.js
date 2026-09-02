@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, W_AMUL,
+    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, P_BASIC, W_AMUL,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { inventoryItemDescription } from '../js/invent.js';
@@ -29,7 +29,8 @@ import {
     knownInventoryObject, knownInventoryWeapon, knownObject,
 } from './support/game-objects.js';
 import {
-    installHumanWerewolfHero, wearHeroObject, wearPolymorphControlRing,
+    installHeroWeaponSkills, installHumanWerewolfHero, wearHeroObject,
+    wearPolymorphControlRing,
 } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
@@ -82,12 +83,7 @@ function installLowCapacityRockBurden(quantity) {
 
 function setBasicWeaponSkill(object) {
     const skill = Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0);
-    game.u.weaponSkills = Array.from({ length: 38 }, () => ({
-        skill: 0, maxSkill: 0, advance: 0,
-    }));
-    game.u.weaponSkills[skill] = {
-        skill: 2, maxSkill: 4, advance: 0,
-    };
+    installHeroWeaponSkills({ [skill]: P_BASIC });
     return skill;
 }
 
