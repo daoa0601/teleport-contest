@@ -1,5 +1,8 @@
 import { game } from '../../js/gstate.js';
+import { W_RINGR } from '../../js/const.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
+import { RIN_POLYMORPH_CONTROL } from '../../js/object_data.js';
+import { knownInventoryObject } from './game-objects.js';
 
 const PM_WEREWOLF = 21;
 const PM_HUMAN_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
@@ -52,4 +55,12 @@ export function wearHeroObject(object, slot, mask) {
     game[slot] = object;
     game.u[slot] = object;
     return object;
+}
+
+export function wearPolymorphControlRing() {
+    return wearHeroObject(
+        knownInventoryObject(RIN_POLYMORPH_CONTROL),
+        'uright',
+        W_RINGR,
+    );
 }

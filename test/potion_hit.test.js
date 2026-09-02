@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { A_CON, A_DEX, A_INT, W_RINGR } from '../js/const.js';
+import { A_CON, A_DEX, A_INT } from '../js/const.js';
 import { game, resetGame } from '../js/gstate.js';
 import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
     POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
     LENSES, POT_BLINDNESS, POT_PARALYSIS, POT_SLEEPING, POT_SPEED,
-    POT_INVISIBILITY, POT_WATER, RIN_POLYMORPH_CONTROL, SPEED_BOOTS,
+    POT_INVISIBILITY, POT_WATER, SPEED_BOOTS,
 } from '../js/object_data.js';
 import {
     applySupportedPotionVapor, hitMonsterWithInertPotion,
@@ -20,7 +20,7 @@ import {
     knownInventoryObject, looseObject,
 } from './support/game-objects.js';
 import {
-    installHumanWerewolfHero, wearHeroObject,
+    installHumanWerewolfHero, wearPolymorphControlRing,
 } from './support/hero-state.js';
 import { liveMonster } from './support/monsters.js';
 import { freshCommandRoom } from './support/playable-room.js';
@@ -54,12 +54,6 @@ function freshPotionState(hero = { hallucinationTurns: 0 }) {
 function installDirectWereHero({ beast = false } = {}) {
     freshCommandRoom({ role: 'archeologist', seed: 1n });
     installHumanWerewolfHero({ beast });
-}
-
-function installPolymorphControl() {
-    return wearHeroObject(
-        knownInventoryObject(RIN_POLYMORPH_CONTROL), 'uright', W_RINGR,
-    );
 }
 
 test('visible inert potion impact names a headed monster and evaporates',
@@ -1272,7 +1266,7 @@ test('blessed water vapor returns a werewolf hero to human form', async () => {
 test('controlled cursed vapor accepts change despite a nearby threat',
     async () => {
         installDirectWereHero();
-        installPolymorphControl();
+        wearPolymorphControlRing();
         game.u.detectMonsters = true;
         game.level.monsters = [{
             mnum: PM_PURPLE_WORM,
@@ -1297,7 +1291,7 @@ test('controlled cursed vapor accepts change despite a nearby threat',
 test('controlled cursed vapor rejection preserves the human form',
     async () => {
         installDirectWereHero();
-        installPolymorphControl();
+        wearPolymorphControlRing();
         const potion = potionObject(POT_WATER);
         potion.cursed = true;
 
@@ -1322,7 +1316,7 @@ test('controlled blessed vapor keeps or leaves beast form by answer polarity',
             },
         ]) {
             installDirectWereHero({ beast: true });
-            installPolymorphControl();
+            wearPolymorphControlRing();
             const potion = potionObject(POT_WATER);
             potion.blessed = true;
             const messages = [];
@@ -1343,7 +1337,7 @@ test('controlled blessed vapor keeps or leaves beast form by answer polarity',
 test('a nearby threat blocks controlled blessed vapor before prompting',
     async () => {
         installDirectWereHero({ beast: true });
-        installPolymorphControl();
+        wearPolymorphControlRing();
         game.u.mtimedone = 0;
         game.u.detectMonsters = true;
         game.level.monsters = [{
@@ -1371,7 +1365,7 @@ test('were-change paranoia rejects y but accepts a committed yes line',
         ];
         for (const witness of outcomes) {
             installDirectWereHero();
-            installPolymorphControl();
+            wearPolymorphControlRing();
             game.flags = {
                 ...game.flags,
                 ...parseNethackrc(
@@ -1395,7 +1389,7 @@ test('were-change paranoia rejects y but accepts a committed yes line',
 test('global paranoia rejects a short n and repeats until committed no',
     async () => {
         installDirectWereHero();
-        installPolymorphControl();
+        wearPolymorphControlRing();
         game.flags = {
             ...game.flags,
             ...parseNethackrc(

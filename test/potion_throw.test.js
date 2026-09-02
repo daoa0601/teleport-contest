@@ -1,27 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { rhack } from '../js/cmd.js';
 import {
-    A_CON, A_DEX, STONE, W_ARM, W_ARMC, W_RINGR,
+    A_CON, A_DEX, STONE, W_ARM, W_ARMC,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { pushKey } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import {
     CORPSE, IRON_CHAIN,
     POT_ACID, POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
     POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_SICKNESS, POT_SPEED,
-    POT_WATER, RIN_POLYMORPH_CONTROL,
+    POT_WATER,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { throwInventoryObject } from './support/commands.js';
 import { knownInventoryObject } from './support/game-objects.js';
 import {
-    installHumanWerewolfHero, installPolymorphedHero, wearHeroObject,
+    installHumanWerewolfHero, installPolymorphedHero,
+    wearPolymorphControlRing,
 } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
 const PM_PURPLE_WORM = 115;
 
 function freshMapPotionState(distance = 2) {
@@ -56,13 +57,9 @@ function freshMapPotionState(distance = 2) {
     return monster;
 }
 
-async function throwEast(potion, continuationKeys = []) {
-    pushKey(potion.invlet);
-    pushKey('l');
-    for (const key of continuationKeys) pushKey(key);
-    await rhack('t'.charCodeAt(0));
+function throwEast(potion, answers = []) {
+    return throwInventoryObject(potion, 'l', answers);
 }
-
 
 function addSleepingNeighbor(m_id, { strategy = null } = {}) {
     return addMonster({
@@ -660,11 +657,7 @@ test('controlled lycanthrope decline completes a two-square map throw',
     async () => {
         freshMapPotionState(2);
         installHumanWerewolfHero();
-        const ring = wearHeroObject(
-            knownInventoryObject(RIN_POLYMORPH_CONTROL),
-            'uright',
-            W_RINGR,
-        );
+        const ring = wearPolymorphControlRing();
         const potion = knownInventoryObject(POT_WATER);
         potion.cursed = true;
 
@@ -680,11 +673,7 @@ test('three-square water contact bypasses unreachable hero-vapor prompts',
     async () => {
         const monster = freshMapPotionState(3);
         installHumanWerewolfHero();
-        wearHeroObject(
-            knownInventoryObject(RIN_POLYMORPH_CONTROL),
-            'uright',
-            W_RINGR,
-        );
+        wearPolymorphControlRing();
         const potion = knownInventoryObject(POT_WATER);
         potion.cursed = true;
 
