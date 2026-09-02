@@ -8,14 +8,19 @@ import {
     monsterCanBeLeashed, releaseMonsterLeash,
 } from './monster_leash.js';
 import { newMonsterHitPoints } from './monster_hit_points.js';
+import { dropObjectFromMonsterInventory } from './monster_inventory.js';
 import {
     MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM,
     monsterClassSymbol,
 } from './monster_data.js';
 import {
-    CANDELABRUM_OF_INVOCATION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES,
-    YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
+    adjustMonsterClothingAfterPolymorph, checkMonsterGearNextTurn,
+} from './monworn.js';
+import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
+import {
+    BOULDER, CANDELABRUM_OF_INVOCATION, GRAY_DRAGON_SCALE_MAIL,
+    GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
 } from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import {
@@ -31,6 +36,7 @@ const M2_SHAPESHIFTER = 0x00004000;
 const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;
 const M2_NEUTER = 0x00040000;
+const M2_ROCKTHROW = 0x08000000;
 const S_VAMPIRE = 48;
 
 const PM_WOLF = MONSTER_NAME.indexOf('wolf');
@@ -301,6 +307,14 @@ function naturalShapechanger(mnum) {
     return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_SHAPESHIFTER);
 }
 
+function dropBouldersTheNewFormCannotCarry(monster, state) {
+    if ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ROCKTHROW) return [];
+    const boulders = (monster.minvent || monster.inventory || [])
+        .filter(object => object.otyp === BOULDER);
+    return boulders.map(object =>
+        dropObjectFromMonsterInventory(monster, object, state)).filter(Boolean);
+}
+
 function initialShapechangedMonster(monster, targetMnum) {
     const baseMnum = monster.mnum;
     const female = shapechangerGender(
@@ -440,10 +454,19 @@ export function changeMonsterForm(
     if (targetMnum === PM_LONG_WORM)
         initializeMonsterWormBody(monster);
     monster.meverseen = 0;
+
+    const droppedWeapon = updateMonsterWeaponAfterPolymorph(monster, state);
+    const clothing = adjustMonsterClothingAfterPolymorph(monster, state);
+    checkMonsterGearNextTurn(monster);
+    const droppedBoulders = dropBouldersTheNewFormCannotCarry(monster, state);
     return {
         oldMnum,
         newMnum: targetMnum,
         leashReleased,
         leashReleaseVisible,
+        droppedWeapon,
+        droppedClothing: clothing.dropped,
+        destroyedClothing: clothing.destroyed,
+        droppedBoulders,
     };
 }

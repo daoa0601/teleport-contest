@@ -1,5 +1,7 @@
+import { W_SADDLE, W_WEP } from '../../js/const.js';
 import { game } from '../../js/gstate.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
+import { addObjectToMonsterInventory } from '../../js/monster_inventory.js';
 
 export function liveMonster({
     mnum,
@@ -71,4 +73,20 @@ export function addMonster(options, state = game) {
 
 export function addPet(options, state = game) {
     return addMonsterToLevel(livePet(options), state);
+}
+
+export function equipMonsterObject(monster, object, wornMask, state = game) {
+    const carried = addObjectToMonsterInventory(monster, object, state);
+    carried.owornmask = wornMask;
+    carried.worn = wornMask !== 0;
+    monster.misc_worn_check = (monster.misc_worn_check ?? 0) | wornMask;
+    if (wornMask & W_WEP) {
+        carried.wielded = true;
+        monster.mw = carried;
+    }
+    if (wornMask & W_SADDLE) {
+        monster.saddle = carried;
+        monster.saddled = true;
+    }
+    return carried;
 }

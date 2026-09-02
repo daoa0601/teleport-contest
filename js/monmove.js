@@ -10,11 +10,11 @@ import {
 } from './monster_spit.js';
 import {
     MONSTER_POLEARMS,
-    monsterWieldedWeapon, objectTypeName, placeAndStackThrownObject,
-    placeThrownObject,
+    objectTypeName, placeAndStackThrownObject, placeThrownObject,
     RANGED_LAUNCHERS, readyRangedMonsterWeapon, selectRangedWeapon,
     throwMonsterWeaponAtHero,
 } from './monster_throw.js';
+import { monsterWieldedWeapon } from './monster_weapon.js';
 import { sessionIsNight } from './monster_sound.js';
 export { sessionIsNight } from './monster_sound.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';

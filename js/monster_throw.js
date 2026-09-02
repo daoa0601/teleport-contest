@@ -21,6 +21,7 @@ import {
     MONSTER_SYMBOL, monsterHatesSilver, monsterTypeName,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
+import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     BLINDING_VENOM, CREAM_PIE, EGG, FLINT, OBJECT_DESCRIPTIONS,
     OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT,
@@ -112,12 +113,6 @@ export function selectRangedWeapon(monster) {
         if (weapon) return weapon;
     }
     return null;
-}
-
-export function monsterWieldedWeapon(monster) {
-    return monster?.mw
-        || (monster?.minvent || monster?.inventory || [])
-            .find(object => object?.wielded);
 }
 
 // Switching to a launcher consumes this action. If no launcher is needed,

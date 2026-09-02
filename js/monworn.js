@@ -3,14 +3,19 @@
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
 
 import { armorBonus, armorSlotFor } from './armor.js';
+import { game } from './gstate.js';
 import {
     MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE,
     monsterBreaksArmor, monsterHasNoHands, monsterIsCentaur,
-    monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed,
+    monsterHornCount, monsterIsSlithy, monsterIsVerySmall,
+    monsterSlipsArmor, monsterWrappingAllowed,
 } from './monster_data.js';
 import {
+    destroyObjectFromMonsterInventory, dropObjectFromMonsterInventory,
+} from './monster_inventory.js';
+import {
     AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
-    OBJECT_BIMANUAL, OBJECT_DELAY,
+    MUMMY_WRAPPING, OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_MATERIAL,
 } from './object_data.js';
 import {
     AC_MAX, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
@@ -21,6 +26,7 @@ const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
 const MZ_SMALL = 1;
+const LEATHER = 7;
 const SPEED_BOOTS = 166;
 
 const SLOT_MASK = Object.freeze({
@@ -190,6 +196,69 @@ export function snapshotMonsterCreationWearNames(monster, snapshotName) {
     const slots = monsterCreationWearSnapshotSlots(monster);
     for (const slot of slots) snapshotName(monster, slot);
     return slots.length;
+}
+
+function dropWornObject(monster, object, state, dropped) {
+    if (!object) return;
+    const placed = dropObjectFromMonsterInventory(monster, object, state);
+    if (placed) dropped.push(placed);
+}
+
+function destroyWornObject(monster, object, state, destroyed) {
+    if (!object) return;
+    if (destroyObjectFromMonsterInventory(monster, object, state))
+        destroyed.push(object);
+}
+
+export function adjustMonsterClothingAfterPolymorph(
+    monster, state = game,
+) {
+    const dropped = [];
+    const destroyed = [];
+    const mnum = monster.mnum;
+    const wrappingFits = monsterWrappingAllowed(mnum);
+
+    if (monsterBreaksArmor(mnum)) {
+        destroyWornObject(monster, wornInSlot(monster, W_ARM), state, destroyed);
+
+        const cloak = wornInSlot(monster, W_ARMC);
+        if (cloak && (cloak.otyp !== MUMMY_WRAPPING || !wrappingFits)) {
+            if (cloak.oartifact)
+                dropWornObject(monster, cloak, state, dropped);
+            else
+                destroyWornObject(monster, cloak, state, destroyed);
+        }
+        destroyWornObject(
+            monster, wornInSlot(monster, W_ARMU), state, destroyed,
+        );
+    } else if (monsterSlipsArmor(mnum)) {
+        dropWornObject(monster, wornInSlot(monster, W_ARM), state, dropped);
+
+        const cloak = wornInSlot(monster, W_ARMC);
+        if (cloak && (cloak.otyp !== MUMMY_WRAPPING || !wrappingFits))
+            dropWornObject(monster, cloak, state, dropped);
+        dropWornObject(monster, wornInSlot(monster, W_ARMU), state, dropped);
+    }
+
+    const handlessOrTiny = monsterHasNoHands(mnum)
+        || monsterIsVerySmall(mnum);
+    if (handlessOrTiny) {
+        dropWornObject(monster, wornInSlot(monster, W_ARMG), state, dropped);
+        dropWornObject(monster, wornInSlot(monster, W_ARMS), state, dropped);
+    }
+
+    const helmet = wornInSlot(monster, W_ARMH);
+    const helmetIsFlimsy = helmet
+        && (OBJECT_MATERIAL[helmet.otyp] ?? Infinity) <= LEATHER;
+    if (helmet && (handlessOrTiny
+        || (monsterHornCount(mnum) && !helmetIsFlimsy))) {
+        dropWornObject(monster, helmet, state, dropped);
+    }
+
+    if (handlessOrTiny || monsterIsSlithy(mnum) || monsterIsCentaur(mnum))
+        dropWornObject(monster, wornInSlot(monster, W_ARMF), state, dropped);
+
+    return { dropped, destroyed };
 }
 
 export function checkMonsterGearNextTurn(monster) {
