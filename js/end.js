@@ -789,7 +789,9 @@ function doneObjectCleanup() {
 // performs no random calls.
 export async function finishOrdinaryDeath({
     killer, possessionAnswer = null, deathVerb = 'died', deathCause = null,
+    deathType = null,
 }) {
+    if (deathType !== null) setHeroRemainsFromDeath(deathType, game);
     game.program_state.gameover = true;
     game._deathKiller = killer;
     doneObjectCleanup();

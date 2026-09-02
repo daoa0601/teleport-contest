@@ -2,10 +2,10 @@
 // C ref: hack.c pooleffects() and trap.c drown().
 
 import {
-    D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_GENERIC, DOOR, ICE, IS_LAVA,
-    IS_OBSTRUCTED, IS_POOL, IS_WALL, IS_WATERWALL, Is_waterlevel,
-    LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, TREE, WATER,
-    TT_LAVA, W_NONDIGGABLE, W_NONPASSWALL,
+    BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_GENERIC, DISSOLVED,
+    DOOR, ICE, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_WALL, IS_WATERWALL,
+    Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE,
+    TREE, TT_LAVA, WATER, W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
@@ -322,6 +322,7 @@ async function finishLavaLifeSaving({
                 killer: 'molten lava',
                 possessionAnswer: 'n',
                 deathVerb: 'burned',
+                deathType: BURNING,
             });
             if (state.context) state.context.move = 0;
             return { entered: true, moved: false, died: true };
@@ -435,6 +436,7 @@ export async function sinkHeroIntoLava({
                 killer: 'molten lava',
                 possessionAnswer: 'n',
                 deathVerb: 'dissolved',
+                deathType: DISSOLVED,
             });
             if (state.context) state.context.move = 0;
             return { sank: true, died: true };

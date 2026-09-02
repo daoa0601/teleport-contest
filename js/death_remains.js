@@ -3,7 +3,8 @@
 
 import { isZombieMaker } from './corpse_species.js';
 import {
-    G_GENOD, LEAVESTATUE, NON_PM, STONING,
+    BURNING, DISSOLVED, G_GENOD, LEAVESTATUE, NON_PM, PANICKED, STONING,
+    TURNED_SLIME,
 } from './const.js';
 import { game } from './gstate.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
@@ -14,6 +15,7 @@ const PM_HUMAN_ZOMBIE = 244;
 const PM_VAMPIRE = 226;
 const PM_WRAITH = 230;
 const PM_GHOUL = 246;
+const PM_GREEN_SLIME = 208;
 const S_MUMMY = 39;
 const S_VAMPIRE = 48;
 const S_WRAITH = 49;
@@ -24,7 +26,18 @@ export function clearHeroRemains(state = game) {
 }
 
 export function setHeroRemainsFromDeath(deathType, state = game) {
-    state.u.ugrave_arise = deathType === STONING ? LEAVESTATUE : NON_PM;
+    if (deathType === PANICKED) {
+        state.u.ugrave_arise = NON_PM - 3;
+    } else if (deathType === BURNING || deathType === DISSOLVED) {
+        state.u.ugrave_arise = NON_PM - 2;
+    } else if (deathType === STONING) {
+        state.u.ugrave_arise = LEAVESTATUE;
+    } else if (deathType === TURNED_SLIME
+        && !((state.mvitals?.[PM_GREEN_SLIME]?.mvflags ?? 0) & G_GENOD)) {
+        state.u.ugrave_arise = PM_GREEN_SLIME;
+    } else {
+        state.u.ugrave_arise = NON_PM;
+    }
     return state.u.ugrave_arise;
 }
 

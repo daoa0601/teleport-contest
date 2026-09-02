@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    A_CON, A_STR, LAVAPOOL, PARANOID_SWIM, POOL, ROOM, TT_LAVA, WATER,
+    A_CON, A_STR, BURNING, DISSOLVED, LAVAPOOL, PARANOID_SWIM, POOL, ROOM,
+    TT_LAVA, WATER,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
@@ -132,8 +133,27 @@ test('an unprotected hero burns in lava', async () => {
     });
 
     assert.equal(death.killer, 'molten lava');
+    assert.equal(death.deathType, BURNING);
     assert.equal(messages.includes('You fall into the molten lava!'), true);
     assert.equal(messages.includes('You burn to a crisp...'), true);
+});
+
+test('a trapped fire-resistant hero eventually dissolves in lava', async () => {
+    liquidAtHero(LAVAPOOL);
+    game.u.fireResistance = true;
+    game.u.utrap = 1 << 8;
+    game.u.utraptype = TT_LAVA;
+    let death = null;
+
+    const result = await sinkHeroIntoLava({
+        ...noDisplay,
+        publish: async () => {},
+        die: async details => { death = details; },
+    });
+
+    assert.equal(result.died, true);
+    assert.equal(death.killer, 'molten lava');
+    assert.equal(death.deathType, DISSOLVED);
 });
 
 test('life saving pulls the hero out after flammable gear burns', async () => {

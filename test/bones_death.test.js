@@ -5,13 +5,15 @@ import {
     createBonesFromDeath, dropHeroInventoryForBones,
 } from '../js/bones_death.js';
 import {
-    LEAVESTATUE, ROOM, W_ARM, W_ARMC,
+    BURNING, LEAVESTATUE, ROOM, W_ARM, W_ARMC,
 } from '../js/const.js';
-import { setHeroRemainsFromMonster } from '../js/death_remains.js';
+import {
+    setHeroRemainsFromDeath, setHeroRemainsFromMonster,
+} from '../js/death_remains.js';
 import { game } from '../js/gstate.js';
 import { beginObjectBurn } from '../js/light.js';
 import {
-    DAGGER, LEATHER_ARMOR, MUMMY_WRAPPING, OIL_LAMP, STATUE,
+    CORPSE, DAGGER, LEATHER_ARMOR, MUMMY_WRAPPING, OIL_LAMP, STATUE,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -55,6 +57,29 @@ test('a nearby object-loving monster can inherit a dead hero item', () => {
     assert.equal(game.level.objects[10]?.[10]?.includes(dagger) ?? false,
         false);
 });
+
+test('a hero burned in lava leaves dropped gear and a ghost but no body',
+    async () => {
+        freshCommandRoom({
+            seed: 31n,
+            hero: { uz: { dnum: 0, dlevel: 9 } },
+        });
+        init_objects();
+        game.storage = memoryStorage();
+        game._canMakeBones = true;
+        game.plname = 'Ember';
+        const dagger = knownInventoryObject(DAGGER);
+        setHeroRemainsFromDeath(BURNING);
+
+        assert.equal(await createBonesFromDeath(async () => 'y'), true);
+
+        const remains = floorObjectsAt(game.level, 10, 10);
+        assert.equal(remains.includes(dagger), true);
+        assert.equal(remains.some(object => object.otyp === CORPSE), false);
+        assert.equal(game.level.monsters.some(monster =>
+            monster.mnum === PM_GHOST), true);
+        assert.equal(game.level.at(10, 10).typ, ROOM);
+    });
 
 test('a mummy victim rises with their inventory and intrinsic resistances',
     async () => {
