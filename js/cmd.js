@@ -156,6 +156,7 @@ import {
     artifactById, artifactToHitBonus,
 } from './artifacts.js';
 import { applyArtifactHitToMonster } from './artifact_hit.js';
+import { invokeArtifactPower } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import {
     SLING, CARROT, BULLWHIP, GRAPPLING_HOOK,
@@ -5410,8 +5411,11 @@ async function doinvoke() {
         return;
     }
 
-    // The property and special-power branches are explicit data now but need
-    // their own source transactions before they can be accepted.
+    const invocation = await invokeArtifactPower(object, artifact);
+    if (invocation.used) {
+        game.context.move = 1;
+        return;
+    }
     await pline('Nothing happens.');
     game.context.move = 1;
 }
