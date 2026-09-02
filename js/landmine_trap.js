@@ -1,19 +1,14 @@
 // Land mines triggered by monsters.
-// C ref: trap.c:trapeffect_landmine() and blow_up_landmine().
+// C ref: trap.c:trapeffect_landmine().
 
 import {
-    D_BROKEN, IS_DOOR, Is_airlevel, Is_waterlevel,
-    LAVAPOOL, PIT, ROOM, W_ARMF, WT_ELF,
+    W_ARMF, WT_ELF,
 } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
-import { liquidForHole } from './hole.js';
-import {
-    fillPitWithBoulderAt,
-} from './mklev.js';
-import {
-    monsterInAir, resolveMonsterLiquid, wakeMonstersNear,
-} from './mon.js';
+import { explodeLandMine } from './landmine_explosion.js';
+import { fillPitWithBoulderAt } from './mklev.js';
+import { monsterInAir, resolveMonsterLiquid } from './mon.js';
 import {
     MONSTER_BODY_META, MONSTER_NAME,
 } from './monster_data.js';
@@ -22,11 +17,7 @@ import {
 } from './monster_pit_trap.js';
 import { IRON_SHOES } from './object_data.js';
 import { rn2, rnd } from './rng.js';
-import { scatterFloorObjects } from './scatter.js';
-import {
-    destroyLavaFloorObjects, monsterTrapVisibility, waterDamageChain,
-} from './trap.js';
-import { vision_note_blocker_change } from './vision.js';
+import { monsterTrapVisibility } from './trap.js';
 
 function inventoryOf(monster) {
     return monster.minvent || monster.inventory || [];
@@ -44,125 +35,6 @@ function ordinaryMonsterName(monster) {
 
 function ordinaryMonsterSubject(monster) {
     return `The ${ordinaryMonsterName(monster)}`;
-}
-
-function levelHasNoPits(state) {
-    return !!state.level?.flags?.is_airlevel
-        || !!state.level?.flags?.is_waterlevel
-        || Is_airlevel(state.u?.uz) || Is_waterlevel(state.u?.uz);
-}
-
-function removeTrap(state, trap) {
-    const index = state.level?.traps?.indexOf(trap) ?? -1;
-    if (index >= 0) state.level.traps.splice(index, 1);
-}
-
-function removeEngravingAt(state, x, y) {
-    state.level.engravings = (state.level?.engravings || []).filter(
-        engraving => (engraving.x ?? engraving.ex) !== x
-            || (engraving.y ?? engraving.ey) !== y,
-    );
-}
-
-async function destroyDrawbridgeAt(x, y, state, finishDeath) {
-    const { destroyDrawbridge, findDrawbridgeAt } = await import('./dbridge.js');
-    const bridge = findDrawbridgeAt(x, y, state);
-    if (!bridge) return false;
-    return destroyDrawbridge(bridge.x, bridge.y, state, {
-        finishMonsterKill: async (monster, _x, _y, options) => {
-            const death = await finishDeath(monster, {
-                noCorpse: options.noCorpse,
-                visible: false,
-                spotted: false,
-            });
-            return !death.survived;
-        },
-    });
-}
-
-async function flowLiquidIntoMineHole(
-    x, y, trap, liquid, monster, state, options,
-) {
-    removeTrap(state, trap);
-    const location = state.level.at(x, y);
-    location.typ = liquid;
-    location.flags = 0;
-    const pile = state.level?.objects?.[x]?.[y] || [];
-    if (liquid === LAVAPOOL) {
-        await destroyLavaFloorObjects(pile, {
-            publish: options.publish,
-            random: options.random,
-            visible: options.seeSquare,
-        });
-    } else {
-        const messages = [];
-        await waterDamageChain(pile, messages, state);
-        if (options.seeSquare) {
-            for (const message of messages) await options.publish(message);
-        }
-    }
-    await resolveMonsterLiquid(monster, state, {
-        announce: options.publish,
-        monsterMoving: true,
-        random: options.random,
-        finishDeath: async (
-            victim, _state, random, _calls, leaveCorpse,
-        ) => options.finishDeath(victim, {
-            noCorpse: !leaveCorpse,
-            visible: options.seeSquare,
-            spotted: options.inSight,
-            random,
-            publish: options.publish,
-        }),
-    });
-    newsym(x, y);
-}
-
-async function blowUpLandMine(monster, event, state, options) {
-    const x = event.trap.tx;
-    const y = event.trap.ty;
-    await scatterFloorObjects(x, y, 4, {
-        state,
-        publish: options.publish,
-        random: options.random,
-        rollOne: options.rollOne,
-        finishMonsterDeath: options.finishDeath,
-    });
-    removeEngravingAt(state, x, y);
-    wakeMonstersNear(x, y, 400, state);
-
-    const location = state.level?.at?.(x, y);
-    if (location && IS_DOOR(location.typ)) location.doormask = D_BROKEN;
-    await destroyDrawbridgeAt(x, y, state, options.finishDeath);
-
-    const survivingTrap = state.level?.traps?.find(candidate =>
-        candidate.tx === x && candidate.ty === y) || null;
-    if (!survivingTrap) return null;
-    if (levelHasNoPits(state)) {
-        removeTrap(state, survivingTrap);
-        return null;
-    }
-
-    const liquid = liquidForHole(x, y, state, { random: options.random });
-    if (liquid !== ROOM) {
-        await flowLiquidIntoMineHole(
-            x, y, survivingTrap, liquid, monster, state, {
-                ...options,
-                seeSquare: event.seeSquare,
-                inSight: event.inSight,
-            },
-        );
-        return null;
-    }
-
-    survivingTrap.ttyp = PIT;
-    survivingTrap.madeby_u = false;
-    survivingTrap.tseen = true;
-    fillPitWithBoulderAt(x, y, state);
-    vision_note_blocker_change(x, y);
-    newsym(x, y);
-    return state.level?.traps?.includes(survivingTrap)
-        ? survivingTrap : null;
 }
 
 async function finishMineDeath(monster, event, options) {
@@ -197,6 +69,23 @@ async function fallIntoMinePit(monster, trap, event, state, options) {
     });
     if (pit.death) event.death = pit.death;
     if (pit.killed) event.killed = true;
+}
+
+async function resolveMineLiquid(monster, event, state, options) {
+    return resolveMonsterLiquid(monster, state, {
+        announce: options.publish,
+        monsterMoving: true,
+        random: options.random,
+        finishDeath: async (
+            victim, _state, random, _calls, leaveCorpse,
+        ) => options.finishDeath(victim, {
+            noCorpse: !leaveCorpse,
+            visible: event.seeSquare,
+            spotted: event.inSight,
+            random,
+            publish: options.publish,
+        }),
+    });
 }
 
 export function beginMonsterLandMine(
@@ -292,7 +181,16 @@ export async function finishMonsterLandMine(
         await publish('Kaablamm!  You hear an explosion in the distance!');
     }
 
-    const pit = await blowUpLandMine(monster, event, state, options);
+    const pit = await explodeLandMine(event.trap, state, {
+        publish,
+        random,
+        rollOne,
+        seeSquare: event.seeSquare,
+        finishMonsterDeath: finishDeath,
+        resolveLiquid: () => resolveMineLiquid(
+            monster, event, state, options,
+        ),
+    });
     if (monster.dead || (monster.mhp ?? 0) <= 0
         || !state.level?.monsters?.includes(monster)) {
         event.killed = !!monster.dead || (monster.mhp ?? 0) <= 0;

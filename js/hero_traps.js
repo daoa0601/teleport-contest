@@ -24,13 +24,17 @@ import {
     transientObjectGlyph,
 } from './display.js';
 import { game } from './gstate.js';
+import { heroLiquidEffects } from './hack.js';
 import {
     hasInternalInvisibility, syncHeroInvisibility,
 } from './hero_invisibility.js';
 import { distmin } from './hacklib.js';
+import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { explodeLandMine } from './landmine_explosion.js';
+import { igniteItems } from './light.js';
 import {
-    canFallThrough, place_object, remove_object, splitHeroMonsterForm,
-    stack_object,
+    canFallThrough, fillPitWithBoulderAt, place_object, remove_object,
+    splitHeroMonsterForm, stack_object,
 } from './mklev.js';
 import { somexyspace } from './mkroom.js';
 import {
@@ -81,6 +85,7 @@ import { splashLitObject, waterDamageObject } from './trap.js';
 import { heroIsPolymorphed, rehumanizeHero } from './polyself.js';
 import { finishHeroDeath } from './end.js';
 import { triggerHeroAntiMagicTrap } from './anti_magic_trap.js';
+import { destroyFireInventory } from './zap.js';
 
 const M1_CLING = 0x00000010;
 const M1_WALLWALK = 0x00000008;
@@ -257,7 +262,9 @@ async function triggerLandmine(trap, { failedUntrap = false } = {}) {
     } else {
         trap.tseen = true;
         await plineWithContinuation(
-            'KAABLAMM!!!  You triggered a land mine!',
+            `KAABLAMM!!!  You triggered ${
+                trap.madeby_u ? 'your' : 'a'
+            } land mine!`,
         );
         hero._woundedLegTurns = Math.max(
             hero._woundedLegTurns ?? 0, rn2(35) + 41, rn2(35) + 41,
@@ -268,7 +275,40 @@ async function triggerLandmine(trap, { failedUntrap = false } = {}) {
     trap.ttyp = PIT;
     trap.madeby_u = false;
     losePhysicalHitPoints(damage);
-    await triggerPit(trap, { failedUntrap });
+    const finishMonsterDeath = async (monster, death) => {
+        const killed = await finishHeroMonsterKill(
+            monster, monster.mx, monster.my, {
+                showKillMessage: false,
+                weaponHit: false,
+                noCorpse: death.noCorpse,
+            },
+        );
+        return { monster, survived: !killed };
+    };
+    const pit = await explodeLandMine(trap, game, {
+        publish: plineWithContinuation,
+        random: rn2,
+        rollOne: rnd,
+        seeSquare: cansee(hero.ux, hero.uy),
+        heroCaused: true,
+        finishMonsterDeath,
+        finishMonsterKill: finishHeroMonsterKill,
+        resolveLiquid: () => heroLiquidEffects({
+            state: game,
+            publish: plineWithContinuation,
+            burnInventory: fireDamage => destroyFireInventory(
+                fireDamage, { state: game, publish: plineWithContinuation },
+            ),
+            igniteInventory: () => igniteItems(game.inventory, {
+                state: game,
+                publish: plineWithContinuation,
+            }),
+        }),
+    });
+    if (pit) {
+        await triggerPit(pit, { failedUntrap });
+        fillPitWithBoulderAt(hero.ux, hero.uy, game);
+    }
     newsym(hero.ux, hero.uy);
 }
 
