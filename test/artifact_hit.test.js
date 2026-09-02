@@ -87,3 +87,67 @@ test('Stormbringer drains a monster level and heals its wielder', async () => {
     assert.equal(monster.mhpmax, 12);
     assert.equal(game.u.uhp, 9);
 });
+
+test('the Tsurugi bisects small monsters and cuts deeply into large ones',
+    async () => {
+        freshObjectRoom();
+        const weapon = artifactObject('The Tsurugi of Muramasa');
+        const messages = [];
+        const jackal = liveMonster({ species: 'jackal', hitPoints: 20 });
+
+        const smallHit = await applyArtifactHitToMonster(
+            weapon, jackal, 4, {
+                state: game,
+                dieRoll: 1,
+                describeTarget: () => 'the jackal',
+                publish: async message => messages.push(message),
+                rollOne: maximumRoll,
+            },
+        );
+        const largeHit = await applyArtifactHitToMonster(
+            weapon, liveMonster({ species: 'mumak', hitPoints: 20 }), 4, {
+                state: game,
+                dieRoll: 1,
+                describeTarget: () => 'the mumak',
+                publish: async message => messages.push(message),
+                rollOne: maximumRoll,
+            },
+        );
+
+        assert.equal(smallHit.damage, 41);
+        assert.equal(largeHit.damage, 24);
+        assert.match(messages[0], /cuts the jackal in half/);
+        assert.match(messages[1], /slice deeply into the mumak/);
+    });
+
+test('Vorpal Blade misses a headless creature and beheads a jabberwock',
+    async () => {
+        freshObjectRoom();
+        const weapon = artifactObject('Vorpal Blade');
+        const messages = [];
+        const headless = await applyArtifactHitToMonster(
+            weapon, liveMonster({ species: 'gas spore', hitPoints: 20 }), 4, {
+                state: game,
+                dieRoll: 1,
+                describeTarget: () => 'the gas spore',
+                publish: async message => messages.push(message),
+                rollOne: maximumRoll,
+            },
+        );
+        const jabberwock = await applyArtifactHitToMonster(
+            weapon, liveMonster({ species: 'jabberwock', hitPoints: 20 }), 4, {
+                state: game,
+                dieRoll: 10,
+                describeTarget: () => 'the jabberwock',
+                publish: async message => messages.push(message),
+                random: () => 0,
+                rollOne: maximumRoll,
+            },
+        );
+
+        assert.equal(headless.damage, 0);
+        assert.equal(headless.attackStopped, true);
+        assert.equal(jabberwock.damage, 41);
+        assert.match(messages[0], /miss the gas spore wildly/);
+        assert.match(messages[1], /beheads the jabberwock/);
+    });

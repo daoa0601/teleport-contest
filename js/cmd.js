@@ -11021,7 +11021,7 @@ async function attackHostileMonster(monster, x, y, {
     }
     threshold -= meleeEncumbrancePenalty();
     if (game.u?.utrap) threshold -= 3;
-    if (threshold <= dieroll) {
+    if (threshold <= dieroll && !game.u?.uswallow) {
         await plineWithContinuation(
             `You miss ${displayedMonsterObject()}.`,
         );
@@ -11065,9 +11065,15 @@ async function attackHostileMonster(monster, x, y, {
             describeTarget: displayedMonsterObject,
             describeCarrier: displayedMonsterName,
             publish: plineWithContinuation,
+            dieRoll: dieroll,
+            hitOnHead: monster.mx === x && monster.my === y,
         })
         : { damage, specialMessage: false };
     damage = artifactHit.damage;
+    if (artifactHit.attackStopped) {
+        if (primaryStrike) passiveContact(monster, true);
+        return finishStrike();
+    }
     const damageCanUseBonuses = damage > 0;
     if (trainsWeapon) {
         recordWeaponPractice(

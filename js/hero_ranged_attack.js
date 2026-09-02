@@ -106,7 +106,7 @@ function appliedHitThreshold(monster, weapon, state) {
     return threshold + (targetIsOrc && heroIsElf ? 1 : 0);
 }
 
-async function rollAppliedDamage(monster, weapon, state) {
+async function rollAppliedDamage(monster, weapon, state, dieRoll) {
     let damage = rollPhysicalWeaponDamage(weapon, monster);
     const trainsSkill = damage > 1;
     const artifactHit = await applyArtifactHitToMonster(
@@ -116,6 +116,7 @@ async function rollAppliedDamage(monster, weapon, state) {
             describeTarget: () => targetObject(monster, state) || 'it',
             describeCarrier: () => targetName(monster, state),
             publish: plineWithContinuation,
+            dieRoll,
         },
     );
     damage = artifactHit.damage;
@@ -125,9 +126,10 @@ async function rollAppliedDamage(monster, weapon, state) {
             state, Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0),
         );
     return {
-        damage: Math.max(1, damage),
+        damage: artifactHit.attackStopped ? 0 : Math.max(1, damage),
         trainsSkill,
         specialMessage: artifactHit.specialMessage,
+        attackStopped: artifactHit.attackStopped,
     };
 }
 
@@ -188,9 +190,15 @@ export async function hitMonsterWithAppliedWeapon(
     }
 
     exerciseAttribute(A_DEX, true, state);
-    const { damage, trainsSkill, specialMessage } = await rollAppliedDamage(
-        monster, weapon, state,
+    const {
+        damage, trainsSkill, specialMessage, attackStopped,
+    } = await rollAppliedDamage(
+        monster, weapon, state, dieRoll,
     );
+    if (attackStopped) {
+        await applyProjectileObjectPassive(monster, weapon);
+        return true;
+    }
     recordWeaponHit(weapon, damage, state);
     if (trainsSkill) {
         recordWeaponPractice(

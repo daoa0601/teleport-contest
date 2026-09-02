@@ -101,6 +101,8 @@ const M2_UNDEAD = 0x00000002;
 const M2_WERE = 0x00000004;
 const M2_DEMON = 0x00000100;
 const M2_JEWELS = 0x20000000;
+const M1_AMORPHOUS = 0x00000004;
+const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
 const M1_THICK_HIDE = 0x00200000;
@@ -121,6 +123,7 @@ const S_IMP = 9;
 const S_UNICORN = 21;
 const S_VORTEX = 22;
 const S_VAMPIRE = 48;
+const S_GHOST = 54;
 const S_GOLEM = 55;
 
 export function monsterIsUndead(mnum) {
@@ -133,6 +136,18 @@ export function monsterIsMindless(mnum) {
 
 export function monsterIsAnimal(monster) {
     return !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_ANIMAL);
+}
+
+export function monsterHasHead(monster) {
+    return !((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_NOHEAD);
+}
+
+export function monsterIsAmorphous(monster) {
+    return !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_AMORPHOUS);
+}
+
+export function monsterIsNoncorporeal(monster) {
+    return MONSTER_SYMBOL[monster?.mnum] === S_GHOST;
 }
 
 export function monsterIsWhirly(monster) {

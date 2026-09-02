@@ -1,4 +1,4 @@
-// Artifact weapon damage and elemental side effects.
+// Artifact weapon damage and special-hit effects.
 // C ref: artifact.c artifact_hit().
 
 import { artifactById, artifactDamageBonus } from './artifacts.js';
@@ -7,13 +7,18 @@ import { game } from './gstate.js';
 import { igniteItems } from './light.js';
 import { wakeMonstersNear } from './mon.js';
 import { monsterHitPointsPerLevel } from './monster_hit_points.js';
-import { monsterIsNonliving, monsterTypeName } from './monster_data.js';
+import {
+    MONSTER_NAME, MONSTER_SIZE, monsterHasHead, monsterIsAmorphous,
+    monsterIsNoncorporeal, monsterIsNonliving, monsterTypeName,
+} from './monster_data.js';
+import { recordObjectEncounter } from './object_knowledge.js';
 import { rn2, rnd } from './rng.js';
 import {
     destroyMonsterInventoryByElement, INVENTORY_DAMAGE,
 } from './zap.js';
 
 const PM_WATER_ELEMENTAL = 157;
+const PM_JABBERWOCK = MONSTER_NAME.indexOf('jabberwock');
 
 function elementalDamageType(damageType) {
     return {
@@ -44,6 +49,74 @@ function elementalHitMessage(damageType, applied, monster, targetName) {
 
 function inventoryDamageChance(damageType) {
     return damageType === 'shock' ? 5 : 4;
+}
+
+function observeArtifactObject(object, state) {
+    const hallucinating = !!(state.u?.hallucinating
+        || (state.u?.hallucinationTurns ?? 0) > 0);
+    if (hallucinating) return;
+    object.dknown = true;
+    recordObjectEncounter(object.otyp, state);
+}
+
+function possessiveTarget(target) {
+    if (target === 'it') return 'its';
+    return target.endsWith('s') ? `${target}'` : `${target}'s`;
+}
+
+async function applyBeheading(
+    artifact, object, monster, damage, {
+        state, dieRoll, hitOnHead, describeTarget, publish, random,
+    },
+) {
+    if (!artifact.flags.includes('SPFX_BEHEAD')) return null;
+    const swallowed = !!state.u?.uswallow && state.u?.ustuck === monster;
+
+    if (artifact.name === 'The Tsurugi of Muramasa') {
+        if (dieRoll !== 1) return null;
+        const target = describeTarget();
+        if (swallowed) {
+            await publish(`You slice ${target} wide open!`);
+            return {
+                damage: 2 * (monster.mhp ?? 1) + 1,
+                specialMessage: true,
+            };
+        }
+        if (!hitOnHead) return null;
+        if ((MONSTER_SIZE[monster.mnum] ?? 2) >= 3) {
+            await publish(`You slice deeply into ${target}!`);
+            return { damage: damage * 2, specialMessage: true };
+        }
+        await publish(`The razor-sharp blade cuts ${target} in half!`);
+        observeArtifactObject(object, state);
+        return {
+            damage: 2 * (monster.mhp ?? 1) + 1,
+            specialMessage: true,
+        };
+    }
+
+    if (artifact.name !== 'Vorpal Blade'
+        || (dieRoll !== 1 && monster.mnum !== PM_JABBERWOCK)
+        || swallowed) return null;
+    const target = describeTarget();
+    if (!monsterHasHead(monster) || !hitOnHead) {
+        await publish(`Somehow, you miss ${target} wildly.`);
+        return { damage: 0, specialMessage: true, attackStopped: true };
+    }
+    if (monsterIsNoncorporeal(monster) || monsterIsAmorphous(monster)) {
+        await publish(
+            `Vorpal Blade slices through ${possessiveTarget(target)} neck.`,
+        );
+        return { damage, specialMessage: true };
+    }
+
+    const verb = random(2) === 0 ? 'beheads' : 'decapitates';
+    await publish(`Vorpal Blade ${verb} ${target}!`);
+    observeArtifactObject(object, state);
+    return {
+        damage: 2 * (monster.mhp ?? 1) + 1,
+        specialMessage: true,
+    };
 }
 
 function healHeroFromDrain(state, amount) {
@@ -106,6 +179,8 @@ export async function applyArtifactHitToMonster(
         publish = async () => {},
         random = rn2,
         rollOne = rnd,
+        dieRoll = 0,
+        hitOnHead = true,
     } = {},
 ) {
     const artifact = artifactById(object?.oartifact, state);
@@ -119,6 +194,19 @@ export async function applyArtifactHitToMonster(
     let damage = baseDamage + bonus;
     const damageType = artifact.attack.damageType;
     const inventoryDamage = elementalDamageType(damageType);
+    if (bonus > 0) {
+        const beheading = await applyBeheading(
+            artifact, object, monster, damage, {
+                state,
+                dieRoll,
+                hitOnHead,
+                describeTarget,
+                publish,
+                random,
+            },
+        );
+        if (beheading) return beheading;
+    }
     if (damageType === 'life-drain' && bonus > 0) {
         return applyLifeDrain(artifact, monster, damage, {
             state,
