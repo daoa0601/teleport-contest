@@ -155,6 +155,7 @@ import {
 import {
     mergable as objectsMergable, mergeObjectStacks,
 } from './object_merge.js';
+import { addObjectToContainer } from './object_container.js';
 import { vision_note_blocker_change } from './vision.js';
 import { monsterGoodPosition } from './teleport_rules.js';
 import {
@@ -7773,15 +7774,7 @@ function removeFloorObject(object) {
 function addToContainer(container, object) {
     if (!container || !object) return object;
     removeFloorObject(object);
-    if (!container.contents) container.contents = [];
-    const existing = container.contents.find(candidate =>
-        objectsMergable(candidate, object, game));
-    if (existing) return mergeObjectStacks(existing, object, game);
-    object.where = 'contained';
-    object.container = container;
-    object.ox = object.oy = 0;
-    container.contents.unshift(object);
-    return object;
+    return addObjectToContainer(container, object, game);
 }
 
 function addBuriedObject(object, x, y) {

@@ -8,6 +8,7 @@ import {
 import { recordHeroKillConduct } from './end.js';
 import { game } from './gstate.js';
 import { endObjectBurn } from './light.js';
+import { addObjectToContainer } from './object_container.js';
 import {
     lifeSaveMonster, wornMonsterLifeSaver,
 } from './mondeath.js';
@@ -107,12 +108,7 @@ async function restoreShapechanger(monster) {
 function putInStatue(statue, object) {
     clearMonsterCarriedObjectState(object);
     endObjectBurn(object);
-    object.where = 'contained';
-    object.container = statue;
-    object.ox = 0;
-    object.oy = 0;
-    statue.contents ||= [];
-    statue.contents.unshift(object);
+    addObjectToContainer(statue, object);
 }
 
 function dropBesideStatue(object, x, y) {

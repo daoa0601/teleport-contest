@@ -14,6 +14,7 @@ import { inventoryItemDescription } from './invent.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
 import { liftObject } from './lift_object.js';
 import { endObjectBurn } from './light.js';
+import { addObjectToContainer } from './object_container.js';
 import {
     makemonNear, place_object, startCorpseTimeout,
 } from './mklev.js';
@@ -512,12 +513,7 @@ export async function putIntoContainer(
         return explodeBag(container, object, state);
     }
 
-    object.where = 'contained';
-    object.container = container;
-    object.ox = 0;
-    object.oy = 0;
-    container.contents ||= [];
-    container.contents.unshift(object);
+    addObjectToContainer(container, object, state);
     container.cknown = true;
     updateContainerWeights(container);
     state._capacityDirty = true;
