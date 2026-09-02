@@ -33,6 +33,7 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import {
     monsterBreathMessage, monsterCoughMessage, resolveMonsterBreathAttack,
 } from './dogmove.js';
+import { monsterDryRattleMessage } from './monster_spit.js';
 import { angerMonster } from './monster_anger.js';
 import { animateRollingBoulderCell } from './hero_traps.js';
 import { grantAmuletWish } from './wish.js';
@@ -157,7 +158,7 @@ import {
     resumeDeferredMonsterStrikingWand,
     finishDeferredMonsterStrikingWandHit,
     relocateMonsterAfterTheft,
-    resumeDeferredPetBreathCough,
+    resumeDeferredPetRangedNoise,
     resumeDeferredPetEating, resumeDeferredPetMove,
     resolveDeferredMonsterBreath, resumeDeferredSpitAttack,
     finishDeferredMonsterDeath,
@@ -3869,10 +3870,12 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             }
             movement = action.movement;
         }
-        if (movement?.deferredPetBreathCough) {
-            const message = monsterCoughMessage(monster, game);
+        if (movement?.deferredPetRangedNoise) {
+            const message = movement.petRangedAttack.cough
+                ? monsterCoughMessage(monster, game)
+                : monsterDryRattleMessage(monster, game);
             if (message) await queueTurnMessage(message);
-            resumeDeferredPetBreathCough(action, game);
+            resumeDeferredPetRangedNoise(action, game);
             movement = action.movement;
         }
         if (movement?.deferredPetEating) {
@@ -5391,16 +5394,9 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         }
         if (movement?.spitAttack) {
             const spit = movement.spitAttack;
-            if (spit.dryRattle && !game.deaf) {
-                if (monsterIsSeen) {
-                    await queueTurnMessage(
-                        `A dry rattle comes from the ${
-                            quietMonsterName(monster)
-                        }'s throat.`,
-                    );
-                } else {
-                    await queueTurnMessage('You hear a dry rattle nearby.');
-                }
+            if (spit.dryRattle) {
+                const message = monsterDryRattleMessage(monster, game);
+                if (message) await queueTurnMessage(message);
             }
             if (spit.launched) {
                 // spitmm() installs the visible launch line before entering

@@ -2,6 +2,7 @@
 // C refs: mthrowu.c spitmm() and m_throw().
 
 import { BOLT_LIM } from './const.js';
+import { canProjectMonster } from './display.js';
 import { distmin } from './hacklib.js';
 import { mksobj } from './mklev.js';
 import { findMonsterArmorClass } from './monworn.js';
@@ -14,11 +15,22 @@ import {
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { syncBlindness } from './senses.js';
+import { monsterSentenceSubject } from './monster_sound.js';
 
 export function monsterSpitAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || []).find(
         ([attackType]) => attackType === AT_SPIT,
     ) || null;
+}
+
+export function monsterDryRattleMessage(monster, state) {
+    if (!monster || state.deaf || state.u?.deaf) return null;
+    if (!canProjectMonster(monster, monster.mx, monster.my))
+        return 'You hear a dry rattle nearby.';
+    const subject = monsterSentenceSubject(monster);
+    const middleOfSentence = subject.startsWith('The ')
+        ? `the ${subject.slice(4)}` : subject;
+    return `A dry rattle comes from ${middleOfSentence}'s throat.`;
 }
 
 function venomTypeFor(damageType) {
@@ -152,7 +164,7 @@ function hitHero(source, spit, state, random, rollOne) {
     destroyVenom(spit.venom, random);
 }
 
-export function resolveMonsterSpitFlight(
+function flyMonsterVenom(
     source, spit, state, {
         random = rn2,
         rollOne = rnd,
@@ -201,4 +213,16 @@ export function resolveMonsterSpitFlight(
     }
     spit.flightPath = flightPath;
     return spit;
+}
+
+export function resolveMonsterSpitFlight(
+    source, spit, state, options = {},
+) {
+    if (!spit?.deferredFlight) return spit || null;
+    const result = flyMonsterVenom(source, spit, state, options);
+    if (source.mtame && !source.isminion
+        && (source.edog?.hungrytime ?? 0) > 1) {
+        source.edog.hungrytime -= 5;
+    }
+    return result;
 }

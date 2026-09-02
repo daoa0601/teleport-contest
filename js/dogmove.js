@@ -1,4 +1,4 @@
-// Pet target choice and breath attacks.
+// Pet target choice and natural breath or spit attacks.
 // C refs: dogmove.c best_target(), score_targ(), and pet_ranged_attk().
 
 import { canProjectMonster } from './display.js';
@@ -16,6 +16,9 @@ import {
 } from './monster_attack_types.js';
 import { rn2, rnd, d } from './rng.js';
 import { monsterSentenceSubject } from './monster_sound.js';
+import {
+    beginMonsterSpitAttack, monsterSpitAttack,
+} from './monster_spit.js';
 import { clearPath } from './vision.js';
 
 const DOG_HUNGRY = 300;
@@ -211,7 +214,7 @@ function beginBreathAtTarget(monster, target, state, random) {
     return { target, attack, launched: true };
 }
 
-export function beginPetBreathAttack(
+export function beginPetRangedAttack(
     pet, state, {
         forced = false,
         random = rn2,
@@ -227,7 +230,27 @@ export function beginPetBreathAttack(
         return { target, launched: false, makeNoise: forced };
     }
 
-    return beginBreathAtTarget(pet, target, state, random);
+    if (monsterBreathAttack(pet)) {
+        return {
+            kind: 'breath',
+            ...beginBreathAtTarget(pet, target, state, random),
+        };
+    }
+
+    const spitAttack = monsterSpitAttack(pet);
+    if (spitAttack) {
+        const position = targetPosition(target, state);
+        pet.mlstmv = sourceTurn(state);
+        return {
+            kind: 'spit',
+            target,
+            ...beginMonsterSpitAttack(
+                pet, position.x, position.y,
+                { attack: spitAttack, random },
+            ),
+        };
+    }
+    return { target, launched: false };
 }
 
 export function monsterBreathMessage(monster, breath) {

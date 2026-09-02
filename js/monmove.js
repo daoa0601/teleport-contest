@@ -4,7 +4,7 @@
 
 import { d, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
-import { beginPetBreathAttack } from './dogmove.js';
+import { beginPetRangedAttack } from './dogmove.js';
 import {
     beginMonsterSpitAttack, monsterSpitAttack, resolveMonsterSpitFlight,
 } from './monster_spit.js';
@@ -3330,7 +3330,7 @@ function movePet(
     const movePlan = {
         oldx, oldy, nix, niy, selectedInfo, reluctant, inventoryAction,
     };
-    const breath = beginPetBreathAttack(monster, state, {
+    const rangedAttack = beginPetRangedAttack(monster, state, {
         random: range => recordRandom(random, calls, range),
         rollOne: range => {
             const result = rollOne(range);
@@ -3338,19 +3338,22 @@ function movePet(
             return result;
         },
     });
-    if (breath.launched) {
+    if (rangedAttack.launched) {
+        const attack = rangedAttack.kind === 'spit'
+            ? { spitAttack: rangedAttack }
+            : { petBreath: rangedAttack };
         return {
             oldx, oldy, x: oldx, y: oldy, moved: false,
-            petBreath: breath,
+            ...attack,
             actionCompleted: true,
         };
     }
-    if (breath.cough) {
+    if (rangedAttack.cough || rangedAttack.dryRattle) {
         return {
             oldx, oldy, x: oldx, y: oldy, moved: false,
-            petBreath: breath,
+            petRangedAttack: rangedAttack,
             petMovePlan: movePlan,
-            deferredPetBreathCough: true,
+            deferredPetRangedNoise: true,
         };
     }
     return finishPetMovePlan(
@@ -4271,7 +4274,7 @@ function rayMonsterLeavesCorpse(monster, state, random, calls) {
     return recordRandom(random, calls, range) === 0;
 }
 
-function finishRayKilledMonster(monster, state, random, calls) {
+function finishRangedKilledMonster(monster, state, random, calls) {
     const x = monster.mx, y = monster.my;
     const carried = monster.minvent || monster.inventory || [];
     for (const object of carried)
@@ -4379,7 +4382,7 @@ export async function resolveDeferredMonsterBreath(
                             `The ${MONSTER_NAME[target.mnum]} is killed by the blast of fire!`,
                         );
                     }
-                    finishRayKilledMonster(target, state, random, calls);
+                    finishRangedKilledMonster(target, state, random, calls);
                 } else if (emitMessage) {
                     await emitMessage(
                         `The blast of fire hits ${
@@ -4452,7 +4455,7 @@ export function resumeDeferredSpitAttack(
 ) {
     const spit = action?.movement?.spitAttack;
     if (!spit?.deferredFlight) return spit || null;
-    return resolveMonsterSpitFlight(action.monster, spit, state, {
+    const result = resolveMonsterSpitFlight(action.monster, spit, state, {
         random: range => recordRandom(random, action.calls, range),
         rollOne: range => {
             const result = rollOne(range);
@@ -4460,6 +4463,13 @@ export function resumeDeferredSpitAttack(
             return result;
         },
     });
+    if (result.target && (result.target.mhp ?? 0) <= 0
+        && state.level?.monsters?.includes(result.target)) {
+        finishRangedKilledMonster(
+            result.target, state, random, action.calls,
+        );
+    }
+    return result;
 }
 
 function pointsOnline(x0, y0, x1, y1) {
@@ -8341,8 +8351,9 @@ export function quietMonsterActionRng(
             // check, while movement-only door and tracking branches do not.
             if (!movement.deferredPetMove
                 && !movement.deferredPetEating
-                && !movement.deferredPetBreathCough
+                && !movement.deferredPetRangedNoise
                 && !movement.petBreath?.launched
+                && !movement.spitAttack?.launched
                 && !movement.actorDied && !movement.actorLeftLevel)
                 movement.petPostmov = true;
         } else if (monster?.isgd && monster?._egd) {
@@ -8357,8 +8368,9 @@ export function quietMonsterActionRng(
         if (trapRelease?.escaped) movement.trapEscape = trapRelease;
         if (movement.deferredPetMove
             || movement.deferredPetEating
-            || movement.deferredPetBreathCough
+            || movement.deferredPetRangedNoise
             || movement.petBreath?.launched
+            || movement.spitAttack?.launched
             || movement.deferredAfterRestrictedTenguTeleport)
             return { calls, movement };
         completeMovedMonsterAction(
@@ -8536,7 +8548,7 @@ export function resolveMonsterMagicMissileContact(
 export function finishMonsterMagicMissileDeath(
     action, target, state, random = rn2,
 ) {
-    finishRayKilledMonster(target, state, random, action.calls);
+    finishRangedKilledMonster(target, state, random, action.calls);
     return target;
 }
 
@@ -8671,11 +8683,11 @@ export function resumeDeferredMonsterRollingBoulder(
     return finishDeferredMonsterRollingBoulderPlacement(action, state);
 }
 
-export function resumeDeferredPetBreathCough(
+export function resumeDeferredPetRangedNoise(
     action, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
     const deferred = action?.movement;
-    if (!deferred?.deferredPetBreathCough) return action;
+    if (!deferred?.deferredPetRangedNoise) return action;
     const monster = action.monster;
     const movement = finishPetMovePlan(
         monster, state, deferred.petMovePlan,
