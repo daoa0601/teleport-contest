@@ -23,7 +23,7 @@ import {
     installHumanWerewolfHero, wearPolymorphControlRing,
 } from './support/hero-state.js';
 import { freshGame } from './support/game-state.js';
-import { liveMonster } from './support/monsters.js';
+import { addMonster, liveMonster } from './support/monsters.js';
 import { freshCommandRoom } from './support/playable-room.js';
 
 const PM_ENERGY_VORTEX = 109;
@@ -1267,12 +1267,7 @@ test('controlled cursed vapor accepts change despite a nearby threat',
         installDirectWereHero();
         wearPolymorphControlRing();
         game.u.detectMonsters = true;
-        game.level.monsters = [liveMonster({
-            mnum: PM_PURPLE_WORM,
-            x: 11,
-            y: 10,
-            hitPoints: 20,
-        })];
+        addMonster({ species: 'purple worm', x: 11, y: 10 });
         const potion = potionObject(POT_WATER);
         potion.cursed = true;
 
@@ -1340,12 +1335,7 @@ test('a nearby threat blocks controlled blessed vapor before prompting',
         wearPolymorphControlRing();
         game.u.mtimedone = 0;
         game.u.detectMonsters = true;
-        game.level.monsters = [liveMonster({
-            mnum: PM_PURPLE_WORM,
-            x: 11,
-            y: 10,
-            hitPoints: 20,
-        })];
+        addMonster({ species: 'purple worm', x: 11, y: 10 });
         const potion = potionObject(POT_WATER);
         potion.blessed = true;
 
@@ -1413,12 +1403,7 @@ test('a spotted adjacent threat suppresses cursed-water were change',
     async () => {
         installDirectWereHero();
         game.u.detectMonsters = true;
-        game.level.monsters = [liveMonster({
-            mnum: PM_PURPLE_WORM,
-            x: 11,
-            y: 10,
-            hitPoints: 20,
-        })];
+        addMonster({ species: 'purple worm', x: 11, y: 10 });
         const potion = potionObject(POT_WATER);
         potion.cursed = true;
 
