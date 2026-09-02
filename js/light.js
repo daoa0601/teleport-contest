@@ -17,6 +17,7 @@ import { wakeMonstersNear } from './mon.js';
 import {
     MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
+import { AD_DGST, AT_ENGL } from './monster_attack_types.js';
 import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, MAGIC_LAMP, OBJECT_NAMES,
     OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE,
@@ -47,8 +48,6 @@ const PM_YELLOW_LIGHT = 118;
 const PM_BLACK_LIGHT = 119;
 const PM_AIR_ELEMENTAL = 154;
 const S_VORTEX = 22;
-const AT_ENGL = 11;
-const AD_DGST = 26;
 
 function heroIsBlind() {
     return !!(game.blind || (game.u?.blindTurns ?? 0) > 0);

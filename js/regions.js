@@ -14,6 +14,7 @@ import {
     MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter,
     monsterTypeName,
 } from './monster_data.js';
+import { AD_DRST, AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind, syncBlindness } from './senses.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
@@ -28,9 +29,6 @@ const S_EEL = 57;
 const PM_FOG_CLOUD = 106;
 const PM_VROCK = 295;
 const PM_HEZROU = 296;
-const AT_BREA = 12;
-const AD_DRST = 7;
-const AD_RBRE = 242;
 
 function uniqueXMajorCells(cells) {
     const points = new Map();

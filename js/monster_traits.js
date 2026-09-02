@@ -5,12 +5,11 @@ import { isReviver } from './corpse_species.js';
 import {
     MONSTER_ATTACKS, MONSTER_GENO, MONSTER_LEVEL,
 } from './monster_data.js';
+import { AD_SEDU, AD_SSEX } from './monster_attack_types.js';
 import { monsterHitPointsPerLevel } from './monster_hit_points.js';
 import { rnd, rn2 } from './rng.js';
 
 const G_UNIQ = 0x1000;
-const AD_SEDU = 22;
-const AD_SSEX = 35;
 
 function monsterHasSeductionAttack(mnum) {
     return (MONSTER_ATTACKS[mnum] || []).some(

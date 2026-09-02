@@ -15,6 +15,7 @@ import {
 import {
     MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
+import { AD_DGST, AT_ENGL } from './monster_attack_types.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
 import { rnd } from './rng.js';
 import {
@@ -40,8 +41,6 @@ import {
 } from './throw_state.js';
 
 const PM_AIR_ELEMENTAL = 154;
-const AT_ENGL = 11;
-const AD_DGST = 26;
 const POTION_CLASS = 8;
 const TIMED_LAMP_TYPES = new Set([BRASS_LANTERN, OIL_LAMP]);
 const LAMP_TYPES = new Set([...TIMED_LAMP_TYPES, MAGIC_LAMP]);

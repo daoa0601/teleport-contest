@@ -7,6 +7,7 @@
     "test": "node --test --test-concurrency=1 --test-reporter=dot $(find test -maxdepth 1 -type f -name '*.test.js' -print | sort)",
     "score": "bash frozen/score.sh",
     "score:engine": "node frozen/ps_test_runner.mjs sessions",
+    "generate:monster-attacks": "node scripts/generate-monster-attack-types.mjs",
     "generate:monster-growth": "node scripts/generate-monster-growth-data.mjs",
     "generate:lua-assets": "node scripts/generate-lua-assets.mjs",
     "play": "echo 'Open index.html in a browser to play'"

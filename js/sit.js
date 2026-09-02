@@ -19,6 +19,9 @@ import {
     MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
+    AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS,
+} from './monster_attack_types.js';
+import {
     CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_MATERIAL, OBJECT_NAMES,
     OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS,
 } from './object_data.js';
@@ -44,10 +47,6 @@ const M1_OVIPAROUS = 0x00400000;
 const M2_NEUTER = 0x00040000;
 const S_DRAGON = 30;
 const S_EEL = 57;
-const AT_HUGS = 7;
-const AT_ENGL = 11;
-const AD_WRAP = 18;
-const AD_STCK = 19;
 const PM_QUEEN_BEE = 5;
 const PM_GREMLIN = 40;
 const PM_GARGOYLE = 41;

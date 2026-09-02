@@ -7,10 +7,9 @@ import {
     canSpotMonster, pline, plineWithContinuation,
 } from './display.js';
 import { MONSTER_ATTACKS } from './monster_data.js';
+import { AT_BOOM } from './monster_attack_types.js';
 import { M_AP_FURNITURE, M_AP_OBJECT } from './const.js';
 import { syncBlindness } from './senses.js';
-
-const AT_BOOM = 14;
 
 function monsterHasActiveAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || [])

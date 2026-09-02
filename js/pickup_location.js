@@ -11,6 +11,7 @@ import { game } from './gstate.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
+import { AD_DGST, AT_ENGL } from './monster_attack_types.js';
 import { heroFormFlags, heroMonsterForm } from './polyself.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';
@@ -20,8 +21,6 @@ const M1_CLING = 0x00000010;
 const M1_BREATHLESS = 0x00000400;
 const S_EYE = 5;
 const S_LIGHT = 25;
-const AT_ENGL = 11;
-const AD_DGST = 26;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_SALAMANDER = 329;
 

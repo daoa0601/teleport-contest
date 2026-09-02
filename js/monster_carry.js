@@ -5,11 +5,11 @@ import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
+import { AT_ENGL } from './monster_attack_types.js';
 import {
     BOULDER, CORPSE, GOLD_PIECE, OBJECT_WEIGHT,
 } from './object_data.js';
 
-const AT_ENGL = 11;
 const GEM_CLASS = 13;
 const M1_NOHANDS = 0x00002000;
 const M2_STRONG = 0x04000000;

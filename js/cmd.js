@@ -13,6 +13,7 @@ import {
 import { defaultCommandKey } from './command_keys.js';
 import { nextIdent } from './ident.js';
 import { nhgetch } from './input.js';
+import { AT_BOOM } from './monster_attack_types.js';
 import { moreUntilDismissed, promptKey } from './tty_prompts.js';
 import {
     getLine, paranoidQuery, promptYesNo, promptYesNoQuit,
@@ -365,7 +366,6 @@ const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
 const M1_WALLWALK = 0x00000008;
 const M2_ROCKTHROW = 0x08000000;
-const AT_BOOM = 14;
 const MAT_GEMSTONE = 20;
 const MAT_MINERAL = 21;
 

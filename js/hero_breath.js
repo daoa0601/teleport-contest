@@ -17,6 +17,10 @@ import { igniteItems } from './light.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, MONSTER_RESISTS,
 } from './monster_data.js';
+import {
+    AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM,
+    AD_RBRE, AD_SLEE, AT_BREA,
+} from './monster_attack_types.js';
 import { hasWornProperty } from './properties.js';
 import { heroMonsterForm, rehumanizeHero } from './polyself.js';
 import { resolvePoisonedHero } from './poison.js';
@@ -26,17 +30,6 @@ import { burnHeroArmorByFire } from './trap.js';
 import {
     destroyColdInventory, destroyElectricInventory, destroyFireInventory,
 } from './zap.js';
-
-const AT_BREA = 12;
-const AD_MAGM = 1;
-const AD_FIRE = 2;
-const AD_COLD = 3;
-const AD_SLEE = 4;
-const AD_DISN = 5;
-const AD_ELEC = 6;
-const AD_DRST = 7;
-const AD_ACID = 8;
-const AD_RBRE = 242;
 
 const MR_FIRE = 0x01;
 const MR_COLD = 0x02;

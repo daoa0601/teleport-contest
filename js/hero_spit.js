@@ -16,6 +16,9 @@ import { wakeAttackedMonster } from './monster_anger.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, monsterTypeName,
 } from './monster_data.js';
+import {
+    AD_ACID, AD_BLND, AD_DRST, AT_SPIT,
+} from './monster_attack_types.js';
 import { monsterHasAcidResistance } from './monster_resistance.js';
 import {
     breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact,
@@ -34,10 +37,6 @@ import {
 } from './thrown_object.js';
 import { promptDirection } from './tty_prompts.js';
 
-const AT_SPIT = 10;
-const AD_DRST = 7;
-const AD_ACID = 8;
-const AD_BLND = 11;
 const M1_NOEYES = 0x00001000;
 
 export function heroSpitAttack(state = game) {

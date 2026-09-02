@@ -20,6 +20,7 @@ import { initRng } from '../js/rng.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { floorObject, inventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
+import { addMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 test('sitting on cream pies crushes the whole floor stack', async () => {
@@ -94,6 +95,22 @@ test('a gremlin sitting in water creates a tame clone', async () => {
 
     assert.ok(level.monsters.some(monster =>
         monster.mnum === 40 && monster.mtame > 0));
+});
+
+test('a cockatrice held by another monster cannot sit down', async () => {
+    freshWeaponArena();
+    installPolymorphedHero('cockatrice');
+    game.u.ustuck = addMonster({
+        species: 'jackal',
+        x: game.u.ux,
+        y: game.u.uy,
+    });
+    pushKeys('sit\n');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.context.move, 0);
+    assert.match(game._pending_message, /has no lap/);
 });
 
 test('sitting on a bear trap catches the hero', async () => {

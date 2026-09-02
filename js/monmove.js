@@ -26,6 +26,13 @@ import {
     MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
+    AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CORR, AD_DCAY, AD_DREN,
+    AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS,
+    AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON,
+    AD_STUN, AD_WRAP, AD_RUST, AT_BOOM, AT_BREA, AT_ENGL, AT_GAZE,
+    AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP,
+} from './monster_attack_types.js';
+import {
     ACID_VENOM, AMULET_OF_YENDOR, APPLE, BANANA,
     BELL_OF_OPENING, BULLWHIP,
     BLINDING_VENOM, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION,
@@ -218,9 +225,6 @@ const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;
 const WAN_MAGIC_MISSILE = 429;
 const S_GOLEM = 55;
-const AD_RUST = 24;
-const AD_DCAY = 34;
-const AD_CORR = 42;
 const POT_SPEED = 302;
 const LOW_BOOTS = 163;
 const WEAPON_CLASS = 2;
@@ -246,36 +250,6 @@ const MANFOOD = 3;
 const APPORT = 4;
 const POISON = 5;
 const UNDEF = 6;
-const AT_WEAP = 254;
-const AT_MAGC = 255;
-const AT_ENGL = 11;
-const AT_TUCH = 5;
-const AT_SPIT = 10;
-const AT_BREA = 12;
-const AT_BOOM = 14;
-const AT_GAZE = 15;
-const AT_HUGS = 7;
-const AD_PHYS = 0;
-const AD_FIRE = 2;
-const AD_COLD = 3;
-const AD_ELEC = 6;
-const AD_DRST = 7;
-const AD_SAMU = 252;
-const AD_ACID = 8;
-const AD_BLND = 11;
-const AD_STUN = 12;
-const AD_DRLI = 15;
-const AD_WRAP = 18;
-const AD_STCK = 19;
-const AD_DREN = 16;
-const AD_LEGS = 17;
-const AD_STON = 18;
-const AD_SLIM = 40;
-const AD_SITM = 21;
-const AD_SEDU = 22;
-const AD_ENCH = 41;
-const AD_CLRC = 240;
-const AD_SPEL = 241;
 const PRACTICAL_OBJECT_CLASSES = new Set([
     WEAPON_CLASS, ARMOR_CLASS, GEM_CLASS, FOOD_CLASS,
 ]);

@@ -8,6 +8,7 @@ import {
     MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_FLAGS1,
     MONSTER_SYMBOL, monsterIsNonliving,
 } from './monster_data.js';
+import { AT_EXPL } from './monster_attack_types.js';
 import {
     AMULET_OF_LIFE_SAVING, OBJECT_MATERIAL, OBJECT_SUBTYPE,
     POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_EXTRA_HEALING,
@@ -20,7 +21,6 @@ import {
 } from './object_data.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
 
-const AT_EXPL = 13;
 const M1_AMORPHOUS = 0x00000004;
 const M1_WALLWALK = 0x00000008;
 const M1_MINDLESS = 0x00010000;

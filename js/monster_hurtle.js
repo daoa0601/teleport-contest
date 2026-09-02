@@ -11,6 +11,7 @@ import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE,
     MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
+import { AD_CORR, AD_RUST } from './monster_attack_types.js';
 import { BOULDER } from './object_data.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
@@ -29,8 +30,6 @@ const S_EYE = 5;
 const S_LIGHT = 25;
 const S_VORTEX = 22;
 const PM_GRID_BUG = 116;
-const AD_RUST = 24;
-const AD_CORR = 42;
 
 function monsterAt(state, x, y, ignoredMonster) {
     return state.level?.monsters?.find(monster =>

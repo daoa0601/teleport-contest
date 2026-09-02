@@ -6,6 +6,7 @@ import { game } from './gstate.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL, SPECIAL_PM,
 } from './monster_data.js';
+import { AT_CLAW } from './monster_attack_types.js';
 
 const M1_HUMANOID = 0x00020000;
 const M1_SLITHY = 0x00080000;
@@ -38,7 +39,6 @@ const PM_JELLYFISH = 316;
 const PM_KRAKEN = 321;
 const PM_STONE_GOLEM = 257;
 const PM_AMOROUS_DEMON = 290;
-const AT_CLAW = 1;
 const HUMANOIDS_WITH_HANDS = new Set([
     53, // human
     39, // mummy

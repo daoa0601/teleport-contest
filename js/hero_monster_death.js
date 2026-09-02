@@ -28,6 +28,7 @@ import {
     MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SIZE,
     MONSTER_SYMBOL, monsterIsNonliving,
 } from './monster_data.js';
+import { AT_BOOM } from './monster_attack_types.js';
 import {
     addObjectToMonsterInventory, clearMonsterCarriedObjectState,
 } from './monster_inventory.js';
@@ -44,7 +45,6 @@ const PM_LIZARD = 326;
 const PM_ARCHEOLOGIST = 331;
 const PM_WIZARD = 343;
 
-const AT_BOOM = 14;
 const S_GOLEM = 55;
 const M2_ALWAYS_HOSTILE = 0x00100000;
 const M2_ALWAYS_PEACEFUL = 0x00200000;

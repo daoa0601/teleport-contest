@@ -32,6 +32,9 @@ import {
     MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND,
     monsterTypeName,
 } from './monster_data.js';
+import {
+    AD_DISE, AD_PEST, AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS,
+} from './monster_attack_types.js';
 import { monsterHasAcidResistance } from './monster_resistance.js';
 import {
     adjustMonsterSpeed, monsterSpeedMessage,
@@ -69,12 +72,6 @@ const M2_DEMON = 0x00000100;
 const M1_SEE_INVIS = 0x01000000;
 const MR_SLEEP = 0x04;
 const MR_POISON = 0x20;
-const AT_HUGS = 7;
-const AT_ENGL = 11;
-const AD_WRAP = 18;
-const AD_STCK = 19;
-const AD_DISE = 33;
-const AD_PEST = 38;
 
 export const INERT_MONSTER_POTION_TYPES = new Set([
     POT_GAIN_LEVEL,

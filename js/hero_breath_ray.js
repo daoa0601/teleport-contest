@@ -22,6 +22,10 @@ import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME,
 } from './monster_data.js';
 import {
+    AD_ACID, AD_BLND, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE,
+    AD_MAGM, AD_RBRE, AD_SLEE, AT_EXPL, AT_GAZE,
+} from './monster_attack_types.js';
+import {
     BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, OBJECT_NAMES,
 } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
@@ -43,19 +47,6 @@ import {
     sleepMonsterFromRay,
     INVENTORY_DAMAGE,
 } from './zap.js';
-
-const AD_MAGM = 1;
-const AD_FIRE = 2;
-const AD_COLD = 3;
-const AD_SLEE = 4;
-const AD_DISN = 5;
-const AD_ELEC = 6;
-const AD_DRST = 7;
-const AD_ACID = 8;
-const AD_BLND = 11;
-const AD_RBRE = 242;
-const AT_EXPL = 13;
-const AT_GAZE = 15;
 
 const MR_FIRE = 0x01;
 const MR_COLD = 0x02;
