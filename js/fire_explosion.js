@@ -10,7 +10,7 @@ import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { igniteItems } from './light.js';
-import { wakeMonstersNear } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_NAME } from './monster_data.js';
 import {

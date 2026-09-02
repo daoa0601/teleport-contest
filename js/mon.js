@@ -4,19 +4,19 @@
 import { game } from './gstate.js';
 import {
     FOUNTAIN, G_GENOD, In_endgame, Is_earthlevel, Is_waterlevel, IS_LAVA,
-    IS_POOL, STRAT_WAITMASK, WATER,
+    IS_POOL, WATER,
 } from './const.js';
 import { dryFountainAt } from './fountain_terrain.js';
 import {
-    canSeeMonster, newsym, plineWithContinuation,
+    canSeeMonster, newsym,
 } from './display.js';
 import {
     lifeSaveMonster, wornMonsterLifeSaver,
 } from './mondeath.js';
 import { splitMonster } from './monster_clone.js';
 import {
-    MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS,
-    MONSTER_SYMBOL, monsterTypeName, monsterYoungerForm,
+    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_RESISTS,
+    MONSTER_SYMBOL, monsterYoungerForm,
 } from './monster_data.js';
 import { place_object, stack_object } from './floor_object.js';
 import { changeMonsterForm } from './monster_polymorph.js';
@@ -45,7 +45,6 @@ const PM_FIRE_ELEMENTAL = 155;
 const PM_SALAMANDER = 329;
 const MR_FIRE = 0x01;
 const S_EEL = 57;
-const G_UNIQ = 0x1000;
 
 function speciesWasGenocided(mnum, state) {
     return !!((state.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD);
@@ -243,39 +242,6 @@ export function applyDryLandEel(monster, state = game, random = rn2) {
     monster.mflee = 1;
     monster.mtrack = [];
     return true;
-}
-
-export function wakeMonstersNear(x, y, distance, state = game) {
-    for (const monster of state.level?.monsters || []) {
-        if (!monster || (monster.mhp ?? 1) <= 0) continue;
-        const dx = (monster.mx ?? 0) - x;
-        const dy = (monster.my ?? 0) - y;
-        if (distance && dx * dx + dy * dy >= distance) continue;
-        monster.msleeping = 0;
-        if (!((MONSTER_GENO[monster.mnum] || 0) & G_UNIQ))
-            monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    }
-}
-
-// wake_nearto_core() reports each visible sleeper before waking it.
-export async function wakeMonstersNearWithMessages(
-    x, y, distance, state = game, publish = plineWithContinuation,
-) {
-    for (const monster of state.level?.monsters || []) {
-        if (!monster || (monster.mhp ?? 1) <= 0) continue;
-        const dx = (monster.mx ?? 0) - x;
-        const dy = (monster.my ?? 0) - y;
-        if (distance && dx * dx + dy * dy >= distance) continue;
-        if (monster.msleeping
-            && canSeeMonster(monster, monster.mx, monster.my)) {
-            const name = monster.name
-                || `The ${monsterTypeName(monster.mnum, !!monster.female)}`;
-            await publish(`${name} wakes up.`);
-        }
-        monster.msleeping = 0;
-        if (!((MONSTER_GENO[monster.mnum] || 0) & G_UNIQ))
-            monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    }
 }
 
 function monsterLiquidName(monster) {

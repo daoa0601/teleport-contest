@@ -12,7 +12,7 @@ import { place_object, remove_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { fillPitWithBoulderAt } from './mklev.js';
 import { wakeMonster } from './monster_anger.js';
-import { wakeMonstersNear } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import {
     MONSTER_NAME, MONSTER_SIZE, monsterHatesBlessings,
 } from './monster_data.js';

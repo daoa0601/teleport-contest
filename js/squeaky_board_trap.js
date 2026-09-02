@@ -6,7 +6,8 @@ import {
 } from './const.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
-import { monsterInAir, wakeMonstersNear } from './mon.js';
+import { monsterInAir } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import {
     monsterIsMindless, monsterTypeName,
 } from './monster_data.js';

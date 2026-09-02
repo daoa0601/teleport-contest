@@ -7,7 +7,7 @@ import {
     canSpotMonster, plineWithContinuation, randomDisplayMonsterSubject,
 } from './display.js';
 import { game } from './gstate.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { nameToMonster } from './mondata.js';
 import {

@@ -5,7 +5,7 @@ import { artifactById, artifactDamageBonus } from './artifacts.js';
 import { Upolyd } from './const.js';
 import { game } from './gstate.js';
 import { igniteItems } from './light.js';
-import { wakeMonstersNear } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import { applyMagicbaneHit } from './magicbane.js';
 import { monsterHitPointsPerLevel } from './monster_hit_points.js';
 import {

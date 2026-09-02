@@ -6,7 +6,7 @@ import {
     W_ARMS, W_ARMU, W_SADDLE, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { wakeMonstersNear } from '../js/mon.js';
+import { wakeMonstersNear } from '../js/monster_wake.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     changeMonsterForm, decideMonsterShapeChange,

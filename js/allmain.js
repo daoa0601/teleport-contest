@@ -192,9 +192,11 @@ import {
     resumeDeferredHeroRustArmor,
 } from './hero_erosion.js';
 import {
-    killGenocidedMonster, resolveMonsterLiquid, wakeMonstersNear,
-    wakeMonstersNearWithMessages,
+    killGenocidedMonster, resolveMonsterLiquid,
 } from './mon.js';
+import {
+    wakeMonstersNear, wakeMonstersNearWithMessages,
+} from './monster_wake.js';
 import { presentWereChange } from './were.js';
 import { burnHeroArmorByFire } from './trap.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from './hack.js';

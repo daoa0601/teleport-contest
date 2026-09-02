@@ -31,7 +31,7 @@ import {
 } from './light.js';
 import { doEnlightenmentEffect } from './insight.js';
 import { buryFloorObjectsAt, createCritters, maketrap } from './mklev.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { cancelMonster } from './monster_cancellation.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';

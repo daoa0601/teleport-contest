@@ -224,9 +224,8 @@ import {
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { isRider, isZombieMaker } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
-import {
-    killGenocidedMonsters, wakeMonstersNear,
-} from './mon.js';
+import { killGenocidedMonsters } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import {
     angerAttackedMonster, publishKickedPetYelp, publishMonsterGrowl,
     wakeAttackedMonster, wakeAttackedShopkeeper,

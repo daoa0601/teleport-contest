@@ -13,7 +13,7 @@ import {
 } from './display.js';
 import { tameMonster } from './dog.js';
 import { makemonNear } from './mklev.js';
-import { wakeMonstersNear } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import {
     monsterDigests, monsterIsWhirly, monsterTypeName,
 } from './monster_data.js';

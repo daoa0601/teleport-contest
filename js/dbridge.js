@@ -17,7 +17,7 @@ import {
 import { scatterDrawbridgeDebris } from './drawbridge_debris.js';
 import { game } from './gstate.js';
 import { BOULDER } from './object_data.js';
-import { wakeMonstersNear } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import {
     cansee, vision_note_blocker_change, vision_recalc,

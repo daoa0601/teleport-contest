@@ -21,7 +21,7 @@ import { prepareHoleFall } from './hero_traps.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { place_object, remove_object, stack_object } from './floor_object.js';
 import { mksobj } from './mklev.js';
-import { wakeMonstersNear } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_NAME } from './monster_data.js';

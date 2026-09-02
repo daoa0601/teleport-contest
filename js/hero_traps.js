@@ -70,7 +70,7 @@ import { resolvePoisonedHero } from './poison.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
-import { wakeMonstersNear } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import { ceilingName } from './terrain_name.js';
 import { simpleObjectNameWithArticle } from './object_grammar.js';
 import { putHeroToSleep } from './hero_sleep.js';

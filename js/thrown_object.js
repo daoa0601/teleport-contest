@@ -13,7 +13,7 @@ import {
     show_glyph_cell, transientObjectGlyph,
 } from './display.js';
 import { game } from './gstate.js';
-import { wakeMonstersNear } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import {
     MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE,
 } from './monster_data.js';

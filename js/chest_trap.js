@@ -9,7 +9,7 @@ import {
 } from './display.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { game } from './gstate.js';
-import { wakeMonstersNear } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import {
     deleteObject, deleteObjectContents,
 } from './object_delete.js';

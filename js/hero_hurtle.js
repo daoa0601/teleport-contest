@@ -24,7 +24,7 @@ import {
 } from './hack.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { igniteItems } from './light.js';
-import { wakeMonstersNear } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
 import {
     monsterWearsTorsoArmor, petrifyMonsterFromContact,

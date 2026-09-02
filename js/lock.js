@@ -12,7 +12,7 @@ import {
 } from './display.js';
 import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { wakeMonstersNear } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import {
     CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, OBJECT_MATERIAL, OBJECT_NAMES,
     OBJECT_SUBTYPE,

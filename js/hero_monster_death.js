@@ -22,7 +22,7 @@ import {
 } from './mklev.js';
 import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { markQuestLeaderDead } from './quest.js';
-import { wakeMonstersNear } from './mon.js';
+import { wakeMonstersNear } from './monster_wake.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_GENO,

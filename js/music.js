@@ -18,7 +18,7 @@ import {
     MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS,
     MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL,
 } from './monster_data.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import {
     BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM,
