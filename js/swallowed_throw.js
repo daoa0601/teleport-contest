@@ -13,9 +13,10 @@ import {
     OBJECT_NAMES, OBJECT_SUBTYPE, OIL_LAMP,
 } from './object_data.js';
 import {
-    MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
+    monsterTypeName,
 } from './monster_data.js';
-import { AD_DGST, AT_ENGL } from './monster_attack_types.js';
+import { AT_ENGL } from './monster_attack_types.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
 import { rnd } from './rng.js';
 import {
@@ -486,11 +487,10 @@ export async function resolveGenericSwallowedThrow({
     await wakeMonster(engulfer);
     const monsterName = engulfer.name
         || `the ${monsterTypeName(engulfer.mnum, !!engulfer.female)}`;
-    const digests = MONSTER_ATTACKS[engulfer.mnum]?.some(attack =>
-        attack[0] === AT_ENGL && attack[1] === AD_DGST);
     const whirly = MONSTER_SYMBOL[engulfer.mnum] === 22
         || engulfer.mnum === PM_AIR_ELEMENTAL;
-    const trail = digests ? ' entrails' : whirly ? ' currents' : '';
+    const trail = monsterDigests(engulfer)
+        ? ' entrails' : whirly ? ' currents' : '';
     const destination = trail
         ? `${possessive(monsterName)}${trail}` : monsterName;
     await plineWithContinuation(

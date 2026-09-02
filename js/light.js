@@ -15,9 +15,8 @@ import { tameMonster } from './dog.js';
 import { makemonNear } from './mklev.js';
 import { wakeMonstersNear } from './mon.js';
 import {
-    MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName,
+    MONSTER_SYMBOL, monsterDigests, monsterTypeName,
 } from './monster_data.js';
-import { AD_DGST, AT_ENGL } from './monster_attack_types.js';
 import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, MAGIC_LAMP, OBJECT_NAMES,
     OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE,
@@ -59,9 +58,7 @@ function swallowedLightMessage() {
     const name = swallower.name
         || monsterTypeName(swallower.mnum, !!swallower.female);
     const subject = `The ${name}`;
-    const digests = (MONSTER_ATTACKS[swallower.mnum] || []).some(attack =>
-        attack[0] === AT_ENGL && attack[1] === AD_DGST);
-    if (digests) return `${subject}'s stomach is lit.`;
+    if (monsterDigests(swallower)) return `${subject}'s stomach is lit.`;
     const whirly = MONSTER_SYMBOL[swallower.mnum] === S_VORTEX
         || swallower.mnum === PM_AIR_ELEMENTAL;
     return whirly

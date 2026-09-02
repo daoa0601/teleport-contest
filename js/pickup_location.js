@@ -9,9 +9,8 @@ import {
 import { floorReachProblem } from './floor_reach.js';
 import { game } from './gstate.js';
 import {
-    MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
 } from './monster_data.js';
-import { AD_DGST, AT_ENGL } from './monster_attack_types.js';
 import { heroFormFlags, heroMonsterForm } from './polyself.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';
@@ -23,13 +22,6 @@ const S_EYE = 5;
 const S_LIGHT = 25;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_SALAMANDER = 329;
-
-function monsterDigests(monster) {
-    return (MONSTER_ATTACKS[monster?.mnum] || []).some(
-        ([attackType, damageType]) =>
-            attackType === AT_ENGL && damageType === AD_DGST,
-    );
-}
 
 function monsterName(monster) {
     return monster?.name || `the ${MONSTER_NAME[monster?.mnum] || 'monster'}`;
