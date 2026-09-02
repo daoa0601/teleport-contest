@@ -47,7 +47,6 @@ export function splitObjectStack(
         pickup_prev: false,
         lua_ref_cnt: 0,
     };
-    delete split.attachedMid;
     if (split.oextra) delete split.oextra.omid;
 
     setQuantity(object, total - count);

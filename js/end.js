@@ -129,7 +129,7 @@ async function createOrdinaryBones() {
         ghost.mhp = ghost.mhpmax = game.u?.uhpmax || 1;
         ghost.female = !!game.flags?.female;
         ghost.msleeping = 1;
-        corpse.attachedMid = ghost.m_id;
+        corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
     }
     game._bonesSaved = saveBonesLevel();
     return game._bonesSaved;

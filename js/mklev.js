@@ -14,6 +14,7 @@ import {
 } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
 import { GameMap } from './game.js';
+import { decodeSavedGraph, encodeSavedGraph } from './saved_graph.js';
 import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
 import { init_rect, rnd_rect, get_rect, split_rects } from './rect.js';
 import {
@@ -4301,7 +4302,7 @@ function random_engraving() {
     };
 }
 
-const BONES_VERSION = 1;
+const BONES_VERSION = 2;
 
 function bonesStorageKey(level = game.u?.uz) {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
@@ -4332,35 +4333,38 @@ async function bonesPrompt(message, displayLevel = null) {
     return String.fromCharCode(await nhgetch()).toLowerCase();
 }
 
+function eachTopLevelBonesObject(level, visit) {
+    for (const monster of level?.monsters || []) {
+        for (const object of monster.minvent || monster.inventory || [])
+            visit(object);
+    }
+    for (const column of level?.objects || []) {
+        for (const pile of column || []) {
+            for (const object of pile || []) visit(object);
+        }
+    }
+    for (const object of level?.buriedObjects || []) visit(object);
+}
+
 function eachObjectInBonesGraph(level, visit) {
     const walk = object => {
         if (!object) return;
         visit(object);
         for (const content of object.contents || []) walk(content);
     };
-    for (const monster of level?.monsters || []) {
-        for (const object of monster.minvent || monster.inventory || [])
-            walk(object);
-    }
-    for (const column of level?.objects || []) {
-        for (const pile of column || []) {
-            for (const object of pile || []) walk(object);
-        }
-    }
-    for (const object of level?.buriedObjects || []) walk(object);
+    eachTopLevelBonesObject(level, walk);
 }
 
-// C refs: bones.c savebones()/resetobjs(FALSE).  The persistent payload owns
-// the level graph only; the next hero, RNG, terminal, and command state remain
-// process-local.  JSON is sufficient for the current plain-data graph and the
-// GameMap prototype is restored explicitly in getbones().
+// C refs: bones.c savebones()/resetobjs(FALSE). The persistent payload owns
+// the level graph only. The saved-graph codec retains entity aliases and
+// container back-pointers; getbones() restores the GameMap prototype.
 export function saveBonesLevel() {
     const storage = game.storage;
     if (!storage || !game.level) return false;
 
     let payload;
     try {
-        payload = JSON.parse(JSON.stringify({
+        payload = decodeSavedGraph(encodeSavedGraph({
             version: BONES_VERSION,
             level: game.level,
             stairs: game.stairs || null,
@@ -4386,9 +4390,8 @@ export function saveBonesLevel() {
     for (const trap of payload.level.traps || []) {
         trap.madeby_u = 0;
     }
-    eachObjectInBonesGraph(payload.level, object => {
+    eachTopLevelBonesObject(payload.level, object => {
         object.ghostly = true;
-        object.o_id = 0;
     });
 
     // savebones() removes the dead hero and all of their remembered glyphs
@@ -4409,10 +4412,61 @@ export function saveBonesLevel() {
     }
 
     try {
-        storageSet(storage, bonesStorageKey(), JSON.stringify(payload));
+        storageSet(storage, bonesStorageKey(), encodeSavedGraph(payload));
         return true;
     } catch (_error) {
         return false;
+    }
+}
+
+function remappedMonsterId(oldId, monsterIds) {
+    return Number.isInteger(oldId) ? monsterIds.get(oldId) : undefined;
+}
+
+function repairContainedObjects(container) {
+    for (const object of container.contents || []) {
+        object.container = container;
+        object.where = 'contained';
+        delete object.carrierMid;
+        repairContainedObjects(object);
+    }
+}
+
+function repairObjectMonsterIds(object, monsterIds) {
+    const omid = object.oextra?.omid;
+    if (omid) {
+        const newId = remappedMonsterId(omid, monsterIds);
+        if (newId) object.oextra.omid = newId;
+        else delete object.oextra.omid;
+    }
+    if (object.omid) {
+        const newId = remappedMonsterId(object.omid, monsterIds);
+        if (newId) object.omid = newId;
+        else delete object.omid;
+    }
+    if (object.leashmon) {
+        object.leashmon = remappedMonsterId(object.leashmon, monsterIds) || 0;
+    }
+    if (object.oextra?.omonst) {
+        object.oextra.omonst.m_id = 0;
+        object.oextra.omonst.mpeaceful = 0;
+        object.oextra.omonst.mtame = 0;
+    }
+}
+
+function repairMonsterExtensions(monster) {
+    if (monster.edog || monster.mextra?.edog) {
+        const edog = monster.edog || monster.mextra.edog;
+        edog.parentmid = monster.m_id;
+        monster.edog = edog;
+        monster.mextra = { ...(monster.mextra || {}), edog };
+    }
+    for (const name of ['eshk', 'epri', 'emin', 'ebones']) {
+        const extension = monster[name] || monster.mextra?.[name];
+        if (!extension) continue;
+        extension.parentmid = monster.m_id;
+        monster[name] = extension;
+        if (monster.mextra?.[name]) monster.mextra[name] = extension;
     }
 }
 
@@ -4420,26 +4474,39 @@ function renewBonesIdentities(level) {
     // restmonchn() assigns every monster a fresh id; each monster inventory
     // is restored immediately afterward. getlev() then restores floor and
     // buried object chains. All three paths share next_ident().
-    for (const monster of level?.monsters || []) {
-        nextIdent();
-        for (const object of monster.minvent || monster.inventory || []) {
-            const walk = current => {
-                if (!current) return;
-                nextIdent();
-                for (const content of current.contents || []) walk(content);
-            };
-            walk(object);
-        }
-    }
-    const walk = object => {
+    const monsterIds = new Map();
+    const renewObject = object => {
         if (!object) return;
-        nextIdent();
-        for (const content of object.contents || []) walk(content);
+        object.o_id = nextIdent();
+        for (const content of object.contents || []) renewObject(content);
     };
+    for (const monster of level?.monsters || []) {
+        const oldId = monster.m_id;
+        monster.m_id = nextIdent();
+        if (Number.isInteger(oldId) && oldId > 0)
+            monsterIds.set(oldId, monster.m_id);
+        for (const object of monster.minvent || monster.inventory || [])
+            renewObject(object);
+    }
     for (const column of level?.objects || [])
         for (const pile of column || [])
-            for (const object of pile || []) walk(object);
-    for (const object of level?.buriedObjects || []) walk(object);
+            for (const object of pile || []) renewObject(object);
+    for (const object of level?.buriedObjects || []) renewObject(object);
+
+    for (const monster of level?.monsters || []) {
+        repairMonsterExtensions(monster);
+        const inventory = monster.minvent || monster.inventory || [];
+        monster.minvent = inventory;
+        monster.inventory = inventory;
+        monster.hasInventory = inventory.length > 0;
+        for (const object of inventory) {
+            object.where = 'minvent';
+            object.carrierMid = monster.m_id;
+        }
+    }
+    eachObjectInBonesGraph(level, object =>
+        repairObjectMonsterIds(object, monsterIds));
+    eachTopLevelBonesObject(level, repairContainedObjects);
 }
 
 function restoreBonesMonsterAttitudes(level) {
@@ -4490,7 +4557,7 @@ async function getbones() {
 
     let payload;
     try {
-        payload = JSON.parse(encoded);
+        payload = decodeSavedGraph(encoded);
     } catch (_error) {
         return false;
     }

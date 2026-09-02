@@ -24,8 +24,7 @@ function objectName(object) {
 
 function hasAttachment(object) {
     return !!(
-        object?.attachedMid || object?.attachedMonster
-        || object?.oextra?.omid || object?.oextra?.omonst
+        object?.oextra?.omid || object?.oextra?.omonst
     );
 }
 

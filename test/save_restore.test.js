@@ -5,15 +5,7 @@ import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
 import { restoreGame, saveGame } from '../js/save.js';
-
-function memoryStorage() {
-    const values = new Map();
-    return {
-        getItem: key => values.get(key) ?? null,
-        setItem: (key, value) => values.set(key, value),
-        removeItem: key => values.delete(key),
-    };
-}
+import { memoryStorage } from './support/memory-storage.js';
 
 test('save and restore preserve entity identity across every loaded level', () => {
     resetGame();
