@@ -1,8 +1,10 @@
 // Monster shape-changing rules.
 // C refs: mon.c:select_newcham_form(), pickvampshape(), and newcham().
 
-import { IS_LAVA, IS_POOL, Is_rogue_level, W_ARM } from './const.js';
-import { canSeeMonster } from './display.js';
+import {
+    BOLT_LIM, IS_LAVA, IS_POOL, Is_rogue_level, STRAT_WAITFORU, W_ARM,
+} from './const.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { game } from './gstate.js';
 import {
     monsterCanBeLeashed, releaseMonsterLeash,
@@ -12,7 +14,7 @@ import { dropObjectFromMonsterInventory } from './monster_inventory.js';
 import {
     MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM,
-    monsterClassSymbol,
+    monsterClassSymbol, monsterTypeName,
 } from './monster_data.js';
 import {
     adjustMonsterClothingAfterPolymorph, checkMonsterGearNextTurn,
@@ -469,4 +471,91 @@ export function changeMonsterForm(
         destroyedClothing: clothing.destroyed,
         droppedBoulders,
     };
+}
+
+function monsterFormSubject(monster, mnum = monster?.mnum) {
+    if (monster?.name) return monster.name;
+    const name = monsterTypeName(mnum, !!monster?.female);
+    return monster?.mtame ? `Your ${name}` : `The ${name}`;
+}
+
+export function changeMonsterFormWithAppearance(
+    monster, forcedTargetMnum = null, state = game,
+) {
+    const oldMnum = monster.mnum;
+    const oldSubject = monsterFormSubject(monster, oldMnum);
+    const wasSpotted = canSpotMonster(monster);
+    const change = changeMonsterForm(monster, forcedTargetMnum, state);
+    if (!change) return null;
+
+    newsym(monster.mx, monster.my);
+    const newName = monsterTypeName(monster.mnum, !!monster.female);
+    const nowSpotted = canSpotMonster(monster);
+    let message = null;
+    if (wasSpotted && nowSpotted) {
+        message = `${oldSubject} turns into a ${newName}!`;
+    } else if (wasSpotted) {
+        message = `${oldSubject} disappears!`;
+    } else if (nowSpotted) {
+        const subject = monster.mtame ? `Your ${newName}` : `A ${newName}`;
+        message = `${subject} appears!`;
+    }
+    return { ...change, message };
+}
+
+function vampireMayShiftOutOfSight(monster, state) {
+    const visible = canSeeMonster(monster, monster.mx, monster.my);
+    const dx = monster.mx - (state.u?.ux ?? monster.mx);
+    const dy = monster.my - (state.u?.uy ?? monster.my);
+    return !visible || dx * dx + dy * dy > BOLT_LIM * BOLT_LIM;
+}
+
+export function decideMonsterShapeChange(
+    monster, state = game, random = rn2,
+) {
+    const baseMnum = Number.isInteger(monster.cham) && monster.cham >= 0
+        ? monster.cham : null;
+    if (baseMnum === null) return null;
+
+    const vampireShifter = baseMnum === PM_VAMPIRE
+        || baseMnum === PM_VAMPIRE_LEADER
+        || baseMnum === PM_VLAD_THE_IMPALER;
+    let targetMnum = null;
+    let shouldChange = false;
+    if (!vampireShifter) {
+        if (!(monster.mspec_used ?? 0) && random(6) === 0) {
+            monster.mspec_used = 3 + random(10);
+            shouldChange = true;
+        }
+    } else if (!((monster.mstrategy ?? 0) & STRAT_WAITFORU)) {
+        const inVampireForm = MONSTER_SYMBOL[monster.mnum] === S_VAMPIRE;
+        if (!inVampireForm) {
+            if (monster.mhp <= ((monster.mhpmax ?? 0) + 5) / 6
+                && random(4) !== 0) {
+                targetMnum = baseMnum;
+                shouldChange = true;
+            } else if (monster.mnum === PM_FOG_CLOUD
+                && monster.mhp === monster.mhpmax
+                && random(4) === 0
+                && vampireMayShiftOutOfSight(monster, state)) {
+                shouldChange = true;
+            }
+        } else if (monster.mhp >= 9 * (monster.mhpmax ?? 0) / 10
+            && random(6) === 0
+            && vampireMayShiftOutOfSight(monster, state)) {
+            shouldChange = true;
+        }
+    }
+    if (!shouldChange) return null;
+
+    const wasFemale = !!monster.female;
+    const change = changeMonsterFormWithAppearance(
+        monster, targetMnum, state,
+    );
+    if (change && vampireShifter) {
+        const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
+        if (!(flags & (M2_MALE | M2_FEMALE | M2_NEUTER)))
+            monster.female = wasFemale;
+    }
+    return change;
 }

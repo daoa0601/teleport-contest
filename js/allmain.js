@@ -1639,21 +1639,32 @@ function initialTurnMaintenanceRng(
     // C calls mcalcdistress() before incrementing svm.moves.  JS reaches this
     // boundary with the new displayed turn already in game.moves, so monster
     // periodic regeneration must inspect the preceding turn number.
+    game.were_changes = 0;
     const distress = updateMonsterDistress(
         game.level?.monsters || [], game, rn2, completedTurn - 1,
     );
-    const wereChanges = distress
-        .map(result => result.changedWere)
-        .filter(Boolean);
-    if (deferAmbientMessage && wereChanges.some(change =>
-        change.transformationMessage || change.howlMessage)) {
+    const monsterChanges = distress.flatMap(result => {
+        const changes = [];
+        if (result.changedShape?.message)
+            changes.push({ kind: 'shape', change: result.changedShape });
+        if (result.changedWere?.transformationMessage
+            || result.changedWere?.howlMessage) {
+            changes.push({ kind: 'were', change: result.changedWere });
+        }
+        return changes;
+    });
+    if (deferAmbientMessage && monsterChanges.length) {
         return {
-            wereChangesToPresent: wereChanges,
+            monsterChangesToPresent: monsterChanges,
             completedTurn,
             deferAmbientMessage,
         };
     }
-    for (const change of wereChanges) {
+    for (const { kind, change } of monsterChanges) {
+        if (kind === 'shape') {
+            appendTurnMessage(change.message);
+            continue;
+        }
         if (change.transformationMessage)
             appendTurnMessage(change.transformationMessage);
         if (change.howlMessage)
@@ -2157,8 +2168,12 @@ async function initialTurnMaintenanceWithTty(
     completedTurn = game.moves || 1,
 ) {
     let phase = initialTurnMaintenanceRng(completedTurn, true);
-    while (phase?.wereChangesToPresent) {
-        for (const change of phase.wereChangesToPresent) {
+    while (phase?.monsterChangesToPresent) {
+        for (const { kind, change } of phase.monsterChangesToPresent) {
+            if (kind === 'shape') {
+                await queueTurnMessage(change.message);
+                continue;
+            }
             await presentWereChange(change, {
                 publish: queueTurnMessage,
                 wakeNearby: (x, y, distance) =>

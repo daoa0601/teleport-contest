@@ -8,7 +8,9 @@ import {
 import { game } from '../js/gstate.js';
 import { wakeMonstersNear } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import {
+    changeMonsterForm, decideMonsterShapeChange,
+} from '../js/monster_polymorph.js';
 import {
     BOULDER, CHAIN_MAIL, DAGGER, ELVEN_CLOAK, HAWAIIAN_SHIRT, HELMET,
     LEASH, LEATHER_GLOVES, SADDLE, SMALL_SHIELD, SPEED_BOOTS,
@@ -182,4 +184,22 @@ test('an unseen werejackal howls and wakes nearby monsters', async () => {
 
     assert.deepEqual(messages, ['You hear a jackal howling at the moon.']);
     assert.equal(sleeper.msleeping, 0);
+});
+
+test('a wounded vampire shape returns to its natural form', () => {
+    freshObjectRoom();
+    const monster = addMonster({
+        species: 'fog cloud',
+        x: 11,
+        y: 10,
+        hitPoints: 2,
+        maxHitPoints: 20,
+        cham: MONSTER_NAME.indexOf('vampire'),
+    });
+    initRng(1n);
+
+    const change = decideMonsterShapeChange(monster, game, () => 1);
+
+    assert.equal(monster.mnum, MONSTER_NAME.indexOf('vampire'));
+    assert.equal(change.message, 'The fog cloud turns into a vampire!');
 });

@@ -101,7 +101,7 @@ import {
     makemonNear, mkcorpstat, mksobj,
     summonNastyMonsters, undeadToCorpse,
 } from './mklev.js';
-import { changeMonsterForm } from './monster_polymorph.js';
+import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { getTrack } from './track.js';
@@ -256,9 +256,6 @@ const PM_TENGU = 55;
 const PM_BABY_PURPLE_WORM = 113;
 const PM_PURPLE_WORM = 115;
 const PM_SHRIEKER = 163;
-const PM_VAMPIRE = 226;
-const PM_VAMPIRE_LEADER = 227;
-const PM_VLAD_THE_IMPALER = 228;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
 const PM_STALKER = 153;
@@ -1084,20 +1081,6 @@ export function heroEveryturnEffect(state = game, random = rn2) {
     );
 }
 
-function vampireMayShiftOutOfSight(monster, state) {
-    const heroBlind = !!(state?.blind || (state?.u?.blindTurns ?? 0) > 0);
-    const heroSeesInvisible = !!(
-        state?.u?.seeInvisible || state?.u?.see_invisible
-    );
-    const visible = !heroBlind
-        && (!monster.minvis || heroSeesInvisible)
-        && couldSeeFromHero(state, monster.mx, monster.my);
-    return !visible || dist2(
-        monster.mx, monster.my,
-        state?.u?.ux ?? monster.mx, state?.u?.uy ?? monster.my,
-    ) > BOLT_LIM * BOLT_LIM;
-}
-
 // C ref: mon.c mcalcdistress()/m_calcdistress(). JS appends monsters while C
 // prepends them to fmon, so this once-per-global-turn phase traverses the
 // reverse of creation order just like movement allocation does.
@@ -1116,45 +1099,9 @@ export function updateMonsterDistress(
         }
         if ((monster.mspec_used ?? 0) > 0) monster.mspec_used--;
 
-        // C mon.c:decide_to_shapeshift().  Ordinary shapechangers probe once
-        // every global turn while their cooldown is clear.  Vampire-derived
-        // forms use their separate health/form policy below.
-        const hasNaturalForm = Number.isInteger(monster.cham)
-            && monster.cham >= 0;
-        const vampireShifter = monster.cham === PM_VAMPIRE
-            || monster.cham === PM_VAMPIRE_LEADER
-            || monster.cham === PM_VLAD_THE_IMPALER;
-        let changedShape = false;
-        if (hasNaturalForm && !vampireShifter && !monster.mspec_used) {
-            if (random(6) === 0) {
-                monster.mspec_used = 3 + random(10);
-                changedShape = !!changeMonsterForm(monster);
-            }
-        } else if (vampireShifter
-            && !((monster.mstrategy ?? 0) & STRAT_WAITFORU)) {
-            const inNaturalVampireForm
-                = MONSTER_SYMBOL[monster.mnum] === 48;
-            if (!inNaturalVampireForm) {
-                // Shifted vampires revert when badly hurt.  A healthy fog
-                // cloud may instead select another vampire shape when the
-                // hero cannot currently see it at close range.
-                if (monster.mhp <= ((monster.mhpmax ?? 0) + 5) / 6
-                    && random(4) !== 0) {
-                    changedShape = !!changeMonsterForm(
-                        monster, monster.cham,
-                    );
-                } else if (monster.mnum === PM_FOG_CLOUD
-                    && monster.mhp === monster.mhpmax
-                    && random(4) === 0
-                    && vampireMayShiftOutOfSight(monster, state)) {
-                    changedShape = !!changeMonsterForm(monster);
-                }
-            } else if (monster.mhp >= 9 * (monster.mhpmax ?? 0) / 10
-                && random(6) === 0
-                && vampireMayShiftOutOfSight(monster, state)) {
-                changedShape = !!changeMonsterForm(monster);
-            }
-        }
+        const changedShape = decideMonsterShapeChange(
+            monster, state, random,
+        );
         const changedWere = wereChange(monster, state, random);
         if ((monster.mblinded ?? 0) > 0 && --monster.mblinded === 0)
             monster.mcansee = 1;

@@ -5,14 +5,13 @@ import {
     monsterHasMagicResistance, monsterWornIronShoes,
 } from './anti_magic_trap.js';
 import { W_ARMF } from './const.js';
-import { canSpotMonster } from './display.js';
 import { game } from './gstate.js';
 import { mksobj } from './mklev.js';
 import {
     addObjectToMonsterInventory, removeObjectFromMonsterInventory,
 } from './monster_inventory.js';
 import { MONSTER_FLAGS2, monsterTypeName } from './monster_data.js';
-import { changeMonsterForm } from './monster_polymorph.js';
+import { changeMonsterFormWithAppearance } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import {
     IRON_SHOES, KICKING_BOOTS,
@@ -130,23 +129,15 @@ export function applyMonsterPolymorphTrap(
         };
     }
 
-    const oldName = monsterTypeName(monster.mnum, !!monster.female);
-    const oldSubject = monsterSubject(monster, oldName);
-    const wasSpotted = canSpotMonster(monster);
-    const change = changeMonsterForm(monster, null, state);
+    const change = changeMonsterFormWithAppearance(monster, null, state);
     const changed = !!change;
-    const newName = monsterTypeName(monster.mnum, !!monster.female);
-    const nowSpotted = canSpotMonster(monster);
     return {
         kind: 'polymorph-trap',
         trap,
         changed,
         leashReleaseMessage: change?.leashReleased
             ? leashReleaseMessage(monster, change.leashReleaseVisible) : null,
-        oldSubject,
-        newName,
-        wasSpotted,
-        nowSpotted,
+        formChangeMessage: change?.message ?? null,
         finished: !changed && !visibility.inSight,
         ...visibility,
     };
@@ -164,13 +155,8 @@ export async function finishMonsterPolymorphTrap(
     if (event.leashReleaseMessage)
         await publish(event.leashReleaseMessage);
 
-    if (event.wasSpotted && event.nowSpotted) {
-        await publish(`${event.oldSubject} turns into a ${event.newName}!`);
-    } else if (event.wasSpotted) {
-        await publish(`${event.oldSubject} disappears!`);
-    } else if (event.nowSpotted) {
-        await publish(`A ${event.newName} appears!`);
-    }
+    if (event.formChangeMessage)
+        await publish(event.formChangeMessage);
 
     if (event.inSight) {
         event.trap.tseen = true;
