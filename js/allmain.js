@@ -159,6 +159,7 @@ import {
     resumeDeferredMonsterFireTrap,
     resumeDeferredMonsterLandMine,
     resumeDeferredMonsterPitTrap,
+    resumeDeferredMonsterRockTrap,
     resumeDeferredMonsterProjectileTrap,
     resumeDeferredMonsterRustTrap,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
@@ -4039,6 +4040,18 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             );
             resumeDeferredMonsterProjectileTrap(action, game);
             movement = action.movement;
+        }
+        if ((movement?.trap?.kind === 'falling-rock'
+            || movement?.trap?.kind === 'spent-rock-trap')
+            && movement.deferredAfterMonsterRockTrap) {
+            const event = movement.trap;
+            await resumeDeferredMonsterRockTrap(action, game, {
+                publish: queueTurnMessage,
+                monsterName: quietMonsterName,
+                describeMonster: visibleMonsterSubject,
+            });
+            movement = action.movement;
+            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
         }
         if (movement?.trap?.kind === 'fire-trap'
             && movement.deferredAfterMonsterFireTrap) {

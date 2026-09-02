@@ -38,6 +38,9 @@ import {
 import {
     beginMonsterPitTrap, finishMonsterPitTrap, monsterAvoidsPit,
 } from './monster_pit_trap.js';
+import {
+    beginMonsterRockTrap, finishMonsterRockTrap, rockTrapNeedsResume,
+} from './rock_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -4686,14 +4689,6 @@ function triggerMonsterTrap(
         return event;
     }
     if (trap.ttyp === ROCKTRAP) {
-        // The visible branch crosses thitm()/pline() before death and floor
-        // placement. This block implements only the source-faithful unseen
-        // branch. The visible path requires its own tty continuation.
-        const visible = !state?.blind && !(state?.u?.blindTurns > 0)
-            && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2)
-            && (!monster.minvis || state?.u?.seeInvisible
-                || state?.u?.see_invisible);
-        if (visible) return null;
         if (monsterKnowsTrap(monster, trap)
             && recordRandom(random, calls, 4) !== 0) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
@@ -4702,30 +4697,17 @@ function triggerMonsterTrap(
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        trap.once = true;
-
-        const missile = makeTrapMissile(ROCK, trap);
-        const damage = rollDice(2, 6);
-        calls.push('d(2,6)');
-        monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
-        let death = null;
-        if (monster.mhp <= 0) {
-            detachDeadMonster(monster, state);
-            const corpse = createOrdinaryMonsterCorpse(
-                monster, state, random, calls,
-            );
-            death = { corpseCreated: !!corpse, corpse };
-            movement.actorDied = true;
-            movement.actionCompleted = true;
-        }
-        const floorRock = placeAndStackTrapMissile(
-            missile, state, trap.tx, trap.ty,
-        );
-        const event = {
-            kind: 'falling-rock', trap, visible: false,
-            missile: floorRock, damage, killed: monster.mhp <= 0, death,
-        };
+        const event = beginMonsterRockTrap(monster, trap, state, {
+            random: range => recordRandom(random, calls, range),
+            rollDice: (count, sides) => {
+                const result = rollDice(count, sides);
+                calls.push(`d(${count},${sides})`);
+                return result;
+            },
+        });
         movement.trap = event;
+        if (rockTrapNeedsResume(event))
+            movement.deferredAfterMonsterRockTrap = true;
         return event;
     }
     if (trap.ttyp === LANDMINE) {
@@ -7475,6 +7457,7 @@ function monsterTrapResultIsDeferred(movement) {
         || movement.deferredAfterMonsterFireTrap
         || movement.deferredAfterMonsterLandMine
         || movement.deferredAfterMonsterPitTrap
+        || movement.deferredAfterMonsterRockTrap
         || movement.deferredAfterAntiMagicTrapMessage
         || movement.deferredAfterAntiMagicTrapDeath);
 }
@@ -7562,6 +7545,18 @@ function completeMovedMonsterAction(
     return movement;
 }
 
+function continueAfterMonsterTrap(
+    action, state, random, rollDice, rollOne, calls,
+) {
+    if (action.movement?.immediateTrap) return action;
+    completeMovedMonsterAction(
+        action.monster, action.movement, state,
+        random, rollDice, rollOne, calls,
+        { trapAlreadyHandled: true },
+    );
+    return action;
+}
+
 export function resumeDeferredMonsterProjectileTrap(
     action, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
@@ -7572,9 +7567,9 @@ export function resumeDeferredMonsterProjectileTrap(
         movement.trap, action.monster, state, movement,
         random, rollOne, action.calls,
     );
-    completeMovedMonsterAction(
-        action.monster, movement, state, random, rollDice, rollOne,
-        action.calls || DISCARDED_CALL_LOG, { trapAlreadyHandled: true },
+    continueAfterMonsterTrap(
+        action, state, random, rollDice, rollOne,
+        action.calls || DISCARDED_CALL_LOG,
     );
     return action;
 }
@@ -7613,9 +7608,9 @@ export async function resumeDeferredMonsterAntiMagicTrap(
         movement.actionCompleted = false;
     }
 
-    completeMovedMonsterAction(
-        action.monster, movement, state, random, rollDice, rollOne,
-        action.calls || DISCARDED_CALL_LOG, { trapAlreadyHandled: true },
+    continueAfterMonsterTrap(
+        action, state, random, rollDice, rollOne,
+        action.calls || DISCARDED_CALL_LOG,
     );
     return action;
 }
@@ -7651,9 +7646,9 @@ export async function resumeDeferredMonsterFireTrap(
         return action;
     }
 
-    completeMovedMonsterAction(
-        action.monster, movement, state, random, rollDice, rollOne,
-        action.calls || DISCARDED_CALL_LOG, { trapAlreadyHandled: true },
+    continueAfterMonsterTrap(
+        action, state, random, rollDice, rollOne,
+        action.calls || DISCARDED_CALL_LOG,
     );
     return action;
 }
@@ -7696,9 +7691,8 @@ export async function resumeDeferredMonsterLandMine(
         return action;
     }
 
-    completeMovedMonsterAction(
-        action.monster, movement, state, random, rollDice, rollOne,
-        calls, { trapAlreadyHandled: true },
+    continueAfterMonsterTrap(
+        action, state, random, rollDice, rollOne, calls,
     );
     return action;
 }
@@ -7738,9 +7732,46 @@ export async function resumeDeferredMonsterPitTrap(
         return action;
     }
 
-    completeMovedMonsterAction(
-        action.monster, movement, state, random, rollDice, rollOne,
-        calls, { trapAlreadyHandled: true },
+    continueAfterMonsterTrap(
+        action, state, random, rollDice, rollOne, calls,
+    );
+    return action;
+}
+
+export async function resumeDeferredMonsterRockTrap(
+    action, state, {
+        random = rn2,
+        rollDice = d,
+        rollOne = rnd,
+        publish = plineWithContinuation,
+        monsterName,
+        describeMonster,
+    } = {},
+) {
+    const movement = action?.movement;
+    const event = movement?.trap;
+    if (!movement?.deferredAfterMonsterRockTrap
+        || !['falling-rock', 'spent-rock-trap'].includes(event?.kind)) {
+        return action;
+    }
+    delete movement.deferredAfterMonsterRockTrap;
+    await finishMonsterRockTrap(action.monster, event, state, {
+        finishDeath: (monster, options) =>
+            finishEnvironmentalMonsterDeath(monster, state, options),
+        publish,
+        random,
+        monsterName,
+        describeMonster,
+    });
+    if (event.killed) {
+        movement.actorDied = true;
+        movement.actionCompleted = true;
+        return action;
+    }
+
+    continueAfterMonsterTrap(
+        action, state, random, rollDice, rollOne,
+        action.calls || DISCARDED_CALL_LOG,
     );
     return action;
 }
@@ -8275,10 +8306,12 @@ export function resumeDeferredMonsterBearTrap(
     action.monster.mhp = Math.max(0, (action.monster.mhp ?? 1) - damage);
     event.damage = damage;
     event.killed = action.monster.mhp <= 0;
-    finishDochugAfterMovement(
-        action.monster, movement, state, random, rollOne, rollDice,
-        action.calls,
-    );
+    if (!movement.immediateTrap) {
+        finishDochugAfterMovement(
+            action.monster, movement, state, random, rollOne, rollDice,
+            action.calls,
+        );
+    }
     return action;
 }
 
