@@ -259,13 +259,14 @@ export async function finishHeroMonsterKill(monster, x, y, {
     zombifyCorpse = false,
 } = {}) {
     const wasInside = deathContext?.kind === 'swallowed-projectile'
-        || deathContext?.kind === 'swallowed-potion';
+        || deathContext?.kind === 'swallowed-potion'
+        || deathContext?.kind === 'swallowed-breath';
     if (deathContext && !wasInside) {
         throw new Error(
             `unsupported monster death context ${deathContext.kind}`,
         );
     }
-    if (wasInside
+    if (wasInside && deathContext.kind !== 'swallowed-breath'
         && typeof deathContext.finishDestinationEffects !== 'function') {
         throw new TypeError(
             'swallowed monster death requires destination effects',
@@ -420,7 +421,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
             corpse.age = (corpse.age ?? game.moves ?? 1) - (TAINT_AGE + 1);
     }
 
-    if (wasInside) {
+    if (typeof deathContext?.finishDestinationEffects === 'function') {
         await deathContext.finishDestinationEffects({
             oldx: game.u.ux0 ?? x,
             oldy: game.u.uy0 ?? y,

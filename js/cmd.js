@@ -56,6 +56,8 @@ import { applyPotionLikeInvisibility } from './hero_invisibility.js';
 import {
     cureHeroIllness, startHeroSickness, startHeroVomiting, vomitHero,
 } from './hero_illness.js';
+import { heroBreathAttack } from './hero_breath.js';
+import { useHeroBreath } from './hero_breath_command.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
 import { continueFoodMeal, doeat } from './eat.js';
@@ -5662,19 +5664,21 @@ async function wizMap() {
     await bot();
 }
 
-// C ref: cmd.c:domonability().  Base form reaches the final zero-time
-// refusal.  Breath, spit, gaze, hide, web, summon, mind blast, gremlin,
-// unicorn, shriek, vampire, and steed abilities are polymorph subgraphs.
+// C ref: cmd.c:domonability().
 async function domonability() {
     if ((game.u?.mtimedone ?? 0) <= 0) {
         await pline("You don't have a special ability in your normal form!");
         game.context.move = 0;
         return;
     }
-    if (MONSTER_SYMBOL[game.u.umonnum] === 30
-        && (game.u.uen ?? 0) < 15) {
-        await pline("You don't have enough energy to breathe!");
-        game.context.move = 0;
+    const breath = heroBreathAttack(game);
+    if (breath) {
+        const result = await useHeroBreath({
+            state: game,
+            attack: breath,
+            finishMonsterKill: finishHeroMonsterKill,
+        });
+        game.context.move = result.spentTime ? 1 : 0;
         return;
     }
     await pline('Any special ability you may have is purely reflexive.');

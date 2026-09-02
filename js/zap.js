@@ -8,11 +8,13 @@ import { findit } from './detect.js';
 import {
     A_STR, A_WIS, COLNO, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_UNDER, DOOR,
     DRAWBRIDGE_UP,
-    D_CLOSED, D_LOCKED, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL,
-    IS_LAVA, IS_POOL, IS_ROOM, IS_WALL, IS_WATERWALL, Is_rogue_level,
-    Is_waterlevel, LAVAWALL, MOAT, PIT, POOL, ROOM, ROWNO, SDOOR, STONE,
+    D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HWALL, ICE, ICED_MOAT,
+    ICED_POOL, IRONBARS,
+    IS_LAVA, IS_POOL, IS_WALL, IS_WATERWALL,
+    Is_rogue_level, Is_waterlevel, LAVAWALL, MOAT, PIT, POOL,
+    ROOM, ROWNO, SDOOR, STONE,
     SCORR, STRAT_WAITMASK, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd,
-    VWALL, WEB, WM_MASK, W_RING, ZAP_POS,
+    VWALL, WEB, WM_MASK, W_NONDIGGABLE, W_RING,
 } from './const.js';
 import {
     canProjectMonster, flush_screen, lastDirtyMapCursor, newsym,
@@ -32,15 +34,15 @@ import { wakeMonstersNearWithMessages } from './mon.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
 import { makePlural } from './object_grammar.js';
 import {
-    MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
-    MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE,
+    MONSTER_NAME, MONSTER_RESISTS,
     monsterIsNonliving,
 } from './monster_data.js';
 import {
-    AMULET_OF_REFLECTION, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME,
-    OBJECT_CHARGED, OBJECT_MATERIAL, OBJECT_NAMES, POT_OIL,
+    DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_MATERIAL,
+    OBJECT_NAMES, POT_OIL,
     RIN_PROTECTION, RIN_REGENERATION, RIN_SHOCK_RESISTANCE, SCR_FIRE,
-    SHIELD_OF_REFLECTION, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL,
+    SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL,
     WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING,
     WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT,
     WAN_LIGHTNING, WAN_MAKE_INVISIBLE, WAN_POLYMORPH,
@@ -73,6 +75,13 @@ import {
 import { objectWeight } from './weight.js';
 import { makeWish } from './wish.js';
 import { hasWornProperty } from './properties.js';
+import {
+    captureRayTraversalFrame, clearRayCells, closedRayDoor,
+    discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay,
+    monsterReflectionSource, monsterReflectsRay, paintRayCell,
+    rayBounceDirection, rayHitsHero, rayHitsMonster, rayMonsterAt,
+    rayPositionIsOpen, rayPositionIsValid, runRay,
+} from './ray.js';
 import { changeMonsterSpeedInDirection } from './monster_speed_magic.js';
 import { forceBoltInDirection } from './force_bolt.js';
 import { makeInvisibleInDirection } from './monster_invisibility_magic.js';
@@ -98,6 +107,9 @@ const RAY_FIRE = 'fire';
 const RAY_COLD = 'cold';
 const RAY_SLEEP = 'sleep';
 const RAY_DEATH = 'death';
+const RAY_DISINTEGRATION = 'disintegration';
+const RAY_LIGHTNING = 'lightning';
+const RAY_ACID = 'acid';
 
 export const INVENTORY_DAMAGE = Object.freeze({
     COLD: 'cold',
@@ -531,117 +543,6 @@ export async function dozap({
     await finishWandUse(wand);
 }
 
-export function rayPositionIsValid(x, y) {
-    return x >= 1 && x < COLNO && y >= 0 && y < ROWNO;
-}
-
-export function closedRayDoor(location) {
-    return location?.typ === DOOR
-        && !!(location.doormask & (D_CLOSED | D_LOCKED));
-}
-
-export function rayPositionIsOpen(x, y, state = game) {
-    if (!rayPositionIsValid(x, y)) return false;
-    const location = state.level?.at(x, y);
-    return !!location && ZAP_POS(location.typ) && !closedRayDoor(location);
-}
-
-export function rayMonsterAt(x, y, state = game) {
-    return state.level?.monsters?.find(monster => (monster.mhp ?? 1) > 0
-        && monster.mx === x && monster.my === y) || null;
-}
-
-export async function captureRayTraversalFrame(state = game) {
-    const frameCursor = lastDirtyMapCursor();
-    const messageCursor = state._pending_message
-        ? [state._pending_message.length, 0] : null;
-    await flush_screen(1);
-    if (frameCursor)
-        state.nhDisplay?.setCursor(...frameCursor);
-    else if (messageCursor)
-        state.nhDisplay?.setCursor(...messageCursor);
-    await state.animationFrame?.();
-}
-
-export function rayHitsMonster(monster, random = rn2, rollOne = rnd) {
-    const armorClass = Number.isFinite(monster.mac) ? monster.mac
-        : Number.isFinite(monster.ac) ? monster.ac
-            : MONSTER_EXPERIENCE_META[monster.mnum]?.[0] ?? 10;
-    const chance = random(20);
-    if (!chance) return rollOne(10) < armorClass;
-    const effectiveArmorClass = armorClass >= 0
-        ? armorClass : -rollOne(-armorClass);
-    return 3 - chance < effectiveArmorClass;
-}
-
-export function rayHitsHero(
-    state = game, random = rn2, rollOne = rnd,
-) {
-    const armorClass = Number.isFinite(state.u?.uac) ? state.u.uac : 10;
-    const chance = random(20);
-    if (!chance) return rollOne(10) < armorClass;
-    const effectiveArmorClass = armorClass >= 0
-        ? armorClass : -rollOne(-armorClass);
-    return 3 - chance < effectiveArmorClass;
-}
-
-export function heroReflectionSource(state = game) {
-    if (state.uarms?.otyp === SHIELD_OF_REFLECTION)
-        return { object: state.uarms, noun: 'shield' };
-    const amulet = state.uamul || state.u?.uamul;
-    if (amulet?.otyp === AMULET_OF_REFLECTION)
-        return { object: amulet, noun: 'medallion' };
-    return null;
-}
-
-export function heroReflectsRay(state = game) {
-    return !!(state.u?.reflecting || state.reflecting
-        || heroReflectionSource(state));
-}
-
-export function discoverHeroReflectionSource(
-    source = heroReflectionSource(), state = game,
-) {
-    const object = source?.object;
-    if (!object || state._knownObjectTypes?.has(object.otyp)) return;
-    exerciseAttribute(A_WIS, true, state);
-    recordObjectKnowledge(object.otyp, state);
-    object.typeKnown = true;
-}
-
-export function discoverReflectingShield(state = game) {
-    const shield = state.uarms;
-    if (!shield || shield.otyp !== SHIELD_OF_REFLECTION) return;
-    discoverHeroReflectionSource({ object: shield, noun: 'shield' }, state);
-}
-
-export function rayBounceDirection(
-    x, y, dx, dy, bounceback, state = game, random = rn2,
-) {
-    if (!dx || !dy || (bounceback > 0 && random(bounceback) === 0))
-        return { dx: -dx, dy: -dy };
-
-    const previousX = x - dx;
-    const previousY = y - dy;
-    let bounce = 0;
-    const vertical = state.level?.at(x, previousY);
-    if (rayPositionIsOpen(x, previousY, state)
-        && (IS_ROOM(vertical.typ)
-            || rayPositionIsOpen(x + dx, previousY, state))) {
-        bounce = 1;
-    }
-    const horizontal = state.level?.at(previousX, y);
-    if (rayPositionIsOpen(previousX, y, state)
-        && (IS_ROOM(horizontal.typ)
-            || rayPositionIsOpen(previousX, y + dy, state))
-        && (!bounce || random(2))) {
-        bounce = 2;
-    }
-    if (bounce === 2) return { dx: -dx, dy };
-    if (bounce === 1) return { dx, dy: -dy };
-    return { dx: -dx, dy: -dy };
-}
-
 function removeWebAt(x, y, state = game) {
     const trap = state.level?.traps?.find(candidate =>
         candidate.tx === x && candidate.ty === y && candidate.ttyp === WEB,
@@ -902,8 +803,9 @@ async function evaporatePoolAt(x, y, state = game) {
     return rangeChange;
 }
 
-async function applyRayFloorFeatures(
-    kind, x, y, state = game, { wakeMonsters } = {},
+export async function applyRayFloorFeatures(
+    kind, x, y, state = game,
+    { wakeMonsters, rayNoun = 'bolt', random = rn2 } = {},
 ) {
     const location = state.level?.at(x, y);
     if (!location) return { absorbed: false, rangeChange: 0 };
@@ -922,13 +824,39 @@ async function applyRayFloorFeatures(
         rangeChange += await evaporatePoolAt(x, y, state);
     }
 
+    const damagesBars = kind === RAY_ACID
+        || (kind === RAY_LIGHTNING && random(10) === 0);
+    if (damagesBars && location.typ === IRONBARS) {
+        const action = kind === RAY_ACID ? 'corrode' : 'melt';
+        if ((location.wall_info ?? 0) & W_NONDIGGABLE) {
+            if (visible) {
+                await plineWithContinuation(
+                    `The iron bars ${action} somewhat but remain intact.`,
+                );
+            }
+        } else {
+            rangeChange -= 3;
+            location.typ = ROOM;
+            location.flags = 0;
+            location.wall_info = 0;
+            vision_note_blocker_change(x, y);
+            if (visible) {
+                await plineWithContinuation(
+                    `The iron bars ${action}${
+                        kind === RAY_ACID ? ' away' : ''}.`,
+                );
+                newsym(x, y);
+            }
+        }
+    }
+
     if (location.typ === SDOOR) {
         revealSecretDoor(location, state);
         vision_note_blocker_change(x, y);
         newsym(x, y);
         if (visible) {
             await plineWithContinuation(
-                'Your bolt reveals a secret door.',
+                `Your ${rayNoun} reveals a secret door.`,
             );
         }
     }
@@ -937,23 +865,30 @@ async function applyRayFloorFeatures(
 
     if (closedRayDoor(location)) {
         absorbed = true;
-        if (kind === RAY_FIRE || kind === RAY_COLD) {
-            location.doormask = D_NODOOR;
+        if (kind === RAY_FIRE || kind === RAY_COLD
+            || kind === RAY_DISINTEGRATION || kind === RAY_LIGHTNING) {
+            location.doormask = kind === RAY_LIGHTNING
+                ? D_BROKEN : D_NODOOR;
             vision_note_blocker_change(x, y);
             if (visible) {
-                await plineWithContinuation(kind === RAY_FIRE
-                    ? 'The door is consumed in flames!'
-                    : 'The door freezes and shatters!');
+                await plineWithContinuation(destroyedDoorMessage(kind));
                 newsym(x, y);
             } else if (kind === RAY_FIRE) {
                 await plineWithContinuation('You smell smoke.');
-            } else if (!(state.u?.deaf || state.deaf)) {
+            } else if (!(state.u?.deaf || state.deaf)
+                && kind === RAY_COLD) {
                 await plineWithContinuation(
                     'You hear a deep cracking sound.',
                 );
+            } else if (!(state.u?.deaf || state.deaf)) {
+                await plineWithContinuation(kind === RAY_DISINTEGRATION
+                    ? 'You hear crashing wood.'
+                    : 'You hear crackling.');
             }
         } else if (visible) {
-            await plineWithContinuation('The door absorbs your bolt!');
+            await plineWithContinuation(
+                `The door absorbs your ${rayNoun}!`,
+            );
         } else {
             await plineWithContinuation('You feel vibrations.');
         }
@@ -974,16 +909,23 @@ async function applyRayFloorFeatures(
     return { absorbed, rangeChange };
 }
 
+function destroyedDoorMessage(kind) {
+    if (kind === RAY_FIRE) return 'The door is consumed in flames!';
+    if (kind === RAY_COLD) return 'The door freezes and shatters!';
+    if (kind === RAY_DISINTEGRATION) return 'The door disintegrates!';
+    return 'The door splinters!';
+}
+
 export function applyFireToFloorAt(x, y, state = game) {
     return applyRayFloorFeatures(RAY_FIRE, x, y, state);
 }
 
-function monsterHasElementalResistance(monster, mask, explicit) {
+export function monsterHasElementalResistance(monster, mask, explicit) {
     return !!((MONSTER_RESISTS[monster?.mnum] || 0) & mask)
         || !!monster?.[explicit];
 }
 
-function monsterResistsWandDamage(monster, random, rollOne) {
+export function monsterResistsRayDamage(monster, random, rollOne) {
     const attackLevel = 12;
     const defenseLevel = Math.max(1, Math.min(
         50, monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 1,
@@ -1000,8 +942,15 @@ function monsterIgnoresDeathRay(monster) {
         || !!monster?.resistsMagic;
 }
 
-function sleepMonsterFromRay(monster) {
-    const duration = d(6, 25);
+export function sleepMonsterFromRay(
+    monster,
+    {
+        dice = 6,
+        random = rn2,
+        rollDice = d,
+    } = {},
+) {
+    const duration = rollDice(dice, 25);
     const inherentlyResistant = !!((MONSTER_RESISTS[monster.mnum] || 0)
         & MR_SLEEP);
     let resisted = inherentlyResistant || !!monster.defendedSleep;
@@ -1011,7 +960,7 @@ function sleepMonsterFromRay(monster) {
             50, monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 1,
         ));
         const magicResistance = MONSTER_MAGIC_RESISTANCE[monster.mnum] || 0;
-        resisted = rn2(100 + attackLevel - defenseLevel) < magicResistance;
+        resisted = random(100 + attackLevel - defenseLevel) < magicResistance;
     }
     if (resisted || monster.mcanmove === 0) return false;
 
@@ -1029,6 +978,7 @@ export async function coldRayDamageMonster(
         random = rn2,
         rollDice = d,
         rollOne = rnd,
+        dice = 6,
     } = {},
 ) {
     if (monsterHasElementalResistance(
@@ -1038,10 +988,10 @@ export async function coldRayDamageMonster(
         return { damage: 0, resisted: true };
     }
 
-    let damage = rollDice(6, 6);
+    let damage = rollDice(dice, 6);
     const sourceDamage = damage;
     if (monsterHasElementalResistance(monster, MR_FIRE, 'defendedFire'))
-        damage += rollDice(6, 3);
+        damage += rollDice(dice, 3);
     if (random(3) === 0) {
         damage += await destroyColdMonsterInventory(monster, sourceDamage, {
             carrierName: MONSTER_NAME[monster.mnum] || 'monster',
@@ -1051,7 +1001,7 @@ export async function coldRayDamageMonster(
             visible: canProjectMonster(monster, monster.mx, monster.my),
         });
     }
-    if (damage > 0 && monsterResistsWandDamage(
+    if (damage > 0 && monsterResistsRayDamage(
         monster, random, rollOne,
     )) damage = Math.trunc(damage / 2);
     monster.mhp = (monster.mhp ?? 1) - damage;
@@ -1066,6 +1016,7 @@ export async function fireRayDamageMonster(
         random = rn2,
         rollDice = d,
         rollOne = rnd,
+        dice = 6,
     } = {},
 ) {
     if (monsterHasElementalResistance(
@@ -1075,7 +1026,7 @@ export async function fireRayDamageMonster(
         return { damage: 0, resisted: true };
     }
 
-    let damage = rollDice(6, 6);
+    let damage = rollDice(dice, 6);
     const sourceDamage = damage;
     if (monsterHasElementalResistance(monster, MR_COLD, 'defendedCold'))
         damage += 7;
@@ -1101,397 +1052,301 @@ export async function fireRayDamageMonster(
             visible: canProjectMonster(monster, monster.mx, monster.my),
         });
     }
-    if (damage > 0 && monsterResistsWandDamage(
+    if (damage > 0 && monsterResistsRayDamage(
         monster, random, rollOne,
     )) damage = Math.trunc(damage / 2);
     monster.mhp = (monster.mhp ?? 1) - damage;
     return { damage, resisted: false };
 }
 
-function paintRayCell(cells, x, y, dx, dy, color) {
-    cells.set(`${x},${y}`, { x, y });
-    if (dy === 0) show_glyph_cell(x, y, 'q', color, true);
-    else if (dx === 0) show_glyph_cell(x, y, 'x', color, true);
-    else show_glyph_cell(x, y, dx === dy ? '\\' : '/', color, false);
-}
-
-function clearRayCells(cells) {
-    for (const cell of cells.values()) newsym(cell.x, cell.y);
-}
-
 export async function zapColdRay(
     direction,
     { finishMonsterKill, exerciseWisdom = true } = {},
 ) {
-    if (exerciseWisdom) exerciseAttribute(A_WIS, true);
-    let dx = DIR_DX[direction] || 0;
-    let dy = DIR_DY[direction] || 0;
-    let x = game.u.ux;
-    let y = game.u.uy;
-    let range = 7 + rn2(7);
-    const beamCells = new Map();
-
-    while (range-- > 0) {
-        const previousX = x;
-        const previousY = y;
-        x += dx;
-        y += dy;
-        const valid = rayPositionIsValid(x, y);
-        const location = valid ? game.level?.at(x, y) : null;
-        let absorbedByDoor = false;
-
-        if (valid && location?.typ !== STONE) {
-            if (cansee(x, y)
-                && (rayPositionIsOpen(x, y)
-                    || (rayPositionIsValid(previousX, previousY)
-                        && cansee(previousX, previousY)))) {
-                paintRayCell(beamCells, x, y, dx, dy, CLR_WHITE);
-                await captureRayTraversalFrame();
-            }
-
-            const floor = await applyRayFloorFeatures(RAY_COLD, x, y);
-            absorbedByDoor = floor.absorbed;
-            range += floor.rangeChange;
-
-            const monster = rayMonsterAt(x, y);
-            if (monster) {
-                monster.mstrategy = (monster.mstrategy || 0)
-                    & ~STRAT_WAITMASK;
-                if (rayHitsMonster(monster)) {
-                    if (monster.reflecting) {
-                        dx = -dx;
-                        dy = -dy;
-                    } else {
-                        const { damage } = await coldRayDamageMonster(monster);
-                        const name = MONSTER_NAME[monster.mnum] || 'monster';
-                        if ((monster.mhp ?? 0) <= 0) {
-                            await finishMonsterKill?.(monster, x, y, {
-                                weaponHit: false,
-                            });
-                        } else {
-                            if (canProjectMonster(monster, x, y)) {
-                                await plineWithContinuation(
-                                    `The bolt of cold hits the ${name}${
-                                        damage <= 4 ? '.' : '!'
-                                    }`,
-                                );
-                            }
-                            monster.msleeping = 0;
-                        }
-                    }
-                    range -= 2;
-                } else if (cansee(x, y)) {
-                    const name = MONSTER_NAME[monster.mnum] || 'monster';
-                    await plineWithContinuation(
-                        `The bolt of cold misses the ${name}.`,
-                    );
-                }
-            } else if (x === game.u.ux && y === game.u.uy && range >= 0) {
-                if (rayHitsHero()) {
-                    range -= 2;
-                    await plineWithContinuation('The bolt of cold hits you!');
-                    const reflectionSource = heroReflectionSource();
-                    if (heroReflectsRay()) {
-                        await plineWithContinuation(
-                            `But it reflects from your ${
-                                reflectionSource?.noun || 'shield'
-                            }!`,
-                        );
-                        await shieldeff(game.u.ux, game.u.uy);
-                        if (reflectionSource)
-                            discoverHeroReflectionSource(reflectionSource);
-                        dx = -dx;
-                        dy = -dy;
-                    } else {
-                        const damage = d(6, 6);
-                        const coldResistant = !!(game.u?.coldResistance
-                            || game.u?.cold_resistance);
-                        if (coldResistant) {
-                            await shieldeff(game.u.ux, game.u.uy);
-                            await plineWithContinuation(
-                                "You don't feel cold.",
-                            );
-                        }
-                        if (rn2(3) === 0)
-                            await destroyColdInventory(damage);
-                        let appliedDamage = coldResistant ? 0 : damage;
-                        if (appliedDamage
-                            && (game.u?.halfSpellDamage
-                                || game.u?.half_spell_damage)) {
-                            appliedDamage = Math.trunc(
-                                (appliedDamage + 1) / 2,
-                            );
-                        }
-                        game.u.uhp = Math.max(
-                            0, (game.u.uhp || 0) - appliedDamage,
-                        );
-                        if (game.u.uhp <= 0) return { heroDied: true };
-                    }
-                } else if (cansee(x, y)) {
-                    await plineWithContinuation(
-                        'The bolt of cold whizzes by you!',
-                    );
-                }
-            }
-        }
-
-        if (!rayPositionIsOpen(x, y)) {
-            if (absorbedByDoor) break;
-            range--;
-            if (range > 0 && rayPositionIsValid(previousX, previousY)
-                && cansee(previousX, previousY)) {
-                await plineWithContinuation('The bolt of cold bounces!');
-            }
-            const bounceback = !valid || location?.typ === STONE ? 10 : 75;
-            ({ dx, dy } = rayBounceDirection(x, y, dx, dy, bounceback));
-        }
-    }
-
-    clearRayCells(beamCells);
-    return { heroDied: false };
+    return zapElementalRay(direction, {
+        kind: RAY_COLD,
+        color: CLR_WHITE,
+        finishMonsterKill,
+        exerciseWisdom,
+    });
 }
 
 export async function zapFireRay(
     direction,
     { finishMonsterKill, wakeMonsters, exerciseWisdom = true } = {},
 ) {
+    return zapElementalRay(direction, {
+        kind: RAY_FIRE,
+        color: CLR_ORANGE,
+        finishMonsterKill,
+        wakeMonsters,
+        exerciseWisdom,
+    });
+}
+
+async function zapElementalRay(direction, {
+    kind,
+    color,
+    finishMonsterKill,
+    wakeMonsters,
+    exerciseWisdom,
+}) {
     if (exerciseWisdom) exerciseAttribute(A_WIS, true);
-    let dx = DIR_DX[direction] || 0;
-    let dy = DIR_DY[direction] || 0;
-    let x = game.u.ux;
-    let y = game.u.uy;
-    let range = 7 + rn2(7);
-    const beamCells = new Map();
+    const label = `bolt of ${kind}`;
+    const context = { kind, label, finishMonsterKill, wakeMonsters };
+    const stopped = await runRay({
+        direction,
+        range: 7 + rn2(7),
+        color,
+        onCell: cell => hitElementalRayCell(cell, context),
+        onBounce: () => plineWithContinuation(
+            `The ${label} bounces!`,
+        ),
+        onVanish: () => plineWithContinuation(
+            `The ${label} vanishes into the aether!`,
+        ),
+    });
+    return stopped || { heroDied: false };
+}
 
-    while (range-- > 0) {
-        const previousX = x;
-        const previousY = y;
-        x += dx;
-        y += dy;
-        const valid = rayPositionIsValid(x, y);
-        const location = valid ? game.level?.at(x, y) : null;
-        let absorbedByDoor = false;
+async function hitElementalRayCell(
+    { x, y, remainingRange }, context,
+) {
+    const floor = await applyRayFloorFeatures(
+        context.kind, x, y, game, { wakeMonsters: context.wakeMonsters },
+    );
+    let reflected = false;
+    let rangeChange = floor.rangeChange;
+    const monster = floor.absorbed ? null : rayMonsterAt(x, y);
 
-        if (valid && location?.typ !== STONE) {
-            if (cansee(x, y)
-                && (rayPositionIsOpen(x, y)
-                    || (rayPositionIsValid(previousX, previousY)
-                        && cansee(previousX, previousY)))) {
-                paintRayCell(beamCells, x, y, dx, dy, CLR_ORANGE);
+    if (monster) {
+        monster.mstrategy = (monster.mstrategy || 0) & ~STRAT_WAITMASK;
+        if (rayHitsMonster(monster)) {
+            rangeChange -= 2;
+            if (monsterReflectsRay(monster)) {
+                await showReflectedMonsterRay(monster, context.label);
+                reflected = true;
+            } else {
+                await hitMonsterWithElementalRay(monster, x, y, context);
             }
-            await captureRayTraversalFrame();
-
-            const floor = await applyRayFloorFeatures(
-                RAY_FIRE, x, y, game, { wakeMonsters },
+        } else if (canProjectMonster(monster, x, y)) {
+            const name = MONSTER_NAME[monster.mnum] || 'monster';
+            await plineWithContinuation(
+                `The ${context.label} misses the ${name}.`,
             );
-            absorbedByDoor = floor.absorbed;
-            range += floor.rangeChange;
-
-            const monster = rayMonsterAt(x, y);
-            if (monster) {
-                monster.mstrategy = (monster.mstrategy || 0)
-                    & ~STRAT_WAITMASK;
-                if (rayHitsMonster(monster)) {
-                    if (monster.reflecting) {
-                        dx = -dx;
-                        dy = -dy;
-                    } else {
-                        const { damage } = await fireRayDamageMonster(monster);
-                        const name = MONSTER_NAME[monster.mnum] || 'monster';
-                        if ((monster.mhp ?? 0) <= 0) {
-                            await finishMonsterKill?.(monster, x, y, {
-                                weaponHit: false,
-                                noCorpse: [PM_STRAW_GOLEM, PM_PAPER_GOLEM]
-                                    .includes(monster.mnum),
-                            });
-                        } else {
-                            if (canProjectMonster(monster, x, y)) {
-                                await plineWithContinuation(
-                                    `The bolt of fire hits the ${name}${
-                                        damage <= 4 ? '.' : '!'
-                                    }`,
-                                );
-                            }
-                            monster.msleeping = 0;
-                        }
-                    }
-                    range -= 2;
-                } else if (cansee(x, y)) {
-                    const name = MONSTER_NAME[monster.mnum] || 'monster';
-                    await plineWithContinuation(
-                        `The bolt of fire misses the ${name}.`,
-                    );
-                }
-            } else if (x === game.u.ux && y === game.u.uy && range >= 0
-                && rayHitsHero()) {
-                range -= 2;
-                await plineWithContinuation('The bolt of fire hits you!');
-                const reflectionSource = heroReflectionSource();
-                if (heroReflectsRay()) {
-                    await plineWithContinuation(
-                        `But it reflects from your ${
-                            reflectionSource?.noun || 'shield'
-                        }!`,
-                    );
-                    await shieldeff(game.u.ux, game.u.uy);
-                    if (reflectionSource)
-                        discoverHeroReflectionSource(reflectionSource);
-                    dx = -dx;
-                    dy = -dy;
-                } else {
-                    const damage = d(6, 6);
-                    const fireResistant = !!(game.u?.fireResistance
-                        || game.u?.fire_resistance);
-                    if (fireResistant) {
-                        await shieldeff(game.u.ux, game.u.uy);
-                        await plineWithContinuation("You don't feel hot!");
-                    }
-                    if (clearHeroSliming(game)) {
-                        await plineWithContinuation(
-                            'The slime that covers you is burned away!',
-                        );
-                    }
-                    const bodyHit = await burnHeroArmorByFire(
-                        game, plineWithContinuation, [], rn2,
-                    );
-                    if (bodyHit) {
-                        if (rn2(3) === 0)
-                            await destroyFireInventory(damage);
-                        if (rn2(3) === 0) {
-                            await igniteItems(game.inventory, {
-                                state: game,
-                                publish: plineWithContinuation,
-                            });
-                        }
-                    }
-
-                    let appliedDamage = fireResistant ? 0 : damage;
-                    if (appliedDamage
-                        && (game.u?.halfSpellDamage
-                            || game.u?.half_spell_damage)) {
-                        appliedDamage = Math.trunc(
-                            (appliedDamage + 1) / 2,
-                        );
-                    }
-                    game.u.uhp = Math.max(
-                        0, (game.u.uhp || 0) - appliedDamage,
-                    );
-                    if (game.u.uhp <= 0) return { heroDied: true };
-                }
-            }
         }
-
-        if (!rayPositionIsOpen(x, y)) {
-            if (absorbedByDoor) break;
-            range--;
-            if (range > 0 && rayPositionIsValid(previousX, previousY)
-                && cansee(previousX, previousY)) {
-                await plineWithContinuation('The bolt of fire bounces!');
-            }
-            const bounceback = !valid || location?.typ === STONE ? 10 : 75;
-            ({ dx, dy } = rayBounceDirection(x, y, dx, dy, bounceback));
+    } else if (!floor.absorbed
+        && x === game.u.ux && y === game.u.uy && remainingRange >= 0) {
+        const hero = await hitHeroWithElementalRay(context);
+        rangeChange -= hero.hit ? 2 : 0;
+        reflected = hero.reflected;
+        if (hero.heroDied) {
+            return {
+                stop: true,
+                result: { heroDied: true },
+            };
         }
     }
 
-    clearRayCells(beamCells);
-    return { heroDied: false };
+    return { absorbed: floor.absorbed, rangeChange, reflected };
+}
+
+async function hitMonsterWithElementalRay(monster, x, y, context) {
+    const result = context.kind === RAY_FIRE
+        ? await fireRayDamageMonster(monster)
+        : await coldRayDamageMonster(monster);
+    if ((monster.mhp ?? 0) <= 0) {
+        await context.finishMonsterKill?.(monster, x, y, {
+            weaponHit: false,
+            noCorpse: context.kind === RAY_FIRE
+                && [PM_STRAW_GOLEM, PM_PAPER_GOLEM].includes(monster.mnum),
+        });
+        return;
+    }
+    if (canProjectMonster(monster, x, y)) {
+        const name = MONSTER_NAME[monster.mnum] || 'monster';
+        await plineWithContinuation(
+            `The ${context.label} hits the ${name}${
+                result.damage <= 4 ? '.' : '!'
+            }`,
+        );
+    }
+    monster.msleeping = 0;
+}
+
+async function showReflectedMonsterRay(monster, label) {
+    if (!canProjectMonster(monster, monster.mx, monster.my)) return;
+    const name = MONSTER_NAME[monster.mnum] || 'monster';
+    const source = monsterReflectionSource(monster);
+    await plineWithContinuation(`The ${label} hits the ${name}.`);
+    await shieldeff(monster.mx, monster.my);
+    await plineWithContinuation(
+        `But it reflects from the ${name}'s ${source?.noun || 'body'}!`,
+    );
+}
+
+async function hitHeroWithElementalRay(context) {
+    if (!rayHitsHero()) {
+        await plineWithContinuation(
+            `The ${context.label} whizzes by you!`,
+        );
+        return { hit: false, reflected: false, heroDied: false };
+    }
+
+    await plineWithContinuation(`The ${context.label} hits you!`);
+    const reflectionSource = heroReflectionSource();
+    if (heroReflectsRay()) {
+        await plineWithContinuation(
+            `But it reflects from your ${
+                reflectionSource?.noun || 'shield'
+            }!`,
+        );
+        await shieldeff(game.u.ux, game.u.uy);
+        if (reflectionSource)
+            discoverHeroReflectionSource(reflectionSource);
+        return { hit: true, reflected: true, heroDied: false };
+    }
+
+    const heroDied = context.kind === RAY_FIRE
+        ? await burnHeroWithRay()
+        : await freezeHeroWithRay();
+    return { hit: true, reflected: false, heroDied };
+}
+
+async function freezeHeroWithRay() {
+    const damage = d(6, 6);
+    const resistant = !!(game.u?.coldResistance
+        || game.u?.cold_resistance);
+    if (resistant) {
+        await shieldeff(game.u.ux, game.u.uy);
+        await plineWithContinuation("You don't feel cold.");
+    }
+    if (rn2(3) === 0) await destroyColdInventory(damage);
+    applyElementalRayDamage(resistant ? 0 : damage);
+    return game.u.uhp <= 0;
+}
+
+async function burnHeroWithRay() {
+    const damage = d(6, 6);
+    const resistant = !!(game.u?.fireResistance
+        || game.u?.fire_resistance);
+    if (resistant) {
+        await shieldeff(game.u.ux, game.u.uy);
+        await plineWithContinuation("You don't feel hot!");
+    }
+    if (clearHeroSliming(game)) {
+        await plineWithContinuation(
+            'The slime that covers you is burned away!',
+        );
+    }
+    const bodyHit = await burnHeroArmorByFire(
+        game, plineWithContinuation, [], rn2,
+    );
+    if (bodyHit && rn2(3) === 0)
+        await destroyFireInventory(damage);
+    if (bodyHit && rn2(3) === 0) {
+        await igniteItems(game.inventory, {
+            state: game,
+            publish: plineWithContinuation,
+        });
+    }
+    applyElementalRayDamage(resistant ? 0 : damage);
+    return game.u.uhp <= 0;
+}
+
+function applyElementalRayDamage(damage) {
+    let appliedDamage = damage;
+    if (appliedDamage
+        && (game.u?.halfSpellDamage || game.u?.half_spell_damage)) {
+        appliedDamage = Math.trunc((appliedDamage + 1) / 2);
+    }
+    game.u.uhp = Math.max(0, (game.u.uhp || 0) - appliedDamage);
 }
 
 export async function zapSleepRay(direction) {
     exerciseAttribute(A_WIS, true);
-    let dx = DIR_DX[direction] || 0;
-    let dy = DIR_DY[direction] || 0;
-    let x = game.u.ux;
-    let y = game.u.uy;
-    let range = 7 + rn2(7);
-    let showedMessage = false;
-    const beamCells = new Map();
+    const output = { showedMessage: false };
+    await runRay({
+        direction,
+        range: 7 + rn2(7),
+        color: CLR_BRIGHT_BLUE,
+        onCell: cell => hitSleepRayCell(cell, output),
+        onBounce: async () => {
+            await plineWithContinuation('The sleep ray bounces!');
+            output.showedMessage = true;
+        },
+        onVanish: async () => {
+            await plineWithContinuation(
+                'The sleep ray vanishes into the aether!',
+            );
+            output.showedMessage = true;
+        },
+    });
+    if (!output.showedMessage) game._pending_message = '';
+}
 
-    while (range-- > 0) {
-        const previousX = x;
-        const previousY = y;
-        x += dx;
-        y += dy;
-        const valid = rayPositionIsValid(x, y);
-        const location = valid ? game.level?.at(x, y) : null;
-        let absorbedByDoor = false;
+async function hitSleepRayCell({ x, y, remainingRange }, output) {
+    const floor = await applyRayFloorFeatures(RAY_SLEEP, x, y);
+    let reflected = false;
+    let rangeChange = floor.rangeChange;
+    const monster = floor.absorbed ? null : rayMonsterAt(x, y);
 
-        if (valid && location?.typ !== STONE) {
-            if (cansee(x, y)
-                && (rayPositionIsOpen(x, y)
-                    || (rayPositionIsValid(previousX, previousY)
-                        && cansee(previousX, previousY)))) {
-                paintRayCell(beamCells, x, y, dx, dy, CLR_BRIGHT_BLUE);
+    if (monster) {
+        monster.mstrategy = (monster.mstrategy || 0) & ~STRAT_WAITMASK;
+        if (rayHitsMonster(monster)) {
+            rangeChange -= 2;
+            if (monsterReflectsRay(monster)) {
+                await showReflectedMonsterRay(monster, 'sleep ray');
+                reflected = true;
+            } else {
+                sleepMonsterFromRay(monster);
+                const name = MONSTER_NAME[monster.mnum] || 'monster';
+                await plineWithContinuation(
+                    `The sleep ray hits the ${name}.`,
+                );
             }
-            await captureRayTraversalFrame();
-            const floor = await applyRayFloorFeatures(RAY_SLEEP, x, y);
-            absorbedByDoor = floor.absorbed;
-            range += floor.rangeChange;
-            const monster = rayMonsterAt(x, y);
-            if (monster) {
-                monster.mstrategy = (monster.mstrategy || 0)
-                    & ~STRAT_WAITMASK;
-                if (rayHitsMonster(monster)) {
-                    if (monster.reflecting) {
-                        dx = -dx;
-                        dy = -dy;
-                    } else {
-                        sleepMonsterFromRay(monster);
-                        const name = MONSTER_NAME[monster.mnum] || 'monster';
-                        await plineWithContinuation(
-                            `The sleep ray hits the ${name}.`,
-                        );
-                        showedMessage = true;
-                    }
-                    range -= 2;
-                } else if (cansee(x, y)) {
-                    const name = MONSTER_NAME[monster.mnum] || 'monster';
-                    await plineWithContinuation(
-                        `The sleep ray misses the ${name}.`,
-                    );
-                    showedMessage = true;
-                }
-            } else if (x === game.u.ux && y === game.u.uy && range >= 0) {
-                if (rayHitsHero()) {
-                    range -= 2;
-                    await plineWithContinuation('The sleep ray hits you!');
-                    showedMessage = true;
-                    if (heroReflectsRay()) {
-                        const source = heroReflectionSource();
-                        await plineWithContinuation(
-                            `But it reflects from your ${
-                                source?.noun || 'shield'
-                            }!`,
-                        );
-                        await shieldeff(game.u.ux, game.u.uy);
-                        if (source) discoverHeroReflectionSource(source);
-                        dx = -dx;
-                        dy = -dy;
-                    }
-                } else {
-                    await plineWithContinuation(
-                        'The sleep ray whizzes by you!',
-                    );
-                    showedMessage = true;
-                }
-            }
+            output.showedMessage = true;
+        } else if (canProjectMonster(monster, x, y)) {
+            const name = MONSTER_NAME[monster.mnum] || 'monster';
+            await plineWithContinuation(
+                `The sleep ray misses the ${name}.`,
+            );
+            output.showedMessage = true;
         }
-
-        if (!rayPositionIsOpen(x, y)) {
-            if (absorbedByDoor) break;
-            range--;
-            if (range > 0 && rayPositionIsValid(previousX, previousY)
-                && cansee(previousX, previousY)) {
-                await plineWithContinuation('The sleep ray bounces!');
-                showedMessage = true;
-            }
-            const bounceback = !valid || location?.typ === STONE ? 10 : 75;
-            ({ dx, dy } = rayBounceDirection(x, y, dx, dy, bounceback));
-        }
+    } else if (!floor.absorbed
+        && x === game.u.ux && y === game.u.uy && remainingRange >= 0) {
+        const hero = await hitHeroWithSleepRay();
+        rangeChange -= hero.hit ? 2 : 0;
+        reflected = hero.reflected;
+        output.showedMessage = true;
     }
 
-    clearRayCells(beamCells);
-    if (!showedMessage) game._pending_message = '';
+    return { absorbed: floor.absorbed, rangeChange, reflected };
+}
+
+async function hitHeroWithSleepRay() {
+    if (!rayHitsHero()) {
+        await plineWithContinuation('The sleep ray whizzes by you!');
+        return { hit: false, reflected: false };
+    }
+
+    await plineWithContinuation('The sleep ray hits you!');
+    const source = heroReflectionSource();
+    if (heroReflectsRay()) {
+        await plineWithContinuation(
+            `But it reflects from your ${source?.noun || 'shield'}!`,
+        );
+        await shieldeff(game.u.ux, game.u.uy);
+        if (source) discoverHeroReflectionSource(source);
+        return { hit: true, reflected: true };
+    }
+    if (game.u?.sleepResistance) {
+        await shieldeff(game.u.ux, game.u.uy);
+        await plineWithContinuation("You don't feel sleepy.");
+    } else {
+        putHeroToSleep(d(6, 25));
+    }
+    return { hit: true, reflected: false };
 }
 
 function strengthenDeath(monster) {
@@ -1573,7 +1428,7 @@ export async function zapDeathRay(
                 monster.mstrategy = (monster.mstrategy || 0)
                     & ~STRAT_WAITMASK;
                 if (rayHitsMonster(monster)) {
-                    if (monster.reflecting) {
+                    if (monsterReflectsRay(monster)) {
                         if (canProjectMonster(monster, x, y)) {
                             const name = MONSTER_NAME[monster.mnum]
                                 || 'monster';
@@ -2043,7 +1898,8 @@ export async function destroyMonsterInventoryByElement(
         visible = false,
     } = {},
 ) {
-    if (![INVENTORY_DAMAGE.COLD, INVENTORY_DAMAGE.FIRE]
+    if (![INVENTORY_DAMAGE.COLD, INVENTORY_DAMAGE.FIRE,
+        INVENTORY_DAMAGE.ELECTRIC]
         .includes(damageType)) return 0;
     const limit = destructionLimit(sourceDamage, random);
     if (!limit) return 0;

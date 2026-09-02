@@ -1,7 +1,9 @@
 import { game } from '../../js/gstate.js';
+import { MONSTER_NAME } from '../../js/monster_data.js';
 
 export function liveMonster({
     mnum,
+    species,
     x,
     y,
     hitPoints = 20,
@@ -10,7 +12,7 @@ export function liveMonster({
 }) {
     const inventory = [];
     return {
-        mnum,
+        mnum: mnum ?? MONSTER_NAME.indexOf(species),
         mx: x,
         my: y,
         m_lev: level,

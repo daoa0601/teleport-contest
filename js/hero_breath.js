@@ -321,7 +321,7 @@ async function applyOrdinaryBreathDamage(
     return { resisted, damage, heroDied };
 }
 
-function effectiveBreathDamage(damageType) {
+export function effectiveBreathDamage(damageType) {
     // BZ_OFS_AD(AD_RBRE) maps the Chromatic Dragon's hero breath to fire.
     return damageType === AD_RBRE ? AD_FIRE : damageType;
 }

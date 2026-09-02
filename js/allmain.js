@@ -88,8 +88,8 @@ import {
 import { finishMeltIce } from './ice.js';
 import {
     destroyColdInventory, destroyElectricInventory, destroyFireInventory,
-    discoverReflectingShield,
 } from './zap.js';
+import { discoverReflectingShield } from './ray.js';
 import {
     finishEggHatchTimer, runClaimedEggHatchTimer,
 } from './egg.js';
