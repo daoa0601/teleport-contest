@@ -3137,11 +3137,7 @@ function movePet(
     });
     if (rangedAttack.kind === 'weapon'
         && rangedAttack.target
-        && (rangedAttack.target.mhp ?? 0) <= 0
-        && state.level?.monsters?.includes(rangedAttack.target)) {
-        finishRangedKilledMonster(
-            rangedAttack.target, state, random, calls,
-        );
+        && (rangedAttack.target.mhp ?? 0) <= 0) {
         rangedAttack.targetDied = true;
     }
     movePlan.wieldedWeapon = rangedAttack.readiedWeapon;

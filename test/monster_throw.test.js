@@ -79,8 +79,7 @@ test('a tame orc throws a dagger at a distant monster', () => {
     quietMonsterActionRng(orc, game);
 
     assert.deepEqual([orc.mx, orc.my], [9, 10]);
-    assert.equal(target.dead, true);
-    assert.equal(game.level.monsters.includes(target), false);
+    assert.equal(target.mhp, 0);
     assert.equal(orc.inventory.includes(dagger), false);
     assert.equal(
         floorObjectsAt(game.level, 12, 10).some(

@@ -5870,6 +5870,20 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     if (transientFlightCell)
                         newsym(transientFlightCell.x, transientFlightCell.y);
                 }
+                if (ranged.targetDied) {
+                    const death = await finishEnvironmentalMonsterDeath(
+                        ranged.target, game, {
+                            visible: targetVisible,
+                            spotted: canProjectMonster(
+                                ranged.target,
+                                ranged.target.mx,
+                                ranged.target.my,
+                            ),
+                            publish: queueTurnMessage,
+                        },
+                    );
+                    ranged.targetDied = !death.survived;
+                }
             }
         }
         // dogmove.c:dog_eat() always commits nutrition/removal, but narrates
