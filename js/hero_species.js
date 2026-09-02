@@ -6,9 +6,10 @@ import { monsterSpeciesHatesSilver } from './monster_data.js';
 
 export function heroSpecies(state) {
     if (Upolyd(state.u)) return state.u.umonnum;
+    const race = state.urace;
     return state.flags?.female
-        ? state.urace?.femalenum ?? state.urace?.malenum
-        : state.urace?.malenum;
+        ? race?.femalenum ?? race?.malenum ?? race?.mnum
+        : race?.malenum ?? race?.mnum;
 }
 
 export function heroHatesSilver(state) {

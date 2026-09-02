@@ -1,0 +1,74 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import {
+    artifactByName, artifactDamageBonus, artifactToHitBonus,
+    resolveHeroArtifactTouch,
+} from '../js/artifacts.js';
+import { game } from '../js/gstate.js';
+import { initRng } from '../js/rng.js';
+import { artifactObject } from './support/game-objects.js';
+import { liveMonster } from './support/monsters.js';
+
+const maximumRoll = range => range;
+
+test('Excalibur gets its accuracy and damage against any monster', () => {
+    const excalibur = artifactObject('Excalibur');
+    const jackal = liveMonster({ species: 'jackal' });
+
+    const accuracy = artifactToHitBonus(excalibur, jackal, maximumRoll);
+    const damage = artifactDamageBonus(excalibur, jackal, 7, maximumRoll);
+
+    assert.equal(accuracy, 5);
+    assert.equal(damage, 10);
+});
+
+test('Orcrist doubles damage only against orcs', () => {
+    const orcrist = artifactObject('Orcrist');
+    const orc = liveMonster({ species: 'orc' });
+    const jackal = liveMonster({ species: 'jackal' });
+
+    assert.equal(artifactToHitBonus(orcrist, orc, maximumRoll), 5);
+    assert.equal(artifactDamageBonus(orcrist, orc, 7, maximumRoll), 7);
+    assert.equal(artifactToHitBonus(orcrist, jackal, maximumRoll), 0);
+    assert.equal(artifactDamageBonus(orcrist, jackal, 7, maximumRoll), 0);
+});
+
+test('Grimtooth damages every target but gets accuracy only against elves', () => {
+    const grimtooth = artifactObject('Grimtooth');
+    const elf = liveMonster({ species: 'elf' });
+    const jackal = liveMonster({ species: 'jackal' });
+
+    assert.equal(artifactToHitBonus(grimtooth, elf, maximumRoll), 2);
+    assert.equal(artifactToHitBonus(grimtooth, jackal, maximumRoll), 0);
+    assert.equal(artifactDamageBonus(grimtooth, jackal, 7, maximumRoll), 6);
+});
+
+test('the Sceptre of Might doubles damage against opposing alignments', () => {
+    const sceptre = artifactObject('The Sceptre of Might');
+    const orc = liveMonster({ species: 'orc' });
+    const angel = liveMonster({ species: 'Angel' });
+
+    assert.equal(artifactToHitBonus(sceptre, orc, maximumRoll), 5);
+    assert.equal(artifactDamageBonus(sceptre, orc, 7, maximumRoll), 7);
+    assert.equal(artifactToHitBonus(sceptre, angel, maximumRoll), 0);
+    assert.equal(artifactDamageBonus(sceptre, angel, 7, maximumRoll), 0);
+});
+
+test('Grimtooth rejects an elf hero', () => {
+    game.flags = { female: false };
+    game.urace = { mnum: 264 };
+    game.u = {
+        mtimedone: 0,
+        ulycn: -1,
+        ualign: { type: -1, record: 10 },
+    };
+    initRng(301n);
+    const grimtooth = artifactObject('Grimtooth');
+
+    const touch = resolveHeroArtifactTouch(
+        grimtooth, artifactByName('Grimtooth'),
+    );
+
+    assert.equal(touch.badAlignment, true);
+});

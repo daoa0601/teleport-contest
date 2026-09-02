@@ -5,11 +5,14 @@
 // that ordinary object, and oname() then commits the named artifact.
 
 import { game } from './gstate.js';
+import { ARTIFACT_COMBAT } from './artifact_combat_data.js';
 import { d, rnd, rn2 } from './rng.js';
 import {
     OBJECT_MATERIAL, OBJECT_NAMES,
 } from './object_data.js';
-import { MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
+import {
+    MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SYMBOL,
+} from './monster_data.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 
 const M2_UNDEAD = 0x00000002;
@@ -22,6 +25,22 @@ const S_DRAGON = 30;
 const S_OGRE = 41;
 const S_TROLL = 46;
 const SILVER = 14;
+const ATTACK_BY_NAME = new Map(
+    ARTIFACT_COMBAT.map(attack => [attack.name, attack]),
+);
+const FLAG2_TARGETS = {
+    M2_UNDEAD,
+    M2_WERE,
+    M2_ELF,
+    M2_ORC,
+    M2_DEMON,
+    M2_GIANT,
+};
+const SYMBOL_TARGETS = {
+    S_DRAGON,
+    S_OGRE,
+    S_TROLL,
+};
 
 const RAW_ARTIFACTS = [
     ['Excalibur', 'long sword', 1, 'knight', true, true, null],
@@ -114,39 +133,11 @@ const QUEST_ARTIFACT_NAMES = new Set([
     'The Eye of the Aethiopica',
 ]);
 
-// C include/artilist.h attack fields.  Keep attack behavior on the artifact
-// identity rather than on silver saber: ordinary and named sabers share the
-// base weapon die, but only Grayswandir receives PHYS(5, 0).  Profiles are
-// added here as their spec_applies() target predicates are ported; treating an
-// unsupported artifact as ordinary is safer than silently applying its bonus
-// to the wrong monster class or resistance.
-const SUPPORTED_ATTACK_PROFILES = new Map([
-    ['Grayswandir', {
-        damageType: 'physical',
-        toHitDie: 5,
-        damageDie: 0,
-        targetPredicate: 'all',
-    }],
-]);
-
 // C include/artilist.h `spfx` capabilities which apply while the artifact is
 // wielded.  Keep these distinct from attack and carried-property profiles:
 // set_artifact_intrinsic() installs them under the weapon equipment mask.
 const SUPPORTED_WIELDED_PROPERTIES = new Map([
     ['Grayswandir', ['hallucinationResistance']],
-]);
-
-const ARTIFACT_BANES = new Map([
-    ['Grimtooth', { flag: M2_ELF }],
-    ['Orcrist', { flag: M2_ORC }],
-    ['Sting', { flag: M2_ORC }],
-    ['Dragonbane', { symbol: S_DRAGON }],
-    ['Demonbane', { flag: M2_DEMON }],
-    ['Werebane', { flag: M2_WERE }],
-    ['Giantslayer', { flag: M2_GIANT }],
-    ['Ogresmasher', { symbol: S_OGRE }],
-    ['Trollsbane', { symbol: S_TROLL }],
-    ['Sunsword', { flag: M2_UNDEAD }],
 ]);
 
 function fuzzyArtifactName(value) {
@@ -177,7 +168,7 @@ export const ARTIFACTS = RAW_ARTIFACTS.map((
     noGeneration,
     questArtifact: QUEST_ARTIFACT_NAMES.has(name),
     invokePower,
-    attack: SUPPORTED_ATTACK_PROFILES.get(name) || null,
+    attack: ATTACK_BY_NAME.get(name) || null,
     wieldedProperties: SUPPORTED_WIELDED_PROPERTIES.get(name) || [],
 }));
 
@@ -206,7 +197,10 @@ export function initializeArtifacts(state = game) {
     const alignment = state.initAlignment?.value ?? 0;
     const runtime = new Map(ARTIFACTS.map(artifact => [artifact.id, {
         ...artifact,
-        attack: artifact.attack ? { ...artifact.attack } : null,
+        attack: artifact.attack ? {
+            ...artifact.attack,
+            target: { ...artifact.attack.target },
+        } : null,
         wieldedProperties: [...artifact.wieldedProperties],
     }]));
 
@@ -268,19 +262,39 @@ export function artifactExistCount() {
     return game._artifactExistCount ?? existenceSet().size;
 }
 
-// C artifact.c:spec_applies().  Grayswandir has neither SPFX_DBONUS nor
-// SPFX_ATTK, so its physical profile applies to every defender.
-function supportedAttackApplies(artifact, defender) {
-    return !!defender
-        && artifact?.attack?.damageType === 'physical'
-        && artifact.attack.targetPredicate === 'all';
+function physicalAttackApplies(artifact, defender, hero = false) {
+    const attack = artifact?.attack;
+    if (!defender || attack?.damageType !== 'physical') return false;
+
+    const mnum = defender.mnum;
+    switch (attack.target.kind) {
+    case 'all':
+        return true;
+    case 'flag2': {
+        const flag = FLAG2_TARGETS[attack.target.value] ?? 0;
+        return !!((MONSTER_FLAGS2[mnum] ?? 0) & flag)
+            || (hero && attack.target.value === 'M2_WERE'
+                && Number.isInteger(game.u?.ulycn) && game.u.ulycn >= 0);
+    }
+    case 'symbol':
+        return MONSTER_SYMBOL[mnum]
+            === SYMBOL_TARGETS[attack.target.value];
+    case 'alignment': {
+        const alignment = hero ? game.u?.ualign?.type
+            : defender.maligntyp ?? MONSTER_ALIGNMENT[mnum];
+        if (hero) return alignment !== artifact.alignment;
+        return alignment === -128
+            || Math.sign(alignment) !== artifact.alignment;
+    }
+    default:
+        return false;
+    }
 }
 
-// C weapon.c:hitval() -> artifact.c:spec_abon().  This call belongs before
-// hitum()'s ordinary d20, which is observable in the contest RNG transcript.
+// C weapon.c:hitval() calls spec_abon() before hitum() rolls its ordinary d20.
 export function artifactToHitBonus(object, defender, roll = rnd) {
     const artifact = artifactById(object?.oartifact);
-    if (!supportedAttackApplies(artifact, defender)
+    if (!physicalAttackApplies(artifact, defender)
         || !(artifact.attack.toHitDie > 0)) return 0;
     return roll(artifact.attack.toHitDie);
 }
@@ -292,7 +306,9 @@ export function artifactDamageBonus(
     object, defender, baseWeaponDamage, roll = rnd,
 ) {
     const artifact = artifactById(object?.oartifact);
-    if (!supportedAttackApplies(artifact, defender)) return 0;
+    const applies = artifact?.name === 'Grimtooth'
+        || physicalAttackApplies(artifact, defender);
+    if (!applies || artifact.attack.damageType !== 'physical') return 0;
     return artifact.attack.damageDie > 0
         ? roll(artifact.attack.damageDie)
         : Math.max(baseWeaponDamage, 1);
@@ -300,7 +316,7 @@ export function artifactDamageBonus(
 
 export function artifactDoublesWeaponDamage(object, defender) {
     const artifact = artifactById(object?.oartifact);
-    return supportedAttackApplies(artifact, defender)
+    return physicalAttackApplies(artifact, defender)
         && artifact.attack.damageDie === 0;
 }
 
@@ -313,14 +329,11 @@ export function artifactStrikesShade(object) {
 }
 
 function artifactBaneApplies(artifact) {
-    const bane = ARTIFACT_BANES.get(artifact?.name);
-    if (!bane) return false;
-    const mnum = heroSpecies(game);
-    const flags = MONSTER_FLAGS2[mnum] ?? 0;
-    if (bane.flag === M2_WERE
-        && Number.isInteger(game.u?.ulycn) && game.u.ulycn >= 0) return true;
-    return bane.flag ? !!(flags & bane.flag)
-        : MONSTER_SYMBOL[mnum] === bane.symbol;
+    if (!['flag2', 'symbol', 'alignment']
+        .includes(artifact?.attack?.target?.kind)) return false;
+    return physicalAttackApplies(
+        artifact, { mnum: heroSpecies(game) }, true,
+    );
 }
 
 // C artifact.c:touch_artifact() hero branch up to its blast message.
