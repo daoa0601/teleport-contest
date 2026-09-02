@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { decodeScreen } from '../frozen/screen-decode.mjs';
 import { game, resetGame } from '../js/gstate.js';
 import { currentConductLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
@@ -11,12 +10,7 @@ import { aligns, races, roles } from '../js/roles.js';
 import {
     finishStartingDiscoveries, uInitInventoryAttrs, uInitMisc,
 } from '../js/u_init.js';
-
-
-function screenText(encoded) {
-    return decodeScreen(encoded).map(row =>
-        row.map(cell => cell.ch).join('').trimEnd()).join('\n');
-}
+import { screenText } from './support/screen.js';
 
 function wizardCandidate(seed = 8271n) {
     resetGame();

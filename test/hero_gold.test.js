@@ -6,27 +6,15 @@ import { W_QUIVER } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
 import {
-    addHeroGoldObject, heroGoldAmount, heroGoldObject,
+    heroGoldAmount, heroGoldObject,
 } from '../js/hero_gold.js';
 import { pushKey } from '../js/input.js';
-import { mkgold, mksobj } from '../js/mklev.js';
+import { mkgold } from '../js/mklev.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
 import { settleCarriedShopBillItem } from '../js/shk.js';
+import { carriedGold } from './support/gold-arena.js';
+import { floorObjects } from './support/level-state.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
-
-
-function carriedGold(amount, id = null) {
-    const gold = mksobj(GOLD_PIECE, false, false);
-    gold.quan = gold.quantity = amount;
-    if (id !== null) gold.o_id = id;
-    addHeroGoldObject(game, gold);
-    return gold;
-}
-
-function completeFloorObjects(level) {
-    return (level.objects || []).flatMap(column =>
-        (column || []).flatMap(pile => pile || []));
-}
 
 test('picking up floor gold moves that identity into the dollar inventory slot',
     async () => {
@@ -69,7 +57,7 @@ test('dropping the purse moves the same identity to the floor', async () => {
     assert.equal(heroGoldObject(game), null);
     assert.equal(heroGoldAmount(game), 0);
     assert.equal(game._goldCount, 0);
-    assert.ok(completeFloorObjects(level).includes(purse));
+    assert.ok(floorObjects(level).includes(purse));
     assert.equal(purse.where, 'floor');
     assert.equal(purse.quantity, 19);
     assert.equal(game.context.move, 1);
@@ -104,7 +92,7 @@ test('quivered gold detaches one coin while preserving the purse identity',
         pushKey('l');
         await rhack('f'.charCodeAt(0));
 
-        const landed = completeFloorObjects(level).filter(object =>
+        const landed = floorObjects(level).filter(object =>
             object.otyp === GOLD_PIECE);
         assert.equal(heroGoldObject(game), purse);
         assert.equal(heroGoldAmount(game), 4);

@@ -1,13 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { decodeScreen } from '../frozen/screen-decode.mjs';
 import { runSegment } from '../js/jsmain.js';
-
-function screenText(encoded) {
-    return decodeScreen(encoded).map(row =>
-        row.map(cell => cell.ch).join('').trimEnd()).join('\n');
-}
+import { screenText } from './support/screen.js';
 
 test('enhance shows the role skill names', async () => {
     const result = await runSegment({
