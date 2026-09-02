@@ -3135,6 +3135,15 @@ function movePet(
             return result;
         },
     });
+    if (rangedAttack.kind === 'weapon'
+        && rangedAttack.target
+        && (rangedAttack.target.mhp ?? 0) <= 0
+        && state.level?.monsters?.includes(rangedAttack.target)) {
+        finishRangedKilledMonster(
+            rangedAttack.target, state, random, calls,
+        );
+        rangedAttack.targetDied = true;
+    }
     movePlan.wieldedWeapon = rangedAttack.readiedWeapon;
     if (rangedAttack.launched || rangedAttack.madeAttack) {
         const attack = rangedAttack.kind === 'spit'
@@ -4077,17 +4086,7 @@ function rayMonsterLeavesCorpse(monster, state, random, calls) {
 
 function finishRangedKilledMonster(monster, state, random, calls) {
     const x = monster.mx, y = monster.my;
-    const carried = monster.minvent || monster.inventory || [];
-    for (const object of carried)
-        placeThrownObject(state, object, x, y);
-    monster.minvent = [];
-    monster.inventory = monster.minvent;
-    state.level.monsters = state.level.monsters.filter(candidate =>
-        candidate !== monster);
-    if (state === game) unmap_invisible(x, y, false);
-    recordVanquished(monster, MONSTER_NAME[monster.mnum] || 'monster', {
-        state,
-    });
+    detachDeadMonster(monster, state);
 
     const leavesCorpse = rayMonsterLeavesCorpse(
         monster, state, random, calls,

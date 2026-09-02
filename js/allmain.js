@@ -5837,6 +5837,11 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         await queueTurnMessage(ranged.hit
                             ? `The ${ranged.appearance} hits the ${target}.`
                             : `The ${ranged.appearance} misses the ${target}.`);
+                        if (ranged.targetDied) {
+                            await queueTurnMessage(
+                                `The ${target} is killed!`,
+                            );
+                        }
                     } else {
                         await queueTurnMessage(
                             ranged.hit ? 'It is hit.' : 'It is missed.',
