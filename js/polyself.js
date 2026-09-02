@@ -9,6 +9,9 @@ import {
     MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM,
 } from './monster_data.js';
+import {
+    AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS,
+} from './monster_attack_types.js';
 import { LENSES, OBJECT_MATERIAL } from './object_data.js';
 import { newsym, pline, plineWithContinuation } from './display.js';
 import { moreUntilDismissed } from './tty_prompts.js';
@@ -83,6 +86,18 @@ export function heroMonsterForm(state = game) {
 export function heroFormFlags(state = game) {
     const form = heroMonsterForm(state);
     return form == null ? 0 : MONSTER_FLAGS1[form] ?? 0;
+}
+
+// C ref: mondata.c sticks().
+export function heroFormSticks(state = game) {
+    const form = heroMonsterForm(state);
+    if (form === null) return false;
+    const attacks = MONSTER_ATTACKS[form] || [];
+    const engulfs = attacks.some(([attackType]) => attackType === AT_ENGL);
+    return attacks.some(([, damageType]) => damageType === AD_STCK)
+        || (!engulfs
+            && attacks.some(([, damageType]) => damageType === AD_WRAP))
+        || attacks.some(([attackType]) => attackType === AT_HUGS);
 }
 
 export function heroHasNoHands(state = game) {

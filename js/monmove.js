@@ -30,7 +30,7 @@ import {
     AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS,
     AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON,
     AD_STUN, AD_WRAP, AD_RUST, AT_BOOM, AT_BREA, AT_ENGL, AT_GAZE,
-    AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP,
+    AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
 import {
     ACID_VENOM, AMULET_OF_YENDOR, APPLE, BANANA,
@@ -56,7 +56,7 @@ import {
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { getTrack } from './track.js';
-import { rehumanizeHero } from './polyself.js';
+import { heroFormSticks, rehumanizeHero } from './polyself.js';
 import {
     clearPath, couldsee, visibleCellsFrom, vision_note_blocker_change,
     vision_recalc,
@@ -7128,17 +7128,6 @@ export function resumeDeferredHeroContact(
     }
     attack.deferredPostHit = false;
     return action;
-}
-
-function heroFormSticks(state) {
-    if (!Upolyd(state?.u) || !Number.isInteger(state.u.umonnum))
-        return false;
-    return (MONSTER_ATTACKS[state.u.umonnum] || []).some(
-        ([attackType, damageType]) =>
-            damageType === AD_STCK
-            || (damageType === AD_WRAP && attackType !== AT_ENGL)
-            || attackType === AT_HUGS,
-    );
 }
 
 export function resumeDeferredHeroSticking(action, state) {

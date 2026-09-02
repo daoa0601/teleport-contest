@@ -33,7 +33,7 @@ import {
     monsterTypeName,
 } from './monster_data.js';
 import {
-    AD_DISE, AD_PEST, AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS,
+    AD_DISE, AD_PEST,
 } from './monster_attack_types.js';
 import { monsterHasAcidResistance } from './monster_resistance.js';
 import {
@@ -52,6 +52,7 @@ import {
     applyHeroWaterVaporChange, heroHasProtectionFromShapeChangers,
     transformWereMonster,
 } from './were.js';
+import { heroFormSticks } from './polyself.js';
 
 const PM_PESTILENCE = 312;
 const PM_ARCHEOLOGIST = 331;
@@ -261,18 +262,6 @@ function monsterHasSleepDefense(monster) {
         || !!monster?.sleepResistance
         || !!monster?.sleep_resistance
         || !!monster?.defendedSleep;
-}
-
-function heroFormSticks(state) {
-    const mnum = Number.isInteger(state.u?.umonnum)
-        ? state.u.umonnum
-        : Number.isInteger(state.u?.umonster) ? state.u.umonster : null;
-    if (!Number.isInteger(mnum)) return false;
-    const attacks = MONSTER_ATTACKS[mnum] || [];
-    const hasEngulf = attacks.some(attack => attack[0] === AT_ENGL);
-    return attacks.some(attack => attack[1] === AD_STCK
-        || (attack[1] === AD_WRAP && !hasEngulf)
-        || attack[0] === AT_HUGS);
 }
 
 function defaultMonsterCanSeeHero(monster, state) {

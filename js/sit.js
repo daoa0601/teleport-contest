@@ -15,19 +15,18 @@ import {
     mksobj, place_object, remove_object, set_corpsenm, stack_object,
 } from './mklev.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME,
     MONSTER_SYMBOL,
 } from './monster_data.js';
-import {
-    AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS,
-} from './monster_attack_types.js';
 import {
     CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_MATERIAL, OBJECT_NAMES,
     OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import { heroGoldAmount } from './hero_gold.js';
-import { heroFormFlags, heroMonsterForm } from './polyself.js';
+import {
+    heroFormFlags, heroFormSticks, heroMonsterForm,
+} from './polyself.js';
 import { altarWrath } from './pray.js';
 import { d, rnd, rn2 } from './rng.js';
 import { waterDamageObject } from './trap.js';
@@ -58,14 +57,6 @@ const PM_FIRE_ELEMENTAL = 155;
 const PM_GIANT_EEL = 319;
 const PM_ELECTRIC_EEL = 320;
 const PM_SALAMANDER = 329;
-
-function formSticks() {
-    const attacks = MONSTER_ATTACKS[heroMonsterForm(game)] || [];
-    return attacks.some(([attackType, damageType]) =>
-        damageType === AD_STCK
-        || (damageType === AD_WRAP && attackType !== AT_ENGL)
-        || attackType === AT_HUGS);
-}
 
 function monsterName(monster) {
     return monster?.name || MONSTER_NAME[monster?.mnum] || 'monster';
@@ -284,7 +275,7 @@ export async function dosit({
         game.context.move = 0;
         return;
     }
-    if (u?.ustuck && !formSticks()) {
+    if (u?.ustuck && !heroFormSticks(game)) {
         const holder = u.ustuck;
         const humanoid = (MONSTER_FLAGS1[holder.mnum] ?? 0) & M1_HUMANOID;
         await pline(humanoid

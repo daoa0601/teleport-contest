@@ -9,24 +9,16 @@ import { game } from './gstate.js';
 import {
     MONSTER_ATTACKS, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
+import { AT_HUGS } from './monster_attack_types.js';
 import {
-    AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS,
-} from './monster_attack_types.js';
-import { heroFormFlags, heroMonsterForm } from './polyself.js';
+    heroFormFlags, heroFormSticks, heroMonsterForm,
+} from './polyself.js';
 
 const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
 const M1_HIDE = 0x00000100;
 const MZ_HUGE = 4;
 const S_MIMIC = 13;
-
-function formSticks(state) {
-    const attacks = MONSTER_ATTACKS[heroMonsterForm(state)] || [];
-    return attacks.some(([attackType, damageType]) =>
-        damageType === AD_STCK
-        || (damageType === AD_WRAP && attackType !== AT_ENGL)
-        || attackType === AT_HUGS);
-}
 
 function holderHugs(holder) {
     return (MONSTER_ATTACKS[holder?.mnum] || [])
@@ -74,7 +66,7 @@ export function floorReachProblem(
 ) {
     const hero = state.u || {};
     if (hero.uswallow) return 'swallowed';
-    if (hero.ustuck && !formSticks(state) && holderHugs(hero.ustuck))
+    if (hero.ustuck && !heroFormSticks(state) && holderHugs(hero.ustuck))
         return 'held';
 
     const airLevel = state.level?.flags?.is_airlevel
