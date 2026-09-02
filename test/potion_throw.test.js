@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    A_CON, A_DEX, STONE, W_ARM, W_ARMC,
+    A_CON, A_DEX, STONE, W_ARM, W_ARMC, W_RINGR,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
@@ -18,6 +18,9 @@ import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { knownInventoryObject } from './support/game-objects.js';
+import {
+    installHumanWerewolfHero, wearHeroObject,
+} from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -666,19 +669,18 @@ test('live blessed water rehumanizes an unequipped beast were', async () => {
 test('controlled lycanthrope decline completes a two-square map throw',
     async () => {
         freshMapPotionState(2);
-        Object.assign(game.u, {
-            umonster: 331, umonnum: 331, ulycn: 21,
-        });
-        const ring = {
-            otyp: RIN_POLYMORPH_CONTROL, worn: true, owornmask: 1,
-        };
-        game.u.uright = game.uright = ring;
+        installHumanWerewolfHero();
+        const ring = wearHeroObject(
+            knownInventoryObject(RIN_POLYMORPH_CONTROL),
+            'uright',
+            W_RINGR,
+        );
         const potion = knownInventoryObject(POT_WATER);
         potion.cursed = true;
 
         initRng(2702n);
         await throwEast(potion, [' ', 'n']);
-        assert.deepEqual(game.inventory, []);
+        assert.deepEqual(game.inventory, [ring]);
         assert.equal(game.u.umonnum, 331);
         assert.equal(game.were_changes ?? 0, 0);
         assert.equal(potion.where, 'gone');
@@ -687,13 +689,12 @@ test('controlled lycanthrope decline completes a two-square map throw',
 test('three-square water contact bypasses unreachable hero-vapor prompts',
     async () => {
         const monster = freshMapPotionState(3);
-        Object.assign(game.u, {
-            umonster: 331, umonnum: 331, ulycn: 21,
-        });
-        const ring = {
-            otyp: RIN_POLYMORPH_CONTROL, worn: true, owornmask: 1,
-        };
-        game.u.uright = game.uright = ring;
+        installHumanWerewolfHero();
+        wearHeroObject(
+            knownInventoryObject(RIN_POLYMORPH_CONTROL),
+            'uright',
+            W_RINGR,
+        );
         const potion = knownInventoryObject(POT_WATER);
         potion.cursed = true;
 

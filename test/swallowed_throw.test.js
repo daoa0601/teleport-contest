@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, W_AMUL,
+    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, W_AMUL, W_RINGR,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
@@ -30,6 +30,9 @@ import { vision_reset_new_level } from '../js/vision.js';
 import {
     knownInventoryObject, knownInventoryWeapon, knownObject,
 } from './support/game-objects.js';
+import {
+    installHumanWerewolfHero, wearHeroObject,
+} from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -83,18 +86,6 @@ function freshSwallowedState(mnum) {
     return engulfer;
 }
 
-
-function installHumanWerewolfState() {
-    game.urole = { key: 'archeologist', mnum: 0 };
-    game.urace = { name: 'human', noun: 'human', adj: 'human', mnum: 260 };
-    game.flags.female = false;
-    Object.assign(game.u, {
-        umonster: PM_ARCHEOLOGIST,
-        umonnum: PM_ARCHEOLOGIST,
-        ulycn: PM_WEREWOLF,
-        mtimedone: 0,
-    });
-}
 
 function installLowCapacityRockBurden(quantity) {
     game.u.acurr.a[A_STR] = game.u.acurr.a[A_CON] = 3;
@@ -566,7 +557,7 @@ test('swallowed cursed-water vapor changes an unthreatened lycanthrope hero',
     async () => {
         const engulfer = freshSwallowedState(PM_JUIBLEX);
         engulfer.mhp = 20;
-        installHumanWerewolfState();
+        installHumanWerewolfHero();
         const potion = knownInventoryObject(POT_WATER, { cursed: true });
 
         initRng(2511n);
@@ -586,11 +577,10 @@ test('swallowed cursed-water vapor changes an unthreatened lycanthrope hero',
 test('Unchanging suppresses cursed-water lycanthrope vapor transformation',
     async () => {
         const engulfer = freshSwallowedState(PM_JUIBLEX);
-        installHumanWerewolfState();
-        const amulet = {
-            otyp: AMULET_OF_UNCHANGING, worn: true, owornmask: W_AMUL,
-        };
-        game.u.uamul = game.uamul = amulet;
+        installHumanWerewolfHero();
+        wearHeroObject(
+            knownInventoryObject(AMULET_OF_UNCHANGING), 'uamul', W_AMUL,
+        );
         const potion = knownInventoryObject(POT_WATER, { cursed: true });
 
         initRng(2511n);
@@ -607,7 +597,7 @@ test('Unchanging suppresses cursed-water lycanthrope vapor transformation',
 test('gremlin hero water vapor creates a named tame clone and splits form HP',
     async () => {
         const engulfer = freshSwallowedState(PM_JUIBLEX);
-        installHumanWerewolfState();
+        installHumanWerewolfHero();
         game.plname = 'Splitter';
         Object.assign(game.u, {
             umonnum: PM_GREMLIN,
@@ -649,7 +639,7 @@ test('gremlin hero water vapor creates a named tame clone and splits form HP',
 test('one-HP gremlin vapor consumes water without constructing a clone',
     async () => {
         const engulfer = freshSwallowedState(PM_JUIBLEX);
-        installHumanWerewolfState();
+        installHumanWerewolfHero();
         Object.assign(game.u, {
             umonnum: PM_GREMLIN,
             mtimedone: 300,
@@ -676,7 +666,7 @@ test('one-HP gremlin vapor consumes water without constructing a clone',
 test('four-HP gremlin throw is not a stamina drop while unencumbered',
     async () => {
         const engulfer = freshSwallowedState(PM_JUIBLEX);
-        installHumanWerewolfState();
+        installHumanWerewolfHero();
         Object.assign(game.u, {
             umonnum: PM_GREMLIN,
             mtimedone: 300,
@@ -761,7 +751,7 @@ test('stressed low-HP hero drops then completes swallowed potion contact',
 test('stressed four-HP gremlin drops without physical exercise then contacts',
     async () => {
         freshSwallowedState(PM_JUIBLEX);
-        installHumanWerewolfState();
+        installHumanWerewolfHero();
         Object.assign(game.u, {
             umonnum: PM_GREMLIN,
             mtimedone: 300,
@@ -788,11 +778,12 @@ test('stressed four-HP gremlin drops without physical exercise then contacts',
 test('controlled lycanthrope acceptance completes swallowed mutation',
     async () => {
         const engulfer = freshSwallowedState(PM_JUIBLEX);
-        installHumanWerewolfState();
-        const ring = {
-            otyp: RIN_POLYMORPH_CONTROL, worn: true, owornmask: 1,
-        };
-        game.u.uright = game.uright = ring;
+        installHumanWerewolfHero();
+        const ring = wearHeroObject(
+            knownInventoryObject(RIN_POLYMORPH_CONTROL),
+            'uright',
+            W_RINGR,
+        );
         const potion = knownInventoryObject(POT_WATER, { cursed: true });
 
         initRng(2511n);
@@ -800,7 +791,7 @@ test('controlled lycanthrope acceptance completes swallowed mutation',
             potion, 'l', ['y'],
         );
 
-        assert.deepEqual(game.inventory, []);
+        assert.deepEqual(game.inventory, [ring]);
         assert.equal(game.u.umonnum, PM_WEREWOLF);
         assert.equal(game.were_changes, 1);
         assert.equal(game.u.uconduct.polyselfs, 1);
@@ -810,11 +801,12 @@ test('controlled lycanthrope acceptance completes swallowed mutation',
 test('stun bypasses the lycanthrope control prompt and permits transformation',
     async () => {
         const engulfer = freshSwallowedState(PM_JUIBLEX);
-        installHumanWerewolfState();
-        const ring = {
-            otyp: RIN_POLYMORPH_CONTROL, worn: true, owornmask: 1,
-        };
-        game.u.uright = game.uright = ring;
+        installHumanWerewolfHero();
+        wearHeroObject(
+            knownInventoryObject(RIN_POLYMORPH_CONTROL),
+            'uright',
+            W_RINGR,
+        );
         game.u.stunned = true;
         game.u.stunnedTurns = 4;
         const potion = knownInventoryObject(POT_WATER, { cursed: true });

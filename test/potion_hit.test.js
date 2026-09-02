@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { GameMap } from '../js/game.js';
-import { A_CON, A_DEX, A_INT } from '../js/const.js';
+import { A_CON, A_DEX, A_INT, W_RINGR } from '../js/const.js';
 import { game, resetGame } from '../js/gstate.js';
 import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
@@ -17,8 +16,14 @@ import {
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { parseNethackrc } from '../js/options.js';
 import { initRng } from '../js/rng.js';
-import { looseObject } from './support/game-objects.js';
+import {
+    knownInventoryObject, looseObject,
+} from './support/game-objects.js';
+import {
+    installHumanWerewolfHero, wearHeroObject,
+} from './support/hero-state.js';
 import { liveMonster } from './support/monsters.js';
+import { freshCommandRoom } from './support/playable-room.js';
 
 const PM_ENERGY_VORTEX = 109;
 const PM_PURPLE_WORM = 115;
@@ -47,33 +52,14 @@ function freshPotionState(hero = { hallucinationTurns: 0 }) {
 }
 
 function installDirectWereHero({ beast = false } = {}) {
-    freshPotionState();
-    game.level = new GameMap();
-    game.inventory = [];
-    game.flags = { female: false };
-    game.urole = { key: 'archeologist', mnum: 0 };
-    game.urace = {
-        name: 'human', noun: 'human', adj: 'human', mnum: 260,
-    };
-    game.u = {
-        ux: 10, uy: 10,
-        umonster: 331, umonnum: beast ? 21 : 331, ulycn: 21,
-        mtimedone: beast ? 350 : 0,
-        mh: beast ? 18 : 0,
-        mhmax: beast ? 24 : 0,
-        uhp: 40, uhpmax: 40,
-        acurr: { a: Array(6).fill(12) },
-        amax: { a: Array(6).fill(12) },
-        macurr: { a: Array(6).fill(12) },
-        mamax: { a: Array(6).fill(12) },
-    };
+    freshCommandRoom({ role: 'archeologist', seed: 1n });
+    installHumanWerewolfHero({ beast });
 }
 
 function installPolymorphControl() {
-    const ring = {
-        otyp: RIN_POLYMORPH_CONTROL, worn: true, owornmask: 1,
-    };
-    game.u.uright = game.uright = ring;
+    return wearHeroObject(
+        knownInventoryObject(RIN_POLYMORPH_CONTROL), 'uright', W_RINGR,
+    );
 }
 
 test('visible inert potion impact names a headed monster and evaporates',
