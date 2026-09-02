@@ -216,7 +216,7 @@ import {
 } from './armor.js';
 import {
     findMonsterArmorClass,
-    snapshotMonsterCreationWearNames,
+    nameMonsterForCreationArmorChecks,
 } from './monworn.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
@@ -4674,7 +4674,7 @@ async function wizGenesis() {
         newsym(monster.mx, monster.my);
         const hallucinating = heroHallucinating();
         if (hallucinating) {
-            snapshotMonsterCreationWearNames(
+            nameMonsterForCreationArmorChecks(
                 monster, () => randomDisplayMonsterName(),
             );
         }

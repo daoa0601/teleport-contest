@@ -120,7 +120,7 @@ import { collectNearbyCoords } from './u_init.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import {
     checkMonsterGearNextTurn, findMonsterArmorClass, reassessMonsterArmor,
-    snapshotMonsterCreationWearNames,
+    nameMonsterForCreationArmorChecks,
 } from './monworn.js';
 import { inTown } from './room.js';
 import {
@@ -6920,7 +6920,7 @@ export async function beginDeferredHeroCloneWizard(action, state) {
     const hallucinating = !!(state.u?.hallucinating
         || (state.u?.hallucinationTurns ?? 0) > 0);
     if (hallucinating) {
-        snapshotMonsterCreationWearNames(
+        nameMonsterForCreationArmorChecks(
             clone, () => randomDisplayMonsterName(),
         );
     }

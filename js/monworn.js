@@ -1,4 +1,4 @@
-// monworn.js — monster armor ownership and deferred dressing transactions.
+// Monster armor.
 // C refs: makemon.c:makemon(), mon.c:check_gear_next_turn() and
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
 
@@ -191,10 +191,13 @@ export function initializeMonsterArmor(monster) {
     return changes;
 }
 
-export function snapshotMonsterCreationWearNames(monster, snapshotName) {
-    if (typeof snapshotName !== 'function') return 0;
+// m_dowear_type() reads the monster's name before every armor check, even
+// during creation when it prints no dressing message. Hallucinated names use
+// the display RNG, so creation must make the same reads.
+export function nameMonsterForCreationArmorChecks(monster, nameMonster) {
+    if (typeof nameMonster !== 'function') return 0;
     const slots = monsterCreationWearSnapshotSlots(monster);
-    for (const slot of slots) snapshotName(monster, slot);
+    for (const slot of slots) nameMonster(monster, slot);
     return slots.length;
 }
 
@@ -266,9 +269,8 @@ export function checkMonsterGearNextTurn(monster) {
     monster.misc_worn_check = (monster.misc_worn_check ?? 0) | I_SPECIAL;
 }
 
-// Return null when the source postpones assessment because a hostile monster
-// still believes the hero is nearby.  Otherwise return the action outcome;
-// `consumed` mirrors movemon_singlemon()'s worn-mask/mcanmove return gate.
+// Hostile monsters wait to change armor while they believe the hero is close.
+// `consumed` says whether dressing used this turn.
 export function reassessMonsterArmor(monster) {
     if (!((monster?.misc_worn_check ?? 0) & I_SPECIAL)) return null;
     const apparentX = Number.isFinite(monster.mux) ? monster.mux : 0;

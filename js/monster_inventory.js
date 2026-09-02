@@ -1,4 +1,4 @@
-// monster_inventory.js — Shared monster acquisition boundary.
+// Monster inventory operations.
 // C refs: steal.c:mpickobj()/add_to_minv() and invent.c:carry_obj_effects().
 
 import { attachCursedFigurineTimer } from './figurine_timer.js';
@@ -23,19 +23,15 @@ export function clearMonsterCarriedObjectState(object) {
     delete object.carrierMid;
 }
 
-// Runtime monster inventories mirror C's minvent chain head-to-tail.  Every
-// unmerged add_to_minv() acquisition becomes the new head; callers may request
-// tail insertion only for a source boundary which explicitly constructs one.
-// carry_obj_effects() must run before add_to_minv() because linking/merging may
-// replace the input identity; the current live carrying effect is FIG_TRANSFORM.
+// NetHack adds newly acquired objects to the front of minvent. Some object
+// creation code asks for the back explicitly. Carrying effects run before the
+// object is linked because linking may merge it into an existing stack.
 export function addObjectToMonsterInventory(
     monster, object, state = game, { atFront = true } = {},
 ) {
     if (!monster || !object) return null;
-    // steal.c:mpickobj() repairs hero-loss provenance before carrying
-    // effects or add_to_minv() can inspect merge compatibility.  A hostile
-    // swallower acquiring a thrown object therefore owns LOST_STOLEN, while
-    // a pet deliberately preserves the hero's thrown/dropped marker.
+    // A hostile monster that keeps a thrown object has stolen it. A pet keeps
+    // the original thrown or dropped marker.
     if (!monster.mtame) {
         if (object.how_lost === LOST_THROWN)
             object.how_lost = LOST_STOLEN;
@@ -49,10 +45,8 @@ export function addObjectToMonsterInventory(
     );
 }
 
-// add_to_minv() is also called directly for identities such as newly minted
-// monster gold.  That source boundary links ownership without
-// carry_obj_effects(); keep it distinct so future carrying effects do not
-// silently consume RNG or mutate direct-link objects.
+// Some C callers use add_to_minv() directly for newly created objects such as
+// monster gold. This function links those objects without pickup effects.
 export function linkObjectToMonsterInventory(
     monster, object, { atFront = true, state = game } = {},
 ) {
@@ -75,9 +69,8 @@ export function linkObjectToMonsterInventory(
     monster.inventory = inventory;
     monster.hasInventory = inventory.length > 0;
     object.where = 'minvent';
-    // C add_to_minv() does not rewrite ox/oy.  Those fields retain their
-    // origin-specific payload (often 0,0 for a constructed/inventory object
-    // or its former square for a floor pickup); ocarry is the ownership link.
+    // add_to_minv() leaves ox and oy unchanged. They remain either zero for a
+    // new object or the object's former floor position.
     object.carrierMid = monster.m_id ?? null;
     return object;
 }
