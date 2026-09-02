@@ -7,7 +7,7 @@ import {
 } from '../js/monster_throw.js';
 import { NEED_WEAPON } from '../js/const.js';
 import {
-    ARROW, BOW, DAGGER, ELVEN_ARROW, ELVEN_BOW,
+    ARROW, BOW, CROSSBOW, CROSSBOW_BOLT, DAGGER, ELVEN_ARROW, ELVEN_BOW,
 } from '../js/object_data.js';
 import { game } from '../js/gstate.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
@@ -83,6 +83,27 @@ test('a tame orc shoots an arrow with its bow', () => {
         ),
         true,
     );
+});
+
+test('a crossbow bolt gets its source damage against a large monster', () => {
+    freshRangedCombatRoom({ gameplaySeed: 1n });
+    const bolt = carriedObject(CROSSBOW_BOLT);
+    const crossbow = carriedObject(CROSSBOW, { wielded: true });
+    const orc = addMonsterToLevel(rangedPet('orc', {
+        inventory: [bolt, crossbow],
+        mw: crossbow,
+    }));
+    const target = addMonsterToLevel(rangedTarget('purple worm', {
+        hitPoints: 100,
+        mac: 100,
+    }));
+
+    throwMonsterWeaponAtMonster(orc, target, game, {
+        random: () => 1,
+        rollOne: range => range,
+    });
+
+    assert.equal(target.mhp, 93);
 });
 
 test('an elven lord fires every arrow in a three-shot volley', () => {

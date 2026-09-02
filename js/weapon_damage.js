@@ -5,7 +5,7 @@ import {
     OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE,
 } from './object_data.js';
 import { MONSTER_SIZE } from './monster_data.js';
-import { d, rnd } from './rng.js';
+import { rnd } from './rng.js';
 
 function objectTypes(names) {
     return new Set(names.map(name => OBJECT_NAMES.indexOf(name))
@@ -66,14 +66,23 @@ function finalizePhysicalDamage(object, damage) {
 // This owns dmgval()'s ordinary physical table. Target-specific blessing,
 // silver, wooden-target, artifact-light, shade, and thick-hide modifiers are
 // intentionally selected by callers before they enter this shared core.
-export function rollPhysicalWeaponDamage(object, monster) {
+export function rollPhysicalWeaponDamage(
+    object, monster, {
+        rollOne = rnd,
+        rollDice = (count, sides) => {
+            let total = 0;
+            for (let die = 0; die < count; die++) total += rollOne(sides);
+            return total;
+        },
+    } = {},
+) {
     const profile = damageProfile(object, monster);
-    let damage = profile.range > 0 ? rnd(profile.range) : 0;
+    let damage = profile.range > 0 ? rollOne(profile.range) : 0;
     damage += profile.fixed;
-    if (profile.random4) damage += rnd(4);
-    if (profile.random6) damage += rnd(6);
-    if (profile.twoD4) damage += d(2, 4);
-    if (profile.twoD6) damage += d(2, 6);
+    if (profile.random4) damage += rollOne(4);
+    if (profile.random6) damage += rollOne(6);
+    if (profile.twoD4) damage += rollDice(2, 4);
+    if (profile.twoD6) damage += rollDice(2, 6);
     return finalizePhysicalDamage(object, damage);
 }
 

@@ -9,15 +9,15 @@ import { dist2, distmin } from './hacklib.js';
 import { nextIdent } from './ident.js';
 import { stack_object } from './mklev.js';
 import {
-    MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SIZE, monsterTypeName,
+    MONSTER_FLAGS2, MONSTER_LEVEL, monsterTypeName,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
-    OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE,
-    OBJECT_SUBTYPE, OBJECT_WEIGHT,
+    OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
+import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
@@ -298,17 +298,7 @@ export function projectileDamageAgainstHero(object, rollOne = rnd) {
 }
 
 function projectileDamageAgainstMonster(object, monster, rollOne) {
-    const damageTable = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3
-        ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE;
-    const sides = Math.max(1, damageTable[object.otyp] || 1);
-    let damage = rollOne(sides) + (object.spe ?? 0);
-    if (damage > 0) {
-        damage = Math.max(
-            1,
-            damage - Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0),
-        );
-    }
-    return Math.max(1, damage);
+    return rollPhysicalWeaponDamage(object, monster, { rollOne });
 }
 
 function livingMonsterAt(state, source, x, y) {
