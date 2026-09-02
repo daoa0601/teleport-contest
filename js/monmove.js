@@ -52,6 +52,9 @@ import {
 import {
     beginMonsterSqueakyBoard, finishMonsterSqueakyBoard,
 } from './squeaky_board_trap.js';
+import {
+    beginMonsterVibratingSquare, finishMonsterVibratingSquare,
+} from './vibrating_square_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -4741,6 +4744,20 @@ function triggerMonsterTrap(
         movement.trap = event;
         return event;
     }
+    if (trap.ttyp === VIBRATING_SQUARE) {
+        if (monsterKnowsTrap(monster, trap)
+            && recordRandom(random, calls, 4) !== 0) {
+            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
+            movement.trap = event;
+            return event;
+        }
+        monsterLearnsTrap(monster, trap);
+        monstersSeeTrap(state, trap);
+        const event = beginMonsterVibratingSquare(monster, trap, state);
+        movement.trap = event;
+        if (!event.finished) movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
     if (trap.ttyp !== BEAR_TRAP) return null;
     // MZ_SMALL and smaller pass through a bear trap.  The starting pony is
     // MZ_LARGE and has none of the airborne/amorphous exceptions.
@@ -7452,6 +7469,7 @@ export async function resumeDeferredMonsterTrap(
         publish = plineWithContinuation,
         monsterName,
         describeMonster,
+        revealTrap,
     } = {},
 ) {
     const movement = action?.movement;
@@ -7552,6 +7570,13 @@ export async function resumeDeferredMonsterTrap(
             publish,
             monsterName,
             describeMonster,
+        });
+        break;
+    case 'vibrating-square':
+        await finishMonsterVibratingSquare(action.monster, event, {
+            publish,
+            describeMonster,
+            revealTrap,
         });
         break;
     default:

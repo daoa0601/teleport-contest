@@ -3995,9 +3995,11 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 publish: queueTurnMessage,
                 monsterName: quietMonsterName,
                 describeMonster: visibleMonsterSubject,
+                revealTrap: trap => newsym(trap.tx, trap.ty),
             });
             movement = action.movement;
-            if (event.seeSquare) newsym(event.trap.tx, event.trap.ty);
+            if (event.seeSquare && event.kind !== 'vibrating-square')
+                newsym(event.trap.tx, event.trap.ty);
         }
         if (movement?.trap?.kind === 'teleport-trap') {
             const event = movement.trap;

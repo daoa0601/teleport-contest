@@ -102,6 +102,7 @@ const M2_WERE = 0x00000004;
 const M2_DEMON = 0x00000100;
 const M2_JEWELS = 0x20000000;
 const M1_AMORPHOUS = 0x00000004;
+const M1_NOLIMBS = 0x00004000;
 const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
@@ -132,6 +133,10 @@ export function monsterIsUndead(mnum) {
 
 export function monsterIsMindless(mnum) {
     return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_MINDLESS);
+}
+
+export function monsterHasNoLimbs(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOLIMBS);
 }
 
 export function monsterIsAnimal(monster) {
