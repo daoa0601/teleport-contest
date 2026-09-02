@@ -20,8 +20,8 @@ import { heroMonsterForm } from './polyself.js';
 import { altarWrath } from './pray.js';
 import { d, rn2 } from './rng.js';
 import {
-    heroAcidBreathAttack, hitHeroWithAcidBreath,
-} from './zap.js';
+    heroAcidBreathAttack, hitHeroWithBreath,
+} from './hero_breath.js';
 
 const S_RODENT = 18;
 const M1_ACID = 0x08000000;
@@ -165,7 +165,7 @@ export async function vomitHero({
     const acidBreath = heroAcidBreathAttack(state);
     if (acidBreath) {
         await publish('You breathe acid on yourself...');
-        const breath = await hitHeroWithAcidBreath({
+        const breath = await hitHeroWithBreath({
             state,
             attack: acidBreath,
             publish,

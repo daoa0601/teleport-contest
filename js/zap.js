@@ -32,9 +32,8 @@ import { wakeMonstersNearWithMessages } from './mon.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
 import { makePlural } from './object_grammar.js';
 import {
-    MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1,
-    MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME,
-    MONSTER_RESISTS,
+    MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
+    MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS,
     monsterIsNonliving,
 } from './monster_data.js';
 import {
@@ -59,7 +58,7 @@ import {
 } from './object_timers.js';
 import { applySupportedPotionVapor } from './potion_hit.js';
 import {
-    heroHasNoHands, heroMonsterForm, polyselfRandomOrdinary, rehumanizeHero,
+    heroHasNoHands, polyselfRandomOrdinary, rehumanizeHero,
 } from './polyself.js';
 import { createSteamCloud } from './regions.js';
 import { d, rn2, rnd } from './rng.js';
@@ -79,9 +78,6 @@ import { forceBoltInDirection } from './force_bolt.js';
 import { makeInvisibleInDirection } from './monster_invisibility_magic.js';
 import { turnUndeadInDirection } from './undead_turning.js';
 import { clearHeroSliming } from './slime.js';
-import {
-    corrodeRandomHeroArmor, damageHeroObjectWithAcid,
-} from './hero_erosion.js';
 
 const RING_CLASS = 4;
 const POTION_CLASS = 8;
@@ -92,9 +88,6 @@ const MAX_ITEMS_DESTROYED = 20;
 const MR_FIRE = 0x01;
 const MR_COLD = 0x02;
 const MR_SLEEP = 0x04;
-const MR_ACID = 0x40;
-const AT_BREA = 12;
-const AD_ACID = 8;
 const PM_STRAW_GOLEM = 249;
 const PM_PAPER_GOLEM = 250;
 const PM_DEATH_RIDER = 311;
@@ -2165,80 +2158,4 @@ export function destroyElectricInventory(sourceDamage, options) {
     return destroyInventoryByElement(
         INVENTORY_DAMAGE.ELECTRIC, sourceDamage, options,
     );
-}
-
-export function heroAcidBreathAttack(state = game) {
-    const form = heroMonsterForm(state);
-    if (form == null) return null;
-    return (MONSTER_ATTACKS[form] || []).find(
-        ([attackType, damageType]) =>
-            attackType === AT_BREA && damageType === AD_ACID,
-    ) || null;
-}
-
-// C zap.c:ubreatheu() -> zhitu(ZT_ACID). This is used when a polymorphed
-// hero aims acid breath at their own square, including yellow-dragon vomit.
-export async function hitHeroWithAcidBreath({
-    state = game,
-    attack = heroAcidBreathAttack(state),
-    publish = plineWithContinuation,
-    random = rn2,
-    rollDice = d,
-    die = finishHeroDeath,
-} = {}) {
-    if (!attack) return { hit: false, damage: 0, heroDied: false };
-
-    const hero = state.u || (state.u = {});
-    const form = heroMonsterForm(state);
-    const resistant = !!(hero.acidResistance || hero.acid_resistance)
-        || (form != null && ((MONSTER_RESISTS[form] ?? 0) & MR_ACID) !== 0);
-    let damage = 0;
-    if (resistant) {
-        await publish("The acid doesn't hurt.");
-    } else {
-        await publish('The acid burns!');
-        damage = rollDice(attack[2] ?? 0, attack[3] ?? 0);
-        exerciseAttribute(A_STR, false, state);
-    }
-
-    const twoWeapons = !!hero.twoweap;
-    if (random(twoWeapons ? 3 : 6) === 0) {
-        await damageHeroObjectWithAcid(
-            state.uwep || hero.uwep,
-            { state, publish, random },
-        );
-    }
-    if (twoWeapons && random(3) === 0) {
-        await damageHeroObjectWithAcid(
-            state.uswapwep || hero.uswapwep,
-            { state, publish, random },
-        );
-    }
-    if (random(6) === 0)
-        await corrodeRandomHeroArmor({ state, publish, random });
-
-    const heroDied = damage > 0
-        ? await applyAcidBreathDamage(state, damage, publish, die)
-        : false;
-    return { hit: true, resistant, damage, heroDied };
-}
-
-async function applyAcidBreathDamage(state, damage, publish, die) {
-    const hero = state.u;
-    if (Upolyd(hero)) {
-        hero.mh = Math.max(0, (hero.mh ?? 1) - damage);
-        if (hero.mh > 0) return false;
-        if (!(hero.unchanging || state.unchanging)) {
-            const restored = rehumanizeHero(state);
-            if (restored.changed)
-                await publish(`You return to ${restored.race} form!`);
-            return false;
-        }
-    } else {
-        hero.uhp = Math.max(0, (hero.uhp ?? 1) - damage);
-        if (hero.uhp > 0) return false;
-    }
-
-    const reflexive = state.flags?.female ? 'herself' : 'himself';
-    return die({ killer: `blast of acid exhaled by ${reflexive}` });
 }

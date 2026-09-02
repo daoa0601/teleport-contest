@@ -60,6 +60,8 @@ export async function resolvePoisonedHero({
     random = rn2,
     rollDice = d,
     publish = async () => undefined,
+    onResisted = null,
+    poisonResistant = null,
 }) {
     let pagerOwned = false;
     const line = async message => {
@@ -68,9 +70,13 @@ export async function resolvePoisonedHero({
             pagerOwned = true;
     };
 
-    await line(`${reason} was poisoned!`);
+    const blast = reason === 'blast';
+    if (!blast) await line(`${reason} was poisoned!`);
     const hero = state.u;
-    if (hero.poisonResistance || hero.poison_resistance) {
+    const resisted = poisonResistant
+        ?? !!(hero.poisonResistance || hero.poison_resistance);
+    if (resisted) {
+        await onResisted?.();
         await line("The poison doesn't seem to affect you.");
         return { resisted: true, pagerOwned };
     }
