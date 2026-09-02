@@ -3,9 +3,12 @@ import assert from 'node:assert/strict';
 
 import {
     readyRangedMonsterWeapon, selectRangedWeapon,
+    throwMonsterWeaponAtMonster,
 } from '../js/monster_throw.js';
 import { NEED_WEAPON } from '../js/const.js';
-import { ARROW, BOW, DAGGER } from '../js/object_data.js';
+import {
+    ARROW, BOW, DAGGER, ELVEN_ARROW, ELVEN_BOW,
+} from '../js/object_data.js';
 import { game } from '../js/gstate.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
 import { carriedObject } from './support/game-objects.js';
@@ -104,4 +107,33 @@ test('a tame orc shoots an arrow with its bow', () => {
         ),
         true,
     );
+});
+
+test('an elven lord fires every arrow in a three-shot volley', () => {
+    freshRangedPetRoom();
+    const arrows = carriedObject(ELVEN_ARROW, { quan: 3 });
+    const bow = carriedObject(ELVEN_BOW, { wielded: true });
+    const archer = addPet({
+        species: 'elf-noble',
+        x: 9,
+        y: 10,
+        hitPoints: 30,
+        level: 8,
+        inventory: [arrows, bow],
+        mw: bow,
+    });
+    const target = addRangedTarget();
+    target.mhp = target.mhpmax = 100;
+
+    throwMonsterWeaponAtMonster(archer, target, game, {
+        random: () => 1,
+        rollOne: range => range,
+    });
+
+    const landedArrows = floorObjectsAt(game.level, 12, 10)
+        .filter(object => object.otyp === ELVEN_ARROW)
+        .reduce((total, object) => total + object.quan, 0);
+    assert.equal(landedArrows, 3);
+    assert.equal(archer.inventory.includes(arrows), false);
+    assert.ok(target.mhp < 100);
 });

@@ -238,6 +238,76 @@ function positionsAreLinedUp(source, target) {
     return dx === 0 || dy === 0 || dx === dy;
 }
 
+function throwOneMonsterMissile(
+    source, target, state, weapon, launched, random, rollOne,
+) {
+    const missile = splitMonsterMissile(source, weapon);
+    state._thrownObject = missile;
+    const distance = distmin(source.mx, source.my, target.mx, target.my);
+    const dx = Math.sign(target.mx - source.mx);
+    const dy = Math.sign(target.my - source.my);
+    const flightPath = [];
+    let x = source.mx;
+    let y = source.my;
+
+    for (let remaining = distance; remaining > 0; remaining--) {
+        x += dx;
+        y += dy;
+        const defender = livingMonsterAt(state, source, x, y);
+        if (!defender) {
+            random(5);
+            flightPath.push({ x, y });
+            continue;
+        }
+
+        let hitThreshold = 5 + findMonsterArmorClass(defender);
+        const sourceLevel = source.m_lev
+            ?? MONSTER_LEVEL[source.mnum] ?? 0;
+        if (defender === target && sourceLevel > 5)
+            hitThreshold += sourceLevel - 5;
+        const hitRoll = rollOne(20);
+        const hit = hitThreshold >= hitRoll;
+        const damage = hit
+            ? projectileDamageAgainstMonster(missile, defender, rollOne)
+            : 0;
+        if (hit) {
+            defender.msleeping = 0;
+            defender.mhp = Math.max(0, (defender.mhp ?? 1) - damage);
+        } else {
+            random(5);
+            if (remaining > 1) {
+                flightPath.push({ x, y });
+                continue;
+            }
+        }
+        placeAndStackThrownObject(state, missile, x, y);
+        return {
+            weapon: missile,
+            appearance: objectTypeName(missile) || 'weapon',
+            target: defender,
+            hit,
+            hitRoll,
+            hitThreshold,
+            damage,
+            launched,
+            flightPath,
+            flightGlyph: ')',
+        };
+    }
+
+    placeAndStackThrownObject(state, missile, x, y);
+    return {
+        weapon: missile,
+        appearance: objectTypeName(missile) || 'weapon',
+        target: null,
+        hit: false,
+        damage: 0,
+        launched,
+        flightPath,
+        flightGlyph: ')',
+    };
+}
+
 export function throwMonsterWeaponAtMonster(
     source, target, state, {
         random = rn2,
@@ -271,75 +341,24 @@ export function throwMonsterWeaponAtMonster(
     }
 
     const volley = monsterVolleyCount(source, weapon, launcher, rollOne);
-    const missile = splitMonsterMissile(source, weapon);
-    state._thrownObject = missile;
     source.weaponCheck = NEED_WEAPON;
-
-    const dx = Math.sign(target.mx - source.mx);
-    const dy = Math.sign(target.my - source.my);
-    const flightPath = [];
-    let x = source.mx;
-    let y = source.my;
-    for (let remaining = distance; remaining > 0; remaining--) {
-        x += dx;
-        y += dy;
-        const defender = livingMonsterAt(state, source, x, y);
-        if (!defender) {
-            random(5);
-            flightPath.push({ x, y });
-            continue;
-        }
-
-        let hitThreshold = 5 + findMonsterArmorClass(defender);
-        const sourceLevel = source.m_lev
-            ?? MONSTER_LEVEL[source.mnum] ?? 0;
-        if (defender === target && sourceLevel > 5)
-            hitThreshold += sourceLevel - 5;
-        const hitRoll = rollOne(20);
-        const hit = hitThreshold >= hitRoll;
-        const damage = hit
-            ? projectileDamageAgainstMonster(missile, defender, rollOne)
-            : 0;
-        if (hit) {
-            defender.msleeping = 0;
-            defender.mhp = Math.max(0, (defender.mhp ?? 1) - damage);
-        } else {
-            random(5);
-            if (remaining > 1) {
-                flightPath.push({ x, y });
-                continue;
-            }
-        }
-        placeAndStackThrownObject(state, missile, x, y);
-        return {
-            attempted: true,
-            madeAttack: true,
-            weapon: missile,
-            appearance: objectTypeName(missile) || 'weapon',
-            target: defender,
-            hit,
-            hitRoll,
-            hitThreshold,
-            damage,
-            volley,
-            launched,
-            flightPath,
-            flightGlyph: ')',
-        };
+    const shots = [];
+    for (let shot = 0; shot < volley; shot++) {
+        shots.push(throwOneMonsterMissile(
+            source, target, state, weapon, launched, random, rollOne,
+        ));
+        if ((source.mhp ?? 1) <= 0) break;
     }
-
-    placeAndStackThrownObject(state, missile, x, y);
+    const firstShot = shots[0];
     return {
         attempted: true,
         madeAttack: true,
-        weapon: missile,
-        appearance: objectTypeName(missile) || 'weapon',
-        target: null,
-        hit: false,
-        damage: 0,
+        ...firstShot,
+        hit: shots.some(shot => shot.hit),
+        damage: shots.reduce((total, shot) => total + shot.damage, 0),
+        target: shots.find(shot => shot.target)?.target || null,
         volley,
+        shots,
         launched,
-        flightPath,
-        flightGlyph: ')',
     };
 }
