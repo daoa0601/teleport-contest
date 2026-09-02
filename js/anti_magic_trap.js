@@ -85,7 +85,7 @@ export function applyMonsterAntiMagicTrap(
     monster,
     { rollDice = d, rollOne = rnd } = {},
 ) {
-    const shoes = monsterIronShoes(monster);
+    const shoes = monsterWornIronShoes(monster);
     if (shoes && (shoes.spe ?? 0) > 0) {
         shoes.spe--;
         if (Number.isInteger(shoes.enchantment))
@@ -174,7 +174,7 @@ function monsterWeapon(monster) {
             object?.wielded || ((object?.owornmask ?? 0) & W_WEP));
 }
 
-function monsterHasMagicResistance(monster) {
+export function monsterHasMagicResistance(monster) {
     if (monster?.mnum === PM_BABY_GRAY_DRAGON
         || (MONSTER_ATTACKS[monster?.mnum] || []).some(([, damageType]) =>
             damageType === AD_MAGM || damageType === AD_RBRE)) {
@@ -192,7 +192,7 @@ function monsterHasMagicResistance(monster) {
     });
 }
 
-function monsterIronShoes(monster) {
+export function monsterWornIronShoes(monster) {
     return monsterInventory(monster).find(object =>
         OBJECT_MATERIAL[object?.otyp] === IRON
         && !!((object?.owornmask ?? 0) & W_ARMF));

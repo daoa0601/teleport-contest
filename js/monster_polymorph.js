@@ -1,7 +1,7 @@
 // Monster shape-changing rules.
 // C refs: mon.c:select_newcham_form(), pickvampshape(), and newcham().
 
-import { IS_LAVA, IS_POOL, Is_rogue_level } from './const.js';
+import { IS_LAVA, IS_POOL, Is_rogue_level, W_ARM } from './const.js';
 import { game } from './gstate.js';
 import { newMonsterHitPoints } from './monster_hit_points.js';
 import {
@@ -9,16 +9,22 @@ import {
     MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM,
     monsterClassSymbol,
 } from './monster_data.js';
-import { CANDELABRUM_OF_INVOCATION } from './object_data.js';
+import {
+    CANDELABRUM_OF_INVOCATION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES,
+    YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
+} from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 
 const M1_HUMANOID = 0x00020000;
 const M1_ANIMAL = 0x00040000;
+const M1_CONCEAL = 0x00000080;
+const M1_HIDE = 0x00000100;
 const M2_NOPOLY = 0x00000001;
 const M2_SHAPESHIFTER = 0x00004000;
 const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;
 const M2_NEUTER = 0x00040000;
+const S_VAMPIRE = 48;
 
 const PM_WOLF = MONSTER_NAME.indexOf('wolf');
 const PM_FOG_CLOUD = MONSTER_NAME.indexOf('fog cloud');
@@ -37,6 +43,10 @@ const PM_ARCHAEOLOGIST = MONSTER_NAME.indexOf('archeologist');
 const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
 const PM_STUDENT = MONSTER_NAME.indexOf('student');
 const PM_APPRENTICE = MONSTER_NAME.indexOf('apprentice');
+const PM_GRAY_DRAGON = MONSTER_NAME.indexOf('gray dragon');
+const POLYMORPH_IMMUNE_MONSTERS = new Set([
+    'Nazgul', 'erinys', 'Death', 'Pestilence', 'Famine',
+].map(monsterIndexByName));
 
 function monsterIndexByName(name) {
     const mnum = MONSTER_NAME.indexOf(name);
@@ -132,6 +142,36 @@ function randomShape(baseMnum) {
         && Is_rogue_level(game.u?.uz)
         && !/^[A-Z]$/.test(monsterClassSymbol(targetMnum)));
     return targetMnum;
+}
+
+function dragonArmorForm(monster) {
+    const armor = (monster?.minvent || monster?.inventory || []).find(
+        object => ((object.owornmask ?? 0) & W_ARM) !== 0,
+    );
+    if (!armor) return null;
+    if (armor.otyp >= GRAY_DRAGON_SCALE_MAIL
+        && armor.otyp <= YELLOW_DRAGON_SCALE_MAIL) {
+        return PM_GRAY_DRAGON + armor.otyp - GRAY_DRAGON_SCALE_MAIL;
+    }
+    if (armor.otyp >= GRAY_DRAGON_SCALES
+        && armor.otyp <= YELLOW_DRAGON_SCALES) {
+        return PM_GRAY_DRAGON + armor.otyp - GRAY_DRAGON_SCALES;
+    }
+    return null;
+}
+
+function selectOrdinaryPolymorphForm(monster) {
+    const armorForm = dragonArmorForm(monster);
+    for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
+        const targetMnum = armorForm ?? randomShape(-1);
+        const wantsUppercase = triesLeft > 15 && Is_rogue_level(game.u?.uz);
+        if (acceptsShapechangerForm(-1, targetMnum)
+            && (!wantsUppercase
+                || /^[A-Z]$/.test(monsterClassSymbol(targetMnum)))) {
+            return targetMnum;
+        }
+    }
+    return null;
 }
 
 function selectDoppelgangerFormOnce() {
@@ -316,7 +356,18 @@ export function initialShapechangedBirth(monster) {
 }
 
 export function shapechangeMonster(monster, forcedTargetMnum = null) {
-    const baseMnum = monster?.cham;
+    let baseMnum = Number.isInteger(monster?.cham) && monster.cham >= 0
+        ? monster.cham : -1;
+    if (baseMnum < 0 && POLYMORPH_IMMUNE_MONSTERS.has(monster?.mnum))
+        return false;
+    if (baseMnum < 0 && monster?.mcan
+        && naturalShapechanger(monster.mnum)
+        && !shapechangerProtectionActive()) {
+        baseMnum = monster.mnum;
+        monster.cham = baseMnum;
+        monster.mcan = 0;
+    }
+
     let targetMnum = forcedTargetMnum;
     if (targetMnum == null && baseMnum === PM_DOPPELGANGER) {
         targetMnum = selectDoppelgangerForm();
@@ -328,6 +379,8 @@ export function shapechangeMonster(monster, forcedTargetMnum = null) {
         || baseMnum === PM_VLAD_THE_IMPALER
     )) {
         targetMnum = pickVampireShape(monster);
+    } else if (targetMnum == null) {
+        targetMnum = selectOrdinaryPolymorphForm(monster);
     }
     if (targetMnum == null || targetMnum === monster.mnum) return false;
 
@@ -336,7 +389,9 @@ export function shapechangeMonster(monster, forcedTargetMnum = null) {
     const female = shapechangerGender(baseMnum, targetMnum, !!monster.female);
     const { level, hp } = newMonsterHitPoints(targetMnum);
     const scaledHp = Math.trunc(oldHp * hp / oldMax);
-    const permanentlyInvisible = targetMnum === PM_STALKER
+    const oldNaturallyInvisible = monster.mnum === PM_STALKER
+        || monster.mnum === PM_BLACK_LIGHT;
+    const naturallyInvisible = targetMnum === PM_STALKER
         || targetMnum === PM_BLACK_LIGHT;
 
     monster.mnum = targetMnum;
@@ -347,8 +402,22 @@ export function shapechangeMonster(monster, forcedTargetMnum = null) {
     monster.mmove = MONSTER_MOVE[targetMnum] ?? monster.mmove ?? 0;
     monster.symbol = monsterClassSymbol(targetMnum);
     monster.color = MONSTER_COLOR[targetMnum];
-    monster.perminvis = permanentlyInvisible;
-    monster.minvis = monster.invis_blkd ? 0 : permanentlyInvisible;
+    if (!monster.perminvis || oldNaturallyInvisible)
+        monster.perminvis = naturallyInvisible;
+    monster.minvis = monster.invis_blkd ? 0 : !!monster.perminvis;
+    if (monster.m_ap_type && MONSTER_SYMBOL[targetMnum] !== 13) {
+        monster.m_ap_type = 0;
+        monster.mappearance = 0;
+    }
+    if (monster.mundetected
+        && !((MONSTER_FLAGS1[targetMnum] ?? 0) & (M1_CONCEAL | M1_HIDE))) {
+        monster.mundetected = 0;
+    }
+    if (baseMnum < 0 && MONSTER_SYMBOL[targetMnum] === S_VAMPIRE
+        && naturalShapechanger(targetMnum)
+        && !shapechangerProtectionActive()) {
+        monster.cham = targetMnum;
+    }
     monster.meverseen = 0;
     return true;
 }

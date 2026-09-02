@@ -55,6 +55,9 @@ import {
 import {
     beginMonsterVibratingSquare, finishMonsterVibratingSquare,
 } from './vibrating_square_trap.js';
+import {
+    applyMonsterPolymorphTrap, finishMonsterPolymorphTrap,
+} from './polymorph_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -175,7 +178,7 @@ import {
     MAGIC_PORTAL, OPENDOOR, TELEP_TRAP,
     ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP,
     M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING,
-    M_AP_OBJECT, RUST_TRAP,
+    M_AP_OBJECT, POLY_TRAP, RUST_TRAP,
     PIT, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE,
     SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR,
     G_GONE, G_NOCORPSE,
@@ -4745,6 +4748,22 @@ function triggerMonsterTrap(
         movement.trap = event;
         return event;
     }
+    if (trap.ttyp === POLY_TRAP) {
+        if (monsterKnowsTrap(monster, trap)
+            && recordRandom(random, calls, 4) !== 0) {
+            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
+            movement.trap = event;
+            return event;
+        }
+        monsterLearnsTrap(monster, trap);
+        monstersSeeTrap(state, trap);
+        const event = applyMonsterPolymorphTrap(monster, trap, state, {
+            random: range => recordRandom(random, calls, range),
+        });
+        movement.trap = event;
+        if (!event.finished) movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
     if (trap.ttyp === VIBRATING_SQUARE) {
         if (monsterKnowsTrap(monster, trap)
             && recordRandom(random, calls, 4) !== 0) {
@@ -7577,6 +7596,12 @@ export async function resumeDeferredMonsterTrap(
         await finishMonsterVibratingSquare(action.monster, event, {
             publish,
             describeMonster,
+            revealTrap,
+        });
+        break;
+    case 'polymorph-trap':
+        await finishMonsterPolymorphTrap(event, {
+            publish,
             revealTrap,
         });
         break;
