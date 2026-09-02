@@ -7,7 +7,7 @@ import { game } from './gstate.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
-import { shapechangeMonster } from './monster_polymorph.js';
+import { changeMonsterForm } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { rn2 } from './rng.js';
 import {
@@ -21,7 +21,7 @@ function restoreNaturalShape(monster, state) {
     let changed = false;
     if (Number.isInteger(monster.cham) && monster.cham >= 0) {
         const cancelled = monster.mcan;
-        changed = shapechangeMonster(monster, monster.cham) || changed;
+        changed = !!changeMonsterForm(monster, monster.cham) || changed;
         monster.cham = -1;
         if (cancelled) monster.mcan = 1;
     }

@@ -20,7 +20,7 @@ import {
     monsterTypeName,
 } from './monster_data.js';
 import { restoreMonsterTraits } from './monster_traits.js';
-import { shapechangeMonster } from './monster_polymorph.js';
+import { changeMonsterForm } from './monster_polymorph.js';
 import {
     linkObjectToMonsterInventory, removeObjectFromMonsterInventory,
 } from './monster_inventory.js';
@@ -348,7 +348,7 @@ async function createRevivedMonster(corpse, location, state) {
             makePetWary(monster, { wasDead: true, state });
     } else if (replacement === PM_DOPPELGANGER) {
         if (monster.cham === PM_DOPPELGANGER)
-            shapechangeMonster(monster, originalMnum);
+            changeMonsterForm(monster, originalMnum);
     } else if (replacement === PM_HUMAN_ZOMBIE) {
         monster.mhp = monster.mhpmax = 100;
         monster.permspeed = MFAST;

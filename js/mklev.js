@@ -118,7 +118,7 @@ import {
     adjustedMonsterLevel, newMonsterHitPoints,
 } from './monster_hit_points.js';
 import {
-    initialShapechangedBirth, shapechangeMonster,
+    changeMonsterForm, initialShapechangedBirth,
 } from './monster_polymorph.js';
 import { initializeMonsterWormBody } from './monster_worm.js';
 import { setMonsterMalign } from './monster_alignment.js';
@@ -6616,7 +6616,7 @@ async function createLuaMonster(context, options) {
         if (monster.cham === PM_VAMPIRE_LEADER
             && monster.mnum !== PM_VAMPIRE_LEADER
             && options.appearance?.kind !== 'monster') {
-            shapechangeMonster(monster, PM_VAMPIRE_LEADER);
+            changeMonsterForm(monster, PM_VAMPIRE_LEADER);
         }
     }
     if (monster && options.seentraps)

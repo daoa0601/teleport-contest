@@ -11,8 +11,8 @@ import { mksobj } from './mklev.js';
 import {
     addObjectToMonsterInventory, removeObjectFromMonsterInventory,
 } from './monster_inventory.js';
-import { monsterTypeName } from './monster_data.js';
-import { shapechangeMonster } from './monster_polymorph.js';
+import { MONSTER_FLAGS2, monsterTypeName } from './monster_data.js';
+import { changeMonsterForm } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import {
     IRON_SHOES, KICKING_BOOTS,
@@ -20,6 +20,8 @@ import {
 import { rn2 } from './rng.js';
 import { monsterTrapVisibility } from './trap.js';
 import { objectWeight } from './weight.js';
+
+const M2_NEUTER = 0x00040000;
 
 function copyBootState(source, replacement) {
     const quantity = source.quan ?? source.quantity ?? 1;
@@ -78,6 +80,15 @@ function monsterSubject(monster, name = monsterTypeName(
     return monster?.mtame ? `Your ${name}` : `The ${name}`;
 }
 
+function leashReleaseMessage(monster, visible) {
+    if (!visible) return 'Your leash falls slack.';
+    const subject = monsterSubject(monster);
+    const sentenceSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
+    const neuter = (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_NEUTER;
+    const pronoun = neuter ? 'its' : monster.female ? 'her' : 'his';
+    return `${sentenceSubject} pulls free of ${pronoun} leash!`;
+}
+
 export function applyMonsterPolymorphTrap(
     monster,
     trap,
@@ -122,13 +133,16 @@ export function applyMonsterPolymorphTrap(
     const oldName = monsterTypeName(monster.mnum, !!monster.female);
     const oldSubject = monsterSubject(monster, oldName);
     const wasSpotted = canSpotMonster(monster);
-    const changed = shapechangeMonster(monster);
+    const change = changeMonsterForm(monster, null, state);
+    const changed = !!change;
     const newName = monsterTypeName(monster.mnum, !!monster.female);
     const nowSpotted = canSpotMonster(monster);
     return {
         kind: 'polymorph-trap',
         trap,
         changed,
+        leashReleaseMessage: change?.leashReleased
+            ? leashReleaseMessage(monster, change.leashReleaseVisible) : null,
         oldSubject,
         newName,
         wasSpotted,
@@ -146,6 +160,9 @@ export async function finishMonsterPolymorphTrap(
     } = {},
 ) {
     if (!event || event.finished) return event;
+
+    if (event.leashReleaseMessage)
+        await publish(event.leashReleaseMessage);
 
     if (event.wasSpotted && event.nowSpotted) {
         await publish(`${event.oldSubject} turns into a ${event.newName}!`);

@@ -2,7 +2,22 @@
 // C refs: apply.c:m_unleash(), get_mleash(), and unleash_all().
 
 import { game } from './gstate.js';
+import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { LEASH } from './object_data.js';
+
+const M1_NOLIMBS = 0x00006000;
+const M1_NOHEAD = 0x00008000;
+const M1_UNSOLID = 0x00100000;
+const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
+
+// C apply.c:leashable().  A head is enough to leash a limbless monster.
+export function monsterCanBeLeashed(monster) {
+    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
+    const hasNoLimbs = (flags & M1_NOLIMBS) === M1_NOLIMBS;
+    return monster?.mnum !== PM_LONG_WORM
+        && !(flags & M1_UNSOLID)
+        && (!hasNoLimbs || !(flags & M1_NOHEAD));
+}
 
 export function leashAttachedToMonster(monster, state = game) {
     return (state.inventory || []).find(object =>

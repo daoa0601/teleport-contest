@@ -20,7 +20,7 @@ import {
     monsterIsNonliving, monsterIsVampireShifter, monsterTypeName,
 } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { shapechangeMonster } from './monster_polymorph.js';
+import { changeMonsterForm } from './monster_polymorph.js';
 import { restoreMonsterTraits } from './monster_traits.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { STATUE } from './object_data.js';
@@ -81,7 +81,7 @@ async function createStatueMonster(statue, x, y, state) {
             makePetWary(monster, { wasDead: true, state });
     } else if (replacement === PM_DOPPELGANGER
         && monster.cham === PM_DOPPELGANGER) {
-        shapechangeMonster(monster, statue.corpsenm);
+        changeMonsterForm(monster, statue.corpsenm);
     }
     return monster;
 }

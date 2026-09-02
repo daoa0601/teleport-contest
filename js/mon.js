@@ -20,7 +20,7 @@ import {
 import {
     place_object, stack_object,
 } from './mklev.js';
-import { shapechangeMonster } from './monster_polymorph.js';
+import { changeMonsterForm } from './monster_polymorph.js';
 import { EGG } from './object_data.js';
 import {
     OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer,
@@ -123,7 +123,7 @@ export async function killGenocidedMonsters(state = game) {
             && !baseWasGenocided) continue;
         if (Number.isInteger(monster.cham) && monster.cham >= 0
             && !baseWasGenocided) {
-            if (shapechangeMonster(monster)) reshaped.push(monster);
+            if (changeMonsterForm(monster)) reshaped.push(monster);
             continue;
         }
         killed.push(await killGenocidedMonster(monster, state));

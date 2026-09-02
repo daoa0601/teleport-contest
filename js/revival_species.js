@@ -4,7 +4,7 @@
 import { MM_FEMALE, MM_MALE } from './const.js';
 import { game } from './gstate.js';
 import { MONSTER_FLAGS2, MONSTER_GENO } from './monster_data.js';
-import { shapechangeMonster } from './monster_polymorph.js';
+import { changeMonsterForm } from './monster_polymorph.js';
 
 const G_UNIQ = 0x1000;
 const M2_SHAPESHIFTER = 0x00004000;
@@ -45,7 +45,7 @@ export function restoreRevivedShapechanger(monster, state = game) {
     if (protectedFromShapechangers || monster.mcan) {
         if (naturalForm != null) {
             const cancelled = monster.mcan;
-            shapechangeMonster(monster, naturalForm);
+            changeMonsterForm(monster, naturalForm);
             monster.cham = -1;
             if (cancelled) monster.mcan = 1;
         }

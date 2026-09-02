@@ -19,7 +19,7 @@ import {
 import {
     MONSTER_GENO, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
-import { shapechangeMonster } from './monster_polymorph.js';
+import { changeMonsterForm } from './monster_polymorph.js';
 import { BOULDER, ROCK, STATUE } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
@@ -83,7 +83,7 @@ async function turnGolemToStone(monster, publish) {
             `${monsterSubject(monster)} solidifies...`,
         );
     }
-    const changed = shapechangeMonster(monster, PM_STONE_GOLEM);
+    const changed = !!changeMonsterForm(monster, PM_STONE_GOLEM);
     if (visible) {
         await publish(changed
             ? `Now it's a ${monsterTypeName(monster.mnum)}.`
@@ -110,7 +110,7 @@ async function restoreShapechanger(monster, publish) {
         monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
     );
     monster.mhp = monster.mhpmax;
-    if (!shapechangeMonster(monster, baseForm)) return false;
+    if (!changeMonsterForm(monster, baseForm)) return false;
     monster.cham = -1;
     if (canSeeMonster(monster, monster.mx, monster.my)) {
         const subject = vampire

@@ -102,7 +102,7 @@ import {
     makemonNear, mkcorpstat, mksobj, place_object,
     summonNastyMonsters, stack_object, undeadToCorpse,
 } from './mklev.js';
-import { shapechangeMonster } from './monster_polymorph.js';
+import { changeMonsterForm } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { getTrack } from './track.js';
@@ -1150,7 +1150,7 @@ export function updateMonsterDistress(
         if (hasNaturalForm && !vampireShifter && !monster.mspec_used) {
             if (random(6) === 0) {
                 monster.mspec_used = 3 + random(10);
-                changedShape = shapechangeMonster(monster);
+                changedShape = !!changeMonsterForm(monster);
             }
         } else if (vampireShifter
             && !((monster.mstrategy ?? 0) & STRAT_WAITFORU)) {
@@ -1162,19 +1162,19 @@ export function updateMonsterDistress(
                 // hero cannot currently see it at close range.
                 if (monster.mhp <= ((monster.mhpmax ?? 0) + 5) / 6
                     && random(4) !== 0) {
-                    changedShape = shapechangeMonster(
+                    changedShape = !!changeMonsterForm(
                         monster, monster.cham,
                     );
                 } else if (monster.mnum === PM_FOG_CLOUD
                     && monster.mhp === monster.mhpmax
                     && random(4) === 0
                     && vampireMayShiftOutOfSight(monster, state)) {
-                    changedShape = shapechangeMonster(monster);
+                    changedShape = !!changeMonsterForm(monster);
                 }
             } else if (monster.mhp >= 9 * (monster.mhpmax ?? 0) / 10
                 && random(6) === 0
                 && vampireMayShiftOutOfSight(monster, state)) {
-                changedShape = shapechangeMonster(monster);
+                changedShape = !!changeMonsterForm(monster);
             }
         }
         const changedWere = wereChange(monster, state, random);

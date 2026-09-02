@@ -2,7 +2,11 @@
 // C refs: mon.c:select_newcham_form(), pickvampshape(), and newcham().
 
 import { IS_LAVA, IS_POOL, Is_rogue_level, W_ARM } from './const.js';
+import { canSeeMonster } from './display.js';
 import { game } from './gstate.js';
+import {
+    monsterCanBeLeashed, releaseMonsterLeash,
+} from './monster_leash.js';
 import { newMonsterHitPoints } from './monster_hit_points.js';
 import {
     MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2,
@@ -359,11 +363,13 @@ export function initialShapechangedBirth(monster) {
     return initialShapechangedMonster(monster, targetMnum);
 }
 
-export function shapechangeMonster(monster, forcedTargetMnum = null) {
+export function changeMonsterForm(
+    monster, forcedTargetMnum = null, state = game,
+) {
     let baseMnum = Number.isInteger(monster?.cham) && monster.cham >= 0
         ? monster.cham : -1;
     if (baseMnum < 0 && POLYMORPH_IMMUNE_MONSTERS.has(monster?.mnum))
-        return false;
+        return null;
     if (baseMnum < 0 && monster?.mcan
         && naturalShapechanger(monster.mnum)
         && !shapechangerProtectionActive()) {
@@ -386,8 +392,9 @@ export function shapechangeMonster(monster, forcedTargetMnum = null) {
     } else if (targetMnum == null) {
         targetMnum = selectOrdinaryPolymorphForm(monster);
     }
-    if (targetMnum == null || targetMnum === monster.mnum) return false;
+    if (targetMnum == null || targetMnum === monster.mnum) return null;
 
+    const oldMnum = monster.mnum;
     if (monster.wormno) removeMonsterWormBody(monster);
     const oldHp = Math.max(1, monster.mhp ?? 1);
     const oldMax = Math.max(1, monster.mhpmax ?? oldHp);
@@ -407,6 +414,13 @@ export function shapechangeMonster(monster, forcedTargetMnum = null) {
     monster.mmove = MONSTER_MOVE[targetMnum] ?? monster.mmove ?? 0;
     monster.symbol = monsterClassSymbol(targetMnum);
     monster.color = MONSTER_COLOR[targetMnum];
+    let leashReleased = false;
+    let leashReleaseVisible = false;
+    if (monster.mleashed && !monsterCanBeLeashed(monster)) {
+        leashReleaseVisible = canSeeMonster(monster, monster.mx, monster.my);
+        releaseMonsterLeash(monster, state);
+        leashReleased = true;
+    }
     if (!monster.perminvis || oldNaturallyInvisible)
         monster.perminvis = naturallyInvisible;
     monster.minvis = monster.invis_blkd ? 0 : !!monster.perminvis;
@@ -426,5 +440,10 @@ export function shapechangeMonster(monster, forcedTargetMnum = null) {
     if (targetMnum === PM_LONG_WORM)
         initializeMonsterWormBody(monster);
     monster.meverseen = 0;
-    return true;
+    return {
+        oldMnum,
+        newMnum: targetMnum,
+        leashReleased,
+        leashReleaseVisible,
+    };
 }
