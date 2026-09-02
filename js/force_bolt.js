@@ -6,7 +6,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import {
     A_STR, COLNO, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR,
     D_TRAPPED, CORPSTAT_HISTORIC, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP,
-    Is_airlevel, Is_waterlevel, HOLE, M_AP_MONSTER, ROWNO, SDOOR,
+    Is_airlevel, Is_waterlevel, HOLE, ROWNO, SDOOR,
     STATUE_TRAP, TRAPDOOR, Upolyd, ZAP_POS,
 } from './const.js';
 import {
@@ -23,6 +23,7 @@ import {
 } from './mklev.js';
 import { wakeMonstersNear } from './mon.js';
 import { wakeAttackedMonster } from './monster_anger.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { breakFloorObject } from './object_breakage.js';
@@ -235,15 +236,6 @@ async function breakTrapdoor(state) {
     };
 }
 
-function revealMimic(monster, revealMonsterDisguise = true) {
-    if (!monster.m_ap_type) return;
-    if (!revealMonsterDisguise && monster.m_ap_type === M_AP_MONSTER)
-        return;
-    monster.m_ap_type = 0;
-    monster.mappearance = 0;
-    newsym(monster.mx, monster.my);
-}
-
 function monsterName(monster) {
     return MONSTER_NAME[monster.mnum] || 'monster';
 }
@@ -252,7 +244,9 @@ async function hitMonster(monster, source, state, options) {
     const attackLevel = source === 'wand' ? 12 : state.u?.ulevel ?? 1;
     const targetCellWasVisible = cansee(monster.mx, monster.my);
     if (monsterResistsEffect(monster, attackLevel, options.random)) {
-        revealMimic(monster, false);
+        revealMonsterAppearance(monster, {
+            includeMonsterDisguise: false,
+        });
         await shieldeff(monster.mx, monster.my, state);
         await pline('Boing!');
         await wakeAttackedMonster(monster);
@@ -270,7 +264,7 @@ async function hitMonster(monster, source, state, options) {
         return false;
     }
 
-    revealMimic(monster);
+    revealMonsterAppearance(monster);
     let damage = options.rollDice(2, 12);
     if (state.urole?.key === 'knight' && state.u?.uhave?.questart)
         damage *= 2;

@@ -16,6 +16,7 @@ import {
 import { nextIdent } from './ident.js';
 import { GameMap } from './game.js';
 import { restoreBonesMonsters } from './bones_monster.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
 import {
     prepareBonesObjectForRestore, prepareBonesObjectForSave,
 } from './bones_object.js';
@@ -3970,44 +3971,6 @@ function createMeltMonsterCorpse(monster, state = game) {
     return stack_object(corpse, state);
 }
 
-function meltAppearanceBlocksLight(monster) {
-    const type = monster.m_ap_type ?? 0;
-    const appearance = monster.mappearance ?? 0;
-    if (type === M_AP_OBJECT) return appearance === BOULDER;
-    if (type !== M_AP_FURNITURE) return false;
-    // The port persists special-level furniture in the terrain namespace,
-    // while ordinary C mimic state uses cmap indices.  Accept both encodings:
-    // C walls are below S_ndoor=12, closed doors are 15/16, and tree is 18.
-    return (appearance >= 0 && appearance < 12)
-        || appearance === 15 || appearance === 16 || appearance === 18
-        || appearance === TREE || appearance === SDOOR
-        || appearance === DOOR || IS_WALL(appearance);
-}
-
-function revealMeltMonsterAppearance(monster, state = game) {
-    const type = monster.m_ap_type ?? 0;
-    const appearance = monster.mappearance ?? 0;
-    if (type === 0 || type === M_AP_MONSTER) {
-        return {
-            revealed: false, type, appearance, lightBlocker: false,
-        };
-    }
-
-    const lightBlocker = meltAppearanceBlocksLight(monster);
-    const corpsenm = monster.mcorpsenm
-        ?? monster.mextra?.mcorpsenm ?? null;
-    monster.m_ap_type = 0;
-    monster.mappearance = 0;
-    delete monster.mcorpsenm;
-    if (monster.mextra) delete monster.mextra.mcorpsenm;
-    if (lightBlocker)
-        vision_note_blocker_change(monster.mx, monster.my);
-    newsym(monster.mx, monster.my);
-    return {
-        revealed: true, type, appearance, corpsenm, lightBlocker,
-    };
-}
-
 export function killMonsterOnMeltingIce(monster, state = game) {
     monster.mhp = 0;
     recordMeltMonsterDeath(monster, state);
@@ -4015,7 +3978,9 @@ export function killMonsterOnMeltingIce(monster, state = game) {
     monster.mundetected = 0;
     state.level.monsters = state.level.monsters.filter(candidate =>
         candidate !== monster);
-    const appearanceReveal = revealMeltMonsterAppearance(monster, state);
+    const appearanceReveal = revealMonsterAppearance(monster, {
+        includeMonsterDisguise: false,
+    });
     newsym(monster.mx, monster.my);
     const releasedInventory = releaseMeltMonsterInventory(monster, state);
     const corpse = createMeltMonsterCorpse(monster, state);

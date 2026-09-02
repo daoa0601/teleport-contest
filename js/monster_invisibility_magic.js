@@ -11,6 +11,7 @@ import { deleteEngravingAt } from './engrave.js';
 import { game } from './gstate.js';
 import { zapHeroInvisible } from './hero_invisibility.js';
 import { wakeMonster } from './monster_anger.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
 import {
     setMonsterPermanentInvisibility,
 } from './monster_invisibility.js';
@@ -37,13 +38,6 @@ function rayCellIsOpen(x, y, state) {
         || !(location.doormask & (D_CLOSED | D_LOCKED));
 }
 
-function revealMimic(monster) {
-    if (!monster.m_ap_type) return;
-    monster.m_ap_type = 0;
-    monster.mappearance = 0;
-    newsym(monster.mx, monster.my);
-}
-
 function monsterName(monster) {
     return monster.name
         || `The ${monsterTypeName(monster.mnum, !!monster.female)}`;
@@ -52,7 +46,7 @@ function monsterName(monster) {
 async function makeMonsterInvisible(monster) {
     const wasInvisible = !!monster.minvis;
     const wasVisible = canSeeMonster(monster, monster.mx, monster.my);
-    revealMimic(monster);
+    revealMonsterAppearance(monster);
     const name = monsterName(monster);
 
     setMonsterPermanentInvisibility(monster);

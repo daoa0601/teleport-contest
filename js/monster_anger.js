@@ -4,11 +4,11 @@
 import { adjustHeroAlignment } from './alignment.js';
 import { M_AP_MONSTER, STRAT_WAITMASK } from './const.js';
 import {
-    canSpotMonster, newsym, plineWithContinuation,
-    randomDisplayMonsterSubject,
+    canSpotMonster, plineWithContinuation, randomDisplayMonsterSubject,
 } from './display.js';
 import { game } from './gstate.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
 import { nameToMonster } from './mondata.js';
 import {
     MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND,
@@ -481,9 +481,7 @@ export async function wakeMonster(monster, { attacked = false } = {}) {
     }
     monster.msleeping = 0;
     if (monster.m_ap_type && monster.m_ap_type !== M_AP_MONSTER) {
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
-        newsym(monster.mx, monster.my);
+        revealMonsterAppearance(monster);
     }
     monster.meating = 0;
     if (!attacked) return;
