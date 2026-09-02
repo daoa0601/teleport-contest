@@ -15,8 +15,6 @@ import {
     throwMonsterWeaponAtHero,
 } from './monster_throw.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
-import { sessionIsNight } from './monster_sound.js';
-export { sessionIsNight } from './monster_sound.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';
 import { growMonster } from './monster_growth.js';
 import { currentAttribute } from './attrib.js';
@@ -163,9 +161,8 @@ import {
     applyMonsterRustTrap, burnArmorByFire, monsterTrapVisibility,
 } from './trap.js';
 import {
-    isHumanWereMonster, isWereMonster, transformWereMonster,
+    wereChange,
 } from './were.js';
-import { heroHasProtectionFromShapeChangers } from './polyself.js';
 import {
     A_CHA, A_DEX, A_STR,
     ACCESSIBLE, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_ROCK, ALLOW_SANCT,
@@ -1085,27 +1082,6 @@ export function heroEveryturnEffect(state = game, random = rn2) {
     return createFogEveryturnRegion(
         state, state.u.ux, state.u.uy, random,
     );
-}
-
-// C refs: were.c counter_were()/new_were()/were_change().  The shared owner
-// applies identity, movement, waking, and healing; this scheduler leaves its
-// repaint to the enclosing display boundary.  Armor breakage and forced
-// unwielding remain a named production admission gap.
-export function wereChange(monster, state = {}, random = rn2) {
-    if (!isWereMonster(monster)) return false;
-
-    const protectedHero = heroHasProtectionFromShapeChangers(state);
-    if (isHumanWereMonster(monster)) {
-        if (protectedHero) return false;
-        const fullMoon = state.flags?.moonphase === 4;
-        const denominator = sessionIsNight(state.datetime)
-            ? (fullMoon ? 3 : 30) : (fullMoon ? 10 : 50);
-        if (random(denominator) !== 0) return false;
-    } else if (random(30) !== 0 && !protectedHero) {
-        return false;
-    }
-
-    return transformWereMonster(monster, state, { repaint: false });
 }
 
 function vampireMayShiftOutOfSight(monster, state) {

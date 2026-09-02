@@ -192,6 +192,7 @@ import {
     killGenocidedMonster, resolveMonsterLiquid, wakeMonstersNear,
     wakeMonstersNearWithMessages,
 } from './mon.js';
+import { presentWereChange } from './were.js';
 import { burnHeroArmorByFire } from './trap.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from './hack.js';
 import {
@@ -1638,9 +1639,41 @@ function initialTurnMaintenanceRng(
     // C calls mcalcdistress() before incrementing svm.moves.  JS reaches this
     // boundary with the new displayed turn already in game.moves, so monster
     // periodic regeneration must inspect the preceding turn number.
-    updateMonsterDistress(
+    const distress = updateMonsterDistress(
         game.level?.monsters || [], game, rn2, completedTurn - 1,
     );
+    const wereChanges = distress
+        .map(result => result.changedWere)
+        .filter(Boolean);
+    if (deferAmbientMessage && wereChanges.some(change =>
+        change.transformationMessage || change.howlMessage)) {
+        return {
+            wereChangesToPresent: wereChanges,
+            completedTurn,
+            deferAmbientMessage,
+        };
+    }
+    for (const change of wereChanges) {
+        if (change.transformationMessage)
+            appendTurnMessage(change.transformationMessage);
+        if (change.howlMessage)
+            appendTurnMessage(change.howlMessage);
+        if (change.wakeDistance) {
+            wakeMonstersNear(
+                change.monster.mx,
+                change.monster.my,
+                change.wakeDistance,
+            );
+        }
+    }
+    return finishInitialTurnMaintenanceAfterMonsterDistress(
+        completedTurn, deferAmbientMessage,
+    );
+}
+
+function finishInitialTurnMaintenanceAfterMonsterDistress(
+    completedTurn, deferAmbientMessage,
+) {
     const allocations = allocateMonsterMovement(game.level?.monsters || []);
     game._monsterMovementInitialized = true;
     game._lastMonsterAllocations = allocations.map(({ monster, amount, movement }) => ({
@@ -2124,6 +2157,18 @@ async function initialTurnMaintenanceWithTty(
     completedTurn = game.moves || 1,
 ) {
     let phase = initialTurnMaintenanceRng(completedTurn, true);
+    while (phase?.wereChangesToPresent) {
+        for (const change of phase.wereChangesToPresent) {
+            await presentWereChange(change, {
+                publish: queueTurnMessage,
+                wakeNearby: (x, y, distance) =>
+                    wakeMonstersNear(x, y, distance, game),
+            });
+        }
+        phase = finishInitialTurnMaintenanceAfterMonsterDistress(
+            phase.completedTurn, phase.deferAmbientMessage,
+        );
+    }
     while (phase?.deferredObjectTimer) {
         const claimed = claimNextDueObjectTimer(
             game, phase.sourceTurn,

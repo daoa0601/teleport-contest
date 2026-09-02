@@ -6,6 +6,7 @@ import {
     W_ARMS, W_ARMU, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { wakeMonstersNear } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import {
@@ -13,6 +14,7 @@ import {
     LEASH, LEATHER_GLOVES, SMALL_SHIELD, SPEED_BOOTS,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { presentWereChange, wereChange } from '../js/were.js';
 import { knownInventoryObject, knownObject } from './support/game-objects.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -126,4 +128,44 @@ test('a former giant drops boulders its new form cannot carry', () => {
     assert.equal(boulder.where, 'floor');
     assert.equal(boulder.ox, monster.mx);
     assert.equal(boulder.oy, monster.my);
+});
+
+test('a visible werewolf announces its natural change', async () => {
+    freshObjectRoom();
+    game.datetime = '20250101010000';
+    game.flags.moonphase = 4;
+    const monster = addMonster({ mnum: 263, x: 11, y: 10 });
+    const messages = [];
+
+    const change = wereChange(monster, game, () => 0);
+    await presentWereChange(change, {
+        publish: async message => messages.push(message),
+        wakeNearby: wakeMonstersNear,
+    });
+
+    assert.equal(monster.mnum, 21);
+    assert.deepEqual(messages, ['The werewolf changes into a wolf.']);
+    assert.equal(game.were_changes, 1);
+});
+
+test('an unseen werejackal howls and wakes nearby monsters', async () => {
+    freshObjectRoom();
+    game.datetime = '20250101010000';
+    game.flags.moonphase = 4;
+    const werejackal = addMonster({
+        mnum: 262, x: 11, y: 10, minvis: 1,
+    });
+    const sleeper = addMonster({
+        species: 'jackal', x: 12, y: 10, msleeping: 1,
+    });
+    const messages = [];
+
+    const change = wereChange(werejackal, game, () => 0);
+    await presentWereChange(change, {
+        publish: async message => messages.push(message),
+        wakeNearby: wakeMonstersNear,
+    });
+
+    assert.deepEqual(messages, ['You hear a jackal howling at the moon.']);
+    assert.equal(sleeper.msleeping, 0);
 });

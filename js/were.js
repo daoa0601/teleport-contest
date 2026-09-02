@@ -9,7 +9,9 @@ import { threateningMonsterNearby } from './do.js';
 import { game } from './gstate.js';
 import { makemonNear, splitHeroMonsterForm } from './mklev.js';
 import { adjustMonsterClothingAfterPolymorph } from './monworn.js';
-import { newsym, plineWithContinuation } from './display.js';
+import {
+    canSeeMonster, newsym, plineWithContinuation,
+} from './display.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
@@ -20,6 +22,10 @@ import {
 } from './polyself.js';
 import { paranoidQuery } from './query.js';
 import { rn2, rnd } from './rng.js';
+import {
+    monsterSentenceSubject, sessionIsNight,
+} from './monster_sound.js';
+import { heroIsDeaf } from './senses.js';
 import { vision_recalc } from './vision.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 
@@ -251,6 +257,82 @@ export function isWereMonster(monster) {
 export function isHumanWereMonster(monster) {
     const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
     return !!(flags & M2_WERE) && !!(flags & M2_HUMAN);
+}
+
+function heroHallucinates(state) {
+    return !!(state.u?.hallucinating
+        || (state.u?.hallucinationTurns ?? 0) > 0);
+}
+
+function changedWereFormName(monster) {
+    if (isHumanWereMonster(monster)) return 'human';
+    return (MONSTER_NAME[monster.mnum] || 'creature').replace(/^were/u, '');
+}
+
+function unseenWereHowl(monster, state) {
+    if (heroIsDeaf(state)
+        || canSeeMonster(monster, monster.mx, monster.my)) return null;
+    if (monster.mnum === PM_WEREWOLF) return 'wolf';
+    if (monster.mnum === PM_WEREJACKAL) return 'jackal';
+    return null;
+}
+
+export function wereChange(monster, state = game, random = rn2) {
+    if (!isWereMonster(monster)) return null;
+
+    const changedFromHuman = isHumanWereMonster(monster);
+    const protectedHero = heroHasProtectionFromShapeChangers(state);
+    if (changedFromHuman) {
+        if (protectedHero) return null;
+        const fullMoon = state.flags?.moonphase === 4;
+        const denominator = sessionIsNight(state.datetime)
+            ? (fullMoon ? 3 : 30) : (fullMoon ? 10 : 50);
+        if (random(denominator) !== 0) return null;
+    } else if (random(30) !== 0 && !protectedHero) {
+        return null;
+    }
+
+    const oldMnum = monster.mnum;
+    const subject = monsterSentenceSubject(monster);
+    const visibleBefore = canSeeMonster(monster, monster.mx, monster.my);
+    if (!transformWereMonster(monster, state, { repaint: false })) return null;
+
+    state.were_changes = (state.were_changes ?? 0) + 1;
+    const howler = changedFromHuman ? unseenWereHowl(monster, state) : null;
+    return {
+        monster,
+        oldMnum,
+        newMnum: monster.mnum,
+        transformationMessage: visibleBefore && !heroHallucinates(state)
+            ? `${subject} changes into a ${changedWereFormName(monster)}.`
+            : null,
+        howlMessage: howler
+            ? `You hear a ${howler} howling at the moon.` : null,
+        wakeDistance: howler ? 16 : 0,
+    };
+}
+
+export async function presentWereChange(change, {
+    publish = plineWithContinuation,
+    wakeNearby,
+} = {}) {
+    if (!change) return null;
+    if (change.transformationMessage)
+        await publish(change.transformationMessage);
+    if (change.howlMessage) {
+        await publish(change.howlMessage);
+        if (typeof wakeNearby !== 'function') {
+            throw new TypeError(
+                'presentWereChange requires wakeNearby for an unseen howl',
+            );
+        }
+        wakeNearby(
+            change.monster.mx,
+            change.monster.my,
+            change.wakeDistance,
+        );
+    }
+    return change;
 }
 
 export function transformWereMonster(monster, state = game, {
