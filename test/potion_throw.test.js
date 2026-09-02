@@ -2,25 +2,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    A_CON, A_DEX, STONE, W_ARM, W_ARMC,
+    A_CON, A_DEX, STONE, W_ARM, W_ARMC, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import {
-    CORPSE, IRON_CHAIN,
+    CHAIN_MAIL, CORPSE, DAGGER, IRON_CHAIN,
     POT_ACID, POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
     POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_SICKNESS, POT_SPEED,
     POT_WATER,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { throwInventoryObject } from './support/commands.js';
-import { knownInventoryObject } from './support/game-objects.js';
+import { knownInventoryObject, knownObject } from './support/game-objects.js';
 import {
     installHumanWerewolfHero, installPolymorphedHero,
     wearPolymorphControlRing,
 } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const PM_PURPLE_WORM = 115;
@@ -542,6 +542,30 @@ test('live cursed water changes a human were only without shape protection',
             assert.equal(monster.msleeping, 0);
             assert.equal(potion.where, 'gone');
         }
+    });
+
+test('cursed water makes a human werewolf shed incompatible equipment',
+    async () => {
+        const monster = freshMapPotionState(2, {
+            mnum: 263,
+            hitPoints: 10,
+            maxHitPoints: 20,
+        });
+        const armor = equipMonsterObject(
+            monster, knownObject(CHAIN_MAIL), W_ARM,
+        );
+        const dagger = equipMonsterObject(
+            monster, knownObject(DAGGER), W_WEP,
+        );
+        const potion = knownInventoryObject(POT_WATER, { cursed: true });
+
+        initRng(2702n);
+        await throwEast(potion, Array(20).fill(' '));
+
+        assert.equal(monster.mnum, 21);
+        assert.equal(armor.where, 'gone');
+        assert.equal(dagger.where, 'floor');
+        assert.equal(potion.where, 'gone');
     });
 
 test('live ordinary water rusts a surviving iron golem', async () => {

@@ -17,7 +17,7 @@ import { objectBreaksOnImpact } from './object_breakage.js';
 import {
     applySupportedPotionVapor, destroyPotionIdentity,
     hitMonsterWithSupportedPotion, potionImpactObjectName,
-    maximumSupportedPotionFatalDamage, supportedPotionTargetGap,
+    maximumSupportedPotionFatalDamage,
     SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { rn2, rnd } from './rng.js';
@@ -104,9 +104,6 @@ function flightTargetSupported({
     if (!flight || (flight.contact && !targetIsOrdinary(flight.contact)))
         return false;
     if (!flight.contact) return true;
-    if (supportedPotionTargetGap({
-        state, potion: item, monster: flight.contact,
-    })) return false;
     const maximumFatalDamage = maximumSupportedPotionFatalDamage(
         item, flight.contact,
     );

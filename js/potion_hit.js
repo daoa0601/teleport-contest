@@ -292,23 +292,6 @@ function monsterIsHuman(monster) {
     return !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_HUMAN);
 }
 
-function heroBlocksShapeChange(state) {
-    return heroHasProtectionFromShapeChangers(state);
-}
-
-function monsterHasTransformEquipment(monster) {
-    if ((monster?.misc_worn_check ?? 0) !== 0) return true;
-    return (monster?.minvent || monster?.inventory || []).some(object =>
-        (object?.owornmask ?? 0) !== 0 || object?.worn || object?.wielded);
-}
-
-function waterWouldTransformWere(state, potion, monster) {
-    if (potion?.otyp !== POT_WATER || !monsterIsWere(monster)) return false;
-    if (potion.blessed) return !monsterIsHuman(monster);
-    return !!potion.cursed && monsterIsHuman(monster)
-        && !heroBlocksShapeChange(state);
-}
-
 // Includes the one-point bottle chip which precedes potionhit()'s damaging
 // water or acid die. A bottle chip alone cannot kill because C applies it only
 // above one HP, so non-damaging identities return zero rather than one.
@@ -325,17 +308,6 @@ export function maximumSupportedPotionFatalDamage(potion, monster) {
     }
     if (monster?.mnum === PM_IRON_GOLEM) return 7;
     return 0;
-}
-
-// Production callers ask this before splitobj()/freeinv() or throw RNG.  The
-// deterministic new_were() core is live, but mon_break_armor() and
-// possibly_unwield() are not.
-export function supportedPotionTargetGap({ state = game, potion, monster }) {
-    if (waterWouldTransformWere(state, potion, monster)
-        && monsterHasTransformEquipment(monster)) {
-        return 'water-were-equipment';
-    }
-    return null;
 }
 
 function waterEffectSubject(monster, targetSpotted) {
@@ -643,7 +615,7 @@ async function applySupportedDirectEffect({
                     monster.mhp + waterHealing,
                 );
                 if (monsterIsWere(monster) && monsterIsHuman(monster)
-                    && !heroBlocksShapeChange(state)) {
+                    && !heroHasProtectionFromShapeChangers(state)) {
                     if (!transformWere)
                         throw new Error('water were-transform owner unavailable');
                     if (targetSpotted && !heroHallucinates(state)) {

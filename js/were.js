@@ -8,6 +8,7 @@ import { tameMonster } from './dog.js';
 import { threateningMonsterNearby } from './do.js';
 import { game } from './gstate.js';
 import { makemonNear, splitHeroMonsterForm } from './mklev.js';
+import { adjustMonsterClothingAfterPolymorph } from './monworn.js';
 import { newsym, plineWithContinuation } from './display.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
@@ -20,6 +21,7 @@ import {
 import { paranoidQuery } from './query.js';
 import { rn2, rnd } from './rng.js';
 import { vision_recalc } from './vision.js';
+import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 
 const M2_WERE = 0x00000004;
 const M2_HUMAN = 0x00000008;
@@ -281,5 +283,7 @@ export function transformWereMonster(monster, state = game, {
         monster.mhp = Math.min(monster.mhpmax, monster.mhp + healing);
     }
     if (repaint) newsym(monster.mx, monster.my);
+    adjustMonsterClothingAfterPolymorph(monster, state);
+    updateMonsterWeaponAfterPolymorph(monster, state);
     return true;
 }
