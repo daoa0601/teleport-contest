@@ -3139,13 +3139,14 @@ function movePet(
         && rangedAttack.target
         && (rangedAttack.target.mhp ?? 0) <= 0) {
         rangedAttack.targetDied = true;
+        rangedAttack.attacks.at(-1).targetDied = true;
     }
     movePlan.wieldedWeapon = rangedAttack.readiedWeapon;
     if (rangedAttack.launched || rangedAttack.madeAttack) {
         const attack = rangedAttack.kind === 'spit'
             ? { spitAttack: rangedAttack }
             : rangedAttack.kind === 'weapon'
-                ? { rangedAttack }
+                ? { rangedAttacks: rangedAttack.attacks }
                 : { petBreath: rangedAttack };
         return {
             oldx, oldy, x: oldx, y: oldy, moved: false,
@@ -8150,7 +8151,7 @@ export function quietMonsterActionRng(
                 && !movement.deferredPetRangedNoise
                 && !movement.petBreath?.launched
                 && !movement.spitAttack?.launched
-                && !movement.rangedAttack?.madeAttack
+                && !movement.rangedAttacks?.length
                 && !movement.actorDied && !movement.actorLeftLevel)
                 movement.petPostmov = true;
         } else if (monster?.isgd && monster?._egd) {
@@ -8168,7 +8169,7 @@ export function quietMonsterActionRng(
             || movement.deferredPetRangedNoise
             || movement.petBreath?.launched
             || movement.spitAttack?.launched
-            || movement.rangedAttack?.madeAttack
+            || movement.rangedAttacks?.length
             || movement.deferredAfterRestrictedTenguTeleport)
             return { calls, movement };
         completeMovedMonsterAction(

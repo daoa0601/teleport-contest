@@ -138,3 +138,20 @@ test('an elven lord fires every arrow in a three-shot volley', () => {
     assert.equal(archer.inventory.includes(arrows), false);
     assert.ok(target.mhp < 100);
 });
+
+test('an orc captain uses both of its weapon attacks', () => {
+    freshRangedPetRoom();
+    const daggers = carriedObject(DAGGER, { quan: 2 });
+    const captain = addOrcPet([daggers], { species: 'orc-captain' });
+    const target = addRangedTarget();
+    target.mhp = target.mhpmax = 100;
+
+    quietMonsterActionRng(captain, game);
+
+    const landedDaggers = floorObjectsAt(game.level, 12, 10)
+        .filter(object => object.otyp === DAGGER)
+        .reduce((total, object) => total + object.quan, 0);
+    assert.equal(landedDaggers, 2);
+    assert.equal(captain.inventory.includes(daggers), false);
+    assert.ok(target.mhp < 100);
+});

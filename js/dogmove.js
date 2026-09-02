@@ -233,6 +233,7 @@ export function beginPetRangedAttack(
 
     pet.mlstmv = sourceTurn(state);
     let readiedWeapon = null;
+    const weaponAttacks = [];
     for (const attack of MONSTER_ATTACKS[pet.mnum] || []) {
         if (attack[0] === AT_WEAP && target !== state.u) {
             const weaponAttack = throwMonsterWeaponAtMonster(
@@ -243,13 +244,11 @@ export function beginPetRangedAttack(
                 continue;
             }
             if (weaponAttack?.madeAttack) {
-                return {
-                    kind: 'weapon',
-                    readiedWeapon,
-                    ...weaponAttack,
-                };
+                weaponAttacks.push(weaponAttack);
+                if ((target.mhp ?? 0) <= 0) break;
             }
         } else if (attack[0] === AT_BREA) {
+            if (weaponAttacks.length) break;
             const breath = beginBreathAtTarget(
                 pet, target, state, random, attack,
             );
@@ -259,6 +258,7 @@ export function beginPetRangedAttack(
                 };
             }
         } else if (attack[0] === AT_SPIT && target !== state.u) {
+            if (weaponAttacks.length) break;
             const position = targetPosition(target, state);
             const spit = beginMonsterSpitAttack(
                 pet, position.x, position.y,
@@ -270,6 +270,20 @@ export function beginPetRangedAttack(
                 };
             }
         }
+    }
+    if (weaponAttacks.length) {
+        const firstAttack = weaponAttacks[0];
+        return {
+            kind: 'weapon',
+            ...firstAttack,
+            hit: weaponAttacks.some(attack => attack.hit),
+            damage: weaponAttacks.reduce(
+                (total, attack) => total + attack.damage,
+                0,
+            ),
+            attacks: weaponAttacks,
+            readiedWeapon,
+        };
     }
     return { target, launched: false, readiedWeapon };
 }

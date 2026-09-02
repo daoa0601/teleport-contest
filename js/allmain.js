@@ -5599,8 +5599,9 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     newsym(transientFlightCell.x, transientFlightCell.y);
             }
         }
-        if (movement?.rangedAttack) {
-            const ranged = movement.rangedAttack;
+        const rangedAttacks = movement?.rangedAttacks
+            || (movement?.rangedAttack ? [movement.rangedAttack] : []);
+        for (const ranged of rangedAttacks) {
             const rangedAppearance = ranged.appearance || 'weapon';
             const rangedArticle = /^[aeiou]/i.test(rangedAppearance)
                 ? 'an' : 'a';
