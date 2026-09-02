@@ -1,7 +1,7 @@
 import {
-    CLUB, CORPSE, DART, FLINT, LOADSTONE, OBJECT_BASES, OBJECT_NAMES, ROCK,
-    SLING,
+    CLUB, CORPSE, DART, FLINT, LOADSTONE, OBJECT_NAMES, ROCK, SLING,
 } from '../../js/object_data.js';
+import { objectClassForType } from '../../js/object_knowledge.js';
 import { artifactByName } from '../../js/artifacts.js';
 import { mksobj, place_object, set_corpsenm } from '../../js/mklev.js';
 import { stopAllObjectTimers } from '../../js/object_timers.js';
@@ -17,20 +17,12 @@ const WEAPON_NAMES = new Map([
     [ROCK, ['rock', 'rocks']],
 ]);
 
-function objectClass(otyp) {
-    for (let oclass = 2; oclass < OBJECT_BASES.length - 1; oclass++) {
-        if (otyp >= OBJECT_BASES[oclass] && otyp < OBJECT_BASES[oclass + 1])
-            return oclass;
-    }
-    return 1;
-}
-
 function testObject(otyp, overrides = {}) {
     const quantity = overrides.quan ?? overrides.quantity ?? 1;
     return {
         otyp,
         name: OBJECT_NAMES[otyp],
-        oclass: objectClass(otyp),
+        oclass: objectClassForType(otyp),
         quan: quantity,
         quantity,
         blessed: false,

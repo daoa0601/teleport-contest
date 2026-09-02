@@ -21,6 +21,9 @@ export function freshObjectRoom({
         top: 6,
         bottom: 14,
         ...room,
+        moves,
+        flags,
+        context,
         hero: {
             uz: { dnum: 0, dlevel: 8 },
             ulevel: 8,
@@ -35,10 +38,7 @@ export function freshObjectRoom({
             ...hero,
         },
     });
-    game.moves = moves;
     game.mvitals = [];
-    game.flags = flags;
-    game.context = context;
     game.in_mklev = false;
     vision_reset_new_level();
     if (recalculateVision) vision_recalc(0);

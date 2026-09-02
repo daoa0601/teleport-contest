@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { LuaLifecycle } from '../js/lua/lifecycle.js';
 import { enableRngLog, getRngLog, initRng, rn2Display } from '../js/rng.js';
+import { freshGame } from './support/game-state.js';
 
 function freshLuaGame(seed) {
-    resetGame();
-    game.u = {};
+    freshGame();
     initRng(seed);
     enableRngLog();
 }

@@ -7,13 +7,13 @@ import {
 } from '../js/exper.js';
 import { A_CON, A_WIS } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
+import { liveMonster } from './support/monsters.js';
 
-const monster = (name, state = {}) => ({
-    mnum: MONSTER_NAME.indexOf(name),
-    m_lev: 0,
+const monster = (species, state = {}) => liveMonster({
+    species,
+    level: 0,
     ...state,
 });
 

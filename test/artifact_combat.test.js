@@ -10,6 +10,7 @@ import { game } from '../js/gstate.js';
 import { BLACK_DRAGON_SCALES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { artifactObject, carriedObject } from './support/game-objects.js';
+import { freshGame } from './support/game-state.js';
 import { liveMonster } from './support/monsters.js';
 
 const maximumRoll = range => range;
@@ -114,13 +115,15 @@ test('black dragon scales protect a monster from Stormbringer', () => {
 });
 
 test('Grimtooth rejects an elf hero', () => {
-    game.flags = { female: false };
+    freshGame({
+        flags: { female: false },
+        hero: {
+            mtimedone: 0,
+            ulycn: -1,
+            ualign: { type: -1, record: 10 },
+        },
+    });
     game.urace = { mnum: 264 };
-    game.u = {
-        mtimedone: 0,
-        ulycn: -1,
-        ualign: { type: -1, record: 10 },
-    };
     initRng(301n);
     const grimtooth = artifactObject('Grimtooth');
 

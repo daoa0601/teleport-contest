@@ -15,6 +15,7 @@ export function freshPlayableRoom({
     heroY = 10,
     role = 'caveman',
     hero = {},
+    ...gameState
 } = {}) {
     const level = new GameMap();
     for (let x = left; x <= right; x++) {
@@ -28,7 +29,7 @@ export function freshPlayableRoom({
         }
     }
 
-    freshGame({ level, role, heroX, heroY, hero });
+    freshGame({ ...gameState, level, role, heroX, heroY, hero });
     vision_reset();
     return level;
 }
@@ -38,8 +39,7 @@ export function freshCommandRoom({
     seed,
     ...room
 } = {}) {
-    const level = freshPlayableRoom(room);
-    game.inventory = inventory;
+    const level = freshPlayableRoom({ ...room, inventory });
     game.nhDisplay = new GameDisplay(null);
     if (seed !== undefined) initRng(seed);
     return level;
