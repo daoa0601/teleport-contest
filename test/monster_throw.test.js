@@ -12,8 +12,8 @@ import {
 import { A_STR, NEED_WEAPON, W_AMUL } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import {
-    AMULET_OF_LIFE_SAVING, ARROW, BOW, CROSSBOW, CROSSBOW_BOLT, DAGGER,
-    DART, ELVEN_ARROW, ELVEN_BOW,
+    AMULET_OF_LIFE_SAVING, ARROW, BOW, CREAM_PIE, CROSSBOW,
+    CROSSBOW_BOLT, DAGGER, DART, ELVEN_ARROW, ELVEN_BOW,
 } from '../js/object_data.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -100,6 +100,37 @@ test('a poisoned dart adds poison damage to a susceptible monster', () => {
     finishRangedAttacks([attack], game, options);
 
     assert.equal(target.mhp, 18);
+});
+
+test('a cream pie blinds a monster without hurting it', async () => {
+    freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
+    game.nhDisplay = new GameDisplay(null);
+    const pie = carriedObject(CREAM_PIE);
+    const orc = addMonsterToLevel(rangedPet('orc', {
+        inventory: [pie],
+    }));
+    const target = addMonsterToLevel(rangedTarget());
+    const hitPointsBefore = target.mhp;
+
+    const attack = throwMonsterWeaponAtMonster(orc, target, game, {
+        random: () => 1,
+        rollOne: () => 1,
+    });
+    const shot = attack.shots[0];
+    const messages = [];
+    await presentMonsterProjectileShot(shot, PROJECTILE_GLYPH, game, {
+        publish: async message => messages.push(message),
+    });
+    finishDeferredRangedProjectileHit(shot, game, () => 0);
+
+    assert.equal(target.mhp, hitPointsBefore);
+    assert.equal(target.mcansee, 0);
+    assert.equal(target.mblinded, 21);
+    assert.equal(pie.where, 'gone');
+    assert.deepEqual(messages, [
+        'The cream pie hits the jackal.',
+        'The jackal is blinded by the pie.',
+    ]);
 });
 
 test('poison resistance stops the poison on a thrown dart', async () => {
@@ -223,6 +254,36 @@ test('a hostile monster can throw a dagger at the hero and land it', () => {
         floorObjectsAt(game.level, game.u.ux, game.u.uy).includes(dagger),
         true,
     );
+});
+
+test('a cream pie blinds the hero without hurting them', async () => {
+    freshRangedCombatRoom({
+        heroX: 12,
+        heroY: 10,
+        hero: { uhp: 12, uhpmax: 12 },
+        gameplaySeed: 1n,
+    });
+    const pie = carriedObject(CREAM_PIE);
+    const orc = addMonsterToLevel(rangedMonster('orc', {
+        inventory: [pie],
+    }));
+    const attack = throwMonsterWeaponAtHero(orc, game, pie, {
+        random: () => 1,
+        rollOne: () => 1,
+    });
+    const messages = [];
+
+    await finishHeroProjectileHit(attack.shots[0], game, {
+        publish: async message => messages.push(message),
+        random: () => 0,
+        rollOne: () => 5,
+    });
+
+    assert.equal(game.u.uhp, 12);
+    assert.equal(game.u.blindTurns, 5);
+    assert.equal(game.u.ucreamed, 5);
+    assert.equal(pie.where, 'gone');
+    assert.deepEqual(messages, ["Yecch!  You've been creamed."]);
 });
 
 test('a poisoned dart damages the hero after its ordinary hit', async () => {

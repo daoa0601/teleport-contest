@@ -5899,6 +5899,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     if (transientFlightCell)
                         newsym(transientFlightCell.x, transientFlightCell.y);
                 }
+                finishDeferredRangedProjectileHit(ranged, game);
             }
             if (!ranged.heroTarget) {
                 const impactVisible = Number.isFinite(ranged.impactX)

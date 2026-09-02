@@ -3,6 +3,9 @@
 // and uhitm.c hmon() venom cases.
 
 import { currentAttribute } from './attrib.js';
+import {
+    blindMonsterWithThrownObject, heroCanBeBlindedByVenom,
+} from './blinding_attack.js';
 import { A_DEX, IS_SOFT, LOST_THROWN } from './const.js';
 import {
     canProjectMonster, newsym, plineWithContinuation,
@@ -36,10 +39,7 @@ import {
     prepareHeroThrownTarget,
 } from './thrown_object.js';
 import { promptDirection } from './tty_prompts.js';
-import {
-    acidVenomDamage, heroCanBeBlindedByVenom,
-    monsterCanBeBlindedByVenom,
-} from './venom.js';
+import { acidVenomDamage } from './venom.js';
 
 export function heroSpitAttack(state = game) {
     const form = heroMonsterForm(state);
@@ -157,18 +157,18 @@ async function hitMonsterWithVenom({
     }
 
     if (venom.otyp === BLINDING_VENOM) {
-        const further = monster.mcansee ? '' : ' further';
-        if (monsterCanBeBlindedByVenom(monster, {
-            heroInsideTarget: !!state.u?.uswallow,
-            state,
-        })) {
+        const blindness = blindMonsterWithThrownObject(
+            monster, venom.otyp, {
+                heroInsideTarget: !!state.u?.uswallow,
+                state,
+                rollOne,
+            },
+        );
+        if (blindness) {
+            const further = blindness.wasSeeing ? '' : ' further';
             await publish(heroIsBlind(state)
                 ? 'Splash!'
                 : `The venom blinds ${targetName(monster)}${further}!`);
-            monster.mcansee = 0;
-            monster.mblinded = Math.min(
-                127, (monster.mblinded ?? 0) + rollOne(25) + 20,
-            );
         } else {
             await publish('Splash!');
         }

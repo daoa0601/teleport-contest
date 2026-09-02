@@ -7,6 +7,9 @@ import {
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import {
+    blindHeroWithThrownObject, blindMonsterWithThrownObject,
+} from './blinding_attack.js';
+import {
     canProjectMonster, flush_screen, newsym, show_glyph_cell,
 } from './display.js';
 import { dist2, distmin } from './hacklib.js';
@@ -17,8 +20,8 @@ import {
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
-    FLINT, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_SMALL_DAMAGE,
-    OBJECT_SUBTYPE, OBJECT_WEIGHT,
+    BLINDING_VENOM, CREAM_PIE, FLINT, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
+    OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
 import { isPoisonableObject } from './object_properties.js';
 import { monsterHasPoisonResistance } from './monster_resistance.js';
@@ -45,6 +48,7 @@ const PM_ROGUE = MONSTER_NAME.indexOf('rogue');
 const PM_SAMURAI = MONSTER_NAME.indexOf('samurai');
 const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
 const PM_NINJA = MONSTER_NAME.indexOf('ninja');
+const BLINDING_PROJECTILES = new Set([CREAM_PIE, BLINDING_VENOM]);
 
 // C weapon.c:rwep[] order. A melee weapon is not automatically a missile.
 const RANGED_WEAPON_PREFERENCE = [
@@ -262,8 +266,8 @@ export function finishDeferredRangedProjectileHit(
         && subtype >= -24 && subtype <= -23;
     const magicStone = objectTypeName(object) === 'loadstone'
         || objectTypeName(object) === 'luckstone';
-    let broken = false;
-    if (shot.hit && (ammo || missile) && !magicStone) {
+    let broken = BLINDING_PROJECTILES.has(object.otyp);
+    if (!broken && shot.hit && (ammo || missile) && !magicStone) {
         const chance = 3 + Math.max(
             object.oeroded ?? 0, object.oeroded2 ?? 0,
         ) - (object.spe ?? 0);
@@ -335,6 +339,12 @@ export async function finishHeroProjectileHit(
             lifeSaved = true;
         }
     }
+    if (shot.hit && BLINDING_PROJECTILES.has(shot.weapon?.otyp)) {
+        const blindness = blindHeroWithThrownObject(
+            shot.weapon.otyp, state, rollOne,
+        );
+        if (blindness) await publish(blindness.message);
+    }
     finishDeferredRangedProjectileHit(shot, state, random);
     return { died: false, lifeSaved };
 }
@@ -358,6 +368,10 @@ export async function presentMonsterProjectileContact(contact, publish) {
         await publish(`The poison doesn't seem to affect ${target}.`);
     else if (contact.poisonDeadly)
         await publish('The poison was deadly...');
+    if (contact.blinded && spotted) {
+        const cause = contact.weapon?.otyp === CREAM_PIE ? 'pie' : 'venom';
+        await publish(`The ${target.slice(4)} is blinded by the ${cause}.`);
+    }
     if (contact.targetDied) {
         const subject = target === 'it'
             ? 'It' : `The ${target.slice(4)}`;
@@ -431,6 +445,7 @@ export async function presentMonsterProjectileShot(
 }
 
 export function projectileDamageAgainstHero(object, rollOne = rnd) {
+    if (BLINDING_PROJECTILES.has(object.otyp)) return 0;
     const sides = Math.max(1, OBJECT_SMALL_DAMAGE[object.otyp] || 1);
     let damage = rollOne(sides);
     const weaponLike = object.oclass === WEAPON_CLASS
@@ -450,6 +465,7 @@ export function projectileDamageAgainstHero(object, rollOne = rnd) {
 }
 
 function projectileDamageAgainstMonster(object, monster, rollOne) {
+    if (BLINDING_PROJECTILES.has(object.otyp)) return 0;
     return rollPhysicalWeaponDamage(object, monster, { rollOne });
 }
 
@@ -475,7 +491,7 @@ function positionsAreLinedUp(source, target) {
 }
 
 function hitMonsterWithMissile(
-    source, intendedTarget, defender, missile, random, rollOne,
+    source, intendedTarget, defender, missile, state, random, rollOne,
 ) {
     let hitThreshold = 5 + findMonsterArmorClass(defender);
     const sourceLevel = source.m_lev ?? MONSTER_LEVEL[source.mnum] ?? 0;
@@ -502,7 +518,11 @@ function hitMonsterWithMissile(
         defender.msleeping = 0;
         defender.mhp = Math.max(0, (defender.mhp ?? 1) - damage);
     }
+    const blindness = hit ? blindMonsterWithThrownObject(
+        defender, missile.otyp, { state, rollOne },
+    ) : null;
     return {
+        weapon: missile,
         appearance: missileAppearance(missile),
         target: defender,
         x: defender.mx,
@@ -514,6 +534,8 @@ function hitMonsterWithMissile(
         damage,
         poisonResisted,
         poisonDeadly,
+        blinded: blindness?.wasSeeing ?? false,
+        blindIncrement: blindness?.blindIncrement ?? 0,
     };
 }
 
@@ -540,7 +562,7 @@ function throwOneMonsterMissile(
         }
 
         const contact = hitMonsterWithMissile(
-            source, target, defender, missile, random, rollOne,
+            source, target, defender, missile, state, random, rollOne,
         );
         if (!contact.hit) {
             random(5);
@@ -597,7 +619,7 @@ function throwOneMonsterMissileAtHero(
         const defender = livingMonsterAt(state, source, x, y);
         if (defender) {
             const contact = hitMonsterWithMissile(
-                source, null, defender, missile, random, rollOne,
+                source, null, defender, missile, state, random, rollOne,
             );
             if (!contact.hit) {
                 random(5);
@@ -606,7 +628,6 @@ function throwOneMonsterMissileAtHero(
                     continue;
                 }
             }
-            placeAndStackThrownObject(state, missile, x, y);
             return {
                 weapon: missile,
                 ...contact,
@@ -615,6 +636,7 @@ function throwOneMonsterMissileAtHero(
                 flightGlyph: ')',
                 impactX: x,
                 impactY: y,
+                deferredFloorResolution: true,
             };
         }
 
@@ -648,10 +670,11 @@ function throwOneMonsterMissileAtHero(
             }
 
             const damage = projectileDamageAgainstHero(missile, rollOne);
-            let hitLevel = Math.max(
-                -4, 3 - distmin(heroX, heroY, source.mx, source.my),
-            );
-            hitLevel += 8 + (missile.spe ?? 0);
+            const hitLevel = BLINDING_PROJECTILES.has(missile.otyp)
+                ? 8
+                : Math.max(
+                    -4, 3 - distmin(heroX, heroY, source.mx, source.my),
+                ) + 8 + (missile.spe ?? 0);
             const hitRoll = rollOne(20);
             const hit = (state.u?.uac ?? 10) + hitLevel > hitRoll;
             if (hit) {
@@ -676,7 +699,9 @@ function throwOneMonsterMissileAtHero(
             }
 
             random(5);
-            placeAndStackThrownObject(state, missile, x, y);
+            const disappears = BLINDING_PROJECTILES.has(missile.otyp);
+            if (!disappears)
+                placeAndStackThrownObject(state, missile, x, y);
             return {
                 weapon: missile,
                 appearance,
@@ -690,6 +715,7 @@ function throwOneMonsterMissileAtHero(
                 flightGlyph: ')',
                 impactX: x,
                 impactY: y,
+                deferredFloorResolution: disappears,
             };
         }
 
