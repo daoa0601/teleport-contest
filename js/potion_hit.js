@@ -30,7 +30,7 @@ import {
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
     MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND,
-    monsterTypeName,
+    monsterHatesBlessings, monsterTypeName,
 } from './monster_data.js';
 import {
     AD_DISE, AD_PEST,
@@ -62,17 +62,12 @@ const PM_ARCHEOLOGIST = 331;
 const PM_WIZARD = 343;
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
-const PM_VAMPIRE = 226;
-const PM_VAMPIRE_LEADER = 227;
-const PM_VLAD_THE_IMPALER = 228;
 const M1_BREATHLESS = 0x00000400;
 const M1_NOEYES = 0x00001000;
 const M1_NOHEAD = 0x00008000;
 const M2_PNAME = 0x00080000;
-const M2_UNDEAD = 0x00000002;
 const M2_WERE = 0x00000004;
 const M2_HUMAN = 0x00000008;
-const M2_DEMON = 0x00000100;
 const M1_SEE_INVIS = 0x01000000;
 const MR_SLEEP = 0x04;
 
@@ -322,17 +317,6 @@ function heroSeesInvisible(state) {
     const hero = state.u || {};
     return !!(hero.seeInvisible || hero.see_invisible
         || (hero.seeInvisibleTurns ?? 0) > 0);
-}
-
-function monsterIsVampireShifter(monster) {
-    return [PM_VAMPIRE, PM_VAMPIRE_LEADER, PM_VLAD_THE_IMPALER]
-        .includes(monster?.cham);
-}
-
-function monsterHatesBlessings(monster) {
-    const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
-    return !!(flags & (M2_UNDEAD | M2_DEMON))
-        || monsterIsVampireShifter(monster);
 }
 
 function monsterIsWere(monster) {

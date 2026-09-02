@@ -2,8 +2,8 @@
 // C refs: weapon.c select_rwep() and mthrowu.c monmulti(), m_throw().
 
 import {
-    A_DEX, A_STR, BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON, POISONING,
-    P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR,
+    A_CON, A_DEX, A_STR, BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON,
+    POISONING, P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import {
@@ -17,12 +17,13 @@ import { nextIdent } from './ident.js';
 import { stack_object } from './mklev.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import {
-    MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, monsterTypeName,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME,
+    MONSTER_SYMBOL, monsterHatesSilver, monsterTypeName,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
     BLINDING_VENOM, CREAM_PIE, EGG, FLINT, OBJECT_DESCRIPTIONS,
-    OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT,
+    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { isPoisonableObject } from './object_properties.js';
@@ -32,7 +33,10 @@ import {
 import { resolvePoisonedHero } from './poison.js';
 import { d, rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
-import { rollPhysicalWeaponDamage } from './weapon_damage.js';
+import {
+    heroHatesSilver, rollPhysicalWeaponDamage,
+    rollPhysicalWeaponDamageAgainstHero,
+} from './weapon_damage.js';
 import { finishHeroDeath } from './end.js';
 import { hitByPetrifyingEgg, touchPetrifies } from './stoning.js';
 
@@ -45,6 +49,9 @@ const M2_GNOME = 0x00000040;
 const M2_ORC = 0x00000080;
 const M2_LORD = 0x00000400;
 const M2_PRINCE = 0x00000800;
+const M1_AMORPHOUS = 0x00000004;
+const S_GHOST = 54;
+const SILVER = 14;
 const PM_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
 const PM_CAVE_DWELLER = MONSTER_NAME.indexOf('cave dweller');
 const PM_MONK = MONSTER_NAME.indexOf('monk');
@@ -312,6 +319,10 @@ export async function finishHeroProjectileHit(
 ) {
     const killer = objectTypeName(shot.weapon)
         || shot.appearance || 'weapon';
+    if (shot.hit && shot.silverSears) {
+        await publish('The silver sears your flesh!');
+        exerciseAttribute(A_CON, false, state);
+    }
     const baseHitWasFatal = (state.u?.uhp ?? 1) < 1;
     if (baseHitWasFatal && await finishDeath({
         killer,
@@ -416,6 +427,14 @@ export async function presentMonsterProjectileContact(
         await publish(`The poison doesn't seem to affect ${target}.`);
     else if (contact.poisonDeadly)
         await publish('The poison was deadly...');
+    if (contact.silverSears) {
+        const flesh = MONSTER_SYMBOL[contact.target?.mnum] !== S_GHOST
+            && !((MONSTER_FLAGS1[contact.target?.mnum] ?? 0) & M1_AMORPHOUS);
+        const object = flesh
+            ? target === 'it' ? 'its flesh' : `${possessive(target)} flesh`
+            : target;
+        await publish(`The silver sears ${object}!`);
+    }
     if (contact.blinded && spotted) {
         const cause = contact.weapon?.otyp === CREAM_PIE ? 'pie' : 'venom';
         await publish(`The ${target.slice(4)} is blinded by the ${cause}.`);
@@ -492,24 +511,11 @@ export async function presentMonsterProjectileShot(
     return { targetVisible };
 }
 
-export function projectileDamageAgainstHero(object, rollOne = rnd) {
+export function projectileDamageAgainstHero(object, state, rollOne = rnd) {
     if (ZERO_DAMAGE_HERO_PROJECTILES.has(object.otyp)) return 0;
-    const sides = Math.max(1, OBJECT_SMALL_DAMAGE[object.otyp] || 1);
-    let damage = rollOne(sides);
-    const weaponLike = object.oclass === WEAPON_CLASS
-        || (object.oclass === TOOL_CLASS
-            && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0);
-    if (weaponLike) {
-        damage += object.spe ?? 0;
-        if (damage < 0) damage = 0;
-    }
-    if (damage > 0) {
-        damage = Math.max(
-            1,
-            damage - Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0),
-        );
-    }
-    return Math.max(1, damage);
+    return Math.max(1, rollPhysicalWeaponDamageAgainstHero(
+        object, state, { rollOne },
+    ));
 }
 
 function projectileDamageAgainstMonster(object, monster, rollOne) {
@@ -528,6 +534,10 @@ function missileAppearance(missile) {
             || objectTypeName(missile) || 'weapon';
     return missile.opoisoned && isPoisonableObject(missile)
         ? `poisoned ${name}` : name;
+}
+
+function possessive(name) {
+    return /s$/i.test(name) ? `${name}'` : `${name}'s`;
 }
 
 function livingMonsterAt(state, source, x, y) {
@@ -556,6 +566,9 @@ function hitMonsterWithMissile(
         : 0;
     const petrifyingEgg = hit && missile.otyp === EGG
         && touchPetrifies(missile.corpsenm);
+    const silverSears = hit
+        && OBJECT_MATERIAL[missile.otyp] === SILVER
+        && monsterHatesSilver(defender);
     const eggImpactDamage = petrifyingEgg ? damage : 0;
     if (petrifyingEgg) damage = 0;
     let poisonResisted = false;
@@ -592,6 +605,7 @@ function hitMonsterWithMissile(
         damage,
         poisonResisted,
         poisonDeadly,
+        silverSears,
         petrifyingEgg,
         eggImpactDamage,
         blinded: blindness?.wasSeeing ?? false,
@@ -729,7 +743,11 @@ function throwOneMonsterMissileAtHero(
                 };
             }
 
-            const damage = projectileDamageAgainstHero(missile, rollOne);
+            const silverSears = OBJECT_MATERIAL[missile.otyp] === SILVER
+                && heroHatesSilver(state);
+            const damage = projectileDamageAgainstHero(
+                missile, state, rollOne,
+            );
             const hitLevel = ZERO_DAMAGE_HERO_PROJECTILES.has(missile.otyp)
                 ? 8
                 : Math.max(
@@ -748,6 +766,7 @@ function throwOneMonsterMissileAtHero(
                     hitRoll,
                     hitLevel,
                     damage,
+                    silverSears,
                     preHitHp,
                     launched,
                     flightPath,

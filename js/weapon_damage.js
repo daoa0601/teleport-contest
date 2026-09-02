@@ -1,11 +1,24 @@
 // weapon_damage.js — Shared physical weapon die, enchantment, and erosion.
 // C refs: weapon.c:dmgval(), weapon.c:dbon().
 
+import { Upolyd } from './const.js';
 import {
-    OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE,
+    OBJECT_LARGE_DAMAGE, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SMALL_DAMAGE,
+    OBJECT_SUBTYPE,
 } from './object_data.js';
-import { MONSTER_SIZE } from './monster_data.js';
+import {
+    MONSTER_SIZE, monsterHatesBlessings, monsterHatesSilver,
+    monsterSpeciesHatesSilver,
+} from './monster_data.js';
+import { objectClassForType } from './object_knowledge.js';
 import { rnd } from './rng.js';
+
+const WEAPON_CLASS = 2;
+const TOOL_CLASS = 6;
+const GEM_CLASS = 13;
+const BALL_CLASS = 15;
+const CHAIN_CLASS = 16;
+const SILVER = 14;
 
 function objectTypes(names) {
     return new Set(names.map(name => OBJECT_NAMES.indexOf(name))
@@ -56,19 +69,56 @@ function erosion(object) {
     return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0);
 }
 
-function finalizePhysicalDamage(object, damage) {
+function addWeaponEnchantment(object, damage) {
+    const objectClass = object.oclass || objectClassForType(object.otyp);
+    const weaponLike = objectClass === WEAPON_CLASS
+        || (objectClass === TOOL_CLASS
+            && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0);
+    if (!weaponLike) return damage;
     damage += enchantment(object);
-    if (damage < 0) damage = 0;
+    return Math.max(0, damage);
+}
+
+function canHaveTargetDamageBonus(object) {
+    const objectClass = object.oclass || objectClassForType(object.otyp);
+    return objectClass === WEAPON_CLASS
+        || (objectClass === TOOL_CLASS
+            && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0)
+        || objectClass === GEM_CLASS
+        || objectClass === BALL_CLASS
+        || objectClass === CHAIN_CLASS;
+}
+
+function targetDamageBonus(
+    object, { hatesBlessings, hatesSilver }, rollOne,
+) {
+    if (!canHaveTargetDamageBonus(object)) return 0;
+    let bonus = 0;
+    if (object.blessed && hatesBlessings) bonus += rollOne(4);
+    if (OBJECT_MATERIAL[object.otyp] === SILVER && hatesSilver)
+        bonus += rollOne(20);
+    return bonus;
+}
+
+function maximumTargetDamageBonus(object, monster) {
+    if (!canHaveTargetDamageBonus(object)) return 0;
+    let bonus = 0;
+    if (object.blessed && monsterHatesBlessings(monster)) bonus += 4;
+    if (OBJECT_MATERIAL[object.otyp] === SILVER
+        && monsterHatesSilver(monster)) bonus += 20;
+    return bonus;
+}
+
+function applyErosion(object, damage) {
     if (damage > 0) damage = Math.max(1, damage - erosion(object));
     return damage;
 }
 
-// This owns dmgval()'s ordinary physical table. Target-specific blessing,
-// silver, wooden-target, artifact-light, shade, and thick-hide modifiers are
-// intentionally selected by callers before they enter this shared core.
 export function rollPhysicalWeaponDamage(
     object, monster, {
         rollOne = rnd,
+        hatesBlessings = monsterHatesBlessings(monster),
+        hatesSilver = monsterHatesSilver(monster),
         rollDice = (count, sides) => {
             let total = 0;
             for (let die = 0; die < count; die++) total += rollOne(sides);
@@ -83,7 +133,33 @@ export function rollPhysicalWeaponDamage(
     if (profile.random6) damage += rollOne(6);
     if (profile.twoD4) damage += rollDice(2, 4);
     if (profile.twoD6) damage += rollDice(2, 6);
-    return finalizePhysicalDamage(object, damage);
+    damage = addWeaponEnchantment(object, damage);
+    damage += targetDamageBonus(
+        object, { hatesBlessings, hatesSilver }, rollOne,
+    );
+    return applyErosion(object, damage);
+}
+
+function heroMonsterNumber(state) {
+    if (Upolyd(state.u)) return state.u.umonnum;
+    return state.flags?.female
+        ? state.urace?.femalenum ?? state.urace?.malenum
+        : state.urace?.malenum;
+}
+
+export function heroHatesSilver(state) {
+    if (Number.isInteger(state.u?.ulycn) && state.u.ulycn >= 0) return true;
+    return monsterSpeciesHatesSilver(heroMonsterNumber(state));
+}
+
+export function rollPhysicalWeaponDamageAgainstHero(
+    object, state, options = {},
+) {
+    return rollPhysicalWeaponDamage(
+        object,
+        { mnum: heroMonsterNumber(state) },
+        { ...options, hatesSilver: heroHatesSilver(state) },
+    );
 }
 
 export function maximumPhysicalWeaponDamage(object, monster) {
@@ -93,7 +169,9 @@ export function maximumPhysicalWeaponDamage(object, monster) {
     if (profile.random6) damage += 6;
     if (profile.twoD4) damage += 8;
     if (profile.twoD6) damage += 12;
-    return finalizePhysicalDamage(object, damage);
+    damage = addWeaponEnchantment(object, damage);
+    damage += maximumTargetDamageBonus(object, monster);
+    return applyErosion(object, damage);
 }
 
 // Strength values above 18 retain NetHack's internal encoding (19 == 18/01,

@@ -8,7 +8,8 @@ import { couldsee } from './vision.js';
 import { newsym, unmap_invisible } from './display.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SIZE,
-    MONSTER_SOUND, MONSTER_SYMBOL,
+    MONSTER_SOUND, MONSTER_SYMBOL, monsterHatesBlessings,
+    monsterHatesSilver,
 } from './monster_data.js';
 import {
     KICKING_BOOTS, OBJECT_BIMANUAL, OBJECT_MATERIAL,
@@ -30,18 +31,10 @@ const M1_SLITHY = 0x00080000;
 const M1_THICK_HIDE = 0x00200000;
 const M1_TPORT = 0x02000000;
 const M2_UNDEAD = 0x00000002;
-const M2_WERE = 0x00000004;
-const M2_DEMON = 0x00000100;
-const S_IMP = 9;
 const S_EYE = 5;
 const S_LIGHT = 25;
-const S_VAMPIRE = 48;
 const S_EEL = 57;
-const PM_TENGU = 55;
 const PM_GRID_BUG = 116;
-const PM_VAMPIRE = 226;
-const PM_VAMPIRE_LEADER = 227;
-const PM_VLAD_THE_IMPALER = 228;
 const PM_SHADE = 288;
 const SILVER = 14;
 
@@ -83,29 +76,12 @@ function evasionVerb(monster, state) {
     return 'jumps';
 }
 
-function vampireShifter(monster) {
-    return [PM_VAMPIRE, PM_VAMPIRE_LEADER, PM_VLAD_THE_IMPALER]
-        .includes(monster.cham);
-}
-
-function hatesBlessedObjects(monster) {
-    const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
-    return vampireShifter(monster) || !!(flags & (M2_UNDEAD | M2_DEMON));
-}
-
-function hatesSilver(monster) {
-    const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[monster.mnum];
-    return vampireShifter(monster) || !!(flags & (M2_WERE | M2_DEMON))
-        || symbol === S_VAMPIRE || monster.mnum === PM_SHADE
-        || (symbol === S_IMP && monster.mnum !== PM_TENGU);
-}
-
 function specialBootDamage(monster, boots) {
     if (!boots) return 0;
     let damage = 0;
-    if (boots.blessed && hatesBlessedObjects(monster)) damage += rnd(4);
-    if (OBJECT_MATERIAL[boots.otyp] === SILVER && hatesSilver(monster))
+    if (boots.blessed && monsterHatesBlessings(monster)) damage += rnd(4);
+    if (OBJECT_MATERIAL[boots.otyp] === SILVER
+        && monsterHatesSilver(monster))
         damage += rnd(20);
     return damage;
 }

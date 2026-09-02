@@ -14,7 +14,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, CORPSE, CREAM_PIE,
     CROSSBOW, CROSSBOW_BOLT, DAGGER, DART, EGG, ELVEN_ARROW,
-    ELVEN_BOW, STATUE,
+    ELVEN_BOW, OBJECT_NAMES, STATUE,
 } from '../js/object_data.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -38,6 +38,7 @@ import {
 } from './support/ranged-combat.js';
 
 const PROJECTILE_GLYPH = { ch: ')', color: 0, decgfx: false, attr: 0 };
+const SILVER_DAGGER = OBJECT_NAMES.indexOf('silver dagger');
 
 test('a monster readies the launcher required by its ammunition', () => {
     const bow = carriedObject(BOW);
@@ -101,6 +102,65 @@ test('a poisoned dart adds poison damage to a susceptible monster', () => {
     finishRangedAttacks([attack], game, options);
 
     assert.equal(target.mhp, 18);
+});
+
+test('a silver dagger sears a vampire', async () => {
+    freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
+    const dagger = carriedObject(SILVER_DAGGER);
+    const orc = addMonsterToLevel(rangedPet('orc', {
+        inventory: [dagger],
+    }));
+    const vampire = addMonsterToLevel(rangedTarget('vampire', {
+        hitPoints: 100,
+        mac: 100,
+    }));
+    const options = { random: () => 1, rollOne: range => range };
+
+    const attack = throwMonsterWeaponAtMonster(
+        orc, vampire, game, options,
+    );
+    const messages = [];
+    await presentMonsterProjectileShot(
+        attack.shots[0], PROJECTILE_GLYPH, game, {
+            publish: async message => messages.push(message),
+        },
+    );
+
+    assert.equal(vampire.mhp, 76);
+    assert.deepEqual(messages, [
+        'The silver dagger hits the vampire.',
+        "The silver sears the vampire's flesh!",
+    ]);
+});
+
+test('a silver dagger sears a lycanthropic hero', async () => {
+    freshRangedCombatRoom({
+        heroX: 12,
+        heroY: 10,
+        gameplaySeed: 1n,
+        hero: {
+            uac: 30,
+            uhp: 100,
+            uhpmax: 100,
+            ulycn: MONSTER_NAME.indexOf('werewolf'),
+        },
+    });
+    const dagger = carriedObject(SILVER_DAGGER);
+    const orc = addMonsterToLevel(rangedMonster('orc', {
+        inventory: [dagger],
+    }));
+    const attack = throwMonsterWeaponAtHero(orc, game, dagger, {
+        random: () => 1,
+        rollOne: range => range,
+    });
+    const messages = [];
+
+    await finishHeroProjectileHit(attack.shots[0], game, {
+        publish: async message => messages.push(message),
+    });
+
+    assert.equal(game.u.uhp, 76);
+    assert.deepEqual(messages, ['The silver sears your flesh!']);
 });
 
 test('a cream pie blinds a monster without hurting it', async () => {

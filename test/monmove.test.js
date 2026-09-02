@@ -8,9 +8,11 @@ import {
 import { IRONBARS, LAVAPOOL, ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
-import { ROCK } from '../js/object_data.js';
+import { OBJECT_NAMES, ROCK } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
+import { carriedObject } from './support/game-objects.js';
 import { addMonster, addPet, liveMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -86,6 +88,46 @@ test('a tame red dragon bites and claws an adjacent enemy', () => {
         ['bite', 'claw', 'claw'],
     );
     assert.equal(goblin.mhp, 68);
+});
+
+test('a silver weapon sears a lycanthropic hero in melee', () => {
+    freshObjectRoom({
+        heroX: 10,
+        heroY: 10,
+        hero: {
+            uac: 10,
+            uhp: 100,
+            uhpmax: 100,
+            ulycn: MONSTER_NAME.indexOf('werewolf'),
+        },
+        recalculateVision: false,
+    });
+    const silverDagger = carriedObject(
+        OBJECT_NAMES.indexOf('silver dagger'),
+        { wielded: true, where: 'monster' },
+    );
+    const soldier = addMonster({
+        species: 'soldier',
+        x: 11,
+        y: 10,
+        hitPoints: 30,
+        level: 10,
+        inventory: [silverDagger],
+        mw: silverDagger,
+        mux: 10,
+        muy: 10,
+    });
+
+    const action = quietMonsterActionRng(
+        soldier,
+        game,
+        () => 1,
+        (count, sides) => count * sides,
+        range => range,
+    );
+
+    assert.equal(action.movement.attack.effect, 'physical-weapon');
+    assert.equal(game.u.uhp, 68);
 });
 
 test('a land monster in lava burns and drops what it carried', async () => {

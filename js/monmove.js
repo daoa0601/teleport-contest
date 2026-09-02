@@ -93,6 +93,7 @@ import {
 import { syncBlindness } from './senses.js';
 import { touchPetrifies } from './stoning.js';
 import { clearHeroSliming } from './slime.js';
+import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import { priestIsInOwnTemple } from './priest.js';
 import {
@@ -5463,29 +5464,17 @@ function basicMonsterAttack(
     if (hit && contactWeapon && damageType === AD_PHYS) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
-        const weaponSides = Math.max(
-            0, OBJECT_SMALL_DAMAGE[contactWeapon.otyp] || 0,
-        );
-        let weaponDamage = weaponSides ? rollOne(weaponSides) : 0;
-        if (weaponSides) calls.push(`rnd(${weaponSides})`);
-        // weapon.c:dmgval(), non-big defender supplement.  A battle-axe
-        // keeps its encoded 1d8 die, then adds a separate 1d4 before
-        // enchantment and erosion adjustments.
-        if (contactWeapon.otyp === BATTLE_AXE) {
-            weaponDamage += rollOne(4);
-            calls.push('rnd(4)');
-        }
-        // weapon.c:dmgval(): a mace has a fixed +1 against non-big
-        // defenders in addition to its encoded 1d6 base die.
-        if (contactWeapon.otyp === 73) weaponDamage++;
-        weaponDamage += contactWeapon.spe
-            ?? contactWeapon.enchantment ?? 0;
-        weaponDamage = Math.max(
-            weaponDamage - Math.max(
-                contactWeapon.oeroded ?? 0,
-                contactWeapon.oeroded2 ?? 0,
-            ),
-            weaponSides ? 1 : 0,
+        const weaponDamage = rollPhysicalWeaponDamageAgainstHero(
+            contactWeapon, state, {
+                rollOne: range => {
+                    calls.push(`rnd(${range})`);
+                    return rollOne(range);
+                },
+                rollDice: (count, sides) => {
+                    calls.push(`d(${count},${sides})`);
+                    return rollDice(count, sides);
+                },
+            },
         );
         damage += weaponDamage;
         if (deferVisibleContact) {

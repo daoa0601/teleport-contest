@@ -19,7 +19,7 @@ import {
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
-    OBJECT_HIT_BONUS, OBJECT_NAMES, OBJECT_SUBTYPE,
+    OBJECT_HIT_BONUS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE,
 } from './object_data.js';
 import { applyProjectileObjectPassive } from './projectile.js';
 import { rnd, rn2 } from './rng.js';
@@ -35,6 +35,7 @@ const M2_DEMON = 0x00000100;
 const M2_ELF = 0x00000010;
 const M2_ORC = 0x00000080;
 const M2_UNDEAD = 0x00000002;
+const SILVER = 14;
 
 function dexterityHitBonus(state) {
     const dexterity = currentAttribute(A_DEX, state);
@@ -106,14 +107,12 @@ function appliedHitThreshold(monster, weapon, state) {
 }
 
 function rollAppliedDamage(monster, weapon, state) {
-    const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
     const shade = monsterTypeName(monster.mnum) === 'shade';
-    if (shade) return { damage: 0, trainsSkill: false };
+    if (shade && OBJECT_MATERIAL[weapon.otyp] !== SILVER)
+        return { damage: 0, trainsSkill: false };
 
     let damage = rollPhysicalWeaponDamage(weapon, monster);
     const trainsSkill = damage > 1;
-    if (weapon.blessed && (flags & (M2_UNDEAD | M2_DEMON)))
-        damage += rnd(4);
     damage += artifactDamageBonus(weapon, monster, damage);
     damage += (state.u?.udaminc ?? state.udaminc ?? 0)
         + strengthDamageBonus(currentAttribute(A_STR, state))

@@ -98,6 +98,8 @@ export function monsterTypeName(mnum, female = false) {
 
 // C ref: mondata.h nonliving().  Symbol numbers use the generated S_* order.
 const M2_UNDEAD = 0x00000002;
+const M2_WERE = 0x00000004;
+const M2_DEMON = 0x00000100;
 const M2_JEWELS = 0x20000000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
@@ -110,6 +112,9 @@ const PM_VAMPIRE_BAT = 129;
 const PM_VAMPIRE = 226;
 const PM_MANES = 50;
 const PM_AIR_ELEMENTAL = 154;
+const PM_TENGU = 55;
+const PM_SHADE = 288;
+const S_IMP = 9;
 const S_UNICORN = 21;
 const S_VORTEX = 22;
 const S_VAMPIRE = 48;
@@ -167,6 +172,26 @@ export function monsterDigests(monster) {
 
 export function monsterIsVampireShifter(monster) {
     return monsterIsVampire(monster?.cham);
+}
+
+// C refs: mondata.c mon_hates_blessings() and mon_hates_silver().
+export function monsterHatesBlessings(monster) {
+    const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
+    return monsterIsVampireShifter(monster)
+        || !!(flags & (M2_UNDEAD | M2_DEMON));
+}
+
+export function monsterSpeciesHatesSilver(mnum) {
+    const flags = MONSTER_FLAGS2[mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[mnum];
+    return !!(flags & (M2_WERE | M2_DEMON))
+        || symbol === S_VAMPIRE || mnum === PM_SHADE
+        || (symbol === S_IMP && mnum !== PM_TENGU);
+}
+
+export function monsterHatesSilver(monster) {
+    return monsterIsVampireShifter(monster)
+        || monsterSpeciesHatesSilver(monster?.mnum);
 }
 
 export function monsterIsNonliving(mnum) {

@@ -13,13 +13,15 @@ import {
 } from './mklev.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
-    MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE,
+    MONSTER_NAME, MONSTER_SIZE, monsterHatesBlessings,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { IRON_CHAIN, OBJECT_HIT_BONUS } from './object_data.js';
 import { rehumanizeHero } from './polyself.js';
 import { rn2, rnd } from './rng.js';
-import { rollPhysicalWeaponDamage } from './weapon_damage.js';
+import {
+    rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
+} from './weapon_damage.js';
 
 const DIRECTIONS = [
     { dx: -1, dy: 0 },
@@ -31,14 +33,6 @@ const DIRECTIONS = [
     { dx: 0, dy: 1 },
     { dx: -1, dy: 1 },
 ];
-const M2_UNDEAD = 0x00000002;
-const M2_DEMON = 0x00000100;
-
-function monsterHatesBlessedWeapons(monster) {
-    return !!((MONSTER_FLAGS2[monster.mnum] ?? 0)
-        & (M2_UNDEAD | M2_DEMON));
-}
-
 function monsterAt(x, y, state) {
     return state.level?.monsters?.find(monster =>
         (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y,
@@ -58,7 +52,7 @@ function monsterHitBonus(monster, chain) {
     if (monster.msleeping) bonus += 2;
     if (!monster.mcanmove) bonus += 4;
     bonus += (chain.spe ?? 0) + (OBJECT_HIT_BONUS[chain.otyp] ?? 0);
-    if (chain.blessed && monsterHatesBlessedWeapons(monster))
+    if (chain.blessed && monsterHatesBlessings(monster))
         bonus += 2;
     return bonus;
 }
@@ -73,9 +67,7 @@ async function hitMonster(monster, chain, state, finishMonsterKill) {
         return;
     }
 
-    let damage = rollPhysicalWeaponDamage(chain, monster);
-    if (chain.blessed && monsterHatesBlessedWeapons(monster))
-        damage += rnd(4);
+    const damage = rollPhysicalWeaponDamage(chain, monster);
     if (visible)
         await plineWithContinuation(`The iron chain hits the ${target}.`);
     monster.mhp -= damage;
@@ -98,7 +90,7 @@ async function hitHero(chain, state) {
     }
 
     await plineWithContinuation('You are hit by an iron chain.');
-    let damage = rollPhysicalWeaponDamage(chain, state.u);
+    let damage = rollPhysicalWeaponDamageAgainstHero(chain, state);
     if (state.u?.halfPhysicalDamage || state.u?.half_physical_damage)
         damage = Math.ceil(damage / 2);
     exerciseAttribute(A_STR, false, state);
