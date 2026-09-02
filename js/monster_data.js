@@ -109,8 +109,10 @@ const M1_MINDLESS = 0x00010000;
 const M1_HUMANOID = 0x00020000;
 const M1_ANIMAL = 0x00040000;
 const M1_SLITHY = 0x00080000;
+const M1_UNSOLID = 0x00100000;
 const M1_THICK_HIDE = 0x00200000;
 const MZ_SMALL = 1;
+const MZ_MEDIUM = 2;
 const MZ_LARGE = 3;
 const MZ_HUGE = 4;
 const PM_FLOATING_EYE = 28;
@@ -129,9 +131,14 @@ const PM_SHADE = 288;
 const PM_WINGED_GARGOYLE = MONSTER_NAME.indexOf('winged gargoyle');
 const PM_MARILITH = MONSTER_NAME.indexOf('marilith');
 const S_IMP = 9;
+const S_QUADRUPED = 17;
 const S_UNICORN = 21;
 const S_VORTEX = 22;
+const S_ANGEL = 27;
 const S_CENTAUR = 29;
+const S_DRAGON = 30;
+const S_ELEMENTAL = 31;
+const S_JABBERWOCK = 36;
 const S_VAMPIRE = 48;
 const S_GHOST = 54;
 const S_GOLEM = 55;
@@ -142,6 +149,14 @@ const MONSTER_HORNS = new Map([
     ['white unicorn', 1], ['gray unicorn', 1], ['black unicorn', 1],
     ['ki-rin', 1],
 ].map(([name, count]) => [MONSTER_NAME.indexOf(name), count]));
+const SADDLE_CLASSES = new Set([
+    S_QUADRUPED,
+    S_UNICORN,
+    S_ANGEL,
+    S_CENTAUR,
+    S_DRAGON,
+    S_JABBERWOCK,
+]);
 
 export function monsterClassSymbol(mnum) {
     return MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[mnum] ?? 0] ?? '?';
@@ -173,6 +188,20 @@ export function monsterIsSlithy(mnum) {
 
 export function monsterIsCentaur(mnum) {
     return MONSTER_SYMBOL[mnum] === S_CENTAUR;
+}
+
+export function monsterCanBeSaddled(monster) {
+    if (!Number.isInteger(monster?.mnum)) return false;
+    const mnum = monster.mnum;
+    const symbol = MONSTER_SYMBOL[mnum];
+    const flags = MONSTER_FLAGS1[mnum] ?? 0;
+    return SADDLE_CLASSES.has(symbol)
+        && (MONSTER_SIZE[mnum] ?? 0) >= MZ_MEDIUM
+        && (!(flags & M1_HUMANOID) || symbol === S_CENTAUR)
+        && !(flags & (M1_AMORPHOUS | M1_UNSOLID))
+        && symbol !== S_GHOST
+        && symbol !== S_VORTEX
+        && !(symbol === S_ELEMENTAL && mnum === PM_AIR_ELEMENTAL);
 }
 
 export function monsterHornCount(mnum) {

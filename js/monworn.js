@@ -6,7 +6,8 @@ import { armorBonus, armorSlotFor } from './armor.js';
 import { game } from './gstate.js';
 import {
     MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE,
-    monsterBreaksArmor, monsterHasNoHands, monsterIsCentaur,
+    monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands,
+    monsterIsCentaur,
     monsterHornCount, monsterIsSlithy, monsterIsVerySmall,
     monsterSlipsArmor, monsterWrappingAllowed,
 } from './monster_data.js';
@@ -19,7 +20,7 @@ import {
 } from './object_data.js';
 import {
     AC_MAX, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
-    W_ARMS, W_ARMU,
+    W_ARMS, W_ARMU, W_SADDLE,
 } from './const.js';
 
 const M1_NOHEAD = 0x00008000;
@@ -260,6 +261,9 @@ export function adjustMonsterClothingAfterPolymorph(
 
     if (handlessOrTiny || monsterIsSlithy(mnum) || monsterIsCentaur(mnum))
         dropWornObject(monster, wornInSlot(monster, W_ARMF), state, dropped);
+
+    if (!monsterCanBeSaddled(monster))
+        dropWornObject(monster, wornInSlot(monster, W_SADDLE), state, dropped);
 
     return { dropped, destroyed };
 }

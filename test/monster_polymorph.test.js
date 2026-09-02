@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
     I_SPECIAL, NO_WEAPON_WANTED, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
-    W_ARMS, W_ARMU, W_WEP,
+    W_ARMS, W_ARMU, W_SADDLE, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { wakeMonstersNear } from '../js/mon.js';
@@ -11,7 +11,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import {
     BOULDER, CHAIN_MAIL, DAGGER, ELVEN_CLOAK, HAWAIIAN_SHIRT, HELMET,
-    LEASH, LEATHER_GLOVES, SMALL_SHIELD, SPEED_BOOTS,
+    LEASH, LEATHER_GLOVES, SADDLE, SMALL_SHIELD, SPEED_BOOTS,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { presentWereChange, wereChange } from '../js/were.js';
@@ -128,6 +128,20 @@ test('a former giant drops boulders its new form cannot carry', () => {
     assert.equal(boulder.where, 'floor');
     assert.equal(boulder.ox, monster.mx);
     assert.equal(boulder.oy, monster.my);
+});
+
+test('a monster drops its saddle when its new body cannot wear one', () => {
+    freshObjectRoom();
+    const monster = addMonster({ species: 'pony', x: 11, y: 10 });
+    const saddle = equipMonsterObject(
+        monster, knownObject(SADDLE), W_SADDLE,
+    );
+    initRng(1n);
+
+    changeMonsterForm(monster, MONSTER_NAME.indexOf('grid bug'));
+
+    assert.equal(saddle.where, 'floor');
+    assert.equal(monster.saddled, false);
 });
 
 test('a visible werewolf announces its natural change', async () => {

@@ -10,7 +10,7 @@ import { newsym, pline } from './display.js';
 import { levelHasCeiling, resolveMonsterLiquid } from './mon.js';
 import { finishMonsterLiquidDeath } from './monmove.js';
 import {
-    MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
+    MONSTER_FLAGS1, MONSTER_SYMBOL, monsterCanBeSaddled, monsterTypeName,
 } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { releaseMonsterLeash } from './monster_leash.js';
@@ -21,47 +21,11 @@ import { promptKey } from './tty_prompts.js';
 import { vision_recalc } from './vision.js';
 
 const M1_FLY = 0x00000001;
-const M1_AMORPHOUS = 0x00000004;
 const M1_CLING = 0x00000010;
-const M1_HUMANOID = 0x00020000;
-const M1_UNSOLID = 0x00100000;
-const MZ_MEDIUM = 2;
 const S_EYE = 5;
-const S_QUADRUPED = 17;
-const S_UNICORN = 21;
-const S_VORTEX = 22;
 const S_LIGHT = 25;
-const S_ANGEL = 27;
-const S_CENTAUR = 29;
-const S_DRAGON = 30;
-const S_ELEMENTAL = 31;
-const S_JABBERWOCK = 36;
-const S_GHOST = 54;
-const PM_AIR_ELEMENTAL = 154;
-const SADDLE_CLASSES = new Set([
-    S_QUADRUPED,
-    S_UNICORN,
-    S_ANGEL,
-    S_CENTAUR,
-    S_DRAGON,
-    S_JABBERWOCK,
-]);
 const DIRECTION_X = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIRECTION_Y = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
-
-export function canSaddleMonster(monster) {
-    if (!Number.isInteger(monster?.mnum)) return false;
-    const monsterClass = MONSTER_SYMBOL[monster.mnum];
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    return SADDLE_CLASSES.has(monsterClass)
-        && (MONSTER_SIZE[monster.mnum] ?? 0) >= MZ_MEDIUM
-        && (!(flags & M1_HUMANOID) || monsterClass === S_CENTAUR)
-        && !(flags & (M1_AMORPHOUS | M1_UNSOLID))
-        && monsterClass !== S_GHOST
-        && monsterClass !== S_VORTEX
-        && !(monsterClass === S_ELEMENTAL
-            && monster.mnum === PM_AIR_ELEMENTAL);
-}
 
 export function steedIsGrounded(steed, state = game) {
     const flags = MONSTER_FLAGS1[steed?.mnum] ?? 0;
@@ -152,7 +116,7 @@ export async function doride() {
 }
 
 export function putSaddleOnMonster(saddle, monster) {
-    if (!saddle || !canSaddleMonster(monster) || monsterSaddle(monster))
+    if (!saddle || !monsterCanBeSaddled(monster) || monsterSaddle(monster))
         return null;
     const carriedSaddle = addObjectToMonsterInventory(monster, saddle);
     carriedSaddle.owornmask = W_SADDLE;
