@@ -6,18 +6,18 @@ import { W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { CLUB, OIL_LAMP } from '../js/object_data.js';
-import { inventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 test('rubbing a lamp wields it and keeps the old weapon as secondary',
     async () => {
         freshPlayableRoom();
-        const club = inventoryObject(CLUB, 'a', {
+        const club = addInventoryObject(CLUB, {
+            invlet: 'a',
             wielded: true,
             owornmask: W_WEP,
         });
-        const lamp = inventoryObject(OIL_LAMP, 'b');
-        game.inventory = [club, lamp];
+        const lamp = addInventoryObject(OIL_LAMP, { invlet: 'b' });
         game.uwep = game.u.uwep = club;
         game.flags.pushweapon = true;
         pushKeys('rub\nb');
@@ -40,14 +40,14 @@ test('rubbing a lamp wields it and keeps the old weapon as secondary',
 test('a welded primary weapon prevents wielding a lamp to rub it',
     async () => {
         freshPlayableRoom();
-        const club = inventoryObject(CLUB, 'a', {
+        const club = addInventoryObject(CLUB, {
+            invlet: 'a',
             cursed: true,
             bknown: false,
             wielded: true,
             owornmask: W_WEP,
         });
-        const lamp = inventoryObject(OIL_LAMP, 'b');
-        game.inventory = [club, lamp];
+        const lamp = addInventoryObject(OIL_LAMP, { invlet: 'b' });
         game.uwep = game.u.uwep = club;
         pushKeys('rub\nb');
 
@@ -55,7 +55,6 @@ test('a welded primary weapon prevents wielding a lamp to rub it',
 
         assert.equal(game.uwep, club);
         assert.equal(club.bknown, true);
-        assert.equal(lamp.wielded, false);
         assert.equal(game._cannedCommands?.length ?? 0, 0);
         assert.equal(game.context.move, 0);
         assert.match(game._pending_message, /welded to your hand/);

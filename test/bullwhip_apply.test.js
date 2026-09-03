@@ -7,15 +7,18 @@ import { game } from '../js/gstate.js';
 import { BOULDER, BULLWHIP, CLUB } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
-import { floorObject, inventoryObject } from './support/game-objects.js';
+import {
+    addInventoryObject, floorObject, knownObject,
+} from './support/game-objects.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 test('applying an unwielded bullwhip wields it before asking for direction',
     async () => {
         freshPlayableRoom({ role: 'archeologist' });
-        const whip = inventoryObject(BULLWHIP, 'a', { spe: 2 });
-        game.inventory = [whip];
+        const whip = addInventoryObject(BULLWHIP, {
+            invlet: 'a', spe: 2,
+        });
         initRng(7101n);
         await applyInventoryObject(whip, 'l');
 
@@ -34,14 +37,14 @@ test('an archeologist can pull a wielded weapon from an adjacent monster',
             role: 'archeologist',
             hero: { acurr: { a: [10, 10, 10, 18, 10, 10] } },
         });
-        const whip = inventoryObject(BULLWHIP, 'a', {
+        const whip = addInventoryObject(BULLWHIP, {
+            invlet: 'a',
             spe: 2,
             wielded: true,
             owornmask: W_WEP,
         });
-        game.inventory = [whip];
         game.uwep = game.u.uwep = whip;
-        const club = inventoryObject(CLUB, null, {
+        const club = knownObject(CLUB, {
             where: 'minvent',
             wielded: true,
             owornmask: W_WEP,
@@ -62,12 +65,12 @@ test('a proficient bullwhip can pull the hero from a pit toward a boulder',
             role: 'archeologist',
             hero: { acurr: { a: [10, 10, 10, 18, 10, 10] } },
         });
-        const whip = inventoryObject(BULLWHIP, 'a', {
+        const whip = addInventoryObject(BULLWHIP, {
+            invlet: 'a',
             spe: 2,
             wielded: true,
             owornmask: W_WEP,
         });
-        game.inventory = [whip];
         game.uwep = game.u.uwep = whip;
         game.u.utrap = 3;
         game.u.utraptype = TT_PIT;

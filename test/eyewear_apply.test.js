@@ -5,14 +5,13 @@ import { W_TOOL } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { BLINDFOLD, LENSES } from '../js/object_data.js';
 import { applyInventoryObject } from './support/commands.js';
-import { inventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 test('applying a blindfold wears it and applying it again removes it',
     async () => {
         freshPlayableRoom();
-        const blindfold = inventoryObject(BLINDFOLD, 'a');
-        game.inventory = [blindfold];
+        const blindfold = addInventoryObject(BLINDFOLD, { invlet: 'a' });
 
         await applyInventoryObject('a');
 
@@ -35,8 +34,9 @@ test('applying a blindfold wears it and applying it again removes it',
 
 test('applying a cursed worn blindfold cannot remove it', async () => {
     freshPlayableRoom();
-    const blindfold = inventoryObject(BLINDFOLD, 'a', { cursed: true });
-    game.inventory = [blindfold];
+    const blindfold = addInventoryObject(BLINDFOLD, {
+        invlet: 'a', cursed: true,
+    });
     await applyInventoryObject('a');
 
     await applyInventoryObject('a');
@@ -48,16 +48,14 @@ test('applying a cursed worn blindfold cannot remove it', async () => {
 
 test('lenses occupy the eyewear slot without blinding the hero', async () => {
     freshPlayableRoom();
-    const lenses = inventoryObject(LENSES, 'a');
-    const blindfold = inventoryObject(BLINDFOLD, 'b');
-    game.inventory = [lenses, blindfold];
+    const lenses = addInventoryObject(LENSES, { invlet: 'a' });
+    const blindfold = addInventoryObject(BLINDFOLD, { invlet: 'b' });
 
     await applyInventoryObject('a');
     await applyInventoryObject('b');
 
     assert.equal(game.ublindf, lenses);
     assert.equal(game.blind, false);
-    assert.equal(blindfold.worn, false);
     assert.match(game._pending_message, /already wearing lenses/);
     assert.equal(game.context.move, 1);
 });

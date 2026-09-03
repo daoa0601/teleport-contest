@@ -8,13 +8,14 @@ import { pushKeys } from '../js/input.js';
 import { CHEST, DAGGER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    floorObject, inventoryObject,
+    addInventoryObject, floorObject,
 } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 test('a blade can break while prying a chest lock', async () => {
     freshGameplayRoom();
-    const dagger = inventoryObject(DAGGER, 'a', {
+    const dagger = addInventoryObject(DAGGER, {
+        invlet: 'a',
         spe: 0,
         cursed: false,
         wielded: true,
@@ -25,7 +26,6 @@ test('a blade can break while prying a chest lock', async () => {
         obroken: false,
         contents: [],
     });
-    game.inventory = [dagger];
     game.uwep = game.u.uwep = dagger;
     initRng(46n);
     pushKeys('force\ny');

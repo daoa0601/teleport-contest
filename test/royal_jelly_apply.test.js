@@ -12,22 +12,23 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
-import { inventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 test('blessed royal jelly turns a killer bee egg into a queen bee egg',
     async () => {
         freshPlayableRoom();
-        const jelly = inventoryObject(LUMP_OF_ROYAL_JELLY, 'a', {
+        const jelly = addInventoryObject(LUMP_OF_ROYAL_JELLY, {
+            invlet: 'a',
             blessed: true,
             quan: 2,
             quantity: 2,
         });
-        const egg = inventoryObject(EGG, 'b', {
+        const egg = addInventoryObject(EGG, {
+            invlet: 'b',
             corpsenm: 1,
             spe: 0,
         });
-        game.inventory = [jelly, egg];
         initRng(4401n);
         await applyInventoryObject(jelly, 'b ');
 
@@ -42,11 +43,13 @@ test('blessed royal jelly turns a killer bee egg into a queen bee egg',
 test('rubbing cursed royal jelly on an egg stops it from hatching',
     async () => {
         freshPlayableRoom();
-        const jelly = inventoryObject(LUMP_OF_ROYAL_JELLY, 'a', {
+        const jelly = addInventoryObject(LUMP_OF_ROYAL_JELLY, {
+            invlet: 'a',
             cursed: true,
         });
-        const egg = inventoryObject(EGG, 'b', { corpsenm: 94 });
-        game.inventory = [jelly, egg];
+        const egg = addInventoryObject(EGG, {
+            invlet: 'b', corpsenm: 94,
+        });
         scheduleObjectTimer(
             egg,
             OBJECT_TIMER_KIND.HATCH_EGG,
@@ -67,11 +70,11 @@ test('rubbing cursed royal jelly on an egg stops it from hatching',
 
 test('royal jelly returns to its stack when there is no egg', async () => {
     freshPlayableRoom();
-    const jelly = inventoryObject(LUMP_OF_ROYAL_JELLY, 'a', {
+    const jelly = addInventoryObject(LUMP_OF_ROYAL_JELLY, {
+        invlet: 'a',
         quan: 2,
         quantity: 2,
     });
-    game.inventory = [jelly];
     initRng(4403n);
     await applyInventoryObject(jelly);
 

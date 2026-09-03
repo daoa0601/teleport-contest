@@ -17,7 +17,7 @@ import {
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import {
-    inventoryObject, addInventoryObject,
+    addInventoryObject,
 } from './support/game-objects.js';
 import { wearHeroObject } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
@@ -183,8 +183,9 @@ test('sleeping gas stops a susceptible hero', async () => {
 
 test('a rust trap can rust the helmet worn by the hero', async () => {
     const level = freshGameplayRoom();
-    const helmet = inventoryObject(ORCISH_HELM, 'a', { oeroded: 0 });
-    game.inventory = [helmet];
+    const helmet = addInventoryObject(ORCISH_HELM, {
+        invlet: 'a', oeroded: 0,
+    });
     wearHeroObject(helmet, 'uarmh', W_ARMH);
     const trap = addTrap(level, RUST_TRAP, 11, 10, { tseen: false });
     initRng(1n);

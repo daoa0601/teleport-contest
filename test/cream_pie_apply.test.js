@@ -7,18 +7,18 @@ import { BLINDFOLD, CREAM_PIE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { syncBlindness } from '../js/senses.js';
 import { applyInventoryObject } from './support/commands.js';
-import { inventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 test('applying one pie from a stack blinds the hero without taking a turn',
     async () => {
         freshPlayableRoom();
-        const pies = inventoryObject(CREAM_PIE, 'a', {
+        const pies = addInventoryObject(CREAM_PIE, {
+            invlet: 'a',
             quan: 2,
             quantity: 2,
             owt: 20,
         });
-        game.inventory = [pies];
         initRng(4301n);
         await applyInventoryObject(pies, ' ');
 
@@ -35,13 +35,13 @@ test('applying one pie from a stack blinds the hero without taking a turn',
 test("a blindfold keeps an applied cream pie out of the hero's eyes",
     async () => {
         freshPlayableRoom();
-        const blindfold = inventoryObject(BLINDFOLD, 'b', {
+        const blindfold = addInventoryObject(BLINDFOLD, {
+            invlet: 'b',
             worn: true,
             wornSlot: 'ublindf',
             owornmask: W_TOOL,
         });
-        const pie = inventoryObject(CREAM_PIE, 'a');
-        game.inventory = [pie, blindfold];
+        const pie = addInventoryObject(CREAM_PIE, { invlet: 'a' });
         game.ublindf = game.u.ublindf = blindfold;
         syncBlindness(game);
         initRng(4302n);
@@ -57,8 +57,7 @@ test("a blindfold keeps an applied cream pie out of the hero's eyes",
 test('another cream pie adds more goop while the hero is already blind',
     async () => {
         freshPlayableRoom();
-        const pie = inventoryObject(CREAM_PIE, 'a');
-        game.inventory = [pie];
+        const pie = addInventoryObject(CREAM_PIE, { invlet: 'a' });
         game.u.blindTurns = 5;
         game.u.ucreamed = 2;
         syncBlindness(game);
