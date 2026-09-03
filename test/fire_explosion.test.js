@@ -3,16 +3,15 @@ import assert from 'node:assert/strict';
 
 import { createFireExplosion } from '../js/fire_explosion.js';
 import { game } from '../js/gstate.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 test('a fire explosion burns the hero and monsters in adjacent squares',
     async () => {
         freshGameplayRoom();
         game.u.uhp = game.u.uhpmax = 100;
-        const monster = addMonster({
-            mnum: 12, x: 11, y: 10, hitPoints: 20,
-        });
+        const monster = await createMonsterAt('jackal', 11, 10);
+        monster.mhp = monster.mhpmax = 20;
 
         await createFireExplosion(11, 10, 5, {
             heroCaused: false,

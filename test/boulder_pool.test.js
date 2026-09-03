@@ -9,7 +9,7 @@ import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import {
-    addMonster, equipMonsterObject,
+    createMonsterAt, equipMonsterObject,
 } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -20,9 +20,8 @@ test("a monster's life-saving amulet works when a boulder fills its pool",
         game.blind = true;
         game.deaf = true;
         vision_recalc(0);
-        const monster = addMonster({
-            species: 'giant', x: 12, y: 10, hitPoints: 1,
-        });
+        const monster = await createMonsterAt('giant', 12, 10);
+        monster.mhp = 1;
         const amulet = equipMonsterObject(
             monster,
             knownObject(AMULET_OF_LIFE_SAVING),

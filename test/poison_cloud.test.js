@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { runLevelRegions } from '../js/regions.js';
 import { initRng } from '../js/rng.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 function poisonCloud({ x = 10, y = 10, damage = 8, ttl = 3 } = {}) {
@@ -71,13 +71,8 @@ test('poison resistance leaves a coughing hero unharmed', async () => {
 test('poison gas kills a susceptible monster through ordinary death',
     async () => {
         freshCloudRoom();
-        const jackal = addMonster({
-            mnum: 12,
-            x: 11,
-            y: 10,
-            hitPoints: 6,
-            mcansee: 1,
-        });
+        const jackal = await createMonsterAt('jackal', 11, 10);
+        jackal.mhp = jackal.mhpmax = 6;
         game.level.regions = [poisonCloud({ x: 11, y: 10 })];
         const messages = [];
 
@@ -106,13 +101,8 @@ test('poison gas kills a susceptible monster through ordinary death',
 test('poison-resistant monsters cough and lose their sight but not HP',
     async () => {
         freshCloudRoom();
-        const giantAnt = addMonster({
-            mnum: 1,
-            x: 11,
-            y: 10,
-            hitPoints: 12,
-            mcansee: 1,
-        });
+        const killerBee = await createMonsterAt('killer bee', 11, 10);
+        const hitPoints = killerBee.mhp;
         game.level.regions = [poisonCloud({ x: 11, y: 10 })];
 
         const events = await runLevelRegions(game, {
@@ -120,9 +110,9 @@ test('poison-resistant monsters cough and lose their sight but not HP',
         });
 
         assert.equal(events[0].resisted, true);
-        assert.equal(giantAnt.mhp, 12);
-        assert.equal(giantAnt.mcansee, 0);
-        assert.equal(giantAnt.mblinded, 1);
+        assert.equal(killerBee.mhp, hitPoints);
+        assert.equal(killerBee.mcansee, 0);
+        assert.equal(killerBee.mblinded, 1);
     });
 
 test('a thick cloud thins before it finally dissipates', async () => {
