@@ -19,7 +19,7 @@ import {
 import { preventMonsterDeath } from './mondeath.js';
 import {
     MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE,
-    MONSTER_SYMBOL,
+    MONSTER_SYMBOL, monsterIsPlayerMonster,
 } from './monster_data.js';
 import { recordMonsterDeath } from './monster_vitals.js';
 import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
@@ -63,8 +63,6 @@ const PM_VLAD_THE_IMPALER = 228;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
 const PM_LIZARD = 326;
-const PM_ARCHEOLOGIST = 331;
-const PM_WIZARD = 343;
 const S_GOLEM = 55;
 const S_LICH = 38;
 const M2_UNDEAD = 0x00000002;
@@ -111,7 +109,7 @@ export function monsterLeavesCorpse(monster, random = rn2) {
     const guaranteed = (((MONSTER_SIZE[mnum] ?? 2) >= 3
             || mnum === PM_LIZARD) && !monster.mcloned)
         || MONSTER_SYMBOL[mnum] === S_GOLEM
-        || (mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD)
+        || monsterIsPlayerMonster(mnum)
         || (mnum >= PM_DEATH && mnum <= PM_FAMINE)
         || !!monster.isshk;
     if (guaranteed) return true;

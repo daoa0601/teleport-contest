@@ -14,7 +14,7 @@ import { dropObjectFromMonsterInventory } from './monster_inventory.js';
 import {
     MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM,
-    monsterClassSymbol, monsterTypeName,
+    monsterClassSymbol, monsterIsPlayerMonster, monsterTypeName,
 } from './monster_data.js';
 import { setMonsterSpecies } from './monster_species.js';
 import {
@@ -136,14 +136,11 @@ function pickNastyShape(difficultyCap) {
     return result;
 }
 
-function isPlayerMonster(mnum) {
-    return mnum >= PM_ARCHAEOLOGIST && mnum <= PM_WIZARD;
-}
-
 function acceptsShapechangerForm(baseMnum, targetMnum) {
     if (!Number.isInteger(targetMnum) || targetMnum < 0
         || monsterIsGenocided(targetMnum)) return false;
-    if (isPlayerMonster(targetMnum) || targetMnum === baseMnum) return true;
+    if (monsterIsPlayerMonster(targetMnum) || targetMnum === baseMnum)
+        return true;
     return !((MONSTER_FLAGS2[targetMnum] ?? 0) & M2_NOPOLY);
 }
 

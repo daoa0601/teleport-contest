@@ -4,7 +4,8 @@
 import { G_GENOD } from './const.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GROWTH_TARGET, MONSTER_LEVEL,
-    MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName,
+    MONSTER_SYMBOL, monsterIsNonliving, monsterIsPlayerMonster,
+    monsterTypeName,
 } from './monster_data.js';
 import { setMonsterSpecies } from './monster_species.js';
 import { game } from './gstate.js';
@@ -21,8 +22,6 @@ const PM_AIR_ELEMENTAL = 154;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_EARTH_ELEMENTAL = 156;
 const PM_WATER_ELEMENTAL = 157;
-const PM_ARCHEOLOGIST = 331;
-const PM_WIZARD = 343;
 
 function sameLevel(left, right) {
     return !!left && !!right
@@ -160,7 +159,7 @@ export function growMonster(
     let levelLimit = victim ? Math.trunc(3 * oldSpeciesLevel / 2) : 50;
     if (oldType !== newType && targetLevel > levelLimit)
         levelLimit = targetLevel;
-    if (oldType >= PM_ARCHEOLOGIST && oldType <= PM_WIZARD)
+    if (monsterIsPlayerMonster(oldType))
         levelLimit = 30;
     else if (levelLimit < 5) levelLimit = 5;
     else if (levelLimit > 49) levelLimit = oldSpeciesLevel > 49 ? 50 : 49;

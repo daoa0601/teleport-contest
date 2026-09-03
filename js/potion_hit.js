@@ -31,7 +31,8 @@ import {
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
     MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND,
-    monsterHatesBlessings, monsterIsHuman, monsterTypeName,
+    monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster,
+    monsterTypeName,
 } from './monster_data.js';
 import {
     AD_DISE, AD_PEST,
@@ -60,8 +61,6 @@ import {
 } from './polyself.js';
 
 const PM_PESTILENCE = 312;
-const PM_ARCHEOLOGIST = 331;
-const PM_WIZARD = 343;
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
 const M1_BREATHLESS = 0x00000400;
@@ -241,7 +240,7 @@ function monsterResistsPotion(monster, state = game) {
     let defenseLevel = monster?.m_lev
         ?? MONSTER_LEVEL[mnum] ?? 1;
     if (defenseLevel < 1)
-        defenseLevel = mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD
+        defenseLevel = monsterIsPlayerMonster(mnum)
             ? state.u?.ulevel ?? 1 : 1;
     defenseLevel = Math.max(1, Math.min(50, defenseLevel));
     const resistanceRange = 100 + 6 - defenseLevel;

@@ -18,7 +18,8 @@ import { stack_object } from './floor_object.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME,
-    MONSTER_SYMBOL, monsterHatesSilver, monsterTypeName,
+    MONSTER_SYMBOL, monsterHatesSilver, monsterIsPlayerMonster,
+    monsterTypeName,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
@@ -53,13 +54,11 @@ const M2_PRINCE = 0x00000800;
 const M1_AMORPHOUS = 0x00000004;
 const S_GHOST = 54;
 const SILVER = 14;
-const PM_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
 const PM_CAVE_DWELLER = MONSTER_NAME.indexOf('cave dweller');
 const PM_MONK = MONSTER_NAME.indexOf('monk');
 const PM_RANGER = MONSTER_NAME.indexOf('ranger');
 const PM_ROGUE = MONSTER_NAME.indexOf('rogue');
 const PM_SAMURAI = MONSTER_NAME.indexOf('samurai');
-const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
 const PM_NINJA = MONSTER_NAME.indexOf('ninja');
 const BLINDING_PROJECTILES = new Set([CREAM_PIE, BLINDING_VENOM]);
 const ZERO_DAMAGE_HERO_PROJECTILES = new Set([
@@ -145,10 +144,6 @@ export function readyRangedMonsterWeapon(monster) {
     return launcher;
 }
 
-function isPlayerMonster(mnum) {
-    return mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD;
-}
-
 function monsterClassVolleyBonus(monster, missile, launcher) {
     const skill = OBJECT_SUBTYPE[missile.otyp] ?? 0;
     if (monster.mnum === PM_CAVE_DWELLER)
@@ -189,7 +184,7 @@ export function monsterVolleyCount(
     let maximum = 1;
     if (flags & M2_PRINCE) maximum += 2;
     else if (flags & M2_LORD) maximum++;
-    else if (isPlayerMonster(monster.mnum)) maximum++;
+    else if (monsterIsPlayerMonster(monster.mnum)) maximum++;
     if (missileName === 'elven arrow' && !missile.cursed) maximum++;
     if (objectTypeName(launcher) === 'elven bow'
         && matchingLauncher && !launcher?.cursed) maximum++;
