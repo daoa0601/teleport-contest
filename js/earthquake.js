@@ -22,7 +22,8 @@ import {
 import { liquidForHole } from './hole.js';
 import { igniteItems } from './light.js';
 import { remove_object } from './floor_object.js';
-import { buryFloorObjectsAt, maketrap } from './mklev.js';
+import { buryFloorObjectsAt } from './buried_object.js';
+import { maketrap } from './mklev.js';
 import { monsterInAir, resolveMonsterLiquid } from './mon.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME, monsterIsHumanoid,

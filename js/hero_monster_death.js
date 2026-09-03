@@ -2,7 +2,7 @@
 // C refs: mon.c xkilled(), corpse_chance(), and explode.c explode().
 
 import { adjustHeroAlignment } from './alignment.js';
-import { G_NOCORPSE } from './const.js';
+import { G_NOCORPSE, is_pit } from './const.js';
 import {
     canProjectMonster, docrt, newsym, plineWithContinuation,
     randomDisplayMonsterName, unmap_invisible,
@@ -31,6 +31,7 @@ import {
 import {
     addObjectToMonsterInventory, clearMonsterCarriedObjectState,
 } from './monster_inventory.js';
+import { BOULDER } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import { rnd, rn2 } from './rng.js';
 import { cansee, vision_recalc } from './vision.js';
@@ -86,6 +87,21 @@ function recordKilledPet(monster) {
     if (pet) pet.killed_by_u = 1;
 }
 
+function pitDeathRemains(monster, x, y) {
+    if (!monster.mtrapped) return { buryCorpse: false, suppressRemains: false };
+    const trap = game.level?.traps?.find(candidate =>
+        candidate.tx === x && candidate.ty === y);
+    if (!trap || !is_pit(trap.ttyp))
+        return { buryCorpse: false, suppressRemains: false };
+
+    const floorObjects = game.level?.objects?.[x]?.[y] || [];
+    const carriedObjects = monster.minvent || monster.inventory || [];
+    return {
+        buryCorpse: carriedObjects.some(object => object.otyp === BOULDER),
+        suppressRemains: floorObjects.some(object => object.otyp === BOULDER),
+    };
+}
+
 export async function finishHeroMonsterKill(monster, x, y, {
     wasTame = (monster?.mtame ?? (monster?.pet ? 1 : 0)) > 0,
     hallucinating = !!(game.u?.hallucinating
@@ -136,6 +152,8 @@ export async function finishHeroMonsterKill(monster, x, y, {
         );
     }
 
+    const pitRemains = pitDeathRemains(monster, x, y);
+    const suppressRemains = noCorpse || pitRemains.suppressRemains;
     recordKilledPet(monster);
     if (deathContext?.kind === 'swallowed-projectile') {
         addObjectToMonsterInventory(
@@ -147,7 +165,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
         visible: deathLocationVisible,
         spotted: deathWasSpotted,
         petSpotted: deathWasSpotted,
-        disintegrated: noCorpse,
+        disintegrated: suppressRemains,
         state: game,
     });
     if (recovery.survived) {
@@ -188,7 +206,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
     monster.inventory = monster.minvent;
     monster.hasInventory = false;
 
-    const permitsDeathDrops = !noCorpse
+    const permitsDeathDrops = !suppressRemains
         && levelAllowsMonsterDeathDrops(monster, game, rn2);
     if (permitsDeathDrops) {
         const extraObjectRoll = rn2(6);
@@ -222,7 +240,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
             ? monsterBodyCrumblesMessage(monster) : null;
         if (crumbleMessage && deathLocationVisible && !wasInside)
             await plineWithContinuation(crumbleMessage);
-        leavesCorpse = !noCorpse && !wasInside
+        leavesCorpse = !suppressRemains && !wasInside
             && permitsDeathDrops && monsterLeavesCorpse(monster, rn2);
     }
     unmap_invisible(x, y, false);
@@ -234,6 +252,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
     recordVanquished(monster, monsterName, { weaponHit });
     if (leavesCorpse) {
         await createMonsterRemains(monster, game, {
+            buried: pitRemains.buryCorpse,
             zombify: zombifyCorpse,
             seen: deathWasSpotted,
             publish: plineWithContinuation,

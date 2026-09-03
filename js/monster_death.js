@@ -5,6 +5,7 @@ import {
     CORPSTAT_FEMALE, CORPSTAT_INIT, CORPSTAT_MALE,
     G_NOCORPSE, Is_rogue_level,
 } from './const.js';
+import { buryFloorObject } from './buried_object.js';
 import {
     canProjectMonster, newsym, plineWithContinuation, unmap_invisible,
 } from './display.js';
@@ -268,6 +269,7 @@ async function createPuddingGlob(monster, state, publish) {
 
 export async function createMonsterRemains(
     monster, state = game, {
+        buried = false,
         zombify = false,
         seen = false,
         publish = plineWithContinuation,
@@ -300,6 +302,11 @@ export async function createMonsterRemains(
     if (monster.name) corpse.oname = monster.name;
     if (corpseForm !== monster.mnum)
         corpse.age = (corpse.age ?? state.moves ?? 1) - 51;
+    if (buried) {
+        const result = buryFloorObject(corpse, state);
+        if (result === null) return null;
+        if (result === true) return corpse;
+    }
     return stack_object(corpse, state);
 }
 

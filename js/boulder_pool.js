@@ -9,7 +9,7 @@ import {
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { remove_object } from './floor_object.js';
-import { buryFloorObjectsAt } from './mklev.js';
+import { buryFloorObjectsAt } from './buried_object.js';
 import { monsterInAir } from './mon.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { wakeMonstersNear } from './monster_wake.js';

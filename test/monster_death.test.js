@@ -1,18 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import {
-    CORPSE, GLOB_OF_BLACK_PUDDING, OBJECT_NAMES, RED_DRAGON_SCALES,
-    ROCK, STATUE, UNICORN_HORN, WORM_TOOTH,
+    BOULDER, CORPSE, GLOB_OF_BLACK_PUDDING, OBJECT_NAMES,
+    RED_DRAGON_SCALES, ROCK, STATUE, UNICORN_HORN, WORM_TOOTH,
 } from '../js/object_data.js';
 import { place_object } from '../js/floor_object.js';
 import { knownObject } from './support/game-objects.js';
-import { floorObjects, floorObjectsAt } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import {
+    addTrap, floorObjects, floorObjectsAt,
+} from './support/level-state.js';
+import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 test('a large monster leaves a corpse without a random chance', async () => {
@@ -29,6 +32,45 @@ test('a large monster leaves a corpse without a random chance', async () => {
 
     assert.equal(death.corpse?.otyp, CORPSE);
     assert.equal(floorObjectsAt(level, 11, 10).includes(death.corpse), true);
+});
+
+test('killing a pit-trapped monster with a boulder buries its corpse',
+    async () => {
+        const level = freshObjectRoom({ gameplaySeed: 28n });
+        const giant = addMonster({
+            species: 'giant', x: 11, y: 10,
+            hitPoints: 1, mtrapped: 1,
+        });
+        addTrap(level, PIT, giant.mx, giant.my);
+        equipMonsterObject(giant, knownObject(BOULDER), 0);
+
+        await finishHeroMonsterKill(giant, giant.mx, giant.my, {
+            showKillMessage: false,
+            recordConduct: false,
+        });
+
+        const corpse = level.buriedObjects?.find(object =>
+            object.otyp === CORPSE && object.corpsenm === giant.mnum);
+        assert.equal(corpse?.where, 'buried');
+        assert.equal(floorObjectsAt(level, 11, 10).includes(corpse), false);
+    });
+
+test('a boulder already in a monster pit prevents death remains', async () => {
+    const level = freshObjectRoom({ gameplaySeed: 29n });
+    const giant = addMonster({
+        species: 'giant', x: 11, y: 10,
+        hitPoints: 1, mtrapped: 1,
+    });
+    addTrap(level, PIT, giant.mx, giant.my);
+    place_object(knownObject(BOULDER), giant.mx, giant.my);
+
+    await finishHeroMonsterKill(giant, giant.mx, giant.my, {
+        showKillMessage: false,
+        recordConduct: false,
+    });
+
+    assert.equal(floorObjectsAt(level, 11, 10).some(object =>
+        object.otyp === CORPSE), false);
 });
 
 test('a visible lich crumbles to dust instead of leaving a corpse', async () => {

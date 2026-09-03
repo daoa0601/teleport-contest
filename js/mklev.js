@@ -17,6 +17,9 @@ import { nextIdent } from './ident.js';
 import {
     place_object, remove_object, stack_object, updateCorpseIceTimer,
 } from './floor_object.js';
+import {
+    addBuriedObject, buryFloorObject, buryFloorObjectsAt,
+} from './buried_object.js';
 import { GameMap } from './game.js';
 import { restoreBonesMonsters } from './bones_monster.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
@@ -3176,62 +3179,8 @@ function buryContainedObject(object, container, x, y, state = game) {
             (state.moves ?? 0) + 250 + rnd(250), state,
         );
     }
-    addBuriedObject(object, x, y);
+    addBuriedObject(object, x, y, state);
     return true;
-}
-
-function buryFloorObject(object, state = game) {
-    if (!object || object.where !== 'floor'
-        || objectResistsDestruction(object, 0, 0))
-        return false;
-
-    const x = object.ox;
-    const y = object.oy;
-    const pile = state.level?.objects?.[x]?.[y];
-    const index = pile?.indexOf(object) ?? -1;
-    if (index >= 0) pile.splice(index, 1);
-
-    if (object.lamplit && object.otyp !== POT_OIL) {
-        object.lamplit = false;
-        stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
-        state.vision_full_recalc = 1;
-    }
-
-    const underIce = state.level?.at?.(x, y)?.typ === ICE;
-    if ((object.otyp === ROCK && !underIce) || object.otyp === BOULDER) {
-        stopAllObjectTimers(object);
-        object.where = 'gone';
-        object.buried = false;
-        object.ox = object.oy = 0;
-        return null;
-    }
-
-    if (object.otyp !== CORPSE
-        && (underIce
-            ? object.oclass === POTION_CLASS
-            : (OBJECT_MATERIAL[object.otyp] ?? Infinity) <= 8)
-        && !objectResistsDestruction(object, 5, 95)) {
-        scheduleObjectTimer(
-            object, OBJECT_TIMER_KIND.ROT_ORGANIC,
-            (underIce ? 0 : 250) + rnd(250) + (state.moves ?? 0), state,
-        );
-    }
-
-    object.where = 'buried';
-    object.buried = true;
-    if (!state.level.buriedObjects) state.level.buriedObjects = [];
-    state.level.buriedObjects.unshift(object);
-    updateCorpseIceTimer(object, x, y, underIce, state);
-    return true;
-}
-
-export function buryFloorObjectsAt(x, y, state = game) {
-    const buried = [];
-    const pile = state.level?.objects?.[x]?.[y];
-    for (const object of [...(pile || [])]) {
-        if (buryFloorObject(object, state) === true) buried.push(object);
-    }
-    return buried;
 }
 
 // C ref: trap.c:fill_pit() -> do.c:flooreffects().  A boulder on a pit or
@@ -3300,7 +3249,7 @@ function iceMeltTrapEffects(x, y, state = game) {
         // trap.c:cnv_trap_obj(..., bury_it=TRUE) delegates to bury_an_obj();
         // even a non-resistant ordinary tool owns obj_resists(0,0)'s draw.
         rn2(100);
-        addBuriedObject(converted, x, y);
+        addBuriedObject(converted, x, y, state);
     }
     const removable = trap.ttyp !== MAGIC_PORTAL
         && trap.ttyp !== VIBRATING_SQUARE;
@@ -7166,19 +7115,6 @@ function addToContainer(container, object) {
     if (!container || !object) return object;
     removeFloorObject(object);
     return addObjectToContainer(container, object, game);
-}
-
-function addBuriedObject(object, x, y) {
-    if (!object) return object;
-    removeFloorObject(object);
-    object.where = 'buried';
-    object.buried = true;
-    object.ox = x;
-    object.oy = y;
-    if (!game.level.buriedObjects) game.level.buriedObjects = [];
-    game.level.buriedObjects.unshift(object);
-    updateCorpseIceTimer(object, x, y, game.level.at(x, y)?.typ === ICE);
-    return object;
 }
 
 function consumeSpecialMonsterAlignment() {

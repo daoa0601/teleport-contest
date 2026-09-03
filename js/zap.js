@@ -30,7 +30,8 @@ import {
     damageGremlinHeroWithLight, igniteItems, lightRoom,
 } from './light.js';
 import { doEnlightenmentEffect } from './insight.js';
-import { buryFloorObjectsAt, createCritters, maketrap } from './mklev.js';
+import { buryFloorObjectsAt } from './buried_object.js';
+import { createCritters, maketrap } from './mklev.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { cancelMonster } from './monster_cancellation.js';
 import { revealMonsterAppearance } from './monster_appearance.js';

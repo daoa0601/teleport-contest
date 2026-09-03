@@ -16,7 +16,8 @@ import {
 } from './hero_expulsion.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { game } from './gstate.js';
-import { buryFloorObjectsAt, maketrap } from './mklev.js';
+import { buryFloorObjectsAt } from './buried_object.js';
+import { maketrap } from './mklev.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, monsterDigests, monsterIsAnimal,
     monsterIsWhirly, monsterTypeName,
