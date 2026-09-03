@@ -338,6 +338,21 @@ test('swallowed dart survives mulch and transfers after live missile damage',
         assert.equal(floorObjects(game.level).length, 0);
     });
 
+test('a swallowed engulfer can resist poison on a thrown dart', async () => {
+    const engulfer = freshSwallowedState(PM_ENERGY_VORTEX);
+    const dart = addInventoryWeapon(DART, { opoisoned: true });
+    setBasicWeaponSkill(dart);
+
+    initRng(2413n);
+    await throwInventoryObject(dart, 'l', [' ']);
+
+    assert.ok(engulfer.mhp < 40);
+    assert.match(
+        game._pending_message,
+        /poison doesn't seem to affect the energy vortex/,
+    );
+});
+
 test('swallowed dart mulch removes the detached identity after damage',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);

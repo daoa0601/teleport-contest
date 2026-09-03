@@ -7,6 +7,7 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { endObjectBurn } from './light.js';
+import { resolveHeroWeaponPoison } from './hero_weapon_poison.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
     BOULDER, BRASS_LANTERN, MAGIC_LAMP, OBJECT_MATERIAL,
@@ -18,6 +19,7 @@ import {
 } from './monster_data.js';
 import { AT_ENGL } from './monster_attack_types.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
+import { isPoisonableObject } from './object_properties.js';
 import { rnd } from './rng.js';
 import { applyMonsterPassiveToObject } from './monster_passive.js';
 import {
@@ -154,7 +156,7 @@ function swallowedWeaponEligibility(
 }
 
 function swallowedProjectileEligibility(
-    state, item, objectClass, selectedQuantity,
+    state, item, objectClass, selectedQuantity, canFinishKill, finishKill,
 ) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     const kind = projectileKind(item);
@@ -184,7 +186,7 @@ function swallowedProjectileEligibility(
     // their own swallowed-combat rules and remain with the caller.
     if ((skill != null && (!skillState
             || !Number.isInteger(skillState.skill)))
-        || material === SILVER || item.blessed || item.opoisoned
+        || material === SILVER || item.blessed
         || item.oartifact || item.artifact || item.lamplit
         || containsUnpaidObject(item) || projectileIsEquipped(state, item)
         || activeObjectTimerCount(item) > 0
@@ -193,6 +195,8 @@ function swallowedProjectileEligibility(
         || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade'
         || state.u?.polymorphed || state.u?.upolyd
         || state.u?.twoweap || state.twoweap) return null;
+    if (item.opoisoned && isPoisonableObject(item)
+        && (!finishKill || !canFinishKill?.(engulfer))) return null;
 
     const baseMaximum = kind === 'ammunition' && !launcher
         ? 2 : maximumPhysicalWeaponDamage(item, engulfer) + roleDamage;
@@ -279,7 +283,7 @@ export async function resolveSwallowedProjectileThrow({
     finishKill,
 }) {
     const eligible = swallowedProjectileEligibility(
-        state, item, objectClass, selectedQuantity,
+        state, item, objectClass, selectedQuantity, canFinishKill, finishKill,
     );
     if (!eligible) return false;
     const {
@@ -301,19 +305,26 @@ export async function resolveSwallowedProjectileThrow({
     });
     await applyLowStaminaThrow({ state, object: thrown });
 
-    rnd(20);
+    const dieRoll = rnd(20);
     const unlaunchedAmmo = kind === 'ammunition' && !launcher;
     const physicalDamage = unlaunchedAmmo
         ? rnd(2) : rollPhysicalWeaponDamage(thrown, engulfer) + roleDamage;
     const trains = launcher ? physicalDamage > 0 : physicalDamage > 1;
     if (skill != null && trains) recordWeaponPractice(state, skill, 1);
+    const poison = await resolveHeroWeaponPoison(engulfer, thrown, {
+        state,
+        mode: 'thrown',
+        dieRoll,
+        publish: plineWithContinuation,
+    });
     const damage = Math.max(
         1,
         physicalDamage
             + (state.u?.udaminc ?? state.udaminc ?? 0)
             + (launcher ? 0
                 : strengthDamageBonus(currentAttribute(A_STR, state)))
-            + (skill == null ? 0 : weaponSkillDamageBonus(state, skill)),
+            + (skill == null ? 0 : weaponSkillDamageBonus(state, skill))
+            + (poison?.damage ?? 0),
     );
     engulfer.mhp -= damage;
 
@@ -324,14 +335,31 @@ export async function resolveSwallowedProjectileThrow({
             damage > 4 ? '!' : '.'
         }`,
     );
-    if (engulfer.mhp <= 0) {
+    if (poison?.resisted) {
+        await plineWithContinuation(
+            `The poison doesn't seem to affect ${monsterName}.`,
+        );
+    }
+    if (poison?.deadly)
+        await plineWithContinuation('The poison was deadly...');
+    const wornOffObjectName = poison?.woreOff
+        ? thrownObjectName(thrown, state) : null;
+    const reportWornOffPoison = async () => {
+        if (!wornOffObjectName) return;
+        await plineWithContinuation(
+            `Your ${wornOffObjectName} is no longer poisoned.`,
+        );
+    };
+    if (poison?.deadly || engulfer.mhp <= 0) {
         // hmon()->xkilled() consumes the killing missile through mpickobj(),
         // then thitmonst() returns past exercise without mulch or passive_obj.
         await finishKill(engulfer, thrown);
+        await reportWornOffPoison();
         exerciseAttribute(A_DEX, true, state);
         state.context.move = 1;
         return true;
     }
+    await reportWornOffPoison();
     await wakeMonster(engulfer);
     exerciseAttribute(A_DEX, true, state);
 
