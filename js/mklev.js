@@ -5,6 +5,7 @@
 
 import { game } from './gstate.js';
 import { recordMonsterDeath } from './monster_vitals.js';
+import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
 import { restoreMonsterTrueSpecies } from './monster_species.js';
 import { exerciseAttribute } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -3342,6 +3343,7 @@ export function killMonsterOnMeltingIce(
     monster, { state = game } = {},
 ) {
     monster.mhp = 0;
+    createSteamVortexDeathCloud(monster, state);
     restoreMonsterTrueSpecies(monster);
     recordMonsterDeath(monster, state);
     monster.dead = true;

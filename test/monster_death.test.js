@@ -77,6 +77,24 @@ test('dead shapechangers return to their true species', async () => {
     }
 });
 
+test('a dead steam vortex leaves a harmless steam cloud', async () => {
+    const level = freshObjectRoom();
+    const vortex = addMonster({
+        species: 'steam vortex', x: 11, y: 10, hitPoints: 1,
+    });
+
+    await finishEnvironmentalMonsterDeath(vortex, game, {
+        visible: false,
+        random: range => range - 1,
+        publish: async () => {},
+    });
+
+    const cloud = level.regions?.find(region => region.kind === 'gas-cloud');
+    assert.equal(cloud?.damage, 0);
+    assert.equal(cloud?.cells.some(cell =>
+        cell.x === 11 && cell.y === 10), true);
+});
+
 test('killing a pit-trapped monster with a boulder buries its corpse',
     async () => {
         const level = freshObjectRoom({ gameplaySeed: 28n });

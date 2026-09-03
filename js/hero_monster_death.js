@@ -26,6 +26,7 @@ import {
 import {
     monsterDeathCount, recordMonsterDeath,
 } from './monster_vitals.js';
+import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
 import { restoreMonsterTrueSpecies } from './monster_species.js';
 import {
     createMonsterRemains, levelAllowsMonsterDeathDrops,
@@ -185,6 +186,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
         return false;
     }
 
+    createSteamVortexDeathCloud(monster);
     restoreMonsterTrueSpecies(monster);
     recordMonsterDeath(monster);
 

@@ -22,6 +22,7 @@ import {
     MONSTER_SYMBOL,
 } from './monster_data.js';
 import { recordMonsterDeath } from './monster_vitals.js';
+import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
 import { restoreMonsterTrueSpecies } from './monster_species.js';
 import {
     createPhysicalMonsterExplosion, monsterHasDeathExplosion,
@@ -340,10 +341,11 @@ function releaseDeadMonsterInventory(monster, state) {
     monster.mw = null;
 }
 
-function detachDeadMonster(monster, state) {
+function detachDeadMonster(monster, state, random) {
     const x = monster.mx;
     const y = monster.my;
     releaseDeadMonsterInventory(monster, state);
+    createSteamVortexDeathCloud(monster, state, random);
     restoreMonsterTrueSpecies(monster);
     monster.mhp = 0;
     monster.dead = true;
@@ -365,7 +367,7 @@ export async function finishMonsterLiquidDeath(
 ) {
     const x = monster.mx;
     const y = monster.my;
-    detachDeadMonster(monster, state);
+    detachDeadMonster(monster, state, random);
     const death = leaveCorpse
         ? ordinaryMonsterDeathResult(monster, state, random, rollDice)
         : {
@@ -432,7 +434,7 @@ export async function finishEnvironmentalMonsterDeath(
 
     const x = monster.mx;
     const y = monster.my;
-    detachDeadMonster(monster, state);
+    detachDeadMonster(monster, state, random);
     const death = noCorpse
         ? {
             crumbleMessage: null,
