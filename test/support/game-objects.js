@@ -6,26 +6,6 @@ import { stopAllObjectTimers } from '../../js/object_timers.js';
 import { addInventoryItem } from '../../js/u_init.js';
 import { objectWeight } from '../../js/weight.js';
 
-export function carriedObject(otyp, overrides = {}) {
-    return knownObject(otyp, {
-        initialize: false,
-        invlet: 'a',
-        where: 'inventory',
-        ...overrides,
-    });
-}
-
-export function artifactObject(name, overrides = {}) {
-    const artifact = artifactByName(name);
-    if (!artifact) throw new Error(`Unknown artifact: ${name}`);
-    return knownObject(artifact.baseType, {
-        initialize: false,
-        oartifact: artifact.id,
-        oextra: { oname: artifact.name },
-        ...overrides,
-    });
-}
-
 export function knownObject(otyp, overrides = {}) {
     const { initialize = true, ...properties } = overrides;
     const quantity = properties.quan ?? properties.quantity ?? 1;
@@ -44,6 +24,23 @@ export function knownObject(otyp, overrides = {}) {
     });
     if (properties.owt === undefined) object.owt = objectWeight(object);
     return object;
+}
+
+export function uninitializedObject(otyp, overrides = {}) {
+    return knownObject(otyp, {
+        initialize: false,
+        ...overrides,
+    });
+}
+
+export function artifactObject(name, overrides = {}) {
+    const artifact = artifactByName(name);
+    if (!artifact) throw new Error(`Unknown artifact: ${name}`);
+    return uninitializedObject(artifact.baseType, {
+        oartifact: artifact.id,
+        oextra: { oname: artifact.name },
+        ...overrides,
+    });
 }
 
 export function addInventoryObject(otyp, overrides = {}) {
@@ -87,7 +84,10 @@ export function inventoryObject(otyp, invlet, overrides = {}) {
 }
 
 export function chargedWand(otyp, { charges = 3, ...overrides } = {}) {
-    return carriedObject(otyp, {
+    return knownObject(otyp, {
+        initialize: false,
+        invlet: 'a',
+        where: 'inventory',
         spe: charges,
         charges: { current: charges, recharged: 0 },
         ...overrides,

@@ -5,7 +5,7 @@ import { applyArtifactHitToMonster } from '../js/artifact_hit.js';
 import { game } from '../js/gstate.js';
 import { SCR_IDENTIFY } from '../js/object_data.js';
 import {
-    artifactObject, carriedObject,
+    artifactObject, uninitializedObject,
 } from './support/game-objects.js';
 import { addMonster, liveMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -14,7 +14,7 @@ const maximumRoll = range => range;
 
 test('Fire Brand can burn a monster inventory and add its damage', async () => {
     freshObjectRoom();
-    const scroll = carriedObject(SCR_IDENTIFY, { where: 'minvent' });
+    const scroll = uninitializedObject(SCR_IDENTIFY);
     const monster = liveMonster({
         species: 'jackal',
         x: 12,

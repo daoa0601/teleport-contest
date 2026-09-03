@@ -16,7 +16,7 @@ export function liveMonster({
     ...overrides
 }) {
     const inventory = listedInventory ?? minvent ?? [];
-    return {
+    const monster = {
         mnum: mnum ?? MONSTER_NAME.indexOf(species),
         mx: x,
         my: y,
@@ -34,6 +34,12 @@ export function liveMonster({
         inventory,
         ...overrides,
     };
+    for (const object of inventory) {
+        object.where = 'minvent';
+        object.carrierMid = monster.m_id ?? null;
+    }
+    monster.hasInventory = inventory.length > 0;
+    return monster;
 }
 
 export function deadMonster(options) {
@@ -63,6 +69,8 @@ export function deadPet(options) {
 export function addMonsterToLevel(monster, state = game) {
     if (monster.m_id === undefined)
         monster.m_id = 1000 + state.level.monsters.length;
+    for (const object of monster.minvent ?? monster.inventory ?? [])
+        object.carrierMid = monster.m_id;
     state.level.monsters.push(monster);
     return monster;
 }

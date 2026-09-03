@@ -10,13 +10,13 @@ import { initRng } from '../js/rng.js';
 import {
     destroyColdInventory, destroyElectricInventory, destroyFireInventory,
 } from '../js/zap.js';
-import { carriedObject } from './support/game-objects.js';
+import { uninitializedObject } from './support/game-objects.js';
 
 test.beforeEach(() => initRng(1n));
 
 test('carried paper burns and an exposed candle catches light', async () => {
-    const scroll = carriedObject(SCR_IDENTIFY);
-    const candle = carriedObject(TALLOW_CANDLE, {
+    const scroll = uninitializedObject(SCR_IDENTIFY);
+    const candle = uninitializedObject(TALLOW_CANDLE, {
         age: 80,
         lamplit: false,
     });
@@ -57,7 +57,7 @@ test('carried paper burns and an exposed candle catches light', async () => {
 });
 
 test('cold shatters carried potions', async () => {
-    const potion = carriedObject(POT_HEALING, { quan: 2 });
+    const potion = uninitializedObject(POT_HEALING, { quan: 2 });
     const state = {
         inventory: [potion],
         u: { uhp: 20, acurr: { a: Array(6).fill(10) } },
@@ -81,7 +81,7 @@ test('cold shatters carried potions', async () => {
 
 test('electricity can recharge a charged ring instead of destroying it',
     async () => {
-        const ring = carriedObject(RIN_PROTECTION, {
+        const ring = uninitializedObject(RIN_PROTECTION, {
             spe: 0,
         });
         const state = {

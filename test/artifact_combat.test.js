@@ -9,7 +9,7 @@ import { W_ARM, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { BLACK_DRAGON_SCALES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { artifactObject, carriedObject } from './support/game-objects.js';
+import { artifactObject, uninitializedObject } from './support/game-objects.js';
 import { freshGame } from './support/game-state.js';
 import { equipMonsterObject, liveMonster } from './support/monsters.js';
 
@@ -105,7 +105,9 @@ test('Stormbringer cannot drain an undead monster', () => {
 
 test('black dragon scales protect a monster from Stormbringer', () => {
     const stormbringer = artifactObject('Stormbringer');
-    const scales = carriedObject(BLACK_DRAGON_SCALES, { owornmask: W_ARM });
+    const scales = uninitializedObject(BLACK_DRAGON_SCALES, {
+        owornmask: W_ARM,
+    });
     const jackal = liveMonster({ species: 'jackal', inventory: [scales] });
 
     assert.equal(

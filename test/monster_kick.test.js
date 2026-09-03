@@ -14,7 +14,7 @@ import {
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import { kickDirection } from './support/commands.js';
-import { carriedObject } from './support/game-objects.js';
+import { uninitializedObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -164,9 +164,7 @@ test('a cockatrice hero recoiling into an unarmored monster leaves a statue',
     async () => {
         const human = installKickArena(260);
         human.mx = 9;
-        const club = carriedObject(OBJECT_NAMES.indexOf('club'), {
-            owornmask: 0,
-            where: 'minvent',
+        const club = uninitializedObject(OBJECT_NAMES.indexOf('club'), {
             owt: 30,
         });
         equipMonsterObject(human, club, 0);
@@ -192,11 +190,7 @@ test('a worn life-saving amulet saves a monster from petrifying recoil',
     async () => {
         const human = installKickArena(260);
         human.mx = 9;
-        const amulet = carriedObject(AMULET_OF_LIFE_SAVING, {
-            owornmask: W_AMUL,
-            worn: true,
-            where: 'minvent',
-        });
+        const amulet = uninitializedObject(AMULET_OF_LIFE_SAVING);
         equipMonsterObject(human, amulet, W_AMUL);
         game.level.at(11, 10).typ = STONE;
         game.u.levitating = true;

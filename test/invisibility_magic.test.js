@@ -10,15 +10,17 @@ import {
 import { castKnownSpell } from '../js/spell.js';
 import { dozap } from '../js/zap.js';
 import {
-    carriedObject, chargedWand,
+    addInventoryObject, chargedWand,
 } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 test('drinking an invisibility potion makes the hero invisible', async () => {
     freshGameplayRoom();
-    const potion = carriedObject(POT_INVISIBILITY);
-    game.inventory = [potion];
+    const potion = addInventoryObject(POT_INVISIBILITY, {
+        initialize: false,
+        invlet: 'a',
+    });
     pushKeys('a');
 
     await rhack('q'.charCodeAt(0));

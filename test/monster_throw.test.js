@@ -25,7 +25,7 @@ import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import {
-    carriedObject, addInventoryObject,
+    addInventoryObject, uninitializedObject,
 } from './support/game-objects.js';
 import { wearHeroObject } from './support/hero-state.js';
 import {
@@ -44,8 +44,8 @@ const SILVER_DAGGER = OBJECT_NAMES.indexOf('silver dagger');
 
 test('a monster readies the launcher required by its ammunition', () => {
     initRng(1n);
-    const bow = carriedObject(BOW);
-    const arrows = carriedObject(ARROW, { quan: 6 });
+    const bow = uninitializedObject(BOW);
+    const arrows = uninitializedObject(ARROW, { quan: 6 });
     const archer = liveMonster({
         species: 'orc',
         x: 10,
@@ -64,7 +64,7 @@ test('a monster readies the launcher required by its ammunition', () => {
 
 test('a tame orc throws a dagger at a distant monster', () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
-    const dagger = carriedObject(DAGGER);
+    const dagger = uninitializedObject(DAGGER);
     const orc = addMonsterToLevel(rangedPet('orc', {
         inventory: [dagger],
     }));
@@ -89,7 +89,7 @@ test('a tame orc throws a dagger at a distant monster', () => {
 
 test('a poisoned dart adds poison damage to a susceptible monster', () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
-    const dart = carriedObject(DART, { opoisoned: 1 });
+    const dart = uninitializedObject(DART, { opoisoned: 1 });
     const orc = addMonsterToLevel(rangedPet('orc', {
         inventory: [dart],
     }));
@@ -109,7 +109,7 @@ test('a poisoned dart adds poison damage to a susceptible monster', () => {
 
 test('a silver dagger sears a vampire', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
-    const dagger = carriedObject(SILVER_DAGGER);
+    const dagger = uninitializedObject(SILVER_DAGGER);
     const orc = addMonsterToLevel(rangedPet('orc', {
         inventory: [dagger],
     }));
@@ -148,7 +148,7 @@ test('a silver dagger sears a lycanthropic hero', async () => {
             ulycn: MONSTER_NAME.indexOf('werewolf'),
         },
     });
-    const dagger = carriedObject(SILVER_DAGGER);
+    const dagger = uninitializedObject(SILVER_DAGGER);
     const orc = addMonsterToLevel(rangedMonster('orc', {
         inventory: [dagger],
     }));
@@ -168,7 +168,7 @@ test('a silver dagger sears a lycanthropic hero', async () => {
 
 test('a cream pie blinds a monster without hurting it', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
-    const pie = carriedObject(CREAM_PIE);
+    const pie = uninitializedObject(CREAM_PIE);
     const orc = addMonsterToLevel(rangedPet('orc', {
         inventory: [pie],
     }));
@@ -204,7 +204,7 @@ test('a cockatrice egg turns an intervening monster into a statue',
             gameplaySeed: 1n,
             recalculateVision: true,
         });
-        const egg = carriedObject(EGG, {
+        const egg = uninitializedObject(EGG, {
             corpsenm: 10,
             known: true,
         });
@@ -260,13 +260,12 @@ test('a monster eats a lizard corpse before a cockatrice egg petrifies it',
             gameplaySeed: 1n,
             recalculateVision: true,
         });
-        const egg = carriedObject(EGG, {
+        const egg = uninitializedObject(EGG, {
             corpsenm: 10,
             known: true,
         });
-        const lizard = carriedObject(CORPSE, {
+        const lizard = uninitializedObject(CORPSE, {
             corpsenm: MONSTER_NAME.indexOf('lizard'),
-            where: 'minvent',
         });
         const orc = addMonsterToLevel(rangedMonster('orc', {
             inventory: [egg],
@@ -321,7 +320,7 @@ test('poison resistance stops the poison on a thrown dart', async () => {
         gameplaySeed: 1n,
         recalculateVision: true,
     });
-    const dart = carriedObject(DART, { opoisoned: 1 });
+    const dart = uninitializedObject(DART, { opoisoned: 1 });
     const orc = addMonsterToLevel(rangedPet('orc', {
         inventory: [dart],
     }));
@@ -354,7 +353,7 @@ test('deadly poison on a thrown dart kills the monster', async () => {
         gameplaySeed: 1n,
         recalculateVision: true,
     });
-    const dart = carriedObject(DART, { opoisoned: 1 });
+    const dart = uninitializedObject(DART, { opoisoned: 1 });
     const orc = addMonsterToLevel(rangedPet('orc', {
         inventory: [dart],
     }));
@@ -385,8 +384,8 @@ test('deadly poison on a thrown dart kills the monster', async () => {
 
 test('a tame orc shoots an arrow with its bow', () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
-    const arrow = carriedObject(ARROW);
-    const bow = carriedObject(BOW, { wielded: true });
+    const arrow = uninitializedObject(ARROW);
+    const bow = uninitializedObject(BOW);
     const orc = addMonsterToLevel(rangedPet('orc'));
     equipMonsterObject(orc, arrow, 0);
     equipMonsterObject(orc, bow, W_WEP);
@@ -411,7 +410,7 @@ test('a tame orc shoots an arrow with its bow', () => {
 
 test('a hostile monster can throw a dagger at the hero and land it', () => {
     freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
-    const dagger = carriedObject(DAGGER);
+    const dagger = uninitializedObject(DAGGER);
     const orc = addMonsterToLevel(rangedMonster('orc', {
         inventory: [dagger],
     }));
@@ -443,7 +442,7 @@ test('a cream pie blinds the hero without hurting them', async () => {
         hero: { uhp: 12, uhpmax: 12 },
         gameplaySeed: 1n,
     });
-    const pie = carriedObject(CREAM_PIE);
+    const pie = uninitializedObject(CREAM_PIE);
     const orc = addMonsterToLevel(rangedMonster('orc', {
         inventory: [pie],
     }));
@@ -473,7 +472,7 @@ test('a cockatrice egg starts petrifying the hero', async () => {
         hero: { uhp: 12, uhpmax: 12 },
         gameplaySeed: 1n,
     });
-    const egg = carriedObject(EGG, {
+    const egg = uninitializedObject(EGG, {
         corpsenm: 10,
         known: true,
     });
@@ -501,7 +500,7 @@ test('a poisoned dart damages the hero after its ordinary hit', async () => {
         hero: { uhp: 12, uhpmax: 12 },
         gameplaySeed: 1n,
     });
-    const dart = carriedObject(DART, { opoisoned: 1 });
+    const dart = uninitializedObject(DART, { opoisoned: 1 });
     const orc = addMonsterToLevel(rangedMonster('orc', {
         inventory: [dart],
     }));
@@ -531,7 +530,7 @@ test('impact life saving limits thrown poison to strength loss', async () => {
     );
     game.u.uhp = 1;
     const originalStrength = game.u.acurr.a[A_STR];
-    const dart = carriedObject(DART, { opoisoned: 1 });
+    const dart = uninitializedObject(DART, { opoisoned: 1 });
     const orc = addMonsterToLevel(rangedMonster('orc', {
         inventory: [dart],
     }));
@@ -556,7 +555,7 @@ test('impact life saving limits thrown poison to strength loss', async () => {
 
 test('a hostile rogue throws its full dagger volley at the hero', () => {
     freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
-    const daggers = carriedObject(DAGGER, { quan: 4 });
+    const daggers = uninitializedObject(DAGGER, { quan: 4 });
     const rogue = addMonsterToLevel(rangedMonster('rogue', {
         inventory: [daggers],
     }));
@@ -593,7 +592,7 @@ test('life saving lets a hostile monster finish its dagger volley', async () => 
         W_AMUL,
     );
     game.u.uhp = 1;
-    const daggers = carriedObject(DAGGER, { quan: 4 });
+    const daggers = uninitializedObject(DAGGER, { quan: 4 });
     const rogue = addMonsterToLevel(rangedMonster('rogue', {
         inventory: [daggers],
     }));
@@ -627,14 +626,13 @@ test('life saving lets a hostile monster finish its dagger volley', async () => 
 
 test('a monster life-saves before the next dagger is thrown', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
-    const daggers = carriedObject(DAGGER, { quan: 4 });
+    const daggers = uninitializedObject(DAGGER, { quan: 4 });
     const rogue = addMonsterToLevel(rangedPet('rogue', {
         inventory: [daggers],
     }));
-    const amulet = carriedObject(AMULET_OF_LIFE_SAVING, {
+    const amulet = uninitializedObject(AMULET_OF_LIFE_SAVING, {
         owornmask: W_AMUL,
         worn: true,
-        where: 'minvent',
     });
     const target = addMonsterToLevel(rangedTarget('jackal', {
         hitPoints: 1,
@@ -675,7 +673,7 @@ test('a monster life-saves before the next dagger is thrown', async () => {
 
 test('a missed intervening monster does not hide the later hit', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
-    const dagger = carriedObject(DAGGER);
+    const dagger = uninitializedObject(DAGGER);
     const orc = addMonsterToLevel(rangedPet('orc', {
         inventory: [dagger],
     }));
@@ -712,8 +710,8 @@ test('a missed intervening monster does not hide the later hit', async () => {
 
 test('a crossbow bolt gets its source damage against a large monster', () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
-    const bolt = carriedObject(CROSSBOW_BOLT);
-    const crossbow = carriedObject(CROSSBOW, { wielded: true });
+    const bolt = uninitializedObject(CROSSBOW_BOLT);
+    const crossbow = uninitializedObject(CROSSBOW);
     const orc = addMonsterToLevel(rangedPet('orc'));
     equipMonsterObject(orc, bolt, 0);
     equipMonsterObject(orc, crossbow, W_WEP);
@@ -736,8 +734,8 @@ test('a crossbow bolt gets its source damage against a large monster', () => {
 
 test('an elven lord fires every arrow in a three-shot volley', () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
-    const arrows = carriedObject(ELVEN_ARROW, { quan: 3 });
-    const bow = carriedObject(ELVEN_BOW, { wielded: true });
+    const arrows = uninitializedObject(ELVEN_ARROW, { quan: 3 });
+    const bow = uninitializedObject(ELVEN_BOW);
     const archer = addMonsterToLevel(rangedPet('elf-noble'));
     equipMonsterObject(archer, arrows, 0);
     equipMonsterObject(archer, bow, W_WEP);
@@ -760,7 +758,7 @@ test('an elven lord fires every arrow in a three-shot volley', () => {
 
 test('a rogue player monster gets its dagger volley bonus', () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
-    const daggers = carriedObject(DAGGER, { quan: 4 });
+    const daggers = uninitializedObject(DAGGER, { quan: 4 });
     const rogue = addMonsterToLevel(rangedPet('rogue', {
         inventory: [daggers],
     }));
@@ -783,7 +781,7 @@ test('a rogue player monster gets its dagger volley bonus', () => {
 
 test('a second weapon attack starts after the first dagger lands', () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
-    const daggers = carriedObject(DAGGER, { quan: 2 });
+    const daggers = uninitializedObject(DAGGER, { quan: 2 });
     const captain = addMonsterToLevel(rangedPet('orc-captain', {
         inventory: [daggers],
     }));

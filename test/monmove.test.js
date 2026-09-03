@@ -18,7 +18,7 @@ import {
 } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
 import {
-    carriedObject, knownObject,
+    knownObject, uninitializedObject,
 } from './support/game-objects.js';
 import {
     addMonster, addPet, equipMonsterObject, liveMonster,
@@ -129,9 +129,8 @@ test('a silver weapon sears a lycanthropic hero in melee', () => {
         },
         recalculateVision: false,
     });
-    const silverDagger = carriedObject(
+    const silverDagger = uninitializedObject(
         OBJECT_NAMES.indexOf('silver dagger'),
-        { wielded: true, where: 'monster' },
     );
     const soldier = addMonster({
         species: 'soldier',

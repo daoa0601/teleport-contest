@@ -8,7 +8,7 @@ import {
     rollHeroMeleeWeaponDamage, rollPhysicalWeaponDamage,
 } from '../js/weapon_damage.js';
 import { initRng } from '../js/rng.js';
-import { artifactObject, carriedObject } from './support/game-objects.js';
+import { artifactObject, uninitializedObject } from './support/game-objects.js';
 import { liveMonster } from './support/monsters.js';
 
 const maximumRoll = range => range;
@@ -25,7 +25,7 @@ function maximumDamage(object, species) {
 }
 
 test('acid venom rolls both of its damage dice', () => {
-    const venom = carriedObject(ACID_VENOM);
+    const venom = uninitializedObject(ACID_VENOM);
 
     const damage = maximumDamage(venom, 'jackal');
 
@@ -33,7 +33,7 @@ test('acid venom rolls both of its damage dice', () => {
 });
 
 test('a leather whip cannot hurt a thick-skinned monster', () => {
-    const whip = carriedObject(BULLWHIP);
+    const whip = uninitializedObject(BULLWHIP);
 
     const damage = maximumDamage(whip, 'mastodon');
 
@@ -41,7 +41,7 @@ test('a leather whip cannot hurt a thick-skinned monster', () => {
 });
 
 test('a bow swung in melee uses improvised damage without weapon skill', () => {
-    const bow = carriedObject(BOW);
+    const bow = uninitializedObject(BOW);
     const monster = liveMonster({ species: 'jackal' });
 
     const hit = rollHeroMeleeWeaponDamage(
@@ -56,8 +56,8 @@ test('a bow swung in melee uses improvised damage without weapon skill', () => {
 });
 
 test('a dagger blessing still hurts a shade when its blade passes through', () => {
-    const dagger = carriedObject(DAGGER);
-    const blessedDagger = carriedObject(DAGGER, { blessed: true });
+    const dagger = uninitializedObject(DAGGER);
+    const blessedDagger = uninitializedObject(DAGGER, { blessed: true });
 
     const ordinaryDamage = maximumDamage(dagger, 'shade');
     const blessedDamage = maximumDamage(blessedDagger, 'shade');
@@ -67,7 +67,7 @@ test('a dagger blessing still hurts a shade when its blade passes through', () =
 });
 
 test('an axe gets its extra die against a wood golem', () => {
-    const axe = carriedObject(AXE);
+    const axe = uninitializedObject(AXE);
 
     const damage = maximumDamage(axe, 'wood golem');
 
@@ -75,7 +75,7 @@ test('an axe gets its extra die against a wood golem', () => {
 });
 
 test('an overweight iron ball gains damage up to the source cap', () => {
-    const ball = carriedObject(HEAVY_IRON_BALL, {
+    const ball = uninitializedObject(HEAVY_IRON_BALL, {
         owt: OBJECT_WEIGHT[HEAVY_IRON_BALL] + 320,
     });
 

@@ -12,7 +12,7 @@ import {
 } from '../js/hero_illness.js';
 import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
-import { carriedObject, chargedWand } from './support/game-objects.js';
+import { addInventoryObject, chargedWand } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
@@ -40,10 +40,12 @@ async function runUntilInput(inputGate, maxCycles) {
 test('helplessness advances through live global turns',
     async () => {
         const inputGate = freshTurnArena();
-        game.inventory = [carriedObject(POT_PARALYSIS, {
+        addInventoryObject(POT_PARALYSIS, {
+            initialize: false,
+            invlet: 'a',
             name: 'potion of paralysis',
             plural: 'potions of paralysis',
-        })];
+        });
         pushKeys('qa');
 
         const returnedToInput = await runUntilInput(inputGate, 60);

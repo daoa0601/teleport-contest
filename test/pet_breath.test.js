@@ -7,7 +7,7 @@ import { freshCommandRoom } from './support/playable-room.js';
 import {
     finishRangedAttacks, freshRangedCombatRoom, rangedPet, rangedTarget,
 } from './support/ranged-combat.js';
-import { carriedObject } from './support/game-objects.js';
+import { uninitializedObject } from './support/game-objects.js';
 import {
     floorObjectQuantityAt, floorObjectsAt,
 } from './support/level-state.js';
@@ -106,7 +106,7 @@ test('a mounted dragon with no target snarls and spends the turn', async () => {
 
 test('an iron golem throws before using its breath attack', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
-    const dagger = carriedObject(DAGGER);
+    const dagger = uninitializedObject(DAGGER);
     const golem = addMonsterToLevel(rangedPet('iron golem', {
         hitPoints: 200,
         level: 18,
@@ -141,7 +141,7 @@ test('an iron golem throws before using its breath attack', async () => {
 test('a ranged target can throw weapons back at a pet', async () => {
     freshRangedCombatRoom();
     const dragon = addMonsterToLevel(redDragon());
-    const daggers = carriedObject(DAGGER, { quan: 2 });
+    const daggers = uninitializedObject(DAGGER, { quan: 2 });
     const target = addMonsterToLevel(rangedTarget('orc-captain', {
         x: 13,
         hitPoints: 200,
