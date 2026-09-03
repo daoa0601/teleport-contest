@@ -5276,22 +5276,25 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 const message = visibleMonsterCombatMessage(movement.attack);
                 if (message) await queueTurnMessage(message);
                 else await reportUnseenMonsterCombat(movement.attack);
-                if (!movement.attack.deferredContact) break;
-                resumeDeferredMonsterContact(action, game);
-                if (movement.attack.defenderDied
+                if (movement.attack.deferredContact)
+                    resumeDeferredMonsterContact(action, game);
+                if (movement.attack.deathPending
                     && cansee(movement.attack.defender.mx,
                         movement.attack.defender.my)) {
                     const defender = quietMonsterName(movement.attack.defender);
                     await queueTurnMessage(`The ${defender} is killed!`);
                 }
-                if (movement.attack.defenderDied) {
-                    finishDeferredMonsterDeath(action, game);
+                if (movement.attack.deathPending) {
+                    await finishDeferredMonsterDeath(action, game, {
+                        publish: queueTurnMessage,
+                    });
                     newsym(movement.attack.defender.mx,
                         movement.attack.defender.my);
                     newsym(movement.attack.aggressor.mx,
                         movement.attack.aggressor.my);
                 }
                 if (movement.attack.defenderDied) break;
+                if (!movement.attack.deferredContact) break;
             } while (movement.attack.deferredContact);
             await presentMonsterGrowth(
                 movement.attack.aggressor,
@@ -5306,8 +5309,9 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     if (counterMessage)
                         await queueTurnMessage(counterMessage);
                     else await reportUnseenMonsterCombat(counterattack);
-                    resumeDeferredMonsterCounterattack(action, game);
-                    if (counterattack.defenderDied
+                    if (counterattack.deferredContact)
+                        resumeDeferredMonsterCounterattack(action, game);
+                    if (counterattack.deathPending
                         && cansee(counterattack.defender.mx,
                             counterattack.defender.my)) {
                         const defender = quietMonsterName(
@@ -5315,14 +5319,17 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         );
                         await queueTurnMessage(`The ${defender} is killed!`);
                     }
-                    if (counterattack.defenderDied) {
-                        finishDeferredMonsterCounterattackDeath(action, game);
+                    if (counterattack.deathPending) {
+                        await finishDeferredMonsterCounterattackDeath(
+                            action, game, { publish: queueTurnMessage },
+                        );
                         newsym(counterattack.defender.mx,
                             counterattack.defender.my);
                         newsym(counterattack.aggressor.mx,
                             counterattack.aggressor.my);
-                        break;
                     }
+                    if (counterattack.defenderDied) break;
+                    if (!counterattack.deferredContact) break;
                 } while (counterattack.deferredContact);
             } else if (movement.attack.counterattack?.kind
                 === 'monster-wield') {
