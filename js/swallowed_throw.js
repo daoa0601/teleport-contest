@@ -47,7 +47,6 @@ const LAMP_TYPES = new Set([...TIMED_LAMP_TYPES, MAGIC_LAMP]);
 const SILVER = 14;
 const IRON = 11;
 const LAUNCHER_SKILLS = new Set([20, 21, 22]);
-const AXE_NAMES = new Set(['axe', 'battle-axe']);
 const THROWING_WEAPON_NAMES = new Set([
     'dagger', 'elven dagger', 'orcish dagger', 'silver dagger', 'athame',
     'knife', 'crysknife', 'war hammer', 'aklys',
@@ -129,9 +128,8 @@ function swallowedWeaponEligibility(
     if (!weaponOrTool || subtype <= 0 || LAUNCHER_SKILLS.has(skill)
         || (selectedQuantity > 1 && objectClass === 2)
         || !skillState || !Number.isInteger(skillState.skill)
-        || material < IRON || material === SILVER
-        || AXE_NAMES.has(OBJECT_NAMES[item.otyp])
-        || item.blessed || item.opoisoned || item.oartifact || item.artifact
+        || material < IRON
+        || item.opoisoned || item.oartifact || item.artifact
         || item.lamplit || containsUnpaidObject(item)
         || itemIsEquipped(state, item)
         || activeObjectTimerCount(item) > 0

@@ -225,6 +225,23 @@ test('swallowed ordinary weapon damages, trains, and transfers after contact',
         assert.equal(floorObjects(game.level).length, 0);
     });
 
+test('a blessed swallowed weapon deals extra damage to a demon', async () => {
+    const ordinaryTarget = freshSwallowedState(PM_JUIBLEX);
+    const ordinaryDagger = addInventoryWeapon(DAGGER);
+    setBasicWeaponSkill(ordinaryDagger);
+    initRng(2310n);
+    await throwInventoryObject(ordinaryDagger, 'l');
+    const ordinaryDamage = 40 - ordinaryTarget.mhp;
+
+    const blessedTarget = freshSwallowedState(PM_JUIBLEX);
+    const blessedDagger = addInventoryWeapon(DAGGER, { blessed: true });
+    setBasicWeaponSkill(blessedDagger);
+    initRng(2310n);
+    await throwInventoryObject(blessedDagger, 'l');
+
+    assert.ok(40 - blessedTarget.mhp > ordinaryDamage);
+});
+
 test('swallowed weapon-tool preserves minimal-damage skill cadence',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
