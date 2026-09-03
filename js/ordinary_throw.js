@@ -2,7 +2,7 @@
 // C refs: dothrow.c throwit() and thitmonst(), zap.c bhit().
 
 import { game } from './gstate.js';
-import { hitMonsterWithThrownBlindingObject } from './blinding_attack.js';
+import { hitMonsterWithThrownCreamOrVenom } from './hero_cream_and_venom.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { hurtleHero } from './hero_hurtle.js';
 import {
@@ -64,11 +64,11 @@ export async function throwOrdinaryObject({
     if (flight.destroyed || flight.migrated) return flight;
 
     if (flight.contact) {
-        const blinding = await hitMonsterWithThrownBlindingObject(
+        const creamOrVenom = await hitMonsterWithThrownCreamOrVenom(
             flight.contact, thrown, { state },
         );
-        if (blinding?.consumed) return { ...flight, consumed: true };
-        if (!blinding) {
+        if (creamOrVenom?.consumed) return { ...flight, consumed: true };
+        if (!creamOrVenom) {
             const contact = await hitMonsterWithThrownObject(
                 flight.contact, thrown, { state },
             );

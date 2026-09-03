@@ -11,7 +11,7 @@ import { inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/light.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
-    AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING,
+    ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING,
     ARROW, BOW, CREAM_PIE, DAGGER, DART, FIGURINE, LONG_SWORD, MAGIC_LAMP,
     OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
     POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY,
@@ -190,6 +190,19 @@ test('a cream pie thrown from inside an engulfer is consumed', async () => {
     assert.equal(game.inventory.includes(pie), false);
     assert.equal(engulfer.mcansee, 1);
     assert.equal(engulfer.mhp, 40);
+});
+
+test('acid venom can kill an engulfer and release the hero', async () => {
+    const engulfer = freshSwallowedState(PM_TRAPPER);
+    engulfer.mhp = 1;
+    const venom = addInventoryObject(ACID_VENOM);
+
+    await throwInventoryObject(venom, 'l', Array(8).fill(' '));
+
+    assert.equal(venom.where, 'gone');
+    assert.equal(game.u.uswallow, 0);
+    assert.equal(game.u.ustuck, null);
+    assert.equal(game.level.monsters.includes(engulfer), false);
 });
 
 test('blind swallowed contact silently snuffs an untimed magic lamp',

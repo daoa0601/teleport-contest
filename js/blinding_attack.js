@@ -1,33 +1,19 @@
 // Blindness caused by cream pies and blinding venom.
-// C refs: mondata.c can_blnd(), dothrow.c thitmonst(),
-// uhitm.c hmon_hitmon_misc_obj(), and mthrowu.c m_throw()/ohitmon().
+// C refs: mondata.c can_blnd() and mthrowu.c m_throw()/ohitmon().
 
-import { currentAttribute } from './attrib.js';
-import { A_DEX, W_ARMH } from './const.js';
-import {
-    canProjectMonster, plineWithContinuation,
-} from './display.js';
+import { W_ARMH } from './const.js';
 import { game } from './gstate.js';
-import { angerAttackedMonster, wakeAttackedMonster } from './monster_anger.js';
-import {
-    MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName,
-} from './monster_data.js';
-import { deleteObject } from './object_delete.js';
+import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import {
     BLINDING_VENOM, CREAM_PIE, OBJECT_DESCRIPTIONS,
 } from './object_data.js';
 import { heroMonsterForm } from './polyself.js';
-import { rn2, rnd } from './rng.js';
+import { rnd } from './rng.js';
 import { blindfolded, heroIsBlind, syncBlindness } from './senses.js';
-import { prepareHeroThrownTarget } from './thrown_object.js';
 
 const M1_NOEYES = 0x00001000;
 const PM_CYCLOPS = MONSTER_NAME.indexOf('Cyclops');
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
-
-export function isThrownBlindingObject(object) {
-    return object?.otyp === CREAM_PIE || object?.otyp === BLINDING_VENOM;
-}
 
 function wearsVisoredHelmet(objects, state) {
     return objects.some(object =>
@@ -36,7 +22,7 @@ function wearsVisoredHelmet(objects, state) {
             ?? OBJECT_DESCRIPTIONS[object.otyp]) === 'visored helmet');
 }
 
-function monsterCanBeBlindedByObject(
+export function monsterCanBeBlindedByObject(
     monster, objectType, { heroInsideTarget = false, state = game } = {},
 ) {
     if (![CREAM_PIE, BLINDING_VENOM].includes(objectType)) return false;
@@ -50,7 +36,7 @@ function monsterCanBeBlindedByObject(
     );
 }
 
-function applyMonsterBlindness(monster, rollOne) {
+export function applyMonsterBlindness(monster, rollOne) {
     const wasSeeing = !!monster.mcansee;
     const blindIncrement = rollOne(25) + 20;
     monster.mcansee = 0;
@@ -71,74 +57,6 @@ export function blindMonsterWithThrownObject(
         monster, objectType, { heroInsideTarget, state },
     )) return null;
     return applyMonsterBlindness(monster, rollOne);
-}
-
-function targetName(monster) {
-    if (!canProjectMonster(monster, monster.mx, monster.my)) return 'it';
-    return monster.name
-        || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
-}
-
-function possessive(name) {
-    if (name === 'it') return 'its';
-    return /s$/i.test(name) ? `${name}'` : `${name}'s`;
-}
-
-function creamPieTarget(monster) {
-    const name = targetName(monster);
-    const hasFace = !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
-        && monster.mnum !== PM_FLOATING_EYE;
-    return hasFace ? `${possessive(name)} face` : name;
-}
-
-function missName(object) {
-    return object.otyp === CREAM_PIE ? 'cream pie' : 'splash of venom';
-}
-
-export async function hitMonsterWithThrownBlindingObject(
-    monster,
-    object,
-    {
-        state = game,
-        guaranteedHit = false,
-        publish = plineWithContinuation,
-        random = rn2,
-        rollOne = rnd,
-    } = {},
-) {
-    if (!isThrownBlindingObject(object)) return null;
-
-    prepareHeroThrownTarget(monster, random);
-    rollOne(20);
-    if (!guaranteedHit && currentAttribute(A_DEX, state) <= rollOne(25)) {
-        await publish(`The ${missName(object)} misses ${targetName(monster)}.`);
-        if (random(3) === 0) await wakeAttackedMonster(monster);
-        return { hit: false, consumed: false };
-    }
-
-    monster.msleeping = 0;
-    const heroInsideTarget = !!state.u?.uswallow
-        && state.u?.ustuck === monster;
-    const canBlind = monsterCanBeBlindedByObject(monster, object.otyp, {
-        heroInsideTarget,
-        state,
-    });
-    const wasSeeing = !!monster.mcansee;
-    let message = object.otyp === CREAM_PIE ? 'Splat!' : 'Splash!';
-    if (canBlind && !heroIsBlind(state)) {
-        message = object.otyp === CREAM_PIE
-            ? `The cream pie splashes over ${creamPieTarget(monster)}!`
-            : `The venom blinds ${targetName(monster)}${
-                wasSeeing ? '' : ' further'
-            }!`;
-    }
-    await publish(message);
-    await angerAttackedMonster(monster);
-
-    if (canBlind) applyMonsterBlindness(monster, rollOne);
-    deleteObject(object, state);
-    await wakeAttackedMonster(monster);
-    return { hit: true, consumed: true };
 }
 
 function heroHasEyes(state) {

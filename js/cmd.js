@@ -144,7 +144,7 @@ import {
     addObjectToMonsterInventory, removeObjectFromMonsterInventory,
 } from './monster_inventory.js';
 import {
-    resolveGenericSwallowedThrow, resolveSwallowedBlindingThrow,
+    resolveGenericSwallowedThrow, resolveSwallowedCreamOrVenomThrow,
     resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow,
 } from './swallowed_throw.js';
 import {
@@ -9251,10 +9251,10 @@ async function finishOrdinarySwallowedThrowKill(monster, projectile) {
     });
 }
 
-async function finishOrdinarySwallowedPotionKill(monster) {
+async function finishOrdinarySwallowedConsumedKill(monster, kind) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my, {
         deathContext: {
-            kind: 'swallowed-potion',
+            kind,
             finishDestinationEffects: finishDestinationSpotEffects,
         },
     });
@@ -9451,11 +9451,14 @@ async function dothrow(
         !candidate.dead && (candidate.mhp ?? 1) > 0
         && candidate.mx === game.u.ux + dx
         && candidate.my === game.u.uy + dy);
-    if (await resolveSwallowedBlindingThrow({
+    if (await resolveSwallowedCreamOrVenomThrow({
         state: game,
         item,
         selectedQuantity,
         splitObjectId,
+        finishKill: monster => finishOrdinarySwallowedConsumedKill(
+            monster, 'swallowed-venom',
+        ),
     })) return;
     if (await resolveSwallowedWeaponThrow({
         state: game,
@@ -9482,7 +9485,9 @@ async function dothrow(
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
         wakeNearby: wakeMonstersNear,
-        finishKill: finishOrdinarySwallowedPotionKill,
+        finishKill: monster => finishOrdinarySwallowedConsumedKill(
+            monster, 'swallowed-potion',
+        ),
     })) return;
     if (game.u?.uswallow && thrownObjectClass === 8)
         throw new Error('swallowed potion throwing is not implemented');

@@ -2,32 +2,23 @@
 // C refs: polyself.c dospit(), dothrow.c throwit()/thitmonst()/toss_up(),
 // and uhitm.c hmon() venom cases.
 
-import { currentAttribute } from './attrib.js';
-import {
-    heroCanBeBlindedByVenom, hitMonsterWithThrownBlindingObject,
-} from './blinding_attack.js';
-import { A_DEX, IS_SOFT, LOST_THROWN } from './const.js';
-import {
-    canProjectMonster, newsym, plineWithContinuation,
-} from './display.js';
+import { heroCanBeBlindedByVenom } from './blinding_attack.js';
+import { IS_SOFT, LOST_THROWN } from './const.js';
+import { newsym, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { hitMonsterWithThrownCreamOrVenom } from './hero_cream_and_venom.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { place_object, stack_object } from './floor_object.js';
 import { mksobj } from './mklev.js';
 import { levelHasCeiling } from './mon.js';
-import { wakeAttackedMonster } from './monster_anger.js';
-import {
-    MONSTER_ATTACKS, monsterTypeName,
-} from './monster_data.js';
+import { MONSTER_ATTACKS } from './monster_data.js';
 import {
     AD_ACID, AD_BLND, AD_DRST, AT_SPIT,
 } from './monster_attack_types.js';
-import { monsterHasAcidResistance } from './monster_resistance.js';
 import {
     breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact,
 } from './object_breakage.js';
-import { deleteObject } from './object_delete.js';
 import {
     ACID_VENOM, BLINDING_VENOM,
 } from './object_data.js';
@@ -37,10 +28,8 @@ import { heroIsBlind, syncBlindness } from './senses.js';
 import { surfaceName } from './terrain_name.js';
 import {
     captureThrownObjectFlight, flyHeroThrownObject, heroThrowTrajectory,
-    prepareHeroThrownTarget,
 } from './thrown_object.js';
 import { promptDirection } from './tty_prompts.js';
-import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 
 export function heroSpitAttack(state = game) {
     const form = heroMonsterForm(state);
@@ -54,12 +43,6 @@ function venomTypeForAttack(attack) {
     const damageType = attack?.[1];
     return damageType === AD_BLND || damageType === AD_DRST
         ? BLINDING_VENOM : ACID_VENOM;
-}
-
-function targetName(monster) {
-    if (!canProjectMonster(monster, monster.mx, monster.my)) return 'it';
-    return monster.name
-        || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
 }
 
 function settleVenom(venom, x, y, state) {
@@ -148,46 +131,24 @@ async function hitMonsterWithVenom({
     monster, venom, state, publish, random, rollOne, swallowed,
     finishMonsterKill,
 }) {
-    if (venom.otyp === BLINDING_VENOM) {
-        const impact = await hitMonsterWithThrownBlindingObject(
-            monster, venom, {
-                state,
-                guaranteedHit: swallowed,
-                publish,
-                random,
-                rollOne,
-            },
-        );
-        return impact.consumed;
-    }
-
-    prepareHeroThrownTarget(monster, random);
-    rollOne(20);
-    const hit = swallowed || currentAttribute(A_DEX, state) > rollOne(25);
-    if (!hit) {
-        await publish(`The splash of venom misses ${targetName(monster)}.`);
-        if (random(3) === 0) await wakeAttackedMonster(monster);
-        return false;
-    }
-
-    let damage = 0;
-    if (monsterHasAcidResistance(monster)) {
-        await publish(`Your venom hits ${targetName(monster)} harmlessly.`);
-    } else {
-        await publish(`Your venom burns ${targetName(monster)}!`);
-        damage = rollPhysicalWeaponDamage(venom, monster, { rollOne });
-        monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
-    }
-    deleteObject(venom, state);
-    if (monster.mhp > 0) {
-        await wakeAttackedMonster(monster);
-    } else {
-        const options = swallowed
-            ? { deathContext: { kind: 'swallowed-venom' } }
-            : undefined;
-        await finishMonsterKill(monster, monster.mx, monster.my, options);
-    }
-    return true;
+    const impact = await hitMonsterWithThrownCreamOrVenom(
+        monster, venom, {
+            state,
+            guaranteedHit: swallowed,
+            publish,
+            random,
+            rollOne,
+            finishMonsterKill: target => finishMonsterKill(
+                target,
+                target.mx,
+                target.my,
+                swallowed
+                    ? { deathContext: { kind: 'swallowed-venom' } }
+                    : undefined,
+            ),
+        },
+    );
+    return impact.consumed;
 }
 
 async function spitHorizontally({

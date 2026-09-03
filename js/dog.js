@@ -1,14 +1,66 @@
 // Tame monster state.
-// C refs: dog.c tamedog(), newedog(), and initedog().
+// C refs: dog.c tamedog(), newedog(), initedog(), and abuse_dog().
 
 import { currentAttribute } from './attrib.js';
 import { A_CHA } from './const.js';
+import { newsym } from './display.js';
 import { game } from './gstate.js';
+import { heroHasConflict } from './hero_conflict.js';
+import {
+    publishKickedPetYelp, publishMonsterGrowl,
+} from './monster_anger.js';
 import { releaseMonsterLeash } from './monster_leash.js';
-import { MONSTER_FLAGS2 } from './monster_data.js';
-import { rn2 } from './rng.js';
+import { MONSTER_FLAGS2, MONSTER_SOUND } from './monster_data.js';
+import { RIN_AGGRAVATE_MONSTER } from './object_data.js';
+import { rn2, rnd } from './rng.js';
 
 const M2_DOMESTIC = 0x00400000;
+
+function heroAggravatesMonsters(state) {
+    const rings = [
+        state.uleft, state.uright, state.u?.uleft, state.u?.uright,
+    ];
+    return !!(state.u?.aggravateMonster || state.u?.aggravate_monster
+        || state.aggravateMonster || state.aggravate_monster
+        || rings.some(ring => ring?.otyp === RIN_AGGRAVATE_MONSTER)
+        || heroHasConflict(state));
+}
+
+export async function abusePetAfterHeroHit(
+    monster, damage, state = game,
+) {
+    if (!(monster?.mtame > 0) || damage <= 0) return false;
+
+    monster.mtame = heroAggravatesMonsters(state)
+        ? Math.trunc(monster.mtame / 2) : monster.mtame - 1;
+    monster.pet = monster.mtame > 0;
+    if (monster.mtame > 0 && !monster.isminion) {
+        if (!monster.edog) monster.edog = {};
+        monster.edog.abuse = (monster.edog.abuse ?? 0) + 1;
+    }
+    if (!monster.mtame && monster.mleashed)
+        releaseMonsterLeash(monster, state);
+
+    if (monster.mx !== 0) {
+        if (monster.mtame > 0 && rn2(monster.mtame) !== 0) {
+            await publishKickedPetYelp(
+                monster, MONSTER_SOUND[monster.mnum] ?? 0,
+            );
+        } else {
+            await publishMonsterGrowl(monster);
+        }
+        if (!monster.mtame) newsym(monster.mx, monster.my);
+    }
+
+    if (monster.mtame > 0 && (monster.mhp ?? 0) > 0) {
+        monster.mflee = 1;
+        monster.mfleetim = Math.min(
+            127,
+            (monster.mfleetim ?? 0) + 10 * rnd(damage),
+        );
+    }
+    return true;
+}
 
 export function tameMonster(monster, state = game) {
     if (!monster) return false;

@@ -7,8 +7,8 @@ import {
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
-    ARROW, BLINDING_VENOM, BOW, CLUB, CROSSBOW, CROSSBOW_BOLT, DART,
-    ELVEN_ARROW, ELVEN_BOW, GAUNTLETS_OF_POWER, YA, YUMI,
+    ACID_VENOM, ARROW, BLINDING_VENOM, BOW, CLUB, CROSSBOW, CROSSBOW_BOLT,
+    DART, ELVEN_ARROW, ELVEN_BOW, GAUNTLETS_OF_POWER, YA, YUMI,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { races } from '../js/roles.js';
@@ -18,7 +18,7 @@ import {
 } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { addMonster, addPet } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 function carriedClub() {
@@ -113,6 +113,25 @@ test('thrown blinding venom blinds a monster without hurting it', async () => {
 
     assert.equal(jackal.mhp, 20);
     assert.equal(jackal.mcansee, 0);
+    assert.equal(game.inventory.includes(venom), false);
+    assert.equal(floorObjects(level).includes(venom), false);
+});
+
+test('thrown acid venom burns and frightens a pet', async () => {
+    const level = freshObjectRoom({ right: 20, gameplaySeed: 4109n });
+    game.u.acurr.a[A_DEX] = 18;
+    const venom = addInventoryObject(ACID_VENOM, { invlet: 'a' });
+    const jackal = addPet({
+        species: 'jackal', x: 13, y: 10, hitPoints: 20, mtame: 5,
+    });
+    initRng(1n);
+
+    await throwInventoryObject(venom, 'l', Array(8).fill(' '));
+
+    assert.ok(jackal.mhp < 20);
+    assert.equal(jackal.mtame, 4);
+    assert.equal(jackal.mflee, 1);
+    assert.equal(venom.where, 'gone');
     assert.equal(game.inventory.includes(venom), false);
     assert.equal(floorObjects(level).includes(venom), false);
 });

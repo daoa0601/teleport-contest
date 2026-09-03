@@ -4,8 +4,8 @@
 
 import { W_SADDLE } from './const.js';
 import {
-    hitMonsterWithThrownBlindingObject, isThrownBlindingObject,
-} from './blinding_attack.js';
+    hitMonsterWithThrownCreamOrVenom, isHeroThrownCreamOrVenom,
+} from './hero_cream_and_venom.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
@@ -193,23 +193,25 @@ export async function resolveSwallowedWeaponThrow({
     return true;
 }
 
-export async function resolveSwallowedBlindingThrow({
+export async function resolveSwallowedCreamOrVenomThrow({
     state = game,
     item,
     selectedQuantity,
     splitObjectId,
+    finishKill,
 }) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
-    if (!engulfer || !isThrownBlindingObject(item)) return false;
+    if (!engulfer || !isHeroThrownCreamOrVenom(item)) return false;
 
     const thrown = detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
     await applyThrowSlip({ state, object: thrown });
     await applyLowStaminaThrow({ state, object: thrown });
-    await hitMonsterWithThrownBlindingObject(engulfer, thrown, {
+    await hitMonsterWithThrownCreamOrVenom(engulfer, thrown, {
         state,
         guaranteedHit: true,
+        finishMonsterKill: finishKill,
     });
     state.context.move = 1;
     return true;
