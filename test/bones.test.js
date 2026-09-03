@@ -18,7 +18,7 @@ import { init_objects } from '../js/o_init.js';
 import { knownObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
 
@@ -44,12 +44,7 @@ test('bones restore resets old hero state and repairs entity links',
         const storage = memoryStorage();
         freshBonesRoom(storage);
 
-        const ghost = addMonster({
-            m_id: 7101,
-            mnum: PM_GHOST,
-            x: 12,
-            y: 10,
-        });
+        const ghost = await createMonsterAt(PM_GHOST, 12, 10);
         const dagger = knownObject(DAGGER, {
             invlet: 'a',
             lknown: true,
@@ -192,19 +187,13 @@ test('bones keep partly eaten food free in its staffed shop', async () => {
 test('bones clean monster names and remove extinct species', async () => {
     const storage = memoryStorage();
     freshBonesRoom(storage);
-    addMonster({
-        mnum: PM_GHOST,
-        x: 12,
-        y: 10,
+    const ghost = await createMonsterAt(PM_GHOST, 12, 10);
+    Object.assign(ghost, {
         name: 'old\u0001ghost',
         mgivenname: 'old\u0001ghost',
         mextra: { mgivenname: 'old\u0001ghost' },
     });
-    const troll = addMonster({
-        mnum: 220,
-        x: 13,
-        y: 10,
-    });
+    const troll = await createMonsterAt('troll', 13, 10);
     const questArtifact = artifactByName('The Orb of Detection');
     const orb = knownObject(questArtifact.baseType);
     assert.equal(nameArtifact(orb, questArtifact), true);
