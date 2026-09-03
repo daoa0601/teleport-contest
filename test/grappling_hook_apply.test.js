@@ -2,23 +2,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { P_BASIC, P_FLAIL, W_WEP } from '../js/const.js';
+import { place_object } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
 import { GRAPPLING_HOOK, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
-import { floorObject, inventoryObject } from './support/game-objects.js';
+import {
+    knownInventoryObject, knownObject,
+} from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
-import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 function installHook({ wielded = true, enchantment = 0 } = {}) {
-    const hook = inventoryObject(GRAPPLING_HOOK, 'a', {
+    const hook = knownInventoryObject(GRAPPLING_HOOK, {
         spe: enchantment,
         wielded,
         owornmask: wielded ? W_WEP : 0,
     });
-    game.inventory = [hook];
     if (wielded) game.uwep = game.u.uwep = hook;
     installHeroWeaponSkills({ [P_FLAIL]: P_BASIC });
     return hook;
@@ -26,7 +28,7 @@ function installHook({ wielded = true, enchantment = 0 } = {}) {
 
 test('applying an unwielded grappling hook wields it before targeting',
     async () => {
-        freshPlayableRoom();
+        freshObjectRoom();
         const hook = installHook({ wielded: false });
         await applyInventoryObject(hook);
 
@@ -36,9 +38,9 @@ test('applying an unwielded grappling hook wields it before targeting',
 
 test('a grappling hook snags one object from a visible floor square',
     async () => {
-        freshPlayableRoom();
+        freshObjectRoom();
         const hook = installHook();
-        const rock = floorObject(ROCK, 12, 10);
+        const rock = place_object(knownObject(ROCK), 12, 10);
         game._travelTipShown = true;
         initRng(3n);
         await applyInventoryObject(hook, 'll.');
@@ -50,7 +52,7 @@ test('a grappling hook snags one object from a visible floor square',
 
 test('a grappling hook can yank the hero one square toward solid terrain',
     async () => {
-        freshPlayableRoom();
+        freshObjectRoom();
         const hook = installHook();
         game._travelTipShown = true;
         initRng(2n);
@@ -62,7 +64,7 @@ test('a grappling hook can yank the hero one square toward solid terrain',
 
 test('a grappling hook strikes at range without charging melee hunger',
     async () => {
-        freshPlayableRoom();
+        freshObjectRoom();
         const hook = installHook({ enchantment: 20 });
         const monster = addMonster({
             mnum: 12,
@@ -81,7 +83,7 @@ test('a grappling hook strikes at range without charging melee hunger',
     });
 
 test('a grappling hook can pull a tiny monster next to the hero', async () => {
-    freshPlayableRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     const hook = installHook();
     const monster = addMonster({
         mnum: 0,

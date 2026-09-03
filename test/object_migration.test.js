@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { COLNO, HOLE, ROOM, ROWNO, STONE } from '../js/const.js';
+import { place_object } from '../js/floor_object.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import {
@@ -12,7 +13,7 @@ import {
 } from '../js/object_data.js';
 import { throwInventoryObject } from './support/commands.js';
 import {
-    carriedObject, floorObject, looseObject,
+    knownInventoryObject, knownObject,
 } from './support/game-objects.js';
 import { addTrap, floorObjects } from './support/level-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
@@ -50,7 +51,7 @@ function enterDestination({ ladder = false, region = null } = {}) {
 test('an object always falls down a ladder and arrives on the linked level',
     async () => {
         sourceLevel({ ladder: true });
-        const club = looseObject(CLUB);
+        const club = knownObject(CLUB, { spe: 0 });
 
         const shipped = await shipObject(club, 10, 10, {
             state: game,
@@ -78,11 +79,10 @@ test('hero-thrown objects can fall down a ladder', async () => {
         const source = sourceLevel({ ladder: true });
         game.stairs.sx = 11;
         source.at(12, 10).typ = STONE;
-        const object = carriedObject(specimen.type, {
+        const object = knownInventoryObject(specimen.type, {
             invlet: 'a',
             name: specimen.name,
         });
-        game.inventory = [object];
 
         await throwInventoryObject(object, 'l', specimen.answers);
 
@@ -104,7 +104,7 @@ test('an object falling through a hole lands inside the lower arrival region',
         const source = sourceLevel();
         game.stairs = null;
         addTrap(source, HOLE, 10, 10, { tseen: true });
-        const club = looseObject(CLUB);
+        const club = knownObject(CLUB, { spe: 0 });
         await shipObject(club, 10, 10, {
             state: game,
             random: range => range === 100 ? 99 : 0,
@@ -130,7 +130,7 @@ test('a mirror can break while falling and carries its Luck penalty',
     async () => {
         sourceLevel();
         game.u.uluck = 5;
-        const mirror = looseObject(MIRROR);
+        const mirror = knownObject(MIRROR);
         const messages = [];
 
         const shipped = await shipObject(mirror, 10, 10, {
@@ -148,8 +148,8 @@ test('a mirror can break while falling and carries its Luck penalty',
 test('a falling object can knock another floor object down with it',
     async () => {
         const source = sourceLevel();
-        const rock = floorObject(ROCK, 10, 10);
-        const club = looseObject(CLUB);
+        const rock = place_object(knownObject(ROCK), 10, 10);
+        const club = knownObject(CLUB, { spe: 0 });
 
         await shipObject(club, 10, 10, {
             state: game,
