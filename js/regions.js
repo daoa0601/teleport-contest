@@ -216,7 +216,12 @@ async function affectHeroWithGas(
     const damage = halfHeroGasDamage(rollOne(region.damage) + 5, state);
     const hitPoints = damageHero(damage, state);
     const event = { kind: 'hero-gas', resisted: false, damage };
-    if (hitPoints <= 0) event.died = await onHeroDeath(event);
+    if (hitPoints <= 0) {
+        if (typeof onHeroDeath !== 'function') {
+            throw new TypeError('poison gas requires the hero death handler');
+        }
+        event.died = await onHeroDeath(event);
+    }
     return event;
 }
 
@@ -244,7 +249,12 @@ async function affectMonsterWithGas(
         monster.mblinded = 1;
         monster.mcansee = 0;
     }
-    if (region.heroFault) await onAnger(monster);
+    if (region.heroFault) {
+        if (typeof onAnger !== 'function') {
+            throw new TypeError('poison gas requires the monster anger handler');
+        }
+        await onAnger(monster);
+    }
     if (monsterGasTolerance(monster, state) === GAS_MINOR)
         return { kind: 'monster-gas', monster, resisted: true, damage: 0 };
 
@@ -255,6 +265,11 @@ async function affectMonsterWithGas(
         heroFault: !!region.heroFault, visible,
     };
     if (monster.mhp <= 0) {
+        if (typeof onMonsterDeath !== 'function') {
+            throw new TypeError(
+                'poison gas requires the monster death handler',
+            );
+        }
         event.death = await onMonsterDeath(monster, event);
     }
     return event;
@@ -315,17 +330,9 @@ export async function runLevelRegions(state, {
     publish = plineWithContinuation,
     rollOne = rnd,
     wake = async () => {},
-    onHeroDeath = async () => true,
-    onMonsterDeath = async monster => {
-        monster.dead = true;
-        state.level.monsters = state.level.monsters.filter(
-            candidate => candidate !== monster,
-        );
-        return { monster, survived: false };
-    },
-    onAnger = async monster => {
-        monster.mpeaceful = 0;
-    },
+    onHeroDeath,
+    onMonsterDeath,
+    onAnger,
 } = {}) {
     if (!state?.level?.regions?.length) return [];
     await expireRegions(state, publish);
