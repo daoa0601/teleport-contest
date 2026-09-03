@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { A_CON, A_DEX, A_INT } from '../js/const.js';
+import { A_CON, A_DEX, A_INT, W_ARMF } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
@@ -494,7 +494,7 @@ test('worn speed boots keep effective speed fast while potion removes slow',
             mfrozen: 0,
             permspeed: 1,
             mspeed: 2,
-            minvent: [{ otyp: SPEED_BOOTS, owornmask: 0x20 }],
+            minvent: [looseObject(SPEED_BOOTS, { owornmask: W_ARMF })],
         });
         const messages = [];
 
