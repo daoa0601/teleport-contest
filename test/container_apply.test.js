@@ -14,6 +14,7 @@ import {
     OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer,
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
+import { applyInventoryObject } from './support/commands.js';
 import {
     artifactObject, floorObject, inventoryObject,
 } from './support/game-objects.js';
@@ -23,17 +24,12 @@ function freshContainerGame(...objects) {
     freshCommandRoom({ inventory: objects, seed: 48201n });
 }
 
-async function applyObject(keys) {
-    pushKeys(keys);
-    await rhack('a'.charCodeAt(0));
-}
-
 test('applying a carried chest can put an ordinary item inside', async () => {
     const chest = inventoryObject(CHEST, 'a', { cknown: false });
     const club = inventoryObject(CLUB, 'b');
     freshContainerGame(chest, club);
 
-    await applyObject('aib\n');
+    await applyInventoryObject('a', 'ib\n');
 
     assert.deepEqual(game.inventory, [chest]);
     assert.deepEqual(chest.contents, [club]);
@@ -55,7 +51,7 @@ test('applying a carried chest can take its item back out', async () => {
     chest.contents = [club];
     freshContainerGame(chest);
 
-    await applyObject('aoa\n');
+    await applyInventoryObject('a', 'oa\n');
 
     assert.deepEqual(chest.contents, []);
     assert.equal(game.inventory.includes(club), true);
@@ -73,7 +69,7 @@ test('a container menu can move part of a carried stack', async () => {
     });
     freshContainerGame(chest, darts);
 
-    await applyObject('ai2b\n');
+    await applyInventoryObject('a', 'i2b\n');
 
     assert.equal(darts.quan, 3);
     assert.equal(game.inventory.includes(darts), true);
@@ -92,7 +88,7 @@ test('a container menu can take part of a contained stack', async () => {
     chest.contents = [darts];
     freshContainerGame(chest);
 
-    await applyObject('ao2a\n');
+    await applyInventoryObject('a', 'o2a\n');
 
     assert.equal(darts.quan, 3);
     assert.deepEqual(chest.contents, [darts]);
@@ -109,7 +105,7 @@ test('a rejected partial transfer restores the carried stack', async () => {
     });
     freshContainerGame(chest, loadstones);
 
-    await applyObject('ai2b\n');
+    await applyInventoryObject('a', 'i2b\n');
 
     assert.equal(loadstones.quan, 5);
     assert.deepEqual(game.inventory, [chest, loadstones]);
@@ -124,7 +120,7 @@ test('moving some gold keeps the purse and container amounts separate',
         });
         freshContainerGame(chest, gold);
 
-        await applyObject('ai2$\n');
+        await applyInventoryObject('a', 'i2$\n');
 
         assert.equal(gold.quan, 3);
         assert.equal(heroGoldAmount(game), 3);
@@ -146,7 +142,7 @@ test('touching one cockatrice corpse restores its stack and stops transfer',
         freshContainerGame(chest, corpse, amulet);
         game.uamul = game.u.uamul = amulet;
 
-        await applyObject(`aic\n1b\n${' '.repeat(10)}`);
+        await applyInventoryObject('a', `ic\n1b\n${' '.repeat(10)}`);
 
         assert.equal(game.inventory.includes(corpse), true);
         assert.equal(corpse.quan, 2);
@@ -162,7 +158,7 @@ test('gloves make a cockatrice corpse safe to put away', async () => {
     freshContainerGame(chest, corpse, gloves);
     game.uarmg = game.u.uarmg = gloves;
 
-    await applyObject('aic\nb\n');
+    await applyInventoryObject('a', 'ic\nb\n');
 
     assert.deepEqual(chest.contents, [corpse]);
     assert.ok(game.u.uhp > 0);
@@ -181,7 +177,7 @@ test('a self-willed artifact can refuse to leave a container', async () => {
     game.u.uhp = game.u.uhpmax = 100;
     initRng(8401n);
 
-    await applyObject(`aoa\n${' '.repeat(10)}`);
+    await applyInventoryObject('a', `oa\n${' '.repeat(10)}`);
 
     assert.deepEqual(chest.contents, [orb]);
     assert.equal(orb.where, 'contained');
@@ -197,7 +193,7 @@ test('a carried locked chest must be put down before it can be opened',
         });
         freshContainerGame(chest);
 
-        await applyObject('a');
+        await applyInventoryObject('a');
 
         assert.equal(chest.lknown, true);
         assert.equal(chest.cknown, false);
@@ -211,7 +207,7 @@ test('applying a trapped chest discharges its trap and spends the turn',
         freshContainerGame(chest);
         initRng(1n);
 
-        await applyObject('a ');
+        await applyInventoryObject('a', ' ');
 
         assert.equal(chest.otrapped, false);
         assert.equal(chest.tknown, true);
@@ -224,7 +220,7 @@ test('invocation items cannot be hidden in a container', async () => {
     const amulet = inventoryObject(AMULET_OF_YENDOR, 'b');
     freshContainerGame(chest, amulet);
 
-    await applyObject('aib\n');
+    await applyInventoryObject('a', 'ib\n');
 
     assert.deepEqual(game.inventory, [chest, amulet]);
     assert.deepEqual(chest.contents, []);
@@ -243,12 +239,12 @@ test('an ice box pauses and resumes corpse decay', async () => {
     game.moves = 40;
     scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ROT_CORPSE, 80, game);
 
-    await applyObject('aib\n');
+    await applyInventoryObject('a', 'ib\n');
 
     assert.equal(corpse.ageRelative, true);
     assert.deepEqual(objectTimers(corpse), []);
 
-    await applyObject('aoa\n');
+    await applyInventoryObject('a', 'oa\n');
 
     assert.equal(corpse.ageRelative, false);
     assert.equal(corpse.where, 'inventory');
@@ -288,7 +284,7 @@ test('opening a cursed bag of holding can make its contents vanish',
         freshContainerGame(bag);
         initRng(17n);
 
-        await applyObject('a q');
+        await applyInventoryObject('a', ' q');
 
         assert.deepEqual(bag.contents, []);
         assert.equal(club.where, 'gone');
@@ -311,7 +307,7 @@ test('putting one bag of holding inside another destroys both bags',
         freshContainerGame(outer, inner);
         const hitPoints = game.u.uhp;
 
-        await applyObject('aib\n');
+        await applyInventoryObject('a', 'ib\n');
 
         assert.equal(outer.where, 'gone');
         assert.equal(inner.where, 'gone');
@@ -337,7 +333,7 @@ test('opening a quantum box resolves its cat once', async () => {
     game.moves = 40;
     initRng(1n);
 
-    await applyObject('aq');
+    await applyInventoryObject('a', 'q');
 
     assert.equal(box.spe, 0);
     assert.equal(corpse.oname, "Schroedinger's Cat");

@@ -1021,12 +1021,14 @@ test('sleep resistance teaches only eligible observers on the yawn path',
         freshPotionState({
             ux: 10, uy: 10, sleepResistance: true,
         });
-        game.level = {
-            monsters: [
-                { mnum: 1, mx: 11, my: 10, mhp: 4, seen_resistance: 1 },
-                { mnum: 1, mx: 12, my: 10, mhp: 0, seen_resistance: 2 },
-            ],
-        };
+        const awakeObserver = addMonster({
+            mnum: 1, x: 11, y: 10,
+            hitPoints: 4, seen_resistance: 1,
+        });
+        const deadObserver = addMonster({
+            mnum: 1, x: 12, y: 10,
+            hitPoints: 0, maxHitPoints: 4, seen_resistance: 2,
+        });
         const messages = [];
 
         initRng(3001n);
@@ -1038,8 +1040,8 @@ test('sleep resistance teaches only eligible observers on the yawn path',
         });
         assert.deepEqual(messages, ['You yawn.']);
         assert.equal(game._helplessTurns, undefined);
-        assert.equal(game.level.monsters[0].seen_resistance, 0x0009);
-        assert.equal(game.level.monsters[1].seen_resistance, 2);
+        assert.equal(awakeObserver.seen_resistance, 0x0009);
+        assert.equal(deadObserver.seen_resistance, 2);
         assert.equal(result.resisted, true);
     });
 

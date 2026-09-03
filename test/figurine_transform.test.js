@@ -25,10 +25,6 @@ const PM_WUMPUS = 84;
 const PM_LEOCROTTA = 83;
 const PM_FLOATING_EYE = 28;
 
-function freshFigurineState() {
-    freshObjectRoom();
-}
-
 function carriedFigurine({
     species = PM_WUMPUS, cursed = true, blessed = false, timerSeed = 123,
 } = {}) {
@@ -99,7 +95,7 @@ function transferFigurineToMonster(figurine, monster, timerSeed = 321) {
 }
 
 test('only a viable cursed carried figurine receives a fresh timer', () => {
-    freshFigurineState();
+    freshObjectRoom();
     const { figurine } = carriedFigurine();
     const timer = figTimer(figurine);
     assert.equal(figurine.where, 'inventory');
@@ -115,7 +111,7 @@ test('only a viable cursed carried figurine receives a fresh timer', () => {
 
 test('genocide before transformation consumes the figurine without a monster',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         game.mvitals[PM_WUMPUS] = { mvflags: G_GENOD };
 
@@ -128,7 +124,7 @@ test('genocide before transformation consumes the figurine without a monster',
 
 test('monster acquisition replaces the timer before visible pack transform',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         const carrier = ordinaryMonsterCarrier();
         const { prior, timer } = transferFigurineToMonster(
@@ -156,7 +152,7 @@ test('monster acquisition replaces the timer before visible pack transform',
     });
 
 test('invisible monster carrier is attributed to thin air', async () => {
-    freshFigurineState();
+    freshObjectRoom();
     const { figurine } = carriedFigurine();
     const carrier = ordinaryMonsterCarrier({ invisible: true });
     transferFigurineToMonster(figurine, carrier);
@@ -170,7 +166,7 @@ test('invisible monster carrier is attributed to thin air', async () => {
 
 test('invisible monster carrier in a pool is attributed to empty water',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         const carrier = ordinaryMonsterCarrier({ invisible: true });
         game.level.at(carrier.mx, carrier.my).typ = POOL;
@@ -185,7 +181,7 @@ test('invisible monster carrier in a pool is attributed to empty water',
 
 test('overdue monster-inventory transform stays silent until deletion',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         const carrier = ordinaryMonsterCarrier();
         transferFigurineToMonster(figurine, carrier);
@@ -201,7 +197,7 @@ test('overdue monster-inventory transform stays silent until deletion',
 
 test('blocked monster-carried figurine retains its carrier for retry',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         const carrier = ordinaryMonsterCarrier();
         transferFigurineToMonster(figurine, carrier);
@@ -226,7 +222,7 @@ test('blocked monster-carried figurine retains its carrier for retry',
 
 test('cursed carried figurine creates a hostile actor before pack prose',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         const event = await claimTransform(figurine, 1);
         assert.equal(event.chance, 2);
@@ -245,7 +241,7 @@ test('cursed carried figurine creates a hostile actor before pack prose',
 
 test('a named floating-eye figurine keeps its name and floats from the pack',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine({ species: PM_FLOATING_EYE });
         figurine.oextra = { ...(figurine.oextra || {}), oname: 'Iris' };
 
@@ -258,7 +254,7 @@ test('a named floating-eye figurine keeps its name and floats from the pack',
 
 test('zero disposition initializes a complete non-domestic figurine pet',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         const event = await claimTransform(figurine, 17);
         assert.equal(event.chance, 0);
@@ -275,7 +271,7 @@ test('zero disposition initializes a complete non-domestic figurine pet',
 
 test('one disposition preserves the familiar birth attitude without taming',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         const event = await claimTransform(figurine, 19);
         assert.equal(event.chance, 1);
@@ -290,7 +286,7 @@ test('one disposition preserves the familiar birth attitude without taming',
 
 test('overdue blind inventory transform still presents tactile pack prose',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         game.u.blindTurns = 20;
         const { figurine } = carriedFigurine();
         const event = await claimTransform(figurine, 1, 25);
@@ -303,7 +299,7 @@ test('overdue blind inventory transform still presents tactile pack prose',
 
 test('drop command preserves figurine timer into visible floor transformation',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         await dropFigurineThroughCommand(figurine);
         const x = figurine.ox, y = figurine.oy;
@@ -325,7 +321,7 @@ test('drop command preserves figurine timer into visible floor transformation',
 
 test('floor figurine under hero uses makemon adjacent placement',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         await dropFigurineThroughCommand(figurine);
         const x = figurine.ox, y = figurine.oy;
@@ -347,7 +343,7 @@ test('floor figurine under hero uses makemon adjacent placement',
 
 test('overdue visible floor transformation is silent before object deletion',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         await dropFigurineThroughCommand(figurine);
         const x = figurine.ox, y = figurine.oy;
@@ -366,7 +362,7 @@ test('overdue visible floor transformation is silent before object deletion',
 
 test('obstructed floor figurine retains its square and schedules one retry',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         await dropFigurineThroughCommand(figurine);
         const x = figurine.ox, y = figurine.oy;
@@ -390,7 +386,7 @@ test('obstructed floor figurine retains its square and schedules one retry',
 
 test('occupied floor square consumes figurine as construction failure',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         await dropFigurineThroughCommand(figurine);
         const x = figurine.ox, y = figurine.oy;
@@ -415,7 +411,7 @@ test('occupied floor square consumes figurine as construction failure',
 
 test('a floor figurine over water creates a monster which immediately drowns',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine({ species: PM_LEOCROTTA });
         await dropFigurineThroughCommand(figurine);
         const x = figurine.ox, y = figurine.oy;
@@ -433,7 +429,7 @@ test('a floor figurine over water creates a monster which immediately drowns',
 
 test('carried figurine uses whole-map enexto fallback before retrying',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         for (let x = 1; x < COLNO; x++) {
             for (let y = 0; y < ROWNO; y++)
@@ -454,7 +450,7 @@ test('carried figurine uses whole-map enexto fallback before retrying',
 
 test('blocked carried figurine retains identity and schedules a bounded retry',
     async () => {
-        freshFigurineState();
+        freshObjectRoom();
         const { figurine } = carriedFigurine();
         for (let x = 1; x < COLNO; x++) {
             for (let y = 0; y < ROWNO; y++)
