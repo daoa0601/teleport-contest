@@ -10,7 +10,7 @@ import { castKnownSpell } from '../js/spell.js';
 import { turnUndeadInDirection } from '../js/undead_turning.js';
 import { dozap } from '../js/zap.js';
 import { chargedWand, untimedCorpse } from './support/game-objects.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const PM_TROLL = 220;
@@ -33,20 +33,13 @@ function trollCorpse() {
     return untimedCorpse(PM_TROLL);
 }
 
-function addZombie(x, y) {
-    return addMonster({
-        m_id: 901,
-        mnum: PM_HUMAN_ZOMBIE,
-        x, y,
-        level: 4,
-    });
-}
-
 test('undead turning revives floor and carried corpses along its path',
     async () => {
         freshState();
         const floorCorpse = place_object(trollCorpse(), 11, 10);
-        const zombie = addZombie(13, 10);
+        const zombie = await createMonsterAt('human zombie', 13, 10);
+        zombie.mhp = zombie.mhpmax = 20;
+        zombie.m_lev = 4;
         const carriedCorpse = trollCorpse();
         addObjectToMonsterInventory(zombie, carriedCorpse);
 
