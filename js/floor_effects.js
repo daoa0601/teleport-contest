@@ -3,7 +3,7 @@
 
 import {
     ALTAR, CORR, IS_POOL, LAVAPOOL, MOAT, POOL, ROOM, WATER,
-    is_hole, is_pit,
+    TT_PIT, is_hole, is_pit,
 } from './const.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { place_object, stack_object } from './floor_object.js';
@@ -11,13 +11,14 @@ import { game } from './gstate.js';
 import { meldNearbyFloorGlobs } from './glob.js';
 import { breakObjectAtLocation } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
-import { BOULDER, POT_OIL } from './object_data.js';
+import { BOULDER, OBJECT_NAMES, POT_OIL } from './object_data.js';
 import { makePlural } from './object_grammar.js';
+import { shipObject } from './object_migration.js';
 import { objectResistsDestruction } from './object_state.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { potionImpactObjectName } from './potion_hit.js';
 import { rnl, rn2 } from './rng.js';
-import { heroIsDeaf } from './senses.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
 import { cansee } from './vision.js';
 
@@ -78,6 +79,37 @@ async function breakPotionOnHotGround(
     return true;
 }
 
+function fallenObjectSubject(object) {
+    const quantity = object.quan ?? object.quantity ?? 1;
+    const noun = object.oextra?.oname || object.oname
+        || object.name || OBJECT_NAMES[object.otyp] || 'object';
+    return quantity === 1 ? `The ${noun}`
+        : `The ${quantity} ${makePlural(noun)}`;
+}
+
+async function handleHeroShaftEdge(
+    object, trap, x, y, state, publish, random,
+) {
+    if (state.u?.ux !== x || state.u?.uy !== y
+        || !(trap?.tseen ?? trap?.seen)) return false;
+    if (is_pit(trap.ttyp)
+        && !(state.u?.utrap && state.u.utraptype === TT_PIT)) {
+        const noun = object.oextra?.oname || object.oname
+            || object.name || OBJECT_NAMES[object.otyp] || 'object';
+        if (heroIsBlind(state) && !heroIsDeaf(state))
+            await publish(`You hear the ${noun} tumble downwards.`);
+        else {
+            const verb = (object.quan ?? object.quantity ?? 1) === 1
+                ? 'tumbles' : 'tumble';
+            await publish(`${fallenObjectSubject(object)} ${verb} into ${
+                trap.madeby_u ? 'your' : 'the'} pit.`);
+        }
+        return false;
+    }
+    if (!is_hole(trap.ttyp)) return false;
+    return shipObject(object, x, y, { state, publish, random });
+}
+
 export async function landFloorObject(
     object,
     x,
@@ -130,6 +162,10 @@ export async function landFloorObject(
             return null;
         }
     }
+
+    if (await handleHeroShaftEdge(
+        object, trap, x, y, state, publish, random,
+    )) return null;
 
     if (object.globby) {
         place_object(object, x, y, state);

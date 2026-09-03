@@ -9,6 +9,7 @@ import { place_object, stack_object } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
 import { mksobj } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { shipObject } from '../js/object_migration.js';
 import {
     GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING,
     GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, SACK,
@@ -322,8 +323,34 @@ test('a monster-carried glob disappears from its pack', () => {
     assert.equal(carrier.minvent.includes(glob), false);
 });
 
-test('a dissolving wielded glob clears the hero weapon slot', () => {
+test('a glob keeps shrinking while it is falling between levels', async () => {
     freshGlobState(18);
+    game.u.uz = { dnum: 0, dlevel: 1 };
+    game.dungeons = [{ num_dunlevs: 2, flags: {} }];
+    game.stairs = {
+        sx: 10, sy: 10, up: false, isladder: false,
+        tolev: { dnum: 0, dlevel: 2 }, next: null,
+    };
+    const glob = mksobj(GLOB_OF_GREEN_SLIME, true, false);
+    glob.owt = 1;
+    const timer = shrinkTimer(glob);
+
+    await shipObject(glob, 10, 10, {
+        state: game,
+        random: range => range === 3 ? 0 : 99,
+    });
+    game.moves = timer.deadline;
+    const event = runClaimedGlobTimer(
+        claimNextDueObjectTimer(game, game.moves), game, game.moves,
+    );
+
+    assert.equal(event.gone, true);
+    assert.equal(glob.where, 'gone');
+    assert.equal(game.migratingObjects.includes(glob), false);
+});
+
+test('a dissolving wielded glob clears the hero weapon slot', () => {
+    freshGlobState(19);
     const glob = mksobj(GLOB_OF_BLACK_PUDDING, true, false);
     glob.where = 'inventory';
     glob.owt = 1;

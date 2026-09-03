@@ -218,9 +218,8 @@ function deleteGlob(glob, state, carrier = null) {
         if (index >= 0) state.level.buriedObjects.splice(index, 1);
         glob.buried = false;
     } else if (where === 'migrating') {
-        const migrating = state.migratingObjects || state._migratingObjects;
-        const index = migrating?.indexOf(glob) ?? -1;
-        if (index >= 0) migrating.splice(index, 1);
+        const index = state.migratingObjects?.indexOf(glob) ?? -1;
+        if (index >= 0) state.migratingObjects.splice(index, 1);
     }
     glob.where = 'gone';
     glob.ocarry = null;

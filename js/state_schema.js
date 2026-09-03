@@ -23,7 +23,7 @@ const persistentNames = `
     displayName dungeons dx dy earth_level fire_level flags
     flying fruitName gamelog iflags in_mk_themerooms in_mklev initAlignment
     inventory invisible js juiblex_level knox_level lastStrTurn level
-    levitating made_branch maxSkill medusa_level mines_dnum mode moves
+    levitating made_branch maxSkill medusa_level migratingObjects mines_dnum mode moves
     multi mvitals name nethackrc nh_lua_variables objectColors objectDescriptionIndex objectDescriptions
     oracle_level plname polymorphControl preferred_pet protectionFromShapeChangers quest_dnum quest_status
     race reflecting rndencode rogue_level sanctum_level seer_turn skill

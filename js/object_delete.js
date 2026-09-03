@@ -59,6 +59,9 @@ function detachObject(object, state) {
     } else if (object.where === 'buried') {
         state.level.buriedObjects = (state.level?.buriedObjects || [])
             .filter(candidate => candidate !== object);
+    } else if (object.where === 'migrating') {
+        state.migratingObjects = (state.migratingObjects || [])
+            .filter(candidate => candidate !== object);
     } else if (object.where === 'minvent') {
         for (const monster of state.level?.monsters || []) {
             const inventory = (monster.minvent || monster.inventory || [])

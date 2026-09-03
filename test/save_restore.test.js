@@ -1,12 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { rhack } from '../js/cmd.js';
+import { ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
+import { pushKey } from '../js/input.js';
 import { runSegment } from '../js/jsmain.js';
+import { CLUB } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
+import { dropInventoryObject } from './support/commands.js';
+import { inventoryObject } from './support/game-objects.js';
 import { freshGame } from './support/game-state.js';
+import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 test('save and restore preserve entity identity across every loaded level', () => {
     const storage = memoryStorage();
@@ -44,6 +53,58 @@ test('save and restore preserve entity identity across every loaded level', () =
     assert.equal(game.u.ustuck, game.level.monsters[0]);
     assert.equal(game.inventory[1].contents[0].container, game.inventory[1]);
 });
+
+test('an object falling down stairs survives saving and reaches the next level',
+    async () => {
+        const storage = memoryStorage();
+        const source = freshGameplayRoom();
+        const destination = new GameMap();
+        Object.assign(destination.at(12, 10), {
+            typ: ROOM, lit: true, waslit: true, seenv: 255,
+        });
+        source.dnstair = { x: 10, y: 10 };
+        destination.upstair = { x: 12, y: 10 };
+        game.u.uz = { dnum: 0, dlevel: 1 };
+        game.dungeons = [{
+            dname: 'The Dungeons of Doom',
+            depth_start: 1,
+            num_dunlevs: 2,
+            flags: {},
+        }];
+        game.stairs = {
+            sx: 10, sy: 10, up: false, isladder: false,
+            tolev: { dnum: 0, dlevel: 2 }, next: null,
+        };
+        game._levelCache = new Map([[
+            '0:2', {
+                level: destination,
+                stairs: {
+                    sx: 12, sy: 10, up: true, isladder: false,
+                    tolev: { dnum: 0, dlevel: 1 }, next: null,
+                },
+                heroTrack: [],
+                savedAt: game.moves,
+            },
+        ]]);
+        const club = inventoryObject(CLUB, 'a', { o_id: 7301 });
+        game.inventory = [club];
+        game.plname = 'Faller';
+        initRng(1n);
+
+        await dropInventoryObject(club);
+
+        assert.equal(floorObjects(source).includes(club), false);
+        assert.equal(saveGame(storage), true);
+        assert.equal(restoreGame('Faller', storage), true);
+
+        pushKey(' ');
+        await rhack('>'.charCodeAt(0));
+
+        const delivered = floorObjects(game.level)
+            .find(object => object.o_id === club.o_id);
+        assert.ok(delivered);
+        assert.deepEqual(game.u.uz, { dnum: 0, dlevel: 2 });
+    });
 
 test('runSegment resumes a saved game through the same Engine boundary',
     async () => {

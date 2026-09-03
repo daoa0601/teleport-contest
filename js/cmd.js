@@ -112,6 +112,9 @@ import {
 import { d, rnd, rn2, rn2Display, rnl, rnz } from './rng.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { landFloorObject } from './floor_effects.js';
+import {
+    deliverMigratingObjects, shipObject,
+} from './object_migration.js';
 import { place_object, remove_object, stack_object } from './floor_object.js';
 import {
     makemonNear, mklev,
@@ -2070,6 +2073,7 @@ async function ordinaryDescend() {
         place_object(migratingPunishment.chain, game.u.ux, game.u.uy);
         game.u.bc_order = migratingPunishment.ballCarried ? 2 : 1;
     }
+    await deliverMigratingObjects(game);
     let descentMessage = 'You descend the stairs.--More--';
     let lowHitPointWarning = '';
     const loseHitPoints = damage => {
@@ -2691,6 +2695,7 @@ async function gotoLevel(targetDepth, {
             migratingPunishment.chain, game.u.ux, game.u.uy,
         );
     }
+    await deliverMigratingObjects(game);
     for (const follower of followers) arriveWithHero(follower);
     await killGenocidedMonsters();
     resolveHeroArrivalCollision();
@@ -8060,6 +8065,14 @@ async function dodrop() {
         if (!onAltar && game.flags?.verbose !== false)
             await pline(`You drop ${walletGold} gold pieces.`);
         gold.where = 'free';
+        if (!game.u?.uswallow && await shipObject(gold, x, y, {
+            state: game,
+            publish: plineWithContinuation,
+        })) {
+            newsym(x, y);
+            game.context.move = 1;
+            return;
+        }
         if (onAltar) {
             await landObjectOnAltar(gold, {
                 state: game,
@@ -8099,6 +8112,14 @@ async function dodrop() {
     object.worn = false;
     object.wornSlot = null;
     object.where = 'free';
+    if (!game.u?.uswallow && await shipObject(object, x, y, {
+        state: game,
+        publish: plineWithContinuation,
+    })) {
+        newsym(x, y);
+        game.context.move = 1;
+        return;
+    }
     if (onAltar) {
         await landObjectOnAltar(object, {
             state: game,
