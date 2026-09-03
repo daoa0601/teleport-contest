@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { PIT, STONE } from '../js/const.js';
+import { G_GENOD, PIT, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys } from '../js/input.js';
@@ -49,6 +49,23 @@ test('a monster death updates its species death count', async () => {
     });
 
     assert.equal(game.mvitals[giant.mnum]?.died, 1);
+});
+
+test('a dead mail daemon stops future mail delivery', async () => {
+    freshObjectRoom();
+    const daemon = addMonster({
+        species: 'mail daemon', x: 11, y: 10, hitPoints: 1,
+    });
+
+    await finishEnvironmentalMonsterDeath(daemon, game, {
+        visible: false,
+        publish: async () => {},
+    });
+
+    assert.equal(
+        (game.mvitals[daemon.mnum]?.mvflags & G_GENOD) !== 0,
+        true,
+    );
 });
 
 test('dead shapechangers return to their true species', async () => {
