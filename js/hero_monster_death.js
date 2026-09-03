@@ -23,7 +23,8 @@ import {
 } from './monster_data.js';
 import {
     createMonsterRemains, levelAllowsMonsterDeathDrops,
-    monsterBodyCrumblesMessage, monsterLeavesCorpse,
+    monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects,
+    monsterLeavesCorpse,
 } from './monster_death.js';
 import {
     createPhysicalMonsterExplosion, rollMonsterDeathExplosionDamage,
@@ -206,9 +207,14 @@ export async function finishHeroMonsterKill(monster, x, y, {
     monster.inventory = monster.minvent;
     monster.hasInventory = false;
 
-    const permitsDeathDrops = !suppressRemains
+    const levelAllowsDeathDrops = !suppressRemains
         && levelAllowsMonsterDeathDrops(monster, game, rn2);
-    if (permitsDeathDrops) {
+    const squareAllowsDeathObjects = monsterDeathSquareAllowsObjects(
+        x, y, game,
+    );
+    const canCreateDeathObjects = levelAllowsDeathDrops
+        && squareAllowsDeathObjects;
+    if (canCreateDeathObjects) {
         const extraObjectRoll = rn2(6);
         if (extraObjectRoll === 0
             && !((MONSTER_GENO[monster.mnum] ?? 0) & G_NOCORPSE)
@@ -231,17 +237,17 @@ export async function finishHeroMonsterKill(monster, x, y, {
         }
     }
 
-    const explosionDamage = permitsDeathDrops
+    const explosionDamage = canCreateDeathObjects
         ? rollMonsterDeathExplosionDamage(monster)
         : null;
     let leavesCorpse = false;
     if (explosionDamage === null) {
-        const crumbleMessage = permitsDeathDrops
+        const crumbleMessage = canCreateDeathObjects
             ? monsterBodyCrumblesMessage(monster) : null;
         if (crumbleMessage && deathLocationVisible && !wasInside)
             await plineWithContinuation(crumbleMessage);
-        leavesCorpse = !suppressRemains && !wasInside
-            && permitsDeathDrops && monsterLeavesCorpse(monster, rn2);
+        leavesCorpse = !wasInside && canCreateDeathObjects
+            && monsterLeavesCorpse(monster, rn2);
     }
     unmap_invisible(x, y, false);
     monster.dead = true;

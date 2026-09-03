@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { PIT } from '../js/const.js';
+import { PIT, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys } from '../js/input.js';
@@ -71,6 +71,21 @@ test('a boulder already in a monster pit prevents death remains', async () => {
 
     assert.equal(floorObjectsAt(level, 11, 10).some(object =>
         object.otyp === CORPSE), false);
+});
+
+test('killing a monster inside solid rock leaves no objects', async () => {
+    const level = freshObjectRoom({ gameplaySeed: 30n });
+    level.at(11, 10).typ = STONE;
+    const giant = addMonster({
+        species: 'giant', x: 11, y: 10, hitPoints: 1,
+    });
+
+    await finishHeroMonsterKill(giant, giant.mx, giant.my, {
+        showKillMessage: false,
+        recordConduct: false,
+    });
+
+    assert.deepEqual(floorObjectsAt(level, 11, 10), []);
 });
 
 test('a visible lich crumbles to dust instead of leaving a corpse', async () => {

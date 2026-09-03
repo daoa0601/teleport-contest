@@ -2,8 +2,9 @@
 // C refs: mon.c mondead(), mondied(), corpse_chance(), and make_corpse().
 
 import {
-    CORPSTAT_FEMALE, CORPSTAT_INIT, CORPSTAT_MALE,
+    ACCESSIBLE, CORPSTAT_FEMALE, CORPSTAT_INIT, CORPSTAT_MALE,
     G_NOCORPSE, Is_rogue_level,
+    IS_POOL,
 } from './const.js';
 import { buryFloorObject } from './buried_object.js';
 import {
@@ -81,6 +82,11 @@ export function levelAllowsMonsterDeathDrops(
     return !(state.level?.flags?.graveyard && undead && random(3));
 }
 
+export function monsterDeathSquareAllowsObjects(x, y, state = game) {
+    const terrain = state.level?.at?.(x, y)?.typ;
+    return ACCESSIBLE(terrain) || IS_POOL(terrain);
+}
+
 function monsterPossessiveName(monster) {
     const name = monster.name || MONSTER_NAME[monster.mnum] || 'monster';
     const usesArticle = !monster.name && !/^[A-Z]/.test(name);
@@ -125,9 +131,12 @@ function ordinaryMonsterDeathResult(monster, state, random, rollDice) {
         return { crumbleMessage: null, explosionDamage, leavesRemains: false };
     }
 
-    const leavesRemains = levelAllowsMonsterDeathDrops(
+    const corpseRolled = levelAllowsMonsterDeathDrops(
         monster, state, random,
     ) && monsterLeavesCorpse(monster, random);
+    const leavesRemains = corpseRolled && monsterDeathSquareAllowsObjects(
+        monster.mx, monster.my, state,
+    );
     return { crumbleMessage: null, explosionDamage: null, leavesRemains };
 }
 
