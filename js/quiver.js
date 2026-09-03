@@ -1,17 +1,17 @@
-// quiver.js — Automatic quiver candidate classification and slot ownership.
+// Automatic quiver candidate classification and slot ownership.
 // C refs: dothrow.c:autoquiver()/throwing_weapon(), obj.h ammo predicates,
 // wield.c:ready_ok()/setuqwep().  Command prompts remain in cmd.js.
 
 import {
-    P_BOOMERANG, P_BOW, P_CROSSBOW, P_DAGGER, P_DART,
-    P_SHORT_SWORD, P_SLING, P_SPEAR, W_QUIVER,
+    P_BOW, P_CROSSBOW, P_DAGGER, P_SLING, W_QUIVER,
 } from './const.js';
 import {
-    AKLYS, FLINT, OBJECT_DIR, OBJECT_MATERIAL, OBJECT_SUBTYPE, ROCK,
+    AKLYS, FLINT, OBJECT_MATERIAL, OBJECT_SUBTYPE, ROCK,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
-
-const WAR_HAMMER = 76;
+import {
+    isMissileObject, isThrowingWeapon,
+} from './object_properties.js';
 
 function quiverObjectClass(item) {
     return item?.oclass || objectClassForType(item?.otyp);
@@ -28,25 +28,6 @@ export function launcherMatchesAmmo(ammo, launcher) {
     return isLauncherAmmo(ammo) && !!launcher
         && OBJECT_SUBTYPE[ammo.otyp]
             === -(OBJECT_SUBTYPE[launcher.otyp] ?? 0);
-}
-
-function isMissileObject(item) {
-    const objectClass = quiverObjectClass(item);
-    const skill = OBJECT_SUBTYPE[item?.otyp] ?? 0;
-    return [2, 6].includes(objectClass)
-        && skill >= -P_BOOMERANG && skill <= -P_DART;
-}
-
-function isThrowingWeapon(item) {
-    const objectClass = quiverObjectClass(item);
-    const skill = OBJECT_SUBTYPE[item?.otyp] ?? 0;
-    const piercingDaggerOrKnife = objectClass === 2
-        && skill >= P_DAGGER && skill < P_SHORT_SWORD
-        && ((OBJECT_DIR[item.otyp] ?? 0) & 1) !== 0;
-    return isMissileObject(item)
-        || (objectClass === 2 && skill === P_SPEAR)
-        || piercingDaggerOrKnife
-        || item?.otyp === WAR_HAMMER || item?.otyp === AKLYS;
 }
 
 export function setQuiverObject(item, state) {

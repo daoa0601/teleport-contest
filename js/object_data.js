@@ -55,6 +55,7 @@ export const KATANA = 56;
 export const LUCERN_HAMMER = 69;
 export const LANCE = 72;
 export const MACE = 73;
+export const WAR_HAMMER = 76;
 export const CLUB = 77;
 export const QUARTERSTAFF = 79;
 export const AKLYS = 80;

@@ -152,9 +152,9 @@ import {
     setQuiverObject,
 } from './quiver.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
+import { throwOrdinaryObject } from './ordinary_throw.js';
 import {
-    captureThrownObjectFlight, detachThrownUnit,
-    finishHeroThrownObjectLanding,
+    captureThrownObjectFlight, finishHeroThrownObjectLanding,
 } from './thrown_object.js';
 import {
     applyProjectileObjectPassive as applySharedProjectileObjectPassive,
@@ -9500,9 +9500,7 @@ async function dothrow(
             arrowVolleyCount = Math.min(arrowVolleyCount, shotLimit);
     }
     let splitObjectId = null;
-    if (!game.u?.uswallow && thrownObjectClass !== 8
-        && thrownObjectClass !== 3
-        && !launchedArrow && !handThrownArrow
+    if (!game.u?.uswallow && thrownObjectClass === 13
         && !matchingSlingGem
         && selectedQuantity > 1) {
         splitObjectId = nextIdent(); // splitobj()
@@ -9621,47 +9619,6 @@ async function dothrow(
     })) return;
     if (!game.u?.uswallow && thrownObjectClass === 8)
         throw new Error('map potion impact is not implemented');
-
-    if (thrownObjectClass === 3) {
-        const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
-        const thrown = detachThrownUnit(
-            game, item, selectedQuantity, splitObjectId,
-        );
-
-        const x = game.u.ux + dx, y = game.u.uy + dy;
-        const monster = game.level?.monsters?.find(candidate =>
-            candidate.mx === x && candidate.my === y
-            && (candidate.mhp ?? 1) > 0);
-        if (monster) {
-            // dothrow.c:thitmonst() always rolls to-hit before class-specific
-            // handling.  Armor reaches the generic miss branch, then tmiss()
-            // owns its one-in-three wakeup check.
-            rnd(20);
-            const objectName = OBJECT_NAMES[thrown.otyp]
-                || thrown.name || 'object';
-            const monsterName = MONSTER_NAME[monster.mnum] || 'monster';
-            await pline(`The ${objectName} misses the ${monsterName}.`);
-            rn2(3);
-        }
-
-        await finishHeroThrownObjectLanding({
-            state: game,
-            object: thrown,
-            x,
-            y,
-            publish: plineWithContinuation,
-        });
-
-        const currentCapacity = nearCapacity(game);
-        const capacityMessage = encumbranceMessage(
-            previousCapacity, currentCapacity,
-        );
-        if (capacityMessage) await plineWithContinuation(capacityMessage);
-        game._encumbranceLevel = currentCapacity;
-        game.u._encumbrance = encumbranceLabel(currentCapacity);
-        game.context.move = 1;
-        return;
-    }
 
     // is_ammo() halves hand-thrown arrow range and announces the missing
     // launcher before bhit() resolves the landing.  Keep the line alive
@@ -10542,71 +10499,22 @@ async function dothrow(
         return;
     }
 
-    if (thrownObjectClass === 2
-        && blocksMove(game.u.ux + dx, game.u.uy + dy)) {
-        // A blocked weapon-class projectile lands at gb.bhitpos, which is
-        // still the hero square. Its floor/fobj identity is visible to the
-        // same-turn monster scheduler.
-        let thrown = item;
-        if (selectedQuantity > 1) {
-            thrown = {
-                ...item,
-                o_id: splitObjectId,
-                quantity: 1,
-                quan: 1,
-                owt: OBJECT_WEIGHT[item.otyp] ?? item.owt ?? 1,
-                owornmask: 0,
-                ready: false,
-                where: 'free',
-            };
-        } else {
-            thrown = detachThrownUnit(game, item, 1);
-        }
-        thrown.how_lost = LOST_THROWN;
-        await finishHeroThrownObjectLanding({
-            state: game,
-            object: thrown,
-            x: game.u.ux,
-            y: game.u.uy,
-            publish: plineWithContinuation,
-        });
-        game.context.move = 1;
-        return;
-    }
-
-    if (thrownObjectClass !== 2) {
-        // dothrow.c removes the object from inventory, or splits one unit from
-        // its stack, before drop_throw().
-        let thrown = item;
-        if (selectedQuantity > 1) {
-            thrown = {
-                ...item,
-                o_id: splitObjectId,
-                quantity: 1,
-                quan: 1,
-            };
-        } else {
-            thrown = detachThrownUnit(game, item, 1);
-        }
-        thrown.where = 'free';
-        thrown.how_lost = LOST_THROWN;
-        let x = game.u.ux, y = game.u.uy;
-        const nx = x + DIR_DX[direction], ny = y + DIR_DY[direction];
-        if (!blocksMove(nx, ny)) {
-            x = nx;
-            y = ny;
-        }
-        await finishHeroThrownObjectLanding({
-            state: game,
-            object: thrown,
-            x,
-            y,
-            publish: plineWithContinuation,
-        });
-        game.context.move = 1;
-        return;
-    }
-    if (!handThrownArrow) game._pending_message = '';
+    const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
+    await throwOrdinaryObject({
+        state: game,
+        item,
+        quantity: selectedQuantity,
+        splitObjectId,
+        dx,
+        dy,
+    });
+    const currentCapacity = nearCapacity(game);
+    const capacityMessage = encumbranceMessage(
+        previousCapacity, currentCapacity,
+    );
+    if (capacityMessage) await plineWithContinuation(capacityMessage);
+    game._encumbranceLevel = currentCapacity;
+    game.u._encumbrance = encumbranceLabel(currentCapacity);
     game.context.move = 1;
 }
 

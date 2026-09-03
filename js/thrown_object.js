@@ -207,6 +207,7 @@ export async function finishHeroThrownObjectLanding({
     object,
     x,
     y,
+    contactedMonster = false,
     publish = plineWithContinuation,
     random = rn2,
 }) {
@@ -229,7 +230,7 @@ export async function finishHeroThrownObjectLanding({
     });
     if (floorEffect.finished) return floorEffect.object;
 
-    if (!liveMonsterAt(state, x, y)
+    if (!contactedMonster && !liveMonsterAt(state, x, y)
         && await shipObject(object, x, y, { state, publish, random })) {
         return null;
     }

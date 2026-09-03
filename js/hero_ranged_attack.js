@@ -21,9 +21,10 @@ import {
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
-    OBJECT_HIT_BONUS, OBJECT_NAMES, OBJECT_SUBTYPE,
+    BOOMERANG, OBJECT_HIT_BONUS, OBJECT_NAMES, OBJECT_SUBTYPE,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
+import { isThrowingWeapon } from './object_properties.js';
 import {
     applyProjectileObjectPassive, destroyMulchedProjectile,
     shouldMulchMissile,
@@ -118,6 +119,16 @@ function appliedHitThreshold(monster, weapon, state) {
         + weaponSkillHitBonus(state, skill);
 }
 
+function thrownHitThreshold(monster, weapon, state) {
+    let threshold = baseRangedHitThreshold(monster, weapon, state);
+    const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0);
+    if (rangedObjectIsAmmunition(weapon)) return threshold - 4;
+
+    if (weapon.otyp === BOOMERANG) threshold += 4;
+    else threshold += isThrowingWeapon(weapon) ? 2 : -2;
+    return threshold + weaponSkillHitBonus(state, skill);
+}
+
 async function rollRangedObjectDamage(
     monster, weapon, state, dieRoll, applied,
 ) {
@@ -188,14 +199,14 @@ async function abusePet(monster, damage, state) {
     }
 }
 
-function kickedObjectUsesWeaponHit(object) {
+function rangedObjectUsesWeaponHit(object) {
     const objectClass = object.oclass ?? objectClassForType(object.otyp);
     const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
     return objectClass === WEAPON_CLASS || objectClass === GEM_CLASS
         || (objectClass === TOOL_CLASS && skill !== 0);
 }
 
-function kickedObjectIsAmmunition(object) {
+function rangedObjectIsAmmunition(object) {
     const objectClass = object.oclass ?? objectClassForType(object.otyp);
     const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
     return (objectClass === WEAPON_CLASS || objectClass === GEM_CLASS)
@@ -205,14 +216,18 @@ function kickedObjectIsAmmunition(object) {
 async function hitMonsterWithRangedObject(monster, object, state, mode) {
     const applied = mode === 'applied';
     if (applied) await applyCaitiffPenalty(monster, state);
-    const threshold = applied
-        ? appliedHitThreshold(monster, object, state)
-        : baseRangedHitThreshold(monster, object, state)
-            - (kickedObjectIsAmmunition(object) ? 5 : 3);
+    let threshold;
+    if (applied) threshold = appliedHitThreshold(monster, object, state);
+    else if (mode === 'thrown')
+        threshold = thrownHitThreshold(monster, object, state);
+    else {
+        threshold = baseRangedHitThreshold(monster, object, state)
+            - (rangedObjectIsAmmunition(object) ? 5 : 3);
+    }
     const dieRoll = rnd(20);
     const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
 
-    if ((!applied && !kickedObjectUsesWeaponHit(object))
+    if ((!applied && !rangedObjectUsesWeaponHit(object))
         || threshold < dieRoll) {
         const namedTarget = targetObject(monster, state);
         await plineWithContinuation(
@@ -309,4 +324,10 @@ export function hitMonsterWithKickedObject(
     monster, object, { state = game } = {},
 ) {
     return hitMonsterWithRangedObject(monster, object, state, 'kicked');
+}
+
+export function hitMonsterWithThrownObject(
+    monster, object, { state = game } = {},
+) {
+    return hitMonsterWithRangedObject(monster, object, state, 'thrown');
 }
