@@ -31,10 +31,8 @@ import {
     isLauncherAmmunition, isPoisonableObject, isThrowingWeapon,
     launcherMatchesAmmo,
 } from './object_properties.js';
-import {
-    applyProjectileObjectPassive, destroyMulchedProjectile,
-    shouldMulchMissile,
-} from './projectile.js';
+import { applyMonsterPassiveToObject } from './monster_passive.js';
+import { destroyMulchedProjectile, shouldMulchMissile } from './projectile.js';
 import { rnd, rn2 } from './rng.js';
 import { shopkeeperName } from './shk.js';
 import {
@@ -336,7 +334,7 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
         monster, object, state, dieRoll, mode,
     );
     if (attackStopped) {
-        await applyProjectileObjectPassive(monster, object);
+        await applyMonsterPassiveToObject(monster, object);
         return { hit: true, consumed: false, result: true };
     }
     if (applied) {
@@ -355,7 +353,7 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
             );
         }
         await wakeAttackedMonster(monster);
-        await applyProjectileObjectPassive(monster, object);
+        await applyMonsterPassiveToObject(monster, object);
         return { hit: true, consumed: false, result: true };
     }
 
@@ -420,7 +418,7 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
         destroyMulchedProjectile(object);
         return { hit: true, consumed: true, result };
     }
-    await applyProjectileObjectPassive(monster, object);
+    await applyMonsterPassiveToObject(monster, object);
     return { hit: true, consumed: false, result };
 }
 

@@ -16,7 +16,7 @@ import { nhgetch } from './input.js';
 import {
     compactInventoryLetters, promptInventoryObject,
 } from './inventory_prompt.js';
-import { AT_BOOM } from './monster_attack_types.js';
+import { AT_BOOM, AT_KICK, AT_WEAP } from './monster_attack_types.js';
 import { moreUntilDismissed, promptKey } from './tty_prompts.js';
 import {
     getLine, paranoidQuery, promptYesNo, promptYesNoQuit,
@@ -157,10 +157,7 @@ import { chooseHeroVolleyCount } from './hero_multishot.js';
 import {
     captureThrownObjectFlight, finishHeroThrownObjectLanding,
 } from './thrown_object.js';
-import {
-    applyProjectileObjectPassive as applySharedProjectileObjectPassive,
-    destroyMulchedProjectile, shouldMulchMissile,
-} from './projectile.js';
+import { destroyMulchedProjectile, shouldMulchMissile } from './projectile.js';
 import {
     objectStatePrefix, unseenObjectNoun,
 } from './objnam.js';
@@ -301,6 +298,9 @@ import {
     recordDungeonEntryAchievements,
 } from './achievements.js';
 import { getHungry } from './hunger.js';
+import {
+    applyHeroContactPassive, applyMonsterPassiveToObject,
+} from './monster_passive.js';
 import {
     heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed,
     heroHasOlfaction, heroIsVerySmall, polyselfControlledMonster,
@@ -3852,6 +3852,14 @@ async function confirmKickTarget(monster) {
     );
 }
 
+function applyKickPassive(monster, hit) {
+    return applyHeroContactPassive(monster, {
+        hit,
+        attackType: AT_KICK,
+        weapon: game.uarmf || game.u?.uarmf || null,
+    });
+}
+
 // C refs: dokick.c:maybe_kick_monster(), kick_monster(), kickdmg().
 // This owns the ordinary humanoid kick path.  Projection affects only the
 // target noun: dokick() still targets m_at(x,y) when the actor is invisible.
@@ -3876,7 +3884,7 @@ async function kickLiveMonster(monster, x, y) {
 
     if (levitatingKickMisses(monster)) {
         await pline('Floating in the air, you miss wildly!');
-        passiveContact(monster, false);
+        await applyKickPassive(monster, false);
         game.context.move = 1;
         return;
     }
@@ -3907,7 +3915,7 @@ async function kickLiveMonster(monster, x, y) {
         announce: pline,
     });
     if (kick.stopped) {
-        passiveContact(monster, false);
+        await applyKickPassive(monster, false);
         game.context.move = 1;
         return;
     }
@@ -3921,7 +3929,7 @@ async function kickLiveMonster(monster, x, y) {
             ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
     });
     if (evaded) {
-        passiveContact(monster, true);
+        await applyKickPassive(monster, false);
         if (monster.mx === x && monster.my === y
             && !canProjectMonster(monster, x, y)) map_invisible(x, y);
         game.context.move = 1;
@@ -3967,7 +3975,11 @@ async function kickLiveMonster(monster, x, y) {
         },
     );
 
-    passiveContact(monster, (monster.mhp ?? 1) > 0);
+    const passive = await applyKickPassive(monster, true);
+    if (passive.heroDied) {
+        game.context.move = 1;
+        return;
+    }
     if ((monster.mhp ?? 1) <= 0) {
         await finishHeroMonsterKill(monster, monster.mx, monster.my, {
             showKillMessage: !reel?.dead,
@@ -10100,7 +10112,7 @@ async function dothrow(
                 game.context.move = 1;
                 return;
             }
-            await applySharedProjectileObjectPassive(
+            await applyMonsterPassiveToObject(
                 contact, thrownMineral,
             );
             await landThrownMineral(x, y);
@@ -10157,16 +10169,6 @@ async function dothrow(
         if (game.program_state?.gameover) break;
     }
     game.context.move = 1;
-}
-
-function passiveContact(monster, malive) {
-    const passive = MONSTER_ATTACKS[monster.mnum]
-        ?.find(attack => attack[0] === 0);
-    if (!passive) return;
-    const [, , dice, sides] = passive;
-    if (dice > 0) d(dice, sides);
-    else if (sides > 0) d((monster.m_lev ?? 0) + 1, sides);
-    if (malive && !monster.mcan) rn2(3);
 }
 
 // C refs: lock.c autokey(TRUE), pick_lock().  Default autounlock includes
@@ -10318,6 +10320,11 @@ async function attackHostileMonster(monster, x, y, {
     const attackWeapon = secondaryStrike
         ? (game.uswapwep || game.u?.uswapwep || null)
         : (game.uwep || game.u?.uwep || null);
+    const applyPassive = hit => applyHeroContactPassive(monster, {
+        hit,
+        attackType: AT_WEAP,
+        weapon: attackWeapon,
+    });
     const twoWeaponActive = !!(game.u?.twoweap || game.twoweap)
         && !!(game.uwep || game.u?.uwep)
         && !!(game.uswapwep || game.u?.uswapwep);
@@ -10325,6 +10332,7 @@ async function attackHostileMonster(monster, x, y, {
     const targetStillAvailableForOffhand = () => primaryStrike
         && twoWeaponActive
         && (game.multi ?? game._multi ?? 0) >= 0
+        && !(game._helplessTurns > 0)
         && (game.u?.umortality ?? 0) === mortalityBeforeStrike
         && (monster.mhp ?? 0) > 0
         && monster.mx === x && monster.my === y
@@ -10448,12 +10456,14 @@ async function attackHostileMonster(monster, x, y, {
             `You miss ${displayedMonsterObject()}.`,
         );
         // missum() wakes and angers an awake peaceful shopkeeper before
-        // hitum() reaches passive().  Keeping the passive draw after the
-        // messages also preserves tty suspension if either pline blocks.
+        // the monster's passive response.
         if (!helpless) await wakeAttackedShopkeeper(monster);
         // hitum() invokes passive() after every primary attempt, including a
         // miss.  The second attempt invokes it only when that strike hits.
-        if (primaryStrike) passiveContact(monster, true);
+        if (primaryStrike) {
+            const passive = await applyPassive(false);
+            if (passive.heroDied) return true;
+        }
         return finishStrike();
     }
 
@@ -10493,7 +10503,8 @@ async function attackHostileMonster(monster, x, y, {
         : { damage, specialMessage: false };
     damage = artifactHit.damage;
     if (artifactHit.attackStopped) {
-        if (primaryStrike) passiveContact(monster, true);
+        const passive = await applyPassive(true);
+        if (passive.heroDied) return true;
         return finishStrike();
     }
     const damageCanUseBonuses = damage > 0;
@@ -10595,7 +10606,8 @@ async function attackHostileMonster(monster, x, y, {
             );
         }
         await wakeMonsterAfterHit();
-        if (primaryStrike) passiveContact(monster, true);
+        const passive = await applyPassive(true);
+        if (passive.heroDied) return true;
         return finishStrike();
     }
     let stagger = { staggered: false };
@@ -10621,7 +10633,10 @@ async function attackHostileMonster(monster, x, y, {
     }
     if (!stagger.dead)
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
-    if (stagger.dead) return true;
+    if (stagger.dead) {
+        await applyPassive(true);
+        return true;
+    }
     if (monster.mhp > 0) {
         // C uhitm.c:hmon_hitmon_msg_hit() uses canseemon(), not canspotmon():
         // telepathy can supply the target noun without exposing damage
@@ -10655,7 +10670,7 @@ async function attackHostileMonster(monster, x, y, {
                 },
             );
             if (knockback.dead) {
-                passiveContact(monster, false);
+                await applyPassive(true);
                 return true;
             }
         }
@@ -10665,7 +10680,8 @@ async function attackHostileMonster(monster, x, y, {
             if (rn2(3) === 0) rnd(100);
             monster.mflee = 1;
         }
-        passiveContact(monster, true);
+        const passive = await applyPassive(true);
+        if (passive.heroDied) return true;
         return finishStrike();
     }
 
@@ -10703,7 +10719,7 @@ async function attackHostileMonster(monster, x, y, {
         }
     }
 
-    return finishHeroMonsterKill(monster, x, y, {
+    const killed = await finishHeroMonsterKill(monster, x, y, {
         hallucinating,
         zombifyCorpse: bareHanded && isZombieMaker(
             game.u?.umonnum, game.u?.mcan,
@@ -10712,6 +10728,8 @@ async function attackHostileMonster(monster, x, y, {
         // lazy Hallucination-name boundary rather than precomputing it.
         nameMonster: displayedMonsterName,
     });
+    await applyPassive(true);
+    return killed;
 }
 
 // C uhitm.c:attack_checks().  An ordinary direction into an actor which the

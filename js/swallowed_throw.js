@@ -19,9 +19,9 @@ import {
 import { AT_ENGL } from './monster_attack_types.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
 import { rnd } from './rng.js';
+import { applyMonsterPassiveToObject } from './monster_passive.js';
 import {
-    applyProjectileObjectPassive, destroyMulchedProjectile, projectileKind,
-    shouldMulchMissile,
+    destroyMulchedProjectile, projectileKind, shouldMulchMissile,
 } from './projectile.js';
 import {
     hitMonsterWithSupportedPotion, maximumSupportedPotionFatalDamage,
@@ -348,7 +348,7 @@ export async function resolveSwallowedProjectileThrow({
         state.context.move = 1;
         return true;
     }
-    await applyProjectileObjectPassive(engulfer, thrown);
+    await applyMonsterPassiveToObject(engulfer, thrown);
     addObjectToMonsterInventory(
         engulfer, thrown, state, { atFront: true },
     );

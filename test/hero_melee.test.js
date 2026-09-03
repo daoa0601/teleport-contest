@@ -152,6 +152,19 @@ test('a heavy melee hit can knock a tiny monster backward', async () => {
     assert.ok(newt.mhp < 100);
 });
 
+test('striking an acid blob can splash and hurt the hero', async () => {
+    installMeleeArena('caveman', 'acid blob');
+    game.u.ulevel = 20;
+    game.u.uhp = game.u.uhpmax = 40;
+    game.u.acurr.a[A_DEX] = 18;
+
+    initRng(1n);
+    pushKey(' ');
+    await rhack('l'.charCodeAt(0));
+
+    assert.ok(game.u.uhp < 40);
+});
+
 test('an ordinary dagger passes through a shade without breaking conduct',
     async () => {
         const { monster: shade } = installMeleeArena(

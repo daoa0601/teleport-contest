@@ -53,8 +53,34 @@ export async function damageHeroObjectWithAcid(
         return { result: 'erased' };
     }
 
+    return corrodeHeroObject(object, {
+        state,
+        publish,
+        random,
+        verbose: true,
+        skipInventoryProtection: true,
+    });
+}
+
+export async function corrodeHeroObject(
+    object,
+    {
+        state = game,
+        publish = plineWithContinuation,
+        random = rn2,
+        verbose = false,
+        skipInventoryProtection = false,
+    } = {},
+) {
+    if (!object) return { result: 'nothing' };
     const erosion = heroObjectErosionResult(
-        object, true, 'corrosion', state, random, null, true,
+        object,
+        verbose,
+        'corrosion',
+        state,
+        random,
+        null,
+        skipInventoryProtection,
     );
     await applyErosionWithMessages(erosion, state, publish, random);
     return erosion;
@@ -80,6 +106,7 @@ export async function corrodeRandomHeroArmor({
             'corrosion',
             state,
             random,
+            null,
         );
         await applyErosionWithMessages(erosion, state, publish, random);
         if (selection.bodySlot || erosion.result !== 'nothing') return erosion;
