@@ -226,6 +226,18 @@ test('swallowed ordinary weapon damages, trains, and transfers after contact',
         assert.equal(floorObjects(game.level).length, 0);
     });
 
+test('an unwielded bow can be thrown at a swallowing monster', async () => {
+    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const bow = addInventoryWeapon(BOW);
+    setBasicWeaponSkill(bow);
+
+    initRng(2310n);
+    await throwInventoryObject(bow, 'l');
+
+    assert.ok(engulfer.mhp < 40);
+    assert.strictEqual(engulfer.minvent[0], bow);
+});
+
 test('a blessed swallowed weapon deals extra damage to a demon', async () => {
     const ordinaryTarget = freshSwallowedState(PM_JUIBLEX);
     const ordinaryDagger = addInventoryWeapon(DAGGER);

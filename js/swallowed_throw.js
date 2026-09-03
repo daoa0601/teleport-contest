@@ -11,8 +11,8 @@ import { endObjectBurn } from './light.js';
 import { resolveHeroWeaponPoison } from './hero_weapon_poison.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
-    BOULDER, BRASS_LANTERN, MAGIC_LAMP, OBJECT_MATERIAL,
-    OBJECT_NAMES, OBJECT_SUBTYPE, OIL_LAMP,
+    BOULDER, BRASS_LANTERN, MAGIC_LAMP, OBJECT_NAMES, OBJECT_SUBTYPE,
+    OIL_LAMP,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
@@ -47,8 +47,6 @@ const PM_AIR_ELEMENTAL = 154;
 const POTION_CLASS = 8;
 const TIMED_LAMP_TYPES = new Set([BRASS_LANTERN, OIL_LAMP]);
 const LAMP_TYPES = new Set([...TIMED_LAMP_TYPES, MAGIC_LAMP]);
-const IRON = 11;
-const LAUNCHER_SKILLS = new Set([20, 21, 22]);
 const THROWING_WEAPON_NAMES = new Set([
     'dagger', 'elven dagger', 'orcish dagger', 'silver dagger', 'athame',
     'knife', 'crysknife', 'war hammer', 'aklys',
@@ -142,15 +140,13 @@ function swallowedWeaponEligibility(
     const weaponOrTool = objectClass === 2
         || (objectClass === 6 && subtype !== 0);
     const skill = Math.abs(subtype);
-    const material = OBJECT_MATERIAL[item.otyp] ?? 0;
     const skillState = state.u?.weaponSkills?.[skill];
 
-    // Missiles and launchers use the projectile path below. The remaining
-    // exclusions still need ownership or hero-state handling around hmon().
-    if (!weaponOrTool || subtype <= 0 || LAUNCHER_SKILLS.has(skill)
+    // Missiles use the projectile path below. The remaining exclusions need
+    // ownership or hero-state handling around hmon().
+    if (!weaponOrTool || subtype <= 0
         || (selectedQuantity > 1 && objectClass === 2)
         || !skillState || !Number.isInteger(skillState.skill)
-        || material < IRON
         || item.lamplit || containsUnpaidObject(item)
         || itemIsEquipped(state, item)
         || activeObjectTimerCount(item) > 0
