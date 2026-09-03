@@ -34,8 +34,9 @@ import { explodeLandMine } from './landmine_explosion.js';
 import { igniteItems } from './light.js';
 import { place_object, remove_object, stack_object } from './floor_object.js';
 import {
-    canFallThrough, fillPitWithBoulderAt, splitHeroMonsterForm,
+    canFallThrough, splitHeroMonsterForm,
 } from './mklev.js';
+import { fillPitWithBoulderAt } from './pit_fill.js';
 import { somexyspace } from './mkroom.js';
 import {
     MONSTER_FLAGS1, MONSTER_SIZE, monsterTypeName,

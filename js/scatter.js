@@ -10,7 +10,7 @@ import { newsym } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { place_object, remove_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { fillPitWithBoulderAt } from './mklev.js';
+import { fillPitWithBoulderAt } from './pit_fill.js';
 import { wakeMonster } from './monster_anger.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import {

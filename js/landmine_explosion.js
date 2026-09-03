@@ -8,7 +8,7 @@ import {
 import { newsym } from './display.js';
 import { game } from './gstate.js';
 import { liquidForHole } from './hole.js';
-import { fillPitWithBoulderAt } from './mklev.js';
+import { fillPitWithBoulderAt } from './pit_fill.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { rn2, rnd } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';

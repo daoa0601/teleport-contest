@@ -5,7 +5,7 @@ import { WT_ELF } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { explodeLandMine } from './landmine_explosion.js';
-import { fillPitWithBoulderAt } from './mklev.js';
+import { fillPitWithBoulderAt } from './pit_fill.js';
 import { monsterInAir, resolveMonsterLiquid } from './mon.js';
 import {
     MONSTER_BODY_META, MONSTER_NAME,
