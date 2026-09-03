@@ -44,16 +44,6 @@ export function liveMonster({
     return monster;
 }
 
-export function livePet(options) {
-    return liveMonster({
-        mpeaceful: 1,
-        mtame: 10,
-        pet: true,
-        edog: {},
-        ...options,
-    });
-}
-
 export function addMonsterToLevel(monster, state = game) {
     if (monster.m_id === undefined)
         monster.m_id = 1000 + state.level.monsters.length;
@@ -65,10 +55,6 @@ export function addMonsterToLevel(monster, state = game) {
 
 export function addMonster(options, state = game) {
     return addMonsterToLevel(liveMonster(options), state);
-}
-
-export function addPet(options, state = game) {
-    return addMonsterToLevel(livePet(options), state);
 }
 
 export async function createMonsterAt(species, x, y, flags = 0) {

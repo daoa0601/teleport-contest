@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { runClaimedCorpseRevivalTimer } from '../js/corpse_revival.js';
+import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
@@ -12,7 +13,7 @@ import { CORPSE } from '../js/object_data.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
 } from '../js/object_timers.js';
-import { addMonster, addPet } from './support/monsters.js';
+import { addMonster, createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const PM_GIANT = 169;
@@ -89,12 +90,10 @@ test('a zombie attacks a nearby giant and the giant rises as a zombie',
 
 test('a fatal monster attack makes a shifted vampire rise', async () => {
     freshState();
-    const dragon = addPet({
-        species: 'red dragon', x: 10, y: 10,
-        hitPoints: 40, level: 15, movement: 12,
-        mux: game.u.ux, muy: game.u.uy,
-        edog: { hungrytime: 1000 },
-    });
+    const dragon = await createMonsterAt('red dragon', 10, 10);
+    tameMonster(dragon, game);
+    dragon.mhp = dragon.mhpmax = 40;
+    dragon.movement = 12;
     const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
     const wolf = addArenaMonster({
         species: 'wolf', x: 11, y: 10,

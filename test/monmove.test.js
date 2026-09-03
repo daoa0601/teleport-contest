@@ -10,6 +10,7 @@ import { finishMonsterLiquidDeath } from '../js/monster_death.js';
 import {
     FOUNTAIN, IRONBARS, LAVAPOOL, POOL, ROOM, WATER, W_WEP,
 } from '../js/const.js';
+import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
@@ -21,7 +22,7 @@ import {
     knownObject, uninitializedObject,
 } from './support/game-objects.js';
 import {
-    addMonster, addPet, equipMonsterObject, liveMonster,
+    addMonster, createMonsterAt, equipMonsterObject, liveMonster,
 } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -55,17 +56,17 @@ test('monster allocation applies newest-first movement to current actors',
         assert.equal(kobold.movement, 12);
     });
 
-test('galloping gives the mounted steed extra movement', () => {
+test('galloping gives the mounted steed extra movement', async () => {
     freshObjectRoom({
         context: { mv: true },
         recalculateVision: false,
     });
-    const pony = addPet({
-        species: 'pony',
-        x: 11,
-        y: 10,
-    });
+    const pony = await createMonsterAt('pony', 11, 10);
+    tameMonster(pony, game);
     game.u.usteed = pony;
+    game.level.monsters = game.level.monsters.filter(
+        monster => monster !== pony,
+    );
     game.u.ugallop = 30;
 
     allocateMonsterMovement([pony], rolls([0, 0]), game);
@@ -77,22 +78,16 @@ test('Knight starts with the source pony species', () => {
     assert.equal(roles.find(role => role.key === 'knight').petnum, 100);
 });
 
-test('a tame red dragon bites and claws an adjacent enemy', () => {
+test('a tame red dragon bites and claws an adjacent enemy', async () => {
     freshObjectRoom({
         right: 20,
         heroX: 18,
         heroY: 10,
         recalculateVision: false,
     });
-    const dragon = addPet({
-        species: 'red dragon',
-        x: 10,
-        y: 10,
-        hitPoints: 100,
-        level: 15,
-        mtame: 20,
-        edog: { hungrytime: 1000 },
-    });
+    const dragon = await createMonsterAt('red dragon', 10, 10);
+    tameMonster(dragon, game);
+    dragon.mhp = dragon.mhpmax = 100;
     const goblin = addMonster({
         species: 'goblin',
         x: 11,
