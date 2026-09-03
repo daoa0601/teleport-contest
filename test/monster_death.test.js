@@ -466,9 +466,7 @@ test('a visible lich crumbles to dust instead of leaving a corpse', async () => 
 
 test('a stone golem leaves a statue of itself', async () => {
     const level = freshObjectRoom({ gameplaySeed: 21n });
-    const golem = addMonster({
-        species: 'stone golem', x: 11, y: 10, hitPoints: 1,
-    });
+    const golem = await createMonsterAt('stone golem', 11, 10);
 
     await finishEnvironmentalMonsterDeath(golem, game, {
         visible: false,
@@ -482,9 +480,7 @@ test('a stone golem leaves a statue of itself', async () => {
 
 test('a clay golem collapses into a pile of rocks', async () => {
     const level = freshObjectRoom({ gameplaySeed: 22n });
-    const golem = addMonster({
-        species: 'clay golem', x: 11, y: 10, hitPoints: 1,
-    });
+    const golem = await createMonsterAt('clay golem', 11, 10);
 
     await finishEnvironmentalMonsterDeath(golem, game, {
         visible: false,
@@ -532,9 +528,7 @@ test('golems leave the materials they were made from', async () => {
             species, minimum, maximum, materials,
         } = golemCase;
         const level = freshObjectRoom({ gameplaySeed: 23n });
-        const golem = addMonster({
-            species, x: 11, y: 10, hitPoints: 1,
-        });
+        const golem = await createMonsterAt(species, 11, 10);
 
         await finishEnvironmentalMonsterDeath(golem, game, {
             visible: false,
@@ -554,9 +548,8 @@ test('golems leave the materials they were made from', async () => {
 
 test('an adult dragon can leave scales with its corpse', async () => {
     const level = freshObjectRoom({ gameplaySeed: 1n });
-    const dragon = addMonster({
-        species: 'red dragon', x: 11, y: 10, hitPoints: 1,
-    });
+    const dragon = await createMonsterAt('red dragon', 11, 10);
+    initRng(1n);
 
     await finishEnvironmentalMonsterDeath(dragon, game, {
         visible: false,
@@ -575,9 +568,7 @@ test('unicorns and long worms leave both a body and a useful part', async () => 
         ['long worm', WORM_TOOTH],
     ]) {
         const level = freshObjectRoom({ gameplaySeed: 24n });
-        const monster = addMonster({
-            species, x: 11, y: 10, hitPoints: 1,
-        });
+        const monster = await createMonsterAt(species, 11, 10);
 
         await finishEnvironmentalMonsterDeath(monster, game, {
             visible: false,
@@ -594,9 +585,7 @@ test('a black pudding congeals and joins a nearby glob', async () => {
     const level = freshObjectRoom({ gameplaySeed: 25n });
     const oldGlob = knownObject(GLOB_OF_BLACK_PUDDING);
     place_object(oldGlob, 12, 10);
-    const pudding = addMonster({
-        species: 'black pudding', x: 11, y: 10, hitPoints: 1,
-    });
+    const pudding = await createMonsterAt('black pudding', 11, 10);
 
     await finishEnvironmentalMonsterDeath(pudding, game, {
         visible: false,
