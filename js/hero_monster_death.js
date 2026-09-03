@@ -2,13 +2,10 @@
 // C refs: mon.c xkilled(), corpse_chance(), and explode.c explode().
 
 import { adjustHeroAlignment } from './alignment.js';
-import { exerciseAttribute } from './attrib.js';
+import { G_NOCORPSE } from './const.js';
 import {
-    A_STR, COLNO, G_NOCORPSE, ROWNO,
-} from './const.js';
-import {
-    canProjectMonster, docrt, flush_screen, newsym, plineWithContinuation,
-    randomDisplayMonsterName, show_glyph_cell, unmap_invisible,
+    canProjectMonster, docrt, newsym, plineWithContinuation,
+    randomDisplayMonsterName, unmap_invisible,
 } from './display.js';
 import { recordHeroKillConduct, recordVanquished } from './end.js';
 import {
@@ -19,149 +16,28 @@ import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { mkobj } from './mklev.js';
 import { markQuestLeaderDead } from './quest.js';
-import { wakeMonstersNear } from './monster_wake.js';
 import { preventMonsterDeath } from './mondeath.js';
 import {
-    MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_GENO,
-    MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SIZE,
-    monsterIsNonliving,
+    MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME,
+    MONSTER_SIZE, monsterIsNonliving,
 } from './monster_data.js';
 import {
     createMonsterRemains, levelAllowsMonsterDeathDrops,
     monsterBodyCrumblesMessage, monsterLeavesCorpse,
 } from './monster_death.js';
-import { AT_BOOM } from './monster_attack_types.js';
+import {
+    createPhysicalMonsterExplosion, rollMonsterDeathExplosionDamage,
+} from './monster_explosion.js';
 import {
     addObjectToMonsterInventory, clearMonsterCarriedObjectState,
 } from './monster_inventory.js';
 import { recordObjectEncounter } from './object_knowledge.js';
-import { d, rnd, rn2 } from './rng.js';
-import { CLR_GREEN } from './terminal.js';
+import { rnd, rn2 } from './rng.js';
 import { cansee, vision_recalc } from './vision.js';
 
 const M2_ALWAYS_HOSTILE = 0x00100000;
 const M2_ALWAYS_PEACEFUL = 0x00200000;
 const A_NONE = -128;
-
-function rollMonsterAttackDamage(monster, attack) {
-    const [, , dice = 0, sides = 0] = attack || [];
-    if (dice > 0) return d(dice, sides);
-    if (sides > 0) {
-        return d(
-            (monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0) + 1,
-            sides,
-        );
-    }
-    return 0;
-}
-
-function physicalExplosionInventoryProbe(damage) {
-    const remainder = damage % 5;
-    const limit = Math.trunc(damage / 5) + (remainder > rn2(5) ? 1 : 0);
-    return Math.min(20, Math.max(0, limit));
-}
-
-function monsterResistsPhysicalExplosion(monster) {
-    const attackLevel = game.u?.ulevel ?? 1;
-    const defenseLevel = Math.max(1, Math.min(50, monster.m_lev || 1));
-    const range = Math.max(1, 100 + attackLevel - defenseLevel);
-    return rn2(range)
-        < (MONSTER_MAGIC_RESISTANCE[monster.mnum] || 0);
-}
-
-async function captureNoxiousPhysicalExplosion(x, y) {
-    const cells = [];
-    for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-            const tx = x + dx;
-            const ty = y + dy;
-            if (tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO) continue;
-            cells.push({ x: tx, y: ty });
-        }
-    }
-    if (!cells.some(cell => cansee(cell.x, cell.y))) return;
-
-    const mask = [
-        ['/', false], ['o', true], ['\\', false],
-        ['x', true], [' ', false], ['x', true],
-        ['\\', false], ['s', true], ['/', false],
-    ];
-    try {
-        for (const cell of cells) {
-            const index = (cell.y - (y - 1)) * 3
-                + (cell.x - (x - 1));
-            const [ch, decgfx] = mask[index];
-            show_glyph_cell(cell.x, cell.y, ch, CLR_GREEN, decgfx);
-        }
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(
-            (game.u?.ux ?? 1) - 1,
-            (game.u?.uy ?? 0) + 1,
-        );
-        await game.animationFrame?.();
-        await game.animationFrame?.();
-    } finally {
-        for (const cell of cells) newsym(cell.x, cell.y);
-    }
-}
-
-async function resolvePhysicalMonsterExplosion(
-    sourceMonster, x, y, damage,
-) {
-    const sourceName = MONSTER_NAME[sourceMonster.mnum] || 'monster';
-    const explosionName = `${sourceName}'s explosion`;
-    await captureNoxiousPhysicalExplosion(x, y);
-    await plineWithContinuation('Boom!');
-
-    for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-            const tx = x + dx;
-            const ty = y + dy;
-            const target = game.level?.monsters?.find(monster =>
-                (monster.mhp ?? 1) > 0
-                && monster.mx === tx && monster.my === ty);
-            if (!target) continue;
-
-            if (cansee(tx, ty)) {
-                const targetName = MONSTER_NAME[target.mnum] || 'monster';
-                await plineWithContinuation(
-                    `The ${targetName} is caught in the ${explosionName}!`,
-                );
-            }
-            physicalExplosionInventoryProbe(damage);
-            let appliedDamage = damage;
-            if (monsterResistsPhysicalExplosion(target)) {
-                appliedDamage = Math.trunc((damage + 1) / 2);
-                if (cansee(tx, ty)) {
-                    const targetName = MONSTER_NAME[target.mnum] || 'monster';
-                    await plineWithContinuation(
-                        `The ${targetName} resists the ${explosionName}!`,
-                    );
-                }
-            }
-            target.mhp = Math.max(0, (target.mhp ?? 1) - appliedDamage);
-            if (target.mhp <= 0)
-                await finishHeroMonsterKill(target, tx, ty);
-        }
-    }
-
-    const heroInBlast = Math.abs((game.u?.ux ?? x) - x) <= 1
-        && Math.abs((game.u?.uy ?? y) - y) <= 1;
-    if (heroInBlast) {
-        await plineWithContinuation(
-            `You are caught in the ${explosionName}!`,
-        );
-        physicalExplosionInventoryProbe(damage);
-        let appliedDamage = damage;
-        if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
-            appliedDamage = Math.trunc((appliedDamage + 1) / 2);
-        game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - appliedDamage);
-        exerciseAttribute(A_STR, false);
-    }
-
-    const wakeDistance = Math.max(50, damage * damage);
-    wakeMonstersNear(x, y, wakeDistance);
-}
 
 function monsterDeathMalign(monster) {
     if (Number.isInteger(monster?.malign)) return monster.malign;
@@ -337,17 +213,11 @@ export async function finishHeroMonsterKill(monster, x, y, {
         }
     }
 
-    const boomAttack = permitsDeathDrops
-        ? MONSTER_ATTACKS[monster.mnum]
-            ?.find(attack => attack[0] === AT_BOOM)
+    const explosionDamage = permitsDeathDrops
+        ? rollMonsterDeathExplosionDamage(monster)
         : null;
-    let explosion = null;
     let leavesCorpse = false;
-    if (boomAttack) {
-        const containedDamage = rollMonsterAttackDamage(monster, boomAttack);
-        const blastDamage = rollMonsterAttackDamage(monster, boomAttack);
-        explosion = { containedDamage, blastDamage };
-    } else {
+    if (explosionDamage === null) {
         const crumbleMessage = permitsDeathDrops
             ? monsterBodyCrumblesMessage(monster) : null;
         if (crumbleMessage && deathLocationVisible && !wasInside)
@@ -405,9 +275,15 @@ export async function finishHeroMonsterKill(monster, x, y, {
         await gainLevelAbilities(oldLevel, game.u.ulevel);
     }
     if (!wasInside) newsym(x, y);
-    if (!wasInside && explosion) {
-        await resolvePhysicalMonsterExplosion(
-            monster, x, y, explosion.blastDamage,
+    if (!wasInside && explosionDamage !== null) {
+        await createPhysicalMonsterExplosion(
+            monster, x, y, explosionDamage, {
+                state: game,
+                heroCaused: true,
+                finishMonsterDeath: target => finishHeroMonsterKill(
+                    target, target.mx, target.my,
+                ),
+            },
         );
     }
     if (!wasInside) newsym(x, y);

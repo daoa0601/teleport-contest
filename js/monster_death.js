@@ -20,6 +20,10 @@ import {
     MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE,
     MONSTER_SYMBOL,
 } from './monster_data.js';
+import {
+    createPhysicalMonsterExplosion, monsterHasDeathExplosion,
+    rollMonsterDeathExplosionDamage,
+} from './monster_explosion.js';
 import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import {
     BOOMERANG, BULLWHIP, CLUB, CORPSE, ELVEN_SPEAR,
@@ -91,7 +95,8 @@ export function monsterBodyCrumblesMessage(monster) {
 }
 
 export function monsterLeavesCorpse(monster, random = rn2) {
-    if (monsterBodyCrumblesMessage(monster)) return false;
+    if (monsterBodyCrumblesMessage(monster)
+        || monsterHasDeathExplosion(monster)) return false;
     const mnum = monster.mnum;
     const guaranteed = (((MONSTER_SIZE[mnum] ?? 2) >= 3
             || mnum === PM_LIZARD) && !monster.mcloned)
@@ -104,6 +109,25 @@ export function monsterLeavesCorpse(monster, random = rn2) {
     const corpseDenominator = 2 + Number(frequency < 2)
         + Number((MONSTER_SIZE[mnum] ?? 0) === 0);
     return random(corpseDenominator) === 0;
+}
+
+function ordinaryMonsterDeathResult(monster, state, random, rollDice) {
+    const crumbleMessage = monsterBodyCrumblesMessage(monster);
+    if (crumbleMessage) {
+        return { crumbleMessage, explosionDamage: null, leavesRemains: false };
+    }
+
+    const explosionDamage = rollMonsterDeathExplosionDamage(
+        monster, rollDice,
+    );
+    if (explosionDamage !== null) {
+        return { crumbleMessage: null, explosionDamage, leavesRemains: false };
+    }
+
+    const leavesRemains = levelAllowsMonsterDeathDrops(
+        monster, state, random,
+    ) && monsterLeavesCorpse(monster, random);
+    return { crumbleMessage: null, explosionDamage: null, leavesRemains };
 }
 
 function corpseFlags(monster, initialize = true) {
@@ -317,19 +341,40 @@ export async function finishMonsterLiquidDeath(
     monster, {
         state = game,
         random = rn2,
+        rollDice = d,
         leaveCorpse = false,
+        publish = plineWithContinuation,
     } = {},
 ) {
     const x = monster.mx;
     const y = monster.my;
-    const leavesRemains = leaveCorpse
-        && levelAllowsMonsterDeathDrops(monster, state, random)
-        && monsterLeavesCorpse(monster, random);
     detachDeadMonster(monster, state);
-    const corpse = leavesRemains
+    const death = leaveCorpse
+        ? ordinaryMonsterDeathResult(monster, state, random, rollDice)
+        : {
+            crumbleMessage: null,
+            explosionDamage: null,
+            leavesRemains: false,
+        };
+    const visible = state === game && cansee(x, y);
+    if (death.crumbleMessage && visible)
+        await publish(death.crumbleMessage);
+    if (death.explosionDamage !== null) {
+        if (state === game) newsym(x, y);
+        await createPhysicalMonsterExplosion(
+            monster, x, y, death.explosionDamage, {
+                state,
+                publish,
+                random,
+                finishMonsterDeath: (target, options) =>
+                    finishEnvironmentalMonsterDeath(target, state, options),
+            },
+        );
+    }
+    const corpse = death.leavesRemains
         ? await createMonsterRemains(monster, state, {
-            seen: state === game
-                && canProjectMonster(monster, monster.mx, monster.my),
+            seen: state === game && canProjectMonster(monster, x, y),
+            publish,
         })
         : null;
     if (state === game) {
@@ -352,6 +397,7 @@ export async function finishEnvironmentalMonsterDeath(
         noCorpse = false,
         zombifyCorpse = false,
         random = rn2,
+        rollDice = d,
         publish = plineWithContinuation,
     } = {},
 ) {
@@ -369,15 +415,29 @@ export async function finishEnvironmentalMonsterDeath(
 
     const x = monster.mx;
     const y = monster.my;
-    const dropsAllowed = !noCorpse
-        && levelAllowsMonsterDeathDrops(monster, state, random);
-    const crumbleMessage = dropsAllowed
-        ? monsterBodyCrumblesMessage(monster) : null;
-    const leavesRemains = dropsAllowed
-        && monsterLeavesCorpse(monster, random);
     detachDeadMonster(monster, state);
-    if (crumbleMessage && visible) await publish(crumbleMessage);
-    const corpse = leavesRemains
+    const death = noCorpse
+        ? {
+            crumbleMessage: null,
+            explosionDamage: null,
+            leavesRemains: false,
+        }
+        : ordinaryMonsterDeathResult(monster, state, random, rollDice);
+    if (death.crumbleMessage && visible)
+        await publish(death.crumbleMessage);
+    if (death.explosionDamage !== null) {
+        if (state === game) newsym(x, y);
+        await createPhysicalMonsterExplosion(
+            monster, x, y, death.explosionDamage, {
+                state,
+                publish,
+                random,
+                finishMonsterDeath: (target, options) =>
+                    finishEnvironmentalMonsterDeath(target, state, options),
+            },
+        );
+    }
+    const corpse = death.leavesRemains
         ? await createMonsterRemains(
             monster, state, {
                 zombify: zombifyCorpse,

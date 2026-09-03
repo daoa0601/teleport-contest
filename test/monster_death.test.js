@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
+import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
+import { pushKeys } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import {
     CORPSE, GLOB_OF_BLACK_PUDDING, OBJECT_NAMES, RED_DRAGON_SCALES,
@@ -193,4 +195,45 @@ test('a black pudding congeals and joins a nearby glob', async () => {
     assert.equal(glob?.otyp, GLOB_OF_BLACK_PUDDING);
     assert.equal(glob?.globby, true);
     assert.equal(glob?.owt, 40);
+});
+
+test('a dungeon-killed gas spore explodes where corpses cannot drop', async () => {
+    freshObjectRoom({ gameplaySeed: 26n });
+    game.level.flags.deathdrops = false;
+    const gasSpore = addMonster({
+        species: 'gas spore', x: 11, y: 10, hitPoints: 1,
+    });
+    const jackal = addMonster({
+        species: 'jackal', x: 12, y: 10, hitPoints: 100,
+    });
+    const heroHitPoints = game.u.uhp;
+
+    await finishEnvironmentalMonsterDeath(gasSpore, game, {
+        visible: false,
+        random: () => 0,
+        publish: async () => {},
+    });
+
+    assert.ok(jackal.mhp < 100);
+    assert.ok(game.u.uhp < heroHitPoints);
+});
+
+test('killing a gas spore blasts the hero and nearby monsters', async () => {
+    freshObjectRoom({ gameplaySeed: 27n });
+    game.u.uhp = game.u.uhpmax = 100;
+    const gasSpore = addMonster({
+        species: 'gas spore', x: 11, y: 10, hitPoints: 1,
+    });
+    const jackal = addMonster({
+        species: 'jackal', x: 12, y: 10, hitPoints: 100,
+    });
+    pushKeys(' '.repeat(20));
+
+    await finishHeroMonsterKill(gasSpore, gasSpore.mx, gasSpore.my, {
+        showKillMessage: false,
+        recordConduct: false,
+    });
+
+    assert.ok(jackal.mhp < 100);
+    assert.ok(game.u.uhp < 100);
 });
