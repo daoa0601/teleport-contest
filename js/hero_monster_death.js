@@ -475,12 +475,17 @@ export async function finishHeroMonsterKill(monster, x, y, {
 // When the hero creates water under a monster, minliquid() calls xkilled()
 // without printing a second kill line.
 export async function finishHeroLiquidMonsterDeath(
-    monster, _state, _random, calls, leaveCorpse, options = {},
+    monster, {
+        leaveCorpse = false,
+        hallucinating,
+        nameMonster,
+    } = {},
 ) {
     const x = monster.mx;
     const y = monster.my;
     const killed = await finishHeroMonsterKill(monster, x, y, {
-        ...options,
+        hallucinating,
+        nameMonster,
         showKillMessage: false,
         weaponHit: false,
         noCorpse: !leaveCorpse,
@@ -493,6 +498,5 @@ export async function finishHeroLiquidMonsterDeath(
         moved: false,
         dead: killed,
         actionCompleted: killed,
-        calls,
     };
 }

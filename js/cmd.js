@@ -11092,14 +11092,12 @@ async function attackHostileMonster(monster, x, y, {
                 ? `The ${displayedMonsterName()}`
                 : monsterInstanceDisplayName(target),
             wakeMonster: wakeMonsterAfterHit,
-            finishLiquidDeath: (
-                victim, state, random, calls, leaveCorpse,
-            ) => finishHeroLiquidMonsterDeath(
-                victim, state, random, calls, leaveCorpse, {
+            finishLiquidDeath: (victim, death) =>
+                finishHeroLiquidMonsterDeath(victim, {
+                    ...death,
                     hallucinating,
                     nameMonster: displayedMonsterName,
-                },
-            ),
+                }),
         });
     }
     if (!stagger.dead)

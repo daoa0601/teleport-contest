@@ -339,10 +339,9 @@ export async function resolveMonsterLiquid(
                     await waterDamageChain(
                         monster.minvent || monster.inventory || [], [], state,
                     );
-                    return finishDeath(
-                        monster, state, random, calls, true,
-                        { cause: 'rust' },
-                    );
+                    return finishDeath(monster, {
+                        state, random, leaveCorpse: true, cause: 'rust',
+                    });
                 }
             }
             await waterDamageChain(
@@ -371,10 +370,9 @@ export async function resolveMonsterLiquid(
                 await waterDamageChain(
                     monster.minvent || monster.inventory || [], [], state,
                 );
-                return finishDeath(
-                    monster, state, random, calls, true,
-                    { cause: 'drowning' },
-                );
+                return finishDeath(monster, {
+                    state, random, leaveCorpse: true, cause: 'drowning',
+                });
             }
             await waterDamageChain(
                 monster.minvent || monster.inventory || [], [], state,
@@ -425,13 +423,13 @@ export async function resolveMonsterLiquid(
                     },
                 );
                 if (!recovery.survived) {
-                    return finishDeath(
-                        monster, state, random, calls, false,
-                        {
-                            cause: lava.kind === 'scorch'
-                                ? 'lava-scorch' : 'lava-burning',
-                        },
-                    );
+                    return finishDeath(monster, {
+                        state,
+                        random,
+                        leaveCorpse: false,
+                        cause: lava.kind === 'scorch'
+                            ? 'lava-scorch' : 'lava-burning',
+                    });
                 }
             }
             if (monsterInAir(monster, state) || monsterLikesLava(monster))

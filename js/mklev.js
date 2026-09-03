@@ -3398,7 +3398,9 @@ function createMeltMonsterCorpse(monster, state = game) {
     return stack_object(corpse, state);
 }
 
-export function killMonsterOnMeltingIce(monster, state = game) {
+export function killMonsterOnMeltingIce(
+    monster, { state = game } = {},
+) {
     monster.mhp = 0;
     recordMeltMonsterDeath(monster, state);
     monster.dead = true;
@@ -3498,9 +3500,9 @@ export function finishMeltIceBoulderLifeSaving(
     outcome.occupantLifeSaving = resolution;
     event.occupantLifeSaving = resolution;
     if (!resolution.survived) {
-        const occupantDeath = killMonsterOnMeltingIce(
-            pending.monster, state,
-        );
+        const occupantDeath = killMonsterOnMeltingIce(pending.monster, {
+            state,
+        });
         outcome.occupantDeath = occupantDeath;
         event.occupantDeath = occupantDeath;
     }
@@ -3554,7 +3556,7 @@ export function runNextMeltIceBoulder(event, state = game) {
                         ?? 0) & G_GENOD),
                 };
             } else {
-                occupantDeath = killMonsterOnMeltingIce(occupant, state);
+                occupantDeath = killMonsterOnMeltingIce(occupant, { state });
                 event.occupantDeath = occupantDeath;
             }
         }

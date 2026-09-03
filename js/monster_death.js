@@ -21,19 +21,13 @@ import { cansee } from './vision.js';
 
 const PM_IRON_GOLEM = 259;
 
-function recordRandom(random, calls, range) {
-    calls.push(range);
-    return random(range);
-}
-
 function createOrdinaryMonsterCorpse(
-    monster, state, random, calls, { zombify = false } = {},
+    monster, state, random, { zombify = false } = {},
 ) {
     const x = monster.mx;
     const y = monster.my;
     if (monster.mnum === PM_IRON_GOLEM) {
         const chainCount = d(2, 6);
-        calls.push('d(2,6)');
         let lastChain = null;
         for (let index = 0; index < chainCount; index++) {
             lastChain = mksobj(IRON_CHAIN, true, false);
@@ -45,7 +39,7 @@ function createOrdinaryMonsterCorpse(
     const frequency = (MONSTER_GENO[monster.mnum] ?? 0) & 0x7;
     const corpseDenominator = 2 + Number(frequency < 2)
         + Number((MONSTER_SIZE[monster.mnum] ?? 0) === 0);
-    if (recordRandom(random, calls, corpseDenominator) !== 0) return null;
+    if (random(corpseDenominator) !== 0) return null;
 
     const corpseForm = undeadToCorpse(monster.mnum);
     if (corpseForm === monster.mnum
@@ -103,13 +97,17 @@ function detachDeadMonster(monster, state) {
 }
 
 export function finishMonsterLiquidDeath(
-    monster, state, random, calls, leaveCorpse,
+    monster, {
+        state = game,
+        random = rn2,
+        leaveCorpse = false,
+    } = {},
 ) {
     const x = monster.mx;
     const y = monster.my;
     detachDeadMonster(monster, state);
     const corpse = leaveCorpse
-        ? createOrdinaryMonsterCorpse(monster, state, random, calls)
+        ? createOrdinaryMonsterCorpse(monster, state, random)
         : null;
     if (state === game) {
         unmap_invisible(x, y, false);
@@ -146,12 +144,11 @@ export async function finishEnvironmentalMonsterDeath(
     if (recovery.survived)
         return { monster, survived: true, corpse: null };
 
-    const calls = [];
     const x = monster.mx;
     const y = monster.my;
     detachDeadMonster(monster, state);
     const corpse = noCorpse ? null : createOrdinaryMonsterCorpse(
-        monster, state, random, calls, { zombify: zombifyCorpse },
+        monster, state, random, { zombify: zombifyCorpse },
     );
     if (state === game) newsym(x, y);
     return { monster, survived: false, corpse };

@@ -64,13 +64,11 @@ async function resolveMineLiquid(monster, event, state, options) {
         announce: options.publish,
         monsterMoving: true,
         random: options.random,
-        finishDeath: async (
-            victim, _state, random, _calls, leaveCorpse,
-        ) => options.finishDeath(victim, {
-            noCorpse: !leaveCorpse,
+        finishDeath: async (victim, death) => options.finishDeath(victim, {
+            noCorpse: !death.leaveCorpse,
             visible: event.seeSquare,
             spotted: event.inSight,
-            random,
+            random: death.random,
             publish: options.publish,
         }),
     });
