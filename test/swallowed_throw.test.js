@@ -38,7 +38,7 @@ import {
     installPolymorphedHero, wearHeroObject, wearPolymorphControlRing,
 } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
-import { addMonster, equipMonsterObject } from './support/monsters.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
@@ -51,7 +51,7 @@ const PM_WEREWOLF = 21;
 const PM_GREMLIN = 40;
 const PM_ARCHEOLOGIST = 331;
 
-function freshSwallowedState(mnum) {
+async function freshSwallowedState(mnum) {
     freshObjectRoom({
         right: 12,
         hero: {
@@ -61,14 +61,10 @@ function freshSwallowedState(mnum) {
         context: { move: 0 },
         recalculateVision: false,
     });
-    const engulfer = addMonster({
-        m_id: 2300 + mnum,
-        mnum,
-        x: 10,
-        y: 10,
-        hitPoints: 40,
-        hasInventory: false,
-    });
+    const engulfer = await createMonsterAt(mnum, 11, 10);
+    engulfer.mx = game.u.ux;
+    engulfer.my = game.u.uy;
+    engulfer.mhp = engulfer.mhpmax = 40;
     Object.assign(game.u, {
         uswallow: 1,
         ustuck: engulfer,
@@ -95,7 +91,7 @@ function setBasicWeaponSkill(object) {
 
 test('swallowed live throw transfers a cursed figurine and replaces its timer',
     async () => {
-        const engulfer = freshSwallowedState(PM_ENERGY_VORTEX);
+        const engulfer = await freshSwallowedState(PM_ENERGY_VORTEX);
         initRng(2301n);
         const figurine = addInventoryObject(FIGURINE, {
             corpsenm: 84,
@@ -122,7 +118,7 @@ test('swallowed live throw transfers a cursed figurine and replaces its timer',
 
 test('swallowed split stack merges only after thrown ownership becomes stolen',
     async () => {
-        const engulfer = freshSwallowedState(PM_PURPLE_WORM);
+        const engulfer = await freshSwallowedState(PM_PURPLE_WORM);
         initRng(2303n);
         const carried = addInventoryObject(SCR_BLANK_PAPER, {
             quan: 2,
@@ -158,7 +154,7 @@ test('swallowed split stack merges only after thrown ownership becomes stolen',
 
 test('swallowed timed lamp links before snuffing and restores unused fuel',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         initRng(2305n);
         const lamp = addInventoryObject(OIL_LAMP, { age: 200 });
         assert.equal(lamp.invlet, 'a');
@@ -186,7 +182,7 @@ test('swallowed timed lamp links before snuffing and restores unused fuel',
 
 test('garlic thrown inside an engulfer is transferred without attacking',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const garlic = addInventoryObject(CLOVE_OF_GARLIC);
 
         await throwInventoryObject(garlic, 'l');
@@ -197,7 +193,7 @@ test('garlic thrown inside an engulfer is transferred without attacking',
     });
 
 test('a cream pie thrown from inside an engulfer is consumed', async () => {
-    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const engulfer = await freshSwallowedState(PM_TRAPPER);
     const pie = addInventoryObject(CREAM_PIE);
 
     await throwInventoryObject(pie, 'l');
@@ -209,7 +205,7 @@ test('a cream pie thrown from inside an engulfer is consumed', async () => {
 });
 
 test('a fatal egg throw releases the hero from an engulfer', async () => {
-    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const engulfer = await freshSwallowedState(PM_TRAPPER);
     engulfer.mhp = 1;
     const egg = addInventoryObject(EGG, {
         corpsenm: -1,
@@ -226,7 +222,7 @@ test('a fatal egg throw releases the hero from an engulfer', async () => {
 });
 
 test('acid venom can kill an engulfer and release the hero', async () => {
-    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const engulfer = await freshSwallowedState(PM_TRAPPER);
     engulfer.mhp = 1;
     const venom = addInventoryObject(ACID_VENOM);
 
@@ -240,7 +236,7 @@ test('acid venom can kill an engulfer and release the hero', async () => {
 
 test('blind swallowed contact silently snuffs an untimed magic lamp',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         game.u.blindTurns = 5;
         initRng(2307n);
         const lamp = addInventoryObject(MAGIC_LAMP, { age: 40 });
@@ -264,7 +260,7 @@ test('blind swallowed contact silently snuffs an untimed magic lamp',
 
 test('swallowed ordinary weapon damages, trains, and transfers after contact',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const dagger = addInventoryWeapon(DAGGER);
         const skill = setBasicWeaponSkill(dagger);
 
@@ -286,7 +282,7 @@ test('swallowed ordinary weapon damages, trains, and transfers after contact',
     });
 
 test('an unwielded bow can be thrown at a swallowing monster', async () => {
-    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const engulfer = await freshSwallowedState(PM_TRAPPER);
     const bow = addInventoryWeapon(BOW);
     setBasicWeaponSkill(bow);
 
@@ -298,7 +294,7 @@ test('an unwielded bow can be thrown at a swallowing monster', async () => {
 });
 
 test('a swallowed boomerang hits before return flight can begin', async () => {
-    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const engulfer = await freshSwallowedState(PM_TRAPPER);
     const boomerang = addInventoryWeapon(BOOMERANG);
     setBasicWeaponSkill(boomerang);
 
@@ -310,7 +306,7 @@ test('a swallowed boomerang hits before return flight can begin', async () => {
 });
 
 test('a swallowed weapon can hurt the pet that engulfed the hero', async () => {
-    const pet = freshSwallowedState(PM_TRAPPER);
+    const pet = await freshSwallowedState(PM_TRAPPER);
     Object.assign(pet, {
         mpeaceful: 1,
         mtame: 5,
@@ -328,7 +324,7 @@ test('a swallowed weapon can hurt the pet that engulfed the hero', async () => {
 });
 
 test('an ordinary swallowed weapon passes through a shade', async () => {
-    const shade = freshSwallowedState(MONSTER_NAME.indexOf('shade'));
+    const shade = await freshSwallowedState(MONSTER_NAME.indexOf('shade'));
     const dagger = addInventoryWeapon(DAGGER);
     setBasicWeaponSkill(dagger);
 
@@ -341,7 +337,7 @@ test('an ordinary swallowed weapon passes through a shade', async () => {
 });
 
 test('a wielded swallowed weapon leaves the hand unless welded', async () => {
-    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const engulfer = await freshSwallowedState(PM_TRAPPER);
     const dagger = addInventoryWeapon(DAGGER, {
         wielded: true,
         owornmask: W_WEP,
@@ -356,7 +352,7 @@ test('a wielded swallowed weapon leaves the hand unless welded', async () => {
     assert.equal(dagger.wielded, false);
     assert.strictEqual(engulfer.minvent[0], dagger);
 
-    const untouchedEngulfer = freshSwallowedState(PM_TRAPPER);
+    const untouchedEngulfer = await freshSwallowedState(PM_TRAPPER);
     const weldedDagger = addInventoryWeapon(DAGGER, {
         cursed: true,
         bknown: false,
@@ -376,7 +372,7 @@ test('a wielded swallowed weapon leaves the hand unless welded', async () => {
 });
 
 test('throwing a dual-wielded weapon ends two-weapon mode', async () => {
-    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const engulfer = await freshSwallowedState(PM_TRAPPER);
     const dagger = addInventoryWeapon(DAGGER, {
         invlet: 'a', wielded: true, owornmask: W_WEP,
     });
@@ -397,7 +393,7 @@ test('throwing a dual-wielded weapon ends two-weapon mode', async () => {
 });
 
 test('throwing a quivered dart preserves two-weapon mode', async () => {
-    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const engulfer = await freshSwallowedState(PM_TRAPPER);
     const sword = addInventoryWeapon(LONG_SWORD, {
         invlet: 'a', wielded: true, owornmask: W_WEP,
     });
@@ -424,7 +420,7 @@ test('throwing a quivered dart preserves two-weapon mode', async () => {
 
 test('a polymorphed throw does not use human Strength damage', async () => {
     async function daggerDamage(formName) {
-        const target = freshSwallowedState(PM_TRAPPER);
+        const target = await freshSwallowedState(PM_TRAPPER);
         game.u.acurr.a[A_STR] = 18;
         if (formName) installPolymorphedHero(formName);
         const dagger = addInventoryWeapon(DAGGER);
@@ -442,7 +438,7 @@ test('a polymorphed throw does not use human Strength damage', async () => {
 
 test('swallowed throws take one weapon from a stack', async () => {
     for (const weaponType of [DAGGER, DART]) {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const stack = addInventoryWeapon(weaponType, {
             quan: 3,
             quantity: 3,
@@ -460,14 +456,14 @@ test('swallowed throws take one weapon from a stack', async () => {
 });
 
 test('a blessed swallowed weapon deals extra damage to a demon', async () => {
-    const ordinaryTarget = freshSwallowedState(PM_JUIBLEX);
+    const ordinaryTarget = await freshSwallowedState(PM_JUIBLEX);
     const ordinaryDagger = addInventoryWeapon(DAGGER);
     setBasicWeaponSkill(ordinaryDagger);
     initRng(2310n);
     await throwInventoryObject(ordinaryDagger, 'l');
     const ordinaryDamage = 40 - ordinaryTarget.mhp;
 
-    const blessedTarget = freshSwallowedState(PM_JUIBLEX);
+    const blessedTarget = await freshSwallowedState(PM_JUIBLEX);
     const blessedDagger = addInventoryWeapon(DAGGER, { blessed: true });
     setBasicWeaponSkill(blessedDagger);
     initRng(2310n);
@@ -477,14 +473,14 @@ test('a blessed swallowed weapon deals extra damage to a demon', async () => {
 });
 
 test('a swallowed artifact applies its special weapon damage', async () => {
-    const ordinaryTarget = freshSwallowedState(PM_TRAPPER);
+    const ordinaryTarget = await freshSwallowedState(PM_TRAPPER);
     const ordinarySword = addInventoryWeapon(LONG_SWORD);
     setBasicWeaponSkill(ordinarySword);
     initRng(2310n);
     await throwInventoryObject(ordinarySword, 'l');
     const ordinaryDamage = 40 - ordinaryTarget.mhp;
 
-    const artifactTarget = freshSwallowedState(PM_TRAPPER);
+    const artifactTarget = await freshSwallowedState(PM_TRAPPER);
     const fireBrand = addInventoryItem(artifactObject('Fire Brand'));
     setBasicWeaponSkill(fireBrand);
     initRng(2310n);
@@ -495,7 +491,7 @@ test('a swallowed artifact applies its special weapon damage', async () => {
 
 test('throwing a wielded Sunsword stops its light before swallowed contact',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const sunsword = addInventoryItem(artifactObject('Sunsword'));
         wearHeroObject(sunsword, 'uwep', W_WEP);
         setBasicWeaponSkill(sunsword);
@@ -511,7 +507,7 @@ test('throwing a wielded Sunsword stops its light before swallowed contact',
     });
 
 test('a swallowed engulfer can resist Grimtooth poison', async () => {
-    const engulfer = freshSwallowedState(PM_ENERGY_VORTEX);
+    const engulfer = await freshSwallowedState(PM_ENERGY_VORTEX);
     const grimtooth = addInventoryItem(artifactObject('Grimtooth'));
     setBasicWeaponSkill(grimtooth);
 
@@ -527,7 +523,7 @@ test('a swallowed engulfer can resist Grimtooth poison', async () => {
 
 test('swallowed weapon-tool preserves minimal-damage skill cadence',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const pick = addInventoryWeapon(PICK_AXE);
         const skill = setBasicWeaponSkill(pick);
 
@@ -548,7 +544,7 @@ test('swallowed weapon-tool preserves minimal-damage skill cadence',
     });
 
 test('swallowed weapon corrodes before the engulfer keeps it', async () => {
-    const engulfer = freshSwallowedState(PM_OCHRE_JELLY);
+    const engulfer = await freshSwallowedState(PM_OCHRE_JELLY);
     const pick = addInventoryWeapon(PICK_AXE);
     setBasicWeaponSkill(pick);
 
@@ -562,7 +558,7 @@ test('swallowed weapon corrodes before the engulfer keeps it', async () => {
 
 test('swallowed multi-die weapon uses the shared physical damage owner',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const sword = addInventoryWeapon(TWO_HANDED_SWORD);
         const skill = setBasicWeaponSkill(sword);
 
@@ -582,7 +578,7 @@ test('swallowed multi-die weapon uses the shared physical damage owner',
 
 test('cursed swallowed throwing weapon slips before hitting the engulfer',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const spear = addInventoryWeapon(SPEAR, { cursed: true });
         const skill = setBasicWeaponSkill(spear);
 
@@ -603,7 +599,7 @@ test('cursed swallowed throwing weapon slips before hitting the engulfer',
 
 test('swallowed dart survives mulch and transfers after live missile damage',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const dart = addInventoryWeapon(DART, { unpaid: true });
         const { shopkeeper } = await createStaffedShop({
             keeperX: 14,
@@ -629,14 +625,14 @@ test('swallowed dart survives mulch and transfers after live missile damage',
     });
 
 test('a blessed swallowed dart deals extra damage to a demon', async () => {
-    const ordinaryTarget = freshSwallowedState(PM_JUIBLEX);
+    const ordinaryTarget = await freshSwallowedState(PM_JUIBLEX);
     const ordinaryDart = addInventoryWeapon(DART);
     setBasicWeaponSkill(ordinaryDart);
     initRng(2413n);
     await throwInventoryObject(ordinaryDart, 'l');
     const ordinaryDamage = 40 - ordinaryTarget.mhp;
 
-    const blessedTarget = freshSwallowedState(PM_JUIBLEX);
+    const blessedTarget = await freshSwallowedState(PM_JUIBLEX);
     const blessedDart = addInventoryWeapon(DART, { blessed: true });
     setBasicWeaponSkill(blessedDart);
     initRng(2413n);
@@ -646,7 +642,7 @@ test('a blessed swallowed dart deals extra damage to a demon', async () => {
 });
 
 test('a swallowed engulfer can resist poison on a thrown dart', async () => {
-    const engulfer = freshSwallowedState(PM_ENERGY_VORTEX);
+    const engulfer = await freshSwallowedState(PM_ENERGY_VORTEX);
     const dart = addInventoryWeapon(DART, { opoisoned: true });
     setBasicWeaponSkill(dart);
 
@@ -662,7 +658,7 @@ test('a swallowed engulfer can resist poison on a thrown dart', async () => {
 
 test('swallowed dart mulch removes the detached identity after damage',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const dart = addInventoryWeapon(DART, { unpaid: true });
         const { shopkeeper } = await createStaffedShop({
             keeperX: 14,
@@ -686,7 +682,7 @@ test('swallowed dart mulch removes the detached identity after damage',
 
 test('swallowed projectile passive follows mulch survival before acquisition',
     async () => {
-        const engulfer = freshSwallowedState(PM_OCHRE_JELLY);
+        const engulfer = await freshSwallowedState(PM_OCHRE_JELLY);
         const dart = addInventoryWeapon(DART);
         const skill = setBasicWeaponSkill(dart);
 
@@ -704,7 +700,7 @@ test('swallowed projectile passive follows mulch survival before acquisition',
 
 test('swallowed launched arrow uses launcher skill and excludes Strength',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const bow = addInventoryWeapon(BOW);
         const skill = setBasicWeaponSkill(bow);
         game.uwep = game.u.uwep = bow;
@@ -727,7 +723,7 @@ test('swallowed launched arrow uses launcher skill and excludes Strength',
 
 test('swallowed hand-thrown arrow uses ranged damage and Strength without skill',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const arrow = addInventoryWeapon(ARROW);
         const skill = setBasicWeaponSkill(arrow);
         game.u.acurr.a[A_STR] = 18;
@@ -746,7 +742,7 @@ test('swallowed hand-thrown arrow uses ranged damage and Strength without skill'
 
 test('swallowed sickness harms both the engulfer and hero',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const potion = addInventoryObject(POT_SICKNESS);
 
         initRng(2510n);
@@ -763,7 +759,7 @@ test('swallowed sickness harms both the engulfer and hero',
 
 test('swallowed booze confuses both the engulfer and hero',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         engulfer.m_lev = 12;
         engulfer.mconf = 0;
         game.u.confusionTurns = 0;
@@ -784,7 +780,7 @@ test('swallowed booze confuses both the engulfer and hero',
 
 test('swallowed sleeping potion freezes engulfer and installs hero sleep turns',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         engulfer.m_lev = 12;
         engulfer.mfrozen = 0;
         engulfer.meating = 3;
@@ -807,7 +803,7 @@ test('swallowed sleeping potion freezes engulfer and installs hero sleep turns',
 
 test('swallowed blindness times engulfer sight before blinding the hero',
     async () => {
-        const engulfer = freshSwallowedState(PM_PURPLE_WORM);
+        const engulfer = await freshSwallowedState(PM_PURPLE_WORM);
         engulfer.m_lev = 12;
         engulfer.mcansee = 1;
         engulfer.mblinded = 0;
@@ -831,7 +827,7 @@ test('swallowed blindness times engulfer sight before blinding the hero',
 
 test('swallowed cursed invisibility reveals and angers an invisible engulfer',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         engulfer.minvis = 1;
         engulfer.perminvis = 1;
         engulfer.invis_blkd = 0;
@@ -854,7 +850,7 @@ test('swallowed cursed invisibility reveals and angers an invisible engulfer',
 
 test('swallowed blessed water damages a demonic engulfer through the live owner',
     async () => {
-        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        const engulfer = await freshSwallowedState(PM_JUIBLEX);
         const potion = addInventoryObject(POT_WATER, { blessed: true });
 
         initRng(2511n);
@@ -867,7 +863,7 @@ test('swallowed blessed water damages a demonic engulfer through the live owner'
 
 test('swallowed cursed water heals a demonic engulfer without angering it',
     async () => {
-        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        const engulfer = await freshSwallowedState(PM_JUIBLEX);
         engulfer.mhp = 20;
         engulfer.msleeping = 1;
         const potion = addInventoryObject(POT_WATER, { cursed: true });
@@ -883,7 +879,7 @@ test('swallowed cursed water heals a demonic engulfer without angering it',
 
 test('swallowed cursed-water vapor changes an unthreatened lycanthrope hero',
     async () => {
-        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        const engulfer = await freshSwallowedState(PM_JUIBLEX);
         engulfer.mhp = 20;
         installHumanWerewolfHero();
         const potion = addInventoryObject(POT_WATER, { cursed: true });
@@ -904,7 +900,7 @@ test('swallowed cursed-water vapor changes an unthreatened lycanthrope hero',
 
 test('Unchanging suppresses cursed-water lycanthrope vapor transformation',
     async () => {
-        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        const engulfer = await freshSwallowedState(PM_JUIBLEX);
         installHumanWerewolfHero();
         wearHeroObject(
             addInventoryObject(AMULET_OF_UNCHANGING), 'uamul', W_AMUL,
@@ -924,7 +920,7 @@ test('Unchanging suppresses cursed-water lycanthrope vapor transformation',
 
 test('gremlin hero water vapor creates a named tame clone and splits form HP',
     async () => {
-        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        const engulfer = await freshSwallowedState(PM_JUIBLEX);
         installHumanWerewolfHero();
         game.plname = 'Splitter';
         Object.assign(game.u, {
@@ -966,7 +962,7 @@ test('gremlin hero water vapor creates a named tame clone and splits form HP',
 
 test('one-HP gremlin vapor consumes water without constructing a clone',
     async () => {
-        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        const engulfer = await freshSwallowedState(PM_JUIBLEX);
         installHumanWerewolfHero();
         Object.assign(game.u, {
             umonnum: PM_GREMLIN,
@@ -993,7 +989,7 @@ test('one-HP gremlin vapor consumes water without constructing a clone',
 
 test('four-HP gremlin throw is not a stamina drop while unencumbered',
     async () => {
-        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        const engulfer = await freshSwallowedState(PM_JUIBLEX);
         installHumanWerewolfHero();
         Object.assign(game.u, {
             umonnum: PM_GREMLIN,
@@ -1021,7 +1017,7 @@ test('four-HP gremlin throw is not a stamina drop while unencumbered',
     });
 
 test('overtaxed throw rejects before object and direction input', async () => {
-    freshSwallowedState(PM_ENERGY_VORTEX);
+    await freshSwallowedState(PM_ENERGY_VORTEX);
     const rocks = installLowCapacityRockBurden(50);
 
     initRng(2511n);
@@ -1036,7 +1032,7 @@ test('overtaxed throw rejects before object and direction input', async () => {
 
 test('burdened low-HP hero throws without the Stressed stamina branch',
     async () => {
-        freshSwallowedState(PM_ENERGY_VORTEX);
+        await freshSwallowedState(PM_ENERGY_VORTEX);
         game.u.uhp = 9;
         const rocks = installLowCapacityRockBurden(20);
         const potion = addInventoryObject(POT_FRUIT_JUICE);
@@ -1058,7 +1054,7 @@ test('burdened low-HP hero throws without the Stressed stamina branch',
 
 test('stressed low-HP hero drops then completes swallowed potion contact',
     async () => {
-        const engulfer = freshSwallowedState(PM_ENERGY_VORTEX);
+        const engulfer = await freshSwallowedState(PM_ENERGY_VORTEX);
         game.u.uhp = 9;
         const rocks = installLowCapacityRockBurden(30);
         const potion = addInventoryObject(POT_FRUIT_JUICE);
@@ -1078,7 +1074,7 @@ test('stressed low-HP hero drops then completes swallowed potion contact',
 
 test('stressed four-HP gremlin drops without physical exercise then contacts',
     async () => {
-        freshSwallowedState(PM_JUIBLEX);
+        await freshSwallowedState(PM_JUIBLEX);
         installHumanWerewolfHero();
         Object.assign(game.u, {
             umonnum: PM_GREMLIN,
@@ -1105,7 +1101,7 @@ test('stressed four-HP gremlin drops without physical exercise then contacts',
 
 test('controlled lycanthrope acceptance completes swallowed mutation',
     async () => {
-        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        const engulfer = await freshSwallowedState(PM_JUIBLEX);
         installHumanWerewolfHero();
         const ring = wearPolymorphControlRing();
         const potion = addInventoryObject(POT_WATER, { cursed: true });
@@ -1124,7 +1120,7 @@ test('controlled lycanthrope acceptance completes swallowed mutation',
 
 test('stun bypasses the lycanthrope control prompt and permits transformation',
     async () => {
-        const engulfer = freshSwallowedState(PM_JUIBLEX);
+        const engulfer = await freshSwallowedState(PM_JUIBLEX);
         installHumanWerewolfHero();
         wearPolymorphControlRing();
         game.u.stunned = true;
@@ -1144,7 +1140,7 @@ test('stun bypasses the lycanthrope control prompt and permits transformation',
 
 test('swallowed acid damages the engulfer and exercises hero Constitution',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const potion = addInventoryObject(POT_ACID);
 
         initRng(2511n);
@@ -1160,7 +1156,7 @@ test('swallowed acid damages the engulfer and exercises hero Constitution',
 
 test('swallowed unlit oil breaks without evaporation or floor fallback',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         engulfer.msleeping = 1;
         const potion = addInventoryObject(POT_OIL);
 
@@ -1180,7 +1176,7 @@ test('swallowed unlit oil breaks without evaporation or floor fallback',
     });
 
 test('a swallowed potion can be thrown from the hero hand', async () => {
-    freshSwallowedState(PM_TRAPPER);
+    await freshSwallowedState(PM_TRAPPER);
     const potion = addInventoryObject(POT_FRUIT_JUICE);
     pushKey(potion.invlet);
     await rhack('w'.charCodeAt(0));
@@ -1212,7 +1208,7 @@ test('swallowed healing family heals both monster and hero through vapor',
         ];
 
         for (const specimen of cases) {
-            const engulfer = freshSwallowedState(PM_TRAPPER);
+            const engulfer = await freshSwallowedState(PM_TRAPPER);
             engulfer.mhp = 9;
             engulfer.mcansee = 0;
             engulfer.mblinded = 20;
@@ -1241,7 +1237,7 @@ test('swallowed healing family heals both monster and hero through vapor',
 
 test('swallowed blessed gain ability restores every reduced base attribute',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         engulfer.mhp = 11;
         game.u.acurr.a = Array(6).fill(12);
         game.u.acurr.a[A_STR] = 10;
@@ -1263,7 +1259,7 @@ test('swallowed blessed gain ability restores every reduced base attribute',
 
 test('cursed restore ability vapor smells but cannot restore attributes',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         engulfer.mhp = 12;
         game.u.acurr.a = Array(6).fill(12);
         game.u.acurr.a[A_STR] = 10;
@@ -1294,7 +1290,7 @@ test('all monster-inert potions crash unseen, chip, and disappear live',
         const expectedHp = [39, 40, 39, 39, 40, 39];
 
         for (let index = 0; index < inertTypes.length; index++) {
-            const engulfer = freshSwallowedState(PM_TRAPPER);
+            const engulfer = await freshSwallowedState(PM_TRAPPER);
             if (index === 0) engulfer.msleeping = 1;
             const potion = addInventoryObject(inertTypes[index]);
 
@@ -1314,7 +1310,7 @@ test('all monster-inert potions crash unseen, chip, and disappear live',
 
 test('unseen swallowed bottle selection remains hallucination-sensitive',
     async () => {
-        const engulfer = freshSwallowedState(PM_ENERGY_VORTEX);
+        const engulfer = await freshSwallowedState(PM_ENERGY_VORTEX);
         game.u.hallucinationTurns = 8;
         const potion = addInventoryObject(POT_GAIN_LEVEL);
 
@@ -1328,7 +1324,7 @@ test('unseen swallowed bottle selection remains hallucination-sensitive',
     });
 
 test('swallowed inert potion stack splits one consumed identity', async () => {
-    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const engulfer = await freshSwallowedState(PM_TRAPPER);
     const potion = addInventoryObject(POT_FRUIT_JUICE, {
         quan: 2,
         quantity: 2,
@@ -1347,7 +1343,7 @@ test('swallowed inert potion stack splits one consumed identity', async () => {
 
 test('dknown unknown swallowed potion records a live type call after impact',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const potion = addInventoryObject(POT_FRUIT_JUICE, {
             known: false,
             typeKnown: false,
@@ -1377,7 +1373,7 @@ test('dknown unknown swallowed potion records a live type call after impact',
     });
 
 test('unseen unknown inert potion needs no naming continuation', async () => {
-    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const engulfer = await freshSwallowedState(PM_TRAPPER);
     const potion = addInventoryObject(POT_FRUIT_JUICE, {
         bknown: false,
         dknown: false,
@@ -1397,7 +1393,7 @@ test('unseen unknown inert potion needs no naming continuation', async () => {
 
 test('greased inert potion slips before its swallowed impact transaction',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         const potion = addInventoryObject(POT_GAIN_ENERGY, {
             greased: true,
         });
@@ -1416,7 +1412,7 @@ test('greased inert potion slips before its swallowed impact transaction',
 
 test('a killing swallowed dart is acquired, dropped, and autopicked before cleanup',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         engulfer.mhp = 1;
         game.flags.pickup = true;
         const dart = addInventoryWeapon(DART);
@@ -1450,7 +1446,7 @@ test('a killing swallowed dart is acquired, dropped, and autopicked before clean
 
 test('a swallowed monster can survive a killing throw with life saving',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         engulfer.mhp = 1;
         const amulet = knownObject(AMULET_OF_LIFE_SAVING);
         equipMonsterObject(engulfer, amulet, W_AMUL);
@@ -1469,7 +1465,7 @@ test('a swallowed monster can survive a killing throw with life saving',
 
 test('a killing swallowed weapon remains on the death square without autopickup',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         engulfer.mhp = 1;
         game.flags.pickup = false;
         const dagger = addInventoryWeapon(DAGGER);
@@ -1489,7 +1485,7 @@ test('a killing swallowed weapon remains on the death square without autopickup'
 
 test('a killing projectile releases prior minvent ahead of itself into autopickup',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         engulfer.mhp = 1;
         game.flags.pickup = true;
 
@@ -1515,7 +1511,7 @@ test('a killing projectile releases prior minvent ahead of itself into autopicku
 
 test('a killing projectile merges in minvent before the survivor is released',
     async () => {
-        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
         engulfer.mhp = 1;
         game.flags.pickup = true;
 
