@@ -4,6 +4,7 @@
 // Level construction uses the game's main random-number stream.
 
 import { game } from './gstate.js';
+import { recordMonsterDeath } from './monster_vitals.js';
 import { exerciseAttribute } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import {
@@ -3280,17 +3281,6 @@ function unearthObjectsAt(x, y, state = game) {
     return unearthed;
 }
 
-function recordMeltMonsterDeath(monster, state = game) {
-    if (!state._vanquishedCounts) state._vanquishedCounts = new Map();
-    const mnum = monster.mnum ?? -1;
-    const prior = state._vanquishedCounts.get(mnum) || {
-        mnum, name: MONSTER_NAME[mnum] || 'monster', count: 0,
-        difficulty: MONSTER_DIFFICULTY[mnum] ?? 0,
-    };
-    prior.count = Math.min(255, prior.count + 1);
-    state._vanquishedCounts.set(mnum, prior);
-}
-
 function releaseMeltMonsterInventory(monster, state = game) {
     const x = monster.mx, y = monster.my;
     const carried = monster.minvent?.length
@@ -3351,7 +3341,7 @@ export function killMonsterOnMeltingIce(
     monster, { state = game } = {},
 ) {
     monster.mhp = 0;
-    recordMeltMonsterDeath(monster, state);
+    recordMonsterDeath(monster, state);
     monster.dead = true;
     monster.mundetected = 0;
     state.level.monsters = state.level.monsters.filter(candidate =>

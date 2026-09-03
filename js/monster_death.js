@@ -10,7 +10,6 @@ import { buryFloorObject } from './buried_object.js';
 import {
     canProjectMonster, newsym, plineWithContinuation, unmap_invisible,
 } from './display.js';
-import { recordVanquished } from './end.js';
 import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { meldNearbyFloorGlobs } from './glob.js';
@@ -22,6 +21,7 @@ import {
     MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE,
     MONSTER_SYMBOL,
 } from './monster_data.js';
+import { recordMonsterDeath } from './monster_vitals.js';
 import {
     createPhysicalMonsterExplosion, monsterHasDeathExplosion,
     rollMonsterDeathExplosionDamage,
@@ -342,7 +342,6 @@ function releaseDeadMonsterInventory(monster, state) {
 function detachDeadMonster(monster, state) {
     const x = monster.mx;
     const y = monster.my;
-    const monsterName = MONSTER_NAME[monster.mnum] || 'monster';
     releaseDeadMonsterInventory(monster, state);
     monster.mhp = 0;
     monster.dead = true;
@@ -350,7 +349,7 @@ function detachDeadMonster(monster, state) {
     if (state === game) unmap_invisible(x, y, false);
     state.level.monsters = state.level.monsters.filter(candidate =>
         candidate !== monster);
-    recordVanquished(monster, monsterName, { state });
+    recordMonsterDeath(monster, state);
 }
 
 export async function finishMonsterLiquidDeath(

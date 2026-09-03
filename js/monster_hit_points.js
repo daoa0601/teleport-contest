@@ -5,6 +5,7 @@ import { In_endgame } from './const.js';
 import { level_difficulty } from './dungeon.js';
 import { game } from './gstate.js';
 import { MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { monsterDeathCount } from './monster_vitals.js';
 import { d, rnd, rn2 } from './rng.js';
 
 const PM_ERINYS = MONSTER_NAME.indexOf('erinys');
@@ -37,7 +38,7 @@ export function adjustedMonsterLevel(mnum) {
         ? Math.min(50, speciesLevel + (game.u?.ualign?.abuse ?? 0))
         : speciesLevel;
     if (mnum === PM_WIZARD_OF_YENDOR) {
-        const deaths = game._vanquishedCounts?.get?.(mnum)?.count ?? 0;
+        const deaths = monsterDeathCount(mnum);
         return Math.min(49, baseLevel + deaths);
     }
     if (baseLevel > 49) return 50;

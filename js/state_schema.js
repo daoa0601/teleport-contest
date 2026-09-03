@@ -17,7 +17,7 @@ const persistentNames = `
     _questExpulsionPending _restoredBones _rndmonstAlignment _rndmonstAlignmentMove _runtimeVersionInfoInitialized _shopRooms _specialLevelPrototype
     _specialRooms _startingEffectsApplied _startingPwMinimum _stethoscopeSeq _templeRooms _tipSwimShown
     _travelTipShown _tributeBookstock _tutorialActive _tutorialDeclined _tutorialState _unresolvedDemigodIntervention _unweapon
-    _useInitialMaintenance _vanquishedCounts _vaultGuard _vaultHiddenGold _wailmsg advance aggravateMonster
+    _useInitialMaintenance _vaultGuard _vaultHiddenGold _wailmsg advance aggravateMonster
     aggravate_monster air_level antimagic astral_level blind branches castleTune
     commandBindings context deaf detectMonsters discover discoveries displaced
     displayName dungeons dx dy earth_level fire_level flags

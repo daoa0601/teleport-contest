@@ -288,6 +288,7 @@ import {
     finishHeroDeath,
     vanquishedLines,
 } from './end.js';
+import { hasRecordedMonsterDeaths } from './monster_vitals.js';
 import {
     recordDungeonEntryAchievements,
 } from './achievements.js';
@@ -6227,7 +6228,7 @@ async function doChronicle() {
 }
 
 async function doVanquished() {
-    if (!game._vanquishedCounts?.size) {
+    if (!hasRecordedMonsterDeaths()) {
         await pline('No creatures have been vanquished.');
     } else {
         await showDisclosureOverlay(vanquishedLines(), {

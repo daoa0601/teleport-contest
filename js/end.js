@@ -9,7 +9,8 @@ import {
 import { showIdentifiedInventory } from './invent.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
 import { showDisclosureOverlay } from './windows.js';
-import { MONSTER_DIFFICULTY } from './monster_data.js';
+import { MONSTER_DIFFICULTY, MONSTER_NAME } from './monster_data.js';
+import { hasRecordedMonsterDeaths } from './monster_vitals.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { rn2 } from './rng.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
@@ -203,26 +204,6 @@ export function recordHeroKillConduct(state = game) {
         recordGameLogEvent('killed for the first time', { state });
 }
 
-// C xkilled()/monkilled() both update mvitals[].died; only hero kills break
-// killer conduct.  Weapon-hit conduct is owned earlier by hitum(), for every
-// effective wielded hit whether or not that hit kills.
-export function recordVanquished(monster, name, {
-    byHero = false, weaponHit = false, state = game,
-} = {}) {
-    if (!state._vanquishedCounts) state._vanquishedCounts = new Map();
-    const mnum = monster?.mnum ?? -1;
-    const prior = state._vanquishedCounts.get(mnum) || {
-        mnum, name: name || 'monster', count: 0,
-        difficulty: MONSTER_DIFFICULTY[mnum] ?? 0,
-    };
-    prior.count++;
-    state._vanquishedCounts.set(mnum, prior);
-    if (byHero) {
-        recordHeroKillConduct(state);
-        void weaponHit;
-    }
-}
-
 async function promptDeathQuestion(message) {
     await pline(message);
     await flush_screen(1);
@@ -231,7 +212,16 @@ async function promptDeathQuestion(message) {
 }
 
 export function vanquishedLines() {
-    const entries = [...(game._vanquishedCounts?.values() || [])]
+    const entries = (game.mvitals || []).flatMap((vital, mnum) => {
+        const count = vital?.died ?? 0;
+        if (!count) return [];
+        return [{
+            mnum,
+            name: MONSTER_NAME[mnum] || 'monster',
+            count,
+            difficulty: MONSTER_DIFFICULTY[mnum] ?? 0,
+        }];
+    })
         .sort((a, b) => b.difficulty - a.difficulty || a.mnum - b.mnum);
     const total = entries.reduce((sum, entry) => sum + entry.count, 0);
     const lines = ['Vanquished creatures:', ''];
@@ -818,7 +808,7 @@ export async function finishOrdinaryDeath({
     if (attributes === 'y') await showFinalAttributes();
     if (attributes === 'q') return;
 
-    if (game._vanquishedCounts?.size) {
+    if (hasRecordedMonsterDeaths()) {
         const vanquished = await disclosureAnswer(
             'v',
             'Do you want an account of creatures vanquished? [ynaq] (n)',
@@ -899,7 +889,7 @@ export async function finishOrdinaryQuit() {
     if (attributes === 'y') await showFinalAttributes();
     if (attributes === 'q') return;
 
-    if (game._vanquishedCounts?.size) {
+    if (hasRecordedMonsterDeaths()) {
         const vanquished = await disclosureAnswer(
             'v',
             'Do you want an account of creatures vanquished? [ynaq] (n)',

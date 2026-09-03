@@ -8,7 +8,7 @@ import {
     canProjectMonster, docrt, newsym, plineWithContinuation,
     randomDisplayMonsterName, unmap_invisible,
 } from './display.js';
-import { recordHeroKillConduct, recordVanquished } from './end.js';
+import { recordHeroKillConduct } from './end.js';
 import {
     awardMonsterExperience, gainExperienceLevel, gainLevelAbilities,
     newExperienceThreshold,
@@ -23,6 +23,9 @@ import {
     MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME,
     MONSTER_SIZE, monsterIsKop, monsterIsNonliving,
 } from './monster_data.js';
+import {
+    monsterDeathCount, recordMonsterDeath,
+} from './monster_vitals.js';
 import {
     createMonsterRemains, levelAllowsMonsterDeathDrops,
     monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects,
@@ -267,7 +270,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
     game.level.monsters = game.level.monsters.filter(
         candidate => candidate !== monster,
     );
-    recordVanquished(monster, monsterName, { weaponHit });
+    recordMonsterDeath(monster);
     if (leavesCorpse) {
         await createMonsterRemains(monster, game, {
             buried: pitRemains.buryCorpse,
@@ -294,7 +297,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
         if (wasTame || monster.mtame)
             game.u.uluck = (game.u.uluck || 0) - 1;
     }
-    const killCount = game._vanquishedCounts?.get(monster.mnum)?.count || 1;
+    const killCount = monsterDeathCount(monster.mnum);
     awardMonsterExperience(monster, {
         killCount,
         amphibious: !!game.u?.amphibious,

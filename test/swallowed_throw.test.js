@@ -1070,7 +1070,7 @@ test('a killing swallowed dart is acquired, dropped, and autopicked before clean
         assert.equal(game.u.weaponSkills[skill].advance, 1);
         assert.equal(game.u._exercise[A_DEX], 1);
         assert.equal(game.u.uconduct.killer, 1);
-        assert.equal(game._vanquishedCounts.get(PM_TRAPPER).count, 1);
+        assert.equal(game.mvitals[PM_TRAPPER].died, 1);
         assert.ok((game.u.uexp ?? 0) > 0);
         assert.equal(floorObjects(game.level)
             .some(object => /corpse/.test(object.name || '')), false);

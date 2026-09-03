@@ -34,6 +34,20 @@ test('a large monster leaves a corpse without a random chance', async () => {
     assert.equal(floorObjectsAt(level, 11, 10).includes(death.corpse), true);
 });
 
+test('a monster death updates its species death count', async () => {
+    freshObjectRoom();
+    const giant = addMonster({
+        species: 'giant', x: 11, y: 10, hitPoints: 1,
+    });
+
+    await finishEnvironmentalMonsterDeath(giant, game, {
+        visible: false,
+        publish: async () => {},
+    });
+
+    assert.equal(game.mvitals[giant.mnum]?.died, 1);
+});
+
 test('killing a pit-trapped monster with a boulder buries its corpse',
     async () => {
         const level = freshObjectRoom({ gameplaySeed: 28n });
