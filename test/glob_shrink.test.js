@@ -19,7 +19,7 @@ import {
     scheduleObjectTimer, stopAllObjectTimers,
 } from '../js/object_timers.js';
 import { objectWeight } from '../js/weight.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 
@@ -300,14 +300,9 @@ test('a glob inside a carried sack makes the sack lighter', () => {
     assert.equal(sack.contents.includes(glob), true);
 });
 
-test('a monster-carried glob disappears from its pack', () => {
+test('a monster-carried glob disappears from its pack', async () => {
     freshGlobState(17);
-    const carrier = addMonster({
-        mnum: 260,
-        m_id: 8100,
-        x: 12,
-        y: 10,
-    });
+    const carrier = await createMonsterAt('human', 12, 10);
     const glob = mksobj(GLOB_OF_GREEN_SLIME, true, false);
     glob.owt = 1;
     linkObjectToMonsterInventory(carrier, glob);
