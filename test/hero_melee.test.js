@@ -8,6 +8,7 @@ import {
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { inventoryObject } from './support/game-objects.js';
@@ -258,4 +259,19 @@ test('soft food and paper do not hurt a monster', async () => {
 
         assert.equal(jackal.mhp, 100, objectName);
     }
+});
+
+test('corpse melee damage comes from the corpse species size', async () => {
+    const { monster: jackal } = installMeleeArena(
+        'tourist', 'jackal', { mac: 100 },
+    );
+    equipWeapon('corpse', {
+        corpsenm: MONSTER_NAME.indexOf('dog'),
+    });
+    game.u.acurr.a[A_STR] = 10;
+
+    initRng(908n);
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(jackal.mhp, 97);
 });

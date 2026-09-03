@@ -11,15 +11,17 @@ import { angerAttackedMonster } from './monster_anger.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { monsterHasAcidResistance } from './monster_resistance.js';
 import {
-    MONSTER_NAME, monsterIsShade, monsterIsUndead, monsterIsVampireShifter,
+    MONSTER_NAME, MONSTER_SIZE, monsterIsShade, monsterIsUndead,
+    monsterIsVampireShifter,
 } from './monster_data.js';
 import {
-    ACID_VENOM, BLINDING_VENOM, CLOVE_OF_GARLIC, CREAM_PIE, EGG, MIRROR,
-    OBJECT_MATERIAL,
+    ACID_VENOM, BLINDING_VENOM, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, EGG,
+    MIRROR, OBJECT_MATERIAL,
 } from './object_data.js';
 import { objectBreaksOnImpact } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
 import { rnd, rn2 } from './rng.js';
+import { touchPetrifies } from './stoning.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 import { objectWeight } from './weight.js';
@@ -68,6 +70,14 @@ export async function resolveHeroMeleeObjectContact(
         };
     }
 
+    if (object?.otyp === CORPSE && !touchPetrifies(object.corpsenm)) {
+        if (monsterIsShade(monster)) {
+            return { damage: 0, addHeroDamageBonuses: false };
+        }
+        const corpseSize = MONSTER_SIZE[object.corpsenm] ?? 0;
+        return { damage: corpseSize + 1 };
+    }
+
     if (object?.otyp === ACID_VENOM) {
         if (monsterIsShade(monster)) {
             return { damage: 0, addHeroDamageBonuses: false };
@@ -89,7 +99,8 @@ export async function resolveHeroMeleeObjectContact(
     }
 
     const material = OBJECT_MATERIAL[object?.otyp];
-    const tooSoftToHurt = object?.otyp !== EGG
+    const tooSoftToHurt = !BLINDING_OBJECTS.has(object?.otyp)
+        && object?.otyp !== EGG
         && object?.oclass !== SPBOOK_CLASS
         && (material === VEGGY || material === PAPER);
     if (tooSoftToHurt) {
