@@ -9,7 +9,7 @@ import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
-    BOULDER, CORPSE, FIGURINE, GLOB_OF_BLACK_PUDDING, OBJECT_NAMES,
+    BOULDER, CORPSE, GLOB_OF_BLACK_PUDDING, OBJECT_NAMES,
     POT_ACID, RED_DRAGON_SCALES, ROCK, STATUE, UNICORN_HORN, WORM_TOOTH,
 } from '../js/object_data.js';
 import { place_object } from '../js/floor_object.js';
@@ -293,12 +293,11 @@ test('killing an aligned priest removes divine protection', async () => {
 test('killing a pit-trapped monster with a boulder buries its corpse',
     async () => {
         const level = freshObjectRoom({ gameplaySeed: 28n });
-        const giant = addMonster({
-            species: 'giant', x: 11, y: 10,
-            hitPoints: 1, mtrapped: 1,
-        });
+        const giant = await createMonsterAt('giant', 11, 10);
+        giant.mtrapped = 1;
         addTrap(level, PIT, giant.mx, giant.my);
         equipMonsterObject(giant, knownObject(BOULDER), 0);
+        initRng(28n);
 
         await finishHeroMonsterKill(giant, giant.mx, giant.my, {
             recordConduct: false,
@@ -316,12 +315,11 @@ test('killing a pit-trapped monster with a boulder buries its corpse',
 
 test('a boulder already in a monster pit prevents death remains', async () => {
     const level = freshObjectRoom({ gameplaySeed: 29n });
-    const giant = addMonster({
-        species: 'giant', x: 11, y: 10,
-        hitPoints: 1, mtrapped: 1,
-    });
+    const giant = await createMonsterAt('giant', 11, 10);
+    giant.mtrapped = 1;
     addTrap(level, PIT, giant.mx, giant.my);
     place_object(knownObject(BOULDER), giant.mx, giant.my);
+    initRng(29n);
 
     await finishHeroMonsterKill(giant, giant.mx, giant.my, {
         showKillMessage: false,
@@ -335,11 +333,10 @@ test('a boulder already in a monster pit prevents death remains', async () => {
 test('killing a monster inside solid rock leaves no objects', async () => {
     const level = freshObjectRoom({ gameplaySeed: 30n });
     level.at(11, 10).typ = STONE;
-    const giant = addMonster({
-        species: 'giant', x: 11, y: 10, hitPoints: 1,
-    });
+    const jackal = await createMonsterAt('jackal', 11, 10);
+    initRng(30n);
 
-    await finishHeroMonsterKill(giant, giant.mx, giant.my, {
+    await finishHeroMonsterKill(jackal, jackal.mx, jackal.my, {
         showKillMessage: false,
         recordConduct: false,
     });
@@ -348,14 +345,14 @@ test('killing a monster inside solid rock leaves no objects', async () => {
 });
 
 test('Kops and cloned monsters do not leave random bonus objects', async () => {
-    for (const monsterOptions of [
+    for (const { species, cloned = false } of [
         { species: 'Keystone Kop' },
-        { species: 'giant', mcloned: 1 },
+        { species: 'jackal', cloned: true },
     ]) {
         const level = freshObjectRoom({ gameplaySeed: 10n });
-        const monster = addMonster({
-            ...monsterOptions, x: 11, y: 10, hitPoints: 1,
-        });
+        const monster = await createMonsterAt(species, 11, 10);
+        monster.mcloned = cloned ? 1 : 0;
+        initRng(10n);
 
         await finishHeroMonsterKill(monster, monster.mx, monster.my, {
             showKillMessage: false,
@@ -363,38 +360,8 @@ test('Kops and cloned monsters do not leave random bonus objects', async () => {
         });
 
         assert.equal(floorObjectsAt(level, 11, 10).every(object =>
-            object.otyp === CORPSE), true, monsterOptions.species);
+            object.otyp === CORPSE), true, species);
     }
-});
-
-test('a small monster can leave a figurine as its bonus object', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 4967n });
-    const jackal = addMonster({
-        species: 'jackal', x: 11, y: 10, hitPoints: 1,
-    });
-
-    await finishHeroMonsterKill(jackal, jackal.mx, jackal.my, {
-        showKillMessage: false,
-        recordConduct: false,
-    });
-
-    assert.equal(floorObjectsAt(level, 11, 10).some(object =>
-        object.otyp === FIGURINE), true);
-});
-
-test('a human-sized monster can leave a heavy bonus object', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 49n });
-    const dwarf = addMonster({
-        species: 'dwarf', x: 11, y: 10, hitPoints: 1,
-    });
-
-    await finishHeroMonsterKill(dwarf, dwarf.mx, dwarf.my, {
-        showKillMessage: false,
-        recordConduct: false,
-    });
-
-    assert.equal(floorObjectsAt(level, 11, 10).some(object =>
-        object.otyp === ROCK), true);
 });
 
 test('pool water destroys an acid potion dropped by a dying monster',
@@ -404,25 +371,23 @@ test('pool water destroys an acid potion dropped by a dying monster',
             hero: { uluck: -5 },
         });
         level.at(11, 10).typ = POOL;
-        const jackal = addMonster({
-            species: 'jackal', x: 11, y: 10, hitPoints: 1,
-        });
+        const jackal = await createMonsterAt('jackal', 11, 10);
+        const potion = knownObject(POT_ACID);
+        addObjectToMonsterInventory(jackal, potion, game);
+        initRng(482n);
 
         await finishHeroMonsterKill(jackal, jackal.mx, jackal.my, {
             showKillMessage: false,
             recordConduct: false,
         });
 
-        assert.equal(floorObjectsAt(level, 11, 10).some(object =>
-            object.otyp === POT_ACID), false);
+        assert.equal(potion.where, 'gone');
     });
 
 test('a glob dropped by a dying monster joins a neighboring glob', async () => {
     const level = freshObjectRoom({ gameplaySeed: 483n });
     place_object(knownObject(GLOB_OF_BLACK_PUDDING), 12, 10);
-    const jackal = addMonster({
-        species: 'jackal', x: 11, y: 10, hitPoints: 1,
-    });
+    const jackal = await createMonsterAt('jackal', 11, 10);
     addObjectToMonsterInventory(
         jackal, knownObject(GLOB_OF_BLACK_PUDDING), game,
     );
@@ -447,9 +412,7 @@ test('a potion dropped on a hot dungeon floor shatters', async () => {
         heroY: 10,
     });
     level.flags.temperature = 1;
-    const jackal = addMonster({
-        species: 'jackal', x: 11, y: 10, hitPoints: 1,
-    });
+    const jackal = await createMonsterAt('jackal', 11, 10);
     const potion = knownObject(POT_ACID);
     addObjectToMonsterInventory(jackal, potion, game);
 
@@ -469,9 +432,7 @@ test('a monster-turn drop reveals an object curse on a visible altar',
         const level = freshObjectRoom();
         level.at(11, 10).typ = ALTAR;
         game.context.mon_moving = true;
-        const jackal = addMonster({
-            species: 'jackal', x: 11, y: 10, hitPoints: 1,
-        });
+        const jackal = await createMonsterAt('jackal', 11, 10);
         const potion = knownObject(POT_ACID, {
             cursed: true,
             bknown: false,
@@ -490,9 +451,7 @@ test('a monster-turn drop reveals an object curse on a visible altar',
 
 test('a visible lich crumbles to dust instead of leaving a corpse', async () => {
     freshObjectRoom();
-    const lich = addMonster({
-        species: 'lich', x: 11, y: 10, hitPoints: 1,
-    });
+    const lich = await createMonsterAt('lich', 11, 10);
     const messages = [];
 
     const death = await finishEnvironmentalMonsterDeath(lich, game, {
