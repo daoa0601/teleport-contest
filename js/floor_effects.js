@@ -1,11 +1,12 @@
 // What happens when a free object lands on a dungeon square.
-// C ref: do.c flooreffects() boulder, lava, and pool branches.
+// C ref: do.c flooreffects() boulder, lava, pool, and glob branches.
 
 import {
     IS_POOL, LAVAPOOL, MOAT, POOL, WATER, is_hole, is_pit,
 } from './const.js';
 import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
+import { meldNearbyFloorGlobs } from './glob.js';
 import { deleteObject } from './object_delete.js';
 import { BOULDER } from './object_data.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
@@ -77,5 +78,7 @@ export async function landFloorObject(
     }
 
     place_object(object, x, y, state);
+    if (object.globby)
+        return meldNearbyFloorGlobs(object, { state, publish, random });
     return stack_object(object, state);
 }

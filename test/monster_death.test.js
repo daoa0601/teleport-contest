@@ -432,6 +432,27 @@ test('pool water destroys an acid potion dropped by a dying monster',
             object.otyp === POT_ACID), false);
     });
 
+test('a glob dropped by a dying monster joins a neighboring glob', async () => {
+    const level = freshObjectRoom({ gameplaySeed: 483n });
+    place_object(knownObject(GLOB_OF_BLACK_PUDDING), 12, 10);
+    const jackal = addMonster({
+        species: 'jackal', x: 11, y: 10, hitPoints: 1,
+    });
+    equipMonsterObject(jackal, knownObject(GLOB_OF_BLACK_PUDDING), 0);
+
+    await finishEnvironmentalMonsterDeath(jackal, game, {
+        visible: false,
+        noCorpse: true,
+        random: () => 0,
+        publish: async () => {},
+    });
+
+    const globs = floorObjects(level).filter(object =>
+        object.otyp === GLOB_OF_BLACK_PUDDING);
+    assert.equal(globs.length, 1);
+    assert.equal(globs[0].owt, 40);
+});
+
 test('a visible lich crumbles to dust instead of leaving a corpse', async () => {
     freshObjectRoom();
     const lich = addMonster({
