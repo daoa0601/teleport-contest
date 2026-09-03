@@ -1,14 +1,16 @@
 // Glob shrink timers.
 // C refs: mkobj.c start_glob_timeout()/shrink_glob().
 
-import { newsym } from './display.js';
-import { ICE } from './const.js';
+import { newsym, plineWithContinuation } from './display.js';
+import { ICE, isok } from './const.js';
 import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import {
     GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, OBJECT_NAMES,
 } from './object_data.js';
+import { makePlural } from './object_grammar.js';
+import { mergable, mergeObjectStacks } from './object_merge.js';
 import {
     OBJECT_TIMER_KIND, objectsInTimerGraph, scheduleObjectTimer,
 } from './object_timers.js';
@@ -20,6 +22,68 @@ import {
 
 function isGlobType(otyp) {
     return otyp >= GLOB_OF_GRAY_OOZE && otyp <= GLOB_OF_BLACK_PUDDING;
+}
+
+function nearbyMergableGlob(glob, state, random) {
+    const findAt = (x, y) => (state.level?.objects?.[x]?.[y] || [])
+        .find(object => object !== glob && mergable(glob, object, state));
+    const onSameSquare = findAt(glob.ox, glob.oy);
+    if (onSameSquare) return onSameSquare;
+
+    const xStep = random(2) ? -1 : 1;
+    const yStep = random(2) ? -1 : 1;
+    for (let x = glob.ox - xStep; Math.abs(x - glob.ox) < 2; x += xStep) {
+        for (let y = glob.oy - yStep;
+            Math.abs(y - glob.oy) < 2; y += yStep) {
+            if (!isok(x, y) || (x === glob.ox && y === glob.oy)) continue;
+            const nearby = findAt(x, y);
+            if (nearby) return nearby;
+        }
+    }
+    return null;
+}
+
+async function announceFloorGlobMerge(first, second, state, publish) {
+    const blind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
+    const visible = state === game
+        && (cansee(first.ox, first.oy) || cansee(second.ox, second.oy));
+    if (blind || !visible) return;
+    const hallucinating = !!state.u?.hallucinating
+        || (state.u?.hallucinationTurns ?? 0) > 0;
+    if (hallucinating) {
+        await publish('You see parts of the floor melting!');
+        return;
+    }
+    const heroX = state.u?.ux;
+    const heroY = state.u?.uy;
+    const adjacent = (first.ox !== heroX || first.oy !== heroY)
+        && (second.ox !== heroX || second.oy !== heroY);
+    await publish(`The ${adjacent ? 'adjacent ' : ''}${
+        makePlural(OBJECT_NAMES[first.otyp])} coalesce.`);
+}
+
+export async function meldNearbyFloorGlobs(glob, {
+    state = game,
+    publish = plineWithContinuation,
+    random = rn2,
+} = {}) {
+    let combined = glob;
+    for (;;) {
+        const nearby = nearbyMergableGlob(combined, state, random);
+        if (!nearby) return combined;
+        await announceFloorGlobMerge(combined, nearby, state, publish);
+
+        const equalWeight = combined.owt === nearby.owt;
+        const combinedSurvives = combined.owt > nearby.owt
+            || (equalWeight && random(2) !== 0);
+        const survivor = combinedSurvives ? combined : nearby;
+        const absorbed = combinedSurvives ? nearby : combined;
+        const oldX = absorbed.ox;
+        const oldY = absorbed.oy;
+        remove_object(absorbed, state);
+        combined = mergeObjectStacks(survivor, absorbed, state);
+        if (state === game && cansee(oldX, oldY)) newsym(oldX, oldY);
+    }
 }
 
 function scheduleNextGlobAttempt(glob, state, currentTurn, delay = 0) {

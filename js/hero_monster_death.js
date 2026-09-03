@@ -362,8 +362,13 @@ export async function finishHeroMonsterKill(monster, x, y, {
         candidate => candidate !== monster,
     );
     recordVanquished(monster, monsterName, { weaponHit });
-    if (leavesCorpse)
-        createMonsterRemains(monster, game, { zombify: zombifyCorpse });
+    if (leavesCorpse) {
+        await createMonsterRemains(monster, game, {
+            zombify: zombifyCorpse,
+            seen: deathWasSpotted,
+            publish: plineWithContinuation,
+        });
+    }
 
     if (typeof deathContext?.finishDestinationEffects === 'function') {
         await deathContext.finishDestinationEffects({

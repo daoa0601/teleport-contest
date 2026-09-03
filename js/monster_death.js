@@ -11,6 +11,7 @@ import {
 import { recordVanquished } from './end.js';
 import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
+import { meldNearbyFloorGlobs } from './glob.js';
 import {
     mkcorpstat, mkgold, mksobj, undeadToCorpse,
 } from './mklev.js';
@@ -22,8 +23,9 @@ import {
 import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import {
     BOOMERANG, BULLWHIP, CLUB, CORPSE, ELVEN_SPEAR,
-    GRAPPLING_HOOK, IRON_CHAIN, LEASH, LEATHER_ARMOR, LEATHER_CLOAK,
-    QUARTERSTAFF, ROCK, SADDLE, SCR_BLANK_PAPER, SMALL_SHIELD, STATUE,
+    GLOB_OF_GRAY_OOZE, GRAPPLING_HOOK, GRAY_DRAGON_SCALES, IRON_CHAIN,
+    LEASH, LEATHER_ARMOR, LEATHER_CLOAK, QUARTERSTAFF, ROCK, SADDLE,
+    SCR_BLANK_PAPER, SMALL_SHIELD, STATUE, UNICORN_HORN, WORM_TOOTH,
     WORTHLESS_PIECE_OF_VIOLET_GLASS,
     WORTHLESS_PIECE_OF_WHITE_GLASS,
 } from './object_data.js';
@@ -41,6 +43,13 @@ const PM_CLAY_GOLEM = 256;
 const PM_STONE_GOLEM = 257;
 const PM_GLASS_GOLEM = 258;
 const PM_IRON_GOLEM = 259;
+const PM_WHITE_UNICORN = 101;
+const PM_BLACK_UNICORN = 103;
+const PM_LONG_WORM = 114;
+const PM_GRAY_DRAGON = 143;
+const PM_YELLOW_DRAGON = 152;
+const PM_GRAY_OOZE = 206;
+const PM_BLACK_PUDDING = 209;
 const PM_VLAD_THE_IMPALER = 228;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
@@ -67,15 +76,18 @@ export function levelAllowsMonsterDeathDrops(
     return !(state.level?.flags?.graveyard && undead && random(3));
 }
 
+function monsterPossessiveName(monster) {
+    const name = monster.name || MONSTER_NAME[monster.mnum] || 'monster';
+    const usesArticle = !monster.name && !/^[A-Z]/.test(name);
+    const subject = usesArticle ? `The ${name}` : name;
+    return /s$/i.test(subject) ? `${subject}'` : `${subject}'s`;
+}
+
 export function monsterBodyCrumblesMessage(monster) {
     const mnum = monster.mnum;
     if (mnum !== PM_VLAD_THE_IMPALER
         && MONSTER_SYMBOL[mnum] !== S_LICH) return null;
-    const name = monster.name || MONSTER_NAME[mnum] || 'monster';
-    const usesArticle = !monster.name && !/^[A-Z]/.test(name);
-    const subject = usesArticle ? `The ${name}` : name;
-    const possessive = /s$/i.test(subject) ? `${subject}'` : `${subject}'s`;
-    return `${possessive} body crumbles into dust.`;
+    return `${monsterPossessiveName(monster)} body crumbles into dust.`;
 }
 
 export function monsterLeavesCorpse(monster, random = rn2) {
@@ -180,13 +192,71 @@ function createGolemRemains(monster, state) {
     return remains ? stack_object(remains, state) : null;
 }
 
-export function createMonsterRemains(
-    monster, state = game, { zombify = false } = {},
+function placeMonsterPart(type, monster, state, initialize = true) {
+    const part = mksobj(type, initialize, false);
+    place_object(part, monster.mx, monster.my, state);
+    return part;
+}
+
+async function createMonsterPart(monster, state, seen, publish) {
+    const mnum = monster.mnum;
+    if (mnum >= PM_GRAY_DRAGON && mnum <= PM_YELLOW_DRAGON) {
+        const chance = monster.mrevived ? 20 : 3;
+        if (rn2(chance) !== 0) return null;
+        const scales = placeMonsterPart(
+            GRAY_DRAGON_SCALES + mnum - PM_GRAY_DRAGON,
+            monster, state, false,
+        );
+        scales.spe = 0;
+        scales.cursed = false;
+        scales.blessed = false;
+        return scales;
+    }
+    if (mnum >= PM_WHITE_UNICORN && mnum <= PM_BLACK_UNICORN) {
+        if (monster.mrevived && rn2(2)) {
+            if (seen) {
+                await publish(
+                    `${monsterPossessiveName(monster)} recently regrown horn `
+                        + 'crumbles to dust.',
+                );
+            }
+            return null;
+        }
+        const horn = placeMonsterPart(UNICORN_HORN, monster, state);
+        if (monster.mrevived) horn.degraded_horn = 1;
+        return horn;
+    }
+    if (mnum === PM_LONG_WORM)
+        return placeMonsterPart(WORM_TOOTH, monster, state);
+    return null;
+}
+
+async function createPuddingGlob(monster, state, publish) {
+    if (monster.mnum < PM_GRAY_OOZE
+        || monster.mnum > PM_BLACK_PUDDING) return null;
+    const glob = placeMonsterPart(
+        GLOB_OF_GRAY_OOZE + monster.mnum - PM_GRAY_OOZE,
+        monster, state,
+    );
+    delete monster.name;
+    return meldNearbyFloorGlobs(glob, { state, publish });
+}
+
+export async function createMonsterRemains(
+    monster, state = game, {
+        zombify = false,
+        seen = false,
+        publish = plineWithContinuation,
+    } = {},
 ) {
     const x = monster.mx;
     const y = monster.my;
     if (SPECIAL_GOLEM_REMAINS.has(monster.mnum))
         return createGolemRemains(monster, state);
+    if (monster.mnum >= PM_GRAY_OOZE && monster.mnum <= PM_BLACK_PUDDING)
+        return createPuddingGlob(monster, state, publish);
+
+    await createMonsterPart(monster, state, seen, publish);
 
     const corpseForm = undeadToCorpse(monster.mnum);
     if (corpseForm === monster.mnum
@@ -243,7 +313,7 @@ function detachDeadMonster(monster, state) {
     recordVanquished(monster, monsterName, { state });
 }
 
-export function finishMonsterLiquidDeath(
+export async function finishMonsterLiquidDeath(
     monster, {
         state = game,
         random = rn2,
@@ -257,7 +327,10 @@ export function finishMonsterLiquidDeath(
         && monsterLeavesCorpse(monster, random);
     detachDeadMonster(monster, state);
     const corpse = leavesRemains
-        ? createMonsterRemains(monster, state)
+        ? await createMonsterRemains(monster, state, {
+            seen: state === game
+                && canProjectMonster(monster, monster.mx, monster.my),
+        })
         : null;
     if (state === game) {
         unmap_invisible(x, y, false);
@@ -305,8 +378,12 @@ export async function finishEnvironmentalMonsterDeath(
     detachDeadMonster(monster, state);
     if (crumbleMessage && visible) await publish(crumbleMessage);
     const corpse = leavesRemains
-        ? createMonsterRemains(
-            monster, state, { zombify: zombifyCorpse },
+        ? await createMonsterRemains(
+            monster, state, {
+                zombify: zombifyCorpse,
+                seen: spotted,
+                publish,
+            },
         ) : null;
     if (state === game) newsym(x, y);
     return { monster, survived: false, corpse };

@@ -3,8 +3,13 @@ import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
-import { CORPSE, OBJECT_NAMES, ROCK, STATUE } from '../js/object_data.js';
-import { floorObjectsAt } from './support/level-state.js';
+import {
+    CORPSE, GLOB_OF_BLACK_PUDDING, OBJECT_NAMES, RED_DRAGON_SCALES,
+    ROCK, STATUE, UNICORN_HORN, WORM_TOOTH,
+} from '../js/object_data.js';
+import { place_object } from '../js/floor_object.js';
+import { knownObject } from './support/game-objects.js';
+import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -127,4 +132,65 @@ test('golems leave the materials they were made from', async () => {
             OBJECT_NAMES[object.otyp],
         )), true, species);
     }
+});
+
+test('an adult dragon can leave scales with its corpse', async () => {
+    const level = freshObjectRoom({ gameplaySeed: 1n });
+    const dragon = addMonster({
+        species: 'red dragon', x: 11, y: 10, hitPoints: 1,
+    });
+
+    await finishEnvironmentalMonsterDeath(dragon, game, {
+        visible: false,
+        publish: async () => {},
+    });
+
+    const remains = floorObjectsAt(level, 11, 10);
+    assert.equal(remains.some(object => object.otyp === CORPSE), true);
+    assert.equal(remains.some(object =>
+        object.otyp === RED_DRAGON_SCALES), true);
+});
+
+test('unicorns and long worms leave both a body and a useful part', async () => {
+    for (const [species, part] of [
+        ['white unicorn', UNICORN_HORN],
+        ['long worm', WORM_TOOTH],
+    ]) {
+        const level = freshObjectRoom({ gameplaySeed: 24n });
+        const monster = addMonster({
+            species, x: 11, y: 10, hitPoints: 1,
+        });
+
+        await finishEnvironmentalMonsterDeath(monster, game, {
+            visible: false,
+            publish: async () => {},
+        });
+
+        const remains = floorObjectsAt(level, 11, 10);
+        assert.equal(remains.some(object => object.otyp === CORPSE), true);
+        assert.equal(remains.some(object => object.otyp === part), true);
+    }
+});
+
+test('a black pudding congeals and joins a nearby glob', async () => {
+    const level = freshObjectRoom({ gameplaySeed: 25n });
+    const oldGlob = knownObject(GLOB_OF_BLACK_PUDDING);
+    place_object(oldGlob, 12, 10);
+    const pudding = addMonster({
+        species: 'black pudding', x: 11, y: 10, hitPoints: 1,
+    });
+
+    await finishEnvironmentalMonsterDeath(pudding, game, {
+        visible: false,
+        random: () => 0,
+        publish: async () => {},
+    });
+
+    const globs = floorObjects(level).filter(object =>
+        object.otyp === GLOB_OF_BLACK_PUDDING);
+    const [glob] = globs;
+    assert.equal(globs.length, 1);
+    assert.equal(glob?.otyp, GLOB_OF_BLACK_PUDDING);
+    assert.equal(glob?.globby, true);
+    assert.equal(glob?.owt, 40);
 });
