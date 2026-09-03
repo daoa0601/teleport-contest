@@ -7,6 +7,7 @@ import {
     W_QUIVER, W_SWAPWEP, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { pushKey } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/light.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
@@ -1101,6 +1102,19 @@ test('swallowed unlit oil breaks without evaporation or floor fallback',
         assert.equal(potion.where, 'gone');
         assert.equal(floorObjects(game.level).length, 0);
     });
+
+test('a swallowed potion can be thrown from the hero hand', async () => {
+    freshSwallowedState(PM_TRAPPER);
+    const potion = addInventoryObject(POT_FRUIT_JUICE);
+    pushKey(potion.invlet);
+    await rhack('w'.charCodeAt(0));
+
+    initRng(2511n);
+    await throwInventoryObject(potion, 'l', Array(10).fill(' '));
+
+    assert.equal(game.uwep, null);
+    assert.equal(potion.where, 'gone');
+});
 
 test('swallowed healing family heals both monster and hero through vapor',
     async () => {

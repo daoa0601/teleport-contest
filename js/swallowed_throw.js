@@ -144,8 +144,7 @@ function swallowedPotionEligibility(
 
     const burningOil = item.otyp === POT_OIL && item.lamplit
         && activeObjectTimerCount(item) > 0;
-    if (itemIsEquipped(state, item)
-        || containsUnpaidObject(item)
+    if (containsUnpaidObject(item)
         || ((item.lamplit || activeObjectTimerCount(item) > 0)
             && !burningOil)
         || item.oartifact || item.artifact

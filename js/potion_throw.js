@@ -29,20 +29,11 @@ import { nearCapacity } from './weight.js';
 const POTION_CLASS = 8;
 const G_UNIQ = 0x1000;
 const SUPPORTED_PATH_TYPES = new Set([ROOM, CORR, DOOR]);
-const EQUIPMENT_SLOTS = [
-    'uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmu', 'uarmc', 'uarmh',
-    'uarmg', 'uarmf', 'uarms', 'uleft', 'uright', 'uamul', 'ublindf',
-];
 
 function containsUnpaidObject(object) {
     if (!object) return false;
     if (object.unpaid) return true;
     return (object.contents || []).some(containsUnpaidObject);
-}
-
-function equipped(state, item) {
-    return !!(item.owornmask ?? 0) || EQUIPMENT_SLOTS.some(slot =>
-        state[slot] === item || state.u?.[slot] === item);
 }
 
 function activeTimerCount(item) {
@@ -113,7 +104,7 @@ function ordinaryEligibility({
     const burningOil = item.otyp === POT_OIL && item.lamplit
         && activeTimerCount(item) > 0;
     if (((item.lamplit || activeTimerCount(item) > 0) && !burningOil)
-        || item.oartifact || item.artifact || equipped(state, item)
+        || item.oartifact || item.artifact
         || containsUnpaidObject(item)
         || (item.contents?.length ?? 0) > 0
         || heroIsBlind(state)

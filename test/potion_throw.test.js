@@ -4,7 +4,9 @@ import assert from 'node:assert/strict';
 import {
     A_CON, A_DEX, STONE, W_ARM, W_ARMC, W_SADDLE, W_WEP,
 } from '../js/const.js';
+import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
+import { pushKey } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/light.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -92,6 +94,19 @@ test('live map potion crosses bhit and consumes a successful inert contact',
         assert.equal(game.inventory.includes(potion), false);
         assert.equal(floorObjects(game.level).includes(potion), false);
     });
+
+test('a wielded potion leaves the hero hand when thrown', async () => {
+    freshMapPotionState(2);
+    const potion = addInventoryObject(POT_FRUIT_JUICE);
+    pushKey(potion.invlet);
+    await rhack('w'.charCodeAt(0));
+
+    initRng(2702n);
+    await throwEast(potion, Array(10).fill(' '));
+
+    assert.equal(game.uwep, null);
+    assert.equal(potion.where, 'gone');
+});
 
 test('a thrown polymorph potion changes its live target', async () => {
     const monster = freshMapPotionState(2, { mnum: 12 });
