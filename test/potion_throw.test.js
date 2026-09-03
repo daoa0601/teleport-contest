@@ -139,6 +139,18 @@ test('throwing a potion while levitating moves the hero backward', async () => {
     assert.equal(potion.where, 'gone');
 });
 
+test('a potion can hit an adjacent monster underwater', async () => {
+    const monster = freshMapPotionState(1);
+    game.u.uinwater = true;
+    const potion = addInventoryObject(POT_INVISIBILITY);
+
+    initRng(3321n);
+    await throwEast(potion, Array(10).fill(' '));
+
+    assert.equal(monster.minvis, 1);
+    assert.equal(potion.where, 'gone');
+});
+
 test('throwing a potion at a peaceful monster makes it hostile', async () => {
     const monster = freshMapPotionState(2, { mpeaceful: 1 });
     const potion = addInventoryObject(POT_FRUIT_JUICE);

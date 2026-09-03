@@ -59,7 +59,6 @@ function canResolveMapPotionThrow({
         || item.oartifact || item.artifact
         || containsUnpaidObject(item)
         || (item.contents?.length ?? 0) > 0
-        || state.underwater || state.u?.uinwater
         || state.uball || state.u?.uball || state.uchain || state.u?.uchain
         || state.u?.usteed || state._shopRooms?.current
         || (state._encumbranceLevel ?? nearCapacity(state)) > 0) return false;
@@ -120,7 +119,10 @@ export async function resolveMapPotionThrow({
 
     const actualDx = state.u?.dx ?? dx;
     const actualDy = state.u?.dy ?? dy;
-    const trajectory = heroThrowTrajectory(thrown, state);
+    const underwater = state.underwater || state.u?.uinwater;
+    const trajectory = underwater
+        ? { range: 1, recoil: 0 }
+        : heroThrowTrajectory(thrown, state);
     const flight = await flyHeroThrownObject({
         state,
         object: thrown,
