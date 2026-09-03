@@ -4,6 +4,7 @@
 
 import { A_DEX, A_STR, W_SADDLE } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { applyArtifactHitToMonster } from './artifact_hit.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { endObjectBurn } from './light.js';
@@ -111,7 +112,7 @@ function intendedThrowingWeapon(item) {
 }
 
 function swallowedWeaponEligibility(
-    state, item, objectClass, selectedQuantity,
+    state, item, objectClass, selectedQuantity, canFinishKill, finishKill,
 ) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer) return null;
@@ -122,15 +123,13 @@ function swallowedWeaponEligibility(
     const material = OBJECT_MATERIAL[item.otyp] ?? 0;
     const skillState = state.u?.weaponSkills?.[skill];
 
-    // This owner deliberately enters hmon()'s ordinary physical survivor
-    // path. Ammo/missiles, launchers, special material/target bonuses,
-    // poison, artifacts, passives, attitude changes, and engulfer death all
-    // retain separate fail-closed continuations.
+    // Missiles and launchers use the projectile path below. The remaining
+    // exclusions still need ownership or hero-state handling around hmon().
     if (!weaponOrTool || subtype <= 0 || LAUNCHER_SKILLS.has(skill)
         || (selectedQuantity > 1 && objectClass === 2)
         || !skillState || !Number.isInteger(skillState.skill)
         || material < IRON
-        || item.opoisoned || item.oartifact || item.artifact
+        || item.opoisoned
         || item.lamplit || containsUnpaidObject(item)
         || itemIsEquipped(state, item)
         || activeObjectTimerCount(item) > 0
@@ -138,6 +137,8 @@ function swallowedWeaponEligibility(
         || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade'
         || state.u?.polymorphed || state.u?.upolyd
         || state.u?.twoweap || state.twoweap) return null;
+    if ((item.oartifact || item.artifact)
+        && (!finishKill || !canFinishKill?.(engulfer))) return null;
     if (selectedQuantity > 1 && activeObjectTimerCount(item) > 0)
         return null;
 
@@ -384,7 +385,7 @@ export async function resolveSwallowedWeaponThrow({
     finishKill,
 }) {
     const eligible = swallowedWeaponEligibility(
-        state, item, objectClass, selectedQuantity,
+        state, item, objectClass, selectedQuantity, canFinishKill, finishKill,
     );
     if (!eligible) return false;
     const { engulfer, skill, maximumDamage } = eligible;
@@ -401,25 +402,37 @@ export async function resolveSwallowedWeaponThrow({
     });
     await applyLowStaminaThrow({ state, object: thrown });
 
-    rnd(20); // thitmonst() consumes its guaranteed-hit dieroll first
+    const dieRoll = rnd(20);
     const physicalDamage = rollPhysicalWeaponDamage(thrown, engulfer);
     if (physicalDamage > 1) recordWeaponPractice(state, skill, 1);
-    const damage = Math.max(
-        1,
-        physicalDamage
+    const monsterName = engulfer.name
+        || `the ${monsterTypeName(engulfer.mnum, !!engulfer.female)}`;
+    const artifactHit = await applyArtifactHitToMonster(
+        thrown, engulfer, physicalDamage, {
+            state,
+            visible: !heroIsBlind(state),
+            describeTarget: () => monsterName,
+            describeCarrier: () => engulfer.name
+                || monsterTypeName(engulfer.mnum, !!engulfer.female),
+            publish: plineWithContinuation,
+            dieRoll,
+        },
+    );
+    const damage = artifactHit.attackStopped ? 0 : Math.max(
+        1, artifactHit.damage
             + (state.u?.udaminc ?? state.udaminc ?? 0)
             + strengthDamageBonus(currentAttribute(A_STR, state))
             + weaponSkillDamageBonus(state, skill),
     );
     engulfer.mhp -= damage;
 
-    const monsterName = engulfer.name
-        || `the ${monsterTypeName(engulfer.mnum, !!engulfer.female)}`;
-    await plineWithContinuation(
-        `The ${thrownObjectName(thrown, state)} hits ${monsterName}${
-            damage > 4 ? '!' : '.'
-        }`,
-    );
+    if (!artifactHit.specialMessage) {
+        await plineWithContinuation(
+            `The ${thrownObjectName(thrown, state)} hits ${monsterName}${
+                damage > 4 ? '!' : '.'
+            }`,
+        );
+    }
     if (engulfer.mhp <= 0) {
         await finishKill(engulfer, thrown);
         exerciseAttribute(A_DEX, true, state);

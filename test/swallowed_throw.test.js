@@ -11,7 +11,7 @@ import { beginObjectBurn } from '../js/light.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING,
-    ARROW, BOW, DAGGER, DART, FIGURINE, MAGIC_LAMP,
+    ARROW, BOW, DAGGER, DART, FIGURINE, LONG_SWORD, MAGIC_LAMP,
     OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
     POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY,
@@ -24,9 +24,10 @@ import {
 } from '../js/object_data.js';
 import { objectTimers } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
+import { addInventoryItem } from '../js/u_init.js';
 import { throwInventoryObject } from './support/commands.js';
 import {
-    addInventoryObject, addInventoryWeapon, knownObject,
+    addInventoryObject, addInventoryWeapon, artifactObject, knownObject,
 } from './support/game-objects.js';
 import {
     installHeroWeaponSkills, installHumanWerewolfHero, wearHeroObject,
@@ -240,6 +241,23 @@ test('a blessed swallowed weapon deals extra damage to a demon', async () => {
     await throwInventoryObject(blessedDagger, 'l');
 
     assert.ok(40 - blessedTarget.mhp > ordinaryDamage);
+});
+
+test('a swallowed artifact applies its special weapon damage', async () => {
+    const ordinaryTarget = freshSwallowedState(PM_TRAPPER);
+    const ordinarySword = addInventoryWeapon(LONG_SWORD);
+    setBasicWeaponSkill(ordinarySword);
+    initRng(2310n);
+    await throwInventoryObject(ordinarySword, 'l');
+    const ordinaryDamage = 40 - ordinaryTarget.mhp;
+
+    const artifactTarget = freshSwallowedState(PM_TRAPPER);
+    const fireBrand = addInventoryItem(artifactObject('Fire Brand'));
+    setBasicWeaponSkill(fireBrand);
+    initRng(2310n);
+    await throwInventoryObject(fireBrand, 'l', [' ']);
+
+    assert.ok(40 - artifactTarget.mhp > ordinaryDamage);
 });
 
 test('swallowed weapon-tool preserves minimal-damage skill cadence',
