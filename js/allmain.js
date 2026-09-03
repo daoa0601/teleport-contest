@@ -160,7 +160,7 @@ import {
     resumeDeferredMonsterContact, resumeDeferredMonsterCounterattack,
     resumeDeferredMonsterCounterWield,
     resumeDeferredMonsterTrap,
-    resumeDeferredMonsterBearTrap, resumeDeferredMonsterHideUnder,
+    resumeDeferredMonsterHideUnder,
     resumeDeferredMonsterRustTrap,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
     finishDeferredMonsterRollingBoulderPlacement,
@@ -2462,12 +2462,6 @@ function reluctantPetMessage(monster, movement) {
     } ${objectName}.`;
 }
 
-function monsterBearTrapMessage(monster) {
-    if (monster?.mnum === 100)
-        return 'The saddled pony is caught in a bear trap!';
-    return 'The monster is caught in a bear trap!';
-}
-
 function monsterTrapEscapeMessage(monster) {
     if (monster?.mnum === 100)
         return 'The saddled pony pulls free of the bear trap.';
@@ -4213,13 +4207,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             await queueTurnMessage(
                 `Suddenly, the ${quietMonsterName(monster)} ${fall}.`,
             );
-        }
-        if (movement?.trap?.kind === 'bear-trap' && monsterIsSeen) {
-            await queueTurnMessage(monsterBearTrapMessage(monster));
-            if (movement.trap.deferredDamage) {
-                resumeDeferredMonsterBearTrap(action, game);
-                movement = action.movement;
-            }
         }
         if (movement?.trap?.kind === 'web-trap' && monsterIsSeen) {
             await presentMonsterWebTrap({

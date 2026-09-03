@@ -7,8 +7,7 @@ import {
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
-    resumeDeferredMonsterBearTrap, resumeDeferredMonsterTrap,
-    triggerImmediateMonsterTrap,
+    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { IRON_SHOES, ORCISH_HELM } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -76,18 +75,48 @@ test('a fixed teleport trap sends a monster to its free destination', () => {
     assert.deepEqual(monster.mtrack, []);
 });
 
-test('a visible bear trap catches and hurts a pony', () => {
+test('a visible bear trap catches and hurts a pony', async () => {
     const { monster, trap } = monsterAtTrap(BEAR_TRAP, {
         monster: { mnum: 100, hitPoints: 20 },
     });
     initRng(5n);
 
     const action = triggerImmediateMonsterTrap(monster, game);
-    resumeDeferredMonsterBearTrap(action, game);
+    await resumeDeferredMonsterTrap(action, game);
 
     assert.equal(monster.mtrapped, 1);
     assert.ok(monster.mhp < 20);
     assert.equal(trap.tseen, true);
+});
+
+test('a bear trap removes a monster it kills', async () => {
+    const { monster } = monsterAtTrap(BEAR_TRAP, {
+        monster: { mnum: 100, hitPoints: 1 },
+    });
+
+    const action = triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, {
+        rollDice: () => 8,
+        publish: async () => {},
+    });
+
+    assert.equal(game.level.monsters.includes(monster), false);
+});
+
+test('iron shoes protect a caught monster from a bear trap', async () => {
+    const shoes = knownObject(IRON_SHOES, {
+        owornmask: W_ARMF, where: 'monster',
+    });
+    const { monster } = monsterAtTrap(BEAR_TRAP, {
+        monster: { mnum: 100, hitPoints: 20, inventory: [shoes] },
+    });
+
+    const action = triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, {
+        publish: async () => {},
+    });
+
+    assert.equal(monster.mhp, 20);
 });
 
 test('rust-trap water rusts an iron helmet worn by a monster', () => {

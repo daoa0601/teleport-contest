@@ -229,6 +229,10 @@ export function monsterIsWhirly(monster) {
         || MONSTER_SYMBOL[monster?.mnum] === S_VORTEX;
 }
 
+export function monsterIsUnsolid(monster) {
+    return !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_UNSOLID);
+}
+
 export function monsterSlipsArmor(mnum) {
     const monster = { mnum };
     return monsterIsWhirly(monster)

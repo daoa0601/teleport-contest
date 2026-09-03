@@ -28,6 +28,9 @@ import {
     applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap,
 } from './anti_magic_trap.js';
 import {
+    beginMonsterBearTrap, finishMonsterBearTrap,
+} from './bear_trap.js';
+import {
     beginMonsterFireTrap, finishMonsterFireTrap,
 } from './fire_trap.js';
 import {
@@ -4690,14 +4693,7 @@ function triggerMonsterTrap(
         if (!event.finished) movement.deferredAfterMonsterTrap = true;
         return event;
     }
-    if (trap.ttyp !== BEAR_TRAP) return null;
-    // MZ_SMALL and smaller pass through a bear trap.  The starting pony is
-    // MZ_LARGE and has none of the airborne/amorphous exceptions.
-    if ((MONSTER_SIZE[monster.mnum] ?? 0) <= 1) return null;
-
-    // mintrap(): a monster which has learned this trap type usually evades a
-    // newly entered trap.  Hero knowledge (trap.tseen) is deliberately a
-    // different state bit and is consulted earlier by dog_move().
+    if (trap.ttyp !== BEAR_TRAP || monsterInAir(monster, state)) return null;
     if (monsterKnowsTrap(monster, trap)
         && recordRandom(random, calls, 4) !== 0) {
         const event = { kind: 'known-trap-avoided', trap, damage: 0 };
@@ -4706,27 +4702,9 @@ function triggerMonsterTrap(
     }
     monsterLearnsTrap(monster, trap);
     monstersSeeTrap(state, trap);
-
-    monster.mtrapped = 1;
-    const inSight = !state?.viz_array
-        || !!(state.viz_array?.[monster.my]?.[monster.mx] & 0x2);
-    if (inSight) {
-        // trap.c sets mtrapped before the visible caught pline, but rolls
-        // damage only after that call returns.  A pending reluctance message
-        // can suspend tty inside the pline, so preserve that exact boundary.
-        const event = {
-            kind: 'bear-trap', trap, damage: 0, killed: false,
-            deferredDamage: true,
-        };
-        movement.trap = event;
-        movement.deferredAfterBearTrapMessage = true;
-        return event;
-    }
-    const damage = rollDice(2, 4);
-    calls.push('d(2,4)');
-    monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
-    const event = { kind: 'bear-trap', trap, damage, killed: monster.mhp <= 0 };
+    const event = beginMonsterBearTrap(monster, trap, state);
     movement.trap = event;
+    if (!event.finished) movement.deferredAfterMonsterTrap = true;
     return event;
 }
 
@@ -7373,8 +7351,7 @@ function completeMovedMonsterAction(
     // dochug(); the latter's second distfleeck and phase-four attacks follow.
     postMoveHideUnder(monster, movement, state, random, calls);
     if (!movement.deferredAfterHideUnder
-        && !movement.deferredAfterMovementSpell
-        && !movement.deferredAfterBearTrapMessage)
+        && !movement.deferredAfterMovementSpell)
         finishDochugAfterMovement(
             monster, movement, state, random, rollOne, rollDice, calls,
         );
@@ -7420,6 +7397,15 @@ export async function resumeDeferredMonsterTrap(
     };
 
     switch (event?.kind) {
+    case 'bear-trap':
+        await finishMonsterBearTrap(action.monster, event, {
+            finishDeath,
+            publish,
+            random,
+            rollDice,
+            describeMonster,
+        });
+        break;
     case 'projectile-trap':
     case 'spent-projectile-trap':
         await finishMonsterProjectileTrap(
@@ -7566,8 +7552,7 @@ export function resumeDeferredMonsterPickup(
         action.monster, movement, state, random, action.calls,
     );
     if (!movement.deferredAfterHideUnder
-        && !movement.deferredAfterMovementSpell
-        && !movement.deferredAfterBearTrapMessage) {
+        && !movement.deferredAfterMovementSpell) {
         finishDochugAfterMovement(
             action.monster, movement, state, random, rollOne, rollDice,
             action.calls,
@@ -7835,8 +7820,7 @@ export function quietMonsterActionRng(
     // dochug(); the latter's second distfleeck and phase-four attacks follow.
     postMoveHideUnder(monster, movement, state, random, calls);
     if (!movement.deferredAfterHideUnder
-        && !movement.deferredAfterMovementSpell
-        && !movement.deferredAfterBearTrapMessage)
+        && !movement.deferredAfterMovementSpell)
         finishDochugAfterMovement(
             monster, movement, state, random, rollOne, rollDice, calls,
         );
@@ -8039,33 +8023,6 @@ export function finishDeferredMonsterStrikingWandHit(
     offensive.fatal = state.u.uhp < 1;
     offensive.identifiesType = !offensive.fatal;
     return offensive;
-}
-
-// Resume visible bear-trap handling after its caught message has crossed tty.
-// Source sets mtrapped before pline(), then seetrap(), damage, and dochug's
-// trailing distfleeck() occur only after the acknowledgement returns.
-export function resumeDeferredMonsterBearTrap(
-    action, state, random = rn2, rollDice = d, rollOne = rnd,
-) {
-    const movement = action?.movement;
-    const event = movement?.trap;
-    if (!movement?.deferredAfterBearTrapMessage
-        || event?.kind !== 'bear-trap' || !event.deferredDamage) return action;
-    delete movement.deferredAfterBearTrapMessage;
-    event.deferredDamage = false;
-    event.trap.tseen = true;
-    const damage = rollDice(2, 4);
-    action.calls.push('d(2,4)');
-    action.monster.mhp = Math.max(0, (action.monster.mhp ?? 1) - damage);
-    event.damage = damage;
-    event.killed = action.monster.mhp <= 0;
-    if (!movement.immediateTrap) {
-        finishDochugAfterMovement(
-            action.monster, movement, state, random, rollOne, rollDice,
-            action.calls,
-        );
-    }
-    return action;
 }
 
 // Resume a visible rolling boulder after tty has installed its hit/miss and
