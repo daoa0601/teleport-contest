@@ -103,7 +103,7 @@ import {
 } from './object_data.js';
 import { place_object, stack_object } from './floor_object.js';
 import {
-    makemonNear, summonNastyMonsters,
+    makemonNear, mksobj, summonNastyMonsters,
 } from './mklev.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
