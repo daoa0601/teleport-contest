@@ -10532,10 +10532,6 @@ async function dothrow(
         return;
     }
 
-    // Non-arrow survivors retain throwit()->drop_throw()->breaktest()
-    // ownership.  Arrow iterations consume this inside resolveArrowShot().
-    if (item.otyp !== CARROT) rn2(100);
-
     if (thrownObjectClass === 2
         && blocksMove(game.u.ux + dx, game.u.uy + dy)) {
         // A blocked weapon-class projectile lands at gb.bhitpos, which is
@@ -10554,17 +10550,16 @@ async function dothrow(
                 where: 'free',
             };
         } else {
-            const index = game.inventory.indexOf(item);
-            if (index >= 0) game.inventory.splice(index, 1);
-            if (game.uwep === item) game.uwep = null;
-            if (game.uswapwep === item) game.uswapwep = null;
-            if (game.uquiver === item) game.uquiver = null;
+            thrown = detachThrownUnit(game, item, 1);
         }
         thrown.how_lost = LOST_THROWN;
-        place_object(thrown, game.u.ux, game.u.uy);
-        stack_object(thrown);
-        newsym(game.u.ux, game.u.uy);
-        game._pending_message = '';
+        await finishHeroThrownObjectLanding({
+            state: game,
+            object: thrown,
+            x: game.u.ux,
+            y: game.u.uy,
+            publish: plineWithContinuation,
+        });
         game.context.move = 1;
         return;
     }
@@ -10581,26 +10576,23 @@ async function dothrow(
                 quan: 1,
             };
         } else {
-            const index = game.inventory.indexOf(item);
-            if (index >= 0) game.inventory.splice(index, 1);
-            if (game.uquiver === item) setQuiverObject(null, game);
+            thrown = detachThrownUnit(game, item, 1);
         }
+        thrown.where = 'free';
+        thrown.how_lost = LOST_THROWN;
         let x = game.u.ux, y = game.u.uy;
         const nx = x + DIR_DX[direction], ny = y + DIR_DY[direction];
         if (!blocksMove(nx, ny)) {
             x = nx;
             y = ny;
         }
-        thrown.ox = x;
-        thrown.oy = y;
-        thrown.where = 'floor';
-        game._fobjSerial = (game._fobjSerial || 0) + 1;
-        thrown._fobjOrder = game._fobjSerial;
-        if (!game.level.objects[x]) game.level.objects[x] = [];
-        if (!game.level.objects[x][y]) game.level.objects[x][y] = [];
-        game.level.objects[x][y].unshift(thrown);
-        newsym(x, y);
-        game._pending_message = '';
+        await finishHeroThrownObjectLanding({
+            state: game,
+            object: thrown,
+            x,
+            y,
+            publish: plineWithContinuation,
+        });
         game.context.move = 1;
         return;
     }

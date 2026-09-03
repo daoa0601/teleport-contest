@@ -8,7 +8,7 @@ import {
     deliverMigratingObjects, shipObject,
 } from '../js/object_migration.js';
 import {
-    ARROW, CHAIN_MAIL, CLUB, MIRROR, ROCK,
+    APPLE, ARROW, CHAIN_MAIL, CLUB, MIRROR, ROCK,
 } from '../js/object_data.js';
 import { throwInventoryObject } from './support/commands.js';
 import {
@@ -66,57 +66,37 @@ test('an object always falls down a ladder and arrives on the linked level',
         assert.equal(floorObjects(destination).includes(club), true);
     });
 
-test('armor thrown onto a down ladder leaves the source level', async () => {
-    const source = sourceLevel({ ladder: true });
-    game.stairs.sx = 11;
-    const mail = carriedObject(CHAIN_MAIL, {
-        invlet: 'a',
-        name: 'chain mail',
-    });
-    game.inventory = [mail];
-
-    await throwInventoryObject(mail, 'l');
-
-    assert.equal(floorObjects(source).includes(mail), false);
-    assert.equal(mail.where, 'migrating');
-    assert.deepEqual(mail.migration.destination, {
-        dnum: 0,
-        dlevel: 2,
-    });
-});
-
-test('an arrow landing on a down ladder leaves the source level', async () => {
-    const source = sourceLevel({ ladder: true });
-    game.stairs.sx = 11;
-    source.at(12, 10).typ = STONE;
-    const arrow = carriedObject(ARROW, {
-        invlet: 'a',
-        name: 'arrow',
-    });
-    game.inventory = [arrow];
-
-    await throwInventoryObject(arrow, 'l', [' ']);
-
-    assert.equal(floorObjects(source).includes(arrow), false);
-    assert.equal(arrow.where, 'migrating');
-});
-
-test('a thrown rock landing on a down ladder leaves the source level',
-    async () => {
+test('hero-thrown objects can fall down a ladder', async () => {
+    const specimens = [
+        { type: CHAIN_MAIL, name: 'chain mail' },
+        { type: ARROW, name: 'arrow', answers: [' '] },
+        { type: ROCK, name: 'rock' },
+        { type: APPLE, name: 'apple' },
+    ];
+    for (const specimen of specimens) {
         const source = sourceLevel({ ladder: true });
         game.stairs.sx = 11;
         source.at(12, 10).typ = STONE;
-        const rock = carriedObject(ROCK, {
+        const object = carriedObject(specimen.type, {
             invlet: 'a',
-            name: 'rock',
+            name: specimen.name,
         });
-        game.inventory = [rock];
+        game.inventory = [object];
 
-        await throwInventoryObject(rock, 'l');
+        await throwInventoryObject(object, 'l', specimen.answers);
 
-        assert.equal(floorObjects(source).includes(rock), false);
-        assert.equal(rock.where, 'migrating');
-    });
+        assert.equal(
+            floorObjects(source).includes(object),
+            false,
+            `${specimen.name} remained on the source level`,
+        );
+        assert.equal(object.where, 'migrating');
+        assert.deepEqual(object.migration.destination, {
+            dnum: 0,
+            dlevel: 2,
+        });
+    }
+});
 
 test('an object falling through a hole lands inside the lower arrival region',
     async () => {
