@@ -7,9 +7,10 @@ import { game } from '../js/gstate.js';
 import {
     deliverMigratingObjects, shipObject,
 } from '../js/object_migration.js';
-import { CLUB, MIRROR, ROCK } from '../js/object_data.js';
+import { CHAIN_MAIL, CLUB, MIRROR, ROCK } from '../js/object_data.js';
+import { throwInventoryObject } from './support/commands.js';
 import {
-    floorObject, looseObject,
+    carriedObject, floorObject, looseObject,
 } from './support/game-objects.js';
 import { addTrap, floorObjects } from './support/level-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
@@ -62,6 +63,25 @@ test('an object always falls down a ladder and arrives on the linked level',
         assert.equal(shipped, true);
         assert.equal(floorObjects(destination).includes(club), true);
     });
+
+test('armor thrown onto a down ladder leaves the source level', async () => {
+    const source = sourceLevel({ ladder: true });
+    game.stairs.sx = 11;
+    const mail = carriedObject(CHAIN_MAIL, {
+        invlet: 'a',
+        name: 'chain mail',
+    });
+    game.inventory = [mail];
+
+    await throwInventoryObject(mail, 'l');
+
+    assert.equal(floorObjects(source).includes(mail), false);
+    assert.equal(mail.where, 'migrating');
+    assert.deepEqual(mail.migration.destination, {
+        dnum: 0,
+        dlevel: 2,
+    });
+});
 
 test('an object falling through a hole lands inside the lower arrival region',
     async () => {

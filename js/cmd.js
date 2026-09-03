@@ -152,7 +152,10 @@ import {
     setQuiverObject,
 } from './quiver.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
-import { captureThrownObjectFlight } from './thrown_object.js';
+import {
+    captureThrownObjectFlight, detachThrownUnit,
+    finishHeroThrownObjectLanding,
+} from './thrown_object.js';
 import {
     applyProjectileObjectPassive as applySharedProjectileObjectPassive,
     destroyMulchedProjectile, shouldMulchMissile,
@@ -9489,6 +9492,7 @@ async function dothrow(
     }
     let splitObjectId = null;
     if (!game.u?.uswallow && thrownObjectClass !== 8
+        && thrownObjectClass !== 3
         && !launchedArrow && !handThrownArrow
         && !matchingSlingGem
         && selectedQuantity > 1) {
@@ -9611,11 +9615,9 @@ async function dothrow(
 
     if (thrownObjectClass === 3) {
         const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
-        const itemIndex = game.inventory.indexOf(item);
-        if (itemIndex >= 0) game.inventory.splice(itemIndex, 1);
-        if (game.uwep === item) game.uwep = null;
-        if (game.uswapwep === item) game.uswapwep = null;
-        if (game.uquiver === item) game.uquiver = null;
+        const thrown = detachThrownUnit(
+            game, item, selectedQuantity, splitObjectId,
+        );
 
         const x = game.u.ux + dx, y = game.u.uy + dy;
         const monster = game.level?.monsters?.find(candidate =>
@@ -9626,23 +9628,20 @@ async function dothrow(
             // handling.  Armor reaches the generic miss branch, then tmiss()
             // owns its one-in-three wakeup check.
             rnd(20);
-            const objectName = OBJECT_NAMES[item.otyp] || item.name || 'object';
+            const objectName = OBJECT_NAMES[thrown.otyp]
+                || thrown.name || 'object';
             const monsterName = MONSTER_NAME[monster.mnum] || 'monster';
             await pline(`The ${objectName} misses the ${monsterName}.`);
             rn2(3);
         }
 
-        // drop_throw()->breaktest()->obj_resists() precedes floor placement
-        // even for non-breakable armor.
-        rn2(100);
-        if (!game.level.objects[x]) game.level.objects[x] = [];
-        if (!game.level.objects[x][y]) game.level.objects[x][y] = [];
-        item.ox = x;
-        item.oy = y;
-        game.level.objects[x][y].unshift(item);
-        game._fobjSerial = (game._fobjSerial || 0) + 1;
-        item._fobjOrder = game._fobjSerial;
-        newsym(x, y);
+        await finishHeroThrownObjectLanding({
+            state: game,
+            object: thrown,
+            x,
+            y,
+            publish: plineWithContinuation,
+        });
 
         const currentCapacity = nearCapacity(game);
         const capacityMessage = encumbranceMessage(
