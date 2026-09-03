@@ -27,6 +27,7 @@ import {
     monsterDeathCount, recordMonsterDeath,
 } from './monster_vitals.js';
 import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
+import { returnDeadKop } from './monster_return.js';
 import { restoreMonsterTrueSpecies } from './monster_species.js';
 import {
     createMonsterRemains, levelAllowsMonsterDeathDrops,
@@ -189,6 +190,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
     createSteamVortexDeathCloud(monster);
     restoreMonsterTrueSpecies(monster);
     recordMonsterDeath(monster);
+    await returnDeadKop(monster);
 
     if (wasInside) {
         game.u.ustuck = null;

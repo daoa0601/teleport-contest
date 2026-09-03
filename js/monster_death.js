@@ -23,6 +23,7 @@ import {
 } from './monster_data.js';
 import { recordMonsterDeath } from './monster_vitals.js';
 import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
+import { returnDeadKop } from './monster_return.js';
 import { restoreMonsterTrueSpecies } from './monster_species.js';
 import {
     createPhysicalMonsterExplosion, monsterHasDeathExplosion,
@@ -341,19 +342,20 @@ function releaseDeadMonsterInventory(monster, state) {
     monster.mw = null;
 }
 
-function detachDeadMonster(monster, state, random) {
+async function detachDeadMonster(monster, state, random) {
     const x = monster.mx;
     const y = monster.my;
-    releaseDeadMonsterInventory(monster, state);
     createSteamVortexDeathCloud(monster, state, random);
     restoreMonsterTrueSpecies(monster);
     monster.mhp = 0;
-    monster.dead = true;
+    recordMonsterDeath(monster, state);
     markQuestLeaderDead(monster, state);
+    await returnDeadKop(monster, state, random);
+    releaseDeadMonsterInventory(monster, state);
+    monster.dead = true;
     if (state === game) unmap_invisible(x, y, false);
     state.level.monsters = state.level.monsters.filter(candidate =>
         candidate !== monster);
-    recordMonsterDeath(monster, state);
 }
 
 export async function finishMonsterLiquidDeath(
@@ -367,7 +369,7 @@ export async function finishMonsterLiquidDeath(
 ) {
     const x = monster.mx;
     const y = monster.my;
-    detachDeadMonster(monster, state, random);
+    await detachDeadMonster(monster, state, random);
     const death = leaveCorpse
         ? ordinaryMonsterDeathResult(monster, state, random, rollDice)
         : {
@@ -434,7 +436,7 @@ export async function finishEnvironmentalMonsterDeath(
 
     const x = monster.mx;
     const y = monster.my;
-    detachDeadMonster(monster, state, random);
+    await detachDeadMonster(monster, state, random);
     const death = noCorpse
         ? {
             crumbleMessage: null,

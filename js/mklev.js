@@ -4,9 +4,6 @@
 // Level construction uses the game's main random-number stream.
 
 import { game } from './gstate.js';
-import { recordMonsterDeath } from './monster_vitals.js';
-import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
-import { restoreMonsterTrueSpecies } from './monster_species.js';
 import { exerciseAttribute } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import {
@@ -25,7 +22,6 @@ import {
 } from './buried_object.js';
 import { GameMap } from './game.js';
 import { restoreBonesMonsters } from './bones_monster.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
 import {
     prepareBonesObjectForRestore, prepareBonesObjectForSave,
 } from './bones_object.js';
@@ -3283,86 +3279,6 @@ function unearthObjectsAt(x, y, state = game) {
     return unearthed;
 }
 
-function releaseMeltMonsterInventory(monster, state = game) {
-    const x = monster.mx, y = monster.my;
-    const carried = monster.minvent?.length
-        ? monster.minvent : monster.inventory || monster.minvent || [];
-    const released = [];
-    for (const object of carried) {
-        object.owornmask = 0;
-        object.worn = false;
-        object.wornSlot = null;
-        object.wielded = false;
-        object.alternate = false;
-        object.ready = false;
-        place_object(object, x, y);
-        stack_object(object, state);
-        released.push(object);
-    }
-    monster.minvent = [];
-    monster.inventory = monster.minvent;
-    monster.hasInventory = false;
-    monster.mw = null;
-    monster.misc_worn_check = 0;
-    return released;
-}
-
-function meltLevelSpecificNoCorpse(monster, state = game) {
-    const flags = state.level?.flags || {};
-    if (flags.rogue_level || flags.is_rogue_level
-        || flags.deathdrops === false) return true;
-    const undead = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x2);
-    return !!(flags.graveyard && undead && rn2(3));
-}
-
-function createMeltMonsterCorpse(monster, state = game) {
-    if (meltLevelSpecificNoCorpse(monster, state)) return null;
-    const mnum = monster.mnum;
-    const guaranteed = (((MONSTER_SIZE[mnum] ?? 2) >= 3
-            || mnum === PM_LIZARD) && !monster.mcloned)
-        || (mnum >= PM_ARCHAEOLOGIST && mnum <= PM_WIZARD)
-        || (mnum >= PM_DEATH && mnum <= PM_FAMINE);
-    const frequency = (MONSTER_GENO[mnum] ?? 0) & 0x7;
-    const range = 2 + Number(frequency < 2)
-        + Number((MONSTER_SIZE[mnum] ?? 2) === 0);
-    if (!guaranteed && rn2(range) !== 0) return null;
-    if ((MONSTER_GENO[mnum] ?? 0) & G_NOCORPSE) return null;
-
-    let flags = CORPSTAT_INIT;
-    if (monster.female) flags |= CORPSTAT_FEMALE;
-    else if (!((MONSTER_FLAGS2[mnum] ?? 0) & M2_NEUTER))
-        flags |= CORPSTAT_MALE;
-    const corpse = mkcorpstat(CORPSE, null, mnum,
-        monster.mx, monster.my, flags);
-    corpse.name = `${MONSTER_NAME[mnum] || 'monster'} corpse`;
-    if (monster.name) corpse.oname = monster.name;
-    return stack_object(corpse, state);
-}
-
-export function killMonsterOnMeltingIce(
-    monster, { state = game } = {},
-) {
-    monster.mhp = 0;
-    createSteamVortexDeathCloud(monster, state);
-    restoreMonsterTrueSpecies(monster);
-    recordMonsterDeath(monster, state);
-    monster.dead = true;
-    monster.mundetected = 0;
-    state.level.monsters = state.level.monsters.filter(candidate =>
-        candidate !== monster);
-    const appearanceReveal = revealMonsterAppearance(monster, {
-        includeMonsterDisguise: false,
-    });
-    newsym(monster.mx, monster.my);
-    const releasedInventory = releaseMeltMonsterInventory(monster, state);
-    const corpse = createMeltMonsterCorpse(monster, state);
-    return {
-        kind: 'melt-ice-occupant-death', monster,
-        releasedInventory, appearanceReveal,
-        corpse, corpseCreated: !!corpse,
-    };
-}
-
 // C ref: hack.c:disturb_buried_zombies().  wake_nearto() shortens each
 // adjacent ZOMBIFY_MON timer to two thirds of its remaining duration, then
 // restarts it in the shared queue with a fresh insertion id.
@@ -3426,8 +3342,11 @@ function finishMeltIceBoulderOutcome(event, outcome, state = game) {
     return outcome;
 }
 
-export function finishMeltIceBoulderLifeSaving(
-    event, outcome, resolution, state = game,
+export async function finishMeltIceBoulderLifeSaving(
+    event, outcome, resolution, {
+        state = game,
+        finishMonsterDeath,
+    } = {},
 ) {
     const pending = outcome?.pendingOccupantLifeSaving;
     if (!pending || pending.monster !== resolution?.monster
@@ -3443,8 +3362,13 @@ export function finishMeltIceBoulderLifeSaving(
     outcome.occupantLifeSaving = resolution;
     event.occupantLifeSaving = resolution;
     if (!resolution.survived) {
-        const occupantDeath = killMonsterOnMeltingIce(pending.monster, {
-            state,
+        if (typeof finishMonsterDeath !== 'function') {
+            throw new TypeError(
+                'melting ice requires a monster death handler',
+            );
+        }
+        const occupantDeath = await finishMonsterDeath(pending.monster, {
+            state, leaveCorpse: true,
         });
         outcome.occupantDeath = occupantDeath;
         event.occupantDeath = occupantDeath;
@@ -3457,7 +3381,12 @@ export function finishMeltIceBoulderLifeSaving(
 // returned.  Melted ICE can only expose ordinary POOL/MOAT here, so the
 // native fill rule is rn2(10) != 0; a zero sinks this boulder and leaves the
 // next boulder for another iteration.
-export function runNextMeltIceBoulder(event, state = game) {
+export async function runNextMeltIceBoulder(
+    event, {
+        state = game,
+        finishMonsterDeath,
+    } = {},
+) {
     if (event?.kind !== LEVEL_TIMER_KIND.MELT_ICE_AWAY
         || event.boulderComplete) return null;
     if (event.pendingBoulderOutcome) return event.pendingBoulderOutcome;
@@ -3499,7 +3428,14 @@ export function runNextMeltIceBoulder(event, state = game) {
                         ?? 0) & G_GENOD),
                 };
             } else {
-                occupantDeath = killMonsterOnMeltingIce(occupant, { state });
+                if (typeof finishMonsterDeath !== 'function') {
+                    throw new TypeError(
+                        'melting ice requires a monster death handler',
+                    );
+                }
+                occupantDeath = await finishMonsterDeath(occupant, {
+                    state, leaveCorpse: true,
+                });
                 event.occupantDeath = occupantDeath;
             }
         }

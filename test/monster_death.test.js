@@ -95,6 +95,24 @@ test('a dead steam vortex leaves a harmless steam cloud', async () => {
         cell.x === 11 && cell.y === 10), true);
 });
 
+test('a dead Kop can return elsewhere on the level', async () => {
+    const level = freshObjectRoom({ gameplaySeed: 3n });
+    const kop = addMonster({
+        species: 'Keystone Kop', x: 11, y: 10, hitPoints: 1,
+    });
+
+    await finishEnvironmentalMonsterDeath(kop, game, {
+        visible: false,
+        publish: async () => {},
+    });
+
+    const returnedKop = level.monsters.find(monster =>
+        monster.mnum === kop.mnum);
+    assert.notEqual(returnedKop, undefined);
+    assert.notEqual(returnedKop, kop);
+    assert.ok(returnedKop.mhp > 0);
+});
+
 test('killing a pit-trapped monster with a boulder buries its corpse',
     async () => {
         const level = freshObjectRoom({ gameplaySeed: 28n });

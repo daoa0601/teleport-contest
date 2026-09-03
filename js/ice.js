@@ -8,8 +8,9 @@ import { game } from './gstate.js';
 import { heroLiquidEffects } from './hack.js';
 import {
     disturbBuriedZombieTimers, finishMeltIceBoulderLifeSaving,
-    killMonsterOnMeltingIce, meltIceAt, runNextMeltIceBoulder,
+    meltIceAt, runNextMeltIceBoulder,
 } from './mklev.js';
+import { finishMonsterLiquidDeath } from './monster_death.js';
 import { lifeSaveMonster } from './mondeath.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { LEVEL_TIMER_KIND } from './object_timers.js';
@@ -70,7 +71,10 @@ export async function finishMeltIce(event, options = {}) {
         if (settles) await announce(settles);
     }
     while (event.pendingBoulder || event.pendingBoulderOutcome) {
-        const outcome = runNextMeltIceBoulder(event, game);
+        const outcome = await runNextMeltIceBoulder(event, {
+            state: game,
+            finishMonsterDeath: finishMonsterLiquidDeath,
+        });
         if (!outcome) break;
         if (outcome.pendingOccupantLifeSaving) {
             const monster = outcome.pendingOccupantLifeSaving.monster;
@@ -88,8 +92,11 @@ export async function finishMeltIce(event, options = {}) {
                 monster, outcome.pendingOccupantLifeSaving.amulet,
                 presentation,
             );
-            finishMeltIceBoulderLifeSaving(
-                event, outcome, resolution, game,
+            await finishMeltIceBoulderLifeSaving(
+                event, outcome, resolution, {
+                    state: game,
+                    finishMonsterDeath: finishMonsterLiquidDeath,
+                },
             );
         }
         if (outcome.fillsUp) repaint(event.x, event.y);
@@ -113,7 +120,7 @@ export async function finishMeltIce(event, options = {}) {
     } else {
         const result = await resolveMonsterLiquid(event.occupant, game, {
             announce,
-            finishDeath: killMonsterOnMeltingIce,
+            finishDeath: finishMonsterLiquidDeath,
             monsterMoving: event.monsterMoving,
             saveMonster,
         });
