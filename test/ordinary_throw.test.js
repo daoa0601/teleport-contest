@@ -34,12 +34,16 @@ async function fireBowAtJackal({
     seed = 1n,
     heroLevel = 1,
     dexterity = 10,
+    strength = 10,
+    damageBonus = 0,
     targetArmorClass = 10,
 } = {}) {
     freshObjectRoom({ right: 20, role, gameplaySeed: 4900n });
     game.urace = races.find(candidate => candidate.name === race);
     game.u.ulevel = heroLevel;
     game.u.acurr.a[A_DEX] = dexterity;
+    game.u.acurr.a[A_STR] = strength;
+    game.u.udaminc = damageBonus;
     installHeroWeaponSkills({ [P_BOW]: P_BASIC });
     const bow = addInventoryWeapon(bowType, {
         invlet: 'a', owornmask: W_WEP, wielded: true,
@@ -124,28 +128,6 @@ test('a crossbow sends its bolt eight squares regardless of Strength', async () 
     assert.deepEqual([bolt.ox, bolt.oy], [18, 10]);
 });
 
-test('a fired crossbow bolt gets ring damage but not Strength damage', async () => {
-    freshObjectRoom({ right: 20, gameplaySeed: 4105n });
-    game.u.ulevel = 20;
-    game.u.acurr.a[A_DEX] = 18;
-    game.u.acurr.a[A_STR] = 3;
-    game.u.udaminc = 3;
-    installHeroWeaponSkills({ [P_CROSSBOW]: P_BASIC });
-    const crossbow = addInventoryWeapon(CROSSBOW, {
-        invlet: 'a', owornmask: W_WEP, wielded: true,
-    });
-    const bolt = addInventoryWeapon(CROSSBOW_BOLT, { invlet: 'b' });
-    game.uwep = game.u.uwep = crossbow;
-    const jackal = addMonster({
-        species: 'jackal', x: 11, y: 10,
-        hitPoints: 20, mac: 10, mcanmove: 0,
-    });
-
-    await throwInventoryObject(bolt, 'l', Array(4).fill(' '));
-
-    assert.equal(jackal.mhp, 15);
-});
-
 test('a skilled Ranger can fire several crossbow bolts in one turn', async () => {
     const level = freshObjectRoom({
         right: 22,
@@ -173,27 +155,20 @@ test('a skilled Ranger can fire several crossbow bolts in one turn', async () =>
     ), 3);
 });
 
-test('a fired arrow gets ring damage but not Strength damage', async () => {
-    freshObjectRoom({ right: 20, gameplaySeed: 4107n });
-    game.u.ulevel = 20;
-    game.u.acurr.a[A_DEX] = 18;
-    game.u.acurr.a[A_STR] = 3;
-    game.u.udaminc = 3;
-    installHeroWeaponSkills({ [P_BOW]: P_BASIC });
-    const bow = addInventoryWeapon(BOW, {
-        invlet: 'a', owornmask: W_WEP, wielded: true,
+test('a launcher uses ring damage but not Strength damage', async () => {
+    const shot = overrides => fireBowAtJackal({
+        heroLevel: 20,
+        dexterity: 18,
+        seed: 1n,
+        ...overrides,
     });
-    const arrow = addInventoryWeapon(ARROW, { invlet: 'b' });
-    game.uwep = game.u.uwep = bow;
-    const jackal = addMonster({
-        species: 'jackal', x: 11, y: 10,
-        hitPoints: 20, mac: 10, mcanmove: 0,
-    });
-    initRng(1n);
 
-    await throwInventoryObject(arrow, 'l', Array(4).fill(' '));
+    const baseDamage = await shot({ strength: 3 });
+    const ringDamage = await shot({ strength: 3, damageBonus: 3 });
+    const strongDamage = await shot({ strength: 18 });
 
-    assert.equal(jackal.mhp, 15);
+    assert.equal(ringDamage, baseDamage + 3);
+    assert.equal(strongDamage, baseDamage);
 });
 
 test('an elf is more accurate with an elven bow', async () => {

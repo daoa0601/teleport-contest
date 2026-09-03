@@ -1,14 +1,12 @@
-// swallowed_throw.js — Generic non-consuming projectile contact while engulfed.
+// Thrown-object contact while the hero is engulfed.
 // C refs: dothrow.c throw_obj(), throwit(), thitmonst(), swallowit();
 // steal.c mpickobj().
 
-import { A_DEX, W_SADDLE } from './const.js';
-import { exerciseAttribute } from './attrib.js';
-import { applyArtifactHitToMonster } from './artifact_hit.js';
+import { W_SADDLE } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { endObjectBurn } from './light.js';
-import { resolveHeroWeaponPoison } from './hero_weapon_poison.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
     BOULDER, BRASS_LANTERN, MAGIC_LAMP, OBJECT_NAMES, OBJECT_SUBTYPE,
@@ -20,22 +18,14 @@ import {
 } from './monster_data.js';
 import { AT_ENGL } from './monster_attack_types.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
-import { rnd } from './rng.js';
-import { applyMonsterPassiveToObject } from './monster_passive.js';
 import {
-    destroyMulchedProjectile, projectileKind, shouldMulchMissile,
-} from './projectile.js';
+    isThrowingWeapon, launcherMatchesAmmo,
+} from './object_properties.js';
+import { rnd } from './rng.js';
 import {
     hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { heroIsBlind } from './senses.js';
-import {
-    recordWeaponPractice, weaponSkillDamageBonus,
-} from './skills.js';
-import {
-    heroStrengthDamageBonus, maximumPhysicalWeaponDamage,
-    rollPhysicalWeaponDamage,
-} from './weapon_damage.js';
 import { detachThrownUnit } from './thrown_object.js';
 import {
     applyLowStaminaThrow, applyThrowSlip, thrownObjectName,
@@ -45,10 +35,6 @@ const PM_AIR_ELEMENTAL = 154;
 const POTION_CLASS = 8;
 const TIMED_LAMP_TYPES = new Set([BRASS_LANTERN, OIL_LAMP]);
 const LAMP_TYPES = new Set([...TIMED_LAMP_TYPES, MAGIC_LAMP]);
-const THROWING_WEAPON_NAMES = new Set([
-    'dagger', 'elven dagger', 'orcish dagger', 'silver dagger', 'athame',
-    'knife', 'crysknife', 'war hammer', 'aklys',
-]);
 
 const EQUIPMENT_SLOTS = [
     'uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmu', 'uarmc', 'uarmh',
@@ -57,28 +43,6 @@ const EQUIPMENT_SLOTS = [
 
 function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
-}
-
-function swallowedMonsterName(monster) {
-    return monster.name
-        || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
-}
-
-async function reportPoisonResult(poison, monsterName) {
-    if (poison?.resisted) {
-        await plineWithContinuation(
-            `The poison doesn't seem to affect ${monsterName}.`,
-        );
-    }
-    if (poison?.deadly)
-        await plineWithContinuation('The poison was deadly...');
-}
-
-async function reportWornOffPoison(objectName) {
-    if (!objectName) return;
-    await plineWithContinuation(
-        `Your ${objectName} is no longer poisoned.`,
-    );
 }
 
 function containsUnpaidObject(object) {
@@ -91,13 +55,6 @@ function itemIsEquipped(state, item) {
     return EQUIPMENT_SLOTS.some(slot =>
         state[slot] === item || state.u?.[slot] === item)
         || !!(item.owornmask ?? 0);
-}
-
-function projectileIsEquipped(state, item) {
-    return EQUIPMENT_SLOTS.filter(slot => slot !== 'uquiver').some(slot =>
-        state[slot] === item || state.u?.[slot] === item)
-        || !!((item.owornmask ?? 0) && state.uquiver !== item
-            && state.u?.uquiver !== item);
 }
 
 function activeObjectTimerCount(item) {
@@ -124,81 +81,23 @@ function supportedLitLamp(state, item, engulfer) {
         && timers[0].deadline >= (state.moves ?? 0);
 }
 
-function intendedThrowingWeapon(item) {
-    const skill = Math.abs(OBJECT_SUBTYPE[item.otyp] ?? 0);
-    return skill === 17 || THROWING_WEAPON_NAMES.has(OBJECT_NAMES[item.otyp]);
-}
-
-function swallowedWeaponEligibility(
-    state, item, objectClass,
-) {
+function swallowedWeaponTarget(state, item, objectClass) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer) return null;
     const subtype = OBJECT_SUBTYPE[item.otyp] ?? 0;
     const weaponOrTool = objectClass === 2
         || (objectClass === 6 && subtype !== 0);
-    const skill = Math.abs(subtype);
-    const skillState = state.u?.weaponSkills?.[skill];
 
-    // Missiles use the projectile path below. The remaining exclusions need
-    // ownership or hero-state handling around hmon().
-    if (!weaponOrTool || subtype <= 0
-        || !skillState || !Number.isInteger(skillState.skill)
+    if (!weaponOrTool || subtype === 0
         || item.lamplit || containsUnpaidObject(item)
         || activeObjectTimerCount(item) > 0
+        || OBJECT_NAMES[item.otyp] === 'boomerang'
         || engulfer.mpeaceful || engulfer.mtame || engulfer.pet
         || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade') {
         return null;
     }
-    const baseMaximum = maximumPhysicalWeaponDamage(item, engulfer);
-    if (baseMaximum <= 0) return null;
     if (!Number.isFinite(engulfer.mhp)) return null;
-    return { engulfer, skill };
-}
-
-function swallowedProjectileEligibility(
-    state, item, objectClass, selectedQuantity,
-) {
-    const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
-    const kind = projectileKind(item);
-    if (!engulfer || objectClass !== 2 || !kind
-        || !Number.isInteger(selectedQuantity)
-        || selectedQuantity < 1) return null;
-
-    const subtype = OBJECT_SUBTYPE[item.otyp] ?? 0;
-    const wielded = state.uwep ?? state.u?.uwep ?? null;
-    const launcher = kind === 'ammunition' && wielded
-        && (OBJECT_SUBTYPE[wielded.otyp] ?? 0) === -subtype
-        ? wielded : null;
-    const skill = launcher
-        ? Math.abs(OBJECT_SUBTYPE[launcher.otyp] ?? 0)
-        : kind === 'missile' ? Math.abs(subtype) : null;
-    const skillState = skill == null ? null : state.u?.weaponSkills?.[skill];
-    const itemName = OBJECT_NAMES[item.otyp] ?? '';
-    const launcherName = OBJECT_NAMES[launcher?.otyp] ?? '';
-    const roleDamage = state.urole?.key === 'samurai'
-        && itemName === 'ya' && launcherName === 'yumi'
-        ? 1
-        : state.urace?.key === 'elf'
-            && itemName === 'elven arrow' && launcherName === 'elven bow'
-            ? 1 : 0;
-
-    // This path handles one ordinary weapon or missile. The cases below need
-    // their own swallowed-combat rules and remain with the caller.
-    if ((skill != null && (!skillState
-            || !Number.isInteger(skillState.skill)))
-        || item.oartifact || item.artifact || item.lamplit
-        || containsUnpaidObject(item) || projectileIsEquipped(state, item)
-        || activeObjectTimerCount(item) > 0
-        || itemName === 'boomerang'
-        || engulfer.mpeaceful || engulfer.mtame || engulfer.pet
-        || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade') {
-        return null;
-    }
-    const baseMaximum = kind === 'ammunition' && !launcher
-        ? 2 : maximumPhysicalWeaponDamage(item, engulfer) + roleDamage;
-    if (baseMaximum <= 0 || !Number.isFinite(engulfer.mhp)) return null;
-    return { engulfer, kind, launcher, skill, roleDamage };
+    return engulfer;
 }
 
 function genericSwallowedEligibility(
@@ -254,171 +153,39 @@ function swallowedPotionEligibility(
     return engulfer;
 }
 
-export async function resolveSwallowedProjectileThrow({
-    state = game,
-    item,
-    objectClass,
-    selectedQuantity,
-    splitObjectId,
-    wakeMonster,
-    finishKill,
-}) {
-    const eligible = swallowedProjectileEligibility(
-        state, item, objectClass, selectedQuantity,
-    );
-    if (!eligible) return false;
-    const { engulfer, kind, launcher, skill, roleDamage } = eligible;
-    const thrown = detachThrownUnit(
-        state, item, selectedQuantity, splitObjectId,
-    );
-
-    await applyThrowSlip({
-        state,
-        object: thrown,
-        launcher: !!launcher,
-        throwingWeapon: kind === 'missile',
-    });
-    await applyLowStaminaThrow({ state, object: thrown });
-
-    const dieRoll = rnd(20);
-    const unlaunchedAmmo = kind === 'ammunition' && !launcher;
-    const physicalDamage = unlaunchedAmmo
-        ? rnd(2) : rollPhysicalWeaponDamage(thrown, engulfer) + roleDamage;
-    const trains = launcher ? physicalDamage > 0 : physicalDamage > 1;
-    if (skill != null && trains) recordWeaponPractice(state, skill, 1);
-    const poison = await resolveHeroWeaponPoison(engulfer, thrown, {
-        state,
-        mode: 'thrown',
-        dieRoll,
-        publish: plineWithContinuation,
-    });
-    const damage = Math.max(
-        1,
-        physicalDamage
-            + (state.u?.udaminc ?? state.udaminc ?? 0)
-            + (launcher ? 0
-                : heroStrengthDamageBonus(state))
-            + (skill == null ? 0 : weaponSkillDamageBonus(state, skill))
-            + (poison?.damage ?? 0),
-    );
-    engulfer.mhp -= damage;
-
-    const monsterName = swallowedMonsterName(engulfer);
-    await plineWithContinuation(
-        `The ${thrownObjectName(thrown, state)} hits ${monsterName}${
-            damage > 4 ? '!' : '.'
-        }`,
-    );
-    await reportPoisonResult(poison, monsterName);
-    const wornOffObjectName = poison?.woreOff
-        ? thrownObjectName(thrown, state) : null;
-    if (poison?.deadly || engulfer.mhp <= 0) {
-        // hmon()->xkilled() consumes the killing missile through mpickobj(),
-        // then thitmonst() returns past exercise without mulch or passive_obj.
-        await finishKill(engulfer, thrown);
-        await reportWornOffPoison(wornOffObjectName);
-        exerciseAttribute(A_DEX, true, state);
-        state.context.move = 1;
-        return true;
-    }
-    await reportWornOffPoison(wornOffObjectName);
-    await wakeMonster(engulfer);
-    exerciseAttribute(A_DEX, true, state);
-
-    if (shouldMulchMissile(thrown)) {
-        destroyMulchedProjectile(thrown);
-        state.context.move = 1;
-        return true;
-    }
-    await applyMonsterPassiveToObject(engulfer, thrown);
-    addObjectToMonsterInventory(
-        engulfer, thrown, state, { atFront: true },
-    );
-    state.context.move = 1;
-    return true;
-}
-
 export async function resolveSwallowedWeaponThrow({
     state = game,
     item,
     objectClass,
     selectedQuantity,
     splitObjectId,
-    wakeMonster,
     finishKill,
 }) {
-    const eligible = swallowedWeaponEligibility(
-        state, item, objectClass,
-    );
-    if (!eligible) return false;
-    const { engulfer, skill } = eligible;
+    const engulfer = swallowedWeaponTarget(state, item, objectClass);
+    if (!engulfer) return false;
     const thrown = detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
 
+    const launched = launcherMatchesAmmo(thrown, state.uwep);
     await applyThrowSlip({
         state,
         object: thrown,
-        throwingWeapon: intendedThrowingWeapon(thrown),
+        launcher: launched,
+        throwingWeapon: isThrowingWeapon(thrown),
     });
     await applyLowStaminaThrow({ state, object: thrown });
 
-    const dieRoll = rnd(20);
-    const physicalDamage = rollPhysicalWeaponDamage(thrown, engulfer);
-    if (physicalDamage > 1) recordWeaponPractice(state, skill, 1);
-    const monsterName = swallowedMonsterName(engulfer);
-    const artifactHit = await applyArtifactHitToMonster(
-        thrown, engulfer, physicalDamage, {
-            state,
-            visible: !heroIsBlind(state),
-            describeTarget: () => monsterName,
-            describeCarrier: () => engulfer.name
-                || monsterTypeName(engulfer.mnum, !!engulfer.female),
-            publish: plineWithContinuation,
-            dieRoll,
-        },
-    );
-    const poison = artifactHit.attackStopped ? null
-        : await resolveHeroWeaponPoison(engulfer, thrown, {
-            state,
-            mode: 'thrown',
-            dieRoll,
-            publish: plineWithContinuation,
-        });
-    const damage = artifactHit.attackStopped ? 0 : Math.max(
-        1, artifactHit.damage
-            + (state.u?.udaminc ?? state.udaminc ?? 0)
-            + heroStrengthDamageBonus(state)
-            + weaponSkillDamageBonus(state, skill)
-            + (poison?.damage ?? 0),
-    );
-    engulfer.mhp -= damage;
-
-    if (!artifactHit.specialMessage) {
-        await plineWithContinuation(
-            `The ${thrownObjectName(thrown, state)} hits ${monsterName}${
-                damage > 4 ? '!' : '.'
-            }`,
+    const contact = await hitMonsterWithThrownObject(engulfer, thrown, {
+        state,
+        guaranteedHit: true,
+        finishKillWithObject: finishKill,
+    });
+    if (!contact.consumed) {
+        addObjectToMonsterInventory(
+            engulfer, thrown, state, { atFront: true },
         );
     }
-    await reportPoisonResult(poison, monsterName);
-    const wornOffObjectName = poison?.woreOff
-        ? thrownObjectName(thrown, state) : null;
-    if (poison?.deadly || engulfer.mhp <= 0) {
-        await finishKill(engulfer, thrown);
-        await reportWornOffPoison(wornOffObjectName);
-        exerciseAttribute(A_DEX, true, state);
-        state.context.move = 1;
-        return true;
-    }
-    await reportWornOffPoison(wornOffObjectName);
-    await wakeMonster(engulfer);
-    exerciseAttribute(A_DEX, true, state);
-
-    await applyMonsterPassiveToObject(engulfer, thrown);
-    addObjectToMonsterInventory(
-        engulfer, thrown, state, { atFront: true },
-    );
     state.context.move = 1;
     return true;
 }

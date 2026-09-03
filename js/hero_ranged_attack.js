@@ -34,6 +34,7 @@ import {
 import { applyMonsterPassiveToObject } from './monster_passive.js';
 import { destroyMulchedProjectile, shouldMulchMissile } from './projectile.js';
 import { rnd, rn2 } from './rng.js';
+import { heroIsBlind } from './senses.js';
 import { shopkeeperName } from './shk.js';
 import {
     recordWeaponPractice, weaponSkillDamageBonus, weaponSkillHitBonus,
@@ -104,8 +105,9 @@ function targetName(monster, state) {
     return monster.name || monsterTypeName(monster.mnum, !!monster.female);
 }
 
-function targetObject(monster, state) {
-    if (!canProjectMonster(monster, monster.mx, monster.my)) return '';
+function targetObject(monster, state, known = false) {
+    if (!known && !canProjectMonster(monster, monster.mx, monster.my))
+        return '';
     const name = targetName(monster, state);
     return monster.name || monster.isshk ? name : `the ${name}`;
 }
@@ -185,7 +187,10 @@ function thrownHitThreshold(monster, weapon, state) {
 }
 
 async function rollRangedObjectDamage(
-    monster, weapon, state, dieRoll, mode,
+    monster, weapon, state, dieRoll, mode, {
+        targetKnown = false,
+        targetVisible = null,
+    } = {},
 ) {
     const applied = mode === 'applied';
     const launcher = mode === 'thrown'
@@ -201,8 +206,12 @@ async function rollRangedObjectDamage(
         const artifactHit = await applyArtifactHitToMonster(
             weapon, monster, damage, {
                 state,
-                visible: canProjectMonster(monster, monster.mx, monster.my),
-                describeTarget: () => targetObject(monster, state) || 'it',
+                visible: targetVisible ?? canProjectMonster(
+                    monster, monster.mx, monster.my,
+                ),
+                describeTarget: () => targetObject(
+                    monster, state, targetKnown,
+                ) || 'it',
                 describeCarrier: () => targetName(monster, state),
                 publish: plineWithContinuation,
                 dieRoll,
@@ -300,8 +309,15 @@ function rangedObjectUsesWeaponHit(object) {
         || (objectClass === TOOL_CLASS && skill !== 0);
 }
 
-async function hitMonsterWithRangedObject(monster, object, state, mode) {
+async function hitMonsterWithRangedObject(
+    monster, object, state, mode, {
+        guaranteedHit = false,
+        finishKillWithObject = null,
+    } = {},
+) {
     const applied = mode === 'applied';
+    const targetKnown = guaranteedHit;
+    const targetVisible = guaranteedHit ? !heroIsBlind(state) : null;
     if (applied) await applyCaitiffPenalty(monster, state);
     let threshold;
     if (applied) threshold = appliedHitThreshold(monster, object, state);
@@ -316,9 +332,9 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
     const name = object.opoisoned && isPoisonableObject(object)
         ? `poisoned ${plainName}` : plainName;
 
-    if ((!applied && !rangedObjectUsesWeaponHit(object))
-        || threshold < dieRoll) {
-        const namedTarget = targetObject(monster, state);
+    if (!guaranteedHit && ((!applied && !rangedObjectUsesWeaponHit(object))
+        || threshold < dieRoll)) {
+        const namedTarget = targetObject(monster, state, targetKnown);
         await plineWithContinuation(
             `The ${name} misses${namedTarget ? ` ${namedTarget}` : ''}.`,
         );
@@ -327,13 +343,16 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
     }
 
     if (!applied) await applyCaitiffPenalty(monster, state);
-    exerciseAttribute(A_DEX, true, state);
     const {
         damage, practiceSkill, specialMessage, attackStopped, poison,
     } = await rollRangedObjectDamage(
-        monster, object, state, dieRoll, mode,
+        monster, object, state, dieRoll, mode, {
+            targetKnown,
+            targetVisible,
+        },
     );
     if (attackStopped) {
+        exerciseAttribute(A_DEX, true, state);
         await applyMonsterPassiveToObject(monster, object);
         return { hit: true, consumed: false, result: true };
     }
@@ -344,7 +363,7 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
         recordWeaponPractice(state, practiceSkill, 1);
 
     if (damage === 0) {
-        const namedTarget = targetObject(monster, state);
+        const namedTarget = targetObject(monster, state, targetKnown);
         if (!specialMessage) {
             await plineWithContinuation(
                 `The ${name} passes harmlessly through ${
@@ -353,6 +372,7 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
             );
         }
         await wakeAttackedMonster(monster);
+        exerciseAttribute(A_DEX, true, state);
         await applyMonsterPassiveToObject(monster, object);
         return { hit: true, consumed: false, result: true };
     }
@@ -360,10 +380,13 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     await abusePet(monster, damage, state);
     let result = true;
+    let objectMovedByDeath = false;
     const killedByDamage = monster.mhp <= 0;
     if (!killedByDamage) {
-        const namedTarget = targetObject(monster, state);
-        const punctuation = canSeeMonster(monster, monster.mx, monster.my)
+        const namedTarget = targetObject(monster, state, targetKnown);
+        const punctuation = (targetVisible ?? canSeeMonster(
+            monster, monster.mx, monster.my,
+        ))
             && damage > 4 ? '!' : '.';
         if (!specialMessage) {
             await plineWithContinuation(
@@ -374,28 +397,26 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
     if (poison?.resisted) {
         await plineWithContinuation(
             `The poison doesn't seem to affect ${
-                targetObject(monster, state) || 'it'
+                targetObject(monster, state, targetKnown) || 'it'
             }.`,
         );
     }
-    if (poison?.deadly) {
+    if (poison?.deadly)
         await plineWithContinuation('The poison was deadly...');
-        result = await finishHeroMonsterKill(
-            monster, monster.mx, monster.my, {
-                hallucinating: !!(state.u?.hallucinating
-                    || (state.u?.hallucinationTurns ?? 0) > 0),
-                nameMonster: () => targetName(monster, state),
-                showKillMessage: false,
-            },
-        );
-    } else if (killedByDamage) {
-        result = await finishHeroMonsterKill(
-            monster, monster.mx, monster.my, {
-                hallucinating: !!(state.u?.hallucinating
-                    || (state.u?.hallucinationTurns ?? 0) > 0),
-                nameMonster: () => targetName(monster, state),
-            },
-        );
+    if (poison?.deadly || killedByDamage) {
+        if (finishKillWithObject) {
+            result = await finishKillWithObject(monster, object);
+            objectMovedByDeath = true;
+        } else {
+            result = await finishHeroMonsterKill(
+                monster, monster.mx, monster.my, {
+                    hallucinating: !!(state.u?.hallucinating
+                        || (state.u?.hallucinationTurns ?? 0) > 0),
+                    nameMonster: () => targetName(monster, state),
+                    showKillMessage: !poison?.deadly,
+                },
+            );
+        }
     } else {
         await wakeAttackedMonster(monster);
         if (applied) {
@@ -414,6 +435,9 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
         );
     }
 
+    exerciseAttribute(A_DEX, true, state);
+    if (objectMovedByDeath)
+        return { hit: true, consumed: true, result };
     if (!applied && shouldMulchMissile(object)) {
         destroyMulchedProjectile(object);
         return { hit: true, consumed: true, result };
@@ -438,7 +462,14 @@ export function hitMonsterWithKickedObject(
 }
 
 export function hitMonsterWithThrownObject(
-    monster, object, { state = game } = {},
+    monster, object, {
+        state = game,
+        guaranteedHit = false,
+        finishKillWithObject = null,
+    } = {},
 ) {
-    return hitMonsterWithRangedObject(monster, object, state, 'thrown');
+    return hitMonsterWithRangedObject(monster, object, state, 'thrown', {
+        guaranteedHit,
+        finishKillWithObject,
+    });
 }

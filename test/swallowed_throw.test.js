@@ -21,7 +21,7 @@ import {
     POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS,
     POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING,
     POT_WATER, ROCK,
-    SCR_BLANK_PAPER, TWO_HANDED_SWORD,
+    SCR_BLANK_PAPER, SPEAR, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { objectTimers } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
@@ -465,18 +465,18 @@ test('swallowed multi-die weapon uses the shared physical damage owner',
 test('cursed swallowed throwing weapon slips before hitting the engulfer',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
-        const dagger = addInventoryWeapon(DAGGER, { cursed: true });
-        const skill = setBasicWeaponSkill(dagger);
+        const spear = addInventoryWeapon(SPEAR, { cursed: true });
+        const skill = setBasicWeaponSkill(spear);
 
         initRng(2333n);
-        await throwInventoryObject(dagger, 'l');
+        await throwInventoryObject(spear, 'l');
 
-        assert.equal(engulfer.mhp, 37);
-        assert.strictEqual(engulfer.minvent[0], dagger);
-        assert.equal(dagger.how_lost, LOST_STOLEN);
+        assert.equal(engulfer.mhp, 33);
+        assert.strictEqual(engulfer.minvent[0], spear);
+        assert.equal(spear.how_lost, LOST_STOLEN);
         assert.equal(game.u.weaponSkills[skill].advance, 1);
         assert.equal(game._pending_message,
-            'The dagger slips as you throw it!  The dagger hits the trapper.');
+            'The spear slips as you throw it!  The spear hits the trapper!');
         assert.equal(game.u.dx, -1);
         assert.equal(game.u.dy, -1);
         assert.equal(game.u.dz, 0);

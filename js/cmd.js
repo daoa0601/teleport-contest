@@ -145,7 +145,7 @@ import {
 } from './monster_inventory.js';
 import {
     resolveGenericSwallowedThrow, resolveSwallowedPotionThrow,
-    resolveSwallowedProjectileThrow, resolveSwallowedWeaponThrow,
+    resolveSwallowedWeaponThrow,
 } from './swallowed_throw.js';
 import {
     autoquiverCandidate, readySuggestion, setQuiverObject,
@@ -9481,26 +9481,12 @@ async function dothrow(
             return;
         }
     }
-    // Generic thrown objects and missiles follow different source paths.
-    // Missiles retain their class-specific handling:
-    // routing arrows and darts through this branch consumes the entire stack
-    // and suppresses dothrow()'s launcher warning.
-    if (await resolveSwallowedProjectileThrow({
-        state: game,
-        item,
-        objectClass: thrownObjectClass,
-        selectedQuantity,
-        splitObjectId,
-        wakeMonster: wakeAttackedMonster,
-        finishKill: finishOrdinarySwallowedThrowKill,
-    })) return;
     if (await resolveSwallowedWeaponThrow({
         state: game,
         item,
         objectClass: thrownObjectClass,
         selectedQuantity,
         splitObjectId,
-        wakeMonster: wakeAttackedMonster,
         finishKill: finishOrdinarySwallowedThrowKill,
     })) return;
     if (game.u?.uswallow
