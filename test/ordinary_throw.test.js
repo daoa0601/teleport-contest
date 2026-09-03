@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    A_DEX, A_STR, P_BASIC, P_BOW, P_CROSSBOW, P_SKILLED, W_ARMG, W_WEP,
+    A_DEX, A_LAWFUL, A_STR, P_BASIC, P_BOW, P_CROSSBOW, P_DART, P_SKILLED,
+    W_ARMG, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
-    ARROW, BOW, CLUB, CROSSBOW, CROSSBOW_BOLT, ELVEN_ARROW, ELVEN_BOW,
+    ARROW, BOW, CLUB, CROSSBOW, CROSSBOW_BOLT, DART, ELVEN_ARROW, ELVEN_BOW,
     GAUNTLETS_OF_POWER, YA, YUMI,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -245,4 +246,43 @@ test('gauntlets of power hinder a bow shot', async () => {
 
     assert.ok(bareDamage > 0);
     assert.equal(glovedDamage, 0);
+});
+
+test('a poisoned thrown dart harms the target and costs lawful alignment', async () => {
+    const throwDart = async poisoned => {
+        freshObjectRoom({
+            right: 20,
+            gameplaySeed: 4910n,
+            hero: { ualign: { type: A_LAWFUL, record: 10 } },
+        });
+        game.u.ulevel = 20;
+        game.u.acurr.a[A_DEX] = 18;
+        installHeroWeaponSkills({ [P_DART]: P_BASIC });
+        const dart = addInventoryWeapon(DART, {
+            invlet: 'a', opoisoned: poisoned,
+        });
+        const jackal = addMonster({
+            species: 'jackal', x: 11, y: 10,
+            hitPoints: 20, mac: 10,
+        });
+        initRng(1n);
+
+        await throwInventoryObject(dart, 'l', Array(6).fill(' '));
+
+        return {
+            damage: 20 - jackal.mhp,
+            alignment: game.u.ualign.record,
+        };
+    };
+
+    const plain = await throwDart(false);
+    const poisoned = await throwDart(true);
+
+    assert.ok(
+        poisoned.damage > plain.damage,
+        `plain dart dealt ${plain.damage}; poisoned dart dealt ${
+            poisoned.damage
+        }`,
+    );
+    assert.equal(poisoned.alignment, 9);
 });

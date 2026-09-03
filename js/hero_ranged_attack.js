@@ -14,6 +14,7 @@ import { game } from './gstate.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { heroHasConflict } from './hero_conflict.js';
+import { resolveHeroWeaponPoison } from './hero_weapon_poison.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
     MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_SIZE,
@@ -27,7 +28,8 @@ import {
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import {
-    isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo,
+    isLauncherAmmunition, isPoisonableObject, isThrowingWeapon,
+    launcherMatchesAmmo,
 } from './object_properties.js';
 import {
     applyProjectileObjectPassive, destroyMulchedProjectile,
@@ -236,11 +238,21 @@ async function rollRangedObjectDamage(
             }
         }
     }
+    const poison = attackStopped ? null : await resolveHeroWeaponPoison(
+        monster, weapon, {
+            state,
+            mode,
+            dieRoll,
+            publish: plineWithContinuation,
+        },
+    );
+    damage += poison?.damage ?? 0;
     return {
         damage: attackStopped ? 0 : Math.max(1, damage),
         practiceSkill,
         specialMessage,
         attackStopped,
+        poison,
     };
 }
 
@@ -302,7 +314,9 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
             - (isLauncherAmmunition(object) ? 5 : 3);
     }
     const dieRoll = rnd(20);
-    const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
+    const plainName = object.name || OBJECT_NAMES[object.otyp] || 'object';
+    const name = object.opoisoned && isPoisonableObject(object)
+        ? `poisoned ${plainName}` : plainName;
 
     if ((!applied && !rangedObjectUsesWeaponHit(object))
         || threshold < dieRoll) {
@@ -317,7 +331,7 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
     if (!applied) await applyCaitiffPenalty(monster, state);
     exerciseAttribute(A_DEX, true, state);
     const {
-        damage, practiceSkill, specialMessage, attackStopped,
+        damage, practiceSkill, specialMessage, attackStopped, poison,
     } = await rollRangedObjectDamage(
         monster, object, state, dieRoll, mode,
     );
@@ -348,7 +362,8 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     await abusePet(monster, damage, state);
     let result = true;
-    if (monster.mhp > 0) {
+    const killedByDamage = monster.mhp <= 0;
+    if (!killedByDamage) {
         const namedTarget = targetObject(monster, state);
         const punctuation = canSeeMonster(monster, monster.mx, monster.my)
             && damage > 4 ? '!' : '.';
@@ -357,6 +372,33 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
                 `The ${name} hits ${namedTarget || 'it'}${punctuation}`,
             );
         }
+    }
+    if (poison?.resisted) {
+        await plineWithContinuation(
+            `The poison doesn't seem to affect ${
+                targetObject(monster, state) || 'it'
+            }.`,
+        );
+    }
+    if (poison?.deadly) {
+        await plineWithContinuation('The poison was deadly...');
+        result = await finishHeroMonsterKill(
+            monster, monster.mx, monster.my, {
+                hallucinating: !!(state.u?.hallucinating
+                    || (state.u?.hallucinationTurns ?? 0) > 0),
+                nameMonster: () => targetName(monster, state),
+                showKillMessage: false,
+            },
+        );
+    } else if (killedByDamage) {
+        result = await finishHeroMonsterKill(
+            monster, monster.mx, monster.my, {
+                hallucinating: !!(state.u?.hallucinating
+                    || (state.u?.hallucinationTurns ?? 0) > 0),
+                nameMonster: () => targetName(monster, state),
+            },
+        );
+    } else {
         await wakeAttackedMonster(monster);
         if (applied) {
             const fleeRoll = rn2(25);
@@ -367,13 +409,10 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
                 monster.mflee = 1;
             }
         }
-    } else {
-        result = await finishHeroMonsterKill(
-            monster, monster.mx, monster.my, {
-                hallucinating: !!(state.u?.hallucinating
-                    || (state.u?.hallucinationTurns ?? 0) > 0),
-                nameMonster: () => targetName(monster, state),
-            },
+    }
+    if (poison?.woreOff) {
+        await plineWithContinuation(
+            `Your ${plainName} is no longer poisoned.`,
         );
     }
 

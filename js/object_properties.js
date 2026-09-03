@@ -62,3 +62,7 @@ export function isPoisonableObject(object) {
     return isMultiGeneratedWeapon(object)
         || artifactById(object?.oartifact)?.invokePower === 'fling-poison';
 }
+
+export function isPermanentlyPoisonedObject(object) {
+    return artifactById(object?.oartifact)?.invokePower === 'fling-poison';
+}
