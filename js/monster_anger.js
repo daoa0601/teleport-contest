@@ -426,7 +426,7 @@ function heroIsHallucinating() {
         || (game.u?.hallucinationTurns ?? 0) > 0);
 }
 
-async function angerQuestGuardians(monster) {
+async function angerQuestGuardiansAfterAttack(monster) {
     if (monster.mnum !== game.urole?.ldrnum) return;
     const guardians = (game.level?.monsters || []).filter(candidate =>
         !candidate.dead && (candidate.mhp ?? 1) > 0
@@ -443,6 +443,16 @@ async function angerQuestGuardians(monster) {
     await plineWithContinuation(
         `The ${name} ${verb} to be angry too...`,
     );
+}
+
+export async function angerQuestGuardiansAfterLeaderDeath() {
+    for (const guardian of Array.from(game.level?.monsters || []).reverse()) {
+        if (!guardian.dead && (guardian.mhp ?? 1) > 0
+            && guardian.mnum === game.urole?.guardnum
+            && guardian.mpeaceful) {
+            await angerMonster(guardian, { attacked: true });
+        }
+    }
 }
 
 export async function wakeAttackedShopkeeper(monster) {
@@ -492,7 +502,7 @@ export async function angerMonster(monster, { attacked = false } = {}) {
         await publishMonsterGrowl(monster);
     }
 
-    await angerQuestGuardians(monster);
+    await angerQuestGuardiansAfterAttack(monster);
     await reactPeacefulBystanders(monster);
 }
 

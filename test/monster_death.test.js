@@ -13,6 +13,7 @@ import {
 } from '../js/object_data.js';
 import { place_object } from '../js/floor_object.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
+import { registerQuestLeader } from '../js/quest.js';
 import { knownObject } from './support/game-objects.js';
 import {
     addTrap, floorObjects, floorObjectsAt,
@@ -168,6 +169,48 @@ test('murder costs luck and intrinsic telepathy', async () => {
         telepathy: false,
     });
 });
+
+test('killing the quest leader punishes the hero and angers guardians',
+    async () => {
+        freshObjectRoom({
+            gameplaySeed: 1n,
+            hero: { ualign: { type: -1, record: 8 } },
+        });
+        const leader = addMonster({
+            species: 'Lord Carnarvon', x: 11, y: 10, hitPoints: 1,
+        });
+        const guardian = addMonster({
+            species: 'student', x: 1, y: 1, hitPoints: 10, mpeaceful: 1,
+        });
+        game.urole = {
+            ...(game.urole || {}),
+            ldrnum: leader.mnum,
+            guardnum: guardian.mnum,
+        };
+        registerQuestLeader(leader, game);
+        game.u.uluck = 0;
+        game.u.ugangr = 0;
+
+        await finishHeroMonsterKill(leader, leader.mx, leader.my, {
+            showKillMessage: false,
+            recordConduct: false,
+            noCorpse: true,
+        });
+
+        assert.deepEqual({
+            alignment: game.u.ualign.record,
+            anger: game.u.ugangr,
+            luck: game.u.uluck,
+            killedLeader: game.quest_status.killed_leader,
+            guardianPeaceful: guardian.mpeaceful,
+        }, {
+            alignment: -26,
+            anger: 7,
+            luck: -20,
+            killedLeader: true,
+            guardianPeaceful: 0,
+        });
+    });
 
 test('killing a pit-trapped monster with a boulder buries its corpse',
     async () => {

@@ -16,7 +16,10 @@ import {
 import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { mkobj } from './mklev.js';
-import { markQuestLeaderDead } from './quest.js';
+import { angerQuestGuardiansAfterLeaderDeath } from './monster_anger.js';
+import {
+    isQuestLeader, markQuestLeaderDead,
+} from './quest.js';
 import { deleteObject } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
 import {
@@ -101,6 +104,21 @@ async function punishMurder() {
     const blind = !!game.blind || (game.u?.blindTurns ?? 0) > 0;
     if (blind && !game.u?.blindTelepathy && !game.u?.telepathy)
         see_monsters();
+}
+
+async function punishQuestLeaderKill(monster) {
+    const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
+    const alignmentRecord = game.u?.ualign?.record || 0;
+    adjustHeroAlignment(-(
+        alignmentRecord + Math.trunc(alignmentLimit / 2)
+    ));
+    game.u.ugangr = (game.u.ugangr || 0) + 7;
+    game.u.uluck = (game.u.uluck || 0) - 20;
+
+    const probably = game.u?.uevent?.qcompleted ? 'probably ' : '';
+    await plineWithContinuation(`That was ${probably}a bad idea...`);
+    if (!game.context?.mon_moving)
+        await angerQuestGuardiansAfterLeaderDeath();
 }
 
 function observeMonsterDropName(object, x, y) {
@@ -359,7 +377,9 @@ export async function finishHeroMonsterKill(monster, x, y, {
     }
     if (!wasInside) newsym(x, y);
 
-    if (monster.mtame) {
+    if (isQuestLeader(monster, game)) {
+        await punishQuestLeaderKill(monster);
+    } else if (monster.mtame) {
         adjustHeroAlignment(-15);
         await plineWithContinuation(hallucinating
             ? 'You hear the studio audience applaud!'

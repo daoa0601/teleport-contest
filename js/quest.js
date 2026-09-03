@@ -68,7 +68,9 @@ export function isQuestLeader(monster, g = game) {
 
 export function markQuestLeaderDead(monster, g = game) {
     if (!isQuestLeader(monster, g)) return false;
-    ensureQuestStatus(g).leader_is_dead = true;
+    const status = ensureQuestStatus(g);
+    status.leader_is_dead = true;
+    status.killed_leader = true;
     return true;
 }
 
