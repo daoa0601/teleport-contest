@@ -16,7 +16,7 @@ import { nhgetch } from './input.js';
 import {
     compactInventoryLetters, promptInventoryObject,
 } from './inventory_prompt.js';
-import { AT_BOOM, AT_KICK, AT_WEAP } from './monster_attack_types.js';
+import { AT_KICK, AT_WEAP } from './monster_attack_types.js';
 import { moreUntilDismissed, promptKey } from './tty_prompts.js';
 import {
     getLine, paranoidQuery, promptYesNo, promptYesNoQuit,
@@ -199,8 +199,8 @@ import {
     CLR_WHITE, NO_COLOR,
 } from './terminal.js';
 import {
-    MONSTER_ATTACKS, MONSTER_COLOR, MONSTER_EXPERIENCE_META,
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
+    MONSTER_COLOR, MONSTER_EXPERIENCE_META,
+    MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE,
     MONSTER_SYMBOL, MONSTER_ALIGNMENT,
     monsterIsNonliving, monsterIsShade, monsterTypeName,
@@ -8401,7 +8401,6 @@ async function finishTeleportArrival(movement) {
 }
 
 
-const G_UNIQ = 0x1000;
 // C refs: apply.c use_stethoscope(); insight.c piousness().  hero_seq is
 // distinct after every time-taking hero action, including actions which do
 // not advance the global `moves` counter because the hero has movement left.
@@ -9242,56 +9241,6 @@ async function dofire(cannedShotLimit = null) {
     }
 }
 
-// C mon.c:xkilled() has a distinct wasinside continuation.  Admit only the
-// ordinary room transaction here so a potentially fatal roll cannot detach an
-// object and then discover that life-saving, special death, punishment, shop,
-// or terrain ownership is still missing.
-function canFinishOrdinaryThrownKill(monster, { swallowed = false } = {}) {
-    if (!monster) return false;
-    if (swallowed) {
-        if (game.u?.ustuck !== monster || !game.u?.uswallow) return false;
-    } else if (game.u?.uswallow || game.u?.ustuck) return false;
-    const location = game.level?.at?.(monster.mx, monster.my);
-    const leaderId = game.quest_status?.leader_m_id;
-    const carried = monster.minvent || monster.inventory || [];
-    const ordinaryPriorInventory = carried.every(object => {
-        const objectClass = object.oclass || objectClassForType(object.otyp);
-        return [2, 9].includes(objectClass)
-            && !(object.owornmask ?? 0) && !object.worn && !object.wielded
-            && !object.ready && !object.lamplit && !object.unpaid
-            && !object.oartifact && !object.artifact
-            && !(object.timed ?? 0) && !(object.objectTimers?.length ?? 0)
-            && !(object.contents?.length ?? 0);
-    });
-    return location?.typ === ROOM
-        && !game.level?.traps?.some(trap =>
-            (trap.tx ?? trap.x) === monster.mx
-                && (trap.ty ?? trap.y) === monster.my)
-        && !game._shopRooms?.current
-        && !game.uball && !game.u?.uball && !game.uchain && !game.u?.uchain
-        && !game.u?.usteed
-        && !monster.iswiz && !monster.isshk && !monster.ispriest
-        && !monster.isminion && !monster.isgd && !monster.mleashed
-        && !monster.mtrapped && !monster.m_ap_type
-        && !(Number.isInteger(monster.cham) && monster.cham >= 0)
-        && monster.m_id !== leaderId
-        && !((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)
-        && !MONSTER_ATTACKS[monster.mnum]?.some(attack =>
-            attack[0] === AT_BOOM)
-        // Weapon and scroll identities exercise ordinary minvent order and
-        // stack absorption.  Worn, timed, lit, billed, contained, artifact,
-        // and other class-specific release effects remain fail-loud.
-        && ordinaryPriorInventory;
-}
-
-function canFinishOrdinarySwallowedThrowKill(monster) {
-    return canFinishOrdinaryThrownKill(monster, { swallowed: true });
-}
-
-function canFinishOrdinaryMapPotionKill(monster) {
-    return canFinishOrdinaryThrownKill(monster);
-}
-
 async function finishOrdinarySwallowedThrowKill(monster, projectile) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my, {
         deathContext: {
@@ -9543,7 +9492,6 @@ async function dothrow(
         selectedQuantity,
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
-        canFinishKill: canFinishOrdinarySwallowedThrowKill,
         finishKill: finishOrdinarySwallowedThrowKill,
     })) return;
     if (await resolveSwallowedWeaponThrow({
@@ -9553,7 +9501,6 @@ async function dothrow(
         selectedQuantity,
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
-        canFinishKill: canFinishOrdinarySwallowedThrowKill,
         finishKill: finishOrdinarySwallowedThrowKill,
     })) return;
     if (game.u?.uswallow
@@ -9573,7 +9520,6 @@ async function dothrow(
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
         wakeNearby: wakeMonstersNear,
-        canFinishKill: canFinishOrdinarySwallowedThrowKill,
         finishKill: finishOrdinarySwallowedPotionKill,
     })) return;
     if (game.u?.uswallow && thrownObjectClass === 8)
@@ -9605,7 +9551,6 @@ async function dothrow(
         captureFlight: captureThrownObjectFlight,
         wakeMonster: wakeAttackedMonster,
         wakeNearby: wakeMonstersNear,
-        canFinishKill: canFinishOrdinaryMapPotionKill,
         finishKill: finishOrdinaryMapPotionKill,
     })) return;
     if (!game.u?.uswallow && thrownObjectClass === 8)

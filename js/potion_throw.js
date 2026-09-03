@@ -14,7 +14,6 @@ import {
 import { OBJECT_WEIGHT } from './object_data.js';
 import {
     hitMonsterWithSupportedPotion, potionImpactObjectName,
-    maximumSupportedPotionFatalDamage,
     SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { rn2, rnd } from './rng.js';
@@ -97,23 +96,13 @@ function traceOrdinaryPath(state, dx, dy, range, blocksMove) {
     return { x, y, path, contact };
 }
 
-function flightTargetSupported({
-    state, item, flight, canFinishKill, finishKill,
-}) {
-    if (!flight || (flight.contact && !targetIsOrdinary(flight.contact)))
-        return false;
-    if (!flight.contact) return true;
-    const maximumFatalDamage = maximumSupportedPotionFatalDamage(
-        item, flight.contact,
-    );
-    return !(maximumFatalDamage > 0
-        && flight.contact.mhp <= maximumFatalDamage
-        && (!finishKill || !canFinishKill?.(flight.contact)));
+function flightTargetSupported(flight) {
+    return !!flight
+        && (!flight.contact || targetIsOrdinary(flight.contact));
 }
 
 function ordinaryEligibility({
     state, item, objectClass, selectedQuantity, dx, dy, blocksMove,
-    canFinishKill, finishKill,
 }) {
     if (state.u?.uswallow || objectClass !== POTION_CLASS
         || !SUPPORTED_MONSTER_POTION_TYPES.has(item?.otyp)
@@ -142,9 +131,7 @@ function ordinaryEligibility({
             - Math.trunc(weight / 40),
     );
     const flight = traceOrdinaryPath(state, dx, dy, range, blocksMove);
-    if (!flightTargetSupported({
-        state, item, flight, canFinishKill, finishKill,
-    })) return null;
+    if (!flightTargetSupported(flight)) return null;
 
     if (item.greased) {
         // A successful throwit() slip can choose any horizontal direction or
@@ -160,10 +147,7 @@ function ordinaryEligibility({
                 const candidate = traceOrdinaryPath(
                     state, candidateDx, candidateDy, range, blocksMove,
                 );
-                if (!flightTargetSupported({
-                    state, item, flight: candidate,
-                    canFinishKill, finishKill,
-                })) return null;
+                if (!flightTargetSupported(candidate)) return null;
             }
         }
     }
@@ -191,13 +175,11 @@ export async function resolveMapPotionThrow({
     captureFlight,
     wakeMonster,
     wakeNearby,
-    canFinishKill,
     finishKill,
     publish = plineWithContinuation,
 }) {
     const eligible = ordinaryEligibility({
         state, item, objectClass, selectedQuantity, dx, dy, blocksMove,
-        canFinishKill, finishKill,
     });
     if (!eligible) return false;
 
@@ -230,9 +212,7 @@ export async function resolveMapPotionThrow({
     const flight = traceOrdinaryPath(
         state, actualDx, actualDy, eligible.range, blocksMove,
     );
-    if (!flightTargetSupported({
-        state, item: thrown, flight, canFinishKill, finishKill,
-    })) {
+    if (!flightTargetSupported(flight)) {
         throw new Error('preflighted potion slip left the supported path');
     }
 

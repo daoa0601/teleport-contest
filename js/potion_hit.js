@@ -286,24 +286,6 @@ function monsterIsWere(monster) {
     return !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_WERE);
 }
 
-// Includes the one-point bottle chip which precedes potionhit()'s damaging
-// water or acid die. A bottle chip alone cannot kill because C applies it only
-// above one HP, so non-damaging identities return zero rather than one.
-export function maximumSupportedPotionFatalDamage(potion, monster) {
-    if (potion?.otyp === POT_ACID) {
-        if (monsterHasAcidResistance(monster)) return 0;
-        const dice = potion.cursed ? 2 : 1;
-        const sides = potion.blessed ? 4 : 8;
-        return 1 + dice * sides;
-    }
-    if (potion?.otyp !== POT_WATER) return 0;
-    if (monsterHatesBlessings(monster) || monsterIsWere(monster)) {
-        return potion.blessed ? 13 : 0;
-    }
-    if (monster?.mnum === PM_IRON_GOLEM) return 7;
-    return 0;
-}
-
 function waterEffectSubject(monster, targetSpotted) {
     return targetSpotted ? sentenceSubject(monster) : 'It';
 }

@@ -35,7 +35,7 @@ import {
     installPolymorphedHero, wearHeroObject, wearPolymorphControlRing,
 } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const PM_ENERGY_VORTEX = 109;
@@ -1302,6 +1302,25 @@ test('a killing swallowed dart is acquired, dropped, and autopicked before clean
         assert.equal(floorObjects(game.level)
             .some(object => /corpse/.test(object.name || '')), false);
         assert.match(game._pending_message, /a - (?:an? )?dart\./);
+    });
+
+test('a swallowed monster can survive a killing throw with life saving',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        engulfer.mhp = 1;
+        const amulet = knownObject(AMULET_OF_LIFE_SAVING);
+        equipMonsterObject(engulfer, amulet, W_AMUL);
+        const dart = addInventoryWeapon(DART);
+        setBasicWeaponSkill(dart);
+
+        initRng(2312n);
+        await throwInventoryObject(dart, 'h', [' ', ' ', ' ']);
+
+        assert.equal(engulfer.mhp, engulfer.mhpmax);
+        assert.equal(game.u.uswallow, 1);
+        assert.strictEqual(game.u.ustuck, engulfer);
+        assert.equal(engulfer.minvent.includes(amulet), false);
+        assert.equal(engulfer.minvent.includes(dart), true);
     });
 
 test('a killing swallowed weapon remains on the death square without autopickup',

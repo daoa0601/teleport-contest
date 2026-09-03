@@ -20,15 +20,13 @@ import {
 } from './monster_data.js';
 import { AT_ENGL } from './monster_attack_types.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
-import { isPoisonableObject } from './object_properties.js';
 import { rnd } from './rng.js';
 import { applyMonsterPassiveToObject } from './monster_passive.js';
 import {
     destroyMulchedProjectile, projectileKind, shouldMulchMissile,
 } from './projectile.js';
 import {
-    hitMonsterWithSupportedPotion, maximumSupportedPotionFatalDamage,
-    SUPPORTED_MONSTER_POTION_TYPES,
+    hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { heroIsBlind } from './senses.js';
 import {
@@ -132,7 +130,7 @@ function intendedThrowingWeapon(item) {
 }
 
 function swallowedWeaponEligibility(
-    state, item, objectClass, selectedQuantity, canFinishKill, finishKill,
+    state, item, objectClass,
 ) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer) return null;
@@ -152,23 +150,14 @@ function swallowedWeaponEligibility(
         || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade') {
         return null;
     }
-    if ((item.oartifact || item.artifact)
-        && (!finishKill || !canFinishKill?.(engulfer))) return null;
     const baseMaximum = maximumPhysicalWeaponDamage(item, engulfer);
     if (baseMaximum <= 0) return null;
-    const maximumDamage = Math.max(
-        1,
-        baseMaximum
-            + (state.u?.udaminc ?? state.udaminc ?? 0)
-            + heroStrengthDamageBonus(state)
-            + weaponSkillDamageBonus(state, skill),
-    );
     if (!Number.isFinite(engulfer.mhp)) return null;
-    return { engulfer, skill, maximumDamage };
+    return { engulfer, skill };
 }
 
 function swallowedProjectileEligibility(
-    state, item, objectClass, selectedQuantity, canFinishKill, finishKill,
+    state, item, objectClass, selectedQuantity,
 ) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     const kind = projectileKind(item);
@@ -206,23 +195,10 @@ function swallowedProjectileEligibility(
         || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade') {
         return null;
     }
-    if (item.opoisoned && isPoisonableObject(item)
-        && (!finishKill || !canFinishKill?.(engulfer))) return null;
-
     const baseMaximum = kind === 'ammunition' && !launcher
         ? 2 : maximumPhysicalWeaponDamage(item, engulfer) + roleDamage;
-    const maximumDamage = Math.max(
-        1,
-        baseMaximum
-            + (state.u?.udaminc ?? state.udaminc ?? 0)
-            + (launcher ? 0
-                : heroStrengthDamageBonus(state))
-            + (skill == null ? 0 : weaponSkillDamageBonus(state, skill)),
-    );
     if (baseMaximum <= 0 || !Number.isFinite(engulfer.mhp)) return null;
-    return {
-        engulfer, kind, launcher, skill, roleDamage, maximumDamage,
-    };
+    return { engulfer, kind, launcher, skill, roleDamage };
 }
 
 function genericSwallowedEligibility(
@@ -253,7 +229,7 @@ function genericSwallowedEligibility(
 }
 
 function swallowedPotionEligibility(
-    state, item, objectClass, selectedQuantity, canFinishKill, finishKill,
+    state, item, objectClass, selectedQuantity,
 ) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer || objectClass !== POTION_CLASS
@@ -275,11 +251,6 @@ function swallowedPotionEligibility(
         return null;
     }
 
-    const maximumFatalDamage = maximumSupportedPotionFatalDamage(
-        item, engulfer,
-    );
-    if (maximumFatalDamage > 0 && engulfer.mhp <= maximumFatalDamage
-        && (!finishKill || !canFinishKill?.(engulfer))) return null;
     return engulfer;
 }
 
@@ -290,20 +261,13 @@ export async function resolveSwallowedProjectileThrow({
     selectedQuantity,
     splitObjectId,
     wakeMonster,
-    canFinishKill,
     finishKill,
 }) {
     const eligible = swallowedProjectileEligibility(
-        state, item, objectClass, selectedQuantity, canFinishKill, finishKill,
+        state, item, objectClass, selectedQuantity,
     );
     if (!eligible) return false;
-    const {
-        engulfer, kind, launcher, skill, roleDamage, maximumDamage,
-    } = eligible;
-    // A potential fatal roll must have a complete source continuation before
-    // freeinv()/splitobj() detaches the real object or any combat RNG advances.
-    if (engulfer.mhp <= maximumDamage
-        && (!finishKill || !canFinishKill?.(engulfer))) return false;
+    const { engulfer, kind, launcher, skill, roleDamage } = eligible;
     const thrown = detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
@@ -381,16 +345,13 @@ export async function resolveSwallowedWeaponThrow({
     selectedQuantity,
     splitObjectId,
     wakeMonster,
-    canFinishKill,
     finishKill,
 }) {
     const eligible = swallowedWeaponEligibility(
-        state, item, objectClass, selectedQuantity, canFinishKill, finishKill,
+        state, item, objectClass,
     );
     if (!eligible) return false;
-    const { engulfer, skill, maximumDamage } = eligible;
-    if (engulfer.mhp <= maximumDamage
-        && (!finishKill || !canFinishKill?.(engulfer))) return false;
+    const { engulfer, skill } = eligible;
     const thrown = detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
@@ -470,11 +431,10 @@ export async function resolveSwallowedPotionThrow({
     splitObjectId,
     wakeMonster,
     wakeNearby,
-    canFinishKill,
     finishKill,
 }) {
     const engulfer = swallowedPotionEligibility(
-        state, item, objectClass, selectedQuantity, canFinishKill, finishKill,
+        state, item, objectClass, selectedQuantity,
     );
     if (!engulfer) return false;
     const thrown = detachThrownUnit(
