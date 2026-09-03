@@ -15,18 +15,20 @@ import {
 import { place_object } from '../js/floor_object.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { ensureQuestStatus, registerQuestLeader } from '../js/quest.js';
+import { initRng } from '../js/rng.js';
+import { transformWereMonster } from '../js/were.js';
 import { knownObject } from './support/game-objects.js';
 import {
     addTrap, floorObjects, floorObjectsAt,
 } from './support/level-state.js';
-import { addMonster, equipMonsterObject } from './support/monsters.js';
+import {
+    addMonster, createMonsterAt, equipMonsterObject,
+} from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 test('a large monster leaves a corpse without a random chance', async () => {
     const level = freshObjectRoom();
-    const giant = addMonster({
-        species: 'giant', x: 11, y: 10, hitPoints: 1,
-    });
+    const giant = await createMonsterAt('giant', 11, 10);
 
     const death = await finishEnvironmentalMonsterDeath(giant, game, {
         visible: false,
@@ -40,9 +42,7 @@ test('a large monster leaves a corpse without a random chance', async () => {
 
 test('a monster death updates its species death count', async () => {
     freshObjectRoom();
-    const giant = addMonster({
-        species: 'giant', x: 11, y: 10, hitPoints: 1,
-    });
+    const giant = await createMonsterAt('giant', 11, 10);
 
     await finishEnvironmentalMonsterDeath(giant, game, {
         visible: false,
@@ -54,9 +54,7 @@ test('a monster death updates its species death count', async () => {
 
 test('a dead mail daemon stops future mail delivery', async () => {
     freshObjectRoom();
-    const daemon = addMonster({
-        species: 'mail daemon', x: 11, y: 10, hitPoints: 1,
-    });
+    const daemon = await createMonsterAt('mail daemon', 11, 10);
 
     await finishEnvironmentalMonsterDeath(daemon, game, {
         visible: false,
@@ -69,39 +67,46 @@ test('a dead mail daemon stops future mail delivery', async () => {
     );
 });
 
-test('dead shapechangers return to their true species', async () => {
+test('a dead chameleon returns to its true species', async () => {
+    freshObjectRoom({ gameplaySeed: 1n });
     const chameleon = MONSTER_NAME.indexOf('chameleon');
+    const monster = await createMonsterAt(chameleon, 11, 10);
+    const killedForm = monster.mnum;
+
+    const death = await finishEnvironmentalMonsterDeath(monster, game, {
+        visible: false,
+        random: () => 0,
+        publish: async () => {},
+    });
+
+    assert.equal(monster.mnum, chameleon);
+    assert.equal(death.corpse?.corpsenm, chameleon);
+    assert.equal(game.mvitals[chameleon]?.died, 1);
+    assert.equal(game.mvitals[killedForm]?.died ?? 0, 0);
+});
+
+test('a dead werewolf returns to its human species', async () => {
+    freshObjectRoom();
     const humanWerewolf = MONSTER_NAME.lastIndexOf('werewolf');
-    const cases = [
-        { species: 'giant', cham: chameleon, trueSpecies: chameleon },
-        { species: 'werewolf', trueSpecies: humanWerewolf },
-    ];
+    const monster = await createMonsterAt(humanWerewolf, 11, 10);
+    transformWereMonster(monster, game);
+    const killedForm = monster.mnum;
 
-    for (const { trueSpecies, ...monsterOptions } of cases) {
-        freshObjectRoom();
-        const monster = addMonster({
-            ...monsterOptions, x: 11, y: 10, hitPoints: 1,
-        });
-        const killedForm = monster.mnum;
+    const death = await finishEnvironmentalMonsterDeath(monster, game, {
+        visible: false,
+        random: () => 0,
+        publish: async () => {},
+    });
 
-        const death = await finishEnvironmentalMonsterDeath(monster, game, {
-            visible: false,
-            random: () => 0,
-            publish: async () => {},
-        });
-
-        assert.equal(monster.mnum, trueSpecies);
-        assert.equal(death.corpse?.corpsenm, trueSpecies);
-        assert.equal(game.mvitals[trueSpecies]?.died, 1);
-        assert.equal(game.mvitals[killedForm]?.died ?? 0, 0);
-    }
+    assert.equal(monster.mnum, humanWerewolf);
+    assert.equal(death.corpse?.corpsenm, humanWerewolf);
+    assert.equal(game.mvitals[humanWerewolf]?.died, 1);
+    assert.equal(game.mvitals[killedForm]?.died ?? 0, 0);
 });
 
 test('a dead steam vortex leaves a harmless steam cloud', async () => {
     const level = freshObjectRoom();
-    const vortex = addMonster({
-        species: 'steam vortex', x: 11, y: 10, hitPoints: 1,
-    });
+    const vortex = await createMonsterAt('steam vortex', 11, 10);
 
     await finishEnvironmentalMonsterDeath(vortex, game, {
         visible: false,
@@ -117,9 +122,8 @@ test('a dead steam vortex leaves a harmless steam cloud', async () => {
 
 test('a dead Kop can return elsewhere on the level', async () => {
     const level = freshObjectRoom({ gameplaySeed: 3n });
-    const kop = addMonster({
-        species: 'Keystone Kop', x: 11, y: 10, hitPoints: 1,
-    });
+    const kop = await createMonsterAt('Keystone Kop', 11, 10);
+    initRng(3n);
 
     await finishEnvironmentalMonsterDeath(kop, game, {
         visible: false,
