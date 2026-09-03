@@ -9,7 +9,6 @@ import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { monsterTypeName } from './monster_data.js';
-import { POT_OIL } from './object_data.js';
 import {
     hitMonsterWithSupportedPotion, potionImpactObjectName,
     SUPPORTED_MONSTER_POTION_TYPES,
@@ -24,13 +23,6 @@ import { cansee } from './vision.js';
 
 const POTION_CLASS = 8;
 
-function activeTimerCount(item) {
-    return Math.max(
-        item.timed ?? 0,
-        Array.isArray(item.objectTimers) ? item.objectTimers.length : 0,
-    );
-}
-
 function monsterName(monster) {
     return monster.name
         || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
@@ -43,14 +35,6 @@ function canResolveMapPotionThrow({
         || !SUPPORTED_MONSTER_POTION_TYPES.has(item?.otyp)
         || !Number.isInteger(selectedQuantity) || selectedQuantity < 1
         || !Number.isInteger(dx) || !Number.isInteger(dy)) return false;
-
-    // Leave unsupported inventory and hero states untouched.  This check runs
-    // before the potion leaves inventory and before the throw uses randomness.
-    const burningOil = item.otyp === POT_OIL && item.lamplit
-        && activeTimerCount(item) > 0;
-    if ((item.lamplit || activeTimerCount(item) > 0) && !burningOil)
-        return false;
-
     return true;
 }
 
