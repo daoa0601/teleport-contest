@@ -8,7 +8,7 @@ import {
     deliverMigratingObjects, shipObject,
 } from '../js/object_migration.js';
 import {
-    APPLE, ARROW, CHAIN_MAIL, CLUB, MIRROR, ROCK,
+    APPLE, ARROW, CARROT, CHAIN_MAIL, CLUB, MIRROR, ROCK,
 } from '../js/object_data.js';
 import { throwInventoryObject } from './support/commands.js';
 import {
@@ -72,6 +72,7 @@ test('hero-thrown objects can fall down a ladder', async () => {
         { type: ARROW, name: 'arrow', answers: [' '] },
         { type: ROCK, name: 'rock' },
         { type: APPLE, name: 'apple' },
+        { type: CARROT, name: 'carrot' },
     ];
     for (const specimen of specimens) {
         const source = sourceLevel({ ladder: true });

@@ -172,7 +172,7 @@ import {
 } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import {
-    SLING, CARROT, BULLWHIP, GRAPPLING_HOOK,
+    SLING, BULLWHIP, GRAPPLING_HOOK,
     CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, SLIME_MOLD, TIN,
     LOCK_PICK, CREDIT_CARD,
     STETHOSCOPE, TIN_OPENER, LOADSTONE, HEAVY_IRON_BALL,
@@ -10564,7 +10564,7 @@ async function dothrow(
         return;
     }
 
-    if (thrownObjectClass !== 2 && item.otyp !== CARROT) {
+    if (thrownObjectClass !== 2) {
         // dothrow.c removes the object from inventory, or splits one unit from
         // its stack, before drop_throw().
         let thrown = item;
@@ -10595,36 +10595,6 @@ async function dothrow(
         });
         game.context.move = 1;
         return;
-    }
-    if (item.otyp === CARROT) {
-        const dx = DIR_DX[direction], dy = DIR_DY[direction];
-        let x = game.u.ux, y = game.u.uy;
-        const flightPath = [];
-        for (let distance = 0; distance < 2; distance++) {
-            const nx = x + dx, ny = y + dy;
-            if (blocksMove(nx, ny)) break;
-            x = nx; y = ny;
-            flightPath.push({ x, y });
-            if (game.level?.monsters?.some(monster => monster.mx === x
-                && monster.my === y)) break;
-        }
-        await captureThrownObjectFlight(item, flightPath);
-        rn2(100); // drop_throw()->breaktest()->obj_resists()
-        if (!game.level.objects[x]) game.level.objects[x] = [];
-        if (!game.level.objects[x][y]) game.level.objects[x][y] = [];
-        const existing = game.level.objects[x][y]
-            .find(object => object.otyp === item.otyp
-                && !!object.cursed === !!item.cursed
-                && !!object.blessed === !!item.blessed);
-        if (existing) {
-            existing.quantity = (existing.quantity ?? existing.quan ?? 1) + 1;
-            existing.quan = existing.quantity;
-        } else {
-            game.level.objects[x][y].unshift({
-                ...item, quantity: 1, quan: 1, ox: x, oy: y,
-            });
-        }
-        newsym(x, y);
     }
     if (!handThrownArrow) game._pending_message = '';
     game.context.move = 1;
