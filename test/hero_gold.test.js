@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { W_QUIVER } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { GameDisplay } from '../js/game_display.js';
 import {
     heroGoldAmount, heroGoldObject,
 } from '../js/hero_gold.js';
@@ -13,8 +12,11 @@ import { mkgold } from '../js/mklev.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
 import { settleCarriedShopBillItem } from '../js/shk.js';
 import { carriedGold } from './support/gold-arena.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
-import { freshGameplayRoom } from './support/playable-room.js';
+import {
+    freshCommandRoom, freshGameplayRoom,
+} from './support/playable-room.js';
 
 test('picking up floor gold moves that identity into the dollar inventory slot',
     async () => {
@@ -106,17 +108,11 @@ test('quivered gold detaches one coin while preserving the purse identity',
 
 test('putting gold into a bag and taking it out moves the same identity',
     async () => {
-        freshGameplayRoom();
-        game.nhDisplay = new GameDisplay(null);
+        freshCommandRoom();
         const purse = carriedGold(23, 28304);
-        const bag = {
-            otyp: SACK, oclass: 6, invlet: 'a',
-            name: 'bag', plural: 'bags', where: 'inventory',
-            quan: 1, quantity: 1, contents: [], cknown: false,
-            worn: false, wielded: false, alternate: false, ready: false,
-            owornmask: 0, objectTimers: [], timed: 0,
-        };
-        game.inventory.push(bag);
+        const bag = addInventoryObject(SACK, {
+            invlet: 'a', cknown: false,
+        });
 
         pushKey('a');
         pushKey('i');

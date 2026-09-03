@@ -13,7 +13,7 @@ import {
 } from '../js/object_data.js';
 import { throwInventoryObject } from './support/commands.js';
 import {
-    knownInventoryObject, knownObject,
+    addInventoryObject, knownObject,
 } from './support/game-objects.js';
 import { addTrap, floorObjects } from './support/level-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
@@ -79,7 +79,7 @@ test('hero-thrown objects can fall down a ladder', async () => {
         const source = sourceLevel({ ladder: true });
         game.stairs.sx = 11;
         source.at(12, 10).typ = STONE;
-        const object = knownInventoryObject(specimen.type, {
+        const object = addInventoryObject(specimen.type, {
             invlet: 'a',
             name: specimen.name,
         });

@@ -1,6 +1,4 @@
-import {
-    CLUB, CORPSE, DART, FLINT, LOADSTONE, OBJECT_NAMES, ROCK, SLING,
-} from '../../js/object_data.js';
+import { CORPSE, OBJECT_NAMES } from '../../js/object_data.js';
 import { objectClassForType } from '../../js/object_knowledge.js';
 import { artifactByName } from '../../js/artifacts.js';
 import { place_object } from '../../js/floor_object.js';
@@ -8,15 +6,6 @@ import { mksobj, set_corpsenm } from '../../js/mklev.js';
 import { stopAllObjectTimers } from '../../js/object_timers.js';
 import { addInventoryItem } from '../../js/u_init.js';
 import { objectWeight } from '../../js/weight.js';
-
-const WEAPON_NAMES = new Map([
-    [CLUB, ['club', 'clubs']],
-    [DART, ['dart', 'darts']],
-    [SLING, ['sling', 'slings']],
-    [FLINT, ['flint stone', 'flint stones']],
-    [LOADSTONE, ['loadstone', 'loadstones']],
-    [ROCK, ['rock', 'rocks']],
-]);
 
 export function plainObject(otyp, overrides = {}) {
     const quantity = overrides.quan ?? overrides.quantity ?? 1;
@@ -77,12 +66,12 @@ export function knownObject(otyp, overrides = {}) {
     return object;
 }
 
-export function knownInventoryObject(otyp, overrides = {}) {
+export function addInventoryObject(otyp, overrides = {}) {
     return addInventoryItem(knownObject(otyp, overrides));
 }
 
-export function knownInventoryWeapon(otyp, overrides = {}) {
-    return knownInventoryObject(otyp, {
+export function addInventoryWeapon(otyp, overrides = {}) {
+    return addInventoryObject(otyp, {
         quan: 1,
         quantity: 1,
         spe: 0,
@@ -105,13 +94,9 @@ export function floorArtifact(name, x, y, overrides = {}) {
 }
 
 export function inventoryObject(otyp, invlet, overrides = {}) {
-    const [name, plural] = WEAPON_NAMES.get(otyp)
-        || [OBJECT_NAMES[otyp], `${OBJECT_NAMES[otyp]}s`];
     return knownObject(otyp, {
         invlet,
         where: 'inventory',
-        name,
-        plural,
         worn: false,
         wielded: false,
         alternate: false,

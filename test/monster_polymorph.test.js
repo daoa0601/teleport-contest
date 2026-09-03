@@ -20,7 +20,7 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { presentWereChange, wereChange } from '../js/were.js';
-import { knownInventoryObject, knownObject } from './support/game-objects.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -57,7 +57,7 @@ test('a leashed monster pulls free when its new body cannot be leashed', () => {
     const monster = addMonster({
         species: 'little dog', x: 11, y: 10, mleashed: 1,
     });
-    const leash = knownInventoryObject(LEASH, { leashmon: monster.m_id });
+    const leash = addInventoryObject(LEASH, { leashmon: monster.m_id });
     initRng(1n);
 
     changeMonsterForm(monster, MONSTER_NAME.indexOf('long worm'));

@@ -8,7 +8,7 @@ import { GRAPPLING_HOOK, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
 import {
-    knownInventoryObject, knownObject,
+    addInventoryObject, knownObject,
 } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
@@ -16,7 +16,7 @@ import { addMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 function installHook({ wielded = true, enchantment = 0 } = {}) {
-    const hook = knownInventoryObject(GRAPPLING_HOOK, {
+    const hook = addInventoryObject(GRAPPLING_HOOK, {
         spe: enchantment,
         wielded,
         owornmask: wielded ? W_WEP : 0,

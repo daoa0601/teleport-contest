@@ -10,14 +10,14 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { throwInventoryObject } from './support/commands.js';
-import { knownInventoryWeapon } from './support/game-objects.js';
+import { addInventoryWeapon } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 function carriedClub() {
-    return knownInventoryWeapon(CLUB, { invlet: 'a', spe: 0 });
+    return addInventoryWeapon(CLUB, { invlet: 'a', spe: 0 });
 }
 
 test('throwing a club carries it across its strength-based range', async () => {
@@ -69,10 +69,10 @@ test('grease can make a thrown club slip away from its chosen path', async () =>
 test('a crossbow sends its bolt eight squares regardless of Strength', async () => {
     const level = freshObjectRoom({ right: 22, gameplaySeed: 4104n });
     game.u.acurr.a[A_STR] = 3;
-    const crossbow = knownInventoryWeapon(CROSSBOW, {
+    const crossbow = addInventoryWeapon(CROSSBOW, {
         invlet: 'a', owornmask: W_WEP, wielded: true,
     });
-    const bolt = knownInventoryWeapon(CROSSBOW_BOLT, { invlet: 'b' });
+    const bolt = addInventoryWeapon(CROSSBOW_BOLT, { invlet: 'b' });
     game.uwep = game.u.uwep = crossbow;
 
     await throwInventoryObject(bolt, 'l');
@@ -88,10 +88,10 @@ test('a fired crossbow bolt gets ring damage but not Strength damage', async () 
     game.u.acurr.a[A_STR] = 3;
     game.u.udaminc = 3;
     installHeroWeaponSkills({ [P_CROSSBOW]: P_BASIC });
-    const crossbow = knownInventoryWeapon(CROSSBOW, {
+    const crossbow = addInventoryWeapon(CROSSBOW, {
         invlet: 'a', owornmask: W_WEP, wielded: true,
     });
-    const bolt = knownInventoryWeapon(CROSSBOW_BOLT, { invlet: 'b' });
+    const bolt = addInventoryWeapon(CROSSBOW_BOLT, { invlet: 'b' });
     game.uwep = game.u.uwep = crossbow;
     const jackal = addMonster({
         species: 'jackal', x: 11, y: 10,
@@ -111,10 +111,10 @@ test('a skilled Ranger can fire several crossbow bolts in one turn', async () =>
     });
     game.u.acurr.a[A_STR] = 18;
     installHeroWeaponSkills({ [P_CROSSBOW]: P_SKILLED });
-    const crossbow = knownInventoryWeapon(CROSSBOW, {
+    const crossbow = addInventoryWeapon(CROSSBOW, {
         invlet: 'a', owornmask: W_WEP, wielded: true,
     });
-    const bolts = knownInventoryWeapon(CROSSBOW_BOLT, {
+    const bolts = addInventoryWeapon(CROSSBOW_BOLT, {
         invlet: 'b', quan: 3, quantity: 3,
     });
     game.uwep = game.u.uwep = crossbow;
@@ -137,10 +137,10 @@ test('a fired arrow gets ring damage but not Strength damage', async () => {
     game.u.acurr.a[A_STR] = 3;
     game.u.udaminc = 3;
     installHeroWeaponSkills({ [P_BOW]: P_BASIC });
-    const bow = knownInventoryWeapon(BOW, {
+    const bow = addInventoryWeapon(BOW, {
         invlet: 'a', owornmask: W_WEP, wielded: true,
     });
-    const arrow = knownInventoryWeapon(ARROW, { invlet: 'b' });
+    const arrow = addInventoryWeapon(ARROW, { invlet: 'b' });
     game.uwep = game.u.uwep = bow;
     const jackal = addMonster({
         species: 'jackal', x: 11, y: 10,

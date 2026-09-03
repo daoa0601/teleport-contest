@@ -7,7 +7,7 @@ import { MONSTER_NAME } from '../../js/monster_data.js';
 import {
     HEAVY_IRON_BALL, IRON_CHAIN, RIN_POLYMORPH_CONTROL,
 } from '../../js/object_data.js';
-import { knownInventoryObject, knownObject } from './game-objects.js';
+import { addInventoryObject, knownObject } from './game-objects.js';
 import { freshObjectRoom } from './object-room.js';
 
 const PM_WEREWOLF = 21;
@@ -125,7 +125,7 @@ export function wearHeroObject(object, slot, mask) {
 
 export function wearPolymorphControlRing() {
     return wearHeroObject(
-        knownInventoryObject(RIN_POLYMORPH_CONTROL),
+        addInventoryObject(RIN_POLYMORPH_CONTROL),
         'uright',
         W_RINGR,
     );

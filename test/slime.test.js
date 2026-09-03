@@ -19,7 +19,7 @@ import {
     resumeDeferredHeroSlime, startHeroSliming,
 } from '../js/slime.js';
 import { addMonster } from './support/monsters.js';
-import { knownInventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import {
     freshHeroConditionRoom, wearHeroObject,
 } from './support/hero-state.js';
@@ -91,9 +91,9 @@ test('the final slime turn changes form before invoking slime death',
         freshHeroConditionRoom();
         startHeroSliming({ state: game, turns: 1, killer: 'green slime' });
         const armor = wearHeroObject(
-            knownInventoryObject(LEATHER_ARMOR), 'uarm', W_ARM,
+            addInventoryObject(LEATHER_ARMOR), 'uarm', W_ARM,
         );
-        const amulet = knownInventoryObject(AMULET_OF_LIFE_SAVING);
+        const amulet = addInventoryObject(AMULET_OF_LIFE_SAVING);
         game.uamul = amulet;
         game.u.uamul = amulet;
         const messages = [];

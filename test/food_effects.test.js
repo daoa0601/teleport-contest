@@ -11,7 +11,7 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { syncBlindness } from '../js/senses.js';
-import { knownInventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { installHumanWerewolfHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -20,7 +20,7 @@ test('eating a carrot clears temporary blindness', async () => {
     game.u.blindTurns = 12;
     game.u.ucreamed = 0;
     syncBlindness(game);
-    const carrot = knownInventoryObject(CARROT, { age: game.moves });
+    const carrot = addInventoryObject(CARROT, { age: game.moves });
     pushKey('a');
 
     await rhack('e'.charCodeAt(0));
@@ -38,7 +38,7 @@ test('eating an uncursed eucalyptus leaf cures illness and nausea',
         game.u.sickType = SICK_VOMITABLE;
         game.u.vomiting = true;
         game.u.vomitingTurns = 9;
-        const leaf = knownInventoryObject(EUCALYPTUS_LEAF, {
+        const leaf = addInventoryObject(EUCALYPTUS_LEAF, {
             age: game.moves,
         });
         pushKey('a');
@@ -56,7 +56,7 @@ test('eating an uncursed eucalyptus leaf cures illness and nausea',
 test('eating wolfsbane cures lycanthropy and ends beast form', async () => {
     freshObjectRoom({ gameplaySeed: 45300n });
     installHumanWerewolfHero({ beast: true });
-    const wolfsbane = knownInventoryObject(SPRIG_OF_WOLFSBANE, {
+    const wolfsbane = addInventoryObject(SPRIG_OF_WOLFSBANE, {
         age: game.moves,
     });
     pushKey('a');
@@ -72,7 +72,7 @@ test('eating wolfsbane cures lycanthropy and ends beast form', async () => {
 
 test('eating a cockatrice egg starts petrification', async () => {
     freshObjectRoom({ gameplaySeed: 45300n });
-    const egg = knownInventoryObject(EGG, {
+    const egg = addInventoryObject(EGG, {
         age: game.moves,
         corpsenm: 10,
     });
@@ -93,7 +93,7 @@ test('eating royal jelly strengthens and heals the hero', async () => {
     game.u._woundedLegSide = 'left';
     game.u.acurr.a[A_DEX]--;
     const strength = game.u.acurr.a[A_STR];
-    const jelly = knownInventoryObject(LUMP_OF_ROYAL_JELLY, {
+    const jelly = addInventoryObject(LUMP_OF_ROYAL_JELLY, {
         age: game.moves,
     });
     pushKeys('a   ');
@@ -108,7 +108,7 @@ test('eating royal jelly strengthens and heals the hero', async () => {
 
 test('eating a cursed apple puts the hero to sleep', async () => {
     freshObjectRoom({ gameplaySeed: 45300n });
-    const apple = knownInventoryObject(APPLE, {
+    const apple = addInventoryObject(APPLE, {
         age: game.moves,
         cursed: true,
     });
@@ -127,7 +127,7 @@ test('reading a fortune cookie grants nutrition and literacy', async () => {
     freshObjectRoom({ gameplaySeed: 45300n });
     game.u.uhunger = 900;
     game.u.uconduct = {};
-    const cookie = knownInventoryObject(FORTUNE_COOKIE, {
+    const cookie = addInventoryObject(FORTUNE_COOKIE, {
         age: game.moves,
     });
     pushKeys('a    ');
@@ -142,7 +142,7 @@ test('reading a fortune cookie grants nutrition and literacy', async () => {
 test('a tainted corpse is consumed and starts fatal sickness', async () => {
     freshObjectRoom({ gameplaySeed: 45300n });
     game.moves = 1000;
-    const corpse = knownInventoryObject(CORPSE, {
+    const corpse = addInventoryObject(CORPSE, {
         age: 1,
         corpsenm: 70,
         name: 'goblin corpse',

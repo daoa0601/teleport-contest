@@ -24,7 +24,7 @@ import {
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
 import {
-    carriedObject, knownInventoryObject,
+    carriedObject, addInventoryObject,
 } from './support/game-objects.js';
 import { wearHeroObject } from './support/hero-state.js';
 import {
@@ -523,7 +523,7 @@ test('impact life saving limits thrown poison to strength loss', async () => {
         gameplaySeed: 1n,
     });
     const amulet = wearHeroObject(
-        knownInventoryObject(AMULET_OF_LIFE_SAVING),
+        addInventoryObject(AMULET_OF_LIFE_SAVING),
         'uamul',
         W_AMUL,
     );
@@ -586,7 +586,7 @@ test('a hostile rogue throws its full dagger volley at the hero', () => {
 test('life saving lets a hostile monster finish its dagger volley', async () => {
     freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
     const amulet = wearHeroObject(
-        knownInventoryObject(AMULET_OF_LIFE_SAVING),
+        addInventoryObject(AMULET_OF_LIFE_SAVING),
         'uamul',
         W_AMUL,
     );

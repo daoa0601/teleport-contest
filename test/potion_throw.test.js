@@ -14,7 +14,7 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { throwInventoryObject } from './support/commands.js';
-import { knownInventoryObject, knownObject } from './support/game-objects.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
 import {
     installHumanWerewolfHero, installPolymorphedHero,
     wearPolymorphControlRing,
@@ -78,7 +78,7 @@ test('live map potion crosses bhit and consumes a successful inert contact',
     async () => {
         const monster = freshMapPotionState(2);
         monster.msleeping = 1;
-        const potion = knownInventoryObject(POT_FRUIT_JUICE);
+        const potion = addInventoryObject(POT_FRUIT_JUICE);
 
         initRng(2702n);
         await throwEast(potion, [' ', ' ', ' ', ' ']);
@@ -94,7 +94,7 @@ test('live map potion miss wakes conditionally then shatters at bhitpos',
     async () => {
         const monster = freshMapPotionState(2);
         monster.msleeping = 1;
-        const potion = knownInventoryObject(POT_GAIN_LEVEL);
+        const potion = addInventoryObject(POT_GAIN_LEVEL);
 
         initRng(2701n);
         await throwEast(potion, [' ', ' ', ' ']);
@@ -110,7 +110,7 @@ test('live map potion miss wakes conditionally then shatters at bhitpos',
 
 test('map potion stack allocates and consumes one split identity', async () => {
     const monster = freshMapPotionState(2);
-    const potion = knownInventoryObject(POT_FRUIT_JUICE);
+    const potion = addInventoryObject(POT_FRUIT_JUICE);
     potion.quan = potion.quantity = 2;
     potion.owt *= 2;
 
@@ -128,7 +128,7 @@ test('one-percent map potion break resistance preserves the thrown identity',
     async () => {
         freshMapPotionState(2);
         game.level.monsters = [];
-        const potion = knownInventoryObject(POT_GAIN_LEVEL);
+        const potion = addInventoryObject(POT_GAIN_LEVEL);
 
         initRng(2795n);
         await throwEast(potion);
@@ -152,7 +152,7 @@ test('a thrown potion that survives impact can fall down a ladder',
             tolev: { dnum: 0, dlevel: 5 },
             next: null,
         };
-        const potion = knownInventoryObject(POT_GAIN_LEVEL);
+        const potion = addInventoryObject(POT_GAIN_LEVEL);
 
         initRng(2795n);
         await throwEast(potion);
@@ -175,7 +175,7 @@ test('map extra healing contact heals monster then hero through nearby vapor',
         game.u.uhpmax = 30;
         game.u.blindTurns = 0;
         game.u.deafTurns = 6;
-        const potion = knownInventoryObject(POT_EXTRA_HEALING);
+        const potion = addInventoryObject(POT_EXTRA_HEALING);
 
         initRng(2804n);
         await throwEast(potion, [' ', ' ', ' ', ' ', ' ', ' ', ' ']);
@@ -194,7 +194,7 @@ test('map sickness contact harms monster before nearby hero vapor', async () => 
     monster.msleeping = 1;
     game.u.uhp = 30;
     game.u.uhpmax = 30;
-    const potion = knownInventoryObject(POT_SICKNESS);
+    const potion = addInventoryObject(POT_SICKNESS);
 
     initRng(2942n);
     await throwEast(potion, [' ', ' ', ' ', ' ', ' ', ' ']);
@@ -211,7 +211,7 @@ test('map confusion contact affects both monster and nearby hero', async () => {
     monster.mconf = 0;
     monster.msleeping = 1;
     game.u.confusionTurns = 0;
-    const potion = knownInventoryObject(POT_CONFUSION);
+    const potion = addInventoryObject(POT_CONFUSION);
 
     initRng(2998n);
     await throwEast(potion, [' ', ' ', ' ', ' ', ' ']);
@@ -230,7 +230,7 @@ test('adjacent hard-floor break applies healing vapor without monster contact',
         game.level.at(11, 10).typ = STONE;
         game.u.uhp = 20;
         game.u.uhpmax = 30;
-        const potion = knownInventoryObject(POT_EXTRA_HEALING);
+        const potion = addInventoryObject(POT_EXTRA_HEALING);
         potion.cursed = false;
         potion.blessed = false;
 
@@ -247,7 +247,7 @@ test('adjacent paralysis contact freezes monster and installs hero helplessness'
         const monster = freshMapPotionState(1);
         monster.meating = 3;
         monster.mstrategy = 0x20000000;
-        const potion = knownInventoryObject(POT_PARALYSIS);
+        const potion = addInventoryObject(POT_PARALYSIS);
 
         initRng(3011n);
         await throwEast(potion, [' ', ' ', ' ', ' ', ' ']);
@@ -271,7 +271,7 @@ test('map speed contact accelerates monster before nearby hero movement timeout'
         game.u.fast = false;
         game.u.veryFast = false;
         game.u.veryFastTurns = 0;
-        const potion = knownInventoryObject(POT_SPEED);
+        const potion = addInventoryObject(POT_SPEED);
 
         initRng(3321n);
         await throwEast(potion, [' ', ' ', ' ', ' ', ' ', ' ']);
@@ -292,7 +292,7 @@ test('map invisibility contact hides the target and records its remembered squar
         monster.perminvis = 0;
         monster.invis_blkd = 0;
         game.level.flags.hero_memory = true;
-        const potion = knownInventoryObject(POT_INVISIBILITY);
+        const potion = addInventoryObject(POT_INVISIBILITY);
 
         initRng(3321n);
         await throwEast(potion, [' ', ' ', ' ', ' ', ' ']);
@@ -317,7 +317,7 @@ test('cursed map potion reaches its target and reveals it',
         game.level.at(monster.mx, monster.my).remembered_glyph = {
             ch: 'I', color: 0, decgfx: false, kind: 'invisible',
         };
-        const potion = knownInventoryObject(POT_INVISIBILITY);
+        const potion = addInventoryObject(POT_INVISIBILITY);
         potion.cursed = true;
         potion.blessed = false;
 
@@ -342,7 +342,7 @@ test('live acid-resistant target takes only impact chip and leaves radius asleep
             msleeping: 1,
         });
         const neighbor = addSleepingNeighbor(2712);
-        const potion = knownInventoryObject(POT_ACID);
+        const potion = addInventoryObject(POT_ACID);
 
         initRng(2702n);
         await throwEast(potion, Array(20).fill(' '));
@@ -367,7 +367,7 @@ test('live worn acid-protection armor limits damage to the impact chip',
             const armor = equipMonsterObject(
                 monster, knownObject(equipment.otyp), equipment.mask,
             );
-            const potion = knownInventoryObject(POT_ACID);
+            const potion = addInventoryObject(POT_ACID);
 
             initRng(2702n);
             await throwEast(potion, Array(20).fill(' '));
@@ -387,7 +387,7 @@ test('live magic-resistant acid target avoids acid and radius damage',
             msleeping: 1,
         });
         const neighbor = addSleepingNeighbor(2713);
-        const potion = knownInventoryObject(POT_ACID);
+        const potion = addInventoryObject(POT_ACID);
 
         initRng(2700n);
         await throwEast(potion, Array(20).fill(' '));
@@ -408,7 +408,7 @@ test('live acid damage wakes the audible source radius before survival',
         const neighbor = addSleepingNeighbor(2714, {
             strategy: 0x60000000,
         });
-        const potion = knownInventoryObject(POT_ACID);
+        const potion = addInventoryObject(POT_ACID);
 
         initRng(2702n);
         await throwEast(potion, Array(20).fill(' '));
@@ -428,7 +428,7 @@ test('live acid damages a silent target without radius wake', async () => {
         msleeping: 1,
     });
     const neighbor = addSleepingNeighbor(2715);
-    const potion = knownInventoryObject(POT_ACID);
+    const potion = addInventoryObject(POT_ACID);
 
     initRng(2702n);
     await throwEast(potion, Array(20).fill(' '));
@@ -449,7 +449,7 @@ test('live cursed acid hurts more than blessed acid under the same seed',
                 mnum: 289,
                 hitPoints: 40,
             });
-            const potion = knownInventoryObject(POT_ACID);
+            const potion = addInventoryObject(POT_ACID);
             potion.blessed = specimen.blessed;
             potion.cursed = specimen.cursed;
 
@@ -470,7 +470,7 @@ test('live fatal acid crosses the ordinary map death continuation', async () => 
         hitPoints: 2,
         maxHitPoints: 20,
     });
-    const potion = knownInventoryObject(POT_ACID);
+    const potion = addInventoryObject(POT_ACID);
 
     initRng(2702n);
     await throwEast(potion, Array(40).fill(' '));
@@ -491,7 +491,7 @@ test('live blessed water damages a demon and wakes its source-radius neighbors',
         const neighbor = addSleepingNeighbor(2710, {
             strategy: 0x60000000,
         });
-        const potion = knownInventoryObject(POT_WATER);
+        const potion = addInventoryObject(POT_WATER);
         potion.blessed = true;
 
         initRng(2702n);
@@ -511,7 +511,7 @@ test('live cursed water heals a demon without taking the hostile wake branch',
             maxHitPoints: 20,
             msleeping: 1,
         });
-        const potion = knownInventoryObject(POT_WATER);
+        const potion = addInventoryObject(POT_WATER);
         potion.cursed = true;
 
         initRng(2702n);
@@ -530,7 +530,7 @@ test('live blessed water damages silent undead without waking its neighbors',
             msleeping: 1,
         });
         const neighbor = addSleepingNeighbor(2711);
-        const potion = knownInventoryObject(POT_WATER);
+        const potion = addInventoryObject(POT_WATER);
         potion.blessed = true;
 
         initRng(2702n);
@@ -552,7 +552,7 @@ test('live cursed water changes a human were only without shape protection',
                 msleeping: 1,
             });
             game.u.protectionFromShapeChangers = protectedHero;
-            const potion = knownInventoryObject(POT_WATER);
+            const potion = addInventoryObject(POT_WATER);
             potion.cursed = true;
 
             initRng(2702n);
@@ -578,7 +578,7 @@ test('cursed water makes a human werewolf shed incompatible equipment',
         const dagger = equipMonsterObject(
             monster, knownObject(DAGGER), W_WEP,
         );
-        const potion = knownInventoryObject(POT_WATER, { cursed: true });
+        const potion = addInventoryObject(POT_WATER, { cursed: true });
 
         initRng(2702n);
         await throwEast(potion, Array(20).fill(' '));
@@ -595,7 +595,7 @@ test('live ordinary water rusts a surviving iron golem', async () => {
         hitPoints: 20,
         msleeping: 1,
     });
-    const potion = knownInventoryObject(POT_WATER);
+    const potion = addInventoryObject(POT_WATER);
 
     initRng(2702n);
     await throwEast(potion, Array(20).fill(' '));
@@ -614,7 +614,7 @@ test('live water contact clones a hostile gremlin with split hit points',
             hitPoints: 12,
             msleeping: 1,
         });
-        const potion = knownInventoryObject(POT_WATER);
+        const potion = addInventoryObject(POT_WATER);
 
         initRng(2702n);
         await throwEast(potion, Array(20).fill(' '));
@@ -638,7 +638,7 @@ test('two-square water vapor can multiply a live gremlin hero', async () => {
         turns: 300,
         hitPoints: 17,
     });
-    const potion = knownInventoryObject(POT_WATER);
+    const potion = addInventoryObject(POT_WATER);
 
     initRng(2746n);
     await throwEast(potion, Array(30).fill(' '));
@@ -663,7 +663,7 @@ test('live blessed water rehumanizes an unequipped beast were', async () => {
         movement: 18,
         mmove: 18,
     });
-    const potion = knownInventoryObject(POT_WATER);
+    const potion = addInventoryObject(POT_WATER);
     potion.blessed = true;
 
     initRng(2702n);
@@ -679,7 +679,7 @@ test('controlled lycanthrope decline completes a two-square map throw',
         freshMapPotionState(2);
         installHumanWerewolfHero();
         const ring = wearPolymorphControlRing();
-        const potion = knownInventoryObject(POT_WATER);
+        const potion = addInventoryObject(POT_WATER);
         potion.cursed = true;
 
         initRng(2702n);
@@ -695,7 +695,7 @@ test('three-square water contact bypasses unreachable hero-vapor prompts',
         const monster = freshMapPotionState(3);
         installHumanWerewolfHero();
         wearPolymorphControlRing();
-        const potion = knownInventoryObject(POT_WATER);
+        const potion = addInventoryObject(POT_WATER);
         potion.cursed = true;
 
         initRng(2702n);
@@ -716,7 +716,7 @@ test('live fatal iron-golem water creates source special chain drops',
             name: 'Ferrum',
         });
         game.u.ulevel = 30;
-        const potion = knownInventoryObject(POT_WATER);
+        const potion = addInventoryObject(POT_WATER);
 
         initRng(2702n);
         await throwEast(potion, Array(40).fill(' '));
@@ -745,7 +745,7 @@ test('live fatal blessed water uses the ordinary map death continuation',
             hitPoints: 2,
             maxHitPoints: 20,
         });
-        const potion = knownInventoryObject(POT_WATER);
+        const potion = addInventoryObject(POT_WATER);
         potion.blessed = true;
 
         initRng(2702n);
@@ -759,7 +759,7 @@ test('live fatal blessed water uses the ordinary map death continuation',
 test('greased map potion reroutes live flight after stack detachment',
     async () => {
         const monster = freshMapPotionState(2);
-        const potion = knownInventoryObject(POT_INVISIBILITY);
+        const potion = addInventoryObject(POT_INVISIBILITY);
         potion.greased = true;
         potion.quan = potion.quantity = 2;
         potion.owt *= 2;
@@ -783,7 +783,7 @@ test('greased map potion reroutes live flight after stack detachment',
 test('greased map potion can reroute vertically through live hitfloor',
     async () => {
         const monster = freshMapPotionState(2);
-        const potion = knownInventoryObject(POT_INVISIBILITY);
+        const potion = addInventoryObject(POT_INVISIBILITY);
         potion.greased = true;
 
         initRng(124n);
@@ -804,7 +804,7 @@ test('greased map potion can reroute vertically through live hitfloor',
 test('live unlit oil breaks without evaporation and wakes its target', async () => {
     const monster = freshMapPotionState(2);
     monster.msleeping = 1;
-    const potion = knownInventoryObject(POT_OIL);
+    const potion = addInventoryObject(POT_OIL);
 
     initRng(2702n);
     await throwEast(potion, Array(20).fill(' '));
@@ -818,10 +818,10 @@ test('live unlit oil breaks without evaporation and wakes its target', async () 
 test('unknown inert map potion records a live type call after visible impact',
     async () => {
         const monster = freshMapPotionState(2);
-        const potion = knownInventoryObject(POT_GAIN_LEVEL);
+        const potion = addInventoryObject(POT_GAIN_LEVEL);
         potion.typeKnown = potion.known = false;
         game._knownObjectTypes?.delete(potion.otyp);
-        const sibling = knownInventoryObject(POT_GAIN_LEVEL, {
+        const sibling = addInventoryObject(POT_GAIN_LEVEL, {
             blessed: true,
             known: false,
             typeKnown: false,

@@ -10,7 +10,7 @@ import {
 } from '../js/object_data.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { dropInventoryObject } from './support/commands.js';
-import { inventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
@@ -47,17 +47,7 @@ test('a cursed scroll of light darkens the visible area', async () => {
     const level = freshGameplayRoom();
     vision_reset_new_level();
     vision_recalc(0);
-    const scroll = {
-        otyp: SCR_LIGHT,
-        invlet: 'a',
-        name: 'light',
-        oclass: 9,
-        quan: 1,
-        quantity: 1,
-        cursed: true,
-        dknown: true,
-    };
-    game.inventory = [scroll];
+    addInventoryObject(SCR_LIGHT, { invlet: 'a', cursed: true });
     pushKey('a');
     pushKey(' ');
 
@@ -70,15 +60,7 @@ test('reading a magical scroll exercises Wisdom', async () => {
     freshGameplayRoom();
     game.u.acurr.a[A_WIS] = 3;
     game.u.acurr.a[A_CON] = 3;
-    game.inventory = [{
-        otyp: SCR_LIGHT,
-        invlet: 'a',
-        name: 'light',
-        oclass: 9,
-        quan: 1,
-        quantity: 1,
-        dknown: true,
-    }];
+    addInventoryObject(SCR_LIGHT, { invlet: 'a' });
     pushKey('a');
     pushKey(' ');
 
@@ -93,16 +75,7 @@ test('reading a magical scroll exercises Wisdom', async () => {
 test('a confused scroll of light creates harmless tame lights', async () => {
     const level = freshGameplayRoom();
     game.u.confusionTurns = 5;
-    const scroll = {
-        otyp: SCR_LIGHT,
-        invlet: 'a',
-        name: 'light',
-        oclass: 9,
-        quan: 1,
-        quantity: 1,
-        dknown: true,
-    };
-    game.inventory = [scroll];
+    addInventoryObject(SCR_LIGHT, { invlet: 'a' });
     pushKey('a');
     pushKey(' ');
 
@@ -120,22 +93,7 @@ test('quaffing applies the potion, consumes it, and uses a turn',
         freshGameplayRoom();
         game.urole = { key: 'wizard' };
         game.u.uen = game.u.uenmax = game.u.uenpeak = 1;
-        const potion = {
-            otyp: POT_GAIN_ENERGY,
-            invlet: 'a',
-            name: 'potion of gain energy',
-            plural: 'potions of gain energy',
-            class: 'Potions',
-            oclass: 8,
-            quan: 1,
-            quantity: 1,
-            where: 'inventory',
-            cursed: false,
-            blessed: false,
-            bknown: true,
-            dknown: true,
-        };
-        game.inventory = [potion];
+        const potion = addInventoryObject(POT_GAIN_ENERGY, { invlet: 'a' });
         pushKey('a');
 
         await rhack('q'.charCodeAt(0));
@@ -149,12 +107,12 @@ test('quaffing applies the potion, consumes it, and uses a turn',
 test('dropping a cursed item on an altar reveals its curse', async () => {
     const level = freshObjectRoom();
     level.at(game.u.ux, game.u.uy).typ = ALTAR;
-    const potion = inventoryObject(POT_GAIN_ENERGY, 'a', {
+    const potion = addInventoryObject(POT_GAIN_ENERGY, {
+        invlet: 'a',
         cursed: true,
         bknown: false,
         typeKnown: true,
     });
-    game.inventory = [potion];
 
     await dropInventoryObject(potion);
 

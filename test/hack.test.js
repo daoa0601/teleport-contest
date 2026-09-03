@@ -14,7 +14,7 @@ import {
     WATER_WALKING_BOOTS,
 } from '../js/object_data.js';
 import { vision_reset } from '../js/vision.js';
-import { carriedObject as inventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { addMonster, livePet } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
@@ -98,12 +98,11 @@ test('a trapped hero sinks deeper after another action in lava', async () => {
 
 test('fireproof water-walking boots hold the hero above lava', async () => {
     liquidAtHero(LAVAPOOL);
-    const boots = inventoryObject(WATER_WALKING_BOOTS, {
+    const boots = addInventoryObject(WATER_WALKING_BOOTS, {
         oclass: 3,
         worn: true,
         oerodeproof: true,
     });
-    game.inventory = [boots];
     game.uarmf = boots;
     game.u.uarmf = boots;
     const messages = [];
@@ -160,12 +159,11 @@ test('a trapped fire-resistant hero eventually dissolves in lava', async () => {
 test('life saving pulls the hero out after flammable gear burns', async () => {
     const level = liquidAtHero(LAVAPOOL);
     level.at(20, 5).typ = ROOM;
-    const armor = inventoryObject(LEATHER_ARMOR, { oclass: 3 });
-    const amulet = inventoryObject(AMULET_OF_LIFE_SAVING, {
+    const armor = addInventoryObject(LEATHER_ARMOR, { oclass: 3 });
+    const amulet = addInventoryObject(AMULET_OF_LIFE_SAVING, {
         oclass: 5,
         worn: true,
     });
-    game.inventory = [armor, amulet];
     game.uamul = amulet;
     game.u.uamul = amulet;
 
@@ -328,12 +326,11 @@ test('known water-walking boots let the hero step onto a pool', async () => {
     const level = freshGameplayRoom();
     level.at(11, 10).typ = POOL;
     vision_reset();
-    const boots = inventoryObject(WATER_WALKING_BOOTS, {
+    const boots = addInventoryObject(WATER_WALKING_BOOTS, {
         oclass: 3,
         worn: true,
         typeKnown: true,
     });
-    game.inventory = [boots];
     game.uarmf = boots;
     game.u.uarmf = boots;
     game.flags.paranoia_bits = PARANOID_SWIM;
@@ -346,8 +343,7 @@ test('known water-walking boots let the hero step onto a pool', async () => {
 
 test('a burdened hero drops gear before crawling out of a pool', async () => {
     const level = poolAtHero();
-    const stone = inventoryObject(LOADSTONE);
-    game.inventory = [stone];
+    const stone = addInventoryObject(LOADSTONE);
     const messages = [];
 
     const result = await heroLiquidEffects({
@@ -370,8 +366,7 @@ test('a burdened hero drops gear before crawling out of a pool', async () => {
 
 test('a cursed loadstone can keep the hero from crawling out', async () => {
     poolAtHero();
-    const loadstone = inventoryObject(LOADSTONE, { cursed: true });
-    game.inventory = [loadstone];
+    const loadstone = addInventoryObject(LOADSTONE, { cursed: true });
     const messages = [];
     let death = null;
 
@@ -396,12 +391,11 @@ test('a cursed loadstone can keep the hero from crawling out', async () => {
 test('life saving moves a drowned hero to dry land', async () => {
     const level = poolAtHero();
     level.at(20, 5).typ = ROOM;
-    const loadstone = inventoryObject(LOADSTONE, { cursed: true });
-    const amulet = inventoryObject(AMULET_OF_LIFE_SAVING, {
+    const loadstone = addInventoryObject(LOADSTONE, { cursed: true });
+    const amulet = addInventoryObject(AMULET_OF_LIFE_SAVING, {
         oclass: 5,
         worn: true,
     });
-    game.inventory = [loadstone, amulet];
     game.uamul = amulet;
     game.u.uamul = amulet;
 
@@ -443,8 +437,7 @@ test('water wakes a sleeping hero before the crawl attempt', async () => {
 test('the Plane of Water does not make the hero drop gear to escape', async () => {
     const level = poolAtHero();
     level.flags.is_waterlevel = true;
-    const stone = inventoryObject(LOADSTONE);
-    game.inventory = [stone];
+    const stone = addInventoryObject(LOADSTONE);
 
     const result = await heroLiquidEffects({
         ...noDisplay,
@@ -468,8 +461,7 @@ test('swimming through the same pool usually leaves inventory dry', async () => 
     game.u.uinwater = 1;
     game.u.swimming = true;
     game.u.uluck = -5;
-    const acid = inventoryObject(POT_ACID, { oclass: 8 });
-    game.inventory = [acid];
+    const acid = addInventoryObject(POT_ACID, { oclass: 8 });
 
     await heroLiquidEffects({
         ...noDisplay,
@@ -494,11 +486,10 @@ test('entering a pool releases every leash', async () => {
         hitPoints: 8,
         mleashed: 1,
     });
-    const leash = inventoryObject(LEASH, {
+    const leash = addInventoryObject(LEASH, {
         oclass: 6,
         leashmon: pet.m_id,
     });
-    game.inventory = [leash];
     const messages = [];
 
     await heroLiquidEffects({

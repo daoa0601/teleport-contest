@@ -15,7 +15,7 @@ import {
 import {
     applyInventoryObject as applyInventoryA,
 } from './support/commands.js';
-import { knownInventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshCommandRoom } from './support/playable-room.js';
 import { addStaffedShop } from './support/shop.js';
 
@@ -36,7 +36,7 @@ function freshLampState(otyp, overrides = {}, seed = 1n) {
     game.flags = {};
     game.moves = 40;
     vision_reset_new_level();
-    const lamp = knownInventoryObject(otyp, {
+    const lamp = addInventoryObject(otyp, {
         age: 200,
         spe: 1,
         lamplit: false,

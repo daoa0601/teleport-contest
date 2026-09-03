@@ -20,7 +20,7 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { races, roles } from '../js/roles.js';
 import { objectWeight } from '../js/weight.js';
-import { knownInventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { addMonster } from './support/monsters.js';
@@ -38,7 +38,7 @@ test('a nearby object-loving monster can inherit a dead hero item', () => {
         y: 10,
         hitPoints: 20,
     });
-    const dagger = knownInventoryObject(DAGGER, {
+    const dagger = addInventoryObject(DAGGER, {
         worn: true,
         wielded: true,
         owornmask: 1,
@@ -68,7 +68,7 @@ test('a hero burned in lava leaves dropped gear and a ghost but no body',
         game.storage = memoryStorage();
         game._canMakeBones = true;
         game.plname = 'Ember';
-        const dagger = knownInventoryObject(DAGGER);
+        const dagger = addInventoryObject(DAGGER);
         setHeroRemainsFromDeath(BURNING);
 
         assert.equal(await createBonesFromDeath(async () => 'y'), true);
@@ -104,8 +104,8 @@ test('a mummy victim rises with their inventory and intrinsic resistances',
         game.flags.female = true;
         grantIntrinsicProperty('fireResistance', 'experience', game);
         grantIntrinsicProperty('poisonResistance', 'outside', game);
-        const armor = knownInventoryObject(LEATHER_ARMOR);
-        const dagger = knownInventoryObject(DAGGER);
+        const armor = addInventoryObject(LEATHER_ARMOR);
+        const dagger = addInventoryObject(DAGGER);
 
         assert.equal(setHeroRemainsFromMonster({
             mnum: PM_HUMAN_MUMMY,
@@ -148,8 +148,8 @@ test('a stoned hero leaves a named statue containing their inventory',
         game._canMakeBones = true;
         game.plname = 'Ada';
         game.u.ugrave_arise = LEAVESTATUE;
-        const dagger = knownInventoryObject(DAGGER);
-        const lamp = knownInventoryObject(OIL_LAMP, { age: 100 });
+        const dagger = addInventoryObject(DAGGER);
+        const lamp = addInventoryObject(OIL_LAMP, { age: 100 });
         beginObjectBurn(lamp, game, game.moves);
 
         assert.equal(await createBonesFromDeath(async () => 'y'), true);

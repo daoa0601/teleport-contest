@@ -16,7 +16,6 @@ import {
     WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_SECRET_DOOR_DETECTION,
     WAN_SLEEP, WAN_STASIS, WAN_WISHING,
 } from '../js/object_data.js';
-import { place_object } from '../js/floor_object.js';
 import {
     LEVEL_TIMER_KIND, scheduleLevelTimer,
 } from '../js/object_timers.js';
@@ -26,7 +25,9 @@ import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import {
     zapCancellationRay, zapColdRay, zapDeathRay, zapFireRay,
 } from '../js/zap.js';
-import { chargedWand } from './support/game-objects.js';
+import {
+    addInventoryObject, chargedWand, floorObject,
+} from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
@@ -325,23 +326,14 @@ test('a fire ray burns floor scrolls and lights an exposed oil lamp', async () =
     game.u.blindTurns = 10;
     game.viz_array[10][11] = 0;
     game.viz_array[10][12] = 0;
-    const scrolls = place_object({
-        otyp: SCR_IDENTIFY,
-        oclass: 9,
+    const scrolls = floorObject(SCR_IDENTIFY, 11, 10, {
         quan: 20,
         quantity: 20,
-        owt: 100,
-        artifact: false,
-    }, 11, 10);
-    const lamp = place_object({
-        otyp: OIL_LAMP,
-        oclass: 6,
-        quan: 1,
-        quantity: 1,
+    });
+    const lamp = floorObject(OIL_LAMP, 11, 10, {
         age: 100,
-        cursed: false,
         lamplit: false,
-    }, 11, 10);
+    });
     const door = level.at(12, 10);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
@@ -362,13 +354,7 @@ test('a cold ray freezes a pool and buries objects under the ice', async () => {
     game.viz_array[10][12] = 0;
     const pool = level.at(11, 10);
     pool.typ = POOL;
-    const scroll = place_object({
-        otyp: SCR_IDENTIFY,
-        oclass: 9,
-        quan: 1,
-        quantity: 1,
-        artifact: false,
-    }, 11, 10);
+    const scroll = floorObject(SCR_IDENTIFY, 11, 10);
     const door = level.at(12, 10);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
@@ -413,15 +399,8 @@ test('a fire ray melts ice back into its pool', async () => {
 
 test('melting ice makes the hero crawl out of the pool', async () => {
     const level = freshGameplayRoom();
-    const acid = {
-        otyp: POT_ACID,
-        oclass: 8,
-        quan: 1,
-        quantity: 1,
-        where: 'inventory',
-    };
+    const acid = addInventoryObject(POT_ACID);
     game.u.uluck = -5;
-    game.inventory = [acid];
     const ice = level.at(game.u.ux, game.u.uy);
     ice.typ = ICE;
     ice.icedpool = ICED_POOL;

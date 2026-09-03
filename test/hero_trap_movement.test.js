@@ -17,7 +17,7 @@ import {
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import {
-    inventoryObject, knownInventoryObject,
+    inventoryObject, addInventoryObject,
 } from './support/game-objects.js';
 import { wearHeroObject } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
@@ -200,7 +200,7 @@ test('enchanted iron shoes absorb an anti-magic field', async () => {
     const level = freshObjectRoom({
         hero: { uen: 20, uenmax: 20 },
     });
-    const shoes = knownInventoryObject(IRON_SHOES, { spe: 1 });
+    const shoes = addInventoryObject(IRON_SHOES, { spe: 1 });
     wearHeroObject(shoes, 'uarmf', W_ARMF);
     const trap = addTrap(level, ANTI_MAGIC, 11, 10, { tseen: false });
 
@@ -232,7 +232,7 @@ test('wielding Magicbane turns an anti-magic field into an implosion',
             hero: { uen: 20, uenmax: 20 },
         });
         const artifact = artifactByName('Magicbane');
-        const magicbane = knownInventoryObject(artifact.baseType, { spe: 0 });
+        const magicbane = addInventoryObject(artifact.baseType, { spe: 0 });
         nameArtifact(magicbane, artifact);
         magicbane.wielded = true;
         wearHeroObject(magicbane, 'uwep', W_WEP);

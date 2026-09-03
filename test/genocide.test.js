@@ -10,7 +10,9 @@ import { CLUB, EGG } from '../js/object_data.js';
 import {
     OBJECT_TIMER_KIND, scheduleObjectTimer,
 } from '../js/object_timers.js';
-import { inventoryObject } from './support/game-objects.js';
+import {
+    addInventoryObject, knownObject,
+} from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
@@ -23,7 +25,7 @@ test('monster lookup accepts source names, plurals, and class descriptions', () 
 
 test('genocide removes the species, drops its inventory, and sterilizes eggs', async () => {
     freshGameplayRoom();
-    const carried = inventoryObject(CLUB, null, { where: 'monster' });
+    const carried = knownObject(CLUB, { where: 'monster' });
     const ant = addMonster({
         mnum: 0,
         m_id: 40,
@@ -32,12 +34,10 @@ test('genocide removes the species, drops its inventory, and sterilizes eggs', a
         hitPoints: 4,
         inventory: [carried],
     });
-    const egg = {
-        otyp: EGG, oclass: 7, corpsenm: 0,
-        quan: 1, quantity: 1, where: 'inventory',
-        objectTimers: [], timed: 0,
-    };
-    game.inventory = [egg];
+    const egg = addInventoryObject(EGG, {
+        initialize: false,
+        corpsenm: 0,
+    });
     scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, 200);
     pushKeys('giant ant\n');
 

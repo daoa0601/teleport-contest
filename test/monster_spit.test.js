@@ -10,7 +10,7 @@ import { pushKeys } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, HELMET } from '../js/object_data.js';
 import { resolveRangedRetaliation } from '../js/dogmove.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
-import { knownInventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { wearHeroObject } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addMonsterToLevel } from './support/monsters.js';
@@ -75,7 +75,7 @@ test('life saving rescues the hero from fatal acid venom', async () => {
         gameplaySeed: 1n,
     });
     const amulet = wearHeroObject(
-        knownInventoryObject(AMULET_OF_LIFE_SAVING),
+        addInventoryObject(AMULET_OF_LIFE_SAVING),
         'uamul',
         W_AMUL,
     );
@@ -105,7 +105,7 @@ test('a visored helmet blocks blinding venom', () => {
     });
     game.objectDescriptions[HELMET] = 'visored helmet';
     wearHeroObject(
-        knownInventoryObject(HELMET),
+        addInventoryObject(HELMET),
         'uarmh',
         W_ARMH,
     );

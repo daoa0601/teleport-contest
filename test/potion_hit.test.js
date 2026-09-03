@@ -17,7 +17,7 @@ import { pushKey, pushKeys } from '../js/input.js';
 import { parseNethackrc } from '../js/options.js';
 import { initRng } from '../js/rng.js';
 import {
-    knownInventoryObject, plainObject,
+    addInventoryObject, plainObject,
 } from './support/game-objects.js';
 import {
     installHumanWerewolfHero, wearPolymorphControlRing,

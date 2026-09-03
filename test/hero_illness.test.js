@@ -11,7 +11,7 @@ import {
 } from '../js/hero_illness.js';
 import { CHAIN_MAIL, LONG_SWORD } from '../js/object_data.js';
 import {
-    knownInventoryObject, knownInventoryWeapon,
+    addInventoryObject, addInventoryWeapon,
 } from './support/game-objects.js';
 import {
     freshHeroConditionRoom, installPolymorphedHero, wearHeroObject,
@@ -136,11 +136,11 @@ test('a vomiting yellow dragon breathes acid on its weapon and armor',
     async () => {
         freshHeroConditionRoom();
         installPolymorphedHero('yellow dragon', { turns: 20 });
-        const sword = knownInventoryWeapon(LONG_SWORD);
+        const sword = addInventoryWeapon(LONG_SWORD);
         game.uwep = sword;
         game.u.uwep = sword;
         const mail = wearHeroObject(
-            knownInventoryObject(CHAIN_MAIL), 'uarm', W_ARM,
+            addInventoryObject(CHAIN_MAIL), 'uarm', W_ARM,
         );
         const rolls = [0, 0, 1];
         const messages = [];

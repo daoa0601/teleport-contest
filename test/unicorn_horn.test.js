@@ -8,14 +8,14 @@ import { useUnicornHorn } from '../js/unicorn_horn.js';
 import {
     applyInventoryObject, runMonsterAbilityCommand,
 } from './support/commands.js';
-import { knownInventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { freshCommandRoom } from './support/playable-room.js';
 
 function freshHorn() {
     freshCommandRoom({ seed: 1n });
     game.context.move = 0;
-    return knownInventoryObject(UNICORN_HORN);
+    return addInventoryObject(UNICORN_HORN);
 }
 
 test('applying a unicorn horn uses a turn without consuming it', async () => {
