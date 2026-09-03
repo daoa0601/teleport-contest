@@ -11,12 +11,14 @@ import {
     canProjectMonster, newsym, plineWithContinuation, unmap_invisible,
 } from './display.js';
 import { place_object, stack_object } from './floor_object.js';
+import { landFloorObject } from './floor_effects.js';
 import { game } from './gstate.js';
 import { meldNearbyFloorGlobs } from './glob.js';
 import {
     mkcorpstat, mkgold, mksobj, undeadToCorpse,
 } from './mklev.js';
 import { preventMonsterDeath } from './mondeath.js';
+import { clearMonsterCarriedObjectState } from './monster_inventory.js';
 import {
     MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE,
     MONSTER_SYMBOL, monsterIsPlayerMonster,
@@ -321,19 +323,16 @@ export async function createMonsterRemains(
     return stack_object(corpse, state);
 }
 
-function releaseDeadMonsterInventory(monster, state) {
+async function releaseDeadMonsterInventory(monster, state, publish, random) {
     const x = monster.mx;
     const y = monster.my;
     const carried = monster.minvent || monster.inventory || [];
     for (const object of carried) {
-        object.owornmask = 0;
-        object.worn = false;
-        object.wornSlot = null;
-        object.wielded = false;
-        object.alternate = false;
-        object.ready = false;
-        place_object(object, x, y, state);
-        stack_object(object, state);
+        clearMonsterCarriedObjectState(object);
+        object.where = 'free';
+        await landFloorObject(object, x, y, {
+            state, publish, random,
+        });
     }
     monster.minvent = [];
     monster.inventory = monster.minvent;
@@ -341,7 +340,7 @@ function releaseDeadMonsterInventory(monster, state) {
     monster.mw = null;
 }
 
-async function detachDeadMonster(monster, state, random) {
+async function detachDeadMonster(monster, state, random, publish) {
     const x = monster.mx;
     const y = monster.my;
     createSteamVortexDeathCloud(monster, state, random);
@@ -351,7 +350,7 @@ async function detachDeadMonster(monster, state, random) {
     markQuestLeaderDead(monster, state);
     markQuestNemesisDead(monster, state);
     await returnDeadKop(monster, state, random);
-    releaseDeadMonsterInventory(monster, state);
+    await releaseDeadMonsterInventory(monster, state, publish, random);
     monster.dead = true;
     if (state === game) unmap_invisible(x, y, false);
     state.level.monsters = state.level.monsters.filter(candidate =>
@@ -369,7 +368,7 @@ export async function finishMonsterLiquidDeath(
 ) {
     const x = monster.mx;
     const y = monster.my;
-    await detachDeadMonster(monster, state, random);
+    await detachDeadMonster(monster, state, random, publish);
     const death = leaveCorpse
         ? ordinaryMonsterDeathResult(monster, state, random, rollDice)
         : {
@@ -436,7 +435,7 @@ export async function finishEnvironmentalMonsterDeath(
 
     const x = monster.mx;
     const y = monster.my;
-    await detachDeadMonster(monster, state, random);
+    await detachDeadMonster(monster, state, random, publish);
     const death = noCorpse
         ? {
             crumbleMessage: null,

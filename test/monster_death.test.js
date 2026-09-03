@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { G_GENOD, PIT, STONE } from '../js/const.js';
+import { G_GENOD, PIT, POOL, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys } from '../js/input.js';
@@ -9,7 +9,7 @@ import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     BOULDER, CORPSE, FIGURINE, GLOB_OF_BLACK_PUDDING, OBJECT_NAMES,
-    RED_DRAGON_SCALES, ROCK, STATUE, UNICORN_HORN, WORM_TOOTH,
+    POT_ACID, RED_DRAGON_SCALES, ROCK, STATUE, UNICORN_HORN, WORM_TOOTH,
 } from '../js/object_data.js';
 import { place_object } from '../js/floor_object.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -411,6 +411,26 @@ test('a human-sized monster can leave a heavy bonus object', async () => {
     assert.equal(floorObjectsAt(level, 11, 10).some(object =>
         object.otyp === ROCK), true);
 });
+
+test('pool water destroys an acid potion dropped by a dying monster',
+    async () => {
+        const level = freshObjectRoom({
+            gameplaySeed: 482n,
+            hero: { uluck: -5 },
+        });
+        level.at(11, 10).typ = POOL;
+        const jackal = addMonster({
+            species: 'jackal', x: 11, y: 10, hitPoints: 1,
+        });
+
+        await finishHeroMonsterKill(jackal, jackal.mx, jackal.my, {
+            showKillMessage: false,
+            recordConduct: false,
+        });
+
+        assert.equal(floorObjectsAt(level, 11, 10).some(object =>
+            object.otyp === POT_ACID), false);
+    });
 
 test('a visible lich crumbles to dust instead of leaving a corpse', async () => {
     freshObjectRoom();

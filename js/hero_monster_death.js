@@ -13,7 +13,7 @@ import {
     awardMonsterExperience, gainExperienceLevel, gainLevelAbilities,
     newExperienceThreshold,
 } from './exper.js';
-import { place_object, stack_object } from './floor_object.js';
+import { landFloorObject } from './floor_effects.js';
 import { game } from './gstate.js';
 import { mkobj } from './mklev.js';
 import { angerQuestGuardiansAfterLeaderDeath } from './monster_anger.js';
@@ -283,12 +283,16 @@ export async function finishHeroMonsterKill(monster, x, y, {
     for (const object of carried) {
         observeMonsterDropName(object, x, y);
         clearMonsterCarriedObjectState(object);
-        place_object(object, x, y);
-        stack_object(object, game);
+        object.where = 'free';
+        await landFloorObject(object, x, y, {
+            state: game,
+            publish: plineWithContinuation,
+        });
     }
     monster.minvent = [];
     monster.inventory = monster.minvent;
     monster.hasInventory = false;
+    monster.mw = null;
 
     const levelAllowsDeathDrops = !suppressRemains
         && levelAllowsMonsterDeathDrops(monster, game, rn2);
@@ -319,8 +323,10 @@ export async function finishHeroMonsterKill(monster, x, y, {
                     uncreateArtifact(extra, game);
                 deleteObject(extra, game);
             } else {
-                place_object(extra, x, y);
-                stack_object(extra, game);
+                await landFloorObject(extra, x, y, {
+                    state: game,
+                    publish: plineWithContinuation,
+                });
             }
         }
     }

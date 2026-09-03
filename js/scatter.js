@@ -2,15 +2,15 @@
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
 
 import {
-    A_STR, DOOR, D_CLOSED, D_LOCKED, LAVAPOOL, MOAT, POOL, SINK,
-    STATUE_TRAP, Upolyd, WATER, ZAP_POS, isok, is_hole, is_pit,
+    A_STR, DOOR, D_CLOSED, D_LOCKED, SINK, STATUE_TRAP, Upolyd,
+    ZAP_POS, isok,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { newsym } from './display.js';
 import { finishHeroDeath } from './end.js';
+import { landFloorObject } from './floor_effects.js';
 import { place_object, remove_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { fillPitWithBoulderAt } from './pit_fill.js';
 import { wakeMonster } from './monster_anger.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import {
@@ -25,13 +25,11 @@ import {
     breakFloorObject,
 } from './object_breakage.js';
 import { splitObjectStack } from './object_stack.js';
-import { stopAllObjectTimers } from './object_timers.js';
 import {
     hitMonsterWithInertPotion, hitMonsterWithSupportedPotion,
 } from './potion_hit.js';
 import { rehumanizeHero } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
-import { destroyLavaFloorObjects, waterDamageChain } from './trap.js';
 import { objectWeight } from './weight.js';
 import {
     rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
@@ -248,13 +246,6 @@ async function hitHero(node, state, options) {
     return true;
 }
 
-function deleteObject(object, state) {
-    if (object.where === 'floor') removeFloorObject(object, state);
-    stopAllObjectTimers(object);
-    object.where = 'gone';
-    object.ox = object.oy = 0;
-}
-
 async function fractureObject(object, x, y, state, options) {
     if (squareIsVisible(state, x, y)) {
         const verb = object.otyp === BOULDER ? 'breaks apart' : 'crumbles';
@@ -338,38 +329,11 @@ function nextObjectFromPile(pile, state, options) {
 
 async function landObject(node, state, options) {
     const { object, x, y } = node;
-    placeOnFloor(object, x, y, state);
-    const location = state.level?.at?.(x, y);
-    if (object.otyp === BOULDER
-        && location && [MOAT, POOL, WATER, LAVAPOOL].includes(location.typ)) {
-        const { dropBoulderIntoLiquid } = await import('./boulder_pool.js');
-        await dropBoulderIntoLiquid(object, x, y, state);
-        return;
-    }
-    const trap = state.level?.traps?.find(candidate =>
-        candidate.tx === x && candidate.ty === y);
-    if (object.otyp === BOULDER
-        && trap && (is_pit(trap.ttyp) || is_hole(trap.ttyp))) {
-        fillPitWithBoulderAt(x, y, state);
-        return;
-    }
-    if (location?.typ === LAVAPOOL) {
-        const landed = [object];
-        await destroyLavaFloorObjects(landed, {
-            publish: options.publish,
-            random: options.random,
-            visible: squareIsVisible(state, x, y),
-        });
-        if (object.where === 'gone') {
-            remove_object(object, state);
-            object.where = 'gone';
-            object.ox = object.oy = 0;
-        }
-    } else if ([MOAT, POOL, WATER].includes(location?.typ)) {
-        const landed = [object];
-        await waterDamageChain(landed, [], state);
-        if (!landed.includes(object)) deleteObject(object, state);
-    }
+    await landFloorObject(object, x, y, {
+        state,
+        publish: options.publish,
+        random: options.random,
+    });
 }
 
 export async function scatterFloorObjects(

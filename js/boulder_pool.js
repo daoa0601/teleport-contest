@@ -45,7 +45,7 @@ export async function dropBoulderIntoLiquid(boulder, x, y, state) {
     const fills = !Is_waterlevel(state.u?.uz)
         && (lava ? chance === 0 : chance !== 0);
 
-    remove_object(boulder);
+    remove_object(boulder, state);
     if (fills) {
         location.typ = ROOM;
         location.flags = 0;
