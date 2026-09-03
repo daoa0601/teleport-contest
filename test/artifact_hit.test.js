@@ -2,25 +2,29 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { applyArtifactHitToMonster } from '../js/artifact_hit.js';
+import {
+    MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT,
+} from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { SCR_IDENTIFY } from '../js/object_data.js';
 import {
     artifactObject, uninitializedObject,
 } from './support/game-objects.js';
-import { addMonster, liveMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const maximumRoll = range => range;
+const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT
+    | NO_MINVENT;
 
 test('Fire Brand can burn a monster inventory and add its damage', async () => {
     freshObjectRoom();
     const scroll = uninitializedObject(SCR_IDENTIFY);
-    const monster = liveMonster({
-        species: 'jackal',
-        x: 12,
-        y: 10,
-        inventory: [scroll],
-    });
+    const monster = await createMonsterAt(
+        'jackal', 12, 10, TEST_MONSTER_FLAGS,
+    );
+    addObjectToMonsterInventory(monster, scroll, game);
     const messages = [];
 
     const hit = await applyArtifactHitToMonster(
@@ -41,12 +45,13 @@ test('Fire Brand can burn a monster inventory and add its damage', async () => {
 
 test('Mjollnir wakes monsters near a target struck by lightning', async () => {
     freshObjectRoom();
-    const target = addMonster({
-        species: 'jackal', x: 12, y: 10,
-    });
-    const sleeper = addMonster({
-        species: 'lichen', x: 13, y: 10, msleeping: 1,
-    });
+    const target = await createMonsterAt(
+        'jackal', 12, 10, TEST_MONSTER_FLAGS,
+    );
+    const sleeper = await createMonsterAt(
+        'lichen', 13, 10, TEST_MONSTER_FLAGS,
+    );
+    sleeper.msleeping = 1;
 
     const hit = await applyArtifactHitToMonster(
         artifactObject('Mjollnir'), target, 4, {
@@ -63,18 +68,16 @@ test('Mjollnir wakes monsters near a target struck by lightning', async () => {
 
 test('Stormbringer drains a monster level and heals its wielder', async () => {
     freshObjectRoom({ hero: { uhp: 5, uhpmax: 12 } });
-    const monster = liveMonster({
-        species: 'jackal',
-        x: 12,
-        y: 10,
-        level: 3,
-        hitPoints: 20,
-    });
+    const monster = await createMonsterAt(
+        'pony', 12, 10, TEST_MONSTER_FLAGS,
+    );
+    monster.mhp = monster.mhpmax = 20;
+    const levelBefore = monster.m_lev;
 
     const hit = await applyArtifactHitToMonster(
         artifactObject('Stormbringer'), monster, 4, {
             state: game,
-            describeTarget: () => 'the jackal',
+            describeTarget: () => 'the pony',
             publish: async () => {},
             random: () => 1,
             rollOne: maximumRoll,
@@ -82,7 +85,7 @@ test('Stormbringer drains a monster level and heals its wielder', async () => {
     );
 
     assert.equal(hit.damage, 14);
-    assert.equal(monster.m_lev, 2);
+    assert.equal(monster.m_lev, levelBefore - 1);
     assert.equal(monster.mhpmax, 12);
     assert.equal(game.u.uhp, 9);
 });
@@ -91,9 +94,9 @@ test('Magicbane cancels a spellcaster and absorbs its magic', async () => {
     freshObjectRoom({
         hero: { uen: 2, uenmax: 3, uenpeak: 3 },
     });
-    const monster = liveMonster({
-        species: 'gnomish wizard', x: 12, y: 10,
-    });
+    const monster = await createMonsterAt(
+        'gnomish wizard', 12, 10, TEST_MONSTER_FLAGS,
+    );
     const messages = [];
 
     const hit = await applyArtifactHitToMonster(
@@ -118,9 +121,10 @@ test('Magicbane cancels a spellcaster and absorbs its magic', async () => {
 
 test('Magicbane scares a surviving monster for three turns', async () => {
     freshObjectRoom();
-    const monster = liveMonster({
-        species: 'jackal', x: 12, y: 10, hitPoints: 30,
-    });
+    const monster = await createMonsterAt(
+        'jackal', 12, 10, TEST_MONSTER_FLAGS,
+    );
+    monster.mhp = monster.mhpmax = 30;
     const messages = [];
 
     const hit = await applyArtifactHitToMonster(
@@ -146,7 +150,14 @@ test('the Tsurugi bisects small monsters and cuts deeply into large ones',
         freshObjectRoom();
         const weapon = artifactObject('The Tsurugi of Muramasa');
         const messages = [];
-        const jackal = liveMonster({ species: 'jackal', hitPoints: 20 });
+        const jackal = await createMonsterAt(
+            'jackal', 11, 10, TEST_MONSTER_FLAGS,
+        );
+        jackal.mhp = jackal.mhpmax = 20;
+        const mumak = await createMonsterAt(
+            'mumak', 12, 10, TEST_MONSTER_FLAGS,
+        );
+        mumak.mhp = mumak.mhpmax = 20;
 
         const smallHit = await applyArtifactHitToMonster(
             weapon, jackal, 4, {
@@ -158,7 +169,7 @@ test('the Tsurugi bisects small monsters and cuts deeply into large ones',
             },
         );
         const largeHit = await applyArtifactHitToMonster(
-            weapon, liveMonster({ species: 'mumak', hitPoints: 20 }), 4, {
+            weapon, mumak, 4, {
                 state: game,
                 dieRoll: 1,
                 describeTarget: () => 'the mumak',
@@ -178,8 +189,12 @@ test('Vorpal Blade misses a headless creature and beheads a jabberwock',
         freshObjectRoom();
         const weapon = artifactObject('Vorpal Blade');
         const messages = [];
+        const gasSpore = await createMonsterAt(
+            'gas spore', 11, 10, TEST_MONSTER_FLAGS,
+        );
+        gasSpore.mhp = gasSpore.mhpmax = 20;
         const headless = await applyArtifactHitToMonster(
-            weapon, liveMonster({ species: 'gas spore', hitPoints: 20 }), 4, {
+            weapon, gasSpore, 4, {
                 state: game,
                 dieRoll: 1,
                 describeTarget: () => 'the gas spore',
@@ -187,8 +202,12 @@ test('Vorpal Blade misses a headless creature and beheads a jabberwock',
                 rollOne: maximumRoll,
             },
         );
+        const jabberwockTarget = await createMonsterAt(
+            'jabberwock', 12, 10, TEST_MONSTER_FLAGS,
+        );
+        jabberwockTarget.mhp = jabberwockTarget.mhpmax = 20;
         const jabberwock = await applyArtifactHitToMonster(
-            weapon, liveMonster({ species: 'jabberwock', hitPoints: 20 }), 4, {
+            weapon, jabberwockTarget, 4, {
                 state: game,
                 dieRoll: 10,
                 describeTarget: () => 'the jabberwock',
