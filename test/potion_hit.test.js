@@ -12,6 +12,7 @@ import {
 import {
     applySupportedPotionVapor, hitMonsterWithSupportedPotion,
 } from '../js/potion_hit.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import { parseNethackrc } from '../js/options.js';
 import { initRng } from '../js/rng.js';
@@ -22,7 +23,7 @@ import {
     installHumanWerewolfHero, wearPolymorphControlRing,
 } from './support/hero-state.js';
 import { freshGame } from './support/game-state.js';
-import { addMonster, liveMonster } from './support/monsters.js';
+import { addMonster, createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_ENERGY_VORTEX = 109;
@@ -36,14 +37,21 @@ function potionObject(otyp) {
     });
 }
 
-function potionTarget(mnum, overrides = {}) {
-    return liveMonster({
-        mnum,
-        x: 10,
-        y: 10,
-        hitPoints: 20,
-        ...overrides,
-    });
+async function potionTarget(mnum, {
+    hitPoints = 20,
+    maxHitPoints = hitPoints,
+    level,
+    minvent = [],
+    ...state
+} = {}) {
+    const monster = await createMonsterAt(mnum, 12, 10);
+    monster.mhp = hitPoints;
+    monster.mhpmax = maxHitPoints;
+    if (level !== undefined) monster.m_lev = level;
+    Object.assign(monster, state);
+    for (const object of minvent)
+        addObjectToMonsterInventory(monster, object, game);
+    return monster;
 }
 
 function freshPotionState(hero = { hallucinationTurns: 0 }) {
@@ -59,7 +67,7 @@ function installDirectWereHero({ beast = false } = {}) {
 test('visible inert potion impact names a headed monster and evaporates',
     async () => {
         freshPotionState();
-        const monster = potionTarget(PM_PURPLE_WORM, { hitPoints: 8 });
+        const monster = await potionTarget(PM_PURPLE_WORM, { hitPoints: 8 });
         const potion = potionObject(POT_FRUIT_JUICE);
         const messages = [];
 
@@ -86,7 +94,7 @@ test('an existing potion call name suppresses trycall and remains visible',
         freshPotionState();
         game._knownObjectTypes = new Set();
         game._objectCallNames = { [POT_FRUIT_JUICE]: 'mystery' };
-        const monster = potionTarget(PM_PURPLE_WORM, { hitPoints: 8 });
+        const monster = await potionTarget(PM_PURPLE_WORM, { hitPoints: 8 });
         const potion = potionObject(POT_FRUIT_JUICE);
         potion.typeKnown = false;
         const messages = [];
@@ -109,7 +117,7 @@ test('an existing potion call name suppresses trycall and remains visible',
 test('hallucinated inert potion impact names a visible headless monster',
     async () => {
         freshPotionState({ hallucinationTurns: 4 });
-        const monster = potionTarget(PM_ENERGY_VORTEX, { hitPoints: 8 });
+        const monster = await potionTarget(PM_ENERGY_VORTEX, { hitPoints: 8 });
         const potion = potionObject(POT_GAIN_LEVEL);
         const messages = [];
 
@@ -133,7 +141,7 @@ test('hallucinated inert potion impact names a visible headless monster',
 test('healing potion makes Pestilence ill and retains hostile wake policy',
     async () => {
         freshPotionState();
-        const monster = potionTarget(312, {
+        const monster = await potionTarget(312, {
             hitPoints: 40,
             mhp: 20,
             mcansee: 1,
@@ -163,7 +171,7 @@ test('healing potion makes Pestilence ill and retains hostile wake policy',
 test('sickness halves a susceptible monster after the common impact chip',
     async () => {
         freshPotionState();
-        const monster = potionTarget(PM_PURPLE_WORM, {
+        const monster = await potionTarget(PM_PURPLE_WORM, {
             hitPoints: 40,
             mhp: 20,
             msleeping: 1,
@@ -192,7 +200,7 @@ test('sickness halves a susceptible monster after the common impact chip',
 test('sickness leaves poison-resistant monsters unharmed after impact',
     async () => {
         freshPotionState();
-        const monster = potionTarget(1);
+        const monster = await potionTarget(1);
         const potion = potionObject(POT_SICKNESS);
         const messages = [];
 
@@ -216,7 +224,7 @@ test('sickness leaves poison-resistant monsters unharmed after impact',
 
 test('sickness heals Pestilence and clears sleep without anger', async () => {
     freshPotionState();
-    const monster = potionTarget(312, {
+    const monster = await potionTarget(312, {
         hitPoints: 40,
         mhp: 20,
         msleeping: 1,
@@ -246,7 +254,7 @@ test('sickness heals Pestilence and clears sleep without anger', async () => {
 test('confusion potion leaves a susceptible monster confused',
     async () => {
         freshPotionState();
-        const monster = potionTarget(1, {
+        const monster = await potionTarget(1, {
             level: 1,
             mconf: 0,
         });
@@ -274,7 +282,7 @@ test('confusion potion leaves a susceptible monster confused',
 test('booze leaves a magic-resistant monster unconfused but hostile',
     async () => {
         freshPotionState();
-        const monster = potionTarget(312, {
+        const monster = await potionTarget(312, {
             level: 30,
             mconf: 0,
         });
@@ -303,7 +311,7 @@ test('booze leaves a magic-resistant monster unconfused but hostile',
 test('paralysis freezes a moving monster and clears its wait strategy',
     async () => {
         freshPotionState();
-        const monster = potionTarget(1, {
+        const monster = await potionTarget(1, {
             mfrozen: 0,
             meating: 3,
             mstrategy: 0x20000020,
@@ -328,7 +336,7 @@ test('paralysis freezes a moving monster and clears its wait strategy',
 test('paralysis does not reroll or replace an existing frozen duration',
     async () => {
         freshPotionState();
-        const monster = potionTarget(1, {
+        const monster = await potionTarget(1, {
             mcanmove: 0,
             mfrozen: 9,
             meating: 2,
@@ -355,7 +363,7 @@ test('paralysis does not reroll or replace an existing frozen duration',
 test('sleeping potion pays duration then resistance and freezes a target',
     async () => {
         freshPotionState();
-        const monster = potionTarget(1, {
+        const monster = await potionTarget(1, {
             level: 1,
             mfrozen: 2,
             meating: 4,
@@ -383,7 +391,7 @@ test('sleeping potion pays duration then resistance and freezes a target',
 test('sleep-resistant monster shields and remains awake',
     async () => {
         freshPotionState();
-        const monster = potionTarget(PM_ENERGY_VORTEX, {
+        const monster = await potionTarget(PM_ENERGY_VORTEX, {
             level: 6,
             mfrozen: 0,
         });
@@ -413,7 +421,7 @@ test('sleep-resistant monster shields and remains awake',
 test('magic-resistant sleep target shields and remains awake',
     async () => {
         freshPotionState();
-        const monster = potionTarget(48, {
+        const monster = await potionTarget(48, {
             level: 9,
             mfrozen: 0,
         });
@@ -439,15 +447,15 @@ test('magic-resistant sleep target shields and remains awake',
 
 test('successful sleeping potion releases a non-engulfing monster grip',
     async () => {
-        const monster = potionTarget(1, {
-            level: 1,
-            mfrozen: 0,
-        });
         freshPotionState({
             hallucinationTurns: 0,
             uswallow: 0,
-            ustuck: monster,
         });
+        const monster = await potionTarget(1, {
+            level: 1,
+            mfrozen: 0,
+        });
+        game.u.ustuck = monster;
         const messages = [];
 
         const potion = potionObject(POT_SLEEPING);
@@ -470,7 +478,7 @@ test('successful sleeping potion releases a non-engulfing monster grip',
 test('speed potion makes an active normal-speed monster permanently fast',
     async () => {
         freshPotionState();
-        const monster = potionTarget(PM_PURPLE_WORM, {
+        const monster = await potionTarget(PM_PURPLE_WORM, {
             mfrozen: 0,
             permspeed: 0,
             mspeed: 0,
@@ -498,7 +506,7 @@ test('speed potion makes an active normal-speed monster permanently fast',
 test('worn speed boots keep effective speed fast while potion removes slow',
     async () => {
         freshPotionState();
-        const monster = potionTarget(PM_PURPLE_WORM, {
+        const monster = await potionTarget(PM_PURPLE_WORM, {
             mfrozen: 0,
             permspeed: 1,
             mspeed: 2,
@@ -530,7 +538,7 @@ test('worn speed boots keep effective speed fast while potion removes slow',
 test('speed potion silently wakes a sleeping monster without hostile wakeup',
     async () => {
         freshPotionState();
-        const monster = potionTarget(PM_PURPLE_WORM, {
+        const monster = await potionTarget(PM_PURPLE_WORM, {
             msleeping: 1,
             mfrozen: 0,
             permspeed: 0,
@@ -559,7 +567,7 @@ test('speed potion silently wakes a sleeping monster without hostile wakeup',
 test('a resistant monster remains sighted after blindness impact',
     async () => {
         freshPotionState();
-        const monster = potionTarget(1, {
+        const monster = await potionTarget(1, {
             level: 1,
             mblinded: 10,
         });
@@ -583,7 +591,7 @@ test('a resistant monster remains sighted after blindness impact',
 test('resisted blindness excludes only the second already-consumed duration',
     async () => {
         freshPotionState();
-        const monster = potionTarget(48, {
+        const monster = await potionTarget(48, {
             level: 9,
             mblinded: 5,
         });
@@ -611,7 +619,7 @@ test('eyeless and permanently blind monsters retain their sight state',
             [1, 0, 0],
         ]) {
             freshPotionState();
-            const monster = potionTarget(mnum, { mcansee, mblinded });
+            const monster = await potionTarget(mnum, { mcansee, mblinded });
             const potion = potionObject(POT_BLINDNESS);
             initRng(3202n);
             const result = await hitMonsterWithSupportedPotion({
@@ -629,7 +637,7 @@ test('eyeless and permanently blind monsters retain their sight state',
 test('uncursed invisibility hides a spotted monster without anger',
     async () => {
         freshPotionState();
-        const monster = potionTarget(PM_PURPLE_WORM, {
+        const monster = await potionTarget(PM_PURPLE_WORM, {
             minvis: 0,
             perminvis: 0,
             invis_blkd: 0,
@@ -662,7 +670,7 @@ test('uncursed invisibility hides a spotted monster without anger',
 test('cursed invisibility reveals an unseen invisible monster and angers it',
     async () => {
         freshPotionState();
-        const monster = potionTarget(PM_PURPLE_WORM, {
+        const monster = await potionTarget(PM_PURPLE_WORM, {
             minvis: 1,
             perminvis: 1,
             invis_blkd: 0,
@@ -692,7 +700,7 @@ test('cursed invisibility reveals an unseen invisible monster and angers it',
 test('cursed invisibility uses sensor-spotted transparency presentation',
     async () => {
         freshPotionState();
-        const monster = potionTarget(PM_PURPLE_WORM, {
+        const monster = await potionTarget(PM_PURPLE_WORM, {
             minvis: 1,
             perminvis: 1,
             invis_blkd: 0,
@@ -721,7 +729,7 @@ test('cursed invisibility uses sensor-spotted transparency presentation',
 
 test('blocked invisibility changes only the permanent property', async () => {
     freshPotionState();
-    const monster = potionTarget(PM_PURPLE_WORM, {
+    const monster = await potionTarget(PM_PURPLE_WORM, {
         minvis: 0,
         perminvis: 0,
         invis_blkd: 1,
@@ -748,7 +756,7 @@ test('blocked invisibility changes only the permanent property', async () => {
 
 test('zero-level player monsters defend with the hero level', async () => {
     freshPotionState({ hallucinationTurns: 0, ulevel: 20 });
-    const monster = potionTarget(343, {
+    const monster = await potionTarget(343, {
         level: 0,
         mconf: 0,
     });
@@ -771,7 +779,7 @@ test('zero-level player monsters defend with the hero level', async () => {
 
 test('ability potion heals a peaceful monster without angering it', async () => {
     freshPotionState();
-    const monster = potionTarget(PM_PURPLE_WORM, {
+    const monster = await potionTarget(PM_PURPLE_WORM, {
         hitPoints: 12,
         mhp: 3,
         msleeping: 1,

@@ -5,7 +5,7 @@ import { nameToMonster } from '../../js/mondata.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../../js/monster_inventory.js';
 
-export function liveMonster({
+export function addMonster({
     mnum,
     species,
     x,
@@ -16,7 +16,7 @@ export function liveMonster({
     inventory: listedInventory,
     minvent,
     ...overrides
-}) {
+}, state = game) {
     const inventory = listedInventory ?? minvent ?? [];
     const monster = {
         mnum: mnum ?? MONSTER_NAME.indexOf(species),
@@ -36,25 +36,15 @@ export function liveMonster({
         inventory,
         ...overrides,
     };
-    for (const object of inventory) {
-        object.where = 'minvent';
-        object.carrierMid = monster.m_id ?? null;
-    }
-    monster.hasInventory = inventory.length > 0;
-    return monster;
-}
-
-export function addMonsterToLevel(monster, state = game) {
     if (monster.m_id === undefined)
         monster.m_id = 1000 + state.level.monsters.length;
-    for (const object of monster.minvent ?? monster.inventory ?? [])
+    for (const object of inventory) {
+        object.where = 'minvent';
         object.carrierMid = monster.m_id;
+    }
+    monster.hasInventory = inventory.length > 0;
     state.level.monsters.push(monster);
     return monster;
-}
-
-export function addMonster(options, state = game) {
-    return addMonsterToLevel(liveMonster(options), state);
 }
 
 export async function createMonsterAt(species, x, y, flags = 0) {
