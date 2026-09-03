@@ -5,6 +5,7 @@ import {
     applyMonsterBlindness, heroBlindingObjectHitMessage,
     monsterCanBeBlindedByObject,
 } from './blinding_attack.js';
+import { releaseCameraDemon } from './camera.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
@@ -21,7 +22,7 @@ import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import {
     ACID_VENOM, BLINDING_VENOM, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, EGG,
-    MIRROR, OBJECT_MATERIAL,
+    EXPENSIVE_CAMERA, MIRROR, OBJECT_MATERIAL,
 } from './object_data.js';
 import { objectBreaksOnImpact } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
@@ -73,6 +74,23 @@ export async function resolveHeroMeleeObjectContact(
             damage: 1,
             addHeroDamageBonuses: false,
             specialMessage: true,
+        };
+    }
+
+    if (object?.otyp === EXPENSIVE_CAMERA) {
+        await publish(
+            'You succeed in destroying your expensive camera. Congratulations!',
+        );
+        await releaseCameraDemon(object, state.u.ux, state.u.uy, {
+            state, publish, random,
+        });
+        consumeOneWieldedObject(object, state);
+        return {
+            attackComplete: true,
+            damage: 0,
+            addHeroDamageBonuses: false,
+            specialMessage: true,
+            monsterSurvived: true,
         };
     }
 

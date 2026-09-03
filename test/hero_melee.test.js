@@ -246,6 +246,26 @@ test('bashing with a mirror can break it and reduce luck', async () => {
     assert.equal(game.uwep, null);
 });
 
+test('bashing with a camera can release a demon without hurting the monster',
+    async () => {
+        const { level, monster: jackal } = installMeleeArena(
+            'tourist', 'jackal', { mac: 100, msleeping: 1 },
+        );
+        const camera = equipWeapon('expensive camera');
+        game.u.acurr.a[A_STR] = 18;
+        game.u.udaminc = 5;
+
+        initRng(2n);
+        pushKeys(' '.repeat(4));
+        await rhack('l'.charCodeAt(0));
+
+        assert.equal(camera.where, 'gone');
+        assert.equal(jackal.mhp, 100);
+        assert.equal(jackal.msleeping, 1);
+        assert.ok(level.monsters.some(monster =>
+            monster !== jackal && monster.mpeaceful === 1));
+    });
+
 test('soft food and paper do not hurt a monster', async () => {
     for (const objectName of ['carrot', 'blank paper']) {
         const { monster: jackal } = installMeleeArena(

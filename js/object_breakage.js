@@ -7,9 +7,9 @@ import {
     POT_OIL, POT_WATER,
 } from './object_data.js';
 import {
-    canProjectMonster, newsym, plineWithContinuation,
-    randomDisplayMonsterName,
+    newsym, plineWithContinuation,
 } from './display.js';
+import { releaseCameraDemon } from './camera.js';
 import {
     applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg,
 } from './egg_impact.js';
@@ -17,7 +17,6 @@ import { createFireExplosion } from './fire_explosion.js';
 import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { makemonAt } from './mklev.js';
-import { setMonsterMalign } from './monster_alignment.js';
 import { objectResistsDestruction } from './object_state.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import {
@@ -32,8 +31,6 @@ const ARMOR_CLASS = 3;
 const POTION_CLASS = 8;
 const GEM_CLASS = 13;
 const GLASS = 19;
-const PM_HOMUNCULUS = 52;
-const PM_IMP = 53;
 
 const BREAKABLE_TYPES = new Set([
     EXPENSIVE_CAMERA,
@@ -143,24 +140,6 @@ async function applyPotionBreakEffect(object, x, y, state, publish) {
     return true;
 }
 
-async function releaseCameraDemon(
-    object, x, y, state, publish, random, summonMonster,
-) {
-    if (random(3) !== 0) return null;
-    const mnum = random(3) === 0 ? PM_IMP : PM_HOMUNCULUS;
-    const monster = await summonMonster(mnum, x, y, 0);
-    if (!monster) return null;
-    if (canProjectMonster(monster, monster.mx, monster.my)) {
-        const subject = state.u?.hallucinating
-            ? `A ${randomDisplayMonsterName()}`
-            : 'The picture-painting demon';
-        await publish(`${subject} is released!`);
-    }
-    monster.mpeaceful = object.cursed ? 0 : 1;
-    setMonsterMalign(monster, state);
-    return monster;
-}
-
 export async function breakFloorObject(object, {
     state = game,
     heroCaused = true,
@@ -215,9 +194,9 @@ export async function breakObjectAtLocation(object, {
         );
     }
     const cameraDemon = object.otyp === EXPENSIVE_CAMERA
-        ? await releaseCameraDemon(
-            object, x, y, state, publish, random, summonMonster,
-        ) : null;
+        ? await releaseCameraDemon(object, x, y, {
+            state, publish, random, summonMonster,
+        }) : null;
     if (object.oclass === POTION_CLASS)
         await applyPotionBreakEffect(object, x, y, state, publish);
 
