@@ -3,9 +3,9 @@
 // and zap.c bhit().
 
 import {
-    A_STR, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_LAVA, IS_POOL,
+    A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_LAVA, IS_POOL,
     IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN,
-    M_AP_OBJECT, SINK, WEB, ZAP_POS, isok,
+    M_AP_OBJECT, P_CROSSBOW, SINK, WEB, ZAP_POS, isok,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
 import {
@@ -27,6 +27,9 @@ import {
     TIN_WHISTLE, WAX_CANDLE,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
+import {
+    isLauncherAmmunition, launcherMatchesAmmo,
+} from './object_properties.js';
 import { shipObject } from './object_migration.js';
 import { splitObjectStack } from './object_stack.js';
 import { rn2 } from './rng.js';
@@ -46,6 +49,7 @@ const FOOD_CLASS = 7;
 const SPBOOK_CLASS = 10;
 const WAND_CLASS = 11;
 const COIN_CLASS = 12;
+const GEM_CLASS = 13;
 const ROCK_CLASS = 14;
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
@@ -178,16 +182,30 @@ export function heroThrowRange(object, state = game) {
     );
 }
 
-export function heroThrowTrajectory(object, state = game) {
-    const ordinaryRange = heroThrowRange(object, state);
+export function heroThrowTrajectory(object, state = game, launcher = null) {
+    const launched = launcherMatchesAmmo(object, launcher);
+    const crossbowing = launched
+        && OBJECT_SUBTYPE[launcher.otyp] === P_CROSSBOW;
+    const unweightedRange = Math.trunc(
+        (crossbowing ? 18 : heroThrowStrength(state)) / 2,
+    );
+    let range = Math.max(
+        1,
+        unweightedRange - Math.trunc((object.owt ?? 1) / 40),
+    );
+    if (isLauncherAmmunition(object)) {
+        if (launched) range = crossbowing ? BOLT_LIM : range + 1;
+        else if (objectClass(object) !== GEM_CLASS)
+            range = Math.trunc(range / 2);
+    }
+
     const floating = Is_airlevel(state.u?.uz)
         || state.u?.levitating || state.u?.levitation || state.levitating;
-    if (!floating) return { range: ordinaryRange, recoil: 0 };
+    if (!floating) return { range, recoil: 0 };
 
-    const unweightedRange = Math.trunc(heroThrowStrength(state) / 2);
-    const recoil = Math.max(1, unweightedRange - ordinaryRange);
+    const recoil = Math.max(1, unweightedRange - range);
     return {
-        range: Math.max(1, ordinaryRange - recoil),
+        range: Math.max(1, range - recoil),
         recoil,
     };
 }

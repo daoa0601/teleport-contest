@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { A_DEX, A_STR } from '../js/const.js';
+import { A_DEX, A_STR, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { CLUB } from '../js/object_data.js';
+import { CLUB, CROSSBOW, CROSSBOW_BOLT } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { throwInventoryObject } from './support/commands.js';
 import { knownInventoryWeapon } from './support/game-objects.js';
@@ -59,4 +59,19 @@ test('grease can make a thrown club slip away from its chosen path', async () =>
 
     assert.notDeepEqual([club.ox, club.oy], [15, 10]);
     assert.match(game._pending_message, /slips as you throw it/);
+});
+
+test('a crossbow sends its bolt eight squares regardless of Strength', async () => {
+    const level = freshObjectRoom({ right: 22, gameplaySeed: 4104n });
+    game.u.acurr.a[A_STR] = 3;
+    const crossbow = knownInventoryWeapon(CROSSBOW, {
+        invlet: 'a', owornmask: W_WEP, wielded: true,
+    });
+    const bolt = knownInventoryWeapon(CROSSBOW_BOLT, { invlet: 'b' });
+    game.uwep = game.u.uwep = crossbow;
+
+    await throwInventoryObject(bolt, 'l');
+
+    assert.equal(floorObjects(level).includes(bolt), true);
+    assert.deepEqual([bolt.ox, bolt.oy], [18, 10]);
 });

@@ -3,8 +3,8 @@
 
 import { artifactById } from './artifacts.js';
 import {
-    P_BOOMERANG, P_BOW, P_DAGGER, P_DART, P_SHORT_SWORD, P_SHURIKEN,
-    P_SPEAR,
+    P_BOOMERANG, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_SHORT_SWORD,
+    P_SHURIKEN, P_SPEAR,
 } from './const.js';
 import {
     AKLYS, OBJECT_DIR, OBJECT_SUBTYPE, WAR_HAMMER,
@@ -13,6 +13,7 @@ import { objectClassForType } from './object_knowledge.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
+const GEM_CLASS = 13;
 
 function objectClass(object) {
     return object?.oclass || objectClassForType(object?.otyp);
@@ -23,6 +24,19 @@ export function isMissileObject(object) {
     const skill = OBJECT_SUBTYPE[object?.otyp] ?? 0;
     return (kind === WEAPON_CLASS || kind === TOOL_CLASS)
         && skill >= -P_BOOMERANG && skill <= -P_DART;
+}
+
+export function isLauncherAmmunition(object) {
+    const kind = objectClass(object);
+    const skill = OBJECT_SUBTYPE[object?.otyp] ?? 0;
+    return (kind === WEAPON_CLASS || kind === GEM_CLASS)
+        && skill >= -P_CROSSBOW && skill <= -P_BOW;
+}
+
+export function launcherMatchesAmmo(ammunition, launcher) {
+    return isLauncherAmmunition(ammunition) && !!launcher
+        && OBJECT_SUBTYPE[ammunition.otyp]
+            === -(OBJECT_SUBTYPE[launcher.otyp] ?? 0);
 }
 
 export function isThrowingWeapon(object) {

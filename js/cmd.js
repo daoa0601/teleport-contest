@@ -148,9 +148,9 @@ import {
     resolveSwallowedProjectileThrow, resolveSwallowedWeaponThrow,
 } from './swallowed_throw.js';
 import {
-    autoquiverCandidate, launcherMatchesAmmo, readySuggestion,
-    setQuiverObject,
+    autoquiverCandidate, readySuggestion, setQuiverObject,
 } from './quiver.js';
+import { launcherMatchesAmmo } from './object_properties.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
 import {

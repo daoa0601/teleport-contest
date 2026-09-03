@@ -10,24 +10,12 @@ import {
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import {
-    isMissileObject, isThrowingWeapon,
+    isLauncherAmmunition, isMissileObject, isThrowingWeapon,
+    launcherMatchesAmmo,
 } from './object_properties.js';
 
 function quiverObjectClass(item) {
     return item?.oclass || objectClassForType(item?.otyp);
-}
-
-function isLauncherAmmo(item) {
-    const objectClass = quiverObjectClass(item);
-    const skill = OBJECT_SUBTYPE[item?.otyp] ?? 0;
-    return [2, 13].includes(objectClass)
-        && skill >= -P_CROSSBOW && skill <= -P_BOW;
-}
-
-export function launcherMatchesAmmo(ammo, launcher) {
-    return isLauncherAmmo(ammo) && !!launcher
-        && OBJECT_SUBTYPE[ammo.otyp]
-            === -(OBJECT_SUBTYPE[launcher.otyp] ?? 0);
 }
 
 export function setQuiverObject(item, state) {
@@ -75,7 +63,7 @@ export function autoquiverCandidate(state) {
             else if (!miscellaneous) miscellaneous = item;
         } else if (objectClass === 13) {
             continue;
-        } else if (isLauncherAmmo(item)) {
+        } else if (isLauncherAmmunition(item)) {
             if (launcherMatchesAmmo(item, state.uwep)) currentAmmo = item;
             else if (launcherMatchesAmmo(item, state.uswapwep))
                 alternateAmmo = item;
@@ -97,7 +85,7 @@ export function readySuggestion(item, state) {
         || (item === state.uswapwep && state.u?.twoweap)) {
         return quantity > 1;
     }
-    if (isLauncherAmmo(item)) {
+    if (isLauncherAmmunition(item)) {
         return launcherMatchesAmmo(item, state.uwep)
             || launcherMatchesAmmo(item, state.uswapwep);
     }

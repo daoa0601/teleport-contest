@@ -4,8 +4,9 @@
 import { game } from './gstate.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { hurtleHero } from './hero_hurtle.js';
-import { isThrowingWeapon } from './object_properties.js';
-import { launcherMatchesAmmo } from './quiver.js';
+import {
+    isThrowingWeapon, launcherMatchesAmmo,
+} from './object_properties.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import {
     captureThrownObjectFlight, detachThrownUnit,
@@ -44,7 +45,7 @@ export async function throwOrdinaryObject({
         return { object: thrown, landed, stoppedBy: 'vertical' };
     }
 
-    const trajectory = heroThrowTrajectory(thrown, state);
+    const trajectory = heroThrowTrajectory(thrown, state, state.uwep);
     const flight = await flyHeroThrownObject({
         state,
         object: thrown,

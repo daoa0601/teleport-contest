@@ -4,7 +4,7 @@
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { applyArtifactHitToMonster } from './artifact_hit.js';
 import { artifactToHitBonus } from './artifacts.js';
-import { A_DEX, A_STR, P_BOW, P_CROSSBOW } from './const.js';
+import { A_DEX, A_STR } from './const.js';
 import {
     canProjectMonster, canSeeMonster, plineWithContinuation,
     randomDisplayMonsterName,
@@ -24,7 +24,9 @@ import {
     BOOMERANG, OBJECT_HIT_BONUS, OBJECT_NAMES, OBJECT_SUBTYPE,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
-import { isThrowingWeapon } from './object_properties.js';
+import {
+    isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo,
+} from './object_properties.js';
 import {
     applyProjectileObjectPassive, destroyMulchedProjectile,
     shouldMulchMissile,
@@ -122,7 +124,18 @@ function appliedHitThreshold(monster, weapon, state) {
 function thrownHitThreshold(monster, weapon, state) {
     let threshold = baseRangedHitThreshold(monster, weapon, state);
     const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0);
-    if (rangedObjectIsAmmunition(weapon)) return threshold - 4;
+    if (isLauncherAmmunition(weapon)) {
+        const launcher = state.uwep;
+        if (!launcherMatchesAmmo(weapon, launcher)) return threshold - 4;
+        const erosion = Math.max(
+            launcher.oeroded ?? 0, launcher.oeroded2 ?? 0,
+        );
+        return threshold + (launcher.spe ?? 0) - erosion
+            + weaponSkillHitBonus(
+                state, Math.abs(OBJECT_SUBTYPE[launcher.otyp] ?? 0),
+            )
+            + artifactToHitBonus(launcher, monster);
+    }
 
     if (weapon.otyp === BOOMERANG) threshold += 4;
     else threshold += isThrowingWeapon(weapon) ? 2 : -2;
@@ -206,13 +219,6 @@ function rangedObjectUsesWeaponHit(object) {
         || (objectClass === TOOL_CLASS && skill !== 0);
 }
 
-function rangedObjectIsAmmunition(object) {
-    const objectClass = object.oclass ?? objectClassForType(object.otyp);
-    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
-    return (objectClass === WEAPON_CLASS || objectClass === GEM_CLASS)
-        && skill >= -P_CROSSBOW && skill <= -P_BOW;
-}
-
 async function hitMonsterWithRangedObject(monster, object, state, mode) {
     const applied = mode === 'applied';
     if (applied) await applyCaitiffPenalty(monster, state);
@@ -222,7 +228,7 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
         threshold = thrownHitThreshold(monster, object, state);
     else {
         threshold = baseRangedHitThreshold(monster, object, state)
-            - (rangedObjectIsAmmunition(object) ? 5 : 3);
+            - (isLauncherAmmunition(object) ? 5 : 3);
     }
     const dieRoll = rnd(20);
     const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
