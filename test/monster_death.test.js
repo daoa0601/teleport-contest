@@ -22,7 +22,7 @@ import {
     addTrap, floorObjects, floorObjectsAt,
 } from './support/level-state.js';
 import {
-    addMonster, createMonsterAt, equipMonsterObject,
+    createMonsterAt, equipMonsterObject,
 } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -605,12 +605,9 @@ test('a black pudding congeals and joins a nearby glob', async () => {
 test('a dungeon-killed gas spore explodes where corpses cannot drop', async () => {
     freshObjectRoom({ gameplaySeed: 26n });
     game.level.flags.deathdrops = false;
-    const gasSpore = addMonster({
-        species: 'gas spore', x: 11, y: 10, hitPoints: 1,
-    });
-    const jackal = addMonster({
-        species: 'jackal', x: 12, y: 10, hitPoints: 100,
-    });
+    const gasSpore = await createMonsterAt('gas spore', 11, 10);
+    const jackal = await createMonsterAt('jackal', 12, 10);
+    jackal.mhp = jackal.mhpmax = 100;
     const heroHitPoints = game.u.uhp;
 
     await finishEnvironmentalMonsterDeath(gasSpore, game, {
@@ -626,12 +623,10 @@ test('a dungeon-killed gas spore explodes where corpses cannot drop', async () =
 test('killing a gas spore blasts the hero and nearby monsters', async () => {
     freshObjectRoom({ gameplaySeed: 27n });
     game.u.uhp = game.u.uhpmax = 100;
-    const gasSpore = addMonster({
-        species: 'gas spore', x: 11, y: 10, hitPoints: 1,
-    });
-    const jackal = addMonster({
-        species: 'jackal', x: 12, y: 10, hitPoints: 100,
-    });
+    const gasSpore = await createMonsterAt('gas spore', 11, 10);
+    const jackal = await createMonsterAt('jackal', 12, 10);
+    jackal.mhp = jackal.mhpmax = 100;
+    initRng(27n);
     pushKeys(' '.repeat(20));
 
     await finishHeroMonsterKill(gasSpore, gasSpore.mx, gasSpore.my, {
