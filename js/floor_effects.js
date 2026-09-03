@@ -1,18 +1,25 @@
 // What happens when a free object lands on a dungeon square.
-// C ref: do.c flooreffects() boulder, lava, pool, and glob branches.
+// C ref: do.c flooreffects() object landing branches.
 
 import {
-    IS_POOL, LAVAPOOL, MOAT, POOL, WATER, is_hole, is_pit,
+    CORR, IS_POOL, LAVAPOOL, MOAT, POOL, ROOM, WATER, is_hole, is_pit,
 } from './const.js';
 import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { meldNearbyFloorGlobs } from './glob.js';
+import { breakObjectAtLocation } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
-import { BOULDER } from './object_data.js';
+import { BOULDER, POT_OIL } from './object_data.js';
+import { makePlural } from './object_grammar.js';
+import { objectResistsDestruction } from './object_state.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
+import { potionImpactObjectName } from './potion_hit.js';
 import { rnl, rn2 } from './rng.js';
+import { heroIsDeaf } from './senses.js';
 import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
 import { cansee } from './vision.js';
+
+const POTION_CLASS = 8;
 
 function squareIsVisible(state, x, y) {
     if (state === game) return cansee(x, y);
@@ -22,6 +29,51 @@ function squareIsVisible(state, x, y) {
 
 async function publishAll(messages, publish) {
     for (const message of messages) await publish(message);
+}
+
+function potionLandingSubject(object, state) {
+    const quantity = object.quan ?? object.quantity ?? 1;
+    const name = potionImpactObjectName(object, state);
+    return quantity === 1
+        ? `The ${name}`
+        : `The ${quantity} ${makePlural(name)}`;
+}
+
+async function breakPotionOnHotGround(
+    object, x, y, state, publish, random, luckRoll,
+) {
+    const visible = squareIsVisible(state, x, y);
+    const quantity = object.quan ?? object.quantity ?? 1;
+    if (visible) {
+        const singular = quantity === 1;
+        await publish(`${potionLandingSubject(object, state)} ${
+            singular ? 'heats' : 'heat'
+        } up as ${singular ? 'it hits' : 'they hit'} the hot ground.`);
+    }
+
+    let survivalChance = object.blessed ? 70 : 50;
+    if (object.invlet) survivalChance += (state.u?.uluck ?? 0) * 2;
+    if (object.otyp === POT_OIL) survivalChance = 100;
+    if (objectResistsDestruction(
+        object, survivalChance, 100, random,
+    )) return false;
+
+    if (visible) {
+        await publish(quantity === 1
+            ? 'It shatters from the heat!'
+            : 'They shatter from the heat!');
+    } else if (!heroIsDeaf(state)) {
+        await publish('You hear a shattering noise.');
+    }
+    await breakObjectAtLocation(object, {
+        state,
+        heroCaused: false,
+        showBreakMessage: false,
+        publish,
+        random,
+        luckRandom: luckRoll,
+    });
+    return true;
 }
 
 export async function landFloorObject(
@@ -76,6 +128,14 @@ export async function landFloorObject(
             return null;
         }
     }
+
+    const hotGround = location?.typ === ROOM || location?.typ === CORR;
+    if (object.oclass === POTION_CLASS
+        && (state.level?.flags?.temperature ?? 0) > 0
+        && hotGround
+        && await breakPotionOnHotGround(
+            object, x, y, state, publish, random, luckRoll,
+        )) return null;
 
     place_object(object, x, y, state);
     if (object.globby)

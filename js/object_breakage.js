@@ -182,6 +182,7 @@ export async function breakFloorObject(object, {
 export async function breakObjectAtLocation(object, {
     state = game,
     heroCaused = true,
+    showBreakMessage = true,
     publish = plineWithContinuation,
     random = rn2,
     luckRandom = rnl,
@@ -204,7 +205,8 @@ export async function breakObjectAtLocation(object, {
         return { destroyed, observed: destroyed && (visible || audible) };
     }
 
-    await publishBreakMessage(object, visible, audible, publish);
+    if (showBreakMessage)
+        await publishBreakMessage(object, visible, audible, publish);
     if (heroCaused && object.otyp === MIRROR) {
         state.u.uluck = Math.max(
             -13, Math.min(13, (state.u.uluck ?? 0) - 2),

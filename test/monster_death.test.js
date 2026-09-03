@@ -7,6 +7,7 @@ import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     BOULDER, CORPSE, FIGURINE, GLOB_OF_BLACK_PUDDING, OBJECT_NAMES,
     POT_ACID, RED_DRAGON_SCALES, ROCK, STATUE, UNICORN_HORN, WORM_TOOTH,
@@ -438,7 +439,9 @@ test('a glob dropped by a dying monster joins a neighboring glob', async () => {
     const jackal = addMonster({
         species: 'jackal', x: 11, y: 10, hitPoints: 1,
     });
-    equipMonsterObject(jackal, knownObject(GLOB_OF_BLACK_PUDDING), 0);
+    addObjectToMonsterInventory(
+        jackal, knownObject(GLOB_OF_BLACK_PUDDING), game,
+    );
 
     await finishEnvironmentalMonsterDeath(jackal, game, {
         visible: false,
@@ -451,6 +454,30 @@ test('a glob dropped by a dying monster joins a neighboring glob', async () => {
         object.otyp === GLOB_OF_BLACK_PUDDING);
     assert.equal(globs.length, 1);
     assert.equal(globs[0].owt, 40);
+});
+
+test('a potion dropped on a hot dungeon floor shatters', async () => {
+    const level = freshObjectRoom({
+        gameplaySeed: 484n,
+        heroX: 15,
+        heroY: 10,
+    });
+    level.flags.temperature = 1;
+    const jackal = addMonster({
+        species: 'jackal', x: 11, y: 10, hitPoints: 1,
+    });
+    const potion = knownObject(POT_ACID);
+    addObjectToMonsterInventory(jackal, potion, game);
+
+    await finishEnvironmentalMonsterDeath(jackal, game, {
+        visible: false,
+        noCorpse: true,
+        random: () => 99,
+        publish: async () => {},
+    });
+
+    assert.equal(potion.where, 'gone');
+    assert.deepEqual(floorObjectsAt(level, 11, 10), []);
 });
 
 test('a visible lich crumbles to dust instead of leaving a corpse', async () => {
