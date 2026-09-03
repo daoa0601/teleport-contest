@@ -21,7 +21,7 @@ import { deleteObject } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME,
-    MONSTER_SIZE, monsterIsKop, monsterIsNonliving,
+    MONSTER_SIZE, monsterIsKop, monsterIsNonliving, monsterIsUnicorn,
 } from './monster_data.js';
 import {
     monsterDeathCount, recordMonsterDeath,
@@ -299,6 +299,12 @@ export async function finishHeroMonsterKill(monster, x, y, {
 
     if ((monster.mpeaceful && rn2(2) === 0) || monster.mtame)
         game.u.uluck = (game.u.uluck || 0) - 1;
+    if (monsterIsUnicorn(monster.mnum)
+        && Math.sign(game.u?.ualign?.type ?? 0)
+            === Math.sign(MONSTER_ALIGNMENT[monster.mnum] ?? 0)) {
+        game.u.uluck = (game.u.uluck || 0) - 5;
+        await plineWithContinuation('You feel guilty...');
+    }
     const killCount = monsterDeathCount(monster.mnum);
     awardMonsterExperience(monster, {
         killCount,

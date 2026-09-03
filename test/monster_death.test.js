@@ -129,6 +129,22 @@ test('killing a peaceful monster can reduce luck', async () => {
     assert.equal(game.u.uluck, -1);
 });
 
+test('killing a co-aligned unicorn costs five luck', async () => {
+    freshObjectRoom({ hero: { ualign: { type: 1, record: 0 } } });
+    const unicorn = addMonster({
+        species: 'white unicorn', x: 11, y: 10, hitPoints: 1,
+    });
+    game.u.uluck = 0;
+
+    await finishHeroMonsterKill(unicorn, unicorn.mx, unicorn.my, {
+        showKillMessage: false,
+        recordConduct: false,
+        noCorpse: true,
+    });
+
+    assert.equal(game.u.uluck, -5);
+});
+
 test('killing a pit-trapped monster with a boulder buries its corpse',
     async () => {
         const level = freshObjectRoom({ gameplaySeed: 28n });
