@@ -12,7 +12,7 @@ import {
 } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 function installHook({ wielded = true, enchantment = 0 } = {}) {
@@ -66,12 +66,8 @@ test('a grappling hook strikes at range without charging melee hunger',
     async () => {
         freshObjectRoom();
         const hook = installHook({ enchantment: 20 });
-        const monster = addMonster({
-            mnum: 12,
-            x: 12,
-            y: 10,
-            hitPoints: 100,
-        });
+        const monster = await createMonsterAt('jackal', 12, 10);
+        monster.mhp = monster.mhpmax = 100;
         const hungerBefore = game.u.uhunger;
         game._travelTipShown = true;
         initRng(14n);
@@ -85,12 +81,8 @@ test('a grappling hook strikes at range without charging melee hunger',
 test('a grappling hook can pull a tiny monster next to the hero', async () => {
     freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     const hook = installHook();
-    const monster = addMonster({
-        mnum: 0,
-        x: 12,
-        y: 10,
-        hitPoints: 100,
-    });
+    const monster = await createMonsterAt('giant ant', 12, 10);
+    monster.mhp = monster.mhpmax = 100;
     game._travelTipShown = true;
     initRng(113n);
     await applyInventoryObject(hook, 'll.');

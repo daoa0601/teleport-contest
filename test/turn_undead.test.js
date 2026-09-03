@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
 import { turnUndeadByCallingOnDeity } from '../js/turn_undead.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const PM_HUMAN_MUMMY = 192;
@@ -30,14 +30,12 @@ function freshPriest(alignment = 1) {
 test('a lawful priest destroys a zombie and frightens a tougher mummy',
     async () => {
         freshPriest(1);
-        const zombie = addMonster({
-            mnum: PM_HUMAN_ZOMBIE, x: 11, y: 10,
-            level: 4, msleeping: 1,
-        });
-        const mummy = addMonster({
-            mnum: PM_HUMAN_MUMMY, x: 12, y: 10,
-            level: 4, msleeping: 1,
-        });
+        const zombie = await createMonsterAt(PM_HUMAN_ZOMBIE, 11, 10);
+        zombie.m_lev = 4;
+        zombie.msleeping = 1;
+        const mummy = await createMonsterAt(PM_HUMAN_MUMMY, 12, 10);
+        mummy.m_lev = 4;
+        mummy.msleeping = 1;
 
         await turnUndeadByCallingOnDeity(game, {
             random: range => range - 1,
@@ -52,10 +50,9 @@ test('a lawful priest destroys a zombie and frightens a tougher mummy',
 
 test('a chaotic priest makes a weak undead monster peaceful', async () => {
     freshPriest(-1);
-    const zombie = addMonster({
-        mnum: PM_HUMAN_ZOMBIE, x: 11, y: 10,
-        level: 4, msleeping: 1,
-    });
+    const zombie = await createMonsterAt(PM_HUMAN_ZOMBIE, 11, 10);
+    zombie.m_lev = 4;
+    zombie.msleeping = 1;
 
     await turnUndeadByCallingOnDeity(game, {
         random: range => range - 1,

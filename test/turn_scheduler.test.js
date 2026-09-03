@@ -2,9 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
-import { POOL, STONE } from '../js/const.js';
+import { NO_MINVENT, POOL, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { POT_PARALYSIS, WAN_MAGIC_MISSILE } from '../js/object_data.js';
 import {
     startHeroSickness, startHeroVomiting,
@@ -12,7 +13,7 @@ import {
 import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { addInventoryObject, chargedWand } from './support/game-objects.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 function freshTurnArena() {
@@ -84,13 +85,9 @@ test('a stationary monster in water is checked during world maintenance',
     async () => {
         const inputGate = freshTurnArena();
         game.level.at(12, 10).typ = POOL;
-        const oracle = addMonster({
-            species: 'Oracle',
-            x: 12,
-            y: 10,
-            mpeaceful: 1,
-            movement: 0,
-        });
+        const oracle = await createMonsterAt('Oracle', 12, 10);
+        oracle.mpeaceful = 1;
+        oracle.movement = 0;
         pushKeys('.');
 
         await runUntilInput(inputGate, 8);
@@ -102,20 +99,22 @@ test('a stationary monster in water is checked during world maintenance',
 
 test('a monster-fired magic missile can kill another monster', async () => {
     const inputGate = freshTurnArena();
-    const target = addMonster({
-        species: 'jackal', x: 13, y: 10,
-        hitPoints: 1, mac: 20,
+    const target = await createMonsterAt('jackal', 13, 10);
+    Object.assign(target, {
+        mhp: 1, mhpmax: 1, mac: 20,
         mpeaceful: 1, mcanmove: 0, mfrozen: 100,
     });
     const wand = chargedWand(WAN_MAGIC_MISSILE, {
-        where: 'monster', charges: 2,
+        charges: 2,
     });
-    addMonster({
-        species: 'gnomish wizard', x: 14, y: 10,
-        hitPoints: 20, movement: 12, mwandexp: true,
+    const wizard = await createMonsterAt(
+        'gnomish wizard', 14, 10, NO_MINVENT,
+    );
+    Object.assign(wizard, {
+        movement: 12, mwandexp: true,
         mux: game.u.ux, muy: game.u.uy,
-        inventory: [wand],
     });
+    addObjectToMonsterInventory(wizard, wand);
     for (const [x, y] of [
         [13, 9], [14, 9], [15, 9],
         [13, 11], [14, 11], [15, 10], [15, 11],

@@ -17,7 +17,7 @@ import {
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { vision_recalc } from '../js/vision.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 
@@ -70,18 +70,18 @@ async function dropFigurineThroughCommand(figurine) {
     return after;
 }
 
-function ordinaryMonsterCarrier({ x = 12, y = 10, invisible = false } = {}) {
-    return addMonster({
-        m_id: 700,
-        mnum: PM_LEOCROTTA,
-        x,
-        y,
-        hitPoints: 30,
+async function ordinaryMonsterCarrier({
+    x = 12, y = 10, invisible = false,
+} = {}) {
+    const carrier = await createMonsterAt(PM_LEOCROTTA, x, y);
+    Object.assign(carrier, {
+        mhp: 30,
+        mhpmax: 30,
         female: false,
         minvis: invisible ? 1 : 0,
         mundetected: 0,
-        hasInventory: false,
     });
+    return carrier;
 }
 
 function transferFigurineToMonster(figurine, monster, timerSeed = 321) {
@@ -126,7 +126,7 @@ test('monster acquisition replaces the timer before visible pack transform',
     async () => {
         freshObjectRoom();
         const { figurine } = carriedFigurine();
-        const carrier = ordinaryMonsterCarrier();
+        const carrier = await ordinaryMonsterCarrier();
         const { prior, timer } = transferFigurineToMonster(
             figurine, carrier,
         );
@@ -154,7 +154,7 @@ test('monster acquisition replaces the timer before visible pack transform',
 test('invisible monster carrier is attributed to thin air', async () => {
     freshObjectRoom();
     const { figurine } = carriedFigurine();
-    const carrier = ordinaryMonsterCarrier({ invisible: true });
+    const carrier = await ordinaryMonsterCarrier({ invisible: true });
     transferFigurineToMonster(figurine, carrier);
 
     const event = await claimTransform(figurine, 1);
@@ -168,7 +168,7 @@ test('invisible monster carrier in a pool is attributed to empty water',
     async () => {
         freshObjectRoom();
         const { figurine } = carriedFigurine();
-        const carrier = ordinaryMonsterCarrier({ invisible: true });
+        const carrier = await ordinaryMonsterCarrier({ invisible: true });
         game.level.at(carrier.mx, carrier.my).typ = POOL;
         transferFigurineToMonster(figurine, carrier);
 
@@ -183,7 +183,7 @@ test('overdue monster-inventory transform stays silent until deletion',
     async () => {
         freshObjectRoom();
         const { figurine } = carriedFigurine();
-        const carrier = ordinaryMonsterCarrier();
+        const carrier = await ordinaryMonsterCarrier();
         transferFigurineToMonster(figurine, carrier);
 
         const event = await claimTransform(figurine, 1, 25);
@@ -199,7 +199,7 @@ test('blocked monster-carried figurine retains its carrier for retry',
     async () => {
         freshObjectRoom();
         const { figurine } = carriedFigurine();
-        const carrier = ordinaryMonsterCarrier();
+        const carrier = await ordinaryMonsterCarrier();
         transferFigurineToMonster(figurine, carrier);
         for (let x = 1; x < COLNO; x++) {
             for (let y = 0; y < ROWNO; y++)
@@ -391,12 +391,7 @@ test('occupied floor square consumes figurine as construction failure',
         await dropFigurineThroughCommand(figurine);
         const x = figurine.ox, y = figurine.oy;
         game.u.ux = x + 2;
-        addMonster({
-            mnum: PM_LEOCROTTA,
-            x,
-            y,
-            hitPoints: 20,
-        });
+        await createMonsterAt(PM_LEOCROTTA, x, y);
         vision_recalc(0);
 
         const event = await claimTransform(figurine, 37);
