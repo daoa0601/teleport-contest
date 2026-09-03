@@ -18,7 +18,7 @@ import { game } from './gstate.js';
 import { mkobj } from './mklev.js';
 import { angerQuestGuardiansAfterLeaderDeath } from './monster_anger.js';
 import {
-    isQuestLeader, markQuestLeaderDead,
+    isQuestLeader, markQuestLeaderDead, markQuestNemesisDead,
 } from './quest.js';
 import { deleteObject } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
@@ -26,7 +26,7 @@ import {
     MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME,
     MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop,
     monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster,
-    monsterIsUnicorn,
+    monsterIsQuestGuardian, monsterIsQuestNemesis, monsterIsUnicorn,
 } from './monster_data.js';
 import {
     monsterDeathCount, recordMonsterDeath,
@@ -119,6 +119,22 @@ async function punishQuestLeaderKill(monster) {
     await plineWithContinuation(`That was ${probably}a bad idea...`);
     if (!game.context?.mon_moving)
         await angerQuestGuardiansAfterLeaderDeath();
+}
+
+function rewardQuestNemesisKill() {
+    if (game.quest_status?.killed_leader) return;
+    const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
+    adjustHeroAlignment(Math.trunc(alignmentLimit / 4));
+}
+
+async function punishQuestGuardianKill(hallucinating) {
+    const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
+    adjustHeroAlignment(-Math.trunc(alignmentLimit / 8));
+    game.u.ugangr = (game.u.ugangr || 0) + 1;
+    game.u.uluck = (game.u.uluck || 0) - 4;
+    await plineWithContinuation(hallucinating
+        ? 'Whoopsie-daisy!'
+        : 'That was probably a bad idea...');
 }
 
 function observeMonsterDropName(object, x, y) {
@@ -313,6 +329,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
     unmap_invisible(x, y, false);
     monster.dead = true;
     markQuestLeaderDead(monster, game);
+    markQuestNemesisDead(monster, game);
     game.level.monsters = game.level.monsters.filter(
         candidate => candidate !== monster,
     );
@@ -379,6 +396,10 @@ export async function finishHeroMonsterKill(monster, x, y, {
 
     if (isQuestLeader(monster, game)) {
         await punishQuestLeaderKill(monster);
+    } else if (monsterIsQuestNemesis(monster.mnum)) {
+        rewardQuestNemesisKill();
+    } else if (monsterIsQuestGuardian(monster.mnum)) {
+        await punishQuestGuardianKill(hallucinating);
     } else if (monster.mtame) {
         adjustHeroAlignment(-15);
         await plineWithContinuation(hallucinating

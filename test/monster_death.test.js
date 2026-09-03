@@ -13,7 +13,7 @@ import {
 } from '../js/object_data.js';
 import { place_object } from '../js/floor_object.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { registerQuestLeader } from '../js/quest.js';
+import { ensureQuestStatus, registerQuestLeader } from '../js/quest.js';
 import { knownObject } from './support/game-objects.js';
 import {
     addTrap, floorObjects, floorObjectsAt,
@@ -211,6 +211,57 @@ test('killing the quest leader punishes the hero and angers guardians',
             guardianPeaceful: 0,
         });
     });
+
+test('killing the nemesis before the leader rewards alignment', async () => {
+    freshObjectRoom({ hero: { ualign: { type: -1, record: 0 } } });
+    const nemesis = addMonster({
+        species: 'Minion of Huhetotl', x: 11, y: 10,
+        hitPoints: 1, malign: 0,
+    });
+    const quest = ensureQuestStatus(game);
+    quest.killed_leader = false;
+    quest.killed_nemesis = false;
+
+    await finishHeroMonsterKill(nemesis, nemesis.mx, nemesis.my, {
+        showKillMessage: false,
+        recordConduct: false,
+        noCorpse: true,
+    });
+
+    assert.deepEqual({
+        alignment: game.u.ualign.record,
+        killedNemesis: game.quest_status.killed_nemesis,
+    }, {
+        alignment: 2,
+        killedNemesis: true,
+    });
+});
+
+test('killing a quest guardian costs alignment and luck', async () => {
+    freshObjectRoom({ hero: { ualign: { type: -1, record: 0 } } });
+    const guardian = addMonster({
+        species: 'student', x: 11, y: 10,
+        hitPoints: 1, malign: 0,
+    });
+    game.u.uluck = 0;
+    game.u.ugangr = 0;
+
+    await finishHeroMonsterKill(guardian, guardian.mx, guardian.my, {
+        showKillMessage: false,
+        recordConduct: false,
+        noCorpse: true,
+    });
+
+    assert.deepEqual({
+        alignment: game.u.ualign.record,
+        anger: game.u.ugangr,
+        luck: game.u.uluck,
+    }, {
+        alignment: -1,
+        anger: 1,
+        luck: -4,
+    });
+});
 
 test('killing a pit-trapped monster with a boulder buries its corpse',
     async () => {

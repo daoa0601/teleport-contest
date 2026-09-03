@@ -38,7 +38,7 @@ import {
     WORTHLESS_PIECE_OF_VIOLET_GLASS,
     WORTHLESS_PIECE_OF_WHITE_GLASS,
 } from './object_data.js';
-import { markQuestLeaderDead } from './quest.js';
+import { markQuestLeaderDead, markQuestNemesisDead } from './quest.js';
 import { d, rnd, rnl, rn2 } from './rng.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
@@ -348,6 +348,7 @@ async function detachDeadMonster(monster, state, random) {
     monster.mhp = 0;
     recordMonsterDeath(monster, state);
     markQuestLeaderDead(monster, state);
+    markQuestNemesisDead(monster, state);
     await returnDeadKop(monster, state, random);
     releaseDeadMonsterInventory(monster, state);
     monster.dead = true;

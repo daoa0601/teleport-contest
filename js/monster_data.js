@@ -148,6 +148,8 @@ const S_KOP = 37;
 const S_VAMPIRE = 48;
 const S_GHOST = 54;
 const S_GOLEM = 55;
+const MS_NEMESIS = 37;
+const MS_GUARDIAN = 38;
 const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
     ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
 const MONSTER_HORNS = new Map([
@@ -186,6 +188,14 @@ export function monsterIsPlayerMonster(mnum) {
 
 export function monsterIsPlainHuman(mnum) {
     return mnum === PM_HUMAN;
+}
+
+export function monsterIsQuestNemesis(mnum) {
+    return MONSTER_SOUND[mnum] === MS_NEMESIS;
+}
+
+export function monsterIsQuestGuardian(mnum) {
+    return MONSTER_SOUND[mnum] === MS_GUARDIAN;
 }
 
 export function monsterIsMindless(mnum) {

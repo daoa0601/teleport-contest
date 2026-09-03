@@ -9,6 +9,7 @@ import { rn2 } from './rng.js';
 import {
     MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_CLOSE,
 } from './const.js';
+import { monsterIsQuestNemesis } from './monster_data.js';
 
 // C struct q_score is global game state, not a property inferred from the
 // current special level.  Keeping the complete shape here makes the state
@@ -77,6 +78,12 @@ export function markQuestLeaderDead(monster, g = game) {
 export function markQuestLeaderAlive(monster, g = game) {
     if (!isQuestLeader(monster, g)) return false;
     ensureQuestStatus(g).leader_is_dead = false;
+    return true;
+}
+
+export function markQuestNemesisDead(monster, g = game) {
+    if (!monsterIsQuestNemesis(monster?.mnum)) return false;
+    ensureQuestStatus(g).killed_nemesis = true;
     return true;
 }
 
