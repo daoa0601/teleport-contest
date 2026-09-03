@@ -332,6 +332,12 @@ export function monsterDigests(monster) {
     );
 }
 
+export function monsterCanEngulf(monster) {
+    return (MONSTER_ATTACKS[monster?.mnum] || []).some(
+        ([attackType]) => attackType === AT_ENGL,
+    );
+}
+
 export function monsterIsVampireShifter(monster) {
     return monsterIsVampire(monster?.cham);
 }

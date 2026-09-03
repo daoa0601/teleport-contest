@@ -7,6 +7,7 @@ import {
     IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN,
     M_AP_OBJECT, P_CROSSBOW, SINK, WEB, ZAP_POS, isok,
 } from './const.js';
+import { artifactEmitsLight } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
 import {
     flush_screen, lastDirtyMapCursor, newsym, plineWithContinuation,
@@ -15,6 +16,7 @@ import {
 import { applyFloorEffects } from './floor_effects.js';
 import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
+import { endObjectBurn } from './light.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import {
     MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE,
@@ -33,7 +35,7 @@ import {
 import { shipObject } from './object_migration.js';
 import { splitObjectStack } from './object_stack.js';
 import { rn2 } from './rng.js';
-import { heroIsDeaf } from './senses.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { settleThrownShopObject, splitShopBill } from './shk.js';
 import { cansee } from './vision.js';
 
@@ -394,8 +396,9 @@ export function flyKickedObject(options) {
 // stack allocates the source child identity before mutating the parent; a
 // singleton detaches the exact carried identity.  Both leave throwit() with a
 // free object whose loss provenance is LOST_THROWN.
-export function detachThrownUnit(
+export async function detachThrownUnit(
     state, item, selectedQuantity, splitObjectId = null,
+    publish = plineWithContinuation,
 ) {
     let thrown = item;
     if (selectedQuantity > 1) {
@@ -412,6 +415,15 @@ export function detachThrownUnit(
             || state.u?.uwep === item
             || state.uswapwep === item
             || state.u?.uswapwep === item;
+        if (occupiedPrimaryWeaponSlot && item.lamplit
+            && artifactEmitsLight(item)) {
+            endObjectBurn(item, state, state.moves ?? 0);
+            if (!heroIsBlind(state)) {
+                const name = item.oextra?.oname || item.oname
+                    || OBJECT_NAMES[item.otyp] || 'weapon';
+                await publish(`The ${name} stops shining.`);
+            }
+        }
         const index = state.inventory.indexOf(item);
         if (index >= 0) state.inventory.splice(index, 1);
         for (const slot of EQUIPMENT_SLOTS) {

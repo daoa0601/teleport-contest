@@ -2,6 +2,7 @@
 // C refs: timeout.c begin_burn()/burn_object()/end_burn(), light.c.
 
 import { game } from './gstate.js';
+import { artifactEmitsLight } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     A_WIS, CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG,
@@ -45,6 +46,11 @@ const SPBOOK_CLASS = 10;
 const PM_GREMLIN = 40;
 const PM_YELLOW_LIGHT = 118;
 const PM_BLACK_LIGHT = 119;
+
+export function objectShedsLight(object) {
+    return !!object?.lamplit
+        && (LIGHT_TYPES.has(object.otyp) || artifactEmitsLight(object));
+}
 
 function heroIsBlind() {
     return !!(game.blind || (game.u?.blindTurns ?? 0) > 0);
@@ -327,7 +333,15 @@ function objectBurnTurns(object) {
 export function beginObjectBurn(
     object, state = game, currentTurn = state.moves ?? 0,
 ) {
-    if (!object || !LIGHT_TYPES.has(object.otyp)) return false;
+    if (!object
+        || (!LIGHT_TYPES.has(object.otyp) && !artifactEmitsLight(object))) {
+        return false;
+    }
+    if (artifactEmitsLight(object)) {
+        object.lamplit = true;
+        state.vision_full_recalc = 1;
+        return true;
+    }
     if (object.otyp === MAGIC_LAMP) {
         if ((object.spe ?? 0) <= 0) return false;
         object.lamplit = true;
@@ -373,9 +387,9 @@ export function transformMagicLampToOilLamp(
 export function endObjectBurn(
     object, state = game, currentTurn = state.moves ?? 0,
 ) {
-    if (!object || !LIGHT_TYPES.has(object.otyp) || !object.lamplit)
+    if (!object || !objectShedsLight(object))
         return false;
-    if (object.otyp === MAGIC_LAMP) {
+    if (object.otyp === MAGIC_LAMP || artifactEmitsLight(object)) {
         object.lamplit = false;
         state.vision_full_recalc = 1;
         return true;

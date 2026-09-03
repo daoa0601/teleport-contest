@@ -8,17 +8,14 @@ import {
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
-import { endObjectBurn } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
     BOULDER, BRASS_LANTERN, CLOVE_OF_GARLIC, MAGIC_LAMP, OBJECT_SUBTYPE,
     OIL_LAMP,
 } from './object_data.js';
 import {
-    MONSTER_ATTACKS, MONSTER_SYMBOL, monsterDigests,
-    monsterTypeName,
+    MONSTER_SYMBOL, monsterCanEngulf, monsterDigests, monsterTypeName,
 } from './monster_data.js';
-import { AT_ENGL } from './monster_attack_types.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
 import {
     isThrowingWeapon, launcherMatchesAmmo,
@@ -53,15 +50,10 @@ function itemIsEquipped(state, item) {
         || !!(item.owornmask ?? 0);
 }
 
-function hasEngulfAttack(monster) {
-    return MONSTER_ATTACKS[monster?.mnum]?.some(attack =>
-        attack[0] === AT_ENGL);
-}
-
 function supportedLitLamp(state, item, engulfer) {
     if (!item.lamplit) return true;
     if (!LAMP_TYPES.has(item.otyp) || item.artifact || item.oartifact
-        || !hasEngulfAttack(engulfer)) return false;
+        || !monsterCanEngulf(engulfer)) return false;
     const timers = objectTimers(item);
     if (item.otyp === MAGIC_LAMP) return timers.length === 0;
     return timers.length === 1
@@ -77,7 +69,7 @@ function swallowedWeaponTarget(state, item, objectClass) {
     const weaponOrTool = objectClass === 2
         || (objectClass === 6 && subtype !== 0);
 
-    if (!weaponOrTool || item.lamplit || engulfer.wormno) {
+    if (!weaponOrTool || engulfer.wormno) {
         return null;
     }
     return engulfer;
@@ -134,7 +126,7 @@ export async function resolveSwallowedWeaponThrow({
 }) {
     const engulfer = swallowedWeaponTarget(state, item, objectClass);
     if (!engulfer) return false;
-    const thrown = detachThrownUnit(
+    const thrown = await detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
 
@@ -171,7 +163,7 @@ export async function resolveSwallowedEggPieOrVenomThrow({
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer || !isHeroThrownEggPieOrVenom(item)) return false;
 
-    const thrown = detachThrownUnit(
+    const thrown = await detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
     await applyThrowSlip({ state, object: thrown });
@@ -199,7 +191,7 @@ export async function resolveSwallowedPotionThrow({
         state, item, objectClass, selectedQuantity,
     );
     if (!engulfer) return false;
-    const thrown = detachThrownUnit(
+    const thrown = await detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
 
@@ -239,7 +231,7 @@ export async function resolveGenericSwallowedThrow({
     if (!engulfer) return false;
 
     // freeinv() occurs before throwit() begins slip/contact handling.
-    const thrown = detachThrownUnit(
+    const thrown = await detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
     await applyThrowSlip({ state, object: thrown });
@@ -259,7 +251,7 @@ export async function resolveGenericSwallowedThrow({
         `The ${thrownObjectName(thrown, state)} vanishes into ${destination}.`,
     );
     const snuffLamp = thrown.lamplit && LAMP_TYPES.has(thrown.otyp)
-        && hasEngulfAttack(engulfer);
+        && monsterCanEngulf(engulfer);
     if (snuffLamp && !heroIsBlind(state)) {
         await plineWithContinuation(
             `The ${thrownObjectName(thrown, state)} goes out.`,
@@ -268,9 +260,6 @@ export async function resolveGenericSwallowedThrow({
     addObjectToMonsterInventory(
         engulfer, thrown, state, { atFront: true },
     );
-    // steal.c:mpickobj() deliberately waits until add_to_minv() has linked
-    // the carrier before snuff_light_source() resolves that mobile light.
-    if (snuffLamp) endObjectBurn(thrown, state, state.moves ?? 0);
     state.context.move = 1;
     return true;
 }

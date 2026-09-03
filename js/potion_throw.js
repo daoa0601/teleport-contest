@@ -82,7 +82,7 @@ export async function resolveMapPotionThrow({
         state, item, objectClass, selectedQuantity, dx, dy,
     })) return false;
 
-    const thrown = detachThrownUnit(
+    const thrown = await detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
 

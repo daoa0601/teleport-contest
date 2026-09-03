@@ -11,6 +11,9 @@ import { game } from './gstate.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 import { deleteObject } from './object_delete.js';
 import { removeObjectAndContentsFromBill } from './shk.js';
+import { artifactEmitsLight } from './artifacts.js';
+import { endObjectBurn, objectShedsLight } from './light.js';
+import { monsterCanEngulf } from './monster_data.js';
 
 export function clearMonsterCarriedObjectState(object) {
     if (!object) return;
@@ -42,9 +45,14 @@ export function addObjectToMonsterInventory(
     removeObjectAndContentsFromBill(object, state);
     object.no_charge = false;
     attachCursedFigurineTimer(object, state);
-    return linkObjectToMonsterInventory(
+    const extinguishAfterPickup = objectShedsLight(object)
+        && !artifactEmitsLight(object) && monsterCanEngulf(monster);
+    const carried = linkObjectToMonsterInventory(
         monster, object, { atFront, state },
     );
+    if (extinguishAfterPickup)
+        endObjectBurn(carried, state, state.moves ?? 0);
+    return carried;
 }
 
 // Some C callers use add_to_minv() directly for newly created objects such as

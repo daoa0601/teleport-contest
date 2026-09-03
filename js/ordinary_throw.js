@@ -25,7 +25,7 @@ export async function throwOrdinaryObject({
     dx,
     dy,
 }) {
-    const thrown = detachThrownUnit(
+    const thrown = await detachThrownUnit(
         state, item, quantity, splitObjectId,
     );
     await applyThrowSlip({

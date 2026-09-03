@@ -493,6 +493,23 @@ test('a swallowed artifact applies its special weapon damage', async () => {
     assert.ok(40 - artifactTarget.mhp > ordinaryDamage);
 });
 
+test('throwing a wielded Sunsword stops its light before swallowed contact',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const sunsword = addInventoryItem(artifactObject('Sunsword'));
+        wearHeroObject(sunsword, 'uwep', W_WEP);
+        setBasicWeaponSkill(sunsword);
+        assert.equal(beginObjectBurn(sunsword, game, game.moves), true);
+
+        initRng(2310n);
+        await throwInventoryObject(sunsword, 'l', [' ']);
+
+        assert.equal(sunsword.lamplit, false);
+        assert.equal(game.uwep, null);
+        assert.strictEqual(engulfer.minvent[0], sunsword);
+        assert.ok(engulfer.mhp < 40);
+    });
+
 test('a swallowed engulfer can resist Grimtooth poison', async () => {
     const engulfer = freshSwallowedState(PM_ENERGY_VORTEX);
     const grimtooth = addInventoryItem(artifactObject('Grimtooth'));
