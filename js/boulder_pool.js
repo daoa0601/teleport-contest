@@ -4,13 +4,15 @@
 import {
     Is_waterlevel, LAVAPOOL, MOAT, POOL, ROOM, WATER,
 } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import {
+    canProjectMonster, newsym, plineWithContinuation,
+} from './display.js';
 import { finishHeroDeath } from './end.js';
 import { remove_object } from './floor_object.js';
 import { buryFloorObjectsAt } from './mklev.js';
 import { monsterInAir } from './mon.js';
 import { wakeMonstersNear } from './monster_wake.js';
-import { finishMonsterLiquidDeath } from './monmove.js';
+import { finishEnvironmentalMonsterDeath } from './monmove.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { d, rn2 } from './rng.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
@@ -51,8 +53,10 @@ export async function dropBoulderIntoLiquid(boulder, x, y, state) {
         vision_note_blocker_change(x, y);
         const monster = monsterAt(x, y, state);
         if (monster && !monsterInAir(monster, state)) {
-            monster.mhp = 0;
-            finishMonsterLiquidDeath(monster, state, rn2, [], false);
+            await finishEnvironmentalMonsterDeath(monster, state, {
+                visible: cansee(x, y),
+                spotted: canProjectMonster(monster, x, y),
+            });
         }
         state.level.traps = (state.level.traps || []).filter(
             trap => trap.tx !== x || trap.ty !== y,
