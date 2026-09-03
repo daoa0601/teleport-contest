@@ -260,6 +260,21 @@ test('a swallowed artifact applies its special weapon damage', async () => {
     assert.ok(40 - artifactTarget.mhp > ordinaryDamage);
 });
 
+test('a swallowed engulfer can resist Grimtooth poison', async () => {
+    const engulfer = freshSwallowedState(PM_ENERGY_VORTEX);
+    const grimtooth = addInventoryItem(artifactObject('Grimtooth'));
+    setBasicWeaponSkill(grimtooth);
+
+    initRng(5n);
+    await throwInventoryObject(grimtooth, 'l', [' ']);
+
+    assert.ok(engulfer.mhp < 40);
+    assert.match(
+        game._pending_message,
+        /poison doesn't seem to affect the energy vortex/,
+    );
+});
+
 test('swallowed weapon-tool preserves minimal-damage skill cadence',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
