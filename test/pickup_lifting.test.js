@@ -15,7 +15,7 @@ import {
     addInventoryObject, floorArtifact, floorObject, knownObject,
 } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
-import { addMonster, equipMonsterObject } from './support/monsters.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 function freshPickupGame() {
@@ -30,14 +30,14 @@ function addCarriedRocks(count) {
     });
 }
 
-function swallowHeroWith(...objects) {
-    const worm = addMonster({
-        mnum: 115,
-        x: game.u.ux,
-        y: game.u.uy,
-        hitPoints: 30,
-        level: 15,
-    });
+async function swallowHeroWith(...objects) {
+    const worm = await createMonsterAt(
+        'purple worm', game.u.ux + 1, game.u.uy,
+    );
+    worm.mx = game.u.ux;
+    worm.my = game.u.uy;
+    worm.mhp = worm.mhpmax = 30;
+    worm.m_lev = 15;
     for (const object of objects)
         addObjectToMonsterInventory(worm, object);
     game.u.uswallow = 1;
@@ -291,7 +291,7 @@ test('an unliftable scare scroll remains unchanged', async () => {
 test('a swallowed hero can pick up an object inside the monster', async () => {
     freshPickupGame();
     const club = knownObject(CLUB, { spe: 0 });
-    const worm = swallowHeroWith(club);
+    const worm = await swallowHeroWith(club);
 
     await rhack(','.charCodeAt(0));
 
@@ -309,7 +309,7 @@ test('a swallowed hero cannot take the monster weapon', async () => {
         owornmask: W_WEP,
         wielded: true,
     });
-    const worm = swallowHeroWith();
+    const worm = await swallowHeroWith();
     equipMonsterObject(worm, club, W_WEP);
 
     await rhack(','.charCodeAt(0));
@@ -413,7 +413,7 @@ test('a pickup command count chooses one matching stack', async () => {
 
 test('an empty digesting monster still consumes a pickup turn', async () => {
     freshPickupGame();
-    swallowHeroWith();
+    await swallowHeroWith();
     pushKeys(' '.repeat(3));
 
     await rhack(','.charCodeAt(0));
