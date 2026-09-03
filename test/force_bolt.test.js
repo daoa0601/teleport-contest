@@ -21,20 +21,16 @@ import {
     chargedWand, floorObject, knownObject,
 } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 const PM_JACKAL = 12;
 
-function addJackal(x = 12) {
-    return addMonster({
-        m_id: 921,
-        mnum: PM_JACKAL,
-        x,
-        y: 10,
-        hitPoints: 100,
-        mac: 100,
-    });
+async function createJackal(x = 12) {
+    const jackal = await createMonsterAt('jackal', x, 10);
+    jackal.mhp = jackal.mhpmax = 100;
+    jackal.mac = 100;
+    return jackal;
 }
 
 function freshWizard() {
@@ -55,7 +51,7 @@ function forceBoltSpell() {
 
 test('force bolt damages a monster in its path', async () => {
     freshWizard();
-    const monster = addJackal();
+    const monster = await createJackal();
     pushKeys('l');
 
     await castKnownSpell(forceBoltSpell());
@@ -130,7 +126,7 @@ test('force bolt breaks fragile floor objects and continues past them',
         freshWizard();
         const potion = floorObject(POT_WATER, 12, 10);
         const club = floorObject(CLUB, 12, 10);
-        const monster = addJackal(13);
+        const monster = await createJackal(13);
         pushKeys(`l${' '.repeat(20)}`);
 
         await castKnownSpell(forceBoltSpell());
