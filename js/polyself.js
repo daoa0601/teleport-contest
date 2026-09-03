@@ -33,6 +33,7 @@ import {
 import { exerciseAttribute } from './attrib.js';
 import { syncBlindness } from './senses.js';
 import { golemHitPoints } from './monster_hit_points.js';
+import { finishHeroDeath } from './end.js';
 
 const M1_NOEYES = 0x00001000;
 const M1_NOTAKE = 0x00000800;
@@ -735,9 +736,11 @@ export async function polyselfControlledNewman() {
     const oldLevel = u.ulevel ?? 1;
     let newLevel = oldLevel + rn2(5) - 2;
     if (newLevel < 1) {
-        // TODO: finish the fatal newman() path.
         await pline("Your new form doesn't seem healthy enough to survive.");
-        return { transformed: false, died: true };
+        const died = await finishHeroDeath({
+            killer: 'unsuccessful polymorph',
+        });
+        return { transformed: false, died };
     }
     newLevel = Math.min(MAXULEV, newLevel);
     if (newLevel < oldLevel)
