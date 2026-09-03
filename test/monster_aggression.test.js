@@ -13,11 +13,9 @@ import { CORPSE } from '../js/object_data.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
 } from '../js/object_timers.js';
-import { addMonster, createMonsterAt } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-const PM_GIANT = 169;
-const PM_HUMAN_ZOMBIE = 244;
 const PM_GIANT_ZOMBIE = 247;
 
 function freshState() {
@@ -29,30 +27,18 @@ function freshState() {
     });
 }
 
-function addArenaMonster(options) {
-    return addMonster({
-        mux: game.u.ux, muy: game.u.uy,
-        movement: 12,
-        ...options,
-    });
-}
-
 test('a zombie attacks a nearby giant and the giant rises as a zombie',
     async () => {
         freshState();
-        const zombie = addArenaMonster({
-            m_id: 901,
-            mnum: PM_HUMAN_ZOMBIE,
-            x: 10, y: 10,
-            hitPoints: 30,
-            level: 8,
+        const zombie = await createMonsterAt('human zombie', 10, 10);
+        Object.assign(zombie, {
+            mux: game.u.ux, muy: game.u.uy,
+            movement: 12, mhp: 30, mhpmax: 30, m_lev: 8,
         });
-        const giant = addArenaMonster({
-            m_id: 902,
-            mnum: PM_GIANT,
-            x: 11, y: 10,
-            hitPoints: 8,
-            level: 6,
+        const giant = await createMonsterAt('giant', 11, 10);
+        Object.assign(giant, {
+            mux: game.u.ux, muy: game.u.uy,
+            movement: 12, mhp: 8, mhpmax: 8, m_lev: 6,
         });
         giant.name = 'Bram';
         game._deferVisibleMonsterContact = true;
@@ -95,10 +81,10 @@ test('a fatal monster attack makes a shifted vampire rise', async () => {
     dragon.mhp = dragon.mhpmax = 40;
     dragon.movement = 12;
     const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
-    const wolf = addArenaMonster({
-        species: 'wolf', x: 11, y: 10,
-        hitPoints: 1, maxHitPoints: 20, level: 6,
-        cham: vampireLeader,
+    const wolf = await createMonsterAt('wolf', 11, 10);
+    Object.assign(wolf, {
+        mux: game.u.ux, muy: game.u.uy, movement: 12,
+        mhp: 1, mhpmax: 20, m_lev: 6, cham: vampireLeader,
     });
     game._deferVisibleMonsterContact = true;
 
