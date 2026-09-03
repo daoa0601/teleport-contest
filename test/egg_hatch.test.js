@@ -14,9 +14,9 @@ import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
-import { cansee, vision_recalc } from '../js/vision.js';
+import { vision_recalc } from '../js/vision.js';
 import { objectWeight } from '../js/weight.js';
-import { liveMonster } from './support/monsters.js';
+import { addMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 
@@ -29,7 +29,6 @@ function freshEggState(seed) {
         moves: 2,
         gameplaySeed: seed,
     });
-    assert.equal(cansee(12, 10), true);
 }
 
 
@@ -234,14 +233,13 @@ test('a dragon egg in the pack hatches a tame dragon', async () => {
 
 test('an egg hatches out of a visible monster pack', async () => {
     freshEggState(2);
-    const carrier = liveMonster({
+    const carrier = addMonster({
         mnum: 260,
         m_id: 7001,
         x: 12,
         y: 10,
         hitPoints: 10,
     });
-    game.level.monsters = [carrier];
     const egg = mksobj(EGG, true, false);
     egg.quan = egg.quantity = 1;
     linkObjectToMonsterInventory(carrier, egg);

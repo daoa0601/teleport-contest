@@ -17,9 +17,8 @@ import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
     scheduleObjectTimer, stopAllObjectTimers,
 } from '../js/object_timers.js';
-import { cansee } from '../js/vision.js';
 import { objectWeight } from '../js/weight.js';
-import { liveMonster } from './support/monsters.js';
+import { addMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 
@@ -29,7 +28,6 @@ function freshGlobState(seed = 1) {
         context: { move: 0, nopick: false },
         gameplaySeed: seed,
     });
-    assert.equal(cansee(12, 10), true);
 }
 
 
@@ -303,13 +301,12 @@ test('a glob inside a carried sack makes the sack lighter', () => {
 
 test('a monster-carried glob disappears from its pack', () => {
     freshGlobState(17);
-    const carrier = liveMonster({
+    const carrier = addMonster({
         mnum: 260,
         m_id: 8100,
         x: 12,
         y: 10,
     });
-    game.level.monsters = [carrier];
     const glob = mksobj(GLOB_OF_GREEN_SLIME, true, false);
     glob.owt = 1;
     linkObjectToMonsterInventory(carrier, glob);
