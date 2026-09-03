@@ -21,8 +21,9 @@ import {
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import {
-    ACID_VENOM, BLINDING_VENOM, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, EGG,
-    EXPENSIVE_CAMERA, MIRROR, OBJECT_MATERIAL,
+    ACID_VENOM, BLINDING_VENOM, BOULDER, CLOVE_OF_GARLIC, CORPSE,
+    CREAM_PIE, EGG, EXPENSIVE_CAMERA, HEAVY_IRON_BALL, IRON_CHAIN, MIRROR,
+    OBJECT_MATERIAL,
 } from './object_data.js';
 import { objectBreaksOnImpact } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
@@ -36,6 +37,15 @@ const BLINDING_OBJECTS = new Set([CREAM_PIE, BLINDING_VENOM]);
 const VEGGY = 3;
 const PAPER = 5;
 const SPBOOK_CLASS = 10;
+const SILVER = 14;
+const SHADE_AWARE_OBJECTS = new Set([
+    BOULDER, HEAVY_IRON_BALL, IRON_CHAIN, MIRROR, CLOVE_OF_GARLIC,
+]);
+
+function objectCanTouchShade(object) {
+    return SHADE_AWARE_OBJECTS.has(object?.otyp)
+        || OBJECT_MATERIAL[object?.otyp] === SILVER;
+}
 
 export async function resolveHeroMeleeObjectContact(
     monster,
@@ -50,6 +60,10 @@ export async function resolveHeroMeleeObjectContact(
             || `the ${MONSTER_NAME[monster.mnum] || 'monster'}`,
     } = {},
 ) {
+    if (monsterIsShade(monster) && !objectCanTouchShade(object)) {
+        return { damage: 0, addHeroDamageBonuses: false };
+    }
+
     if (object?.otyp === CLOVE_OF_GARLIC) {
         if (monsterIsUndead(monster.mnum)
             || monsterIsVampireShifter(monster)) {
@@ -95,9 +109,6 @@ export async function resolveHeroMeleeObjectContact(
     }
 
     if (object?.otyp === CORPSE) {
-        if (monsterIsShade(monster)) {
-            return { damage: 0, addHeroDamageBonuses: false };
-        }
         if (touchPetrifies(object.corpsenm)) {
             await publish(
                 `You hit ${describeTarget()} with ${corpseContactName(object)}.`,
@@ -135,9 +146,6 @@ export async function resolveHeroMeleeObjectContact(
     }
 
     if (object?.otyp === EGG) {
-        if (monsterIsShade(monster)) {
-            return { damage: 0, addHeroDamageBonuses: false };
-        }
         return resolveHeroEggHit(monster, object, {
             state,
             publish,
@@ -149,10 +157,6 @@ export async function resolveHeroMeleeObjectContact(
     }
 
     if (object?.otyp === ACID_VENOM) {
-        if (monsterIsShade(monster)) {
-            return { damage: 0, addHeroDamageBonuses: false };
-        }
-
         const resisted = monsterHasAcidResistance(monster);
         await publish(resisted
             ? `Your venom hits ${describeTarget()} harmlessly.`
@@ -177,9 +181,6 @@ export async function resolveHeroMeleeObjectContact(
     }
 
     if (!BLINDING_OBJECTS.has(object?.otyp)) return null;
-    if (monsterIsShade(monster)) {
-        return { damage: 0, addHeroDamageBonuses: false };
-    }
 
     monster.msleeping = 0;
     const canBlind = monsterCanBeBlindedByObject(monster, object.otyp, {

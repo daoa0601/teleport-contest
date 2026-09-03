@@ -266,6 +266,20 @@ test('bashing with a camera can release a demon without hurting the monster',
             monster !== jackal && monster.mpeaceful === 1));
     });
 
+test('a camera passes through a shade without being destroyed', async () => {
+    const { monster: shade } = installMeleeArena(
+        'tourist', 'shade', { mac: 100 },
+    );
+    const camera = equipWeapon('expensive camera');
+
+    initRng(915n);
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(shade.mhp, 100);
+    assert.equal(camera.where, 'inventory');
+    assert.strictEqual(game.uwep, camera);
+});
+
 test('soft food and paper do not hurt a monster', async () => {
     for (const objectName of ['carrot', 'blank paper']) {
         const { monster: jackal } = installMeleeArena(
