@@ -6,7 +6,7 @@ import { heroSpitAttack, useHeroSpit } from '../js/hero_spit.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { floorObjects, floorObjectsAt } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 
 function direction(key, dx = 0, dy = 0, dz = 0) {
     return { key, dx, dy, dz };
@@ -43,12 +43,8 @@ test('cancelling a spit direction creates no venom and spends no turn',
 
 test('cobra venom blinds a monster without hurting it', async () => {
     freshMonsterAbilityRoom('cobra');
-    const jackal = addMonster({
-        species: 'jackal',
-        x: 11,
-        y: 10,
-        hitPoints: 12,
-    });
+    const jackal = await createMonsterAt('jackal', 11, 10);
+    jackal.mhp = jackal.mhpmax = 12;
 
     const result = await spit(direction('l', 1, 0), {
         publish: async () => undefined,
@@ -63,12 +59,8 @@ test('cobra venom blinds a monster without hurting it', async () => {
 
 test('black naga venom burns a monster', async () => {
     freshMonsterAbilityRoom('black naga');
-    const jackal = addMonster({
-        species: 'jackal',
-        x: 11,
-        y: 10,
-        hitPoints: 12,
-    });
+    const jackal = await createMonsterAt('jackal', 11, 10);
+    jackal.mhp = jackal.mhpmax = 12;
 
     const result = await spit(direction('l', 1, 0), {
         publish: async () => undefined,
@@ -110,12 +102,12 @@ test('spitting blinding venom upward can blind the hero', async () => {
 
 test('blinding venom cannot reach an engulfer eyes from inside', async () => {
     freshMonsterAbilityRoom('cobra');
-    const worm = addMonster({
-        species: 'purple worm',
-        x: game.u.ux,
-        y: game.u.uy,
-        hitPoints: 30,
-    });
+    const worm = await createMonsterAt(
+        'purple worm', game.u.ux + 1, game.u.uy,
+    );
+    worm.mx = game.u.ux;
+    worm.my = game.u.uy;
+    worm.mhp = worm.mhpmax = 30;
     game.u.uswallow = 1;
     game.u.ustuck = worm;
 
@@ -132,12 +124,12 @@ test('blinding venom cannot reach an engulfer eyes from inside', async () => {
 
 test('acid venom which kills an engulfer releases the hero', async () => {
     freshMonsterAbilityRoom('black naga');
-    const jackal = addMonster({
-        species: 'jackal',
-        x: game.u.ux,
-        y: game.u.uy,
-        hitPoints: 1,
-    });
+    const jackal = await createMonsterAt(
+        'jackal', game.u.ux + 1, game.u.uy,
+    );
+    jackal.mx = game.u.ux;
+    jackal.my = game.u.uy;
+    jackal.mhp = jackal.mhpmax = 1;
     game.u.uswallow = 1;
     game.u.ustuck = jackal;
 

@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { heroGazeAttack, useHeroGaze } from '../js/hero_gaze.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 
 function gaze(options = {}) {
     return useHeroGaze({
@@ -18,11 +18,7 @@ function gaze(options = {}) {
 
 test('an umber hulk uses #monster to confuse a visible monster', async () => {
     freshMonsterAbilityRoom('umber hulk', { energy: 30 });
-    const jackal = addMonster({
-        species: 'jackal',
-        x: 11,
-        y: 10,
-    });
+    const jackal = await createMonsterAt('jackal', 11, 10);
     await runMonsterAbilityCommand(' '.repeat(6));
 
     assert.equal(jackal.mconf, 1);
@@ -35,7 +31,7 @@ test('a blind hero cannot use a gaze attack', async () => {
         energy: 30,
         polymorph: { blindTurns: 3 },
     });
-    addMonster({ species: 'jackal', x: 11, y: 10 });
+    await createMonsterAt('jackal', 11, 10);
 
     const result = await gaze();
 
@@ -46,12 +42,8 @@ test('a blind hero cannot use a gaze attack', async () => {
 
 test('a pyrolisk fiery gaze burns a monster', async () => {
     freshMonsterAbilityRoom('pyrolisk', { energy: 30 });
-    const jackal = addMonster({
-        species: 'jackal',
-        x: 11,
-        y: 10,
-        hitPoints: 12,
-    });
+    const jackal = await createMonsterAt('jackal', 11, 10);
+    jackal.mhp = jackal.mhpmax = 12;
 
     await gaze({
         random: () => 19,
@@ -64,12 +56,8 @@ test('a pyrolisk fiery gaze burns a monster', async () => {
 
 test('gazing at a floating eye can freeze the hero', async () => {
     freshMonsterAbilityRoom('umber hulk', { energy: 30 });
-    addMonster({
-        species: 'floating eye',
-        x: 11,
-        y: 10,
-        level: 2,
-    });
+    const eye = await createMonsterAt('floating eye', 11, 10);
+    eye.m_lev = 2;
 
     const result = await gaze({ rollDice: () => 9 });
 

@@ -5,6 +5,7 @@ import { IRONBARS, ROOM, W_ARMH, W_ARMS, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroBreathAttack } from '../js/hero_breath.js';
 import { useHeroBreath } from '../js/hero_breath_command.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     BLACK_DRAGON_SCALES, HELMET, LONG_SWORD, SMALL_SHIELD,
 } from '../js/object_data.js';
@@ -13,7 +14,7 @@ import { runMonsterAbilityCommand } from './support/commands.js';
 import { knownObject } from './support/game-objects.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
-import { addMonster, equipMonsterObject } from './support/monsters.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 
 function breathe(direction, options = {}) {
     return useHeroBreath({
@@ -31,16 +32,10 @@ function breathe(direction, options = {}) {
 
 test('a winter wolf uses #monster to breathe frost at a target', async () => {
     const level = freshMonsterAbilityRoom('winter wolf', { energy: 30 });
-    const jackal = addMonster({
-        species: 'jackal',
-        m_id: 81,
-        x: 11,
-        y: 10,
-        hitPoints: 1,
-        level: 1,
-        mac: 99,
-        peaceful: false,
-    });
+    const jackal = await createMonsterAt('jackal', 11, 10);
+    jackal.mhp = jackal.mhpmax = 1;
+    jackal.m_lev = 1;
+    jackal.mac = 99;
     initRng(7n);
     await runMonsterAbilityCommand(`l${' '.repeat(12)}`);
 
@@ -64,16 +59,12 @@ test('disintegration breath destroys a shield before hurting its wearer',
     async () => {
         freshMonsterAbilityRoom('black dragon', { energy: 30 });
         const shield = knownObject(SMALL_SHIELD, {
-            where: 'minvent', worn: true, owornmask: W_ARMS,
+            worn: true, owornmask: W_ARMS,
         });
-        const jackal = addMonster({
-            species: 'jackal',
-            x: 11,
-            y: 10,
-            hitPoints: 20,
-            mac: 99,
-            inventory: [shield],
-        });
+        const jackal = await createMonsterAt('jackal', 11, 10);
+        jackal.mhp = jackal.mhpmax = 20;
+        jackal.mac = 99;
+        equipMonsterObject(jackal, shield, W_ARMS);
 
         await breathe('l', {
             publish: async () => undefined,
@@ -88,18 +79,13 @@ test('disintegration breath destroys a shield before hurting its wearer',
 test('fatal disintegration destroys ordinary gear but spares black scales',
     async () => {
         freshMonsterAbilityRoom('black dragon', { energy: 30 });
-        const sword = knownObject(LONG_SWORD, { where: 'minvent' });
-        const scales = knownObject(BLACK_DRAGON_SCALES, {
-            where: 'minvent',
-        });
-        const jackal = addMonster({
-            species: 'jackal',
-            x: 11,
-            y: 10,
-            hitPoints: 1,
-            mac: 99,
-            inventory: [sword, scales],
-        });
+        const sword = knownObject(LONG_SWORD);
+        const scales = knownObject(BLACK_DRAGON_SCALES);
+        const jackal = await createMonsterAt('jackal', 11, 10);
+        jackal.mhp = jackal.mhpmax = 1;
+        jackal.mac = 99;
+        addObjectToMonsterInventory(jackal, sword);
+        addObjectToMonsterInventory(jackal, scales);
 
         await breathe('l', {
             publish: async () => undefined,
@@ -120,13 +106,9 @@ test('acid breath corrodes a monster weapon and armor', async () => {
     const helmet = knownObject(HELMET, {
         where: 'minvent', worn: true, owornmask: W_ARMH,
     });
-    const jackal = addMonster({
-        species: 'jackal',
-        x: 11,
-        y: 10,
-        hitPoints: 20,
-        mac: 99,
-    });
+    const jackal = await createMonsterAt('jackal', 11, 10);
+    jackal.mhp = jackal.mhpmax = 20;
+    jackal.mac = 99;
     equipMonsterObject(jackal, sword, W_WEP);
     equipMonsterObject(jackal, helmet, W_ARMH);
 
@@ -155,13 +137,13 @@ test('lightning breath can melt iron bars', async () => {
 
 test('breath fired while swallowed hits the engulfer directly', async () => {
     freshMonsterAbilityRoom('winter wolf', { energy: 30 });
-    const worm = addMonster({
-        species: 'purple worm',
-        x: game.u.ux,
-        y: game.u.uy,
-        hitPoints: 1,
-        mac: -99,
-    });
+    const worm = await createMonsterAt(
+        'purple worm', game.u.ux + 1, game.u.uy,
+    );
+    worm.mx = game.u.ux;
+    worm.my = game.u.uy;
+    worm.mhp = worm.mhpmax = 1;
+    worm.mac = -99;
     game.u.uswallow = 1;
     game.u.ustuck = worm;
 

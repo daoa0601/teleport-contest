@@ -6,38 +6,24 @@ import { useHeroMindBlast } from '../js/hero_mind_blast.js';
 import { initRng } from '../js/rng.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 
 test('a mind flayer uses #monster to strike nearby hostile minds', async () => {
     freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
-    const target = addMonster({
-        species: 'floating eye',
-        x: 11,
-        y: 10,
-        hitPoints: 1,
-        mcansee: 0,
-    });
-    const mindless = addMonster({
-        species: 'straw golem',
-        x: 12,
-        y: 10,
-        hitPoints: 20,
-    });
-    const peaceful = addMonster({
-        species: 'floating eye',
-        x: 13,
-        y: 10,
-        hitPoints: 20,
-        mcansee: 0,
-        mpeaceful: 1,
-    });
-    const distant = addMonster({
-        species: 'floating eye',
-        x: 19,
-        y: 10,
-        hitPoints: 20,
-        mcansee: 0,
-    });
+    const target = await createMonsterAt('floating eye', 11, 10);
+    target.mhp = target.mhpmax = 1;
+    target.mcansee = 0;
+    target.mpeaceful = 0;
+    const mindless = await createMonsterAt('straw golem', 12, 10);
+    mindless.mhp = mindless.mhpmax = 20;
+    const peaceful = await createMonsterAt('floating eye', 13, 10);
+    peaceful.mhp = peaceful.mhpmax = 20;
+    peaceful.mcansee = 0;
+    peaceful.mpeaceful = 1;
+    const distant = await createMonsterAt('floating eye', 19, 10);
+    distant.mhp = distant.mhpmax = 20;
+    distant.mcansee = 0;
+    distant.mpeaceful = 0;
     initRng(7n);
     await runMonsterAbilityCommand(' '.repeat(20));
 
@@ -52,25 +38,17 @@ test('a mind flayer uses #monster to strike nearby hostile minds', async () => {
 test('blind and sighted telepaths are found by their source chances',
     async () => {
         freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
-        const blindEye = addMonster({
-            species: 'floating eye',
-            x: 11,
-            y: 10,
-            hitPoints: 20,
-            mcansee: 0,
-        });
-        const sightedFlayer = addMonster({
-            species: 'master mind flayer',
-            x: 12,
-            y: 10,
-            hitPoints: 20,
-        });
-        const jackal = addMonster({
-            species: 'jackal',
-            x: 13,
-            y: 10,
-            hitPoints: 20,
-        });
+        const blindEye = await createMonsterAt('floating eye', 11, 10);
+        blindEye.mhp = blindEye.mhpmax = 20;
+        blindEye.mcansee = 0;
+        blindEye.mpeaceful = 0;
+        const sightedFlayer = await createMonsterAt(
+            'master mind flayer', 12, 10,
+        );
+        sightedFlayer.mhp = sightedFlayer.mhpmax = 20;
+        sightedFlayer.mpeaceful = 0;
+        const jackal = await createMonsterAt('jackal', 13, 10);
+        jackal.mhp = jackal.mhpmax = 20;
 
         await useHeroMindBlast({
             state: game,
