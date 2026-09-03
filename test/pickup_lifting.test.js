@@ -12,18 +12,19 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    floorArtifact, floorObject, inventoryObject, knownObject,
+    addInventoryObject, floorArtifact, floorObject, knownObject,
 } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
-function freshPickupGame(inventory = []) {
-    freshPlayableRoom({ inventory, seed: 32001n });
+function freshPickupGame() {
+    freshPlayableRoom({ seed: 32001n });
 }
 
-function carriedRocks(count) {
-    return inventoryObject(ROCK, 'a', {
+function addCarriedRocks(count) {
+    return addInventoryObject(ROCK, {
+        invlet: 'a',
         quantity: count,
         nomerge: true,
     });
@@ -60,8 +61,10 @@ test('floor pickup honors a count chosen from a multi-object pile', async () => 
 });
 
 test('a new pickup replaces the previous just-picked batch', async () => {
-    const club = inventoryObject(CLUB, 'a', { pickup_prev: true });
-    freshPickupGame([club]);
+    freshPickupGame();
+    const club = addInventoryObject(CLUB, {
+        invlet: 'a', pickup_prev: true,
+    });
     const ration = floorObject(FOOD_RATION, 10, 10);
 
     await rhack(','.charCodeAt(0));
@@ -87,7 +90,8 @@ test('picking up a bones bow adjusts it for a left-handed hero', async () => {
 
 test('floor pickup takes the largest stack that remains below overload',
     async () => {
-        freshPickupGame([carriedRocks(150)]);
+        freshPickupGame();
+        addCarriedRocks(150);
         const darts = floorObject(DART, 10, 10, { quantity: 200 });
         pushKeys(' '.repeat(5));
 
@@ -101,7 +105,8 @@ test('floor pickup takes the largest stack that remains below overload',
 
 test('declining a heavier burden leaves the floor object in place',
     async () => {
-        freshPickupGame([carriedRocks(70)]);
+        freshPickupGame();
+        addCarriedRocks(70);
         const ball = floorObject(HEAVY_IRON_BALL, 10, 10);
         pushKey('n');
 
@@ -113,7 +118,8 @@ test('declining a heavier burden leaves the floor object in place',
     });
 
 test('accepting a heavier burden picks up the floor object', async () => {
-    freshPickupGame([carriedRocks(70)]);
+    freshPickupGame();
+    addCarriedRocks(70);
     const ball = floorObject(HEAVY_IRON_BALL, 10, 10);
     pushKey('y');
 
@@ -124,13 +130,15 @@ test('accepting a heavier burden picks up the floor object', async () => {
 });
 
 test('a full pack rejects a new stack which cannot merge', async () => {
+    freshPickupGame();
     const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const inventory = [...letters].map((letter, index) =>
-        inventoryObject(CLUB, letter, {
+    for (const [index, letter] of [...letters].entries()) {
+        addInventoryObject(CLUB, {
+            invlet: letter,
             o_id: 32000 + index,
             nomerge: true,
-        }));
-    freshPickupGame(inventory);
+        });
+    }
     const dart = floorObject(DART, 10, 10, { nomerge: true });
 
     await rhack(','.charCodeAt(0));
@@ -140,7 +148,8 @@ test('a full pack rejects a new stack which cannot merge', async () => {
 });
 
 test('a loadstone ignores the ordinary weight limit', async () => {
-    freshPickupGame([carriedRocks(160)]);
+    freshPickupGame();
+    addCarriedRocks(160);
     const loadstone = floorObject(LOADSTONE, 10, 10, { cursed: true });
 
     await rhack(','.charCodeAt(0));
@@ -150,9 +159,12 @@ test('a loadstone ignores the ordinary weight limit', async () => {
 });
 
 test('container removal uses the same partial-stack limit', async () => {
-    freshPickupGame([carriedRocks(150)]);
-    const chest = floorObject(CHEST, 10, 10, { cknown: true });
-    const darts = inventoryObject(DART, null, {
+    freshPickupGame();
+    addCarriedRocks(150);
+    const chest = floorObject(CHEST, 10, 10, {
+        cknown: true, olocked: false, otrapped: false,
+    });
+    const darts = knownObject(DART, {
         where: 'contained',
         container: chest,
         quantity: 200,
@@ -185,11 +197,12 @@ test('a floor artifact can blast the hero and evade pickup', async () => {
 });
 
 test('a fatal floor corpse stops pickup after life saving', async () => {
-    const amulet = inventoryObject(AMULET_OF_LIFE_SAVING, 'a', {
+    freshPickupGame();
+    const amulet = addInventoryObject(AMULET_OF_LIFE_SAVING, {
+        invlet: 'a',
         worn: true,
         owornmask: W_AMUL,
     });
-    freshPickupGame([amulet]);
     game.uamul = game.u.uamul = amulet;
     const corpse = floorObject(CORPSE, 10, 10, {
         corpsenm: 10,
@@ -242,7 +255,8 @@ test('a blessed scare scroll becomes uncursed when picked up', async () => {
 
 test('only the carryable part of a cursed scare-scroll stack turns to dust',
     async () => {
-        freshPickupGame([carriedRocks(164)]);
+        freshPickupGame();
+        addCarriedRocks(164);
         game._knownObjectTypes = new Set([SCR_SCARE_MONSTER]);
         const scrolls = floorObject(SCR_SCARE_MONSTER, 10, 10, {
             cursed: true,
@@ -260,7 +274,8 @@ test('only the carryable part of a cursed scare-scroll stack turns to dust',
     });
 
 test('an unliftable scare scroll remains unchanged', async () => {
-    freshPickupGame([carriedRocks(165)]);
+    freshPickupGame();
+    addCarriedRocks(165);
     const scroll = floorObject(SCR_SCARE_MONSTER, 10, 10, {
         cursed: false,
         spe: 0,

@@ -73,19 +73,6 @@ export function floorArtifact(name, x, y, overrides = {}) {
     return place_object(artifactObject(name, overrides), x, y);
 }
 
-export function inventoryObject(otyp, invlet, overrides = {}) {
-    return knownObject(otyp, {
-        invlet,
-        where: 'inventory',
-        worn: false,
-        wielded: false,
-        alternate: false,
-        ready: false,
-        owornmask: 0,
-        ...overrides,
-    });
-}
-
 export function chargedWand(otyp, { charges = 3, ...overrides } = {}) {
     return knownObject(otyp, {
         initialize: false,
