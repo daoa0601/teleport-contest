@@ -6,6 +6,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { nameToMonster, nameToMonsterClass } from '../js/mondata.js';
 import { doClassGenocide, doGenocide } from '../js/genocide.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { CLUB, EGG } from '../js/object_data.js';
 import {
     OBJECT_TIMER_KIND, scheduleObjectTimer,
@@ -13,7 +14,7 @@ import {
 import {
     addInventoryObject, knownObject,
 } from './support/game-objects.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 test('monster lookup accepts source names, plurals, and class descriptions', () => {
@@ -25,15 +26,9 @@ test('monster lookup accepts source names, plurals, and class descriptions', () 
 
 test('genocide removes the species, drops its inventory, and sterilizes eggs', async () => {
     freshGameplayRoom();
-    const carried = knownObject(CLUB, { where: 'monster' });
-    const ant = addMonster({
-        mnum: 0,
-        m_id: 40,
-        x: 12,
-        y: 10,
-        hitPoints: 4,
-        inventory: [carried],
-    });
+    const carried = knownObject(CLUB);
+    const ant = await createMonsterAt('giant ant', 12, 10);
+    addObjectToMonsterInventory(ant, carried);
     const egg = addInventoryObject(EGG, {
         initialize: false,
         corpsenm: 0,

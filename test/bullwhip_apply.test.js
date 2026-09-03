@@ -10,7 +10,7 @@ import { applyInventoryObject } from './support/commands.js';
 import {
     addInventoryObject, floorObject, knownObject,
 } from './support/game-objects.js';
-import { addMonster, equipMonsterObject } from './support/monsters.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 test('applying an unwielded bullwhip wields it before asking for direction',
@@ -49,7 +49,7 @@ test('an archeologist can pull a wielded weapon from an adjacent monster',
             wielded: true,
             owornmask: W_WEP,
         });
-        const bugbear = addMonster({ mnum: 45, x: 11, y: 10 });
+        const bugbear = await createMonsterAt('bugbear', 11, 10);
         equipMonsterObject(bugbear, club, W_WEP);
         initRng(7102n);
         await applyInventoryObject(whip, 'l');

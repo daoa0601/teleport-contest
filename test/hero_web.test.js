@@ -9,7 +9,7 @@ import { runMonsterAbilityCommand } from './support/commands.js';
 import { floorObject } from './support/game-objects.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 
 function webAtHero() {
     return game.level.traps.find(trap =>
@@ -63,11 +63,11 @@ test('web fluid makes an animal release a swallowed spider', async () => {
         right: 24,
         gameplaySeed: 918,
     });
-    const worm = addMonster({
-        species: 'purple worm',
-        x: game.u.ux,
-        y: game.u.uy,
-    });
+    const worm = await createMonsterAt(
+        'purple worm', game.u.ux + 1, game.u.uy,
+    );
+    worm.mx = game.u.ux;
+    worm.my = game.u.uy;
     game.u.uswallow = 1;
     game.u.ustuck = worm;
 

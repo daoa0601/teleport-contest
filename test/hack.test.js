@@ -16,7 +16,7 @@ import {
 } from '../js/object_data.js';
 import { vision_reset } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';
-import { addMonster, createMonsterAt } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 function liquidAtHero(terrain) {
@@ -474,14 +474,8 @@ test('entering a pool releases every leash', async () => {
     level.at(10, 10).typ = POOL;
     game.u.amphibious = true;
     game.u.uluck = 100;
-    const pet = addMonster({
-        mnum: 16,
-        m_id: 7001,
-        x: 11,
-        y: 10,
-        hitPoints: 8,
-        mleashed: 1,
-    });
+    const pet = await createMonsterAt('little dog', 11, 10);
+    pet.mleashed = 1;
     const leash = addInventoryObject(LEASH, {
         oclass: 6,
         leashmon: pet.m_id,
