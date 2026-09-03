@@ -93,7 +93,7 @@ export function knownInventoryWeapon(otyp, overrides = {}) {
 }
 
 export function floorObject(otyp, x, y, overrides = {}) {
-    return place_object(plainObject(otyp, {
+    return place_object(knownObject(otyp, {
         where: 'free',
         ...overrides,
     }), x, y);

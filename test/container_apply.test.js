@@ -254,7 +254,11 @@ test('an ice box pauses and resumes corpse decay', async () => {
 
 test('floor loot uses the same container transfer as apply', async () => {
     const level = freshCommandRoom({ seed: 48202n });
-    const chest = floorObject(CHEST, 10, 10, { cknown: true });
+    const chest = floorObject(CHEST, 10, 10, {
+        cknown: true,
+        olocked: false,
+        otrapped: false,
+    });
     const club = inventoryObject(CLUB, 'b', {
         where: 'contained',
         container: chest,

@@ -71,6 +71,7 @@ test('a proficient bullwhip can pull the hero from a pit toward a boulder',
         game.uwep = game.u.uwep = whip;
         game.u.utrap = 3;
         game.u.utraptype = TT_PIT;
+        initRng(7100n);
         floorObject(BOULDER, 11, 10);
         initRng(7103n);
         await applyInventoryObject(whip, 'l');
