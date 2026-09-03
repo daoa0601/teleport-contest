@@ -81,6 +81,14 @@ export function grantIntrinsicProperty(property, origin, state = game) {
     refreshProperty(property, state);
 }
 
+export function revokeIntrinsicProperty(property, origin, state = game) {
+    const record = propertyRecord(property, state);
+    const removed = !!record.intrinsic[origin];
+    delete record.intrinsic[origin];
+    refreshProperty(property, state);
+    return removed;
+}
+
 export function removeIntrinsicProperty(property, state = game) {
     const record = propertyRecord(property, state);
     const removed = Object.keys(record.intrinsic).length > 0;

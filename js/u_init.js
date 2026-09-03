@@ -1365,7 +1365,7 @@ export function uInitInventoryAttrs() {
         game.uarmh = game.uarmf = null;
     game.u.weaponSkills = null;
     game.u.skillRecord = [];
-    delete game.u.weapon_slots;
+    game.u.weapon_slots = 2;
     game.spells = [];
     delete game._startingEffectsApplied;
     delete game._startingPwMinimum;

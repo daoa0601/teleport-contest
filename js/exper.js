@@ -5,14 +5,17 @@ import { game } from './gstate.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { rnd, rn2 } from './rng.js';
 import { A_CON, A_WIS } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation, see_monsters } from './display.js';
 import {
     rankAchievement, recordAchievement,
 } from './achievements.js';
 import {
     MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MOVE, PM_MAIL_DAEMON,
 } from './monster_data.js';
-import { grantIntrinsicProperty } from './properties.js';
+import {
+    grantIntrinsicProperty, hasIntrinsicProperty, revokeIntrinsicProperty,
+} from './properties.js';
+import { adjustWeaponSkillSlots } from './skills.js';
 
 const NORMAL_SPEED = 12;
 
@@ -110,59 +113,90 @@ export function gainExperienceLevel({ incremental = false } = {}) {
     game.urole.rank = game.urole.title?.[newRank] || game.urole.name;
 }
 
-// C attrib.c role_abil[]: adjabil() runs after the new level's welcome
-// message, so callers await this separately from gainExperienceLevel().
+// C attrib.c role_abil[] and race ability tables.
 const ROLE_LEVEL_ABILITIES = {
     archeologist: [
-        [5, 'stealth', 'stealthy'], [10, 'fast', 'quick'],
+        [5, 'stealth', 'stealthy', ''], [10, 'fast', 'quick', 'slow'],
     ],
     barbarian: [
-        [7, 'fast', 'quick'], [15, 'stealth', 'stealthy'],
+        [7, 'fast', 'quick', 'slow'], [15, 'stealth', 'stealthy', ''],
     ],
     caveman: [
-        [7, 'fast', 'quick'], [15, 'warning', 'sensitive'],
+        [7, 'fast', 'quick', 'slow'], [15, 'warning', 'sensitive', ''],
     ],
-    healer: [[15, 'warning', 'sensitive']],
-    knight: [[7, 'fast', 'quick']],
+    healer: [[15, 'warning', 'sensitive', '']],
+    knight: [[7, 'fast', 'quick', 'slow']],
     monk: [
-        [3, 'poisonResistance', 'healthy'],
-        [5, 'stealth', 'stealthy'],
-        [7, 'warning', 'sensitive'],
-        [9, 'searching', 'perceptive'],
-        [11, 'fireResistance', 'cool'],
-        [13, 'coldResistance', 'warm'],
-        [15, 'shockResistance', 'insulated'],
-        [17, 'teleportControl', 'controlled'],
+        [3, 'poisonResistance', 'healthy', ''],
+        [5, 'stealth', 'stealthy', ''],
+        [7, 'warning', 'sensitive', ''],
+        [9, 'searching', 'perceptive', 'unaware'],
+        [11, 'fireResistance', 'cool', 'warmer'],
+        [13, 'coldResistance', 'warm', 'cooler'],
+        [15, 'shockResistance', 'insulated', 'conductive'],
+        [17, 'teleportControl', 'controlled', 'uncontrolled'],
     ],
     priest: [
-        [15, 'warning', 'sensitive'], [20, 'fireResistance', 'cool'],
+        [15, 'warning', 'sensitive', ''],
+        [20, 'fireResistance', 'cool', 'warmer'],
     ],
     ranger: [
-        [7, 'stealth', 'stealthy'], [15, 'seeInvisible', ''],
+        [7, 'stealth', 'stealthy', ''], [15, 'seeInvisible', '', ''],
     ],
-    rogue: [[10, 'searching', 'perceptive']],
-    samurai: [[15, 'stealth', 'stealthy']],
+    rogue: [[10, 'searching', 'perceptive', '']],
+    samurai: [[15, 'stealth', 'stealthy', '']],
     tourist: [
-        [10, 'searching', 'perceptive'], [20, 'poisonResistance', 'hardy'],
+        [10, 'searching', 'perceptive', ''],
+        [20, 'poisonResistance', 'hardy', ''],
     ],
     valkyrie: [
-        [3, 'stealth', 'stealthy'], [7, 'fast', 'quick'],
+        [3, 'stealth', 'stealthy', ''], [7, 'fast', 'quick', 'slow'],
     ],
     wizard: [
-        [15, 'warning', 'sensitive'],
-        [17, 'teleportControl', 'controlled'],
+        [15, 'warning', 'sensitive', ''],
+        [17, 'teleportControl', 'controlled', 'uncontrolled'],
     ],
 };
 
-export async function gainLevelAbilities(oldLevel, newLevel) {
-    const abilities = ROLE_LEVEL_ABILITIES[game.urole?.key] || [];
-    for (const [level, property, message] of abilities) {
-        if (oldLevel >= level || newLevel < level) continue;
-        const alreadyHadAbility = !!game.u[property];
-        grantIntrinsicProperty(property, 'experience', game);
-        if (!alreadyHadAbility && message)
-            await plineWithContinuation(`You feel ${message}!`);
+const RACE_LEVEL_ABILITIES = {
+    elf: [[4, 'sleepResistance', 'awake', 'tired']],
+};
+
+async function adjustAbilities(abilities, origin, oldLevel, newLevel) {
+    for (const [level, property, gainMessage, lossMessage] of abilities) {
+        let changed = false;
+        if (oldLevel < level && newLevel >= level) {
+            const alreadyIntrinsic = hasIntrinsicProperty(property, null, game);
+            grantIntrinsicProperty(property, origin, game);
+            changed = true;
+            if (!alreadyIntrinsic && gainMessage)
+                await plineWithContinuation(`You feel ${gainMessage}!`);
+        } else if (oldLevel >= level && newLevel < level) {
+            changed = revokeIntrinsicProperty(property, origin, game);
+            if (changed && !hasIntrinsicProperty(property, null, game)) {
+                const message = lossMessage || (gainMessage
+                    ? `less ${gainMessage}` : '');
+                if (message)
+                    await plineWithContinuation(`You feel ${message}!`);
+            }
+        }
+        if (changed && (property === 'warning' || property === 'seeInvisible'))
+            see_monsters();
     }
+}
+
+// C attrib.c:adjabil(). Level changes can grant or revoke role and race
+// abilities, and each changed level adds or removes one weapon-skill slot.
+export async function adjustLevelAbilities(oldLevel, newLevel) {
+    await adjustAbilities(
+        ROLE_LEVEL_ABILITIES[game.urole?.key] || [],
+        'experience', oldLevel, newLevel,
+    );
+    await adjustAbilities(
+        RACE_LEVEL_ABILITIES[game.urace?.name] || [],
+        'race', oldLevel, newLevel,
+    );
+    adjustWeaponSkillSlots(newLevel - oldLevel, game);
 }
 
 // C exper.c:losexp(NULL).  HP and power gains are indexed by the level at

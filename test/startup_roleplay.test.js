@@ -105,7 +105,7 @@ test('standalone nudist constructs no hero armor without becoming pauper', () =>
     assert.ok(state.inventory.some(object => object.oclass === 2));
     assert.ok(state.inventory.some(object => object.oclass === 7));
     assert.ok(state.u.weaponSkills.some(skill => skill.skill > 1));
-    assert.equal(state.u.weapon_slots, undefined);
+    assert.equal(state.u.weapon_slots, 2);
 });
 
 function startingPony(pauper) {

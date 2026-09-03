@@ -10,7 +10,7 @@ import {
 } from './display.js';
 import { recordHeroKillConduct } from './end.js';
 import {
-    awardMonsterExperience, gainExperienceLevel, gainLevelAbilities,
+    adjustLevelAbilities, awardMonsterExperience, gainExperienceLevel,
     newExperienceThreshold,
 } from './exper.js';
 import { landFloorObject } from './floor_effects.js';
@@ -404,7 +404,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
             `Welcome ${returning ? 'back ' : ''}to experience level ${
                 game.u.ulevel}.`,
         );
-        await gainLevelAbilities(oldLevel, game.u.ulevel);
+        await adjustLevelAbilities(oldLevel, game.u.ulevel);
     }
     if (!wasInside) newsym(x, y);
     if (!wasInside && explosionDamage !== null) {

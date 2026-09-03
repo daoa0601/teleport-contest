@@ -14,7 +14,7 @@ import {
 import { newsym, pline, plineWithContinuation } from './display.js';
 import { level_difficulty } from './dungeon.js';
 import {
-    gainExperienceLevel, gainLevelAbilities, newExperienceThreshold,
+    adjustLevelAbilities, gainExperienceLevel, newExperienceThreshold,
 } from './exper.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game } from './gstate.js';
@@ -896,5 +896,5 @@ async function awardExperience(experience, score, state, publish) {
         || state.u.uexp < newExperienceThreshold(level)) return;
     gainExperienceLevel({ incremental: true });
     await publish(`Welcome to experience level ${state.u.ulevel}.`);
-    await gainLevelAbilities(level, state.u.ulevel);
+    await adjustLevelAbilities(level, state.u.ulevel);
 }

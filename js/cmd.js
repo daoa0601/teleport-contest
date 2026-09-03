@@ -209,7 +209,7 @@ import { monsterStatusLine } from './monster_status.js';
 import { revealMimic } from './mimic.js';
 import { nameToMonster } from './mondata.js';
 import {
-    gainExperienceLevel, gainLevelAbilities,
+    adjustLevelAbilities, gainExperienceLevel,
 } from './exper.js';
 import { dosave } from './save.js';
 import { initTrack } from './track.js';
@@ -5146,7 +5146,7 @@ async function wizLevelChange() {
         gainExperienceLevel();
         const level = game.u.ulevel;
         await plineWithContinuation(`Welcome to experience level ${level}.`);
-        await gainLevelAbilities(oldLevel, level);
+        await adjustLevelAbilities(oldLevel, level);
     }
     game.u.ulevelmax = game.u.ulevel;
     game.context.move = 0;

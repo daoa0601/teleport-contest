@@ -252,6 +252,38 @@ export function ensureHeroSkills(game) {
     return skills;
 }
 
+function slotsRequiredToAdvance(skill, level) {
+    if (skill <= 27 || skill === 36) return level;
+    return Math.trunc((level + 1) / 2);
+}
+
+export function adjustWeaponSkillSlots(change, state = game) {
+    const hero = state.u;
+    if (!hero || !Number.isInteger(change) || change === 0) return;
+    if (!Number.isInteger(hero.weapon_slots)) hero.weapon_slots = 0;
+
+    if (change > 0) {
+        hero.weapon_slots += change;
+        return;
+    }
+
+    const skills = ensureHeroSkills(state);
+    const record = hero.skillRecord || (hero.skillRecord = []);
+    for (let remaining = -change; remaining > 0; remaining--) {
+        if (hero.weapon_slots > 0) {
+            hero.weapon_slots--;
+            continue;
+        }
+        const skill = record.pop();
+        const skillState = skills?.[skill];
+        if (!skillState || skillState.skill <= 1) continue;
+        skillState.skill--;
+        hero.weapon_slots = slotsRequiredToAdvance(
+            skill, skillState.skill,
+        ) - 1;
+    }
+}
+
 export function advanceHeroSkill(game, skill) {
     const state = ensureHeroSkills(game)?.[skill];
     if (!state || state.skill <= 0 || state.skill >= state.maxSkill)
