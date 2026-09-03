@@ -1,7 +1,7 @@
-// Monster deaths not credited to the hero.
+// Ordinary monster death and corpse rules.
 // C refs: mon.c mondead(), mondied(), corpse_chance(), and make_corpse().
 
-import { G_NOCORPSE } from './const.js';
+import { G_NOCORPSE, Is_rogue_level } from './const.js';
 import {
     canProjectMonster, newsym, plineWithContinuation, unmap_invisible,
 } from './display.js';
@@ -11,7 +11,8 @@ import { game } from './gstate.js';
 import { mkcorpstat, mksobj, undeadToCorpse } from './mklev.js';
 import { preventMonsterDeath } from './mondeath.js';
 import {
-    MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE,
+    MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE,
+    MONSTER_SYMBOL,
 } from './monster_data.js';
 import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { CORPSE, IRON_CHAIN } from './object_data.js';
@@ -20,12 +21,45 @@ import { d, rn2 } from './rng.js';
 import { cansee } from './vision.js';
 
 const PM_IRON_GOLEM = 259;
+const PM_DEATH = 311;
+const PM_FAMINE = 313;
+const PM_LIZARD = 326;
+const PM_ARCHEOLOGIST = 331;
+const PM_WIZARD = 343;
+const S_GOLEM = 55;
+const M2_UNDEAD = 0x00000002;
+
+function levelPreventsMonsterRemains(monster, state, random) {
+    if (Is_rogue_level(state.u?.uz)
+        || state.level?.flags?.deathdrops === false) return true;
+    const undead = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_UNDEAD);
+    return !!(state.level?.flags?.graveyard && undead && random(3));
+}
+
+export function monsterCorpseChance(
+    monster, state = game, random = rn2,
+) {
+    if (levelPreventsMonsterRemains(monster, state, random)) return false;
+    const mnum = monster.mnum;
+    const guaranteed = (((MONSTER_SIZE[mnum] ?? 2) >= 3
+            || mnum === PM_LIZARD) && !monster.mcloned)
+        || MONSTER_SYMBOL[mnum] === S_GOLEM
+        || (mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD)
+        || (mnum >= PM_DEATH && mnum <= PM_FAMINE)
+        || !!monster.isshk;
+    if (guaranteed) return true;
+    const frequency = (MONSTER_GENO[mnum] ?? 0) & 0x7;
+    const corpseDenominator = 2 + Number(frequency < 2)
+        + Number((MONSTER_SIZE[mnum] ?? 0) === 0);
+    return random(corpseDenominator) === 0;
+}
 
 function createOrdinaryMonsterCorpse(
     monster, state, random, { zombify = false } = {},
 ) {
     const x = monster.mx;
     const y = monster.my;
+    if (!monsterCorpseChance(monster, state, random)) return null;
     if (monster.mnum === PM_IRON_GOLEM) {
         const chainCount = d(2, 6);
         let lastChain = null;
@@ -35,11 +69,6 @@ function createOrdinaryMonsterCorpse(
         }
         return lastChain;
     }
-
-    const frequency = (MONSTER_GENO[monster.mnum] ?? 0) & 0x7;
-    const corpseDenominator = 2 + Number(frequency < 2)
-        + Number((MONSTER_SIZE[monster.mnum] ?? 0) === 0);
-    if (random(corpseDenominator) !== 0) return null;
 
     const corpseForm = undeadToCorpse(monster.mnum);
     if (corpseForm === monster.mnum

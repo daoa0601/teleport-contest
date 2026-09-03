@@ -27,8 +27,9 @@ import { preventMonsterDeath } from './mondeath.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SIZE,
-    MONSTER_SYMBOL, monsterIsNonliving,
+    monsterIsNonliving,
 } from './monster_data.js';
+import { monsterCorpseChance } from './monster_death.js';
 import { AT_BOOM } from './monster_attack_types.js';
 import {
     addObjectToMonsterInventory, clearMonsterCarriedObjectState,
@@ -40,13 +41,7 @@ import { CLR_GREEN } from './terminal.js';
 import { cansee, vision_recalc } from './vision.js';
 
 const PM_IRON_GOLEM = 259;
-const PM_DEATH = 311;
-const PM_FAMINE = 313;
-const PM_LIZARD = 326;
-const PM_ARCHEOLOGIST = 331;
-const PM_WIZARD = 343;
 
-const S_GOLEM = 55;
 const M2_ALWAYS_HOSTILE = 0x00100000;
 const M2_ALWAYS_PEACEFUL = 0x00200000;
 const A_NONE = -128;
@@ -56,22 +51,6 @@ function levelSpecificNoCorpse(monster) {
         || game.level?.flags?.deathdrops === false) return true;
     const isUndead = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x2);
     return !!(game.level?.flags?.graveyard && isUndead && rn2(3));
-}
-
-function corpseChance(monster) {
-    if (levelSpecificNoCorpse(monster)) return false;
-    const mnum = monster.mnum;
-    const guaranteed = (((MONSTER_SIZE[mnum] ?? 2) >= 3
-            || mnum === PM_LIZARD) && !monster.mcloned)
-        || MONSTER_SYMBOL[mnum] === S_GOLEM
-        || (mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD)
-        || (mnum >= PM_DEATH && mnum <= PM_FAMINE)
-        || !!monster.isshk;
-    if (guaranteed) return true;
-    const corpseRange = 2
-        + (((MONSTER_GENO[mnum] ?? 0) & 0x7) < 2 ? 1 : 0)
-        + ((MONSTER_SIZE[mnum] ?? 2) < 1 ? 1 : 0);
-    return rn2(corpseRange) === 0;
 }
 
 function rollMonsterAttackDamage(monster, attack) {
@@ -380,7 +359,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
         explosion = { containedDamage, blastDamage };
     } else {
         leavesCorpse = !noCorpse && !wasInside
-            && permitsDeathDrops && corpseChance(monster);
+            && permitsDeathDrops && monsterCorpseChance(monster, game, rn2);
     }
     unmap_invisible(x, y, false);
     monster.dead = true;
