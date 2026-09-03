@@ -12,7 +12,7 @@ import { beginObjectBurn } from '../js/light.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING,
-    ARROW, BOW, DAGGER, DART, FIGURINE, LONG_SWORD, MAGIC_LAMP,
+    ARROW, BOW, CREAM_PIE, DAGGER, DART, FIGURINE, LONG_SWORD, MAGIC_LAMP,
     OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
     POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY,
@@ -179,6 +179,18 @@ test('swallowed timed lamp links before snuffing and restores unused fuel',
         assert.equal(game._pending_message,
             'The oil lamp vanishes into the trapper.  The oil lamp goes out.');
     });
+
+test('a cream pie thrown from inside an engulfer is consumed', async () => {
+    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const pie = addInventoryObject(CREAM_PIE);
+
+    await throwInventoryObject(pie, 'l');
+
+    assert.equal(pie.where, 'gone');
+    assert.equal(game.inventory.includes(pie), false);
+    assert.equal(engulfer.mcansee, 1);
+    assert.equal(engulfer.mhp, 40);
+});
 
 test('blind swallowed contact silently snuffs an untimed magic lamp',
     async () => {

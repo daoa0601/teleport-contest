@@ -144,8 +144,8 @@ import {
     addObjectToMonsterInventory, removeObjectFromMonsterInventory,
 } from './monster_inventory.js';
 import {
-    resolveGenericSwallowedThrow, resolveSwallowedPotionThrow,
-    resolveSwallowedWeaponThrow,
+    resolveGenericSwallowedThrow, resolveSwallowedBlindingThrow,
+    resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow,
 } from './swallowed_throw.js';
 import {
     autoquiverCandidate, readySuggestion, setQuiverObject,
@@ -9451,36 +9451,12 @@ async function dothrow(
         !candidate.dead && (candidate.mhp ?? 1) > 0
         && candidate.mx === game.u.ux + dx
         && candidate.my === game.u.uy + dy);
-    if (item.otyp === CREAM_PIE && adjacentMonster) {
-        // dothrow.c:thitmonst() rolls its ordinary to-hit die before the
-        // cream-pie class branch.  That branch uses Dexterity versus rnd(25)
-        // to decide contact; hmon_hitmon_misc_obj() then consumes the pie,
-        // blinds without damage, and never reaches drop_throw()/obj_resists().
-        rnd(20);
-        if ((game.u?.acurr?.a?.[A_DEX] ?? 10) > rnd(25)) {
-            const monsterName = MONSTER_NAME[adjacentMonster.mnum]
-                || 'monster';
-            await pline(
-                `The cream pie splashes over the ${monsterName}'s face!`,
-            );
-            // uhitm.c:hmon_hitmon_misc_obj() publishes the splash before
-            // setmangry().  The target's growl therefore forces tty's
-            // continuation while blindness and object consumption remain
-            // suspended on the far side of the acknowledgement.
-            await wakeAttackedMonster(adjacentMonster);
-            adjacentMonster.mcansee = 0;
-            adjacentMonster.mblinded = Math.min(
-                127,
-                (adjacentMonster.mblinded ?? 0) + 21 + rn2(25),
-            );
-            if (selectedQuantity === 1) {
-                const index = game.inventory.indexOf(item);
-                if (index >= 0) game.inventory.splice(index, 1);
-            }
-            game.context.move = 1;
-            return;
-        }
-    }
+    if (await resolveSwallowedBlindingThrow({
+        state: game,
+        item,
+        selectedQuantity,
+        splitObjectId,
+    })) return;
     if (await resolveSwallowedWeaponThrow({
         state: game,
         item,

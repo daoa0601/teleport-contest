@@ -4,7 +4,7 @@
 
 import { currentAttribute } from './attrib.js';
 import {
-    blindMonsterWithThrownObject, heroCanBeBlindedByVenom,
+    heroCanBeBlindedByVenom, hitMonsterWithThrownBlindingObject,
 } from './blinding_attack.js';
 import { A_DEX, IS_SOFT, LOST_THROWN } from './const.js';
 import {
@@ -148,6 +148,19 @@ async function hitMonsterWithVenom({
     monster, venom, state, publish, random, rollOne, swallowed,
     finishMonsterKill,
 }) {
+    if (venom.otyp === BLINDING_VENOM) {
+        const impact = await hitMonsterWithThrownBlindingObject(
+            monster, venom, {
+                state,
+                guaranteedHit: swallowed,
+                publish,
+                random,
+                rollOne,
+            },
+        );
+        return impact.consumed;
+    }
+
     prepareHeroThrownTarget(monster, random);
     rollOne(20);
     const hit = swallowed || currentAttribute(A_DEX, state) > rollOne(25);
@@ -155,27 +168,6 @@ async function hitMonsterWithVenom({
         await publish(`The splash of venom misses ${targetName(monster)}.`);
         if (random(3) === 0) await wakeAttackedMonster(monster);
         return false;
-    }
-
-    if (venom.otyp === BLINDING_VENOM) {
-        const blindness = blindMonsterWithThrownObject(
-            monster, venom.otyp, {
-                heroInsideTarget: !!state.u?.uswallow,
-                state,
-                rollOne,
-            },
-        );
-        if (blindness) {
-            const further = blindness.wasSeeing ? '' : ' further';
-            await publish(heroIsBlind(state)
-                ? 'Splash!'
-                : `The venom blinds ${targetName(monster)}${further}!`);
-        } else {
-            await publish('Splash!');
-        }
-        deleteObject(venom, state);
-        await wakeAttackedMonster(monster);
-        return true;
     }
 
     let damage = 0;

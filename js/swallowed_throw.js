@@ -3,6 +3,9 @@
 // steal.c mpickobj().
 
 import { W_SADDLE } from './const.js';
+import {
+    hitMonsterWithThrownBlindingObject, isThrownBlindingObject,
+} from './blinding_attack.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
@@ -186,6 +189,28 @@ export async function resolveSwallowedWeaponThrow({
             engulfer, thrown, state, { atFront: true },
         );
     }
+    state.context.move = 1;
+    return true;
+}
+
+export async function resolveSwallowedBlindingThrow({
+    state = game,
+    item,
+    selectedQuantity,
+    splitObjectId,
+}) {
+    const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
+    if (!engulfer || !isThrownBlindingObject(item)) return false;
+
+    const thrown = detachThrownUnit(
+        state, item, selectedQuantity, splitObjectId,
+    );
+    await applyThrowSlip({ state, object: thrown });
+    await applyLowStaminaThrow({ state, object: thrown });
+    await hitMonsterWithThrownBlindingObject(engulfer, thrown, {
+        state,
+        guaranteedHit: true,
+    });
     state.context.move = 1;
     return true;
 }
