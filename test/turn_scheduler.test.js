@@ -14,10 +14,10 @@ import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { carriedObject, chargedWand } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 function freshTurnArena() {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.nhDisplay = new GameDisplay(null);
     game.urole = { key: 'valkyrie' };
     game._moveloopStarted = true;

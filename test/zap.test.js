@@ -29,14 +29,14 @@ import {
 import { chargedWand } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 function highestRoll(range) {
     return range - 1;
 }
 
 test('sleep resistance prevents self-zap helplessness', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.urole = { key: 'healer' };
     game.u.sleepResistance = true;
     const wand = chargedWand(WAN_SLEEP);
@@ -54,7 +54,7 @@ test('sleep resistance prevents self-zap helplessness', async () => {
 });
 
 test('cancellation restores a werewolf to human form', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const werewolf = addMonster({
         species: 'werewolf', x: 11, y: 10,
     });
@@ -66,7 +66,7 @@ test('cancellation restores a werewolf to human form', async () => {
 });
 
 test('cancellation destroys a clay golem', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const golem = addMonster({
         species: 'clay golem', x: 11, y: 10,
     });
@@ -79,7 +79,7 @@ test('cancellation destroys a clay golem', async () => {
 });
 
 test('an empty wand does nothing without asking for a direction', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const wand = chargedWand(WAN_SLEEP, { charges: 0 });
     game.inventory = [wand];
     pushKey('a');
@@ -94,7 +94,7 @@ test('an empty wand does nothing without asking for a direction', async () => {
 });
 
 test('a wrested final charge consumes the wand', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     initRng(49n);
     game.u.sleepResistance = true;
     const wand = chargedWand(WAN_SLEEP, { charges: 0 });
@@ -110,7 +110,7 @@ test('a wrested final charge consumes the wand', async () => {
 });
 
 test('a cursed wand can explode before asking for a direction', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     initRng(167n);
     game.u.uhp = game.u.uhpmax = 100;
     const wand = chargedWand(WAN_SLEEP, { cursed: true });
@@ -125,7 +125,7 @@ test('a cursed wand can explode before asking for a direction', async () => {
 });
 
 test('secret door detection reveals nearby hidden terrain and traps', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const hiddenDoor = level.at(12, 10);
     hiddenDoor.typ = SDOOR;
     hiddenDoor.doormask = 0;
@@ -146,7 +146,7 @@ test('secret door detection reveals nearby hidden terrain and traps', async () =
 
 test('light illuminates the visible area and burns a nearby gremlin',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         for (let x = 8; x <= 18; x++) {
             for (let y = 8; y <= 12; y++) level.at(x, y).lit = false;
         }
@@ -167,7 +167,7 @@ test('light illuminates the visible area and burns a nearby gremlin',
     });
 
 test('stasis blocks teleporting until its turns expire', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.moves = 100;
     const wand = chargedWand(WAN_STASIS);
     game.inventory = [wand];
@@ -182,7 +182,7 @@ test('stasis blocks teleporting until its turns expire', async () => {
 
 test('create monster summons beside the hero without asking for a direction',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const wand = chargedWand(WAN_CREATE_MONSTER);
         game.inventory = [wand];
         pushKey('a');
@@ -194,7 +194,7 @@ test('create monster summons beside the hero without asking for a direction',
 
 test('wishing creates the requested object without asking for a direction',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         game.u.uluck = 10;
         const wand = chargedWand(WAN_WISHING);
         game.inventory = [wand];
@@ -209,7 +209,7 @@ test('wishing creates the requested object without asking for a direction',
 
 test('enlightenment describes the hero without asking for a direction',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const wand = chargedWand(WAN_ENLIGHTENMENT);
         game.inventory = [wand];
         pushKey('a');
@@ -221,7 +221,7 @@ test('enlightenment describes the hero without asking for a direction',
     });
 
 test('a fire ray burns a monster in its path', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.u.fireResistance = true;
     game.u.uhp = game.u.uhpmax = 100;
     const monster = addMonster({
@@ -250,7 +250,7 @@ test('a fire ray burns a monster in its path', async () => {
 });
 
 test('a death ray makes Death stronger instead of killing him', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.blind = true;
     game.u.blindTurns = 10;
     game.u.unblind_telepat_range = -1;
@@ -274,7 +274,7 @@ test('a death ray makes Death stronger instead of killing him', async () => {
 });
 
 test('a worn life-saving amulet saves a monster from a death ray', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const amulet = {
         otyp: AMULET_OF_LIFE_SAVING,
         owornmask: W_AMUL,
@@ -302,7 +302,7 @@ test('a worn life-saving amulet saves a monster from a death ray', async () => {
 });
 
 test('a fire ray burns a web and consumes the closed door behind it', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     game.blind = true;
     game.u.blindTurns = 10;
     game.viz_array[10][11] = 0;
@@ -320,7 +320,7 @@ test('a fire ray burns a web and consumes the closed door behind it', async () =
 });
 
 test('a fire ray burns floor scrolls and lights an exposed oil lamp', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     game.blind = true;
     game.u.blindTurns = 10;
     game.viz_array[10][11] = 0;
@@ -353,7 +353,7 @@ test('a fire ray burns floor scrolls and lights an exposed oil lamp', async () =
 });
 
 test('a cold ray freezes a pool and buries objects under the ice', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     game.blind = true;
     game.deaf = true;
     game.u.blindTurns = 10;
@@ -384,7 +384,7 @@ test('a cold ray freezes a pool and buries objects under the ice', async () => {
 });
 
 test('a fire ray melts ice back into its pool', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     game.blind = true;
     game.deaf = true;
     game.u.blindTurns = 10;
@@ -412,7 +412,7 @@ test('a fire ray melts ice back into its pool', async () => {
 });
 
 test('melting ice makes the hero crawl out of the pool', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const acid = {
         otyp: POT_ACID,
         oclass: 8,
@@ -437,7 +437,7 @@ test('melting ice makes the hero crawl out of the pool', async () => {
 });
 
 test('melting ice drowns a land monster but not a swimmer', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     game.blind = true;
     game.u.blindTurns = 10;
     const ant = addMonster({
@@ -470,7 +470,7 @@ test('melting ice drowns a land monster but not a swimmer', async () => {
 });
 
 test('a fire ray evaporates a pool into a steaming pit', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     game.blind = true;
     game.deaf = true;
     game.u.blindTurns = 10;

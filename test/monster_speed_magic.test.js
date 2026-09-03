@@ -11,7 +11,7 @@ import { castKnownSpell } from '../js/spell.js';
 import { dozap } from '../js/zap.js';
 import { chargedWand } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 const PM_JACKAL = 12;
 
@@ -36,7 +36,7 @@ function slowMonsterSpell() {
 
 test('a speed-monster wand hastens a peaceful target without angering it',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const monster = addJackal({ peaceful: true });
         const wand = chargedWand(WAN_SPEED_MONSTER, { charges: 2 });
         game.inventory = [wand];
@@ -52,7 +52,7 @@ test('a speed-monster wand hastens a peaceful target without angering it',
 
 test('slow monster removes permanent speed and angers a peaceful target',
     async () => {
-        freshWeaponArena({ heroLevel: 8, energy: 30 });
+        freshGameplayRoom({ heroLevel: 8, energy: 30 });
         const monster = addJackal({ peaceful: true, speed: 2 });
         pushKeys('l');
 
@@ -64,7 +64,7 @@ test('slow monster removes permanent speed and angers a peaceful target',
     });
 
 test('slow monster aimed at yourself removes intrinsic speed', async () => {
-    freshWeaponArena({ heroLevel: 8, energy: 30 });
+    freshGameplayRoom({ heroLevel: 8, energy: 30 });
     grantIntrinsicProperty('fast', 'role', game);
     pushKeys('.');
 
@@ -76,7 +76,7 @@ test('slow monster aimed at yourself removes intrinsic speed', async () => {
 });
 
 test('a speed-monster wand aimed down hastens the hero\'s mount', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const steed = addJackal();
     game.u.usteed = steed;
     const wand = chargedWand(WAN_SPEED_MONSTER, { charges: 2 });

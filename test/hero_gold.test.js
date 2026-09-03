@@ -14,11 +14,11 @@ import { GOLD_PIECE, SACK } from '../js/object_data.js';
 import { settleCarriedShopBillItem } from '../js/shk.js';
 import { carriedGold } from './support/gold-arena.js';
 import { floorObjects } from './support/level-state.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 test('picking up floor gold moves that identity into the dollar inventory slot',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const floorGold = mkgold(37, game.u.ux, game.u.uy);
 
         await rhack(','.charCodeAt(0));
@@ -31,7 +31,7 @@ test('picking up floor gold moves that identity into the dollar inventory slot',
     });
 
 test('picking up more gold merges to one live purse identity', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const purse = carriedGold(11, 28300);
     const floorGold = mkgold(7, game.u.ux, game.u.uy);
 
@@ -48,7 +48,7 @@ test('picking up more gold merges to one live purse identity', async () => {
 });
 
 test('dropping the purse moves the same identity to the floor', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const purse = carriedGold(19, 28301);
 
     pushKey('$');
@@ -63,7 +63,7 @@ test('dropping the purse moves the same identity to the floor', async () => {
 });
 
 test('a counted quiver request cannot split the purse', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const purse = carriedGold(5, 28302);
 
     pushKey('2');
@@ -80,7 +80,7 @@ test('a counted quiver request cannot split the purse', async () => {
 
 test('quivered gold detaches one coin while preserving the purse identity',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = carriedGold(5, 28303);
 
         pushKey('$');
@@ -106,7 +106,7 @@ test('quivered gold detaches one coin while preserving the purse identity',
 
 test('putting gold into a bag and taking it out moves the same identity',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         game.nhDisplay = new GameDisplay(null);
         const purse = carriedGold(23, 28304);
         const bag = {
@@ -145,7 +145,7 @@ test('putting gold into a bag and taking it out moves the same identity',
 
 test('partial shop payment preserves the purse identity and exact remainder',
     () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const purse = carriedGold(20, 28305);
         const merchandise = {
             o_id: 28306, otyp: SACK, quan: 1, quantity: 1, unpaid: true,

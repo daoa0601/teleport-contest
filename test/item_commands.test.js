@@ -12,13 +12,13 @@ import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { dropInventoryObject } from './support/commands.js';
 import { inventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 const PM_YELLOW_LIGHT = 118;
 
 test('debug wishing creates a live charged polymorph wand', async () => {
     // wiz_wish() adds the requested object without using a turn.
-    freshWeaponArena();
+    freshGameplayRoom();
     game.urole = { key: 'wizard' };
     game.flags.debug = true;
     pushKeys('wand of polymorph (0:30)\n');
@@ -34,7 +34,7 @@ test('debug wishing creates a live charged polymorph wand', async () => {
 });
 
 test('an invalid wish can be replaced by a valid wish', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.flags.debug = true;
     pushKeys('not a NetHack object\napple\n');
 
@@ -44,7 +44,7 @@ test('an invalid wish can be replaced by a valid wish', async () => {
 });
 
 test('a cursed scroll of light darkens the visible area', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     vision_reset_new_level();
     vision_recalc(0);
     const scroll = {
@@ -67,7 +67,7 @@ test('a cursed scroll of light darkens the visible area', async () => {
 });
 
 test('reading a magical scroll exercises Wisdom', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.u.acurr.a[A_WIS] = 3;
     game.u.acurr.a[A_CON] = 3;
     game.inventory = [{
@@ -91,7 +91,7 @@ test('reading a magical scroll exercises Wisdom', async () => {
 });
 
 test('a confused scroll of light creates harmless tame lights', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     game.u.confusionTurns = 5;
     const scroll = {
         otyp: SCR_LIGHT,
@@ -117,7 +117,7 @@ test('a confused scroll of light creates harmless tame lights', async () => {
 test('quaffing applies the potion, consumes it, and uses a turn',
     async () => {
         // potion.c applies the effect before removing the potion.
-        freshWeaponArena();
+        freshGameplayRoom();
         game.urole = { key: 'wizard' };
         game.u.uen = game.u.uenmax = game.u.uenpeak = 1;
         const potion = {

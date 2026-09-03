@@ -6,10 +6,10 @@ import {
 } from '../js/const.js';
 import { mapLevel } from '../js/detect.js';
 import { addTrap } from './support/level-state.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 test('mapping finds secret corridors but preserves other secrets', () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     level.flags.hero_memory = true;
     level.at(30, 9).typ = SCORR;
     level.at(31, 9).typ = SDOOR;

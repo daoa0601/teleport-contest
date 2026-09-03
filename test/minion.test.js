@@ -9,12 +9,12 @@ import {
 import { resumeDeferredMovementSpell } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { addMonster } from './support/monsters.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 const M2_DEMON = 0x00000100;
 
 test('the Wizard summons demons beside the hero', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     initRng(1n);
 
     const result = await msummon();
@@ -29,7 +29,7 @@ test('the Wizard summons demons beside the hero', async () => {
 });
 
 test('a monster spell completes its demon summon in Gehennom', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.dungeons = [{ flags: { hellish: true } }];
     const wizard = addMonster({
         mnum: MONSTER_NAME.indexOf('Wizard of Yendor'),

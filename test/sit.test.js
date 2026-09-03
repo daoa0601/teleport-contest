@@ -22,10 +22,10 @@ import { floorObject, inventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 test('sitting on cream pies crushes the whole floor stack', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const pies = floorObject(CREAM_PIE, 10, 10, {
         plural: 'cream pies',
         quan: 2,
@@ -40,7 +40,7 @@ test('sitting on cream pies crushes the whole floor stack', async () => {
 });
 
 test('sitting on your own altar costs Wisdom and alignment', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     level.at(10, 10).typ = ALTAR;
     level.at(10, 10).flags = Align2amask(game.u.ualign.type);
     game.u.amax = { a: [...game.u.acurr.a] };
@@ -53,7 +53,7 @@ test('sitting on your own altar costs Wisdom and alignment', async () => {
 });
 
 test('a throne can take all carried gold', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     level.at(10, 10).typ = THRONE;
     setHeroGoldAmount(game, 250);
     initRng(125n);
@@ -65,7 +65,7 @@ test('a throne can take all carried gold', async () => {
 });
 
 test("Vlad's throne greases carried equipment", async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     level.at(10, 10).typ = THRONE;
     game.u.uz = { dnum: 0, dlevel: 1 };
     game.dungeons = [{ dname: "Vlad's Tower" }];
@@ -81,7 +81,7 @@ test("Vlad's throne greases carried equipment", async () => {
 });
 
 test('a gremlin sitting in water creates a tame clone', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     level.at(10, 10).typ = FOUNTAIN;
     game.plname = 'Splitter';
     game.mvitals = [];
@@ -99,7 +99,7 @@ test('a gremlin sitting in water creates a tame clone', async () => {
 });
 
 test('a cockatrice held by another monster cannot sit down', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     installPolymorphedHero('cockatrice');
     game.u.ustuck = addMonster({
         species: 'jackal',
@@ -115,7 +115,7 @@ test('a cockatrice held by another monster cannot sit down', async () => {
 });
 
 test('sitting on a bear trap catches the hero', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     addTrap(level, BEAR_TRAP, 10, 10);
     pushKeys('sit\n');
 
@@ -125,7 +125,7 @@ test('sitting on a bear trap catches the hero', async () => {
 });
 
 test('sitting on a teleport trap moves the hero', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     addTrap(level, TELEP_TRAP, 10, 10, {
         teledest: { x: 12, y: 10 },
     });
@@ -137,7 +137,7 @@ test('sitting on a teleport trap moves the hero', async () => {
 });
 
 test('sitting over a pit leaves the hero trapped in it', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     addTrap(level, PIT, 10, 10);
     pushKeys('sit\n');
 
@@ -147,7 +147,7 @@ test('sitting over a pit leaves the hero trapped in it', async () => {
 });
 
 test('sitting on a web entangles the hero', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     addTrap(level, WEB, 10, 10);
     pushKeys('sit\n');
 
@@ -157,7 +157,7 @@ test('sitting on a web entangles the hero', async () => {
 });
 
 test('sitting on a land mine blasts a pit under the hero', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const mine = addTrap(level, LANDMINE, 10, 10);
     pushKeys('sit\n  ');
 
@@ -168,7 +168,7 @@ test('sitting on a land mine blasts a pit under the hero', async () => {
 });
 
 test('a malignant aura curses an ordinary inventory item', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const club = inventoryObject(CLUB, 'a');
     game.inventory = [club];
 
@@ -179,7 +179,7 @@ test('a malignant aura curses an ordinary inventory item', async () => {
 });
 
 test('an attribute curse removes intrinsic but not worn resistance', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const armor = {
         otyp: WHITE_DRAGON_SCALE_MAIL,
         o_id: 42,

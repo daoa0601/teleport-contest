@@ -17,7 +17,7 @@ import { floorObject, knownObject } from './support/game-objects.js';
 import {
     addMonster, equipMonsterObject,
 } from './support/monsters.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 function targetMonster(x, y, overrides = {}) {
     return addMonster({
@@ -40,7 +40,7 @@ function earthquakeDrum(charges) {
 
 test('an earthquake opens chasms under the hero and nearby monsters',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         game.u.uhp = game.u.uhpmax = 1000;
         const monster = targetMonster(11, 10);
         pushKeys(' '.repeat(100));
@@ -57,7 +57,7 @@ test('an earthquake opens chasms under the hero and nearby monsters',
 
 test("a monster's life-saving amulet works after an earthquake fall",
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         game.u.uhp = game.u.uhpmax = 1000;
         const monster = targetMonster(11, 10, {
             hitPoints: 1,
@@ -79,7 +79,7 @@ test("a monster's life-saving amulet works after an earthquake fall",
 
 test('an earthquake collapses doors and drops boulders into chasms',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         game.u.uhp = game.u.uhpmax = 1000;
         const door = level.at(11, 10);
         door.typ = DOOR;
@@ -97,7 +97,7 @@ test('an earthquake collapses doors and drops boulders into chasms',
     });
 
 test('a nearby moat flows into a new chasm', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) level.at(x, y).typ = STONE;
     }
@@ -122,7 +122,7 @@ test('a nearby moat flows into a new chasm', async () => {
 
 test('a charged earthquake drum shakes the level and spends one charge',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         game.u.ulevel = 30;
         game.u.uhp = game.u.uhpmax = 1000;
         const drum = earthquakeDrum(2);
@@ -136,7 +136,7 @@ test('a charged earthquake drum shakes the level and spends one charge',
     });
 
 test('an empty earthquake drum acts like an ordinary drum', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const monster = targetMonster(11, 10);
     const drum = earthquakeDrum(0);
     pushKeys(' '.repeat(20));

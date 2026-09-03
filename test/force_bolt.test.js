@@ -22,7 +22,7 @@ import {
 } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 const PM_JACKAL = 12;
 
@@ -38,7 +38,7 @@ function addJackal(x = 12) {
 }
 
 function freshWizard() {
-    return freshWeaponArena({
+    return freshGameplayRoom({
         role: 'wizard', heroLevel: 8, energy: 40,
     });
 }
@@ -66,7 +66,7 @@ test('force bolt damages a monster in its path', async () => {
 });
 
 test('magic resistance bounces a self-zapped wand of striking', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.u.antimagic = true;
     const startingHitPoints = game.u.uhp;
     const wand = chargedWand(WAN_STRIKING, { charges: 2 });

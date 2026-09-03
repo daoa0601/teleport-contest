@@ -13,10 +13,10 @@ import {
     carriedObject, chargedWand,
 } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 test('drinking an invisibility potion makes the hero invisible', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const potion = carriedObject(POT_INVISIBILITY);
     game.inventory = [potion];
     pushKeys('a');
@@ -30,7 +30,7 @@ test('drinking an invisibility potion makes the hero invisible', async () => {
 
 test('the invisibility spell affects the hero without asking for a direction',
     async () => {
-        freshWeaponArena({ role: 'wizard', heroLevel: 8, energy: 40 });
+        freshGameplayRoom({ role: 'wizard', heroLevel: 8, energy: 40 });
 
         await castKnownSpell({
             name: 'invisibility',
@@ -47,7 +47,7 @@ test('the invisibility spell affects the hero without asking for a direction',
     });
 
 test('a make-invisible wand turns a visible monster transparent', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.u.seeInvisible = true;
     const monster = addMonster({
         species: 'jackal',

@@ -12,7 +12,7 @@ import {
 } from '../js/object_timers.js';
 import { inventoryObject } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 test('monster lookup accepts source names, plurals, and class descriptions', () => {
     assert.equal(nameToMonster('giant ants'), 0);
@@ -22,7 +22,7 @@ test('monster lookup accepts source names, plurals, and class descriptions', () 
 });
 
 test('genocide removes the species, drops its inventory, and sterilizes eggs', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const carried = inventoryObject(CLUB, null, { where: 'monster' });
     const ant = addMonster({
         mnum: 0,
@@ -52,7 +52,7 @@ test('genocide removes the species, drops its inventory, and sterilizes eggs', a
 });
 
 test('a cursed genocide scroll sends in the chosen monsters', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     pushKeys('giant ant\n');
 
     await doGenocide(0);
@@ -63,7 +63,7 @@ test('a cursed genocide scroll sends in the chosen monsters', async () => {
 });
 
 test('blessed genocide applies to every permitted species in a class', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     pushKeys(`a\n${' '.repeat(40)}`);
 
     await doClassGenocide();

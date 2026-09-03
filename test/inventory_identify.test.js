@@ -5,10 +5,10 @@ import { game } from '../js/gstate.js';
 import { identifyPack } from '../js/invent.js';
 import { CLUB } from '../js/object_data.js';
 import { inventoryObject } from './support/game-objects.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 test('identifying the whole pack reveals every part of an object', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const club = inventoryObject(CLUB, 'a', {
         known: false,
         typeKnown: false,

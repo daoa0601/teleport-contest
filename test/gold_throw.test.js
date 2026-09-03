@@ -13,7 +13,7 @@ import {
 import {
     addTrap, floorObjects, floorObjectsAt,
 } from './support/level-state.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 
 const PM_SHOPKEEPER = 271;
@@ -24,7 +24,7 @@ const PM_WATCHMAN = 282;
 
 test('direct throw moves the whole purse through its strength-weight range',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = carriedGold(100, 29001);
 
         await throwGold('l');
@@ -42,7 +42,7 @@ test('direct throw moves the whole purse through its strength-weight range',
 
 test('an adjacent blocked cell leaves the whole thrown purse at the hero',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         level.at(11, 10).typ = STONE;
         const purse = carriedGold(4000, 29002);
 
@@ -57,7 +57,7 @@ test('an adjacent blocked cell leaves the whole thrown purse at the hero',
 
 test('coin weight shortens direct range using source integer division',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = carriedGold(4000, 29026);
 
         await throwGold('l');
@@ -69,7 +69,7 @@ test('coin weight shortens direct range using source integer division',
 
 test('a later wall leaves direct gold on the last open path cell',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         level.at(14, 10).typ = STONE;
         const purse = carriedGold(100, 29027);
 
@@ -80,7 +80,7 @@ test('a later wall leaves direct gold on the last open path cell',
     });
 
 test('coin-class direct gold passes through iron bars', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     level.at(12, 10).typ = IRONBARS;
     const purse = carriedGold(100, 29028);
 
@@ -92,7 +92,7 @@ test('coin-class direct gold passes through iron bars', async () => {
 
 test('distant iron bars can stop thrown gold on the preceding square',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         level.at(12, 10).typ = IRONBARS;
         const purse = carriedGold(100, 29030);
         initRng(1n);
@@ -104,7 +104,7 @@ test('distant iron bars can stop thrown gold on the preceding square',
     });
 
 test('a web can stop the whole purse at its live trap identity', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const web = addTrap(level, WEB, 12, 10, { tseen: false });
     const purse = carriedGold(100, 29029);
     initRng(1n);
@@ -118,7 +118,7 @@ test('a web can stop the whole purse at its live trap identity', async () => {
 
 test('downward gold throw moves the whole purse to the hero square',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = carriedGold(17, 29003);
 
         await throwGold('>');
@@ -132,7 +132,7 @@ test('downward gold throw moves the whole purse to the hero square',
 
 test('self-directed gold cancellation preserves the purse and spends no time',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const purse = carriedGold(17, 29032);
 
         await throwGold('.');
@@ -144,7 +144,7 @@ test('self-directed gold cancellation preserves the purse and spends no time',
     });
 
 test('a non-greedy monster wakes but does not catch thrown gold', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const purse = carriedGold(25, 29004);
     const jackal = addGoldMonster({
         m_id: 29005, mnum: 12, mpeaceful: 1, msleeping: 1,
@@ -162,7 +162,7 @@ test('a non-greedy monster wakes but does not catch thrown gold', async () => {
 
 test('an immobilized greedy monster is hit harmlessly and cannot catch gold',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = carriedGold(31, 29006);
         const leprechaun = addGoldMonster({
             m_id: 29007, mcanmove: 0, mfrozen: 3,
@@ -179,7 +179,7 @@ test('an immobilized greedy monster is hit harmlessly and cannot catch gold',
 
 test('a sleeping greedy monster catches the purse and abandons its meal',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = carriedGold(41, 29008);
         const leprechaun = addGoldMonster({
             m_id: 29009, msleeping: 1, meating: 4,
@@ -201,7 +201,7 @@ test('a sleeping greedy monster catches the purse and abandons its meal',
 
 test('the ordinary catch anger probe can turn a peaceful greedy monster hostile',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const purse = carriedGold(11, 29034);
         const leprechaun = addGoldMonster({
             m_id: 29035, mpeaceful: 1,
@@ -216,7 +216,7 @@ test('the ordinary catch anger probe can turn a peaceful greedy monster hostile'
 
 test('a greedy catch merges into the prior monster purse and frees the incoming identity',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const purse = carriedGold(11, 29030);
         const leprechaun = addGoldMonster({ m_id: 29031 });
         const prior = looseGold(9);
@@ -234,7 +234,7 @@ test('a greedy catch merges into the prior monster purse and frees the incoming 
 
 test('covering a shopkeeper robbery restores peace and preserves payment identity',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const purse = carriedGold(50, 29010);
         const shopkeeper = addGoldMonster({
             m_id: 29011, mnum: PM_SHOPKEEPER, isshk: 1, mpeaceful: 0,
@@ -255,7 +255,7 @@ test('covering a shopkeeper robbery restores peace and preserves payment identit
 
 test('a peaceful shopkeeper turns caught gold into exact customer credit',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const purse = carriedGold(7, 29012);
         const shopkeeper = addGoldMonster({
             m_id: 29013, mnum: PM_SHOPKEEPER, isshk: 1, mpeaceful: 1,
@@ -271,7 +271,7 @@ test('a peaceful shopkeeper turns caught gold into exact customer credit',
     });
 
 test('a temple priest catches the same whole-purse identity', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const purse = carriedGold(13, 29014);
     const priest = addGoldMonster({
         m_id: 29015, mnum: PM_ALIGNED_CLERIC,
@@ -288,7 +288,7 @@ test('a temple priest catches the same whole-purse identity', async () => {
 
 test('the catch anger probe applies the coaligned priest alignment penalty',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const purse = carriedGold(13, 29036);
         const priest = addGoldMonster({
             m_id: 29037, mnum: PM_ALIGNED_CLERIC,
@@ -307,7 +307,7 @@ test('the catch anger probe applies the coaligned priest alignment penalty',
 
 test('the catch anger probe rewards angering a cross-aligned priest',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const purse = carriedGold(13, 29038);
         const priest = addGoldMonster({
             m_id: 29039, mnum: PM_ALIGNED_CLERIC,
@@ -326,7 +326,7 @@ test('the catch anger probe rewards angering a cross-aligned priest',
 
 test('a vault guard catches the purse without the ordinary anger probe',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const purse = carriedGold(19, 29016);
         const guard = addGoldMonster({
             m_id: 29017, mnum: PM_GUARD, isgd: 1, mpeaceful: 1,
@@ -341,7 +341,7 @@ test('a vault guard catches the purse without the ordinary anger probe',
 
 test('a sufficient soldier bribe changes an angry soldier to peaceful',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const purse = carriedGold(150, 29018);
         const soldier = addGoldMonster({
             m_id: 29019, mnum: PM_SOLDIER, mpeaceful: 0,
@@ -356,7 +356,7 @@ test('a sufficient soldier bribe changes an angry soldier to peaceful',
 
 test('an insufficient soldier bribe is still caught but leaves hostility',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const purse = carriedGold(50, 29020);
         const soldier = addGoldMonster({
             m_id: 29021, mnum: PM_SOLDIER, mpeaceful: 0,
@@ -370,7 +370,7 @@ test('an insufficient soldier bribe is still caught but leaves hostility',
     });
 
 test('a watchman catches gold but remains unbribable', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const purse = carriedGold(500, 29022);
     const watchman = addGoldMonster({
         m_id: 29023, mnum: PM_WATCHMAN, mpeaceful: 0,
@@ -384,7 +384,7 @@ test('a watchman catches gold but remains unbribable', async () => {
 });
 
 test('swallowed gold moves whole into the engulfer inventory', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const purse = carriedGold(29, 29024);
     const engulfer = addGoldMonster({
         m_id: 29025, mnum: 202, mx: 10, my: 10,

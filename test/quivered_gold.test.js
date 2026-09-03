@@ -12,7 +12,7 @@ import {
 import {
     addTrap, floorObjects, floorObjectsAt,
 } from './support/level-state.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 
 async function quiver(amount, id) {
@@ -31,7 +31,7 @@ function detachedCoin(level, purse) {
 
 test('f fires one quivered coin through the ordinary strength range',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = await quiver(5, 29101);
 
         await fireQuiveredGold('l');
@@ -49,7 +49,7 @@ test('f fires one quivered coin through the ordinary strength range',
 
 test('t selects the same one-coin quivered path rather than whole-purse gold',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = await quiver(5, 29102);
 
         await throwGold('l');
@@ -63,7 +63,7 @@ test('t selects the same one-coin quivered path rather than whole-purse gold',
 
 test('splitting a heavy coin stack recalculates parent and child weight',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = await quiver(4050, 29103);
         assert.equal(purse.owt, 41);
 
@@ -79,7 +79,7 @@ test('splitting a heavy coin stack recalculates parent and child weight',
 
 test('a later wall leaves a quivered coin on the last open path cell',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         level.at(14, 10).typ = STONE;
         const purse = await quiver(5, 29104);
 
@@ -91,7 +91,7 @@ test('a later wall leaves a quivered coin on the last open path cell',
     });
 
 test('underwater limits a quivered coin to one horizontal cell', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const purse = await quiver(5, 29116);
     game.underwater = true;
 
@@ -106,7 +106,7 @@ test('underwater limits a quivered coin to one horizontal cell', async () => {
 
 test('a sleeping greedy monster does not catch a quivered coin on an ordinary miss',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = await quiver(5, 29105);
         const leprechaun = addGoldMonster({
             m_id: 29106, mpeaceful: 1, msleeping: 1,
@@ -124,7 +124,7 @@ test('a sleeping greedy monster does not catch a quivered coin on an ordinary mi
 
 test('the one-in-three miss wakeup angers but still does not transfer the coin',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = await quiver(5, 29107);
         const leprechaun = addGoldMonster({
             m_id: 29108, mpeaceful: 1, msleeping: 1,
@@ -142,7 +142,7 @@ test('the one-in-three miss wakeup angers but still does not transfer the coin',
 
 test('targeting can thaw an immobilized monster before the coin misses',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = await quiver(5, 29109);
         const leprechaun = addGoldMonster({
             m_id: 29110, mpeaceful: 1, msleeping: 1,
@@ -163,7 +163,7 @@ test('targeting can thaw an immobilized monster before the coin misses',
 
 test('a swallowed quivered coin wakes the engulfer and enters its inventory',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = await quiver(5, 29111);
         const engulfer = addGoldMonster({
             m_id: 29112, mnum: 202, mx: 10, my: 10,
@@ -187,7 +187,7 @@ test('a swallowed quivered coin wakes the engulfer and enters its inventory',
 
 test('an upward quivered coin falls back, hurts the hero, and leaves the parent ready',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const purse = await quiver(5, 29113);
         const hpBefore = game.u.uhp;
 
@@ -203,7 +203,7 @@ test('an upward quivered coin falls back, hurts the hero, and leaves the parent 
     });
 
 test('a greased quivered coin can slip into a one-coin floor drop', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const purse = await quiver(5, 29117);
     purse.greased = true;
     initRng(83n);
@@ -219,7 +219,7 @@ test('a greased quivered coin can slip into a one-coin floor drop', async () => 
 
 test('throwing the last quivered coin transfers its original identity',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const coin = await quiver(1, 29114);
 
         await fireQuiveredGold('l');
@@ -236,7 +236,7 @@ test('throwing the last quivered coin transfers its original identity',
 
 test('a web can stop the live detached coin without disturbing the parent',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const web = addTrap(level, WEB, 12, 10, { tseen: false });
         const purse = await quiver(5, 29115);
         initRng(2n);

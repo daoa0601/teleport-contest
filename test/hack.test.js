@@ -16,10 +16,10 @@ import {
 import { vision_reset } from '../js/vision.js';
 import { carriedObject as inventoryObject } from './support/game-objects.js';
 import { addMonster, livePet } from './support/monsters.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 function liquidAtHero(terrain) {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const { ux, uy } = game.u;
     level.at(ux, uy).typ = terrain;
     game.u.acurr.a[A_STR] = 3;
@@ -39,7 +39,7 @@ const noDisplay = {
 };
 
 test('leaving a pool clears the underwater state', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.level.at(game.u.ux, game.u.uy).typ = ROOM;
     game.u.uinwater = 1;
     game.underwater = true;
@@ -325,7 +325,7 @@ test('a hidden piercer stays above the pool', async () => {
 });
 
 test('known water-walking boots let the hero step onto a pool', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     level.at(11, 10).typ = POOL;
     vision_reset();
     const boots = inventoryObject(WATER_WALKING_BOOTS, {
@@ -458,7 +458,7 @@ test('the Plane of Water does not make the hero drop gear to escape', async () =
 });
 
 test('swimming through the same pool usually leaves inventory dry', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     level.at(10, 10).typ = POOL;
     level.at(11, 10).typ = POOL;
     game.u.ux0 = 10;
@@ -482,7 +482,7 @@ test('swimming through the same pool usually leaves inventory dry', async () => 
 });
 
 test('entering a pool releases every leash', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     level.at(10, 10).typ = POOL;
     game.u.amphibious = true;
     game.u.uluck = 100;
@@ -514,7 +514,7 @@ test('entering a pool releases every leash', async () => {
 });
 
 test('water walking does not protect against a wall of water', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     level.at(10, 10).typ = WATER;
     game.u.waterWalking = true;
     game.u.amphibious = true;

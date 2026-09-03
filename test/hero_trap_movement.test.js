@@ -23,11 +23,11 @@ import { wearHeroObject } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { addMonster, addPet } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 test('escaping a web takes a movement attempt without moving the hero',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         game.u.utrap = 1;
         game.u.utraptype = TT_WEB;
 
@@ -38,7 +38,7 @@ test('escaping a web takes a movement attempt without moving the hero',
     });
 
 test('climbing from a pit leaves the hero on the pit square', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.u.utrap = 1;
     game.u.utraptype = TT_PIT;
 
@@ -49,7 +49,7 @@ test('climbing from a pit leaves the hero on the pit square', async () => {
 });
 
 test('a trapped hero cannot swap places with a pet', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const dog = addPet({
         mnum: 16, x: 11, y: 10, hitPoints: 8,
     });
@@ -64,7 +64,7 @@ test('a trapped hero cannot swap places with a pet', async () => {
 
 test('the hero can move while staying within a buried ball chain',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         level.buriedObjects = [{
             otyp: HEAVY_IRON_BALL, ox: 10, oy: 10,
         }];
@@ -79,7 +79,7 @@ test('the hero can move while staying within a buried ball chain',
     });
 
 test('pulling a buried ball free restores the ball and chain', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const ball = {
         otyp: HEAVY_IRON_BALL, ox: 8, oy: 10, oclass: 15,
         quan: 1, quantity: 1, where: 'buried', owornmask: 0,
@@ -98,7 +98,7 @@ test('pulling a buried ball free restores the ball and chain', async () => {
 
 test('the invocation square reveals itself when the hero steps on it',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const square = addTrap(
             level, VIBRATING_SQUARE, 11, 10, { tseen: false },
         );
@@ -116,7 +116,7 @@ test('the invocation square reveals itself when the hero steps on it',
     });
 
 test('stepping on a fire trap burns the hero', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const trap = addTrap(level, FIRE_TRAP, 11, 10, { tseen: false });
     game.u.uhp = game.u.uhpmax = 40;
 
@@ -128,7 +128,7 @@ test('stepping on a fire trap burns the hero', async () => {
 });
 
 test('a missed arrow trap leaves its arrow on the floor', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const trap = addTrap(level, ARROW_TRAP, 11, 10, { tseen: false });
     game.u.uac = -20;
 
@@ -141,7 +141,7 @@ test('a missed arrow trap leaves its arrow on the floor', async () => {
 });
 
 test('a squeaky board wakes nearby monsters', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const trap = addTrap(level, SQKY_BOARD, 11, 10, {
         tseen: false,
         tnote: 0,
@@ -157,7 +157,7 @@ test('a squeaky board wakes nearby monsters', async () => {
 });
 
 test('a falling-rock trap drops a rock and hurts the hero', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const trap = addTrap(level, ROCKTRAP, 11, 10, { tseen: false });
     game.u.uhp = game.u.uhpmax = 40;
 
@@ -171,7 +171,7 @@ test('a falling-rock trap drops a rock and hurts the hero', async () => {
 });
 
 test('sleeping gas stops a susceptible hero', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const trap = addTrap(level, SLP_GAS_TRAP, 11, 10, { tseen: false });
 
     await rhack('l'.charCodeAt(0));
@@ -182,7 +182,7 @@ test('sleeping gas stops a susceptible hero', async () => {
 });
 
 test('a rust trap can rust the helmet worn by the hero', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     const helmet = inventoryObject(ORCISH_HELM, 'a', { oeroded: 0 });
     game.inventory = [helmet];
     wearHeroObject(helmet, 'uarmh', W_ARMH);
@@ -213,7 +213,7 @@ test('enchanted iron shoes absorb an anti-magic field', async () => {
 });
 
 test('an anti-magic field drains energy from an unprotected hero', async () => {
-    const level = freshWeaponArena({ energy: 20 });
+    const level = freshGameplayRoom({ energy: 20 });
     const trap = addTrap(level, ANTI_MAGIC, 11, 10, { tseen: false });
     const hitPoints = game.u.uhp;
     initRng(8201n);
@@ -251,7 +251,7 @@ test('wielding Magicbane turns an anti-magic field into an implosion',
     });
 
 test('stepping on a statue trap releases its monster', async () => {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     initRng(9402n);
     const statue = mkcorpstat(STATUE, null, 12, 11, 10, 0);
     addTrap(level, STATUE_TRAP, 11, 10, { tseen: false });
@@ -268,7 +268,7 @@ test('stepping on a statue trap releases its monster', async () => {
 
 test('stepping into a magic portal moves the hero to its other end',
     async () => {
-        const source = freshWeaponArena();
+        const source = freshGameplayRoom();
         const destination = new GameMap();
         for (let x = 8; x <= 18; x++) {
             for (let y = 8; y <= 12; y++) {

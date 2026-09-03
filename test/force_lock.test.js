@@ -10,10 +10,10 @@ import { initRng } from '../js/rng.js';
 import {
     floorObject, inventoryObject,
 } from './support/game-objects.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 test('a blade can break while prying a chest lock', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const dagger = inventoryObject(DAGGER, 'a', {
         spe: 0,
         cursed: false,

@@ -9,7 +9,7 @@ import {
     WORTHLESS_PIECE_OF_RED_GLASS,
 } from '../js/object_data.js';
 import { floorObject, looseObject } from './support/game-objects.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 test('ordinary potions break unless their impact resistance succeeds', () => {
     const potion = looseObject(POT_WATER);
@@ -31,7 +31,7 @@ test('glass armor resists most impacts but glass gems do not shatter', () => {
 
 test('crystal armor cracks three times before the next impact destroys it',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const armor = floorObject(
             OBJECT_NAMES.indexOf('crystal plate mail'), 11, 10,
         );

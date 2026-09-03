@@ -11,7 +11,7 @@ import {
 import { addInventoryItem } from '../js/u_init.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addMonster } from './support/monsters.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 function instrument(otyp, spe = 0) {
     return Object.assign(mksobj(otyp, true, false), {
@@ -21,7 +21,7 @@ function instrument(otyp, spe = 0) {
 }
 
 test('a charged magic flute puts nearby monsters to sleep', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.u.ulevel = 5;
     const target = addMonster({ mnum: 0, x: 11, y: 10 });
     const flute = instrument(MAGIC_FLUTE, 2);
@@ -35,7 +35,7 @@ test('a charged magic flute puts nearby monsters to sleep', async () => {
 });
 
 test('a skilled harp player calms nearby nymphs', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     game.u.ulevel = 30;
     const nymph = addMonster({
         mnum: 68, x: 11, y: 10, mpeaceful: 0,
@@ -48,7 +48,7 @@ test('a skilled harp player calms nearby nymphs', async () => {
 });
 
 test('a bugle calls every soldier on the level to battle', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const soldier = addMonster({
         mnum: 277, x: 18, y: 12,
         mpeaceful: 1,
@@ -67,7 +67,7 @@ test('a bugle calls every soldier on the level to battle', async () => {
 });
 
 test('applying a leather drum plays it', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const drum = addInventoryItem(instrument(LEATHER_DRUM));
     await applyInventoryObject(drum, '          ');
 
@@ -76,7 +76,7 @@ test('applying a leather drum plays it', async () => {
 });
 
 test('a fire horn shoots a ray and spends one charge', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const target = addMonster({
         mnum: 0, x: 11, y: 10, hitPoints: 100, mac: 100,
     });
@@ -92,7 +92,7 @@ test('a fire horn shoots a ray and spends one charge', async () => {
 
 test('cold resistance protects against a frost horn aimed at yourself',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         game.u.coldResistance = true;
         game.u.uhp = game.u.uhpmax = 100;
         const horn = instrument(FROST_HORN, 1);
@@ -106,7 +106,7 @@ test('cold resistance protects against a frost horn aimed at yourself',
     });
 
 test('an empty fire horn behaves like an ordinary horn', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const target = addMonster({
         mnum: 0, x: 11, y: 10, msleeping: 1,
     });

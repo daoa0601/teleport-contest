@@ -9,7 +9,7 @@ import {
 import { removeCurseEffect } from '../js/read.js';
 import { inventoryObject } from './support/game-objects.js';
 import { installPunishedHero } from './support/hero-state.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 function cursedObject(otyp, invlet, overrides = {}) {
     return inventoryObject(otyp, invlet, {
@@ -18,7 +18,7 @@ function cursedObject(otyp, invlet, overrides = {}) {
 }
 
 test('remove curse affects worn items and loadstones, not the whole pack', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const worn = cursedObject(CLUB, 'a', { owornmask: W_ARM });
     const loadstone = cursedObject(LOADSTONE, 'b');
     const carried = cursedObject(CLUB, 'c');
@@ -34,7 +34,7 @@ test('remove curse affects worn items and loadstones, not the whole pack', async
 });
 
 test('a blessed remove curse affects the whole pack and ends punishment', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const carried = cursedObject(CLUB, 'a');
     game.inventory = [carried];
 
@@ -52,7 +52,7 @@ test('a blessed remove curse affects the whole pack and ends punishment', async 
 });
 
 test('confused remove curse leaves existing curses and punishment in place', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const worn = cursedObject(CLUB, 'a', {
         owornmask: W_ARM, bknown: true,
     });
@@ -69,7 +69,7 @@ test('confused remove curse leaves existing curses and punishment in place', asy
 });
 
 test('remove curse also frees a steed from its cursed saddle', async () => {
-    freshWeaponArena();
+    freshGameplayRoom();
     const saddle = cursedObject(CLUB, 'a', {
         owornmask: W_SADDLE, bknown: true,
     });

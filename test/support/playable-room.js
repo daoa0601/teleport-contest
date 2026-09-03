@@ -44,3 +44,24 @@ export function freshCommandRoom({
     if (seed !== undefined) initRng(seed);
     return level;
 }
+
+export function freshGameplayRoom({
+    role = 'caveman', heroLevel = 1, energy = 0,
+} = {}) {
+    const level = freshPlayableRoom({
+        role,
+        hero: {
+            ulevel: heroLevel,
+            uen: energy,
+            uenmax: energy,
+        },
+        flags: {
+            fireassist: true,
+            pushweapon: true,
+            verbose: true,
+            pickup: false,
+        },
+    });
+    initRng(28101n);
+    return level;
+}

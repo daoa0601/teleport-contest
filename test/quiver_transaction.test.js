@@ -7,12 +7,12 @@ import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { CLUB, DART, LOADSTONE } from '../js/object_data.js';
 import { inventoryObject } from './support/game-objects.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 
 test('explicit empty selection clears the live quiver without spending time',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const darts = inventoryObject(DART, 'a', {
             quan: 3, quantity: 3, ready: true, owornmask: W_QUIVER,
         });
@@ -29,7 +29,7 @@ test('explicit empty selection clears the live quiver without spending time',
 
 test('quiver selection rejects an armor-mask identity before slot mutation',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const wornClub = inventoryObject(CLUB, 'a', {
             worn: false, owornmask: W_ARMOR,
         });
@@ -45,7 +45,7 @@ test('quiver selection rejects an armor-mask identity before slot mutation',
 
 test('discovering that the primary is welded preserves its slot and spends time',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const club = inventoryObject(CLUB, 'a', {
             cursed: true, bknown: false, wielded: true, owornmask: W_WEP,
         });
@@ -63,7 +63,7 @@ test('discovering that the primary is welded preserves its slot and spends time'
 
 test('a known welded primary refuses the same transition without another turn',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const club = inventoryObject(CLUB, 'a', {
             cursed: true, bknown: true, wielded: true, owornmask: W_WEP,
         });
@@ -81,7 +81,7 @@ test('a known welded primary refuses the same transition without another turn',
 
 test('a counted primary selection readies that many as a distinct identity',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const darts = inventoryObject(DART, 'a', {
             o_id: 28200,
             quan: 4, quantity: 4, wielded: true, owornmask: W_WEP,
@@ -104,7 +104,7 @@ test('a counted primary selection readies that many as a distinct identity',
 
 test('an excessive count keeps the picker alive until a valid split is selected',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const darts = inventoryObject(DART, 'a', {
             o_id: 28202,
             quan: 4, quantity: 4, wielded: true, owornmask: W_WEP,
@@ -128,7 +128,7 @@ test('an excessive count keeps the picker alive until a valid split is selected'
 
 test('a cursed loadstone cannot split and moves only after ready-all confirmation',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const loadstones = inventoryObject(LOADSTONE, 'a', {
             o_id: 28203,
             quan: 3, quantity: 3, cursed: true,
@@ -150,7 +150,7 @@ test('a cursed loadstone cannot split and moves only after ready-all confirmatio
 
 test('declining a single primary transition preserves both weapon and empty quiver',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const club = inventoryObject(CLUB, 'a', {
             wielded: true, owornmask: W_WEP,
         });
@@ -168,7 +168,7 @@ test('declining a single primary transition preserves both weapon and empty quiv
 
 test('a full alphabetic inventory suppresses implicit splitting and can ready all',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         const darts = inventoryObject(DART, letters[0], {
             o_id: 28201,

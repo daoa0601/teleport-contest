@@ -7,12 +7,12 @@ import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { CLUB, DART, FLINT, ROCK, SLING } from '../js/object_data.js';
 import { inventoryObject } from './support/game-objects.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 
 test('fireassist prefers a known-safe launcher over unknown and known-cursed matches',
     async () => {
-        const level = freshWeaponArena();
+        const level = freshGameplayRoom();
         const club = inventoryObject(CLUB, 'a', {
             wielded: true, owornmask: W_WEP,
         });
@@ -44,7 +44,7 @@ test('fireassist prefers a known-safe launcher over unknown and known-cursed mat
 
 test('swapping a sole primary makes it the alternate and leaves bare hands',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         const club = inventoryObject(CLUB, 'a', {
             wielded: true, owornmask: W_WEP,
         });
@@ -63,7 +63,7 @@ test('swapping a sole primary makes it the alternate and leaves bare hands',
 
 test('autoquiver prefers current-launcher ammo and fires it immediately',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         game.flags.autoquiver = true;
         const sling = inventoryObject(SLING, 'a', {
             wielded: true, owornmask: W_WEP,
@@ -99,7 +99,7 @@ test('autoquiver prefers current-launcher ammo and fires it immediately',
 
 test('manual empty-quiver fire keeps the surviving selected stack readied',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         game.flags.autoquiver = false;
         game.flags.fireassist = false;
         const club = inventoryObject(CLUB, 'a', {
@@ -123,7 +123,7 @@ test('manual empty-quiver fire keeps the surviving selected stack readied',
 
 test('autoquiver excludes hidden and artifact objects and ranks missiles over alternate ammo',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         game.flags.autoquiver = true;
         game.flags.fireassist = false;
         const club = inventoryObject(CLUB, 'a', {
@@ -165,7 +165,7 @@ test('autoquiver excludes hidden and artifact objects and ranks missiles over al
 
 test('manual fire splits all but one wielded projectile into a new quiver identity',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         game.flags.autoquiver = false;
         game.flags.fireassist = false;
         const darts = inventoryObject(DART, 'a', {
@@ -194,7 +194,7 @@ test('manual fire splits all but one wielded projectile into a new quiver identi
 
 test('moving the whole primary stack to the quiver spends time even when fire is cancelled',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         game.flags.autoquiver = false;
         game.flags.fireassist = false;
         const darts = inventoryObject(DART, 'a', {
@@ -221,7 +221,7 @@ test('moving the whole primary stack to the quiver spends time even when fire is
 
 test('manual fire splits an alternate stack without replacing its parent slot',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         game.flags.autoquiver = false;
         game.flags.fireassist = false;
         const club = inventoryObject(CLUB, 'a', {
@@ -255,7 +255,7 @@ test('manual fire splits an alternate stack without replacing its parent slot',
 
 test('moving the whole offhand stack ends two-weapon mode and preserves cancellation time',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         game.flags.autoquiver = false;
         game.flags.fireassist = false;
         const club = inventoryObject(CLUB, 'a', {
@@ -289,7 +289,7 @@ test('moving the whole offhand stack ends two-weapon mode and preserves cancella
 
 test('moving an unused alternate stack remains zero-time when the later fire is cancelled',
     async () => {
-        freshWeaponArena();
+        freshGameplayRoom();
         game.flags.autoquiver = false;
         game.flags.fireassist = false;
         const club = inventoryObject(CLUB, 'a', {

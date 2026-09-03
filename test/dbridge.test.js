@@ -21,13 +21,13 @@ import { addTrap } from './support/level-state.js';
 import {
     addMonster, equipMonsterObject,
 } from './support/monsters.js';
-import { freshWeaponArena } from './support/weapon-arena.js';
+import { freshGameplayRoom } from './support/playable-room.js';
 
 const PM_WATER_ELEMENTAL = 157;
 const PM_GHOST = 287;
 
 function installStrongholdDrawbridge() {
-    const level = freshWeaponArena();
+    const level = freshGameplayRoom();
     game.u.ux = 11;
     game.u.uy = 10;
     game.u.uz = { dnum: 1, dlevel: 5 };
