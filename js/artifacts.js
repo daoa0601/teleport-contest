@@ -9,8 +9,9 @@ import { heroHasDrainResistance } from './armor.js';
 import { game } from './gstate.js';
 import { d, rnd, rn2 } from './rng.js';
 import {
-    OBJECT_MATERIAL, OBJECT_NAMES,
+    OBJECT_NAMES,
 } from './object_data.js';
+import { objectMaterial } from './object_material.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE,
     MONSTER_SYMBOL,
@@ -363,10 +364,11 @@ export function resolveHeroArtifactTouch(object, artifact) {
     const alignmentRecord = game.u?.ualign?.record ?? 0;
     const badClass = artifact.selfWilled
         && !!artifact.role && artifact.role !== heroRole;
+    const bane = artifactBaneApplies(artifact);
     let badAlignment = artifact.restricted
         && artifact.alignment !== null
         && (artifact.alignment !== heroAlignment || alignmentRecord < 0);
-    if (!badAlignment) badAlignment = artifactBaneApplies(artifact);
+    if (!badAlignment) badAlignment = bane;
 
     let blasted = false;
     if (((badClass || badAlignment) && artifact.selfWilled)
@@ -379,13 +381,14 @@ export function resolveHeroArtifactTouch(object, artifact) {
         blasted,
         badClass,
         badAlignment,
+        bane,
     };
 }
 
 export function applyHeroArtifactBlast(object, artifact) {
     const antimagic = !!game.u?.antimagic;
     let damage = d(antimagic ? 2 : 4, artifact.selfWilled ? 10 : 4);
-    if (OBJECT_MATERIAL[object.otyp] === SILVER && heroHatesSilver(game)) {
+    if (objectMaterial(object, game) === SILVER && heroHatesSilver(game)) {
         let silverDamage = rnd(10);
         if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
             silverDamage = Math.trunc((silverDamage + 1) / 2);

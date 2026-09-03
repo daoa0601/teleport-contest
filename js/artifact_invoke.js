@@ -43,6 +43,11 @@ const PROPERTY_POWERS = Object.freeze({
     },
 });
 
+export function artifactInvokeIsActive(artifact, state = game) {
+    const power = PROPERTY_POWERS[artifact?.invokePower];
+    return !!power && hasInvokedProperty(power.property, state);
+}
+
 async function nothingSpecial(object, state, publish) {
     if ((state.inventory || []).includes(object)) {
         await publish(
@@ -225,7 +230,7 @@ export async function deactivateArtifactProperty(
     } = {},
 ) {
     const power = PROPERTY_POWERS[artifact?.invokePower];
-    if (!power || !hasInvokedProperty(power.property, state)) return false;
+    if (!artifactInvokeIsActive(artifact, state)) return false;
     await invokeProperty(
         object, artifact, state, publish, rollDice, scaledRandom,
     );

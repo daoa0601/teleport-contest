@@ -42,6 +42,8 @@ import { cureHeroSickness } from './hero_illness.js';
 import {
     clearHeroPetrification, selfTouchPetrifyingWeapons,
 } from './stoning.js';
+import { heroHasNoHead } from './hero_species.js';
+import { retouchEquipment } from './hero_retouch.js';
 import {
     heroIsSliming, resetHeroSlimingCountdown,
 } from './slime.js';
@@ -49,7 +51,6 @@ import {
 const M1_NOEYES = 0x00001000;
 const M1_NOTAKE = 0x00000800;
 const M1_NOLIMBS = 0x00006000;
-const M1_NOHEAD = 0x00008000;
 const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
 const M1_CONCEAL = 0x00000080;
@@ -185,11 +186,6 @@ export function heroHasNoLimbs(state = game) {
     if (!heroIsPolymorphed(state)) return false;
     return ((MONSTER_FLAGS1[state.u?.umonnum] ?? 0) & M1_NOLIMBS)
         === M1_NOLIMBS;
-}
-
-export function heroHasNoHead(state = game) {
-    if (!heroIsPolymorphed(state)) return false;
-    return !!((MONSTER_FLAGS1[state.u?.umonnum] ?? 0) & M1_NOHEAD);
 }
 
 export function heroIsVerySmall(state = game) {
@@ -551,7 +547,7 @@ export async function polymonHero(mnum, {
         dropCarriedObject(boots, ['uarmf']);
         await publishDropCapacityChange();
     }
-    if ((formFlags & M1_NOHEAD) && eyewear) {
+    if (heroHasNoHead(game) && eyewear) {
         let eyewearName = eyewear.name || 'blindfold';
         if (eyewearName.startsWith('pair of '))
             eyewearName = eyewearName.slice('pair of '.length);
@@ -591,6 +587,11 @@ export async function polymonHero(mnum, {
             await plineWithContinuation(capacityMessage);
         else await pline(capacityMessage);
     }
+    const retouch = await retouchEquipment(2);
+    if (retouch.died) return { transformed: true, mnum, died: true };
+    const selfTouch = await selfTouchPetrifyingWeapons();
+    if (selfTouch.died)
+        return { transformed: true, mnum, died: true };
     if (canBreathe && game.flags?.verbose !== false) {
         const breathMessage
             = 'Use the command #monster to use your breath weapon.';
@@ -829,6 +830,12 @@ export async function polyselfControlledNewman() {
     see_monsters();
     if (restored.encumbranceMessage)
         await pline(restored.encumbranceMessage);
+    const retouch = await retouchEquipment(2);
+    if (retouch.died) {
+        return {
+            transformed: true, newman: true, oldLevel, newLevel, died: true,
+        };
+    }
     const selfTouch = await selfTouchPetrifyingWeapons();
     if (selfTouch.died) {
         return {

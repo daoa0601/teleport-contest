@@ -40,6 +40,7 @@ function objectId(name) {
 export function initializeObjectDescriptions() {
     const descriptionIndex = OBJECT_DESCRIPTIONS.map((_, index) => index);
     const colors = OBJECT_COLOR.slice();
+    const materials = OBJECT_MATERIAL.slice();
 
     const sapphire = objectId('sapphire');
     if (rn2(2)) {
@@ -56,7 +57,7 @@ export function initializeObjectDescriptions() {
     descriptionIndex[objectId('fluorite')] = descriptionIndex[fluoriteSource];
     colors[objectId('fluorite')] = colors[fluoriteSource];
 
-    function shuffle(low, high) {
+    function shuffle(low, high, shuffleMaterial) {
         for (let current = low; current <= high; current++) {
             // Objects without an unidentified description are pre-known and
             // skipped by C without drawing.
@@ -68,27 +69,32 @@ export function initializeObjectDescriptions() {
                 [descriptionIndex[picked], descriptionIndex[current]];
             [colors[current], colors[picked]] =
                 [colors[picked], colors[current]];
+            if (shuffleMaterial) {
+                [materials[current], materials[picked]] =
+                    [materials[picked], materials[current]];
+            }
         }
     }
 
     // Whole-class ranges, then the four shuffled armor sub-ranges.
-    shuffle(201, 211); // amulets (exclude fake/real Amulet of Yendor)
-    shuffle(297, 321); // potions (exclude fixed clear water)
-    shuffle(173, 200); // rings
-    shuffle(323, 363); // magical scrolls and extra labels
-    shuffle(366, 406); // spellbooks through chain lightning
-    shuffle(410, 437); // wands, including unnamed appearances
-    shuffle(478, 480); // venoms
-    shuffle(97, 100);  // randomized helms
-    shuffle(159, 162); // gloves
-    shuffle(146, 149); // magical cloaks
-    shuffle(166, 172); // magical boots
+    shuffle(201, 211, true); // amulets (exclude fake/real Amulet of Yendor)
+    shuffle(297, 321, true); // potions (exclude fixed clear water)
+    shuffle(173, 200, true); // rings
+    shuffle(323, 363, true); // magical scrolls and extra labels
+    shuffle(366, 406, true); // spellbooks through chain lightning
+    shuffle(410, 437, true); // wands, including unnamed appearances
+    shuffle(478, 480, true); // venoms
+    shuffle(97, 100, false); // randomized helms
+    shuffle(159, 162, false); // gloves
+    shuffle(146, 149, false); // magical cloaks
+    shuffle(166, 172, false); // magical boots
 
     game.objectDescriptionIndex = descriptionIndex;
     game.objectDescriptions = descriptionIndex.map(
         index => OBJECT_DESCRIPTIONS[index],
     );
     game.objectColors = colors;
+    game.objectMaterials = materials;
     game.wandNothingDirection = rn2(2);
     return game.objectDescriptions;
 }
