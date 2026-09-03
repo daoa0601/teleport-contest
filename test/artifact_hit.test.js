@@ -7,7 +7,7 @@ import { SCR_IDENTIFY } from '../js/object_data.js';
 import {
     artifactObject, carriedObject,
 } from './support/game-objects.js';
-import { liveMonster } from './support/monsters.js';
+import { addMonster, liveMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const maximumRoll = range => range;
@@ -41,13 +41,12 @@ test('Fire Brand can burn a monster inventory and add its damage', async () => {
 
 test('Mjollnir wakes monsters near a target struck by lightning', async () => {
     freshObjectRoom();
-    const target = liveMonster({
+    const target = addMonster({
         species: 'jackal', x: 12, y: 10,
     });
-    const sleeper = liveMonster({
+    const sleeper = addMonster({
         species: 'lichen', x: 13, y: 10, msleeping: 1,
     });
-    game.level.monsters = [target, sleeper];
 
     const hit = await applyArtifactHitToMonster(
         artifactObject('Mjollnir'), target, 4, {

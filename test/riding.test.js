@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset_new_level } from '../js/vision.js';
-import { livePet } from './support/monsters.js';
+import { addPet } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 function freshKnightArena() {
@@ -17,7 +17,7 @@ function freshKnightArena() {
 }
 
 function pony(overrides = {}) {
-    return livePet({
+    return addPet({
         mnum: 100,
         name: 'pony',
         x: 11,
@@ -38,7 +38,6 @@ async function extended(command, suffix = '') {
 test('mount and voluntary dismount preserve the live pony identity', async () => {
     const level = freshKnightArena();
     const steed = pony();
-    level.monsters = [steed];
 
     await extended('ride', 'l');
 
@@ -65,7 +64,6 @@ test('an unsaddled pony rejects riding without time or state mutation',
     async () => {
         const level = freshKnightArena();
         const target = pony({ saddled: false });
-        level.monsters = [target];
         const before = [game.u.ux, game.u.uy, game.u.uhp];
 
         await extended('ride', 'l');
@@ -81,7 +79,6 @@ test('a saddled but untamed pony refuses the mount without injuring the hero',
     async () => {
         const level = freshKnightArena();
         const target = pony({ mtame: 0, pet: false });
-        level.monsters = [target];
         const before = [game.u.ux, game.u.uy, game.u.uhp];
 
         await extended('ride', 'l');
@@ -97,7 +94,6 @@ test('chat derives a pony response from its current tame and hunger state',
     async () => {
         const level = freshKnightArena();
         const target = pony();
-        level.monsters = [target];
 
         await extended('chat', 'l');
 

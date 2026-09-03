@@ -28,7 +28,7 @@ import {
 } from '../js/zap.js';
 import { chargedWand } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
-import { liveMonster } from './support/monsters.js';
+import { addMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 function highestRoll(range) {
@@ -55,10 +55,9 @@ test('sleep resistance prevents self-zap helplessness', async () => {
 
 test('cancellation restores a werewolf to human form', async () => {
     freshWeaponArena();
-    const werewolf = liveMonster({
+    const werewolf = addMonster({
         species: 'werewolf', x: 11, y: 10,
     });
-    game.level.monsters = [werewolf];
 
     await zapCancellationRay('l', { random: highestRoll });
 
@@ -68,10 +67,9 @@ test('cancellation restores a werewolf to human form', async () => {
 
 test('cancellation destroys a clay golem', async () => {
     freshWeaponArena();
-    const golem = liveMonster({
+    const golem = addMonster({
         species: 'clay golem', x: 11, y: 10,
     });
-    game.level.monsters = [golem];
     pushKeys(' '.repeat(20));
 
     await zapCancellationRay('l', { random: highestRoll });
@@ -154,10 +152,9 @@ test('light illuminates the visible area and burns a nearby gremlin',
         }
         vision_reset_new_level();
         vision_recalc(0);
-        const gremlin = liveMonster({
+        const gremlin = addMonster({
             species: 'gremlin', x: 11, y: 10, hitPoints: 20,
         });
-        level.monsters = [gremlin];
         const wand = chargedWand(WAN_LIGHT);
         game.inventory = [wand];
         pushKey('a');
@@ -227,7 +224,7 @@ test('a fire ray burns a monster in its path', async () => {
     freshWeaponArena();
     game.u.fireResistance = true;
     game.u.uhp = game.u.uhpmax = 100;
-    const monster = liveMonster({
+    const monster = addMonster({
         mnum: 0,
         m_id: 9001,
         x: 11,
@@ -238,7 +235,6 @@ test('a fire ray burns a monster in its path', async () => {
         msleeping: 1,
         mstrategy: 0x20000000,
     });
-    game.level.monsters = [monster];
     const wand = chargedWand(WAN_FIRE);
     game.inventory = [wand];
     pushKey('a');
@@ -259,7 +255,7 @@ test('a death ray makes Death stronger instead of killing him', async () => {
     game.u.blindTurns = 10;
     game.u.unblind_telepat_range = -1;
     game.viz_array[10][11] = 0;
-    const death = liveMonster({
+    const death = addMonster({
         mnum: 311,
         m_id: 9002,
         x: 11,
@@ -269,7 +265,6 @@ test('a death ray makes Death stronger instead of killing him', async () => {
         hitPoints: 5,
         mhpmax: 20,
     });
-    game.level.monsters = [death];
 
     await zapDeathRay('l');
 
@@ -286,7 +281,7 @@ test('a worn life-saving amulet saves a monster from a death ray', async () => {
         worn: true,
         where: 'minvent',
     };
-    const monster = liveMonster({
+    const monster = addMonster({
         mnum: 0,
         m_id: 9003,
         x: 11,
@@ -297,7 +292,6 @@ test('a worn life-saving amulet saves a monster from a death ray', async () => {
         inventory: [amulet],
         misc_worn_check: W_AMUL,
     });
-    game.level.monsters = [monster];
     pushKeys(' '.repeat(20));
 
     await zapDeathRay('l', { finishMonsterKill: finishHeroMonsterKill });
@@ -446,21 +440,20 @@ test('melting ice drowns a land monster but not a swimmer', async () => {
     const level = freshWeaponArena();
     game.blind = true;
     game.u.blindTurns = 10;
-    const ant = liveMonster({
+    const ant = addMonster({
         species: 'giant ant',
         m_id: 9101,
         x: 11,
         y: 10,
         hitPoints: 4,
     });
-    const shark = liveMonster({
+    const shark = addMonster({
         species: 'shark',
         m_id: 9102,
         x: 12,
         y: 10,
         hitPoints: 20,
     });
-    game.level.monsters = [ant, shark];
     for (const x of [11, 12]) {
         const ice = level.at(x, 10);
         ice.typ = ICE;

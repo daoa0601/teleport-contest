@@ -16,7 +16,7 @@ import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import { carriedObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
-import { equipMonsterObject, liveMonster } from './support/monsters.js';
+import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_JACKAL = 12;
@@ -34,14 +34,13 @@ function freshKickArena() {
 }
 
 function installKickArena(mnum) {
-    const level = freshKickArena();
-    const monster = liveMonster({
+    freshKickArena();
+    const monster = addMonster({
         mnum, m_id: 55, x: 11, y: 10,
         hitPoints: 20, level: 4, mac: 3,
         minvis: 0, mundetected: 0,
         movement: 12,
     });
-    level.monsters = [monster];
     return monster;
 }
 
