@@ -124,6 +124,17 @@ test('a blind hero can throw a potion at an unseen monster', async () => {
     assert.equal(potion.where, 'gone');
 });
 
+test('throwing a potion at a peaceful monster makes it hostile', async () => {
+    const monster = freshMapPotionState(2, { mpeaceful: 1 });
+    const potion = addInventoryObject(POT_FRUIT_JUICE);
+
+    initRng(2702n);
+    await throwEast(potion, Array(10).fill(' '));
+
+    assert.equal(monster.mpeaceful, 0);
+    assert.equal(potion.where, 'gone');
+});
+
 test('a thrown polymorph potion changes its live target', async () => {
     const monster = freshMapPotionState(2, { mnum: 12 });
     const originalForm = monster.mnum;
