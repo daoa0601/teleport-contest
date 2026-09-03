@@ -10399,7 +10399,10 @@ async function attackHostileMonster(monster, x, y, {
         attackWeapon, monster, { mounted: !!game.u?.usteed },
     );
     const objectContact = bareHanded || weaponDamage ? null
-        : await resolveHeroMeleeObjectContact(monster, attackWeapon);
+        : await resolveHeroMeleeObjectContact(monster, attackWeapon, {
+            describeTarget: displayedMonsterObject,
+            publish: plineWithContinuation,
+        });
     let damage;
     if (bareHanded) {
         damage = rnd(martialArtist ? 4 : 2);
@@ -10436,7 +10439,8 @@ async function attackHostileMonster(monster, x, y, {
         if (passive.heroDied) return true;
         return finishStrike();
     }
-    const damageCanUseBonuses = damage > 0;
+    const addHeroDamageBonuses = objectContact?.addHeroDamageBonuses !== false;
+    const damageCanUseBonuses = damage > 0 && addHeroDamageBonuses;
     if (trainsWeapon) {
         recordWeaponPractice(
             game, twoWeaponActive ? 36
@@ -10472,7 +10476,7 @@ async function attackHostileMonster(monster, x, y, {
             + strengthDamage
             + weaponSkillDamage;
         damage = Math.max(1, damage);
-    } else if (!monsterIsShade(monster)) {
+    } else if (addHeroDamageBonuses && !monsterIsShade(monster)) {
         damage = 1;
     }
     const weaponConduct = attackObjectClass === 2
@@ -10572,7 +10576,8 @@ async function attackHostileMonster(monster, x, y, {
         const hitPunctuation = game.flags?.verbose !== false
             && canSeeMonster(monster, monster.mx, monster.my)
             && damage > 4 ? '!' : '.';
-        if (!stagger.staggered && !artifactHit.specialMessage) {
+        if (!stagger.staggered && !artifactHit.specialMessage
+            && !objectContact?.specialMessage) {
             await plineWithContinuation(
                 `You hit ${displayedMonsterObject()}${hitPunctuation}`,
             );

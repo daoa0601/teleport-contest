@@ -1,5 +1,6 @@
 // Blindness caused by cream pies and blinding venom.
-// C refs: mondata.c can_blnd() and mthrowu.c m_throw()/ohitmon().
+// C refs: mondata.c can_blnd(), uhitm.c hmon_hitmon_misc_obj(), and
+// mthrowu.c m_throw()/ohitmon().
 
 import { W_ARMH } from './const.js';
 import { game } from './gstate.js';
@@ -44,6 +45,38 @@ export function applyMonsterBlindness(monster, rollOne) {
         127, (monster.mblinded ?? 0) + blindIncrement,
     );
     return { blindIncrement, wasSeeing };
+}
+
+export function heroBlindingObjectHitMessage(
+    monster,
+    object,
+    {
+        canBlind,
+        state = game,
+        describeTarget = () => monster.name
+            || `the ${MONSTER_NAME[monster.mnum] || 'monster'}`,
+    } = {},
+) {
+    const impact = object?.otyp === CREAM_PIE ? 'Splat!' : 'Splash!';
+    if (!canBlind || heroIsBlind(state)) return impact;
+    if (object.otyp === BLINDING_VENOM) {
+        return `The venom blinds ${describeTarget()}${
+            monster.mcansee ? '' : ' further'
+        }!`;
+    }
+
+    const count = object.quan ?? object.quantity ?? 1;
+    const article = count > 1 ? 'A' : 'The';
+    return `${article} cream pie splashes over ${
+        creamPieTarget(monster, describeTarget())
+    }!`;
+}
+
+function creamPieTarget(monster, name) {
+    const hasFace = !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
+        && monster.mnum !== PM_FLOATING_EYE;
+    if (!hasFace) return name;
+    return /s$/i.test(name) ? `${name}' face` : `${name}'s face`;
 }
 
 export function blindMonsterWithThrownObject(

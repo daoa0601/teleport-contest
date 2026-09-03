@@ -32,10 +32,11 @@ function installMeleeArena(role, species = 'lichen', overrides = {}) {
     return { level, monster };
 }
 
-function equipWeapon(name) {
+function equipWeapon(name, overrides = {}) {
     const weapon = inventoryObject(
         OBJECT_NAMES.indexOf(name), 'a', {
             spe: 0, enchantment: 0, worn: true, owornmask: 1,
+            ...overrides,
         },
     );
     game.inventory = [weapon];
@@ -196,3 +197,17 @@ test('wielded garlic hurts and frightens an undead monster', async () => {
     assert.equal(shade.mflee, 1);
     assert.ok(shade.mfleetim >= 2 && shade.mfleetim <= 8);
 });
+
+test('a wielded cream pie blinds without damaging and consumes one pie',
+    async () => {
+        const { monster: jackal } = installMeleeArena('tourist', 'jackal');
+        const pies = equipWeapon('cream pie', { quan: 2, quantity: 2 });
+
+        initRng(904n);
+        await rhack('l'.charCodeAt(0));
+
+        assert.equal(jackal.mhp, 100);
+        assert.equal(jackal.mcansee, 0);
+        assert.equal(pies.quan, 1);
+        assert.strictEqual(game.uwep, pies);
+    });
