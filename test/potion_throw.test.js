@@ -19,6 +19,7 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { syncBlindness } from '../js/senses.js';
+import { checkSpecialRoom } from '../js/shk.js';
 import { vision_recalc } from '../js/vision.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
@@ -31,6 +32,7 @@ import {
 } from './support/level-state.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { addStaffedShop } from './support/shop.js';
 
 const PM_PURPLE_WORM = 115;
 
@@ -175,6 +177,21 @@ test('a punished hero can throw a potion', async () => {
     assert.equal(monster.minvis, 1);
     assert.equal(game.uball, punishment.ball);
     assert.equal(game.uchain, punishment.chain);
+    assert.equal(potion.where, 'gone');
+});
+
+test('a paid potion can hit a monster inside a shop', async () => {
+    const monster = freshMapPotionState(2);
+    game.u.ux0 = 7;
+    game.u.uy0 = 10;
+    addStaffedShop({ keeperX: 14, keeperY: 12 });
+    await checkSpecialRoom();
+    const potion = addInventoryObject(POT_INVISIBILITY);
+
+    initRng(3321n);
+    await throwEast(potion, Array(10).fill(' '));
+
+    assert.equal(monster.minvis, 1);
     assert.equal(potion.where, 'gone');
 });
 

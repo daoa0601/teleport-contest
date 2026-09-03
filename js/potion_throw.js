@@ -49,8 +49,7 @@ function canResolveMapPotionThrow({
     const burningOil = item.otyp === POT_OIL && item.lamplit
         && activeTimerCount(item) > 0;
     if (((item.lamplit || activeTimerCount(item) > 0) && !burningOil)
-        || item.unpaid
-        || state._shopRooms?.current) return false;
+        || item.unpaid) return false;
 
     return true;
 }
