@@ -1,37 +1,29 @@
 // Eggs, cream pies, and venom thrown by the hero.
 // C refs: dothrow.c thitmonst() and uhitm.c hmon_hitmon_misc_obj().
 
-import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { currentAttribute } from './attrib.js';
 import {
     applyMonsterBlindness, heroBlindingObjectHitMessage,
     monsterCanBeBlindedByObject,
 } from './blinding_attack.js';
-import { A_DEX, A_WIS } from './const.js';
+import { A_DEX } from './const.js';
 import {
     canProjectMonster, plineWithContinuation,
 } from './display.js';
 import { abusePetAfterHeroHit } from './dog.js';
-import {
-    applyHeroEggLuckPenalty, eggHasMonsterSpecies, eggIsStale,
-    explodePyroliskEggAt, isPyroliskEgg, turnEggIntoRock,
-} from './egg_impact.js';
-import { place_object } from './floor_object.js';
 import { game } from './gstate.js';
+import { resolveHeroEggHit } from './hero_egg_hit.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { angerAttackedMonster, wakeAttackedMonster } from './monster_anger.js';
-import { petrifyMonsterFromContact } from './monster_stoning.js';
 import {
     MONSTER_NAME, monsterTypeName,
 } from './monster_data.js';
-import {
-    monsterHasAcidResistance, monsterHasStoneResistance,
-} from './monster_resistance.js';
+import { monsterHasAcidResistance } from './monster_resistance.js';
 import { deleteObject } from './object_delete.js';
 import {
     ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EGG,
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
-import { touchPetrifies } from './stoning.js';
 import { prepareHeroThrownTarget } from './thrown_object.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 
@@ -54,126 +46,18 @@ function missName(object) {
     return object.otyp === CREAM_PIE ? 'cream pie' : 'splash of venom';
 }
 
-async function finishEggKill(monster, options, finishMonsterKill) {
-    if (finishMonsterKill) return finishMonsterKill(monster, options);
-    return finishHeroMonsterKill(
-        monster, monster.mx, monster.my, options,
-    );
-}
-
-function explosionDeathFinisher(engulfer, finishEngulferKill) {
-    if (!finishEngulferKill) return undefined;
-    return (monster, x, y, options) => {
-        if (monster === engulfer)
-            return finishEngulferKill(monster, options);
-        return finishHeroMonsterKill(monster, x, y, options);
-    };
-}
-
 async function applyEggDamage(monster, state, finishMonsterKill) {
     const damage = 1;
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     await abusePetAfterHeroHit(monster, damage, state);
     if (monster.mhp <= 0) {
-        const result = await finishEggKill(monster, {}, finishMonsterKill);
+        const result = finishMonsterKill
+            ? await finishMonsterKill(monster)
+            : await finishHeroMonsterKill(monster, monster.mx, monster.my);
         return { hit: true, consumed: true, damage, result };
     }
     await wakeAttackedMonster(monster);
     return { hit: true, consumed: true, damage, result: true };
-}
-
-function eggSuffix(count) {
-    return count === 1 ? '' : 's';
-}
-
-function ordinaryEggDescription(egg, count) {
-    if (eggHasMonsterSpecies(egg) && egg.known)
-        return `the ${monsterTypeName(egg.corpsenm)}`;
-    return count === 1 ? 'an' : 'some';
-}
-
-async function hitWithEgg(
-    monster,
-    egg,
-    state,
-    publish,
-    random,
-    rollOne,
-    finishMonsterKill,
-) {
-    const count = egg.quan ?? egg.quantity ?? 1;
-    applyHeroEggLuckPenalty(egg, state);
-
-    if (eggHasMonsterSpecies(egg) && touchPetrifies(egg.corpsenm)) {
-        const article = egg.known ? 'the' : count === 1 ? 'a' : 'some';
-        const species = egg.known
-            ? monsterTypeName(egg.corpsenm) : 'petrifying';
-        await publish(
-            `Splat! You hit ${targetName(monster)} with ${article} ${species} `
-            + `egg${eggSuffix(count)}!`,
-        );
-        egg.known = true;
-        deleteObject(egg, state);
-        const petrification = await petrifyMonsterFromContact(monster, {
-            creditHero: true,
-            finishDeath: (target, death) => finishEggKill(target, {
-                ...death,
-                showKillMessage: false,
-                recordConduct: false,
-            }, finishMonsterKill),
-            publish,
-            rollOne,
-            state,
-        });
-        if (!monsterHasStoneResistance(monster)) {
-            return {
-                hit: true,
-                consumed: true,
-                damage: 0,
-                result: petrification.survived,
-            };
-        }
-        return applyEggDamage(monster, state, finishMonsterKill);
-    }
-
-    await publish(
-        `You hit ${targetName(monster)} with ${ordinaryEggDescription(
-            egg, count,
-        )} egg${eggSuffix(count)}.`,
-    );
-    if (touchPetrifies(monster.mnum) && !eggIsStale(egg, state)) {
-        await publish(
-            `The egg${eggSuffix(count)} ${count === 1 ? "isn't" : "aren't"} `
-            + 'alive any more...',
-        );
-        turnEggIntoRock(egg);
-        place_object(egg, monster.mx, monster.my, state);
-        return applyEggDamage(monster, state, finishMonsterKill);
-    }
-
-    if (isPyroliskEgg(egg)) {
-        deleteObject(egg, state);
-        await explodePyroliskEggAt(monster.mx, monster.my, {
-            state,
-            heroCaused: true,
-            publish,
-            random,
-            finishMonsterKill: explosionDeathFinisher(
-                monster, finishMonsterKill,
-            ),
-        });
-        return {
-            hit: true,
-            consumed: true,
-            damage: 0,
-            result: state.level?.monsters?.includes(monster) ?? false,
-        };
-    }
-
-    await publish('Splat!');
-    deleteObject(egg, state);
-    exerciseAttribute(A_WIS, false, state);
-    return applyEggDamage(monster, state, finishMonsterKill);
 }
 
 async function hitWithBlindingObject(
@@ -251,10 +135,24 @@ export async function hitMonsterWithThrownEggPieOrVenom(
     }
 
     if (object.otyp === EGG) {
-        return hitWithEgg(
-            monster, object, state, publish, random, rollOne,
+        const contact = await resolveHeroEggHit(monster, object, {
+            state,
+            thrown: true,
+            publish,
+            random,
+            rollOne,
             finishMonsterKill,
-        );
+            describeTarget: () => targetName(monster),
+        });
+        if (contact.attackComplete) {
+            return {
+                hit: true,
+                consumed: true,
+                damage: 0,
+                result: contact.monsterSurvived,
+            };
+        }
+        return applyEggDamage(monster, state, finishMonsterKill);
     }
     if (object.otyp === ACID_VENOM) {
         return hitWithAcidVenom(

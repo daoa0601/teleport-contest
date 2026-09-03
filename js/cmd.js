@@ -10403,11 +10403,7 @@ async function attackHostileMonster(monster, x, y, {
         : await resolveHeroMeleeObjectContact(monster, attackWeapon, {
             describeTarget: displayedMonsterObject,
             finishMonsterDeath: (target, death) => finishHeroMonsterKill(
-                target, target.mx, target.my, {
-                    ...death,
-                    showKillMessage: false,
-                    recordConduct: false,
-                },
+                target, target.mx, target.my, death,
             ),
             publish: plineWithContinuation,
         });

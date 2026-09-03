@@ -7,6 +7,7 @@ import {
 } from './blinding_attack.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { resolveHeroEggHit } from './hero_egg_hit.js';
 import { angerAttackedMonster } from './monster_anger.js';
 import {
     MONSTER_NAME, MONSTER_SIZE, monsterIsShade, monsterIsUndead,
@@ -91,7 +92,11 @@ export async function resolveHeroMeleeObjectContact(
             }
             const petrification = await petrifyMonsterFromContact(monster, {
                 creditHero: true,
-                finishDeath: finishMonsterDeath,
+                finishDeath: (target, death) => finishMonsterDeath(target, {
+                    ...death,
+                    showKillMessage: false,
+                    recordConduct: false,
+                }),
                 publish,
                 rollOne,
                 state,
@@ -109,6 +114,20 @@ export async function resolveHeroMeleeObjectContact(
         }
         const corpseSize = MONSTER_SIZE[object.corpsenm] ?? 0;
         return { damage: corpseSize + 1 };
+    }
+
+    if (object?.otyp === EGG) {
+        if (monsterIsShade(monster)) {
+            return { damage: 0, addHeroDamageBonuses: false };
+        }
+        return resolveHeroEggHit(monster, object, {
+            state,
+            publish,
+            random,
+            rollOne,
+            finishMonsterKill: finishMonsterDeath,
+            describeTarget,
+        });
     }
 
     if (object?.otyp === ACID_VENOM) {
@@ -133,7 +152,6 @@ export async function resolveHeroMeleeObjectContact(
 
     const material = OBJECT_MATERIAL[object?.otyp];
     const tooSoftToHurt = !BLINDING_OBJECTS.has(object?.otyp)
-        && object?.otyp !== EGG
         && object?.oclass !== SPBOOK_CLASS
         && (material === VEGGY || material === PAPER);
     if (tooSoftToHurt) {

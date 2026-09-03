@@ -7,9 +7,9 @@ import {
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { pushKey } from '../js/input.js';
+import { pushKey, pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { OBJECT_NAMES, STATUE } from '../js/object_data.js';
+import { OBJECT_NAMES, ROCK, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { inventoryObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
@@ -286,7 +286,7 @@ test('hitting with a cockatrice corpse turns a monster to stone', async () => {
     });
 
     initRng(909n);
-    for (let key = 0; key < 8; key++) pushKey(' ');
+    pushKeys(' '.repeat(8));
     await rhack('l'.charCodeAt(0));
 
     assert.equal(level.monsters.includes(jackal), false);
@@ -308,4 +308,64 @@ test('a petrifying corpse still hurts a stone-resistant monster', async () => {
     await rhack('l'.charCodeAt(0));
 
     assert.equal(stoneGolem.mhp, 99);
+});
+
+test('bashing with eggs splats the whole wielded stack', async () => {
+    const { monster: jackal } = installMeleeArena(
+        'tourist', 'jackal', { mac: 100 },
+    );
+    const eggs = equipWeapon('egg', {
+        corpsenm: -1,
+        age: game.moves,
+        quan: 3,
+        quantity: 3,
+    });
+    game.u.acurr.a[A_STR] = 18;
+    game.u.udaminc = 5;
+
+    initRng(911n);
+    pushKeys(' '.repeat(4));
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(jackal.mhp, 99);
+    assert.equal(eggs.where, 'gone');
+    assert.equal(game.uwep, null);
+});
+
+test('a fresh wielded egg becomes a rock against a cockatrice', async () => {
+    const { monster: cockatrice } = installMeleeArena(
+        'tourist', 'cockatrice', { mac: 100 },
+    );
+    const egg = equipWeapon('egg', {
+        corpsenm: -1,
+        age: game.moves,
+    });
+    game.u.acurr.a[A_STR] = 10;
+
+    initRng(912n);
+    pushKeys(' '.repeat(4));
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(cockatrice.mhp, 99);
+    assert.equal(egg.otyp, ROCK);
+    assert.strictEqual(game.uwep, egg);
+});
+
+test('bashing with a pyrolisk egg explodes beside the hero', async () => {
+    const { monster: jackal } = installMeleeArena(
+        'tourist', 'jackal', { mac: 100 },
+    );
+    const egg = equipWeapon('egg', {
+        corpsenm: MONSTER_NAME.indexOf('pyrolisk'),
+        age: game.moves,
+    });
+    game.u.uhp = game.u.uhpmax = 100;
+
+    initRng(913n);
+    pushKeys(' '.repeat(20));
+    await rhack('l'.charCodeAt(0));
+
+    assert.ok(jackal.mhp < 100);
+    assert.ok(game.u.uhp < 100);
+    assert.equal(egg.where, 'gone');
 });
