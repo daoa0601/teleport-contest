@@ -34,6 +34,7 @@ import {
     monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster,
     monsterTypeName,
 } from './monster_data.js';
+import { polymorphMonsterFromPotion } from './monster_polymorph_attack.js';
 import {
     AD_DISE, AD_PEST,
 } from './monster_attack_types.js';
@@ -75,6 +76,7 @@ export const INERT_MONSTER_POTION_TYPES = new Set([
     POT_GAIN_ENERGY,
     POT_LEVITATION,
     POT_FRUIT_JUICE,
+    POT_HALLUCINATION,
     POT_MONSTER_DETECTION,
     POT_OBJECT_DETECTION,
 ]);
@@ -101,11 +103,6 @@ export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
     POT_WATER,
     POT_ACID,
     POT_OIL,
-]);
-
-const SUPPORTED_POTION_VAPOR_TYPES = new Set([
-    ...SUPPORTED_MONSTER_POTION_TYPES,
-    POT_HALLUCINATION,
     POT_POLYMORPH,
 ]);
 
@@ -319,6 +316,10 @@ function wereTransformationNoun(monster) {
     return 'wolf';
 }
 
+function monsterSurvivedPotion(monster) {
+    return !monster.dead && (monster.mhp ?? 0) > 0;
+}
+
 async function finishPotionVaporKnowledge(state, potion, identifiesType) {
     if (potion.dknown === false) return null;
     if (identifiesType) {
@@ -343,7 +344,7 @@ export async function applySupportedPotionVapor({
     monsterCanSeeHero,
     recalculateVision,
 }) {
-    if (!SUPPORTED_POTION_VAPOR_TYPES.has(potion?.otyp)) return null;
+    if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion?.otyp)) return null;
 
     const profile = heroPotionVaporProfile(state);
     if (!profile.canReceive) return { received: false };
@@ -504,6 +505,23 @@ async function applySupportedDirectEffect({
     publish, showShield, spotMonster, repaintMonster, rememberInvisible,
     wakeNearby, splitMonster, transformWere, finishKill,
 }) {
+    if (potion.otyp === POT_POLYMORPH) {
+        const result = await polymorphMonsterFromPotion(monster, {
+            state,
+            targetSpotted,
+            wakeMonster,
+            publish,
+            showShield,
+            finishDeath: finishKill,
+        });
+        return {
+            angered: true,
+            healed: 0,
+            curedBlindness: false,
+            ...result,
+        };
+    }
+
     if (potion.otyp === POT_OIL) {
         await wakeMonster?.(monster);
         return { angered: true, healed: 0, curedBlindness: false };
@@ -530,6 +548,7 @@ async function applySupportedDirectEffect({
                 if (!finishKill)
                     throw new Error('acid fatality owner unavailable');
                 await finishKill(monster);
+                killed = !monsterSurvivedPotion(monster);
             }
         }
         if (!killed) await wakeMonster?.(monster);
@@ -570,6 +589,7 @@ async function applySupportedDirectEffect({
                     if (!finishKill)
                         throw new Error('water fatality owner unavailable');
                     await finishKill(monster);
+                    killed = !monsterSurvivedPotion(monster);
                 } else if (monsterIsWere(monster)
                     && !monsterIsHuman(monster?.mnum)) {
                     if (!transformWere)
@@ -619,6 +639,7 @@ async function applySupportedDirectEffect({
                 if (!finishKill)
                     throw new Error('water fatality owner unavailable');
                 await finishKill(monster);
+                killed = !monsterSurvivedPotion(monster);
             }
         }
 
@@ -953,10 +974,4 @@ export async function hitMonsterWithSupportedPotion({
         vaporEffect,
         typeCall,
     };
-}
-
-// Narrow entry point for potion types with no effect on monsters.
-export async function hitMonsterWithInertPotion(options) {
-    if (!INERT_MONSTER_POTION_TYPES.has(options?.potion?.otyp)) return null;
-    return hitMonsterWithSupportedPotion(options);
 }

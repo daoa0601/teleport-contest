@@ -8,6 +8,7 @@ import {
 import { releaseCameraDemon } from './camera.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { dist2 } from './hacklib.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
 import { angerAttackedMonster } from './monster_anger.js';
 import {
@@ -28,6 +29,8 @@ import {
 } from './object_data.js';
 import { objectBreaksOnImpact } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
+import { splitObjectStack } from './object_stack.js';
+import { hitMonsterWithSupportedPotion } from './potion_hit.js';
 import { rnd, rn2 } from './rng.js';
 import { touchPetrifies } from './stoning.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
@@ -108,6 +111,68 @@ function weightedObjectContact(monster, object, {
     };
 }
 
+function detachWieldedPotion(object, state) {
+    const quantity = object.quan ?? object.quantity ?? 1;
+    if (quantity > 1) {
+        const potion = splitObjectStack(object, 1, state);
+        potion.invlet = null;
+        potion.where = 'free';
+        state._capacityDirty = true;
+        return potion;
+    }
+
+    releaseWeaponSlots(object, state);
+    const index = state.inventory?.indexOf(object) ?? -1;
+    if (index >= 0) state.inventory.splice(index, 1);
+    object.invlet = null;
+    object.where = 'free';
+    state._capacityDirty = true;
+    return object;
+}
+
+async function resolveWieldedPotionHit(monster, object, {
+    state,
+    publish,
+    wakeMonster,
+    wakeNearby,
+    finishMonsterDeath,
+}) {
+    const potion = detachWieldedPotion(object, state);
+    const impact = await hitMonsterWithSupportedPotion({
+        state,
+        monster,
+        potion,
+        wakeMonster,
+        wakeNearby,
+        finishKill: finishMonsterDeath,
+        publish,
+        resolveVapor: true,
+        distance: dist2(
+            state.u?.ux ?? monster.mx,
+            state.u?.uy ?? monster.my,
+            monster.mx,
+            monster.my,
+        ),
+    });
+    if (!impact)
+        throw new Error('unknown potion reached hero melee');
+
+    const monsterSurvived = !monster.dead && (monster.mhp ?? 0) > 0;
+    if (!monsterSurvived) {
+        return {
+            attackComplete: true,
+            damage: 0,
+            addHeroDamageBonuses: false,
+            specialMessage: true,
+            monsterSurvived: false,
+        };
+    }
+    return {
+        damage: monsterIsShade(monster) ? 0 : 1,
+        specialMessage: true,
+    };
+}
+
 export async function resolveHeroMeleeObjectContact(
     monster,
     object,
@@ -117,10 +182,22 @@ export async function resolveHeroMeleeObjectContact(
         random = rn2,
         publish = plineWithContinuation,
         finishMonsterDeath,
+        wakeMonster,
+        wakeNearby,
         describeTarget = () => monster.name
             || `the ${MONSTER_NAME[monster.mnum] || 'monster'}`,
     } = {},
 ) {
+    if (object?.oclass === POTION_CLASS) {
+        return resolveWieldedPotionHit(monster, object, {
+            state,
+            publish,
+            wakeMonster,
+            wakeNearby,
+            finishMonsterDeath,
+        });
+    }
+
     if (monsterIsShade(monster) && !objectCanTouchShade(object)) {
         return { damage: 0, addHeroDamageBonuses: false };
     }
@@ -264,7 +341,6 @@ export async function resolveHeroMeleeObjectContact(
         };
     }
 
-    if (object?.oclass === POTION_CLASS) return null;
     return weightedObjectContact(monster, object, {
         describeTarget, random, rollOne,
     });

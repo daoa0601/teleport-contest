@@ -9,7 +9,8 @@ import { inventoryItemDescription } from '../js/invent.js';
 import {
     ALCHEMY_SMOCK, CHAIN_MAIL, CORPSE, DAGGER, IRON_CHAIN,
     POT_ACID, POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
-    POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_SICKNESS, POT_SPEED,
+    POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS,
+    POT_SPEED,
     POT_WATER, YELLOW_DRAGON_SCALE_MAIL,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -90,6 +91,19 @@ test('live map potion crosses bhit and consumes a successful inert contact',
         assert.equal(floorObjects(game.level).includes(potion), false);
     });
 
+test('a thrown polymorph potion changes its live target', async () => {
+    const monster = freshMapPotionState(2, { mnum: 12 });
+    const originalForm = monster.mnum;
+    const potion = addInventoryObject(POT_POLYMORPH);
+
+    initRng(1n);
+    await throwEast(potion, Array(12).fill(' '));
+
+    assert.notEqual(monster.mnum, originalForm);
+    assert.equal(monster.dead ?? false, false);
+    assert.equal(potion.where, 'gone');
+});
+
 test('live map potion miss wakes conditionally then shatters at bhitpos',
     async () => {
         const monster = freshMapPotionState(2);
@@ -167,7 +181,7 @@ test('a thrown potion that survives impact can fall down a ladder',
 
 test('map extra healing contact heals monster then hero through nearby vapor',
     async () => {
-        const monster = freshMapPotionState(2);
+        const monster = freshMapPotionState(1);
         monster.mhp = 4;
         monster.mcansee = 0;
         monster.mblinded = 12;
@@ -190,7 +204,7 @@ test('map extra healing contact heals monster then hero through nearby vapor',
     });
 
 test('map sickness contact harms monster before nearby hero vapor', async () => {
-    const monster = freshMapPotionState(2);
+    const monster = freshMapPotionState(1);
     monster.msleeping = 1;
     game.u.uhp = 30;
     game.u.uhpmax = 30;
@@ -206,7 +220,7 @@ test('map sickness contact harms monster before nearby hero vapor', async () => 
 });
 
 test('map confusion contact affects both monster and nearby hero', async () => {
-    const monster = freshMapPotionState(2);
+    const monster = freshMapPotionState(1);
     monster.m_lev = 15;
     monster.mconf = 0;
     monster.msleeping = 1;
@@ -264,7 +278,7 @@ test('adjacent paralysis contact freezes monster and installs hero helplessness'
 
 test('map speed contact accelerates monster before nearby hero movement timeout',
     async () => {
-        const monster = freshMapPotionState(2);
+        const monster = freshMapPotionState(1);
         monster.permspeed = 0;
         monster.mspeed = 0;
         monster.msleeping = 1;
@@ -631,7 +645,7 @@ test('live water contact clones a hostile gremlin with split hit points',
         assert.equal(potion.where, 'gone');
     });
 
-test('two-square water vapor can multiply a live gremlin hero', async () => {
+test('two-square potion impact cannot reach the hero with vapor', async () => {
     freshMapPotionState(2);
     game.plname = 'Splitter';
     installPolymorphedHero('gremlin', {
@@ -644,16 +658,11 @@ test('two-square water vapor can multiply a live gremlin hero', async () => {
     await throwEast(potion, Array(30).fill(' '));
 
     const clones = game.level.monsters.filter(monster => monster.mcloned);
-    assert.equal(clones.length, 1);
-    assert.equal(clones[0].name, 'Splitter');
-    assert.equal(clones[0].pet, true);
-    assert.equal(clones[0].mhp, 8);
-    assert.equal(clones[0].mhpmax, 8);
-    assert.equal(game.u.mh, 9);
-    assert.equal(game.u.mhmax, 9);
-    assert.equal(game.u.uconduct.pets, 1);
+    assert.equal(clones.length, 0);
+    assert.equal(game.u.mh, 17);
+    assert.equal(game.u.mhmax, 17);
+    assert.equal(game.u.uconduct.pets ?? 0, 0);
     assert.equal(potion.where, 'gone');
-    assert.match(game._pending_message, /You multiply!$/);
 });
 
 test('live blessed water rehumanizes an unequipped beast were', async () => {
@@ -674,9 +683,9 @@ test('live blessed water rehumanizes an unequipped beast were', async () => {
     assert.equal(potion.where, 'gone');
 });
 
-test('controlled lycanthrope decline completes a two-square map throw',
+test('controlled lycanthrope decline completes an adjacent map throw',
     async () => {
-        freshMapPotionState(2);
+        freshMapPotionState(1);
         installHumanWerewolfHero();
         const ring = wearPolymorphControlRing();
         const potion = addInventoryObject(POT_WATER);

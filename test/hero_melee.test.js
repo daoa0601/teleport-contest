@@ -280,6 +280,28 @@ test('a camera passes through a shade without being destroyed', async () => {
     assert.strictEqual(game.uwep, camera);
 });
 
+test('bashing with one healing potion leaves the rest wielded', async () => {
+    const { monster: jackal } = installMeleeArena(
+        'tourist', 'jackal', {
+            mac: 100,
+            hitPoints: 10,
+            maxHitPoints: 100,
+        },
+    );
+    const potions = equipWeapon('healing', { quan: 2, quantity: 2 });
+    game.u.acurr.a[A_STR] = 10;
+
+    initRng(920n);
+    pushKeys(' '.repeat(8));
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(jackal.mhp, 99);
+    assert.equal(potions.quan, 1);
+    assert.equal(potions.where, 'inventory');
+    assert.deepEqual(game.inventory, [potions]);
+    assert.strictEqual(game.uwep, potions);
+});
+
 test('soft food and paper do not hurt a monster', async () => {
     for (const objectName of ['carrot', 'blank paper']) {
         const { monster: jackal } = installMeleeArena(

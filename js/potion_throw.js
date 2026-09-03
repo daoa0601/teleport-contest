@@ -8,6 +8,7 @@ import {
 } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { dist2 } from './hacklib.js';
 import {
     MONSTER_GENO, monsterTypeName,
 } from './monster_data.js';
@@ -160,7 +161,7 @@ function indefiniteObjectName(object, state) {
 }
 
 function distanceFromHero(state, x, y) {
-    return Math.max(Math.abs(x - state.u.ux), Math.abs(y - state.u.uy));
+    return dist2(state.u.ux, state.u.uy, x, y);
 }
 
 export async function resolveMapPotionThrow({

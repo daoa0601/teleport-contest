@@ -25,9 +25,7 @@ import {
     breakFloorObject,
 } from './object_breakage.js';
 import { splitObjectStack } from './object_stack.js';
-import {
-    hitMonsterWithInertPotion, hitMonsterWithSupportedPotion,
-} from './potion_hit.js';
+import { hitMonsterWithSupportedPotion } from './potion_hit.js';
 import { rehumanizeHero } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { objectWeight } from './weight.js';
@@ -152,13 +150,14 @@ async function hitMonster(monster, node, state, options) {
             }),
             wakeNearby: (nearX, nearY, distance) =>
                 wakeMonstersNear(nearX, nearY, distance, state),
-            finishKill: async target => {
+            finishKill: async (target, deathOptions = {}) => {
                 if (!options.finishMonsterDeath) {
                     throw new TypeError(
                         'lethal scattered object requires a monster death handler',
                     );
                 }
                 const death = await options.finishMonsterDeath(target, {
+                    ...deathOptions,
                     visible: squareIsVisible(state, target.mx, target.my),
                     spotted: monsterIsVisible(target, state),
                     random: options.random,
@@ -167,8 +166,7 @@ async function hitMonster(monster, node, state, options) {
                 return !death.survived;
             },
         };
-        const impact = await hitMonsterWithSupportedPotion(potionOptions)
-            || await hitMonsterWithInertPotion(potionOptions);
+        const impact = await hitMonsterWithSupportedPotion(potionOptions);
         if (!impact) {
             await breakAtRest(node.object, state, {
                 ...options,

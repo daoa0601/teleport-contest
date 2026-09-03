@@ -9253,8 +9253,11 @@ async function finishOrdinarySwallowedThrowKill(monster, projectile) {
     });
 }
 
-async function finishOrdinarySwallowedConsumedKill(monster, kind) {
+async function finishOrdinarySwallowedConsumedKill(
+    monster, kind, death = {},
+) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my, {
+        ...death,
         deathContext: {
             kind,
             finishDestinationEffects: finishDestinationSpotEffects,
@@ -9262,8 +9265,8 @@ async function finishOrdinarySwallowedConsumedKill(monster, kind) {
     });
 }
 
-async function finishOrdinaryMapPotionKill(monster) {
-    return finishHeroMonsterKill(monster, monster.mx, monster.my);
+async function finishOrdinaryMapPotionKill(monster, death = {}) {
+    return finishHeroMonsterKill(monster, monster.mx, monster.my, death);
 }
 
 async function dothrow(
@@ -9487,8 +9490,8 @@ async function dothrow(
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
         wakeNearby: wakeMonstersNear,
-        finishKill: monster => finishOrdinarySwallowedConsumedKill(
-            monster, 'swallowed-potion',
+        finishKill: (monster, death) => finishOrdinarySwallowedConsumedKill(
+            monster, 'swallowed-potion', death,
         ),
     })) return;
     if (game.u?.uswallow && thrownObjectClass === 8)
@@ -10406,6 +10409,8 @@ async function attackHostileMonster(monster, x, y, {
             finishMonsterDeath: (target, death) => finishHeroMonsterKill(
                 target, target.mx, target.my, death,
             ),
+            wakeMonster: wakeAttackedMonster,
+            wakeNearby: wakeMonstersNear,
             publish: plineWithContinuation,
         });
     if (objectContact?.attackComplete) {

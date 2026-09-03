@@ -10,8 +10,7 @@ import {
     POT_INVISIBILITY, POT_WATER, SPEED_BOOTS,
 } from '../js/object_data.js';
 import {
-    applySupportedPotionVapor, hitMonsterWithInertPotion,
-    hitMonsterWithSupportedPotion,
+    applySupportedPotionVapor, hitMonsterWithSupportedPotion,
 } from '../js/potion_hit.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import { parseNethackrc } from '../js/options.js';
@@ -65,7 +64,7 @@ test('visible inert potion impact names a headed monster and evaporates',
         const messages = [];
 
         initRng(2601n);
-        const result = await hitMonsterWithInertPotion({
+        const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
             potion,
@@ -93,7 +92,7 @@ test('an existing potion call name suppresses trycall and remains visible',
         const messages = [];
 
         initRng(2601n);
-        const result = await hitMonsterWithInertPotion({
+        const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
             potion,
@@ -115,7 +114,7 @@ test('hallucinated inert potion impact names a visible headless monster',
         const messages = [];
 
         initRng(2602n);
-        await hitMonsterWithInertPotion({
+        await hitMonsterWithSupportedPotion({
             state: game,
             monster,
             potion,
