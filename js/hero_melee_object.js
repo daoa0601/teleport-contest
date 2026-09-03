@@ -9,15 +9,17 @@ import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { angerAttackedMonster } from './monster_anger.js';
 import { makeMonsterFlee } from './monster_flee.js';
+import { monsterHasAcidResistance } from './monster_resistance.js';
 import {
     MONSTER_NAME, monsterIsShade, monsterIsUndead, monsterIsVampireShifter,
 } from './monster_data.js';
 import {
-    BLINDING_VENOM, CLOVE_OF_GARLIC, CREAM_PIE,
+    ACID_VENOM, BLINDING_VENOM, CLOVE_OF_GARLIC, CREAM_PIE,
 } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { rnd } from './rng.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
+import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 import { objectWeight } from './weight.js';
 
 const BLINDING_OBJECTS = new Set([CREAM_PIE, BLINDING_VENOM]);
@@ -43,6 +45,26 @@ export async function resolveHeroMeleeObjectContact(
             });
         }
         return { damage: 1 };
+    }
+
+    if (object?.otyp === ACID_VENOM) {
+        if (monsterIsShade(monster)) {
+            return { damage: 0, addHeroDamageBonuses: false };
+        }
+
+        const resisted = monsterHasAcidResistance(monster);
+        await publish(resisted
+            ? `Your venom hits ${describeTarget()} harmlessly.`
+            : `Your venom burns ${describeTarget()}!`);
+        const damage = resisted ? 0 : rollPhysicalWeaponDamage(
+            object, monster, { rollOne },
+        );
+        consumeOneWieldedObject(object, state);
+        return {
+            damage,
+            addHeroDamageBonuses: false,
+            specialMessage: true,
+        };
     }
 
     if (!BLINDING_OBJECTS.has(object?.otyp)) return null;

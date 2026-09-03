@@ -211,3 +211,18 @@ test('a wielded cream pie blinds without damaging and consumes one pie',
         assert.equal(pies.quan, 1);
         assert.strictEqual(game.uwep, pies);
     });
+
+test('wielded acid venom burns a monster and consumes one splash', async () => {
+    const { monster: jackal } = installMeleeArena(
+        'tourist', 'jackal', { mac: 100 },
+    );
+    const venom = equipWeapon(
+        'splash of acid venom', { quan: 2, quantity: 2 },
+    );
+
+    initRng(905n);
+    await rhack('l'.charCodeAt(0));
+
+    assert.ok(jackal.mhp < 100);
+    assert.equal(venom.quan, 1);
+});
