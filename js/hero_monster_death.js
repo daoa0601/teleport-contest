@@ -3,7 +3,7 @@
 
 import { adjustHeroAlignment } from './alignment.js';
 import { uncreateArtifact } from './artifacts.js';
-import { A_CHAOTIC, G_NOCORPSE, is_pit } from './const.js';
+import { A_CHAOTIC, A_NONE, G_NOCORPSE, is_pit } from './const.js';
 import {
     canProjectMonster, docrt, newsym, plineWithContinuation,
     randomDisplayMonsterName, see_monsters, unmap_invisible,
@@ -50,6 +50,7 @@ import {
 } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import { removeIntrinsicProperty } from './properties.js';
+import { priestIsCoaligned } from './priest.js';
 import { rnd, rn2 } from './rng.js';
 import { cansee, vision_recalc } from './vision.js';
 
@@ -57,7 +58,6 @@ const M2_ALWAYS_PEACEFUL = 0x00200000;
 const M2_COLLECT = 0x40000000;
 const FOOD_CLASS = 7;
 const MZ_HUMAN = 2;
-const A_NONE = -128;
 
 function monsterDeathMalign(monster) {
     if (Number.isInteger(monster?.malign)) return monster.malign;
@@ -135,6 +135,17 @@ async function punishQuestGuardianKill(hallucinating) {
     await plineWithContinuation(hallucinating
         ? 'Whoopsie-daisy!'
         : 'That was probably a bad idea...');
+}
+
+function applyPriestKillConsequences(monster) {
+    const coaligned = priestIsCoaligned(monster, game);
+    adjustHeroAlignment(coaligned ? -2 : 2);
+    if (coaligned) game.u.ublessed = 0;
+
+    if (MONSTER_ALIGNMENT[monster.mnum] === A_NONE) {
+        const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
+        adjustHeroAlignment(Math.trunc(alignmentLimit / 4));
+    }
 }
 
 function observeMonsterDropName(object, x, y) {
@@ -400,6 +411,8 @@ export async function finishHeroMonsterKill(monster, x, y, {
         rewardQuestNemesisKill();
     } else if (monsterIsQuestGuardian(monster.mnum)) {
         await punishQuestGuardianKill(hallucinating);
+    } else if (monster.ispriest) {
+        applyPriestKillConsequences(monster);
     } else if (monster.mtame) {
         adjustHeroAlignment(-15);
         await plineWithContinuation(hallucinating

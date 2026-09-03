@@ -263,6 +263,31 @@ test('killing a quest guardian costs alignment and luck', async () => {
     });
 });
 
+test('killing an aligned priest removes divine protection', async () => {
+    freshObjectRoom({
+        hero: { ualign: { type: -1, record: 0 }, ublessed: 3 },
+    });
+    const priest = addMonster({
+        species: 'aligned cleric', x: 11, y: 10,
+        hitPoints: 1, malign: 0, ispriest: 1,
+        epri: { shralign: -1 },
+    });
+
+    await finishHeroMonsterKill(priest, priest.mx, priest.my, {
+        showKillMessage: false,
+        recordConduct: false,
+        noCorpse: true,
+    });
+
+    assert.deepEqual({
+        alignment: game.u.ualign.record,
+        protection: game.u.ublessed,
+    }, {
+        alignment: -2,
+        protection: 0,
+    });
+});
+
 test('killing a pit-trapped monster with a boulder buries its corpse',
     async () => {
         const level = freshObjectRoom({ gameplaySeed: 28n });
