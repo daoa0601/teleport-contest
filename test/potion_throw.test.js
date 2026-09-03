@@ -18,6 +18,8 @@ import {
     POT_WATER, YELLOW_DRAGON_SCALE_MAIL,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { syncBlindness } from '../js/senses.js';
+import { vision_recalc } from '../js/vision.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import {
@@ -105,6 +107,20 @@ test('a wielded potion leaves the hero hand when thrown', async () => {
     await throwEast(potion, Array(10).fill(' '));
 
     assert.equal(game.uwep, null);
+    assert.equal(potion.where, 'gone');
+});
+
+test('a blind hero can throw a potion at an unseen monster', async () => {
+    const monster = freshMapPotionState(2);
+    game.u.blindTurns = 10;
+    syncBlindness(game);
+    vision_recalc(0);
+    const potion = addInventoryObject(POT_INVISIBILITY);
+
+    initRng(3321n);
+    await throwEast(potion, Array(10).fill(' '));
+
+    assert.equal(monster.minvis, 1);
     assert.equal(potion.where, 'gone');
 });
 

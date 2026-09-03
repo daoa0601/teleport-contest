@@ -18,7 +18,6 @@ import {
     SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { rn2, rnd } from './rng.js';
-import { heroIsBlind } from './senses.js';
 import {
     detachThrownUnit, finishHeroThrownObjectLanding,
 } from './thrown_object.js';
@@ -107,7 +106,6 @@ function ordinaryEligibility({
         || item.oartifact || item.artifact
         || containsUnpaidObject(item)
         || (item.contents?.length ?? 0) > 0
-        || heroIsBlind(state)
         || state.underwater || state.u?.uinwater
         || state.u?.levitating || state.u?.levitation || state.levitating
         || Is_airlevel(state.u?.uz)
