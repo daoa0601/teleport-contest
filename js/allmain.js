@@ -161,7 +161,6 @@ import {
     resumeDeferredMonsterCounterWield,
     resumeDeferredMonsterTrap,
     resumeDeferredMonsterHideUnder,
-    resumeDeferredMonsterRustTrap,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
     finishDeferredMonsterRollingBoulderPlacement,
     resumeDeferredMonsterRollingBoulderDeath,
@@ -259,9 +258,7 @@ import { visiblePriestName } from './priest.js';
 import { inventoryItemDescription, rerollMenu } from './invent.js';
 import { refreshProperty } from './properties.js';
 import { msummon } from './minion.js';
-import {
-    presentMonsterRustTrap, presentMonsterWebTrap,
-} from './monster_trap_events.js';
+import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { captureRunmodeDelay } from './runmode.js';
 
 const M1_ANIMAL = 0x00040000;
@@ -4075,18 +4072,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         }
         if (movement?.trapEscape?.escaped && monsterIsSeen)
             await queueTurnMessage(monsterTrapEscapeMessage(monster));
-        if (movement?.trap?.kind === 'rust-trap') {
-            const event = movement.trap;
-            await presentMonsterRustTrap({
-                event, monster, visible: event.visible,
-                subject: visibleMonsterSubject,
-                announce: queueTurnMessage,
-            });
-            if (movement.deferredAfterRustTrapMessage) {
-                resumeDeferredMonsterRustTrap(action, game);
-                movement = action.movement;
-            }
-        }
         if (movement?.trap?.kind === 'pit-trap'
             && movement.trap.visible) {
             const event = movement.trap;

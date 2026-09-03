@@ -59,6 +59,9 @@ import {
 import {
     applyMonsterPolymorphTrap, finishMonsterPolymorphTrap,
 } from './polymorph_trap.js';
+import {
+    beginMonsterRustTrap, finishMonsterRustTrap,
+} from './rust_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import {
     moveExpelledMonster, releaseHeroFromMonster,
@@ -160,9 +163,7 @@ import {
 import {
     monsterGoodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
-import {
-    applyMonsterRustTrap, burnArmorByFire, monsterTrapVisibility,
-} from './trap.js';
+import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
 import {
     wereChange,
 } from './were.js';
@@ -4304,26 +4305,19 @@ function triggerMonsterTrap(
         return event;
     }
     if (trap.ttyp === RUST_TRAP) {
-        const visible = !state?.blind && !(state?.u?.blindTurns > 0)
-            && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2)
-            && (!monster.minvis || state?.u?.seeInvisible
-                || state?.u?.see_invisible);
-        if (visible) trap.tseen = true;
+        if (monsterKnowsTrap(monster, trap)
+            && recordRandom(random, calls, 4) !== 0) {
+            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
+            movement.trap = event;
+            return event;
+        }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        const event = applyMonsterRustTrap(monster, state, {
-            roll: range => recordRandom(random, calls, range),
+        const event = beginMonsterRustTrap(monster, trap, state, {
+            random: range => recordRandom(random, calls, range),
         });
-        event.trap = trap;
-        event.visible = visible;
-        if (event.completelyRusted) {
-            monster.mhp = 0;
-            event.killed = true;
-            movement.actorDied = true;
-            movement.actionCompleted = true;
-            movement.deferredAfterRustTrapMessage = true;
-        }
         movement.trap = event;
+        movement.deferredAfterMonsterTrap = true;
         return event;
     }
     if (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) {
@@ -7406,6 +7400,14 @@ export async function resumeDeferredMonsterTrap(
             describeMonster,
         });
         break;
+    case 'rust-trap':
+        await finishMonsterRustTrap(action.monster, event, {
+            finishDeath,
+            publish,
+            random,
+            describeMonster,
+        });
+        break;
     case 'projectile-trap':
     case 'spent-projectile-trap':
         await finishMonsterProjectileTrap(
@@ -8045,22 +8047,6 @@ export function resumeDeferredMonsterRollingBoulderDeath(
         );
         event.death = { corpseCreated: !!corpse, corpse };
     }
-    return action;
-}
-
-export function resumeDeferredMonsterRustTrap(
-    action, state, random = rn2,
-) {
-    const movement = action?.movement;
-    const event = movement?.trap;
-    if (!movement?.deferredAfterRustTrapMessage
-        || event?.kind !== 'rust-trap' || !event.killed) return action;
-    delete movement.deferredAfterRustTrapMessage;
-    detachDeadMonster(action.monster, state);
-    const corpse = createOrdinaryMonsterCorpse(
-        action.monster, state, random, action.calls || DISCARDED_CALL_LOG,
-    );
-    event.death = { corpseCreated: !!corpse, corpse };
     return action;
 }
 

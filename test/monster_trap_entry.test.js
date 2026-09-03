@@ -119,7 +119,7 @@ test('iron shoes protect a caught monster from a bear trap', async () => {
     assert.equal(monster.mhp, 20);
 });
 
-test('rust-trap water rusts an iron helmet worn by a monster', () => {
+test('rust-trap water rusts an iron helmet worn by a monster', async () => {
     const helmet = knownObject(ORCISH_HELM, {
         owornmask: W_ARMH, oeroded: 0, where: 'monster',
     });
@@ -128,9 +128,25 @@ test('rust-trap water rusts an iron helmet worn by a monster', () => {
     });
     initRng(1n);
 
-    triggerImmediateMonsterTrap(monster, game);
+    const action = triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, {
+        publish: async () => {},
+    });
 
     assert.equal(helmet.oeroded, 1);
+});
+
+test('a rust trap removes an iron golem which falls to pieces', async () => {
+    const { monster } = monsterAtTrap(RUST_TRAP, {
+        monster: { species: 'iron golem', hitPoints: 80 },
+    });
+
+    const action = triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, {
+        publish: async () => {},
+    });
+
+    assert.equal(game.level.monsters.includes(monster), false);
 });
 
 test('enchanted iron shoes absorb an anti-magic trap', () => {
