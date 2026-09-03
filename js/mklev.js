@@ -1608,7 +1608,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     if (!game.level.monsters) game.level.monsters = [];
     const monsterInventory = [];
     const pendingMonster = {
-        m_id: monsterId,
+        m_id: monsterId, cham: -1,
         mnum: mndx, mx: x, my: y, mhp: hp, mhpmax: hp,
         m_lev: baseLevel, female: monsterFemale,
         msleeping: monsterSleeping, mpeaceful: peaceful ? 1 : 0,
@@ -2496,7 +2496,8 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         && !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
     const monster = {
         m_id: monsterId,
-        mnum: mndx, mx: x, my: y, mhp: hp, mhpmax: hp,
+        mnum: mndx, cham: pendingMonster.cham ?? -1,
+        mx: x, my: y, mhp: hp, mhpmax: hp,
         m_lev: baseLevel, female: monsterFemale,
         msleeping: monsterSleeping,
         mpeaceful: clericMinion?.mpeaceful ?? (peaceful ? 1 : 0),

@@ -712,7 +712,8 @@ function randomMonsterRecord(mnum, x, y) {
     const peaceful = peaceMinded(mnum);
     const sleeping = initialMonsterSleepState(mnum);
     const monster = {
-        mnum, m_id: monsterId, mx: x, my: y, mhp: hp, mhpmax: hp,
+        mnum, m_id: monsterId, cham: -1,
+        mx: x, my: y, mhp: hp, mhpmax: hp,
         m_lev: baseLevel, female, msleeping: sleeping,
         mpeaceful: peaceful ? 1 : 0,
         mcanmove: 1, movement: 0, mmove: MONSTER_MOVE[mnum] ?? 0,

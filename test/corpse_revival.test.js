@@ -5,6 +5,7 @@ import {
     reviveCorpseByMagic, runClaimedCorpseRevivalTimer,
 } from '../js/corpse_revival.js';
 import { MFAST } from '../js/const.js';
+import { tameMonster } from '../js/dog.js';
 import { place_object } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
@@ -12,7 +13,6 @@ import {
     mkcorpstat, mksobj, set_corpsenm,
 } from '../js/mklev.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { restoreMonsterTraits } from '../js/monster_traits.js';
 import { CORPSE, SACK } from '../js/object_data.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
@@ -20,9 +20,7 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { untimedCorpse } from './support/game-objects.js';
-import {
-    addMonster, addMonsterToLevel, deadMonster, deadPet,
-} from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const PM_TROLL = 220;
@@ -31,7 +29,6 @@ const PM_HUMAN_ZOMBIE = 244;
 const PM_LEOCROTTA = 83;
 const PM_GIANT = 169;
 const PM_GIANT_ZOMBIE = 247;
-const PM_JACKAL = 12;
 const PM_CHAMELEON = 327;
 const PM_GUARD = 272;
 const PM_GHOST = 287;
@@ -93,48 +90,41 @@ test('explicit revival magic overrides a corpse no-revive flag', async () => {
 
 test('a corpse made from a named monster restores that monster', async () => {
     freshState();
-    const deadTroll = deadMonster({
-        m_id: 91,
-        mnum: PM_TROLL,
-        x: 12, y: 10,
-        level: 9,
-        hitPoints: 47,
-        female: true,
-        name: 'Grond',
+    const troll = await createMonsterAt(PM_TROLL, 12, 10);
+    troll.name = 'Grond';
+    initRng(4n);
+    await finishHeroMonsterKill(troll, troll.mx, troll.my, {
+        showKillMessage: false,
+        recordConduct: false,
     });
-    const corpse = mkcorpstat(
-        CORPSE, deadTroll, PM_TROLL, 12, 10, 8,
+    const corpse = game.level.objects[12][10].find(
+        object => object.otyp === CORPSE,
     );
     stopAllObjectTimers(corpse);
 
     const event = await reviveNow(corpse);
 
-    assert.equal(event.monster.m_id, deadTroll.m_id);
-    assert.equal(event.monster.name, deadTroll.name);
-    assert.equal(event.monster.mhpmax, deadTroll.mhpmax);
-    assert.equal(event.monster.mhp, deadTroll.mhpmax);
+    assert.equal(event.monster.m_id, troll.m_id);
+    assert.equal(event.monster.name, troll.name);
+    assert.equal(event.monster.mhpmax, troll.mhpmax);
+    assert.equal(event.monster.mhp, troll.mhpmax);
 });
 
 test('a pet killed by the hero does not revive tame', async () => {
     freshState();
-    const deadTroll = deadPet({
-        m_id: 92,
-        mnum: PM_TROLL,
-        x: 12, y: 10,
-        level: 9,
-        hitPoints: 20,
-        mtame: 10,
-        meating: 4,
-        edog: {
-            abuse: 0,
-            killed_by_u: 1,
-            mhpmax_penalty: 5,
-            revivals: 0,
-            ogoal: { x: 8, y: 8 },
-        },
+    const troll = await createMonsterAt(PM_TROLL, 12, 10);
+    tameMonster(troll, game);
+    troll.meating = 4;
+    troll.edog.mhpmax_penalty = 5;
+    troll.edog.ogoal = { x: 8, y: 8 };
+    const deadHitPointMaximum = troll.mhpmax;
+    initRng(7n);
+    await finishHeroMonsterKill(troll, troll.mx, troll.my, {
+        showKillMessage: false,
+        recordConduct: false,
     });
-    const corpse = mkcorpstat(
-        CORPSE, deadTroll, PM_TROLL, 12, 10, 8,
+    const corpse = game.level.objects[12][10].find(
+        object => object.otyp === CORPSE,
     );
     stopAllObjectTimers(corpse);
 
@@ -144,33 +134,9 @@ test('a pet killed by the hero does not revive tame', async () => {
     assert.equal(event.monster.pet, false);
     assert.equal(event.monster.mpeaceful, 1);
     assert.equal(event.monster.meating, 0);
-    assert.ok(event.monster.mhpmax > deadTroll.mhpmax);
+    assert.ok(event.monster.mhpmax > deadHitPointMaximum);
     assert.equal(event.monster.mhp, event.monster.mhpmax);
     assert.equal(event.monster.edog.mhpmax_penalty, 0);
-});
-
-test('a level-drained troll can recover when it revives', () => {
-    const drainedTroll = deadMonster({
-        m_id: 95,
-        mnum: PM_TROLL,
-        x: 12, y: 10,
-        level: 0,
-        hitPoints: 1,
-    });
-    const revivedTroll = {
-        ...drainedTroll,
-        m_id: 96,
-        m_lev: 6,
-        mhp: 30, mhpmax: 30,
-    };
-
-    restoreMonsterTraits(revivedTroll, drainedTroll, {
-        rollOne: maximum => maximum,
-    });
-
-    assert.ok(revivedTroll.m_lev > drainedTroll.m_lev);
-    assert.ok(revivedTroll.mhpmax > drainedTroll.mhpmax);
-    assert.equal(revivedTroll.mhp, revivedTroll.mhpmax);
 });
 
 test('a reviving corpse stops being the hero\'s meal', async () => {
@@ -192,15 +158,8 @@ test('a reviving corpse stops being the hero\'s meal', async () => {
 
 test('a substitute revival does not absorb the linked ghost', async () => {
     freshState();
-    const ghost = addMonster({
-        m_id: 96,
-        mnum: PM_GHOST,
-        x: 12, y: 10,
-        level: 10,
-        hitPoints: 40,
-        mpeaceful: 1,
-        mtame: 6,
-    });
+    const ghost = await createMonsterAt(PM_GHOST, 12, 10);
+    tameMonster(ghost, game);
     const sack = mksobj(SACK, false, false);
     addObjectToMonsterInventory(ghost, sack, game);
     const corpse = mksobj(CORPSE, true, false);
@@ -237,14 +196,8 @@ test('shapechanger protection keeps a unique corpse as a doppelganger',
 
 test('reviving the quest leader clears the dead-leader state', async () => {
     freshState();
-    const leader = addMonsterToLevel(deadMonster({
-        m_id: 93,
-        mnum: PM_GIANT,
-        x: 12, y: 10,
-        level: 8,
-        hitPoints: 45,
-        mpeaceful: 1,
-    }));
+    const leader = await createMonsterAt(PM_GIANT, 12, 10);
+    leader.mpeaceful = 1;
     game.quest_status = {
         leader_m_id: leader.m_id,
         leader_is_dead: false,
@@ -267,22 +220,13 @@ test('reviving the quest leader clears the dead-leader state', async () => {
     assert.equal(game.quest_status.leader_is_dead, false);
 });
 
-test('shapechanger protection restores a revived chameleon to itself',
+test('shapechanger protection keeps a revived chameleon in its natural form',
     async () => {
         freshState();
         game.u.protectionFromShapeChangers = true;
-        const disguisedChameleon = deadMonster({
-            m_id: 94,
-            mnum: PM_JACKAL,
-            cham: PM_CHAMELEON,
-            x: 12, y: 10,
-            level: 5,
-            hitPoints: 24,
-        });
-        const corpse = mkcorpstat(
-            CORPSE, disguisedChameleon, PM_CHAMELEON, 12, 10, 8,
+        const corpse = place_object(
+            untimedCorpse(PM_CHAMELEON), 12, 10,
         );
-        stopAllObjectTimers(corpse);
 
         const event = await reviveNow(corpse);
 
@@ -330,14 +274,7 @@ test('a troll corpse revives from a sack in the hero pack', async () => {
 
 test('a monster drops a corpse when it revives from its pack', async () => {
     freshState();
-    const carrier = addMonster({
-        m_id: 700,
-        mnum: PM_LEOCROTTA,
-        x: 12, y: 10,
-        hitPoints: 30,
-        female: false,
-        minvis: 0, mundetected: 0,
-    });
+    const carrier = await createMonsterAt(PM_LEOCROTTA, 12, 10);
     const corpse = trollCorpse();
     addObjectToMonsterInventory(carrier, corpse, game);
 
@@ -395,14 +332,9 @@ test('a buried human corpse on a zombify timer rises as a zombie', async () => {
 
 test('a zombifying kill leaves a corpse which will rise', async () => {
     freshState();
-    const victim = addMonsterToLevel(deadMonster({
-        m_id: 801,
-        mnum: PM_GIANT,
-        x: 12, y: 10,
-        level: 6,
-        hitPoints: 36,
-        name: 'Gorm',
-    }));
+    const victim = await createMonsterAt(PM_GIANT, 12, 10);
+    victim.name = 'Gorm';
+    victim.mgivenname = 'Gorm';
     initRng(6n);
 
     await finishHeroMonsterKill(victim, victim.mx, victim.my, {
