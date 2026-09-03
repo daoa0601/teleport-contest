@@ -4,8 +4,10 @@ import assert from 'node:assert/strict';
 import {
     breakFloorObject, objectBreaksOnImpact,
 } from '../js/object_breakage.js';
+import { game } from '../js/gstate.js';
+import { beginObjectBurn } from '../js/light.js';
 import {
-    OBJECT_NAMES, POT_WATER,
+    OBJECT_NAMES, POT_OIL, POT_WATER,
     WORTHLESS_PIECE_OF_RED_GLASS,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -53,4 +55,24 @@ test('crystal armor cracks three times before the next impact destroys it',
 
         await breakFloorObject(armor, options);
         assert.equal(armor.where, 'gone');
+    });
+
+test('a burning oil potion explodes when it shatters on the floor',
+    async () => {
+        freshGameplayRoom();
+        game.u.uhp = game.u.uhpmax = 100;
+        const potion = floorObject(POT_OIL, game.u.ux, game.u.uy, {
+            age: 200,
+        });
+        beginObjectBurn(potion);
+
+        await breakFloorObject(potion, {
+            publish: async () => {},
+            random: () => 1,
+            rollDice: () => 8,
+        });
+
+        assert.ok(game.u.uhp < 100);
+        assert.equal(potion.where, 'gone');
+        assert.equal(potion.lamplit, false);
     });

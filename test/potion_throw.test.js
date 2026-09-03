@@ -2,15 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    A_CON, A_DEX, STONE, W_ARM, W_ARMC, W_WEP,
+    A_CON, A_DEX, STONE, W_ARM, W_ARMC, W_SADDLE, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { inventoryItemDescription } from '../js/invent.js';
+import { beginObjectBurn } from '../js/light.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     ALCHEMY_SMOCK, CHAIN_MAIL, CORPSE, DAGGER, IRON_CHAIN,
     POT_ACID, POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
     POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS,
-    POT_SPEED,
+    POT_SPEED, SADDLE,
     POT_WATER, YELLOW_DRAGON_SCALE_MAIL,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -823,6 +825,48 @@ test('live unlit oil breaks without evaporation and wakes its target', async () 
     assert.equal(potion.where, 'gone');
     assert.equal(floorObjects(game.level).includes(potion), false);
 });
+
+test('burning oil explodes when it hits a monster', async () => {
+    const monster = freshMapPotionState(2, {
+        hitPoints: 1,
+        maxHitPoints: 1,
+    });
+    const potion = addInventoryObject(POT_OIL, { age: 200 });
+    beginObjectBurn(potion);
+
+    initRng(2702n);
+    await throwEast(potion, Array(30).fill(' '));
+
+    assert.equal(game.level.monsters.includes(monster), false);
+    assert.equal(potion.where, 'gone');
+    assert.equal(potion.lamplit, false);
+});
+
+test('blessed water can cleanse a saddle instead of hurting its wearer',
+    async () => {
+        const pony = freshMapPotionState(2, {
+            mnum: MONSTER_NAME.indexOf('pony'),
+            hitPoints: 100,
+            maxHitPoints: 100,
+        });
+        const saddle = equipMonsterObject(
+            pony,
+            knownObject(SADDLE, { cursed: true, bknown: true }),
+            W_SADDLE,
+        );
+        const potion = addInventoryObject(POT_WATER, { blessed: true });
+
+        initRng(2n);
+        await throwEast(potion, Array(30).fill(' '));
+
+        assert.equal(saddle.cursed, false);
+        assert.equal(saddle.bknown, true);
+        assert.equal(pony.mhp, 100);
+        assert.equal(
+            game._pending_message,
+            "The pony's saddle glows amber.",
+        );
+    });
 
 test('unknown inert map potion records a live type call after visible impact',
     async () => {

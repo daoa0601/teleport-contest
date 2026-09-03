@@ -2,14 +2,14 @@
 // C ref: explode.c explode() with AD_FIRE.
 
 import { exerciseAttribute } from './attrib.js';
-import { A_STR, Upolyd } from './const.js';
+import { A_STR, LOST_EXPLODING, Upolyd } from './const.js';
 import {
     canProjectMonster, plineWithContinuation, shieldeff,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { igniteItems } from './light.js';
+import { endObjectBurn, igniteItems } from './light.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -18,7 +18,7 @@ import {
 } from './monster_resistance.js';
 import { rehumanizeHero } from './polyself.js';
 import { burnArmorByFire, burnHeroArmorByFire } from './trap.js';
-import { rn2, rnd } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { clearHeroSliming } from './slime.js';
 
@@ -36,6 +36,35 @@ async function elementalDamageFunctions() {
         damageHeroInventory: zap.destroyFireInventory,
         damageMonsterInventory: zap.destroyFireMonsterInventory,
     };
+}
+
+// explode_oil() extinguishes the potion before the blast so a fatal explosion
+// cannot leave an active light behind in death or bones state.
+export async function explodeLitOilPotion(potion, x, y, {
+    state = game,
+    heroCaused = true,
+    publish = plineWithContinuation,
+    random = rn2,
+    rollDice = d,
+    finishMonsterKill,
+} = {}) {
+    if (!potion?.lamplit)
+        throw new TypeError('burning oil explosion requires a lit potion');
+    const diluted = !!potion.odiluted;
+    if (!endObjectBurn(potion, state, state.moves ?? 0))
+        throw new Error('lit potion of oil has no active burn timer');
+
+    potion.how_lost = LOST_EXPLODING;
+    const damage = rollDice(diluted ? 3 : 4, 4);
+    await createFireExplosion(x, y, damage, {
+        state,
+        name: 'burning oil',
+        heroCaused,
+        publish,
+        random,
+        finishMonsterKill,
+    });
+    return damage;
 }
 
 export async function createFireExplosion(x, y, damage, {

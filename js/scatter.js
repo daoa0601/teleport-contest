@@ -108,6 +108,26 @@ function monsterHitBonus(monster, object) {
     return bonus;
 }
 
+async function finishScatteredMonsterDeath(
+    monster, x, y, death, state, options,
+) {
+    if (options.finishMonsterKill)
+        return options.finishMonsterKill(monster, x, y, death);
+    if (!options.finishMonsterDeath) {
+        throw new TypeError(
+            'lethal scattered object requires a monster death handler',
+        );
+    }
+    const result = await options.finishMonsterDeath(monster, {
+        ...death,
+        visible: squareIsVisible(state, monster.mx, monster.my),
+        spotted: monsterIsVisible(monster, state),
+        random: options.random,
+        publish: options.publish,
+    });
+    return !result.survived;
+}
+
 async function breakAtRest(object, state, options) {
     object.ox = options.x;
     object.oy = options.y;
@@ -117,7 +137,10 @@ async function breakAtRest(object, state, options) {
         publish: options.publish,
         random: options.random,
         rollDice: options.rollDice,
-        finishMonsterKill: options.finishMonsterKill,
+        finishMonsterKill: (monster, x, y, death) =>
+            finishScatteredMonsterDeath(
+                monster, x, y, death, state, options,
+            ),
     });
     if (result.destroyed) return true;
     placeOnFloor(object, options.x, options.y, state);
@@ -150,21 +173,12 @@ async function hitMonster(monster, node, state, options) {
             }),
             wakeNearby: (nearX, nearY, distance) =>
                 wakeMonstersNear(nearX, nearY, distance, state),
-            finishKill: async (target, deathOptions = {}) => {
-                if (!options.finishMonsterDeath) {
-                    throw new TypeError(
-                        'lethal scattered object requires a monster death handler',
-                    );
-                }
-                const death = await options.finishMonsterDeath(target, {
-                    ...deathOptions,
-                    visible: squareIsVisible(state, target.mx, target.my),
-                    spotted: monsterIsVisible(target, state),
-                    random: options.random,
-                    publish: options.publish,
-                });
-                return !death.survived;
-            },
+            finishKill: (target, deathOptions = {}) =>
+                finishScatteredMonsterDeath(
+                    target, target.mx, target.my,
+                    deathOptions, state, options,
+                ),
+            heroCaused: options.heroCaused,
         };
         const impact = await hitMonsterWithSupportedPotion(potionOptions);
         if (!impact) {

@@ -13,7 +13,7 @@ import { releaseCameraDemon } from './camera.js';
 import {
     applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg,
 } from './egg_impact.js';
-import { createFireExplosion } from './fire_explosion.js';
+import { explodeLitOilPotion } from './fire_explosion.js';
 import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { makemonAt } from './mklev.js';
@@ -95,6 +95,7 @@ function deleteObject(object) {
     object.ox = object.oy = 0;
     object.ocarry = null;
     object.lamplit = false;
+    object.in_use = false;
     delete object.carrierMid;
 }
 
@@ -148,7 +149,6 @@ export async function breakFloorObject(object, {
     luckRandom = rnl,
     rollDice = d,
     summonMonster = makemonAt,
-    explodeFire = createFireExplosion,
     finishMonsterKill,
 } = {}) {
     if (!objectBreaksOnImpact(object, random)) {
@@ -156,7 +156,7 @@ export async function breakFloorObject(object, {
     }
     return breakObjectAtLocation(object, {
         state, heroCaused, publish, random, luckRandom, rollDice,
-        summonMonster, explodeFire, finishMonsterKill,
+        summonMonster, finishMonsterKill,
     });
 }
 
@@ -169,7 +169,6 @@ export async function breakObjectAtLocation(object, {
     luckRandom = rnl,
     rollDice = d,
     summonMonster = makemonAt,
-    explodeFire = createFireExplosion,
     finishMonsterKill,
 } = {}) {
     const x = object.ox, y = object.oy;
@@ -197,25 +196,29 @@ export async function breakObjectAtLocation(object, {
         ? await releaseCameraDemon(object, x, y, {
             state, publish, random, summonMonster,
         }) : null;
-    if (object.oclass === POTION_CLASS)
+    if (object.oclass === POTION_CLASS) {
+        // The blast from burning oil must not ignite or destroy the same
+        // potion again while breakage is still finishing.
+        object.in_use = true;
         await applyPotionBreakEffect(object, x, y, state, publish);
+    }
 
     const oilExplosion = object.otyp === POT_OIL && object.lamplit;
     const eggExplosion = isPyroliskEgg(object);
     if (heroCaused) applyHeroEggLuckPenalty(object, state);
 
-    const dilutedOil = !!object.odiluted;
+    if (oilExplosion) {
+        await explodeLitOilPotion(object, x, y, {
+            state, heroCaused, publish, random, rollDice,
+            finishMonsterKill,
+        });
+    }
     deleteObject(object);
     newsym(x, y);
-    if (oilExplosion) {
-        await explodeFire(x, y, rollDice(dilutedOil ? 3 : 4, 4), {
-            state, name: 'burning oil', heroCaused, publish,
-            random, finishMonsterKill,
-        });
-    } else if (eggExplosion) {
+    if (eggExplosion) {
         await explodePyroliskEggAt(x, y, {
             state, heroCaused, publish, random, rollDice,
-            explodeFire, finishMonsterKill,
+            finishMonsterKill,
         });
     }
     return {

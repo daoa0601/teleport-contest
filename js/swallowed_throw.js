@@ -2,7 +2,6 @@
 // C refs: dothrow.c throw_obj(), throwit(), thitmonst(), swallowit();
 // steal.c mpickobj().
 
-import { W_SADDLE } from './const.js';
 import {
     hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom,
 } from './hero_thrown_egg_pie_venom.js';
@@ -13,7 +12,7 @@ import { endObjectBurn } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
     BOULDER, BRASS_LANTERN, CLOVE_OF_GARLIC, MAGIC_LAMP, OBJECT_NAMES,
-    OBJECT_SUBTYPE, OIL_LAMP,
+    OBJECT_SUBTYPE, OIL_LAMP, POT_OIL,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
@@ -143,15 +142,13 @@ function swallowedPotionEligibility(
         return null;
     }
 
-    // potionhit() can divert into saddle dipping, shop settlement, interactive
-    // trycall(), or special identity cleanup. Keep those owners fail-loud
-    // before splitobj(), freeinv(), or the mandatory thitmonst() dieroll.
-    if (((engulfer.misc_worn_check ?? 0) & W_SADDLE)
-        || engulfer.saddle
-        || itemIsEquipped(state, item)
+    const burningOil = item.otyp === POT_OIL && item.lamplit
+        && activeObjectTimerCount(item) > 0;
+    if (itemIsEquipped(state, item)
         || containsUnpaidObject(item)
-        || item.lamplit || item.oartifact || item.artifact
-        || activeObjectTimerCount(item) > 0
+        || ((item.lamplit || activeObjectTimerCount(item) > 0)
+            && !burningOil)
+        || item.oartifact || item.artifact
         || (item.contents?.length ?? 0) > 0) {
         return null;
     }
@@ -252,6 +249,7 @@ export async function resolveSwallowedPotionThrow({
         wakeMonster,
         wakeNearby,
         finishKill,
+        heroCaused: true,
         resolveVapor: true,
         distance: 0,
     });

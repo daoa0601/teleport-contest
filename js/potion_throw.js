@@ -4,7 +4,7 @@
 
 import { currentAttribute } from './attrib.js';
 import {
-    A_DEX, A_STR, CORR, DOOR, Is_airlevel, ROOM, W_SADDLE,
+    A_DEX, A_STR, CORR, DOOR, Is_airlevel, ROOM,
 } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
@@ -12,7 +12,7 @@ import { dist2 } from './hacklib.js';
 import {
     MONSTER_GENO, monsterTypeName,
 } from './monster_data.js';
-import { OBJECT_WEIGHT } from './object_data.js';
+import { OBJECT_WEIGHT, POT_OIL } from './object_data.js';
 import {
     hitMonsterWithSupportedPotion, potionImpactObjectName,
     SUPPORTED_MONSTER_POTION_TYPES,
@@ -63,8 +63,6 @@ function targetIsOrdinary(monster) {
         && !monster.iswiz && !monster.isgd && !monster.mleashed
         && !monster.mtrapped && !monster.m_ap_type && !monster.mundetected
         && !monster.wormno && !(monster.mtame ?? 0) && !monster.mpeaceful
-        && !((monster.misc_worn_check ?? 0) & W_SADDLE)
-        && !monster.saddle
         && !((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ);
 }
 
@@ -112,9 +110,11 @@ function ordinaryEligibility({
 
     // These branches change flight, billing, object lifecycle, or naming.
     // Reject them before splitobj()/freeinv() and before any throw RNG.
-    if (item.lamplit
+    const burningOil = item.otyp === POT_OIL && item.lamplit
+        && activeTimerCount(item) > 0;
+    if (((item.lamplit || activeTimerCount(item) > 0) && !burningOil)
         || item.oartifact || item.artifact || equipped(state, item)
-        || containsUnpaidObject(item) || activeTimerCount(item) > 0
+        || containsUnpaidObject(item)
         || (item.contents?.length ?? 0) > 0
         || heroIsBlind(state)
         || state.underwater || state.u?.uinwater

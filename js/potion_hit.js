@@ -48,11 +48,17 @@ import {
     setMonsterPermanentInvisibility,
 } from './monster_invisibility.js';
 import { monstersObserveHeroResistance } from './monster_perception.js';
-import { d, rnd, rn2 } from './rng.js';
+import {
+    blessObjectState, curseObjectState, unblessObjectState,
+    uncurseObjectState,
+} from './object_state.js';
+import { explodeLitOilPotion } from './fire_explosion.js';
+import { d, rnd, rn2, rnl } from './rng.js';
 import {
     heroIsBlind, syncBlindness, syncDeafness,
 } from './senses.js';
 import { objectTypeKnown } from './shk.js';
+import { monsterSaddle } from './steed.js';
 import { cansee, vision_recalc } from './vision.js';
 import {
     applyHeroWaterVaporChange, transformWereMonster,
@@ -171,6 +177,70 @@ function sentenceSubject(monster) {
 
 function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
+}
+
+function potionHitsSaddle(monster, potion) {
+    const saddle = monsterSaddle(monster);
+    if (!saddle) return null;
+    if (rn2(10) === 0) return saddle;
+    if (potion.otyp !== POT_WATER) return null;
+    // Keep potion.c's short-circuit order. Neutral water still consumes both
+    // luck rolls before it reaches the final one-in-three chance.
+    if (rnl(10) > 7 && potion.cursed) return saddle;
+    if (rnl(10) < 4 && potion.blessed) return saddle;
+    return rn2(3) === 0 ? saddle : null;
+}
+
+function saddleOwnerPhrase(monster) {
+    const phrase = possessive(monsterImpactName(monster));
+    return `${phrase.charAt(0).toUpperCase()}${phrase.slice(1)}`;
+}
+
+function saddleName(saddle) {
+    const base = saddle.name || OBJECT_NAMES[saddle.otyp] || 'saddle';
+    const given = saddle.oextra?.oname || saddle.oname;
+    return given ? `${base} named ${given}` : base;
+}
+
+async function applyPotionToSaddle({
+    state, monster, saddle, potion, targetVisible, targetSpotted, publish,
+}) {
+    const seen = !heroIsBlind(state) && targetVisible && targetSpotted;
+    const owner = saddleOwnerPhrase(monster);
+    const objectName = saddleName(saddle);
+    let change = null;
+    let message = null;
+
+    if (potion.otyp === POT_WATER && potion.blessed) {
+        if (saddle.cursed) {
+            change = () => uncurseObjectState(saddle);
+            message = `${owner} ${objectName} glows amber.`;
+        } else if (!saddle.blessed) {
+            change = () => blessObjectState(saddle);
+            message = `${owner} ${objectName} glows with a light blue aura.`;
+        }
+    } else if (potion.otyp === POT_WATER && potion.cursed) {
+        if (saddle.blessed) {
+            change = () => unblessObjectState(saddle);
+            message = `${owner} ${objectName} glows brown.`;
+        } else if (!saddle.cursed) {
+            change = () => curseObjectState(saddle);
+            message = `${owner} ${objectName} glows with a black aura.`;
+        }
+    }
+
+    if (!change) {
+        if (seen) await publish(`${owner} ${objectName} gets wet.`);
+        return;
+    }
+
+    if (seen) {
+        await publish(message);
+        saddle.bknown = !heroHallucinates(state);
+    } else if (!potion.bknown || !potion.dknown) {
+        saddle.bknown = false;
+    }
+    change();
 }
 
 export function destroyPotionIdentity(potion) {
@@ -503,7 +573,7 @@ export async function applySupportedPotionVapor({
 async function applySupportedDirectEffect({
     state, monster, potion, targetVisible, targetSpotted, wakeMonster,
     publish, showShield, spotMonster, repaintMonster, rememberInvisible,
-    wakeNearby, splitMonster, transformWere, finishKill,
+    wakeNearby, splitMonster, transformWere, finishKill, heroCaused,
 }) {
     if (potion.otyp === POT_POLYMORPH) {
         const result = await polymorphMonsterFromPotion(monster, {
@@ -523,8 +593,33 @@ async function applySupportedDirectEffect({
     }
 
     if (potion.otyp === POT_OIL) {
-        await wakeMonster?.(monster);
-        return { angered: true, healed: 0, curedBlindness: false };
+        let explosionDamage = 0;
+        if (potion.lamplit) {
+            explosionDamage = await explodeLitOilPotion(
+                potion, monster.mx, monster.my, {
+                    state,
+                    heroCaused,
+                    publish,
+                    finishMonsterKill: async (target, _x, _y, death) => {
+                        if (!finishKill) {
+                            throw new Error(
+                                'oil explosion cannot finish a monster death',
+                            );
+                        }
+                        return finishKill(target, death);
+                    },
+                },
+            );
+        }
+        const killed = !monsterSurvivedPotion(monster);
+        if (!killed) await wakeMonster?.(monster);
+        return {
+            angered: true,
+            healed: 0,
+            curedBlindness: false,
+            explosionDamage,
+            killed,
+        };
     }
 
     if (potion.otyp === POT_ACID) {
@@ -904,6 +999,7 @@ export async function hitMonsterWithSupportedPotion({
     transformWere = target => transformWereMonster(target, state),
     finishKill,
     showShield = target => shieldeff(target.mx, target.my, state),
+    heroCaused = true,
     resolveVapor = false,
     distance = 0,
 }) {
@@ -912,27 +1008,36 @@ export async function hitMonsterWithSupportedPotion({
 
     const bottleName = randomBottleName(state);
     const monsterName = monsterImpactName(monster);
+    const saddle = potionHitsSaddle(monster, potion);
     const hasHead = !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOHEAD);
-    const impactTarget = hasHead
-        ? `${possessive(monsterName)} head` : monsterName;
+    const impactTarget = saddle
+        ? `${possessive(monsterName)} saddle`
+        : hasHead ? `${possessive(monsterName)} head` : monsterName;
     const crashMessage = targetVisible
         ? `The ${bottleName} crashes on ${impactTarget} and breaks into shards.`
         : 'Crash!';
     await publish(crashMessage);
 
     const impactRoll = rn2(5);
-    const impactDamage = impactRoll !== 0 && monster.mhp > 1 ? 1 : 0;
+    const impactDamage = !saddle && impactRoll !== 0 && monster.mhp > 1
+        ? 1 : 0;
     if (impactDamage) monster.mhp--;
 
     let evaporationMessage = null;
-    if (targetVisible && potion.otyp !== POT_OIL) {
+    if (targetVisible && potion.otyp !== POT_OIL && !saddle) {
         evaporationMessage = `The ${potionImpactObjectName(
             potion, state,
         )} evaporates.`;
         await publish(evaporationMessage);
     }
 
-    const directEffect = await applySupportedDirectEffect({
+    if (saddle) {
+        await applyPotionToSaddle({
+            state, monster, saddle, potion,
+            targetVisible, targetSpotted, publish,
+        });
+    }
+    const directEffect = saddle ? null : await applySupportedDirectEffect({
         state, monster, potion, targetVisible, targetSpotted, wakeMonster,
         publish,
         showShield,
@@ -943,6 +1048,7 @@ export async function hitMonsterWithSupportedPotion({
         splitMonster,
         transformWere,
         finishKill,
+        heroCaused,
     });
     let breathedVapor = false;
     let vaporEffect = null;
