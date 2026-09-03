@@ -6350,14 +6350,18 @@ async function executeLiveQuietMonsterScan(monsterScan) {
 // C increments `moves` after movemon(). The internal counter advances earlier,
 // so status messages during the monster scan must display the source turn.
 async function executeSourceTurnMonsterScan(monsterScan) {
-    const previous = game._statusTurnOverride;
+    const previousStatusTurn = game._statusTurnOverride;
+    const context = game.context || (game.context = {});
+    const previousMonsterMoving = !!context.mon_moving;
     const sourceTurn = game._maintenanceMove;
     if (Number.isInteger(sourceTurn) && sourceTurn !== game.moves)
         game._statusTurnOverride = sourceTurn;
+    context.mon_moving = true;
     try {
         return await executeLiveQuietMonsterScan(monsterScan);
     } finally {
-        game._statusTurnOverride = previous;
+        context.mon_moving = previousMonsterMoving;
+        game._statusTurnOverride = previousStatusTurn;
     }
 }
 
