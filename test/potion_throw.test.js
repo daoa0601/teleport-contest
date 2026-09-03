@@ -151,6 +151,20 @@ test('a potion can hit an adjacent monster underwater', async () => {
     assert.equal(potion.where, 'gone');
 });
 
+test('a downward potion can hit the hero steed', async () => {
+    const steed = freshMapPotionState(2);
+    steed.mx = game.u.ux;
+    steed.my = game.u.uy;
+    game.u.usteed = steed;
+    const potion = addInventoryObject(POT_INVISIBILITY);
+
+    initRng(1n);
+    await throwInventoryObject(potion, '>', Array(10).fill(' '));
+
+    assert.equal(steed.minvis, 1);
+    assert.equal(potion.where, 'gone');
+});
+
 test('throwing a potion at a peaceful monster makes it hostile', async () => {
     const monster = freshMapPotionState(2, { mpeaceful: 1 });
     const potion = addInventoryObject(POT_FRUIT_JUICE);

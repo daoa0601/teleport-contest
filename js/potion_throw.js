@@ -60,7 +60,7 @@ function canResolveMapPotionThrow({
         || containsUnpaidObject(item)
         || (item.contents?.length ?? 0) > 0
         || state.uball || state.u?.uball || state.uchain || state.u?.uchain
-        || state.u?.usteed || state._shopRooms?.current
+        || state._shopRooms?.current
         || (state._encumbranceLevel ?? nearCapacity(state)) > 0) return false;
 
     return true;
@@ -73,6 +73,23 @@ function indefiniteObjectName(object, state) {
 
 function distanceFromHero(state, x, y) {
     return dist2(state.u.ux, state.u.uy, x, y);
+}
+
+function hitMonsterWithThrownPotion({
+    state, monster, potion, wakeMonster, wakeNearby, finishKill, publish,
+}) {
+    return hitMonsterWithSupportedPotion({
+        state,
+        monster,
+        potion,
+        wakeMonster,
+        wakeNearby,
+        finishKill,
+        publish,
+        targetVisible: cansee(monster.mx, monster.my),
+        resolveVapor: true,
+        distance: distanceFromHero(state, monster.mx, monster.my),
+    });
 }
 
 export async function resolveMapPotionThrow({
@@ -103,6 +120,20 @@ export async function resolveMapPotionThrow({
     await applyLowStaminaThrow({ state, object: thrown, publish });
 
     if (state.u?.dz) {
+        const steed = state.u.dz > 0 ? state.u.usteed : null;
+        if (steed && rn2(6) !== 0) {
+            await hitMonsterWithThrownPotion({
+                state,
+                monster: steed,
+                potion: thrown,
+                wakeMonster,
+                wakeNearby,
+                finishKill,
+                publish,
+            });
+            state.context.move = 1;
+            return true;
+        }
         await publish(
             `${indefiniteObjectName(thrown, state)} hits the floor.`,
         );
@@ -145,7 +176,7 @@ export async function resolveMapPotionThrow({
     if (flight.contact) {
         rnd(20); // thitmonst() computes this before the potion class test
         if (currentAttribute(A_DEX, state) > rnd(25)) {
-            await hitMonsterWithSupportedPotion({
+            await hitMonsterWithThrownPotion({
                 state,
                 monster: flight.contact,
                 potion: thrown,
@@ -153,13 +184,6 @@ export async function resolveMapPotionThrow({
                 wakeNearby,
                 finishKill,
                 publish,
-                targetVisible: cansee(
-                    flight.contact.mx, flight.contact.my,
-                ),
-                resolveVapor: true,
-                distance: distanceFromHero(
-                    state, flight.contact.mx, flight.contact.my,
-                ),
             });
             state.context.move = 1;
             return true;

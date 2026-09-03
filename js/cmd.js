@@ -9348,9 +9348,8 @@ async function dothrow(
         game.context.move = 0;
         return;
     }
-    const verticalGoldThrow = selectedIsGold
-        && (direction === '<' || direction === '>');
-    if (!isMovementKey(direction) && !verticalGoldThrow) {
+    const verticalThrow = direction === '<' || direction === '>';
+    if (!isMovementKey(direction) && !verticalThrow) {
         const quitDirection = [27, 32, 10, 13].includes(directionKey);
         if (!quitDirection && game.flags?.cmdassist !== false) {
             await showTextPages([directionAssistPage()], {
