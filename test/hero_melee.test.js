@@ -243,3 +243,19 @@ test('bashing with a mirror can break it and reduce luck', async () => {
     assert.equal(mirror.where, 'gone');
     assert.equal(game.uwep, null);
 });
+
+test('soft food and paper do not hurt a monster', async () => {
+    for (const objectName of ['carrot', 'blank paper']) {
+        const { monster: jackal } = installMeleeArena(
+            'tourist', 'jackal', { mac: 100 },
+        );
+        equipWeapon(objectName);
+        game.u.acurr.a[A_STR] = 18;
+        game.u.udaminc = 5;
+
+        initRng(907n);
+        await rhack('l'.charCodeAt(0));
+
+        assert.equal(jackal.mhp, 100, objectName);
+    }
+});

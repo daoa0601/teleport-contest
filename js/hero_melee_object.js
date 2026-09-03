@@ -14,7 +14,8 @@ import {
     MONSTER_NAME, monsterIsShade, monsterIsUndead, monsterIsVampireShifter,
 } from './monster_data.js';
 import {
-    ACID_VENOM, BLINDING_VENOM, CLOVE_OF_GARLIC, CREAM_PIE, MIRROR,
+    ACID_VENOM, BLINDING_VENOM, CLOVE_OF_GARLIC, CREAM_PIE, EGG, MIRROR,
+    OBJECT_MATERIAL,
 } from './object_data.js';
 import { objectBreaksOnImpact } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
@@ -24,6 +25,9 @@ import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 import { objectWeight } from './weight.js';
 
 const BLINDING_OBJECTS = new Set([CREAM_PIE, BLINDING_VENOM]);
+const VEGGY = 3;
+const PAPER = 5;
+const SPBOOK_CLASS = 10;
 
 export async function resolveHeroMeleeObjectContact(
     monster,
@@ -82,6 +86,14 @@ export async function resolveHeroMeleeObjectContact(
             addHeroDamageBonuses: false,
             specialMessage: true,
         };
+    }
+
+    const material = OBJECT_MATERIAL[object?.otyp];
+    const tooSoftToHurt = object?.otyp !== EGG
+        && object?.oclass !== SPBOOK_CLASS
+        && (material === VEGGY || material === PAPER);
+    if (tooSoftToHurt) {
+        return { damage: 0, addHeroDamageBonuses: false };
     }
 
     if (!BLINDING_OBJECTS.has(object?.otyp)) return null;
