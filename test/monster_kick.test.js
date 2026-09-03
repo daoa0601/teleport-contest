@@ -16,7 +16,7 @@ import { vision_reset } from '../js/vision.js';
 import { kickDirection } from './support/commands.js';
 import { uninitializedObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
-import { addMonster, equipMonsterObject } from './support/monsters.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_JACKAL = 12;
@@ -33,11 +33,11 @@ function freshKickArena() {
     return level;
 }
 
-function installKickArena(mnum) {
+async function installKickArena(mnum) {
     freshKickArena();
-    const monster = addMonster({
-        mnum, m_id: 55, x: 11, y: 10,
-        hitPoints: 20, level: 4, mac: 3,
+    const monster = await createMonsterAt(mnum, 11, 10);
+    Object.assign(monster, {
+        mhp: 20, mhpmax: 20, m_lev: 4, mac: 3,
         minvis: 0, mundetected: 0,
         movement: 12,
     });
@@ -45,7 +45,7 @@ function installKickArena(mnum) {
 }
 
 test('a quick snake can slide away from a kick', async () => {
-    const snake = installKickArena(215);
+    const snake = await installKickArena(215);
     initRng(7n);
     await kickDirection('l');
 
@@ -55,7 +55,7 @@ test('a quick snake can slide away from a kick', async () => {
 });
 
 test('a heavy load can leave a clumsy kick harmless', async () => {
-    const lichen = installKickArena(158);
+    const lichen = await installKickArena(158);
     game.inventory = [
         { otyp: OBJECT_NAMES.indexOf('plate mail'), quan: 1 },
         { otyp: OBJECT_NAMES.indexOf('food ration'), quan: 2 },
@@ -69,7 +69,7 @@ test('a heavy load can leave a clumsy kick harmless', async () => {
 
 test('a levitating hero can miss a tiny monster and recoil',
     async () => {
-        const garterSnake = installKickArena(214);
+        const garterSnake = await installKickArena(214);
         game.u.levitating = true;
         initRng(2n);
         await kickDirection('l', [' ']);
@@ -84,7 +84,7 @@ test('a levitating hero can miss a tiny monster and recoil',
     });
 
 test('kicking a pet costs a Samurai honor and frightens the pet', async () => {
-    const dog = installKickArena(16);
+    const dog = await installKickArena(16);
     game.urole = { key: 'samurai' };
     dog.mpeaceful = 1;
     dog.mtame = 10;
@@ -99,7 +99,7 @@ test('kicking a pet costs a Samurai honor and frightens the pet', async () => {
 });
 
 test('declining a pet kick leaves the pet alone and takes no turn', async () => {
-    const dog = installKickArena(16);
+    const dog = await installKickArena(16);
     dog.mpeaceful = 1;
     dog.mtame = 10;
     dog.pet = true;
@@ -113,7 +113,7 @@ test('declining a pet kick leaves the pet alone and takes no turn', async () => 
 });
 
 test('kicking a wall while levitating throws the hero backward', async () => {
-    installKickArena(16);
+    await installKickArena(16);
     game.level.monsters = [];
     game.level.at(11, 10).typ = STONE;
     vision_reset();
@@ -146,7 +146,7 @@ test('kicking a statue trap releases its monster', async () => {
 });
 
 test('hurtling into a peaceful monster wakes and angers it', async () => {
-    const human = installKickArena(260);
+    const human = await installKickArena(260);
     human.mx = 9;
     human.mpeaceful = 1;
     human.msleeping = 1;
@@ -162,7 +162,7 @@ test('hurtling into a peaceful monster wakes and angers it', async () => {
 
 test('a cockatrice hero recoiling into an unarmored monster leaves a statue',
     async () => {
-        const human = installKickArena(260);
+        const human = await installKickArena(260);
         human.mx = 9;
         const club = uninitializedObject(OBJECT_NAMES.indexOf('club'), {
             owt: 30,
@@ -188,7 +188,7 @@ test('a cockatrice hero recoiling into an unarmored monster leaves a statue',
 
 test('a worn life-saving amulet saves a monster from petrifying recoil',
     async () => {
-        const human = installKickArena(260);
+        const human = await installKickArena(260);
         human.mx = 9;
         const amulet = uninitializedObject(AMULET_OF_LIFE_SAVING);
         equipMonsterObject(human, amulet, W_AMUL);
