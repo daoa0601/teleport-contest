@@ -9519,7 +9519,6 @@ async function dothrow(
         splitObjectId,
         dx,
         dy,
-        blocksMove,
         captureFlight: captureThrownObjectFlight,
         wakeMonster: wakeAttackedMonster,
         wakeNearby: wakeMonstersNear,

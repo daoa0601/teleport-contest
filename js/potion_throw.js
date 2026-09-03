@@ -1,33 +1,30 @@
-// potion_throw.js — Source-shaped ordinary map flight for thrown potions.
+// Map flight and impact for potions thrown by the hero.
 // C refs: dothrow.c throwit(), throwit_mon_hit(), thitmonst(), tmiss(),
 // breaktest(), breakmsg(), breakobj(); zap.c bhit().
 
 import { currentAttribute } from './attrib.js';
 import {
-    A_DEX, A_STR, CORR, DOOR, Is_airlevel, ROOM,
+    A_DEX, Is_airlevel,
 } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
-import {
-    MONSTER_GENO, monsterTypeName,
-} from './monster_data.js';
-import { OBJECT_WEIGHT, POT_OIL } from './object_data.js';
+import { monsterTypeName } from './monster_data.js';
+import { POT_OIL } from './object_data.js';
 import {
     hitMonsterWithSupportedPotion, potionImpactObjectName,
     SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { rn2, rnd } from './rng.js';
 import {
-    detachThrownUnit, finishHeroThrownObjectLanding,
+    detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject,
+    heroThrowRange,
 } from './thrown_object.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { cansee } from './vision.js';
 import { nearCapacity } from './weight.js';
 
 const POTION_CLASS = 8;
-const G_UNIQ = 0x1000;
-const SUPPORTED_PATH_TYPES = new Set([ROOM, CORR, DOOR]);
 
 function containsUnpaidObject(object) {
     if (!object) return false;
@@ -47,59 +44,16 @@ function monsterName(monster) {
         || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
 }
 
-function targetIsOrdinary(monster) {
-    return monster && !monster.dead && (monster.mhp ?? 1) > 0
-        && !monster.isshk && !monster.ispriest && !monster.isminion
-        && !monster.iswiz && !monster.isgd && !monster.mleashed
-        && !monster.mtrapped && !monster.m_ap_type && !monster.mundetected
-        && !monster.wormno
-        && !((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ);
-}
-
-function pathTrapAt(state, x, y) {
-    return state.level?.traps?.some(trap =>
-        (trap.tx ?? trap.x) === x && (trap.ty ?? trap.y) === y);
-}
-
-function traceOrdinaryPath(state, dx, dy, range, blocksMove) {
-    let x = state.u.ux;
-    let y = state.u.uy;
-    const path = [];
-    let contact = null;
-    for (let distance = 0; distance < range; distance++) {
-        const nx = x + dx;
-        const ny = y + dy;
-        if (!dx && !dy) break;
-        if (blocksMove(nx, ny)) break;
-        const typ = state.level?.at?.(nx, ny)?.typ;
-        if (!SUPPORTED_PATH_TYPES.has(typ) || pathTrapAt(state, nx, ny))
-            return null;
-        x = nx;
-        y = ny;
-        path.push({ x, y });
-        contact = state.level?.monsters?.find(monster =>
-            !monster.dead && (monster.mhp ?? 1) > 0
-            && monster.mx === x && monster.my === y) || null;
-        if (contact) break;
-    }
-    return { x, y, path, contact };
-}
-
-function flightTargetSupported(flight) {
-    return !!flight
-        && (!flight.contact || targetIsOrdinary(flight.contact));
-}
-
-function ordinaryEligibility({
-    state, item, objectClass, selectedQuantity, dx, dy, blocksMove,
+function canResolveMapPotionThrow({
+    state, item, objectClass, selectedQuantity, dx, dy,
 }) {
     if (state.u?.uswallow || objectClass !== POTION_CLASS
         || !SUPPORTED_MONSTER_POTION_TYPES.has(item?.otyp)
         || !Number.isInteger(selectedQuantity) || selectedQuantity < 1
-        || !Number.isInteger(dx) || !Number.isInteger(dy)) return null;
+        || !Number.isInteger(dx) || !Number.isInteger(dy)) return false;
 
-    // These branches change flight, billing, object lifecycle, or naming.
-    // Reject them before splitobj()/freeinv() and before any throw RNG.
+    // Leave unsupported inventory and hero states untouched.  This check runs
+    // before the potion leaves inventory and before the throw uses randomness.
     const burningOil = item.otyp === POT_OIL && item.lamplit
         && activeTimerCount(item) > 0;
     if (((item.lamplit || activeTimerCount(item) > 0) && !burningOil)
@@ -111,37 +65,9 @@ function ordinaryEligibility({
         || Is_airlevel(state.u?.uz)
         || state.uball || state.u?.uball || state.uchain || state.u?.uchain
         || state.u?.usteed || state._shopRooms?.current
-        || (state._encumbranceLevel ?? nearCapacity(state)) > 0) return null;
+        || (state._encumbranceLevel ?? nearCapacity(state)) > 0) return false;
 
-    const weight = OBJECT_WEIGHT[item.otyp]
-        ?? Math.max(1, Math.trunc((item.owt ?? 1) / selectedQuantity));
-    const range = Math.max(
-        1,
-        Math.trunc(currentAttribute(A_STR, state) / 2)
-            - Math.trunc(weight / 40),
-    );
-    const flight = traceOrdinaryPath(state, dx, dy, range, blocksMove);
-    if (!flightTargetSupported(flight)) return null;
-
-    if (item.greased) {
-        // A successful throwit() slip can choose any horizontal direction or
-        // the vertical floor branch.  Admit the object before detachment only
-        // when every RNG-reachable continuation stays inside this bounded
-        // owner; the actual direction is selected later by live RNG.
-        const heroType = state.level?.at?.(state.u.ux, state.u.uy)?.typ;
-        if (!SUPPORTED_PATH_TYPES.has(heroType)
-            || pathTrapAt(state, state.u.ux, state.u.uy)) return null;
-        for (let candidateDx = -1; candidateDx <= 1; candidateDx++) {
-            for (let candidateDy = -1; candidateDy <= 1; candidateDy++) {
-                if (!candidateDx && !candidateDy) continue;
-                const candidate = traceOrdinaryPath(
-                    state, candidateDx, candidateDy, range, blocksMove,
-                );
-                if (!flightTargetSupported(candidate)) return null;
-            }
-        }
-    }
-    return { ...flight, range };
+    return true;
 }
 
 function indefiniteObjectName(object, state) {
@@ -161,24 +87,22 @@ export async function resolveMapPotionThrow({
     splitObjectId,
     dx,
     dy,
-    blocksMove,
     captureFlight,
     wakeMonster,
     wakeNearby,
     finishKill,
     publish = plineWithContinuation,
 }) {
-    const eligible = ordinaryEligibility({
-        state, item, objectClass, selectedQuantity, dx, dy, blocksMove,
-    });
-    if (!eligible) return false;
+    if (!canResolveMapPotionThrow({
+        state, item, objectClass, selectedQuantity, dx, dy,
+    })) return false;
 
     const thrown = detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
 
-    // throwit() owns slip and low-stamina direction after detachment and
-    // before choosing swallowed, hitfloor, or bhit continuation.
+    // In C, slipping or low stamina changes the direction after the potion
+    // leaves inventory and before it begins moving across the map.
     await applyThrowSlip({ state, object: thrown, publish });
     await applyLowStaminaThrow({ state, object: thrown, publish });
 
@@ -199,14 +123,19 @@ export async function resolveMapPotionThrow({
 
     const actualDx = state.u?.dx ?? dx;
     const actualDy = state.u?.dy ?? dy;
-    const flight = traceOrdinaryPath(
-        state, actualDx, actualDy, eligible.range, blocksMove,
-    );
-    if (!flightTargetSupported(flight)) {
-        throw new Error('preflighted potion slip left the supported path');
+    const flight = await flyHeroThrownObject({
+        state,
+        object: thrown,
+        dx: actualDx,
+        dy: actualDy,
+        range: heroThrowRange(thrown, state),
+        captureFlight,
+        publish,
+    });
+    if (flight.destroyed) {
+        state.context.move = 1;
+        return true;
     }
-
-    await captureFlight?.(thrown, flight.path);
 
     if (flight.contact) {
         rnd(20); // thitmonst() computes this before the potion class test

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    A_CON, A_DEX, STONE, W_ARM, W_ARMC, W_SADDLE, W_WEP,
+    A_CON, A_DEX, STONE, WEB, W_ARM, W_ARMC, W_SADDLE, W_WEP,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
@@ -26,7 +26,9 @@ import {
     installHumanWerewolfHero, installPolymorphedHero,
     wearPolymorphControlRing,
 } from './support/hero-state.js';
-import { floorObjects } from './support/level-state.js';
+import {
+    addTrap, floorObjects,
+} from './support/level-state.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -208,6 +210,20 @@ test('one-percent map potion break resistance preserves the thrown identity',
         assert.equal(potion.oy, 10);
         assert.ok(floorObjects(game.level).includes(potion));
     });
+
+test('a web can stop and break a thrown potion', async () => {
+    freshMapPotionState(2);
+    game.level.monsters = [];
+    const web = addTrap(game.level, WEB, 12, 10, { tseen: false });
+    const potion = addInventoryObject(POT_GAIN_LEVEL);
+
+    initRng(1n);
+    await throwEast(potion, Array(10).fill(' '));
+
+    assert.equal(web.tseen, true);
+    assert.equal(potion.where, 'gone');
+    assert.equal(floorObjects(game.level).includes(potion), false);
+});
 
 test('a thrown potion that survives impact can fall down a ladder',
     async () => {
