@@ -6,6 +6,7 @@ import {
     TT_LAVA, WATER,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
+import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -15,7 +16,7 @@ import {
 } from '../js/object_data.js';
 import { vision_reset } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';
-import { addMonster, livePet } from './support/monsters.js';
+import { addMonster, createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 function liquidAtHero(terrain) {
@@ -260,15 +261,12 @@ test('a no-teleport level blocks escape without spending power', async () => {
 
 test('a grounded steed drowns before the hero tries to crawl out', async () => {
     const level = poolAtHero();
-    const steed = livePet({
-        mnum: MONSTER_NAME.indexOf('pony'),
-        x: game.u.ux,
-        y: game.u.uy,
-        hitPoints: 8,
-        mtame: 20,
-    });
+    const steed = await createMonsterAt('pony', 11, 10);
+    tameMonster(steed, game);
+    steed.mx = game.u.ux;
+    steed.my = game.u.uy;
     game.u.usteed = steed;
-    level.monsters = [];
+    level.monsters = level.monsters.filter(monster => monster !== steed);
     const alignmentBefore = game.u.ualign.record;
 
     const result = await heroLiquidEffects({
@@ -286,15 +284,13 @@ test('a grounded steed drowns before the hero tries to crawl out', async () => {
 });
 
 test('a flying steed keeps its rider above the pool', async () => {
-    poolAtHero();
-    const steed = livePet({
-        mnum: MONSTER_NAME.indexOf('couatl'),
-        x: game.u.ux,
-        y: game.u.uy,
-        hitPoints: 20,
-        mtame: 20,
-    });
+    const level = poolAtHero();
+    const steed = await createMonsterAt('couatl', 11, 10);
+    tameMonster(steed, game);
+    steed.mx = game.u.ux;
+    steed.my = game.u.uy;
     game.u.usteed = steed;
+    level.monsters = level.monsters.filter(monster => monster !== steed);
 
     const result = await heroLiquidEffects({
         ...noDisplay,
