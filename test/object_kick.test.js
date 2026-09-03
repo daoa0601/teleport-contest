@@ -9,7 +9,7 @@ import { initRng } from '../js/rng.js';
 import { kickDirection } from './support/commands.js';
 import { knownObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 test('kicking a loose object moves its existing identity', async () => {
@@ -56,11 +56,10 @@ test('a kicked object can fall down a ladder during flight', async () => {
 test('a kicked club can hit a monster before it lands', async () => {
     const level = freshGameplayRoom({ role: 'tourist' });
     const club = place_object(knownObject(CLUB, { spe: 0 }), 11, 10);
-    const jackal = addMonster({
-        mnum: 12,
-        x: 13,
-        y: 10,
-        hitPoints: 20,
+    const jackal = await createMonsterAt('jackal', 13, 10);
+    Object.assign(jackal, {
+        mhp: 20,
+        mhpmax: 20,
         mac: 10,
         mcanmove: 0,
         movement: 12,

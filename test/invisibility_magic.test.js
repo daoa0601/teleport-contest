@@ -12,7 +12,7 @@ import { dozap } from '../js/zap.js';
 import {
     addInventoryObject, chargedWand,
 } from './support/game-objects.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 test('drinking an invisibility potion makes the hero invisible', async () => {
@@ -51,13 +51,7 @@ test('the invisibility spell affects the hero without asking for a direction',
 test('a make-invisible wand turns a visible monster transparent', async () => {
     freshGameplayRoom();
     game.u.seeInvisible = true;
-    const monster = addMonster({
-        species: 'jackal',
-        m_id: 901,
-        x: 12,
-        y: 10,
-        hitPoints: 8,
-    });
+    const monster = await createMonsterAt('jackal', 12, 10);
     const wand = chargedWand(WAN_MAKE_INVISIBLE, { charges: 2 });
     game.inventory = [wand];
     pushKeys('al');

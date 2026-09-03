@@ -23,7 +23,7 @@ import {
 } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 test('sitting on cream pies crushes the whole floor stack', async () => {
@@ -102,11 +102,7 @@ test('a gremlin sitting in water creates a tame clone', async () => {
 test('a cockatrice held by another monster cannot sit down', async () => {
     freshGameplayRoom();
     installPolymorphedHero('cockatrice');
-    game.u.ustuck = addMonster({
-        species: 'jackal',
-        x: game.u.ux,
-        y: game.u.uy,
-    });
+    game.u.ustuck = await createMonsterAt('jackal', 11, 10);
     pushKeys('sit\n');
 
     await rhack('#'.charCodeAt(0));
