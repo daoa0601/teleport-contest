@@ -9,10 +9,11 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { OBJECT_NAMES } from '../js/object_data.js';
+import { OBJECT_NAMES, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { inventoryObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
+import { floorObjectsAt } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -274,4 +275,37 @@ test('corpse melee damage comes from the corpse species size', async () => {
     await rhack('l'.charCodeAt(0));
 
     assert.equal(jackal.mhp, 97);
+});
+
+test('hitting with a cockatrice corpse turns a monster to stone', async () => {
+    const { level, monster: jackal } = installMeleeArena(
+        'tourist', 'jackal', { mac: 100 },
+    );
+    const corpse = equipWeapon('corpse', {
+        corpsenm: MONSTER_NAME.indexOf('cockatrice'),
+    });
+
+    initRng(909n);
+    for (let key = 0; key < 8; key++) pushKey(' ');
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(level.monsters.includes(jackal), false);
+    assert.ok(floorObjectsAt(level, 11, 10).some(object =>
+        object.otyp === STATUE && object.corpsenm === jackal.mnum));
+    assert.strictEqual(game.uwep, corpse);
+});
+
+test('a petrifying corpse still hurts a stone-resistant monster', async () => {
+    const { monster: stoneGolem } = installMeleeArena(
+        'tourist', 'stone golem', { mac: 100 },
+    );
+    equipWeapon('corpse', {
+        corpsenm: MONSTER_NAME.indexOf('cockatrice'),
+    });
+    game.u.acurr.a[A_STR] = 10;
+
+    initRng(910n);
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(stoneGolem.mhp, 99);
 });

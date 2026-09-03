@@ -8,12 +8,16 @@ import {
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { angerAttackedMonster } from './monster_anger.js';
-import { makeMonsterFlee } from './monster_flee.js';
-import { monsterHasAcidResistance } from './monster_resistance.js';
 import {
     MONSTER_NAME, MONSTER_SIZE, monsterIsShade, monsterIsUndead,
     monsterIsVampireShifter,
 } from './monster_data.js';
+import { makeMonsterFlee } from './monster_flee.js';
+import {
+    monsterHasAcidResistance, monsterHasStoneResistance,
+} from './monster_resistance.js';
+import { petrifyMonsterFromContact } from './monster_stoning.js';
+import { recordObjectEncounter } from './object_knowledge.js';
 import {
     ACID_VENOM, BLINDING_VENOM, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, EGG,
     MIRROR, OBJECT_MATERIAL,
@@ -39,6 +43,7 @@ export async function resolveHeroMeleeObjectContact(
         rollOne = rnd,
         random = rn2,
         publish = plineWithContinuation,
+        finishMonsterDeath,
         describeTarget = () => monster.name
             || `the ${MONSTER_NAME[monster.mnum] || 'monster'}`,
     } = {},
@@ -70,9 +75,37 @@ export async function resolveHeroMeleeObjectContact(
         };
     }
 
-    if (object?.otyp === CORPSE && !touchPetrifies(object.corpsenm)) {
+    if (object?.otyp === CORPSE) {
         if (monsterIsShade(monster)) {
             return { damage: 0, addHeroDamageBonuses: false };
+        }
+        if (touchPetrifies(object.corpsenm)) {
+            await publish(
+                `You hit ${describeTarget()} with ${corpseContactName(object)}.`,
+            );
+            const hallucinating = !!(state.u?.hallucinating
+                || (state.u?.hallucinationTurns ?? 0) > 0);
+            if (!hallucinating) {
+                object.dknown = true;
+                recordObjectEncounter(CORPSE, state);
+            }
+            const petrification = await petrifyMonsterFromContact(monster, {
+                creditHero: true,
+                finishDeath: finishMonsterDeath,
+                publish,
+                rollOne,
+                state,
+            });
+            if (!monsterHasStoneResistance(monster)) {
+                return {
+                    attackComplete: true,
+                    damage: 0,
+                    addHeroDamageBonuses: false,
+                    specialMessage: true,
+                    monsterSurvived: petrification.survived,
+                };
+            }
+            return { damage: 1, specialMessage: true };
         }
         const corpseSize = MONSTER_SIZE[object.corpsenm] ?? 0;
         return { damage: corpseSize + 1 };
@@ -132,6 +165,12 @@ export async function resolveHeroMeleeObjectContact(
         addHeroDamageBonuses: false,
         specialMessage: true,
     };
+}
+
+function corpseContactName(corpse) {
+    if (corpse.dknown === false) return 'a corpse';
+    const species = MONSTER_NAME[corpse.corpsenm];
+    return species ? `the ${species} corpse` : 'the corpse';
 }
 
 function consumeOneWieldedObject(object, state) {

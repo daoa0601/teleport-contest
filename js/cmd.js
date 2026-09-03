@@ -10398,11 +10398,25 @@ async function attackHostileMonster(monster, x, y, {
     const weaponDamage = bareHanded ? null : rollHeroMeleeWeaponDamage(
         attackWeapon, monster, { mounted: !!game.u?.usteed },
     );
+    const hitPointsBeforeObjectContact = monster.mhp;
     const objectContact = bareHanded || weaponDamage ? null
         : await resolveHeroMeleeObjectContact(monster, attackWeapon, {
             describeTarget: displayedMonsterObject,
+            finishMonsterDeath: (target, death) => finishHeroMonsterKill(
+                target, target.mx, target.my, {
+                    ...death,
+                    showKillMessage: false,
+                    recordConduct: false,
+                },
+            ),
             publish: plineWithContinuation,
         });
+    if (objectContact?.attackComplete) {
+        const hit = monster.mhp !== hitPointsBeforeObjectContact;
+        const passive = await applyPassive(hit);
+        if (passive.heroDied) return true;
+        return objectContact.monsterSurvived ? finishStrike() : true;
+    }
     let damage;
     if (bareHanded) {
         damage = rnd(martialArtist ? 4 : 2);
