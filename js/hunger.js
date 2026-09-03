@@ -28,7 +28,7 @@ function accessoryNutritionCost(accessoryTime) {
     const u = game.u;
     let cost = 0;
     if (accessoryTime % 2) {
-        if (u.regenerationIntrinsic || u.regenerationExtrinsic) cost++;
+        if (u.regenerationIntrinsic || u.regeneration) cost++;
         if (nearCapacity(game) > 1) cost++;
         return cost;
     }

@@ -105,6 +105,61 @@ const spellCategories = initializerFields.map(fields => ({
     P_ESCAPE_SPELL: 'escape',
     P_MATTER_SPELL: 'matter',
 }[fields[16]] || null));
+const propertyNames = {
+    ACID_RES: 'acidResistance',
+    ADORNED: 'adorned',
+    AGGRAVATE_MONSTER: 'aggravateMonster',
+    ANTIMAGIC: 'antimagic',
+    BLINDED: 'blinded',
+    CLAIRVOYANT: 'clairvoyant',
+    COLD_RES: 'coldResistance',
+    CONFLICT: 'conflict',
+    CONFUSION: 'confusion',
+    DISINT_RES: 'disintegrationResistance',
+    DISPLACED: 'displaced',
+    DRAIN_RES: 'drainResistance',
+    FAST: 'fast',
+    FIRE_RES: 'fireResistance',
+    FIXED_ABIL: 'sustainAbility',
+    FLYING: 'flying',
+    FREE_ACTION: 'freeAction',
+    FUMBLING: 'fumbling',
+    HALLUC: 'hallucination',
+    HUNGER: 'hunger',
+    INVIS: 'invisible',
+    JUMPING: 'jumping',
+    LEVITATION: 'levitation',
+    LIFESAVED: 'lifeSaving',
+    MAGICAL_BREATHING: 'magicalBreathing',
+    POISON_RES: 'poisonResistance',
+    POLYMORPH: 'polymorph',
+    POLYMORPH_CONTROL: 'polymorphControl',
+    PROTECTION: 'protection',
+    PROT_FROM_SHAPE_CHANGERS: 'protectionFromShapeChangers',
+    REFLECTING: 'reflection',
+    REGENERATION: 'regeneration',
+    SEARCHING: 'searching',
+    SEE_INVIS: 'seeInvisible',
+    SHOCK_RES: 'shockResistance',
+    SLEEPY: 'sleepy',
+    SLEEP_RES: 'sleepResistance',
+    SLOW_DIGESTION: 'slowDigestion',
+    STEALTH: 'stealth',
+    STRANGLED: 'strangled',
+    TELEPAT: 'telepathy',
+    TELEPORT: 'teleportation',
+    TELEPORT_CONTROL: 'teleportControl',
+    UNCHANGING: 'unchanging',
+    WARNING: 'warning',
+    WWALKING: 'waterWalking',
+};
+const objectProperties = initializerFields.map(fields => {
+    const property = fields[17];
+    if (property === '0') return null;
+    if (!propertyNames[property])
+        throw new Error(`unknown object property ${property}`);
+    return propertyNames[property];
+});
 const usesKnown = numericField(5, 'oc_uses_known');
 const merges = numericField(4, 'oc_merge');
 const charged = numericField(8, 'oc_charged');
@@ -129,6 +184,7 @@ const generated = [
     `export const OBJECT_DELAY = ${JSON.stringify(delays)};`,
     `export const OBJECT_SPELL_LEVEL = ${JSON.stringify(spellLevels)};`,
     `export const OBJECT_SPELL_CATEGORY = ${JSON.stringify(spellCategories)};`,
+    `export const OBJECT_PROPERTY = ${JSON.stringify(objectProperties)};`,
     `export const OBJECT_NUTRITION = ${JSON.stringify(nutrition)};`,
     `export const OBJECT_WEIGHT = ${JSON.stringify(weights)};`,
     `export const OBJECT_COST = ${JSON.stringify(costs)};`,

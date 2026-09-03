@@ -6,12 +6,16 @@ import {
     AMULET_OF_GUARDING, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
     FUMBLE_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION,
     SHIELD_OF_DRAIN_RESISTANCE,
-    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SPELL_LEVEL, WATER_WALKING_BOOTS,
+    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, OBJECT_SPELL_LEVEL,
+    WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { rnd } from './rng.js';
 import {
     grantWornProperty, removeWornProperty,
 } from './properties.js';
+import {
+    W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU,
+} from './const.js';
 
 // objects[].a_ac is `10 - ac` for every ARMOR()/HELM()/CLOAK()/SHIELD()/
 // GLOVES()/BOOTS() entry in the pinned objects.h. Armor occupies IDs 89..172.
@@ -45,6 +49,15 @@ const GLASS = 19;
 const ARMOR_SLOTS = Object.freeze([
     'uarm', 'uarmc', 'uarmh', 'uarmf', 'uarms', 'uarmg', 'uarmu',
 ]);
+const ARMOR_MASKS = Object.freeze({
+    uarm: W_ARM,
+    uarmc: W_ARMC,
+    uarmh: W_ARMH,
+    uarms: W_ARMS,
+    uarmg: W_ARMG,
+    uarmf: W_ARMF,
+    uarmu: W_ARMU,
+});
 const AC_MAX = 99;
 const SPEED_BOOTS = 166;
 
@@ -124,6 +137,55 @@ export function armorSlotFor(otyp) {
     if (otyp >= 159 && otyp <= 162) return 'uarmg';
     if (otyp >= 163 && otyp <= 172) return 'uarmf';
     return null;
+}
+
+export function applyWornArmorProperty(object, state = game) {
+    const slot = armorSlotFor(object?.otyp);
+    const property = OBJECT_PROPERTY[object?.otyp];
+    if (!slot || !property) return null;
+    grantWornProperty(property, object, slot, state);
+    return property;
+}
+
+export function wearHeroArmor(object, state = game) {
+    const slot = armorSlotFor(object?.otyp);
+    if (!slot) return null;
+    state[slot] = object;
+    if (state.u) state.u[slot] = object;
+    object.worn = true;
+    object.wornSlot = slot;
+    object.owornmask = (object.owornmask ?? 0) | ARMOR_MASKS[slot];
+    applyWornArmorProperty(object, state);
+    return slot;
+}
+
+export function removeHeroArmor(object, state = game) {
+    const slot = armorSlotFor(object?.otyp);
+    if (!slot) return false;
+    if (state[slot] === object) state[slot] = null;
+    if (state.u?.[slot] === object) state.u[slot] = null;
+    object.worn = false;
+    object.wornSlot = null;
+    object.owornmask = (object.owornmask ?? 0) & ~ARMOR_MASKS[slot];
+    removeArmorProperties(object, state);
+
+    const hero = state.u || (state.u = {});
+    if (object.otyp === SPEED_BOOTS) {
+        object._grantsVeryFastFromArmor = false;
+        hero.veryFastFromArmor = (state.inventory || []).some(candidate =>
+            candidate !== object && candidate.worn
+            && candidate._grantsVeryFastFromArmor);
+        hero.veryFast = hero.veryFastFromArmor
+            || (hero.veryFastTurns ?? 0) > 0;
+    }
+    if (object.otyp === FUMBLE_BOOTS) {
+        hero.fumblingFromArmor = false;
+        if (!object._fumbleBootsHadOtherSource) hero.fumblingTurns = 0;
+        hero.fumbling = !!hero.fumblingIntrinsic
+            || (hero.fumblingTurns ?? 0) > 0;
+    }
+    findArmorClass(state);
+    return true;
 }
 
 export function objectIsHardHelmet(object) {
@@ -210,18 +272,6 @@ export function armorBonus(object) {
 // later do_wear.c:dragon_armor_handling() transaction adds a second property
 // for several colors; blue mail therefore owns both shock resistance and
 // worn-equipment speed.
-const DRAGON_ARMOR_PRIMARY_PROPERTY = Object.freeze({
-    gray: 'antimagic',
-    silver: 'reflection',
-    red: 'fireResistance',
-    white: 'coldResistance',
-    orange: 'sleepResistance',
-    black: 'disintegrationResistance',
-    blue: 'shockResistance',
-    green: 'poisonResistance',
-    yellow: 'acidResistance',
-});
-
 const DRAGON_ARMOR_EXTRA_PROPERTY = Object.freeze({
     black: 'drainResistance',
     blue: 'fast',
@@ -257,6 +307,7 @@ function grantArmorProperty(object, state, property) {
 // their feedback are afternmv effects: they begin only when dressing reaches
 // multi == 0.  Return messages so allmain can preserve nomovemsg ordering.
 export function applyArmorOnEffects(object, state = game) {
+    applyWornArmorProperty(object, state);
     if (object?.otyp === GAUNTLETS_OF_POWER) return [];
 
     if (object?.otyp === FUMBLE_BOOTS) {
@@ -300,15 +351,11 @@ export function applyArmorOnEffects(object, state = game) {
     }
 
     const color = dragonArmorColor(object);
-    const primaryProperty = DRAGON_ARMOR_PRIMARY_PROPERTY[color];
     const extraProperty = DRAGON_ARMOR_EXTRA_PROPERTY[color];
-    if (!primaryProperty && !extraProperty) return [];
+    if (!extraProperty) return [];
 
     const hero = state.u || (state.u = {});
     const messages = [];
-    if (primaryProperty) grantArmorProperty(object, state, primaryProperty);
-    if (!extraProperty) return messages;
-
     const hadProperty = !!hero[extraProperty];
     const wasVeryFast = !!hero.veryFast;
     grantArmorProperty(object, state, extraProperty);
@@ -336,14 +383,14 @@ export function applyArmorOnEffects(object, state = game) {
 // the color-specific extra property after the suit leaves W_ARM.
 export function removeArmorProperties(object, state = game) {
     const color = dragonArmorColor(object);
-    const primaryProperty = DRAGON_ARMOR_PRIMARY_PROPERTY[color];
     const extraProperty = DRAGON_ARMOR_EXTRA_PROPERTY[color];
-    if (!primaryProperty && !extraProperty) return;
+    const ordinaryProperty = OBJECT_PROPERTY[object?.otyp];
+    const slot = armorSlotFor(object?.otyp);
+    if (ordinaryProperty && slot)
+        removeWornProperty(ordinaryProperty, object, slot, state);
+    if (!extraProperty) return;
 
-    if (primaryProperty)
-        removeWornProperty(primaryProperty, object, 'uarm', state);
-    if (extraProperty)
-        removeWornProperty(extraProperty, object, 'uarm', state);
+    removeWornProperty(extraProperty, object, 'uarm', state);
 
     const hero = state.u || (state.u = {});
     if (color === 'blue') {

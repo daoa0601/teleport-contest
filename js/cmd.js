@@ -180,7 +180,7 @@ import {
     QUARTERSTAFF, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
     BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP,
     STATUE, IRON_CHAIN, SCR_SCARE_MONSTER,
-    RIN_PROTECTION, RIN_REGENERATION, RIN_CONFLICT,
+    RIN_PROTECTION, RIN_CONFLICT,
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_HEALING,
     POT_EXTRA_HEALING, POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_OIL,
     POT_GAIN_ENERGY,
@@ -211,13 +211,16 @@ import { nameToMonster } from './mondata.js';
 import {
     adjustLevelAbilities, gainExperienceLevel,
 } from './exper.js';
+import {
+    removeHeroAccessory, wearHeroAccessory,
+} from './accessory.js';
 import { dosave } from './save.js';
 import { initTrack } from './track.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
     findArmorClass, heroIsDisplaced,
-    objectErosionKind, objectErosionMessage, removeArmorProperties,
+    objectErosionKind, objectErosionMessage, removeHeroArmor, wearHeroArmor,
 } from './armor.js';
 import {
     findMonsterArmorClass,
@@ -7447,10 +7450,7 @@ async function putOnAccessoryObject(object) {
             game.context.move = 0;
             return;
         }
-        game.uamul = object;
-        if (game.u) game.u.uamul = object;
-        object.worn = true;
-        object.wornSlot = 'uamul';
+        wearHeroAccessory(object, 'uamul', game);
         // do_wear.c:Amulet_on(AMULET_OF_RESTFUL_SLEEP).
         if (object.otyp === 204) {
             const timeout = rnd(98) + 2;
@@ -7487,14 +7487,7 @@ async function putOnAccessoryObject(object) {
     }
 
     const ringSlot = hand === 'right' ? 'uright' : 'uleft';
-    game[ringSlot] = object;
-    if (game.u) game.u[ringSlot] = object;
-    object.worn = true;
-    object.wornSlot = `${hand}-ring`;
-    if (object.otyp === RIN_REGENERATION && game.u) {
-        game.u.regeneration = true;
-        game.u.regenerationExtrinsic = true;
-    }
+    wearHeroAccessory(object, ringSlot, game);
     if (object.otyp === RIN_PROTECTION) {
         const enchantment = object.spe ?? object.enchantment ?? 0;
         if (enchantment !== 0
@@ -7577,31 +7570,7 @@ function delayedArmorRemovalSimpleName(object) {
 // allmain only after negative multi has reached zero; zero-delay armor can use
 // the same state owner immediately.
 export function finishArmorRemoval(object, { silent = false } = {}) {
-    object.worn = false;
-    object.wornSlot = null;
-    for (const slot of [
-        'uarm', 'uarmu', 'uarmc', 'uarmh', 'uarmg', 'uarmf', 'uarms',
-    ]) {
-        if (game[slot] === object) game[slot] = null;
-        if (game.u?.[slot] === object) game.u[slot] = null;
-    }
-    removeArmorProperties(object, game);
-    if (object.otyp === 166) { // SPEED_BOOTS
-        object._grantsVeryFastFromArmor = false;
-        const otherArmorSpeed = (game.inventory || []).some(candidate =>
-            candidate !== object && candidate.worn
-            && candidate._grantsVeryFastFromArmor);
-        game.u.veryFastFromArmor = otherArmorSpeed;
-        game.u.veryFast = otherArmorSpeed
-            || (game.u.veryFastTurns ?? 0) > 0;
-    }
-    if (object.otyp === FUMBLE_BOOTS) {
-        game.u.fumblingFromArmor = false;
-        if (!object._fumbleBootsHadOtherSource) game.u.fumblingTurns = 0;
-        game.u.fumbling = !!game.u.fumblingIntrinsic
-            || (game.u.fumblingTurns ?? 0) > 0;
-    }
-    findArmorClass(game);
+    removeHeroArmor(object, game);
     if (silent || game.flags?.verbose === false) return '';
     const description = armorRemovalDescription(object);
     return `You were wearing ${indefiniteArticle(description)} ${description}.`;
@@ -7655,6 +7624,21 @@ async function dotakeoff() {
         const removed = await removeEyewear(object);
         if (removed) game._liveQuietTurnRequested = true;
         game.context.move = removed ? 1 : 0;
+        return;
+    }
+
+    if (object === game.uamul || object === game.uleft
+        || object === game.uright) {
+        removeHeroAccessory(object, game);
+        findArmorClass(game);
+        if (game.flags?.verbose !== false) {
+            const description = armorRemovalDescription(object);
+            await plineWithContinuation(
+                `You were wearing ${indefiniteArticle(description)} ${
+                    description}.`,
+            );
+        }
+        game.context.move = 1;
         return;
     }
 
@@ -7720,19 +7704,19 @@ async function putOnArmorObject(object) {
     }
 
     const displacementWasActive = heroIsDisplaced(game);
-    const slot = armorSlotFor(object.otyp) || 'uarm';
-    game[slot] = object;
-    if (game.u) game.u[slot] = object;
-    object.worn = true;
-    object.wornSlot = slot;
+    const hero = game.u || (game.u = {});
+    const speedHadOtherExtrinsic = !!hero.veryFastFromArmor;
+    const speedHadTimedVeryFast = (hero.veryFastTurns ?? 0) > 0;
+    const speedHadIntrinsicFast = !!hero.fast;
+    const fumbleHadOtherSource = !!hero.fumbling
+        && (hero.fumblingTurns ?? 0) <= 0;
+    wearHeroArmor(object, game);
     if (object.otyp === CLOAK_OF_DISPLACEMENT)
         object._displacementWasActive = displacementWasActive;
     if (object.otyp === 166) { // SPEED_BOOTS
-        const hero = game.u || (game.u = {});
-        object._speedBootsHadOtherExtrinsic = !!hero.veryFastFromArmor;
-        object._speedBootsHadTimedVeryFast
-            = (hero.veryFastTurns ?? 0) > 0;
-        object._speedBootsHadIntrinsicFast = !!hero.fast;
+        object._speedBootsHadOtherExtrinsic = speedHadOtherExtrinsic;
+        object._speedBootsHadTimedVeryFast = speedHadTimedVeryFast;
+        object._speedBootsHadIntrinsicFast = speedHadIntrinsicFast;
         object._grantsVeryFastFromArmor = true;
         // setworn() installs the oc_oprop immediately.  Boots_on() later
         // identifies the boots and emits feedback; movement uses Very_fast
@@ -7741,9 +7725,7 @@ async function putOnArmorObject(object) {
         hero.veryFast = true;
     }
     if (object.otyp === FUMBLE_BOOTS) {
-        const hero = game.u || (game.u = {});
-        object._fumbleBootsHadOtherSource = !!hero.fumbling
-            && (hero.fumblingTurns ?? 0) <= 0;
+        object._fumbleBootsHadOtherSource = fumbleHadOtherSource;
         // setworn() installs the boots' extrinsic property before the
         // delayed Boots_on() callback adds its initial timeout.
         hero.fumblingFromArmor = true;

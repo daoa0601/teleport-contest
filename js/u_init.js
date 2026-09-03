@@ -7,7 +7,7 @@ import { rn2, rnd, d, rne } from './rng.js';
 import { mkobj, mksobj } from './mklev.js';
 import { monsterGoodPosition } from './teleport_rules.js';
 import { MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
-import { armorSlotFor, findArmorClass } from './armor.js';
+import { armorSlotFor, findArmorClass, wearHeroArmor } from './armor.js';
 import { ensureQuestStatus } from './quest.js';
 import { A_CHA, A_CON, A_STR, COLNO, ROWNO } from './const.js';
 import {
@@ -1056,8 +1056,7 @@ function useStartingItem(item) {
             item.alternate = true;
         }
     } else if (item.oclass === ARMOR_CLASS && armorSlotFor(item.otyp)) {
-        game[armorSlotFor(item.otyp)] = item;
-        item.worn = true;
+        wearHeroArmor(item, game);
     } else if (item.oclass === SPBOOK_CLASS && item.spellName) {
         game.spells.push({
             name: item.spellName,
