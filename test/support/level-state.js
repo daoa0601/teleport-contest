@@ -26,12 +26,8 @@ export function floorObjectQuantityAt(level, x, y, type) {
         .reduce((total, object) => total + object.quan, 0);
 }
 
-export function trapAt(type, x, y, overrides = {}) {
-    return { ttyp: type, tx: x, ty: y, ...overrides };
-}
-
 export function addTrap(level, type, x, y, overrides = {}) {
-    const trap = trapAt(type, x, y, overrides);
+    const trap = { ttyp: type, tx: x, ty: y, ...overrides };
     level.traps.push(trap);
     return trap;
 }
