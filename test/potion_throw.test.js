@@ -23,7 +23,7 @@ import { vision_recalc } from '../js/vision.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import {
-    installHumanWerewolfHero, installPolymorphedHero,
+    installHumanWerewolfHero, installPolymorphedHero, installPunishedHero,
     wearPolymorphControlRing,
 } from './support/hero-state.js';
 import {
@@ -161,6 +161,20 @@ test('a burdened hero can throw a potion', async () => {
     await throwEast(potion, Array(10).fill(' '));
 
     assert.equal(monster.minvis, 1);
+    assert.equal(potion.where, 'gone');
+});
+
+test('a punished hero can throw a potion', async () => {
+    const monster = freshMapPotionState(2);
+    const punishment = installPunishedHero();
+    const potion = addInventoryObject(POT_INVISIBILITY);
+
+    initRng(3321n);
+    await throwEast(potion, Array(10).fill(' '));
+
+    assert.equal(monster.minvis, 1);
+    assert.equal(game.uball, punishment.ball);
+    assert.equal(game.uchain, punishment.chain);
     assert.equal(potion.where, 'gone');
 });
 

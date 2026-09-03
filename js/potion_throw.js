@@ -50,7 +50,6 @@ function canResolveMapPotionThrow({
         && activeTimerCount(item) > 0;
     if (((item.lamplit || activeTimerCount(item) > 0) && !burningOil)
         || item.unpaid
-        || state.uball || state.u?.uball || state.uchain || state.u?.uchain
         || state._shopRooms?.current) return false;
 
     return true;
