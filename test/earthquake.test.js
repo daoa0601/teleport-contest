@@ -15,18 +15,25 @@ import {
 import { initRng } from '../js/rng.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import {
-    addMonster, equipMonsterObject,
+    createMonsterAt, equipMonsterObject,
 } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
-function targetMonster(x, y, overrides = {}) {
-    return addMonster({
-        species: 'giant ant', x, y, hitPoints: 100,
+async function targetMonster(x, y, {
+    hitPoints = 100,
+    maxHitPoints = hitPoints,
+    ...overrides
+} = {}) {
+    const monster = await createMonsterAt('giant ant', x, y);
+    Object.assign(monster, {
+        mhp: hitPoints,
+        mhpmax: maxHitPoints,
         mfrozen: 0,
         msleeping: 1,
         mstrategy: 0,
         ...overrides,
     });
+    return monster;
 }
 
 function earthquakeDrum(charges) {
@@ -42,7 +49,7 @@ test('an earthquake opens chasms under the hero and nearby monsters',
     async () => {
         const level = freshGameplayRoom();
         game.u.uhp = game.u.uhpmax = 1000;
-        const monster = targetMonster(11, 10);
+        const monster = await targetMonster(11, 10);
         pushKeys(' '.repeat(100));
 
         await createEarthquake(13);
@@ -59,7 +66,7 @@ test("a monster's life-saving amulet works after an earthquake fall",
     async () => {
         const level = freshGameplayRoom();
         game.u.uhp = game.u.uhpmax = 1000;
-        const monster = targetMonster(11, 10, {
+        const monster = await targetMonster(11, 10, {
             hitPoints: 1,
             maxHitPoints: 1,
         });
@@ -137,7 +144,7 @@ test('a charged earthquake drum shakes the level and spends one charge',
 
 test('an empty earthquake drum acts like an ordinary drum', async () => {
     const level = freshGameplayRoom();
-    const monster = targetMonster(11, 10);
+    const monster = await targetMonster(11, 10);
     const drum = earthquakeDrum(0);
     pushKeys(' '.repeat(20));
 
