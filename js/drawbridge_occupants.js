@@ -16,9 +16,11 @@ import { resolveMonsterLiquid } from './mon.js';
 import {
     MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
-import { finishMonsterLiquidDeath } from './monmove.js';
+import {
+    finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
+} from './monmove.js';
 import { heroIsPolymorphed } from './polyself.js';
-import { rnd, rn2 } from './rng.js';
+import { rnd } from './rng.js';
 import {
     heroIsUnaware, moveHeroByTeleport, safeTeleportDestination,
 } from './teleport.js';
@@ -238,6 +240,26 @@ async function moveSurvivingHeroAway(entity, bridge, state) {
     entity.y = state.u.uy;
 }
 
+async function finishCrushedMonster(
+    monster, entity, state, options, recordConduct,
+) {
+    if (options.finishMonsterKill) {
+        await options.finishMonsterKill(monster, entity.x, entity.y, {
+            showKillMessage: false,
+            weaponHit: false,
+            noCorpse: true,
+            recordConduct,
+        });
+        return (monster.mhp ?? 0) <= 0;
+    }
+    const death = await finishEnvironmentalMonsterDeath(monster, state, {
+        noCorpse: true,
+        visible: entityIsVisible(entity),
+        spotted: entityIsVisible(entity),
+    });
+    return !death.survived;
+}
+
 async function crushEntity(entity, bridge, state, options, killer) {
     if (entity.hero) {
         state.u.uhp = 0;
@@ -246,24 +268,17 @@ async function crushEntity(entity, bridge, state, options, killer) {
         return;
     }
     const monster = entity.actor;
-    monster.mhp = 0;
-    if (options.finishMonsterKill) {
-        await options.finishMonsterKill(monster, entity.x, entity.y, {
-            showKillMessage: false,
-            weaponHit: false,
-            noCorpse: true,
-        });
-        if ((monster.mhp ?? 0) > 0) {
-            if (entityIsVisible(entity)) {
-                await plineWithContinuation(
-                    `Unfortunately for ${entityName(entity)}, it is still crushed.`,
-                );
-            }
-            monster.mhp = 0;
-            finishMonsterLiquidDeath(monster, state, rn2, [], false);
-        }
-    } else {
-        finishMonsterLiquidDeath(monster, state, rn2, [], false);
+    if (await finishCrushedMonster(monster, entity, state, options, true))
+        return;
+
+    const visible = entityIsVisible(entity);
+    const died = await finishCrushedMonster(
+        monster, entity, state, options, false,
+    );
+    if (died && visible) {
+        await plineWithContinuation(
+            `Unfortunately for ${entityName(entity)}, it is still crushed.`,
+        );
     }
 }
 

@@ -3,17 +3,24 @@ import assert from 'node:assert/strict';
 
 import {
     ACH_TUNE, DBWALL, DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN,
-    DRAWBRIDGE_UP, D_NODOOR, MOAT, PIT,
+    DRAWBRIDGE_UP, D_NODOOR, MOAT, PIT, W_AMUL,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys, resetInputState } from '../js/input.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { playInstrument } from '../js/music.js';
 import { destroyDrawbridge } from '../js/dbridge.js';
-import { BOULDER, ROCK, WOODEN_HARP } from '../js/object_data.js';
+import {
+    AMULET_OF_LIFE_SAVING, BOULDER, ROCK, WOODEN_HARP,
+} from '../js/object_data.js';
 import { place_object } from '../js/floor_object.js';
 import { mksobj } from '../js/mklev.js';
+import { knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
-import { liveMonster } from './support/monsters.js';
+import {
+    addMonster, equipMonsterObject, liveMonster,
+} from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 const PM_WATER_ELEMENTAL = 157;
@@ -96,6 +103,30 @@ test('a lowering drawbridge crushes a grounded monster on the span',
 
         assert.equal(bridge.typ, DRAWBRIDGE_DOWN);
         assert.equal(level.monsters.includes(monster), false);
+    });
+
+test('a life-saved shifted vampire survives a lowering drawbridge',
+    async () => {
+        const { level } = installStrongholdDrawbridge();
+        const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
+        const monster = addMonster({
+            species: 'wolf', x: 12, y: 10, cham: vampireLeader,
+        });
+        const amulet = equipMonsterObject(
+            monster,
+            knownObject(AMULET_OF_LIFE_SAVING),
+            W_AMUL,
+        );
+        pushKeys(`nABCDE\n${' '.repeat(50)}`);
+
+        await playInstrument(harp(), {
+            finishMonsterKill: finishHeroMonsterKill,
+        });
+
+        assert.equal(monster.mnum, vampireLeader);
+        assert.ok(monster.mhp > 0);
+        assert.equal(level.monsters.includes(monster), true);
+        assert.equal(amulet.where, 'gone');
     });
 
 test('an opening portcullis releases its occupant onto the bridge',
