@@ -1,12 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { A_DEX, A_STR, W_WEP } from '../js/const.js';
+import {
+    A_DEX, A_STR, P_BASIC, P_CROSSBOW, W_WEP,
+} from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { CLUB, CROSSBOW, CROSSBOW_BOLT } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { throwInventoryObject } from './support/commands.js';
 import { knownInventoryWeapon } from './support/game-objects.js';
+import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -74,4 +77,26 @@ test('a crossbow sends its bolt eight squares regardless of Strength', async () 
 
     assert.equal(floorObjects(level).includes(bolt), true);
     assert.deepEqual([bolt.ox, bolt.oy], [18, 10]);
+});
+
+test('a fired crossbow bolt gets ring damage but not Strength damage', async () => {
+    freshObjectRoom({ right: 20, gameplaySeed: 4105n });
+    game.u.ulevel = 20;
+    game.u.acurr.a[A_DEX] = 18;
+    game.u.acurr.a[A_STR] = 3;
+    game.u.udaminc = 3;
+    installHeroWeaponSkills({ [P_CROSSBOW]: P_BASIC });
+    const crossbow = knownInventoryWeapon(CROSSBOW, {
+        invlet: 'a', owornmask: W_WEP, wielded: true,
+    });
+    const bolt = knownInventoryWeapon(CROSSBOW_BOLT, { invlet: 'b' });
+    game.uwep = game.u.uwep = crossbow;
+    const jackal = addMonster({
+        species: 'jackal', x: 11, y: 10,
+        hitPoints: 20, mac: 10, mcanmove: 0,
+    });
+
+    await throwInventoryObject(bolt, 'l', Array(4).fill(' '));
+
+    assert.equal(jackal.mhp, 15);
 });

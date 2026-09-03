@@ -143,33 +143,61 @@ function thrownHitThreshold(monster, weapon, state) {
 }
 
 async function rollRangedObjectDamage(
-    monster, weapon, state, dieRoll, applied,
+    monster, weapon, state, dieRoll, mode,
 ) {
-    let damage = rollPhysicalWeaponDamage(weapon, monster);
-    const trainsSkill = damage > 1;
-    const artifactHit = await applyArtifactHitToMonster(
-        weapon, monster, damage, {
-            state,
-            visible: canProjectMonster(monster, monster.mx, monster.my),
-            describeTarget: () => targetObject(monster, state) || 'it',
-            describeCarrier: () => targetName(monster, state),
-            publish: plineWithContinuation,
-            dieRoll,
-        },
-    );
-    damage = artifactHit.damage;
+    const applied = mode === 'applied';
+    const launcher = mode === 'thrown'
+        && launcherMatchesAmmo(weapon, state.uwep) ? state.uwep : null;
+    const handThrownAmmunition = mode === 'thrown'
+        && isLauncherAmmunition(weapon) && !launcher;
+    let damage = handThrownAmmunition
+        ? rnd(2) : rollPhysicalWeaponDamage(weapon, monster);
+    const baseDamage = damage;
+    let specialMessage = false;
+    let attackStopped = false;
+    if (!handThrownAmmunition) {
+        const artifactHit = await applyArtifactHitToMonster(
+            weapon, monster, damage, {
+                state,
+                visible: canProjectMonster(monster, monster.mx, monster.my),
+                describeTarget: () => targetObject(monster, state) || 'it',
+                describeCarrier: () => targetName(monster, state),
+                publish: plineWithContinuation,
+                dieRoll,
+            },
+        );
+        damage = artifactHit.damage;
+        specialMessage = artifactHit.specialMessage;
+        attackStopped = artifactHit.attackStopped;
+    }
+
+    let practiceSkill = null;
     if (applied) {
+        const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0);
         damage += (state.u?.udaminc ?? state.udaminc ?? 0)
             + strengthDamageBonus(currentAttribute(A_STR, state))
-            + weaponSkillDamageBonus(
-                state, Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0),
-            );
+            + weaponSkillDamageBonus(state, skill);
+        if (baseDamage > 1) practiceSkill = skill;
+    } else if (mode === 'thrown') {
+        damage += state.u?.udaminc ?? state.udaminc ?? 0;
+        if (launcher) {
+            const skill = Math.abs(OBJECT_SUBTYPE[launcher.otyp] ?? 0);
+            damage += weaponSkillDamageBonus(state, skill);
+            if (baseDamage > 0) practiceSkill = skill;
+        } else {
+            damage += strengthDamageBonus(currentAttribute(A_STR, state));
+            if (!handThrownAmmunition) {
+                const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0);
+                damage += weaponSkillDamageBonus(state, skill);
+                if (baseDamage > 1) practiceSkill = skill;
+            }
+        }
     }
     return {
-        damage: artifactHit.attackStopped ? 0 : Math.max(1, damage),
-        trainsSkill,
-        specialMessage: artifactHit.specialMessage,
-        attackStopped: artifactHit.attackStopped,
+        damage: attackStopped ? 0 : Math.max(1, damage),
+        practiceSkill,
+        specialMessage,
+        attackStopped,
     };
 }
 
@@ -246,9 +274,9 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
     if (!applied) await applyCaitiffPenalty(monster, state);
     exerciseAttribute(A_DEX, true, state);
     const {
-        damage, trainsSkill, specialMessage, attackStopped,
+        damage, practiceSkill, specialMessage, attackStopped,
     } = await rollRangedObjectDamage(
-        monster, object, state, dieRoll, applied,
+        monster, object, state, dieRoll, mode,
     );
     if (attackStopped) {
         await applyProjectileObjectPassive(monster, object);
@@ -256,12 +284,9 @@ async function hitMonsterWithRangedObject(monster, object, state, mode) {
     }
     if (applied) {
         recordWeaponHit(object, damage, state);
-        if (trainsSkill) {
-            recordWeaponPractice(
-                state, Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0), 1,
-            );
-        }
     }
+    if (practiceSkill !== null)
+        recordWeaponPractice(state, practiceSkill, 1);
 
     if (damage === 0) {
         const namedTarget = targetObject(monster, state);
