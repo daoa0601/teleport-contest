@@ -1,8 +1,56 @@
 // Hero weapon and quiver slot changes.
 // C refs: wield.c setuwep(), setuswapwep(), setuqwep(), uwepgone().
 
-import { W_WEAPONS } from './const.js';
+import {
+    W_QUIVER, W_SWAPWEP, W_WEAPONS, W_WEP,
+} from './const.js';
 import { game } from './gstate.js';
+
+function slotObject(slot, state) {
+    return state[slot] || state.u?.[slot] || null;
+}
+
+function clearSlot(slot, mask, flag, state) {
+    const object = slotObject(slot, state);
+    state[slot] = null;
+    if (state.u) state.u[slot] = null;
+    if (!object) return null;
+    object[flag] = false;
+    object.owornmask = (object.owornmask ?? 0) & ~mask;
+    return object;
+}
+
+function installSlot(object, slot, mask, flag, state) {
+    state[slot] = object;
+    if (state.u) state.u[slot] = object;
+    object.wielded = flag === 'wielded';
+    object.alternate = flag === 'alternate';
+    object.ready = flag === 'ready';
+    object.owornmask = (object.owornmask ?? 0) | mask;
+}
+
+function replaceSlot(object, slot, mask, flag, state) {
+    const oldObject = slotObject(slot, state);
+    if (oldObject !== object) clearSlot(slot, mask, flag, state);
+    if (!object) return oldObject;
+    if (oldObject !== object) releaseWeaponSlots(object, state);
+    installSlot(object, slot, mask, flag, state);
+    return oldObject;
+}
+
+export function setPrimaryWeapon(object, state = game) {
+    return replaceSlot(object, 'uwep', W_WEP, 'wielded', state);
+}
+
+export function setSecondaryWeapon(object, state = game) {
+    return replaceSlot(
+        object, 'uswapwep', W_SWAPWEP, 'alternate', state,
+    );
+}
+
+export function setQuiverObject(object, state = game) {
+    return replaceSlot(object, 'uquiver', W_QUIVER, 'ready', state);
+}
 
 export function releaseWeaponSlots(object, state = game) {
     if (!object) return;

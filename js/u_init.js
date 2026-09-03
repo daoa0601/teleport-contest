@@ -60,6 +60,9 @@ import { mergable, mergeObjectStacks } from './object_merge.js';
 import { putSaddleOnMonster } from './steed.js';
 import { grantIntrinsicProperty } from './properties.js';
 import { makePlural } from './object_grammar.js';
+import {
+    setPrimaryWeapon, setQuiverObject, setSecondaryWeapon,
+} from './weapon_slots.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -1011,49 +1014,39 @@ function useStartingItem(item) {
     if (item.otyp === ARROW || item.otyp === CROSSBOW_BOLT
         || item.otyp === YA || item.otyp === DART || item.otyp === FLINT) {
         if (!game.uquiver) {
-            game.uquiver = item;
-            item.ready = true;
+            setQuiverObject(item, game);
         }
     } else if (SPEAR_TYPES.has(item.otyp)
         || item.otyp === MACE || item.otyp === BULLWHIP
         || item.otyp === BATTLE_AXE || item.otyp === TWO_HANDED_SWORD
         || item.otyp === LONG_SWORD || item.otyp === QUARTERSTAFF) {
-        game.uwep = item;
-        item.wielded = true;
+        setPrimaryWeapon(item, game);
     } else if (DAGGER_TYPES.has(item.otyp) || item.otyp === SCALPEL
         || item.otyp === KATANA || item.otyp === CLUB) {
         if (game.urole?.key === 'rogue' && game.uwep && !game.uquiver) {
-            game.uquiver = item;
-            item.ready = true;
+            setQuiverObject(item, game);
         } else if (game.urole?.key === 'valkyrie' && game.uwep && !game.uswapwep) {
-            game.uswapwep = item;
-            item.alternate = true;
+            setSecondaryWeapon(item, game);
         } else {
-            game.uwep = item;
-            item.wielded = true;
+            setPrimaryWeapon(item, game);
         }
     } else if (item.otyp === BOW || item.otyp === CROSSBOW
         || item.otyp === SLING || item.otyp === LANCE) {
-        game.uswapwep = item;
-        item.alternate = true;
+        setSecondaryWeapon(item, game);
     } else if (item.otyp === PICK_AXE || item.otyp === TIN_OPENER) {
         // u_init.c:ini_inv_use_obj() treats weapon-tools and the tin opener
         // like weapons for initial primary/alternate slot assignment.
         if (!game.uwep) {
-            game.uwep = item;
-            item.wielded = true;
+            setPrimaryWeapon(item, game);
         } else if (!game.uswapwep) {
-            game.uswapwep = item;
-            item.alternate = true;
+            setSecondaryWeapon(item, game);
         }
     } else if (item.otyp === AXE || SHORT_SWORD_TYPES.has(item.otyp)
         || item.otyp === YUMI) {
         if (!game.uwep) {
-            game.uwep = item;
-            item.wielded = true;
+            setPrimaryWeapon(item, game);
         } else if (!game.uswapwep) {
-            game.uswapwep = item;
-            item.alternate = true;
+            setSecondaryWeapon(item, game);
         }
     } else if (item.oclass === ARMOR_CLASS && armorSlotFor(item.otyp)) {
         wearHeroArmor(item, game);
@@ -1359,7 +1352,9 @@ export function uInitInventoryAttrs() {
     game.inventory = [];
     setHeroGoldAmount(game, 0);
     game._lastInvNr = 51;
-    game.uwep = game.uswapwep = game.uquiver = null;
+    setPrimaryWeapon(null, game);
+    setSecondaryWeapon(null, game);
+    setQuiverObject(null, game);
     game.uarm = game.uarms = game.uarmc = game.uarmu = game.uarmg =
         game.uarmh = game.uarmf = null;
     game.u.weaponSkills = null;

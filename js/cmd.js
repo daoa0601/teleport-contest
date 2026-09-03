@@ -148,8 +148,12 @@ import {
     resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow,
 } from './swallowed_throw.js';
 import {
-    autoquiverCandidate, readySuggestion, setQuiverObject,
+    autoquiverCandidate, readySuggestion,
 } from './quiver.js';
+import {
+    releaseWeaponSlots, setPrimaryWeapon, setQuiverObject,
+    setSecondaryWeapon,
+} from './weapon_slots.js';
 import { launcherMatchesAmmo } from './object_properties.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
@@ -393,7 +397,7 @@ import {
     TEMPLE, SHOPBASE, ROOMOFFSET,
     F_LOOTED,
     In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level,
-    W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
+    W_ARMOR, W_ACCESSORY, W_SADDLE,
     W_BALL, W_CHAIN, LOST_THROWN,
     WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
     P_BOW, P_SLING, PARANOID_HIT, is_pit, isok,
@@ -4463,12 +4467,7 @@ async function doswapweapon() {
             game.context.move = 0;
             return;
         }
-        oldPrimary.wielded = false;
-        oldPrimary.alternate = true;
-        game.uwep = null;
-        if (game.u) game.u.uwep = null;
-        game.uswapwep = oldPrimary;
-        if (game.u) game.u.uswapwep = oldPrimary;
+        setSecondaryWeapon(oldPrimary, game);
         await pline('You are bare handed.');
         await plineWithContinuation(
             `${oldPrimary.invlet} - ${
@@ -4479,23 +4478,15 @@ async function doswapweapon() {
     }
 
     game.u.twoweap = false;
-    game.uswapwep = null;
-    if (game.u) game.u.uswapwep = null;
-
-    oldSecondary.alternate = false;
-    oldSecondary.wielded = true;
-    game.uwep = oldSecondary;
-    if (game.u) game.u.uwep = oldSecondary;
+    setSecondaryWeapon(null, game);
+    setPrimaryWeapon(oldSecondary, game);
     await pline(
         `${oldSecondary.invlet} - ${
             inventoryItemDescription(oldSecondary)}.`,
     );
 
-    game.uswapwep = oldPrimary;
-    if (game.u) game.u.uswapwep = oldPrimary;
     if (oldPrimary) {
-        oldPrimary.wielded = false;
-        oldPrimary.alternate = true;
+        setSecondaryWeapon(oldPrimary, game);
         await plineWithContinuation(
             `${oldPrimary.invlet} - ${
                 inventoryItemDescription(oldPrimary)}.`,
@@ -7807,9 +7798,7 @@ async function dowield(cannedInvlet = null) {
             game.context.move = 0;
             return;
         }
-        game.uwep.wielded = false;
-        game.uwep = null;
-        if (game.u) game.u.uwep = null;
+        setPrimaryWeapon(null, game);
         await pline('You are bare handed.');
         game.context.move = 1;
         return;
@@ -7849,10 +7838,7 @@ async function dowield(cannedInvlet = null) {
 
     const description = inventoryItemDescription(object);
     const oldPrimary = game.uwep || game.u?.uwep || null;
-    if (oldPrimary) oldPrimary.wielded = false;
-    game.uwep = object;
-    if (game.u) game.u.uwep = object;
-    object.wielded = true;
+    setPrimaryWeapon(object, game);
     const hand = game.u?.rightHanded ? 'right' : 'left';
     const suffix = object.class === 'Weapons' || object.oclass === 2
         ? object.name === 'quarterstaff'
@@ -7864,12 +7850,7 @@ async function dowield(cannedInvlet = null) {
     // secondary object; preserving that identity is what makes a later
     // selection of it enter doswapweapon() and its two-prinv continuation.
     if (game.flags?.pushweapon && oldPrimary && oldPrimary !== object) {
-        const oldSecondary = game.uswapwep || game.u?.uswapwep || null;
-        if (oldSecondary && oldSecondary !== oldPrimary)
-            oldSecondary.alternate = false;
-        game.uswapwep = oldPrimary;
-        if (game.u) game.u.uswapwep = oldPrimary;
-        oldPrimary.alternate = true;
+        setSecondaryWeapon(oldPrimary, game);
     }
     game.context.move = 1;
 }
@@ -9111,16 +9092,10 @@ async function doquiverCore(verb) {
                 return { item: null, spentTime: false, cancelled: false };
             }
             if (primary) {
-                game.uwep = null;
-                if (game.u) game.u.uwep = null;
-                item.wielded = false;
-                item.owornmask = (item.owornmask ?? 0) & ~W_WEP;
+                setPrimaryWeapon(null, game);
                 spentTime = true;
             } else {
-                game.uswapwep = null;
-                if (game.u) game.u.uswapwep = null;
-                item.alternate = false;
-                item.owornmask = (item.owornmask ?? 0) & ~W_SWAPWEP;
+                setSecondaryWeapon(null, game);
                 spentTime = wasTwoweap;
             }
             if (game.u) game.u.twoweap = false;
@@ -9629,11 +9604,7 @@ async function dothrow(
             } else {
                 const itemIndex = game.inventory.indexOf(item);
                 if (itemIndex >= 0) game.inventory.splice(itemIndex, 1);
-                if (game.uwep === item) game.uwep = null;
-                if (game.uswapwep === item) game.uswapwep = null;
-                if (game.uquiver === item) game.uquiver = null;
-                item.owornmask = 0;
-                item.ready = false;
+                releaseWeaponSlots(item, game);
                 item.where = 'free';
                 item.how_lost = LOST_THROWN;
             }
@@ -9655,11 +9626,7 @@ async function dothrow(
         } else {
             const itemIndex = game.inventory.indexOf(item);
             if (itemIndex >= 0) game.inventory.splice(itemIndex, 1);
-            if (game.uwep === item) game.uwep = null;
-            if (game.uswapwep === item) game.uswapwep = null;
-            if (game.uquiver === item) game.uquiver = null;
-            item.owornmask = 0;
-            item.ready = false;
+            releaseWeaponSlots(item, game);
             item.where = 'free';
             item.how_lost = LOST_THROWN;
         }

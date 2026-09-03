@@ -3,7 +3,7 @@
 // wield.c:ready_ok()/setuqwep().  Command prompts remain in cmd.js.
 
 import {
-    P_BOW, P_CROSSBOW, P_DAGGER, P_SLING, W_QUIVER,
+    P_BOW, P_CROSSBOW, P_DAGGER, P_SLING,
 } from './const.js';
 import {
     AKLYS, FLINT, OBJECT_MATERIAL, OBJECT_SUBTYPE, ROCK,
@@ -16,18 +16,6 @@ import {
 
 function quiverObjectClass(item) {
     return item?.oclass || objectClassForType(item?.otyp);
-}
-
-export function setQuiverObject(item, state) {
-    if (state.uquiver && state.uquiver !== item) {
-        state.uquiver.ready = false;
-        state.uquiver.owornmask = (state.uquiver.owornmask ?? 0) & ~W_QUIVER;
-    }
-    state.uquiver = item || null;
-    if (item) {
-        item.ready = true;
-        item.owornmask = (item.owornmask ?? 0) | W_QUIVER;
-    }
 }
 
 // The four buckets deliberately have different overwrite policies and final

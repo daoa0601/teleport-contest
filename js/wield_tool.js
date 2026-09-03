@@ -1,7 +1,7 @@
 // Wielding a tool so another command can use it.
 // C ref: wield.c wield_tool().
 
-import { W_ACCESSORY, W_ARMOR, W_SWAPWEP, W_WEP } from './const.js';
+import { W_ACCESSORY, W_ARMOR } from './const.js';
 import { pline } from './display.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
@@ -12,8 +12,9 @@ import {
 import {
     heroHasNoHands, heroIsVerySmall,
 } from './polyself.js';
-import { setQuiverObject } from './quiver.js';
-import { releaseWeaponSlots } from './weapon_slots.js';
+import {
+    setPrimaryWeapon, setQuiverObject, setSecondaryWeapon,
+} from './weapon_slots.js';
 
 function quantityOf(object) {
     return object.quan ?? object.quantity ?? 1;
@@ -58,36 +59,6 @@ function willWeld(object) {
 
 function isTwoHanded(object) {
     return !!(object?.bimanual || OBJECT_BIMANUAL[object?.otyp]);
-}
-
-function clearPrimary(object, state) {
-    if (!object) return;
-    if (state.uwep === object) state.uwep = null;
-    if (state.u?.uwep === object) state.u.uwep = null;
-    object.wielded = false;
-    object.owornmask = (object.owornmask ?? 0) & ~W_WEP;
-}
-
-function setPrimary(object, state) {
-    releaseWeaponSlots(object, state);
-    state.uwep = object;
-    if (state.u) state.u.uwep = object;
-    object.wielded = true;
-    object.alternate = false;
-    object.ready = false;
-    object.owornmask = (object.owornmask ?? 0) | W_WEP;
-}
-
-function pushOldPrimary(object, state) {
-    const oldSecondary = state.uswapwep || state.u?.uswapwep || null;
-    if (oldSecondary && oldSecondary !== object) {
-        oldSecondary.alternate = false;
-        oldSecondary.owornmask = (oldSecondary.owornmask ?? 0) & ~W_SWAPWEP;
-    }
-    state.uswapwep = object;
-    if (state.u) state.u.uswapwep = object;
-    object.alternate = true;
-    object.owornmask = (object.owornmask ?? 0) | W_SWAPWEP;
 }
 
 function weldedPrimary(state) {
@@ -162,8 +133,7 @@ export async function wieldTool(
     }
 
     const description = inventoryItemDescription(object);
-    clearPrimary(current, state);
-    setPrimary(object, state);
+    setPrimaryWeapon(object, state);
     if (willWeld(object)) {
         const dominantSide = state.u?.rightHanded === false ? 'left' : 'right';
         const hand = isTwoHanded(object)
@@ -180,7 +150,7 @@ export async function wieldTool(
     }
 
     if (state.flags?.pushweapon && current && current !== object)
-        pushOldPrimary(current, state);
+        setSecondaryWeapon(current, state);
     if (state.u) state.u.twoweap = false;
     state._unweapon = !isWeapon(object);
     return { ready: true, newlyWielded: true };
