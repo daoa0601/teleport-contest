@@ -31,6 +31,7 @@ import { shipObject } from './object_migration.js';
 import { splitObjectStack } from './object_stack.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf } from './senses.js';
+import { settleThrownShopObject } from './shk.js';
 import { cansee } from './vision.js';
 
 const EQUIPMENT_SLOTS = [
@@ -234,6 +235,7 @@ export async function finishHeroThrownObjectLanding({
     }
 
     place_object(object, x, y, state);
+    await settleThrownShopObject(object, x, y, state);
     const landed = stack_object(object, state);
     newsym(x, y);
     return landed;

@@ -325,8 +325,7 @@ import {
     checkSpecialRoom,
     carriedShopBill, getCostOfShopItem, objectTypeKnown,
     SHOP_TYPE_NAMES,
-    settleCarriedShopBillItem, settleThrownShopObject,
-    shopkeeperForHero, shopkeeperName,
+    settleCarriedShopBillItem, shopkeeperForHero, shopkeeperName,
     shopThankYouMessage,
     unpaidObjectCost,
 } from './shk.js';
@@ -356,7 +355,7 @@ import {
     prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion,
     tryKickReel,
 } from './monster_kick.js';
-import { waterDamageChain, waterDamageObject } from './trap.js';
+import { waterDamageChain } from './trap.js';
 import {
     heroTeleportDestinationOk, moveHeroByTeleport,
     randomMonsterRelocation, safeTeleportDestination,
@@ -10108,6 +10107,15 @@ async function dothrow(
             item.how_lost = LOST_THROWN;
         }
 
+        const landThrownMineral = (landingX, landingY) =>
+            finishHeroThrownObjectLanding({
+                state: game,
+                object: thrownMineral,
+                x: landingX,
+                y: landingY,
+                publish: plineWithContinuation,
+            });
+
         const thrownGemDisplayName = () => {
             const callName = game._objectCallNames?.[thrownMineral.otyp];
             const perceivedName = callName
@@ -10200,11 +10208,7 @@ async function dothrow(
                 await plineWithContinuation(
                     `The ${gemName} misses ${targetName}.`,
                 );
-                rn2(100); // drop_throw()->breaktest()->obj_resists()
-                place_object(thrownMineral, x, y);
-                await settleThrownShopObject(thrownMineral, x, y);
-                stack_object(thrownMineral);
-                newsym(x, y);
+                await landThrownMineral(x, y);
                 game.context.move = 1;
                 return;
             }
@@ -10223,11 +10227,7 @@ async function dothrow(
                 await plineWithContinuation(
                     `${subject} catches and drops the ${gemName}.`,
                 );
-                rn2(100); // drop_throw()->breaktest()->obj_resists()
-                place_object(thrownMineral, x, y);
-                await settleThrownShopObject(thrownMineral, x, y);
-                stack_object(thrownMineral);
-                newsym(x, y);
+                await landThrownMineral(x, y);
                 game.context.move = 1;
                 return;
             }
@@ -10362,11 +10362,7 @@ async function dothrow(
                     }
                 }
                 if (!accepted) {
-                    rn2(100); // drop_throw()->breaktest()->obj_resists()
-                    place_object(thrownMineral, x, y);
-                    await settleThrownShopObject(thrownMineral, x, y);
-                    stack_object(thrownMineral);
-                    newsym(x, y);
+                    await landThrownMineral(x, y);
                 }
                 game.context.move = 1;
                 return;
@@ -10433,11 +10429,7 @@ async function dothrow(
                     `The ${projectileName} misses${targetSuffix}.`,
                 );
                 if (rn2(3) === 0) await wakeAttackedMonster(contact);
-                rn2(100); // drop_throw()->breaktest()->obj_resists()
-                place_object(thrownMineral, x, y);
-                await settleThrownShopObject(thrownMineral, x, y);
-                stack_object(thrownMineral);
-                newsym(x, y);
+                await landThrownMineral(x, y);
                 game.context.move = 1;
                 return;
             }
@@ -10505,11 +10497,7 @@ async function dothrow(
             await applySharedProjectileObjectPassive(
                 contact, thrownMineral,
             );
-            rn2(100); // drop_throw()->breaktest()->obj_resists()
-            place_object(thrownMineral, x, y);
-            await settleThrownShopObject(thrownMineral, x, y);
-            stack_object(thrownMineral);
-            newsym(x, y);
+            await landThrownMineral(x, y);
             game.context.move = 1;
             return;
         }
@@ -10519,16 +10507,8 @@ async function dothrow(
             await plineWithContinuation(
                 unitWeight > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!',
             );
-            thrownMineral.ox = x;
-            thrownMineral.oy = y;
-            await waterDamageObject(thrownMineral, [], game);
-        } else {
-            rn2(100); // drop_throw()->breaktest()->obj_resists()
         }
-        place_object(thrownMineral, x, y);
-        await settleThrownShopObject(thrownMineral, x, y);
-        stack_object(thrownMineral);
-        newsym(x, y);
+        await landThrownMineral(x, y);
         game.context.move = 1;
         return;
         };

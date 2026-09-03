@@ -101,6 +101,23 @@ test('an arrow landing on a down ladder leaves the source level', async () => {
     assert.equal(arrow.where, 'migrating');
 });
 
+test('a thrown rock landing on a down ladder leaves the source level',
+    async () => {
+        const source = sourceLevel({ ladder: true });
+        game.stairs.sx = 11;
+        source.at(12, 10).typ = STONE;
+        const rock = carriedObject(ROCK, {
+            invlet: 'a',
+            name: 'rock',
+        });
+        game.inventory = [rock];
+
+        await throwInventoryObject(rock, 'l');
+
+        assert.equal(floorObjects(source).includes(rock), false);
+        assert.equal(rock.where, 'migrating');
+    });
+
 test('an object falling through a hole lands inside the lower arrival region',
     async () => {
         const source = sourceLevel();
