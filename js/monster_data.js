@@ -99,7 +99,9 @@ export function monsterTypeName(mnum, female = false) {
 // C ref: mondata.h nonliving().  Symbol numbers use the generated S_* order.
 const M2_UNDEAD = 0x00000002;
 const M2_WERE = 0x00000004;
+const M2_HUMAN = 0x00000008;
 const M2_DEMON = 0x00000100;
+const M2_ALWAYS_HOSTILE = 0x00100000;
 const M2_JEWELS = 0x20000000;
 const M1_AMORPHOUS = 0x00000004;
 const M1_NOHANDS = 0x00002000;
@@ -128,6 +130,9 @@ const PM_GREMLIN = 40;
 const PM_TENGU = 55;
 const PM_WOOD_GOLEM = 254;
 const PM_SHADE = 288;
+const PM_HUMAN = MONSTER_NAME.indexOf('human');
+const PM_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
+const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
 const PM_WINGED_GARGOYLE = MONSTER_NAME.indexOf('winged gargoyle');
 const PM_MARILITH = MONSTER_NAME.indexOf('marilith');
 const S_IMP = 9;
@@ -165,6 +170,22 @@ export function monsterClassSymbol(mnum) {
 
 export function monsterIsUndead(mnum) {
     return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_UNDEAD);
+}
+
+export function monsterIsHuman(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_HUMAN);
+}
+
+export function monsterIsAlwaysHostile(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_ALWAYS_HOSTILE);
+}
+
+export function monsterIsPlayerMonster(mnum) {
+    return mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD;
+}
+
+export function monsterIsPlainHuman(mnum) {
+    return mnum === PM_HUMAN;
 }
 
 export function monsterIsMindless(mnum) {

@@ -12,6 +12,7 @@ import {
     RED_DRAGON_SCALES, ROCK, STATUE, UNICORN_HORN, WORM_TOOTH,
 } from '../js/object_data.js';
 import { place_object } from '../js/floor_object.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { knownObject } from './support/game-objects.js';
 import {
     addTrap, floorObjects, floorObjectsAt,
@@ -143,6 +144,29 @@ test('killing a co-aligned unicorn costs five luck', async () => {
     });
 
     assert.equal(game.u.uluck, -5);
+});
+
+test('murder costs luck and intrinsic telepathy', async () => {
+    freshObjectRoom();
+    const prisoner = addMonster({
+        species: 'prisoner', x: 11, y: 10, hitPoints: 1, malign: 0,
+    });
+    game.u.uluck = 0;
+    grantIntrinsicProperty('telepathy', 'corpse', game);
+
+    await finishHeroMonsterKill(prisoner, prisoner.mx, prisoner.my, {
+        showKillMessage: false,
+        recordConduct: false,
+        noCorpse: true,
+    });
+
+    assert.deepEqual({
+        luck: game.u.uluck,
+        telepathy: game.u.telepathy,
+    }, {
+        luck: -2,
+        telepathy: false,
+    });
 });
 
 test('killing a pit-trapped monster with a boulder buries its corpse',

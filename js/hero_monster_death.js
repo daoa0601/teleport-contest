@@ -3,10 +3,10 @@
 
 import { adjustHeroAlignment } from './alignment.js';
 import { uncreateArtifact } from './artifacts.js';
-import { G_NOCORPSE, is_pit } from './const.js';
+import { A_CHAOTIC, G_NOCORPSE, is_pit } from './const.js';
 import {
     canProjectMonster, docrt, newsym, plineWithContinuation,
-    randomDisplayMonsterName, unmap_invisible,
+    randomDisplayMonsterName, see_monsters, unmap_invisible,
 } from './display.js';
 import { recordHeroKillConduct } from './end.js';
 import {
@@ -21,7 +21,9 @@ import { deleteObject } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME,
-    MONSTER_SIZE, monsterIsKop, monsterIsNonliving, monsterIsUnicorn,
+    MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop,
+    monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster,
+    monsterIsUnicorn,
 } from './monster_data.js';
 import {
     monsterDeathCount, recordMonsterDeath,
@@ -44,10 +46,10 @@ import {
     BOULDER, FIGURINE, OBJECT_BIMANUAL,
 } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
+import { removeIntrinsicProperty } from './properties.js';
 import { rnd, rn2 } from './rng.js';
 import { cansee, vision_recalc } from './vision.js';
 
-const M2_ALWAYS_HOSTILE = 0x00100000;
 const M2_ALWAYS_PEACEFUL = 0x00200000;
 const M2_COLLECT = 0x40000000;
 const FOOD_CLASS = 7;
@@ -70,7 +72,7 @@ function monsterDeathMalign(monster) {
     if (flags & M2_ALWAYS_PEACEFUL) {
         return (peaceful ? -3 : 3) * Math.max(5, absoluteAlignment);
     }
-    if (flags & M2_ALWAYS_HOSTILE) {
+    if (monsterIsAlwaysHostile(mnum)) {
         return coaligned ? 0 : Math.max(5, absoluteAlignment);
     }
     if (coaligned) {
@@ -79,6 +81,26 @@ function monsterDeathMalign(monster) {
             : Math.max(3, absoluteAlignment);
     }
     return absoluteAlignment;
+}
+
+function killingIsMurder(monster) {
+    const mnum = monster?.mnum ?? -1;
+    return monsterIsHuman(mnum)
+        && !monsterIsAlwaysHostile(mnum)
+        && monsterDeathMalign(monster) <= 0
+        && !monsterIsPlayerMonster(mnum)
+        && !monsterIsPlainHuman(mnum)
+        && (game.u?.ualign?.type ?? 0) !== A_CHAOTIC;
+}
+
+async function punishMurder() {
+    removeIntrinsicProperty('telepathy', game);
+    game.u.uluck = (game.u.uluck || 0) - 2;
+    await plineWithContinuation('You murderer!');
+
+    const blind = !!game.blind || (game.u?.blindTurns ?? 0) > 0;
+    if (blind && !game.u?.blindTelepathy && !game.u?.telepathy)
+        see_monsters();
 }
 
 function observeMonsterDropName(object, x, y) {
@@ -297,6 +319,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
         newsym(x, y);
     }
 
+    if (killingIsMurder(monster)) await punishMurder();
     if ((monster.mpeaceful && rn2(2) === 0) || monster.mtame)
         game.u.uluck = (game.u.uluck || 0) - 1;
     if (monsterIsUnicorn(monster.mnum)
