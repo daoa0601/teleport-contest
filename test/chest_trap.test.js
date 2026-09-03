@@ -8,7 +8,7 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    floorObject, inventoryObject,
+    addInventoryObject, floorObject, knownObject,
 } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -38,8 +38,9 @@ function freshTrapRoom(options) {
 
 test('luck can discharge a trapped chest without harming the hero', async () => {
     freshTrapRoom({ hero: { uluck: 0, uhp: 40, uhpmax: 40 } });
-    const chest = inventoryObject(CHEST, 'a', { otrapped: true });
-    game.inventory = [chest];
+    const chest = addInventoryObject(CHEST, {
+        invlet: 'a', otrapped: true,
+    });
     const output = messageCollector();
 
     const result = await triggerChestTrap(chest, {
@@ -63,7 +64,7 @@ test('a floor chest explosion destroys ordinary objects and wakes monsters',
             hero: { uluck: 0, ulevel: 5, uhp: 100, uhpmax: 100 },
         });
         const chest = floorObject(CHEST, 10, 10, { otrapped: true });
-        const contents = inventoryObject(CLUB, 'a', {
+        const contents = knownObject(CLUB, {
             where: 'contained',
             container: chest,
         });
@@ -97,13 +98,15 @@ test('a floor chest explosion destroys ordinary objects and wakes monsters',
 test('a carried trapped chest survives its explosion but loses its contents',
     async () => {
         freshTrapRoom({ hero: { uluck: 0, uhp: 60, uhpmax: 60 } });
-        const chest = inventoryObject(CHEST, 'a', { otrapped: true });
-        const club = inventoryObject(CLUB, 'b', {
+        const chest = addInventoryObject(CHEST, {
+            invlet: 'a', otrapped: true,
+        });
+        const club = knownObject(CLUB, {
+            invlet: 'b',
             where: 'contained',
             container: chest,
         });
         chest.contents = [club];
-        game.inventory = [chest];
 
         const result = await triggerChestTrap(chest, {
             random: randomValues(0, 0, 21),
@@ -121,9 +124,12 @@ test('a carried trapped chest survives its explosion but loses its contents',
 
 test('free action prevents a chest trap from paralyzing the hero', async () => {
     freshTrapRoom({ hero: { uluck: 0 } });
-    const chest = inventoryObject(CHEST, 'a', { otrapped: true });
-    const ring = inventoryObject(RIN_FREE_ACTION, 'b', { worn: true });
-    game.inventory = [chest, ring];
+    const chest = addInventoryObject(CHEST, {
+        invlet: 'a', otrapped: true,
+    });
+    const ring = addInventoryObject(RIN_FREE_ACTION, {
+        invlet: 'b', worn: true,
+    });
     game.uleft = game.u.uleft = ring;
 
     const result = await triggerChestTrap(chest, {
@@ -148,8 +154,9 @@ test('poison resistance blocks a trapped chest needle', async () => {
             poisonResistance: true,
         },
     });
-    const chest = inventoryObject(CHEST, 'a', { otrapped: true });
-    game.inventory = [chest];
+    const chest = addInventoryObject(CHEST, {
+        invlet: 'a', otrapped: true,
+    });
 
     const result = await triggerChestTrap(chest, {
         random: randomValues(0, 0, 13),
@@ -188,8 +195,9 @@ test('shock resistance blocks direct chest-trap electrical damage',
                 shockResistance: true,
             },
         });
-        const chest = inventoryObject(CHEST, 'a', { otrapped: true });
-        game.inventory = [chest];
+        const chest = addInventoryObject(CHEST, {
+            invlet: 'a', otrapped: true,
+        });
 
         const result = await triggerChestTrap(chest, {
             random: randomValues(0, 0, 6, 0),
@@ -207,8 +215,9 @@ test('colored gas stuns the hero while hallucination resistance stays active',
         freshTrapRoom({
             hero: { uluck: 0, hallucinationResistance: true },
         });
-        const chest = inventoryObject(CHEST, 'a', { otrapped: true });
-        game.inventory = [chest];
+        const chest = addInventoryObject(CHEST, {
+            invlet: 'a', otrapped: true,
+        });
 
         const result = await triggerChestTrap(chest, {
             random: randomValues(0, 1, 0, 2, 4, 3),

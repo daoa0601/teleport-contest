@@ -11,7 +11,7 @@ import { CLUB } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { dropInventoryObject } from './support/commands.js';
-import { inventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshGame } from './support/game-state.js';
 import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -86,8 +86,9 @@ test('an object falling down stairs survives saving and reaches the next level',
                 savedAt: game.moves,
             },
         ]]);
-        const club = inventoryObject(CLUB, 'a', { o_id: 7301 });
-        game.inventory = [club];
+        const club = addInventoryObject(CLUB, {
+            invlet: 'a', o_id: 7301,
+        });
         game.plname = 'Faller';
         initRng(1n);
 
