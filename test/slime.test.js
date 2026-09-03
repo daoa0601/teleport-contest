@@ -18,25 +18,18 @@ import {
     advanceHeroSliming, finishDeferredHeroSlime, PM_GREEN_SLIME,
     resumeDeferredHeroSlime, startHeroSliming,
 } from '../js/slime.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';
 import {
     freshHeroConditionRoom, wearHeroObject,
 } from './support/hero-state.js';
 
-test('a green slime touch infects and still deals its physical damage', () => {
+test('a green slime touch infects and still deals its physical damage', async () => {
     freshHeroConditionRoom();
-    const slime = addMonster({
-        m_id: 2080,
-        mnum: PM_GREEN_SLIME,
-        x: 12,
-        y: 10,
-        hitPoints: 20,
-        level: 6,
-        mux: game.u.ux,
-        muy: game.u.uy,
-        movement: 12,
-    });
+    const slime = await createMonsterAt('green slime', 12, 10);
+    slime.mux = game.u.ux;
+    slime.muy = game.u.uy;
+    slime.movement = 12;
     game._deferVisibleMonsterContact = true;
     const hitPoints = game.u.uhp;
 

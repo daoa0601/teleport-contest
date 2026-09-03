@@ -23,21 +23,16 @@ import { objectWeight } from '../js/weight.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_GHOST = 287;
 const PM_HUMAN_ARCHEOLOGIST = 331;
 const PM_HUMAN_MUMMY = 192;
 
-test('a nearby object-loving monster can inherit a dead hero item', () => {
+test('a nearby object-loving monster can inherit a dead hero item', async () => {
     freshPlayableRoom({ seed: 1n });
-    const dwarf = addMonster({
-        mnum: 44,
-        x: 11,
-        y: 10,
-        hitPoints: 20,
-    });
+    const orc = await createMonsterAt('orc', 11, 10);
     const dagger = addInventoryObject(DAGGER, {
         worn: true,
         wielded: true,
@@ -48,9 +43,9 @@ test('a nearby object-loving monster can inherit a dead hero item', () => {
     dropHeroInventoryForBones(10, 10);
 
     assert.deepEqual(game.inventory, []);
-    assert.equal(dwarf.minvent.includes(dagger), true);
+    assert.equal(orc.minvent.includes(dagger), true);
     assert.equal(dagger.where, 'minvent');
-    assert.equal(dagger.carrierMid, dwarf.m_id);
+    assert.equal(dagger.carrierMid, orc.m_id);
     assert.equal(dagger.worn, false);
     assert.equal(dagger.wielded, false);
     assert.equal(dagger.owornmask, 0);
