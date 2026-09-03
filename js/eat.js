@@ -39,7 +39,10 @@ import {
     eatPetrifyingEgg, heroWouldPetrifyFromFlesh,
     tastePetrifyingFlesh,
 } from './stoning.js';
-import { purifyHeroLycanthropy } from './were.js';
+import {
+    catchLycanthropyFromCorpse, purifyHeroLycanthropy,
+} from './were.js';
+import { retouchEquipment } from './hero_retouch.js';
 import { exceedsActionCapacity, objectWeight } from './weight.js';
 
 const M1_CARNIVORE = 0x20000000;
@@ -449,7 +452,11 @@ async function applyCorpsePreEffects(g, food) {
 
 // C eat.c:cpostfx()/eye_of_newt_buzz().  Corpse post-effects happen after
 // the finish message and before the consumed floor identity is released.
-function applyCorpsePostEffects(g, corpse) {
+async function applyCorpsePostEffects(g, corpse) {
+    if (catchLycanthropyFromCorpse(corpse?.corpsenm, g)) {
+        await retouchEquipment(2);
+        return null;
+    }
     if (corpse?.corpsenm !== 322) return null; // PM_NEWT
     const u = g.u;
     if (rn2(3) !== 0 || 3 * (u.uen ?? 0) <= 2 * (u.uenmax ?? 0)) {
@@ -549,7 +556,7 @@ async function finishFoodMeal(g, meal, showFinishMessage) {
         await plineWithContinuation(meal.finishMessage);
     }
     const postEffectMessage = meal.corpseLike
-        ? applyCorpsePostEffects(g, meal.object) : null;
+        ? await applyCorpsePostEffects(g, meal.object) : null;
     if (postEffectMessage)
         await plineWithContinuation(postEffectMessage);
     if (!meal.corpseLike)

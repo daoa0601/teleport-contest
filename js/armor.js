@@ -75,6 +75,7 @@ export function heroHasDrainResistance(state = game) {
     const hero = state?.u || {};
     const shield = state?.uarms || hero.uarms;
     return !!(hero.drainResistance || hero.drain_resistance
+        || (Number.isInteger(hero.ulycn) && hero.ulycn >= 0)
         || shield?.otyp === SHIELD_OF_DRAIN_RESISTANCE);
 }
 

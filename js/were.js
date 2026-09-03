@@ -49,6 +49,18 @@ const PM_WINTER_WOLF = 24;
 const PM_HUMAN_WERERAT = 261;
 const PM_HUMAN_WEREJACKAL = 262;
 const PM_HUMAN_WEREWOLF = 263;
+const HUMAN_WERE_CORPSE = new Map([
+    [PM_HUMAN_WERERAT, PM_WERERAT],
+    [PM_HUMAN_WEREJACKAL, PM_WEREJACKAL],
+    [PM_HUMAN_WEREWOLF, PM_WEREWOLF],
+]);
+
+export function catchLycanthropyFromCorpse(mnum, state = game) {
+    const beast = HUMAN_WERE_CORPSE.get(mnum);
+    if (beast === undefined) return false;
+    state.u.ulycn = beast;
+    return true;
+}
 
 function summonedWereAlly(form, random) {
     if (form === PM_WERERAT || form === PM_HUMAN_WERERAT) {
