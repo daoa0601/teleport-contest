@@ -23,3 +23,20 @@ test('a large monster leaves a corpse without a random chance', async () => {
     assert.equal(death.corpse?.otyp, CORPSE);
     assert.equal(floorObjectsAt(level, 11, 10).includes(death.corpse), true);
 });
+
+test('a visible lich crumbles to dust instead of leaving a corpse', async () => {
+    freshObjectRoom();
+    const lich = addMonster({
+        species: 'lich', x: 11, y: 10, hitPoints: 1,
+    });
+    const messages = [];
+
+    const death = await finishEnvironmentalMonsterDeath(lich, game, {
+        visible: true,
+        random: () => 0,
+        publish: async message => messages.push(message),
+    });
+
+    assert.equal(death.corpse, null);
+    assert.deepEqual(messages, ["The lich's body crumbles into dust."]);
+});

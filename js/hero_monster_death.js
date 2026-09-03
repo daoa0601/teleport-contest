@@ -4,7 +4,7 @@
 import { adjustHeroAlignment } from './alignment.js';
 import { exerciseAttribute } from './attrib.js';
 import {
-    A_STR, COLNO, G_NOCORPSE, Is_rogue_level, ROWNO, TAINT_AGE,
+    A_STR, COLNO, G_NOCORPSE, ROWNO,
 } from './const.js';
 import {
     canProjectMonster, docrt, flush_screen, newsym, plineWithContinuation,
@@ -17,10 +17,7 @@ import {
 } from './exper.js';
 import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
-import {
-    mkcorpstat, mkobj, mksobj, undeadToCorpse,
-} from './mklev.js';
-import { corpseKeepsMonsterTraits } from './monster_traits.js';
+import { mkobj } from './mklev.js';
 import { markQuestLeaderDead } from './quest.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { preventMonsterDeath } from './mondeath.js';
@@ -29,29 +26,22 @@ import {
     MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SIZE,
     monsterIsNonliving,
 } from './monster_data.js';
-import { monsterCorpseChance } from './monster_death.js';
+import {
+    createMonsterRemains, levelAllowsMonsterDeathDrops,
+    monsterBodyCrumblesMessage, monsterLeavesCorpse,
+} from './monster_death.js';
 import { AT_BOOM } from './monster_attack_types.js';
 import {
     addObjectToMonsterInventory, clearMonsterCarriedObjectState,
 } from './monster_inventory.js';
-import { CORPSE, IRON_CHAIN } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import { d, rnd, rn2 } from './rng.js';
 import { CLR_GREEN } from './terminal.js';
 import { cansee, vision_recalc } from './vision.js';
 
-const PM_IRON_GOLEM = 259;
-
 const M2_ALWAYS_HOSTILE = 0x00100000;
 const M2_ALWAYS_PEACEFUL = 0x00200000;
 const A_NONE = -128;
-
-function levelSpecificNoCorpse(monster) {
-    if (Is_rogue_level(game.u?.uz)
-        || game.level?.flags?.deathdrops === false) return true;
-    const isUndead = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x2);
-    return !!(game.level?.flags?.graveyard && isUndead && rn2(3));
-}
 
 function rollMonsterAttackDamage(monster, attack) {
     const [, , dice = 0, sides = 0] = attack || [];
@@ -322,7 +312,8 @@ export async function finishHeroMonsterKill(monster, x, y, {
     monster.inventory = monster.minvent;
     monster.hasInventory = false;
 
-    const permitsDeathDrops = !noCorpse && !levelSpecificNoCorpse(monster);
+    const permitsDeathDrops = !noCorpse
+        && levelAllowsMonsterDeathDrops(monster, game, rn2);
     if (permitsDeathDrops) {
         const extraObjectRoll = rn2(6);
         if (extraObjectRoll === 0
@@ -346,7 +337,6 @@ export async function finishHeroMonsterKill(monster, x, y, {
         }
     }
 
-    const generationFlags = MONSTER_GENO[monster.mnum] ?? 0;
     const boomAttack = permitsDeathDrops
         ? MONSTER_ATTACKS[monster.mnum]
             ?.find(attack => attack[0] === AT_BOOM)
@@ -358,8 +348,12 @@ export async function finishHeroMonsterKill(monster, x, y, {
         const blastDamage = rollMonsterAttackDamage(monster, boomAttack);
         explosion = { containedDamage, blastDamage };
     } else {
+        const crumbleMessage = permitsDeathDrops
+            ? monsterBodyCrumblesMessage(monster) : null;
+        if (crumbleMessage && deathLocationVisible && !wasInside)
+            await plineWithContinuation(crumbleMessage);
         leavesCorpse = !noCorpse && !wasInside
-            && permitsDeathDrops && monsterCorpseChance(monster, game, rn2);
+            && permitsDeathDrops && monsterLeavesCorpse(monster, rn2);
     }
     unmap_invisible(x, y, false);
     monster.dead = true;
@@ -368,34 +362,8 @@ export async function finishHeroMonsterKill(monster, x, y, {
         candidate => candidate !== monster,
     );
     recordVanquished(monster, monsterName, { weaponHit });
-    const corpseForm = undeadToCorpse(monster.mnum);
-    const convertedUndeadCorpse = corpseForm !== monster.mnum;
-    if (leavesCorpse && monster.mnum === PM_IRON_GOLEM) {
-        const chainCount = d(2, 6);
-        for (let index = 0; index < chainCount; index++) {
-            const chain = mksobj(IRON_CHAIN, true, false);
-            place_object(chain, x, y);
-        }
-        delete monster.name;
-    } else if (leavesCorpse
-        && (convertedUndeadCorpse || !(generationFlags & G_NOCORPSE))) {
-        const leaderId = game.quest_status?.leader_m_id;
-        const savedMonster = convertedUndeadCorpse
-            || corpseKeepsMonsterTraits(monster, leaderId)
-            ? monster : null;
-        const corpse = mkcorpstat(
-            CORPSE, savedMonster, corpseForm, x, y, 8, {
-                zombify: zombifyCorpse,
-            },
-        );
-        Object.assign(corpse, {
-            name: `${MONSTER_NAME[corpseForm] || monsterName} corpse`,
-            quantity: 1, quan: 1, ox: x, oy: y,
-        });
-        if (monster.name) corpse.oname = monster.name;
-        if (convertedUndeadCorpse)
-            corpse.age = (corpse.age ?? game.moves ?? 1) - (TAINT_AGE + 1);
-    }
+    if (leavesCorpse)
+        createMonsterRemains(monster, game, { zombify: zombifyCorpse });
 
     if (typeof deathContext?.finishDestinationEffects === 'function') {
         await deathContext.finishDestinationEffects({

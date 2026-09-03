@@ -21,25 +21,38 @@ import { d, rn2 } from './rng.js';
 import { cansee } from './vision.js';
 
 const PM_IRON_GOLEM = 259;
+const PM_VLAD_THE_IMPALER = 228;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
 const PM_LIZARD = 326;
 const PM_ARCHEOLOGIST = 331;
 const PM_WIZARD = 343;
 const S_GOLEM = 55;
+const S_LICH = 38;
 const M2_UNDEAD = 0x00000002;
 
-function levelPreventsMonsterRemains(monster, state, random) {
-    if (Is_rogue_level(state.u?.uz)
-        || state.level?.flags?.deathdrops === false) return true;
-    const undead = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_UNDEAD);
-    return !!(state.level?.flags?.graveyard && undead && random(3));
-}
-
-export function monsterCorpseChance(
+export function levelAllowsMonsterDeathDrops(
     monster, state = game, random = rn2,
 ) {
-    if (levelPreventsMonsterRemains(monster, state, random)) return false;
+    if (Is_rogue_level(state.u?.uz)
+        || state.level?.flags?.deathdrops === false) return false;
+    const undead = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_UNDEAD);
+    return !(state.level?.flags?.graveyard && undead && random(3));
+}
+
+export function monsterBodyCrumblesMessage(monster) {
+    const mnum = monster.mnum;
+    if (mnum !== PM_VLAD_THE_IMPALER
+        && MONSTER_SYMBOL[mnum] !== S_LICH) return null;
+    const name = monster.name || MONSTER_NAME[mnum] || 'monster';
+    const usesArticle = !monster.name && !/^[A-Z]/.test(name);
+    const subject = usesArticle ? `The ${name}` : name;
+    const possessive = /s$/i.test(subject) ? `${subject}'` : `${subject}'s`;
+    return `${possessive} body crumbles into dust.`;
+}
+
+export function monsterLeavesCorpse(monster, random = rn2) {
+    if (monsterBodyCrumblesMessage(monster)) return false;
     const mnum = monster.mnum;
     const guaranteed = (((MONSTER_SIZE[mnum] ?? 2) >= 3
             || mnum === PM_LIZARD) && !monster.mcloned)
@@ -54,12 +67,11 @@ export function monsterCorpseChance(
     return random(corpseDenominator) === 0;
 }
 
-function createOrdinaryMonsterCorpse(
-    monster, state, random, { zombify = false } = {},
+export function createMonsterRemains(
+    monster, state = game, { zombify = false } = {},
 ) {
     const x = monster.mx;
     const y = monster.my;
-    if (!monsterCorpseChance(monster, state, random)) return null;
     if (monster.mnum === PM_IRON_GOLEM) {
         const chainCount = d(2, 6);
         let lastChain = null;
@@ -67,6 +79,7 @@ function createOrdinaryMonsterCorpse(
             lastChain = mksobj(IRON_CHAIN, true, false);
             place_object(lastChain, x, y, state);
         }
+        delete monster.name;
         return lastChain;
     }
 
@@ -84,10 +97,8 @@ function createOrdinaryMonsterCorpse(
     );
     corpse.name = `${MONSTER_NAME[corpseForm] || 'monster'} corpse`;
     if (monster.name) corpse.oname = monster.name;
-    const sourceMove = Math.max(1, (state?.moves ?? 1)
-        - Number(state?.urole?.key === 'wizard'));
-    if (corpseForm !== monster.mnum) corpse.age = sourceMove - 51;
-    if (corpseForm === 59) corpse.owt = 400;
+    if (corpseForm !== monster.mnum)
+        corpse.age = (corpse.age ?? state.moves ?? 1) - 51;
     return corpse;
 }
 
@@ -134,9 +145,12 @@ export function finishMonsterLiquidDeath(
 ) {
     const x = monster.mx;
     const y = monster.my;
+    const leavesRemains = leaveCorpse
+        && levelAllowsMonsterDeathDrops(monster, state, random)
+        && monsterLeavesCorpse(monster, random);
     detachDeadMonster(monster, state);
-    const corpse = leaveCorpse
-        ? createOrdinaryMonsterCorpse(monster, state, random)
+    const corpse = leavesRemains
+        ? createMonsterRemains(monster, state)
         : null;
     if (state === game) {
         unmap_invisible(x, y, false);
@@ -175,10 +189,18 @@ export async function finishEnvironmentalMonsterDeath(
 
     const x = monster.mx;
     const y = monster.my;
+    const dropsAllowed = !noCorpse
+        && levelAllowsMonsterDeathDrops(monster, state, random);
+    const crumbleMessage = dropsAllowed
+        ? monsterBodyCrumblesMessage(monster) : null;
+    const leavesRemains = dropsAllowed
+        && monsterLeavesCorpse(monster, random);
     detachDeadMonster(monster, state);
-    const corpse = noCorpse ? null : createOrdinaryMonsterCorpse(
-        monster, state, random, { zombify: zombifyCorpse },
-    );
+    if (crumbleMessage && visible) await publish(crumbleMessage);
+    const corpse = leavesRemains
+        ? createMonsterRemains(
+            monster, state, { zombify: zombifyCorpse },
+        ) : null;
     if (state === game) newsym(x, y);
     return { monster, survived: false, corpse };
 }
