@@ -147,7 +147,6 @@ function swallowedWeaponEligibility(
     if (!weaponOrTool || subtype <= 0
         || !skillState || !Number.isInteger(skillState.skill)
         || item.lamplit || containsUnpaidObject(item)
-        || itemIsEquipped(state, item)
         || activeObjectTimerCount(item) > 0
         || engulfer.mpeaceful || engulfer.mtame || engulfer.pet
         || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade'

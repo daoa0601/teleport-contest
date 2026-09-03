@@ -414,6 +414,8 @@ export function detachThrownUnit(
         thrown.owornmask = 0;
         thrown.worn = false;
         thrown.wornSlot = null;
+        thrown.wielded = false;
+        thrown.alternate = false;
         thrown.ready = false;
         thrown.where = 'free';
     }

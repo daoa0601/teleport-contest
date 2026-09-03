@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, P_BASIC, W_AMUL,
+    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, P_BASIC, W_AMUL, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { inventoryItemDescription } from '../js/invent.js';
@@ -236,6 +236,41 @@ test('an unwielded bow can be thrown at a swallowing monster', async () => {
 
     assert.ok(engulfer.mhp < 40);
     assert.strictEqual(engulfer.minvent[0], bow);
+});
+
+test('a wielded swallowed weapon leaves the hand unless welded', async () => {
+    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const dagger = addInventoryWeapon(DAGGER, {
+        wielded: true,
+        owornmask: W_WEP,
+    });
+    game.uwep = game.u.uwep = dagger;
+    setBasicWeaponSkill(dagger);
+
+    initRng(2310n);
+    await throwInventoryObject(dagger, 'l');
+
+    assert.equal(game.uwep, null);
+    assert.equal(dagger.wielded, false);
+    assert.strictEqual(engulfer.minvent[0], dagger);
+
+    const untouchedEngulfer = freshSwallowedState(PM_TRAPPER);
+    const weldedDagger = addInventoryWeapon(DAGGER, {
+        cursed: true,
+        bknown: false,
+        wielded: true,
+        owornmask: W_WEP,
+    });
+    game.uwep = game.u.uwep = weldedDagger;
+    setBasicWeaponSkill(weldedDagger);
+
+    initRng(2310n);
+    await throwInventoryObject(weldedDagger, 'l');
+
+    assert.equal(untouchedEngulfer.mhp, 40);
+    assert.strictEqual(game.uwep, weldedDagger);
+    assert.equal(weldedDagger.bknown, true);
+    assert.match(game._pending_message, /welded to your hand/);
 });
 
 test('swallowed throws take one weapon from a stack', async () => {

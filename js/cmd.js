@@ -8962,6 +8962,16 @@ function isWeldedPrimary(item) {
         || [HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER].includes(item.otyp);
 }
 
+async function reportWeldedPrimary(item) {
+    const newlyKnown = !item.bknown;
+    item.bknown = true;
+    const hand = item.bimanual ? 'hands' : 'hand';
+    await pline(
+        `${inventoryItemDescription(item)} is welded to your ${hand}!`,
+    );
+    return newlyKnown;
+}
+
 function splittableForQuiver(item) {
     return !(item?.otyp === LOADSTONE && item.cursed)
         && !isWeldedPrimary(item);
@@ -9012,13 +9022,10 @@ async function doquiverCore(verb) {
     }
 
     if (isWeldedPrimary(item)) {
-        const wasKnown = !!item.bknown;
-        item.bknown = true;
-        const hand = item.bimanual ? 'hands' : 'hand';
-        await pline(`${inventoryItemDescription(item)} is welded to your ${hand}!`);
-        game.context.move = wasKnown ? 0 : 1;
+        const spentTime = await reportWeldedPrimary(item);
+        game.context.move = spentTime ? 1 : 0;
         return {
-            item: null, spentTime: !wasKnown, cancelled: false,
+            item: null, spentTime, cancelled: false,
         };
     }
 
@@ -9449,6 +9456,12 @@ async function dothrow(
         if (capacityMessage) await plineWithContinuation(capacityMessage);
         game._encumbranceLevel = currentCapacity;
         game.u._encumbrance = encumbranceLabel(currentCapacity);
+        game.context.move = 1;
+        return;
+    }
+
+    if (isWeldedPrimary(item)) {
+        await reportWeldedPrimary(item);
         game.context.move = 1;
         return;
     }
