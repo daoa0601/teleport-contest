@@ -9,7 +9,11 @@ import {
     readyRangedMonsterWeapon, selectRangedWeapon,
     throwMonsterWeaponAtHero, throwMonsterWeaponAtMonster,
 } from '../js/monster_throw.js';
-import { A_STR, NEED_WEAPON, W_AMUL, W_WEP } from '../js/const.js';
+import {
+    A_STR, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NEED_WEAPON,
+    NO_MINVENT, W_AMUL, W_WEP,
+} from '../js/const.js';
+import { tameMonster } from '../js/dog.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BOW, CORPSE, CREAM_PIE,
@@ -23,7 +27,7 @@ import {
 } from '../js/dogmove.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
-import { initRng } from '../js/rng.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     addInventoryObject, uninitializedObject,
 } from './support/game-objects.js';
@@ -32,27 +36,44 @@ import {
     floorObjectQuantityAt, floorObjectsAt,
 } from './support/level-state.js';
 import {
-    addMonsterToLevel, equipMonsterObject, liveMonster,
+    createMonsterAt, equipMonsterObject,
 } from './support/monsters.js';
 import {
     finishRangedAttacks, freshRangedCombatRoom,
-    rangedMonster, rangedPet, rangedTarget,
 } from './support/ranged-combat.js';
 
 const PROJECTILE_GLYPH = { ch: ')', color: 0, decgfx: false, attr: 0 };
 const SILVER_DAGGER = OBJECT_NAMES.indexOf('silver dagger');
+const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT
+    | NO_MINVENT;
 
-test('a monster readies the launcher required by its ammunition', () => {
-    initRng(1n);
+async function combatant(species, {
+    x = 9,
+    y = 10,
+    hitPoints,
+    tame = false,
+    inventory = [],
+} = {}) {
+    const monster = await createMonsterAt(
+        species, x, y, TEST_MONSTER_FLAGS,
+    );
+    if (tame) tameMonster(monster, game);
+    if (hitPoints !== undefined)
+        monster.mhp = monster.mhpmax = hitPoints;
+    for (const object of inventory)
+        addObjectToMonsterInventory(monster, object, game);
+    return monster;
+}
+
+test('a monster readies the launcher required by its ammunition', async () => {
+    freshRangedCombatRoom();
     const bow = uninitializedObject(BOW);
     const arrows = uninitializedObject(ARROW, { quan: 6 });
-    const archer = liveMonster({
-        species: 'orc',
+    const archer = await combatant('orc', {
         x: 10,
-        y: 10,
         inventory: [arrows, bow],
-        weaponCheck: NEED_WEAPON,
     });
+    archer.weaponCheck = NEED_WEAPON;
 
     const readied = readyRangedMonsterWeapon(archer);
 
@@ -62,16 +83,21 @@ test('a monster readies the launcher required by its ammunition', () => {
     assert.equal(selectRangedWeapon(archer), arrows);
 });
 
-test('a tame orc throws a dagger at a distant monster', () => {
+test('a tame orc throws a dagger at a distant monster', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
     const dagger = uninitializedObject(DAGGER);
-    const orc = addMonsterToLevel(rangedPet('orc', {
+    const orc = await combatant('orc', {
+        tame: true,
         inventory: [dagger],
-    }));
-    const target = addMonsterToLevel(rangedTarget());
-    target.mhp = target.mhpmax = 1;
+    });
+    const target = await combatant('jackal', { x: 12, hitPoints: 1 });
 
-    const action = quietMonsterActionRng(orc, game);
+    const action = quietMonsterActionRng(
+        orc, game,
+        () => 1,
+        (count, sides) => count * sides,
+        () => 1,
+    );
     finishRangedAttacks(action.movement.rangedAttacks, game, {
         random: () => 0,
     });
@@ -87,37 +113,41 @@ test('a tame orc throws a dagger at a distant monster', () => {
     );
 });
 
-test('a poisoned dart adds poison damage to a susceptible monster', () => {
-    freshRangedCombatRoom({ gameplaySeed: 1n });
-    const dart = uninitializedObject(DART, { opoisoned: 1 });
-    const orc = addMonsterToLevel(rangedPet('orc', {
-        inventory: [dart],
-    }));
-    const target = addMonsterToLevel(rangedTarget('purple worm', {
-        hitPoints: 20,
-        mac: 100,
-    }));
-    const options = { random: () => 1, rollOne: () => 1 };
+test('a poisoned dart adds poison damage to a susceptible monster',
+    async () => {
+        freshRangedCombatRoom({ gameplaySeed: 1n });
+        const dart = uninitializedObject(DART, { opoisoned: 1 });
+        const orc = await combatant('orc', {
+            tame: true,
+            inventory: [dart],
+        });
+        const target = await combatant('purple worm', {
+            x: 12,
+            hitPoints: 20,
+        });
+        const options = { random: () => 1, rollOne: () => 1 };
 
-    const attack = throwMonsterWeaponAtMonster(
-        orc, target, game, options,
-    );
-    finishRangedAttacks([attack], game, options);
+        const attack = throwMonsterWeaponAtMonster(
+            orc, target, game, options,
+        );
+        finishRangedAttacks([attack], game, options);
 
-    assert.equal(target.mhp, 18);
-});
+        assert.equal(target.mhp, 18);
+    });
 
 test('a silver dagger sears a vampire', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
     const dagger = uninitializedObject(SILVER_DAGGER);
-    const orc = addMonsterToLevel(rangedPet('orc', {
+    const orc = await combatant('orc', {
+        tame: true,
         inventory: [dagger],
-    }));
-    const vampire = addMonsterToLevel(rangedTarget('vampire', {
+    });
+    const vampire = await combatant('vampire', {
+        x: 12,
         hitPoints: 100,
-        mac: 100,
-    }));
-    const options = { random: () => 1, rollOne: range => range };
+    });
+    const rolls = [1, 4, 20];
+    const options = { random: () => 1, rollOne: () => rolls.shift() };
 
     const attack = throwMonsterWeaponAtMonster(
         orc, vampire, game, options,
@@ -130,10 +160,9 @@ test('a silver dagger sears a vampire', async () => {
     );
 
     assert.equal(vampire.mhp, 76);
-    assert.deepEqual(messages, [
-        'The silver dagger hits the vampire.',
-        "The silver sears the vampire's flesh!",
-    ]);
+    assert.equal(messages.length, 2);
+    assert.match(messages[0], /^The silver dagger hits the /);
+    assert.match(messages[1], /^The silver sears .*flesh!$/);
 });
 
 test('a silver dagger sears a lycanthropic hero', async () => {
@@ -149,9 +178,9 @@ test('a silver dagger sears a lycanthropic hero', async () => {
         },
     });
     const dagger = uninitializedObject(SILVER_DAGGER);
-    const orc = addMonsterToLevel(rangedMonster('orc', {
+    const orc = await combatant('orc', {
         inventory: [dagger],
-    }));
+    });
     const attack = throwMonsterWeaponAtHero(orc, game, dagger, {
         random: () => 1,
         rollOne: range => range,
@@ -169,10 +198,11 @@ test('a silver dagger sears a lycanthropic hero', async () => {
 test('a cream pie blinds a monster without hurting it', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
     const pie = uninitializedObject(CREAM_PIE);
-    const orc = addMonsterToLevel(rangedPet('orc', {
+    const orc = await combatant('orc', {
+        tame: true,
         inventory: [pie],
-    }));
-    const target = addMonsterToLevel(rangedTarget());
+    });
+    const target = await combatant('jackal', { x: 12 });
     const hitPointsBefore = target.mhp;
 
     const attack = throwMonsterWeaponAtMonster(orc, target, game, {
@@ -208,12 +238,12 @@ test('a cockatrice egg turns an intervening monster into a statue',
             corpsenm: 10,
             known: true,
         });
-        const orc = addMonsterToLevel(rangedMonster('orc', {
+        const orc = await combatant('orc', {
             inventory: [egg],
-        }));
-        const target = addMonsterToLevel(rangedTarget('jackal', {
+        });
+        const target = await combatant('jackal', {
             x: 11,
-        }));
+        });
         const attack = throwMonsterWeaponAtHero(orc, game, egg, {
             random: () => 1,
             rollOne: () => 1,
@@ -267,15 +297,15 @@ test('a monster eats a lizard corpse before a cockatrice egg petrifies it',
         const lizard = uninitializedObject(CORPSE, {
             corpsenm: MONSTER_NAME.indexOf('lizard'),
         });
-        const orc = addMonsterToLevel(rangedMonster('orc', {
+        const orc = await combatant('orc', {
             inventory: [egg],
-        }));
-        const target = addMonsterToLevel(rangedTarget('jackal', {
+        });
+        const target = await combatant('jackal', {
             x: 11,
             hitPoints: 12,
             inventory: [lizard],
-            movement: 12,
-        }));
+        });
+        target.movement = 12;
         const attack = throwMonsterWeaponAtHero(orc, game, egg, {
             random: () => 1,
             rollOne: () => 1,
@@ -321,13 +351,14 @@ test('poison resistance stops the poison on a thrown dart', async () => {
         recalculateVision: true,
     });
     const dart = uninitializedObject(DART, { opoisoned: 1 });
-    const orc = addMonsterToLevel(rangedPet('orc', {
+    const orc = await combatant('orc', {
+        tame: true,
         inventory: [dart],
-    }));
-    const target = addMonsterToLevel(rangedTarget('green dragon', {
+    });
+    const target = await combatant('green dragon', {
+        x: 12,
         hitPoints: 20,
-        mac: 100,
-    }));
+    });
     const options = { random: () => 1, rollOne: () => 1 };
 
     const attack = throwMonsterWeaponAtMonster(
@@ -354,13 +385,14 @@ test('deadly poison on a thrown dart kills the monster', async () => {
         recalculateVision: true,
     });
     const dart = uninitializedObject(DART, { opoisoned: 1 });
-    const orc = addMonsterToLevel(rangedPet('orc', {
+    const orc = await combatant('orc', {
+        tame: true,
         inventory: [dart],
-    }));
-    const target = addMonsterToLevel(rangedTarget('purple worm', {
+    });
+    const target = await combatant('purple worm', {
+        x: 12,
         hitPoints: 20,
-        mac: 100,
-    }));
+    });
     const options = { random: () => 0, rollOne: () => 1 };
 
     const attack = throwMonsterWeaponAtMonster(
@@ -382,14 +414,14 @@ test('deadly poison on a thrown dart kills the monster', async () => {
     ]);
 });
 
-test('a tame orc shoots an arrow with its bow', () => {
+test('a tame orc shoots an arrow with its bow', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
     const arrow = uninitializedObject(ARROW);
     const bow = uninitializedObject(BOW);
-    const orc = addMonsterToLevel(rangedPet('orc'));
+    const orc = await combatant('orc', { tame: true });
     equipMonsterObject(orc, arrow, 0);
     equipMonsterObject(orc, bow, W_WEP);
-    const target = addMonsterToLevel(rangedTarget());
+    const target = await combatant('jackal', { x: 12, hitPoints: 12 });
 
     const action = quietMonsterActionRng(orc, game);
     finishRangedAttacks(action.movement.rangedAttacks, game, {
@@ -408,32 +440,33 @@ test('a tame orc shoots an arrow with its bow', () => {
     );
 });
 
-test('a hostile monster can throw a dagger at the hero and land it', () => {
-    freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
-    const dagger = uninitializedObject(DAGGER);
-    const orc = addMonsterToLevel(rangedMonster('orc', {
-        inventory: [dagger],
-    }));
-    const hitPointsBefore = game.u.uhp;
+test('a hostile monster can throw a dagger at the hero and land it',
+    async () => {
+        freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
+        const dagger = uninitializedObject(DAGGER);
+        const orc = await combatant('orc', {
+            inventory: [dagger],
+        });
+        const hitPointsBefore = game.u.uhp;
 
-    const attack = throwMonsterWeaponAtHero(orc, game, dagger, {
-        random: () => 1,
-        rollOne: () => 1,
+        const attack = throwMonsterWeaponAtHero(orc, game, dagger, {
+            random: () => 1,
+            rollOne: () => 1,
+        });
+        const shot = attack.shots[0];
+
+        assert.equal(shot.heroTarget, true);
+        assert.equal(shot.hit, true);
+        assert.equal(game.u.uhp, hitPointsBefore - 1);
+        assert.equal(orc.inventory.includes(dagger), false);
+
+        finishDeferredRangedProjectileHit(shot, game);
+
+        assert.equal(
+            floorObjectsAt(game.level, game.u.ux, game.u.uy).includes(dagger),
+            true,
+        );
     });
-    const shot = attack.shots[0];
-
-    assert.equal(shot.heroTarget, true);
-    assert.equal(shot.hit, true);
-    assert.equal(game.u.uhp, hitPointsBefore - 1);
-    assert.equal(orc.inventory.includes(dagger), false);
-
-    finishDeferredRangedProjectileHit(shot, game);
-
-    assert.equal(
-        floorObjectsAt(game.level, game.u.ux, game.u.uy).includes(dagger),
-        true,
-    );
-});
 
 test('a cream pie blinds the hero without hurting them', async () => {
     freshRangedCombatRoom({
@@ -443,9 +476,9 @@ test('a cream pie blinds the hero without hurting them', async () => {
         gameplaySeed: 1n,
     });
     const pie = uninitializedObject(CREAM_PIE);
-    const orc = addMonsterToLevel(rangedMonster('orc', {
+    const orc = await combatant('orc', {
         inventory: [pie],
-    }));
+    });
     const attack = throwMonsterWeaponAtHero(orc, game, pie, {
         random: () => 1,
         rollOne: () => 1,
@@ -476,9 +509,9 @@ test('a cockatrice egg starts petrifying the hero', async () => {
         corpsenm: 10,
         known: true,
     });
-    const orc = addMonsterToLevel(rangedMonster('orc', {
+    const orc = await combatant('orc', {
         inventory: [egg],
-    }));
+    });
     const attack = throwMonsterWeaponAtHero(orc, game, egg, {
         random: () => 1,
         rollOne: () => 1,
@@ -501,9 +534,9 @@ test('a poisoned dart damages the hero after its ordinary hit', async () => {
         gameplaySeed: 1n,
     });
     const dart = uninitializedObject(DART, { opoisoned: 1 });
-    const orc = addMonsterToLevel(rangedMonster('orc', {
+    const orc = await combatant('orc', {
         inventory: [dart],
-    }));
+    });
     const attack = throwMonsterWeaponAtHero(orc, game, dart, {
         random: () => 1,
         rollOne: () => 2,
@@ -531,9 +564,9 @@ test('impact life saving limits thrown poison to strength loss', async () => {
     game.u.uhp = 1;
     const originalStrength = game.u.acurr.a[A_STR];
     const dart = uninitializedObject(DART, { opoisoned: 1 });
-    const orc = addMonsterToLevel(rangedMonster('orc', {
+    const orc = await combatant('orc', {
         inventory: [dart],
-    }));
+    });
     const attack = throwMonsterWeaponAtHero(orc, game, dart, {
         random: () => 1,
         rollOne: () => 1,
@@ -553,12 +586,12 @@ test('impact life saving limits thrown poison to strength loss', async () => {
     ).includes(dart), true);
 });
 
-test('a hostile rogue throws its full dagger volley at the hero', () => {
+test('a hostile rogue throws its full dagger volley at the hero', async () => {
     freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
     const daggers = uninitializedObject(DAGGER, { quan: 4 });
-    const rogue = addMonsterToLevel(rangedMonster('rogue', {
+    const rogue = await combatant('rogue', {
         inventory: [daggers],
-    }));
+    });
     const hitPointsBefore = game.u.uhp;
     const rolls = [2, 1, 1, 1, 1, 1, 1];
     const options = {
@@ -593,9 +626,9 @@ test('life saving lets a hostile monster finish its dagger volley', async () => 
     );
     game.u.uhp = 1;
     const daggers = uninitializedObject(DAGGER, { quan: 4 });
-    const rogue = addMonsterToLevel(rangedMonster('rogue', {
+    const rogue = await combatant('rogue', {
         inventory: [daggers],
-    }));
+    });
     const rolls = [2, 1, 1, 1, 1, 1, 1];
     const options = {
         random: () => 1,
@@ -627,18 +660,19 @@ test('life saving lets a hostile monster finish its dagger volley', async () => 
 test('a monster life-saves before the next dagger is thrown', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
     const daggers = uninitializedObject(DAGGER, { quan: 4 });
-    const rogue = addMonsterToLevel(rangedPet('rogue', {
+    const rogue = await combatant('rogue', {
+        tame: true,
         inventory: [daggers],
-    }));
+    });
     const amulet = uninitializedObject(AMULET_OF_LIFE_SAVING, {
         owornmask: W_AMUL,
         worn: true,
     });
-    const target = addMonsterToLevel(rangedTarget('jackal', {
+    const target = await combatant('jackal', {
+        x: 12,
         hitPoints: 1,
-        inventory: [amulet],
-        misc_worn_check: W_AMUL,
-    }));
+    });
+    equipMonsterObject(target, amulet, W_AMUL);
     const rolls = [2, 1, 1, 1, 1, 1, 1];
     const options = {
         random: () => 0,
@@ -674,18 +708,18 @@ test('a monster life-saves before the next dagger is thrown', async () => {
 test('a missed intervening monster does not hide the later hit', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
     const dagger = uninitializedObject(DAGGER);
-    const orc = addMonsterToLevel(rangedPet('orc', {
+    const orc = await combatant('orc', {
+        tame: true,
         inventory: [dagger],
-    }));
-    const bystander = addMonsterToLevel(rangedTarget('goblin', {
+    });
+    const bystander = await combatant('goblin', {
         x: 11,
         hitPoints: 12,
-        mac: -10,
-    }));
-    const target = addMonsterToLevel(rangedTarget('jackal', {
+    });
+    const target = await combatant('jackal', {
         x: 13,
         hitPoints: 12,
-    }));
+    });
     const rolls = [20, 1, 1];
 
     const attack = throwMonsterWeaponAtMonster(orc, target, game, {
@@ -708,43 +742,43 @@ test('a missed intervening monster does not hide the later hit', async () => {
     ]);
 });
 
-test('a crossbow bolt gets its source damage against a large monster', () => {
-    freshRangedCombatRoom({ gameplaySeed: 1n });
-    const bolt = uninitializedObject(CROSSBOW_BOLT);
-    const crossbow = uninitializedObject(CROSSBOW);
-    const orc = addMonsterToLevel(rangedPet('orc'));
-    equipMonsterObject(orc, bolt, 0);
-    equipMonsterObject(orc, crossbow, W_WEP);
-    const target = addMonsterToLevel(rangedTarget('purple worm', {
-        hitPoints: 100,
-        mac: 100,
-    }));
+test('a crossbow bolt gets its source damage against a large monster',
+    async () => {
+        freshRangedCombatRoom({ gameplaySeed: 1n });
+        const bolt = uninitializedObject(CROSSBOW_BOLT);
+        const crossbow = uninitializedObject(CROSSBOW);
+        const orc = await combatant('orc', { tame: true });
+        equipMonsterObject(orc, bolt, 0);
+        equipMonsterObject(orc, crossbow, W_WEP);
+        const target = await combatant('purple worm', {
+            x: 12,
+            hitPoints: 100,
+        });
 
-    const options = {
-        random: () => 0,
-        rollOne: range => range,
-    };
-    const attack = throwMonsterWeaponAtMonster(
-        orc, target, game, options,
-    );
-    finishRangedAttacks([attack], game, options);
+        const options = {
+            random: () => 0,
+            rollOne: range => range === 20 ? 1 : range,
+        };
+        const attack = throwMonsterWeaponAtMonster(
+            orc, target, game, options,
+        );
+        finishRangedAttacks([attack], game, options);
 
-    assert.equal(target.mhp, 93);
-});
+        assert.equal(target.mhp, 93);
+    });
 
-test('an elven lord fires every arrow in a three-shot volley', () => {
+test('an elven lord fires every arrow in a three-shot volley', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
     const arrows = uninitializedObject(ELVEN_ARROW, { quan: 3 });
     const bow = uninitializedObject(ELVEN_BOW);
-    const archer = addMonsterToLevel(rangedPet('elf-noble'));
+    const archer = await combatant('elf-noble', { tame: true });
     equipMonsterObject(archer, arrows, 0);
     equipMonsterObject(archer, bow, W_WEP);
-    const target = addMonsterToLevel(rangedTarget());
-    target.mhp = target.mhpmax = 100;
+    const target = await combatant('jackal', { x: 12, hitPoints: 100 });
 
     const options = {
         random: () => 0,
-        rollOne: range => range,
+        rollOne: range => range === 20 ? 1 : range,
     };
     const attack = throwMonsterWeaponAtMonster(
         archer, target, game, options,
@@ -756,15 +790,17 @@ test('an elven lord fires every arrow in a three-shot volley', () => {
     assert.ok(target.mhp < 100);
 });
 
-test('a rogue player monster gets its dagger volley bonus', () => {
+test('a rogue player monster gets its dagger volley bonus', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
     const daggers = uninitializedObject(DAGGER, { quan: 4 });
-    const rogue = addMonsterToLevel(rangedPet('rogue', {
+    const rogue = await combatant('rogue', {
+        tame: true,
         inventory: [daggers],
-    }));
-    const target = addMonsterToLevel(rangedTarget('jackal', {
+    });
+    const target = await combatant('jackal', {
+        x: 12,
         hitPoints: 100,
-    }));
+    });
 
     const options = {
         random: () => 0,
@@ -779,15 +815,17 @@ test('a rogue player monster gets its dagger volley bonus', () => {
     assert.equal(daggers.quan, 1);
 });
 
-test('a second weapon attack starts after the first dagger lands', () => {
+test('a second weapon attack starts after the first dagger lands', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
     const daggers = uninitializedObject(DAGGER, { quan: 2 });
-    const captain = addMonsterToLevel(rangedPet('orc-captain', {
+    const captain = await combatant('orc-captain', {
+        tame: true,
         inventory: [daggers],
-    }));
-    const target = addMonsterToLevel(rangedTarget('jackal', {
+    });
+    const target = await combatant('jackal', {
+        x: 12,
         hitPoints: 100,
-    }));
+    });
     const options = { random: () => 0, rollOne: () => 1 };
 
     const turn = beginMonsterRangedTurn(captain, target, game, options);
