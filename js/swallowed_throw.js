@@ -145,7 +145,6 @@ function swallowedWeaponEligibility(
     // Missiles use the projectile path below. The remaining exclusions need
     // ownership or hero-state handling around hmon().
     if (!weaponOrTool || subtype <= 0
-        || (selectedQuantity > 1 && objectClass === 2)
         || !skillState || !Number.isInteger(skillState.skill)
         || item.lamplit || containsUnpaidObject(item)
         || itemIsEquipped(state, item)
@@ -156,9 +155,6 @@ function swallowedWeaponEligibility(
         || state.u?.twoweap || state.twoweap) return null;
     if ((item.oartifact || item.artifact)
         && (!finishKill || !canFinishKill?.(engulfer))) return null;
-    if (selectedQuantity > 1 && activeObjectTimerCount(item) > 0)
-        return null;
-
     const baseMaximum = maximumPhysicalWeaponDamage(item, engulfer);
     if (baseMaximum <= 0) return null;
     const maximumDamage = Math.max(
@@ -178,7 +174,8 @@ function swallowedProjectileEligibility(
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     const kind = projectileKind(item);
     if (!engulfer || objectClass !== 2 || !kind
-        || selectedQuantity !== 1) return null;
+        || !Number.isInteger(selectedQuantity)
+        || selectedQuantity < 1) return null;
 
     const subtype = OBJECT_SUBTYPE[item.otyp] ?? 0;
     const wielded = state.uwep ?? state.u?.uwep ?? null;

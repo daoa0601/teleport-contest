@@ -238,6 +238,25 @@ test('an unwielded bow can be thrown at a swallowing monster', async () => {
     assert.strictEqual(engulfer.minvent[0], bow);
 });
 
+test('swallowed throws take one weapon from a stack', async () => {
+    for (const weaponType of [DAGGER, DART]) {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const stack = addInventoryWeapon(weaponType, {
+            quan: 3,
+            quantity: 3,
+        });
+        setBasicWeaponSkill(stack);
+
+        initRng(2310n);
+        await throwInventoryObject(stack, 'l');
+
+        assert.equal(stack.quan, 2);
+        assert.equal(stack.quantity, 2);
+        assert.ok(game.inventory.includes(stack));
+        assert.ok(engulfer.mhp < 40);
+    }
+});
+
 test('a blessed swallowed weapon deals extra damage to a demon', async () => {
     const ordinaryTarget = freshSwallowedState(PM_JUIBLEX);
     const ordinaryDagger = addInventoryWeapon(DAGGER);
