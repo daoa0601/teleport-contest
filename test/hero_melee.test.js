@@ -14,18 +14,18 @@ import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
-function installMeleeArena(role, species = 'lichen', overrides = {}) {
+async function installMeleeArena(role, species = 'lichen', overrides = {}) {
     const level = freshPlayableRoom({
         left: 10, right: 11, top: 10, bottom: 10, role,
     });
-    const monster = addMonster({
-        species, m_id: 77,
-        x: 11, y: 10,
-        hitPoints: 100,
-        level: 0,
+    const monster = await createMonsterAt(species, 11, 10);
+    Object.assign(monster, {
+        mhp: 100,
+        mhpmax: 100,
+        m_lev: 0,
         mac: 10,
         minvis: 0,
         mundetected: 0,
@@ -47,7 +47,7 @@ function equipWeapon(name, overrides = {}) {
 }
 
 async function lichenMeleeOutcome(role) {
-    const { level, monster: lichen } = installMeleeArena(role);
+    const { level, monster: lichen } = await installMeleeArena(role);
     equipWeapon('katana');
 
     initRng(901n);
@@ -61,7 +61,7 @@ async function lichenMeleeOutcome(role) {
 }
 
 async function twoWeaponLichenOutcome(role) {
-    const { level, monster: lichen } = installMeleeArena(role);
+    const { level, monster: lichen } = await installMeleeArena(role);
     equipWeapon('katana');
     const wakizashi = addInventoryObject(
         OBJECT_NAMES.indexOf('short sword'), {
@@ -117,7 +117,7 @@ test('two-weapon combat attempts an off-hand strike for every role',
     });
 
 test('a powerful unarmed strike can shove a small monster', async () => {
-    const { monster: lichen } = installMeleeArena('samurai');
+    const { monster: lichen } = await installMeleeArena('samurai');
     Object.assign(game.level.at(12, 10), {
         typ: ROOM, lit: true, waslit: true, seenv: 255,
     });
@@ -135,7 +135,7 @@ test('a powerful unarmed strike can shove a small monster', async () => {
 });
 
 test('a heavy melee hit can knock a tiny monster backward', async () => {
-    const { monster: newt } = installMeleeArena('caveman', 'newt');
+    const { monster: newt } = await installMeleeArena('caveman', 'newt');
     for (const x of [12, 13]) {
         Object.assign(game.level.at(x, 10), {
             typ: ROOM, lit: true, waslit: true, seenv: 255,
@@ -156,7 +156,7 @@ test('a heavy melee hit can knock a tiny monster backward', async () => {
 });
 
 test('striking an acid blob can splash and hurt the hero', async () => {
-    installMeleeArena('caveman', 'acid blob');
+    await installMeleeArena('caveman', 'acid blob');
     game.u.ulevel = 20;
     game.u.uhp = game.u.uhpmax = 40;
     game.u.acurr.a[A_DEX] = 18;
@@ -170,7 +170,7 @@ test('striking an acid blob can splash and hurt the hero', async () => {
 
 test('an ordinary dagger passes through a shade without breaking conduct',
     async () => {
-        const { monster: shade } = installMeleeArena(
+        const { monster: shade } = await installMeleeArena(
             'tourist', 'shade', { mac: 100 },
         );
         equipWeapon('dagger');
@@ -187,7 +187,7 @@ test('an ordinary dagger passes through a shade without breaking conduct',
     });
 
 test('wielded garlic hurts and frightens an undead monster', async () => {
-    const { monster: shade } = installMeleeArena(
+    const { monster: shade } = await installMeleeArena(
         'tourist', 'shade', { mac: 100 },
     );
     equipWeapon('clove of garlic');
@@ -202,7 +202,7 @@ test('wielded garlic hurts and frightens an undead monster', async () => {
 
 test('a wielded cream pie blinds without damaging and consumes one pie',
     async () => {
-        const { monster: jackal } = installMeleeArena('tourist', 'jackal');
+        const { monster: jackal } = await installMeleeArena('tourist', 'jackal');
         const pies = equipWeapon('cream pie', { quan: 2, quantity: 2 });
 
         initRng(904n);
@@ -215,7 +215,7 @@ test('a wielded cream pie blinds without damaging and consumes one pie',
     });
 
 test('wielded acid venom burns a monster and consumes one splash', async () => {
-    const { monster: jackal } = installMeleeArena(
+    const { monster: jackal } = await installMeleeArena(
         'tourist', 'jackal', { mac: 100 },
     );
     const venom = equipWeapon(
@@ -230,7 +230,7 @@ test('wielded acid venom burns a monster and consumes one splash', async () => {
 });
 
 test('bashing with a mirror can break it and reduce luck', async () => {
-    const { monster: jackal } = installMeleeArena(
+    const { monster: jackal } = await installMeleeArena(
         'tourist', 'jackal', { mac: 100 },
     );
     const mirror = equipWeapon('mirror');
@@ -248,7 +248,7 @@ test('bashing with a mirror can break it and reduce luck', async () => {
 
 test('bashing with a camera can release a demon without hurting the monster',
     async () => {
-        const { level, monster: jackal } = installMeleeArena(
+        const { level, monster: jackal } = await installMeleeArena(
             'tourist', 'jackal', { mac: 100, msleeping: 1 },
         );
         const camera = equipWeapon('expensive camera');
@@ -267,7 +267,7 @@ test('bashing with a camera can release a demon without hurting the monster',
     });
 
 test('a camera passes through a shade without being destroyed', async () => {
-    const { monster: shade } = installMeleeArena(
+    const { monster: shade } = await installMeleeArena(
         'tourist', 'shade', { mac: 100 },
     );
     const camera = equipWeapon('expensive camera');
@@ -281,7 +281,7 @@ test('a camera passes through a shade without being destroyed', async () => {
 });
 
 test('bashing with one healing potion leaves the rest wielded', async () => {
-    const { monster: jackal } = installMeleeArena(
+    const { monster: jackal } = await installMeleeArena(
         'tourist', 'jackal', {
             mac: 100,
             hitPoints: 10,
@@ -304,7 +304,7 @@ test('bashing with one healing potion leaves the rest wielded', async () => {
 
 test('soft food and paper do not hurt a monster', async () => {
     for (const objectName of ['carrot', 'blank paper']) {
-        const { monster: jackal } = installMeleeArena(
+        const { monster: jackal } = await installMeleeArena(
             'tourist', 'jackal', { mac: 100 },
         );
         equipWeapon(objectName);
@@ -319,7 +319,7 @@ test('soft food and paper do not hurt a monster', async () => {
 });
 
 test('a heavy non-weapon uses its weight for melee damage', async () => {
-    const { monster: jackal } = installMeleeArena(
+    const { monster: jackal } = await installMeleeArena(
         'tourist', 'jackal', { mac: 100 },
     );
     equipWeapon('chest');
@@ -333,7 +333,7 @@ test('a heavy non-weapon uses its weight for melee damage', async () => {
 });
 
 test('a wet towel can dry after lashing a monster', async () => {
-    const { monster: jackal } = installMeleeArena(
+    const { monster: jackal } = await installMeleeArena(
         'tourist', 'jackal', { mac: 100 },
     );
     const towel = equipWeapon('towel', { spe: 3 });
@@ -348,7 +348,7 @@ test('a wet towel can dry after lashing a monster', async () => {
 });
 
 test('a silver shield sears a shade', async () => {
-    const { monster: shade } = installMeleeArena(
+    const { monster: shade } = await installMeleeArena(
         'tourist', 'shade', { mac: 100 },
     );
     equipWeapon('shield of reflection');
@@ -364,7 +364,7 @@ test('a silver shield sears a shade', async () => {
 
 test('a blessed object hurts an undead monster more than its weight alone',
     async () => {
-        const { monster: zombie } = installMeleeArena(
+        const { monster: zombie } = await installMeleeArena(
             'tourist', 'human zombie', { mac: 100 },
         );
         equipWeapon('meat stick', { blessed: true });
@@ -377,7 +377,7 @@ test('a blessed object hurts an undead monster more than its weight alone',
     });
 
 test('corpse melee damage comes from the corpse species size', async () => {
-    const { monster: jackal } = installMeleeArena(
+    const { monster: jackal } = await installMeleeArena(
         'tourist', 'jackal', { mac: 100 },
     );
     equipWeapon('corpse', {
@@ -392,7 +392,7 @@ test('corpse melee damage comes from the corpse species size', async () => {
 });
 
 test('hitting with a cockatrice corpse turns a monster to stone', async () => {
-    const { level, monster: jackal } = installMeleeArena(
+    const { level, monster: jackal } = await installMeleeArena(
         'tourist', 'jackal', { mac: 100 },
     );
     const corpse = equipWeapon('corpse', {
@@ -410,7 +410,7 @@ test('hitting with a cockatrice corpse turns a monster to stone', async () => {
 });
 
 test('a petrifying corpse still hurts a stone-resistant monster', async () => {
-    const { monster: stoneGolem } = installMeleeArena(
+    const { monster: stoneGolem } = await installMeleeArena(
         'tourist', 'stone golem', { mac: 100 },
     );
     equipWeapon('corpse', {
@@ -425,7 +425,7 @@ test('a petrifying corpse still hurts a stone-resistant monster', async () => {
 });
 
 test('bashing with eggs splats the whole wielded stack', async () => {
-    const { monster: jackal } = installMeleeArena(
+    const { monster: jackal } = await installMeleeArena(
         'tourist', 'jackal', { mac: 100 },
     );
     const eggs = equipWeapon('egg', {
@@ -447,7 +447,7 @@ test('bashing with eggs splats the whole wielded stack', async () => {
 });
 
 test('a fresh wielded egg becomes a rock against a cockatrice', async () => {
-    const { monster: cockatrice } = installMeleeArena(
+    const { monster: cockatrice } = await installMeleeArena(
         'tourist', 'cockatrice', { mac: 100 },
     );
     const egg = equipWeapon('egg', {
@@ -466,7 +466,7 @@ test('a fresh wielded egg becomes a rock against a cockatrice', async () => {
 });
 
 test('bashing with a pyrolisk egg explodes beside the hero', async () => {
-    const { monster: jackal } = installMeleeArena(
+    const { monster: jackal } = await installMeleeArena(
         'tourist', 'jackal', { mac: 100 },
     );
     const egg = equipWeapon('egg', {
