@@ -228,7 +228,7 @@ import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SOUND, MONSTER_SYMBOL, monsterClassSymbol, monsterIsNonliving,
-    monsterTypeName,
+    monsterIsVampireShifter, monsterTypeName,
 } from './monster_data.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath,
@@ -4089,8 +4089,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 `${visibleMonsterSubject(monster)} falls into ${pitName}!`,
             );
         }
-        if (movement?.trap?.kind === 'rolling-boulder'
-            && movement.trap.visible) {
+        if (movement?.trap?.kind === 'rolling-boulder') {
             const event = movement.trap;
             // postmov() has already installed the moving actor on the trap
             // square when mintrap() begins.  Fatal ohitmon() damage changes
@@ -4101,14 +4100,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             if (event.killed) monster.mhp = event.monsterHpBefore;
             newsym(movement.x, movement.y);
             monster.mhp = liveHp;
-            const trigger = game.deaf
-                ? `${visibleMonsterSubject(monster)} triggers ${
-                    event.wasSeen ? 'a rolling boulder trap' : 'something'
-                }.`
-                : `Click!  ${visibleMonsterSubject(monster)} triggers ${
-                    event.wasSeen ? 'a rolling boulder trap' : 'something'
-                }.`;
-            await queueTurnMessage(trigger);
+            if (event.inSight) {
+                const trigger = game.deaf
+                    ? `${visibleMonsterSubject(monster)} triggers ${
+                        event.wasSeen ? 'a rolling boulder trap' : 'something'
+                    }.`
+                    : `Click!  ${visibleMonsterSubject(monster)} triggers ${
+                        event.wasSeen ? 'a rolling boulder trap' : 'something'
+                    }.`;
+                await queueTurnMessage(trigger);
+            }
             if (event.released) {
                 vision_note_blocker_change(
                     event.launch.x, event.launch.y,
@@ -4134,24 +4135,35 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 }
                 event.flight = { x: flightX, y: flightY, dx, dy, glyph };
             }
-            if (event.released && event.hit) {
+            if (event.released && event.hit && event.seeSquare) {
+                const target = event.inSight
+                    ? `the ${quietMonsterName(monster)}` : 'it';
                 await queueTurnMessage(
-                    `The boulder hits the ${quietMonsterName(monster)}!`,
+                    `The boulder hits ${target}!`,
                 );
                 if (event.killed) {
+                    const subject = event.inSight
+                        ? `The ${quietMonsterName(monster)}` : 'It';
+                    const destroyed = monsterIsNonliving(monster.mnum)
+                        || monsterIsVampireShifter(monster)
+                        || !event.inSight;
                     await queueTurnMessage(
-                        `The ${quietMonsterName(monster)} is killed!`,
+                        `${subject} is ${destroyed ? 'destroyed' : 'killed'}!`,
                     );
                 }
-            } else if (event.released) {
+            } else if (event.released && event.seeSquare) {
+                const target = event.inSight
+                    ? `the ${quietMonsterName(monster)}` : 'it';
                 await queueTurnMessage(
-                    `The boulder misses the ${quietMonsterName(monster)}.`,
+                    `The boulder misses ${target}.`,
                 );
             }
             if (event.released) {
                 // ohitmon() finishes death/corpse work before launch_obj()
                 // resumes its two-delay traversal from the target cell.
-                resumeDeferredMonsterRollingBoulderDeath(action, game);
+                await resumeDeferredMonsterRollingBoulderDeath(action, game, {
+                    publish: queueTurnMessage,
+                });
                 movement = action.movement;
                 const { dx, dy, glyph } = event.flight;
                 let flightX = event.flight.x;

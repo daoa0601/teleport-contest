@@ -2,16 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    ANTI_MAGIC, BEAR_TRAP, RUST_TRAP, TELEP_TRAP,
+    ANTI_MAGIC, BEAR_TRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, TELEP_TRAP,
     W_ARMF, W_ARMH, WEB,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import {
-    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
+    finishDeferredMonsterRollingBoulderPlacement,
+    resumeDeferredMonsterRollingBoulderDeath, resumeDeferredMonsterTrap,
+    triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
-import { IRON_SHOES, ORCISH_HELM } from '../js/object_data.js';
+import { BOULDER, IRON_SHOES, ORCISH_HELM } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { knownObject } from './support/game-objects.js';
+import { floorObject, knownObject } from './support/game-objects.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 function monsterAtTrap(trapType, { monster = {}, trap = {} } = {}) {
@@ -148,6 +151,30 @@ test('a rust trap removes an iron golem which falls to pieces', async () => {
 
     assert.equal(game.level.monsters.includes(monster), false);
 });
+
+test('a boulder-hit vampire rises while the boulder keeps rolling',
+    async () => {
+        const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
+        const { monster } = monsterAtTrap(ROLLING_BOULDER_TRAP, {
+            monster: {
+                species: 'wolf', hitPoints: 1, maxHitPoints: 20,
+                mac: 20, cham: vampireLeader,
+            },
+            trap: {
+                launch: { x: 9, y: 10 },
+                launch2: { x: 15, y: 10 },
+            },
+        });
+        const boulder = floorObject(BOULDER, 9, 10);
+
+        const action = triggerImmediateMonsterTrap(monster, game);
+        await resumeDeferredMonsterRollingBoulderDeath(action, game);
+        finishDeferredMonsterRollingBoulderPlacement(action, game);
+
+        assert.equal(monster.mnum, vampireLeader);
+        assert.equal(game.level.monsters.includes(monster), true);
+        assert.equal(game.level.objects[15][10].includes(boulder), true);
+    });
 
 test('enchanted iron shoes absorb an anti-magic trap', () => {
     const shoes = knownObject(IRON_SHOES, {

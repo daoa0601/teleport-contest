@@ -4384,10 +4384,8 @@ function triggerMonsterTrap(
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
 
-        const visible = !state?.blind && !(state?.u?.blindTurns > 0)
-            && !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2)
-            && (!monster.minvis || state?.u?.seeInvisible
-                || state?.u?.see_invisible);
+        const visibility = monsterTrapVisibility(monster, state);
+        const visible = visibility.inSight;
         const wasSeen = !!trap.tseen;
         const launch = trap.launch || { x: trap.tx, y: trap.ty };
         const endpoint = trap.launch2 || { x: trap.tx, y: trap.ty };
@@ -4432,12 +4430,13 @@ function triggerMonsterTrap(
             monsterHpBefore, monsterHpAfter: monster.mhp,
             damage, killed, deferredDeath: killed,
             deferredPlacement: true,
+            ...visibility,
         };
         movement.trap = event;
+        movement.deferredAfterRollingBoulderMessage = true;
         if (killed) {
             movement.actorDied = true;
             movement.actionCompleted = true;
-            movement.deferredAfterRollingBoulderMessage = true;
         }
         return event;
     }
@@ -7297,7 +7296,8 @@ function completeMovedMonsterAction(
         triggerMonsterTrap(
             monster, state, movement, random, rollDice, rollOne, calls,
         );
-    if (movement.deferredAfterMonsterTrap) return movement;
+    if (movement.deferredAfterMonsterTrap
+        || movement.deferredAfterRollingBoulderMessage) return movement;
     // postmov() maps both a trap-killed actor and an actor moved off-level to
     // an immediate terminal result.  Neither reaches tunneling, pickup,
     // concealment, the second distfleeck(), or phase-four attacks.
@@ -8031,8 +8031,11 @@ export function finishDeferredMonsterStrikingWandHit(
 // optional kill lines.  ohitmon() has already consumed hit/damage RNG and
 // reduced HP; fatal detach/corpse work precedes launch_obj() continuing the
 // free in-flight boulder to its opposite endpoint.
-export function resumeDeferredMonsterRollingBoulderDeath(
-    action, state, random = rn2,
+export async function resumeDeferredMonsterRollingBoulderDeath(
+    action, state, {
+        random = rn2,
+        publish = plineWithContinuation,
+    } = {},
 ) {
     const movement = action?.movement;
     const event = movement?.trap;
@@ -8041,37 +8044,50 @@ export function resumeDeferredMonsterRollingBoulderDeath(
         && event.deferredDeath) {
         delete movement.deferredAfterRollingBoulderMessage;
         event.deferredDeath = false;
-        detachDeadMonster(action.monster, state);
-        const corpse = createOrdinaryMonsterCorpse(
-            action.monster, state, random, action.calls,
+        const death = await finishEnvironmentalMonsterDeath(
+            action.monster,
+            state,
+            {
+                visible: event.seeSquare,
+                spotted: event.inSight,
+                random,
+                publish,
+            },
         );
-        event.death = { corpseCreated: !!corpse, corpse };
+        event.death = death;
+        event.killed = !death.survived;
+        if (death.survived) {
+            movement.actorDied = false;
+            movement.actionCompleted = false;
+        }
     }
     return action;
 }
 
 // launch_obj() keeps rolling after ohitmon() returns.  Endpoint placement is
 // later than death/corpse resolution and every remaining per-cell delay.
-export function finishDeferredMonsterRollingBoulderPlacement(action, state) {
+export function finishDeferredMonsterRollingBoulderPlacement(
+    action, state, random = rn2, rollDice = d, rollOne = rnd,
+) {
     const movement = action?.movement;
     const event = movement?.trap;
     if (event?.kind !== 'rolling-boulder' || !event.released) return action;
     if (event.deferredPlacement) {
         event.deferredPlacement = false;
+        delete movement.deferredAfterRollingBoulderMessage;
         event.boulder = placeAndStackTrapMissile(
             event.boulder, state, event.endpoint.x, event.endpoint.y,
         );
         if (state === game)
             vision_note_blocker_change(event.endpoint.x, event.endpoint.y);
+        if (!event.killed) {
+            continueAfterMonsterTrap(
+                action, state, random, rollDice, rollOne,
+                action.calls || DISCARDED_CALL_LOG,
+            );
+        }
     }
     return action;
-}
-
-export function resumeDeferredMonsterRollingBoulder(
-    action, state, random = rn2,
-) {
-    resumeDeferredMonsterRollingBoulderDeath(action, state, random);
-    return finishDeferredMonsterRollingBoulderPlacement(action, state);
 }
 
 export function resumeDeferredPetRangedNoise(
@@ -8114,7 +8130,8 @@ export function resumeDeferredPetMove(
         triggerMonsterTrap(
             monster, state, movement, random, rollDice, rollOne, calls,
         );
-    if (movement.deferredAfterMonsterTrap) {
+    if (movement.deferredAfterMonsterTrap
+        || movement.deferredAfterRollingBoulderMessage) {
         action.movement = movement;
         return action;
     }
