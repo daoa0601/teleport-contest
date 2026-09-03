@@ -2,8 +2,10 @@
 // C ref: do.c flooreffects() object landing branches.
 
 import {
-    CORR, IS_POOL, LAVAPOOL, MOAT, POOL, ROOM, WATER, is_hole, is_pit,
+    ALTAR, CORR, IS_POOL, LAVAPOOL, MOAT, POOL, ROOM, WATER,
+    is_hole, is_pit,
 } from './const.js';
+import { landObjectOnAltar } from './altar_object.js';
 import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { meldNearbyFloorGlobs } from './glob.js';
@@ -129,6 +131,18 @@ export async function landFloorObject(
         }
     }
 
+    if (object.globby) {
+        place_object(object, x, y, state);
+        return meldNearbyFloorGlobs(object, { state, publish, random });
+    }
+    if (state.context?.mon_moving
+        && location?.typ === ALTAR
+        && squareIsVisible(state, x, y)) {
+        await landObjectOnAltar(object, {
+            state, monsterMoving: true, publish,
+        });
+    }
+
     const hotGround = location?.typ === ROOM || location?.typ === CORR;
     if (object.oclass === POTION_CLASS
         && (state.level?.flags?.temperature ?? 0) > 0
@@ -138,7 +152,5 @@ export async function landFloorObject(
         )) return null;
 
     place_object(object, x, y, state);
-    if (object.globby)
-        return meldNearbyFloorGlobs(object, { state, publish, random });
     return stack_object(object, state);
 }

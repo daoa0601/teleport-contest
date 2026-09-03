@@ -2,13 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { A_CON, A_WIS } from '../js/const.js';
+import { A_CON, A_WIS, ALTAR } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import {
     APPLE, POT_GAIN_ENERGY, SCR_LIGHT, WAN_POLYMORPH,
 } from '../js/object_data.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
+import { dropInventoryObject } from './support/commands.js';
+import { inventoryObject } from './support/game-objects.js';
+import { freshObjectRoom } from './support/object-room.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
 const PM_YELLOW_LIGHT = 118;
@@ -142,3 +145,19 @@ test('quaffing applies the potion, consumes it, and uses a turn',
         assert.ok(game.u.uen > 1);
         assert.equal(game.context.move, 1);
     });
+
+test('dropping a cursed item on an altar reveals its curse', async () => {
+    const level = freshObjectRoom();
+    level.at(game.u.ux, game.u.uy).typ = ALTAR;
+    const potion = inventoryObject(POT_GAIN_ENERGY, 'a', {
+        cursed: true,
+        bknown: false,
+        typeKnown: true,
+    });
+    game.inventory = [potion];
+
+    await dropInventoryObject(potion);
+
+    assert.equal(potion.bknown, true);
+    assert.equal(game.u.uconduct.gnostic, 1);
+});

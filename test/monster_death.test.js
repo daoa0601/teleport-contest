@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { G_GENOD, PIT, POOL, STONE } from '../js/const.js';
+import { ALTAR, G_GENOD, PIT, POOL, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys } from '../js/input.js';
@@ -479,6 +479,30 @@ test('a potion dropped on a hot dungeon floor shatters', async () => {
     assert.equal(potion.where, 'gone');
     assert.deepEqual(floorObjectsAt(level, 11, 10), []);
 });
+
+test('a monster-turn drop reveals an object curse on a visible altar',
+    async () => {
+        const level = freshObjectRoom();
+        level.at(11, 10).typ = ALTAR;
+        game.context.mon_moving = true;
+        const jackal = addMonster({
+            species: 'jackal', x: 11, y: 10, hitPoints: 1,
+        });
+        const potion = knownObject(POT_ACID, {
+            cursed: true,
+            bknown: false,
+        });
+        addObjectToMonsterInventory(jackal, potion, game);
+
+        await finishEnvironmentalMonsterDeath(jackal, game, {
+            visible: false,
+            noCorpse: true,
+            publish: async () => {},
+        });
+
+        assert.equal(potion.bknown, true);
+        assert.equal(game.u.uconduct.gnostic ?? 0, 0);
+    });
 
 test('a visible lich crumbles to dust instead of leaving a corpse', async () => {
     freshObjectRoom();

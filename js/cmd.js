@@ -110,6 +110,8 @@ import {
     restoreMenuUnderlay, snapshotMenuUnderlay,
 } from './windows.js';
 import { d, rnd, rn2, rn2Display, rnl, rnz } from './rng.js';
+import { landObjectOnAltar } from './altar_object.js';
+import { landFloorObject } from './floor_effects.js';
 import { place_object, remove_object, stack_object } from './floor_object.js';
 import {
     makemonNear, mklev,
@@ -8051,26 +8053,35 @@ async function dodrop() {
         || selection.object?.oclass === 12;
     if (selectedGold && walletGold) {
         const gold = detachHeroGold(game);
-        gold.ox = game.u.ux;
-        gold.oy = game.u.uy;
-        gold.where = 'floor';
-        game._fobjSerial = (game._fobjSerial || 0) + 1;
-        gold._fobjOrder = game._fobjSerial;
-        if (!game.level.objects[gold.ox]) game.level.objects[gold.ox] = [];
-        if (!game.level.objects[gold.ox][gold.oy])
-            game.level.objects[gold.ox][gold.oy] = [];
-        game.level.objects[gold.ox][gold.oy].unshift(gold);
-        newsym(gold.ox, gold.oy);
-        // C do.c:drop() suppresses the ordinary floor-drop line when
-        // `!verbose`.  The inventory prompt has already been cleared, so
-        // retaining synthetic prose here can incorrectly fill tty's topline
-        // and suspend the following monster transaction at --More--.
-        if (game.flags?.verbose !== false)
+        const x = game.u.ux;
+        const y = game.u.uy;
+        const onAltar = !game.u?.uswallow
+            && game.level?.at?.(x, y)?.typ === ALTAR;
+        if (!onAltar && game.flags?.verbose !== false)
             await pline(`You drop ${walletGold} gold pieces.`);
+        gold.where = 'free';
+        if (onAltar) {
+            await landObjectOnAltar(gold, {
+                state: game,
+                monsterMoving: false,
+                publish: plineWithContinuation,
+            });
+        }
+        await landFloorObject(gold, x, y, {
+            state: game,
+            publish: plineWithContinuation,
+        });
+        newsym(x, y);
         game.context.move = 1;
         return;
     }
     const { object } = selection;
+    const x = game.u.ux;
+    const y = game.u.uy;
+    const onAltar = !game.u?.uswallow
+        && game.level?.at?.(x, y)?.typ === ALTAR;
+    if (!onAltar && game.flags?.verbose !== false)
+        await pline(`You drop ${droppedObjectDescription(object)}.`);
 
     game.inventory = inventory.filter(candidate => candidate !== object);
     if (object.oartifact) {
@@ -8087,13 +8098,19 @@ async function dodrop() {
     }
     object.worn = false;
     object.wornSlot = null;
-    // C dropx()->place_object() changes object ownership before map
-    // projection.  Timed identities must no longer look carried after they
-    // enter the floor chain; their existing timer remains attached.
-    place_object(object, game.u.ux, game.u.uy);
-    newsym(object.ox, object.oy);
-    if (game.flags?.verbose !== false)
-        await pline(`You drop ${droppedObjectDescription(object)}.`);
+    object.where = 'free';
+    if (onAltar) {
+        await landObjectOnAltar(object, {
+            state: game,
+            monsterMoving: false,
+            publish: plineWithContinuation,
+        });
+    }
+    await landFloorObject(object, x, y, {
+        state: game,
+        publish: plineWithContinuation,
+    });
+    newsym(x, y);
     game.context.move = 1;
 }
 
