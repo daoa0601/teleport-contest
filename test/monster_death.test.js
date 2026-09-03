@@ -316,7 +316,6 @@ test('killing a pit-trapped monster with a boulder buries its corpse',
         equipMonsterObject(giant, knownObject(BOULDER), 0);
 
         await finishHeroMonsterKill(giant, giant.mx, giant.my, {
-            showKillMessage: false,
             recordConduct: false,
         });
 
@@ -324,6 +323,10 @@ test('killing a pit-trapped monster with a boulder buries its corpse',
             object.otyp === CORPSE && object.corpsenm === giant.mnum);
         assert.equal(corpse?.where, 'buried');
         assert.equal(floorObjectsAt(level, 11, 10).includes(corpse), false);
+        assert.match(
+            game._pending_message,
+            /The giant's corpse ends up buried\.$/,
+        );
     });
 
 test('a boulder already in a monster pit prevents death remains', async () => {

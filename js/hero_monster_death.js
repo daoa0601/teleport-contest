@@ -37,7 +37,7 @@ import { restoreMonsterTrueSpecies } from './monster_species.js';
 import {
     createMonsterRemains, levelAllowsMonsterDeathDrops,
     monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects,
-    monsterLeavesCorpse,
+    monsterLeavesCorpse, monsterPossessiveName,
 } from './monster_death.js';
 import {
     createPhysicalMonsterExplosion, rollMonsterDeathExplosionDamage,
@@ -344,13 +344,21 @@ export async function finishHeroMonsterKill(monster, x, y, {
     game.level.monsters = game.level.monsters.filter(
         candidate => candidate !== monster,
     );
+    let corpse = null;
     if (leavesCorpse) {
-        await createMonsterRemains(monster, game, {
+        corpse = await createMonsterRemains(monster, game, {
             buried: pitRemains.buryCorpse,
             zombify: zombifyCorpse,
             seen: deathWasSpotted,
             publish: plineWithContinuation,
         });
+    }
+    if (pitRemains.buryCorpse && corpse?.where === 'buried'
+        && deathLocationVisible && !monster.minvis && showKillMessage) {
+        const possessive = monsterPossessiveName(monster, monsterName);
+        await plineWithContinuation(
+            `${possessive} corpse ends up buried.`,
+        );
     }
 
     if (typeof deathContext?.finishDestinationEffects === 'function') {

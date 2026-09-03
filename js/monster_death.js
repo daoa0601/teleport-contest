@@ -88,8 +88,9 @@ export function monsterDeathSquareAllowsObjects(x, y, state = game) {
     return ACCESSIBLE(terrain) || IS_POOL(terrain);
 }
 
-function monsterPossessiveName(monster) {
-    const name = monster.name || MONSTER_NAME[monster.mnum] || 'monster';
+export function monsterPossessiveName(monster, displayName = null) {
+    const name = monster.name || displayName
+        || MONSTER_NAME[monster.mnum] || 'monster';
     const usesArticle = !monster.name && !/^[A-Z]/.test(name);
     const subject = usesArticle ? `The ${name}` : name;
     return /s$/i.test(subject) ? `${subject}'` : `${subject}'s`;
