@@ -56,6 +56,7 @@ import {
 import { invWeight } from './weight.js';
 import { syncBlindness, syncDeafness } from './senses.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { mergable, mergeObjectStacks } from './object_merge.js';
 import { putSaddleOnMonster } from './steed.js';
 import { grantIntrinsicProperty } from './properties.js';
 import { makePlural } from './object_grammar.js';
@@ -981,14 +982,8 @@ export function assignInventoryLetter(item) {
 export function addInventoryItem(raw, presentation = null, observe = true) {
     const item = inventoryItem(raw, presentation);
     if (observe) item.dknown = true;
-    const merge = game.inventory.find(other => other.otyp === item.otyp
-        && other.enchantment === item.enchantment && other.buc === item.buc
-        && other.corpsenm === item.corpsenm && other.spe === item.spe);
-    if (merge) {
-        merge.quantity += item.quantity;
-        merge.quan = merge.quantity;
-        return merge;
-    }
+    const merge = game.inventory.find(other => mergable(other, item, game));
+    if (merge) return mergeObjectStacks(merge, item, game);
     assignInventoryLetter(item);
     item.where = 'inventory';
     game.inventory.push(item);
