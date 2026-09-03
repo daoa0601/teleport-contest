@@ -21,7 +21,7 @@ import {
 } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjects, floorObjectsAt } from './support/level-state.js';
-import { addMonster, createMonsterAt } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const PM_COCKATRICE = MONSTER_NAME.indexOf('cockatrice');
@@ -62,10 +62,9 @@ async function fireBowAtJackal({
         });
         game.uarmg = game.u.uarmg = gloves;
     }
-    const jackal = addMonster({
-        species: 'jackal', x: 11, y: 10,
-        hitPoints: 20, mac: targetArmorClass,
-    });
+    const jackal = await createMonsterAt('jackal', 11, 10);
+    jackal.mhp = jackal.mhpmax = 20;
+    jackal.mac = targetArmorClass;
     initRng(seed);
 
     await throwInventoryObject(arrow, 'l', Array(6).fill(' '));
@@ -90,14 +89,10 @@ test('a thrown club can hit a monster and land on its square', async () => {
     game.u.ulevel = 20;
     game.u.acurr.a[A_DEX] = 18;
     const club = carriedClub();
-    const jackal = addMonster({
-        species: 'jackal',
-        x: 13,
-        y: 10,
-        hitPoints: 20,
-        mac: 10,
-        mcanmove: 0,
-    });
+    const jackal = await createMonsterAt('jackal', 13, 10);
+    jackal.mhp = jackal.mhpmax = 20;
+    jackal.mac = 10;
+    jackal.mcanmove = 0;
 
     await throwInventoryObject(club, 'l', Array(4).fill(' '));
 
@@ -110,9 +105,8 @@ test('thrown blinding venom blinds a monster without hurting it', async () => {
     const level = freshObjectRoom({ right: 20, gameplaySeed: 4108n });
     game.u.acurr.a[A_DEX] = 18;
     const venom = addInventoryObject(BLINDING_VENOM, { invlet: 'a' });
-    const jackal = addMonster({
-        species: 'jackal', x: 13, y: 10, hitPoints: 20,
-    });
+    const jackal = await createMonsterAt('jackal', 13, 10);
+    jackal.mhp = jackal.mhpmax = 20;
     initRng(1n);
 
     await throwInventoryObject(venom, 'l');
@@ -148,9 +142,8 @@ test('an ordinary thrown egg splats and deals one point of damage', async () => 
     const egg = addInventoryObject(EGG, {
         invlet: 'a', corpsenm: -1, age: game.moves,
     });
-    const jackal = addMonster({
-        species: 'jackal', x: 13, y: 10, hitPoints: 20,
-    });
+    const jackal = await createMonsterAt('jackal', 13, 10);
+    jackal.mhp = jackal.mhpmax = 20;
     initRng(1n);
 
     await throwInventoryObject(egg, 'l');
@@ -167,9 +160,8 @@ test('a cockatrice egg petrifies a monster and costs Luck', async () => {
     const egg = addInventoryObject(EGG, {
         invlet: 'a', corpsenm: PM_COCKATRICE, spe: 1, known: false,
     });
-    const jackal = addMonster({
-        species: 'jackal', x: 13, y: 10, hitPoints: 20,
-    });
+    const jackal = await createMonsterAt('jackal', 13, 10);
+    jackal.mhp = jackal.mhpmax = 20;
     initRng(1n);
 
     await throwInventoryObject(egg, 'l', Array(8).fill(' '));
@@ -188,9 +180,8 @@ test('a fresh egg turns to rock when it hits a cockatrice', async () => {
     const egg = addInventoryObject(EGG, {
         invlet: 'a', corpsenm: -1, age: game.moves,
     });
-    const cockatrice = addMonster({
-        species: 'cockatrice', x: 13, y: 10, hitPoints: 20,
-    });
+    const cockatrice = await createMonsterAt('cockatrice', 13, 10);
+    cockatrice.mhp = cockatrice.mhpmax = 20;
     initRng(1n);
 
     await throwInventoryObject(egg, 'l');
@@ -207,12 +198,10 @@ test('a pyrolisk egg explodes around the monster it hits', async () => {
     const egg = addInventoryObject(EGG, {
         invlet: 'a', corpsenm: PM_PYROLISK, age: game.moves,
     });
-    const target = addMonster({
-        species: 'jackal', x: 13, y: 10, hitPoints: 100,
-    });
-    const neighbor = addMonster({
-        species: 'fox', x: 13, y: 11, hitPoints: 100,
-    });
+    const target = await createMonsterAt('jackal', 13, 10);
+    target.mhp = target.mhpmax = 100;
+    const neighbor = await createMonsterAt('fox', 13, 11);
+    neighbor.mhp = neighbor.mhpmax = 100;
     initRng(1n);
 
     await throwInventoryObject(egg, 'l', Array(12).fill(' '));
@@ -359,10 +348,9 @@ test('a poisoned thrown dart harms the target and costs lawful alignment', async
         const dart = addInventoryWeapon(DART, {
             invlet: 'a', opoisoned: poisoned,
         });
-        const jackal = addMonster({
-            species: 'jackal', x: 11, y: 10,
-            hitPoints: 20, mac: 10,
-        });
+        const jackal = await createMonsterAt('jackal', 11, 10);
+        jackal.mhp = jackal.mhpmax = 20;
+        jackal.mac = 10;
         initRng(1n);
 
         await throwInventoryObject(dart, 'l', Array(6).fill(' '));
