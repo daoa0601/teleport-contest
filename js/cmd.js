@@ -153,6 +153,7 @@ import {
 import { launcherMatchesAmmo } from './object_properties.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
+import { chooseHeroVolleyCount } from './hero_multishot.js';
 import {
     captureThrownObjectFlight, finishHeroThrownObjectLanding,
 } from './thrown_object.js';
@@ -317,7 +318,7 @@ import { useBullwhip } from './bullwhip.js';
 import { useGrapplingHook } from './grappling_hook.js';
 import { wieldTool } from './wield_tool.js';
 import {
-    doenhance, ensureHeroSkills, recordWeaponPractice,
+    doenhance, recordWeaponPractice,
     weaponSkillDamageBonus, weaponSkillHitBonus,
 } from './skills.js';
 import {
@@ -390,7 +391,7 @@ import {
     W_ARMOR, W_ACCESSORY, W_SADDLE, W_WEP, W_SWAPWEP,
     W_BALL, W_CHAIN, LOST_THROWN,
     WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
-    P_BOW, P_SLING, P_SKILLED, P_EXPERT, PARANOID_HIT, is_pit, isok,
+    P_BOW, P_SLING, PARANOID_HIT, is_pit, isok,
 } from './const.js';
 
 // Direction deltas: y u k
@@ -9295,37 +9296,6 @@ async function finishOrdinaryMapPotionKill(monster) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my);
 }
 
-// C dothrow.c:throw_obj() chooses one action-level volley count before the
-// first splitobj().  This helper is complete for matching sling ammunition:
-// skill and weak-multishot policy plus the only role bonuses which apply to a
-// sling (Cave Dweller and Ranger). Bow/crossbow and stackable-weapon families
-// retain their existing owners.
-function matchingSlingVolleyCount(item, selectedQuantity, shotLimit = 0) {
-    if (selectedQuantity <= 1
-        || OBJECT_SUBTYPE[item.otyp] !== -P_SLING
-        || OBJECT_SUBTYPE[game.uwep?.otyp] !== P_SLING
-        || game.u?.confused
-        || (game.u?.confusionTurns ?? 0) > 0
-        || (game.u?.stunnedTurns ?? 0) > 0
-        || game.u?.stunned) return 1;
-
-    const role = game.urole?.key;
-    const fumbling = !!(game.u?.fumbling
-        || (game.u?.fumblingTurns ?? 0) > 0);
-    const weakMultishot = ['wizard', 'priest', 'healer', 'tourist']
-        .includes(role)
-        || fumbling
-        || (game.u?.acurr?.a?.[A_DEX] ?? 10) <= 6;
-    const level = ensureHeroSkills(game)?.[P_SLING]?.skill ?? 0;
-    let maximum = 1;
-    if (level >= P_EXPERT) maximum++;
-    if (level >= P_SKILLED && !weakMultishot) maximum++;
-    if (role === 'caveman' || role === 'ranger') maximum++;
-
-    const selected = Math.min(rnd(maximum), selectedQuantity);
-    return shotLimit > 0 ? Math.min(selected, shotLimit) : selected;
-}
-
 async function dothrow(
     selectedItem = null, capabilityChecked = false, suppliedShotLimit = null,
 ) {
@@ -9484,21 +9454,20 @@ async function dothrow(
     const matchingSlingGem = !game.u?.uswallow
         && wieldingSling && thrownObjectClass === 13
         && OBJECT_SUBTYPE[item.otyp] === -P_SLING;
-    const slingVolleyCount = matchingSlingGem
-        ? matchingSlingVolleyCount(item, selectedQuantity, shotLimit) : 1;
-
-    // Tourist darts get their role multishot roll even when the result can
-    // only be one projectile.  A Ranger using a matching bow selects one
-    // action-level volley count; splitobj() still belongs to each iteration.
-    if (!game.u?.uswallow
-        && game.urole?.key === 'tourist' && item.otyp === DART) rnd(1);
-    let arrowVolleyCount = 1;
-    if (!game.u?.uswallow
-        && game.urole?.key === 'ranger' && launchedArrow) {
-        arrowVolleyCount = Math.min(rnd(2), selectedQuantity);
-        if (shotLimit > 0)
-            arrowVolleyCount = Math.min(arrowVolleyCount, shotLimit);
+    const volleyCount = game.u?.uswallow ? 1 : chooseHeroVolleyCount(item, {
+        state: game,
+        shotLimit,
+    });
+    if (volleyCount > 1 || shotLimit > 0) {
+        const name = OBJECT_NAMES[item.otyp] || item.name || 'object';
+        const noun = volleyCount === 1
+            ? name : item.plural || makePlural(name);
+        await plineWithContinuation(
+            `You ${launcherMatchesAmmo(item, game.uwep) ? 'shoot' : 'throw'} ${
+                volleyCount} ${noun}.`,
+        );
     }
+    const arrowVolleyCount = bowAmmo ? volleyCount : 1;
     let splitObjectId = null;
     if (!game.u?.uswallow && thrownObjectClass === 13
         && !matchingSlingGem
@@ -9935,15 +9904,6 @@ async function dothrow(
     };
 
     if (handThrownArrow || launchedArrow) {
-        if (arrowVolleyCount > 1 || shotLimit > 0) {
-            const noun = arrowVolleyCount === 1
-                ? arrowObjectName
-                : item.plural || `${arrowObjectName}s`;
-            await plineWithContinuation(
-                `You ${launchedArrow ? 'shoot' : 'throw'} ${
-                    arrowVolleyCount} ${noun}.`,
-            );
-        }
         for (let shot = 1; shot <= arrowVolleyCount; shot++) {
             await resolveArrowShot(shot);
         }
@@ -9985,14 +9945,6 @@ async function dothrow(
             || mineralFirstTyp === CORR || mineralFirstTyp === DOOR
             || mineralFirstTyp === ALTAR || mineralFirstTyp === IRONBARS
             || IS_WALL(mineralFirstTyp))) {
-        if (matchingSlingGem
-            && (slingVolleyCount > 1 || shotLimit > 0)) {
-            const baseName = item.name
-                || OBJECT_NAMES[item.otyp] || 'stone';
-            const noun = slingVolleyCount === 1
-                ? baseName : item.plural || `${baseName}s`;
-            await pline(`You shoot ${slingVolleyCount} ${noun}.`);
-        }
         const resolveGemShot = async () => {
         const unitWeight = OBJECT_WEIGHT[item.otyp] ?? item.owt ?? 1;
         let range = Math.max(
@@ -10480,7 +10432,6 @@ async function dothrow(
         return;
         };
 
-        const volleyCount = matchingSlingGem ? slingVolleyCount : 1;
         for (let shot = 0; shot < volleyCount; shot++) {
             const previousCapacity = game._encumbranceLevel
                 ?? nearCapacity(game);
@@ -10499,22 +10450,25 @@ async function dothrow(
         return;
     }
 
-    const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
-    await throwOrdinaryObject({
-        state: game,
-        item,
-        quantity: selectedQuantity,
-        splitObjectId,
-        dx,
-        dy,
-    });
-    const currentCapacity = nearCapacity(game);
-    const capacityMessage = encumbranceMessage(
-        previousCapacity, currentCapacity,
-    );
-    if (capacityMessage) await plineWithContinuation(capacityMessage);
-    game._encumbranceLevel = currentCapacity;
-    game.u._encumbrance = encumbranceLabel(currentCapacity);
+    for (let shot = 0; shot < volleyCount; shot++) {
+        const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
+        await throwOrdinaryObject({
+            state: game,
+            item,
+            quantity: item.quantity ?? item.quan ?? 1,
+            splitObjectId,
+            dx,
+            dy,
+        });
+        const currentCapacity = nearCapacity(game);
+        const capacityMessage = encumbranceMessage(
+            previousCapacity, currentCapacity,
+        );
+        if (capacityMessage) await plineWithContinuation(capacityMessage);
+        game._encumbranceLevel = currentCapacity;
+        game.u._encumbrance = encumbranceLabel(currentCapacity);
+        if (game.program_state?.gameover) break;
+    }
     game.context.move = 1;
 }
 

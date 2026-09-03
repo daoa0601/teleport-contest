@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    A_DEX, A_STR, P_BASIC, P_CROSSBOW, W_WEP,
+    A_DEX, A_STR, P_BASIC, P_CROSSBOW, P_SKILLED, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { CLUB, CROSSBOW, CROSSBOW_BOLT } from '../js/object_data.js';
@@ -99,4 +99,31 @@ test('a fired crossbow bolt gets ring damage but not Strength damage', async () 
     await throwInventoryObject(bolt, 'l', Array(4).fill(' '));
 
     assert.equal(jackal.mhp, 15);
+});
+
+test('a skilled Ranger can fire several crossbow bolts in one turn', async () => {
+    const level = freshObjectRoom({
+        right: 22,
+        role: 'ranger',
+        gameplaySeed: 4106n,
+    });
+    game.u.acurr.a[A_STR] = 18;
+    installHeroWeaponSkills({ [P_CROSSBOW]: P_SKILLED });
+    const crossbow = knownInventoryWeapon(CROSSBOW, {
+        invlet: 'a', owornmask: W_WEP, wielded: true,
+    });
+    const bolts = knownInventoryWeapon(CROSSBOW_BOLT, {
+        invlet: 'b', quan: 3, quantity: 3,
+    });
+    game.uwep = game.u.uwep = crossbow;
+    initRng(4n);
+
+    await throwInventoryObject(bolts, 'l');
+
+    const landedBolts = floorObjects(level)
+        .filter(object => object.otyp === CROSSBOW_BOLT);
+    assert.equal(game.inventory.includes(bolts), false);
+    assert.equal(landedBolts.reduce(
+        (count, object) => count + (object.quan ?? 1), 0,
+    ), 3);
 });
