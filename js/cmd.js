@@ -227,6 +227,7 @@ import {
     finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
 } from './hero_monster_death.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
+import { resolveHeroMeleeObjectContact } from './hero_melee_object.js';
 import { isRider, isZombieMaker } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { killGenocidedMonsters } from './mon.js';
@@ -10397,11 +10398,15 @@ async function attackHostileMonster(monster, x, y, {
     const weaponDamage = bareHanded ? null : rollHeroMeleeWeaponDamage(
         attackWeapon, monster, { mounted: !!game.u?.usteed },
     );
+    const objectContact = bareHanded || weaponDamage ? null
+        : await resolveHeroMeleeObjectContact(monster, attackWeapon);
     let damage;
     if (bareHanded) {
         damage = rnd(martialArtist ? 4 : 2);
     } else if (weaponDamage) {
         damage = weaponDamage.damage;
+    } else if (objectContact) {
+        damage = objectContact.damage;
     } else if ([BOULDER, HEAVY_IRON_BALL, IRON_CHAIN]
         .includes(attackWeapon.otyp)) {
         damage = rollPhysicalWeaponDamage(attackWeapon, monster);

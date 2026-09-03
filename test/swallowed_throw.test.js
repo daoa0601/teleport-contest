@@ -12,8 +12,8 @@ import { beginObjectBurn } from '../js/light.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING,
-    ARROW, BOW, CREAM_PIE, DAGGER, DART, EGG, FIGURINE, LONG_SWORD, MAGIC_LAMP,
-    OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
+    ARROW, BOW, CLOVE_OF_GARLIC, CREAM_PIE, DAGGER, DART, EGG, FIGURINE,
+    LONG_SWORD, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
     POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY,
     POT_GAIN_LEVEL,
@@ -178,6 +178,18 @@ test('swallowed timed lamp links before snuffing and restores unused fuel',
         assert.equal(game.vision_full_recalc, 1);
         assert.equal(game._pending_message,
             'The oil lamp vanishes into the trapper.  The oil lamp goes out.');
+    });
+
+test('garlic thrown inside an engulfer is transferred without attacking',
+    async () => {
+        const engulfer = freshSwallowedState(PM_TRAPPER);
+        const garlic = addInventoryObject(CLOVE_OF_GARLIC);
+
+        await throwInventoryObject(garlic, 'l');
+
+        assert.equal(engulfer.mhp, 40);
+        assert.strictEqual(engulfer.minvent[0], garlic);
+        assert.equal(garlic.where, 'minvent');
     });
 
 test('a cream pie thrown from inside an engulfer is consumed', async () => {

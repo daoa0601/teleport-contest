@@ -12,8 +12,8 @@ import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { endObjectBurn } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
-    BOULDER, BRASS_LANTERN, MAGIC_LAMP, OBJECT_NAMES, OBJECT_SUBTYPE,
-    OIL_LAMP,
+    BOULDER, BRASS_LANTERN, CLOVE_OF_GARLIC, MAGIC_LAMP, OBJECT_NAMES,
+    OBJECT_SUBTYPE, OIL_LAMP,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
@@ -115,7 +115,10 @@ function genericSwallowedEligibility(
     // timed stack splitting own materially different continuations and
     // remain explicit successors.  The supported lamps below reuse the
     // live burn-timer owner after mpickobj() has linked monster ownership.
-    if ([2, 7, 8, 12, 13, 15, 17].includes(objectClass)
+    const foodNeedsTamingRules = objectClass === 7
+        && item.otyp !== CLOVE_OF_GARLIC;
+    if ([2, 8, 12, 13, 15, 17].includes(objectClass)
+        || foodNeedsTamingRules
         || item.otyp === BOULDER
         || item === state.uball || item === state.u?.uball) return null;
     if (objectClass === 6 && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0)

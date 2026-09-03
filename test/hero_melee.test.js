@@ -182,3 +182,17 @@ test('an ordinary dagger passes through a shade without breaking conduct',
             /Your dagger passes harmlessly through the shade\./,
         );
     });
+
+test('wielded garlic hurts and frightens an undead monster', async () => {
+    const { monster: shade } = installMeleeArena(
+        'tourist', 'shade', { mac: 100 },
+    );
+    equipWeapon('clove of garlic');
+
+    initRng(903n);
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(shade.mhp, 99);
+    assert.equal(shade.mflee, 1);
+    assert.ok(shade.mfleetim >= 2 && shade.mfleetim <= 8);
+});
