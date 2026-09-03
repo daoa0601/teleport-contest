@@ -4,7 +4,7 @@
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { applyArtifactHitToMonster } from './artifact_hit.js';
 import { artifactToHitBonus } from './artifacts.js';
-import { A_DEX, A_STR } from './const.js';
+import { A_DEX, A_STR, P_BOW, P_CROSSBOW } from './const.js';
 import {
     canProjectMonster, canSeeMonster, plineWithContinuation,
     randomDisplayMonsterName,
@@ -23,7 +23,11 @@ import { findMonsterArmorClass } from './monworn.js';
 import {
     OBJECT_HIT_BONUS, OBJECT_NAMES, OBJECT_SUBTYPE,
 } from './object_data.js';
-import { applyProjectileObjectPassive } from './projectile.js';
+import { objectClassForType } from './object_knowledge.js';
+import {
+    applyProjectileObjectPassive, destroyMulchedProjectile,
+    shouldMulchMissile,
+} from './projectile.js';
 import { rnd, rn2 } from './rng.js';
 import { shopkeeperName } from './shk.js';
 import {
@@ -37,6 +41,9 @@ const M2_DEMON = 0x00000100;
 const M2_ELF = 0x00000010;
 const M2_ORC = 0x00000080;
 const M2_UNDEAD = 0x00000002;
+const WEAPON_CLASS = 2;
+const TOOL_CLASS = 6;
+const GEM_CLASS = 13;
 
 function dexterityHitBonus(state) {
     const dexterity = currentAttribute(A_DEX, state);
@@ -59,7 +66,7 @@ function targetObject(monster, state) {
     return monster.name || monster.isshk ? name : `the ${name}`;
 }
 
-function appliedHitThreshold(monster, weapon, state) {
+function baseRangedHitThreshold(monster, weapon, state) {
     const distance = Math.max(
         Math.abs(monster.mx - state.u.ux),
         Math.abs(monster.my - state.u.uy),
@@ -67,7 +74,6 @@ function appliedHitThreshold(monster, weapon, state) {
     const movement = monster.mmove ?? MONSTER_MOVE[monster.mnum] ?? 0;
     const immobilized = monster.mcanmove === 0
         || monster.mcanmove === false || !movement;
-    const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0);
     const polymorphed = !!(state.u?.mtimedone || state.u?.polymorphed
         || state.u?.upolyd);
     const heroLevel = polymorphed
@@ -95,8 +101,7 @@ function appliedHitThreshold(monster, weapon, state) {
     threshold += (weapon.spe ?? weapon.enchantment ?? 0)
         + (weapon.hitbon ?? weapon.oc_hitbon
             ?? OBJECT_HIT_BONUS[weapon.otyp] ?? 0)
-        + artifactToHitBonus(weapon, monster)
-        + weaponSkillHitBonus(state, skill);
+        + artifactToHitBonus(weapon, monster);
     if (weapon.blessed && (targetFlags & (M2_UNDEAD | M2_DEMON)))
         threshold += 2;
 
@@ -107,7 +112,15 @@ function appliedHitThreshold(monster, weapon, state) {
     return threshold + (targetIsOrc && heroIsElf ? 1 : 0);
 }
 
-async function rollAppliedDamage(monster, weapon, state, dieRoll) {
+function appliedHitThreshold(monster, weapon, state) {
+    const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0);
+    return baseRangedHitThreshold(monster, weapon, state)
+        + weaponSkillHitBonus(state, skill);
+}
+
+async function rollRangedObjectDamage(
+    monster, weapon, state, dieRoll, applied,
+) {
     let damage = rollPhysicalWeaponDamage(weapon, monster);
     const trainsSkill = damage > 1;
     const artifactHit = await applyArtifactHitToMonster(
@@ -121,11 +134,13 @@ async function rollAppliedDamage(monster, weapon, state, dieRoll) {
         },
     );
     damage = artifactHit.damage;
-    damage += (state.u?.udaminc ?? state.udaminc ?? 0)
-        + strengthDamageBonus(currentAttribute(A_STR, state))
-        + weaponSkillDamageBonus(
-            state, Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0),
-        );
+    if (applied) {
+        damage += (state.u?.udaminc ?? state.udaminc ?? 0)
+            + strengthDamageBonus(currentAttribute(A_STR, state))
+            + weaponSkillDamageBonus(
+                state, Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0),
+            );
+    }
     return {
         damage: artifactHit.attackStopped ? 0 : Math.max(1, damage),
         trainsSkill,
@@ -173,81 +188,125 @@ async function abusePet(monster, damage, state) {
     }
 }
 
-export async function hitMonsterWithAppliedWeapon(
-    monster, weapon, { state = game } = {},
-) {
-    await applyCaitiffPenalty(monster, state);
-    const threshold = appliedHitThreshold(monster, weapon, state);
-    const dieRoll = rnd(20);
-    const weaponName = weapon.name || OBJECT_NAMES[weapon.otyp] || 'weapon';
+function kickedObjectUsesWeaponHit(object) {
+    const objectClass = object.oclass ?? objectClassForType(object.otyp);
+    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    return objectClass === WEAPON_CLASS || objectClass === GEM_CLASS
+        || (objectClass === TOOL_CLASS && skill !== 0);
+}
 
-    if (threshold < dieRoll) {
+function kickedObjectIsAmmunition(object) {
+    const objectClass = object.oclass ?? objectClassForType(object.otyp);
+    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    return (objectClass === WEAPON_CLASS || objectClass === GEM_CLASS)
+        && skill >= -P_CROSSBOW && skill <= -P_BOW;
+}
+
+async function hitMonsterWithRangedObject(monster, object, state, mode) {
+    const applied = mode === 'applied';
+    if (applied) await applyCaitiffPenalty(monster, state);
+    const threshold = applied
+        ? appliedHitThreshold(monster, object, state)
+        : baseRangedHitThreshold(monster, object, state)
+            - (kickedObjectIsAmmunition(object) ? 5 : 3);
+    const dieRoll = rnd(20);
+    const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
+
+    if ((!applied && !kickedObjectUsesWeaponHit(object))
+        || threshold < dieRoll) {
         const namedTarget = targetObject(monster, state);
         await plineWithContinuation(
-            `The ${weaponName} misses${namedTarget ? ` ${namedTarget}` : ''}.`,
+            `The ${name} misses${namedTarget ? ` ${namedTarget}` : ''}.`,
         );
         if (rn2(3) === 0) await wakeAttackedMonster(monster);
-        return false;
+        return { hit: false, consumed: false, result: false };
     }
 
+    if (!applied) await applyCaitiffPenalty(monster, state);
     exerciseAttribute(A_DEX, true, state);
     const {
         damage, trainsSkill, specialMessage, attackStopped,
-    } = await rollAppliedDamage(
-        monster, weapon, state, dieRoll,
+    } = await rollRangedObjectDamage(
+        monster, object, state, dieRoll, applied,
     );
     if (attackStopped) {
-        await applyProjectileObjectPassive(monster, weapon);
-        return true;
+        await applyProjectileObjectPassive(monster, object);
+        return { hit: true, consumed: false, result: true };
     }
-    recordWeaponHit(weapon, damage, state);
-    if (trainsSkill) {
-        recordWeaponPractice(
-            state, Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0), 1,
-        );
+    if (applied) {
+        recordWeaponHit(object, damage, state);
+        if (trainsSkill) {
+            recordWeaponPractice(
+                state, Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0), 1,
+            );
+        }
     }
 
     if (damage === 0) {
         const namedTarget = targetObject(monster, state);
         if (!specialMessage) {
             await plineWithContinuation(
-                `The ${weaponName} passes harmlessly through ${
+                `The ${name} passes harmlessly through ${
                     namedTarget || 'it'
                 }.`,
             );
         }
         await wakeAttackedMonster(monster);
-        await applyProjectileObjectPassive(monster, weapon);
-        return true;
+        await applyProjectileObjectPassive(monster, object);
+        return { hit: true, consumed: false, result: true };
     }
 
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     await abusePet(monster, damage, state);
+    let result = true;
     if (monster.mhp > 0) {
         const namedTarget = targetObject(monster, state);
         const punctuation = canSeeMonster(monster, monster.mx, monster.my)
             && damage > 4 ? '!' : '.';
         if (!specialMessage) {
             await plineWithContinuation(
-                `The ${weaponName} hits ${namedTarget || 'it'}${punctuation}`,
+                `The ${name} hits ${namedTarget || 'it'}${punctuation}`,
             );
         }
         await wakeAttackedMonster(monster);
-        const fleeRoll = rn2(25);
-        if (fleeRoll === 0
-            && monster.mhp < Math.trunc((monster.mhpmax ?? monster.mhp) / 2)) {
-            if (rn2(3) === 0) rnd(100);
-            monster.mflee = 1;
+        if (applied) {
+            const fleeRoll = rn2(25);
+            if (fleeRoll === 0
+                && monster.mhp
+                    < Math.trunc((monster.mhpmax ?? monster.mhp) / 2)) {
+                if (rn2(3) === 0) rnd(100);
+                monster.mflee = 1;
+            }
         }
-        await applyProjectileObjectPassive(monster, weapon);
-        return true;
+    } else {
+        result = await finishHeroMonsterKill(
+            monster, monster.mx, monster.my, {
+                hallucinating: !!(state.u?.hallucinating
+                    || (state.u?.hallucinationTurns ?? 0) > 0),
+                nameMonster: () => targetName(monster, state),
+            },
+        );
     }
 
-    const killed = await finishHeroMonsterKill(monster, monster.mx, monster.my, {
-        hallucinating: !!(state.u?.hallucinating
-            || (state.u?.hallucinationTurns ?? 0) > 0),
-        nameMonster: () => targetName(monster, state),
-    });
-    await applyProjectileObjectPassive(monster, weapon);
-    return killed;
+    if (!applied && shouldMulchMissile(object)) {
+        destroyMulchedProjectile(object);
+        return { hit: true, consumed: true, result };
+    }
+    await applyProjectileObjectPassive(monster, object);
+    return { hit: true, consumed: false, result };
+}
+
+export async function hitMonsterWithAppliedWeapon(
+    monster, weapon, { state = game } = {},
+) {
+    const hit = await hitMonsterWithRangedObject(
+        monster, weapon, state, 'applied',
+    );
+    return hit.result;
+}
+
+export function hitMonsterWithKickedObject(
+    monster, object, { state = game } = {},
+) {
+    return hitMonsterWithRangedObject(monster, object, state, 'kicked');
 }

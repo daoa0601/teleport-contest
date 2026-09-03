@@ -4,9 +4,11 @@ import assert from 'node:assert/strict';
 import { STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { CLUB } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
 import { kickDirection } from './support/commands.js';
 import { floorObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
+import { addMonster } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 test('kicking a loose object moves its existing identity', async () => {
@@ -48,4 +50,25 @@ test('a kicked object can fall down a ladder during flight', async () => {
 
     assert.equal(floorObjects(level).includes(club), false);
     assert.equal(club.where, 'migrating');
+});
+
+test('a kicked club can hit a monster before it lands', async () => {
+    const level = freshGameplayRoom({ role: 'tourist' });
+    const club = floorObject(CLUB, 11, 10, { name: 'club' });
+    const jackal = addMonster({
+        mnum: 12,
+        x: 13,
+        y: 10,
+        hitPoints: 20,
+        mac: 10,
+        mcanmove: 0,
+        movement: 12,
+    });
+    initRng(1n);
+
+    await kickDirection('l', ' '.repeat(4));
+
+    assert.ok(jackal.mhp < 20);
+    assert.deepEqual([club.ox, club.oy], [13, 10]);
+    assert.equal(floorObjects(level).includes(club), true);
 });

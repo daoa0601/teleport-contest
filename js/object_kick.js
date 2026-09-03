@@ -13,6 +13,7 @@ import {
     detachFloorObjectUnit, remove_object,
 } from './floor_object.js';
 import { game } from './gstate.js';
+import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
 import { breakFloorObject } from './object_breakage.js';
 import { KICKING_BOOTS, OBJECT_NAMES } from './object_data.js';
 import { rn2, rnd } from './rng.js';
@@ -131,6 +132,12 @@ export async function kickFloorObject(x, y, {
         random,
     });
     if (flight.destroyed || flight.migrated) return true;
+    if (flight.contact) {
+        const contact = await hitMonsterWithKickedObject(
+            flight.contact, moving, { state },
+        );
+        if (contact.consumed) return true;
+    }
 
     await landFloorObject(moving, flight.x, flight.y, {
         state,
