@@ -1,9 +1,7 @@
 // Land mines triggered by monsters.
 // C ref: trap.c:trapeffect_landmine().
 
-import {
-    W_ARMF, WT_ELF,
-} from './const.js';
+import { WT_ELF } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { explodeLandMine } from './landmine_explosion.js';
@@ -15,19 +13,9 @@ import {
 import {
     beginMonsterPitTrap, finishMonsterPitTrap,
 } from './monster_pit_trap.js';
-import { IRON_SHOES } from './object_data.js';
+import { monsterWearsIronShoes } from './monworn.js';
 import { rn2, rnd } from './rng.js';
 import { monsterTrapVisibility } from './trap.js';
-
-function inventoryOf(monster) {
-    return monster.minvent || monster.inventory || [];
-}
-
-function wearsIronShoes(monster) {
-    return inventoryOf(monster).some(object =>
-        object.otyp === IRON_SHOES
-        && ((object.owornmask ?? 0) & W_ARMF));
-}
 
 function ordinaryMonsterName(monster) {
     return monster.name || MONSTER_NAME[monster.mnum] || 'monster';
@@ -96,7 +84,7 @@ export function beginMonsterLandMine(
 ) {
     const visibility = monsterTrapVisibility(monster, state);
     const rawDamage = rollOne(16);
-    const damage = wearsIronShoes(monster)
+    const damage = monsterWearsIronShoes(monster)
         ? Math.trunc((rawDamage + 3) / 4) : rawDamage;
     const bodyWeight = MONSTER_BODY_META[monster.mnum]?.[0] ?? 0;
     const triggerWeight = Math.trunc(WT_ELF / 2);

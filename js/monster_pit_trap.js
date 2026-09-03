@@ -1,14 +1,14 @@
 // A monster falling into an ordinary or spiked pit.
 // C ref: trap.c:trapeffect_pit().
 
-import { SPIKED_PIT, W_ARMF } from './const.js';
+import { SPIKED_PIT } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { monsterSelfTouch } from './monster_stoning.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
-import { IRON_SHOES } from './object_data.js';
+import { monsterWearsIronShoes } from './monworn.js';
 import { rnd } from './rng.js';
 import { monsterTrapVisibility } from './trap.js';
 
@@ -19,16 +19,6 @@ const PM_PIT_FIEND = 300;
 const PM_PIT_VIPER = 218;
 const S_EYE = 5;
 const S_LIGHT = 25;
-function inventoryOf(monster) {
-    return monster.minvent || monster.inventory || [];
-}
-
-function wearsIronShoes(monster) {
-    return inventoryOf(monster).some(object =>
-        object.otyp === IRON_SHOES
-        && ((object.owornmask ?? 0) & W_ARMF));
-}
-
 function ordinaryMonsterSubject(monster) {
     return `The ${monster.name || MONSTER_NAME[monster.mnum] || 'monster'}`;
 }
@@ -53,7 +43,7 @@ export function beginMonsterPitTrap(
     if (!trap || monsterAvoidsPit(monster, { forced })) return null;
     const visibility = monsterTrapVisibility(monster, state);
     const spiked = trap.ttyp === SPIKED_PIT;
-    const relevantSpikes = spiked && !wearsIronShoes(monster);
+    const relevantSpikes = spiked && !monsterWearsIronShoes(monster);
     if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK))
         monster.mtrapped = 1;
     return {

@@ -16,7 +16,8 @@ import {
 } from './monster_inventory.js';
 import {
     AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
-    MUMMY_WRAPPING, OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_MATERIAL,
+    IRON_SHOES, MUMMY_WRAPPING,
+    OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_MATERIAL,
 } from './object_data.js';
 import {
     AC_MAX, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
@@ -102,6 +103,10 @@ function preference(monster, object) {
 function wornInSlot(monster, mask) {
     return (monster?.minvent || monster?.inventory || [])
         .find(object => ((object.owornmask ?? 0) & mask) !== 0) || null;
+}
+
+export function monsterWearsIronShoes(monster) {
+    return wornInSlot(monster, W_ARMF)?.otyp === IRON_SHOES;
 }
 
 // C ref: worn.c:find_mac().  Species AC is the base; only inventory objects
