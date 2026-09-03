@@ -87,6 +87,13 @@ export function clearHeroSliming(state = game) {
     return wasSliming;
 }
 
+export function resetHeroSlimingCountdown(state = game, turns = 10) {
+    if (!heroIsSliming(state)) return false;
+    state.u.slimedTurns = turns;
+    state.u.slimed = true;
+    return true;
+}
+
 // Continue a green slime's touch after hitmsg(). The contact's ordinary
 // damage remains unless the hero's current form cannot be slimed.
 export function resumeDeferredHeroSlime(action, state) {

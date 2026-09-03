@@ -18,6 +18,7 @@ import {
 import { removeIntrinsicProperty } from './properties.js';
 import { clearHeroSliming } from './slime.js';
 import { stopRun } from './runmode.js';
+import { releaseWeaponSlots } from './weapon_slots.js';
 
 const PM_CHICKATRICE = 9;
 const PM_COCKATRICE = 10;
@@ -191,6 +192,34 @@ function corpseWithArticle(object) {
     const name = object.oextra?.oname || object.oname;
     const noun = `${species} corpse${name ? ` named ${name}` : ''}`;
     return `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
+}
+
+export async function selfTouchPetrifyingWeapons({
+    messageStart = 'No longer petrify-resistant, you',
+} = {}) {
+    if (game.uarmg || game.u?.uarmg || heroResistsStoning())
+        return { touched: false, died: false };
+
+    let touched = false;
+    for (let slot = 0; slot < 2; slot++) {
+        const weapon = slot === 0
+            ? game.uwep || game.u?.uwep
+            : game.u?.twoweap
+                ? game.uswapwep || game.u?.uswapwep : null;
+        if (weapon?.otyp !== CORPSE || !touchPetrifies(weapon.corpsenm))
+            continue;
+        touched = true;
+        const species = MONSTER_NAME[weapon.corpsenm] || 'monster';
+        await pline(`${messageStart} touch the ${species} corpse.`);
+        const result = await resolveImmediatePetrification({
+            killer: corpseWithArticle(weapon),
+            publish: pline,
+        });
+        if (result.died) return { touched: true, died: true };
+        if (!(game.uarmg || game.u?.uarmg) && !heroResistsStoning())
+            releaseWeaponSlots(weapon);
+    }
+    return { touched, died: false };
 }
 
 export async function touchPetrifyingCorpse(object, {

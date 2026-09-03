@@ -3,7 +3,9 @@
 
 import { game } from './gstate.js';
 import { d, rnd, rn2 } from './rng.js';
-import { newExperienceThreshold } from './exper.js';
+import {
+    adjustLevelAbilities, newExperienceThreshold,
+} from './exper.js';
 import {
     MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1,
     MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
@@ -20,7 +22,9 @@ import {
     AMULET_OF_UNCHANGING, LENSES, OBJECT_MATERIAL,
     RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS,
 } from './object_data.js';
-import { newsym, pline, plineWithContinuation } from './display.js';
+import {
+    newsym, pline, plineWithContinuation, see_monsters,
+} from './display.js';
 import { place_object } from './floor_object.js';
 import { moreUntilDismissed } from './tty_prompts.js';
 import { findArmorClass } from './armor.js';
@@ -34,6 +38,13 @@ import { exerciseAttribute } from './attrib.js';
 import { syncBlindness } from './senses.js';
 import { golemHitPoints } from './monster_hit_points.js';
 import { finishHeroDeath } from './end.js';
+import { cureHeroSickness } from './hero_illness.js';
+import {
+    clearHeroPetrification, selfTouchPetrifyingWeapons,
+} from './stoning.js';
+import {
+    heroIsSliming, resetHeroSlimingCountdown,
+} from './slime.js';
 
 const M1_NOEYES = 0x00001000;
 const M1_NOTAKE = 0x00000800;
@@ -753,6 +764,8 @@ export async function polyselfControlledNewman() {
         else if (game.flags) game.flags.female = !game.flags.female;
     }
 
+    await adjustLevelAbilities(oldLevel, newLevel);
+
     u.uexp = randomExperienceForLevel(newLevel);
     redistributeActiveAttributes();
 
@@ -792,10 +805,36 @@ export async function polyselfControlledNewman() {
     u.uen = Math.min(u.uen, u.uenmax);
 
     u.uhunger = 500 + rn2(500);
+    cureHeroSickness(game);
+    clearHeroPetrification(game);
+    if (u.uhp <= 0) {
+        if (heroHasPolymorphControl(game)) u.uhp = 1;
+        else {
+            await pline(
+                "Your new form doesn't seem healthy enough to survive.",
+            );
+            const died = await finishHeroDeath({
+                killer: 'unsuccessful polymorph',
+            });
+            return { transformed: false, died };
+        }
+    }
+
     const restored = rehumanizeHero(game);
     await pline(`You feel like a new ${newHumanFormName()}!`);
+    if (heroIsSliming(game)) {
+        await pline('Your body transforms, but there is still slime on you.');
+        resetHeroSlimingCountdown(game);
+    }
+    see_monsters();
     if (restored.encumbranceMessage)
         await pline(restored.encumbranceMessage);
+    const selfTouch = await selfTouchPetrifyingWeapons();
+    if (selfTouch.died) {
+        return {
+            transformed: true, newman: true, oldLevel, newLevel, died: true,
+        };
+    }
     return {
         transformed: true,
         newman: true,
