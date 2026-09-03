@@ -139,6 +139,32 @@ test('one-percent map potion break resistance preserves the thrown identity',
         assert.ok(floorObjects(game.level).includes(potion));
     });
 
+test('a thrown potion that survives impact can fall down a ladder',
+    async () => {
+        freshMapPotionState(2);
+        game.level.monsters = [];
+        game.dungeons = [{ num_dunlevs: 5, flags: {} }];
+        game.stairs = {
+            sx: 16,
+            sy: 10,
+            up: false,
+            isladder: true,
+            tolev: { dnum: 0, dlevel: 5 },
+            next: null,
+        };
+        const potion = knownInventoryObject(POT_GAIN_LEVEL);
+
+        initRng(2795n);
+        await throwEast(potion);
+
+        assert.equal(floorObjects(game.level).includes(potion), false);
+        assert.equal(potion.where, 'migrating');
+        assert.deepEqual(potion.migration.destination, {
+            dnum: 0,
+            dlevel: 5,
+        });
+    });
+
 test('map extra healing contact heals monster then hero through nearby vapor',
     async () => {
         const monster = freshMapPotionState(2);

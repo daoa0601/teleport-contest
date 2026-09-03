@@ -3,7 +3,7 @@
 // and zap.c bhit().
 
 import {
-    A_STR, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_WATERWALL,
+    A_STR, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_SOFT, IS_WATERWALL,
     Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, SINK, WEB, ZAP_POS,
     isok,
 } from './const.js';
@@ -12,6 +12,8 @@ import {
     flush_screen, lastDirtyMapCursor, newsym, plineWithContinuation,
     show_glyph_cell, transientObjectGlyph,
 } from './display.js';
+import { applyFloorEffects } from './floor_effects.js';
+import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import {
@@ -25,6 +27,7 @@ import {
     TIN_WHISTLE, WAX_CANDLE,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
+import { shipObject } from './object_migration.js';
 import { splitObjectStack } from './object_stack.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf } from './senses.js';
@@ -196,6 +199,44 @@ export function prepareHeroThrownTarget(monster, random = rn2) {
         monster.mcanmove = 1;
         monster.mfrozen = 0;
     }
+}
+
+export async function finishHeroThrownObjectLanding({
+    state = game,
+    object,
+    x,
+    y,
+    publish = plineWithContinuation,
+    random = rn2,
+}) {
+    object.ox = x;
+    object.oy = y;
+
+    if (!IS_SOFT(state.level?.at?.(x, y)?.typ)) {
+        const { destroyed } = await breakFloorObject(object, {
+            state,
+            publish,
+            random,
+        });
+        if (destroyed) return null;
+    }
+
+    const floorEffect = await applyFloorEffects(object, x, y, {
+        state,
+        publish,
+        random,
+    });
+    if (floorEffect.finished) return floorEffect.object;
+
+    if (!liveMonsterAt(state, x, y)
+        && await shipObject(object, x, y, { state, publish, random })) {
+        return null;
+    }
+
+    place_object(object, x, y, state);
+    const landed = stack_object(object, state);
+    newsym(x, y);
+    return landed;
 }
 
 export async function flyHeroThrownObject({

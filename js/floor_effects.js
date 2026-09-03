@@ -110,7 +110,7 @@ async function handleHeroShaftEdge(
     return shipObject(object, x, y, { state, publish, random });
 }
 
-export async function landFloorObject(
+export async function applyFloorEffects(
     object,
     x,
     y,
@@ -130,7 +130,7 @@ export async function landFloorObject(
         place_object(object, x, y, state);
         const { dropBoulderIntoLiquid } = await import('./boulder_pool.js');
         await dropBoulderIntoLiquid(object, x, y, state);
-        return null;
+        return { finished: true, object: null };
     }
 
     const trap = state.level?.traps?.find(candidate =>
@@ -138,8 +138,9 @@ export async function landFloorObject(
     if (object.otyp === BOULDER && trap
         && (is_pit(trap.ttyp) || is_hole(trap.ttyp))) {
         place_object(object, x, y, state);
-        if (fillPitWithBoulderAt(x, y, state).filled) return null;
-        return stack_object(object, state);
+        if (fillPitWithBoulderAt(x, y, state).filled)
+            return { finished: true, object: null };
+        return { finished: true, object: stack_object(object, state) };
     }
 
     if (location?.typ === LAVAPOOL) {
@@ -149,7 +150,8 @@ export async function landFloorObject(
             random,
             visible: squareIsVisible(state, x, y),
         });
-        if (!landed.includes(object)) return null;
+        if (!landed.includes(object))
+            return { finished: true, object: null };
     } else if (IS_POOL(location?.typ)) {
         const messages = [];
         const result = await waterDamageObject(object, messages, state, {
@@ -159,17 +161,22 @@ export async function landFloorObject(
         await publishAll(messages, publish);
         if (result === 'destroyed') {
             deleteObject(object, state);
-            return null;
+            return { finished: true, object: null };
         }
     }
 
     if (await handleHeroShaftEdge(
         object, trap, x, y, state, publish, random,
-    )) return null;
+    )) return { finished: true, object: null };
 
     if (object.globby) {
         place_object(object, x, y, state);
-        return meldNearbyFloorGlobs(object, { state, publish, random });
+        return {
+            finished: true,
+            object: await meldNearbyFloorGlobs(object, {
+                state, publish, random,
+            }),
+        };
     }
     if (state.context?.mon_moving
         && location?.typ === ALTAR
@@ -185,7 +192,20 @@ export async function landFloorObject(
         && hotGround
         && await breakPotionOnHotGround(
             object, x, y, state, publish, random, luckRoll,
-        )) return null;
+        )) return { finished: true, object: null };
+
+    return { finished: false, object };
+}
+
+export async function landFloorObject(
+    object,
+    x,
+    y,
+    options = {},
+) {
+    const state = options.state ?? game;
+    const result = await applyFloorEffects(object, x, y, options);
+    if (result.finished) return result.object;
 
     place_object(object, x, y, state);
     return stack_object(object, state);

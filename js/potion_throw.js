@@ -6,23 +6,22 @@ import { currentAttribute } from './attrib.js';
 import {
     A_DEX, A_STR, CORR, DOOR, Is_airlevel, ROOM, W_SADDLE,
 } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
-import { place_object, stack_object } from './floor_object.js';
+import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import {
     MONSTER_GENO, monsterTypeName,
 } from './monster_data.js';
 import { OBJECT_WEIGHT } from './object_data.js';
-import { objectBreaksOnImpact } from './object_breakage.js';
 import {
-    applySupportedPotionVapor, destroyPotionIdentity,
     hitMonsterWithSupportedPotion, potionImpactObjectName,
     maximumSupportedPotionFatalDamage,
     SUPPORTED_MONSTER_POTION_TYPES,
 } from './potion_hit.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
-import { detachThrownUnit } from './thrown_object.js';
+import {
+    detachThrownUnit, finishHeroThrownObjectLanding,
+} from './thrown_object.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { cansee } from './vision.js';
 import { nearCapacity } from './weight.js';
@@ -180,25 +179,6 @@ function distanceFromHero(state, x, y) {
     return Math.max(Math.abs(x - state.u.ux), Math.abs(y - state.u.uy));
 }
 
-async function settlePotionAfterMiss({
-    state, potion, x, y, publish,
-}) {
-    if (!objectBreaksOnImpact(potion)) {
-        place_object(potion, x, y);
-        stack_object(potion, state);
-        newsym(x, y);
-        return { broke: false };
-    }
-
-    await publish(`${indefiniteObjectName(potion, state)} shatters!`);
-    if (distanceFromHero(state, x, y) <= 1) {
-        await publish('You smell a peculiar odor...');
-        await applySupportedPotionVapor({ state, potion, publish });
-    }
-    destroyPotionIdentity(potion);
-    return { broke: true };
-}
-
 export async function resolveMapPotionThrow({
     state = game,
     item,
@@ -234,9 +214,9 @@ export async function resolveMapPotionThrow({
         await publish(
             `${indefiniteObjectName(thrown, state)} hits the floor.`,
         );
-        await settlePotionAfterMiss({
+        await finishHeroThrownObjectLanding({
             state,
-            potion: thrown,
+            object: thrown,
             x: state.u.ux,
             y: state.u.uy,
             publish,
@@ -290,9 +270,9 @@ export async function resolveMapPotionThrow({
         if (rn2(3) === 0) await wakeMonster?.(flight.contact);
     }
 
-    await settlePotionAfterMiss({
+    await finishHeroThrownObjectLanding({
         state,
-        potion: thrown,
+        object: thrown,
         x: flight.x,
         y: flight.y,
         publish,
