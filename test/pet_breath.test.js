@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { runMonsterAbilityCommand } from './support/commands.js';
-import { addMonsterToLevel } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import {
-    finishRangedAttacks, freshRangedCombatRoom, rangedPet, rangedTarget,
+    finishRangedAttacks, freshRangedCombatRoom,
 } from './support/ranged-combat.js';
 import { uninitializedObject } from './support/game-objects.js';
 import {
@@ -14,31 +14,34 @@ import {
 import {
     continueMonsterRangedTurn, resolveMonsterBreathAttack,
 } from '../js/dogmove.js';
+import {
+    MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT,
+} from '../js/const.js';
+import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { DAGGER } from '../js/object_data.js';
 import { finishMonsterRayDeath } from '../js/monster_death.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
 
-function redDragon(options = {}) {
-    return rangedPet('red dragon', {
-        x: 10,
-        y: 10,
-        hitPoints: 100,
-        level: 15,
-        mtame: 20,
-        ...options,
-    });
+const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT
+    | NO_MINVENT;
+
+async function redDragon() {
+    const dragon = await createMonsterAt(
+        'red dragon', 10, 10, TEST_MONSTER_FLAGS,
+    );
+    tameMonster(dragon, game);
+    dragon.mhp = dragon.mhpmax = 100;
+    return dragon;
 }
 
-function breathTarget(options = {}) {
-    return rangedTarget('goblin', {
-        x: 13,
-        y: 10,
-        hitPoints: 100,
-        level: 4,
-        mac: 100,
-        ...options,
-    });
+async function breathTarget(species = 'orc-captain') {
+    const target = await createMonsterAt(
+        species, 13, 10, TEST_MONSTER_FLAGS,
+    );
+    target.mhp = target.mhpmax = 100;
+    return target;
 }
 
 async function resolveBreath(monster, breath, rollOne = () => 1) {
@@ -56,8 +59,9 @@ async function resolveBreath(monster, breath, rollOne = () => 1) {
 test('a tame dragon breathes at a distant monster instead of moving',
     async () => {
         freshRangedCombatRoom();
-        const dragon = addMonsterToLevel(redDragon());
-        const target = addMonsterToLevel(breathTarget());
+        const dragon = await redDragon();
+        const target = await breathTarget();
+        const hungryBefore = dragon.edog.hungrytime;
 
         const action = quietMonsterActionRng(
             dragon,
@@ -76,27 +80,29 @@ test('a tame dragon breathes at a distant monster instead of moving',
         assert.deepEqual([dragon.mx, dragon.my], [10, 10]);
         assert.ok(target.mhp < 100);
         assert.equal(dragon.mspec_used, 9);
-        assert.equal(dragon.edog.hungrytime, 990);
+        assert.equal(dragon.edog.hungrytime, hungryBefore - 10);
     });
 
 test('a rider in normal form can use a red dragon mount breath', async () => {
     freshPlayableRoom({ right: 20, role: 'knight', seed: 1n });
-    const steed = redDragon();
+    const steed = await redDragon();
     game.u.usteed = steed;
-    const target = addMonsterToLevel(breathTarget({ mpeaceful: 1 }));
+    const target = await breathTarget();
+    target.mpeaceful = 1;
+    const hungryBefore = steed.edog.hungrytime;
 
     await runMonsterAbilityCommand(' '.repeat(8));
 
     assert.equal(game.context.move, 1);
     assert.ok(steed.mspec_used > 0);
-    assert.equal(steed.edog.hungrytime, 990);
+    assert.equal(steed.edog.hungrytime, hungryBefore - 10);
     assert.ok(target.mhp < 100);
     assert.equal(target.mpeaceful, 1);
 });
 
 test('a mounted dragon with no target snarls and spends the turn', async () => {
     freshPlayableRoom({ right: 20, role: 'knight', seed: 46003n });
-    game.u.usteed = redDragon();
+    game.u.usteed = await redDragon();
 
     await runMonsterAbilityCommand();
 
@@ -107,16 +113,17 @@ test('a mounted dragon with no target snarls and spends the turn', async () => {
 test('an iron golem throws before using its breath attack', async () => {
     freshRangedCombatRoom({ gameplaySeed: 1n });
     const dagger = uninitializedObject(DAGGER);
-    const golem = addMonsterToLevel(rangedPet('iron golem', {
-        hitPoints: 200,
-        level: 18,
-        inventory: [dagger],
-    }));
-    const target = addMonsterToLevel(rangedTarget('ettin', {
-        hitPoints: 200,
-        level: 18,
-        mac: 20,
-    }));
+    const golem = await createMonsterAt(
+        'iron golem', 9, 10, TEST_MONSTER_FLAGS,
+    );
+    tameMonster(golem, game);
+    golem.mhp = golem.mhpmax = 200;
+    addObjectToMonsterInventory(golem, dagger, game);
+    const target = await createMonsterAt(
+        'ettin', 12, 10, TEST_MONSTER_FLAGS,
+    );
+    target.mhp = target.mhpmax = 200;
+    const hungryBefore = golem.edog.hungrytime;
 
     const action = quietMonsterActionRng(golem, game);
     finishRangedAttacks(action.movement.rangedAttacks, game, {
@@ -135,19 +142,16 @@ test('an iron golem throws before using its breath attack', async () => {
     assert.equal(daggerLanded, true);
     assert.ok(hitPointsAfterDagger < 200);
     assert.ok(target.mhp < hitPointsAfterDagger);
-    assert.equal(golem.edog.hungrytime, 990);
+    assert.equal(golem.edog.hungrytime, hungryBefore - 10);
 });
 
 test('a ranged target can throw weapons back at a pet', async () => {
     freshRangedCombatRoom();
-    const dragon = addMonsterToLevel(redDragon());
+    const dragon = await redDragon();
     const daggers = uninitializedObject(DAGGER, { quan: 2 });
-    const target = addMonsterToLevel(rangedTarget('orc-captain', {
-        x: 13,
-        hitPoints: 200,
-        level: 10,
-        inventory: [daggers],
-    }));
+    const target = await breathTarget();
+    target.mhp = target.mhpmax = 200;
+    addObjectToMonsterInventory(target, daggers, game);
     const action = quietMonsterActionRng(
         dragon,
         game,

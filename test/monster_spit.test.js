@@ -11,31 +11,26 @@ import {
 import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { makemonAt } from '../js/mklev.js';
-import { nameToMonster } from '../js/mondata.js';
 import { AMULET_OF_LIFE_SAVING, HELMET } from '../js/object_data.js';
 import { resolveRangedRetaliation } from '../js/dogmove.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { wearHeroObject } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshRangedCombatRoom } from './support/ranged-combat.js';
 
 const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT
     | NO_MINVENT;
 
-async function placeMonster(species, x, y) {
-    const monster = await makemonAt(
-        nameToMonster(species), x, y, TEST_MONSTER_FLAGS,
-    );
-    assert.ok(monster, `could not create ${species} at ${x},${y}`);
-    return monster;
-}
-
 test('a black naga can spit acid at another monster', async () => {
     freshObjectRoom({ heroX: 15, heroY: 12 });
-    const naga = await placeMonster('black naga', 9, 10);
-    const target = await placeMonster('jackal', 12, 10);
+    const naga = await createMonsterAt(
+        'black naga', 9, 10, TEST_MONSTER_FLAGS,
+    );
+    const target = await createMonsterAt(
+        'jackal', 12, 10, TEST_MONSTER_FLAGS,
+    );
     target.mhp = target.mhpmax = 12;
 
     const spit = beginMonsterSpitAttack(naga, target.mx, target.my, {
@@ -52,8 +47,12 @@ test('a black naga can spit acid at another monster', async () => {
 
 test('acid venom does not hurt an acid-resistant monster', async () => {
     freshObjectRoom({ heroX: 15, heroY: 12 });
-    const naga = await placeMonster('black naga', 9, 10);
-    const dragon = await placeMonster('yellow dragon', 12, 10);
+    const naga = await createMonsterAt(
+        'black naga', 9, 10, TEST_MONSTER_FLAGS,
+    );
+    const dragon = await createMonsterAt(
+        'yellow dragon', 12, 10, TEST_MONSTER_FLAGS,
+    );
     dragon.mhp = dragon.mhpmax = 12;
 
     const spit = beginMonsterSpitAttack(naga, dragon.mx, dragon.my, {
@@ -69,8 +68,12 @@ test('acid venom does not hurt an acid-resistant monster', async () => {
 
 test('blinding venom cannot blind an eyeless monster', async () => {
     freshObjectRoom({ heroX: 15, heroY: 12 });
-    const cobra = await placeMonster('cobra', 9, 10);
-    const cube = await placeMonster('gelatinous cube', 12, 10);
+    const cobra = await createMonsterAt(
+        'cobra', 9, 10, TEST_MONSTER_FLAGS,
+    );
+    const cube = await createMonsterAt(
+        'gelatinous cube', 12, 10, TEST_MONSTER_FLAGS,
+    );
 
     const spit = beginMonsterSpitAttack(cobra, cube.mx, cube.my, {
         random: () => 0,
@@ -96,7 +99,9 @@ test('life saving rescues the hero from fatal acid venom', async () => {
         W_AMUL,
     );
     game.u.uhp = 1;
-    const naga = await placeMonster('black naga', 9, 10);
+    const naga = await createMonsterAt(
+        'black naga', 9, 10, TEST_MONSTER_FLAGS,
+    );
     const spit = beginMonsterSpitAttack(
         naga, game.u.ux, game.u.uy, { random: () => 0 },
     );
@@ -125,7 +130,9 @@ test('a visored helmet blocks blinding venom', async () => {
         'uarmh',
         W_ARMH,
     );
-    const cobra = await placeMonster('cobra', 9, 10);
+    const cobra = await createMonsterAt(
+        'cobra', 9, 10, TEST_MONSTER_FLAGS,
+    );
     const spit = beginMonsterSpitAttack(
         cobra, game.u.ux, game.u.uy, { random: () => 0 },
     );
@@ -142,9 +149,13 @@ test('a visored helmet blocks blinding venom', async () => {
 test('a tame black naga spits at a distant monster instead of moving',
     async () => {
         freshRangedCombatRoom();
-        const naga = await placeMonster('black naga', 9, 10);
+        const naga = await createMonsterAt(
+            'black naga', 9, 10, TEST_MONSTER_FLAGS,
+        );
         tameMonster(naga, game);
-        const target = await placeMonster('orc-captain', 12, 10);
+        const target = await createMonsterAt(
+            'orc-captain', 12, 10, TEST_MONSTER_FLAGS,
+        );
         target.mhp = target.mhpmax = 12;
         const hungryBefore = naga.edog.hungrytime;
 
@@ -163,9 +174,11 @@ test('a tame black naga spits at a distant monster instead of moving',
 
 test('a cobra can spit back after a ranged attack', async () => {
     freshObjectRoom({ heroX: 15, heroY: 12, gameplaySeed: 7n });
-    const pet = await placeMonster('orc', 9, 10);
+    const pet = await createMonsterAt('orc', 9, 10, TEST_MONSTER_FLAGS);
     tameMonster(pet, game);
-    const cobra = await placeMonster('cobra', 12, 10);
+    const cobra = await createMonsterAt(
+        'cobra', 12, 10, TEST_MONSTER_FLAGS,
+    );
     cobra.mhp = cobra.mhpmax = 30;
 
     await resolveRangedRetaliation(pet, cobra, game, {

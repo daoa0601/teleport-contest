@@ -1,5 +1,7 @@
 import { W_SADDLE, W_WEP } from '../../js/const.js';
 import { game } from '../../js/gstate.js';
+import { makemonAt } from '../../js/mklev.js';
+import { nameToMonster } from '../../js/mondata.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../../js/monster_inventory.js';
 
@@ -81,6 +83,15 @@ export function addMonster(options, state = game) {
 
 export function addPet(options, state = game) {
     return addMonsterToLevel(livePet(options), state);
+}
+
+export async function createMonsterAt(species, x, y, flags = 0) {
+    const mnum = typeof species === 'number' ? species : nameToMonster(species);
+    if (mnum < 0) throw new Error(`Unknown monster: ${species}`);
+    const monster = await makemonAt(mnum, x, y, flags);
+    if (!monster)
+        throw new Error(`Could not create ${species} at ${x},${y}`);
+    return monster;
 }
 
 export function equipMonsterObject(monster, object, wornMask, state = game) {
