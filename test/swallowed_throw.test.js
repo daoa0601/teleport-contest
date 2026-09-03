@@ -247,6 +247,19 @@ test('swallowed weapon-tool preserves minimal-damage skill cadence',
         assert.equal(floorObjects(game.level).length, 0);
     });
 
+test('swallowed weapon corrodes before the engulfer keeps it', async () => {
+    const engulfer = freshSwallowedState(PM_OCHRE_JELLY);
+    const pick = addInventoryWeapon(PICK_AXE);
+    setBasicWeaponSkill(pick);
+
+    initRng(5n);
+    await throwInventoryObject(pick, 'k');
+
+    assert.strictEqual(engulfer.minvent[0], pick);
+    assert.equal(pick.oeroded2, 1);
+    assert.match(game._pending_message, /pick-axe corrodes!$/);
+});
+
 test('swallowed multi-die weapon uses the shared physical damage owner',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);

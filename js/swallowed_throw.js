@@ -105,11 +105,6 @@ function supportedLitLamp(state, item, engulfer) {
         && timers[0].deadline >= (state.moves ?? 0);
 }
 
-function monsterHasObjectPassive(monster) {
-    return MONSTER_ATTACKS[monster?.mnum]?.some(attack =>
-        attack[0] === 0 && (attack[1] || attack[2] || attack[3]));
-}
-
 function intendedThrowingWeapon(item) {
     const skill = Math.abs(OBJECT_SUBTYPE[item.otyp] ?? 0);
     return skill === 17 || THROWING_WEAPON_NAMES.has(OBJECT_NAMES[item.otyp]);
@@ -142,7 +137,6 @@ function swallowedWeaponEligibility(
         || activeObjectTimerCount(item) > 0
         || engulfer.mpeaceful || engulfer.mtame || engulfer.pet
         || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade'
-        || monsterHasObjectPassive(engulfer)
         || state.u?.polymorphed || state.u?.upolyd
         || state.u?.twoweap || state.twoweap) return null;
     if (selectedQuantity > 1 && activeObjectTimerCount(item) > 0)
@@ -412,6 +406,7 @@ export async function resolveSwallowedWeaponThrow({
     await wakeMonster(engulfer);
     exerciseAttribute(A_DEX, true, state);
 
+    await applyMonsterPassiveToObject(engulfer, thrown);
     addObjectToMonsterInventory(
         engulfer, thrown, state, { atFront: true },
     );
