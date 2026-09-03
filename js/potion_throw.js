@@ -52,7 +52,7 @@ function targetIsOrdinary(monster) {
         && !monster.isshk && !monster.ispriest && !monster.isminion
         && !monster.iswiz && !monster.isgd && !monster.mleashed
         && !monster.mtrapped && !monster.m_ap_type && !monster.mundetected
-        && !monster.wormno && !(monster.mtame ?? 0)
+        && !monster.wormno
         && !((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ);
 }
 
