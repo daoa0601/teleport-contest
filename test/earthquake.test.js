@@ -3,26 +3,29 @@ import assert from 'node:assert/strict';
 
 import {
     COLNO, DOOR, D_CLOSED, D_NODOOR, MOAT, PIT, ROOM, ROWNO, STONE,
-    TT_PIT,
+    TT_PIT, W_AMUL,
 } from '../js/const.js';
 import { createEarthquake } from '../js/earthquake.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { playInstrument } from '../js/music.js';
 import {
-    BOULDER, DRUM_OF_EARTHQUAKE,
+    AMULET_OF_LIFE_SAVING, BOULDER, DRUM_OF_EARTHQUAKE,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { floorObject } from './support/game-objects.js';
-import { liveMonster } from './support/monsters.js';
+import { floorObject, knownObject } from './support/game-objects.js';
+import {
+    addMonster, equipMonsterObject,
+} from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
-function targetMonster(x, y) {
-    return liveMonster({
-        mnum: 0, x, y, hitPoints: 100,
+function targetMonster(x, y, overrides = {}) {
+    return addMonster({
+        species: 'giant ant', x, y, hitPoints: 100,
         mfrozen: 0,
         msleeping: 1,
         mstrategy: 0,
+        ...overrides,
     });
 }
 
@@ -40,7 +43,6 @@ test('an earthquake opens chasms under the hero and nearby monsters',
         const level = freshWeaponArena();
         game.u.uhp = game.u.uhpmax = 1000;
         const monster = targetMonster(11, 10);
-        level.monsters = [monster];
         pushKeys(' '.repeat(100));
 
         await createEarthquake(13);
@@ -51,6 +53,28 @@ test('an earthquake opens chasms under the hero and nearby monsters',
         assert.ok(game.u.uhp < 1000);
         assert.equal(monster.mtrapped, 1);
         assert.ok(monster.mhp < 100);
+    });
+
+test("a monster's life-saving amulet works after an earthquake fall",
+    async () => {
+        const level = freshWeaponArena();
+        game.u.uhp = game.u.uhpmax = 1000;
+        const monster = targetMonster(11, 10, {
+            hitPoints: 1,
+            maxHitPoints: 1,
+        });
+        const amulet = equipMonsterObject(
+            monster,
+            knownObject(AMULET_OF_LIFE_SAVING),
+            W_AMUL,
+        );
+        pushKeys(' '.repeat(100));
+
+        await createEarthquake(13);
+
+        assert.equal(level.monsters.includes(monster), true);
+        assert.ok(monster.mhp > 0);
+        assert.equal(amulet.where, 'gone');
     });
 
 test('an earthquake collapses doors and drops boulders into chasms',
@@ -114,7 +138,6 @@ test('a charged earthquake drum shakes the level and spends one charge',
 test('an empty earthquake drum acts like an ordinary drum', async () => {
     const level = freshWeaponArena();
     const monster = targetMonster(11, 10);
-    level.monsters = [monster];
     const drum = earthquakeDrum(0);
     pushKeys(' '.repeat(20));
 

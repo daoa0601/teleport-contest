@@ -249,9 +249,13 @@ export function monsterBreaksArmor(mnum) {
         || mnum === PM_MARILITH;
 }
 
+export function monsterIsHumanoid(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID);
+}
+
 export function monsterWrappingAllowed(mnum) {
     const size = MONSTER_SIZE[mnum] ?? 0;
-    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID)
+    return monsterIsHumanoid(mnum)
         && size >= MZ_SMALL && size <= MZ_HUGE
         && !monsterIsNoncorporeal({ mnum })
         && !monsterIsCentaur(mnum)

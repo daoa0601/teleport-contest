@@ -495,14 +495,14 @@ function levelDescription() {
     return 'dungeon';
 }
 
-async function playEarthquakeDrum(instrument, options) {
+async function playEarthquakeDrum(instrument) {
     consumeCharge(instrument);
     await plineWithContinuation('You produce a heavy, thunderous rolling!');
     await plineWithContinuation(
         `The entire ${levelDescription()} is shaking around you!`,
     );
     const force = Math.trunc(((game.u?.ulevel || 1) - 1) / 3) + 1;
-    await createEarthquake(force, options);
+    await createEarthquake(force);
     await awakenMonsters(ROWNO * COLNO);
     learnInstrumentType(instrument);
 }
@@ -536,7 +536,7 @@ async function improvise(instrument, options) {
     else if (effectiveType === FROST_HORN)
         await playElementalHorn(instrument, 'cold', options);
     else if (effectiveType === DRUM_OF_EARTHQUAKE)
-        await playEarthquakeDrum(instrument, options);
+        await playEarthquakeDrum(instrument);
     else if (effectiveType === BUGLE)
         await playBugle(instrument, familiar);
     else if (effectiveType === MAGIC_HARP)

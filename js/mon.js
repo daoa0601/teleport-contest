@@ -339,7 +339,10 @@ export async function resolveMonsterLiquid(
                     await waterDamageChain(
                         monster.minvent || monster.inventory || [], [], state,
                     );
-                    return finishDeath(monster, state, random, calls, true);
+                    return finishDeath(
+                        monster, state, random, calls, true,
+                        { cause: 'rust' },
+                    );
                 }
             }
             await waterDamageChain(
@@ -368,7 +371,10 @@ export async function resolveMonsterLiquid(
                 await waterDamageChain(
                     monster.minvent || monster.inventory || [], [], state,
                 );
-                return finishDeath(monster, state, random, calls, true);
+                return finishDeath(
+                    monster, state, random, calls, true,
+                    { cause: 'drowning' },
+                );
             }
             await waterDamageChain(
                 monster.minvent || monster.inventory || [], [], state,
@@ -418,8 +424,15 @@ export async function resolveMonsterLiquid(
                         announce, saveMonster, random, rollOne,
                     },
                 );
-                if (!recovery.survived)
-                    return finishDeath(monster, state, random, calls, false);
+                if (!recovery.survived) {
+                    return finishDeath(
+                        monster, state, random, calls, false,
+                        {
+                            cause: lava.kind === 'scorch'
+                                ? 'lava-scorch' : 'lava-burning',
+                        },
+                    );
+                }
             }
             if (monsterInAir(monster, state) || monsterLikesLava(monster))
                 return { survived: true };
