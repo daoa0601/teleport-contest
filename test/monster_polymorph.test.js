@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    DOOR, D_CLOSED, D_NODOOR, I_SPECIAL, NO_WEAPON_WANTED,
+    DOOR, D_CLOSED, D_NODOOR, I_SPECIAL, NO_MINVENT, NO_WEAPON_WANTED,
     W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE,
     W_WEP,
 } from '../js/const.js';
@@ -21,18 +21,12 @@ import {
 import { initRng } from '../js/rng.js';
 import { presentWereChange, wereChange } from '../js/were.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
-import { addMonster, equipMonsterObject } from './support/monsters.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-test('a long worm loses its old body when it changes form', () => {
+test('a long worm loses its old body when it changes form', async () => {
     freshObjectRoom();
-    const monster = addMonster({
-        species: 'long worm',
-        x: 11,
-        y: 10,
-        wormno: 1,
-        wormSegments: [{ x: 10, y: 10 }, { x: 9, y: 10 }],
-    });
+    const monster = await createMonsterAt('long worm', 11, 10);
     initRng(1n);
 
     changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
@@ -41,9 +35,9 @@ test('a long worm loses its old body when it changes form', () => {
     assert.deepEqual(monster.wormSegments, []);
 });
 
-test('a monster receives a worm body when it becomes a long worm', () => {
+test('a monster receives a worm body when it becomes a long worm', async () => {
     freshObjectRoom();
-    const monster = addMonster({ species: 'little dog', x: 11, y: 10 });
+    const monster = await createMonsterAt('little dog', 11, 10);
     initRng(1n);
 
     changeMonsterForm(monster, MONSTER_NAME.indexOf('long worm'));
@@ -52,41 +46,46 @@ test('a monster receives a worm body when it becomes a long worm', () => {
     assert.ok(Array.isArray(monster.wormSegments));
 });
 
-test('a leashed monster pulls free when its new body cannot be leashed', () => {
-    freshObjectRoom();
-    const monster = addMonster({
-        species: 'little dog', x: 11, y: 10, mleashed: 1,
+test('a leashed monster pulls free when its new body cannot be leashed',
+    async () => {
+        freshObjectRoom();
+        const monster = await createMonsterAt('little dog', 11, 10);
+        monster.mleashed = 1;
+        const leash = addInventoryObject(LEASH, {
+            leashmon: monster.m_id,
+        });
+        initRng(1n);
+
+        changeMonsterForm(monster, MONSTER_NAME.indexOf('long worm'));
+
+        assert.equal(monster.mleashed, 0);
+        assert.equal(leash.leashmon, 0);
+        assert.equal(game.inventory.includes(leash), true);
     });
-    const leash = addInventoryObject(LEASH, { leashmon: monster.m_id });
-    initRng(1n);
 
-    changeMonsterForm(monster, MONSTER_NAME.indexOf('long worm'));
+test('a monster drops its weapon when its new form cannot wield one',
+    async () => {
+        freshObjectRoom();
+        const monster = await createMonsterAt('giant', 11, 10);
+        const dagger = equipMonsterObject(
+            monster, knownObject(DAGGER), W_WEP,
+        );
+        initRng(1n);
 
-    assert.equal(monster.mleashed, 0);
-    assert.equal(leash.leashmon, 0);
-    assert.equal(game.inventory.includes(leash), true);
-});
+        changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
 
-test('a monster drops its weapon when its new form cannot wield one', () => {
+        assert.equal(monster.mw, null);
+        assert.equal(monster.weaponCheck, NO_WEAPON_WANTED);
+        assert.equal(dagger.where, 'floor');
+        assert.equal(dagger.ox, monster.mx);
+        assert.equal(dagger.oy, monster.my);
+    });
+
+test('a large new body destroys ordinary torso clothing', async () => {
     freshObjectRoom();
-    const monster = addMonster({ species: 'giant', x: 11, y: 10 });
-    const dagger = equipMonsterObject(
-        monster, knownObject(DAGGER), W_WEP,
+    const monster = await createMonsterAt(
+        'shopkeeper', 11, 10, NO_MINVENT,
     );
-    initRng(1n);
-
-    changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
-
-    assert.equal(monster.mw, null);
-    assert.equal(monster.weaponCheck, NO_WEAPON_WANTED);
-    assert.equal(dagger.where, 'floor');
-    assert.equal(dagger.ox, monster.mx);
-    assert.equal(dagger.oy, monster.my);
-});
-
-test('a large new body destroys ordinary torso clothing', () => {
-    freshObjectRoom();
-    const monster = addMonster({ species: 'shopkeeper', x: 11, y: 10 });
     const clothing = [
         equipMonsterObject(monster, knownObject(CHAIN_MAIL), W_ARM),
         equipMonsterObject(monster, knownObject(ELVEN_CLOAK), W_ARMC),
@@ -102,9 +101,11 @@ test('a large new body destroys ordinary torso clothing', () => {
     assert.ok(monster.misc_worn_check & I_SPECIAL);
 });
 
-test('a tiny new body drops gear that no longer fits', () => {
+test('a tiny new body drops gear that no longer fits', async () => {
     freshObjectRoom();
-    const monster = addMonster({ species: 'shopkeeper', x: 11, y: 10 });
+    const monster = await createMonsterAt(
+        'shopkeeper', 11, 10, NO_MINVENT,
+    );
     const gear = [
         equipMonsterObject(monster, knownObject(CHAIN_MAIL), W_ARM),
         equipMonsterObject(monster, knownObject(ELVEN_CLOAK), W_ARMC),
@@ -122,9 +123,9 @@ test('a tiny new body drops gear that no longer fits', () => {
     assert.equal(monster.inventory.length, 0);
 });
 
-test('a former giant drops boulders its new form cannot carry', () => {
+test('a former giant drops boulders its new form cannot carry', async () => {
     freshObjectRoom();
-    const monster = addMonster({ species: 'giant', x: 11, y: 10 });
+    const monster = await createMonsterAt('giant', 11, 10);
     const boulder = equipMonsterObject(monster, knownObject(BOULDER), 0);
     initRng(1n);
 
@@ -135,25 +136,26 @@ test('a former giant drops boulders its new form cannot carry', () => {
     assert.equal(boulder.oy, monster.my);
 });
 
-test('a monster drops its saddle when its new body cannot wear one', () => {
-    freshObjectRoom();
-    const monster = addMonster({ species: 'pony', x: 11, y: 10 });
-    const saddle = equipMonsterObject(
-        monster, knownObject(SADDLE), W_SADDLE,
-    );
-    initRng(1n);
+test('a monster drops its saddle when its new body cannot wear one',
+    async () => {
+        freshObjectRoom();
+        const monster = await createMonsterAt('pony', 11, 10);
+        const saddle = equipMonsterObject(
+            monster, knownObject(SADDLE), W_SADDLE,
+        );
+        initRng(1n);
 
-    changeMonsterForm(monster, MONSTER_NAME.indexOf('grid bug'));
+        changeMonsterForm(monster, MONSTER_NAME.indexOf('grid bug'));
 
-    assert.equal(saddle.where, 'floor');
-    assert.equal(monster.saddled, false);
-});
+        assert.equal(saddle.where, 'floor');
+        assert.equal(monster.saddled, false);
+    });
 
 test('a visible werewolf announces its natural change', async () => {
     freshObjectRoom();
     game.datetime = '20250101010000';
     game.flags.moonphase = 4;
-    const monster = addMonster({ mnum: 263, x: 11, y: 10 });
+    const monster = await createMonsterAt(263, 11, 10);
     const messages = [];
 
     const change = wereChange(monster, game, () => 0);
@@ -171,12 +173,10 @@ test('an unseen werejackal howls and wakes nearby monsters', async () => {
     freshObjectRoom();
     game.datetime = '20250101010000';
     game.flags.moonphase = 4;
-    const werejackal = addMonster({
-        mnum: 262, x: 11, y: 10, minvis: 1,
-    });
-    const sleeper = addMonster({
-        species: 'jackal', x: 12, y: 10, msleeping: 1,
-    });
+    const werejackal = await createMonsterAt(262, 11, 10);
+    werejackal.minvis = 1;
+    const sleeper = await createMonsterAt('jackal', 12, 10);
+    sleeper.msleeping = 1;
     const messages = [];
 
     const change = wereChange(werejackal, game, () => 0);
@@ -189,14 +189,12 @@ test('an unseen werejackal howls and wakes nearby monsters', async () => {
     assert.equal(sleeper.msleeping, 0);
 });
 
-test('a wounded vampire shape returns to its natural form', () => {
+test('a wounded vampire shape returns to its natural form', async () => {
     freshObjectRoom();
-    const monster = addMonster({
-        species: 'fog cloud',
-        x: 11,
-        y: 10,
-        hitPoints: 2,
-        maxHitPoints: 20,
+    const monster = await createMonsterAt('fog cloud', 11, 10);
+    Object.assign(monster, {
+        mhp: 2,
+        mhpmax: 20,
         cham: MONSTER_NAME.indexOf('vampire'),
     });
     initRng(1n);
@@ -210,9 +208,8 @@ test('a wounded vampire shape returns to its natural form', () => {
 test('a killed vampire shape rises in its natural form', async () => {
     const level = freshObjectRoom();
     const vampire = MONSTER_NAME.indexOf('vampire');
-    const monster = addMonster({
-        species: 'fog cloud', x: 11, y: 10, cham: vampire,
-    });
+    const monster = await createMonsterAt('fog cloud', 11, 10);
+    monster.cham = vampire;
 
     const removed = await finishHeroMonsterKill(
         monster, monster.mx, monster.my, { showKillMessage: false },
@@ -230,9 +227,9 @@ test('a vampire becoming solid inside a closed door smashes it', async () => {
     door.typ = DOOR;
     door.doormask = D_CLOSED;
     const vampire = MONSTER_NAME.indexOf('vampire');
-    const monster = addMonster({
-        species: 'fog cloud', x: 11, y: 10, hitPoints: 0, cham: vampire,
-    });
+    const monster = await createMonsterAt('fog cloud', 11, 10);
+    monster.mhp = 0;
+    monster.cham = vampire;
     const messages = [];
 
     const death = await finishEnvironmentalMonsterDeath(monster, game, {
