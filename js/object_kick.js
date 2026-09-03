@@ -1,0 +1,142 @@
+// Moving a floor object with the kick command.
+// C refs: dokick.c really_kick_object() and zap.c bhit(KICKED_WEAPON).
+
+import { artifactById } from './artifacts.js';
+import { currentAttribute } from './attrib.js';
+import {
+    A_STR, DOOR, D_CLOSED, D_LOCKED, ICE, IS_POOL, Is_airlevel,
+    Is_waterlevel, WEB, ZAP_POS, is_pit, isok,
+} from './const.js';
+import { newsym, plineWithContinuation } from './display.js';
+import { landFloorObject } from './floor_effects.js';
+import {
+    detachFloorObjectUnit, remove_object,
+} from './floor_object.js';
+import { game } from './gstate.js';
+import { breakFloorObject } from './object_breakage.js';
+import { KICKING_BOOTS, OBJECT_NAMES } from './object_data.js';
+import { rn2, rnd } from './rng.js';
+import { flyKickedObject } from './thrown_object.js';
+import { objectWeight } from './weight.js';
+
+function trapAt(state, x, y) {
+    return state.level?.traps?.find(trap =>
+        (trap.tx ?? trap.x) === x && (trap.ty ?? trap.y) === y) || null;
+}
+
+function closedDoor(location) {
+    return location?.typ === DOOR
+        && !!((location.doormask ?? 0) & (D_CLOSED | D_LOCKED));
+}
+
+function heroKnowsMartialArts(state) {
+    return ['monk', 'samurai'].includes(state.urole?.key)
+        || (state.uarmf || state.u?.uarmf)?.otyp === KICKING_BOOTS;
+}
+
+function quantity(object) {
+    return object.quan ?? object.quantity ?? 1;
+}
+
+function unitWeight(object) {
+    if (quantity(object) === 1) return objectWeight(object);
+    return objectWeight({ ...object, quan: 1, quantity: 1 });
+}
+
+function objectName(object) {
+    const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
+    const count = quantity(object);
+    if (count > 1) return `${count} ${object.plural || `${name}s`}`;
+    return `${/^[aeiou]/iu.test(name) ? 'an' : 'a'} ${name}`;
+}
+
+function kickRange(object, state, dx, dy, martial, rollOne) {
+    let range = Math.trunc(currentAttribute(A_STR, state) / 2)
+        - Math.trunc(unitWeight(object) / 40);
+    if (martial) range += rollOne(3);
+
+    const source = state.level?.at?.(object.ox, object.oy);
+    if (IS_POOL(source?.typ)) {
+        range = Math.trunc(range / 3) + 1;
+    } else if (Is_airlevel(state.u?.uz) || Is_waterlevel(state.u?.uz)) {
+        range += rollOne(3);
+    } else if (source?.typ === ICE || object.greased) {
+        range += rollOne(3);
+    }
+
+    if (artifactById(object.oartifact, state)?.name === 'Mjollnir')
+        range = 1;
+    const nextX = object.ox + dx;
+    const nextY = object.oy + dy;
+    const next = state.level?.at?.(nextX, nextY);
+    if (!isok(nextX, nextY) || !ZAP_POS(next?.typ) || closedDoor(next))
+        range = 1;
+    return range;
+}
+
+export async function kickFloorObject(x, y, {
+    state = game,
+    dx = state.u?.dx ?? 0,
+    dy = state.u?.dy ?? 0,
+    publish = plineWithContinuation,
+    random = rn2,
+    rollOne = rnd,
+    captureFlight = null,
+} = {}) {
+    const object = state.level?.objects?.[x]?.[y]?.[0];
+    if (!object) return false;
+
+    const trap = trapAt(state, x, y);
+    const passesWalls = state.u?.passesWalls || state.u?.passes_walls;
+    if (trap && ((is_pit(trap.ttyp) && !passesWalls)
+        || trap.ttyp === WEB)) {
+        trap.tseen = true;
+        await publish(`You can't kick something that's in a ${
+            trap.ttyp === WEB ? 'web' : 'pit'}!`);
+        return true;
+    }
+    if ((state.u?.fumbling || (state.u?.fumblingTurns ?? 0) > 0)
+        && random(3) === 0) {
+        await publish('Your clumsy kick missed.');
+        return true;
+    }
+
+    const martial = heroKnowsMartialArts(state);
+    const range = kickRange(object, state, dx, dy, martial, rollOne);
+    await publish(`You kick ${objectName(object)}.`);
+
+    const { destroyed } = await breakFloorObject(object, {
+        state,
+        publish,
+        random,
+    });
+    if (destroyed) return true;
+    if (range < 2) {
+        await publish('Thump!');
+        return true;
+    }
+
+    const moving = object.oclass === 12
+        ? remove_object(object, state)
+        : detachFloorObjectUnit(object, state);
+    newsym(x, y);
+    const flight = await flyKickedObject({
+        state,
+        object: moving,
+        dx,
+        dy,
+        range,
+        captureFlight,
+        publish,
+        random,
+    });
+    if (flight.destroyed || flight.migrated) return true;
+
+    await landFloorObject(moving, flight.x, flight.y, {
+        state,
+        publish,
+        random,
+    });
+    newsym(flight.x, flight.y);
+    return true;
+}

@@ -35,3 +35,9 @@ export async function dropInventoryObject(object = 'a', followupKeys = '') {
     pushKeys(followupKeys);
     await rhack('d'.charCodeAt(0));
 }
+
+export async function kickDirection(direction = 'l', answers = []) {
+    pushKey(direction);
+    for (const answer of answers) pushKey(answer);
+    await rhack(4);
+}

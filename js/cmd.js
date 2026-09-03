@@ -355,6 +355,7 @@ import {
     prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion,
     tryKickReel,
 } from './monster_kick.js';
+import { kickFloorObject } from './object_kick.js';
 import { waterDamageChain } from './trap.js';
 import {
     heroTeleportDestinationOk, moveHeroByTeleport,
@@ -4037,6 +4038,15 @@ async function dokick() {
             game.context.move = 1;
             return;
         }
+        await kickFloorObject(x, y, {
+            state: game,
+            dx: game.u.dx,
+            dy: game.u.dy,
+            publish: plineWithContinuation,
+            captureFlight: captureThrownObjectFlight,
+        });
+        game.context.move = 1;
+        return;
     }
     if (!location || IS_STWALL(location.typ)) {
         await kickOuch(x, y);

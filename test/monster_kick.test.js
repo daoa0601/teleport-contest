@@ -4,16 +4,16 @@ import assert from 'node:assert/strict';
 import {
     COULD_SEE, IN_SIGHT, STATUE_TRAP, STONE, W_AMUL,
 } from '../js/const.js';
-import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
-import { pushKey, pushKeys } from '../js/input.js';
+import { pushKey } from '../js/input.js';
 import { mkcorpstat } from '../js/mklev.js';
 import {
     AMULET_OF_LIFE_SAVING, OBJECT_NAMES, STATUE,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
+import { kickDirection } from './support/commands.js';
 import { carriedObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
@@ -47,9 +47,7 @@ function installKickArena(mnum) {
 test('a quick snake can slide away from a kick', async () => {
     const snake = installKickArena(215);
     initRng(7n);
-    pushKey('l');
-
-    await rhack(4);
+    await kickDirection('l');
 
     assert.notDeepEqual([snake.mx, snake.my], [11, 10]);
     assert.equal(snake.mhp, 20);
@@ -63,9 +61,7 @@ test('a heavy load can leave a clumsy kick harmless', async () => {
         { otyp: OBJECT_NAMES.indexOf('food ration'), quan: 2 },
     ];
     initRng(2n);
-    pushKey('l');
-
-    await rhack(4);
+    await kickDirection('l');
 
     assert.equal(lichen.mhp, 20);
     assert.equal(game._pending_message, 'Your clumsy kick does no damage.');
@@ -76,10 +72,7 @@ test('a levitating hero can miss a tiny monster and recoil',
         const garterSnake = installKickArena(214);
         game.u.levitating = true;
         initRng(2n);
-        pushKey('l');
-        pushKey(' ');
-
-        await rhack(4);
+        await kickDirection('l', [' ']);
 
         assert.equal(garterSnake.mhp, 20);
         assert.deepEqual([garterSnake.mx, garterSnake.my], [11, 10]);
@@ -98,12 +91,7 @@ test('kicking a pet costs a Samurai honor and frightens the pet', async () => {
     dog.pet = true;
     dog.edog = {};
     initRng(2n);
-    pushKey('l');
-    pushKey('y');
-    pushKey(' ');
-    pushKey(' ');
-
-    await rhack(4);
+    await kickDirection('l', ['y', ' ', ' ']);
 
     assert.equal(game.u.ualign.record, 9);
     assert.equal(dog.mtame, 9);
@@ -117,10 +105,7 @@ test('declining a pet kick leaves the pet alone and takes no turn', async () => 
     dog.pet = true;
     dog.edog = {};
     initRng(2n);
-    pushKey('l');
-    pushKey('n');
-
-    await rhack(4);
+    await kickDirection('l', ['n']);
 
     assert.equal(dog.mhp, 20);
     assert.equal(dog.mtame, 10);
@@ -135,11 +120,7 @@ test('kicking a wall while levitating throws the hero backward', async () => {
     game.u.levitating = true;
     game.u.uhp = game.u.uhpmax = 100;
     initRng(19n);
-    pushKey('l');
-    pushKey(' ');
-    pushKey(' ');
-
-    await rhack(4);
+    await kickDirection('l', [' ', ' ']);
 
     assert.deepEqual([game.u.ux, game.u.uy], [6, 10]);
 });
@@ -152,9 +133,7 @@ test('kicking a statue trap releases its monster', async () => {
     const statue = mkcorpstat(STATUE, null, PM_JACKAL, x, y, 0);
     addTrap(level, STATUE_TRAP, x, y, { tseen: false });
     initRng(17n);
-    pushKey('l');
-
-    await rhack(4);
+    await kickDirection('l');
 
     const jackal = level.monsters.find(monster =>
         monster.mnum === PM_JACKAL && monster.mx === x && monster.my === y,
@@ -199,9 +178,7 @@ test('a cockatrice hero recoiling into an unarmored monster leaves a statue',
         game.u.uhp = game.u.uhpmax = 100;
         vision_reset();
         initRng(19n);
-        pushKeys(`l${' '.repeat(20)}`);
-
-        await rhack(4);
+        await kickDirection('l', ' '.repeat(20));
 
         assert.equal(game.level.monsters.includes(human), false);
         const statue = game.level.objects[9][10]
@@ -229,9 +206,7 @@ test('a worn life-saving amulet saves a monster from petrifying recoil',
         game.u.uhp = game.u.uhpmax = 100;
         vision_reset();
         initRng(19n);
-        pushKeys(`l${' '.repeat(30)}`);
-
-        await rhack(4);
+        await kickDirection('l', ' '.repeat(30));
 
         assert.equal(game.level.monsters.includes(human), true);
         assert.equal(human.mhp, human.mhpmax);

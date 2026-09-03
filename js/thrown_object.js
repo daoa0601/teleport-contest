@@ -3,9 +3,9 @@
 // and zap.c bhit().
 
 import {
-    A_STR, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_SOFT, IS_WATERWALL,
-    Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, SINK, WEB, ZAP_POS,
-    isok,
+    A_STR, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_LAVA, IS_POOL,
+    IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN,
+    M_AP_OBJECT, SINK, WEB, ZAP_POS, isok,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
 import {
@@ -241,24 +241,29 @@ export async function finishHeroThrownObjectLanding({
     return landed;
 }
 
-export async function flyHeroThrownObject({
+async function flyPhysicalObject({
     state = game,
     object,
     dx,
     dy,
     range,
+    startX,
+    startY,
+    kicked = false,
     captureFlight = null,
     publish = plineWithContinuation,
     random = rn2,
 }) {
-    let x = state.u?.ux ?? 0;
-    let y = state.u?.uy ?? 0;
+    let x = startX;
+    let y = startY;
     const path = [];
     let contact = null;
     let stoppedBy = 'range';
     let destroyed = false;
+    let migrated = false;
+    const steps = kicked ? Math.max(0, range - 1) : range;
 
-    for (let step = 0; step < range && (dx || dy); step++) {
+    for (let step = 0; step < steps && (dx || dy); step++) {
         const nextX = x + dx;
         const nextY = y + dy;
         if (!isok(nextX, nextY)) {
@@ -313,6 +318,17 @@ export async function flyHeroThrownObject({
             break;
         }
 
+        if (kicked && await shipObject(object, x, y, {
+            state,
+            publish,
+            random,
+        })) {
+            path.push({ x, y });
+            migrated = true;
+            stoppedBy = 'passage';
+            break;
+        }
+
         if (!ZAP_POS(location.typ) || closedDoor(location)) {
             x = previousX;
             y = previousY;
@@ -321,6 +337,10 @@ export async function flyHeroThrownObject({
         }
 
         path.push({ x, y });
+        if (kicked && (IS_POOL(location.typ) || IS_LAVA(location.typ))) {
+            stoppedBy = 'liquid';
+            break;
+        }
         if (location.typ === SINK) {
             stoppedBy = 'sink';
             break;
@@ -329,7 +349,26 @@ export async function flyHeroThrownObject({
 
     if (captureFlight && path.length)
         await captureFlight(object, path, state);
-    return { x, y, path, contact, stoppedBy, destroyed };
+    return { x, y, path, contact, stoppedBy, destroyed, migrated };
+}
+
+export function flyHeroThrownObject(options) {
+    const state = options.state ?? game;
+    return flyPhysicalObject({
+        ...options,
+        state,
+        startX: state.u?.ux ?? 0,
+        startY: state.u?.uy ?? 0,
+    });
+}
+
+export function flyKickedObject(options) {
+    return flyPhysicalObject({
+        ...options,
+        startX: options.object?.ox ?? 0,
+        startY: options.object?.oy ?? 0,
+        kicked: true,
+    });
 }
 
 // The caller must establish eligibility before crossing this boundary.  A
