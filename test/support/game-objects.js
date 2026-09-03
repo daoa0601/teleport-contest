@@ -18,7 +18,7 @@ const WEAPON_NAMES = new Map([
     [ROCK, ['rock', 'rocks']],
 ]);
 
-function testObject(otyp, overrides = {}) {
+export function plainObject(otyp, overrides = {}) {
     const quantity = overrides.quan ?? overrides.quantity ?? 1;
     return {
         otyp,
@@ -40,16 +40,9 @@ function testObject(otyp, overrides = {}) {
 }
 
 export function carriedObject(otyp, overrides = {}) {
-    return testObject(otyp, {
+    return plainObject(otyp, {
         invlet: 'a',
         where: 'inventory',
-        ...overrides,
-    });
-}
-
-export function looseObject(otyp, overrides = {}) {
-    return testObject(otyp, {
-        where: 'free',
         ...overrides,
     });
 }
@@ -57,7 +50,7 @@ export function looseObject(otyp, overrides = {}) {
 export function artifactObject(name, overrides = {}) {
     const artifact = artifactByName(name);
     if (!artifact) throw new Error(`Unknown artifact: ${name}`);
-    return testObject(artifact.baseType, {
+    return plainObject(artifact.baseType, {
         oartifact: artifact.id,
         oextra: { oname: artifact.name },
         ...overrides,
@@ -100,7 +93,10 @@ export function knownInventoryWeapon(otyp, overrides = {}) {
 }
 
 export function floorObject(otyp, x, y, overrides = {}) {
-    return place_object(looseObject(otyp, overrides), x, y);
+    return place_object(plainObject(otyp, {
+        where: 'free',
+        ...overrides,
+    }), x, y);
 }
 
 export function floorArtifact(name, x, y, overrides = {}) {

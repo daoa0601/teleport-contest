@@ -12,7 +12,7 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    floorArtifact, floorObject, inventoryObject, looseObject,
+    floorArtifact, floorObject, inventoryObject, knownObject,
 } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
@@ -275,7 +275,7 @@ test('an unliftable scare scroll remains unchanged', async () => {
 
 test('a swallowed hero can pick up an object inside the monster', async () => {
     freshPickupGame();
-    const club = looseObject(CLUB);
+    const club = knownObject(CLUB, { spe: 0 });
     const worm = swallowHeroWith(club);
 
     await rhack(','.charCodeAt(0));
@@ -289,7 +289,8 @@ test('a swallowed hero can pick up an object inside the monster', async () => {
 
 test('a swallowed hero cannot take the monster weapon', async () => {
     freshPickupGame();
-    const club = looseObject(CLUB, {
+    const club = knownObject(CLUB, {
+        spe: 0,
         owornmask: W_WEP,
         wielded: true,
     });

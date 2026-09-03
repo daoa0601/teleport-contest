@@ -18,7 +18,7 @@ import {
 } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
 import {
-    carriedObject, knownObject, looseObject,
+    carriedObject, knownObject,
 } from './support/game-objects.js';
 import {
     addMonster, addPet, equipMonsterObject, liveMonster,
@@ -186,7 +186,7 @@ test('a monster fire blast makes a shifted vampire rise', async () => {
 test('a land monster in lava burns and drops what it carried', async () => {
     const level = freshObjectRoom({ recalculateVision: false });
     level.at(12, 10).typ = LAVAPOOL;
-    const rock = looseObject(ROCK, { where: 'monster' });
+    const rock = knownObject(ROCK, { where: 'monster' });
     const ant = addMonster({
         mnum: 0,
         x: 12,

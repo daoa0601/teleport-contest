@@ -8,21 +8,21 @@ import {
     OBJECT_NAMES, POT_WATER,
     WORTHLESS_PIECE_OF_RED_GLASS,
 } from '../js/object_data.js';
-import { floorObject, looseObject } from './support/game-objects.js';
+import { floorObject, plainObject } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 test('ordinary potions break unless their impact resistance succeeds', () => {
-    const potion = looseObject(POT_WATER);
+    const potion = plainObject(POT_WATER);
 
     assert.equal(objectBreaksOnImpact(potion, () => 1), true);
     assert.equal(objectBreaksOnImpact(potion, () => 0), false);
 });
 
 test('glass armor resists most impacts but glass gems do not shatter', () => {
-    const crystalPlateMail = looseObject(
+    const crystalPlateMail = plainObject(
         OBJECT_NAMES.indexOf('crystal plate mail'),
     );
-    const glassGem = looseObject(WORTHLESS_PIECE_OF_RED_GLASS);
+    const glassGem = plainObject(WORTHLESS_PIECE_OF_RED_GLASS);
 
     assert.equal(objectBreaksOnImpact(crystalPlateMail, () => 89), false);
     assert.equal(objectBreaksOnImpact(crystalPlateMail, () => 90), true);

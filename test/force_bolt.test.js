@@ -18,7 +18,7 @@ import { initRng } from '../js/rng.js';
 import { castKnownSpell } from '../js/spell.js';
 import { dozap } from '../js/zap.js';
 import {
-    chargedWand, floorObject, looseObject,
+    chargedWand, floorObject, knownObject,
 } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
@@ -157,7 +157,7 @@ test('force bolt releases the monster from a statue trap', async () => {
     freshWizard();
     initRng(9401n);
     const statue = mkcorpstat(STATUE, null, PM_JACKAL, 12, 10, 0);
-    const club = looseObject(CLUB, { where: 'contained' });
+    const club = knownObject(CLUB, { where: 'contained', spe: 0 });
     club.container = statue;
     statue.contents = [club];
     addTrap(game.level, STATUE_TRAP, 12, 10, { tseen: false });

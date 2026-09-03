@@ -17,7 +17,7 @@ import { pushKey, pushKeys } from '../js/input.js';
 import { parseNethackrc } from '../js/options.js';
 import { initRng } from '../js/rng.js';
 import {
-    knownInventoryObject, looseObject,
+    knownInventoryObject, plainObject,
 } from './support/game-objects.js';
 import {
     installHumanWerewolfHero, wearPolymorphControlRing,
@@ -30,7 +30,7 @@ const PM_ENERGY_VORTEX = 109;
 const PM_PURPLE_WORM = 115;
 
 function potionObject(otyp) {
-    return looseObject(otyp, {
+    return plainObject(otyp, {
         dknown: true,
         typeKnown: true,
     });
@@ -494,7 +494,7 @@ test('worn speed boots keep effective speed fast while potion removes slow',
             mfrozen: 0,
             permspeed: 1,
             mspeed: 2,
-            minvent: [looseObject(SPEED_BOOTS, { owornmask: W_ARMF })],
+            minvent: [plainObject(SPEED_BOOTS, { owornmask: W_ARMF })],
         });
         const messages = [];
 
