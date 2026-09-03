@@ -46,7 +46,6 @@ const PM_AIR_ELEMENTAL = 154;
 const POTION_CLASS = 8;
 const TIMED_LAMP_TYPES = new Set([BRASS_LANTERN, OIL_LAMP]);
 const LAMP_TYPES = new Set([...TIMED_LAMP_TYPES, MAGIC_LAMP]);
-const SILVER = 14;
 const IRON = 11;
 const LAUNCHER_SKILLS = new Set([20, 21, 22]);
 const THROWING_WEAPON_NAMES = new Set([
@@ -172,7 +171,6 @@ function swallowedProjectileEligibility(
         ? Math.abs(OBJECT_SUBTYPE[launcher.otyp] ?? 0)
         : kind === 'missile' ? Math.abs(subtype) : null;
     const skillState = skill == null ? null : state.u?.weaponSkills?.[skill];
-    const material = OBJECT_MATERIAL[item.otyp] ?? 0;
     const itemName = OBJECT_NAMES[item.otyp] ?? '';
     const launcherName = OBJECT_NAMES[launcher?.otyp] ?? '';
     const roleDamage = state.urole?.key === 'samurai'
@@ -186,7 +184,6 @@ function swallowedProjectileEligibility(
     // their own swallowed-combat rules and remain with the caller.
     if ((skill != null && (!skillState
             || !Number.isInteger(skillState.skill)))
-        || material === SILVER || item.blessed
         || item.oartifact || item.artifact || item.lamplit
         || containsUnpaidObject(item) || projectileIsEquipped(state, item)
         || activeObjectTimerCount(item) > 0

@@ -338,6 +338,23 @@ test('swallowed dart survives mulch and transfers after live missile damage',
         assert.equal(floorObjects(game.level).length, 0);
     });
 
+test('a blessed swallowed dart deals extra damage to a demon', async () => {
+    const ordinaryTarget = freshSwallowedState(PM_JUIBLEX);
+    const ordinaryDart = addInventoryWeapon(DART);
+    setBasicWeaponSkill(ordinaryDart);
+    initRng(2413n);
+    await throwInventoryObject(ordinaryDart, 'l');
+    const ordinaryDamage = 40 - ordinaryTarget.mhp;
+
+    const blessedTarget = freshSwallowedState(PM_JUIBLEX);
+    const blessedDart = addInventoryWeapon(DART, { blessed: true });
+    setBasicWeaponSkill(blessedDart);
+    initRng(2413n);
+    await throwInventoryObject(blessedDart, 'l');
+
+    assert.ok(40 - blessedTarget.mhp > ordinaryDamage);
+});
+
 test('a swallowed engulfer can resist poison on a thrown dart', async () => {
     const engulfer = freshSwallowedState(PM_ENERGY_VORTEX);
     const dart = addInventoryWeapon(DART, { opoisoned: true });
