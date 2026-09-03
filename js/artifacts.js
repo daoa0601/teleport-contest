@@ -161,6 +161,33 @@ export function nameArtifact(object, artifact) {
     return true;
 }
 
+export function uncreateArtifact(object, state = game) {
+    if (!object?.artifact && !object?.oartifact) return false;
+
+    let removed = false;
+    if (object.oartifact) {
+        if (state._artifactExists instanceof Set)
+            removed = state._artifactExists.delete(object.oartifact);
+    } else {
+        const generatedByBase = state._artifactExistByBase;
+        const count = generatedByBase?.get(object.otyp) ?? 0;
+        if (count > 0) {
+            if (count === 1) generatedByBase.delete(object.otyp);
+            else generatedByBase.set(object.otyp, count - 1);
+            removed = true;
+        }
+    }
+
+    if (removed) {
+        state._artifactExistCount = Math.max(
+            0, (state._artifactExistCount ?? 0) - 1,
+        );
+    }
+    object.artifact = false;
+    object.oartifact = 0;
+    return removed;
+}
+
 export function artifactExistCount() {
     return game._artifactExistCount ?? existenceSet().size;
 }

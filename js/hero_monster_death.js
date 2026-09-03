@@ -2,6 +2,7 @@
 // C refs: mon.c xkilled(), corpse_chance(), and explode.c explode().
 
 import { adjustHeroAlignment } from './alignment.js';
+import { uncreateArtifact } from './artifacts.js';
 import { G_NOCORPSE, is_pit } from './const.js';
 import {
     canProjectMonster, docrt, newsym, plineWithContinuation,
@@ -16,10 +17,11 @@ import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { mkobj } from './mklev.js';
 import { markQuestLeaderDead } from './quest.js';
+import { deleteObject } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME,
-    MONSTER_SIZE, monsterIsNonliving,
+    MONSTER_SIZE, monsterIsKop, monsterIsNonliving,
 } from './monster_data.js';
 import {
     createMonsterRemains, levelAllowsMonsterDeathDrops,
@@ -32,13 +34,18 @@ import {
 import {
     addObjectToMonsterInventory, clearMonsterCarriedObjectState,
 } from './monster_inventory.js';
-import { BOULDER } from './object_data.js';
+import {
+    BOULDER, FIGURINE, OBJECT_BIMANUAL,
+} from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import { rnd, rn2 } from './rng.js';
 import { cansee, vision_recalc } from './vision.js';
 
 const M2_ALWAYS_HOSTILE = 0x00100000;
 const M2_ALWAYS_PEACEFUL = 0x00200000;
+const M2_COLLECT = 0x40000000;
+const FOOD_CLASS = 7;
+const MZ_HUMAN = 2;
 const A_NONE = -128;
 
 function monsterDeathMalign(monster) {
@@ -218,21 +225,26 @@ export async function finishHeroMonsterKill(monster, x, y, {
         const extraObjectRoll = rn2(6);
         if (extraObjectRoll === 0
             && !((MONSTER_GENO[monster.mnum] ?? 0) & G_NOCORPSE)
-            && (x !== game.u?.ux || y !== game.u?.uy)) {
+            && (x !== game.u?.ux || y !== game.u?.uy)
+            && !monsterIsKop(monster.mnum)
+            && !monster.mcloned) {
             const extra = mkobj(0, true);
             const collectsFood = !!((MONSTER_FLAGS2[monster.mnum] ?? 0)
-                & 0x40000000);
-            const tooLarge = (MONSTER_SIZE[monster.mnum] ?? 2) < 3
-                && ((extra.owt ?? 1) > 30);
-            const disposableFood = extra.oclass === 7 && !collectsFood
+                & M2_COLLECT);
+            const tooLarge = (MONSTER_SIZE[monster.mnum] ?? MZ_HUMAN)
+                < MZ_HUMAN
+                && extra.otyp !== FIGURINE
+                && ((extra.owt ?? 1) > 30
+                    || OBJECT_BIMANUAL[extra.otyp]);
+            const disposableFood = extra.oclass === FOOD_CLASS && !collectsFood
                 && !extra.artifact;
             if (tooLarge || disposableFood) {
-                rn2(100);
+                if (tooLarge && extra.artifact)
+                    uncreateArtifact(extra, game);
+                deleteObject(extra, game);
             } else {
-                const mergeCandidate = (game.level?.objects?.[x]?.[y] || [])
-                    .some(object => object.otyp === extra.otyp);
                 place_object(extra, x, y);
-                if (mergeCandidate) rn2(100);
+                stack_object(extra, game);
             }
         }
     }

@@ -7,7 +7,7 @@ import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import {
-    BOULDER, CORPSE, GLOB_OF_BLACK_PUDDING, OBJECT_NAMES,
+    BOULDER, CORPSE, FIGURINE, GLOB_OF_BLACK_PUDDING, OBJECT_NAMES,
     RED_DRAGON_SCALES, ROCK, STATUE, UNICORN_HORN, WORM_TOOTH,
 } from '../js/object_data.js';
 import { place_object } from '../js/floor_object.js';
@@ -86,6 +86,56 @@ test('killing a monster inside solid rock leaves no objects', async () => {
     });
 
     assert.deepEqual(floorObjectsAt(level, 11, 10), []);
+});
+
+test('Kops and cloned monsters do not leave random bonus objects', async () => {
+    for (const monsterOptions of [
+        { species: 'Keystone Kop' },
+        { species: 'giant', mcloned: 1 },
+    ]) {
+        const level = freshObjectRoom({ gameplaySeed: 10n });
+        const monster = addMonster({
+            ...monsterOptions, x: 11, y: 10, hitPoints: 1,
+        });
+
+        await finishHeroMonsterKill(monster, monster.mx, monster.my, {
+            showKillMessage: false,
+            recordConduct: false,
+        });
+
+        assert.equal(floorObjectsAt(level, 11, 10).every(object =>
+            object.otyp === CORPSE), true, monsterOptions.species);
+    }
+});
+
+test('a small monster can leave a figurine as its bonus object', async () => {
+    const level = freshObjectRoom({ gameplaySeed: 4967n });
+    const jackal = addMonster({
+        species: 'jackal', x: 11, y: 10, hitPoints: 1,
+    });
+
+    await finishHeroMonsterKill(jackal, jackal.mx, jackal.my, {
+        showKillMessage: false,
+        recordConduct: false,
+    });
+
+    assert.equal(floorObjectsAt(level, 11, 10).some(object =>
+        object.otyp === FIGURINE), true);
+});
+
+test('a human-sized monster can leave a heavy bonus object', async () => {
+    const level = freshObjectRoom({ gameplaySeed: 49n });
+    const dwarf = addMonster({
+        species: 'dwarf', x: 11, y: 10, hitPoints: 1,
+    });
+
+    await finishHeroMonsterKill(dwarf, dwarf.mx, dwarf.my, {
+        showKillMessage: false,
+        recordConduct: false,
+    });
+
+    assert.equal(floorObjectsAt(level, 11, 10).some(object =>
+        object.otyp === ROCK), true);
 });
 
 test('a visible lich crumbles to dust instead of leaving a corpse', async () => {

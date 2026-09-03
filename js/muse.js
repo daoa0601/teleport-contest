@@ -7,7 +7,7 @@ import { rn2 } from './rng.js';
 import { W_ARMH } from './const.js';
 import {
     MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_FLAGS1,
-    MONSTER_SYMBOL, monsterIsNonliving,
+    MONSTER_SYMBOL, monsterIsKop, monsterIsNonliving,
 } from './monster_data.js';
 import { AT_EXPL } from './monster_attack_types.js';
 import {
@@ -27,7 +27,6 @@ const M1_WALLWALK = 0x00000008;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
 const M1_UNSOLID = 0x00100000;
-const S_KOP = 37;
 const S_GHOST = 54;
 const PM_VAMPIRE = 226;
 const PM_VAMPIRE_LEADER = 227;
@@ -39,7 +38,7 @@ function rejectsRandomItem(monster) {
     const symbol = MONSTER_SYMBOL[mndx];
     return !!(flags & (M1_ANIMAL | M1_MINDLESS))
         || (MONSTER_ATTACKS[mndx] || []).some(attack => attack[0] === AT_EXPL)
-        || symbol === S_GHOST || symbol === S_KOP;
+        || symbol === S_GHOST || monsterIsKop(mndx);
 }
 
 function wornHelmet(monster) {

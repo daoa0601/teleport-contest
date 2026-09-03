@@ -139,6 +139,7 @@ const S_CENTAUR = 29;
 const S_DRAGON = 30;
 const S_ELEMENTAL = 31;
 const S_JABBERWOCK = 36;
+const S_KOP = 37;
 const S_VAMPIRE = 48;
 const S_GHOST = 54;
 const S_GOLEM = 55;
@@ -188,6 +189,10 @@ export function monsterIsSlithy(mnum) {
 
 export function monsterIsCentaur(mnum) {
     return MONSTER_SYMBOL[mnum] === S_CENTAUR;
+}
+
+export function monsterIsKop(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_KOP;
 }
 
 export function monsterCanBeSaddled(monster) {
