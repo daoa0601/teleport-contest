@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import {
-    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, P_BASIC, W_AMUL, W_WEP,
+    A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, P_BASIC, W_AMUL,
+    W_QUIVER, W_SWAPWEP, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { inventoryItemDescription } from '../js/invent.js';
@@ -271,6 +272,53 @@ test('a wielded swallowed weapon leaves the hand unless welded', async () => {
     assert.strictEqual(game.uwep, weldedDagger);
     assert.equal(weldedDagger.bknown, true);
     assert.match(game._pending_message, /welded to your hand/);
+});
+
+test('throwing a dual-wielded weapon ends two-weapon mode', async () => {
+    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const dagger = addInventoryWeapon(DAGGER, {
+        invlet: 'a', wielded: true, owornmask: W_WEP,
+    });
+    const sword = addInventoryWeapon(LONG_SWORD, {
+        invlet: 'b', alternate: true, owornmask: W_SWAPWEP,
+    });
+    game.uwep = game.u.uwep = dagger;
+    game.uswapwep = game.u.uswapwep = sword;
+    game.twoweap = game.u.twoweap = true;
+    setBasicWeaponSkill(dagger);
+
+    initRng(2310n);
+    await throwInventoryObject(dagger, 'l');
+
+    assert.equal(game.u.twoweap, false);
+    assert.strictEqual(game.uswapwep, sword);
+    assert.strictEqual(engulfer.minvent[0], dagger);
+});
+
+test('throwing a quivered dart preserves two-weapon mode', async () => {
+    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const sword = addInventoryWeapon(LONG_SWORD, {
+        invlet: 'a', wielded: true, owornmask: W_WEP,
+    });
+    const dagger = addInventoryWeapon(DAGGER, {
+        invlet: 'b', alternate: true, owornmask: W_SWAPWEP,
+    });
+    const dart = addInventoryWeapon(DART, {
+        invlet: 'c', ready: true, owornmask: W_QUIVER,
+    });
+    game.uwep = game.u.uwep = sword;
+    game.uswapwep = game.u.uswapwep = dagger;
+    game.uquiver = game.u.uquiver = dart;
+    game.twoweap = game.u.twoweap = true;
+    setBasicWeaponSkill(dart);
+
+    initRng(2310n);
+    await throwInventoryObject(dart, 'l');
+
+    assert.equal(game.u.twoweap, true);
+    assert.strictEqual(game.uwep, sword);
+    assert.strictEqual(game.uswapwep, dagger);
+    assert.ok(engulfer.mhp < 40);
 });
 
 test('swallowed throws take one weapon from a stack', async () => {

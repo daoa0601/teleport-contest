@@ -405,11 +405,19 @@ export function detachThrownUnit(
         thrown.invlet = null;
         thrown.where = 'free';
     } else {
+        const occupiedWeaponSlot = state.uwep === item
+            || state.u?.uwep === item
+            || state.uswapwep === item
+            || state.u?.uswapwep === item;
         const index = state.inventory.indexOf(item);
         if (index >= 0) state.inventory.splice(index, 1);
         for (const slot of EQUIPMENT_SLOTS) {
             if (state[slot] === item) state[slot] = null;
             if (state.u?.[slot] === item) state.u[slot] = null;
+        }
+        if (occupiedWeaponSlot) {
+            state.twoweap = false;
+            if (state.u) state.u.twoweap = false;
         }
         thrown.owornmask = 0;
         thrown.worn = false;

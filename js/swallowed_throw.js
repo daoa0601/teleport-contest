@@ -150,8 +150,7 @@ function swallowedWeaponEligibility(
         || activeObjectTimerCount(item) > 0
         || engulfer.mpeaceful || engulfer.mtame || engulfer.pet
         || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade'
-        || state.u?.polymorphed || state.u?.upolyd
-        || state.u?.twoweap || state.twoweap) return null;
+        || state.u?.polymorphed || state.u?.upolyd) return null;
     if ((item.oartifact || item.artifact)
         && (!finishKill || !canFinishKill?.(engulfer))) return null;
     const baseMaximum = maximumPhysicalWeaponDamage(item, engulfer);
@@ -204,8 +203,7 @@ function swallowedProjectileEligibility(
         || itemName === 'boomerang'
         || engulfer.mpeaceful || engulfer.mtame || engulfer.pet
         || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade'
-        || state.u?.polymorphed || state.u?.upolyd
-        || state.u?.twoweap || state.twoweap) return null;
+        || state.u?.polymorphed || state.u?.upolyd) return null;
     if (item.opoisoned && isPoisonableObject(item)
         && (!finishKill || !canFinishKill?.(engulfer))) return null;
 
