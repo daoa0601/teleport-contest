@@ -20,7 +20,9 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { untimedCorpse } from './support/game-objects.js';
-import { deadMonster, deadPet, liveMonster } from './support/monsters.js';
+import {
+    addMonster, addMonsterToLevel, deadMonster, deadPet,
+} from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const PM_TROLL = 220;
@@ -190,7 +192,7 @@ test('a reviving corpse stops being the hero\'s meal', async () => {
 
 test('a substitute revival does not absorb the linked ghost', async () => {
     freshState();
-    const ghost = liveMonster({
+    const ghost = addMonster({
         m_id: 96,
         mnum: PM_GHOST,
         x: 12, y: 10,
@@ -201,7 +203,6 @@ test('a substitute revival does not absorb the linked ghost', async () => {
     });
     const sack = mksobj(SACK, false, false);
     addObjectToMonsterInventory(ghost, sack, game);
-    game.level.monsters.push(ghost);
     const corpse = mksobj(CORPSE, true, false);
     set_corpsenm(corpse, PM_GUARD);
     stopAllObjectTimers(corpse);
@@ -236,19 +237,18 @@ test('shapechanger protection keeps a unique corpse as a doppelganger',
 
 test('reviving the quest leader clears the dead-leader state', async () => {
     freshState();
-    const leader = deadMonster({
+    const leader = addMonsterToLevel(deadMonster({
         m_id: 93,
         mnum: PM_GIANT,
         x: 12, y: 10,
         level: 8,
         hitPoints: 45,
         mpeaceful: 1,
-    });
+    }));
     game.quest_status = {
         leader_m_id: leader.m_id,
         leader_is_dead: false,
     };
-    game.level.monsters.push(leader);
     initRng(8n);
 
     await finishHeroMonsterKill(leader, leader.mx, leader.my, {
@@ -330,7 +330,7 @@ test('a troll corpse revives from a sack in the hero pack', async () => {
 
 test('a monster drops a corpse when it revives from its pack', async () => {
     freshState();
-    const carrier = liveMonster({
+    const carrier = addMonster({
         m_id: 700,
         mnum: PM_LEOCROTTA,
         x: 12, y: 10,
@@ -338,7 +338,6 @@ test('a monster drops a corpse when it revives from its pack', async () => {
         female: false,
         minvis: 0, mundetected: 0,
     });
-    game.level.monsters.push(carrier);
     const corpse = trollCorpse();
     addObjectToMonsterInventory(carrier, corpse, game);
 
@@ -396,15 +395,14 @@ test('a buried human corpse on a zombify timer rises as a zombie', async () => {
 
 test('a zombifying kill leaves a corpse which will rise', async () => {
     freshState();
-    const victim = deadMonster({
+    const victim = addMonsterToLevel(deadMonster({
         m_id: 801,
         mnum: PM_GIANT,
         x: 12, y: 10,
         level: 6,
         hitPoints: 36,
         name: 'Gorm',
-    });
-    game.level.monsters.push(victim);
+    }));
     initRng(6n);
 
     await finishHeroMonsterKill(victim, victim.mx, victim.my, {
