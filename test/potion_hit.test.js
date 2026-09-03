@@ -17,7 +17,7 @@ import { pushKey, pushKeys } from '../js/input.js';
 import { parseNethackrc } from '../js/options.js';
 import { initRng } from '../js/rng.js';
 import {
-    addInventoryObject, plainObject,
+    addInventoryObject, knownObject,
 } from './support/game-objects.js';
 import {
     installHumanWerewolfHero, wearPolymorphControlRing,
@@ -30,7 +30,8 @@ const PM_ENERGY_VORTEX = 109;
 const PM_PURPLE_WORM = 115;
 
 function potionObject(otyp) {
-    return plainObject(otyp, {
+    return knownObject(otyp, {
+        initialize: false,
         dknown: true,
         typeKnown: true,
     });
@@ -48,6 +49,7 @@ function potionTarget(mnum, overrides = {}) {
 
 function freshPotionState(hero = { hallucinationTurns: 0 }) {
     freshGame({ hero });
+    initRng(1n);
 }
 
 function installDirectWereHero({ beast = false } = {}) {
@@ -308,11 +310,12 @@ test('paralysis freezes a moving monster and clears its wait strategy',
             mstrategy: 0x20000020,
         });
 
+        const potion = potionObject(POT_PARALYSIS);
         initRng(3002n);
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
-            potion: potionObject(POT_PARALYSIS),
+            potion,
             targetVisible: true,
             publish: async () => {},
         });
@@ -333,11 +336,12 @@ test('paralysis does not reroll or replace an existing frozen duration',
             mstrategy: 0x20000020,
         });
 
+        const potion = potionObject(POT_PARALYSIS);
         initRng(3003n);
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
-            potion: potionObject(POT_PARALYSIS),
+            potion,
             targetVisible: false,
             publish: async () => {},
             wakeMonster: async () => {},
@@ -360,11 +364,12 @@ test('sleeping potion pays duration then resistance and freezes a target',
         });
         const messages = [];
 
+        const potion = potionObject(POT_SLEEPING);
         initRng(3050n);
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
-            potion: potionObject(POT_SLEEPING),
+            potion,
             targetVisible: true,
             publish: async message => messages.push(message),
         });
@@ -385,11 +390,12 @@ test('sleep-resistant monster shields and remains awake',
         });
         let shieldCount = 0;
 
+        const potion = potionObject(POT_SLEEPING);
         initRng(3051n);
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
-            potion: potionObject(POT_SLEEPING),
+            potion,
             targetVisible: true,
             publish: async () => {},
             wakeMonster: async () => {},
@@ -414,11 +420,12 @@ test('magic-resistant sleep target shields and remains awake',
         });
         let shieldCount = 0;
 
+        const potion = potionObject(POT_SLEEPING);
         initRng(3050n);
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
-            potion: potionObject(POT_SLEEPING),
+            potion,
             targetVisible: true,
             publish: async () => {},
             wakeMonster: async () => {},
@@ -444,11 +451,12 @@ test('successful sleeping potion releases a non-engulfing monster grip',
         });
         const messages = [];
 
+        const potion = potionObject(POT_SLEEPING);
         initRng(3050n);
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
-            potion: potionObject(POT_SLEEPING),
+            potion,
             targetVisible: true,
             publish: async message => messages.push(message),
         });
@@ -470,11 +478,12 @@ test('speed potion makes an active normal-speed monster permanently fast',
         });
         const messages = [];
 
+        const potion = potionObject(POT_SPEED);
         initRng(3200n);
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
-            potion: potionObject(POT_SPEED),
+            potion,
             targetVisible: true,
             targetSpotted: true,
             publish: async message => messages.push(message),
@@ -494,15 +503,19 @@ test('worn speed boots keep effective speed fast while potion removes slow',
             mfrozen: 0,
             permspeed: 1,
             mspeed: 2,
-            minvent: [plainObject(SPEED_BOOTS, { owornmask: W_ARMF })],
+            minvent: [knownObject(SPEED_BOOTS, {
+                initialize: false,
+                owornmask: W_ARMF,
+            })],
         });
         const messages = [];
 
+        const potion = potionObject(POT_SPEED);
         initRng(3200n);
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
-            potion: potionObject(POT_SPEED),
+            potion,
             targetVisible: true,
             targetSpotted: true,
             publish: async message => messages.push(message),
@@ -526,11 +539,12 @@ test('speed potion silently wakes a sleeping monster without hostile wakeup',
         });
         const messages = [];
 
+        const potion = potionObject(POT_SPEED);
         initRng(3200n);
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
-            potion: potionObject(POT_SPEED),
+            potion,
             targetVisible: true,
             targetSpotted: true,
             publish: async message => messages.push(message),
@@ -551,11 +565,12 @@ test('a resistant monster remains sighted after blindness impact',
             mblinded: 10,
         });
 
+        const potion = potionObject(POT_BLINDNESS);
         initRng(3202n);
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
-            potion: potionObject(POT_BLINDNESS),
+            potion,
             targetVisible: false,
             publish: async () => {},
             wakeMonster: async () => {},
@@ -574,11 +589,12 @@ test('resisted blindness excludes only the second already-consumed duration',
             mblinded: 5,
         });
 
+        const potion = potionObject(POT_BLINDNESS);
         initRng(3210n);
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
-            potion: potionObject(POT_BLINDNESS),
+            potion,
             targetVisible: false,
             publish: async () => {},
             wakeMonster: async () => {},
@@ -597,11 +613,12 @@ test('eyeless and permanently blind monsters retain their sight state',
         ]) {
             freshPotionState();
             const monster = potionTarget(mnum, { mcansee, mblinded });
+            const potion = potionObject(POT_BLINDNESS);
             initRng(3202n);
             const result = await hitMonsterWithSupportedPotion({
                 state: game,
                 monster,
-                potion: potionObject(POT_BLINDNESS),
+                potion,
                 targetVisible: false,
                 publish: async () => {},
                 wakeMonster: async () => {},
@@ -621,11 +638,12 @@ test('uncursed invisibility hides a spotted monster without anger',
         });
         const messages = [];
 
+        const potion = potionObject(POT_INVISIBILITY);
         initRng(3200n);
         const result = await hitMonsterWithSupportedPotion({
             state: game,
             monster,
-            potion: potionObject(POT_INVISIBILITY),
+            potion,
             targetVisible: true,
             spotMonster: target => !target.minvis,
             repaintMonster: async () => {},
@@ -711,11 +729,12 @@ test('blocked invisibility changes only the permanent property', async () => {
         msleeping: 1,
     });
 
+    const potion = potionObject(POT_INVISIBILITY);
     initRng(3200n);
     const result = await hitMonsterWithSupportedPotion({
         state: game,
         monster,
-        potion: potionObject(POT_INVISIBILITY),
+        potion,
         targetVisible: true,
         spotMonster: () => true,
         repaintMonster: async () => {},
@@ -846,10 +865,11 @@ test('sickness vapor damages a temporary form without exercising Constitution',
         });
         game.urole = { key: 'tourist' };
 
+        const potion = potionObject(POT_SICKNESS);
         initRng(2864n);
         await applySupportedPotionVapor({
             state: game,
-            potion: potionObject(POT_SICKNESS),
+            potion,
             publish: async () => {},
         });
         assert.equal(game.u.mh, 7);
@@ -866,10 +886,11 @@ test('Healer role is immune to sickness vapor', async () => {
     });
     game.urole = { key: 'healer' };
 
+    const potion = potionObject(POT_SICKNESS);
     initRng(2864n);
     const result = await applySupportedPotionVapor({
         state: game,
-        potion: potionObject(POT_SICKNESS),
+        potion,
         publish: async () => {},
     });
     assert.equal(result.received, true);
@@ -886,10 +907,11 @@ test('sickness vapor cannot reduce base HP below one', async () => {
     });
     game.urole = { key: 'tourist' };
 
+    const potion = potionObject(POT_SICKNESS);
     initRng(2864n);
     await applySupportedPotionVapor({
         state: game,
-        potion: potionObject(POT_SICKNESS),
+        potion,
         publish: async () => {},
     });
     assert.equal(game.u.uhp, 1);
@@ -901,10 +923,11 @@ test('confusion vapor announces and increments a clear hero timeout',
         freshPotionState({ confusionTurns: 0 });
         const messages = [];
 
+        const potion = potionObject(POT_CONFUSION);
         initRng(2954n);
         const result = await applySupportedPotionVapor({
             state: game,
-            potion: potionObject(POT_CONFUSION),
+            potion,
             publish: async message => messages.push(message),
         });
         assert.deepEqual(messages, ['You feel somewhat dizzy.']);
@@ -917,10 +940,11 @@ test('booze vapor silently extends and caps an existing confusion timeout',
         freshPotionState({ confusionTurns: 0x00fffffe });
         const messages = [];
 
+        const potion = potionObject(POT_BOOZE);
         initRng(2957n);
         const result = await applySupportedPotionVapor({
             state: game,
-            potion: potionObject(POT_BOOZE),
+            potion,
             publish: async message => messages.push(message),
         });
         assert.deepEqual(messages, []);
@@ -936,10 +960,11 @@ test('paralysis vapor installs live helpless state and Dexterity exercise',
         });
         const messages = [];
 
+        const potion = potionObject(POT_PARALYSIS);
         initRng(3011n);
         const result = await applySupportedPotionVapor({
             state: game,
-            potion: potionObject(POT_PARALYSIS),
+            potion,
             publish: async message => messages.push(message),
         });
         assert.deepEqual(messages, ['Something seems to be holding you.']);
@@ -984,10 +1009,11 @@ test('free action converts paralysis vapor into a momentary stiffen',
         freshPotionState({ freeAction: true });
         const messages = [];
 
+        const potion = potionObject(POT_PARALYSIS);
         initRng(3002n);
         const result = await applySupportedPotionVapor({
             state: game,
-            potion: potionObject(POT_PARALYSIS),
+            potion,
             publish: async message => messages.push(message),
         });
         assert.deepEqual(messages, ['You stiffen momentarily.']);
@@ -1002,10 +1028,11 @@ test('sleeping vapor installs its distinct helpless reason', async () => {
     });
     const messages = [];
 
+    const potion = potionObject(POT_SLEEPING);
     initRng(3001n);
     const result = await applySupportedPotionVapor({
         state: game,
-        potion: potionObject(POT_SLEEPING),
+        potion,
         publish: async message => messages.push(message),
     });
     assert.deepEqual(messages, ['You feel rather tired.']);
@@ -1031,10 +1058,11 @@ test('sleep resistance teaches only eligible observers on the yawn path',
         });
         const messages = [];
 
+        const potion = potionObject(POT_SLEEPING);
         initRng(3001n);
         const result = await applySupportedPotionVapor({
             state: game,
-            potion: potionObject(POT_SLEEPING),
+            potion,
             publish: async message => messages.push(message),
             monsterCanSeeHero: monster => monster.mhp > 0,
         });
@@ -1056,10 +1084,11 @@ test('speed vapor installs timed very-fast movement and exercises Dexterity',
         });
         const messages = [];
 
+        const potion = potionObject(POT_SPEED);
         initRng(3220n);
         const result = await applySupportedPotionVapor({
             state: game,
-            potion: potionObject(POT_SPEED),
+            potion,
             publish: async message => messages.push(message),
         });
         assert.deepEqual(messages, ['Your knees seem more flexible now.']);
@@ -1080,10 +1109,11 @@ test('existing intrinsic speed suppresses prose but not duration or exercise',
         });
         const messages = [];
 
+        const potion = potionObject(POT_SPEED);
         initRng(3220n);
         await applySupportedPotionVapor({
             state: game,
-            potion: potionObject(POT_SPEED),
+            potion,
             publish: async message => messages.push(message),
         });
         assert.deepEqual(messages, []);
@@ -1101,10 +1131,11 @@ test('speed vapor saturates the timed very-fast counter', async () => {
         amax: { a: [12, 12, 12, 12, 12, 12] },
     });
 
+    const potion = potionObject(POT_SPEED);
     initRng(3222n);
     await applySupportedPotionVapor({
         state: game,
-        potion: potionObject(POT_SPEED),
+        potion,
         publish: async () => {},
     });
     assert.equal(game.u.veryFastTurns, 0x00ffffff);
@@ -1117,10 +1148,11 @@ test('blindness vapor darkens sight immediately and extends the live timeout',
         game.blind = false;
         const messages = [];
 
+        const potion = potionObject(POT_BLINDNESS);
         initRng(3222n);
         const result = await applySupportedPotionVapor({
             state: game,
-            potion: potionObject(POT_BLINDNESS),
+            potion,
             publish: async message => messages.push(message),
             recalculateVision: () => {},
         });
@@ -1142,10 +1174,11 @@ test('Eyes-blocked blindness vapor brackets the timeout with vision prose',
         };
         const messages = [];
 
+        const potion = potionObject(POT_BLINDNESS);
         initRng(3222n);
         const result = await applySupportedPotionVapor({
             state: game,
-            potion: potionObject(POT_BLINDNESS),
+            potion,
             publish: async message => messages.push(message),
             recalculateVision: () => {},
         });
@@ -1163,10 +1196,11 @@ test('unaware blindness vapor mutates sight without transition prose',
         game.blind = false;
         const messages = [];
 
+        const potion = potionObject(POT_BLINDNESS);
         initRng(3222n);
         const result = await applySupportedPotionVapor({
             state: game,
-            potion: potionObject(POT_BLINDNESS),
+            potion,
             publish: async message => messages.push(message),
             recalculateVision: () => {},
         });
@@ -1181,10 +1215,11 @@ test('blindness vapor saturates an already-blind timeout without repaint',
         freshPotionState({ blindTurns: 0x00fffffe });
         game.blind = true;
 
+        const potion = potionObject(POT_BLINDNESS);
         initRng(3222n);
         const result = await applySupportedPotionVapor({
             state: game,
-            potion: potionObject(POT_BLINDNESS),
+            potion,
             publish: async () => assert.fail('active blindness announced'),
             recalculateVision: () => {},
         });
@@ -1213,10 +1248,11 @@ test('invisibility vapor reports only the clear visible-self glimpse',
         for (const witness of cases) {
             freshPotionState(witness.hero);
             const messages = [];
+            const potion = potionObject(POT_INVISIBILITY);
             initRng(3200n);
             const result = await applySupportedPotionVapor({
                 state: game,
-                potion: potionObject(POT_INVISIBILITY),
+                potion,
                 publish: async message => messages.push(message),
             });
             assert.deepEqual(messages, witness.messages);
@@ -1229,10 +1265,11 @@ test('water vapor leaves an ordinary non-lycanthrope hero unchanged',
     freshPotionState({ uhp: 7, uhpmax: 12 });
     const messages = [];
 
+    const potion = potionObject(POT_WATER);
     initRng(3400n);
     const result = await applySupportedPotionVapor({
         state: game,
-        potion: potionObject(POT_WATER),
+        potion,
         publish: async message => messages.push(message),
     });
     assert.deepEqual(messages, []);

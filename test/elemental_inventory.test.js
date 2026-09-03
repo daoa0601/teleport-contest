@@ -12,6 +12,8 @@ import {
 } from '../js/zap.js';
 import { carriedObject } from './support/game-objects.js';
 
+test.beforeEach(() => initRng(1n));
+
 test('carried paper burns and an exposed candle catches light', async () => {
     const scroll = carriedObject(SCR_IDENTIFY);
     const candle = carriedObject(TALLOW_CANDLE, {

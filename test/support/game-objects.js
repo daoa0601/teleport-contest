@@ -1,5 +1,4 @@
-import { CORPSE, OBJECT_NAMES } from '../../js/object_data.js';
-import { objectClassForType } from '../../js/object_knowledge.js';
+import { CORPSE } from '../../js/object_data.js';
 import { artifactByName } from '../../js/artifacts.js';
 import { place_object } from '../../js/floor_object.js';
 import { mksobj, set_corpsenm } from '../../js/mklev.js';
@@ -7,29 +6,9 @@ import { stopAllObjectTimers } from '../../js/object_timers.js';
 import { addInventoryItem } from '../../js/u_init.js';
 import { objectWeight } from '../../js/weight.js';
 
-export function plainObject(otyp, overrides = {}) {
-    const quantity = overrides.quan ?? overrides.quantity ?? 1;
-    return {
-        otyp,
-        name: OBJECT_NAMES[otyp],
-        oclass: objectClassForType(otyp),
-        quan: quantity,
-        quantity,
-        blessed: false,
-        cursed: false,
-        bknown: true,
-        dknown: true,
-        contents: [],
-        objectTimers: [],
-        timed: 0,
-        ...overrides,
-        quan: quantity,
-        quantity,
-    };
-}
-
 export function carriedObject(otyp, overrides = {}) {
-    return plainObject(otyp, {
+    return knownObject(otyp, {
+        initialize: false,
         invlet: 'a',
         where: 'inventory',
         ...overrides,
@@ -39,7 +18,8 @@ export function carriedObject(otyp, overrides = {}) {
 export function artifactObject(name, overrides = {}) {
     const artifact = artifactByName(name);
     if (!artifact) throw new Error(`Unknown artifact: ${name}`);
-    return plainObject(artifact.baseType, {
+    return knownObject(artifact.baseType, {
+        initialize: false,
         oartifact: artifact.id,
         oextra: { oname: artifact.name },
         ...overrides,

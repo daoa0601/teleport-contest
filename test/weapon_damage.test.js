@@ -7,11 +7,14 @@ import {
 import {
     rollHeroMeleeWeaponDamage, rollPhysicalWeaponDamage,
 } from '../js/weapon_damage.js';
+import { initRng } from '../js/rng.js';
 import { artifactObject, carriedObject } from './support/game-objects.js';
 import { liveMonster } from './support/monsters.js';
 
 const maximumRoll = range => range;
 const maximumDice = (count, sides) => count * sides;
+
+test.beforeEach(() => initRng(1n));
 
 function maximumDamage(object, species) {
     return rollPhysicalWeaponDamage(

@@ -15,6 +15,8 @@ import { equipMonsterObject, liveMonster } from './support/monsters.js';
 
 const maximumRoll = range => range;
 
+test.beforeEach(() => initRng(1n));
+
 test('Excalibur gets its accuracy and damage against any monster', () => {
     const excalibur = artifactObject('Excalibur');
     const jackal = liveMonster({ species: 'jackal' });

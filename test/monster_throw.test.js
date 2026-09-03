@@ -23,6 +23,7 @@ import {
 } from '../js/dogmove.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
+import { initRng } from '../js/rng.js';
 import {
     carriedObject, addInventoryObject,
 } from './support/game-objects.js';
@@ -42,6 +43,7 @@ const PROJECTILE_GLYPH = { ch: ')', color: 0, decgfx: false, attr: 0 };
 const SILVER_DAGGER = OBJECT_NAMES.indexOf('silver dagger');
 
 test('a monster readies the launcher required by its ammunition', () => {
+    initRng(1n);
     const bow = carriedObject(BOW);
     const arrows = carriedObject(ARROW, { quan: 6 });
     const archer = liveMonster({
