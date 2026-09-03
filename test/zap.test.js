@@ -26,10 +26,10 @@ import {
     zapCancellationRay, zapColdRay, zapDeathRay, zapFireRay,
 } from '../js/zap.js';
 import {
-    addInventoryObject, chargedWand, floorObject,
+    addInventoryObject, chargedWand, floorObject, knownObject,
 } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 function highestRoll(range) {
@@ -56,9 +56,7 @@ test('sleep resistance prevents self-zap helplessness', async () => {
 
 test('cancellation restores a werewolf to human form', async () => {
     freshGameplayRoom();
-    const werewolf = addMonster({
-        species: 'werewolf', x: 11, y: 10,
-    });
+    const werewolf = await createMonsterAt('werewolf', 11, 10);
 
     await zapCancellationRay('l', { random: highestRoll });
 
@@ -68,9 +66,7 @@ test('cancellation restores a werewolf to human form', async () => {
 
 test('cancellation destroys a clay golem', async () => {
     freshGameplayRoom();
-    const golem = addMonster({
-        species: 'clay golem', x: 11, y: 10,
-    });
+    const golem = await createMonsterAt('clay golem', 11, 10);
     pushKeys(' '.repeat(20));
 
     await zapCancellationRay('l', { random: highestRoll });
@@ -83,6 +79,7 @@ test('an empty wand does nothing without asking for a direction', async () => {
     freshGameplayRoom();
     const wand = chargedWand(WAN_SLEEP, { charges: 0 });
     game.inventory = [wand];
+    initRng(1n);
     pushKey('a');
 
     await rhack('z'.charCodeAt(0));
@@ -96,10 +93,10 @@ test('an empty wand does nothing without asking for a direction', async () => {
 
 test('a wrested final charge consumes the wand', async () => {
     freshGameplayRoom();
-    initRng(49n);
     game.u.sleepResistance = true;
     const wand = chargedWand(WAN_SLEEP, { charges: 0 });
     game.inventory = [wand];
+    initRng(49n);
     pushKey('a');
     pushKey('.');
 
@@ -112,10 +109,10 @@ test('a wrested final charge consumes the wand', async () => {
 
 test('a cursed wand can explode before asking for a direction', async () => {
     freshGameplayRoom();
-    initRng(167n);
     game.u.uhp = game.u.uhpmax = 100;
     const wand = chargedWand(WAN_SLEEP, { cursed: true });
     game.inventory = [wand];
+    initRng(167n);
     pushKey('a');
 
     await rhack('z'.charCodeAt(0));
@@ -153,9 +150,8 @@ test('light illuminates the visible area and burns a nearby gremlin',
         }
         vision_reset_new_level();
         vision_recalc(0);
-        const gremlin = addMonster({
-            species: 'gremlin', x: 11, y: 10, hitPoints: 20,
-        });
+        const gremlin = await createMonsterAt('gremlin', 11, 10);
+        gremlin.mhp = gremlin.mhpmax = 20;
         const wand = chargedWand(WAN_LIGHT);
         game.inventory = [wand];
         pushKey('a');
@@ -225,14 +221,12 @@ test('a fire ray burns a monster in its path', async () => {
     freshGameplayRoom();
     game.u.fireResistance = true;
     game.u.uhp = game.u.uhpmax = 100;
-    const monster = addMonster({
-        mnum: 0,
-        m_id: 9001,
-        x: 11,
-        y: 10,
+    const monster = await createMonsterAt('giant ant', 11, 10);
+    Object.assign(monster, {
         mac: 100,
-        level: 1,
-        hitPoints: 100,
+        m_lev: 1,
+        mhp: 100,
+        mhpmax: 100,
         msleeping: 1,
         mstrategy: 0x20000000,
     });
@@ -256,14 +250,11 @@ test('a death ray makes Death stronger instead of killing him', async () => {
     game.u.blindTurns = 10;
     game.u.unblind_telepat_range = -1;
     game.viz_array[10][11] = 0;
-    const death = addMonster({
-        mnum: 311,
-        m_id: 9002,
-        x: 11,
-        y: 10,
+    const death = await createMonsterAt('Death', 11, 10);
+    Object.assign(death, {
         mac: 100,
-        level: 30,
-        hitPoints: 5,
+        m_lev: 30,
+        mhp: 5,
         mhpmax: 20,
     });
 
@@ -276,23 +267,12 @@ test('a death ray makes Death stronger instead of killing him', async () => {
 
 test('a worn life-saving amulet saves a monster from a death ray', async () => {
     freshGameplayRoom();
-    const amulet = {
-        otyp: AMULET_OF_LIFE_SAVING,
-        owornmask: W_AMUL,
-        worn: true,
-        where: 'minvent',
-    };
-    const monster = addMonster({
-        mnum: 0,
-        m_id: 9003,
-        x: 11,
-        y: 10,
-        mac: 100,
-        level: 1,
-        hitPoints: 5,
-        inventory: [amulet],
-        misc_worn_check: W_AMUL,
-    });
+    const amulet = knownObject(AMULET_OF_LIFE_SAVING);
+    const monster = await createMonsterAt('giant ant', 11, 10);
+    monster.mac = 100;
+    monster.m_lev = 1;
+    monster.mhp = 5;
+    equipMonsterObject(monster, amulet, W_AMUL);
     pushKeys(' '.repeat(20));
 
     await zapDeathRay('l', { finishMonsterKill: finishHeroMonsterKill });
@@ -419,20 +399,10 @@ test('melting ice drowns a land monster but not a swimmer', async () => {
     const level = freshGameplayRoom();
     game.blind = true;
     game.u.blindTurns = 10;
-    const ant = addMonster({
-        species: 'giant ant',
-        m_id: 9101,
-        x: 11,
-        y: 10,
-        hitPoints: 4,
-    });
-    const shark = addMonster({
-        species: 'shark',
-        m_id: 9102,
-        x: 12,
-        y: 10,
-        hitPoints: 20,
-    });
+    const ant = await createMonsterAt('giant ant', 11, 10);
+    ant.mhp = ant.mhpmax = 4;
+    const shark = await createMonsterAt('shark', 12, 10);
+    shark.mhp = shark.mhpmax = 20;
     for (const x of [11, 12]) {
         const ice = level.at(x, 10);
         ice.typ = ICE;
