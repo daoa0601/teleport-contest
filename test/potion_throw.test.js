@@ -6,7 +6,8 @@ import {
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { pushKey } from '../js/input.js';
+import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/light.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -82,6 +83,29 @@ function addSleepingNeighbor(m_id, { strategy = null } = {}) {
         hitPoints: 12,
         msleeping: 1,
         ...(strategy === null ? {} : { mstrategy: strategy }),
+    });
+}
+
+async function enterPotionShop(options = {}) {
+    game.u.ux0 = 7;
+    game.u.uy0 = 10;
+    const shop = addStaffedShop({
+        keeperX: 14,
+        keeperY: 12,
+        ...options,
+    });
+    await checkSpecialRoom();
+    return shop;
+}
+
+function enterPotionShopWithBill(potion, price = 75) {
+    return enterPotionShop({
+        bill: [{
+            bo_id: potion.o_id,
+            bquan: potion.quan ?? potion.quantity ?? 1,
+            useup: false,
+            price,
+        }],
     });
 }
 
@@ -182,10 +206,7 @@ test('a punished hero can throw a potion', async () => {
 
 test('a paid potion can hit a monster inside a shop', async () => {
     const monster = freshMapPotionState(2);
-    game.u.ux0 = 7;
-    game.u.uy0 = 10;
-    addStaffedShop({ keeperX: 14, keeperY: 12 });
-    await checkSpecialRoom();
+    await enterPotionShop();
     const potion = addInventoryObject(POT_INVISIBILITY);
 
     initRng(3321n);
@@ -193,6 +214,64 @@ test('a paid potion can hit a monster inside a shop', async () => {
 
     assert.equal(monster.minvis, 1);
     assert.equal(potion.where, 'gone');
+});
+
+test('an unpaid thrown potion becomes debt that the hero can pay',
+    async () => {
+        const monster = freshMapPotionState(2);
+        const potion = addInventoryObject(POT_INVISIBILITY, {
+            unpaid: true,
+        });
+        const { shopkeeper } = await enterPotionShopWithBill(potion);
+        setHeroGoldAmount(game, 100);
+
+        initRng(3321n);
+        await throwEast(potion, Array(20).fill(' '));
+
+        assert.equal(monster.minvis, 1);
+        assert.equal(shopkeeper.eshk.bill.length, 0);
+        assert.equal(shopkeeper.eshk.debit, 75);
+        assert.equal(potion.where, 'gone');
+
+        resetInputState();
+        pushKeys('     ');
+        await rhack('p'.charCodeAt(0));
+
+        assert.equal(shopkeeper.eshk.debit, 0);
+        assert.equal(heroGoldAmount(game), 25);
+    });
+
+test('throwing one unpaid potion splits its shop bill', async () => {
+    freshMapPotionState(2);
+    const potion = addInventoryObject(POT_INVISIBILITY, {
+        unpaid: true,
+        quan: 2,
+    });
+    const { shopkeeper } = await enterPotionShopWithBill(potion);
+
+    initRng(3321n);
+    await throwEast(potion, Array(20).fill(' '));
+
+    assert.equal(potion.quan, 1);
+    assert.equal(shopkeeper.eshk.bill.length, 1);
+    assert.equal(shopkeeper.eshk.bill[0].bo_id, potion.o_id);
+    assert.equal(shopkeeper.eshk.bill[0].bquan, 1);
+    assert.equal(shopkeeper.eshk.debit, 75);
+});
+
+test('an unpaid potion that lands outside its shop becomes debt', async () => {
+    freshMapPotionState(2);
+    game.level.monsters = [];
+    const potion = addInventoryObject(POT_GAIN_LEVEL, { unpaid: true });
+    const { shopkeeper } = await enterPotionShopWithBill(potion);
+
+    initRng(2795n);
+    await throwEast(potion, Array(20).fill(' '));
+
+    assert.equal(potion.where, 'floor');
+    assert.equal(potion.unpaid, false);
+    assert.equal(shopkeeper.eshk.bill.length, 0);
+    assert.equal(shopkeeper.eshk.debit, 75);
 });
 
 test('a downward potion can hit the hero steed', async () => {

@@ -34,7 +34,7 @@ import { shipObject } from './object_migration.js';
 import { splitObjectStack } from './object_stack.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf } from './senses.js';
-import { settleThrownShopObject } from './shk.js';
+import { settleThrownShopObject, splitShopBill } from './shk.js';
 import { cansee } from './vision.js';
 
 const EQUIPMENT_SLOTS = [
@@ -254,7 +254,7 @@ export async function finishHeroThrownObjectLanding({
     }
 
     place_object(object, x, y, state);
-    await settleThrownShopObject(object, x, y, state);
+    await settleThrownShopObject(object, x, y, state, publish);
     const landed = stack_object(object, state);
     newsym(x, y);
     return landed;
@@ -402,6 +402,7 @@ export function detachThrownUnit(
         thrown = splitObjectStack(
             item, 1, state, splitObjectId,
         );
+        splitShopBill(item, thrown, state);
         thrown.invlet = null;
         thrown.where = 'free';
     } else {

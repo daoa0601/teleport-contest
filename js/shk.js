@@ -304,18 +304,25 @@ export function costlySpot(x, y, state = game) {
     return { ...spot, resident };
 }
 
-// C dothrow.c:check_shop_obj() -> shk.c:sellobj().  This first landing slice
-// owns an object from the hero which comes to rest on a costly square in the
-// hero's current shop and has no sale value.  Broader sale offers, unpaid
-// returns, containers, angry residents, and cross-shop throws remain separate
-// transactions rather than being approximated here.
-export async function settleThrownShopObject(object, x, y, state = game) {
+// C dothrow.c:check_shop_obj().  Returning an unpaid object to its costly
+// shop square removes it from the bill.  Throwing it elsewhere turns its bill
+// price into debt.  A paid object with no sale value remains the hero's.
+export async function settleThrownShopObject(
+    object, x, y, state = game, publish = plineWithContinuation,
+) {
     const heroShop = shopRoomAt(
         state, state?.u?.ux, state?.u?.uy, true,
     );
     const spot = costlySpot(x, y, state);
+    if (object?.unpaid) {
+        const returnedToShop = heroShop && spot
+            && heroShop.roomno === spot.roomno;
+        if (returnedToShop) removeObjectFromBill(object, state);
+        else await chargeUnpaidObjectAsDebt(object, state, publish);
+        return true;
+    }
     if (!heroShop || !spot || heroShop.roomno !== spot.roomno
-        || !spot.resident?.mpeaceful || object?.unpaid
+        || !spot.resident?.mpeaceful
         || x === spot.resident.mx && y === spot.resident.my
         || (OBJECT_COST[object?.otyp] ?? 0) !== 0) return false;
 
@@ -448,6 +455,78 @@ function billForObject(object, state = game) {
         if (entry) return { resident, entry };
     }
     return null;
+}
+
+function removeObjectFromBill(object, state = game) {
+    const billed = billForObject(object, state);
+    if (!billed) return null;
+    const eshk = billed.resident.eshk;
+    eshk.bill = (eshk.bill || []).filter(candidate =>
+        candidate !== billed.entry);
+    eshk.billct = eshk.bill.length;
+    object.unpaid = false;
+    return billed;
+}
+
+export async function chargeUnpaidObjectAsDebt(
+    object,
+    state = game,
+    publish = plineWithContinuation,
+) {
+    if (!object?.unpaid) return null;
+    const billed = removeObjectFromBill(object, state);
+    if (!billed) return null;
+
+    const { resident, entry } = billed;
+    const eshk = resident.eshk;
+    const value = Math.max(0, entry.price ?? 0)
+        * Math.max(1, entry.bquan ?? 1);
+
+    let message = null;
+    if (resident.mpeaceful) {
+        const creditUsed = Math.min(eshk.credit ?? 0, value);
+        eshk.credit = Math.max(0, (eshk.credit ?? 0) - creditUsed);
+        const debt = value - creditUsed;
+        eshk.debit = (eshk.debit ?? 0) + debt;
+        if (debt) {
+            message = `You owe ${shopkeeperName(resident)} ${debt} zorkmid${
+                debt === 1 ? '' : 's'
+            } for it!`;
+        } else {
+            message = eshk.credit
+                ? `You have ${eshk.credit} zorkmids credit remaining.`
+                : 'You have no credit remaining.';
+        }
+    } else {
+        eshk.robbed = (eshk.robbed ?? 0) + value;
+        eshk.following = 1;
+        message = `${shopkeeperName(resident)} calls you a thief!`;
+    }
+    if (message) await publish(message);
+    return { resident, value, message };
+}
+
+export function payShopDebt(resident, state = game) {
+    const eshk = resident?.eshk;
+    const debt = Math.max(0, eshk?.debit ?? 0);
+    if (!eshk || !debt) return { paid: false, debt: 0 };
+
+    const credit = Math.max(0, eshk.credit ?? 0);
+    const gold = heroGoldAmount(state);
+    if (credit + gold < debt) return { paid: false, debt };
+
+    const creditUsed = Math.min(credit, debt);
+    const goldPaid = debt - creditUsed;
+    eshk.credit = credit - creditUsed;
+    if (goldPaid) {
+        const payment = detachHeroGold(state, goldPaid);
+        if (payment) payment.where = 'gone';
+        resident.gold = (resident.gold ?? 0) + goldPaid;
+        state._capacityDirty = true;
+    }
+    eshk.debit = 0;
+    eshk.loan = 0;
+    return { paid: true, debt, creditUsed, goldPaid };
 }
 
 export function splitShopBill(object, split, state = game) {

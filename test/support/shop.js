@@ -55,6 +55,7 @@ export function addStaffedShop({
             shd: { x: doorX, y: doorY },
             debit: 0,
             bill,
+            billct: bill.length,
         },
     });
     room.resident = shopkeeper;

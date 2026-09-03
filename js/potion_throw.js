@@ -48,8 +48,8 @@ function canResolveMapPotionThrow({
     // before the potion leaves inventory and before the throw uses randomness.
     const burningOil = item.otyp === POT_OIL && item.lamplit
         && activeTimerCount(item) > 0;
-    if (((item.lamplit || activeTimerCount(item) > 0) && !burningOil)
-        || item.unpaid) return false;
+    if ((item.lamplit || activeTimerCount(item) > 0) && !burningOil)
+        return false;
 
     return true;
 }

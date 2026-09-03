@@ -325,7 +325,7 @@ import {
     addShopObjectToBill, billedPickupQuote, chargeUnpaidLampUse,
     checkSpecialRoom,
     carriedShopBill, getCostOfShopItem, objectTypeKnown,
-    SHOP_TYPE_NAMES,
+    payShopDebt, SHOP_TYPE_NAMES,
     settleCarriedShopBillItem, shopkeeperForHero, shopkeeperName,
     shopThankYouMessage,
     unpaidObjectCost,
@@ -7970,10 +7970,40 @@ async function dopay() {
         return;
     }
 
+    let paid = false;
+    const debt = Math.max(0, resident.eshk?.debit ?? 0);
+    if (debt) {
+        await pline(
+            `You owe ${shopkeeperName(resident)} ${debt} zorkmid${
+                debt === 1 ? '' : 's'
+            } for the use of merchandise.`,
+        );
+        const payment = payShopDebt(resident, game);
+        if (!payment.paid) {
+            await pline("But you don't have enough gold or credit.");
+            game.context.move = 1;
+            return;
+        }
+        if (payment.creditUsed === payment.debt) {
+            await pline('Your debt is covered by your credit.');
+        } else if (payment.creditUsed) {
+            await pline('That debt is partially offset by your credit.');
+            await pline('You pay the remainder.');
+        } else {
+            await pline('You pay that debt.');
+        }
+        paid = true;
+    }
+
     const billed = carriedShopBill(resident);
     if (!billed.length) {
-        await pline(`You do not owe ${resident.eshk?.shknam || 'the shopkeeper'} anything.`);
-        game.context.move = 0;
+        if (!paid) {
+            await pline(`You do not owe ${resident.eshk?.shknam || 'the shopkeeper'} anything.`);
+            game.context.move = 0;
+            return;
+        }
+        await plineWithContinuation(shopThankYouMessage(resident));
+        game.context.move = 1;
         return;
     }
 
@@ -7992,17 +8022,17 @@ async function dopay() {
         omitHeadings: true,
     });
     if (!selected.length) {
-        game.context.move = 0;
+        game.context.move = paid ? 1 : 0;
         return;
     }
 
-    let paid = false;
+    let paidForItem = false;
     for (const item of selected) {
         if (!settleCarriedShopBillItem(resident, item)) continue;
-        paid = true;
+        paidForItem = true;
         await pline(`You bought ${basePickupObjectDescription(item.object)} for ${item.price} gold piece${item.price === 1 ? '' : 's'}.`);
     }
-    if (!paid) {
+    if (!paid && !paidForItem) {
         game.context.move = 0;
         return;
     }

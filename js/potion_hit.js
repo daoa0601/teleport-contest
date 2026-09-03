@@ -57,7 +57,9 @@ import { d, rnd, rn2, rnl } from './rng.js';
 import {
     heroIsBlind, syncBlindness, syncDeafness,
 } from './senses.js';
-import { objectTypeKnown } from './shk.js';
+import {
+    chargeUnpaidObjectAsDebt, objectTypeKnown,
+} from './shk.js';
 import { monsterSaddle } from './steed.js';
 import { cansee, vision_recalc } from './vision.js';
 import {
@@ -1069,6 +1071,7 @@ export async function hitMonsterWithSupportedPotion({
     let typeCall = vaporEffect?.typeCall || null;
     if (!breathedVapor && targetVisible)
         typeCall = await tryCallObjectType(potion, state);
+    await chargeUnpaidObjectAsDebt(potion, state, publish);
     destroyPotionIdentity(potion);
     return {
         bottleName,

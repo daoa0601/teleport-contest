@@ -25,6 +25,7 @@ import {
 } from './potion_hit.js';
 import { d, rnl, rn2 } from './rng.js';
 import { heroIsDeaf } from './senses.js';
+import { chargeUnpaidObjectAsDebt } from './shk.js';
 import { cansee } from './vision.js';
 
 const ARMOR_CLASS = 3;
@@ -206,6 +207,9 @@ export async function breakObjectAtLocation(object, {
     const oilExplosion = object.otyp === POT_OIL && object.lamplit;
     const eggExplosion = isPyroliskEgg(object);
     if (heroCaused) applyHeroEggLuckPenalty(object, state);
+    if (heroCaused) {
+        await chargeUnpaidObjectAsDebt(object, state, publish);
+    }
 
     if (oilExplosion) {
         await explodeLitOilPotion(object, x, y, {
