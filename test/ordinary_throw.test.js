@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    A_DEX, A_STR, P_BASIC, P_CROSSBOW, P_SKILLED, W_WEP,
+    A_DEX, A_STR, P_BASIC, P_BOW, P_CROSSBOW, P_SKILLED, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { CLUB, CROSSBOW, CROSSBOW_BOLT } from '../js/object_data.js';
+import {
+    ARROW, BOW, CLUB, CROSSBOW, CROSSBOW_BOLT,
+} from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { throwInventoryObject } from './support/commands.js';
 import { knownInventoryWeapon } from './support/game-objects.js';
@@ -126,4 +128,27 @@ test('a skilled Ranger can fire several crossbow bolts in one turn', async () =>
     assert.equal(landedBolts.reduce(
         (count, object) => count + (object.quan ?? 1), 0,
     ), 3);
+});
+
+test('a fired arrow gets ring damage but not Strength damage', async () => {
+    freshObjectRoom({ right: 20, gameplaySeed: 4107n });
+    game.u.ulevel = 20;
+    game.u.acurr.a[A_DEX] = 18;
+    game.u.acurr.a[A_STR] = 3;
+    game.u.udaminc = 3;
+    installHeroWeaponSkills({ [P_BOW]: P_BASIC });
+    const bow = knownInventoryWeapon(BOW, {
+        invlet: 'a', owornmask: W_WEP, wielded: true,
+    });
+    const arrow = knownInventoryWeapon(ARROW, { invlet: 'b' });
+    game.uwep = game.u.uwep = bow;
+    const jackal = addMonster({
+        species: 'jackal', x: 11, y: 10,
+        hitPoints: 20, mac: 10, mcanmove: 0,
+    });
+    initRng(1n);
+
+    await throwInventoryObject(arrow, 'l', Array(4).fill(' '));
+
+    assert.equal(jackal.mhp, 15);
 });
