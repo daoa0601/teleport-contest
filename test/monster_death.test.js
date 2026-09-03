@@ -6,6 +6,7 @@ import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     BOULDER, CORPSE, FIGURINE, GLOB_OF_BLACK_PUDDING, OBJECT_NAMES,
     RED_DRAGON_SCALES, ROCK, STATUE, UNICORN_HORN, WORM_TOOTH,
@@ -46,6 +47,34 @@ test('a monster death updates its species death count', async () => {
     });
 
     assert.equal(game.mvitals[giant.mnum]?.died, 1);
+});
+
+test('dead shapechangers return to their true species', async () => {
+    const chameleon = MONSTER_NAME.indexOf('chameleon');
+    const humanWerewolf = MONSTER_NAME.lastIndexOf('werewolf');
+    const cases = [
+        { species: 'giant', cham: chameleon, trueSpecies: chameleon },
+        { species: 'werewolf', trueSpecies: humanWerewolf },
+    ];
+
+    for (const { trueSpecies, ...monsterOptions } of cases) {
+        freshObjectRoom();
+        const monster = addMonster({
+            ...monsterOptions, x: 11, y: 10, hitPoints: 1,
+        });
+        const killedForm = monster.mnum;
+
+        const death = await finishEnvironmentalMonsterDeath(monster, game, {
+            visible: false,
+            random: () => 0,
+            publish: async () => {},
+        });
+
+        assert.equal(monster.mnum, trueSpecies);
+        assert.equal(death.corpse?.corpsenm, trueSpecies);
+        assert.equal(game.mvitals[trueSpecies]?.died, 1);
+        assert.equal(game.mvitals[killedForm]?.died ?? 0, 0);
+    }
 });
 
 test('killing a pit-trapped monster with a boulder buries its corpse',

@@ -16,6 +16,7 @@ import {
     MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM,
     monsterClassSymbol, monsterTypeName,
 } from './monster_data.js';
+import { setMonsterSpecies } from './monster_species.js';
 import {
     adjustMonsterClothingAfterPolymorph, checkMonsterGearNextTurn,
 } from './monworn.js';
@@ -422,14 +423,11 @@ export function changeMonsterForm(
     const naturallyInvisible = targetMnum === PM_STALKER
         || targetMnum === PM_BLACK_LIGHT;
 
-    monster.mnum = targetMnum;
+    setMonsterSpecies(monster, targetMnum);
     monster.m_lev = level;
     monster.mhpmax = hp;
     monster.mhp = Math.max(1, Math.min(hp, scaledHp));
     monster.female = female;
-    monster.mmove = MONSTER_MOVE[targetMnum] ?? monster.mmove ?? 0;
-    monster.symbol = monsterClassSymbol(targetMnum);
-    monster.color = MONSTER_COLOR[targetMnum];
     let leashReleased = false;
     let leashReleaseVisible = false;
     if (monster.mleashed && !monsterCanBeLeashed(monster)) {

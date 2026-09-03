@@ -26,6 +26,7 @@ import {
 import {
     monsterDeathCount, recordMonsterDeath,
 } from './monster_vitals.js';
+import { restoreMonsterTrueSpecies } from './monster_species.js';
 import {
     createMonsterRemains, levelAllowsMonsterDeathDrops,
     monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects,
@@ -184,6 +185,9 @@ export async function finishHeroMonsterKill(monster, x, y, {
         return false;
     }
 
+    restoreMonsterTrueSpecies(monster);
+    recordMonsterDeath(monster);
+
     if (wasInside) {
         game.u.ustuck = null;
         game.u.uswallow = 0;
@@ -269,7 +273,6 @@ export async function finishHeroMonsterKill(monster, x, y, {
     game.level.monsters = game.level.monsters.filter(
         candidate => candidate !== monster,
     );
-    recordMonsterDeath(monster);
     if (leavesCorpse) {
         await createMonsterRemains(monster, game, {
             buried: pitRemains.buryCorpse,

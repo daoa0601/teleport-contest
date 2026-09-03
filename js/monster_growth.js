@@ -6,6 +6,7 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GROWTH_TARGET, MONSTER_LEVEL,
     MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
+import { setMonsterSpecies } from './monster_species.js';
 import { game } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 
@@ -207,7 +208,7 @@ export function growMonster(
 
 export function finishMonsterGrowth(monster, growth) {
     if (!growth?.changedSpecies || growth.applied) return false;
-    monster.mnum = growth.newType;
+    setMonsterSpecies(monster, growth.newType);
     if (monster.cham === growth.oldType) monster.cham = growth.newType;
     monster.female = growth.newFemale;
     growth.applied = true;

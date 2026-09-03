@@ -22,6 +22,7 @@ import {
     MONSTER_SYMBOL,
 } from './monster_data.js';
 import { recordMonsterDeath } from './monster_vitals.js';
+import { restoreMonsterTrueSpecies } from './monster_species.js';
 import {
     createPhysicalMonsterExplosion, monsterHasDeathExplosion,
     rollMonsterDeathExplosionDamage,
@@ -343,6 +344,7 @@ function detachDeadMonster(monster, state) {
     const x = monster.mx;
     const y = monster.my;
     releaseDeadMonsterInventory(monster, state);
+    restoreMonsterTrueSpecies(monster);
     monster.mhp = 0;
     monster.dead = true;
     markQuestLeaderDead(monster, state);

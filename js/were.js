@@ -13,8 +13,11 @@ import {
     canSeeMonster, newsym, plineWithContinuation,
 } from './display.js';
 import {
-    MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_FLAGS2, MONSTER_NAME,
 } from './monster_data.js';
+import {
+    counterWereSpecies, setMonsterSpecies,
+} from './monster_species.js';
 import {
     heroCanControlPolymorph, heroHasProtectionFromShapeChangers,
     heroIsPolymorphed, heroIsUnchanging, heroMonsterForm, polymonHero,
@@ -31,14 +34,6 @@ import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 
 const M2_WERE = 0x00000004;
 const M2_HUMAN = 0x00000008;
-const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
-    ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
-
-const COUNTER_WERE = new Map([
-    [15, 262], [262, 15], // werejackal <-> human werejackal
-    [21, 263], [263, 21], // werewolf <-> human werewolf
-    [91, 261], [261, 91], // wererat <-> human wererat
-]);
 const PM_GREMLIN = 40;
 const PM_SEWER_RAT = 88;
 const PM_GIANT_RAT = 89;
@@ -343,18 +338,10 @@ export function transformWereMonster(monster, state = game, {
         && heroHasProtectionFromShapeChangers(state)) return false;
 
     const oldMnum = monster.mnum;
-    const newMnum = COUNTER_WERE.get(oldMnum);
+    const newMnum = counterWereSpecies(oldMnum);
     if (!Number.isInteger(newMnum)) return false;
 
-    const oldSpeed = MONSTER_MOVE[oldMnum] ?? monster.mmove ?? 0;
-    const newSpeed = MONSTER_MOVE[newMnum] ?? monster.mmove ?? 0;
-    if ((monster.movement ?? 0) && newSpeed < oldSpeed && oldSpeed > 0)
-        monster.movement = Math.trunc(monster.movement * newSpeed / oldSpeed);
-
-    monster.mnum = newMnum;
-    monster.mmove = newSpeed;
-    monster.symbol = MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[newMnum] || 0] || '?';
-    monster.color = MONSTER_COLOR[newMnum];
+    setMonsterSpecies(monster, newMnum);
     if (monster.msleeping || monster.mfrozen || monster.mcanmove === 0) {
         monster.msleeping = 0;
         monster.mfrozen = 0;

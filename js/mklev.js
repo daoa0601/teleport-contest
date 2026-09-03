@@ -5,6 +5,7 @@
 
 import { game } from './gstate.js';
 import { recordMonsterDeath } from './monster_vitals.js';
+import { restoreMonsterTrueSpecies } from './monster_species.js';
 import { exerciseAttribute } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import {
@@ -3341,6 +3342,7 @@ export function killMonsterOnMeltingIce(
     monster, { state = game } = {},
 ) {
     monster.mhp = 0;
+    restoreMonsterTrueSpecies(monster);
     recordMonsterDeath(monster, state);
     monster.dead = true;
     monster.mundetected = 0;
