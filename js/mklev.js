@@ -1036,7 +1036,7 @@ function coinStackWeight(quantity) {
     return Math.max(1, Math.trunc((quantity + 50) / 100));
 }
 
-export function mkgold(amount, x, y) {
+export function mkgold(amount, x, y, state = game) {
     // C ref: mkobj.c mkgold()
     if (amount <= 0) {
         // C ref: mkobj.c:2008-2010
@@ -1044,7 +1044,7 @@ export function mkgold(amount, x, y) {
         const mul = rnd(Math.trunc(30 / Math.max(12 - depthVal, 2)));
         amount = 1 + rnd(level_difficulty() + 2) * mul;
     }
-    const existing = game.level?.objects?.[x]?.[y]
+    const existing = state.level?.objects?.[x]?.[y]
         ?.find(object => object.otyp === GOLD_PIECE);
     if (existing) {
         existing.quan += amount;
@@ -1059,7 +1059,7 @@ export function mkgold(amount, x, y) {
         otyp: GOLD_PIECE, oclass: COIN_CLASS, o_id: objectId, ox: x, oy: y,
         quan: amount, quantity: amount, owt: coinStackWeight(amount),
         cursed: false, blessed: false,
-    }, x, y);
+    }, x, y, state);
 }
 
 const PM_LICHEN = 158;

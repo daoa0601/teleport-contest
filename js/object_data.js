@@ -83,6 +83,7 @@ export const RED_DRAGON_SCALES = 114;
 export const BLACK_DRAGON_SCALES = 117;
 export const YELLOW_DRAGON_SCALES = 120;
 export const ALCHEMY_SMOCK = 144;
+export const LEATHER_CLOAK = 145;
 export const SPLINT_MAIL = 124;
 export const DWARVISH_MITHRIL_COAT = 126;
 export const ELVEN_MITHRIL_COAT = 127;
@@ -313,10 +314,12 @@ export const AQUAMARINE = 448;
 export const TOPAZ = 450;
 export const OBSIDIAN = 458;
 export const JADE = 460;
+export const WORTHLESS_PIECE_OF_WHITE_GLASS = 461;
 export const HARD_GEM_TYPES = new Set([
     DIAMOND, RUBY, JACINTH, SAPPHIRE, BLACK_OPAL, EMERALD, AQUAMARINE, TOPAZ,
 ]);
 export const WORTHLESS_PIECE_OF_RED_GLASS = 463;
+export const WORTHLESS_PIECE_OF_VIOLET_GLASS = 469;
 export const LUCKSTONE = 470;
 export const LOADSTONE = 471;
 export const TOUCHSTONE = 472;
