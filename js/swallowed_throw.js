@@ -12,7 +12,7 @@ import { endObjectBurn } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
     BOULDER, BRASS_LANTERN, CLOVE_OF_GARLIC, MAGIC_LAMP, OBJECT_NAMES,
-    OBJECT_SUBTYPE, OIL_LAMP, POT_OIL,
+    OBJECT_SUBTYPE, OIL_LAMP,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
@@ -141,17 +141,6 @@ function swallowedPotionEligibility(
         || !Number.isInteger(selectedQuantity) || selectedQuantity < 1) {
         return null;
     }
-
-    const burningOil = item.otyp === POT_OIL && item.lamplit
-        && activeObjectTimerCount(item) > 0;
-    if (containsUnpaidObject(item)
-        || ((item.lamplit || activeObjectTimerCount(item) > 0)
-            && !burningOil)
-        || item.oartifact || item.artifact
-        || (item.contents?.length ?? 0) > 0) {
-        return null;
-    }
-
     return engulfer;
 }
 
