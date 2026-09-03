@@ -4,7 +4,7 @@
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { applyArtifactHitToMonster } from './artifact_hit.js';
 import { artifactToHitBonus } from './artifacts.js';
-import { A_DEX, A_STR, P_BOW } from './const.js';
+import { A_DEX, P_BOW, Upolyd } from './const.js';
 import {
     canProjectMonster, canSeeMonster, plineWithContinuation,
     randomDisplayMonsterName,
@@ -39,7 +39,7 @@ import {
     recordWeaponPractice, weaponSkillDamageBonus, weaponSkillHitBonus,
 } from './skills.js';
 import {
-    rollPhysicalWeaponDamage, strengthDamageBonus,
+    heroStrengthDamageBonus, rollPhysicalWeaponDamage,
 } from './weapon_damage.js';
 
 const M2_DEMON = 0x00000100;
@@ -51,7 +51,7 @@ const TOOL_CLASS = 6;
 const GEM_CLASS = 13;
 
 function heroIsPolymorphed(state) {
-    return !!(state.u?.mtimedone || state.u?.polymorphed || state.u?.upolyd);
+    return Upolyd(state.u);
 }
 
 function heroStillHasTheirRace(state) {
@@ -217,7 +217,7 @@ async function rollRangedObjectDamage(
     if (applied) {
         const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0);
         damage += (state.u?.udaminc ?? state.udaminc ?? 0)
-            + strengthDamageBonus(currentAttribute(A_STR, state))
+            + heroStrengthDamageBonus(state)
             + weaponSkillDamageBonus(state, skill);
         if (baseDamage > 1) practiceSkill = skill;
     } else if (mode === 'thrown') {
@@ -228,7 +228,7 @@ async function rollRangedObjectDamage(
                 + matchingBowDamageBonus(state, weapon, launcher);
             if (baseDamage > 0) practiceSkill = skill;
         } else {
-            damage += strengthDamageBonus(currentAttribute(A_STR, state));
+            damage += heroStrengthDamageBonus(state);
             if (!handThrownAmmunition) {
                 const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0);
                 damage += weaponSkillDamageBonus(state, skill);

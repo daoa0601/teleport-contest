@@ -2,8 +2,8 @@
 // C refs: dothrow.c throw_obj(), throwit(), thitmonst(), swallowit();
 // steal.c mpickobj().
 
-import { A_DEX, A_STR, W_SADDLE } from './const.js';
-import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { A_DEX, W_SADDLE } from './const.js';
+import { exerciseAttribute } from './attrib.js';
 import { applyArtifactHitToMonster } from './artifact_hit.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
@@ -35,8 +35,8 @@ import {
     recordWeaponPractice, weaponSkillDamageBonus,
 } from './skills.js';
 import {
-    maximumPhysicalWeaponDamage, rollPhysicalWeaponDamage,
-    strengthDamageBonus,
+    heroStrengthDamageBonus, maximumPhysicalWeaponDamage,
+    rollPhysicalWeaponDamage,
 } from './weapon_damage.js';
 import { detachThrownUnit } from './thrown_object.js';
 import {
@@ -149,8 +149,9 @@ function swallowedWeaponEligibility(
         || item.lamplit || containsUnpaidObject(item)
         || activeObjectTimerCount(item) > 0
         || engulfer.mpeaceful || engulfer.mtame || engulfer.pet
-        || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade'
-        || state.u?.polymorphed || state.u?.upolyd) return null;
+        || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade') {
+        return null;
+    }
     if ((item.oartifact || item.artifact)
         && (!finishKill || !canFinishKill?.(engulfer))) return null;
     const baseMaximum = maximumPhysicalWeaponDamage(item, engulfer);
@@ -159,7 +160,7 @@ function swallowedWeaponEligibility(
         1,
         baseMaximum
             + (state.u?.udaminc ?? state.udaminc ?? 0)
-            + strengthDamageBonus(currentAttribute(A_STR, state))
+            + heroStrengthDamageBonus(state)
             + weaponSkillDamageBonus(state, skill),
     );
     if (!Number.isFinite(engulfer.mhp)) return null;
@@ -202,8 +203,9 @@ function swallowedProjectileEligibility(
         || activeObjectTimerCount(item) > 0
         || itemName === 'boomerang'
         || engulfer.mpeaceful || engulfer.mtame || engulfer.pet
-        || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade'
-        || state.u?.polymorphed || state.u?.upolyd) return null;
+        || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade') {
+        return null;
+    }
     if (item.opoisoned && isPoisonableObject(item)
         && (!finishKill || !canFinishKill?.(engulfer))) return null;
 
@@ -214,7 +216,7 @@ function swallowedProjectileEligibility(
         baseMaximum
             + (state.u?.udaminc ?? state.udaminc ?? 0)
             + (launcher ? 0
-                : strengthDamageBonus(currentAttribute(A_STR, state)))
+                : heroStrengthDamageBonus(state))
             + (skill == null ? 0 : weaponSkillDamageBonus(state, skill)),
     );
     if (baseMaximum <= 0 || !Number.isFinite(engulfer.mhp)) return null;
@@ -331,7 +333,7 @@ export async function resolveSwallowedProjectileThrow({
         physicalDamage
             + (state.u?.udaminc ?? state.udaminc ?? 0)
             + (launcher ? 0
-                : strengthDamageBonus(currentAttribute(A_STR, state)))
+                : heroStrengthDamageBonus(state))
             + (skill == null ? 0 : weaponSkillDamageBonus(state, skill))
             + (poison?.damage ?? 0),
     );
@@ -425,7 +427,7 @@ export async function resolveSwallowedWeaponThrow({
     const damage = artifactHit.attackStopped ? 0 : Math.max(
         1, artifactHit.damage
             + (state.u?.udaminc ?? state.udaminc ?? 0)
-            + strengthDamageBonus(currentAttribute(A_STR, state))
+            + heroStrengthDamageBonus(state)
             + weaponSkillDamageBonus(state, skill)
             + (poison?.damage ?? 0),
     );

@@ -6,7 +6,7 @@ import {
     heroFootName, heroHandName, monsterHandName,
 } from './body_parts.js';
 import {
-    ACCESSIBLE, A_DEX, A_STR, COLNO, IS_FURNITURE, IS_LAVA,
+    ACCESSIBLE, A_DEX, COLNO, IS_FURNITURE, IS_LAVA,
     IS_POOL, IS_WATERWALL, Is_airlevel, Is_waterlevel,
     LAVAWALL, ROWNO, TT_PIT, W_NONPASSWALL, isok,
 } from './const.js';
@@ -40,7 +40,7 @@ import { ceilingName, surfaceName } from './terrain_name.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { collectNearbyCoords } from './u_init.js';
 import { vision_recalc, vision_reset } from './vision.js';
-import { strengthDamageBonus } from './weapon_damage.js';
+import { heroStrengthDamageBonus } from './weapon_damage.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
 
 const PM_GRID_BUG = 116;
@@ -201,7 +201,7 @@ async function snagFloorObject(proficiency, holdObject, state) {
 
 async function damageHeroWithWhip(whip, state) {
     let damage = rnd(2)
-        + strengthDamageBonus(currentAttribute(A_STR, state))
+        + heroStrengthDamageBonus(state)
         + (whip.spe ?? whip.enchantment ?? 0);
     damage = Math.max(1, damage);
     if (state.u?.halfPhysicalDamage || state.u?.half_physical_damage)

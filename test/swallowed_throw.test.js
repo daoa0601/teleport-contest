@@ -31,8 +31,8 @@ import {
     addInventoryObject, addInventoryWeapon, artifactObject, knownObject,
 } from './support/game-objects.js';
 import {
-    installHeroWeaponSkills, installHumanWerewolfHero, wearHeroObject,
-    wearPolymorphControlRing,
+    installHeroWeaponSkills, installHumanWerewolfHero,
+    installPolymorphedHero, wearHeroObject, wearPolymorphControlRing,
 } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
@@ -319,6 +319,24 @@ test('throwing a quivered dart preserves two-weapon mode', async () => {
     assert.strictEqual(game.uwep, sword);
     assert.strictEqual(game.uswapwep, dagger);
     assert.ok(engulfer.mhp < 40);
+});
+
+test('a polymorphed throw does not use human Strength damage', async () => {
+    async function daggerDamage(formName) {
+        const target = freshSwallowedState(PM_TRAPPER);
+        game.u.acurr.a[A_STR] = 18;
+        if (formName) installPolymorphedHero(formName);
+        const dagger = addInventoryWeapon(DAGGER);
+        setBasicWeaponSkill(dagger);
+        initRng(2310n);
+        await throwInventoryObject(dagger, 'l');
+        return 40 - target.mhp;
+    }
+
+    const humanDamage = await daggerDamage();
+    const polymorphedDamage = await daggerDamage('giant');
+
+    assert.equal(humanDamage, polymorphedDamage + 2);
 });
 
 test('swallowed throws take one weapon from a stack', async () => {

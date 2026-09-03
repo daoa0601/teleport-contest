@@ -239,10 +239,9 @@ import { monsterNoiseMessage } from './monster_sound.js';
 import { doride } from './steed.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
-    rollHeroMeleeWeaponDamage, rollPhysicalWeaponDamage,
-    strengthDamageBonus,
+    heroStrengthDamageBonus, rollHeroMeleeWeaponDamage,
+    rollPhysicalWeaponDamage,
 } from './weapon_damage.js';
-export { strengthDamageBonus } from './weapon_damage.js';
 import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
@@ -368,7 +367,7 @@ import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import { moveElementalBubbles } from './elemental.js';
 import {
-    A_CON, A_DEX, A_STR, A_WIS, SICK_NONVOMITABLE, SICK_VOMITABLE,
+    A_CON, A_DEX, A_STR, A_WIS, SICK_NONVOMITABLE, SICK_VOMITABLE, Upolyd,
     BOLT_LIM, COLNO, ROWNO, STONE, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD,
     IRONBARS,
     FOUNTAIN, SINK,
@@ -10540,13 +10539,12 @@ async function attackHostileMonster(monster, x, y, {
     // Strength and weapon skill after the weapon die and enchantment.
     // Polymorphed heroes do not receive dbon(); the current role-shaped state
     // uses the ordinary hero path.
-    const polymorphed = !!(game.u?.polymorphed || game.u?.upolyd);
+    const polymorphed = Upolyd(game.u);
     const weaponSkillDamage = weaponDamage?.usesSkill
         ? weaponSkillDamageBonus(
             game, Math.abs(OBJECT_SUBTYPE[attackWeapon?.otyp] || 0),
         ) : 0;
-    const ordinaryStrengthDamage = polymorphed ? 0
-        : strengthDamageBonus(currentAttribute(A_STR));
+    const ordinaryStrengthDamage = heroStrengthDamageBonus(game);
     const strengthDamage = twoWeaponActive
         ? Math.sign(ordinaryStrengthDamage) * Math.trunc(
             (3 * Math.abs(ordinaryStrengthDamage) + 2) / 4,

@@ -4,9 +4,10 @@
 import {
     artifactDoublesWeaponDamage, artifactEmitsLight, artifactStrikesShade,
 } from './artifacts.js';
+import { currentAttribute } from './attrib.js';
 import {
-    P_AXE, P_BOOMERANG, P_BOW, P_CROSSBOW, P_DART, P_LANCE,
-    P_POLEARMS, WT_IRON_BALL_INCR,
+    A_STR, P_AXE, P_BOOMERANG, P_BOW, P_CROSSBOW, P_DART, P_LANCE,
+    P_POLEARMS, Upolyd, WT_IRON_BALL_INCR,
 } from './const.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import {
@@ -250,4 +251,10 @@ export function strengthDamageBonus(strength) {
     if (strength <= 108) return 4;
     if (strength < 118) return 5;
     return 6;
+}
+
+// C weapon.c:dbon(). Monster forms do not use the human Strength score.
+export function heroStrengthDamageBonus(state) {
+    return Upolyd(state?.u)
+        ? 0 : strengthDamageBonus(currentAttribute(A_STR, state));
 }
