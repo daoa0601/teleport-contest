@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monmove.js';
+import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { runLevelRegions } from '../js/regions.js';
 import { initRng } from '../js/rng.js';
 import { addMonster } from './support/monsters.js';

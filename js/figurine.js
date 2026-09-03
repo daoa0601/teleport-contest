@@ -14,7 +14,7 @@ import {
     findMonsterNearPosition, makemonAt, makemonNear,
 } from './mklev.js';
 import { resolveMonsterLiquid } from './mon.js';
-import { finishMonsterLiquidDeath } from './monmove.js';
+import { finishMonsterLiquidDeath } from './monster_death.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_MOVE, MONSTER_SYMBOL,

@@ -29,7 +29,7 @@ import {
     buryFloorObjectsAt, mksobj,
 } from './mklev.js';
 import { wakeMonstersNear } from './monster_wake.js';
-import { finishEnvironmentalMonsterDeath } from './monmove.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import {
     MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE,

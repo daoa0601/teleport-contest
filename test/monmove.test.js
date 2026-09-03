@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    allocateMonsterMovement, finishMonsterLiquidDeath,
-    mcalcmove, mfndpos, naturalMonsterSpeed, quietMonsterActionRng,
+    allocateMonsterMovement, mcalcmove, mfndpos, naturalMonsterSpeed,
+    quietMonsterActionRng,
     resolveDeferredMonsterBreath, runQuietMonsterActions,
 } from '../js/monmove.js';
+import { finishMonsterLiquidDeath } from '../js/monster_death.js';
 import {
     FOUNTAIN, IRONBARS, LAVAPOOL, POOL, ROOM, WATER, W_WEP,
 } from '../js/const.js';

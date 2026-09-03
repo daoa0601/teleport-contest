@@ -18,7 +18,7 @@ import {
 } from './monster_data.js';
 import {
     finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
-} from './monmove.js';
+} from './monster_death.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { rnd } from './rng.js';
 import {

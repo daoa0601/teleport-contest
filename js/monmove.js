@@ -69,8 +69,7 @@ import {
 import { splitObjectStack } from './object_stack.js';
 import {
     canProjectMonster, map_invisible, newsym, randomDisplayMonsterName,
-    randomDisplayMonsterSubject, swallowed, unmap_invisible,
-    plineWithContinuation,
+    randomDisplayMonsterSubject, swallowed, plineWithContinuation,
 } from './display.js';
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2,
@@ -96,7 +95,7 @@ import {
     ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES,
     OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_DESCRIPTIONS,
     OBJECT_LARGE_DAMAGE, OBJECT_NAMES,
-    OBJECT_SMALL_DAMAGE, IRON_CHAIN,
+    OBJECT_SMALL_DAMAGE,
     OBJECT_SUBTYPE, PICK_AXE, ROCK,
     POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_SLEEPING,
     SLIME_MOLD,
@@ -104,21 +103,17 @@ import {
 } from './object_data.js';
 import { place_object, stack_object } from './floor_object.js';
 import {
-    makemonNear, mkcorpstat, mksobj,
-    summonNastyMonsters, undeadToCorpse,
+    makemonNear, summonNastyMonsters,
 } from './mklev.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
-import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { getTrack } from './track.js';
 import { heroFormSticks, rehumanizeHero } from './polyself.js';
 import {
     cansee, clearPath, couldsee, visibleCellsFrom, vision_note_blocker_change,
     vision_recalc,
 } from './vision.js';
-import { recordVanquished } from './end.js';
 import { wipeEngravingAt } from './engrave.js';
-import { markQuestLeaderDead } from './quest.js';
 import { moveVaultGuard } from './vault.js';
 import { collectNearbyCoords } from './u_init.js';
 import { shopkeeperInOwnShop } from './shk.js';
@@ -134,7 +129,10 @@ import { syncBlindness } from './senses.js';
 import { touchPetrifies } from './stoning.js';
 import { clearHeroSliming } from './slime.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
-import { preventMonsterDeath } from './mondeath.js';
+import {
+    finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
+    finishMonsterRayDeath,
+} from './monster_death.js';
 import { priestIsInOwnTemple } from './priest.js';
 import {
     addObjectToMonsterInventory, dropObjectFromMonsterInventory,
@@ -184,7 +182,7 @@ import {
     M_AP_OBJECT, POLY_TRAP, RUST_TRAP,
     PIT, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE,
     SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR,
-    G_GONE, G_NOCORPSE,
+    G_GONE,
     NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE,
     NEED_WEAPON, NO_WEAPON_WANTED,
     MM_NOWAIT, NOTONL, STRAT_APPEARMSG, STRAT_WAITFORU, STRAT_WAITMASK,
@@ -267,7 +265,6 @@ const PM_LICHEN = 158;
 const PM_LEATHER_GOLEM = 253;
 const PM_FLESH_GOLEM = 255;
 const PM_LIZARD = 326;
-const PM_IRON_GOLEM = 259;
 const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;
 const WAN_MAGIC_MISSILE = 429;
@@ -2497,102 +2494,6 @@ function killingAttackMakesZombie(aggressor, defender, attack) {
         && isZombieMaker(aggressor?.mnum, aggressor?.mcan)
         && [1, 2, AT_TUCH].includes(attack?.attackType)
         && zombieForm(defender?.mnum) != null;
-}
-
-// C mon.c:mondied() owns ordinary corpse eligibility and construction before
-// the dead actor is detached.  Pet combat and environmental trap deaths share
-// this producer; grow_up() remains exclusively with the pet-combat caller.
-function createOrdinaryMonsterCorpse(
-    defender, state, random, calls, { zombify = false } = {},
-) {
-    const x = defender.mx, y = defender.my;
-    if (defender.mnum === PM_IRON_GOLEM) {
-        const chainCount = d(2, 6);
-        calls.push('d(2,6)');
-        let lastChain = null;
-        for (let index = 0; index < chainCount; index++) {
-            lastChain = mksobj(IRON_CHAIN, true, false);
-            placeThrownObject(state, lastChain, x, y);
-        }
-        return lastChain;
-    }
-    const frequency = (MONSTER_GENO[defender.mnum] ?? 0) & 0x7;
-    const corpseDenominator = 2 + Number(frequency < 2)
-        + Number((MONSTER_SIZE[defender.mnum] ?? 0) === 0);
-    if (recordRandom(random, calls, corpseDenominator) === 0) {
-        const corpseForm = undeadToCorpse(defender.mnum);
-        // C make_corpse() handles zombies and mummies before its default
-        // G_NOCORPSE rejection.  Those special actors deliberately carry
-        // G_NOCORPSE to prevent wish/random generation of an undead corpse,
-        // but death still creates the converted living corpse.  Ordinary
-        // no-corpse species (for example grid bugs) stop here after paying
-        // corpse_chance() and before mkcorpstat() object initialization.
-        if (corpseForm === defender.mnum
-            && ((MONSTER_GENO[defender.mnum] ?? 0) & G_NOCORPSE)) {
-            return null;
-        }
-        // C make_corpse() converges through mkcorpstat(), not a direct
-        // corpsenm assignment.  If mksobj() chose a timerless lichen/lizard
-        // as its temporary identity, this override must rebuild the ordinary
-        // corpse timer before grow_up().
-        const leaderId = state.quest_status?.leader_m_id;
-        const savedMonster = corpseForm !== defender.mnum
-            || corpseKeepsMonsterTraits(defender, leaderId)
-            ? defender : null;
-        const corpse = mkcorpstat(
-            CORPSE, savedMonster, corpseForm, x, y, 8, { zombify },
-        );
-        // C make_corpse() converts zombies and mummies back to their living
-        // corpse form and backdates it past TAINT_AGE.
-        corpse.name = `${MONSTER_NAME[corpseForm] || 'monster'} corpse`;
-        if (defender.name) corpse.oname = defender.name;
-        const sourceMove = Math.max(1, (state?.moves ?? 1)
-            - Number(state?.urole?.key === 'wizard'));
-        if (corpseForm !== defender.mnum) corpse.age = sourceMove - 51;
-        // The object layer does not yet derive corpse weight from permonst.
-        // Set the kobold corpse weight used by can_carry() on the next action.
-        if (corpseForm === 59) corpse.owt = 400;
-        return corpse;
-    }
-    return null;
-}
-
-// C mon.c:m_detach(..., TRUE) -> steal.c:relobj().  Ordinary death releases
-// every carried identity before corpse creation.  The resulting floor order
-// is observable both through glyph choice and through dog_goal()'s fobj scan.
-// Migration/disappearance deliberately do not use this helper.
-function releaseDeadMonsterInventory(defender, state) {
-    const x = defender.mx, y = defender.my;
-    const carried = defender.minvent || defender.inventory || [];
-    for (const object of carried) {
-        // extract_from_minvent() clears carrier-owned equipment state before
-        // mdrop_obj() places and stacks the same object identity.
-        object.owornmask = 0;
-        object.worn = false;
-        object.wornSlot = null;
-        object.wielded = false;
-        object.alternate = false;
-        object.ready = false;
-        placeThrownObject(state, object, x, y);
-        stack_object(object, state);
-    }
-    defender.minvent = [];
-    defender.inventory = defender.minvent;
-    defender.hasInventory = false;
-    defender.mw = null;
-}
-
-function detachDeadMonster(defender, state) {
-    const x = defender.mx, y = defender.my;
-    const defenderName = MONSTER_NAME[defender.mnum] || 'monster';
-    releaseDeadMonsterInventory(defender, state);
-    defender.mhp = 0;
-    defender.dead = true;
-    markQuestLeaderDead(defender, state);
-    if (state === game) unmap_invisible(x, y, false);
-    state.level.monsters = state.level.monsters.filter(monster =>
-        monster !== defender);
-    recordVanquished(defender, defenderName, { state });
 }
 
 // C mhitm.c:mattackm() handles an AT_WEAP slot before its to-hit roll.
@@ -8241,76 +8142,6 @@ function attemptMonsterRestrap(monster, state, random, calls) {
         return true;
     }
     return false;
-}
-
-export function finishMonsterLiquidDeath(
-    monster, state, random, calls, leaveCorpse,
-) {
-    const x = monster.mx;
-    const y = monster.my;
-    detachDeadMonster(monster, state);
-    const corpse = leaveCorpse
-        ? createOrdinaryMonsterCorpse(monster, state, random, calls)
-        : null;
-    if (state === game) {
-        unmap_invisible(x, y, false);
-        newsym(x, y);
-    }
-    return {
-        oldx: x, oldy: y, x, y,
-        moved: false, dead: true,
-        actionCompleted: true,
-        corpse,
-    };
-}
-
-export async function finishEnvironmentalMonsterDeath(
-    monster, state, {
-        deathMessage = null,
-        visible = true,
-        spotted = visible,
-        noCorpse = false,
-        zombifyCorpse = false,
-        random = rn2,
-        publish = plineWithContinuation,
-    } = {},
-) {
-    const recovery = await preventMonsterDeath(monster, {
-        creditedKill: deathMessage,
-        visible,
-        spotted,
-        petSpotted: spotted,
-        state,
-        publish,
-        random,
-    });
-    if (recovery.survived)
-        return { monster, survived: true, corpse: null };
-
-    const calls = [];
-    const x = monster.mx;
-    const y = monster.my;
-    detachDeadMonster(monster, state);
-    const corpse = noCorpse ? null : createOrdinaryMonsterCorpse(
-        monster, state, random, calls, { zombify: zombifyCorpse },
-    );
-    if (state === game) newsym(x, y);
-    return { monster, survived: false, corpse };
-}
-
-export function finishMonsterRayDeath(
-    monster, death, state = game, publish = plineWithContinuation,
-    random = rn2,
-) {
-    return finishEnvironmentalMonsterDeath(monster, state, {
-        deathMessage: death.deathMessage,
-        random,
-        publish,
-        noCorpse: death.noCorpse,
-        visible: death.visible ?? cansee(monster.mx, monster.my),
-        spotted: death.spotted
-            ?? canProjectMonster(monster, monster.mx, monster.my),
-    });
 }
 
 export function runQuietMonsterActions(

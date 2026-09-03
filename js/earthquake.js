@@ -27,8 +27,8 @@ import { monsterInAir, resolveMonsterLiquid } from './mon.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME, monsterIsHumanoid,
 } from './monster_data.js';
+import { finishMonsterLiquidDeath } from './monster_death.js';
 import { monsterSelfTouch } from './monster_stoning.js';
-import { finishMonsterLiquidDeath } from './monmove.js';
 import { BOULDER } from './object_data.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { heroIsPolymorphed } from './polyself.js';

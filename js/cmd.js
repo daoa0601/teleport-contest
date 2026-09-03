@@ -336,9 +336,9 @@ import {
     prepareMainQuestPortalCall, onQuestStart, okToQuest,
 } from './quest.js';
 import {
-    aggravateMonsters, finishMonsterRayDeath, fumaroles,
-    triggerImmediateMonsterTrap,
+    aggravateMonsters, fumaroles, triggerImmediateMonsterTrap,
 } from './monmove.js';
+import { finishMonsterRayDeath } from './monster_death.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { tryUnarmedStagger } from './monster_hurtle.js';
 import { announceInvocationSquare } from './invocation.js';

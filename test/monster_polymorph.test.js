@@ -8,7 +8,7 @@ import {
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monmove.js';
+import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { wakeMonstersNear } from '../js/monster_wake.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {

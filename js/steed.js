@@ -8,7 +8,7 @@ import {
 import { game } from './gstate.js';
 import { newsym, pline } from './display.js';
 import { levelHasCeiling, resolveMonsterLiquid } from './mon.js';
-import { finishMonsterLiquidDeath } from './monmove.js';
+import { finishMonsterLiquidDeath } from './monster_death.js';
 import {
     MONSTER_FLAGS1, MONSTER_SYMBOL, monsterCanBeSaddled, monsterTypeName,
 } from './monster_data.js';

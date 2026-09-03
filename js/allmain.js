@@ -166,7 +166,6 @@ import {
     resumeDeferredMonsterRollingBoulderDeath,
     resumeDeferredMonsterMagicMissileWand,
     resolveMonsterMagicMissileContact,
-    finishEnvironmentalMonsterDeath, finishMonsterRayDeath,
     beginHeroMagicMissileContact,
     finishHeroMagicMissileDamage,
     resumeDeferredMonsterStrikingWand,
@@ -176,13 +175,17 @@ import {
     resumeDeferredPetEating, resumeDeferredPetMove,
     resolveDeferredMonsterBreath, resumeDeferredSpitAttack,
     finishDeferredMonsterDeath,
-    finishDeferredMonsterCounterattackDeath, finishMonsterLiquidDeath,
+    finishDeferredMonsterCounterattackDeath,
     fumaroles,
     heroEveryturnEffect, runMonsterEveryturnEffects,
     runQuietMonsterActions,
     scanMonsterMovement,
     monsterDistressEvents,
 } from './monmove.js';
+import {
+    finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
+    finishMonsterRayDeath,
+} from './monster_death.js';
 import {
     finishDeferredHeroCorrosionArmor, finishDeferredHeroDecayArmor,
     finishDeferredHeroRustArmor,

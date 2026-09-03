@@ -16,9 +16,8 @@ import {
 } from '../js/dogmove.js';
 import { game } from '../js/gstate.js';
 import { DAGGER } from '../js/object_data.js';
-import {
-    finishMonsterRayDeath, quietMonsterActionRng,
-} from '../js/monmove.js';
+import { finishMonsterRayDeath } from '../js/monster_death.js';
+import { quietMonsterActionRng } from '../js/monmove.js';
 
 function redDragon(options = {}) {
     return rangedPet('red dragon', {

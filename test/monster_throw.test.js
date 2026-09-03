@@ -21,9 +21,8 @@ import { pushKeys } from '../js/input.js';
 import {
     beginMonsterRangedTurn, continueMonsterRangedTurn,
 } from '../js/dogmove.js';
-import {
-    finishEnvironmentalMonsterDeath, quietMonsterActionRng,
-} from '../js/monmove.js';
+import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { quietMonsterActionRng } from '../js/monmove.js';
 import {
     carriedObject, knownInventoryObject,
 } from './support/game-objects.js';
