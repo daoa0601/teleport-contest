@@ -5,6 +5,7 @@ import {
     A_DEX, A_LAWFUL, A_STR, P_BASIC, P_BOW, P_CROSSBOW, P_DART, P_SKILLED,
     W_ARMG, W_WEP,
 } from '../js/const.js';
+import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
@@ -20,7 +21,7 @@ import {
 } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjects, floorObjectsAt } from './support/level-state.js';
-import { addMonster, addPet } from './support/monsters.js';
+import { addMonster, createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const PM_COCKATRICE = MONSTER_NAME.indexOf('cockatrice');
@@ -126,9 +127,9 @@ test('thrown acid venom burns and frightens a pet', async () => {
     const level = freshObjectRoom({ right: 20, gameplaySeed: 4109n });
     game.u.acurr.a[A_DEX] = 18;
     const venom = addInventoryObject(ACID_VENOM, { invlet: 'a' });
-    const jackal = addPet({
-        species: 'jackal', x: 13, y: 10, hitPoints: 20, mtame: 5,
-    });
+    const jackal = await createMonsterAt('jackal', 13, 10);
+    tameMonster(jackal, game);
+    jackal.mhp = jackal.mhpmax = 20;
     initRng(1n);
 
     await throwInventoryObject(venom, 'l', Array(8).fill(' '));

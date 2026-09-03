@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
     MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, MM_NOWAIT,
 } from '../js/const.js';
+import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { place_object } from '../js/floor_object.js';
 import { initializeRandomMonsterInventory } from '../js/allmain.js';
@@ -27,7 +28,7 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { floorObjects } from './support/level-state.js';
-import { addMonster, addPet } from './support/monsters.js';
+import { addMonster, createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 
@@ -150,18 +151,11 @@ test('special-level inventory transfer removes floor ownership and head-links',
     });
 
 test('pet mpickobj ownership survives the complete pickup and release cycle',
-    () => {
+    async () => {
         freshInventoryState(2105);
-        const pet = addPet({
-            m_id: 705,
-            mnum: 100,
-            x: 13,
-            mux: game.u.ux, muy: game.u.uy,
-            level: 4,
-            hitPoints: 20,
-            mtame: 10,
-            edog: { apport: 1 },
-        });
+        const pet = await createMonsterAt('pony', 13, 10);
+        tameMonster(pet, game);
+        pet.edog.apport = 1;
         const dagger = mksobj(DAGGER, true, false);
         dagger.blessed = false;
         dagger.cursed = false;

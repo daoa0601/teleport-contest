@@ -8,6 +8,7 @@ import {
     SLP_GAS_TRAP, RUST_TRAP, SQKY_BOARD, W_ARMF, W_ARMH, W_WEP,
     TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, VIBRATING_SQUARE,
 } from '../js/const.js';
+import { tameMonster } from '../js/dog.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import { mkcorpstat } from '../js/mklev.js';
@@ -21,7 +22,7 @@ import {
 } from './support/game-objects.js';
 import { wearHeroObject } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
-import { addMonster, addPet } from './support/monsters.js';
+import { addMonster, createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
@@ -50,9 +51,8 @@ test('climbing from a pit leaves the hero on the pit square', async () => {
 
 test('a trapped hero cannot swap places with a pet', async () => {
     freshGameplayRoom();
-    const dog = addPet({
-        mnum: 16, x: 11, y: 10, hitPoints: 8,
-    });
+    const dog = await createMonsterAt('little dog', 11, 10);
+    tameMonster(dog, game);
     game.u.utrap = 1;
     game.u.utraptype = TT_WEB;
 
