@@ -117,7 +117,6 @@ function pitDeathRemains(monster, x, y) {
 }
 
 export async function finishHeroMonsterKill(monster, x, y, {
-    wasTame = (monster?.mtame ?? (monster?.pet ? 1 : 0)) > 0,
     hallucinating = !!(game.u?.hallucinating
         || (game.u?.hallucinationTurns ?? 0) > 0),
     nameMonster = () => hallucinating
@@ -298,11 +297,8 @@ export async function finishHeroMonsterKill(monster, x, y, {
         newsym(x, y);
     }
 
-    if (monster.mpeaceful) {
-        rn2(2);
-        if (wasTame || monster.mtame)
-            game.u.uluck = (game.u.uluck || 0) - 1;
-    }
+    if ((monster.mpeaceful && rn2(2) === 0) || monster.mtame)
+        game.u.uluck = (game.u.uluck || 0) - 1;
     const killCount = monsterDeathCount(monster.mnum);
     awardMonsterExperience(monster, {
         killCount,

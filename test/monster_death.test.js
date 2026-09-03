@@ -113,6 +113,22 @@ test('a dead Kop can return elsewhere on the level', async () => {
     assert.ok(returnedKop.mhp > 0);
 });
 
+test('killing a peaceful monster can reduce luck', async () => {
+    freshObjectRoom({ gameplaySeed: 4n });
+    const jackal = addMonster({
+        species: 'jackal', x: 11, y: 10, hitPoints: 1, mpeaceful: 1,
+    });
+    game.u.uluck = 0;
+
+    await finishHeroMonsterKill(jackal, jackal.mx, jackal.my, {
+        showKillMessage: false,
+        recordConduct: false,
+        noCorpse: true,
+    });
+
+    assert.equal(game.u.uluck, -1);
+});
+
 test('killing a pit-trapped monster with a boulder buries its corpse',
     async () => {
         const level = freshObjectRoom({ gameplaySeed: 28n });

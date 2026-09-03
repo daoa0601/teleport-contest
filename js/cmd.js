@@ -11159,7 +11159,6 @@ async function attackHostileMonster(monster, x, y, {
     }
 
     return finishHeroMonsterKill(monster, x, y, {
-        wasTame,
         hallucinating,
         zombifyCorpse: bareHanded && isZombieMaker(
             game.u?.umonnum, game.u?.mcan,

@@ -221,7 +221,6 @@ export async function hitMonsterWithAppliedWeapon(
         return true;
     }
 
-    const wasTame = (monster.mtame ?? (monster.pet ? 1 : 0)) > 0;
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     await abusePet(monster, damage, state);
     if (monster.mhp > 0) {
@@ -245,7 +244,6 @@ export async function hitMonsterWithAppliedWeapon(
     }
 
     const killed = await finishHeroMonsterKill(monster, monster.mx, monster.my, {
-        wasTame,
         hallucinating: !!(state.u?.hallucinating
             || (state.u?.hallucinationTurns ?? 0) > 0),
         nameMonster: () => targetName(monster, state),
