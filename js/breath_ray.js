@@ -469,7 +469,6 @@ async function finishMonsterBreathHit(
         if (hit.disintegrated)
             destroyDisintegratedMonsterInventory(monster, state, random);
         await finishMonsterKill(monster, monster.mx, monster.my, {
-            weaponHit: false,
             noCorpse: !!hit.noCorpse
                 || !!((MONSTER_GENO[monster.mnum] ?? 0) & G_NOCORPSE),
             showKillMessage: !hit.disintegrated,

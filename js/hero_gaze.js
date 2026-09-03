@@ -162,9 +162,7 @@ async function applyFieryGaze({
     }
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     if (monster.mhp > 0) return false;
-    await finishMonsterKill(monster, monster.mx, monster.my, {
-        weaponHit: false,
-    });
+    await finishMonsterKill(monster, monster.mx, monster.my);
     return true;
 }
 

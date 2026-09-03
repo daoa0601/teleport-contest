@@ -121,7 +121,6 @@ export async function finishHeroMonsterKill(monster, x, y, {
         ? randomDisplayMonsterName()
         : MONSTER_NAME[monster?.mnum] || 'monster',
     showKillMessage = true,
-    weaponHit = !!game.uwep,
     deathContext = null,
     noCorpse = false,
     recordConduct = true,
@@ -355,7 +354,6 @@ export async function finishHeroLiquidMonsterDeath(
         hallucinating,
         nameMonster,
         showKillMessage: false,
-        weaponHit: false,
         noCorpse: !leaveCorpse,
     });
     return {

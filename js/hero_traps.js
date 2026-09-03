@@ -279,7 +279,6 @@ async function triggerLandmine(trap, { failedUntrap = false } = {}) {
         const killed = await finishHeroMonsterKill(
             monster, monster.mx, monster.my, {
                 showKillMessage: false,
-                weaponHit: false,
                 noCorpse: death.noCorpse,
             },
         );

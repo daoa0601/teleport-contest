@@ -36,7 +36,6 @@ export async function scatterDrawbridgeDebris(
                 const killed = await finishMonsterKill(
                     monster, monster.mx, monster.my, {
                         showKillMessage: false,
-                        weaponHit: false,
                         noCorpse: death.noCorpse,
                     },
                 );

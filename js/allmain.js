@@ -1618,7 +1618,7 @@ async function runLevelRegionTurn() {
         onMonsterDeath: async (monster, event) => {
             if (event.heroFault) {
                 const killed = await finishHeroMonsterKill(
-                    monster, monster.mx, monster.my, { weaponHit: false },
+                    monster, monster.mx, monster.my,
                 );
                 return { monster, survived: !killed };
             }

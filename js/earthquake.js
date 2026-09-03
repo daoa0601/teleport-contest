@@ -215,7 +215,6 @@ function finishEarthquakeStoning(monster, options = {}) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my, {
         ...options,
         showKillMessage: false,
-        weaponHit: false,
         recordConduct: false,
     });
 }
@@ -255,7 +254,6 @@ async function dropMonsterIntoChasm(monster, x, y) {
         : 'It is destroyed!');
     await finishHeroMonsterKill(monster, x, y, {
         showKillMessage: false,
-        weaponHit: false,
     });
 }
 

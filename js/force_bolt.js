@@ -278,9 +278,7 @@ async function hitMonster(monster, source, state, options) {
     }
     monster.mhp = (monster.mhp ?? 1) - damage;
     if (monster.mhp <= 0) {
-        await options.finishMonsterKill(monster, monster.mx, monster.my, {
-            weaponHit: false,
-        });
+        await options.finishMonsterKill(monster, monster.mx, monster.my);
     } else {
         await wakeAttackedMonster(monster);
     }

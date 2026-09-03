@@ -121,9 +121,7 @@ async function lightHitsGremlin(
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     wakeMonstersNear(monster.mx, monster.my, 30);
     if (monster.mhp <= 0) {
-        await finishMonsterKill(monster, monster.mx, monster.my, {
-            weaponHit: false,
-        });
+        await finishMonsterKill(monster, monster.mx, monster.my);
     } else if (cansee(monster.mx, monster.my)
         && !canSpotMonster(monster, monster.mx, monster.my)) {
         map_invisible(monster.mx, monster.my);

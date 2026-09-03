@@ -1163,7 +1163,6 @@ async function hitMonsterWithElementalRay(monster, x, y, context) {
         : await coldRayDamageMonster(monster);
     if ((monster.mhp ?? 0) <= 0) {
         await context.finishMonsterKill?.(monster, x, y, {
-            weaponHit: false,
             noCorpse: context.kind === RAY_FIRE
                 && [PM_STRAW_GOLEM, PM_PAPER_GOLEM].includes(monster.mnum),
         });
@@ -1474,7 +1473,6 @@ export async function zapDeathRay(
                         monster.mhp = 0;
                         await finishMonsterKill(monster, x, y, {
                             showKillMessage: true,
-                            weaponHit: false,
                         });
                         pendingMapCursor = deathCursor;
                     }

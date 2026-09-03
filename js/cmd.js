@@ -3962,7 +3962,6 @@ async function kickLiveMonster(monster, x, y) {
             hallucinating: !!(game.u?.hallucinating
                 || (game.u?.hallucinationTurns ?? 0) > 0),
             nameMonster: () => monsterInstanceDisplayName(monster),
-            weaponHit: false,
         });
     } else if (monster.mx === x && monster.my === y
         && !canProjectMonster(monster, x, y)) {
@@ -4737,10 +4736,7 @@ async function wizKill() {
 
     monster.mhp = 0;
     const killed = await finishHeroMonsterKill(
-        monster, monster.mx, monster.my, {
-            showKillMessage: true,
-            weaponHit: false,
-        },
+        monster, monster.mx, monster.my,
     );
     if (!killed)
         game._cursorOverride = [monster.mx - 1, monster.my + 1];
@@ -9228,7 +9224,6 @@ function canFinishOrdinaryMapPotionKill(monster) {
 
 async function finishOrdinarySwallowedThrowKill(monster, projectile) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my, {
-        weaponHit: false,
         deathContext: {
             kind: 'swallowed-projectile',
             projectile,
@@ -9239,7 +9234,6 @@ async function finishOrdinarySwallowedThrowKill(monster, projectile) {
 
 async function finishOrdinarySwallowedPotionKill(monster) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my, {
-        weaponHit: false,
         deathContext: {
             kind: 'swallowed-potion',
             finishDestinationEffects: finishDestinationSpotEffects,
@@ -9248,9 +9242,7 @@ async function finishOrdinarySwallowedPotionKill(monster) {
 }
 
 async function finishOrdinaryMapPotionKill(monster) {
-    return finishHeroMonsterKill(monster, monster.mx, monster.my, {
-        weaponHit: false,
-    });
+    return finishHeroMonsterKill(monster, monster.mx, monster.my);
 }
 
 // C dothrow.c:throw_obj() chooses one action-level volley count before the
@@ -9904,7 +9896,6 @@ async function dothrow(
             if (monster.mhp <= 0) {
                 await finishHeroMonsterKill(
                     monster, arrowFlight.x, arrowFlight.y,
-                    { weaponHit: true },
                 );
             }
             exerciseAttribute(A_DEX, true);
@@ -10463,9 +10454,7 @@ async function dothrow(
                 }
             }
             if (contact.mhp <= 0) {
-                await finishHeroMonsterKill(contact, x, y, {
-                    weaponHit: true,
-                });
+                await finishHeroMonsterKill(contact, x, y);
             } else {
                 await plineWithContinuation(
                     `The ${projectileName} hits ${

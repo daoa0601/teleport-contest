@@ -248,7 +248,6 @@ export async function hitMonsterWithAppliedWeapon(
         wasTame,
         hallucinating: !!(state.u?.hallucinating
             || (state.u?.hallucinationTurns ?? 0) > 0),
-        weaponHit: true,
         nameMonster: () => targetName(monster, state),
     });
     await applyProjectileObjectPassive(monster, weapon);

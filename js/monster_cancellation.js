@@ -71,9 +71,7 @@ export async function cancelMonster(monster, {
 
     let killed = false;
     if (clayGolem && allowKill) {
-        killed = await finishMonsterKill(
-            monster, monster.mx, monster.my, { weaponHit: false },
-        );
+        killed = await finishMonsterKill(monster, monster.mx, monster.my);
     }
     return {
         cancelled: true,

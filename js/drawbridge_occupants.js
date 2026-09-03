@@ -246,7 +246,6 @@ async function finishCrushedMonster(
     if (options.finishMonsterKill) {
         await options.finishMonsterKill(monster, entity.x, entity.y, {
             showKillMessage: false,
-            weaponHit: false,
             noCorpse: true,
             recordConduct,
         });
