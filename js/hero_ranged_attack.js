@@ -35,7 +35,7 @@ import { applyMonsterPassiveToObject } from './monster_passive.js';
 import { destroyMulchedProjectile, shouldMulchMissile } from './projectile.js';
 import { rnd, rn2 } from './rng.js';
 import { heroIsBlind } from './senses.js';
-import { shopkeeperName } from './shk.js';
+import { chargeUnpaidObjectAsDebt, shopkeeperName } from './shk.js';
 import {
     recordWeaponPractice, weaponSkillDamageBonus, weaponSkillHitBonus,
 } from './skills.js';
@@ -424,6 +424,7 @@ async function hitMonsterWithRangedObject(
     if (objectMovedByDeath)
         return { hit: true, consumed: true, result };
     if (!applied && shouldMulchMissile(object)) {
+        await chargeUnpaidObjectAsDebt(object, state);
         destroyMulchedProjectile(object);
         return { hit: true, consumed: true, result };
     }

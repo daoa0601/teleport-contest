@@ -10,6 +10,7 @@ import { place_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 import { deleteObject } from './object_delete.js';
+import { removeObjectAndContentsFromBill } from './shk.js';
 
 export function clearMonsterCarriedObjectState(object) {
     if (!object) return;
@@ -38,6 +39,7 @@ export function addObjectToMonsterInventory(
         else if (object.how_lost === LOST_DROPPED)
             object.how_lost = LOST_NONE;
     }
+    removeObjectAndContentsFromBill(object, state);
     object.no_charge = false;
     attachCursedFigurineTimer(object, state);
     return linkObjectToMonsterInventory(

@@ -40,6 +40,7 @@ import {
 import { floorObjects } from './support/level-state.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { addStaffedShop } from './support/shop.js';
 
 const PM_ENERGY_VORTEX = 109;
 const PM_OCHRE_JELLY = 58;
@@ -586,7 +587,12 @@ test('cursed swallowed throwing weapon slips before hitting the engulfer',
 test('swallowed dart survives mulch and transfers after live missile damage',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
-        const dart = addInventoryWeapon(DART);
+        const dart = addInventoryWeapon(DART, { unpaid: true });
+        const { shopkeeper } = addStaffedShop({
+            keeperX: 14,
+            keeperY: 12,
+            bill: [{ bo_id: dart.o_id, bquan: 1, useup: false, price: 25 }],
+        });
         const skill = setBasicWeaponSkill(dart);
 
         initRng(2413n);
@@ -597,6 +603,8 @@ test('swallowed dart survives mulch and transfers after live missile damage',
         assert.equal(dart.where, 'minvent');
         assert.equal(dart.carrierMid, engulfer.m_id);
         assert.equal(dart.how_lost, LOST_STOLEN);
+        assert.equal(dart.unpaid, false);
+        assert.equal(shopkeeper.eshk.bill.length, 0);
         assert.equal(game.u.weaponSkills[skill].advance, 1);
         assert.equal(game.u._weaponPracticeBySkill[skill], 1);
         assert.equal(game._pending_message, 'The dart hits the trapper.');
@@ -638,7 +646,12 @@ test('a swallowed engulfer can resist poison on a thrown dart', async () => {
 test('swallowed dart mulch removes the detached identity after damage',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
-        const dart = addInventoryWeapon(DART);
+        const dart = addInventoryWeapon(DART, { unpaid: true });
+        const { shopkeeper } = addStaffedShop({
+            keeperX: 14,
+            keeperY: 12,
+            bill: [{ bo_id: dart.o_id, bquan: 1, useup: false, price: 25 }],
+        });
         const skill = setBasicWeaponSkill(dart);
 
         initRng(2502n);
@@ -648,8 +661,9 @@ test('swallowed dart mulch removes the detached identity after damage',
         assert.deepEqual(game.inventory, []);
         assert.deepEqual(engulfer.minvent, []);
         assert.equal(dart.where, 'gone');
+        assert.equal(shopkeeper.eshk.bill.length, 0);
+        assert.equal(shopkeeper.eshk.debit, 25);
         assert.equal(game.u.weaponSkills[skill].advance, 1);
-        assert.equal(game._pending_message, 'The dart hits the trapper.');
         assert.equal(floorObjects(game.level).length, 0);
     });
 

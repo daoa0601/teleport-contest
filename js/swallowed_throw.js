@@ -47,12 +47,6 @@ function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
 }
 
-function containsUnpaidObject(object) {
-    if (!object) return false;
-    if (object.unpaid) return true;
-    return (object.contents || []).some(containsUnpaidObject);
-}
-
 function itemIsEquipped(state, item) {
     return EQUIPMENT_SLOTS.some(slot =>
         state[slot] === item || state.u?.[slot] === item)
@@ -83,9 +77,7 @@ function swallowedWeaponTarget(state, item, objectClass) {
     const weaponOrTool = objectClass === 2
         || (objectClass === 6 && subtype !== 0);
 
-    if (!weaponOrTool
-        || item.lamplit || containsUnpaidObject(item)
-        || engulfer.wormno) {
+    if (!weaponOrTool || item.lamplit || engulfer.wormno) {
         return null;
     }
     return engulfer;
@@ -112,8 +104,7 @@ function genericSwallowedEligibility(
     if (objectClass === 6 && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0)
         return null; // is_weptool()
     if (itemIsEquipped(state, item)) return null;
-    if (!supportedLitLamp(state, item, engulfer)
-        || containsUnpaidObject(item)) return null;
+    if (!supportedLitLamp(state, item, engulfer)) return null;
     if (selectedQuantity > 1
         && ((item.timed ?? 0) > 0 || (item.objectTimers?.length ?? 0) > 0)) {
         return null;

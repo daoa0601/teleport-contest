@@ -21,6 +21,8 @@ import { recordObjectPriceQuote } from './object_knowledge.js';
 import { ACH_TOWN, recordAchievement } from './achievements.js';
 import { nextIdent } from './ident.js';
 
+const COIN_CLASS = 12;
+
 export const SHOP_TYPE_NAMES = [
     'general store',
     'used armor dealership',
@@ -317,7 +319,7 @@ export async function settleThrownShopObject(
     if (object?.unpaid) {
         const returnedToShop = heroShop && spot
             && heroShop.roomno === spot.roomno;
-        if (returnedToShop) removeObjectFromBill(object, state);
+        if (returnedToShop) removeObjectAndContentsFromBill(object, state);
         else await chargeUnpaidObjectAsDebt(object, state, publish);
         return true;
     }
@@ -421,7 +423,8 @@ export async function chargeUnpaidLampUse(object, state = game) {
 }
 
 export function getCostOfShopItem(object, state = game) {
-    if (!object || object.oclass === 12) return { price: 0, noCharge: -1 };
+    if (!object || object.oclass === COIN_CLASS)
+        return { price: 0, noCharge: -1 };
     const heroShop = shopRoomAt(
         state, state?.u?.ux, state?.u?.uy, true,
     );
@@ -457,14 +460,52 @@ function billForObject(object, state = game) {
     return null;
 }
 
-function removeObjectFromBill(object, state = game) {
+function removeOneObjectFromBill(object, state = game) {
     const billed = billForObject(object, state);
-    if (!billed) return null;
+    if (!billed) {
+        if (object?.unpaid) object.unpaid = false;
+        return null;
+    }
     const eshk = billed.resident.eshk;
-    eshk.bill = (eshk.bill || []).filter(candidate =>
-        candidate !== billed.entry);
+    const objectQuantity = Math.max(
+        1, object.quan ?? object.quantity ?? 1,
+    );
+    const billedQuantity = Math.max(1, billed.entry.bquan ?? 1);
+    const removedQuantity = Math.min(objectQuantity, billedQuantity);
+    if (billedQuantity > objectQuantity) {
+        // The missing part of the stack was already used and is still owed.
+        const usedQuantity = billedQuantity - objectQuantity;
+        const usedObject = {
+            ...object,
+            o_id: nextIdent(state),
+            quan: usedQuantity,
+            quantity: usedQuantity,
+            where: 'onbill',
+            unpaid: false,
+            contents: [],
+            owornmask: 0,
+            worn: false,
+        };
+        billed.entry.bo_id = usedObject.o_id;
+        billed.entry.bquan = usedQuantity;
+        billed.entry.useup = true;
+        eshk.billObjects ||= [];
+        eshk.billObjects.push(usedObject);
+    } else {
+        eshk.bill = (eshk.bill || []).filter(candidate =>
+            candidate !== billed.entry);
+    }
     eshk.billct = eshk.bill.length;
     object.unpaid = false;
+    return { ...billed, removedQuantity };
+}
+
+export function removeObjectAndContentsFromBill(object, state = game) {
+    const billed = removeOneObjectFromBill(object, state);
+    for (const content of object?.contents || []) {
+        if (content.oclass !== COIN_CLASS)
+            removeObjectAndContentsFromBill(content, state);
+    }
     return billed;
 }
 
@@ -474,13 +515,12 @@ export async function chargeUnpaidObjectAsDebt(
     publish = plineWithContinuation,
 ) {
     if (!object?.unpaid) return null;
-    const billed = removeObjectFromBill(object, state);
+    const billed = removeOneObjectFromBill(object, state);
     if (!billed) return null;
 
     const { resident, entry } = billed;
     const eshk = resident.eshk;
-    const value = Math.max(0, entry.price ?? 0)
-        * Math.max(1, entry.bquan ?? 1);
+    const value = Math.max(0, entry.price ?? 0) * billed.removedQuantity;
 
     let message = null;
     if (resident.mpeaceful) {
@@ -631,7 +671,7 @@ export function addShopObjectToBill(object, state = game) {
         state, state?.u?.ux, state?.u?.uy, true,
     );
     if (!spot || !heroShop || heroShop.roomno !== spot.roomno
-        || object?.oclass === 12 || object?.no_charge) return null;
+        || object?.oclass === COIN_CLASS || object?.no_charge) return null;
     const eshk = spot.resident.eshk;
     if (!Array.isArray(eshk.bill)) eshk.bill = [];
     const existing = eshk.bill.find(entry => entry.bo_id === object.o_id);
