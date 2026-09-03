@@ -6,7 +6,9 @@ import { heroCanBeBlindedByVenom } from './blinding_attack.js';
 import { IS_SOFT, LOST_THROWN } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
-import { hitMonsterWithThrownCreamOrVenom } from './hero_cream_and_venom.js';
+import {
+    hitMonsterWithThrownEggPieOrVenom,
+} from './hero_thrown_egg_pie_venom.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { place_object, stack_object } from './floor_object.js';
@@ -131,7 +133,7 @@ async function hitMonsterWithVenom({
     monster, venom, state, publish, random, rollOne, swallowed,
     finishMonsterKill,
 }) {
-    const impact = await hitMonsterWithThrownCreamOrVenom(
+    const impact = await hitMonsterWithThrownEggPieOrVenom(
         monster, venom, {
             state,
             guaranteedHit: swallowed,

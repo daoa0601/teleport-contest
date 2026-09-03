@@ -2,7 +2,9 @@
 // C refs: dothrow.c throwit() and thitmonst(), zap.c bhit().
 
 import { game } from './gstate.js';
-import { hitMonsterWithThrownCreamOrVenom } from './hero_cream_and_venom.js';
+import {
+    hitMonsterWithThrownEggPieOrVenom,
+} from './hero_thrown_egg_pie_venom.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { hurtleHero } from './hero_hurtle.js';
 import {
@@ -64,11 +66,11 @@ export async function throwOrdinaryObject({
     if (flight.destroyed || flight.migrated) return flight;
 
     if (flight.contact) {
-        const creamOrVenom = await hitMonsterWithThrownCreamOrVenom(
+        const eggPieOrVenom = await hitMonsterWithThrownEggPieOrVenom(
             flight.contact, thrown, { state },
         );
-        if (creamOrVenom?.consumed) return { ...flight, consumed: true };
-        if (!creamOrVenom) {
+        if (eggPieOrVenom?.consumed) return { ...flight, consumed: true };
+        if (!eggPieOrVenom) {
             const contact = await hitMonsterWithThrownObject(
                 flight.contact, thrown, { state },
             );

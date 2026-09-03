@@ -405,6 +405,8 @@ export function detachThrownUnit(
         thrown.invlet = null;
         thrown.where = 'free';
     } else {
+        const occupiedPrimaryWeaponSlot = state.uwep === item
+            || state.u?.uwep === item;
         const occupiedWeaponSlot = state.uwep === item
             || state.u?.uwep === item
             || state.uswapwep === item
@@ -419,6 +421,7 @@ export function detachThrownUnit(
             state.twoweap = false;
             if (state.u) state.u.twoweap = false;
         }
+        if (occupiedPrimaryWeaponSlot) state._unweapon = true;
         thrown.owornmask = 0;
         thrown.worn = false;
         thrown.wornSlot = null;

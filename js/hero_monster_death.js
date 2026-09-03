@@ -198,7 +198,8 @@ export async function finishHeroMonsterKill(monster, x, y, {
     const wasInside = deathContext?.kind === 'swallowed-projectile'
         || deathContext?.kind === 'swallowed-potion'
         || deathContext?.kind === 'swallowed-breath'
-        || deathContext?.kind === 'swallowed-venom';
+        || deathContext?.kind === 'swallowed-venom'
+        || deathContext?.kind === 'swallowed-egg';
     if (deathContext && !wasInside) {
         throw new Error(
             `unsupported monster death context ${deathContext.kind}`,

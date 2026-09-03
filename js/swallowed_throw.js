@@ -4,8 +4,8 @@
 
 import { W_SADDLE } from './const.js';
 import {
-    hitMonsterWithThrownCreamOrVenom, isHeroThrownCreamOrVenom,
-} from './hero_cream_and_venom.js';
+    hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom,
+} from './hero_thrown_egg_pie_venom.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
@@ -110,7 +110,7 @@ function genericSwallowedEligibility(
     if (!engulfer) return null;
 
     // Weapon/gem damage, food/taming, effectful potions, balls, boulders,
-    // venom,
+    // eggs, venom,
     // shop objects, worn-state removal, unsupported burning objects, and
     // timed stack splitting own materially different continuations and
     // remain explicit successors.  The supported lamps below reuse the
@@ -193,7 +193,7 @@ export async function resolveSwallowedWeaponThrow({
     return true;
 }
 
-export async function resolveSwallowedCreamOrVenomThrow({
+export async function resolveSwallowedEggPieOrVenomThrow({
     state = game,
     item,
     selectedQuantity,
@@ -201,14 +201,14 @@ export async function resolveSwallowedCreamOrVenomThrow({
     finishKill,
 }) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
-    if (!engulfer || !isHeroThrownCreamOrVenom(item)) return false;
+    if (!engulfer || !isHeroThrownEggPieOrVenom(item)) return false;
 
     const thrown = detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
     await applyThrowSlip({ state, object: thrown });
     await applyLowStaminaThrow({ state, object: thrown });
-    await hitMonsterWithThrownCreamOrVenom(engulfer, thrown, {
+    await hitMonsterWithThrownEggPieOrVenom(engulfer, thrown, {
         state,
         guaranteedHit: true,
         finishMonsterKill: finishKill,

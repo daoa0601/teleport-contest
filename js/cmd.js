@@ -144,7 +144,7 @@ import {
     addObjectToMonsterInventory, removeObjectFromMonsterInventory,
 } from './monster_inventory.js';
 import {
-    resolveGenericSwallowedThrow, resolveSwallowedCreamOrVenomThrow,
+    resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow,
     resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow,
 } from './swallowed_throw.js';
 import {
@@ -9451,13 +9451,13 @@ async function dothrow(
         !candidate.dead && (candidate.mhp ?? 1) > 0
         && candidate.mx === game.u.ux + dx
         && candidate.my === game.u.uy + dy);
-    if (await resolveSwallowedCreamOrVenomThrow({
+    if (await resolveSwallowedEggPieOrVenomThrow({
         state: game,
         item,
         selectedQuantity,
         splitObjectId,
         finishKill: monster => finishOrdinarySwallowedConsumedKill(
-            monster, 'swallowed-venom',
+            monster, item.otyp === EGG ? 'swallowed-egg' : 'swallowed-venom',
         ),
     })) return;
     if (await resolveSwallowedWeaponThrow({

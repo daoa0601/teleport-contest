@@ -6,9 +6,11 @@ import {
     W_ARMG, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     ACID_VENOM, ARROW, BLINDING_VENOM, BOW, CLUB, CROSSBOW, CROSSBOW_BOLT,
-    DART, ELVEN_ARROW, ELVEN_BOW, GAUNTLETS_OF_POWER, YA, YUMI,
+    DART, EGG, ELVEN_ARROW, ELVEN_BOW, GAUNTLETS_OF_POWER, ROCK, STATUE,
+    YA, YUMI,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { races } from '../js/roles.js';
@@ -17,9 +19,12 @@ import {
     addInventoryObject, addInventoryWeapon,
 } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
-import { floorObjects } from './support/level-state.js';
+import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { addMonster, addPet } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+const PM_COCKATRICE = MONSTER_NAME.indexOf('cockatrice');
+const PM_PYROLISK = MONSTER_NAME.indexOf('pyrolisk');
 
 function carriedClub() {
     return addInventoryWeapon(CLUB, { invlet: 'a', spe: 0 });
@@ -134,6 +139,87 @@ test('thrown acid venom burns and frightens a pet', async () => {
     assert.equal(venom.where, 'gone');
     assert.equal(game.inventory.includes(venom), false);
     assert.equal(floorObjects(level).includes(venom), false);
+});
+
+test('an ordinary thrown egg splats and deals one point of damage', async () => {
+    const level = freshObjectRoom({ right: 20, gameplaySeed: 4110n });
+    game.u.acurr.a[A_DEX] = 18;
+    const egg = addInventoryObject(EGG, {
+        invlet: 'a', corpsenm: -1, age: game.moves,
+    });
+    const jackal = addMonster({
+        species: 'jackal', x: 13, y: 10, hitPoints: 20,
+    });
+    initRng(1n);
+
+    await throwInventoryObject(egg, 'l');
+
+    assert.equal(jackal.mhp, 19);
+    assert.equal(egg.where, 'gone');
+    assert.equal(floorObjects(level).includes(egg), false);
+});
+
+test('a cockatrice egg petrifies a monster and costs Luck', async () => {
+    const level = freshObjectRoom({ right: 20, gameplaySeed: 4111n });
+    game.u.acurr.a[A_DEX] = 18;
+    game.u.uluck = 0;
+    const egg = addInventoryObject(EGG, {
+        invlet: 'a', corpsenm: PM_COCKATRICE, spe: 1, known: false,
+    });
+    const jackal = addMonster({
+        species: 'jackal', x: 13, y: 10, hitPoints: 20,
+    });
+    initRng(1n);
+
+    await throwInventoryObject(egg, 'l', Array(8).fill(' '));
+
+    assert.equal(game.level.monsters.includes(jackal), false);
+    assert.ok(floorObjectsAt(level, 13, 10).some(object =>
+        object.otyp === STATUE && object.corpsenm === jackal.mnum));
+    assert.equal(egg.where, 'gone');
+    assert.equal(egg.known, true);
+    assert.equal(game.u.uluck, -1);
+});
+
+test('a fresh egg turns to rock when it hits a cockatrice', async () => {
+    const level = freshObjectRoom({ right: 20, gameplaySeed: 4112n });
+    game.u.acurr.a[A_DEX] = 18;
+    const egg = addInventoryObject(EGG, {
+        invlet: 'a', corpsenm: -1, age: game.moves,
+    });
+    const cockatrice = addMonster({
+        species: 'cockatrice', x: 13, y: 10, hitPoints: 20,
+    });
+    initRng(1n);
+
+    await throwInventoryObject(egg, 'l');
+
+    assert.equal(cockatrice.mhp, 19);
+    assert.equal(egg.otyp, ROCK);
+    assert.equal(egg.where, 'floor');
+    assert.deepEqual([egg.ox, egg.oy], [13, 10]);
+});
+
+test('a pyrolisk egg explodes around the monster it hits', async () => {
+    const level = freshObjectRoom({ right: 20, gameplaySeed: 4113n });
+    game.u.acurr.a[A_DEX] = 18;
+    const egg = addInventoryObject(EGG, {
+        invlet: 'a', corpsenm: PM_PYROLISK, age: game.moves,
+    });
+    const target = addMonster({
+        species: 'jackal', x: 13, y: 10, hitPoints: 100,
+    });
+    const neighbor = addMonster({
+        species: 'fox', x: 13, y: 11, hitPoints: 100,
+    });
+    initRng(1n);
+
+    await throwInventoryObject(egg, 'l', Array(12).fill(' '));
+
+    assert.ok(target.mhp < 100);
+    assert.ok(neighbor.mhp < 100);
+    assert.equal(egg.where, 'gone');
+    assert.equal(floorObjects(level).includes(egg), false);
 });
 
 test('grease can make a thrown club slip away from its chosen path', async () => {

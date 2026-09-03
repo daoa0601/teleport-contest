@@ -12,7 +12,7 @@ import { beginObjectBurn } from '../js/light.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING,
-    ARROW, BOW, CREAM_PIE, DAGGER, DART, FIGURINE, LONG_SWORD, MAGIC_LAMP,
+    ARROW, BOW, CREAM_PIE, DAGGER, DART, EGG, FIGURINE, LONG_SWORD, MAGIC_LAMP,
     OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
     POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY,
@@ -190,6 +190,23 @@ test('a cream pie thrown from inside an engulfer is consumed', async () => {
     assert.equal(game.inventory.includes(pie), false);
     assert.equal(engulfer.mcansee, 1);
     assert.equal(engulfer.mhp, 40);
+});
+
+test('a fatal egg throw releases the hero from an engulfer', async () => {
+    const engulfer = freshSwallowedState(PM_TRAPPER);
+    engulfer.mhp = 1;
+    const egg = addInventoryObject(EGG, {
+        corpsenm: -1,
+        age: game.moves,
+    });
+
+    await throwInventoryObject(egg, 'l', Array(8).fill(' '));
+
+    assert.equal(game.level.monsters.includes(engulfer), false);
+    assert.equal(game.u.uswallow, 0);
+    assert.equal(game.u.ustuck, null);
+    assert.equal(egg.where, 'gone');
+    assert.equal(game.inventory.includes(egg), false);
 });
 
 test('acid venom can kill an engulfer and release the hero', async () => {

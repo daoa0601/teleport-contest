@@ -10,6 +10,9 @@ import {
     canProjectMonster, newsym, plineWithContinuation,
     randomDisplayMonsterName,
 } from './display.js';
+import {
+    applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg,
+} from './egg_impact.js';
 import { createFireExplosion } from './fire_explosion.js';
 import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
@@ -29,7 +32,6 @@ const ARMOR_CLASS = 3;
 const POTION_CLASS = 8;
 const GEM_CLASS = 13;
 const GLASS = 19;
-const PM_PYROLISK = 11;
 const PM_HOMUNCULUS = 52;
 const PM_IMP = 53;
 
@@ -220,15 +222,8 @@ export async function breakObjectAtLocation(object, {
         await applyPotionBreakEffect(object, x, y, state, publish);
 
     const oilExplosion = object.otyp === POT_OIL && object.lamplit;
-    const eggExplosion = object.otyp === EGG
-        && object.corpsenm === PM_PYROLISK;
-    if (heroCaused && object.otyp === EGG && object.spe
-        && Number.isInteger(object.corpsenm) && object.corpsenm >= 0) {
-        const quantity = object.quan ?? object.quantity ?? 1;
-        state.u.uluck = Math.max(
-            -13, Math.min(13, (state.u.uluck ?? 0) - Math.min(quantity, 5)),
-        );
-    }
+    const eggExplosion = isPyroliskEgg(object);
+    if (heroCaused) applyHeroEggLuckPenalty(object, state);
 
     const dilutedOil = !!object.odiluted;
     deleteObject(object);
@@ -239,9 +234,9 @@ export async function breakObjectAtLocation(object, {
             random, finishMonsterKill,
         });
     } else if (eggExplosion) {
-        await explodeFire(x, y, rollDice(3, 6), {
-            state, name: 'fireball', heroCaused, publish,
-            random, finishMonsterKill,
+        await explodePyroliskEggAt(x, y, {
+            state, heroCaused, publish, random, rollDice,
+            explodeFire, finishMonsterKill,
         });
     }
     return {
