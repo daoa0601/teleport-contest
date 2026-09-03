@@ -3,12 +3,11 @@
 // breaktest(), breakmsg(), breakobj(); zap.c bhit().
 
 import { currentAttribute } from './attrib.js';
-import {
-    A_DEX, Is_airlevel,
-} from './const.js';
+import { A_DEX } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
+import { hurtleHero } from './hero_hurtle.js';
 import { monsterTypeName } from './monster_data.js';
 import { POT_OIL } from './object_data.js';
 import {
@@ -18,7 +17,7 @@ import {
 import { rn2, rnd } from './rng.js';
 import {
     detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject,
-    heroThrowRange,
+    heroThrowTrajectory,
 } from './thrown_object.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { cansee } from './vision.js';
@@ -61,8 +60,6 @@ function canResolveMapPotionThrow({
         || containsUnpaidObject(item)
         || (item.contents?.length ?? 0) > 0
         || state.underwater || state.u?.uinwater
-        || state.u?.levitating || state.u?.levitation || state.levitating
-        || Is_airlevel(state.u?.uz)
         || state.uball || state.u?.uball || state.uchain || state.u?.uchain
         || state.u?.usteed || state._shopRooms?.current
         || (state._encumbranceLevel ?? nearCapacity(state)) > 0) return false;
@@ -123,15 +120,21 @@ export async function resolveMapPotionThrow({
 
     const actualDx = state.u?.dx ?? dx;
     const actualDy = state.u?.dy ?? dy;
+    const trajectory = heroThrowTrajectory(thrown, state);
     const flight = await flyHeroThrownObject({
         state,
         object: thrown,
         dx: actualDx,
         dy: actualDy,
-        range: heroThrowRange(thrown, state),
+        range: trajectory.range,
         captureFlight,
         publish,
     });
+    if (trajectory.recoil) {
+        await hurtleHero(
+            -actualDx, -actualDy, trajectory.recoil, { verbose: true },
+        );
+    }
     if (flight.destroyed) {
         state.context.move = 1;
         return true;

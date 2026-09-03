@@ -126,6 +126,19 @@ test('a blind hero can throw a potion at an unseen monster', async () => {
     assert.equal(potion.where, 'gone');
 });
 
+test('throwing a potion while levitating moves the hero backward', async () => {
+    const monster = freshMapPotionState(2);
+    game.u.levitating = true;
+    const potion = addInventoryObject(POT_INVISIBILITY);
+
+    initRng(3321n);
+    await throwEast(potion, Array(10).fill(' '));
+
+    assert.deepEqual([game.u.ux, game.u.uy], [9, 10]);
+    assert.equal(monster.minvis, 1);
+    assert.equal(potion.where, 'gone');
+});
+
 test('throwing a potion at a peaceful monster makes it hostile', async () => {
     const monster = freshMapPotionState(2, { mpeaceful: 1 });
     const potion = addInventoryObject(POT_FRUIT_JUICE);
