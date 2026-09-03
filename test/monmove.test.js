@@ -22,7 +22,7 @@ import {
     knownObject, uninitializedObject,
 } from './support/game-objects.js';
 import {
-    addMonster, createMonsterAt, equipMonsterObject, liveMonster,
+    addMonster, createMonsterAt, equipMonsterObject,
 } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -41,13 +41,10 @@ test('natural monster speed and randomized movement use species data', () => {
 });
 
 test('monster allocation applies newest-first movement to current actors',
-    () => {
-        const kobold = liveMonster({
-            mnum: 59, x: 66, y: 16, hitPoints: 1,
-        });
-        const pony = liveMonster({
-            mnum: 100, x: 67, y: 9, hitPoints: 8, pet: true,
-        });
+    async () => {
+        freshObjectRoom({ right: 70, recalculateVision: false });
+        const kobold = await createMonsterAt('kobold', 66, 16);
+        const pony = await createMonsterAt('pony', 67, 9);
         const monsters = [kobold, pony];
 
         allocateMonsterMovement(monsters, rolls([2, 3]));

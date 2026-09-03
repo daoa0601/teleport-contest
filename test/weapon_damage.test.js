@@ -7,9 +7,9 @@ import {
 import {
     rollHeroMeleeWeaponDamage, rollPhysicalWeaponDamage,
 } from '../js/weapon_damage.js';
+import { nameToMonster } from '../js/mondata.js';
 import { initRng } from '../js/rng.js';
 import { artifactObject, uninitializedObject } from './support/game-objects.js';
-import { liveMonster } from './support/monsters.js';
 
 const maximumRoll = range => range;
 const maximumDice = (count, sides) => count * sides;
@@ -19,7 +19,7 @@ test.beforeEach(() => initRng(1n));
 function maximumDamage(object, species) {
     return rollPhysicalWeaponDamage(
         object,
-        liveMonster({ species }),
+        { mnum: nameToMonster(species) },
         { rollOne: maximumRoll, rollDice: maximumDice },
     );
 }
@@ -42,7 +42,7 @@ test('a leather whip cannot hurt a thick-skinned monster', () => {
 
 test('a bow swung in melee uses improvised damage without weapon skill', () => {
     const bow = uninitializedObject(BOW);
-    const monster = liveMonster({ species: 'jackal' });
+    const monster = { mnum: nameToMonster('jackal') };
 
     const hit = rollHeroMeleeWeaponDamage(
         bow, monster, { rollOne: maximumRoll },

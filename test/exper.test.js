@@ -7,35 +7,35 @@ import {
 } from '../js/exper.js';
 import { A_CON, A_WIS } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { nameToMonster } from '../js/mondata.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
-import { liveMonster } from './support/monsters.js';
 
-const monster = (species, state = {}) => liveMonster({
-    species,
-    level: 0,
+const experienceTarget = (species, state = {}) => ({
+    mnum: nameToMonster(species),
+    m_lev: 0,
     ...state,
 });
 
 test('experience includes source attack bonuses for early hostiles', () => {
-    assert.equal(monsterExperience(monster('kobold')), 6);
-    assert.equal(monsterExperience(monster('grid bug')), 1);
-    assert.equal(monsterExperience(monster('jackal')), 1);
-    assert.equal(monsterExperience(monster('lichen')), 4);
+    assert.equal(monsterExperience(experienceTarget('kobold')), 6);
+    assert.equal(monsterExperience(experienceTarget('grid bug')), 1);
+    assert.equal(monsterExperience(experienceTarget('jackal')), 1);
+    assert.equal(monsterExperience(experienceTarget('lichen')), 4);
 });
 
 test('revived monster awards use the source repeated-kill bands', () => {
-    assert.equal(monsterExperience(monster('kobold', { mrevived: 1 }), {
+    assert.equal(monsterExperience(experienceTarget('kobold', { mrevived: 1 }), {
         killCount: 20,
     }), 6);
-    assert.equal(monsterExperience(monster('kobold', { mrevived: 1 }), {
+    assert.equal(monsterExperience(experienceTarget('kobold', { mrevived: 1 }), {
         killCount: 21,
     }), 3);
 });
 
-test('more_experienced adds experience and fourfold score', () => {
+test('awarding experience adds four times as much score', () => {
     const state = { u: { uexp: 2, urexp: 8 } };
-    assert.equal(awardMonsterExperience(monster('lichen'), {
+    assert.equal(awardMonsterExperience(experienceTarget('lichen'), {
         state,
     }), 4);
     assert.deepEqual(state.u, { uexp: 6, urexp: 24 });
