@@ -6,13 +6,14 @@ import {
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { BOULDER } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
 import {
     clearFixedTeleportDestination, heroTeleportTrapBlock,
     moveHeroByTeleport, randomMonsterRelocation, safeTeleportDestination,
 } from '../js/teleport.js';
 import { freshGame } from './support/game-state.js';
 import { addTrap } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 
 function teleportState() {
     freshGame({
@@ -27,14 +28,15 @@ function teleportState() {
     });
     game.level.flags.noteleport = false;
     game.dungeons = [{ flags: {} }];
+    initRng(1n);
     return game;
 }
 
-test('random teleport skips occupied squares, boulders, and traps', () => {
+test('random teleport skips occupied squares, boulders, and traps', async () => {
     const state = teleportState();
     for (const x of [5, 6, 7, 8])
         state.level.at(x, 5).typ = ROOM;
-    addMonster({ species: 'little dog', x: 5, y: 5, hitPoints: 8 }, state);
+    await createMonsterAt('little dog', 5, 5);
     state.level.objects[6] = [];
     state.level.objects[6][5] = [{ otyp: BOULDER }];
     addTrap(state.level, TELEP_TRAP, 7, 5);
@@ -49,16 +51,14 @@ test('random teleport skips occupied squares, boulders, and traps', () => {
     assert.deepEqual(destination, { x: 8, y: 5 });
 });
 
-test('fixed teleport clears its destination before moving the hero', () => {
+test('fixed teleport clears its destination before moving the hero', async () => {
     const state = teleportState();
     for (let x = 19; x <= 21; x++) {
         for (let y = 9; y <= 11; y++)
             state.level.at(x, y).typ = ROOM;
     }
-    const monster = addMonster({
-        m_id: 17, species: 'little dog', x: 20, y: 10, hitPoints: 8,
-        mtrack: [{ x: 1, y: 1 }],
-    }, state);
+    const monster = await createMonsterAt('little dog', 20, 10);
+    monster.mtrack = [{ x: 1, y: 1 }];
 
     const cleared = clearFixedTeleportDestination(20, 10, state, () => 0);
     assert.equal(cleared.cleared, true);
@@ -91,13 +91,11 @@ test('level rules and magic resistance block teleport traps', () => {
     assert.equal(heroTeleportTrapBlock(state), 'antimagic');
 });
 
-test('monster relocation searches the map after random attempts fail', () => {
+test('monster relocation searches the map after random attempts fail', async () => {
     const state = teleportState();
     state.level.at(10, 10).typ = ROOM;
     state.level.at(40, 10).typ = ROOM;
-    const monster = addMonster({
-        species: 'little dog', x: 10, y: 10, hitPoints: 8,
-    }, state);
+    const monster = await createMonsterAt('little dog', 10, 10);
 
     const relocation = randomMonsterRelocation(
         monster, state, [], () => 0, () => 1,
@@ -109,7 +107,7 @@ test('monster relocation searches the map after random attempts fail', () => {
     );
 });
 
-test('a shopkeeper teleports within its own shop', () => {
+test('a shopkeeper teleports within its own shop', async () => {
     const state = teleportState();
     const shopRoomno = ROOMOFFSET;
     state.level.rooms.push({ rtype: SHOPBASE });
@@ -122,13 +120,14 @@ test('a shopkeeper teleports within its own shop', () => {
         state.level.at(x, y).typ = ROOM;
         state.level.at(x, y).roomno = roomno;
     }
-    const monster = addMonster({
-        species: 'little dog', x: 10, y: 10, hitPoints: 8, isshk: true,
+    const monster = await createMonsterAt('shopkeeper', 10, 10);
+    Object.assign(monster, {
+        isshk: true,
         eshk: {
             shoproom: shopRoomno,
             shoplevel: { ...state.u.uz },
         },
-    }, state);
+    });
     const xs = [20, 12];
 
     const relocation = randomMonsterRelocation(

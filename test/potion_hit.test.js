@@ -23,7 +23,7 @@ import {
     installHumanWerewolfHero, wearPolymorphControlRing,
 } from './support/hero-state.js';
 import { freshGame } from './support/game-state.js';
-import { addMonster, createMonsterAt } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_ENERGY_VORTEX = 109;
@@ -1055,14 +1055,13 @@ test('sleep resistance teaches only eligible observers on the yawn path',
         freshPotionState({
             ux: 10, uy: 10, sleepResistance: true,
         });
-        const awakeObserver = addMonster({
-            mnum: 1, x: 11, y: 10,
-            hitPoints: 4, seen_resistance: 1,
-        });
-        const deadObserver = addMonster({
-            mnum: 1, x: 12, y: 10,
-            hitPoints: 0, maxHitPoints: 4, seen_resistance: 2,
-        });
+        const awakeObserver = await createMonsterAt('killer bee', 11, 10);
+        awakeObserver.mhp = awakeObserver.mhpmax = 4;
+        awakeObserver.seen_resistance = 1;
+        const deadObserver = await createMonsterAt('killer bee', 12, 10);
+        deadObserver.mhp = 0;
+        deadObserver.mhpmax = 4;
+        deadObserver.seen_resistance = 2;
         const messages = [];
 
         const potion = potionObject(POT_SLEEPING);
@@ -1313,7 +1312,7 @@ test('controlled cursed vapor accepts change despite a nearby threat',
         installDirectWereHero();
         wearPolymorphControlRing();
         game.u.detectMonsters = true;
-        addMonster({ species: 'purple worm', x: 11, y: 10 });
+        await createMonsterAt('purple worm', 11, 10);
         const potion = potionObject(POT_WATER);
         potion.cursed = true;
 
@@ -1381,7 +1380,7 @@ test('a nearby threat blocks controlled blessed vapor before prompting',
         wearPolymorphControlRing();
         game.u.mtimedone = 0;
         game.u.detectMonsters = true;
-        addMonster({ species: 'purple worm', x: 11, y: 10 });
+        await createMonsterAt('purple worm', 11, 10);
         const potion = potionObject(POT_WATER);
         potion.blessed = true;
 
@@ -1449,7 +1448,7 @@ test('a spotted adjacent threat suppresses cursed-water were change',
     async () => {
         installDirectWereHero();
         game.u.detectMonsters = true;
-        addMonster({ species: 'purple worm', x: 11, y: 10 });
+        await createMonsterAt('purple worm', 11, 10);
         const potion = potionObject(POT_WATER);
         potion.cursed = true;
 

@@ -10,7 +10,7 @@ import {
 } from '../js/object_data.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { applyInventoryObject } from './support/commands.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 function instrument(otyp, spe = 0) {
@@ -23,7 +23,7 @@ function instrument(otyp, spe = 0) {
 test('a charged magic flute puts nearby monsters to sleep', async () => {
     freshGameplayRoom();
     game.u.ulevel = 5;
-    const target = addMonster({ mnum: 0, x: 11, y: 10 });
+    const target = await createMonsterAt('giant ant', 11, 10);
     const flute = instrument(MAGIC_FLUTE, 2);
     pushKeys('y          ');
 
@@ -37,9 +37,8 @@ test('a charged magic flute puts nearby monsters to sleep', async () => {
 test('a skilled harp player calms nearby nymphs', async () => {
     freshGameplayRoom();
     game.u.ulevel = 30;
-    const nymph = addMonster({
-        mnum: 68, x: 11, y: 10, mpeaceful: 0,
-    });
+    const nymph = await createMonsterAt('water nymph', 11, 10);
+    nymph.mpeaceful = 0;
     pushKeys('y          ');
 
     await playInstrument(instrument(WOODEN_HARP));
@@ -49,12 +48,9 @@ test('a skilled harp player calms nearby nymphs', async () => {
 
 test('a bugle calls every soldier on the level to battle', async () => {
     freshGameplayRoom();
-    const soldier = addMonster({
-        mnum: 277, x: 18, y: 12,
-        mpeaceful: 1,
-        msleeping: 1,
-        mcanmove: 0,
-        mfrozen: 12,
+    const soldier = await createMonsterAt('soldier', 18, 12);
+    Object.assign(soldier, {
+        mpeaceful: 1, msleeping: 1, mcanmove: 0, mfrozen: 12,
     });
     pushKeys('y          ');
 
@@ -77,9 +73,9 @@ test('applying a leather drum plays it', async () => {
 
 test('a fire horn shoots a ray and spends one charge', async () => {
     freshGameplayRoom();
-    const target = addMonster({
-        mnum: 0, x: 11, y: 10, hitPoints: 100, mac: 100,
-    });
+    const target = await createMonsterAt('giant ant', 11, 10);
+    target.mhp = target.mhpmax = 100;
+    target.mac = 100;
     const horn = instrument(FIRE_HORN, 2);
     pushKeys('y          l          ');
 
@@ -107,9 +103,8 @@ test('cold resistance protects against a frost horn aimed at yourself',
 
 test('an empty fire horn behaves like an ordinary horn', async () => {
     freshGameplayRoom();
-    const target = addMonster({
-        mnum: 0, x: 11, y: 10, msleeping: 1,
-    });
+    const target = await createMonsterAt('giant ant', 11, 10);
+    target.msleeping = 1;
     const horn = instrument(FIRE_HORN);
     pushKeys('y          ');
 

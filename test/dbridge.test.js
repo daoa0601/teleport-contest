@@ -19,7 +19,7 @@ import { mksobj } from '../js/mklev.js';
 import { knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import {
-    addMonster, equipMonsterObject,
+    createMonsterAt, equipMonsterObject,
 } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
@@ -95,7 +95,7 @@ test('opening a drawbridge destroys objects and traps on the span',
 test('a lowering drawbridge crushes a grounded monster on the span',
     async () => {
         const { level, bridge } = installStrongholdDrawbridge();
-        const monster = addMonster({ mnum: 0, x: 12, y: 10 });
+        const monster = await createMonsterAt('giant ant', 12, 10);
         pushKeys(`nABCDE\n${' '.repeat(30)}`);
 
         await playInstrument(harp());
@@ -108,9 +108,8 @@ test('a life-saved shifted vampire survives a lowering drawbridge',
     async () => {
         const { level } = installStrongholdDrawbridge();
         const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
-        const monster = addMonster({
-            species: 'wolf', x: 12, y: 10, cham: vampireLeader,
-        });
+        const monster = await createMonsterAt('wolf', 12, 10);
+        monster.cham = vampireLeader;
         const amulet = equipMonsterObject(
             monster,
             knownObject(AMULET_OF_LIFE_SAVING),
@@ -131,11 +130,9 @@ test('a life-saved shifted vampire survives a lowering drawbridge',
 test('an opening portcullis releases its occupant onto the bridge',
     async () => {
         const { level } = installStrongholdDrawbridge();
-        const monster = addMonster({
-            mnum: PM_WATER_ELEMENTAL, x: 12, y: 9,
-            mcanmove: 0,
-            msleeping: 1,
-        });
+        const monster = await createMonsterAt(PM_WATER_ELEMENTAL, 12, 9);
+        monster.mcanmove = 0;
+        monster.msleeping = 1;
         pushKeys(`nABCDE\n${' '.repeat(30)}`);
 
         await playInstrument(harp());
@@ -151,11 +148,9 @@ test('a closing portcullis crushes a helpless monster', async () => {
     wall.typ = DOOR;
     wall.doormask = D_NODOOR;
     game.u.uevent = { uheard_tune: 2 };
-    const monster = addMonster({
-        mnum: 0, x: 12, y: 9,
-        mcanmove: 0,
-        msleeping: 1,
-    });
+    const monster = await createMonsterAt('giant ant', 12, 9);
+    monster.mcanmove = 0;
+    monster.msleeping = 1;
     pushKeys(`ny${' '.repeat(30)}`);
 
     await playInstrument(harp());
@@ -166,7 +161,7 @@ test('a closing portcullis crushes a helpless monster', async () => {
 
 test('a ghost passes through a lowering drawbridge', async () => {
     const { level, bridge } = installStrongholdDrawbridge();
-    const ghost = addMonster({ mnum: PM_GHOST, x: 12, y: 10 });
+    const ghost = await createMonsterAt(PM_GHOST, 12, 10);
     pushKeys(`nABCDE\n${' '.repeat(30)}`);
 
     await playInstrument(harp());
@@ -180,7 +175,7 @@ test('a ghost passes through a lowering drawbridge', async () => {
 test('destroying a drawbridge drops its span and portcullis into the moat',
     async () => {
         const { level, bridge, wall } = installStrongholdDrawbridge();
-        const monster = addMonster({ mnum: 0, x: 12, y: 9 });
+        const monster = await createMonsterAt('giant ant', 12, 9);
         pushKeys(' '.repeat(20));
 
         await destroyDrawbridge(12, 10);
