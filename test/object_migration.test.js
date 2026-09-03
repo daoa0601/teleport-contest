@@ -1,13 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { COLNO, HOLE, ROOM, ROWNO } from '../js/const.js';
+import { COLNO, HOLE, ROOM, ROWNO, STONE } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import {
     deliverMigratingObjects, shipObject,
 } from '../js/object_migration.js';
-import { CHAIN_MAIL, CLUB, MIRROR, ROCK } from '../js/object_data.js';
+import {
+    ARROW, CHAIN_MAIL, CLUB, MIRROR, ROCK,
+} from '../js/object_data.js';
 import { throwInventoryObject } from './support/commands.js';
 import {
     carriedObject, floorObject, looseObject,
@@ -81,6 +83,22 @@ test('armor thrown onto a down ladder leaves the source level', async () => {
         dnum: 0,
         dlevel: 2,
     });
+});
+
+test('an arrow landing on a down ladder leaves the source level', async () => {
+    const source = sourceLevel({ ladder: true });
+    game.stairs.sx = 11;
+    source.at(12, 10).typ = STONE;
+    const arrow = carriedObject(ARROW, {
+        invlet: 'a',
+        name: 'arrow',
+    });
+    game.inventory = [arrow];
+
+    await throwInventoryObject(arrow, 'l', [' ']);
+
+    assert.equal(floorObjects(source).includes(arrow), false);
+    assert.equal(arrow.where, 'migrating');
 });
 
 test('an object falling through a hole lands inside the lower arrival region',

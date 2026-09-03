@@ -9699,12 +9699,14 @@ async function dothrow(
             return item;
         }
     };
-    const landArrowUnit = (thrown, x, y) => {
-        place_object(thrown, x, y);
-        stack_object(thrown);
-        newsym(x, y);
-        return thrown;
-    };
+    const landArrowUnit = (thrown, x, y) =>
+        finishHeroThrownObjectLanding({
+            state: game,
+            object: thrown,
+            x,
+            y,
+            publish: plineWithContinuation,
+        });
     const shotOrdinal = shot => {
         const mod100 = shot % 100;
         if (mod100 >= 11 && mod100 <= 13) return `${shot}th`;
@@ -9863,8 +9865,9 @@ async function dothrow(
                     `The ${shotArrowName(shot)} misses ${targetName}.`,
                 );
                 if (rn2(3) === 0) await wakeAttackedMonster(monster);
-                rn2(100); // breaktest()->obj_resists() at contact
-                landArrowUnit(thrown, arrowFlight.x, arrowFlight.y);
+                await landArrowUnit(
+                    thrown, arrowFlight.x, arrowFlight.y,
+                );
                 return;
             }
 
@@ -9941,39 +9944,27 @@ async function dothrow(
                 return;
             }
             await applySharedProjectileObjectPassive(monster, thrown);
-            rn2(100);
-            landArrowUnit(thrown, arrowFlight.x, arrowFlight.y);
+            await landArrowUnit(thrown, arrowFlight.x, arrowFlight.y);
             return;
         }
 
         if (arrowFlight.stoppedInWaterWall) {
-            // dothrow.c:throwit()->flooreffects()->water_damage().  This
-            // accepted branch is a light, rust-prone blessed arrow at Luck 0.
             await plineWithContinuation('Plop!');
-            const luck = game.u?.uluck ?? game.u?.luck ?? game.Luck ?? 0;
-            const luckProtected = luck + 5 > rn2(20);
-            if (!luckProtected) {
-                const blessingProtected = !!thrown.blessed && rnl(4) === 0;
-                if (!blessingProtected) {
-                    thrown.oeroded = Math.min(3, (thrown.oeroded ?? 0) + 1);
-                }
-            }
-            landArrowUnit(thrown, arrowFlight.x, arrowFlight.y);
+            await landArrowUnit(thrown, arrowFlight.x, arrowFlight.y);
             return;
         }
 
-        rn2(100); // breaktest()->obj_resists() for a floor survivor
         if (arrowFlight.x === game.u.ux && arrowFlight.y === game.u.uy
             && blocksMove(game.u.ux + shotDx, game.u.uy + shotDy)) {
             // bhit() leaves gb.bhitpos on the hero square when the first path
             // cell is blocked.
-            landArrowUnit(thrown, game.u.ux, game.u.uy);
+            await landArrowUnit(thrown, game.u.ux, game.u.uy);
             return;
         }
         if (arrowFlight.ordinaryPath && !arrowFlight.contact
             && (arrowFlight.x !== game.u.ux
                 || arrowFlight.y !== game.u.uy)) {
-            landArrowUnit(thrown, arrowFlight.x, arrowFlight.y);
+            await landArrowUnit(thrown, arrowFlight.x, arrowFlight.y);
         }
     };
 
