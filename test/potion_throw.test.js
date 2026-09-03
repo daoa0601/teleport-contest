@@ -33,7 +33,7 @@ import {
 } from './support/level-state.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { addStaffedShop } from './support/shop.js';
+import { createStaffedShop } from './support/shop.js';
 
 const PM_PURPLE_WORM = 115;
 
@@ -89,7 +89,7 @@ function addSleepingNeighbor(m_id, { strategy = null } = {}) {
 async function enterPotionShop(options = {}) {
     game.u.ux0 = 7;
     game.u.uy0 = 10;
-    const shop = addStaffedShop({
+    const shop = await createStaffedShop({
         keeperX: 14,
         keeperY: 12,
         ...options,

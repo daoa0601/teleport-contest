@@ -7,7 +7,7 @@ import { heroGoldAmount, heroGoldObject } from '../js/hero_gold.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    addGoldMonster, carriedGold, fireQuiveredGold, readyGold, throwGold,
+    createGoldMonster, carriedGold, fireQuiveredGold, readyGold, throwGold,
 } from './support/gold-arena.js';
 import {
     addTrap, floorObjects, floorObjectsAt,
@@ -108,8 +108,8 @@ test('a sleeping greedy monster does not catch a quivered coin on an ordinary mi
     async () => {
         const level = freshGameplayRoom();
         const purse = await quiver(5, 29105);
-        const leprechaun = addGoldMonster({
-            m_id: 29106, mpeaceful: 1, msleeping: 1,
+        const leprechaun = await createGoldMonster({
+            mpeaceful: 1, msleeping: 1,
         });
         initRng(2n);
 
@@ -118,7 +118,7 @@ test('a sleeping greedy monster does not catch a quivered coin on an ordinary mi
         const coin = detachedCoin(level, purse);
         assert.equal(leprechaun.msleeping, 1);
         assert.equal(leprechaun.mpeaceful, 1);
-        assert.equal(leprechaun.minvent.length, 0);
+        assert.equal(leprechaun.minvent.includes(coin), false);
         assert.equal(floorObjectsAt(level, 13, 10).includes(coin), true);
     });
 
@@ -126,8 +126,8 @@ test('the one-in-three miss wakeup angers but still does not transfer the coin',
     async () => {
         const level = freshGameplayRoom();
         const purse = await quiver(5, 29107);
-        const leprechaun = addGoldMonster({
-            m_id: 29108, mpeaceful: 1, msleeping: 1,
+        const leprechaun = await createGoldMonster({
+            mpeaceful: 1, msleeping: 1,
         });
         initRng(1n);
 
@@ -136,7 +136,7 @@ test('the one-in-three miss wakeup angers but still does not transfer the coin',
         const coin = detachedCoin(level, purse);
         assert.equal(leprechaun.msleeping, 0);
         assert.equal(leprechaun.mpeaceful, 0);
-        assert.equal(leprechaun.minvent.length, 0);
+        assert.equal(leprechaun.minvent.includes(coin), false);
         assert.equal(floorObjectsAt(level, 13, 10).includes(coin), true);
     });
 
@@ -144,8 +144,8 @@ test('targeting can thaw an immobilized monster before the coin misses',
     async () => {
         const level = freshGameplayRoom();
         const purse = await quiver(5, 29109);
-        const leprechaun = addGoldMonster({
-            m_id: 29110, mpeaceful: 1, msleeping: 1,
+        const leprechaun = await createGoldMonster({
+            mpeaceful: 1, msleeping: 1,
             mcanmove: 0, mfrozen: 6,
         });
         initRng(13n);
@@ -157,7 +157,7 @@ test('targeting can thaw an immobilized monster before the coin misses',
         assert.equal(leprechaun.mfrozen, 0);
         assert.equal(leprechaun.msleeping, 1);
         assert.equal(leprechaun.mpeaceful, 1);
-        assert.equal(leprechaun.minvent.length, 0);
+        assert.equal(leprechaun.minvent.includes(coin), false);
         assert.equal(floorObjectsAt(level, 13, 10).includes(coin), true);
     });
 
@@ -165,8 +165,8 @@ test('a swallowed quivered coin wakes the engulfer and enters its inventory',
     async () => {
         const level = freshGameplayRoom();
         const purse = await quiver(5, 29111);
-        const engulfer = addGoldMonster({
-            m_id: 29112, mnum: 202, mx: 10, my: 10,
+        const engulfer = await createGoldMonster({
+            mnum: 202, mx: 10, my: 10,
             mpeaceful: 1, msleeping: 1,
         });
         game.u.uswallow = true;

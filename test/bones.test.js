@@ -20,7 +20,7 @@ import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { addMonster } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
-import { addStaffedShop } from './support/shop.js';
+import { createStaffedShop } from './support/shop.js';
 
 const PM_GHOST = 287;
 const LEVEL = { dnum: 0, dlevel: 7 };
@@ -169,7 +169,7 @@ test('bones restore resets old hero state and repairs entity links',
 test('bones keep partly eaten food free in its staffed shop', async () => {
     const storage = memoryStorage();
     freshBonesRoom(storage);
-    addStaffedShop({ shopType: SHOPBASE + 5 });
+    await createStaffedShop({ shopType: SHOPBASE + 5 });
     const chest = knownObject(CHEST);
     const ration = knownObject(FOOD_RATION, {
         where: 'contained',

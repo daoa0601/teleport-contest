@@ -1,10 +1,10 @@
 import { ROOM, ROOMOFFSET, SHOPBASE } from '../../js/const.js';
 import { game } from '../../js/gstate.js';
-import { addMonster } from './monsters.js';
+import { createMonsterAt } from './monsters.js';
 
 const PM_SHOPKEEPER = 271;
 
-export function addStaffedShop({
+export async function createStaffedShop({
     left = 8,
     right = 14,
     top = 8,
@@ -39,11 +39,10 @@ export function addStaffedShop({
         }
     }
 
-    const shopkeeper = addMonster({
-        mnum: PM_SHOPKEEPER,
-        x: keeperX,
-        y: keeperY,
-        hitPoints: 20,
+    const shopkeeper = await createMonsterAt(
+        PM_SHOPKEEPER, keeperX, keeperY,
+    );
+    Object.assign(shopkeeper, {
         isshk: true,
         mpeaceful: 1,
         mute: false,

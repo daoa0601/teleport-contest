@@ -4,7 +4,7 @@ import { addHeroGoldObject } from '../../js/hero_gold.js';
 import { pushKey, pushKeys } from '../../js/input.js';
 import { mksobj } from '../../js/mklev.js';
 import { GOLD_PIECE } from '../../js/object_data.js';
-import { addMonster } from './monsters.js';
+import { createMonsterAt } from './monsters.js';
 
 const PM_LEPRECHAUN = 63;
 
@@ -14,21 +14,40 @@ export function carriedGold(amount, id) {
     return gold;
 }
 
-export function looseGold(amount, id = undefined) {
+function looseGold(amount, id = undefined) {
     const gold = mksobj(GOLD_PIECE, false, false);
     gold.quan = gold.quantity = amount;
     if (id !== undefined) gold.o_id = id;
     return gold;
 }
 
-export function addGoldMonster(overrides = {}) {
-    return addMonster({
-        m_id: 29000,
-        mnum: PM_LEPRECHAUN, x: 13, y: 10,
-        hitPoints: 12, level: 5,
-        mfrozen: 0, meating: 0, mcan: 0, hasInventory: false,
+export async function createGoldMonster({
+    mnum = PM_LEPRECHAUN,
+    x = 13,
+    y = 10,
+    mx = x,
+    my = y,
+    hitPoints = 12,
+    maxHitPoints = hitPoints,
+    level = 5,
+    ...overrides
+} = {}) {
+    const bornOnHero = mx === game.u.ux && my === game.u.uy;
+    const monster = await createMonsterAt(
+        mnum, bornOnHero ? mx + 1 : mx, my,
+    );
+    Object.assign(monster, {
+        mx,
+        my,
+        mhp: hitPoints,
+        mhpmax: maxHitPoints,
+        m_lev: level,
+        mfrozen: 0,
+        meating: 0,
+        mcan: 0,
         ...overrides,
     });
+    return monster;
 }
 
 export async function readyGold() {

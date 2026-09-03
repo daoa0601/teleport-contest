@@ -40,7 +40,7 @@ import {
 import { floorObjects } from './support/level-state.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { addStaffedShop } from './support/shop.js';
+import { createStaffedShop } from './support/shop.js';
 
 const PM_ENERGY_VORTEX = 109;
 const PM_OCHRE_JELLY = 58;
@@ -605,7 +605,7 @@ test('swallowed dart survives mulch and transfers after live missile damage',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
         const dart = addInventoryWeapon(DART, { unpaid: true });
-        const { shopkeeper } = addStaffedShop({
+        const { shopkeeper } = await createStaffedShop({
             keeperX: 14,
             keeperY: 12,
             bill: [{ bo_id: dart.o_id, bquan: 1, useup: false, price: 25 }],
@@ -664,7 +664,7 @@ test('swallowed dart mulch removes the detached identity after damage',
     async () => {
         const engulfer = freshSwallowedState(PM_TRAPPER);
         const dart = addInventoryWeapon(DART, { unpaid: true });
-        const { shopkeeper } = addStaffedShop({
+        const { shopkeeper } = await createStaffedShop({
             keeperX: 14,
             keeperY: 12,
             bill: [{ bo_id: dart.o_id, bquan: 1, useup: false, price: 25 }],

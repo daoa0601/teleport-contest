@@ -17,7 +17,7 @@ import {
 } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
-import { addStaffedShop } from './support/shop.js';
+import { createStaffedShop } from './support/shop.js';
 
 function freshLampState(otyp, overrides = {}, seed = 1n) {
     freshPlayableRoom({
@@ -46,8 +46,8 @@ function freshLampState(otyp, overrides = {}, seed = 1n) {
     return lamp;
 }
 
-function installLightingShop(lamp) {
-    const { shopkeeper } = addStaffedShop({
+async function installLightingShop(lamp) {
+    const { shopkeeper } = await createStaffedShop({
         shopType: SHOPBASE + 11,
         bill: [{
             bo_id: lamp.o_id, bquan: 1, useup: false, price: 10,
@@ -219,7 +219,7 @@ test('cursed lamps preserve spill, flicker, blind, and success outcomes',
 test('unpaid timed and magic lamps charge source-order usage fees',
     async () => {
         const lamp = freshLampState(OIL_LAMP, { unpaid: true }, 1n);
-        const shopkeeper = installLightingShop(lamp);
+        const shopkeeper = await installLightingShop(lamp);
 
         await applyInventoryA();
         assert.match(game._pending_message, /Usage fee, 10 zorkmids\./);
@@ -230,7 +230,7 @@ test('unpaid timed and magic lamps charge source-order usage fees',
         const magic = freshLampState(
             MAGIC_LAMP, { age: 40, unpaid: true }, 1n,
         );
-        const magicShopkeeper = installLightingShop(magic);
+        const magicShopkeeper = await installLightingShop(magic);
         await applyInventoryA();
         assert.match(game._pending_message, /Usage fee, 10 zorkmids\./);
         assert.match(game._pending_message, /Your lamp is now on\.$/);
@@ -242,7 +242,7 @@ test('unpaid timed and magic lamps charge source-order usage fees',
             MAGIC_LAMP, { age: 40, unpaid: true }, 1n,
         );
         game.u.deafTurns = 5;
-        const deafShopkeeper = installLightingShop(deafMagic);
+        const deafShopkeeper = await installLightingShop(deafMagic);
         await applyInventoryA();
         assert.equal(game._pending_message, 'Your lamp is now on.');
         assert.equal(deafShopkeeper.eshk.debit, 10);

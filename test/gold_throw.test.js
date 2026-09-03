@@ -4,11 +4,10 @@ import assert from 'node:assert/strict';
 import { IRONBARS, STONE, WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroGoldAmount, heroGoldObject } from '../js/hero_gold.js';
-import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
-    addGoldMonster, carriedGold, looseGold, throwGold,
+    createGoldMonster, carriedGold, throwGold,
 } from './support/gold-arena.js';
 import {
     addTrap, floorObjects, floorObjectsAt,
@@ -21,6 +20,12 @@ const PM_GUARD = 272;
 const PM_ALIGNED_CLERIC = 274;
 const PM_SOLDIER = 277;
 const PM_WATCHMAN = 282;
+
+function monsterGoldAmount(monster) {
+    return monster.minvent
+        .filter(object => object.otyp === GOLD_PIECE)
+        .reduce((total, object) => total + object.quantity, 0);
+}
 
 test('direct throw moves the whole purse through its strength-weight range',
     async () => {
@@ -146,8 +151,8 @@ test('self-directed gold cancellation preserves the purse and spends no time',
 test('a non-greedy monster wakes but does not catch thrown gold', async () => {
     const level = freshGameplayRoom();
     const purse = carriedGold(25, 29004);
-    const jackal = addGoldMonster({
-        m_id: 29005, mnum: 12, mpeaceful: 1, msleeping: 1,
+    const jackal = await createGoldMonster({
+        mnum: 12, mpeaceful: 1, msleeping: 1,
     });
 
     await throwGold('l');
@@ -164,15 +169,15 @@ test('an immobilized greedy monster is hit harmlessly and cannot catch gold',
     async () => {
         const level = freshGameplayRoom();
         const purse = carriedGold(31, 29006);
-        const leprechaun = addGoldMonster({
-            m_id: 29007, mcanmove: 0, mfrozen: 3,
+        const leprechaun = await createGoldMonster({
+            mcanmove: 0, mfrozen: 3,
         });
 
         await throwGold('l');
 
         assert.equal(leprechaun.mcanmove, 0);
         assert.equal(leprechaun.mfrozen, 3);
-        assert.equal(leprechaun.minvent.length, 0);
+        assert.equal(leprechaun.minvent.includes(purse), false);
         assert.equal(floorObjectsAt(level, 13, 10).includes(purse), true);
         assert.equal(purse.where, 'floor');
     });
@@ -181,10 +186,11 @@ test('a sleeping greedy monster catches the purse and abandons its meal',
     async () => {
         const level = freshGameplayRoom();
         const purse = carriedGold(41, 29008);
-        const leprechaun = addGoldMonster({
-            m_id: 29009, msleeping: 1, meating: 4,
+        const leprechaun = await createGoldMonster({
+            msleeping: 1, meating: 4,
             m_ap_type: 1, mappearance: 30,
         });
+        const startingGold = monsterGoldAmount(leprechaun);
         initRng(1n);
 
         await throwGold('l');
@@ -193,9 +199,8 @@ test('a sleeping greedy monster catches the purse and abandons its meal',
         assert.equal(leprechaun.meating, 0);
         assert.equal(leprechaun.m_ap_type, 0);
         assert.equal(leprechaun.mappearance, 0);
-        assert.equal(leprechaun.minvent.includes(purse), true);
-        assert.equal(purse.where, 'minvent');
-        assert.equal(purse.carrierMid, leprechaun.m_id);
+        assert.equal(monsterGoldAmount(leprechaun), startingGold + 41);
+        assert.equal(purse.where, 'gone');
         assert.equal(floorObjects(level).includes(purse), false);
     });
 
@@ -203,31 +208,29 @@ test('the ordinary catch anger probe can turn a peaceful greedy monster hostile'
     async () => {
         freshGameplayRoom();
         const purse = carriedGold(11, 29034);
-        const leprechaun = addGoldMonster({
-            m_id: 29035, mpeaceful: 1,
+        const leprechaun = await createGoldMonster({
+            mpeaceful: 1,
         });
+        const startingGold = monsterGoldAmount(leprechaun);
         initRng(5n);
 
         await throwGold('l');
 
-        assert.equal(leprechaun.minvent.includes(purse), true);
+        assert.equal(monsterGoldAmount(leprechaun), startingGold + 11);
         assert.equal(leprechaun.mpeaceful, 0);
     });
 
-test('a greedy catch merges into the prior monster purse and frees the incoming identity',
+test('a greedy catch merges with gold already in the monster pack',
     async () => {
         freshGameplayRoom();
         const purse = carriedGold(11, 29030);
-        const leprechaun = addGoldMonster({ m_id: 29031 });
-        const prior = looseGold(9);
-        linkObjectToMonsterInventory(leprechaun, prior, { state: game });
+        const leprechaun = await createGoldMonster();
+        const startingGold = monsterGoldAmount(leprechaun);
         initRng(1n);
 
         await throwGold('l');
 
-        assert.equal(leprechaun.minvent.length, 1);
-        assert.equal(leprechaun.minvent[0], prior);
-        assert.equal(prior.quantity, 20);
+        assert.equal(monsterGoldAmount(leprechaun), startingGold + 11);
         assert.equal(purse.where, 'gone');
         assert.equal('carrierMid' in purse, false);
     });
@@ -236,8 +239,8 @@ test('covering a shopkeeper robbery restores peace and preserves payment identit
     async () => {
         freshGameplayRoom();
         const purse = carriedGold(50, 29010);
-        const shopkeeper = addGoldMonster({
-            m_id: 29011, mnum: PM_SHOPKEEPER, isshk: 1, mpeaceful: 0,
+        const shopkeeper = await createGoldMonster({
+            mnum: PM_SHOPKEEPER, isshk: 1, mpeaceful: 0,
             eshk: { robbed: 30, credit: 0, following: 1, surcharge: true },
         });
         game.u.ualign.record = 0;
@@ -257,8 +260,8 @@ test('a peaceful shopkeeper turns caught gold into exact customer credit',
     async () => {
         freshGameplayRoom();
         const purse = carriedGold(7, 29012);
-        const shopkeeper = addGoldMonster({
-            m_id: 29013, mnum: PM_SHOPKEEPER, isshk: 1, mpeaceful: 1,
+        const shopkeeper = await createGoldMonster({
+            mnum: PM_SHOPKEEPER, isshk: 1, mpeaceful: 1,
             eshk: { robbed: 0, credit: 11, following: 0 },
         });
         initRng(1n);
@@ -273,8 +276,8 @@ test('a peaceful shopkeeper turns caught gold into exact customer credit',
 test('a temple priest catches the same whole-purse identity', async () => {
     freshGameplayRoom();
     const purse = carriedGold(13, 29014);
-    const priest = addGoldMonster({
-        m_id: 29015, mnum: PM_ALIGNED_CLERIC,
+    const priest = await createGoldMonster({
+        mnum: PM_ALIGNED_CLERIC,
         ispriest: 1, mpeaceful: 1,
     });
     initRng(1n);
@@ -290,8 +293,8 @@ test('the catch anger probe applies the coaligned priest alignment penalty',
     async () => {
         freshGameplayRoom();
         const purse = carriedGold(13, 29036);
-        const priest = addGoldMonster({
-            m_id: 29037, mnum: PM_ALIGNED_CLERIC,
+        const priest = await createGoldMonster({
+            mnum: PM_ALIGNED_CLERIC,
             ispriest: 1, mpeaceful: 1,
             epri: { shralign: 1 },
         });
@@ -309,8 +312,8 @@ test('the catch anger probe rewards angering a cross-aligned priest',
     async () => {
         freshGameplayRoom();
         const purse = carriedGold(13, 29038);
-        const priest = addGoldMonster({
-            m_id: 29039, mnum: PM_ALIGNED_CLERIC,
+        const priest = await createGoldMonster({
+            mnum: PM_ALIGNED_CLERIC,
             ispriest: 1, mpeaceful: 1,
             epri: { shralign: -1 },
         });
@@ -328,8 +331,8 @@ test('a vault guard catches the purse without the ordinary anger probe',
     async () => {
         freshGameplayRoom();
         const purse = carriedGold(19, 29016);
-        const guard = addGoldMonster({
-            m_id: 29017, mnum: PM_GUARD, isgd: 1, mpeaceful: 1,
+        const guard = await createGoldMonster({
+            mnum: PM_GUARD, isgd: 1, mpeaceful: 1,
         });
         initRng(5n); // the ordinary one-in-four probe would make it angry
 
@@ -343,8 +346,8 @@ test('a sufficient soldier bribe changes an angry soldier to peaceful',
     async () => {
         freshGameplayRoom();
         const purse = carriedGold(150, 29018);
-        const soldier = addGoldMonster({
-            m_id: 29019, mnum: PM_SOLDIER, mpeaceful: 0,
+        const soldier = await createGoldMonster({
+            mnum: PM_SOLDIER, mpeaceful: 0,
         });
         initRng(1n);
 
@@ -358,8 +361,8 @@ test('an insufficient soldier bribe is still caught but leaves hostility',
     async () => {
         freshGameplayRoom();
         const purse = carriedGold(50, 29020);
-        const soldier = addGoldMonster({
-            m_id: 29021, mnum: PM_SOLDIER, mpeaceful: 0,
+        const soldier = await createGoldMonster({
+            mnum: PM_SOLDIER, mpeaceful: 0,
         });
         initRng(1n);
 
@@ -372,8 +375,8 @@ test('an insufficient soldier bribe is still caught but leaves hostility',
 test('a watchman catches gold but remains unbribable', async () => {
     freshGameplayRoom();
     const purse = carriedGold(500, 29022);
-    const watchman = addGoldMonster({
-        m_id: 29023, mnum: PM_WATCHMAN, mpeaceful: 0,
+    const watchman = await createGoldMonster({
+        mnum: PM_WATCHMAN, mpeaceful: 0,
     });
     initRng(1n);
 
@@ -386,8 +389,8 @@ test('a watchman catches gold but remains unbribable', async () => {
 test('swallowed gold moves whole into the engulfer inventory', async () => {
     freshGameplayRoom();
     const purse = carriedGold(29, 29024);
-    const engulfer = addGoldMonster({
-        m_id: 29025, mnum: 202, mx: 10, my: 10,
+    const engulfer = await createGoldMonster({
+        mnum: 202, mx: 10, my: 10,
     });
     game.u.uswallow = true;
     game.u.ustuck = engulfer;
