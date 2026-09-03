@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, MM_NOWAIT,
+    MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT,
 } from '../js/const.js';
 import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
@@ -28,7 +28,7 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { floorObjects } from './support/level-state.js';
-import { addMonster, createMonsterAt } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 
@@ -49,15 +49,24 @@ function freshInventoryState(seed = 1) {
     }];
 }
 
-function inventoryMonster(m_id, overrides = {}) {
-    return addMonster({
-        m_id,
-        mnum: PM_LEPRECHAUN,
-        x: 12,
-        y: 10,
-        hasInventory: false,
-        ...overrides,
+async function createInventoryMonster(overrides = {}) {
+    const {
+        mnum = PM_LEPRECHAUN,
+        x = 12,
+        y = 10,
+        level,
+        hitPoints,
+        maxHitPoints = hitPoints,
+        ...state
+    } = overrides;
+    const monster = await createMonsterAt(mnum, x, y, NO_MINVENT);
+    Object.assign(monster, {
+        ...(level === undefined ? {} : { m_lev: level }),
+        ...(hitPoints === undefined ? {} : { mhp: hitPoints }),
+        ...(maxHitPoints === undefined ? {} : { mhpmax: maxHitPoints }),
+        ...state,
     });
+    return monster;
 }
 
 function assertMonsterOwns(monster, object) {
@@ -85,9 +94,9 @@ test('makemon startup inventory links every identity to the final actor',
     });
 
 test('ambient m_initinv links direct monster money without carrying effects',
-    () => {
+    async () => {
         freshInventoryState(2102);
-        const monster = inventoryMonster(702, { level: 0 });
+        const monster = await createInventoryMonster({ level: 0 });
 
         initializeRandomMonsterInventory(monster);
 
@@ -98,9 +107,9 @@ test('ambient m_initinv links direct monster money without carrying effects',
         assert.equal(monster.hasInventory, true);
     });
 
-test('direct add_to_minv linkage does not invent carrying effects', () => {
+test('direct add_to_minv linkage does not invent carrying effects', async () => {
     freshInventoryState(2104);
-    const monster = inventoryMonster(704);
+    const monster = await createInventoryMonster();
     const figurine = {
         otyp: FIGURINE,
         cursed: true,
@@ -113,9 +122,9 @@ test('direct add_to_minv linkage does not invent carrying effects', () => {
     assertMonsterOwns(monster, figurine);
 });
 
-test('ordinary add_to_minv head-links each unmerged identity by default', () => {
+test('ordinary add_to_minv head-links each unmerged identity by default', async () => {
     freshInventoryState(2112);
-    const monster = inventoryMonster(712);
+    const monster = await createInventoryMonster();
     const oldest = mksobj(DAGGER, true, false);
     const newest = mksobj(MACE, true, false);
 
@@ -129,9 +138,9 @@ test('ordinary add_to_minv head-links each unmerged identity by default', () => 
 });
 
 test('special-level inventory transfer removes floor ownership and head-links',
-    () => {
+    async () => {
         freshInventoryState(2103);
-        const monster = inventoryMonster(703, {
+        const monster = await createInventoryMonster({
             mnum: PM_SHOPKEEPER,
         });
         const prior = mksobj(DAGGER, true, false);
@@ -191,9 +200,9 @@ test('pet mpickobj ownership survives the complete pickup and release cycle',
     });
 
 test('covetous ground tactics head-link the source artifact through mpickobj',
-    () => {
+    async () => {
         freshInventoryState(2106);
-        const wizard = inventoryMonster(706, {
+        const wizard = await createInventoryMonster({
             mnum: 285,
             x: 16,
             y: 12,
@@ -222,9 +231,9 @@ test('covetous ground tactics head-link the source artifact through mpickobj',
         assert.equal(game.level.objects[16][12].includes(book), false);
     });
 
-test('bullwhip snatch transfers a live hero weapon through mpickobj', () => {
+test('bullwhip snatch transfers a live hero weapon through mpickobj', async () => {
     freshInventoryState(2107);
-    const monster = inventoryMonster(707, {
+    const monster = await createInventoryMonster({
         mnum: 285,
     });
     const dagger = mksobj(DAGGER, true, false);
@@ -256,10 +265,10 @@ test('bullwhip snatch transfers a live hero weapon through mpickobj', () => {
 });
 
 test('clonewiz direct add_to_minv links its minted fake without effects',
-    () => {
+    async () => {
         freshInventoryState(2108);
         game.u.protectionFromShapeChangers = true;
-        const clone = inventoryMonster(708, {
+        const clone = await createInventoryMonster({
             mnum: 285,
         });
         const action = {
@@ -288,9 +297,9 @@ test('clonewiz direct add_to_minv links its minted fake without effects',
     });
 
 test('direct add_to_minv merges monster gold into the first live identity',
-    () => {
+    async () => {
         freshInventoryState(2109);
-        const monster = inventoryMonster(709);
+        const monster = await createInventoryMonster();
         const first = mksobj(GOLD_PIECE, true, false);
         first.quan = first.quantity = 75;
         first.owt = 1;
@@ -317,9 +326,9 @@ test('direct add_to_minv merges monster gold into the first live identity',
     });
 
 test('bullwhip mpickobj frees a compatible incoming weapon after merging',
-    () => {
+    async () => {
         freshInventoryState(2110);
-        const monster = inventoryMonster(710, {
+        const monster = await createInventoryMonster({
             mnum: 285,
         });
         const survivor = mksobj(DAGGER, true, false);
@@ -368,9 +377,9 @@ test('bullwhip mpickobj frees a compatible incoming weapon after merging',
     });
 
 test('monster glob absorption averages live shrink delays onto the survivor',
-    () => {
+    async () => {
         freshInventoryState(2111);
-        const monster = inventoryMonster(711);
+        const monster = await createInventoryMonster();
         const survivor = mksobj(GLOB_OF_GRAY_OOZE, true, false);
         const incoming = mksobj(GLOB_OF_GRAY_OOZE, true, false);
         survivor.owt = 20;
