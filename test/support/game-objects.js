@@ -58,8 +58,9 @@ export function artifactObject(name, overrides = {}) {
 }
 
 export function knownObject(otyp, overrides = {}) {
-    const quantity = overrides.quan ?? overrides.quantity ?? 1;
-    const object = Object.assign(mksobj(otyp, true, false), {
+    const { initialize = true, ...properties } = overrides;
+    const quantity = properties.quan ?? properties.quantity ?? 1;
+    const object = Object.assign(mksobj(otyp, initialize, false), {
         blessed: false,
         cursed: false,
         bknown: true,
@@ -68,11 +69,11 @@ export function knownObject(otyp, overrides = {}) {
         typeKnown: true,
         quan: quantity,
         quantity,
-    }, overrides, {
+    }, properties, {
         quan: quantity,
         quantity,
     });
-    if (overrides.owt === undefined) object.owt = objectWeight(object);
+    if (properties.owt === undefined) object.owt = objectWeight(object);
     return object;
 }
 
@@ -106,8 +107,9 @@ export function floorArtifact(name, x, y, overrides = {}) {
 export function inventoryObject(otyp, invlet, overrides = {}) {
     const [name, plural] = WEAPON_NAMES.get(otyp)
         || [OBJECT_NAMES[otyp], `${OBJECT_NAMES[otyp]}s`];
-    return carriedObject(otyp, {
+    return knownObject(otyp, {
         invlet,
+        where: 'inventory',
         name,
         plural,
         worn: false,

@@ -21,6 +21,7 @@ export function freshObjectRoom({
         top: 6,
         bottom: 14,
         ...room,
+        seed: objectInitializationSeed,
         moves,
         flags,
         context,
@@ -42,7 +43,6 @@ export function freshObjectRoom({
     game.in_mklev = false;
     vision_reset_new_level();
     if (recalculateVision) vision_recalc(0);
-    initRng(objectInitializationSeed);
     init_objects();
     if (gameplaySeed !== undefined) initRng(BigInt(gameplaySeed));
     return level;

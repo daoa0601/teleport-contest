@@ -20,14 +20,25 @@ import {
 } from './support/game-objects.js';
 import { freshCommandRoom } from './support/playable-room.js';
 
-function freshContainerGame(...objects) {
-    freshCommandRoom({ inventory: objects, seed: 48201n });
+function carryObjects(...objects) {
+    game.inventory = objects;
 }
 
+function unlockedContainer(otyp, invlet, overrides = {}) {
+    return inventoryObject(otyp, invlet, {
+        initialize: false,
+        olocked: false,
+        otrapped: false,
+        ...overrides,
+    });
+}
+
+test.beforeEach(() => freshCommandRoom({ seed: 48201n }));
+
 test('applying a carried chest can put an ordinary item inside', async () => {
-    const chest = inventoryObject(CHEST, 'a', { cknown: false });
+    const chest = unlockedContainer(CHEST, 'a', { cknown: false });
     const club = inventoryObject(CLUB, 'b');
-    freshContainerGame(chest, club);
+    carryObjects(chest, club);
 
     await applyInventoryObject('a', 'ib\n');
 
@@ -40,7 +51,7 @@ test('applying a carried chest can put an ordinary item inside', async () => {
 });
 
 test('applying a carried chest can take its item back out', async () => {
-    const chest = inventoryObject(CHEST, 'a', {
+    const chest = unlockedContainer(CHEST, 'a', {
         cknown: true,
         pickup_prev: true,
     });
@@ -49,11 +60,11 @@ test('applying a carried chest can take its item back out', async () => {
         container: chest,
     });
     chest.contents = [club];
-    freshContainerGame(chest);
+    carryObjects(chest);
 
     await applyInventoryObject('a', 'oa\n');
 
-    assert.deepEqual(chest.contents, []);
+    assert.equal(chest.contents?.length ?? 0, 0);
     assert.equal(game.inventory.includes(club), true);
     assert.equal(club.where, 'inventory');
     assert.equal(club.container, null);
@@ -63,11 +74,11 @@ test('applying a carried chest can take its item back out', async () => {
 });
 
 test('a container menu can move part of a carried stack', async () => {
-    const chest = inventoryObject(CHEST, 'a', { cknown: true });
+    const chest = unlockedContainer(CHEST, 'a', { cknown: true });
     const darts = inventoryObject(DART, 'b', {
         quantity: 5,
     });
-    freshContainerGame(chest, darts);
+    carryObjects(chest, darts);
 
     await applyInventoryObject('a', 'i2b\n');
 
@@ -79,14 +90,14 @@ test('a container menu can move part of a carried stack', async () => {
 });
 
 test('a container menu can take part of a contained stack', async () => {
-    const chest = inventoryObject(CHEST, 'a', { cknown: true });
+    const chest = unlockedContainer(CHEST, 'a', { cknown: true });
     const darts = inventoryObject(DART, 'b', {
         where: 'contained',
         container: chest,
         quantity: 5,
     });
     chest.contents = [darts];
-    freshContainerGame(chest);
+    carryObjects(chest);
 
     await applyInventoryObject('a', 'o2a\n');
 
@@ -98,27 +109,27 @@ test('a container menu can take part of a contained stack', async () => {
 });
 
 test('a rejected partial transfer restores the carried stack', async () => {
-    const chest = inventoryObject(CHEST, 'a', { cknown: true });
+    const chest = unlockedContainer(CHEST, 'a', { cknown: true });
     const loadstones = inventoryObject(LOADSTONE, 'b', {
         cursed: true,
         quantity: 5,
     });
-    freshContainerGame(chest, loadstones);
+    carryObjects(chest, loadstones);
 
     await applyInventoryObject('a', 'i2b\n');
 
     assert.equal(loadstones.quan, 5);
     assert.deepEqual(game.inventory, [chest, loadstones]);
-    assert.deepEqual(chest.contents, []);
+    assert.equal(chest.contents?.length ?? 0, 0);
 });
 
 test('moving some gold keeps the purse and container amounts separate',
     async () => {
-        const chest = inventoryObject(CHEST, 'a', { cknown: true });
+        const chest = unlockedContainer(CHEST, 'a', { cknown: true });
         const gold = inventoryObject(GOLD_PIECE, '$', {
             quantity: 5,
         });
-        freshContainerGame(chest, gold);
+        carryObjects(chest, gold);
 
         await applyInventoryObject('a', 'i2$\n');
 
@@ -130,7 +141,7 @@ test('moving some gold keeps the purse and container amounts separate',
 
 test('touching one cockatrice corpse restores its stack and stops transfer',
     async () => {
-        const chest = inventoryObject(CHEST, 'a', { cknown: true });
+        const chest = unlockedContainer(CHEST, 'a', { cknown: true });
         const corpse = inventoryObject(CORPSE, 'b', {
             corpsenm: 10,
             quantity: 2,
@@ -139,7 +150,7 @@ test('touching one cockatrice corpse restores its stack and stops transfer',
             worn: true,
             owornmask: W_AMUL,
         });
-        freshContainerGame(chest, corpse, amulet);
+        carryObjects(chest, corpse, amulet);
         game.uamul = game.u.uamul = amulet;
 
         await applyInventoryObject('a', `ic\n1b\n${' '.repeat(10)}`);
@@ -152,10 +163,10 @@ test('touching one cockatrice corpse restores its stack and stops transfer',
     });
 
 test('gloves make a cockatrice corpse safe to put away', async () => {
-    const chest = inventoryObject(CHEST, 'a', { cknown: true });
+    const chest = unlockedContainer(CHEST, 'a', { cknown: true });
     const corpse = inventoryObject(CORPSE, 'b', { corpsenm: 10 });
     const gloves = inventoryObject(LEATHER_GLOVES, 'c', { worn: true });
-    freshContainerGame(chest, corpse, gloves);
+    carryObjects(chest, corpse, gloves);
     game.uarmg = game.u.uarmg = gloves;
 
     await applyInventoryObject('a', 'ic\nb\n');
@@ -165,13 +176,13 @@ test('gloves make a cockatrice corpse safe to put away', async () => {
 });
 
 test('a self-willed artifact can refuse to leave a container', async () => {
-    const chest = inventoryObject(CHEST, 'a', { cknown: true });
+    const chest = unlockedContainer(CHEST, 'a', { cknown: true });
     const orb = artifactObject('The Orb of Detection', {
         where: 'contained',
         container: chest,
     });
     chest.contents = [orb];
-    freshContainerGame(chest);
+    carryObjects(chest);
     game.u.ualign.type = -1;
     game.u.ualign.record = 0;
     game.u.uhp = game.u.uhpmax = 100;
@@ -191,7 +202,7 @@ test('a carried locked chest must be put down before it can be opened',
             lknown: false,
             olocked: true,
         });
-        freshContainerGame(chest);
+        carryObjects(chest);
 
         await applyInventoryObject('a');
 
@@ -203,8 +214,8 @@ test('a carried locked chest must be put down before it can be opened',
 
 test('applying a trapped chest discharges its trap and spends the turn',
     async () => {
-        const chest = inventoryObject(CHEST, 'a', { otrapped: true });
-        freshContainerGame(chest);
+        const chest = unlockedContainer(CHEST, 'a', { otrapped: true });
+        carryObjects(chest);
         initRng(1n);
 
         await applyInventoryObject('a', ' ');
@@ -216,9 +227,9 @@ test('applying a trapped chest discharges its trap and spends the turn',
     });
 
 test('invocation items cannot be hidden in a container', async () => {
-    const chest = inventoryObject(CHEST, 'a', { cknown: true });
+    const chest = unlockedContainer(CHEST, 'a', { cknown: true });
     const amulet = inventoryObject(AMULET_OF_YENDOR, 'b');
-    freshContainerGame(chest, amulet);
+    carryObjects(chest, amulet);
 
     await applyInventoryObject('a', 'ib\n');
 
@@ -230,12 +241,12 @@ test('invocation items cannot be hidden in a container', async () => {
 });
 
 test('an ice box pauses and resumes corpse decay', async () => {
-    const iceBox = inventoryObject(ICE_BOX, 'a', { cknown: true });
+    const iceBox = unlockedContainer(ICE_BOX, 'a', { cknown: true });
     const corpse = inventoryObject(CORPSE, 'b', {
         age: 10,
         corpsenm: 0,
     });
-    freshContainerGame(iceBox, corpse);
+    carryObjects(iceBox, corpse);
     game.moves = 40;
     scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ROT_CORPSE, 80, game);
 
@@ -276,7 +287,7 @@ test('floor loot uses the same container transfer as apply', async () => {
 
 test('opening a cursed bag of holding can make its contents vanish',
     async () => {
-        const bag = inventoryObject(BAG_OF_HOLDING, 'a', {
+        const bag = unlockedContainer(BAG_OF_HOLDING, 'a', {
             cursed: true,
             cknown: true,
         });
@@ -285,7 +296,7 @@ test('opening a cursed bag of holding can make its contents vanish',
             container: bag,
         });
         bag.contents = [club];
-        freshContainerGame(bag);
+        carryObjects(bag);
         initRng(17n);
 
         await applyInventoryObject('a', ' q');
@@ -297,10 +308,10 @@ test('opening a cursed bag of holding can make its contents vanish',
 
 test('putting one bag of holding inside another destroys both bags',
     async () => {
-        const outer = inventoryObject(BAG_OF_HOLDING, 'a', {
+        const outer = unlockedContainer(BAG_OF_HOLDING, 'a', {
             cknown: true,
         });
-        const inner = inventoryObject(BAG_OF_HOLDING, 'b', {
+        const inner = unlockedContainer(BAG_OF_HOLDING, 'b', {
             cknown: true,
         });
         const club = inventoryObject(CLUB, 'c', {
@@ -308,7 +319,7 @@ test('putting one bag of holding inside another destroys both bags',
             container: outer,
         });
         outer.contents = [club];
-        freshContainerGame(outer, inner);
+        carryObjects(outer, inner);
         const hitPoints = game.u.uhp;
 
         await applyInventoryObject('a', 'ib\n');
@@ -323,7 +334,7 @@ test('putting one bag of holding inside another destroys both bags',
     });
 
 test('opening a quantum box resolves its cat once', async () => {
-    const box = inventoryObject(LARGE_BOX, 'a', {
+    const box = unlockedContainer(LARGE_BOX, 'a', {
         cknown: false,
         spe: 1,
     });
@@ -333,7 +344,7 @@ test('opening a quantum box resolves its cat once', async () => {
         corpsenm: 33,
     });
     box.contents = [corpse];
-    freshContainerGame(box);
+    carryObjects(box);
     game.moves = 40;
     initRng(1n);
 
