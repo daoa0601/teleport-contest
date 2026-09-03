@@ -1,21 +1,26 @@
 // Moving a monster after a forceful hit.
-// C refs: dothrow.c:will_hurtle(), mhurtle(), and uhitm.c:mhurtle_to_doom().
+// C refs: dothrow.c:will_hurtle()/mhurtle() and
+// uhitm.c:mhurtle_to_doom()/mhitm_knockback().
 
 import { game } from './gstate.js';
 import {
-    D_CLOSED, D_LOCKED, DOOR, IRONBARS, IS_OBSTRUCTED, IS_STWALL,
-    W_NONPASSWALL, isok,
+    D_BROKEN, D_CLOSED, D_LOCKED, DOOR, IRONBARS, IS_OBSTRUCTED, IS_POOL,
+    IS_STWALL, Is_airlevel, Is_waterlevel, W_NONPASSWALL, W_WEP, isok,
 } from './const.js';
-import { canSpotMonster, newsym } from './display.js';
+import { artifactById } from './artifacts.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE,
     MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { AD_CORR, AD_RUST } from './monster_attack_types.js';
-import { BOULDER } from './object_data.js';
+import { BOULDER, LOADSTONE } from './object_data.js';
+import {
+    isBluntWeapon, isFlimsyObject,
+} from './object_properties.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
-import { rnd } from './rng.js';
+import { rn2, rnd } from './rng.js';
 
 const M1_FLY = 0x00000001;
 const M1_AMORPHOUS = 0x00000004;
@@ -30,6 +35,7 @@ const S_EYE = 5;
 const S_LIGHT = 25;
 const S_VORTEX = 22;
 const PM_GRID_BUG = 116;
+const PM_HUMAN = 260;
 
 function monsterAt(state, x, y, ignoredMonster) {
     return state.level?.monsters?.find(monster =>
@@ -161,6 +167,118 @@ async function hurtleOneSquare(monster, dx, dy, {
     };
 }
 
+async function hurtleMonster(monster, dx, dy, distance, options) {
+    let result = { moved: false, dead: false };
+    for (let step = 0; step < distance; step++) {
+        const next = await hurtleOneSquare(monster, dx, dy, options);
+        result = { ...next, moved: result.moved || next.moved };
+        if (!next.moved || next.dead || next.trap || next.liquid) break;
+    }
+    return result;
+}
+
+function monsterWeapon(monster) {
+    const inventory = monster.minvent || monster.inventory || [];
+    return monster.mw || inventory.find(object =>
+        object.wielded || ((object.owornmask ?? 0) & W_WEP));
+}
+
+function monsterIsSteadfast(monster, state) {
+    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    const heroLocation = state.level?.at?.(state.u?.ux, state.u?.uy);
+    const floatingLevel = Is_airlevel(state.u?.uz)
+        || (Is_waterlevel(state.u?.uz) && !IS_POOL(heroLocation?.typ));
+    if ((flags & M1_FLY) || floatingLevel) return false;
+
+    const weapon = monsterWeapon(monster);
+    if (artifactById(weapon?.oartifact)?.name === 'Giantslayer') return true;
+    const inventory = monster.minvent || monster.inventory || [];
+    return inventory.some(object => object.otyp === LOADSTONE);
+}
+
+function heroSize(state) {
+    return MONSTER_SIZE[state.urace?.mnum ?? PM_HUMAN] ?? 2;
+}
+
+function intactDoorway(location) {
+    return location?.typ === DOOR
+        && !!((location.doormask ?? 0) & ~D_BROKEN);
+}
+
+function canHurtleTo(monster, state, x, y) {
+    return (MONSTER_SIZE[monster.mnum] ?? 2) < 4
+        && monster !== state.u?.ustuck
+        && !monster.mtrapped
+        && destinationIsOpen(monster, state, x, y);
+}
+
+function capitalize(text) {
+    return text ? text[0].toUpperCase() + text.slice(1) : text;
+}
+
+export async function tryHeroWeaponKnockback(monster, weapon, {
+    dx,
+    dy,
+    state = game,
+    announce = async () => {},
+    nameMonster = target => target?.name || 'monster',
+    wakeMonster = async () => {
+        monster.msleeping = 0;
+    },
+    finishLiquidDeath,
+    random = rn2,
+} = {}) {
+    const distance = random(3) ? 1 : 2;
+    const chance = artifactById(weapon?.oartifact)?.name === 'Ogresmasher'
+        ? 2 : 6;
+    if (random(chance) !== 0) return { knocked: false };
+
+    if (heroSize(state) <= (MONSTER_SIZE[monster.mnum] ?? 2) + 1
+        || isFlimsyObject(weapon) || !isBluntWeapon(weapon)) {
+        return { knocked: false };
+    }
+    const diagonal = !!dx && !!dy;
+    if (diagonal && intactDoorway(
+        state.level?.at?.(monster.mx, monster.my),
+    )) return { knocked: false };
+
+    if (monsterIsSteadfast(monster, state)) {
+        if (canSeeMonster(monster, monster.mx, monster.my))
+            await announce(
+                `${capitalize(nameMonster(monster))} doesn't budge.`,
+            );
+        return { knocked: false };
+    }
+
+    const destinationOpen = canHurtleTo(
+        monster, state, monster.mx + Math.sign(dx), monster.my + Math.sign(dy),
+    );
+    const knockedHow = destinationOpen ? 'backward' : 'back';
+    const strength = random(2) ? 'forceful' : 'powerful';
+    const contact = random(2) ? 'blow' : 'strike';
+    if (canSeeMonster(monster, monster.mx, monster.my)) {
+        await announce(
+            `You knock ${nameMonster(monster)} ${knockedHow} with a ${
+                strength
+            } ${contact}!`,
+        );
+    } else {
+        await announce(`You feel something be knocked ${knockedHow}!`);
+    }
+
+    const hurtle = await hurtleMonster(
+        monster, dx, dy, distance, {
+            state,
+            announce,
+            nameMonster,
+            wakeMonster,
+            finishLiquidDeath,
+        },
+    );
+    if (!hurtle.dead) random(4);
+    return { knocked: true, ...hurtle };
+}
+
 export async function tryUnarmedStagger(monster, {
     skill,
     damage,
@@ -187,7 +305,7 @@ export async function tryUnarmedStagger(monster, {
     }
     if (damage >= (monster.mhp ?? 1)) return { staggered: true };
 
-    const hurtle = await hurtleOneSquare(monster, dx, dy, {
+    const hurtle = await hurtleMonster(monster, dx, dy, 1, {
         state,
         announce,
         nameMonster,

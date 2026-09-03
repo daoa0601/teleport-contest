@@ -7,6 +7,7 @@ import {
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
+import { pushKey } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { inventoryObject } from './support/game-objects.js';
@@ -128,6 +129,27 @@ test('a powerful unarmed strike can shove a small monster', async () => {
     assert.equal(lichen.movement, 0);
     assert.ok(lichen.mhp < 100);
     assert.match(game._pending_message, /powerful strike/);
+});
+
+test('a heavy melee hit can knock a tiny monster backward', async () => {
+    const { monster: newt } = installMeleeArena('caveman', 'newt');
+    for (const x of [12, 13]) {
+        Object.assign(game.level.at(x, 10), {
+            typ: ROOM, lit: true, waslit: true, seenv: 255,
+        });
+    }
+    equipWeapon('mace');
+    game.u.ulevel = 20;
+    game.u.acurr.a[A_STR] = 18;
+    game.u.acurr.a[A_DEX] = 18;
+
+    initRng(2n);
+    pushKey(' ');
+    await rhack('l'.charCodeAt(0));
+
+    assert.ok(newt.mx > 11);
+    assert.equal(newt.my, 10);
+    assert.ok(newt.mhp < 100);
 });
 
 test('an ordinary dagger passes through a shade without breaking conduct',

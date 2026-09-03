@@ -7,13 +7,16 @@ import {
     P_SHURIKEN, P_SPEAR,
 } from './const.js';
 import {
-    AKLYS, OBJECT_DIR, OBJECT_SUBTYPE, WAR_HAMMER,
+    AKLYS, OBJECT_DIR, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE,
+    WAR_HAMMER,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
 const GEM_CLASS = 13;
+const LEATHER = 7;
+const WHACK = 4;
 
 function objectClass(object) {
     return object?.oclass || objectClassForType(object?.otyp);
@@ -65,4 +68,16 @@ export function isPoisonableObject(object) {
 
 export function isPermanentlyPoisonedObject(object) {
     return artifactById(object?.oartifact)?.invokePower === 'fling-poison';
+}
+
+export function isBluntWeapon(object) {
+    const kind = objectClass(object);
+    const weaponOrTool = kind === WEAPON_CLASS
+        || (kind === TOOL_CLASS && (OBJECT_SUBTYPE[object?.otyp] ?? 0) !== 0);
+    return weaponOrTool && !!((OBJECT_DIR[object?.otyp] ?? 0) & WHACK);
+}
+
+export function isFlimsyObject(object) {
+    return (OBJECT_MATERIAL[object?.otyp] ?? 0) <= LEATHER
+        || OBJECT_NAMES[object?.otyp] === 'rubber hose';
 }

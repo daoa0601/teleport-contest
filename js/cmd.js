@@ -348,7 +348,9 @@ import {
 } from './monmove.js';
 import { finishMonsterRayDeath } from './monster_death.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
-import { tryUnarmedStagger } from './monster_hurtle.js';
+import {
+    tryHeroWeaponKnockback, tryUnarmedStagger,
+} from './monster_hurtle.js';
 import { announceInvocationSquare } from './invocation.js';
 import {
     abuseKickedPet, kickConductViolation, levitatingKickMisses,
@@ -10633,13 +10635,29 @@ async function attackHostileMonster(monster, x, y, {
             );
         }
         await wakeMonsterAfterHit();
-        // hmon_hitmon() reaches generic knockback only after wakeup() has
-        // completed.  known_hitum() then checks whether the wounded survivor
-        // flees, followed by passive().  Keeping this tail after both pager
-        // boundaries also assigns its RNG to the same input as the C engine.
-        if (!bareHanded && damage > 1 && !twoWeaponActive) {
-            rn2(3);
-            rn2(6);
+        if (!bareHanded && damage > 1 && !polymorphed
+            && !twoWeaponActive) {
+            const knockback = await tryHeroWeaponKnockback(
+                monster, attackWeapon, {
+                    dx: x - (game.u?.ux ?? x),
+                    dy: y - (game.u?.uy ?? y),
+                    announce: plineWithContinuation,
+                    nameMonster: target => target === monster
+                        ? displayedMonsterObject()
+                        : monsterInstanceDisplayName(target),
+                    wakeMonster: wakeMonsterAfterHit,
+                    finishLiquidDeath: (victim, death) =>
+                        finishHeroLiquidMonsterDeath(victim, {
+                            ...death,
+                            hallucinating,
+                            nameMonster: displayedMonsterName,
+                        }),
+                },
+            );
+            if (knockback.dead) {
+                passiveContact(monster, false);
+                return true;
+            }
         }
         const fleeRoll = rn2(25);
         if (fleeRoll === 0
