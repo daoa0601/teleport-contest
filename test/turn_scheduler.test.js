@@ -2,17 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
-import { POOL } from '../js/const.js';
+import { POOL, STONE } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { POT_PARALYSIS } from '../js/object_data.js';
+import { POT_PARALYSIS, WAN_MAGIC_MISSILE } from '../js/object_data.js';
 import {
     startHeroSickness, startHeroVomiting,
 } from '../js/hero_illness.js';
 import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
-import { carriedObject } from './support/game-objects.js';
+import { carriedObject, chargedWand } from './support/game-objects.js';
 import { addMonster } from './support/monsters.js';
 import { freshWeaponArena } from './support/weapon-arena.js';
 
@@ -99,6 +99,33 @@ test('a stationary monster in water is checked during world maintenance',
         assert.equal(game.u.uconduct.killer, 1);
         assert.match(game._pending_message, /You drown the Oracle\./);
     });
+
+test('a monster-fired magic missile can kill another monster', async () => {
+    const inputGate = freshTurnArena();
+    const target = addMonster({
+        species: 'jackal', x: 13, y: 10,
+        hitPoints: 1, mac: 20,
+        mpeaceful: 1, mcanmove: 0, mfrozen: 100,
+    });
+    const wand = chargedWand(WAN_MAGIC_MISSILE, {
+        where: 'monster', charges: 2,
+    });
+    addMonster({
+        species: 'gnomish wizard', x: 14, y: 10,
+        hitPoints: 20, movement: 12, mwandexp: true,
+        mux: game.u.ux, muy: game.u.uy,
+        inventory: [wand],
+    });
+    for (const [x, y] of [
+        [13, 9], [14, 9], [15, 9],
+        [13, 11], [14, 11], [15, 10], [15, 11],
+    ]) game.level.at(x, y).typ = STONE;
+    pushKeys('. ');
+
+    await runUntilInput(inputGate, 8);
+
+    assert.equal(game.level.monsters.includes(target), false);
+});
 
 test('poison clouds act after old blindness expires for the turn', async () => {
     const inputGate = freshTurnArena();

@@ -7998,13 +7998,6 @@ export function resolveMonsterMagicMissileContact(
     return { target, hit, damage, killed: hit && target.mhp <= 0 };
 }
 
-export function finishMonsterMagicMissileDeath(
-    action, target, state, random = rn2,
-) {
-    finishRangedKilledMonster(target, state, random, action.calls);
-    return target;
-}
-
 export function beginHeroMagicMissileContact(
     action, state, random = rn2, rollOne = rnd,
 ) {

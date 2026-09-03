@@ -167,7 +167,6 @@ import {
     resumeDeferredMonsterRollingBoulderDeath,
     resumeDeferredMonsterMagicMissileWand,
     resolveMonsterMagicMissileContact,
-    finishMonsterMagicMissileDeath,
     finishEnvironmentalMonsterDeath, finishMonsterRayDeath,
     beginHeroMagicMissileContact,
     finishHeroMagicMissileDamage,
@@ -3581,14 +3580,28 @@ async function resolveMonsterMagicMissileBeam(action) {
                         range -= 2;
                         if (contact.killed) {
                             const deathCursor = [target.mx, target.my + 1];
-                            await queueTurnMessage(
-                                `The ${quietMonsterName(
-                                    target,
-                                )} is destroyed by the magic missile!`,
+                            const visible = cansee(target.mx, target.my);
+                            const spotted = canProjectMonster(
+                                target, target.mx, target.my,
                             );
-                            finishMonsterMagicMissileDeath(
-                                action, target, game,
+                            const verb = monsterIsNonliving(target.mnum)
+                                ? 'destroyed' : 'killed';
+                            const death = await finishMonsterRayDeath(
+                                target,
+                                {
+                                    deathMessage: visible
+                                        ? `The ${quietMonsterName(
+                                            target,
+                                        )} is ${verb} by the magic missile!`
+                                        : null,
+                                    visible,
+                                    spotted,
+                                },
+                                game,
+                                queueTurnMessage,
                             );
+                            contact.death = death;
+                            contact.killed = !death.survived;
                             pendingMapFlushCursor = deathCursor;
                         } else if (cansee(x, y)) {
                             await queueTurnMessage(
