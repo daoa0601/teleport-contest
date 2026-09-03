@@ -10,7 +10,7 @@ import { initRng } from '../js/rng.js';
 import {
     addInventoryObject, floorObject, knownObject,
 } from './support/game-objects.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 function randomValues(...values) {
@@ -71,12 +71,8 @@ test('a floor chest explosion destroys ordinary objects and wakes monsters',
         chest.contents = [contents];
         const rock = floorObject(ROCK, 10, 10);
         const amulet = floorObject(AMULET_OF_YENDOR, 10, 10);
-        const sleeper = addMonster({
-            mnum: 12,
-            x: 12,
-            y: 10,
-            msleeping: 1,
-        });
+        const sleeper = await createMonsterAt('jackal', 12, 10);
+        sleeper.msleeping = 1;
         const output = messageCollector();
 
         const result = await triggerChestTrap(chest, {

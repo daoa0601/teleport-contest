@@ -22,7 +22,7 @@ import {
 } from './support/game-objects.js';
 import { wearHeroObject } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
-import { addMonster, createMonsterAt } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
@@ -146,9 +146,8 @@ test('a squeaky board wakes nearby monsters', async () => {
         tseen: false,
         tnote: 0,
     });
-    const sleeper = addMonster({
-        species: 'jackal', x: 13, y: 10, msleeping: 1,
-    });
+    const sleeper = await createMonsterAt('jackal', 13, 10);
+    sleeper.msleeping = 1;
 
     await rhack('l'.charCodeAt(0));
 

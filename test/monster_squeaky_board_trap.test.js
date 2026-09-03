@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import {
     resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 function monsterOnSqueakyBoard(species = 'giant') {
@@ -19,9 +19,8 @@ function monsterOnSqueakyBoard(species = 'giant') {
 test('a visible monster squeaks a board and wakes a nearby sleeper',
     async () => {
         const { monster, trap } = monsterOnSqueakyBoard();
-        const sleeper = addMonster({
-            species: 'jackal', x: 15, y: 10, msleeping: 1,
-        });
+        const sleeper = await createMonsterAt('jackal', 15, 10);
+        sleeper.msleeping = 1;
         const messages = [];
 
         const action = triggerImmediateMonsterTrap(monster, game);
@@ -37,9 +36,8 @@ test('a visible monster squeaks a board and wakes a nearby sleeper',
 test('a deaf hero sees a monster cringe without discovering the board',
     async () => {
         const { monster, trap } = monsterOnSqueakyBoard();
-        const sleeper = addMonster({
-            species: 'jackal', x: 15, y: 10, msleeping: 1,
-        });
+        const sleeper = await createMonsterAt('jackal', 15, 10);
+        sleeper.msleeping = 1;
         const messages = [];
         game.deaf = true;
 
@@ -53,11 +51,10 @@ test('a deaf hero sees a monster cringe without discovering the board',
         assert.match(messages[0], /appears to cringe/);
     });
 
-test('a flying monster does not press a squeaky board', () => {
+test('a flying monster does not press a squeaky board', async () => {
     const { monster, trap } = monsterOnSqueakyBoard('red dragon');
-    const sleeper = addMonster({
-        species: 'jackal', x: 15, y: 10, msleeping: 1,
-    });
+    const sleeper = await createMonsterAt('jackal', 15, 10);
+    sleeper.msleeping = 1;
 
     triggerImmediateMonsterTrap(monster, game);
 

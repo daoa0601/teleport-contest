@@ -8,7 +8,7 @@ import { pushKeys } from '../js/input.js';
 import { ROCK } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
-import { addMonster } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 test('a hero-triggered land mine changes the level around the blast',
@@ -16,12 +16,8 @@ test('a hero-triggered land mine changes the level around the blast',
         const level = freshObjectRoom({ gameplaySeed: 19n });
         const mine = addTrap(level, LANDMINE, 10, 10);
         const rock = floorObject(ROCK, 10, 10);
-        const sleeper = addMonster({
-            species: 'giant',
-            x: 15,
-            y: 10,
-            msleeping: 1,
-        });
+        const sleeper = await createMonsterAt('giant', 15, 10);
+        sleeper.msleeping = 1;
         level.engravings = [{ x: 10, y: 10, text: 'Elbereth' }];
         pushKeys('                    ');
 
