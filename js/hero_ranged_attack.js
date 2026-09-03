@@ -4,7 +4,7 @@
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { applyArtifactHitToMonster } from './artifact_hit.js';
 import { artifactToHitBonus } from './artifacts.js';
-import { A_DEX, A_STR } from './const.js';
+import { A_DEX, A_STR, P_BOW } from './const.js';
 import {
     canProjectMonster, canSeeMonster, plineWithContinuation,
     randomDisplayMonsterName,
@@ -21,7 +21,9 @@ import {
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
-    BOOMERANG, OBJECT_HIT_BONUS, OBJECT_NAMES, OBJECT_SUBTYPE,
+    BOOMERANG, ELVEN_ARROW, ELVEN_BOW, GAUNTLETS_OF_FUMBLING,
+    GAUNTLETS_OF_POWER, OBJECT_HIT_BONUS, OBJECT_NAMES, OBJECT_SUBTYPE,
+    YA, YUMI,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import {
@@ -47,6 +49,45 @@ const M2_UNDEAD = 0x00000002;
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
 const GEM_CLASS = 13;
+
+function heroIsPolymorphed(state) {
+    return !!(state.u?.mtimedone || state.u?.polymorphed || state.u?.upolyd);
+}
+
+function heroStillHasTheirRace(state) {
+    if (!heroIsPolymorphed(state)) return true;
+    const raceFlag = state.urace?.selfmask;
+    return !!raceFlag
+        && !!((MONSTER_FLAGS2[state.u?.umonnum] ?? 0) & raceFlag);
+}
+
+function bowGlovePenalty(state) {
+    if (OBJECT_SUBTYPE[state.uwep?.otyp] !== P_BOW) return 0;
+    const gloves = state.uarmg || state.u?.uarmg;
+    if (gloves?.otyp === GAUNTLETS_OF_POWER) return -2;
+    if (gloves?.otyp === GAUNTLETS_OF_FUMBLING) return -3;
+    return 0;
+}
+
+function bowTrainingHitBonus(state, launcher) {
+    if (OBJECT_SUBTYPE[launcher?.otyp] !== P_BOW
+        || !heroStillHasTheirRace(state)) return 0;
+    const elf = state.urace?.key === 'elf' || state.urace?.noun === 'elf';
+    const samurai = state.urole?.key === 'samurai';
+    if (!elf && !samurai) return 0;
+    const ownBow = (elf && launcher.otyp === ELVEN_BOW)
+        || (samurai && launcher.otyp === YUMI);
+    return ownBow ? 2 : 1;
+}
+
+function matchingBowDamageBonus(state, ammunition, launcher) {
+    if (state.urole?.key === 'samurai'
+        && ammunition.otyp === YA && launcher.otyp === YUMI) return 1;
+    const elf = state.urace?.key === 'elf' || state.urace?.noun === 'elf';
+    return Number(elf
+        && ammunition.otyp === ELVEN_ARROW
+        && launcher.otyp === ELVEN_BOW);
+}
 
 function dexterityHitBonus(state) {
     const dexterity = currentAttribute(A_DEX, state);
@@ -77,8 +118,7 @@ function baseRangedHitThreshold(monster, weapon, state) {
     const movement = monster.mmove ?? MONSTER_MOVE[monster.mnum] ?? 0;
     const immobilized = monster.mcanmove === 0
         || monster.mcanmove === false || !movement;
-    const polymorphed = !!(state.u?.mtimedone || state.u?.polymorphed
-        || state.u?.upolyd);
+    const polymorphed = heroIsPolymorphed(state);
     const heroLevel = polymorphed
         ? state.u?.m_lev ?? MONSTER_LEVEL[state.u?.umonnum]
             ?? state.u?.ulevel ?? 1
@@ -91,7 +131,8 @@ function baseRangedHitThreshold(monster, weapon, state) {
         + heroLevel
         + dexterityHitBonus(state)
         + Math.max(-4, 3 - distance)
-        + (MONSTER_SIZE[monster.mnum] ?? 2) - 2;
+        + (MONSTER_SIZE[monster.mnum] ?? 2) - 2
+        + bowGlovePenalty(state);
 
     if (monster.msleeping) threshold += 2;
     if (immobilized) {
@@ -134,7 +175,8 @@ function thrownHitThreshold(monster, weapon, state) {
             + weaponSkillHitBonus(
                 state, Math.abs(OBJECT_SUBTYPE[launcher.otyp] ?? 0),
             )
-            + artifactToHitBonus(launcher, monster);
+            + artifactToHitBonus(launcher, monster)
+            + bowTrainingHitBonus(state, launcher);
     }
 
     if (weapon.otyp === BOOMERANG) threshold += 4;
@@ -182,7 +224,8 @@ async function rollRangedObjectDamage(
         damage += state.u?.udaminc ?? state.udaminc ?? 0;
         if (launcher) {
             const skill = Math.abs(OBJECT_SUBTYPE[launcher.otyp] ?? 0);
-            damage += weaponSkillDamageBonus(state, skill);
+            damage += weaponSkillDamageBonus(state, skill)
+                + matchingBowDamageBonus(state, weapon, launcher);
             if (baseDamage > 0) practiceSkill = skill;
         } else {
             damage += strengthDamageBonus(currentAttribute(A_STR, state));

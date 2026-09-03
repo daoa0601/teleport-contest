@@ -2,15 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    A_DEX, A_STR, P_BASIC, P_BOW, P_CROSSBOW, P_SKILLED, W_WEP,
+    A_DEX, A_STR, P_BASIC, P_BOW, P_CROSSBOW, P_SKILLED, W_ARMG, W_WEP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
-    ARROW, BOW, CLUB, CROSSBOW, CROSSBOW_BOLT,
+    ARROW, BOW, CLUB, CROSSBOW, CROSSBOW_BOLT, ELVEN_ARROW, ELVEN_BOW,
+    GAUNTLETS_OF_POWER, YA, YUMI,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { races } from '../js/roles.js';
 import { throwInventoryObject } from './support/commands.js';
-import { addInventoryWeapon } from './support/game-objects.js';
+import {
+    addInventoryObject, addInventoryWeapon,
+} from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
@@ -18,6 +22,44 @@ import { freshObjectRoom } from './support/object-room.js';
 
 function carriedClub() {
     return addInventoryWeapon(CLUB, { invlet: 'a', spe: 0 });
+}
+
+async function fireBowAtJackal({
+    role = 'caveman',
+    race = 'human',
+    bowType = BOW,
+    arrowType = ARROW,
+    glovesType = null,
+    seed = 1n,
+    heroLevel = 1,
+    dexterity = 10,
+    targetArmorClass = 10,
+} = {}) {
+    freshObjectRoom({ right: 20, role, gameplaySeed: 4900n });
+    game.urace = races.find(candidate => candidate.name === race);
+    game.u.ulevel = heroLevel;
+    game.u.acurr.a[A_DEX] = dexterity;
+    installHeroWeaponSkills({ [P_BOW]: P_BASIC });
+    const bow = addInventoryWeapon(bowType, {
+        invlet: 'a', owornmask: W_WEP, wielded: true,
+    });
+    const arrow = addInventoryWeapon(arrowType, { invlet: 'b' });
+    game.uwep = game.u.uwep = bow;
+    if (glovesType !== null) {
+        const gloves = addInventoryObject(glovesType, {
+            invlet: 'c', owornmask: W_ARMG, worn: true,
+        });
+        game.uarmg = game.u.uarmg = gloves;
+    }
+    const jackal = addMonster({
+        species: 'jackal', x: 11, y: 10,
+        hitPoints: 20, mac: targetArmorClass,
+    });
+    initRng(seed);
+
+    await throwInventoryObject(arrow, 'l', Array(6).fill(' '));
+
+    return 20 - jackal.mhp;
 }
 
 test('throwing a club carries it across its strength-based range', async () => {
@@ -151,4 +193,56 @@ test('a fired arrow gets ring damage but not Strength damage', async () => {
     await throwInventoryObject(arrow, 'l', Array(4).fill(' '));
 
     assert.equal(jackal.mhp, 15);
+});
+
+test('an elf is more accurate with an elven bow', async () => {
+    const humanDamage = await fireBowAtJackal({
+        role: 'ranger',
+        bowType: ELVEN_BOW,
+        arrowType: ELVEN_ARROW,
+        targetArmorClass: 8,
+        seed: 11n,
+    });
+    const elfDamage = await fireBowAtJackal({
+        role: 'ranger',
+        race: 'elf',
+        bowType: ELVEN_BOW,
+        arrowType: ELVEN_ARROW,
+        targetArmorClass: 8,
+        seed: 11n,
+    });
+
+    assert.equal(humanDamage, 0);
+    assert.ok(elfDamage > 0);
+});
+
+test('a Samurai does extra damage with a yumi and ya', async () => {
+    const ordinaryDamage = await fireBowAtJackal({
+        bowType: YUMI,
+        arrowType: YA,
+        heroLevel: 20,
+        dexterity: 18,
+        seed: 1n,
+    });
+    const samuraiDamage = await fireBowAtJackal({
+        role: 'samurai',
+        bowType: YUMI,
+        arrowType: YA,
+        heroLevel: 20,
+        dexterity: 18,
+        seed: 1n,
+    });
+
+    assert.equal(samuraiDamage, ordinaryDamage + 1);
+});
+
+test('gauntlets of power hinder a bow shot', async () => {
+    const bareDamage = await fireBowAtJackal({ seed: 11n });
+    const glovedDamage = await fireBowAtJackal({
+        glovesType: GAUNTLETS_OF_POWER,
+        seed: 11n,
+    });
+
+    assert.ok(bareDamage > 0);
+    assert.equal(glovedDamage, 0);
 });

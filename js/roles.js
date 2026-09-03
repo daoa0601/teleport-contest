@@ -461,9 +461,16 @@ const ROLE_SPELLCASTING = {
 for (const role of roles)
     role.spellcasting = ROLE_SPELLCASTING[role.key];
 
+const M2_HUMAN = 0x00000008;
+const M2_ELF = 0x00000010;
+const M2_DWARF = 0x00000020;
+const M2_GNOME = 0x00000040;
+const M2_ORC = 0x00000080;
+
 export const races = [
     { name: 'human', noun: 'human', adj: 'human', filecode: 'Hum',
-      raceIndex: 0, mnum: 260, mummynum: 192, zombienum: 244,
+      raceIndex: 0, selfmask: M2_HUMAN,
+      mnum: 260, mummynum: 192, zombienum: 244,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [118, 18, 18, 18, 18, 18],
       hpadv: {
           infix: 2, inrnd: 0, lofix: 0, lornd: 2, hifix: 1, hirnd: 0,
@@ -472,7 +479,8 @@ export const races = [
           infix: 1, inrnd: 0, lofix: 2, lornd: 0, hifix: 2, hirnd: 0,
       } },
     { name: 'elf', noun: 'elf', adj: 'elven', filecode: 'Elf',
-      raceIndex: 1, mnum: 264, mummynum: 191, zombienum: 243,
+      raceIndex: 1, selfmask: M2_ELF,
+      mnum: 264, mummynum: 191, zombienum: 243,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [18, 20, 20, 18, 16, 18],
       hpadv: {
           infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 1, hirnd: 0,
@@ -481,7 +489,8 @@ export const races = [
           infix: 2, inrnd: 0, lofix: 3, lornd: 0, hifix: 3, hirnd: 0,
       } },
     { name: 'dwarf', noun: 'dwarf', adj: 'dwarven', filecode: 'Dwa',
-      raceIndex: 2, mnum: 44, mummynum: 190, zombienum: 242,
+      raceIndex: 2, selfmask: M2_DWARF,
+      mnum: 44, mummynum: 190, zombienum: 242,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [118, 16, 16, 20, 20, 16],
       hpadv: {
           infix: 4, inrnd: 0, lofix: 0, lornd: 3, hifix: 2, hirnd: 0,
@@ -490,7 +499,8 @@ export const races = [
           infix: 0, inrnd: 0, lofix: 0, lornd: 0, hifix: 0, hirnd: 0,
       } },
     { name: 'gnome', noun: 'gnome', adj: 'gnomish', filecode: 'Gno',
-      raceIndex: 3, mnum: 165, mummynum: 188, zombienum: 240,
+      raceIndex: 3, selfmask: M2_GNOME,
+      mnum: 165, mummynum: 188, zombienum: 240,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [68, 19, 18, 18, 18, 18],
       hpadv: {
           infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 0,
@@ -499,7 +509,8 @@ export const races = [
           infix: 2, inrnd: 0, lofix: 2, lornd: 0, hifix: 2, hirnd: 0,
       } },
     { name: 'orc', noun: 'orc', adj: 'orcish', filecode: 'Orc',
-      raceIndex: 4, mnum: 72, mummynum: 189, zombienum: 241,
+      raceIndex: 4, selfmask: M2_ORC,
+      mnum: 72, mummynum: 189, zombienum: 241,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [68, 16, 16, 18, 18, 16],
       hpadv: {
           infix: 1, inrnd: 0, lofix: 0, lornd: 1, hifix: 0, hirnd: 0,
