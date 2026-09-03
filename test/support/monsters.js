@@ -44,13 +44,6 @@ export function liveMonster({
     return monster;
 }
 
-export function deadMonster(options) {
-    return liveMonster({
-        ...options,
-        mhp: 0,
-    });
-}
-
 export function livePet(options) {
     return liveMonster({
         mpeaceful: 1,
@@ -58,13 +51,6 @@ export function livePet(options) {
         pet: true,
         edog: {},
         ...options,
-    });
-}
-
-export function deadPet(options) {
-    return livePet({
-        ...options,
-        mhp: 0,
     });
 }
 
