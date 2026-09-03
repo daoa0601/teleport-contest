@@ -11,9 +11,11 @@ import { pushKey } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/light.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING,
-    ARROW, BOW, CLOVE_OF_GARLIC, CREAM_PIE, DAGGER, DART, EGG, FIGURINE,
+    ARROW, BOOMERANG, BOW, CLOVE_OF_GARLIC, CREAM_PIE, DAGGER, DART, EGG,
+    FIGURINE,
     LONG_SWORD, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
     POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY,
@@ -292,6 +294,49 @@ test('an unwielded bow can be thrown at a swallowing monster', async () => {
 
     assert.ok(engulfer.mhp < 40);
     assert.strictEqual(engulfer.minvent[0], bow);
+});
+
+test('a swallowed boomerang hits before return flight can begin', async () => {
+    const engulfer = freshSwallowedState(PM_TRAPPER);
+    const boomerang = addInventoryWeapon(BOOMERANG);
+    setBasicWeaponSkill(boomerang);
+
+    initRng(2310n);
+    await throwInventoryObject(boomerang, 'l');
+
+    assert.ok(engulfer.mhp < 40);
+    assert.equal(engulfer.minvent.includes(boomerang), true);
+});
+
+test('a swallowed weapon can hurt the pet that engulfed the hero', async () => {
+    const pet = freshSwallowedState(PM_TRAPPER);
+    Object.assign(pet, {
+        mpeaceful: 1,
+        mtame: 5,
+        pet: true,
+        edog: {},
+    });
+    const dagger = addInventoryWeapon(DAGGER);
+    setBasicWeaponSkill(dagger);
+
+    initRng(2310n);
+    await throwInventoryObject(dagger, 'l');
+
+    assert.ok(pet.mhp < 40);
+    assert.equal(pet.mtame, 4);
+});
+
+test('an ordinary swallowed weapon passes through a shade', async () => {
+    const shade = freshSwallowedState(MONSTER_NAME.indexOf('shade'));
+    const dagger = addInventoryWeapon(DAGGER);
+    setBasicWeaponSkill(dagger);
+
+    initRng(2310n);
+    await throwInventoryObject(dagger, 'l');
+
+    assert.equal(shade.mhp, 40);
+    assert.equal(shade.minvent.includes(dagger), true);
+    assert.match(game._pending_message, /passes harmlessly through the shade/);
 });
 
 test('a wielded swallowed weapon leaves the hand unless welded', async () => {

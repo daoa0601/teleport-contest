@@ -101,11 +101,16 @@ function canHaveTargetDamageBonus(object) {
         || objectClass === CHAIN_CLASS;
 }
 
+export function shadeBlocksWeaponBaseDamage(object, monster) {
+    return monsterIsShade(monster)
+        && OBJECT_MATERIAL[object.otyp] !== SILVER
+        && !artifactStrikesShade(object);
+}
+
 function applyTargetBaseRules(object, monster, damage, rollOne) {
     const material = OBJECT_MATERIAL[object.otyp];
     if (material <= LEATHER && monsterIsThickSkinned(monster)) damage = 0;
-    if (monsterIsShade(monster)
-        && material !== SILVER && !artifactStrikesShade(object)) damage = 0;
+    if (shadeBlocksWeaponBaseDamage(object, monster)) damage = 0;
 
     if (object.otyp === HEAVY_IRON_BALL && damage > 0) {
         const baseWeight = OBJECT_WEIGHT[HEAVY_IRON_BALL];
@@ -208,8 +213,8 @@ export function rollHeroMeleeWeaponDamage(
     }
 
     const silver = OBJECT_MATERIAL[object.otyp] === SILVER;
-    let damage = monsterIsShade(monster)
-        && !silver && !artifactStrikesShade(object) ? 0 : rollOne(2);
+    let damage = shadeBlocksWeaponBaseDamage(object, monster)
+        ? 0 : rollOne(2);
     if (silver && monsterHatesSilver(monster))
         damage += rollOne(damage > 0 ? 20 : 10);
     return { damage, usesArtifact: false, usesSkill: false };

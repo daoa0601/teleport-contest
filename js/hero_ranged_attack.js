@@ -18,7 +18,7 @@ import { abusePetAfterHeroHit } from './dog.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
     MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_SIZE,
-    monsterTypeName,
+    monsterIsShade, monsterTypeName,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
@@ -41,6 +41,7 @@ import {
 } from './skills.js';
 import {
     heroStrengthDamageBonus, rollPhysicalWeaponDamage,
+    shadeBlocksWeaponBaseDamage,
 } from './weapon_damage.js';
 
 const M2_DEMON = 0x00000100;
@@ -199,6 +200,17 @@ async function rollRangedObjectDamage(
         && isLauncherAmmunition(weapon) && !launcher;
     let damage = handThrownAmmunition
         ? rnd(2) : rollPhysicalWeaponDamage(weapon, monster);
+    if (handThrownAmmunition
+        && shadeBlocksWeaponBaseDamage(weapon, monster)) damage = 0;
+    if (damage === 0 && monsterIsShade(monster)) {
+        return {
+            damage: 0,
+            practiceSkill: null,
+            specialMessage: false,
+            attackStopped: false,
+            poison: null,
+        };
+    }
     const baseDamage = damage;
     let specialMessage = false;
     let attackStopped = false;

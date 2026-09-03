@@ -11,11 +11,11 @@ import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { endObjectBurn } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
-    BOULDER, BRASS_LANTERN, CLOVE_OF_GARLIC, MAGIC_LAMP, OBJECT_NAMES,
-    OBJECT_SUBTYPE, OIL_LAMP,
+    BOULDER, BRASS_LANTERN, CLOVE_OF_GARLIC, MAGIC_LAMP, OBJECT_SUBTYPE,
+    OIL_LAMP,
 } from './object_data.js';
 import {
-    MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
+    MONSTER_ATTACKS, MONSTER_SYMBOL, monsterDigests,
     monsterTypeName,
 } from './monster_data.js';
 import { AT_ENGL } from './monster_attack_types.js';
@@ -59,13 +59,6 @@ function itemIsEquipped(state, item) {
         || !!(item.owornmask ?? 0);
 }
 
-function activeObjectTimerCount(item) {
-    return Math.max(
-        item.timed ?? 0,
-        Array.isArray(item.objectTimers) ? item.objectTimers.length : 0,
-    );
-}
-
 function hasEngulfAttack(monster) {
     return MONSTER_ATTACKS[monster?.mnum]?.some(attack =>
         attack[0] === AT_ENGL);
@@ -90,15 +83,11 @@ function swallowedWeaponTarget(state, item, objectClass) {
     const weaponOrTool = objectClass === 2
         || (objectClass === 6 && subtype !== 0);
 
-    if (!weaponOrTool || subtype === 0
+    if (!weaponOrTool
         || item.lamplit || containsUnpaidObject(item)
-        || activeObjectTimerCount(item) > 0
-        || OBJECT_NAMES[item.otyp] === 'boomerang'
-        || engulfer.mpeaceful || engulfer.mtame || engulfer.pet
-        || engulfer.wormno || MONSTER_NAME[engulfer.mnum] === 'shade') {
+        || engulfer.wormno) {
         return null;
     }
-    if (!Number.isFinite(engulfer.mhp)) return null;
     return engulfer;
 }
 
