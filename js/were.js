@@ -13,7 +13,7 @@ import {
     canSeeMonster, newsym, plineWithContinuation,
 } from './display.js';
 import {
-    MONSTER_FLAGS2, MONSTER_NAME,
+    MONSTER_FLAGS2, MONSTER_NAME, monsterIsHuman,
 } from './monster_data.js';
 import {
     counterWereSpecies, setMonsterSpecies,
@@ -33,7 +33,6 @@ import { vision_recalc } from './vision.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 
 const M2_WERE = 0x00000004;
-const M2_HUMAN = 0x00000008;
 const PM_GREMLIN = 40;
 const PM_SEWER_RAT = 88;
 const PM_GIANT_RAT = 89;
@@ -110,7 +109,7 @@ function lycanthropeBeastMnum(state) {
     if (!Number.isInteger(mnum) || mnum < 0 || mnum >= MONSTER_NAME.length)
         return null;
     const flags = MONSTER_FLAGS2[mnum] ?? 0;
-    return (flags & M2_WERE) && !(flags & M2_HUMAN) ? mnum : null;
+    return (flags & M2_WERE) && !monsterIsHuman(mnum) ? mnum : null;
 }
 
 function beastFormName(beast) {
@@ -251,7 +250,7 @@ export function isWereMonster(monster) {
 
 export function isHumanWereMonster(monster) {
     const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
-    return !!(flags & M2_WERE) && !!(flags & M2_HUMAN);
+    return !!(flags & M2_WERE) && monsterIsHuman(monster?.mnum);
 }
 
 function heroHallucinates(state) {

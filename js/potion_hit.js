@@ -31,7 +31,7 @@ import {
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
     MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND,
-    monsterHatesBlessings, monsterTypeName,
+    monsterHatesBlessings, monsterIsHuman, monsterTypeName,
 } from './monster_data.js';
 import {
     AD_DISE, AD_PEST,
@@ -69,7 +69,6 @@ const M1_NOEYES = 0x00001000;
 const M1_NOHEAD = 0x00008000;
 const M2_PNAME = 0x00080000;
 const M2_WERE = 0x00000004;
-const M2_HUMAN = 0x00000008;
 const MR_SLEEP = 0x04;
 
 export const INERT_MONSTER_POTION_TYPES = new Set([
@@ -288,10 +287,6 @@ function monsterIsWere(monster) {
     return !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_WERE);
 }
 
-function monsterIsHuman(monster) {
-    return !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_HUMAN);
-}
-
 // Includes the one-point bottle chip which precedes potionhit()'s damaging
 // water or acid die. A bottle chip alone cannot kill because C applies it only
 // above one HP, so non-damaging identities return zero rather than one.
@@ -337,7 +332,7 @@ async function publishPotionPainAndWakeRadius({
 }
 
 function wereTransformationNoun(monster) {
-    if (!monsterIsHuman(monster)) return 'human';
+    if (!monsterIsHuman(monster?.mnum)) return 'human';
     if (monster.mnum === 261) return 'rat';
     if (monster.mnum === 262) return 'jackal';
     return 'wolf';
@@ -595,7 +590,7 @@ async function applySupportedDirectEffect({
                         throw new Error('water fatality owner unavailable');
                     await finishKill(monster);
                 } else if (monsterIsWere(monster)
-                    && !monsterIsHuman(monster)) {
+                    && !monsterIsHuman(monster?.mnum)) {
                     if (!transformWere)
                         throw new Error('water were-transform owner unavailable');
                     if (targetSpotted && !heroHallucinates(state)) {
@@ -614,7 +609,7 @@ async function applySupportedDirectEffect({
                     monster.mhpmax ?? monster.mhp,
                     monster.mhp + waterHealing,
                 );
-                if (monsterIsWere(monster) && monsterIsHuman(monster)
+                if (monsterIsWere(monster) && monsterIsHuman(monster?.mnum)
                     && !heroHasProtectionFromShapeChangers(state)) {
                     if (!transformWere)
                         throw new Error('water were-transform owner unavailable');

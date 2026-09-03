@@ -12,6 +12,7 @@ import {
 } from './mklev.js';
 import {
     MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL,
+    monsterIsHuman,
 } from './monster_data.js';
 import { nameToMonster, nameToMonsterClass } from './mondata.js';
 import { makePlural } from './object_grammar.js';
@@ -24,7 +25,6 @@ const GENOCIDE_PLAYER = 2;
 export const GENOCIDE_ON_THRONE = 4;
 const G_GENO = 0x0020;
 const G_UNIQ = 0x1000;
-const M2_HUMAN = 0x00000008;
 const M2_DEMON = 0x00000100;
 function heroRoleMonster() {
     if (Number.isInteger(game.u?.umonster)) return game.u.umonster;
@@ -268,7 +268,7 @@ async function requestGenocideSpecies(really) {
         }
         if (heroOwnSpecies(mnum)) return mnum;
         const alignment = game.u?.ualign?.type ?? 0;
-        if ((MONSTER_FLAGS2[mnum] ?? 0) & M2_HUMAN)
+        if (monsterIsHuman(mnum))
             game.u.ualign.record = (game.u.ualign.record ?? 0)
                 - Math.sign(alignment);
         if ((MONSTER_FLAGS2[mnum] ?? 0) & M2_DEMON)
