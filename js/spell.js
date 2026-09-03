@@ -9,7 +9,7 @@ import { nhgetch } from './input.js';
 import { NO_COLOR, ATR_INVERSE } from './terminal.js';
 import { rnd, rn2, d } from './rng.js';
 import {
-    A_DEX, A_INT, A_WIS, STRAT_APPEARMSG, STRAT_WAITFORU, TIMEOUT,
+    A_DEX, A_INT, A_WIS, TIMEOUT,
 } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
@@ -20,6 +20,7 @@ import {
 } from './object_data.js';
 import { applyPotionLikeInvisibility } from './hero_invisibility.js';
 import { forceBoltInDirection } from './force_bolt.js';
+import { aggravateMonsters } from './monster_anger.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
 import { changeMonsterSpeedInDirection } from './monster_speed_magic.js';
 import { turnUndeadInDirection } from './undead_turning.js';
@@ -68,21 +69,6 @@ function spellbookDelay({ level, otyp }) {
     if (level <= 4) return -(level - 1) * delay;
     if (level <= 6) return -level * delay;
     return -8 * delay;
-}
-
-function aggravateMonsters(g = game) {
-    // C wizard.c:aggravate(). Failed spellbook comprehension wakes every
-    // living monster before later movement.
-    for (const monster of g.level?.monsters || []) {
-        if (!monster || (monster.mhp ?? 1) <= 0) continue;
-        monster.mstrategy = (monster.mstrategy ?? 0)
-            & ~(STRAT_WAITFORU | STRAT_APPEARMSG);
-        monster.msleeping = 0;
-        if (monster.mcanmove === 0 && rn2(5) === 0) {
-            monster.mfrozen = 0;
-            monster.mcanmove = 1;
-        }
-    }
 }
 
 function consumeSpellbook(book, g = game) {

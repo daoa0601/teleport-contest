@@ -42,7 +42,7 @@ import {
 import {
     finishHeroSpitHit, monsterDryRattleMessage,
 } from './monster_spit.js';
-import { angerMonster } from './monster_anger.js';
+import { aggravateMonsters, angerMonster } from './monster_anger.js';
 import { animateRollingBoulderCell } from './hero_traps.js';
 import { grantAmuletWish } from './wish.js';
 import { exerciseAttribute } from './attrib.js';
@@ -150,7 +150,7 @@ import {
     resumeDeferredHeroSpell, resumeDeferredHeroStoning,
     resolveDeferredHeroSummonMonsters,
     resolveDeferredHeroHasteSelf,
-    aggravateMonsters, resolveDeferredHeroAggravation,
+    resolveDeferredHeroAggravation,
     resumeDeferredHeroWeaponSwing,
     finishDeferredMonsterMiscItem,
     finishDeferredHeroCloneWizard,
@@ -1318,7 +1318,7 @@ function finishInitialTurnMaintenanceRng(sourceTurn) {
                 };
                 return;
             } else if (intervention === 3) {
-                const affected = aggravateMonsters(game, rn2, []);
+                const affected = aggravateMonsters(game, rn2);
                 game._lastDemigodAggravation = affected.map(monster =>
                     monster.m_id);
                 delete game._unresolvedDemigodIntervention;

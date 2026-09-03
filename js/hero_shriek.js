@@ -3,8 +3,8 @@
 
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { aggravateMonsters } from './monster_anger.js';
 import { MONSTER_SOUND } from './monster_data.js';
-import { aggravateMonsters } from './monmove.js';
 import { heroMonsterForm } from './polyself.js';
 import { rn2 } from './rng.js';
 

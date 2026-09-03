@@ -1,11 +1,15 @@
 // Monster anger, alarm sounds, and peaceful bystander reactions.
-// C refs: mon.c setmangry(), wakeup(), peacefuls_respond(), angry_guards().
+// C refs: mon.c setmangry(), wakeup(), peacefuls_respond(), angry_guards(),
+// and wizard.c aggravate().
 
 import { adjustHeroAlignment } from './alignment.js';
-import { M_AP_MONSTER, STRAT_WAITMASK } from './const.js';
+import {
+    M_AP_MONSTER, STRAT_APPEARMSG, STRAT_WAITFORU, STRAT_WAITMASK,
+} from './const.js';
 import {
     canSpotMonster, plineWithContinuation, randomDisplayMonsterSubject,
 } from './display.js';
+import { insideWizardTower } from './dungeon.js';
 import { game } from './gstate.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
@@ -83,6 +87,34 @@ const HUMANOID_GASP_EXCLAMATIONS = [
 ];
 
 const WATCH_NAMES = new Set(['watchman', 'watch captain']);
+
+export function aggravateMonsters(state = game, random = rn2) {
+    const heroInsideTower = insideWizardTower(
+        state.u?.ux, state.u?.uy, state,
+    );
+    const awakened = [];
+
+    for (const monster of state.level?.monsters || []) {
+        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0) continue;
+        if (insideWizardTower(monster.mx, monster.my, state)
+            !== heroInsideTower) continue;
+
+        const wasSleeping = !!monster.msleeping;
+        const wasWaiting = !!((monster.mstrategy ?? 0)
+            & (STRAT_WAITFORU | STRAT_APPEARMSG));
+        monster.mstrategy = (monster.mstrategy ?? 0)
+            & ~(STRAT_WAITFORU | STRAT_APPEARMSG);
+        monster.msleeping = 0;
+        let unfroze = false;
+        if (monster.mcanmove === 0 && random(5) === 0) {
+            monster.mfrozen = 0;
+            monster.mcanmove = 1;
+            unfroze = true;
+        }
+        if (wasSleeping || wasWaiting || unfroze) awakened.push(monster);
+    }
+    return awakened;
+}
 
 function monsterDisplayName(monster) {
     if (monster?.name && monster.mnum === PM_GHOST) {

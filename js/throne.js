@@ -48,7 +48,7 @@ import {
 import { heroTeleportRestricted } from './teleport_rules.js';
 import { cansee, vision_recalc } from './vision.js';
 import { makeWish } from './wish.js';
-import { aggravateMonsters } from './monmove.js';
+import { aggravateMonsters } from './monster_anger.js';
 
 const COIN_CLASS = 12;
 const M2_PRINCE = 0x00000800;

@@ -11,6 +11,20 @@ import {
 } from './const.js';
 import { depth } from './hacklib.js';
 
+const WIZARD_TOWER_LEVELS = new Set(['wizard1', 'wizard2', 'wizard3']);
+
+// The teleport exclusions in the three Wizard levels mark the tower walls.
+// C dungeon.c exposes the same area as In_W_tower().
+export function insideWizardTower(x, y, state = game) {
+    const specialLevel = state._activeSpecialLevel;
+    if (!WIZARD_TOWER_LEVELS.has(specialLevel?.prototype)) return false;
+    const boundary = specialLevel.downTeleportExclude
+        || specialLevel.upTeleportExclude;
+    return !!boundary
+        && x >= boundary.lx && x <= boundary.hx
+        && y >= boundary.ly && y <= boundary.hy;
+}
+
 // Upward-building branches are harder than their displayed local depth because
 // the hero must descend to the branch entrance before climbing back up.
 export function level_difficulty() {

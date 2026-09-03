@@ -165,6 +165,7 @@ import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
 import {
     wereChange,
 } from './were.js';
+import { aggravateMonsters } from './monster_anger.js';
 import {
     A_CHA, A_DEX, A_STR,
     ACCESSIBLE, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_ROCK, ALLOW_SANCT,
@@ -6785,39 +6786,12 @@ export function resolveDeferredHeroHasteSelf(action, state) {
     return effect;
 }
 
-export function aggravateMonsters(
-    state, random = rn2, calls = [],
-) {
-    const affected = [];
-    for (const monster of state.level?.monsters || []) {
-        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0) continue;
-        const wasSleeping = !!monster.msleeping;
-        const wasWaiting = !!((monster.mstrategy ?? 0)
-            & (STRAT_WAITFORU | STRAT_APPEARMSG));
-        monster.mstrategy = (monster.mstrategy ?? 0)
-            & ~(STRAT_WAITFORU | STRAT_APPEARMSG);
-        monster.msleeping = 0;
-        let unfroze = false;
-        if (monster.mcanmove === 0
-            && recordRandom(random, calls, 5) === 0) {
-            monster.mfrozen = 0;
-            monster.mcanmove = 1;
-            unfroze = true;
-        }
-        if (wasSleeping || wasWaiting || unfroze)
-            affected.push(monster);
-    }
-    return affected;
-}
-
 export function resolveDeferredHeroAggravation(
     action, state, random = rn2,
 ) {
     const attack = action?.movement?.attack;
     if (!attack?.deferredAggravation) return null;
-    const affected = aggravateMonsters(
-        state, random, action.calls,
-    );
+    const affected = aggravateMonsters(state, random);
     attack.aggravatedMonsters = affected;
     attack.deferredAggravation = false;
     return affected;

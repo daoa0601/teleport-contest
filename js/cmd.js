@@ -227,8 +227,8 @@ import { reviveCorpseImmediately } from './corpse_revival.js';
 import { killGenocidedMonsters } from './mon.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import {
-    angerAttackedMonster, publishKickedPetYelp, publishMonsterGrowl,
-    wakeAttackedMonster, wakeAttackedShopkeeper,
+    aggravateMonsters, angerAttackedMonster, publishKickedPetYelp,
+    publishMonsterGrowl, wakeAttackedMonster, wakeAttackedShopkeeper,
 } from './monster_anger.js';
 import { monsterNoiseMessage } from './monster_sound.js';
 import { doride } from './steed.js';
@@ -336,7 +336,7 @@ import {
     prepareMainQuestPortalCall, onQuestStart, okToQuest,
 } from './quest.js';
 import {
-    aggravateMonsters, fumaroles, triggerImmediateMonsterTrap,
+    fumaroles, triggerImmediateMonsterTrap,
 } from './monmove.js';
 import { finishMonsterRayDeath } from './monster_death.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
