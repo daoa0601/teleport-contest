@@ -431,6 +431,7 @@ export function detachThrownUnit(
         thrown.where = 'free';
     }
     thrown.how_lost = LOST_THROWN;
+    state._capacityDirty = true;
     return thrown;
 }
 

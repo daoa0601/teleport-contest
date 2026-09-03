@@ -21,15 +21,8 @@ import {
 } from './thrown_object.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { cansee } from './vision.js';
-import { nearCapacity } from './weight.js';
 
 const POTION_CLASS = 8;
-
-function containsUnpaidObject(object) {
-    if (!object) return false;
-    if (object.unpaid) return true;
-    return (object.contents || []).some(containsUnpaidObject);
-}
 
 function activeTimerCount(item) {
     return Math.max(
@@ -56,12 +49,9 @@ function canResolveMapPotionThrow({
     const burningOil = item.otyp === POT_OIL && item.lamplit
         && activeTimerCount(item) > 0;
     if (((item.lamplit || activeTimerCount(item) > 0) && !burningOil)
-        || item.oartifact || item.artifact
-        || containsUnpaidObject(item)
-        || (item.contents?.length ?? 0) > 0
+        || item.unpaid
         || state.uball || state.u?.uball || state.uchain || state.u?.uchain
-        || state._shopRooms?.current
-        || (state._encumbranceLevel ?? nearCapacity(state)) > 0) return false;
+        || state._shopRooms?.current) return false;
 
     return true;
 }

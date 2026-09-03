@@ -11,7 +11,7 @@ import { inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/light.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
-    ALCHEMY_SMOCK, CHAIN_MAIL, CORPSE, DAGGER, IRON_CHAIN,
+    ALCHEMY_SMOCK, CHAIN_MAIL, CORPSE, DAGGER, IRON_CHAIN, LARGE_BOX,
     POT_ACID, POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL,
     POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS,
     POT_SPEED, SADDLE,
@@ -142,6 +142,19 @@ test('throwing a potion while levitating moves the hero backward', async () => {
 test('a potion can hit an adjacent monster underwater', async () => {
     const monster = freshMapPotionState(1);
     game.u.uinwater = true;
+    const potion = addInventoryObject(POT_INVISIBILITY);
+
+    initRng(3321n);
+    await throwEast(potion, Array(10).fill(' '));
+
+    assert.equal(monster.minvis, 1);
+    assert.equal(potion.where, 'gone');
+});
+
+test('a burdened hero can throw a potion', async () => {
+    const monster = freshMapPotionState(2);
+    addInventoryObject(CHAIN_MAIL);
+    addInventoryObject(LARGE_BOX);
     const potion = addInventoryObject(POT_INVISIBILITY);
 
     initRng(3321n);
