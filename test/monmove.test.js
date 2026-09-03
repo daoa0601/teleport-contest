@@ -12,6 +12,7 @@ import {
 } from '../js/const.js';
 import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
 import {
@@ -22,7 +23,7 @@ import {
     knownObject, uninitializedObject,
 } from './support/game-objects.js';
 import {
-    addMonster, createMonsterAt, equipMonsterObject,
+    createMonsterAt, equipMonsterObject,
 } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -85,14 +86,10 @@ test('a tame red dragon bites and claws an adjacent enemy', async () => {
     const dragon = await createMonsterAt('red dragon', 10, 10);
     tameMonster(dragon, game);
     dragon.mhp = dragon.mhpmax = 100;
-    const goblin = addMonster({
-        species: 'goblin',
-        x: 11,
-        y: 10,
-        hitPoints: 100,
-        level: 1,
-        mac: 100,
-    });
+    const goblin = await createMonsterAt('goblin', 11, 10);
+    goblin.mhp = goblin.mhpmax = 100;
+    goblin.m_lev = 1;
+    goblin.mac = 100;
 
     const action = quietMonsterActionRng(
         dragon,
@@ -109,7 +106,7 @@ test('a tame red dragon bites and claws an adjacent enemy', async () => {
     assert.equal(goblin.mhp, 68);
 });
 
-test('a silver weapon sears a lycanthropic hero in melee', () => {
+test('a silver weapon sears a lycanthropic hero in melee', async () => {
     freshObjectRoom({
         heroX: 10,
         heroY: 10,
@@ -124,14 +121,10 @@ test('a silver weapon sears a lycanthropic hero in melee', () => {
     const silverDagger = uninitializedObject(
         OBJECT_NAMES.indexOf('silver dagger'),
     );
-    const soldier = addMonster({
-        species: 'soldier',
-        x: 11,
-        y: 10,
-        hitPoints: 30,
-        level: 10,
-        mux: 10,
-        muy: 10,
+    const soldier = await createMonsterAt('soldier', 11, 10);
+    Object.assign(soldier, {
+        mhp: 30, mhpmax: 30, m_lev: 10,
+        mux: 10, muy: 10,
     });
     equipMonsterObject(soldier, silverDagger, W_WEP);
 
@@ -151,14 +144,14 @@ test('a monster fire blast makes a shifted vampire rise', async () => {
     const level = freshObjectRoom({
         heroX: 14, heroY: 10, recalculateVision: false,
     });
-    const dragon = addMonster({
-        species: 'red dragon', x: 10, y: 10,
-        hitPoints: 100, level: 15, mux: 14, muy: 10,
+    const dragon = await createMonsterAt('red dragon', 10, 10);
+    Object.assign(dragon, {
+        mhp: 100, mhpmax: 100, m_lev: 15, mux: 14, muy: 10,
     });
     const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
-    const wolf = addMonster({
-        species: 'wolf', x: 12, y: 10,
-        hitPoints: 1, maxHitPoints: 20, cham: vampireLeader,
+    const wolf = await createMonsterAt('wolf', 12, 10);
+    Object.assign(wolf, {
+        mhp: 1, mhpmax: 20, cham: vampireLeader,
     });
     const [action] = runQuietMonsterActions(
         [dragon], game, () => 1, (count, sides) => count * sides, () => 1,
@@ -177,14 +170,10 @@ test('a monster fire blast makes a shifted vampire rise', async () => {
 test('a land monster in lava burns and drops what it carried', async () => {
     const level = freshObjectRoom({ recalculateVision: false });
     level.at(12, 10).typ = LAVAPOOL;
-    const rock = knownObject(ROCK, { where: 'monster' });
-    const ant = addMonster({
-        mnum: 0,
-        x: 12,
-        y: 10,
-        hitPoints: 4,
-        inventory: [rock],
-    });
+    const rock = knownObject(ROCK);
+    const ant = await createMonsterAt('giant ant', 12, 10);
+    ant.mhp = ant.mhpmax = 4;
+    addObjectToMonsterInventory(ant, rock);
 
     const result = await resolveMonsterLiquid(ant, game, {
         finishDeath: finishMonsterLiquidDeath,
@@ -199,15 +188,10 @@ test('a monster which survives lava burns vulnerable carried items',
     async () => {
         const level = freshObjectRoom({ recalculateVision: false });
         level.at(12, 10).typ = LAVAPOOL;
-        const scroll = knownObject(SCR_TELEPORTATION, {
-            where: 'minvent',
-        });
-        const fireAnt = addMonster({
-            species: 'fire ant',
-            x: 12,
-            y: 10,
-            inventory: [scroll],
-        });
+        const scroll = knownObject(SCR_TELEPORTATION);
+        const fireAnt = await createMonsterAt('fire ant', 12, 10);
+        fireAnt.mhp = fireAnt.mhpmax = 20;
+        addObjectToMonsterInventory(fireAnt, scroll);
 
         await resolveMonsterLiquid(fireAnt, game, {
             finishDeath: finishMonsterLiquidDeath,
@@ -222,12 +206,8 @@ test('a gremlin can multiply in a fountain and dry it up', async () => {
     const level = freshObjectRoom();
     level.at(12, 10).typ = FOUNTAIN;
     level.flags.nfountains = 1;
-    const gremlin = addMonster({
-        species: 'gremlin',
-        x: 12,
-        y: 10,
-        hitPoints: 12,
-    });
+    const gremlin = await createMonsterAt('gremlin', 12, 10);
+    gremlin.mhp = gremlin.mhpmax = 12;
     const messages = [];
 
     const result = await resolveMonsterLiquid(gremlin, game, {
@@ -250,11 +230,7 @@ test('flight does not keep a monster above the Plane of Water', async () => {
     const level = freshObjectRoom();
     level.flags.is_waterlevel = true;
     level.at(12, 10).typ = POOL;
-    const dragon = addMonster({
-        species: 'red dragon',
-        x: 12,
-        y: 10,
-    });
+    const dragon = await createMonsterAt('red dragon', 12, 10);
     const messages = [];
 
     const result = await resolveMonsterLiquid(dragon, game, {
@@ -272,9 +248,8 @@ test('a drowning vampire wolf rises as a flying vampire leader', async () => {
     const level = freshObjectRoom();
     level.at(12, 10).typ = POOL;
     const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
-    const wolf = addMonster({
-        species: 'wolf', x: 12, y: 10, cham: vampireLeader,
-    });
+    const wolf = await createMonsterAt('wolf', 12, 10);
+    wolf.cham = vampireLeader;
     const messages = [];
 
     const result = await resolveMonsterLiquid(wolf, game, {
@@ -295,11 +270,8 @@ test('a flying hero keeps their steed above water', async () => {
     const level = freshObjectRoom();
     level.flags.is_waterlevel = true;
     level.at(12, 10).typ = POOL;
-    const pony = addMonster({
-        species: 'pony',
-        x: 12,
-        y: 10,
-    });
+    const pony = await createMonsterAt('pony', 12, 10);
+    const hitPoints = pony.mhp;
     game.u.usteed = pony;
     game.u.flying = true;
 
@@ -309,18 +281,14 @@ test('a flying hero keeps their steed above water', async () => {
     });
 
     assert.equal(level.monsters.includes(pony), true);
-    assert.equal(pony.mhp, 20);
+    assert.equal(pony.mhp, hitPoints);
 });
 
 test('a water wall drowns a monster clinging to the ceiling', async () => {
     const level = freshObjectRoom();
     level.at(12, 10).typ = WATER;
-    const piercer = addMonster({
-        species: 'rock piercer',
-        x: 12,
-        y: 10,
-        mundetected: 1,
-    });
+    const piercer = await createMonsterAt('rock piercer', 12, 10);
+    piercer.mundetected = 1;
 
     const result = await resolveMonsterLiquid(piercer, game, {
         finishDeath: finishMonsterLiquidDeath,
@@ -331,17 +299,12 @@ test('a water wall drowns a monster clinging to the ceiling', async () => {
     assert.equal(level.monsters.includes(piercer), false);
 });
 
-test('an engulfer carries only a form which fits through iron bars', () => {
+test('an engulfer carries only a form which fits through iron bars', async () => {
     const level = freshObjectRoom({ recalculateVision: false });
     level.at(11, 10).typ = IRONBARS;
-    const fogCloud = addMonster({
-        mnum: 106,
-        x: 10,
-        y: 10,
-        mux: 10,
-        muy: 10,
-        hitPoints: 8,
-        mcansee: 1,
+    const fogCloud = await createMonsterAt('fog cloud', 10, 10);
+    Object.assign(fogCloud, {
+        mux: 10, muy: 10, mhp: 8, mhpmax: 8, mcansee: 1,
     });
     Object.assign(game.u, {
         ustuck: fogCloud,
