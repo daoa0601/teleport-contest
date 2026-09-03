@@ -296,6 +296,64 @@ test('soft food and paper do not hurt a monster', async () => {
     }
 });
 
+test('a heavy non-weapon uses its weight for melee damage', async () => {
+    const { monster: jackal } = installMeleeArena(
+        'tourist', 'jackal', { mac: 100 },
+    );
+    equipWeapon('chest');
+    game.u.acurr.a[A_STR] = 18;
+    game.u.udaminc = -2;
+
+    initRng(3n);
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(jackal.mhp, 94);
+});
+
+test('a wet towel can dry after lashing a monster', async () => {
+    const { monster: jackal } = installMeleeArena(
+        'tourist', 'jackal', { mac: 100 },
+    );
+    const towel = equipWeapon('towel', { spe: 3 });
+    game.u.acurr.a[A_STR] = 10;
+
+    initRng(1n);
+    pushKeys(' '.repeat(4));
+    await rhack('l'.charCodeAt(0));
+
+    assert.ok(jackal.mhp < 100);
+    assert.equal(towel.spe, 2);
+});
+
+test('a silver shield sears a shade', async () => {
+    const { monster: shade } = installMeleeArena(
+        'tourist', 'shade', { mac: 100 },
+    );
+    equipWeapon('shield of reflection');
+    game.u.acurr.a[A_STR] = 10;
+
+    initRng(918n);
+    pushKeys(' '.repeat(4));
+    await rhack('l'.charCodeAt(0));
+
+    assert.ok(shade.mhp < 99);
+    assert.match(game._pending_message, /silver shield.*sears the shade/i);
+});
+
+test('a blessed object hurts an undead monster more than its weight alone',
+    async () => {
+        const { monster: zombie } = installMeleeArena(
+            'tourist', 'human zombie', { mac: 100 },
+        );
+        equipWeapon('meat stick', { blessed: true });
+        game.u.acurr.a[A_STR] = 10;
+
+        initRng(919n);
+        await rhack('l'.charCodeAt(0));
+
+        assert.ok(zombie.mhp <= 98);
+    });
+
 test('corpse melee damage comes from the corpse species size', async () => {
     const { monster: jackal } = installMeleeArena(
         'tourist', 'jackal', { mac: 100 },

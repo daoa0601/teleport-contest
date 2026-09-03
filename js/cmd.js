@@ -227,7 +227,9 @@ import {
     finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
 } from './hero_monster_death.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
-import { resolveHeroMeleeObjectContact } from './hero_melee_object.js';
+import {
+    finishHeroMeleeObjectHit, resolveHeroMeleeObjectContact,
+} from './hero_melee_object.js';
 import { isRider, isZombieMaker } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { killGenocidedMonsters } from './mon.js';
@@ -241,7 +243,6 @@ import { doride } from './steed.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     heroStrengthDamageBonus, rollHeroMeleeWeaponDamage,
-    rollPhysicalWeaponDamage,
 } from './weapon_damage.js';
 import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
@@ -10420,9 +10421,6 @@ async function attackHostileMonster(monster, x, y, {
         damage = weaponDamage.damage;
     } else if (objectContact) {
         damage = objectContact.damage;
-    } else if ([BOULDER, HEAVY_IRON_BALL, IRON_CHAIN]
-        .includes(attackWeapon.otyp)) {
-        damage = rollPhysicalWeaponDamage(attackWeapon, monster);
     } else {
         const targetIsLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3;
         const damageRange = (targetIsLarge
@@ -10592,6 +10590,9 @@ async function attackHostileMonster(monster, x, y, {
                 `You hit ${displayedMonsterObject()}${hitPunctuation}`,
             );
         }
+        await finishHeroMeleeObjectHit(attackWeapon, objectContact, {
+            publish: plineWithContinuation,
+        });
         await wakeMonsterAfterHit();
         if (!bareHanded && damage > 1 && !polymorphed
             && !twoWeaponActive) {
@@ -10627,6 +10628,10 @@ async function attackHostileMonster(monster, x, y, {
         if (passive.heroDied) return true;
         return finishStrike();
     }
+
+    await finishHeroMeleeObjectHit(attackWeapon, objectContact, {
+        publish: plineWithContinuation,
+    });
 
     // C hmon_hitmon_pet()->abuse_dog() runs even when this blow kills the
     // pet.  Hallucination disables is_safemon(), so an ordinary direction can
