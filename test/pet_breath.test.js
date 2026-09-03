@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { addMonsterToLevel } from './support/monsters.js';
-import { freshCommandRoom } from './support/playable-room.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 import {
     finishRangedAttacks, freshRangedCombatRoom, rangedPet, rangedTarget,
 } from './support/ranged-combat.js';
@@ -80,7 +80,7 @@ test('a tame dragon breathes at a distant monster instead of moving',
     });
 
 test('a rider in normal form can use a red dragon mount breath', async () => {
-    freshCommandRoom({ right: 20, role: 'knight', seed: 1n });
+    freshPlayableRoom({ right: 20, role: 'knight', seed: 1n });
     const steed = redDragon();
     game.u.usteed = steed;
     const target = addMonsterToLevel(breathTarget({ mpeaceful: 1 }));
@@ -95,7 +95,7 @@ test('a rider in normal form can use a red dragon mount breath', async () => {
 });
 
 test('a mounted dragon with no target snarls and spends the turn', async () => {
-    freshCommandRoom({ right: 20, role: 'knight', seed: 46003n });
+    freshPlayableRoom({ right: 20, role: 'knight', seed: 46003n });
     game.u.usteed = redDragon();
 
     await runMonsterAbilityCommand();

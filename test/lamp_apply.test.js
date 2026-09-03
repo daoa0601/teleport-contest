@@ -16,11 +16,11 @@ import {
     applyInventoryObject as applyInventoryA,
 } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
-import { freshCommandRoom } from './support/playable-room.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 import { addStaffedShop } from './support/shop.js';
 
 function freshLampState(otyp, overrides = {}, seed = 1n) {
-    freshCommandRoom({
+    freshPlayableRoom({
         seed,
         hero: {
             uz: { dnum: 0, dlevel: 1 },

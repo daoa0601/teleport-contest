@@ -23,7 +23,7 @@ import {
 } from './support/hero-state.js';
 import { freshGame } from './support/game-state.js';
 import { addMonster, liveMonster } from './support/monsters.js';
-import { freshCommandRoom } from './support/playable-room.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_ENERGY_VORTEX = 109;
 const PM_PURPLE_WORM = 115;
@@ -52,7 +52,7 @@ function freshPotionState(hero = { hallucinationTurns: 0 }) {
 }
 
 function installDirectWereHero({ beast = false } = {}) {
-    freshCommandRoom({ role: 'archeologist', seed: 1n });
+    freshPlayableRoom({ role: 'archeologist', seed: 1n });
     installHumanWerewolfHero({ beast });
 }
 

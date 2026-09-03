@@ -16,10 +16,10 @@ import {
 } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { addMonster, equipMonsterObject } from './support/monsters.js';
-import { freshCommandRoom } from './support/playable-room.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 function freshPickupGame(inventory = []) {
-    freshCommandRoom({ inventory, seed: 32001n });
+    freshPlayableRoom({ inventory, seed: 32001n });
 }
 
 function carriedRocks(count) {

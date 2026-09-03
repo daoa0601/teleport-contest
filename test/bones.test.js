@@ -19,14 +19,14 @@ import { knownObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { addMonster } from './support/monsters.js';
-import { freshCommandRoom } from './support/playable-room.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 import { addStaffedShop } from './support/shop.js';
 
 const PM_GHOST = 287;
 const LEVEL = { dnum: 0, dlevel: 7 };
 
 function freshBonesRoom(storage) {
-    freshCommandRoom({
+    freshPlayableRoom({
         seed: 8701n,
         hero: {
             uz: { ...LEVEL },

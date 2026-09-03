@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 
 import { STONING } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
-import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { useHeroHide } from '../js/hero_hide.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -39,7 +38,6 @@ test('a snake needs an object to hide underneath', async () => {
 
 test('a hiding mimic is drawn as an object', async () => {
     freshRoomWithPolymorphedHero('small mimic');
-    game.nhDisplay = new GameDisplay(null);
 
     await runMonsterAbilityCommand();
     await flush_screen(1);

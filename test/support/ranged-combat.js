@@ -1,8 +1,6 @@
 import {
     continueMonsterWeaponVolley, finishDeferredRangedProjectileHit,
 } from '../../js/monster_throw.js';
-import { GameDisplay } from '../../js/game_display.js';
-import { game } from '../../js/gstate.js';
 import { freshObjectRoom } from './object-room.js';
 import { liveMonster, livePet } from './monsters.js';
 
@@ -14,7 +12,6 @@ export function freshRangedCombatRoom(options = {}) {
         recalculateVision: false,
         ...options,
     });
-    game.nhDisplay = new GameDisplay(null);
     return level;
 }
 

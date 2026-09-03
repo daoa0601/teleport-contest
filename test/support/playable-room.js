@@ -33,15 +33,6 @@ export function freshPlayableRoom({
     freshGame({ ...gameState, level, role, heroX, heroY, hero });
     initRng(seed);
     vision_reset();
-    return level;
-}
-
-export function freshCommandRoom({
-    inventory = [],
-    seed = 1n,
-    ...room
-} = {}) {
-    const level = freshPlayableRoom({ ...room, inventory, seed });
     game.nhDisplay = new GameDisplay(null);
     return level;
 }

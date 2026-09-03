@@ -18,7 +18,7 @@ import { applyInventoryObject } from './support/commands.js';
 import {
     artifactObject, floorObject, inventoryObject,
 } from './support/game-objects.js';
-import { freshCommandRoom } from './support/playable-room.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 function carryObjects(...objects) {
     game.inventory = objects;
@@ -33,7 +33,7 @@ function unlockedContainer(otyp, invlet, overrides = {}) {
     });
 }
 
-test.beforeEach(() => freshCommandRoom({ seed: 48201n }));
+test.beforeEach(() => freshPlayableRoom({ seed: 48201n }));
 
 test('applying a carried chest can put an ordinary item inside', async () => {
     const chest = unlockedContainer(CHEST, 'a', { cknown: false });
@@ -264,7 +264,7 @@ test('an ice box pauses and resumes corpse decay', async () => {
 });
 
 test('floor loot uses the same container transfer as apply', async () => {
-    const level = freshCommandRoom({ seed: 48202n });
+    const level = freshPlayableRoom({ seed: 48202n });
     const chest = floorObject(CHEST, 10, 10, {
         cknown: true,
         olocked: false,

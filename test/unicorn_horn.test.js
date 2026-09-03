@@ -10,10 +10,10 @@ import {
 } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
-import { freshCommandRoom } from './support/playable-room.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 function freshHorn() {
-    freshCommandRoom({ seed: 1n });
+    freshPlayableRoom({ seed: 1n });
     game.context.move = 0;
     return addInventoryObject(UNICORN_HORN);
 }

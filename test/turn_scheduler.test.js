@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
 import { POOL, STONE } from '../js/const.js';
-import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { POT_PARALYSIS, WAN_MAGIC_MISSILE } from '../js/object_data.js';
@@ -18,7 +17,6 @@ import { freshGameplayRoom } from './support/playable-room.js';
 
 function freshTurnArena() {
     freshGameplayRoom();
-    game.nhDisplay = new GameDisplay(null);
     game.urole = { key: 'valkyrie' };
     game._moveloopStarted = true;
     game._maintenanceMove = 1;

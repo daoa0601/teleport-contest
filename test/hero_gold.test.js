@@ -15,7 +15,7 @@ import { carriedGold } from './support/gold-arena.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import {
-    freshCommandRoom, freshGameplayRoom,
+    freshGameplayRoom, freshPlayableRoom,
 } from './support/playable-room.js';
 
 test('picking up floor gold moves that identity into the dollar inventory slot',
@@ -108,7 +108,7 @@ test('quivered gold detaches one coin while preserving the purse identity',
 
 test('putting gold into a bag and taking it out moves the same identity',
     async () => {
-        freshCommandRoom();
+        freshPlayableRoom();
         const purse = carriedGold(23, 28304);
         const bag = addInventoryObject(SACK, {
             invlet: 'a', cknown: false,

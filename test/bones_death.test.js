@@ -24,14 +24,14 @@ import { addInventoryObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { addMonster } from './support/monsters.js';
-import { freshCommandRoom } from './support/playable-room.js';
+import { freshPlayableRoom } from './support/playable-room.js';
 
 const PM_GHOST = 287;
 const PM_HUMAN_ARCHEOLOGIST = 331;
 const PM_HUMAN_MUMMY = 192;
 
 test('a nearby object-loving monster can inherit a dead hero item', () => {
-    freshCommandRoom({ seed: 1n });
+    freshPlayableRoom({ seed: 1n });
     const dwarf = addMonster({
         mnum: 44,
         x: 11,
@@ -60,7 +60,7 @@ test('a nearby object-loving monster can inherit a dead hero item', () => {
 
 test('a hero burned in lava leaves dropped gear and a ghost but no body',
     async () => {
-        freshCommandRoom({
+        freshPlayableRoom({
             seed: 31n,
             hero: { uz: { dnum: 0, dlevel: 9 } },
         });
@@ -83,7 +83,7 @@ test('a hero burned in lava leaves dropped gear and a ghost but no body',
 
 test('a mummy victim rises with their inventory and intrinsic resistances',
     async () => {
-        freshCommandRoom({
+        freshPlayableRoom({
             seed: 21n,
             role: 'samurai',
             hero: {
@@ -136,7 +136,7 @@ test('a mummy victim rises with their inventory and intrinsic resistances',
 
 test('a stoned hero leaves a named statue containing their inventory',
     async () => {
-        freshCommandRoom({
+        freshPlayableRoom({
             seed: 11n,
             hero: {
                 uz: { dnum: 0, dlevel: 7 },
