@@ -44,7 +44,10 @@ export function artifactObject(name, overrides = {}) {
 }
 
 export function addInventoryObject(otyp, overrides = {}) {
-    return addInventoryItem(knownObject(otyp, overrides));
+    const { observed = true, ...properties } = overrides;
+    return addInventoryItem(
+        knownObject(otyp, properties), null, observed,
+    );
 }
 
 export function addInventoryWeapon(otyp, overrides = {}) {

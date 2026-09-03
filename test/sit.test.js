@@ -18,7 +18,9 @@ import {
 } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
-import { floorObject, inventoryObject } from './support/game-objects.js';
+import {
+    addInventoryObject, floorObject,
+} from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
@@ -69,8 +71,7 @@ test("Vlad's throne greases carried equipment", async () => {
     level.at(10, 10).typ = THRONE;
     game.u.uz = { dnum: 0, dlevel: 1 };
     game.dungeons = [{ dname: "Vlad's Tower" }];
-    const club = inventoryObject(CLUB, 'a');
-    game.inventory = [club];
+    const club = addInventoryObject(CLUB, { invlet: 'a' });
     initRng(21n);
     pushKeys('sit\n');
 
@@ -169,8 +170,7 @@ test('sitting on a land mine blasts a pit under the hero', async () => {
 
 test('a malignant aura curses an ordinary inventory item', async () => {
     freshGameplayRoom();
-    const club = inventoryObject(CLUB, 'a');
-    game.inventory = [club];
+    const club = addInventoryObject(CLUB, { invlet: 'a' });
 
     await rndcurse();
 
@@ -180,12 +180,10 @@ test('a malignant aura curses an ordinary inventory item', async () => {
 
 test('an attribute curse removes intrinsic but not worn resistance', async () => {
     freshGameplayRoom();
-    const armor = {
-        otyp: WHITE_DRAGON_SCALE_MAIL,
+    const armor = addInventoryObject(WHITE_DRAGON_SCALE_MAIL, {
         o_id: 42,
         worn: true,
-    };
-    game.inventory = [armor];
+    });
     game.uarm = armor;
     grantIntrinsicProperty('coldResistance', 'race', game);
     applyArmorOnEffects(armor, game);

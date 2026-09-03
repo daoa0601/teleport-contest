@@ -11,7 +11,7 @@ import { pushKey, pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { OBJECT_NAMES, ROCK, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { inventoryObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { addMonster } from './support/monsters.js';
@@ -35,13 +35,13 @@ function installMeleeArena(role, species = 'lichen', overrides = {}) {
 }
 
 function equipWeapon(name, overrides = {}) {
-    const weapon = inventoryObject(
-        OBJECT_NAMES.indexOf(name), 'a', {
+    const weapon = addInventoryObject(
+        OBJECT_NAMES.indexOf(name), {
+            invlet: 'a',
             spe: 0, enchantment: 0, worn: true, owornmask: 1,
             ...overrides,
         },
     );
-    game.inventory = [weapon];
     game.uwep = weapon;
     return weapon;
 }
@@ -62,9 +62,10 @@ async function lichenMeleeOutcome(role) {
 
 async function twoWeaponLichenOutcome(role) {
     const { level, monster: lichen } = installMeleeArena(role);
-    const katana = equipWeapon('katana');
-    const wakizashi = inventoryObject(
-        OBJECT_NAMES.indexOf('short sword'), 'b', {
+    equipWeapon('katana');
+    const wakizashi = addInventoryObject(
+        OBJECT_NAMES.indexOf('short sword'), {
+            invlet: 'b',
             // NetHack represents the Samurai's wakizashi as a short sword
             // with a role-specific display name.
             name: 'wakizashi',
@@ -78,7 +79,6 @@ async function twoWeaponLichenOutcome(role) {
         [P_LONG_SWORD]: P_UNSKILLED,
         [P_TWO_WEAPON_COMBAT]: P_UNSKILLED,
     });
-    game.inventory = [katana, wakizashi];
     game.uswapwep = wakizashi;
     game.u.twoweap = true;
 

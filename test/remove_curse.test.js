@@ -7,22 +7,23 @@ import {
     CLUB, LOADSTONE, SCR_REMOVE_CURSE,
 } from '../js/object_data.js';
 import { removeCurseEffect } from '../js/read.js';
-import { inventoryObject } from './support/game-objects.js';
+import {
+    addInventoryObject, knownObject,
+} from './support/game-objects.js';
 import { installPunishedHero } from './support/hero-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
-function cursedObject(otyp, invlet, overrides = {}) {
-    return inventoryObject(otyp, invlet, {
-        cursed: true, blessed: false, buc: 'cursed', ...overrides,
+function addCursedObject(otyp, invlet, overrides = {}) {
+    return addInventoryObject(otyp, {
+        invlet, cursed: true, blessed: false, buc: 'cursed', ...overrides,
     });
 }
 
 test('remove curse affects worn items and loadstones, not the whole pack', async () => {
     freshGameplayRoom();
-    const worn = cursedObject(CLUB, 'a', { owornmask: W_ARM });
-    const loadstone = cursedObject(LOADSTONE, 'b');
-    const carried = cursedObject(CLUB, 'c');
-    game.inventory = [worn, loadstone, carried];
+    const worn = addCursedObject(CLUB, 'a', { owornmask: W_ARM });
+    const loadstone = addCursedObject(LOADSTONE, 'b');
+    const carried = addCursedObject(CLUB, 'c');
 
     await removeCurseEffect({
         source: { otyp: SCR_REMOVE_CURSE },
@@ -35,8 +36,7 @@ test('remove curse affects worn items and loadstones, not the whole pack', async
 
 test('a blessed remove curse affects the whole pack and ends punishment', async () => {
     freshGameplayRoom();
-    const carried = cursedObject(CLUB, 'a');
-    game.inventory = [carried];
+    const carried = addCursedObject(CLUB, 'a');
 
     const { ball, chain } = installPunishedHero();
 
@@ -53,10 +53,9 @@ test('a blessed remove curse affects the whole pack and ends punishment', async 
 
 test('confused remove curse leaves existing curses and punishment in place', async () => {
     freshGameplayRoom();
-    const worn = cursedObject(CLUB, 'a', {
+    const worn = addCursedObject(CLUB, 'a', {
         owornmask: W_ARM, bknown: true,
     });
-    game.inventory = [worn];
     installPunishedHero();
 
     await removeCurseEffect({
@@ -70,8 +69,9 @@ test('confused remove curse leaves existing curses and punishment in place', asy
 
 test('remove curse also frees a steed from its cursed saddle', async () => {
     freshGameplayRoom();
-    const saddle = cursedObject(CLUB, 'a', {
-        owornmask: W_SADDLE, bknown: true,
+    const saddle = knownObject(CLUB, {
+        where: 'minvent', cursed: true, blessed: false,
+        buc: 'cursed', owornmask: W_SADDLE, bknown: true,
     });
     game.u.usteed = { minvent: [saddle] };
     const messages = [];
