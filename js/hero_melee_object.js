@@ -14,10 +14,11 @@ import {
     MONSTER_NAME, monsterIsShade, monsterIsUndead, monsterIsVampireShifter,
 } from './monster_data.js';
 import {
-    ACID_VENOM, BLINDING_VENOM, CLOVE_OF_GARLIC, CREAM_PIE,
+    ACID_VENOM, BLINDING_VENOM, CLOVE_OF_GARLIC, CREAM_PIE, MIRROR,
 } from './object_data.js';
+import { objectBreaksOnImpact } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
-import { rnd } from './rng.js';
+import { rnd, rn2 } from './rng.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 import { objectWeight } from './weight.js';
@@ -30,6 +31,7 @@ export async function resolveHeroMeleeObjectContact(
     {
         state = game,
         rollOne = rnd,
+        random = rn2,
         publish = plineWithContinuation,
         describeTarget = () => monster.name
             || `the ${MONSTER_NAME[monster.mnum] || 'monster'}`,
@@ -45,6 +47,21 @@ export async function resolveHeroMeleeObjectContact(
             });
         }
         return { damage: 1 };
+    }
+
+    if (object?.otyp === MIRROR) {
+        if (!objectBreaksOnImpact(object, random)) return { damage: 1 };
+
+        await publish("You break your mirror. That's bad luck!");
+        state.u.uluck = Math.max(
+            -13, Math.min(13, (state.u?.uluck ?? 0) - 2),
+        );
+        consumeOneWieldedObject(object, state);
+        return {
+            damage: 1,
+            addHeroDamageBonuses: false,
+            specialMessage: true,
+        };
     }
 
     if (object?.otyp === ACID_VENOM) {

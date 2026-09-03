@@ -226,3 +226,20 @@ test('wielded acid venom burns a monster and consumes one splash', async () => {
     assert.ok(jackal.mhp < 100);
     assert.equal(venom.quan, 1);
 });
+
+test('bashing with a mirror can break it and reduce luck', async () => {
+    const { monster: jackal } = installMeleeArena(
+        'tourist', 'jackal', { mac: 100 },
+    );
+    const mirror = equipWeapon('mirror');
+    game.u.acurr.a[A_STR] = 18;
+    game.u.udaminc = 5;
+
+    initRng(906n);
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(jackal.mhp, 99);
+    assert.equal(game.u.uluck, -2);
+    assert.equal(mirror.where, 'gone');
+    assert.equal(game.uwep, null);
+});
