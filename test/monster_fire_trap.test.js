@@ -18,7 +18,7 @@ import { floorObject, knownObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
-function freshMonsterFireTrap({
+async function freshMonsterFireTrap({
     trapType = FIRE_TRAP,
     visible = true,
     species = 'little dog',
@@ -26,7 +26,7 @@ function freshMonsterFireTrap({
     maxHitPoints = hitPoints,
     ...monsterState
 } = {}) {
-    const result = freshMonsterTrapRoom(trapType, {
+    const result = await freshMonsterTrapRoom(trapType, {
         monster: {
             species,
             hitPoints,
@@ -47,7 +47,7 @@ function quietFireRandom(range) {
 }
 
 test('a fire trap burns a vulnerable monster', async () => {
-    const { monster, trap } = freshMonsterFireTrap();
+    const { monster, trap } = await freshMonsterFireTrap();
     const messages = [];
     initRng(29n);
 
@@ -65,7 +65,7 @@ test('a fire trap burns a vulnerable monster', async () => {
 
 test('worn fire resistance stops the flame but not an exploding potion',
     async () => {
-        const { monster } = freshMonsterFireTrap();
+        const { monster } = await freshMonsterFireTrap();
         const potion = knownObject(POT_OIL, { where: 'monster' });
         const towel = knownObject(TOWEL, { spe: 2, where: 'monster' });
         const armor = knownObject(RED_DRAGON_SCALE_MAIL, {
@@ -97,7 +97,7 @@ test('worn fire resistance stops the flame but not an exploding potion',
     });
 
 test('a fire trap completely burns a paper golem', async () => {
-    const { monster } = freshMonsterFireTrap({
+    const { monster } = await freshMonsterFireTrap({
         species: 'paper golem',
     });
     initRng(37n);
@@ -117,7 +117,7 @@ test('a fire trap completely burns a paper golem', async () => {
 });
 
 test('a life-saving amulet lets a monster survive a fire trap', async () => {
-    const { monster } = freshMonsterFireTrap({
+    const { monster } = await freshMonsterFireTrap({
         visible: false,
         hitPoints: 1,
         maxHitPoints: 1,
@@ -141,7 +141,7 @@ test('a life-saving amulet lets a monster survive a fire trap', async () => {
 });
 
 test('a fire trap burns scrolls lying under the monster', async () => {
-    const { monster } = freshMonsterFireTrap();
+    const { monster } = await freshMonsterFireTrap();
     const scroll = floorObject(SCR_IDENTIFY, 11, 10);
     initRng(43n);
 
@@ -156,7 +156,7 @@ test('a fire trap burns scrolls lying under the monster', async () => {
 });
 
 test('a magic trap can produce the complete fire-trap effect', async () => {
-    const { monster, trap } = freshMonsterFireTrap({
+    const { monster, trap } = await freshMonsterFireTrap({
         trapType: MAGIC_TRAP,
     });
     initRng(17n);

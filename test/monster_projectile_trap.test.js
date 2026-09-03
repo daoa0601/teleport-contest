@@ -7,21 +7,24 @@ import {
     resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { ARROW } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 test('an arrow trap hits a visible monster', async () => {
-    const { level, monster, trap } = freshMonsterTrapRoom(ARROW_TRAP, {
+    const { level, monster, trap } = await freshMonsterTrapRoom(ARROW_TRAP, {
         gameplaySeed: 1n,
     });
+    const hitPointsBefore = monster.mhp;
     const messages = [];
+    initRng(1n);
 
     const action = triggerImmediateMonsterTrap(monster, game);
     await resumeDeferredMonsterTrap(action, game, {
         publish: async message => messages.push(message),
     });
 
-    assert.ok(monster.mhp < 20);
+    assert.ok(monster.mhp < hitPointsBefore);
     assert.equal(trap.tseen, true);
     assert.equal(floorObjectsAt(level, 11, 10).some(
         object => object.otyp === ARROW,
@@ -30,17 +33,19 @@ test('an arrow trap hits a visible monster', async () => {
 });
 
 test('an arrow that misses remains on the floor', async () => {
-    const { level, monster } = freshMonsterTrapRoom(ARROW_TRAP, {
+    const { level, monster } = await freshMonsterTrapRoom(ARROW_TRAP, {
         gameplaySeed: 9n,
     });
+    const hitPointsBefore = monster.mhp;
     const messages = [];
+    initRng(9n);
 
     const action = triggerImmediateMonsterTrap(monster, game);
     await resumeDeferredMonsterTrap(action, game, {
         publish: async message => messages.push(message),
     });
 
-    assert.equal(monster.mhp, 20);
+    assert.equal(monster.mhp, hitPointsBefore);
     assert.ok(floorObjectsAt(level, 11, 10).some(
         object => object.otyp === ARROW,
     ));

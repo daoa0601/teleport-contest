@@ -9,7 +9,7 @@ import {
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 test('sleeping gas puts a susceptible visible monster to sleep', async () => {
-    const { monster, trap } = freshMonsterTrapRoom(SLP_GAS_TRAP, {
+    const { monster, trap } = await freshMonsterTrapRoom(SLP_GAS_TRAP, {
         gameplaySeed: 31n,
     });
     const messages = [];

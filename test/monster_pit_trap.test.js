@@ -16,9 +16,10 @@ import { equipMonsterObject } from './support/monsters.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 test('a grounded monster falls into a pit', async () => {
-    const { monster, trap } = freshMonsterTrapRoom(PIT, {
+    const { monster, trap } = await freshMonsterTrapRoom(PIT, {
         monster: { species: 'giant' },
     });
+    const hitPointsBefore = monster.mhp;
     const messages = [];
 
     const action = triggerImmediateMonsterTrap(monster, game);
@@ -28,27 +29,28 @@ test('a grounded monster falls into a pit', async () => {
     });
 
     assert.equal(monster.mtrapped, 1);
-    assert.equal(monster.mhp, 17);
+    assert.equal(monster.mhp, hitPointsBefore - 3);
     assert.equal(trap.tseen, true);
     assert.match(messages[0], /falls into a pit/);
 });
 
-test('a flying monster passes over a pit', () => {
-    const { monster, trap } = freshMonsterTrapRoom(PIT, {
+test('a flying monster passes over a pit', async () => {
+    const { monster, trap } = await freshMonsterTrapRoom(PIT, {
         monster: { species: 'red dragon' },
     });
+    const hitPointsBefore = monster.mhp;
 
     const action = triggerImmediateMonsterTrap(monster, game);
 
     assert.equal(action.event, null);
     assert.equal(monster.mtrapped ?? 0, 0);
-    assert.equal(monster.mhp, 20);
+    assert.equal(monster.mhp, hitPointsBefore);
     assert.equal(trap.tseen ?? false, false);
 });
 
 test('falling makes a monster touch its wielded cockatrice corpse',
     async () => {
-        const { level, monster } = freshMonsterTrapRoom(PIT, {
+        const { level, monster } = await freshMonsterTrapRoom(PIT, {
             monster: { species: 'giant' },
         });
         const corpse = knownObject(CORPSE, { corpsenm: 10 });
@@ -72,7 +74,7 @@ test('falling makes a monster touch its wielded cockatrice corpse',
 
 test('a life-saved monster stops wielding the corpse that petrified it',
     async () => {
-        const { level, monster } = freshMonsterTrapRoom(PIT, {
+        const { level, monster } = await freshMonsterTrapRoom(PIT, {
             monster: { species: 'giant' },
         });
         const corpse = equipMonsterObject(

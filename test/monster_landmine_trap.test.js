@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 test('a heavy monster sets off a land mine and falls into the new pit',
     async () => {
-        const { monster, trap } = freshMonsterTrapRoom(LANDMINE, {
+        const { monster, trap } = await freshMonsterTrapRoom(LANDMINE, {
             gameplaySeed: 1n,
             monster: { species: 'giant', hitPoints: 30 },
         });
@@ -35,8 +35,8 @@ test('a heavy monster sets off a land mine and falls into the new pit',
         assert.ok(messages.some(message => message.includes('falls into a pit')));
     });
 
-test('a light monster can cross a land mine without setting it off', () => {
-    const { monster, trap } = freshMonsterTrapRoom(LANDMINE, {
+test('a light monster can cross a land mine without setting it off', async () => {
+    const { monster, trap } = await freshMonsterTrapRoom(LANDMINE, {
         gameplaySeed: 1n,
         monster: { species: 'gnome', hitPoints: 30 },
     });
@@ -49,7 +49,7 @@ test('a light monster can cross a land mine without setting it off', () => {
 
 test('a flying monster can reveal a land mine without detonating it',
     async () => {
-        const { monster, trap } = freshMonsterTrapRoom(LANDMINE, {
+        const { monster, trap } = await freshMonsterTrapRoom(LANDMINE, {
             gameplaySeed: 2n,
             monster: { species: 'red dragon', hitPoints: 30 },
         });

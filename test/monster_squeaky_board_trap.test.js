@@ -18,7 +18,7 @@ function monsterOnSqueakyBoard(species = 'giant') {
 
 test('a visible monster squeaks a board and wakes a nearby sleeper',
     async () => {
-        const { monster, trap } = monsterOnSqueakyBoard();
+        const { monster, trap } = await monsterOnSqueakyBoard();
         const sleeper = await createMonsterAt('jackal', 15, 10);
         sleeper.msleeping = 1;
         const messages = [];
@@ -35,7 +35,7 @@ test('a visible monster squeaks a board and wakes a nearby sleeper',
 
 test('a deaf hero sees a monster cringe without discovering the board',
     async () => {
-        const { monster, trap } = monsterOnSqueakyBoard();
+        const { monster, trap } = await monsterOnSqueakyBoard();
         const sleeper = await createMonsterAt('jackal', 15, 10);
         sleeper.msleeping = 1;
         const messages = [];
@@ -52,7 +52,7 @@ test('a deaf hero sees a monster cringe without discovering the board',
     });
 
 test('a flying monster does not press a squeaky board', async () => {
-    const { monster, trap } = monsterOnSqueakyBoard('red dragon');
+    const { monster, trap } = await monsterOnSqueakyBoard('red dragon');
     const sleeper = await createMonsterAt('jackal', 15, 10);
     sleeper.msleeping = 1;
 

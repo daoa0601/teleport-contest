@@ -28,8 +28,8 @@ function monsterAtTrap(trapType, { monster = {}, trap = {} } = {}) {
     });
 }
 
-test('a visible monster becomes caught in a web', () => {
-    const { monster, trap } = monsterAtTrap(WEB);
+test('a visible monster becomes caught in a web', async () => {
+    const { monster, trap } = await monsterAtTrap(WEB);
 
     triggerImmediateMonsterTrap(monster, game);
 
@@ -37,8 +37,8 @@ test('a visible monster becomes caught in a web', () => {
     assert.equal(trap.tseen, true);
 });
 
-test('a monster which recognizes a web can avoid becoming trapped', () => {
-    const { monster } = monsterAtTrap(WEB, {
+test('a monster which recognizes a web can avoid becoming trapped', async () => {
+    const { monster } = await monsterAtTrap(WEB, {
         monster: { mtrapseen: 1 << (WEB - 1) },
         trap: { tseen: true },
     });
@@ -50,8 +50,8 @@ test('a monster which recognizes a web can avoid becoming trapped', () => {
     assert.equal(monster.mtrapseen, 1 << (WEB - 1));
 });
 
-test('a monster can avoid a familiar ordinary teleport trap', () => {
-    const { monster } = monsterAtTrap(TELEP_TRAP, {
+test('a monster can avoid a familiar ordinary teleport trap', async () => {
+    const { monster } = await monsterAtTrap(TELEP_TRAP, {
         monster: { mtrapseen: 1 << (TELEP_TRAP - 1) },
         trap: { tseen: true },
     });
@@ -62,9 +62,9 @@ test('a monster can avoid a familiar ordinary teleport trap', () => {
     assert.deepEqual({ x: monster.mx, y: monster.my }, { x: 11, y: 10 });
 });
 
-test('a fixed teleport trap sends a monster to its free destination', () => {
+test('a fixed teleport trap sends a monster to its free destination', async () => {
     const destination = { x: 15, y: 10 };
-    const { monster } = monsterAtTrap(TELEP_TRAP, {
+    const { monster } = await monsterAtTrap(TELEP_TRAP, {
         monster: {
             mtrapseen: 1 << (TELEP_TRAP - 1),
             mtrack: [{ x: 9, y: 10 }],
@@ -79,7 +79,7 @@ test('a fixed teleport trap sends a monster to its free destination', () => {
 });
 
 test('a visible bear trap catches and hurts a pony', async () => {
-    const { monster, trap } = monsterAtTrap(BEAR_TRAP, {
+    const { monster, trap } = await monsterAtTrap(BEAR_TRAP, {
         monster: { mnum: 100, hitPoints: 20 },
     });
     initRng(5n);
@@ -93,7 +93,7 @@ test('a visible bear trap catches and hurts a pony', async () => {
 });
 
 test('a bear trap removes a monster it kills', async () => {
-    const { monster } = monsterAtTrap(BEAR_TRAP, {
+    const { monster } = await monsterAtTrap(BEAR_TRAP, {
         monster: { mnum: 100, hitPoints: 1 },
     });
 
@@ -110,7 +110,7 @@ test('iron shoes protect a caught monster from a bear trap', async () => {
     const shoes = knownObject(IRON_SHOES, {
         owornmask: W_ARMF, where: 'monster',
     });
-    const { monster } = monsterAtTrap(BEAR_TRAP, {
+    const { monster } = await monsterAtTrap(BEAR_TRAP, {
         monster: { mnum: 100, hitPoints: 20, inventory: [shoes] },
     });
 
@@ -126,7 +126,7 @@ test('rust-trap water rusts an iron helmet worn by a monster', async () => {
     const helmet = knownObject(ORCISH_HELM, {
         owornmask: W_ARMH, oeroded: 0, where: 'monster',
     });
-    const { monster } = monsterAtTrap(RUST_TRAP, {
+    const { monster } = await monsterAtTrap(RUST_TRAP, {
         monster: { inventory: [helmet] },
     });
     initRng(1n);
@@ -140,7 +140,7 @@ test('rust-trap water rusts an iron helmet worn by a monster', async () => {
 });
 
 test('a rust trap removes an iron golem which falls to pieces', async () => {
-    const { monster } = monsterAtTrap(RUST_TRAP, {
+    const { monster } = await monsterAtTrap(RUST_TRAP, {
         monster: { species: 'iron golem', hitPoints: 80 },
     });
 
@@ -155,7 +155,7 @@ test('a rust trap removes an iron golem which falls to pieces', async () => {
 test('a boulder-hit vampire rises while the boulder keeps rolling',
     async () => {
         const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
-        const { monster } = monsterAtTrap(ROLLING_BOULDER_TRAP, {
+        const { monster } = await monsterAtTrap(ROLLING_BOULDER_TRAP, {
             monster: {
                 species: 'wolf', hitPoints: 1, maxHitPoints: 20,
                 mac: 20, cham: vampireLeader,
@@ -176,11 +176,11 @@ test('a boulder-hit vampire rises while the boulder keeps rolling',
         assert.equal(game.level.objects[15][10].includes(boulder), true);
     });
 
-test('enchanted iron shoes absorb an anti-magic trap', () => {
+test('enchanted iron shoes absorb an anti-magic trap', async () => {
     const shoes = knownObject(IRON_SHOES, {
         spe: 1, enchantment: 1, owornmask: W_ARMF,
     });
-    const { monster } = monsterAtTrap(ANTI_MAGIC, {
+    const { monster } = await monsterAtTrap(ANTI_MAGIC, {
         monster: { inventory: [shoes] },
     });
 
@@ -190,8 +190,8 @@ test('enchanted iron shoes absorb an anti-magic trap', () => {
     assert.equal(monster.mhp, 8);
 });
 
-test('an anti-magic trap drains a monster which casts spells', () => {
-    const { monster, trap } = monsterAtTrap(ANTI_MAGIC, {
+test('an anti-magic trap drains a monster which casts spells', async () => {
+    const { monster, trap } = await monsterAtTrap(ANTI_MAGIC, {
         monster: { species: 'gnomish wizard' },
     });
     initRng(17n);
@@ -202,8 +202,8 @@ test('an anti-magic trap drains a monster which casts spells', () => {
     assert.equal(trap.tseen, true);
 });
 
-test('an anti-magic trap hurts a magic-resistant monster', () => {
-    const { monster } = monsterAtTrap(ANTI_MAGIC, {
+test('an anti-magic trap hurts a magic-resistant monster', async () => {
+    const { monster } = await monsterAtTrap(ANTI_MAGIC, {
         monster: { species: 'baby gray dragon', hitPoints: 20 },
     });
     initRng(19n);
@@ -214,7 +214,7 @@ test('an anti-magic trap hurts a magic-resistant monster', () => {
 });
 
 test('fatal anti-magic compression removes the monster', async () => {
-    const { monster } = monsterAtTrap(ANTI_MAGIC, {
+    const { monster } = await monsterAtTrap(ANTI_MAGIC, {
         monster: { species: 'baby gray dragon', hitPoints: 1 },
     });
     const messages = [];

@@ -12,10 +12,11 @@ import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 test('a falling-rock trap hits a visible monster and drops its rock',
     async () => {
-        const { level, monster, trap } = freshMonsterTrapRoom(ROCKTRAP, {
+        const { level, monster, trap } = await freshMonsterTrapRoom(ROCKTRAP, {
             gameplaySeed: 23n,
             monster: { species: 'giant' },
         });
+        const hitPointsBefore = monster.mhp;
         const messages = [];
 
         const action = triggerImmediateMonsterTrap(monster, game);
@@ -23,7 +24,7 @@ test('a falling-rock trap hits a visible monster and drops its rock',
             publish: async message => messages.push(message),
         });
 
-        assert.ok(monster.mhp < 20);
+        assert.ok(monster.mhp < hitPointsBefore);
         assert.equal(trap.tseen, true);
         assert.ok(floorObjectsAt(level, 11, 10).some(
             object => object.otyp === ROCK,
@@ -32,10 +33,11 @@ test('a falling-rock trap hits a visible monster and drops its rock',
     });
 
 test('a falling rock passes harmlessly through a xorn', async () => {
-    const { level, monster } = freshMonsterTrapRoom(ROCKTRAP, {
+    const { level, monster } = await freshMonsterTrapRoom(ROCKTRAP, {
         gameplaySeed: 23n,
         monster: { species: 'xorn' },
     });
+    const hitPointsBefore = monster.mhp;
     const messages = [];
 
     const action = triggerImmediateMonsterTrap(monster, game);
@@ -43,7 +45,7 @@ test('a falling rock passes harmlessly through a xorn', async () => {
         publish: async message => messages.push(message),
     });
 
-    assert.equal(monster.mhp, 20);
+    assert.equal(monster.mhp, hitPointsBefore);
     assert.ok(floorObjectsAt(level, 11, 10).some(
         object => object.otyp === ROCK,
     ));
