@@ -589,6 +589,7 @@ async function startFoodMeal(meal, messages) {
     applyMealNutrition(game, meal, 0);
     const occupation = {
         key: 'eat-food',
+        text: 'eating',
         ...meal,
         remaining: meal.reqtime,
         usedtime: 1,

@@ -136,3 +136,8 @@ export function heroHasNoHead(state) {
     return Upolyd(state.u)
         && !monsterHasHead({ mnum: state.u.umonnum });
 }
+
+export function heroIsBreathless(state = game) {
+    return !!state.u.magicalBreathing
+        || !!(MONSTER_FLAGS1[state.u.umonnum] & 0x00000400);
+}

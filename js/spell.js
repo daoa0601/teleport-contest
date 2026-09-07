@@ -172,6 +172,7 @@ export async function studyBook(book, g = game) {
     await pline('You begin to memorize the runes.');
     g._occupation = {
         key: 'study-book',
+        text: 'studying',
         delay: spellbookDelay(details),
         book,
         details,

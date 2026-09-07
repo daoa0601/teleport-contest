@@ -2,6 +2,8 @@
 // C refs: o_init.c observe_object(), discover_object(); shk.c record_price_quote().
 
 import { game } from './gstate.js';
+import { A_WIS } from './const.js';
+import { exerciseAttribute } from './attrib.js';
 import { OBJECT_BASES, OBJECT_NAMES } from './object_data.js';
 
 export const OBJECT_CLASS_LABELS = {
@@ -61,6 +63,16 @@ export function recordObjectKnowledge(otyp, state = game) {
     if (!(state._knownObjectTypes instanceof Set))
         state._knownObjectTypes = new Set();
     state._knownObjectTypes.add(otyp);
+}
+
+// C makeknown(): learning a type also records the encounter and credits
+// Wisdom once. Restoring saved knowledge does not grant that credit.
+export function learnObjectType(otyp, state = game) {
+    if (otyp < 1) return;
+    const known = state._knownObjectTypes?.has(otyp);
+    recordObjectEncounter(otyp, state);
+    recordObjectKnowledge(otyp, state);
+    if (!known) exerciseAttribute(A_WIS, true, state);
 }
 
 export function recordObjectCall(otyp, name, state = game) {

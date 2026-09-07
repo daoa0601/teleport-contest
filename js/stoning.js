@@ -18,6 +18,7 @@ import {
 import { removeIntrinsicProperty } from './properties.js';
 import { clearHeroSliming } from './slime.js';
 import { stopRun } from './runmode.js';
+import { stopHeroOccupation } from './occupation.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
 
 const PM_CHICKATRICE = 9;
@@ -72,11 +73,6 @@ function stopPositiveAction(state) {
     if ((state._multi ?? 0) > 0) state._multi = 0;
 }
 
-function stopOccupation(state) {
-    state._occupation = null;
-    stopPositiveAction(state);
-}
-
 function removeHeroSpeed(state) {
     const hero = state.u;
     hero.fastTurns = 0;
@@ -117,9 +113,9 @@ export async function advanceHeroPetrification({
         removeHeroSpeed(state);
         stopPositiveAction(state);
     } else if (turns === 4) {
-        stopOccupation(state);
+        await stopHeroOccupation(state, publish);
     } else if (turns === 3) {
-        stopOccupation(state);
+        await stopHeroOccupation(state, publish);
         state._helplessTurns = 3;
         state._helplessReason = 'getting stoned';
         state._helplessDoneMessage = 'You can move again.';

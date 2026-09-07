@@ -29,6 +29,7 @@ export function freshGame({
         level,
         flags,
         context,
+        program_state: {},
         moves,
         viz_array: visibleGrid(),
         inventory,

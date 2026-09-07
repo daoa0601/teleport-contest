@@ -4,11 +4,14 @@
 
 import { W_AMUL, W_RINGL, W_RINGR } from './const.js';
 import { game } from './gstate.js';
-import { OBJECT_PROPERTY } from './object_data.js';
+import { AMULET_OF_STRANGULATION, OBJECT_PROPERTY } from './object_data.js';
 import {
     grantWornProperty, removeWornProperty,
 } from './properties.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
+import {
+    clearHeroStrangulation, heroIsStrangled, startAmuletStrangulation,
+} from './hero_strangulation.js';
 
 const ACCESSORY_SLOTS = Object.freeze({
     uleft: { mask: W_RINGL, label: 'left-ring' },
@@ -27,6 +30,7 @@ export function wearHeroAccessory(object, slot, state = game) {
     object.owornmask = (object.owornmask ?? 0) | position.mask;
     const property = OBJECT_PROPERTY[object.otyp];
     if (property) grantWornProperty(property, object, slot, state);
+    if (object.otyp === AMULET_OF_STRANGULATION) startAmuletStrangulation(state);
     return property || null;
 }
 
@@ -42,5 +46,8 @@ export function removeHeroAccessory(object, state = game) {
     object.owornmask = (object.owornmask ?? 0) & ~position.mask;
     const property = OBJECT_PROPERTY[object.otyp];
     if (property) removeWornProperty(property, object, slot, state);
+    if (object.otyp === AMULET_OF_STRANGULATION && heroIsStrangled(state)) {
+        clearHeroStrangulation(state);
+    }
     return property || null;
 }

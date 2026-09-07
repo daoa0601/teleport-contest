@@ -1237,6 +1237,29 @@ export function randomDisplayMonsterName() {
     return randomDisplayMonsterIdentity().name;
 }
 
+const HALLUCINATED_COLORS = [
+    'ultraviolet', 'infrared', 'bluish-orange', 'reddish-green', 'dark white',
+    'light black', 'sky blue-pink', 'pinkish-cyan', 'indigo-chartreuse',
+    'salty', 'sweet', 'sour', 'bitter', 'umami',
+    'striped', 'spiral', 'swirly', 'plaid', 'checkered', 'argyle', 'paisley',
+    'blotchy', 'guernsey-spotted', 'polka-dotted', 'square', 'round',
+    'triangular', 'cabernet', 'sangria', 'fuchsia', 'wisteria', 'lemon-lime',
+    'strawberry-banana', 'peppermint', 'romantic', 'incandescent', 'octarine',
+    'excitingly dull', 'mauve', 'electric', 'neon', 'fluorescent',
+    'phosphorescent', 'translucent', 'opaque', 'psychedelic', 'iridescent',
+    'rainbow-colored', 'polychromatic', 'colorless', 'colorless green',
+    'dancing', 'singing', 'loving', 'loudy', 'noisy', 'clattery', 'silent',
+    'apocyan', 'infra-pink', 'opalescent', 'violant', 'tuneless',
+    'viridian', 'aureolin', 'cinnabar', 'purpurin', 'gamboge', 'madder',
+    'bistre', 'ecru', 'fulvous', 'tekhelet', 'selective yellow',
+];
+
+// C do_name.c:hcolor(). Hallucinated color names use the display RNG.
+export function displayColorName(preferred, state = game) {
+    if (preferred != null && !heroIsHallucinating(state)) return preferred;
+    return HALLUCINATED_COLORS[rn2Display(HALLUCINATED_COLORS.length)];
+}
+
 // C do_name.c:Monnam() requests ARTICLE_THE, except personal bogus-monster
 // names suppress the article before the result is sentence-capitalized.
 export function randomDisplayMonsterSubject(forceThe = false) {
@@ -1497,6 +1520,7 @@ export function _statusLine2() {
     else if (hunger <= 50) line += ' Weak';
     else if (hunger <= 150) line += ' Hungry';
     if (u._encumbrance) line += ` ${u._encumbrance}`;
+    if (u.strangled || u.strangledTurns > 0) line += ' Strngl';
     if (game.blind) line += ' Blind';
     if (polymorphed
         && ((MONSTER_FLAGS1[u.umonnum] ?? 0) & M1_FLY)) line += ' Fly';

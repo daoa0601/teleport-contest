@@ -101,6 +101,12 @@ function statusEnlightenmentLines() {
             : `  You have a wounded ${side} leg.`);
     }
 
+    if (u.strangled || u.strangledTurns > 0) {
+        const timeout = game.flags?.debug ? ` (${u.strangledTurns || 0})` : '';
+        lines.push(u.uburied ? '  You are buried.'
+            : `  You are being strangled${timeout}.`);
+    }
+
     const hunger = u.uhunger ?? 900;
     const rawHunger = game.flags?.debug ? ` <${hunger}>` : '';
     if (hunger > 150 && hunger <= 1000)

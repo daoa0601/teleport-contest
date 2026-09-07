@@ -2,11 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
+import { wearHeroAccessory } from '../js/accessory.js';
 import { NO_MINVENT, POOL, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { POT_PARALYSIS, WAN_MAGIC_MISSILE } from '../js/object_data.js';
+import {
+    AMULET_OF_STRANGULATION, POT_PARALYSIS, WAN_MAGIC_MISSILE,
+} from '../js/object_data.js';
 import {
     startHeroSickness, startHeroVomiting,
 } from '../js/hero_illness.js';
@@ -35,6 +38,26 @@ async function runUntilInput(inputGate, maxCycles) {
     const inputNeeded = inputGate.waitUntilBlocked().then(() => true);
     return Promise.race([turns, inputNeeded]);
 }
+
+test('strangulation advances during world turns and pauses during prayer', async () => {
+    const inputGate = freshTurnArena();
+    wearHeroAccessory(addInventoryObject(AMULET_OF_STRANGULATION), 'uamul');
+    pushKeys('h');
+
+    await moveloop_core();
+    const secondMove = moveloop_core();
+    await inputGate.waitUntilBlocked();
+
+    assert.equal(game.u.strangledTurns, 5);
+    game.u.invulnerable = true;
+    pushKeys('h');
+    await secondMove;
+    const nextCommand = moveloop_core();
+    await inputGate.waitUntilBlocked();
+    assert.equal(game.u.strangledTurns, 5);
+    pushKeys('\x1b');
+    await nextCommand;
+});
 
 test('helplessness advances through live global turns',
     async () => {

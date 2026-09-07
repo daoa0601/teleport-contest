@@ -217,6 +217,7 @@ import {
 import {
     advanceHeroPetrification, heroIsPetrifying,
 } from './stoning.js';
+import { advanceHeroStrangulation } from './hero_strangulation.js';
 import { setTrack } from './track.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, findArmorClass,
@@ -1801,6 +1802,14 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({
             state: game,
             publish: queueTurnMessage,
         });
+    }
+    if (!prayerTimeoutFreeze && game.u.strangledTurns > 0) {
+        await advanceHeroStrangulation({
+            state: game,
+            publish: queueTurnMessage,
+            die: finishHeroDeath,
+        });
+        if (game.program_state?.gameover) return { moveAmount };
     }
     if (!prayerTimeoutFreeze && heroIsSick(game)) {
         await advanceHeroSickness({

@@ -48,6 +48,9 @@ function propertySourceIsActive(property, state) {
 
 export function propertyIsActive(property, state = game) {
     const hero = state.u || {};
+    // C Strangled is the intrinsic timeout, not the amulet's worn property.
+    // Wearing the amulet does not strangle an immune body.
+    if (property === 'strangled') return timedSourceIsActive(property, hero);
     const steedFlags = MONSTER_FLAGS1[hero.usteed?.mnum] || 0;
     const fromSteed = property === 'flying' ? steedFlags & 0x01
         : property === 'swimming' ? steedFlags & 0x02 : false;

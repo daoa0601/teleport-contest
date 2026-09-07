@@ -66,6 +66,9 @@ import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
 import { heroLikesLava } from './hack.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import {
+    restartAmuletStrangulation, stopStrangulationInImmuneForm,
+} from './hero_strangulation.js';
+import {
     clearHeroSliming, heroIsFlaming, heroIsSliming, resetHeroSlimingCountdown,
 } from './slime.js';
 
@@ -296,6 +299,7 @@ export async function returnHeroToHumanForm(state = game, {
     if (restored.regainedSight) vision_recalc(0);
     await publish(`You return to ${restored.race} form!`);
     if (restored.regainedSight) await publish('You can see again.');
+    await restartAmuletStrangulation(state, publish);
     if (state.u.uhp < 1) {
         await publish('Your old form was not healthy enough to survive.');
         const died = await die({
@@ -406,6 +410,7 @@ async function beginMonsterForm(mnum, {
             clearHeroSliming(game);
         }
     }
+    await stopStrangulationInImmuneForm();
     if (heroHasNoHands(game)) {
         u.glibTurns = 0;
         u.glib = false;
@@ -476,6 +481,7 @@ export async function polymonHero(mnum, options = {}) {
     newsym(game.u.ux, game.u.uy);
 
     await escapeTrapsAfterFormChange();
+    await restartAmuletStrangulation();
 
     const currentCapacity = nearCapacity(game);
     game._encumbranceLevel = currentCapacity;
@@ -908,6 +914,7 @@ async function renewHumanForm() {
 
     const restored = await restoreHumanBody(game);
     await pline(`You feel like a new ${newHumanFormName()}!`);
+    await restartAmuletStrangulation();
     if (heroIsSliming(game)) {
         await pline('Your body transforms, but there is still slime on you.');
         resetHeroSlimingCountdown(game);

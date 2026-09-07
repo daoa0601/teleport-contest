@@ -86,6 +86,7 @@ export async function doforce(state = game) {
         await pline(action);
         state._occupation = {
             key: 'force-lock',
+            text: 'forcing the lock',
             container: box,
             picktyp: prying,
             chance: 2 * (OBJECT_LARGE_DAMAGE[weapon.otyp] || 0),

@@ -190,7 +190,7 @@ import {
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS,
     MAGIC_MARKER, UNICORN_HORN,
     SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
-    AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
+    AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR,
     CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING,
     NOVEL,
     OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES,
@@ -217,6 +217,8 @@ import {
 import {
     removeHeroAccessory, wearHeroAccessory,
 } from './accessory.js';
+import { heroIsStrangled } from './hero_strangulation.js';
+import { heroIsBreathless } from './hero_species.js';
 import { dosave } from './save.js';
 import { initTrack } from './track.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
@@ -265,12 +267,12 @@ import {
 } from './fountain_effects.js';
 import { reportFountainWarning } from './fountain.js';
 import { dryFountainAt } from './fountain_terrain.js';
-import { heroArmName } from './body_parts.js';
+import { heroArmName, heroNeckName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { dist2, distmin, dungeonDepth } from './hacklib.js';
 import { roomForRoomno } from './room.js';
 import {
-    OBJECT_CLASS_LABELS, objectClassForType, recordObjectCall,
+    OBJECT_CLASS_LABELS, learnObjectType, objectClassForType, recordObjectCall,
     recordObjectEncounter,
     recordObjectKnowledge,
 } from './object_knowledge.js';
@@ -1255,8 +1257,8 @@ export async function rhack(key) {
             finishHeroDeath,
             finishMonsterKill: finishHeroMonsterKill,
         });
-    } else if (ch === 'T') {
-        await dotakeoff();
+    } else if (ch === 'T' || ch === 'R') {
+        await removeWornItem(ch === 'R' ? 'remove' : 'take off');
     } else if (ch === 'P') {
         await doputon();
     } else if (ch === 'W') {
@@ -5178,6 +5180,9 @@ async function doloot() {
         if (String.fromCharCode(answer).toLowerCase() === 'y') {
             game._occupation = {
                 key: 'pick-lock',
+                text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD
+                    ? 'picking the lock'
+                    : `unlocking the ${container.otyp === CHEST ? 'chest' : 'box'}`,
                 remaining: 51,
                 usedtime: 0,
                 container,
@@ -7403,6 +7408,7 @@ async function putOnAccessoryObject(object) {
             game.context.move = 0;
             return;
         }
+        const wasStrangled = heroIsStrangled(game);
         wearHeroAccessory(object, 'uamul', game);
         // do_wear.c:Amulet_on(AMULET_OF_RESTFUL_SLEEP).
         if (object.otyp === 204) {
@@ -7414,6 +7420,9 @@ async function putOnAccessoryObject(object) {
         // do_wear.c:Amulet_on() -> on_msg() -> prinv().  Let the shared
         // inventory formatter own BUC observation and the worn suffix.
         await pline(`${object.invlet} - ${inventoryItemDescription(object)}.`);
+        if (object.otyp === AMULET_OF_STRANGULATION
+            && !wasStrangled && heroIsStrangled(game))
+            await plineWithContinuation('It constricts your throat!');
         game.context.move = 1;
         return;
     }
@@ -7529,26 +7538,28 @@ export function finishArmorRemoval(object, { silent = false } = {}) {
     return `You were wearing ${indefiniteArticle(description)} ${description}.`;
 }
 
-// C refs: do_wear.c dotakeoff(), armor_or_accessory_off(), and cursed().
-// The tty prompt advertises worn armor; eyewear remains an accepted inventory
-// selection and is removed through the accessory owner.
-async function dotakeoff() {
+// C do_wear.c:dotakeoff()/doremring() share armor_or_accessory_off().
+// T suggests armor and R suggests accessories; either accepts the other kind.
+async function removeWornItem(action) {
     const worn = (game.inventory || []).filter(object => object.worn);
     if (!worn.length) {
-        await pline('Not wearing any armor or accessories.');
+        await pline(action === 'remove'
+            ? 'Not wearing any accessories or armor.'
+            : 'Not wearing any armor or accessories.');
         game.context.move = 0;
         return;
     }
 
     let object;
     let inventoryPrompt = null;
-    if (worn.length === 1) {
-        [object] = worn;
+    const preferred = worn.filter(candidate => action === 'remove'
+        ? candidate.oclass === 4 || candidate.oclass === 5 || isEyewear(candidate)
+        : candidate.class === 'Armor' || candidate.oclass === 3);
+    if (preferred.length === 1) {
+        [object] = preferred;
     } else {
-        const armorLetters = worn.filter(candidate =>
-            candidate.class === 'Armor' || candidate.oclass === 3)
-            .map(candidate => candidate.invlet).join('');
-        const prompt = `What do you want to take off? [${armorLetters} or ?*] `;
+        const letters = preferred.map(candidate => candidate.invlet).join('');
+        const prompt = `What do you want to ${action}? [${letters} or ?*] `;
         inventoryPrompt = prompt;
         const selection = await promptInventoryObject(prompt, worn);
         if (selection.cancelled) {
@@ -7582,6 +7593,8 @@ async function dotakeoff() {
 
     if (object === game.uamul || object === game.uleft
         || object === game.uright) {
+        const wasStrangled = object.otyp === AMULET_OF_STRANGULATION
+            && heroIsStrangled(game);
         removeHeroAccessory(object, game);
         findArmorClass(game);
         if (game.flags?.verbose !== false) {
@@ -7590,6 +7603,12 @@ async function dotakeoff() {
                 `You were wearing ${indefiniteArticle(description)} ${
                     description}.`,
             );
+        }
+        if (wasStrangled) {
+            await plineWithContinuation(heroIsBreathless(game)
+                ? `Your ${heroNeckName(game)} is no longer constricted!`
+                : 'You can breathe more easily!');
+            learnObjectType(AMULET_OF_STRANGULATION, game);
         }
         game.context.move = 1;
         return;
@@ -11130,6 +11149,8 @@ async function domove(dx, dy, explicitAttempt = true) {
             if (String.fromCharCode(answer).toLowerCase() === 'y') {
                 game._occupation = {
                     key: 'pick-lock',
+                    text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD
+                        ? 'picking the lock' : 'unlocking the door',
                     remaining: 51,
                     usedtime: 0,
                     door: loc,

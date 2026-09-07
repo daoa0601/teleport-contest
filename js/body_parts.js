@@ -173,3 +173,21 @@ export function heroHandName(state = game) {
 export function heroHeadName(state = game) {
     return monsterHeadName(currentHeroMonsterNumber(state));
 }
+
+// C mbodypart(NECK). A body without a humanoid neck still has its own name
+// for that region, for example a spider's cephalothorax or an eye's equator.
+export function heroNeckName(state = game) {
+    const mnum = currentHeroMonsterNumber(state);
+    const symbol = MONSTER_SYMBOL[mnum];
+    if (symbol === S_LIGHT) return 'beam';
+    if (symbol === S_EEL && mnum !== PM_JELLYFISH) return 'gills';
+    if (symbol === S_WORM) return 'clitellum';
+    if (symbol === S_SPIDER) return 'cephalothorax';
+    if (MONSTER_FLAGS1[mnum] & M1_SLITHY) return 'neck';
+    if (symbol === S_EYE) return 'equator';
+    if ([S_JELLY, S_PUDDING, S_BLOB].includes(symbol)
+        || mnum === PM_JELLYFISH) return 'middle';
+    if (symbol === S_VORTEX || symbol === S_ELEMENTAL) return 'center';
+    if (symbol === S_FUNGUS) return 'stalk';
+    return 'neck';
+}
