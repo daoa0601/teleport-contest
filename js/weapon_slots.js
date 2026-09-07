@@ -5,6 +5,18 @@ import {
     W_QUIVER, W_SWAPWEP, W_WEAPONS, W_WEP,
 } from './const.js';
 import { game } from './gstate.js';
+import {
+    HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_SUBTYPE, TIN_OPENER,
+} from './object_data.js';
+
+export function isWeldedPrimary(object, state = game) {
+    if (object !== (state.uwep || state.u?.uwep) || !object?.cursed)
+        return false;
+    const weaponTool = object.oclass === 6
+        && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0;
+    return object.oclass === 2 || weaponTool
+        || [HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER].includes(object.otyp);
+}
 
 function slotObject(slot, state) {
     return state[slot] || state.u?.[slot] || null;

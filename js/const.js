@@ -2810,9 +2810,9 @@ export function OMONST(obj) { return obj?.oextra?.omonst; }
 export function MGIVENNAME(mtmp) { return mtmp?.mextra?.mgivenname || mtmp?.mgivenname || ''; }
 export function has_mgivenname(mtmp) { return !!(mtmp?.mextra?.mgivenname || mtmp?.mgivenname); }
 
-// C: you.h — #define Upolyd (u.mtimedone != 0)
+// C you.h: the current body remains polymorphed until its species changes.
 export function Upolyd(player) {
-    return !!(player && player.mtimedone && player.mtimedone > 0);
+    return !!player && player.umonnum !== player.umonster;
 }
 
 // Canonical macros — previously duplicated as local stubs in 15+ files

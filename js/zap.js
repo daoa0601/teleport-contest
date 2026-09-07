@@ -440,6 +440,7 @@ export async function dozap({
     if (wand.otyp === WAN_POLYMORPH && directionChar === '.') {
         const alreadyKnown = game._knownObjectTypes?.has(wand.otyp);
         const result = await polyselfRandomOrdinary();
+        if (result.died) return;
         if (result.learnEffect && wand.dknown && !alreadyKnown) {
             if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
             game._knownObjectTypes.add(wand.otyp);

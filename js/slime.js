@@ -227,7 +227,16 @@ export async function advanceHeroSliming({
             'the final slime turn requires transform and death functions',
         );
     }
-    await transform(PM_GREEN_SLIME, { announceForm: false });
+    const vitals = state.mvitals[PM_GREEN_SLIME] ||= { mvflags: 0 };
+    const originalFlags = vitals.mvflags;
+    // Slime infection completes even after genocide. Life saving then
+    // encounters the genocided body, as in C slimed_to_death().
+    vitals.mvflags &= ~G_GENOD;
+    try {
+        await transform(PM_GREEN_SLIME, { announceForm: false });
+    } finally {
+        vitals.mvflags = originalFlags;
+    }
     const died = await die({
         killer,
         deathVerb: 'turned into slime',

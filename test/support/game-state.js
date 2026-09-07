@@ -2,6 +2,8 @@ import { COLNO, COULD_SEE, IN_SIGHT, ROWNO } from '../../js/const.js';
 import { GameMap } from '../../js/game.js';
 import { game, resetGame } from '../../js/gstate.js';
 import { resetInputState } from '../../js/input.js';
+import { roles } from '../../js/roles.js';
+import { initializeHeroSpecies } from '../../js/u_init.js';
 
 function visibleGrid() {
     return Array.from(
@@ -12,7 +14,7 @@ function visibleGrid() {
 
 export function freshGame({
     level = new GameMap(),
-    role,
+    role = roles[0],
     heroX = 10,
     heroY = 10,
     hero = {},
@@ -35,8 +37,10 @@ export function freshGame({
         uquiver: null,
         animationFrame: async () => {},
     });
-    if (role !== undefined)
-        game.urole = typeof role === 'string' ? { key: role } : role;
+    const roleKey = typeof role === 'string' ? role : role.key;
+    const roleData = roles.find(candidate => candidate.key === roleKey);
+    if (!roleData) throw new Error(`Unknown hero role: ${roleKey}`);
+    game.urole = typeof role === 'string' ? roleData : { ...roleData, ...role };
     game.u = {
         ux: heroX,
         uy: heroY,
@@ -50,8 +54,9 @@ export function freshGame({
         amax: { a: attributes.slice() },
         ualign: { type: 1, record: 10 },
         uconduct: {},
-        ...hero,
     };
+    initializeHeroSpecies(game);
+    Object.assign(game.u, hero);
     resetInputState();
     return game;
 }

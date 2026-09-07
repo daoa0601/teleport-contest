@@ -1,8 +1,8 @@
-// polyself.js — Hero polymorph state and equipment transaction.
+// Hero form changes and equipment.
 // C refs: polyself.c polyself(), polymon(), break_armor(), drop_weapon().
 
 import { game } from './gstate.js';
-import { d, rnd, rn2 } from './rng.js';
+import { d, rnd, rn1, rn2 } from './rng.js';
 import {
     adjustLevelAbilities, newExperienceThreshold,
 } from './exper.js';
@@ -12,27 +12,29 @@ import {
     MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor,
     monsterHasNoHands, monsterHornCount, monsterIsCentaur,
     monsterIsSlithy, monsterIsVampire, monsterIsVerySmall,
-    monsterIsWhirly, monsterSlipsArmor, monsterWrappingAllowed,
+    monsterIsWhirly, monsterSlipsArmor, monsterTypeName, monsterWrappingAllowed,
     validVampireShiftForm,
 } from './monster_data.js';
 import {
-    AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS,
+    AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS, AT_WEAP,
 } from './monster_attack_types.js';
 import {
-    AMULET_OF_UNCHANGING, LENSES, OBJECT_MATERIAL,
+    AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE,
+    OBJECT_MATERIAL,
     RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS,
 } from './object_data.js';
 import {
     newsym, pline, plineWithContinuation, see_monsters,
 } from './display.js';
-import { place_object } from './floor_object.js';
-import { moreUntilDismissed } from './tty_prompts.js';
+import { landFloorObject } from './floor_effects.js';
+import { deleteObject } from './object_delete.js';
 import { findArmorClass } from './armor.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
 import {
-    A_CHA, A_CON, A_DEX, A_STR, A_WIS, STAIRS,
+    A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, STAIRS, Upolyd,
+    W_ACCESSORY, W_ARMOR, W_SADDLE,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { syncBlindness } from './senses.js';
@@ -45,6 +47,8 @@ import {
 import { heroHasNoHead } from './hero_species.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { removeHeroEquipment } from './hero_equipment.js';
+import { loseHeroHp } from './hero_damage.js';
+import { isWeldedPrimary, releaseWeaponSlots } from './weapon_slots.js';
 import { grantIntrinsicProperty, revokeIntrinsicProperty } from './properties.js';
 import { vision_recalc } from './vision.js';
 import {
@@ -63,7 +67,6 @@ const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;
 const M2_NEUTER = 0x00040000;
 const M2_STRONG = 0x04000000;
-const MZ_SMALL = 1;
 const S_MIMIC = 13;
 const S_DRAGON = 30;
 const MAXULEV = 30;
@@ -122,11 +125,7 @@ export function heroHasProtectionFromShapeChangers(state = game) {
 }
 
 export function heroIsPolymorphed(state = game) {
-    const u = state.u;
-    if ((u?.mtimedone ?? 0) > 0) return true;
-    return Number.isInteger(u?.umonnum)
-        && Number.isInteger(u?.umonster)
-        && u.umonnum !== u.umonster;
+    return Upolyd(state.u);
 }
 
 export function heroMonsterForm(state = game) {
@@ -286,21 +285,16 @@ export async function returnHeroToHumanForm(state = game, {
     return { ...restored, died: selfTouch.died };
 }
 
-function dropCarriedObject(object) {
+async function dropCarriedObject(object) {
     if (!object) return;
     removeHeroEquipment(object, game);
     const index = game.inventory?.indexOf(object) ?? -1;
     if (index >= 0) game.inventory.splice(index, 1);
-    place_object(object, game.u.ux, game.u.uy);
+    object.where = 'free';
+    await landFloorObject(object, game.u.ux, game.u.uy, {
+        publish: plineWithContinuation,
+    });
     newsym(game.u.ux, game.u.uy);
-}
-
-function destroyCarriedObject(object) {
-    if (!object) return;
-    removeHeroEquipment(object, game);
-    const index = game.inventory?.indexOf(object) ?? -1;
-    if (index >= 0) game.inventory.splice(index, 1);
-    object.where = 'gone';
 }
 
 function heroSurfaceName() {
@@ -308,7 +302,9 @@ function heroSurfaceName() {
     return location?.typ === STAIRS ? 'stairs' : 'floor';
 }
 
-function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
+async function beginMonsterForm(mnum, {
+    sexChangeAllowed = false, announceForm = true,
+} = {}) {
     const u = game.u;
     const previousMnum = u.umonnum;
     const remainedVampireShifter = validVampireShiftForm(u.mcham, mnum);
@@ -334,11 +330,23 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
     }
 
     const genderFlags = MONSTER_FLAGS2[mnum] ?? 0;
-    if (sexChangeAllowed
-        && !(genderFlags & (M2_MALE | M2_FEMALE | M2_NEUTER))
-        && mnum !== u.ulycn
-        && rn2(10) === 0) {
-        if (game.flags) game.flags.female = !game.flags.female;
+    const female = !!game.flags.female;
+    if (genderFlags & M2_MALE) game.flags.female = false;
+    else if (genderFlags & M2_FEMALE) game.flags.female = true;
+    else if (!(genderFlags & M2_NEUTER) && mnum !== u.ulycn
+        && sexChangeAllowed && rn2(10) === 0)
+        game.flags.female = !female;
+
+    if (announceForm) {
+        const sexChanged = female !== game.flags.female;
+        const gendered = genderFlags & (M2_MALE | M2_FEMALE);
+        const sex = sexChanged && !gendered
+            ? game.flags.female ? 'female ' : 'male ' : '';
+        const renewed = previousMnum === mnum ? 'new ' : '';
+        const name = renewed + sex + monsterTypeName(mnum, game.flags.female);
+        const article = /^[aeiou]/i.test(name) ? 'an' : 'a';
+        const verb = previousMnum === mnum ? 'feel like' : 'turn into';
+        await plineWithContinuation(`You ${verb} ${article} ${name}!`);
     }
 
     // mondata.c:set_mon_data() prorates unused movement when the new form is
@@ -361,15 +369,6 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
     // form-owned base explicit so every existing equipment/protection
     // contribution can continue through the shared armor calculator.
     u.formArmorClass = MONSTER_EXPERIENCE_META[mnum]?.[0] ?? 10;
-    if (!Number.isInteger(u.umonster)) {
-        // role.c initializes u.umonster to the role's generated monster
-        // record, not to the compact role-table index.  Role monsters begin
-        // immediately after PM_LONG_WORM_TAIL/SPECIAL_PM.
-        u.umonster = Number.isInteger(game.urole?.mnum)
-            ? SPECIAL_PM + 1 + game.urole.mnum
-            : (game.urace?.mnum ?? mnum);
-    }
-
     const strong = !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_STRONG);
     if (strong) {
         // polyself.c:uasmon_maxStr(): ordinary strong forms use STR18(100).
@@ -409,183 +408,20 @@ function beginMonsterForm(mnum, { sexChangeAllowed = false } = {}) {
     // polymon() does not repaint the accepted form until break_armor() has
     // completed.  A garment pager can therefore still expose the old hero
     // glyph even though monster HP and status metadata are already live.
-    return { previousMnum, wasPolymorphed };
 }
 
-// C polyself.c:polymon().  Selection and legality remain caller-owned; this
-// function owns the accepted form, equipment, encumbrance, and verbose
-// ability transaction for controlled and involuntary transformations alike.
-export async function polymonHero(mnum, {
-    sexChangeAllowed = false,
-    announceForm = true,
-} = {}) {
+// C polyself.c:polymon(). Selection is separate from changing the body.
+export async function polymonHero(mnum, options = {}) {
+    if ((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD) {
+        await plineWithContinuation(`You feel rather ${MONSTER_NAME[mnum]}-ish.`);
+        exerciseAttribute(A_WIS, true);
+        return { transformed: false };
+    }
+
     const previousCapacity = nearCapacity(game);
-    const wasPolymorphed = heroIsPolymorphed(game);
-    const previousMnum = game.u?.umonnum;
-    beginMonsterForm(mnum, { sexChangeAllowed });
-
-    const monsterName = MONSTER_NAME[mnum] || 'monster';
-    const article = /^[aeiou]/i.test(monsterName) ? 'an' : 'a';
-    const formMessage = wasPolymorphed && previousMnum === mnum
-        ? `You feel like a new ${monsterName}!`
-        : `You turn into ${article} ${monsterName}!`;
-    const withFormMessage = message => announceForm
-        ? `${formMessage}  ${message}` : message;
-    const suit = game.uarm || game.u?.uarm;
-    const cloak = game.uarmc || game.u?.uarmc;
-    const shirt = game.uarmu || game.u?.uarmu;
-    const helmet = game.uarmh || game.u?.uarmh;
-    const gloves = game.uarmg || game.u?.uarmg;
-    const shield = game.uarms || game.u?.uarms;
-    const boots = game.uarmf || game.u?.uarmf;
-    const eyewear = game.ublindf || game.u?.ublindf;
-    const weapon = game.uwep || game.u?.uwep;
-    const formFlags = MONSTER_FLAGS1[mnum] ?? 0;
-    const whirly = monsterIsWhirly({ mnum });
-    const verySmall = monsterIsVerySmall(mnum);
-    const slithy = monsterIsSlithy(mnum);
-    const centaur = monsterIsCentaur(mnum);
-    const slipsArmor = monsterSlipsArmor(mnum);
-    const breaksArmor = monsterBreaksArmor(mnum);
-    const noHands = heroHasNoHands(game);
-    const canBreathe = (MONSTER_ATTACKS[mnum] || [])
-        .some(([attackType]) => attackType === 12);
-
-    const transientCapacity = nearCapacity(game);
-    game._encumbranceLevel = transientCapacity;
-    game.u._encumbrance = encumbranceLabel(transientCapacity);
-    let sequentialEquipmentMessages = false;
-    let sourceCapacity = previousCapacity;
-    const publishDropCapacityChange = async () => {
-        const nextCapacity = nearCapacity(game);
-        const message = encumbranceMessage(sourceCapacity, nextCapacity);
-        sourceCapacity = nextCapacity;
-        game._encumbranceLevel = nextCapacity;
-        game.u._encumbrance = encumbranceLabel(nextCapacity);
-        if (message) await plineWithContinuation(message);
-    };
-
-    if (breaksArmor && !suit && !cloak && !shirt
-        && noHands && weapon && !gloves) {
-        // With no garment prose, the later encumbrance line is what forces
-        // tty to expose the combined form/drop-weapon pager.  Preserve the
-        // pre-find_ac status while projecting the new glyph through dropx.
-        newsym(game.u.ux, game.u.uy);
-        await moreUntilDismissed(
-            `${withFormMessage('You find you must drop your tool!')}--More--`,
-        );
-        dropCarriedObject(weapon);
-    } else if (breaksArmor) {
-        // C polymon() publishes the accepted form before break_armor().
-        // Sequential continuation calls preserve the exact point at which a
-        // later garment line forces tty to page the already-pending prose.
-        if (announceForm) await plineWithContinuation(formMessage);
-        sequentialEquipmentMessages = announceForm;
-        if (suit) {
-            await plineWithContinuation('You break out of your armor!');
-            destroyCarriedObject(suit);
-        }
-        if (cloak) {
-            if (cloak.otyp === MUMMY_WRAPPING
-                && monsterWrappingAllowed(mnum)) {
-                // The source wrapping spans eligible humanoid forms and stays
-                // worn even though their ordinary armor must break.
-            } else if (cloak.otyp === MUMMY_WRAPPING) {
-                await plineWithContinuation('Your wrapping tears apart!');
-                destroyCarriedObject(cloak);
-            } else {
-                await plineWithContinuation(
-                    cloak.otyp === ALCHEMY_SMOCK
-                        ? 'The knot on your apron is pulled apart!'
-                        : 'The clasp on your cloak breaks open!',
-                );
-                dropCarriedObject(cloak);
-            }
-        }
-        if (shirt) {
-            await plineWithContinuation('Your shirt rips to shreds!');
-            destroyCarriedObject(shirt);
-        }
-    } else if (slipsArmor && cloak) {
-        // Native reaches this pager only after dropx()/newsym has projected
-        // the small form, while its pre-removal AC is still painted.
-        newsym(game.u.ux, game.u.uy);
-        await moreUntilDismissed(
-            `${withFormMessage('You shrink out of your cloak!')}--More--`,
-        );
-        dropCarriedObject(cloak);
-    } else if (noHands && weapon && !gloves) {
-        await moreUntilDismissed(
-            `${withFormMessage('You find you must drop your tool!')}--More--`,
-        );
-        dropCarriedObject(weapon);
-    } else if (announceForm) {
-        await pline(formMessage);
-    }
-
-    const hornCount = monsterHornCount(mnum);
-    if (hornCount && helmet) {
-        const flimsy = (OBJECT_MATERIAL[helmet.otyp] ?? Infinity) <= LEATHER;
-        if (flimsy) {
-            const horns = hornCount === 1 ? 'horn' : 'horns';
-            const verb = hornCount === 1 ? 'pierces' : 'pierce';
-            await plineWithContinuation(
-                `Your ${horns} ${verb} through your ${helmet.name}.`,
-            );
-        } else {
-            const helmName = helmet.otyp === 97 ? 'helm' : helmet.name;
-            await plineWithContinuation(
-                `Your ${helmName} falls to the ${heroSurfaceName()}!`,
-            );
-            dropCarriedObject(helmet);
-        }
-    }
-    if (noHands && gloves) {
-        await plineWithContinuation(
-            `You drop your gloves${weapon ? ' and weapon' : ''}!`,
-        );
-        if (weapon) {
-            dropCarriedObject(weapon);
-            await publishDropCapacityChange();
-        }
-        dropCarriedObject(gloves);
-        await publishDropCapacityChange();
-    }
-    if (noHands && shield) {
-        await plineWithContinuation(
-            'You can no longer hold your shield!',
-        );
-        dropCarriedObject(shield);
-        await publishDropCapacityChange();
-    }
-    if ((noHands || verySmall || slithy || centaur) && boots) {
-        await plineWithContinuation(
-            whirly
-                ? 'Your boots fall away!'
-                : verySmall
-                    ? 'Your boots slide off your feet!'
-                    : 'Your boots are pushed off your feet!',
-        );
-        dropCarriedObject(boots);
-        await publishDropCapacityChange();
-    }
-    if (heroHasNoHead(game) && eyewear) {
-        let eyewearName = eyewear.name || 'blindfold';
-        if (eyewearName.startsWith('pair of '))
-            eyewearName = eyewearName.slice('pair of '.length);
-        const fallVerb = eyewearName.endsWith('s') ? 'fall' : 'falls';
-        await plineWithContinuation(
-            `Your ${eyewearName} ${fallVerb} off!`,
-        );
-        removeHeroEquipment(eyewear, game);
-        const stillBlind = syncBlindness(game);
-        if (stillBlind && eyewear.otyp !== LENSES) {
-            await plineWithContinuation('You still cannot see.');
-        }
-        dropCarriedObject(eyewear);
-        await publishDropCapacityChange();
-    }
-
+    await beginMonsterForm(mnum, options);
+    await changeArmorForHeroForm(mnum);
+    await dropPolymorphWeapons(true);
     findArmorClass(game);
     game.vision_full_recalc = 1;
     newsym(game.u.ux, game.u.uy);
@@ -593,42 +429,181 @@ export async function polymonHero(mnum, {
     const currentCapacity = nearCapacity(game);
     game._encumbranceLevel = currentCapacity;
     game.u._encumbrance = encumbranceLabel(currentCapacity);
+    const capacityMessage = encumbranceMessage(previousCapacity, currentCapacity);
+    if (capacityMessage) await plineWithContinuation(capacityMessage);
 
-    const capacityMessage = encumbranceMessage(
-        sourceCapacity, currentCapacity,
-    );
-    let capacityMessagePaged = false;
-    if (capacityMessage && canBreathe) {
-        await moreUntilDismissed(`${capacityMessage}--More--`);
-        capacityMessagePaged = true;
-    } else if (capacityMessage) {
-        if (sequentialEquipmentMessages)
-            await plineWithContinuation(capacityMessage);
-        else await pline(capacityMessage);
-    }
     const retouch = await retouchEquipment(2);
     if (retouch.died) return { transformed: true, mnum, died: true };
     const selfTouch = await selfTouchPetrifyingWeapons();
-    if (selfTouch.died)
-        return { transformed: true, mnum, died: true };
-    if (canBreathe && game.flags?.verbose !== false) {
-        const breathMessage
-            = 'Use the command #monster to use your breath weapon.';
-        if (capacityMessagePaged) await pline(breathMessage);
-        else await plineWithContinuation(breathMessage);
-    }
-    const laysEggs = !!(formFlags & M1_OVIPAROUS);
-    const aquaticEel = ['giant eel', 'electric eel'].includes(monsterName);
-    if (laysEggs && game.flags?.female && !aquaticEel) {
+    if (selfTouch.died) return { transformed: true, mnum, died: true };
+
+    const currentForm = game.u.umonnum;
+    const canBreathe = (MONSTER_ATTACKS[currentForm] || [])
+        .some(([attackType]) => attackType === 12);
+    if (game.flags.verbose !== false && canBreathe) {
         await plineWithContinuation(
-            'Use the command #sit to lay an egg.',
+            'Use the command #monster to use your breath weapon.',
         );
+    }
+    const laysEggs = !!(MONSTER_FLAGS1[currentForm] & M1_OVIPAROUS);
+    const aquaticEel = ['giant eel', 'electric eel']
+        .includes(MONSTER_NAME[currentForm]);
+    if (game.flags.verbose !== false && laysEggs
+        && game.flags.female && !aquaticEel) {
+        await plineWithContinuation('Use the command #sit to lay an egg.');
     }
     return { transformed: true, mnum };
 }
 
-export async function polyselfControlledMonster(mnum) {
-    return polymonHero(mnum, { sexChangeAllowed: true });
+// C break_armor(): garments react in body-slot order. Read each slot when
+// reached because removing one item can change the remaining equipment.
+async function changeArmorForHeroForm(mnum) {
+    const worn = slot => game[slot] || game.u[slot];
+    const breaksArmor = monsterBreaksArmor(mnum);
+    const slipsArmor = monsterSlipsArmor(mnum);
+    const whirly = monsterIsWhirly({ mnum });
+    const noHands = monsterHasNoHands(mnum);
+    const verySmall = monsterIsVerySmall(mnum);
+    let object;
+
+    if (breaksArmor) {
+        if ((object = worn('uarm'))) {
+            await plineWithContinuation('You break out of your armor!');
+            exerciseAttribute(A_STR, false);
+            deleteObject(object);
+        }
+        if ((object = worn('uarmc'))
+            && !(object.otyp === MUMMY_WRAPPING && monsterWrappingAllowed(mnum))) {
+            if (object.otyp === MUMMY_WRAPPING) {
+                await plineWithContinuation('Your wrapping tears apart!');
+                deleteObject(object);
+            } else {
+                await plineWithContinuation(object.otyp === ALCHEMY_SMOCK
+                    ? 'The knot on your apron is pulled apart!'
+                    : 'The clasp on your cloak breaks open!');
+                await dropCarriedObject(object);
+            }
+        }
+        if ((object = worn('uarmu'))) {
+            await plineWithContinuation('Your shirt rips to shreds!');
+            deleteObject(object);
+        }
+    } else if (slipsArmor) {
+        if ((object = worn('uarm'))
+            && !(MONSTER_NAME[mnum] === 'hobbit'
+                && object.otyp === ELVEN_MITHRIL_COAT)) {
+            await plineWithContinuation('Your armor falls around you!');
+            await dropCarriedObject(object);
+        }
+        if ((object = worn('uarmc'))
+            && !(object.otyp === MUMMY_WRAPPING && monsterWrappingAllowed(mnum))) {
+            await plineWithContinuation(whirly
+                ? 'Your cloak falls, unsupported!'
+                : 'You shrink out of your cloak!');
+            await dropCarriedObject(object);
+        }
+        if ((object = worn('uarmu'))) {
+            await plineWithContinuation(whirly
+                ? 'You seep right through your shirt!'
+                : 'You become much too small for your shirt!');
+            await dropCarriedObject(object);
+        }
+    }
+
+    const hornCount = monsterHornCount(mnum);
+    if (hornCount && (object = worn('uarmh'))) {
+        if (OBJECT_MATERIAL[object.otyp] <= LEATHER) {
+            await plineWithContinuation(
+                `Your ${hornCount === 1 ? 'horn pierces' : 'horns pierce'} through your ${object.name}.`,
+            );
+        } else {
+            await plineWithContinuation(
+                `Your helm falls to the ${heroSurfaceName()}!`,
+            );
+            await dropCarriedObject(object);
+        }
+    }
+    if (noHands || verySmall) {
+        if ((object = worn('uarmg'))) {
+            await plineWithContinuation(
+                `You drop your gloves${worn('uwep') ? ' and weapon' : ''}!`,
+            );
+            await dropPolymorphWeapons(false);
+            await dropCarriedObject(object);
+        }
+        if ((object = worn('uarms'))) {
+            await plineWithContinuation('You can no longer hold your shield!');
+            await dropCarriedObject(object);
+        }
+        if ((object = worn('uarmh'))) {
+            await plineWithContinuation(
+                `Your helm falls to the ${heroSurfaceName()}!`,
+            );
+            await dropCarriedObject(object);
+        }
+    }
+    if ((noHands || verySmall || monsterIsSlithy(mnum) || monsterIsCentaur(mnum))
+        && (object = worn('uarmf'))) {
+        await plineWithContinuation(whirly
+            ? 'Your boots fall away!'
+            : verySmall
+                ? 'Your boots slide off your feet!'
+                : 'Your boots are pushed off your feet!');
+        await dropCarriedObject(object);
+    }
+    if (heroHasNoHead(game) && (object = worn('ublindf'))) {
+        const name = (object.name || 'blindfold').replace(/^pair of /, '');
+        await plineWithContinuation(
+            `Your ${name} ${name.endsWith('s') ? 'fall' : 'falls'} off!`,
+        );
+        removeHeroEquipment(object);
+        if (syncBlindness(game) && object.otyp !== LENSES)
+            await plineWithContinuation('You still cannot see.');
+        await dropCarriedObject(object);
+    }
+}
+
+async function dropPolymorphWeapons(alone) {
+    const primary = game.uwep || game.u.uwep;
+    if (!primary) return;
+    const form = game.u.umonnum;
+    if (alone && !monsterHasNoHands(form) && !monsterIsVerySmall(form)) {
+        const weaponAttacks = (MONSTER_ATTACKS[form] || []).slice(0, 3)
+            .filter(([type]) => type === AT_WEAP).length;
+        if (weaponAttacks < 2) game.u.twoweap = false;
+        return;
+    }
+
+    const secondary = game.u.twoweap ? game.uswapwep || game.u.uswapwep : null;
+    const canDropPrimary = canDropPolymorphWeapon(primary);
+    const canDropSecondary = !secondary || canDropPolymorphWeapon(secondary);
+    if (alone) {
+        const verb = canDropPrimary && canDropSecondary ? 'drop' : 'release';
+        await plineWithContinuation(
+            `You find you must ${verb} your ${secondary ? 'weapons' : 'weapon'}!`,
+        );
+    }
+    for (const [object, canDrop] of [
+        [secondary, canDropSecondary], [primary, canDropPrimary],
+    ]) {
+        if (!object) continue;
+        releaseWeaponSlots(object);
+        if (!object.in_use && canDrop) await dropCarriedObject(object);
+    }
+}
+
+function canDropPolymorphWeapon(object) {
+    if (object.owornmask & (W_ARMOR | W_ACCESSORY | W_SADDLE)) return false;
+    if (isWeldedPrimary(object)) {
+        object.bknown = true;
+        return false;
+    }
+    if (object.otyp === LOADSTONE && object.cursed) {
+        object.corpsenm = 0;
+        object.bknown = true;
+        return false;
+    }
+    return !(object.otyp === LEASH && object.leashmon);
 }
 
 function roundDivPositive(numerator, denominator) {
@@ -758,11 +733,9 @@ function newHumanFormName() {
     return game.urace?.noun || game.urace?.name || 'creature';
 }
 
-// C polyself.c:polyself(POLY_CONTROLLED) -> newman() -> polyman().
-// A selected generic human is intentionally an illegal monster target; it
-// rebuilds the saved human level/HP/power body rather than installing PM_HUMAN
-// as a monster form.
-export async function polyselfControlledNewman() {
+// C newman(): rebuild the human level, health, power, and attributes.
+// Both random polymorph and a selected human form can reach this operation.
+export async function renewHumanForm() {
     const u = game.u;
     const oldLevel = u.ulevel ?? 1;
     let newLevel = oldLevel + rn2(5) - 2;
@@ -865,70 +838,33 @@ export async function polyselfControlledNewman() {
     };
 }
 
-// Ordinary uncontrolled polymorph into a legal monster form.
+// C polyself.c: ordinary random form selection. Reject illegal candidates
+// before deciding whether the change instead renews the human body.
 export async function polyselfRandomOrdinary() {
-    const constitution = game.u?.acurr?.a?.[A_CON] ?? 10;
-    if (rn2(20) > constitution) {
-        await pline('You shudder for a moment.');
-        game.u.uhp = Math.max(0, (game.u.uhp || 0) - rnd(30));
-        exerciseAttribute(A_CON, false);
-        return { transformed: false, learnEffect: true };
+    if (heroIsUnchanging(game))
+        return { transformed: false, learnEffect: false };
+
+    const constitution = game.u.acurr.a[A_CON];
+    if (!heroHasPolymorphControl(game) && rn2(20) > constitution) {
+        await plineWithContinuation('You shudder for a moment.');
+        const died = await loseHeroHp(rnd(30), 'system shock');
+        if (!died) exerciseAttribute(A_CON, false);
+        return { transformed: false, learnEffect: true, died };
     }
 
-    const mnum = rn2(SPECIAL_PM);
-    const forceNewHuman = rn2(5) === 0;
-    if (forceNewHuman) {
-        // newman() changes level, sex, HP, and attributes as one independent
-        // transaction.  Do not counterfeit that branch with monster state.
-        game._pendingNewmanPolymorph = mnum;
-        return { transformed: false, learnEffect: true, needsNewman: true };
+    const noPolymorph = 0x00000001; // M2_NOPOLY
+    const placeholders = ['orc', 'giant', 'elf', 'human']
+        .map(name => MONSTER_NAME.indexOf(name));
+    let mnum;
+    for (let attempts = 0; attempts < 200; attempts++) {
+        mnum = rn1(SPECIAL_PM, 0);
+        if (!(MONSTER_FLAGS2[mnum] & noPolymorph)
+            && !placeholders.includes(mnum)) break;
     }
-
-    beginMonsterForm(mnum);
-    const monsterName = MONSTER_NAME[mnum] || 'monster';
-    const suit = game.uarm || game.u?.uarm;
-    const gloves = game.uarmg || game.u?.uarmg;
-    const helmet = game.uarmh || game.u?.uarmh;
-    const weapon = game.uwep || game.u?.uwep;
-    const slipsArmor = (MONSTER_SIZE[mnum] ?? 2) <= MZ_SMALL;
-
-    game._encumbranceLevel = nearCapacity(game);
-    game.u._encumbrance = encumbranceLabel(game._encumbranceLevel);
-
-    if (slipsArmor && suit) {
-        // C break_armor() drops the suit and newsym() projects the accepted
-        // form before encumber_msg() forces the pending form/armor prose.
-        // Keep the pre-removal AC/status until find_ac() below, but paint the
-        // monster glyph on the first pager rather than the old hero glyph.
-        dropCarriedObject(suit);
-        await moreUntilDismissed(
-            `You turn into a ${monsterName}!  Your armor falls around you!--More--`,
-        );
-        await moreUntilDismissed(
-            "You can't even move a handspan with this load!--More--",
-        );
-    } else {
-        await pline(`You turn into a ${monsterName}!`);
-    }
-
-    if (heroHasNoHands(game)) {
-        if (weapon) dropCarriedObject(weapon);
-        if (gloves) dropCarriedObject(gloves);
-        if (helmet) dropCarriedObject(helmet);
-        if (gloves || helmet) {
-            const gloveMessage = gloves
-                ? `You drop your gloves${weapon ? ' and weapon' : ''}!`
-                : '';
-            const helmetMessage = helmet ? 'Your helm falls to the ground!' : '';
-            await pline([gloveMessage, helmetMessage].filter(Boolean).join('  '));
-        }
-    }
-
-    findArmorClass(game);
-    // polyself.c:polymon() invalidates the optical sight bitmap after the
-    // form and equipment transaction.  The next moveloop boundary rebuilds
-    // IN_SIGHT before presenting another command.
-    game.vision_full_recalc = 1;
-    newsym(game.u.ux, game.u.uy);
-    return { transformed: true, learnEffect: true, mnum };
+    const ownRace = !!(MONSTER_FLAGS2[mnum] & game.urace?.selfmask);
+    const result = (MONSTER_FLAGS2[mnum] & noPolymorph)
+        || rn2(5) === 0 || ownRace
+        ? await renewHumanForm()
+        : await polymonHero(mnum, { sexChangeAllowed: true });
+    return { ...result, learnEffect: true };
 }

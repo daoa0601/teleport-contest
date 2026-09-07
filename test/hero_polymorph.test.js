@@ -3,13 +3,18 @@ import assert from 'node:assert/strict';
 
 import { wearHeroArmor } from '../js/armor.js';
 import { touchArtifactByHero } from '../js/artifact_touch.js';
+import { A_CON } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { retouchEquipment } from '../js/hero_retouch.js';
+import { polyselfRandomOrdinary } from '../js/polyself.js';
 import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { OBJECT_NAMES, SHIELD_OF_REFLECTION } from '../js/object_data.js';
+import {
+    CLOAK_OF_PROTECTION, HAWAIIAN_SHIRT, LEATHER_ARMOR, LONG_SWORD,
+    OBJECT_NAMES, SHIELD_OF_REFLECTION,
+} from '../js/object_data.js';
 import { roles, races } from '../js/roles.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
@@ -105,4 +110,70 @@ test('declining death in wizard mode restores an unchanging monster body', async
     assert.equal(died, false);
     assert.equal(game.u.umonnum, vampire);
     assert.ok(game.u.mh > 0);
+});
+
+test('an expired polymorph timer does not move damage into the human body', async () => {
+    freshObjectRoom();
+    installPolymorphedHero('vampire', { turns: 0, hitPoints: 40 });
+    const humanHealth = game.u.uhp;
+
+    await loseHeroHp(5, 'injury');
+
+    assert.equal(game.u.mh, 35);
+    assert.equal(game.u.uhp, humanHealth);
+});
+
+test('a cloud slips out of its suit, cloak, and shirt', async () => {
+    freshObjectRoom({ role: roles[0], flags: { debug: true } });
+    const garments = [LEATHER_ARMOR, CLOAK_OF_PROTECTION, HAWAIIAN_SHIRT]
+        .map(type => addInventoryObject(type));
+    for (const garment of garments) wearHeroArmor(garment);
+    pushKeys('polyself\nfog cloud\n                        ');
+
+    await rhack('#'.charCodeAt(0));
+
+    for (const garment of garments) {
+        assert.equal(garment.worn, false);
+        assert.ok(!game.inventory.includes(garment));
+        assert.ok(game.level.objects[game.u.ux][game.u.uy].includes(garment));
+    }
+});
+
+test('a handless form releases a welded sword without dropping it', async () => {
+    freshObjectRoom({ role: roles[0], flags: { debug: true } });
+    const sword = addInventoryObject(LONG_SWORD, { cursed: true });
+    setPrimaryWeapon(sword);
+    pushKeys('polyself\nfog cloud\n                        ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.uwep, null);
+    assert.ok(game.inventory.includes(sword));
+});
+
+test('random polymorph can renew the human body instead of changing species', async () => {
+    let renewed = false;
+    let changedSpecies = false;
+    for (let seed = 1; seed <= 32; seed++) {
+        freshObjectRoom({ role: roles[0], gameplaySeed: BigInt(seed) });
+        game.urace = races[0];
+        game.u.umonster = game.u.umonnum = MONSTER_NAME.indexOf('archeologist');
+        game.u.acurr.a[A_CON] = 25;
+        game.u.uhunger = 1;
+        pushKeys('                                ');
+
+        const result = await polyselfRandomOrdinary();
+
+        assert.equal(result.transformed, true, `seed ${seed}`);
+        if (result.newman) {
+            renewed = true;
+            assert.equal(game.u.umonnum, game.u.umonster);
+            assert.ok(game.u.uhunger >= 500);
+        } else {
+            changedSpecies = true;
+            assert.notEqual(game.u.umonnum, game.u.umonster);
+        }
+    }
+    assert.ok(renewed, 'random polymorph never renewed the human body');
+    assert.ok(changedSpecies, 'random polymorph never changed species');
 });

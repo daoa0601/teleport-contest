@@ -152,7 +152,7 @@ import {
     autoquiverCandidate, readySuggestion,
 } from './quiver.js';
 import {
-    releaseWeaponSlots, setPrimaryWeapon, setQuiverObject,
+    isWeldedPrimary, releaseWeaponSlots, setPrimaryWeapon, setQuiverObject,
     setSecondaryWeapon,
 } from './weapon_slots.js';
 import { launcherMatchesAmmo } from './object_properties.js';
@@ -312,8 +312,7 @@ import {
 } from './monster_passive.js';
 import {
     heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed,
-    heroHasOlfaction, heroIsVerySmall, polyselfControlledMonster,
-    polyselfControlledNewman,
+    heroHasOlfaction, heroIsVerySmall, polymonHero, renewHumanForm,
 } from './polyself.js';
 import {
     applyEyewear, isEyewear, removeEyewear, wearEyewear,
@@ -4603,8 +4602,8 @@ async function wizPolyself() {
     }
     // PM_HUMAN is a placeholder and deliberately fails polyok().  The C
     // selector uses that failure to enter newman(), not polymon(PM_HUMAN).
-    if (mnum === 260) await polyselfControlledNewman();
-    else await polyselfControlledMonster(mnum);
+    if (mnum === 260) await renewHumanForm();
+    else await polymonHero(mnum, { sexChangeAllowed: true });
     game.context.move = 0;
 }
 
@@ -8929,15 +8928,6 @@ function splitStackForQuiver(item, count) {
     if (!child.invlet) child.invlet = '#';
     game.inventory.push(child);
     return child;
-}
-
-function isWeldedPrimary(item) {
-    if (item !== game.uwep || !item?.cursed) return false;
-    const objectClass = item.oclass || objectClassForType(item.otyp);
-    const weaponTool = objectClass === 6
-        && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0;
-    return objectClass === 2 || weaponTool
-        || [HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER].includes(item.otyp);
 }
 
 async function reportWeldedPrimary(item) {

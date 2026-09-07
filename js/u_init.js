@@ -6,7 +6,7 @@ import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
 import { mkobj, mksobj } from './mklev.js';
 import { monsterGoodPosition } from './teleport_rules.js';
-import { MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_MOVE, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
 import { armorSlotFor, findArmorClass, wearHeroArmor } from './armor.js';
 import { ensureQuestStatus } from './quest.js';
 import { A_CHA, A_CON, A_STR, COLNO, ROWNO } from './const.js';
@@ -479,11 +479,22 @@ function initialRoll(adv) {
     return (adv?.infix || 0) + ((adv?.inrnd || 0) > 0 ? rnd(adv.inrnd) : 0);
 }
 
-// C ref: u_init_misc().  The handedness RNG call is made by the shared
-// pre-mklev initialization and passed in so that it is consumed only once.
+// C u_init_misc(): establish the role body before any polymorph can occur.
+export function initializeHeroSpecies(state = game) {
+    const hero = state.u;
+    // The compact role table numbers roles from zero; their monster records
+    // follow LONG_WORM_TAIL in the generated NetHack monster table.
+    hero.umonster = SPECIAL_PM + 1 + state.urole.mnum;
+    hero.umonnum = hero.umonster;
+    hero.ulycn = -1;
+    hero.mh = hero.mhmax = hero.mtimedone = 0;
+}
+
+// The caller supplies the handedness roll from pre-level initialization.
 export function uInitMisc(handednessRoll) {
     const g = game;
     const u = g.u || (g.u = {});
+    initializeHeroSpecies(g);
     const hp = initialRoll(g.urole?.hpadv) + initialRoll(g.urace?.hpadv);
     const pw = initialRoll(g.urole?.enadv) + (g._initialPwBonus || 0)
         + initialRoll(g.urace?.enadv);
