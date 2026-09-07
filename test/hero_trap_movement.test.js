@@ -5,7 +5,7 @@ import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, ROCKTRAP, ROOM,
-    SLP_GAS_TRAP, RUST_TRAP, SQKY_BOARD, W_ARMF, W_ARMH, W_WEP,
+    SLP_GAS_TRAP, RUST_TRAP, SQKY_BOARD,
     TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, VIBRATING_SQUARE,
 } from '../js/const.js';
 import { tameMonster } from '../js/dog.js';
@@ -20,7 +20,8 @@ import { vision_reset } from '../js/vision.js';
 import {
     addInventoryObject,
 } from './support/game-objects.js';
-import { wearHeroObject } from './support/hero-state.js';
+import { wearHeroArmor } from '../js/armor.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -185,7 +186,7 @@ test('a rust trap can rust the helmet worn by the hero', async () => {
     const helmet = addInventoryObject(ORCISH_HELM, {
         invlet: 'a', oeroded: 0,
     });
-    wearHeroObject(helmet, 'uarmh', W_ARMH);
+    wearHeroArmor(helmet);
     const trap = addTrap(level, RUST_TRAP, 11, 10, { tseen: false });
     initRng(1n);
 
@@ -201,7 +202,7 @@ test('enchanted iron shoes absorb an anti-magic field', async () => {
         hero: { uen: 20, uenmax: 20 },
     });
     const shoes = addInventoryObject(IRON_SHOES, { spe: 1 });
-    wearHeroObject(shoes, 'uarmf', W_ARMF);
+    wearHeroArmor(shoes);
     const trap = addTrap(level, ANTI_MAGIC, 11, 10, { tseen: false });
 
     await rhack('l'.charCodeAt(0));
@@ -234,8 +235,7 @@ test('wielding Magicbane turns an anti-magic field into an implosion',
         const artifact = artifactByName('Magicbane');
         const magicbane = addInventoryObject(artifact.baseType, { spe: 0 });
         nameArtifact(magicbane, artifact);
-        magicbane.wielded = true;
-        wearHeroObject(magicbane, 'uwep', W_WEP);
+        setPrimaryWeapon(magicbane);
         const trap = addTrap(
             level, ANTI_MAGIC, 11, 10, { tseen: false },
         );

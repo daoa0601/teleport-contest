@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { M_AP_MONSTER, TURNED_SLIME, W_ARM } from '../js/const.js';
+import { M_AP_MONSTER, TURNED_SLIME } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { burnAwayHeroSlime } from '../js/hack.js';
 import {
@@ -20,9 +20,9 @@ import {
 } from '../js/slime.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';
-import {
-    freshHeroConditionRoom, wearHeroObject,
-} from './support/hero-state.js';
+import { freshHeroConditionRoom } from './support/hero-state.js';
+import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory } from '../js/accessory.js';
 
 test('a green slime touch infects and still deals its physical damage', async () => {
     freshHeroConditionRoom();
@@ -83,12 +83,10 @@ test('the final slime turn changes form before invoking slime death',
     async () => {
         freshHeroConditionRoom();
         startHeroSliming({ state: game, turns: 1, killer: 'green slime' });
-        const armor = wearHeroObject(
-            addInventoryObject(LEATHER_ARMOR), 'uarm', W_ARM,
-        );
+        const armor = addInventoryObject(LEATHER_ARMOR);
+        wearHeroArmor(armor);
         const amulet = addInventoryObject(AMULET_OF_LIFE_SAVING);
-        game.uamul = amulet;
-        game.u.uamul = amulet;
+        wearHeroAccessory(amulet, 'uamul');
         const messages = [];
         const deaths = [];
         const repaints = [];

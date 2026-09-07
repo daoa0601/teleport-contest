@@ -31,7 +31,7 @@ import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     addInventoryObject, uninitializedObject,
 } from './support/game-objects.js';
-import { wearHeroObject } from './support/hero-state.js';
+import { wearHeroAccessory } from '../js/accessory.js';
 import {
     floorObjectQuantityAt, floorObjectsAt,
 } from './support/level-state.js';
@@ -556,11 +556,8 @@ test('impact life saving limits thrown poison to strength loss', async () => {
         heroY: 10,
         gameplaySeed: 1n,
     });
-    const amulet = wearHeroObject(
-        addInventoryObject(AMULET_OF_LIFE_SAVING),
-        'uamul',
-        W_AMUL,
-    );
+    const amulet = addInventoryObject(AMULET_OF_LIFE_SAVING);
+    wearHeroAccessory(amulet, 'uamul');
     game.u.uhp = 1;
     const originalStrength = game.u.acurr.a[A_STR];
     const dart = uninitializedObject(DART, { opoisoned: 1 });
@@ -619,11 +616,8 @@ test('a hostile rogue throws its full dagger volley at the hero', async () => {
 
 test('life saving lets a hostile monster finish its dagger volley', async () => {
     freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
-    const amulet = wearHeroObject(
-        addInventoryObject(AMULET_OF_LIFE_SAVING),
-        'uamul',
-        W_AMUL,
-    );
+    const amulet = addInventoryObject(AMULET_OF_LIFE_SAVING);
+    wearHeroAccessory(amulet, 'uamul');
     game.u.uhp = 1;
     const daggers = uninitializedObject(DAGGER, { quan: 4 });
     const rogue = await combatant('rogue', {

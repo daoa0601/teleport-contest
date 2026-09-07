@@ -1,6 +1,7 @@
 import { game } from '../../js/gstate.js';
+import { wearHeroAccessory } from '../../js/accessory.js';
 import {
-    P_EXPERT, P_NUM_SKILLS, W_BALL, W_CHAIN, W_RINGR,
+    P_EXPERT, P_NUM_SKILLS, W_BALL, W_CHAIN,
 } from '../../js/const.js';
 import { place_object } from '../../js/floor_object.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
@@ -114,21 +115,10 @@ export function installHumanWerewolfHero({ beast = false } = {}) {
     return game.u;
 }
 
-export function wearHeroObject(object, slot, mask) {
-    object.worn = true;
-    object.wornSlot = slot;
-    object.owornmask = mask;
-    game[slot] = object;
-    game.u[slot] = object;
-    return object;
-}
-
 export function wearPolymorphControlRing() {
-    return wearHeroObject(
-        addInventoryObject(RIN_POLYMORPH_CONTROL),
-        'uright',
-        W_RINGR,
-    );
+    const ring = addInventoryObject(RIN_POLYMORPH_CONTROL);
+    wearHeroAccessory(ring, 'uright');
+    return ring;
 }
 
 export function installPunishedHero() {

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    A_CON, SICK_NONVOMITABLE, SICK_VOMITABLE, W_ARM,
+    A_CON, SICK_NONVOMITABLE, SICK_VOMITABLE,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
@@ -14,8 +14,10 @@ import {
     addInventoryObject, addInventoryWeapon,
 } from './support/game-objects.js';
 import {
-    freshHeroConditionRoom, installPolymorphedHero, wearHeroObject,
+    freshHeroConditionRoom, installPolymorphedHero,
 } from './support/hero-state.js';
+import { wearHeroArmor } from '../js/armor.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 
 test('fatal illness worsens and reaches the normal death path', async () => {
     freshHeroConditionRoom();
@@ -137,11 +139,9 @@ test('a vomiting yellow dragon breathes acid on its weapon and armor',
         freshHeroConditionRoom();
         installPolymorphedHero('yellow dragon', { turns: 20 });
         const sword = addInventoryWeapon(LONG_SWORD);
-        game.uwep = sword;
-        game.u.uwep = sword;
-        const mail = wearHeroObject(
-            addInventoryObject(CHAIN_MAIL), 'uarm', W_ARM,
-        );
+        setPrimaryWeapon(sword);
+        const mail = addInventoryObject(CHAIN_MAIL);
+        wearHeroArmor(mail);
         const rolls = [0, 0, 1];
         const messages = [];
 

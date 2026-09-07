@@ -35,8 +35,10 @@ import {
 } from './support/game-objects.js';
 import {
     installHeroWeaponSkills, installHumanWerewolfHero,
-    installPolymorphedHero, wearHeroObject, wearPolymorphControlRing,
+    installPolymorphedHero, wearPolymorphControlRing,
 } from './support/hero-state.js';
+import { wearHeroAccessory } from '../js/accessory.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { floorObjects } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -493,7 +495,7 @@ test('throwing a wielded Sunsword stops its light before swallowed contact',
     async () => {
         const engulfer = await freshSwallowedState(PM_TRAPPER);
         const sunsword = addInventoryItem(artifactObject('Sunsword'));
-        wearHeroObject(sunsword, 'uwep', W_WEP);
+        setPrimaryWeapon(sunsword);
         setBasicWeaponSkill(sunsword);
         assert.equal(beginObjectBurn(sunsword, game, game.moves), true);
 
@@ -902,9 +904,7 @@ test('Unchanging suppresses cursed-water lycanthrope vapor transformation',
     async () => {
         const engulfer = await freshSwallowedState(PM_JUIBLEX);
         installHumanWerewolfHero();
-        wearHeroObject(
-            addInventoryObject(AMULET_OF_UNCHANGING), 'uamul', W_AMUL,
-        );
+        wearHeroAccessory(addInventoryObject(AMULET_OF_UNCHANGING), 'uamul');
         const potion = addInventoryObject(POT_WATER, { cursed: true });
 
         initRng(2511n);

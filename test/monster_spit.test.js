@@ -6,7 +6,6 @@ import {
 } from '../js/monster_spit.js';
 import {
     MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT,
-    W_AMUL, W_ARMH,
 } from '../js/const.js';
 import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
@@ -15,7 +14,8 @@ import { AMULET_OF_LIFE_SAVING, HELMET } from '../js/object_data.js';
 import { resolveRangedRetaliation } from '../js/dogmove.js';
 import { quietMonsterActionRng } from '../js/monmove.js';
 import { addInventoryObject } from './support/game-objects.js';
-import { wearHeroObject } from './support/hero-state.js';
+import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory } from '../js/accessory.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshRangedCombatRoom } from './support/ranged-combat.js';
@@ -93,11 +93,8 @@ test('life saving rescues the hero from fatal acid venom', async () => {
         heroY: 10,
         gameplaySeed: 1n,
     });
-    const amulet = wearHeroObject(
-        addInventoryObject(AMULET_OF_LIFE_SAVING),
-        'uamul',
-        W_AMUL,
-    );
+    const amulet = addInventoryObject(AMULET_OF_LIFE_SAVING);
+    wearHeroAccessory(amulet, 'uamul');
     game.u.uhp = 1;
     const naga = await createMonsterAt(
         'black naga', 9, 10, TEST_MONSTER_FLAGS,
@@ -125,11 +122,7 @@ test('a visored helmet blocks blinding venom', async () => {
         gameplaySeed: 1n,
     });
     game.objectDescriptions[HELMET] = 'visored helmet';
-    wearHeroObject(
-        addInventoryObject(HELMET),
-        'uarmh',
-        W_ARMH,
-    );
+    wearHeroArmor(addInventoryObject(HELMET));
     const cobra = await createMonsterAt(
         'cobra', 9, 10, TEST_MONSTER_FLAGS,
     );
