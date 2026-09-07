@@ -249,7 +249,7 @@ function teleportCandidates(state, random) {
     const rowRange = cy < ROWNO / 2 ? ROWNO - 1 - cy : cy;
     const colRange = cx < COLNO / 2 ? COLNO - 1 - cx : cx;
     const maxRadius = Math.max(rowRange, colRange);
-    const passesWalls = !!(heroFormFlags(state).flags1 & M1_WALLWALK);
+    const passesWalls = !!state.u.passesWalls;
     const result = [];
     let pair = [];
 

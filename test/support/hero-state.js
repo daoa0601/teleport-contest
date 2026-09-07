@@ -1,5 +1,6 @@
 import { game } from '../../js/gstate.js';
 import { wearHeroAccessory } from '../../js/accessory.js';
+import { setHeroSpecies } from '../../js/hero_species.js';
 import {
     P_EXPERT, P_NUM_SKILLS, W_BALL, W_CHAIN,
 } from '../../js/const.js';
@@ -38,13 +39,12 @@ export function installPolymorphedHero(formName, {
     ...overrides
 } = {}) {
     Object.assign(game.u, {
-        umonster: PM_HUMAN_ARCHEOLOGIST,
-        umonnum: MONSTER_NAME.indexOf(formName),
         mtimedone: turns,
         mh: hitPoints,
         mhmax: maxHitPoints,
         ...overrides,
     });
+    setHeroSpecies(MONSTER_NAME.indexOf(formName), game);
     return game.u;
 }
 
@@ -112,6 +112,7 @@ export function installHumanWerewolfHero({ beast = false } = {}) {
         macurr: { a: attributes.slice() },
         mamax: { a: attributes.slice() },
     });
+    setHeroSpecies(game.u.umonnum, game);
     return game.u;
 }
 

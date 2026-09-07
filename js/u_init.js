@@ -2,6 +2,7 @@
 // C refs: u_init.c, attrib.c, dog.c, teleport.c, makemon.c.
 
 import { game } from './gstate.js';
+import { setHeroSpecies } from './hero_species.js';
 import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
 import { mkobj, mksobj } from './mklev.js';
@@ -485,15 +486,17 @@ export function initializeHeroSpecies(state = game) {
     // The compact role table numbers roles from zero; their monster records
     // follow LONG_WORM_TAIL in the generated NetHack monster table.
     hero.umonster = SPECIAL_PM + 1 + state.urole.mnum;
-    hero.umonnum = hero.umonster;
     hero.ulycn = -1;
     hero.mh = hero.mhmax = hero.mtimedone = 0;
+    state.context ||= {};
+    setHeroSpecies(hero.umonster, state);
 }
 
 // The caller supplies the handedness roll from pre-level initialization.
 export function uInitMisc(handednessRoll) {
     const g = game;
     const u = g.u || (g.u = {});
+    u._propertySources = {};
     initializeHeroSpecies(g);
     const hp = initialRoll(g.urole?.hpadv) + initialRoll(g.urace?.hpadv);
     const pw = initialRoll(g.urole?.enadv) + (g._initialPwBonus || 0)
@@ -516,7 +519,6 @@ export function uInitMisc(handednessRoll) {
     // prayer outcomes, and once-per-turn decay all compose with this value;
     // it is not a disclosure-only default.
     u.ublesscnt = 300;
-    u._propertySources = {};
     u.uac = 0; // set_wear() computes this in moveloop_preamble()
     u.ualign = {
         type: g.initAlignment?.value ?? 0,
@@ -545,9 +547,7 @@ export function uInitMisc(handednessRoll) {
     u.umovement = 12;
     if (g.urole?.intrinsicFast)
         grantIntrinsicProperty('fast', 'role', g);
-    // C attrib.c race ability tables: dwarves, elves, gnomes, and orcs gain
-    // intrinsic infravision at level 1.  It affects monster projection in
-    // dark but geometrically visible cells; it does not light the terrain.
+    // attrib.c race abilities retain infravision even in a body without it.
     if (['dwarf', 'elf', 'gnome', 'orc'].includes(g.urace?.name))
         grantIntrinsicProperty('infravision', 'race', g);
     // C attrib.c level-one role/race ability tables.  Keep these properties

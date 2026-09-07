@@ -15,7 +15,7 @@ import {
 import { putHeroToSleep } from './hero_sleep.js';
 import { igniteItems } from './light.js';
 import {
-    MONSTER_ATTACKS, MONSTER_NAME, MONSTER_RESISTS,
+    MONSTER_ATTACKS,
 } from './monster_data.js';
 import {
     AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM,
@@ -30,14 +30,6 @@ import { burnHeroArmorByFire } from './trap.js';
 import {
     destroyColdInventory, destroyElectricInventory, destroyFireInventory,
 } from './zap.js';
-
-const MR_FIRE = 0x01;
-const MR_COLD = 0x02;
-const MR_SLEEP = 0x04;
-const MR_DISINT = 0x08;
-const MR_ELEC = 0x10;
-const MR_POISON = 0x20;
-const MR_ACID = 0x40;
 
 export function heroBreathAttack(state = game, damageType = null) {
     const form = heroMonsterForm(state);
@@ -83,7 +75,7 @@ export async function hitHeroWithBreath({
 
 async function hitWithMagic(context) {
     const { state, attack, publish, rollDice } = context;
-    if (heroResistsMagic(state)) {
+    if (state.u.antimagic) {
         await shieldHero(state);
         await publish('The missiles bounce off!');
         return { resisted: true, damage: 0, heroDied: false };
@@ -97,7 +89,7 @@ async function hitWithMagic(context) {
 async function hitWithFire(context) {
     const { state, attack, publish, random, rollDice, rollOne } = context;
     const sourceDamage = rollDice(attack[2], 6);
-    const resisted = heroResists(state, 'fireResistance', MR_FIRE);
+    const resisted = !!state.u.fireResistance;
     if (resisted) {
         await shieldHero(state);
         await publish("You don't feel hot!");
@@ -126,7 +118,7 @@ async function hitWithFire(context) {
 async function hitWithCold(context) {
     const { state, attack, publish, random, rollDice, rollOne } = context;
     const sourceDamage = rollDice(attack[2], 6);
-    const resisted = heroResists(state, 'coldResistance', MR_COLD);
+    const resisted = !!state.u.coldResistance;
     if (resisted) {
         await shieldHero(state);
         await publish("You don't feel cold.");
@@ -143,7 +135,7 @@ async function hitWithCold(context) {
 
 async function hitWithSleep(context) {
     const { state, attack, publish, rollDice } = context;
-    const resisted = heroResists(state, 'sleepResistance', MR_SLEEP);
+    const resisted = !!state.u.sleepResistance;
     if (resisted) {
         await shieldHero(state);
         await publish("You don't feel sleepy.");
@@ -155,7 +147,7 @@ async function hitWithSleep(context) {
 
 async function hitWithDisintegration(context) {
     const { state, publish, random, die } = context;
-    if (heroResists(state, 'disintegrationResistance', MR_DISINT)) {
+    if (state.u.disintegrationResistance) {
         await publish('You are not disintegrated.');
         return { resisted: true, damage: 0, heroDied: false };
     }
@@ -209,7 +201,7 @@ async function hitWithDisintegration(context) {
 async function hitWithLightning(context) {
     const { state, attack, publish, random, rollDice, rollOne } = context;
     const sourceDamage = rollDice(attack[2], 6);
-    const resisted = heroResists(state, 'shockResistance', MR_ELEC);
+    const resisted = !!state.u.shockResistance;
     if (resisted) {
         await shieldHero(state);
         await publish("You aren't affected.");
@@ -237,9 +229,7 @@ async function hitWithPoison(context) {
         rollDice,
         publish,
         onResisted: () => shieldHero(state),
-        poisonResistant: heroResists(
-            state, 'poisonResistance', MR_POISON,
-        ),
+        poisonResistant: !!state.u.poisonResistance,
     });
     let heroDied = false;
     if (poison.deadly)
@@ -253,7 +243,7 @@ async function hitWithPoison(context) {
 
 async function hitWithAcid(context) {
     const { state, attack, publish, random, rollDice } = context;
-    const resisted = heroResists(state, 'acidResistance', MR_ACID);
+    const resisted = !!state.u.acidResistance;
     let damage = 0;
     if (resisted) {
         await publish("The acid doesn't hurt.");
@@ -315,28 +305,6 @@ async function applyOrdinaryBreathDamage(
 export function effectiveBreathDamage(damageType) {
     // BZ_OFS_AD(AD_RBRE) maps the Chromatic Dragon's hero breath to fire.
     return damageType === AD_RBRE ? AD_FIRE : damageType;
-}
-
-function heroResists(state, property, mask) {
-    const hero = state.u || {};
-    const snakeCase = property.replace(/[A-Z]/g, letter =>
-        `_${letter.toLowerCase()}`);
-    if (hero[property] || hero[snakeCase]) return true;
-    const form = heroMonsterForm(state);
-    return form != null && ((MONSTER_RESISTS[form] ?? 0) & mask) !== 0;
-}
-
-function heroResistsMagic(state) {
-    const hero = state.u || {};
-    if (hero.antimagic || hero.magicResistance || hero.magic_resistance
-        || hasWornProperty('antimagic', state)) return true;
-    const form = heroMonsterForm(state);
-    if (form == null) return false;
-    const name = MONSTER_NAME[form];
-    return name === 'baby gray dragon'
-        || (MONSTER_ATTACKS[form] || []).some(
-            attack => attack[1] === AD_MAGM || attack[1] === AD_RBRE,
-        );
 }
 
 function wornObject(state, slot) {

@@ -8,7 +8,7 @@ import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import {
     BLINDING_VENOM, CREAM_PIE, OBJECT_DESCRIPTIONS,
 } from './object_data.js';
-import { heroMonsterForm } from './polyself.js';
+import { heroHasEyes } from './polyself.js';
 import { rnd } from './rng.js';
 import { blindfolded, heroIsBlind, syncBlindness } from './senses.js';
 
@@ -90,14 +90,6 @@ export function blindMonsterWithThrownObject(
         monster, objectType, { heroInsideTarget, state },
     )) return null;
     return applyMonsterBlindness(monster, rollOne);
-}
-
-function heroHasEyes(state) {
-    const hero = state.u || {};
-    const form = heroMonsterForm(state);
-    return !hero.noEyes && !hero.eyeless
-        && (form === null
-            || !((MONSTER_FLAGS1[form] ?? 0) & M1_NOEYES));
 }
 
 export function heroCanBeBlindedByVenom(state = game) {

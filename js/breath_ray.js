@@ -10,6 +10,7 @@ import {
     canProjectMonster, plineWithContinuation, shieldeff,
 } from './display.js';
 import { game } from './gstate.js';
+import { heroHasEyes } from './polyself.js';
 import {
     effectiveBreathDamage, hitHeroWithBreath,
 } from './hero_breath.js';
@@ -543,13 +544,10 @@ function monsterIsRider(monster) {
 }
 
 function blindHeroWithLightning(state, attack, rollDice) {
-    const form = state.u?.umonnum;
     const wielded = state.uwep || state.u?.uwep;
     if (state.blind || (state.u?.blindTurns ?? 0) > 0
         || state.unaware || state.u?.unaware
-        || state.u?.noEyes
-        || (Number.isInteger(form)
-            && ((MONSTER_FLAGS1[form] ?? 0) & M1_NOEYES))
+        || state.u?.blindResistance || !heroHasEyes(state)
         || artifactById(wielded?.oartifact, state)?.name === 'Sunsword') {
         return;
     }

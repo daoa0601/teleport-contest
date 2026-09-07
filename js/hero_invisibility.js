@@ -31,14 +31,14 @@ export function hasInternalInvisibility(state = game) {
 export function hasNonArtifactInvisibility(state = game) {
     const hero = state.u || {};
     return !!(hero.intrinsicInvisible || hero.extrinsicInvisible
-        || hero.formInvisible || (hero.invisibleTurns ?? 0) > 0
+        || (hero.invisibleTurns ?? 0) > 0
         || propertyHasOtherSources('invisible', state));
 }
 
 export function heroIsInvisible(state = game) {
     const hero = state.u || {};
     const active = !!(hero.intrinsicInvisible || hero.extrinsicInvisible
-        || hero.formInvisible || (hero.invisibleTurns ?? 0) > 0
+        || (hero.invisibleTurns ?? 0) > 0
         || propertyIsActive('invisible', state));
     return active && !invisibilityIsBlocked(state);
 }

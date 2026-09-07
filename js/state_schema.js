@@ -5,7 +5,7 @@ export const SAVE_VERSION = 3;
 
 const persistentNames = `
     Luck _activeSpecialLevel _armorClassDirty _artifactDiscoveries _artifactExistByBase _artifactExistCount _artifactExists
-    _artifactRuntime _blindFromMonsterForm _bonesEncountered _bonesSaved _bubbleTraversalUp _canMakeBones _characterPickerUsed
+    _artifactRuntime _bonesEncountered _bonesSaved _bubbleTraversalUp _canMakeBones _characterPickerUsed
     _commandCount _deathKiller _deathShopSettlement _deepestLevel _encounteredObjectTypes _encumbranceLevel _farMonsterNoise
     _fobjSerial _genocidedMonsters _helplessAfter _helplessDoneMessage _helplessReason
     _helplessRunmodeDelayPending _helplessTurns _heroActionSeq _heroTrack _initialGoldCount _initialPwBonus _kickedLoc

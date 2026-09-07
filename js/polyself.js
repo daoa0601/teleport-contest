@@ -7,10 +7,10 @@ import {
     adjustLevelAbilities, newExperienceThreshold,
 } from './exper.js';
 import {
-    MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1,
-    MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
+    MONSTER_ATTACKS, MONSTER_FLAGS1,
+    MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor,
-    monsterHasNoHands, monsterHornCount, monsterIsCentaur,
+    monsterHasNoHands, monsterHornCount, monsterIsBat, monsterIsCentaur,
     monsterIsSlithy, monsterIsVampire, monsterIsVerySmall,
     monsterIsWhirly, monsterSlipsArmor, monsterTypeName, monsterWrappingAllowed,
     validVampireShiftForm,
@@ -49,12 +49,11 @@ import { cureHeroSickness } from './hero_illness.js';
 import {
     clearHeroPetrification, selfTouchPetrifyingWeapons,
 } from './stoning.js';
-import { heroHasNoHead } from './hero_species.js';
+import { heroHasNoHead, setHeroSpecies } from './hero_species.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { loseHeroHp } from './hero_damage.js';
 import { isWeldedPrimary, releaseWeaponSlots } from './weapon_slots.js';
-import { grantIntrinsicProperty, revokeIntrinsicProperty } from './properties.js';
 import { vision_recalc } from './vision.js';
 import {
     heroIsSliming, resetHeroSlimingCountdown,
@@ -63,7 +62,6 @@ import {
 const M1_NOEYES = 0x00001000;
 const M1_NOTAKE = 0x00000800;
 const M1_NOLIMBS = 0x00006000;
-const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
 const M1_CONCEAL = 0x00000080;
 const M1_HIDE = 0x00000100;
@@ -90,7 +88,6 @@ const PM_WOLF = MONSTER_NAME.indexOf('wolf');
 const PM_FOG_CLOUD = MONSTER_NAME.indexOf('fog cloud');
 const PM_VAMPIRE_BAT = MONSTER_NAME.indexOf('vampire bat');
 const PM_VAMPIRE_LEADER = MONSTER_NAME.indexOf('vampire leader');
-const S_BAT = MONSTER_SYMBOL[MONSTER_NAME.indexOf('bat')];
 const S_LICH = MONSTER_SYMBOL[MONSTER_NAME.indexOf('lich')];
 const PLACEHOLDER_MONSTERS = new Set(['orc', 'giant', 'elf', 'human']
     .map(name => MONSTER_NAME.indexOf(name)));
@@ -159,8 +156,7 @@ export function heroFormFlags(state = game) {
 }
 
 export function heroIsFlying(state = game) {
-    return !!(state.u?.flying || state.u?.flight || state.flying)
-        || !!(heroFormFlags(state) & M1_FLY);
+    return !!state.u?.flying;
 }
 
 export function heroFormClings(state = game) {
@@ -235,31 +231,23 @@ export function heroHasOlfaction(state = game) {
 async function restoreHumanBody(state, publish = plineWithContinuation) {
     const u = state.u;
     const changed = heroIsPolymorphed(state);
-    const wasBlindFromForm = !!state._blindFromMonsterForm;
+    const wasBlind = heroIsBlind(state);
     const previousEncumbrance = Number.isInteger(state._encumbranceLevel)
         ? state._encumbranceLevel : nearCapacity(state);
     if (changed) {
         if (u.macurr) u.acurr = u.macurr;
         if (u.mamax) u.amax = u.mamax;
-        u.umonnum = u.umonster;
         if (state.flags && typeof u.mfemale === 'boolean')
             state.flags.female = u.mfemale;
     }
 
+    setHeroSpecies(u.umonster, state);
     u.mh = 0;
     u.mhmax = 0;
     u.mtimedone = 0;
     await restoreDragonArmor(state, publish);
-    u.mcham = -1;
     u.uundetected = 0;
-    delete u.formArmorClass;
-    revokeIntrinsicProperty('flying', 'form', state);
-
-    let regainedSight = false;
-    if (wasBlindFromForm) {
-        delete state._blindFromMonsterForm;
-        regainedSight = !syncBlindness(state);
-    }
+    const regainedSight = wasBlind && !heroIsBlind(state);
 
     findArmorClass(state);
     state.vision_full_recalc = 1;
@@ -329,7 +317,6 @@ async function beginMonsterForm(mnum, {
 } = {}) {
     const u = game.u;
     const previousMnum = u.umonnum;
-    const remainedVampireShifter = validVampireShiftForm(u.mcham, mnum);
     const wasPolymorphed = heroIsPolymorphed(game);
     if (!wasPolymorphed) {
         u.macurr = { a: [...(u.acurr?.a || [])] };
@@ -371,26 +358,10 @@ async function beginMonsterForm(mnum, {
         await plineWithContinuation(`You ${verb} ${article} ${name}!`);
     }
 
-    // mondata.c:set_mon_data() prorates unused movement when the new form is
-    // slower, preventing a slow polymorph from inheriting extra actions from
-    // its old body.  A faster form retains the already banked ration.
-    const oldMove = wasPolymorphed
-        ? (MONSTER_MOVE[previousMnum] ?? 0) : 12;
-    const newMove = MONSTER_MOVE[mnum] ?? 0;
-    if (u.umovement && newMove < oldMove && oldMove > 0)
-        u.umovement = Math.trunc(u.umovement * newMove / oldMove);
-
     u.mtimedone = 500 + rn2(500);
-    u.umonnum = mnum;
-    if (heroHasProtectionFromShapeChangers(game)) u.mcham = -1;
-    else if (monsterIsVampire(mnum)) u.mcham = mnum;
-    else if (!remainedVampireShifter) u.mcham = -1;
+    setHeroSpecies(mnum, game);
     u.m_ap_type = 0;
     u.mappearance = 0;
-    // do_wear.c:find_ac() starts from mons[u.umonnum].ac.  Keep that
-    // form-owned base explicit so every existing equipment/protection
-    // contribution can continue through the shared armor calculator.
-    u.formArmorClass = MONSTER_EXPERIENCE_META[mnum]?.[0] ?? 10;
     const strong = !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_STRONG);
     if (strong) {
         // polyself.c:uasmon_maxStr(): ordinary strong forms use STR18(100).
@@ -417,16 +388,6 @@ async function beginMonsterForm(mnum, {
             u.mtimedone * (u.ulevel ?? 1) / monsterLevel,
         );
     }
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_FLY)
-        grantIntrinsicProperty('flying', 'form', game);
-    else
-        revokeIntrinsicProperty('flying', 'form', game);
-
-    // Blind is a derived property of an eyeless current form.  Preserve its
-    // provenance so rehumanize can later distinguish it from timed blindness.
-    if (!heroHasEyes(game)) game._blindFromMonsterForm = true;
-    else delete game._blindFromMonsterForm;
-    syncBlindness(game);
     // polymon() does not repaint the accepted form until break_armor() has
     // completed.  A garment pager can therefore still expose the old hero
     // glyph even though monster HP and status metadata are already live.
@@ -913,7 +874,7 @@ export async function polymorphHero(flags = POLY_NOFLAGS) {
         if (dragon !== null && (choice.random || mnum === dragon))
             return mergeDragonArmor(armor, dragon);
         if (vampire && (choice.random || mnum === PM_WOLF
-            || mnum === PM_FOG_CLOUD || MONSTER_SYMBOL[mnum] === S_BAT))
+            || mnum === PM_FOG_CLOUD || monsterIsBat(mnum)))
             return changeVampireForm(mnum, controlled);
     } else {
         if (dragon !== null) return mergeDragonArmor(armor, dragon);

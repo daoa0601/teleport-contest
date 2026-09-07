@@ -108,7 +108,7 @@ import {
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack } from './track.js';
-import { heroFormSticks, returnHeroToHumanForm } from './polyself.js';
+import { heroFormSticks, heroHasEyes, returnHeroToHumanForm } from './polyself.js';
 import {
     cansee, clearPath, couldsee, visibleCellsFrom, vision_note_blocker_change,
     vision_recalc,
@@ -5346,7 +5346,7 @@ function basicMonsterAttack(
         const blindIncrement = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const blindfolded = !!(state?.ublindf || state?.u?.ublindf);
-        const noEyes = !!(state?.u?.noEyes || state?.u?.eyeless);
+        const noEyes = !heroHasEyes(state);
         const helmet = state?.uarmh || state?.u?.uarmh;
         const visored = /visored helmet/i.test(
             helmet?.description || helmet?.appearance || helmet?.name || '',

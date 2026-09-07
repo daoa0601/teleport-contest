@@ -304,6 +304,10 @@ export function monsterIsUnicorn(mnum) {
         && !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_JEWELS);
 }
 
+export function monsterIsBat(mnum) {
+    return ['bat', 'giant bat', 'vampire bat'].includes(MONSTER_NAME[mnum]);
+}
+
 export function monsterIsVampire(mnum) {
     return MONSTER_SYMBOL[mnum] === S_VAMPIRE;
 }

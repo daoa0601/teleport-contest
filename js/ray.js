@@ -75,15 +75,29 @@ export function rayHitsHero(
 export function heroReflectionSource(state = game) {
     if (state.uarms?.otyp === SHIELD_OF_REFLECTION)
         return { object: state.uarms, noun: 'shield' };
+    const weapon = state.uwep || state.u?.uwep;
+    if (weaponReflects(weapon, state))
+        return { object: weapon, noun: 'weapon' };
     const amulet = state.uamul || state.u?.uamul;
     if (amulet?.otyp === AMULET_OF_REFLECTION)
         return { object: amulet, noun: 'medallion' };
+    const armor = state.uskin || state.uarm || state.u?.uarm;
+    if (armor && [SILVER_DRAGON_SCALES, SILVER_DRAGON_SCALE_MAIL]
+        .includes(armor.otyp)) {
+        return { object: armor, noun: state.uskin ? 'luster' : 'armor' };
+    }
+    if (MONSTER_NAME[state.u?.umonnum] === 'silver dragon')
+        return { object: null, noun: 'scales' };
     return null;
 }
 
 export function heroReflectsRay(state = game) {
-    return !!(state.u?.reflecting || state.reflecting
+    return !!(state.u?.reflection
         || heroReflectionSource(state));
+}
+
+function weaponReflects(object, state) {
+    return !!artifactById(object?.oartifact, state)?.flags.includes('SPFX_REFLECT');
 }
 
 export function monsterReflectionSource(monster, state = game) {
@@ -93,9 +107,7 @@ export function monsterReflectionSource(monster, state = game) {
         return { noun: 'shield', object: shield };
 
     const weapon = monsterWieldedWeapon(monster);
-    const artifactName = artifactById(weapon?.oartifact, state)?.name;
-    if (artifactName === 'Dragonbane'
-        || artifactName === 'The Longbow of Diana') {
+    if (weaponReflects(weapon, state)) {
         return { noun: 'weapon', object: weapon };
     }
 

@@ -1878,7 +1878,7 @@ function finishInitialTurnMaintenanceAfterSickness({
                 };
             }
             game.u.stunnedTurns = 0;
-            game.u.stunned = false;
+            refreshProperty('stunned', game);
             appendTurnMessage('You feel a bit steadier now.');
         } else game.u.stunnedTurns = remaining;
     }
@@ -2215,7 +2215,7 @@ async function initialTurnMaintenanceWithTty(
         await queueTurnMessage(phase.message);
         if (phase.timeoutKind === 'stun') {
             game.u.stunnedTurns = 0;
-            game.u.stunned = false;
+            refreshProperty('stunned', game);
             phase = finishInitialTurnMaintenanceAfterStun(phase);
         } else if (phase.timeoutKind === 'confusion') {
             game.u.confusionTurns = 0;

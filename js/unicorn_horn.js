@@ -6,6 +6,7 @@ import {
 } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { refreshProperty } from './properties.js';
 import {
     cureHeroSickness, cureHeroVomiting, heroIsVomiting,
     startHeroSickness, startHeroVomiting, vomitHero,
@@ -140,7 +141,7 @@ async function cureHornTrouble(trouble, state, publish) {
     }
     if (trouble === STUNNED) {
         hero.stunnedTurns = 0;
-        hero.stunned = false;
+        refreshProperty('stunned', state);
         if (talk) {
             await publish(`You feel ${
                 hero.hallucinating ? 'less wobbly' : 'a bit steadier'

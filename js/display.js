@@ -2,6 +2,8 @@
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 
 import { game } from './gstate.js';
+import { heroIsHallucinating } from './senses.js';
+import { heroWarnsOfMonster } from './hero_species.js';
 import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { cansee, couldsee, vision_recalc } from './vision.js';
@@ -77,6 +79,7 @@ function unblindTelepathyRange() {
 function senseWithTelepathy(monster) {
     if (!monster
         || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS)) return false;
+    if (game.blind && game.u.telepathy) return true;
     const range = unblindTelepathyRange();
     if (range < 0) return false;
     const dx = monster.mx - game.u.ux;
@@ -109,10 +112,9 @@ export function canSeeMonster(monster, x, y) {
 }
 
 export function canProjectMonster(monster, x, y) {
-    // tp_sensemon() precedes physical visibility, infrared, and warning in
-    // display.c:newsym().  It also reveals an otherwise invisible or hidden
-    // monster because the projection is sensory rather than optical.
-    return senseWithTelepathy(monster)
+    // Senses can reveal an invisible or hidden monster without lighting
+    // its square. Ordinary sight and infravision are checked separately.
+    return canSenseMonster(monster)
         || canPhysicallyProjectMonster(monster, x, y);
 }
 
@@ -122,21 +124,23 @@ export function canSenseMonster(monster) {
     if (!monster) return false;
     if ((game.u?.uswallow || game.uswallow)
         && game.u?.ustuck !== monster) return false;
+    if (game.u?.uinwater || game.underwater) {
+        const distance = (monster.mx - game.u.ux) ** 2
+            + (monster.my - game.u.uy) ** 2;
+        if (distance > 2 || !IS_POOL(game.level.at(monster.mx, monster.my).typ))
+            return false;
+    }
     return senseWithTelepathy(monster)
+        || heroWarnsOfMonster(monster)
         || !!game.u?.detectMonsters
         || !!game.detectMonsters;
 }
 
 // C display.h:canspotmon().  Physical/telepathic projection is shared with
-// newsym(); an active monster-detection property senses the actor without
-// making its square optically visible.  Type/class warning can join this
-// boundary when that distinct property is ported; ordinary Warning uses a
-// warning glyph and is deliberately not canspotmon().
+// newsym(). Sensing an actor does not make its square optically visible.
+// Ordinary Warning uses a warning glyph and does not identify the monster.
 export function canSpotMonster(monster, x = monster?.mx, y = monster?.my) {
-    return !!monster && (
-        canProjectMonster(monster, x, y)
-        || canSenseMonster(monster)
-    );
+    return !!monster && canProjectMonster(monster, x, y);
 }
 
 export function monsterHasWarningProjection(monster) {
@@ -150,7 +154,7 @@ export function monsterHasWarningProjection(monster) {
 
 function warningProjection(monster) {
     if (!monsterHasWarningProjection(monster)) return null;
-    const level = hallucinationActive()
+    const level = heroIsHallucinating()
         ? rn2Display(def_warnsyms.length - 1) + 1
         : Math.min(def_warnsyms.length - 1,
             Math.trunc((monster.m_lev ?? 0) / 4));
@@ -609,11 +613,6 @@ function objectGlyphAttr(glyph) {
         ? ATR_INVERSE : 0;
 }
 
-function hallucinationActive() {
-    return !!(game.u?.hallucinating
-        || (game.u?.hallucinationTurns ?? 0) > 0);
-}
-
 function displayMonsterGlyph(mnum) {
     const rawColor = MONSTER_COLOR[mnum] ?? CLR_GRAY;
     return {
@@ -687,7 +686,7 @@ function randomHallucinatedObjectGlyph() {
 
 function objectGlyph(object) {
     const piletop = objectIsPiletop(object);
-    if (hallucinationActive()) {
+    if (heroIsHallucinating()) {
         // display.h:statue_to_glyph() uses a monster plus random gender;
         // map_object() separately stores a random-object memory glyph below.
         if (object.otyp === STATUE) {
@@ -736,7 +735,7 @@ export function transientObjectGlyph(object) {
 // though tty's text presentation does not show a separate glyph column.  The
 // metadata construction remains display-RNG-visible under Hallucination.
 export function consumeHallucinatedMenuObjectGlyph(object) {
-    if (!hallucinationActive() || !object) return null;
+    if (!heroIsHallucinating() || !object) return null;
     return objectGlyph(object);
 }
 
@@ -774,7 +773,7 @@ export function map_object(object, show = true, observe = true) {
     if (loc && game.level?.flags?.hero_memory) {
         // While hallucinating, a statue is displayed as a random monster but
         // remembered as a separately randomized object (display.c:map_object).
-        loc.remembered_glyph = hallucinationActive()
+        loc.remembered_glyph = heroIsHallucinating()
             && object.otyp === STATUE
             ? randomHallucinatedObjectGlyph() : glyph;
     }
@@ -1099,7 +1098,7 @@ export function newsym(x, y) {
                 objectGlyphAttr(glyph));
             return;
         }
-        if (!hallucinationActive()
+        if (!heroIsHallucinating()
             && monster.m_ap_type === M_AP_MONSTER
             && Number.isInteger(monster.mappearance)) {
             const glyph = displayMonsterGlyph(monster.mappearance);
@@ -1108,7 +1107,7 @@ export function newsym(x, y) {
                     && game.flags?.hilite_pet ? 1 : 0);
             return;
         }
-        if (hallucinationActive()) {
+        if (heroIsHallucinating()) {
             const displayMnum = rn2Display(MONSTER_COLOR.length);
             const glyph = displayMonsterGlyph(displayMnum);
             show_glyph_cell(x, y, glyph.ch, glyph.color, false);

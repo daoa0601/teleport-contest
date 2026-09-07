@@ -7,6 +7,7 @@ import { A_WIS, PARANOID_WERECHANGE } from './const.js';
 import { tameMonster } from './dog.js';
 import { threateningMonsterNearby } from './do.js';
 import { game } from './gstate.js';
+import { setHeroSpecies } from './hero_species.js';
 import { makemonNear, splitHeroMonsterForm } from './mklev.js';
 import { adjustMonsterClothingAfterPolymorph } from './monworn.js';
 import {
@@ -58,8 +59,14 @@ const HUMAN_WERE_CORPSE = new Map([
 export function catchLycanthropyFromCorpse(mnum, state = game) {
     const beast = HUMAN_WERE_CORPSE.get(mnum);
     if (beast === undefined) return false;
-    state.u.ulycn = beast;
+    setHeroLycanthropy(beast, state);
     return true;
+}
+
+// C set_ulycn(): infection and its innate resistance change together.
+export function setHeroLycanthropy(species, state = game) {
+    state.u.ulycn = species;
+    setHeroSpecies(state.u.umonnum, state);
 }
 
 function summonedWereAlly(form, random) {
@@ -228,7 +235,7 @@ export async function purifyHeroLycanthropy({
     if (!infected && !inWereForm) return { cured: false, changed: false };
 
     await publish('You feel purified.');
-    hero.ulycn = -1;
+    setHeroLycanthropy(-1, state);
 
     if (!inWereForm) return { cured: true, changed: false };
 

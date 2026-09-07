@@ -24,6 +24,7 @@ import {
     transientObjectGlyph,
 } from './display.js';
 import { game } from './gstate.js';
+import { refreshMovementProperties } from './properties.js';
 import { heroLiquidEffects } from './hack.js';
 import {
     hasInternalInvisibility, syncHeroInvisibility,
@@ -199,6 +200,7 @@ async function triggerPit(
     }
     hero.utrap = rn2(6) + 2;
     hero.utraptype = TT_PIT;
+    refreshMovementProperties(game);
     losePhysicalHitPoints(spiked ? rnd(10) : rnd(6));
     if (spiked) await applySpikePoison();
     game.vision_full_recalc = 1;
@@ -237,6 +239,7 @@ async function triggerWeb(
     const turns = webTrapDuration();
     hero.utrap = turns;
     hero.utraptype = TT_WEB;
+    refreshMovementProperties(game);
     if (!turns) {
         await plineWithContinuation('You tear through the web!');
         const index = game.level.traps.indexOf(trap);
@@ -315,6 +318,7 @@ async function triggerLandmine(trap, { failedUntrap = false } = {}) {
 function clearHeroTrap() {
     game.u.utrap = 0;
     game.u.utraptype = 0;
+    refreshMovementProperties(game);
 }
 
 async function repeatableTrapMessage(message) {
@@ -948,6 +952,7 @@ async function triggerBearTrap(trap, { failedUntrap = false } = {}) {
     trap.tseen = true;
     hero.utrap = 4 + rn2(4);
     hero.utraptype = TT_BEARTRAP;
+    refreshMovementProperties(game);
 
     await pline('A bear trap closes on your foot!');
 

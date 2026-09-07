@@ -2,6 +2,8 @@
 // C ref: prop.h intrinsic and extrinsic property masks.
 
 import { game } from './gstate.js';
+import { TT_PIT } from './const.js';
+import { MONSTER_FLAGS1 } from './monster_data.js';
 
 function propertyRecord(property, state = game) {
     const hero = state.u || (state.u = {});
@@ -26,6 +28,8 @@ function existingPropertyRecord(property, state = game) {
 function timedSourceIsActive(property, hero) {
     if (property === 'antimagic')
         return (hero.magicResistanceTurns ?? 0) > 0;
+    if (property === 'blinded')
+        return (hero.blindTurns ?? 0) > 0;
     return (hero[`${property}Turns`] ?? 0) > 0;
 }
 
@@ -33,13 +37,29 @@ function intrinsicSourceIsActive(record) {
     return Object.keys(record?.intrinsic || {}).length > 0;
 }
 
-export function propertyIsActive(property, state = game) {
+function propertySourceIsActive(property, state) {
     const hero = state.u || {};
     const record = existingPropertyRecord(property, state);
     return intrinsicSourceIsActive(record)
         || (record?.worn.length ?? 0) > 0
         || !!record?.invoked
         || timedSourceIsActive(property, hero);
+}
+
+export function propertyIsActive(property, state = game) {
+    const hero = state.u || {};
+    const steedFlags = MONSTER_FLAGS1[hero.usteed?.mnum] || 0;
+    const fromSteed = property === 'flying' ? steedFlags & 0x01
+        : property === 'swimming' ? steedFlags & 0x02 : false;
+    if (!propertySourceIsActive(property, state) && !fromSteed) return false;
+    const trapped = hero.utrap > 0 && hero.utraptype !== TT_PIT;
+    if (property === 'levitation') return !trapped;
+    if (property === 'flying')
+        return !trapped && !propertySourceIsActive('levitation', state);
+    if (property === 'stealth' && hero.usteed)
+        return propertyIsActive('flying', state)
+            || propertyIsActive('levitation', state);
+    return true;
 }
 
 export function propertyHasOtherSources(property, state = game) {
@@ -50,13 +70,30 @@ export function propertyHasOtherSources(property, state = game) {
         || timedSourceIsActive(property, hero);
 }
 
-export function refreshProperty(property, state = game) {
+function projectProperty(property, state) {
     const record = propertyRecord(property, state);
     const hero = state.u;
     hero[property] = propertyIsActive(property, state);
+    if (property === 'levitation') hero.levitating = hero[property];
     hero[`${property}FromArmor`] = record.worn.some(source =>
         source.slot?.startsWith('uarm'));
     return hero[property];
+}
+
+export function refreshProperty(property, state = game) {
+    projectProperty(property, state);
+    if (property === 'levitation' || property === 'flying') {
+        projectProperty('flying', state);
+        projectProperty('stealth', state);
+    }
+    return state.u[property];
+}
+
+// C float_vs_flight()/steed_vs_stealth(): movement changes can suppress an
+// ability without removing the item or body which grants it.
+export function refreshMovementProperties(state = game) {
+    for (const property of ['levitation', 'flying', 'swimming', 'stealth'])
+        projectProperty(property, state);
 }
 
 export function hasInvokedProperty(property, state = game) {

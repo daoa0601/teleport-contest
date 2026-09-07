@@ -4,6 +4,7 @@
 import { game } from './gstate.js';
 import { LENSES } from './object_data.js';
 import { artifactById } from './artifacts.js';
+import { hasIntrinsicProperty } from './properties.js';
 
 const EYES_OF_THE_OVERWORLD = 'The Eyes of the Overworld';
 
@@ -34,7 +35,7 @@ export function heroIsBlind(state = game) {
     return permanentBlind(state)
         || (u.blindTurns ?? 0) > 0
         || blindfolded(state)
-        || !!(u.noEyes || u.eyeless || state._blindFromMonsterForm);
+        || hasIntrinsicProperty('blinded', 'form', state);
 }
 
 export function syncBlindness(state = game) {
@@ -62,6 +63,12 @@ export function heroIsDeaf(state = game) {
     return permanentDeaf(state)
         || (u.deafTurns ?? 0) > 0
         || !!u.extrinsicDeaf;
+}
+
+export function heroIsHallucinating(state = game) {
+    const hero = state.u || {};
+    return !hero.hallucinationResistance
+        && !!(hero.hallucinating || (hero.hallucinationTurns ?? 0) > 0);
 }
 
 export function syncDeafness(state = game) {

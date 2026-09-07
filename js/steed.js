@@ -6,6 +6,7 @@ import {
     DOOR, IS_POOL, MGIVENNAME, W_SADDLE, isok,
 } from './const.js';
 import { game } from './gstate.js';
+import { refreshMovementProperties } from './properties.js';
 import { newsym, pline } from './display.js';
 import { levelHasCeiling, resolveMonsterLiquid } from './mon.js';
 import { finishMonsterLiquidDeath } from './monster_death.js';
@@ -109,6 +110,7 @@ export async function doride() {
     hero.ux = steed.mx;
     hero.uy = steed.my;
     hero.usteed = steed;
+    refreshMovementProperties(game);
     newsym(hero.ux0, hero.uy0);
     vision_recalc(1);
     newsym(hero.ux, hero.uy);
@@ -249,6 +251,7 @@ export async function dismountHero(
     const oldx = hero.ux;
     const oldy = hero.uy;
     hero.usteed = null;
+    refreshMovementProperties(state);
     hero.ugallop = 0;
     steed.mx = oldx;
     steed.my = oldy;

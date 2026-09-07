@@ -10,7 +10,7 @@ import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { cureHeroVomiting } from './hero_illness.js';
 import { healHeroLegs } from './hero_legs.js';
-import { MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { CORPSE, EGG } from './object_data.js';
 import {
     heroHasNoLimbs, heroIsPolymorphed, polymonHero,
@@ -35,9 +35,7 @@ export function fleshPetrifies(mnum) {
 }
 
 function heroResistsStoning(state = game) {
-    return !!(state.u?.stoneResistance || state.u?.stone_resistance)
-        || (heroIsPolymorphed(state)
-            && !!((MONSTER_RESISTS[state.u.umonnum] ?? 0) & 0x80));
+    return !!state.u?.stoneResistance;
 }
 
 export function heroIsPetrifying(state = game) {
