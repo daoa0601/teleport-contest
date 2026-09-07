@@ -315,10 +315,10 @@ async function triggerLandmine(trap, { failedUntrap = false } = {}) {
     newsym(hero.ux, hero.uy);
 }
 
-function clearHeroTrap() {
-    game.u.utrap = 0;
-    game.u.utraptype = 0;
-    refreshMovementProperties(game);
+export function clearHeroTrap(state = game) {
+    state.u.utrap = 0;
+    state.u.utraptype = 0;
+    refreshMovementProperties(state);
 }
 
 async function repeatableTrapMessage(message) {
@@ -429,11 +429,11 @@ function surfaceAtHero() {
     return 'floor';
 }
 
-function nearestBuriedBall() {
-    const hero = game.u;
+function nearestBuriedBall(state = game) {
+    const hero = state.u;
     let nearest = null;
     let nearestDistance = Infinity;
-    for (const object of game.level?.buriedObjects || []) {
+    for (const object of state.level?.buriedObjects || []) {
         if (object.otyp !== HEAVY_IRON_BALL) continue;
         const dx = object.ox - hero.ux;
         const dy = object.oy - hero.uy;
@@ -444,6 +444,25 @@ function nearestBuriedBall() {
         }
     }
     return nearest;
+}
+
+// C dig.c:buried_ball_to_freedom(). The ball stays where it was buried,
+// which may be beside the hero rather than directly underneath them.
+export function freeHeroFromBuriedBall(state = game) {
+    if (state.u.utrap && state.u.utraptype !== TT_BURIEDBALL) return false;
+    const ball = nearestBuriedBall(state);
+    if (!ball) return false;
+    const { ox: x, oy: y } = ball;
+    state.level.buriedObjects.splice(state.level.buriedObjects.indexOf(ball), 1);
+    ball.buried = false;
+    place_object(ball, x, y, state);
+    stack_object(ball, state);
+    clearHeroTrap(state);
+    state.level.engravings = (state.level.engravings || []).filter(
+        engraving => engraving.x !== x || engraving.y !== y,
+    );
+    newsym(x, y);
+    return true;
 }
 
 function releaseBuriedBallForLevelChange() {

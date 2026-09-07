@@ -11,7 +11,8 @@ import {
     MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor,
     monsterHasNoHands, monsterHornCount, monsterIsBat, monsterIsCentaur,
-    monsterIsSlithy, monsterIsVampire, monsterIsVerySmall,
+    monsterIsAmorphous, monsterIsSlithy, monsterIsUnsolid,
+    monsterIsVampire, monsterIsVerySmall,
     monsterIsWhirly, monsterSlipsArmor, monsterTypeName, monsterWrappingAllowed,
     validVampireShiftForm,
 } from './monster_data.js';
@@ -34,7 +35,8 @@ import {
 } from './weight.js';
 import {
     A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame,
-    STAIRS, STR18, STR19, Upolyd,
+    STAIRS, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR,
+    TT_LAVA, TT_PIT, TT_WEB, Upolyd,
     POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT,
     W_ACCESSORY, W_ARMOR, W_SADDLE,
 } from './const.js';
@@ -58,6 +60,11 @@ import { removeHeroEquipment } from './hero_equipment.js';
 import { loseHeroHp } from './hero_damage.js';
 import { isWeldedPrimary, releaseWeaponSlots } from './weapon_slots.js';
 import { vision_recalc } from './vision.js';
+import { heroIsPunished } from './ball.js';
+import { unpunishHero } from './punishment.js';
+import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
+import { heroLikesLava } from './hack.js';
+import { heroCanSpinWeb } from './hero_web.js';
 import {
     clearHeroSliming, heroIsFlaming, heroIsSliming, resetHeroSlimingCountdown,
 } from './slime.js';
@@ -88,6 +95,7 @@ const G_NOHELL = 0x0800;
 const G_UNIQ = 0x1000;
 const S_MIMIC = 13;
 const S_DRAGON = 30;
+const MZ_SMALL = 1;
 const MAXULEV = 30;
 const MUMMY_WRAPPING = 138;
 const ALCHEMY_SMOCK = 144;
@@ -462,8 +470,12 @@ export async function polymonHero(mnum, options = {}) {
     await changeArmorForHeroForm(mnum);
     await dropPolymorphWeapons(true);
     findArmorClass(game);
+    if (game.u.utrap && game.u.utraptype === TT_PIT)
+        game.u.utrap = rn1(6, 2);
     game.vision_full_recalc = 1;
     newsym(game.u.ux, game.u.uy);
+
+    await escapeTrapsAfterFormChange();
 
     const currentCapacity = nearCapacity(game);
     game._encumbranceLevel = currentCapacity;
@@ -492,6 +504,48 @@ export async function polymonHero(mnum, options = {}) {
         await plineWithContinuation('Use the command #sit to lay an egg.');
     }
     return { transformed: true, mnum };
+}
+
+async function escapeTrapsAfterFormChange() {
+    const hero = game.u;
+    if (hero.passesWalls && hero.utrap
+        && [TT_INFLOOR, TT_BURIEDBALL].includes(hero.utraptype)) {
+        if (hero.utraptype === TT_INFLOOR) {
+            await plineWithContinuation('The rock seems to no longer trap you.');
+        } else {
+            await plineWithContinuation('The buried ball is no longer bound to you.');
+            freeHeroFromBuriedBall();
+        }
+        clearHeroTrap();
+    } else if (heroLikesLava() && hero.utrap && hero.utraptype === TT_LAVA) {
+        await plineWithContinuation('The lava now feels soothing.');
+        clearHeroTrap();
+    }
+
+    const body = { mnum: hero.umonnum };
+    const slipsFree = monsterIsAmorphous(body) || monsterIsWhirly(body)
+        || monsterIsUnsolid(body);
+    if (slipsFree) {
+        if (heroIsPunished()) {
+            await plineWithContinuation('You slip out of the iron chain.');
+            unpunishHero();
+        } else if (hero.utrap && hero.utraptype === TT_BURIEDBALL) {
+            await plineWithContinuation('You slip free of the buried ball and chain.');
+            freeHeroFromBuriedBall();
+        }
+    }
+    if (hero.utrap && [TT_WEB, TT_BEARTRAP].includes(hero.utraptype)
+        && (slipsFree
+            || (MONSTER_SIZE[hero.umonnum] <= MZ_SMALL
+                && hero.utraptype === TT_BEARTRAP))) {
+        const trapName = hero.utraptype === TT_WEB ? 'web' : 'bear trap';
+        await plineWithContinuation(`You are no longer stuck in the ${trapName}.`);
+        clearHeroTrap();
+    }
+    if (heroCanSpinWeb() && hero.utrap && hero.utraptype === TT_WEB) {
+        await plineWithContinuation('You orient yourself on the web.');
+        clearHeroTrap();
+    }
 }
 
 // C break_armor(): garments react in body-slot order. Read each slot when

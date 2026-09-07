@@ -17,7 +17,8 @@ import {
 } from './invent.js';
 import { nhgetch } from './input.js';
 import { readLightScroll } from './light.js';
-import { place_object, stack_object } from './floor_object.js';
+import { place_object } from './floor_object.js';
+import { freeHeroFromBuriedBall } from './hero_traps.js';
 import { mkobj } from './mklev.js';
 import { doClassGenocide, doGenocide } from './genocide.js';
 import {
@@ -290,26 +291,6 @@ function removeCurseFeeling(confused) {
         : 'like someone is helping you.';
 }
 
-async function releaseBuriedBall(publish) {
-    const u = game.u;
-    if (!u?.utrap || u.utraptype !== TT_BURIEDBALL) return;
-    const buried = game.level?.buriedObjects || [];
-    const ball = buried.find(object => object.otyp === HEAVY_IRON_BALL
-        && object.ox === u.ux && object.oy === u.uy);
-    if (ball) {
-        buried.splice(buried.indexOf(ball), 1);
-        place_object(ball, u.ux, u.uy);
-        stack_object(ball);
-        game.level.engravings = (game.level.engravings || []).filter(
-            engraving => engraving.x !== u.ux || engraving.y !== u.uy,
-        );
-        newsym(u.ux, u.uy);
-    }
-    u.utrap = 0;
-    u.utraptype = 0;
-    await publish('The clasp on your leg vanishes.');
-}
-
 // C read.c:seffect_remove_curse().  The caller owns scroll consumption and
 // its reading message; this function owns the effect on carried equipment.
 export async function removeCurseEffect({
@@ -363,7 +344,10 @@ export async function removeCurseEffect({
     }
 
     if (heroIsPunished() && !confused) unpunishHero();
-    await releaseBuriedBall(publish);
+    if (game.u.utrap && game.u.utraptype === TT_BURIEDBALL) {
+        freeHeroFromBuriedBall();
+        await publish('The clasp on your leg vanishes.');
+    }
     return changed;
 }
 

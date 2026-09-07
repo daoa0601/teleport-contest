@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 
 import { wearHeroArmor } from '../js/armor.js';
 import { touchArtifactByHero } from '../js/artifact_touch.js';
-import { A_CON, A_STR, STR18, STR19 } from '../js/const.js';
+import { A_CON, A_STR, BEAR_TRAP, STR18, STR19, WEB } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { heroIsSick, startHeroSickness } from '../js/hero_illness.js';
+import { triggerHeroTrap } from '../js/hero_traps.js';
 import { retouchEquipment } from '../js/hero_retouch.js';
 import { polymorphHero } from '../js/polyself.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -23,7 +24,59 @@ import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { installPolymorphedHero } from './support/hero-state.js';
+import {
+    installHeroChainedToBuriedBall, installPolymorphedHero, installPunishedHero,
+} from './support/hero-state.js';
+import { addTrap } from './support/level-state.js';
+
+for (const [trapType, form] of [
+    [WEB, 'fog cloud'], [WEB, 'giant spider'], [BEAR_TRAP, 'newt'],
+]) {
+    test(`a ${form} body escapes a ${trapType === WEB ? 'web' : 'bear trap'}`, async () => {
+        const level = freshObjectRoom({ flags: { debug: true } });
+        const trap = addTrap(level, trapType, game.u.ux, game.u.uy);
+        await triggerHeroTrap(trap);
+        assert.ok(game.u.utrap > 0);
+        pushKeys(`polyself\n${form}\n                `);
+
+        await rhack('#'.charCodeAt(0));
+
+        assert.equal(game.u.utrap, 0);
+        assert.ok(level.traps.includes(trap), 'escaping does not destroy the trap');
+        resetInputState();
+        const x = game.u.ux;
+        await rhack('l'.charCodeAt(0));
+        assert.equal(game.u.ux, x + 1);
+    });
+}
+
+test('a cloud slips out of punishment and leaves the iron ball behind', async () => {
+    const level = freshObjectRoom({ flags: { debug: true } });
+    const { ball, chain } = installPunishedHero();
+    pushKeys('polyself\nfog cloud\n                ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.uball, null);
+    assert.equal(game.uchain, null);
+    assert.ok(level.objects[game.u.ux][game.u.uy].includes(ball));
+    assert.equal(chain.where, 'gone');
+});
+
+test('passing through walls releases a buried ball without dragging it to the hero', async () => {
+    const level = freshObjectRoom({ flags: { debug: true } });
+    const x = game.u.ux - 1;
+    const y = game.u.uy;
+    const ball = installHeroChainedToBuriedBall({ x, y });
+    pushKeys('polyself\nxorn\n                ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.utrap, 0);
+    assert.ok(level.objects[x][y].includes(ball));
+    assert.equal(level.buriedObjects.includes(ball), false);
+    assert.ok(!game.uchain);
+});
 
 test('a ghoul body cures illness and cannot be infected again', async () => {
     freshObjectRoom({ flags: { debug: true } });

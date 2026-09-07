@@ -5,7 +5,7 @@ import {
     BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_GENERIC, DISSOLVED,
     DOOR, ICE, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_WALL, IS_WATERWALL,
     Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE,
-    TREE, TT_LAVA, WATER, W_NONDIGGABLE, W_NONPASSWALL,
+    TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
@@ -223,10 +223,9 @@ function heroCanLiveUnderwater(state) {
         || (flags & (M1_SWIM | M1_AMPHIBIOUS | M1_BREATHLESS)));
 }
 
-function heroLikesLava(state) {
+export function heroLikesLava(state = game) {
     const hero = state.u || {};
-    if (hero.likesLava || hero.likes_lava) return true;
-    if (!(hero.mtimedone > 0)) return false;
+    if (!Upolyd(hero)) return false;
     return hero.umonnum === PM_FIRE_ELEMENTAL
         || hero.umonnum === PM_SALAMANDER;
 }

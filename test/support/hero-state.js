@@ -1,8 +1,10 @@
 import { game } from '../../js/gstate.js';
 import { wearHeroAccessory } from '../../js/accessory.js';
 import { setHeroSpecies } from '../../js/hero_species.js';
+import { addBuriedObject } from '../../js/buried_object.js';
+import { refreshMovementProperties } from '../../js/properties.js';
 import {
-    A_INT, A_WIS, P_EXPERT, P_NUM_SKILLS, W_BALL, W_CHAIN,
+    A_INT, A_WIS, P_EXPERT, P_NUM_SKILLS, TT_BURIEDBALL, W_BALL, W_CHAIN,
 } from '../../js/const.js';
 import { place_object } from '../../js/floor_object.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
@@ -143,4 +145,17 @@ export function installPunishedHero() {
     game.uchain = game.u.uchain = chain;
     game.u.punished = true;
     return { ball, chain };
+}
+
+export function installHeroChainedToBuriedBall({
+    x = game.u.ux,
+    y = game.u.uy,
+    turns = 40,
+} = {}) {
+    const ball = knownObject(HEAVY_IRON_BALL);
+    addBuriedObject(ball, x, y);
+    game.u.utrap = turns;
+    game.u.utraptype = TT_BURIEDBALL;
+    refreshMovementProperties(game);
+    return ball;
 }

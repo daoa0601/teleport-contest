@@ -10,8 +10,23 @@ import { removeCurseEffect } from '../js/read.js';
 import {
     addInventoryObject, knownObject,
 } from './support/game-objects.js';
-import { installPunishedHero } from './support/hero-state.js';
+import {
+    installHeroChainedToBuriedBall, installPunishedHero,
+} from './support/hero-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+
+test('remove curse releases a buried ball beside the hero at its original square', async () => {
+    const level = freshGameplayRoom();
+    const x = game.u.ux - 1;
+    const y = game.u.uy;
+    const ball = installHeroChainedToBuriedBall({ x, y });
+
+    await removeCurseEffect();
+
+    assert.equal(game.u.utrap, 0);
+    assert.ok(level.objects[x][y].includes(ball));
+    assert.equal(level.buriedObjects.includes(ball), false);
+});
 
 function addCursedObject(otyp, invlet, overrides = {}) {
     return addInventoryObject(otyp, {
