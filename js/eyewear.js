@@ -35,9 +35,9 @@ function equipEyewear(object) {
     object.owornmask = (object.owornmask ?? 0) | W_TOOL;
 }
 
-function unequipEyewear(object) {
-    if (game.ublindf === object) game.ublindf = null;
-    if (game.u?.ublindf === object) game.u.ublindf = null;
+export function unequipEyewear(object, state = game) {
+    if (state.ublindf === object) state.ublindf = null;
+    if (state.u?.ublindf === object) state.u.ublindf = null;
     object.worn = false;
     object.wornSlot = null;
     object.owornmask = (object.owornmask ?? 0) & ~W_TOOL;
@@ -52,11 +52,6 @@ async function announceWorn(object) {
     }
     const suffix = object.otyp === TOWEL ? ' around your head' : '';
     await pline(`You are now wearing ${simpleEyewearName(object)}${suffix}.`);
-}
-
-async function announceRemoved(object) {
-    if (game.flags?.verbose === false) return;
-    await pline(`You were wearing ${simpleEyewearName(object)}.`);
 }
 
 async function announceOccupiedSlot(object) {
@@ -117,21 +112,24 @@ export async function wearEyewear(object, { checkHead = true } = {}) {
     return true;
 }
 
-export async function removeEyewear(object) {
-    if (!object || currentEyewear() !== object) return false;
-    const wasBlind = heroIsBlind(game);
-    unequipEyewear(object);
-    await announceRemoved(object);
-    const blind = syncBlindness(game);
+export async function removeEyewear(object, {
+    state = game, publish = plineWithContinuation,
+} = {}) {
+    if (!object || (state.ublindf || state.u?.ublindf) !== object) return false;
+    const wasBlind = heroIsBlind(state);
+    unequipEyewear(object, state);
+    if (state.flags?.verbose !== false)
+        await publish(`You were wearing ${simpleEyewearName(object)}.`);
+    const blind = syncBlindness(state);
     if (blind) {
         if (!wasBlind) {
-            await plineWithContinuation("You can't see anything now!");
+            await publish("You can't see anything now!");
             await redrawSight();
         } else if (object.otyp !== LENSES) {
-            await plineWithContinuation('You still cannot see.');
+            await publish('You still cannot see.');
         }
     } else if (wasBlind) {
-        await plineWithContinuation('You can see again.');
+        await publish('You can see again.');
         await redrawSight();
     }
     return true;

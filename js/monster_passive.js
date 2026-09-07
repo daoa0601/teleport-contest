@@ -36,7 +36,9 @@ import {
     SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
 import { hasWornProperty } from './properties.js';
-import { heroMonsterForm, rehumanizeHero } from './polyself.js';
+import {
+    heroMonsterForm, returnHeroToHumanForm,
+} from './polyself.js';
 import { heroReflectionSource, heroReflectsRay } from './ray.js';
 import { d, rnl, rn2 } from './rng.js';
 import { resolveImmediatePetrification } from './stoning.js';
@@ -390,10 +392,8 @@ async function damageHero(monster, amount, { state, publish, die }) {
         if (hero.unchanging || state.unchanging) {
             return die({ killer: 'killed while stuck in creature form' });
         }
-        const restored = rehumanizeHero(state);
-        if (restored.changed)
-            await publish(`You return to ${restored.race} form!`);
-        return false;
+        const restored = await returnHeroToHumanForm(state, { publish, die });
+        return restored.died;
     }
 
     hero.uhp = (hero.uhp ?? 1) - amount;

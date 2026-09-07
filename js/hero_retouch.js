@@ -1,229 +1,159 @@
 // Recheck equipment after the hero's body or alignment changes.
-// C ref: artifact.c retouch_object(), untouchable(), retouch_equipment().
+// C artifact.c:retouch_object(), untouchable(), retouch_equipment().
 
-import { removeHeroAccessory } from './accessory.js';
-import {
-    armorSlotFor, findArmorClass, removeHeroArmor,
-} from './armor.js';
 import {
     artifactInvokeIsActive, deactivateArtifactProperty,
 } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import { artifactById } from './artifacts.js';
+import { artifactBaneApplies, artifactById } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
-import {
-    A_CON, DISMOUNT_THROWN, W_BALL, W_QUIVER, W_SWAPWEP,
-} from './const.js';
-import {
-    newsym, plineWithContinuation,
-} from './display.js';
+import { A_CON, DISMOUNT_THROWN, W_BALL, W_QUIVER, W_SWAPWEP } from './const.js';
+import { newsym, plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { removeEyewear } from './eyewear.js';
 import { landFloorObject } from './floor_effects.js';
 import { game } from './gstate.js';
+import { loseHeroHp } from './hero_damage.js';
+import { removeHeroEquipment } from './hero_equipment.js';
 import { heroHatesSilver } from './hero_species.js';
 import { LEASH, OBJECT_NAMES } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { uncurseObjectState } from './object_state.js';
 import { rnd } from './rng.js';
+import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { dismountHero, monsterSaddle } from './steed.js';
-import { releaseWeaponSlots } from './weapon_slots.js';
 
 const TOOL_CLASS = 6;
 const SILVER = 14;
+// Losing a form while handling an item can enter this routine again.
+// Nested passes share C's bypass marks until the outer pass finishes.
+const activeChecks = new WeakMap();
 
-function liveSlot(slot) {
-    return game[slot] || game.u?.[slot] || null;
+export async function retouchEquipment(dropFlag = 0, {
+    state = game, publish = plineWithContinuation, die = finishHeroDeath,
+} = {}) {
+    const nested = activeChecks.has(state);
+    const checked = activeChecks.get(state) || new Set();
+    activeChecks.set(state, checked);
+    const context = { state, publish, die, checked };
+    const hadGloves = !!slotObject('uarmg', state);
+    const oldRingCount = ringCount(state);
+    try {
+        if (state.u.twoweap) {
+            const result = await checkItem(
+                slotObject('uswapwep', state), dropFlag > 0, context,
+            );
+            if (result.died) return result;
+        }
+        const weapon = await checkItem(
+            slotObject('uwep', state), dropFlag > 0, context,
+        );
+        if (weapon.died) return weapon;
+
+        const saddle = await checkItem(
+            monsterSaddle(state.u.usteed), false, context,
+        );
+        if (saddle.died) return saddle;
+        if (saddle.rejected) {
+            await dismountHero(DISMOUNT_THROWN, { state, announce: publish });
+            if (state.program_state?.gameover) return { died: true };
+        }
+
+        let object;
+        while ((object = state.inventory?.find(item => !checked.has(item)))) {
+            const result = await checkItem(object, dropFlag === 1, context);
+            if (result.died) return result;
+        }
+        const gloves = slotObject('uarmg', state);
+        if (ringCount(state) !== oldRingCount && gloves?.cursed)
+            uncurseObjectState(gloves);
+        if (hadGloves && !gloves) {
+            return await selfTouchPetrifyingWeapons({
+                state, publish, die,
+                messageStart: 'After losing your gloves, you',
+            });
+        }
+        return { died: false };
+    } finally {
+        if (!nested) activeChecks.delete(state);
+    }
 }
 
-function artifactCarriedEffect(artifact) {
-    return !!artifact?.carriedDefense
-        || (artifact?.carriedFlags?.length ?? 0) > 0;
+function slotObject(slot, state) {
+    return state[slot] || state.u?.[slot] || null;
 }
 
-function objectNeedsRetouch(object, artifact, equipped) {
-    const excluded = W_QUIVER
-        | (game.u?.twoweap ? 0 : W_SWAPWEP)
-        | W_BALL;
+function ringCount(state) {
+    return Number(!!slotObject('uleft', state))
+        + Number(!!slotObject('uright', state));
+}
+
+function inUse(object, artifact, state) {
+    const excluded = W_QUIVER | W_BALL | (state.u.twoweap ? 0 : W_SWAPWEP);
     const worn = ((object.owornmask ?? 0) & ~excluded) !== 0;
     const activeTool = object.oclass === TOOL_CLASS
-        && (object.lamplit
-            || (object.otyp === LEASH && object.leashmon)
-            || (Array.isArray(object.contents) && object.contents.length > 0));
-    return equipped || worn || activeTool || artifactCarriedEffect(artifact)
-        || artifactInvokeIsActive(artifact, game);
+        && (object.lamplit || object.otyp === LEASH && object.leashmon
+            || object.contents?.length > 0);
+    return worn || activeTool || !!artifact?.carriedDefense
+        || (artifact?.carriedFlags.length ?? 0) > 0
+        || artifactInvokeIsActive(artifact, state);
+}
+
+async function checkItem(object, dropRejected, context) {
+    const { state, publish, die, checked } = context;
+    if (!object || checked.has(object)) return { died: false, rejected: false };
+    checked.add(object);
+    const artifact = artifactById(object.oartifact, state);
+    if (!inUse(object, artifact, state)) return { died: false, rejected: false };
+
+    const touch = await touchArtifactByHero(object, artifact, {
+        state, publish, die,
+    });
+    if (touch.died) return { died: true, rejected: true };
+    // The blast can end a monster form, changing both of these weaknesses.
+    const silver = objectMaterial(object, state) === SILVER
+        && heroHatesSilver(state);
+    const bane = artifactBaneApplies(artifact, state);
+    if (touch.allowed && !silver && !bane) return { died: false, rejected: false };
+    if (touch.allowed) {
+        const anymore = object.owornmask ? ' anymore' : '';
+        await publish(`You can't handle ${objectName(object, artifact)}${anymore}!`);
+        if (!touch.blasted) {
+            let damage = silver ? rnd(10) : 0;
+            if (state.u.halfPhysicalDamage || state.u.half_physical_damage)
+                damage = Math.trunc((damage + 1) / 2);
+            if (bane) damage += rnd(10);
+            const died = await loseHeroHp(
+                damage, `handling ${objectName(object, artifact)}`,
+                { state, publish, die },
+            );
+            if (died) return { died: true, rejected: true };
+            exerciseAttribute(A_CON, false, state);
+        }
+    }
+
+    if (slotObject('ublindf', state) === object)
+        await removeEyewear(object, { state, publish });
+    else
+        removeHeroEquipment(object, state);
+    if (state.program_state?.gameover) return { died: true, rejected: true };
+    if (!state.inventory?.includes(object)) return { died: false, rejected: true };
+    if (dropRejected) {
+        state.inventory.splice(state.inventory.indexOf(object), 1);
+        object.where = 'free';
+    }
+    await deactivateArtifactProperty(object, artifact, { state, publish });
+    if (dropRejected) {
+        const name = objectName(object, artifact);
+        const verb = (object.quan ?? object.quantity ?? 1) > 1 ? 'fall' : 'falls';
+        await publish(`${name[0].toUpperCase()}${name.slice(1)} ${verb} to the floor.`);
+        await landFloorObject(object, state.u.ux, state.u.uy, { state, publish });
+        newsym(state.u.ux, state.u.uy);
+    }
+    return { died: false, rejected: true };
 }
 
 function objectName(object, artifact) {
     if (artifact?.name) return artifact.name.replace(/^The /, 'the ');
     return `your ${object.name || OBJECT_NAMES[object.otyp] || 'object'}`;
-}
-
-async function removeObjectFromUse(object) {
-    if (object === liveSlot('uwep') || object === liveSlot('uswapwep')) {
-        releaseWeaponSlots(object, game);
-        return;
-    }
-    if (armorSlotFor(object.otyp)) {
-        removeHeroArmor(object, game);
-        return;
-    }
-    if (object === liveSlot('uleft') || object === liveSlot('uright')
-        || object === liveSlot('uamul')) {
-        removeHeroAccessory(object, game);
-        findArmorClass(game);
-        return;
-    }
-    if (object === liveSlot('ublindf')) {
-        await removeEyewear(object);
-        return;
-    }
-    object.worn = false;
-    object.wornSlot = null;
-    object.owornmask = 0;
-}
-
-async function applyHandlingDamage(object, artifact, touch) {
-    if (touch.blasted) return false;
-    const silver = objectMaterial(object, game) === SILVER
-        && heroHatesSilver(game);
-    let damage = 0;
-    if (silver) {
-        damage = rnd(10);
-        if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
-            damage = Math.trunc((damage + 1) / 2);
-    }
-    if (touch.bane) damage += rnd(10);
-    if (!damage) return false;
-
-    game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - damage);
-    exerciseAttribute(A_CON, false);
-    if (game.u.uhp > 0) return false;
-    return finishHeroDeath({
-        killer: `handling ${objectName(object, artifact)}`,
-    });
-}
-
-async function dropRejectedObject(object, artifact) {
-    const inventory = game.inventory || [];
-    const index = inventory.indexOf(object);
-    if (index >= 0) inventory.splice(index, 1);
-    object.where = 'free';
-
-    const quantity = object.quan ?? object.quantity ?? 1;
-    const subject = objectName(object, artifact);
-    const sentence = subject[0].toUpperCase() + subject.slice(1);
-    await plineWithContinuation(
-        `${sentence} ${quantity > 1 ? 'fall' : 'falls'} to the floor.`,
-    );
-    await landFloorObject(object, game.u.ux, game.u.uy, {
-        state: game,
-        publish: plineWithContinuation,
-    });
-    newsym(game.u.ux, game.u.uy);
-}
-
-async function retouchObject(
-    object, { dropRejected, removeWorn = true, equipped = false },
-) {
-    const artifact = artifactById(object?.oartifact, game);
-    if (!objectNeedsRetouch(object, artifact, equipped))
-        return { rejected: false, dropped: false, died: false };
-
-    const silver = objectMaterial(object, game) === SILVER
-        && heroHatesSilver(game);
-    const touch = await touchArtifactByHero(object, artifact);
-    if (touch.died)
-        return { rejected: true, dropped: false, died: true };
-
-    const rejected = !touch.allowed || silver || touch.bane;
-    if (!rejected)
-        return { rejected: false, dropped: false, died: false };
-
-    if (touch.allowed) {
-        await plineWithContinuation(
-            `You can't handle ${objectName(object, artifact)} anymore!`,
-        );
-    }
-    const died = await applyHandlingDamage(object, artifact, touch);
-    if (died) return { rejected: true, dropped: false, died: true };
-
-    if (removeWorn) await removeObjectFromUse(object);
-    if (artifactInvokeIsActive(artifact, game)) {
-        await deactivateArtifactProperty(object, artifact, { state: game });
-    }
-    if (dropRejected) await dropRejectedObject(object, artifact);
-    return { rejected: true, dropped: dropRejected, died: false };
-}
-
-export async function retouchEquipment(dropFlag = 0) {
-    const processed = new Set();
-    const rejected = [];
-    const dropped = [];
-    const hadGloves = !!liveSlot('uarmg');
-    const oldRingCount = Number(!!liveSlot('uleft'))
-        + Number(!!liveSlot('uright'));
-
-    const process = async (object, options) => {
-        if (!object || processed.has(object)) return false;
-        processed.add(object);
-        const result = await retouchObject(object, options);
-        if (result.rejected) rejected.push(object);
-        if (result.dropped) dropped.push(object);
-        return result.died;
-    };
-
-    if (game.u?.twoweap
-        && await process(liveSlot('uswapwep'), {
-            dropRejected: dropFlag > 0,
-            equipped: true,
-        })) {
-        return { died: true, rejected, dropped };
-    }
-    if (await process(liveSlot('uwep'), {
-        dropRejected: dropFlag > 0,
-        equipped: true,
-    }))
-        return { died: true, rejected, dropped };
-
-    const steed = game.u?.usteed;
-    const saddle = monsterSaddle(steed);
-    if (saddle) {
-        const wasRejected = rejected.length;
-        if (await process(saddle, {
-            dropRejected: false,
-            removeWorn: false,
-            equipped: true,
-        }))
-            return { died: true, rejected, dropped };
-        if (rejected.length > wasRejected) {
-            await dismountHero(DISMOUNT_THROWN, {
-                state: game,
-                announce: plineWithContinuation,
-            });
-        }
-    }
-
-    while (true) {
-        const object = (game.inventory || []).find(item =>
-            !processed.has(item));
-        if (!object) break;
-        if (await process(object, { dropRejected: dropFlag === 1 }))
-            return { died: true, rejected, dropped };
-    }
-
-    const newRingCount = Number(!!liveSlot('uleft'))
-        + Number(!!liveSlot('uright'));
-    const gloves = liveSlot('uarmg');
-    if (newRingCount !== oldRingCount && gloves?.cursed)
-        uncurseObjectState(gloves);
-
-    if (hadGloves && !gloves) {
-        const { selfTouchPetrifyingWeapons } = await import('./stoning.js');
-        const touch = await selfTouchPetrifyingWeapons({
-            messageStart: 'After losing your gloves, you',
-        });
-        if (touch.died) return { died: true, rejected, dropped };
-    }
-    return { died: false, rejected, dropped };
 }

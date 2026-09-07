@@ -43,7 +43,7 @@ test('a green slime touch infects and still deals its physical damage', async ()
     resumeDeferredHeroSlime(action, game);
     const message = action.movement.attack.slimeEffectMessage;
     finishDeferredHeroSlime(action, game);
-    resumeDeferredHeroContact(action, game, range => range - 1, () => 1);
+    await resumeDeferredHeroContact(action, game, range => range - 1, () => 1);
 
     assert.equal(message, "You don't feel very well.");
     assert.equal(game.u.slimedTurns, 10);

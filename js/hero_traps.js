@@ -83,7 +83,7 @@ import {
     putMonsterToSleep,
 } from './monster_sleep.js';
 import { splashLitObject, waterDamageObject } from './trap.js';
-import { heroIsPolymorphed, rehumanizeHero } from './polyself.js';
+import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';
 import { finishHeroDeath } from './end.js';
 import { triggerHeroAntiMagicTrap } from './anti_magic_trap.js';
 import { destroyFireInventory } from './zap.js';
@@ -996,12 +996,7 @@ async function rustIronGolemHero() {
     hero.mh = (hero.mh ?? 1) - damage;
     if (hero.mh > 0) return;
     if (!(hero.unchanging || game.unchanging)) {
-        const restored = rehumanizeHero(game);
-        if (restored.changed) {
-            await plineWithContinuation(
-                `You return to ${restored.race} form!`,
-            );
-        }
+        await returnHeroToHumanForm(game);
         return;
     }
     await finishHeroDeath({ killer: 'rusting away' });

@@ -16,7 +16,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import {
     monsterHasColdResistance, monsterHasFireResistance,
 } from './monster_resistance.js';
-import { rehumanizeHero } from './polyself.js';
+import { returnHeroToHumanForm } from './polyself.js';
 import { burnArmorByFire, burnHeroArmorByFire } from './trap.js';
 import { d, rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
@@ -167,7 +167,7 @@ export async function createFireExplosion(x, y, damage, {
         if (!fireResistant)
             hero[hitPoints] = Math.max(0, (hero[hitPoints] ?? 1) - damage);
         if (hero[hitPoints] <= 0) {
-            if (Upolyd(hero)) rehumanizeHero(state);
+            if (Upolyd(hero)) await returnHeroToHumanForm(state, { publish });
             else await finishHeroDeath({ killer: name });
         }
         exerciseAttribute(A_STR, false, state);

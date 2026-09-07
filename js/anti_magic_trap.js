@@ -8,8 +8,8 @@ import {
     W_ACCESSORY, W_ARMF, W_ARMOR, W_WEP,
 } from './const.js';
 import { plineWithContinuation } from './display.js';
-import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
+import { loseHeroHp } from './hero_damage.js';
 import { drainHeroEnergy } from './hero_energy.js';
 import {
     CLOAK_OF_MAGIC_RESISTANCE,
@@ -24,7 +24,7 @@ import {
     monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
 import {
-    heroFormFlags, heroIsPolymorphed, heroIsUnchanging, rehumanizeHero,
+    heroFormFlags, heroIsPolymorphed,
 } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { d, rn2, rnd } from './rng.js';
@@ -65,7 +65,7 @@ export async function triggerHeroAntiMagicTrap(trap) {
             : damage >= Math.trunc(hitPoints / 4)
                 ? 'very lethargic.' : 'sluggish.';
         await plineWithContinuation(`You feel ${feeling}`);
-        if (await damageHero(damage)) return;
+        if (await loseHeroHp(damage, 'anti-magic implosion')) return;
     }
 
     let drain = d(2, 6);
@@ -236,27 +236,4 @@ function implosionDamage() {
     if (heroCarriesNonQuestMagicDefense()) damage += rnd(4);
     if (heroPassesWalls()) damage = Math.trunc((damage + 3) / 4);
     return damage;
-}
-
-async function damageHero(amount) {
-    const hero = game.u;
-    if (heroIsPolymorphed(game)) {
-        hero.mh = (hero.mh ?? 1) - amount;
-        if (hero.mh > 0) return false;
-        if (!heroIsUnchanging(game)) {
-            const restored = rehumanizeHero(game);
-            if (restored.changed) {
-                await plineWithContinuation(
-                    `You return to ${restored.race} form!`,
-                );
-            }
-            return false;
-        }
-    } else {
-        hero.uhp = (hero.uhp ?? 1) - amount;
-        if (hero.uhp > 0) return false;
-    }
-
-    await finishHeroDeath({ killer: 'anti-magic implosion' });
-    return !!game.program_state?.gameover;
 }

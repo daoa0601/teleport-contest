@@ -22,7 +22,7 @@ import {
     AD_RBRE, AD_SLEE, AT_BREA,
 } from './monster_attack_types.js';
 import { hasWornProperty } from './properties.js';
-import { heroMonsterForm, rehumanizeHero } from './polyself.js';
+import { heroMonsterForm, returnHeroToHumanForm } from './polyself.js';
 import { resolvePoisonedHero } from './poison.js';
 import { d, rn2, rnd } from './rng.js';
 import { clearHeroSliming } from './slime.js';
@@ -298,10 +298,8 @@ async function applyOrdinaryBreathDamage(
         if (hero.mh > 0)
             return { resisted, damage, heroDied: false };
         if (!(hero.unchanging || state.unchanging)) {
-            const restored = rehumanizeHero(state);
-            if (restored.changed)
-                await publish(`You return to ${restored.race} form!`);
-            return { resisted, damage, heroDied: false };
+            const restored = await returnHeroToHumanForm(state, { publish, die });
+            return { resisted, damage, heroDied: restored.died };
         }
     } else {
         hero.uhp = Math.max(0, (hero.uhp ?? 1) - damage);

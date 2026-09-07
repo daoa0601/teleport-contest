@@ -10,7 +10,7 @@ import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { cureHeroVomiting } from './hero_illness.js';
 import { healHeroLegs } from './hero_legs.js';
-import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL } from './monster_data.js';
 import { CORPSE, EGG } from './object_data.js';
 import {
     heroHasNoLimbs, heroIsPolymorphed, polymonHero,
@@ -35,7 +35,9 @@ export function fleshPetrifies(mnum) {
 }
 
 function heroResistsStoning(state = game) {
-    return !!(state.u?.stoneResistance || state.u?.stone_resistance);
+    return !!(state.u?.stoneResistance || state.u?.stone_resistance)
+        || (heroIsPolymorphed(state)
+            && !!((MONSTER_RESISTS[state.u.umonnum] ?? 0) & 0x80));
 }
 
 export function heroIsPetrifying(state = game) {
@@ -196,28 +198,31 @@ function corpseWithArticle(object) {
 
 export async function selfTouchPetrifyingWeapons({
     messageStart = 'No longer petrify-resistant, you',
+    state = game,
+    publish = pline,
+    die = finishHeroDeath,
 } = {}) {
-    if (game.uarmg || game.u?.uarmg || heroResistsStoning())
+    if (state.uarmg || state.u?.uarmg || heroResistsStoning(state))
         return { touched: false, died: false };
 
     let touched = false;
     for (let slot = 0; slot < 2; slot++) {
         const weapon = slot === 0
-            ? game.uwep || game.u?.uwep
-            : game.u?.twoweap
-                ? game.uswapwep || game.u?.uswapwep : null;
+            ? state.uwep || state.u?.uwep
+            : state.u?.twoweap
+                ? state.uswapwep || state.u?.uswapwep : null;
         if (weapon?.otyp !== CORPSE || !touchPetrifies(weapon.corpsenm))
             continue;
         touched = true;
         const species = MONSTER_NAME[weapon.corpsenm] || 'monster';
-        await pline(`${messageStart} touch the ${species} corpse.`);
+        await publish(`${messageStart} touch the ${species} corpse.`);
         const result = await resolveImmediatePetrification({
             killer: corpseWithArticle(weapon),
-            publish: pline,
+            state, publish, die,
         });
         if (result.died) return { touched: true, died: true };
-        if (!(game.uarmg || game.u?.uarmg) && !heroResistsStoning())
-            releaseWeaponSlots(weapon);
+        if (!(state.uarmg || state.u?.uarmg) && !heroResistsStoning(state))
+            releaseWeaponSlots(weapon, state);
     }
     return { touched, died: false };
 }

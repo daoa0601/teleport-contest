@@ -204,7 +204,7 @@ import { heroLiquidEffects, sinkHeroIntoLava } from './hack.js';
 import {
     monsterGoodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
-import { polymonHero, rehumanizeHero } from './polyself.js';
+import { polymonHero, returnHeroToHumanForm } from './polyself.js';
 import { healHeroLegs } from './hero_legs.js';
 import {
     advanceHeroSickness, advanceHeroVomiting, heroIsSick,
@@ -3047,19 +3047,15 @@ async function resolveErosionFormRehumanization(
     if (effectDismissal !== null && effectDismissal !== undefined)
         pagerOwned = true;
 
-    const rehumanized = rehumanizeHero(game);
-    if (rehumanized.regainedSight) vision_recalc(0);
-    let returnMessage = 'You return to '
-        + rehumanized.race + ' form!';
-    if (rehumanized.regainedSight)
-        returnMessage += '  You can see again.';
-    const returnDismissal = await queueTurnMessage(returnMessage);
-    if (returnDismissal !== null && returnDismissal !== undefined)
-        pagerOwned = true;
-    if (rehumanized.encumbranceMessage)
-        await queueTurnMessage(rehumanized.encumbranceMessage);
+    const restored = await returnHeroToHumanForm(game, {
+        publish: async message => {
+            const dismissal = await queueTurnMessage(message);
+            if (dismissal !== null && dismissal !== undefined) pagerOwned = true;
+        },
+    });
+    heroAttack.heroDied = restored.died;
 
-    heroAttack.deferredPostHit = true;
+    heroAttack.deferredPostHit = !restored.died;
     return pagerOwned;
 }
 
@@ -4591,24 +4587,8 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 game._pending_message = '';
                                 game._retained_message = '';
                             }
-                            const rehumanized = rehumanizeHero(game);
-                            if (rehumanized.regainedSight)
-                                vision_recalc(0);
-                            const returnMessage
-                                = `You return to ${rehumanized.race} form!${
-                                    rehumanized.regainedSight
-                                        ? '  You can see again.' : ''
-                                }`;
-                            await waitForMonsterMore(returnMessage);
-                            if (rehumanized.encumbranceMessage) {
-                                // rehumanize() calls encumber_msg() after
-                                // polyman()'s urgent pager.  That follow-up
-                                // is not an ordinary actor message and still
-                                // becomes the new topline after ESC.
-                                await plineWithContinuation(
-                                    rehumanized.encumbranceMessage,
-                                );
-                            }
+                            const restored = await returnHeroToHumanForm(game);
+                            if (restored.died) return;
                             heroAttack = null;
                             break;
                         }
@@ -4941,7 +4921,15 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 if (heroAttack.deferredLegEffect)
                     resumeDeferredHeroLegs(action, game);
                 if (heroAttack.deferredPostHit) {
-                    resumeDeferredHeroContact(action, game);
+                    const publishContactMessage = async message => {
+                        const dismissal = await queueTurnMessage(message);
+                        if (dismissal !== null && dismissal !== undefined)
+                            actorContactPagerOwned = true;
+                    };
+                    await resumeDeferredHeroContact(
+                        action, game, rn2, rnd, publishContactMessage,
+                    );
+                    if (game.program_state?.gameover) return;
                     if (heroAttack.deferredElementalInventory) {
                         const inventoryDamage
                             = heroAttack.deferredElementalInventory;
@@ -4966,7 +4954,9 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         delete heroAttack.electricOriginalDamage;
                         const hitPoints = Upolyd(game.u) ? 'mh' : 'uhp';
                         if ((game.u?.[hitPoints] ?? 1) > 0) {
-                            resumeDeferredHeroContact(action, game);
+                            await resumeDeferredHeroContact(
+                                action, game, rn2, rnd, publishContactMessage,
+                            );
                         } else {
                             heroAttack.heroDied = true;
                             heroAttack.deferredPostHit = false;
@@ -4979,29 +4969,11 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             );
                         actorContactPagerOwned ||= poisonPagerOwned;
                         heroAttack.deferredPoisonEffect = false;
-                        resumeDeferredHeroContact(action, game);
-                    }
-                }
-                if (heroAttack.contactRehumanized?.changed) {
-                    const rehumanized = heroAttack.contactRehumanized;
-                    if (rehumanized.regainedSight) vision_recalc(0);
-                    let returnMessage
-                        = `You return to ${rehumanized.race} form!`;
-                    if (rehumanized.regainedSight)
-                        returnMessage += '  You can see again.';
-                    const returnDismissal = await queueTurnMessage(
-                        returnMessage,
-                    );
-                    if (returnDismissal !== null
-                        && returnDismissal !== undefined) {
-                        actorContactPagerOwned = true;
-                    }
-                    if (rehumanized.encumbranceMessage) {
-                        await queueTurnMessage(
-                            rehumanized.encumbranceMessage,
+                        await resumeDeferredHeroContact(
+                            action, game, rn2, rnd, publishContactMessage,
                         );
                     }
-                    heroAttack.contactRehumanized = null;
+                    if (game.program_state?.gameover) return;
                 }
                 if (heroAttack.deferredBlindEffect) {
                     const toggledBlindness = resumeDeferredHeroBlindness(

@@ -5,12 +5,12 @@ import {
     IS_AIR, IS_POOL, P_BASIC, P_SKILLED, isok,
 } from './const.js';
 import { docrt, newsym, pline } from './display.js';
-import { finishHeroDeath } from './end.js';
 import { wipeEngravingAt } from './engrave.js';
 import {
     detachFloorObjectUnit, place_object, stack_object,
 } from './floor_object.js';
 import { game } from './gstate.js';
+import { loseHeroHp } from './hero_damage.js';
 import {
     farlookTipUntilDismissed, selectMapPosition,
 } from './getpos.js';
@@ -21,7 +21,6 @@ import {
     MONSTER_FLAGS2, MONSTER_SIZE, monsterTypeName,
 } from './monster_data.js';
 import { OBJECT_SUBTYPE } from './object_data.js';
-import { heroIsPolymorphed, rehumanizeHero } from './polyself.js';
 import { rn2, rnd } from './rng.js';
 import { ensureHeroSkills } from './skills.js';
 import { surfaceName } from './terrain_name.js';
@@ -140,20 +139,7 @@ async function damageHero(state) {
     if (state.u?.halfPhysicalDamage || state.u?.half_physical_damage)
         damage = Math.trunc((damage + 1) / 2);
 
-    if (heroIsPolymorphed(state)) {
-        state.u.mh = (state.u.mh ?? 1) - damage;
-        if (state.u.mh > 0) return false;
-        if (!(state.u.unchanging || state.unchanging)) {
-            const restored = rehumanizeHero(state);
-            if (restored.changed)
-                await pline(`You return to ${restored.race} form!`);
-            return false;
-        }
-    } else {
-        state.u.uhp = (state.u.uhp ?? 1) - damage;
-        if (state.u.uhp > 0) return false;
-    }
-    return finishHeroDeath({ killer: 'a grappling hook' });
+    return loseHeroHp(damage, 'a grappling hook', { state, publish: pline });
 }
 
 export async function useGrapplingHook(hook, {

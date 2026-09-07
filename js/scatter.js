@@ -26,7 +26,7 @@ import {
 } from './object_breakage.js';
 import { splitObjectStack } from './object_stack.js';
 import { hitMonsterWithSupportedPotion } from './potion_hit.js';
-import { rehumanizeHero } from './polyself.js';
+import { returnHeroToHumanForm } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { objectWeight } from './weight.js';
 import {
@@ -251,7 +251,8 @@ async function hitHero(node, state, options) {
     const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';
     state.u[hitPoints] = Math.max(0, (state.u[hitPoints] ?? 1) - damage);
     if (state.u[hitPoints] <= 0) {
-        if (Upolyd(state.u)) rehumanizeHero(state);
+        if (Upolyd(state.u))
+            await returnHeroToHumanForm(state, { publish: options.publish });
         else await finishHeroDeath({ killer: 'flying debris' });
     }
     node.range -= 3;

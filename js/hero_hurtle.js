@@ -33,7 +33,7 @@ import {
     MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName,
 } from './monster_data.js';
 import { BOULDER } from './object_data.js';
-import { rehumanizeHero } from './polyself.js';
+import { loseHeroHp } from './hero_damage.js';
 import { rnd } from './rng.js';
 import { stopRun } from './runmode.js';
 import { checkSpecialRoom } from './shk.js';
@@ -99,23 +99,7 @@ function obstacleReason(location, openDoorFrame) {
 async function loseImpactHitPoints(amount, killer) {
     if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
         amount = Math.trunc((amount + 1) / 2);
-    if (Upolyd(game.u)) {
-        game.u.mh = (game.u.mh ?? 1) - amount;
-        if (game.u.mh > 0) return false;
-        if (!(game.u.unchanging || game.unchanging)) {
-            const restored = rehumanizeHero(game);
-            if (restored.changed) {
-                await plineWithContinuation(
-                    `You return to ${restored.race} form!`,
-                );
-            }
-            return false;
-        }
-    } else {
-        game.u.uhp = (game.u.uhp ?? 1) - amount;
-        if (game.u.uhp > 0) return false;
-    }
-    return finishHeroDeath({ killer });
+    return loseHeroHp(amount, killer);
 }
 
 function obstacleAt(x, y) {

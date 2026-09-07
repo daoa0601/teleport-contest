@@ -2,46 +2,42 @@
 // C ref: artifact.c touch_artifact().
 
 import {
-    applyHeroArtifactBlast, artifactById, resolveHeroArtifactTouch,
+    artifactById, resolveHeroArtifactTouch, rollHeroArtifactBlast,
 } from './artifacts.js';
+import { exerciseAttribute } from './attrib.js';
 import { A_WIS } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
-import { rn2 } from './rng.js';
+import { loseHeroHp } from './hero_damage.js';
 
-function heroCarries(object) {
+function heroCarries(object, state) {
     return object?.where === 'inventory'
-        || (game.inventory || []).includes(object);
+        || (state.inventory || []).includes(object);
 }
 
 export async function touchArtifactByHero(
     object, artifact = artifactById(object?.oartifact),
+    { state = game, publish = plineWithContinuation, die = finishHeroDeath } = {},
 ) {
-    const result = resolveHeroArtifactTouch(object, artifact);
+    const result = resolveHeroArtifactTouch(object, artifact, state);
     if (!artifact || !object?.oartifact) return { ...result, died: false };
 
     let died = false;
     let damage = 0;
     if (result.blasted) {
-        await plineWithContinuation(
+        await publish(
             `You are blasted by ${artifact.name}'s power!`,
         );
-        damage = applyHeroArtifactBlast(object, artifact);
-        if ((game.u?.uhp ?? 1) <= 0) {
-            died = await finishHeroDeath({
-                killer: `touching ${artifact.name}`,
-            });
-        }
-        if (!died) {
-            if (!Array.isArray(game.u._exercise))
-                game.u._exercise = Array(6).fill(0);
-            game.u._exercise[A_WIS] -= rn2(2);
-        }
+        damage = rollHeroArtifactBlast(object, artifact, state);
+        died = await loseHeroHp(damage, `touching ${artifact.name}`, {
+            state, publish, die,
+        });
+        if (!died) exerciseAttribute(A_WIS, false, state);
     }
 
     if (!died && !result.allowed) {
-        await plineWithContinuation(heroCarries(object)
+        await publish(heroCarries(object, state)
             ? `${artifact.name} is beyond your control!`
             : `${artifact.name} evades your grasp!`);
     }

@@ -108,7 +108,7 @@ import {
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack } from './track.js';
-import { heroFormSticks, rehumanizeHero } from './polyself.js';
+import { heroFormSticks, returnHeroToHumanForm } from './polyself.js';
 import {
     cansee, clearPath, couldsee, visibleCellsFrom, vision_note_blocker_change,
     vision_recalc,
@@ -5971,8 +5971,9 @@ export function finishDeferredHeroExpulsion(
 
 // Continue an ordinary natural hit after its visible hit message has been
 // accepted.  C ref: mhitu.c:hitmu() -> mhitm_knockback(), then losehp().
-export function resumeDeferredHeroContact(
+export async function resumeDeferredHeroContact(
     action, state, random = rn2, rollOne = rnd,
+    publish = plineWithContinuation,
 ) {
     const attack = action?.movement?.attack;
     if (!attack?.deferredPostHit) return action;
@@ -6064,11 +6065,14 @@ export function resumeDeferredHeroContact(
     const wasPolymorphed = Upolyd(state?.u);
     applyHeroContactDamage(state, attack.appliedDamage);
     if (wasPolymorphed && (state.u?.mh ?? 0) < 1) {
-        // mhitu.c:mdamageu() rehumanizes atomically before passiveum() sees
-        // the old form.  Retain the returned presentation transaction for
-        // the async actor driver, but make the body change live now so
-        // passiveum's Upolyd-only gate does not consume rn2(3).
-        attack.contactRehumanized = rehumanizeHero(state);
+        // mdamageu() finishes rehumanization, including equipment effects,
+        // before passiveum() decides which effects survive the lost form.
+        const restored = await returnHeroToHumanForm(state, { publish });
+        if (restored.died) {
+            attack.heroDied = true;
+            attack.deferredPostHit = false;
+            return action;
+        }
     }
     if (attack.appliedDamage > 0) {
         attack.passive = applyHeroPassiveAfterContact(

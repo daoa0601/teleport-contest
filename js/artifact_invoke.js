@@ -229,7 +229,6 @@ export async function deactivateArtifactProperty(
         scaledRandom = rnz,
     } = {},
 ) {
-    const power = PROPERTY_POWERS[artifact?.invokePower];
     if (!artifactInvokeIsActive(artifact, state)) return false;
     await invokeProperty(
         object, artifact, state, publish, rollDice, scaledRandom,

@@ -16,7 +16,9 @@ import {
 } from './monster_data.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { wakeMonstersNear } from './monster_wake.js';
-import { heroFormSticks, rehumanizeHero } from './polyself.js';
+import {
+    heroFormSticks, returnHeroToHumanForm,
+} from './polyself.js';
 import { d, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { CLR_GREEN } from './terminal.js';
@@ -213,7 +215,8 @@ async function damageHero(x, y, damage, sourceName, {
     const hitPoints = Upolyd(hero) ? 'mh' : 'uhp';
     hero[hitPoints] = Math.max(0, (hero[hitPoints] ?? 1) - appliedDamage);
     if (hero[hitPoints] <= 0) {
-        if (Upolyd(hero)) rehumanizeHero(state);
+        if (Upolyd(hero))
+            await returnHeroToHumanForm(state, { publish, die: finishHero });
         else await finishHero({ killer: sourceName });
     }
     exerciseAttribute(A_STR, false, state);

@@ -32,7 +32,7 @@ import {
     BOULDER, OBJECT_USES_KNOWN, ROCK, STATUE,
 } from './object_data.js';
 import {
-    heroFormHidesUnderObjects, rehumanizeHero,
+    heroFormHidesUnderObjects, returnHeroToHumanForm,
 } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { adjustSpellDamage } from './spell_damage.js';
@@ -304,9 +304,7 @@ async function hitHero(state, options) {
     );
     if (state.u[hitPoints] > 0) return true;
     if (Upolyd(state.u)) {
-        const restored = rehumanizeHero(state);
-        if (restored.changed)
-            await pline(`You return to ${restored.race} form!`);
+        await returnHeroToHumanForm(state, { publish: pline });
         return true;
     }
     await finishHeroDeath({ killer: 'self-inflicted injury' });
@@ -338,9 +336,8 @@ async function dropRockFromCeiling(state, random, roll) {
     );
     if (state.u[hitPoints] <= 0) {
         if (Upolyd(state.u)) {
-            const restored = rehumanizeHero(state);
-            if (restored.changed)
-                await pline(`You return to ${restored.race} form!`);
+            const restored = await returnHeroToHumanForm(state, { publish: pline });
+            if (restored.died) return true;
         } else {
             await finishHeroDeath({ killer: 'falling rock' });
             return true;

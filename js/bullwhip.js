@@ -13,11 +13,11 @@ import {
 import {
     canSpotMonster, map_invisible, newsym, pline,
 } from './display.js';
-import { finishHeroDeath } from './end.js';
 import {
     detachFloorObjectUnit, place_object, remove_object, stack_object,
 } from './floor_object.js';
 import { game } from './gstate.js';
+import { loseHeroHp } from './hero_damage.js';
 import { inventoryItemDescription } from './invent.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
@@ -30,9 +30,6 @@ import {
     BOULDER, CORPSE, OBJECT_BIMANUAL,
 } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import {
-    heroIsPolymorphed, rehumanizeHero,
-} from './polyself.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { strikeSteed } from './steed.js';
 import { touchPetrifyingCorpse } from './stoning.js';
@@ -209,26 +206,12 @@ async function damageHeroWithWhip(whip, state) {
 
     const foot = heroFootName(state);
     await pline(`You hit your ${foot} with your bullwhip.`);
-    if (heroIsPolymorphed(state)) {
-        state.u.mh = (state.u.mh ?? 1) - damage;
-        if (state.u.mh > 0) return false;
-        if (!(state.u.unchanging || state.unchanging)) {
-            const restored = rehumanizeHero(state);
-            if (restored.changed)
-                await pline(`You return to ${restored.race} form!`);
-            return false;
-        }
-    } else {
-        state.u.uhp = (state.u.uhp ?? 1) - damage;
-        if (state.u.uhp > 0) return false;
-    }
-
     const female = !!(state.flags?.female || state.u?.female);
     const reflexive = female ? 'herself' : 'himself';
     const possessivePronoun = female ? 'her' : 'his';
-    return finishHeroDeath({
-        killer: `killed ${reflexive} with ${possessivePronoun} bullwhip`,
-    });
+    return loseHeroHp(damage,
+        `killed ${reflexive} with ${possessivePronoun} bullwhip`,
+        { state, publish: pline });
 }
 
 function clearMonsterWeapon(monster, object) {

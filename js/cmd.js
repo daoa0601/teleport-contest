@@ -2,6 +2,7 @@
 // C ref: cmd.c rhack(), hack.c domove().
 
 import { game } from './gstate.js';
+import { loseHeroHp } from './hero_damage.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { doOptions } from './options.js';
@@ -312,7 +313,7 @@ import {
 import {
     heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed,
     heroHasOlfaction, heroIsVerySmall, polyselfControlledMonster,
-    polyselfControlledNewman, rehumanizeHero,
+    polyselfControlledNewman,
 } from './polyself.js';
 import {
     applyEyewear, isEyewear, removeEyewear, wearEyewear,
@@ -3801,23 +3802,7 @@ function kickDeathReason(x, y) {
 }
 
 async function damageHeroFromKick(amount, x, y) {
-    if (heroIsPolymorphed(game)) {
-        game.u.mh = (game.u.mh ?? 1) - amount;
-        if (game.u.mh > 0) return false;
-        if (!(game.u.unchanging || game.unchanging)) {
-            const restored = rehumanizeHero(game);
-            if (restored.changed) {
-                await plineWithContinuation(
-                    `You return to ${restored.race} form!`,
-                );
-            }
-            return false;
-        }
-    } else {
-        game.u.uhp = (game.u.uhp ?? 1) - amount;
-        if (game.u.uhp > 0) return false;
-    }
-    return finishHeroDeath({ killer: kickDeathReason(x, y) });
+    return loseHeroHp(amount, kickDeathReason(x, y));
 }
 
 function finishHurtleMonsterDeath(monster, { noCorpse = true } = {}) {

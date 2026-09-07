@@ -17,6 +17,7 @@ import { finishHeroDeath } from './end.js';
 import { loseExperienceLevel } from './exper.js';
 import { doGenocide, GENOCIDE_ON_THRONE } from './genocide.js';
 import { game } from './gstate.js';
+import { loseHeroHp } from './hero_damage.js';
 import { cureHeroSickness } from './hero_illness.js';
 import { healHeroLegs } from './hero_legs.js';
 import {
@@ -34,7 +35,7 @@ import {
     grantIntrinsicProperty, hasIntrinsicProperty, removeIntrinsicProperty,
 } from './properties.js';
 import {
-    heroHasEyes, heroIsPolymorphed, polyselfRandomOrdinary, rehumanizeHero,
+    heroHasEyes, heroIsPolymorphed, polyselfRandomOrdinary,
 } from './polyself.js';
 import { getLine, promptYesNo } from './query.js';
 import { removeCurseEffect } from './read.js';
@@ -107,27 +108,6 @@ async function announceAttributeChange(attribute, amount, conditional) {
     const message = attributeChangeMessage(attribute, result);
     if (message) await plineWithContinuation(message);
     return result;
-}
-
-async function damageHero(amount, killer) {
-    const hero = game.u;
-    if (heroIsPolymorphed(game)) {
-        hero.mh = (hero.mh ?? 1) - amount;
-        if (hero.mh > 0) return false;
-        if (!(hero.unchanging || game.unchanging)) {
-            const restored = rehumanizeHero(game);
-            if (restored.changed) {
-                await plineWithContinuation(
-                    `You return to ${restored.race} form!`,
-                );
-            }
-            return false;
-        }
-    } else {
-        hero.uhp = (hero.uhp ?? 1) - amount;
-        if (hero.uhp > 0) return false;
-    }
-    return finishHeroDeath({ killer });
 }
 
 function healHeroCompletely() {
@@ -245,7 +225,7 @@ async function normalThroneEffect(
     switch (effect) {
     case 1:
         await announceAttributeChange(rn2(A_MAX), -rn1(4, 3), false);
-        await damageHero(rnd(10), 'cursed throne');
+        await loseHeroHp(rnd(10), 'cursed throne');
         break;
     case 2:
         await announceAttributeChange(rn2(A_MAX), 1, false);
@@ -256,7 +236,7 @@ async function normalThroneEffect(
         await plineWithContinuation(
             `A${resistant ? 'n' : ' massive'} electric shock shoots through your body!`,
         );
-        await damageHero(resistant ? rnd(6) : rnd(30), 'electric chair');
+        await loseHeroHp(resistant ? rnd(6) : rnd(30), 'electric chair');
         exerciseAttribute(A_CON, false);
         break;
     }
@@ -426,7 +406,7 @@ async function specialThroneEffect(effect, x, y, { gotoLevel }) {
         await plineWithContinuation('The throne is covered in acid!');
         const resistant = !!(game.u?.acidResistance
             || game.u?.acid_resistance);
-        await damageHero(resistant ? rnd(16) : rnd(80), 'acidic chair');
+        await loseHeroHp(resistant ? rnd(16) : rnd(80), 'acidic chair');
         exerciseAttribute(A_CON, false);
         break;
     }

@@ -230,13 +230,7 @@ export function objectErosionMessage(object, kind) {
 }
 
 export function destroyWornArmor(armor, state = game) {
-    for (const slot of [
-        'uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu',
-    ]) {
-        if (state[slot] === armor) state[slot] = null;
-        if (state.u?.[slot] === armor) state.u[slot] = null;
-    }
-    removeArmorProperties(armor, state);
+    removeHeroArmor(armor, state);
     state.inventory = (state.inventory || []).filter(item => item !== armor);
 }
 

@@ -2,16 +2,11 @@
 // C refs: mkobj.c obj_extract_self(), shk.c obfree(), and delete_contents().
 
 import { game } from './gstate.js';
+import { removeHeroEquipment } from './hero_equipment.js';
 import {
     objectsInTimerGraph, stopAllObjectTimers,
 } from './object_timers.js';
 import { objectWeight } from './weight.js';
-
-const EQUIPMENT_SLOTS = [
-    'uwep', 'uswapwep', 'uquiver',
-    'uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu',
-    'uleft', 'uright', 'uamul', 'ublindf',
-];
 
 function containingObject(object, state) {
     if (object.container?.contents?.includes(object)) return object.container;
@@ -30,10 +25,7 @@ function updateContainerWeights(container) {
 }
 
 function clearEquipment(object, state) {
-    for (const slot of EQUIPMENT_SLOTS) {
-        if (state[slot] === object) state[slot] = null;
-        if (state.u?.[slot] === object) state.u[slot] = null;
-    }
+    removeHeroEquipment(object, state);
     object.owornmask = 0;
     object.worn = false;
     object.wielded = false;

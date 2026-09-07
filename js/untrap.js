@@ -41,7 +41,7 @@ import {
 import { deleteObject } from './object_delete.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
 import {
-    heroFormSticks, heroHasNoHands, rehumanizeHero,
+    heroFormSticks, heroHasNoHands, returnHeroToHumanForm,
 } from './polyself.js';
 import { promptYesNoQuit } from './query.js';
 import { d, rnd, rn2, rnl } from './rng.js';
@@ -882,7 +882,7 @@ async function triggerDoorTrap(door, x, y, { state, publish, rollOne }) {
 
     if (state.u[hitPoints] > 0) return;
     if (Upolyd(state.u) && !(state.u?.unchanging || state.unchanging)) {
-        rehumanizeHero(state);
+        await returnHeroToHumanForm(state, { publish });
         return;
     }
     await finishHeroDeath({ killer: 'explosion' });

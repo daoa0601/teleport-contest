@@ -16,7 +16,7 @@ import {
 } from './monster_data.js';
 import { nameToMonster, nameToMonsterClass } from './mondata.js';
 import { makePlural } from './object_grammar.js';
-import { rehumanizeHero } from './polyself.js';
+import { returnHeroToHumanForm } from './polyself.js';
 import { getLine } from './query.js';
 import { rn1 } from './rng.js';
 
@@ -139,10 +139,8 @@ async function finishGenocidedHero(mnum, killer, finishHeroDeath) {
 
     if (polymorphed && currentSpecies === mnum
         && !(u.unchanging || game.unchanging)) {
-        const restored = rehumanizeHero(game);
-        if (restored.changed)
-            await plineWithContinuation(`You return to ${restored.race} form!`);
-        if (!ownBaseSpecies) return;
+        await returnHeroToHumanForm(game, { die: finishHeroDeath });
+        return;
     } else if (polymorphed && ownBaseSpecies && currentSpecies !== mnum) {
         await plineWithContinuation('You feel dead inside.');
         return;
@@ -173,9 +171,7 @@ async function applySpeciesGenocide(mnum, {
     if (ownSpecies || killsCurrentForm) {
         await finishGenocidedHero(mnum, killer, finishHeroDeath);
     } else if (currentSpecies === mnum) {
-        const restored = rehumanizeHero(game);
-        if (restored.changed)
-            await plineWithContinuation(`You return to ${restored.race} form!`);
+        await returnHeroToHumanForm(game, { die: finishHeroDeath });
     }
     await killGenocidedMonsters();
 }

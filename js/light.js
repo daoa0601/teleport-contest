@@ -26,7 +26,7 @@ import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, scheduleObjectTimer,
     stopObjectTimer,
 } from './object_timers.js';
-import { rehumanizeHero } from './polyself.js';
+import { returnHeroToHumanForm } from './polyself.js';
 import { roomForRoomno } from './room.js';
 import { rn2, rnd } from './rng.js';
 import { makePlural } from './object_grammar.js';
@@ -205,11 +205,7 @@ export async function damageGremlinHeroWithLight(
     if (game.u.mh > 0) return damage;
 
     if (!(game.u?.unchanging || game.unchanging)) {
-        const restored = rehumanizeHero(game);
-        if (restored.changed)
-            await plineWithContinuation(
-                `You return to ${restored.race} form!`,
-            );
+        await returnHeroToHumanForm(game);
         return damage;
     }
     if (!finishHeroDeath)

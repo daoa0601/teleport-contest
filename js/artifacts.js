@@ -346,25 +346,25 @@ export function artifactStrikesShade(object) {
     return artifactById(object?.oartifact)?.name === 'Sunsword';
 }
 
-function artifactBaneApplies(artifact) {
+export function artifactBaneApplies(artifact, state = game) {
     if (!['flag2', 'symbol', 'alignment']
         .includes(artifact?.attack?.target?.kind)) return false;
     return artifactAttackApplies(
-        artifact, { mnum: heroSpecies(game) }, { hero: true },
+        artifact, { mnum: heroSpecies(state) }, { hero: true, state },
     );
 }
 
 // C artifact.c:touch_artifact() hero branch up to its blast message.
-export function resolveHeroArtifactTouch(object, artifact) {
+export function resolveHeroArtifactTouch(object, artifact, state = game) {
     if (!object?.oartifact || !artifact) {
         return { allowed: true, blasted: false };
     }
-    const heroRole = game.urole?.key || null;
-    const heroAlignment = game.u?.ualign?.type ?? 0;
-    const alignmentRecord = game.u?.ualign?.record ?? 0;
+    const heroRole = state.urole?.key || null;
+    const heroAlignment = state.u?.ualign?.type ?? 0;
+    const alignmentRecord = state.u?.ualign?.record ?? 0;
     const badClass = artifact.selfWilled
         && !!artifact.role && artifact.role !== heroRole;
-    const bane = artifactBaneApplies(artifact);
+    const bane = artifactBaneApplies(artifact, state);
     let badAlignment = artifact.restricted
         && artifact.alignment !== null
         && (artifact.alignment !== heroAlignment || alignmentRecord < 0);
@@ -385,15 +385,14 @@ export function resolveHeroArtifactTouch(object, artifact) {
     };
 }
 
-export function applyHeroArtifactBlast(object, artifact) {
-    const antimagic = !!game.u?.antimagic;
+export function rollHeroArtifactBlast(object, artifact, state = game) {
+    const antimagic = !!state.u?.antimagic;
     let damage = d(antimagic ? 2 : 4, artifact.selfWilled ? 10 : 4);
-    if (objectMaterial(object, game) === SILVER && heroHatesSilver(game)) {
+    if (objectMaterial(object, state) === SILVER && heroHatesSilver(state)) {
         let silverDamage = rnd(10);
-        if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
+        if (state.u?.halfPhysicalDamage || state.u?.half_physical_damage)
             silverDamage = Math.trunc((silverDamage + 1) / 2);
         damage += silverDamage;
     }
-    game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - damage);
     return damage;
 }

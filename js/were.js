@@ -21,7 +21,7 @@ import {
 import {
     heroCanControlPolymorph, heroHasProtectionFromShapeChangers,
     heroIsPolymorphed, heroIsUnchanging, heroMonsterForm, polymonHero,
-    rehumanizeHero,
+    returnHeroToHumanForm,
 } from './polyself.js';
 import { paranoidQuery } from './query.js';
 import { rn2, rnd } from './rng.js';
@@ -29,7 +29,6 @@ import {
     monsterSentenceSubject, sessionIsNight,
 } from './monster_sound.js';
 import { heroIsDeaf } from './senses.js';
-import { vision_recalc } from './vision.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 
 const M2_WERE = 0x00000004;
@@ -167,15 +166,7 @@ export async function applyHeroWaterVaporChange({
             );
         }
         if (!unchanging && !nearbyThreat && (!controllable || !remain)) {
-            const restored = rehumanizeHero(state);
-            if (restored.regainedSight && state === game) vision_recalc(0);
-            if (restored.changed) {
-                await publish(`You return to ${restored.race} form!${
-                    restored.regainedSight ? '  You can see again.' : ''
-                }`);
-                if (restored.encumbranceMessage)
-                    await publish(restored.encumbranceMessage);
-            }
+            const restored = await returnHeroToHumanForm(state, { publish });
             return { kind: 'rehumanized', changed: restored.changed, restored };
         }
         if (!u.mtimedone) {
@@ -240,15 +231,7 @@ export async function purifyHeroLycanthropy({
     }
 
     if (!unchanging && !nearbyThreat && (!controllable || !remain)) {
-        const restored = rehumanizeHero(state);
-        if (restored.regainedSight && state === game) vision_recalc(0);
-        if (restored.changed) {
-            await publish(`You return to ${restored.race} form!${
-                restored.regainedSight ? '  You can see again.' : ''
-            }`);
-            if (restored.encumbranceMessage)
-                await publish(restored.encumbranceMessage);
-        }
+        const restored = await returnHeroToHumanForm(state, { publish });
         return { cured: true, changed: restored.changed, restored };
     }
 

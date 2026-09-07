@@ -25,7 +25,7 @@ import {
 } from './object_data.js';
 import {
     heroFormClings, heroFormFlags, heroHidesOnCeiling, heroIsFlying,
-    rehumanizeHero,
+    returnHeroToHumanForm,
 } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { destroyLavaInventory, waterDamageChain } from './trap.js';
@@ -585,10 +585,11 @@ async function applyHeroFormWaterEffect(state, publish, random, rollDice) {
     u.mh = Math.max(0, (u.mh ?? 1) - damage);
     if (u.mh > 0) return { kind: 'rust', damage };
 
-    const restored = rehumanizeHero(state);
-    if (restored.changed)
-        await publish(`You return to ${restored.race} form!`);
-    return { kind: 'rust', damage, rehumanized: restored.changed };
+    const restored = await returnHeroToHumanForm(state, { publish });
+    return {
+        kind: 'rust', damage, rehumanized: restored.changed,
+        died: restored.died,
+    };
 }
 
 async function finishLiquidTeleport(
@@ -760,6 +761,7 @@ export async function heroLiquidEffects({
     const formEffect = await applyHeroFormWaterEffect(
         state, publish, random, rollDice,
     );
+    if (formEffect?.died) return { entered: true, moved: false, died: true };
     canLiveUnderwater = heroCanLiveUnderwater(state);
     if (stayingInPool) {
         return {

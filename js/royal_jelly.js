@@ -21,7 +21,8 @@ import {
 import { releaseWeaponSlots } from './weapon_slots.js';
 import { objectWeight } from './weight.js';
 import {
-    heroIsPolymorphed, heroIsUnchanging, polymonHero, rehumanizeHero,
+    heroIsPolymorphed, heroIsUnchanging, polymonHero,
+    returnHeroToHumanForm,
 } from './polyself.js';
 import { rn2, rnd } from './rng.js';
 
@@ -152,15 +153,6 @@ export function isRoyalJelly(object) {
     return object?.otyp === LUMP_OF_ROYAL_JELLY;
 }
 
-async function publishHumanForm(restored, publish) {
-    if (!restored.changed) return;
-    await publish(`You return to ${restored.race} form!${
-        restored.regainedSight ? '  You can see again.' : ''
-    }`);
-    if (restored.encumbranceMessage)
-        await publish(restored.encumbranceMessage);
-}
-
 export async function eatRoyalJelly(jelly, {
     state = game,
     publish = plineWithContinuation,
@@ -186,7 +178,10 @@ export async function eatRoyalJelly(jelly, {
             if (rn2(17) === 0) hero.mhmax = (hero.mhmax ?? 0) + 1;
             hero.mh = hero.mhmax;
         } else if (hero.mh <= 0) {
-            await publishHumanForm(rehumanizeHero(state), publish);
+            const restored = await returnHeroToHumanForm(
+                state, { publish, die },
+            );
+            if (restored.died) return { transformed: true, died: true };
         }
     } else {
         hero.uhp = (hero.uhp ?? 0) + hitPointChange;

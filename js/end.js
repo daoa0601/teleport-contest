@@ -2,6 +2,7 @@
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 
 import { game } from './gstate.js';
+import { removeHeroEquipment } from './hero_equipment.js';
 import { nhgetch } from './input.js';
 import {
     docrt, flush_screen, pline, plineWithContinuation,
@@ -89,11 +90,8 @@ export function completeHeroLifeSaving(transaction) {
     const amulet = transaction?.amulet;
     if (!amulet) return false;
 
+    removeHeroEquipment(amulet, game);
     game.inventory = (game.inventory || []).filter(item => item !== amulet);
-    if (game.uamul === amulet) game.uamul = null;
-    if (game.u?.uamul === amulet) game.u.uamul = null;
-    amulet.worn = false;
-    amulet.wornSlot = null;
 
     const attributes = game.u?.acurr?.a;
     if (attributes)
@@ -123,6 +121,8 @@ export function restoreHeroAfterDeath() {
     const constitution = game.u?.acurr?.a?.[A_CON] ?? 3;
     const giveHp = 50 + 10 * Math.trunc(constitution / 2);
     game.u.uhp = Math.min(game.u.uhpmax ?? giveHp, giveHp);
+    if (Upolyd(game.u))
+        game.u.mh = Math.min(game.u.mhmax, giveHp);
     if ((game.u.uhunger ?? 900) < 500) game.u.uhunger = 900;
     game.context.move = 0;
     // end.c:savelife() replaces any earlier negative multi (including a

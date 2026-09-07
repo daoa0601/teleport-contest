@@ -21,6 +21,7 @@ import {
     pline, plineWithContinuation, shieldeff, show_glyph_cell,
 } from './display.js';
 import { game } from './gstate.js';
+import { loseHeroHp } from './hero_damage.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -67,7 +68,7 @@ import {
 } from './object_timers.js';
 import { applySupportedPotionVapor } from './potion_hit.js';
 import {
-    heroHasNoHands, polyselfRandomOrdinary, rehumanizeHero,
+    heroHasNoHands, polyselfRandomOrdinary,
 } from './polyself.js';
 import { createSteamCloud } from './regions.js';
 import { d, rn2, rnd } from './rng.js';
@@ -208,20 +209,8 @@ async function backfireWand(wand) {
     if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
         damage = Math.trunc((damage + 1) / 2);
     removeWand(wand);
-    damageHero(game, damage);
-
-    const polymorphed = Upolyd(game.u);
-    const remainingHitPoints = polymorphed ? game.u.mh : game.u.uhp;
-    if (remainingHitPoints <= 0) {
-        if (polymorphed) {
-            const restored = rehumanizeHero(game);
-            if (restored.changed)
-                await pline(`You return to ${restored.race} form!`);
-        } else {
-            const died = await finishHeroDeath({ killer: 'exploding wand' });
-            if (died) return;
-        }
-    }
+    const died = await loseHeroHp(damage, 'exploding wand', { publish: pline });
+    if (died) return;
     exerciseAttribute(A_STR, false);
 }
 
