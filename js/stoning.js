@@ -153,11 +153,12 @@ function heroPolymorphsWhenStoned(state = game) {
         && form !== PM_STONE_GOLEM;
 }
 
-function heroCanBecomeStoneGolem(state = game) {
+export function formCanBecomeStoneGolem(mnum, state = game) {
     const stoneGolemGenocided = !!(
         (state.mvitals?.[PM_STONE_GOLEM]?.mvflags ?? 0) & G_GENOD
     );
-    return heroPolymorphsWhenStoned(state) && !stoneGolemGenocided;
+    return MONSTER_SYMBOL[mnum] === S_GOLEM && mnum !== PM_STONE_GOLEM
+        && !stoneGolemGenocided;
 }
 
 export async function resolveImmediatePetrification({
@@ -166,7 +167,7 @@ export async function resolveImmediatePetrification({
     publish = plineWithContinuation,
     die = finishHeroDeath,
 } = {}) {
-    if (heroCanBecomeStoneGolem(state)) {
+    if (formCanBecomeStoneGolem(state.u.umonnum, state)) {
         await polymonHero(PM_STONE_GOLEM);
         return { died: false, transformed: true };
     }
@@ -246,7 +247,7 @@ export async function eatPetrifyingEgg(object) {
     if (object?.otyp !== EGG || !fleshPetrifies(object.corpsenm)
         || heroResistsStoning()) return { started: false };
 
-    if (heroCanBecomeStoneGolem()) {
+    if (formCanBecomeStoneGolem(game.u.umonnum)) {
         await polymonHero(PM_STONE_GOLEM);
         return { started: false, transformed: true };
     }
@@ -264,7 +265,7 @@ export async function hitByPetrifyingEgg(object, state = game) {
         return { started: false, transformed: false };
     }
 
-    if (heroCanBecomeStoneGolem(state)) {
+    if (formCanBecomeStoneGolem(state.u.umonnum, state)) {
         await polymonHero(PM_STONE_GOLEM);
         return { started: false, transformed: true };
     }
@@ -280,7 +281,7 @@ export async function tastePetrifyingFlesh(object, {
     if (!fleshPetrifies(object?.corpsenm) || heroResistsStoning())
         return { stopped: false, transformed: false };
 
-    if (heroCanBecomeStoneGolem()) {
+    if (formCanBecomeStoneGolem(game.u.umonnum)) {
         await polymonHero(PM_STONE_GOLEM);
         return { stopped: false, transformed: true };
     }

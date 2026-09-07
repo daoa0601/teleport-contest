@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 
 import { wearHeroArmor } from '../js/armor.js';
 import { touchArtifactByHero } from '../js/artifact_touch.js';
-import { A_CON } from '../js/const.js';
+import { A_CON, A_STR, STR18, STR19 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
+import { heroIsSick, startHeroSickness } from '../js/hero_illness.js';
 import { retouchEquipment } from '../js/hero_retouch.js';
 import { polymorphHero } from '../js/polyself.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -16,11 +17,85 @@ import {
     OBJECT_NAMES, SHIELD_OF_REFLECTION,
 } from '../js/object_data.js';
 import { roles, races } from '../js/roles.js';
+import { heroIsSliming, startHeroSliming } from '../js/slime.js';
+import { heroIsPetrifying, startHeroPetrification } from '../js/stoning.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
+
+test('a ghoul body cures illness and cannot be infected again', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    startHeroSickness({ turns: 12, cause: 'tainted meat' });
+    pushKeys('polyself\nghoul\n                ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(heroIsSick(), false);
+    const infection = startHeroSickness({ turns: 12, cause: 'tainted meat' });
+    assert.equal(infection.started, false);
+});
+
+for (const form of ['fire elemental', 'green slime']) {
+    test(`becoming a ${form} stops the slime transformation`, async () => {
+        freshObjectRoom({ flags: { debug: true } });
+        startHeroSliming({ turns: 3 });
+        pushKeys(`polyself\n${form}\n                `);
+
+        await rhack('#'.charCodeAt(0));
+
+        assert.equal(game.u.umonnum, MONSTER_NAME.indexOf(form));
+        assert.equal(heroIsSliming(), false);
+    });
+}
+
+test('a petrifying hero becomes a stone golem instead of the chosen golem', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    startHeroPetrification();
+    pushKeys('polyself\nrope golem\n                ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.umonnum, MONSTER_NAME.indexOf('stone golem'));
+    assert.equal(heroIsPetrifying(), false);
+    assert.equal(game.u.mh, 100);
+});
+
+test('a goblin retains ordinary strength but has the orc strength limit', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    game.u.acurr.a[A_STR] = 16;
+    pushKeys('polyself\ngoblin\n                ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.acurr.a[A_STR], 16);
+    assert.equal(game.u.amax.a[A_STR], STR18(50));
+});
+
+test('living giant strength exceeds undead giant strength', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    pushKeys('polyself\nhill giant\n                ');
+    await rhack('#'.charCodeAt(0));
+    assert.equal(game.u.acurr.a[A_STR], STR19(19));
+    resetInputState();
+    pushKeys('polyself\ngiant zombie\n                ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.acurr.a[A_STR], STR18(100));
+});
+
+test('an adult dragon body has full health dice on the elemental planes', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    game.astral_level = { dnum: 7, dlevel: 1 };
+    game.u.uz = { dnum: 7, dlevel: 3 };
+    pushKeys('polyself\nred dragon\n                ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.mhmax, 120);
+});
 
 test('human renewal restarts the slime countdown even when already human', async () => {
     freshObjectRoom({ role: roles[0], flags: { debug: true }, gameplaySeed: 2317n });

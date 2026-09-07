@@ -284,9 +284,7 @@ function normalCorpseMeal(corpse, corpseName) {
         const foodKind = MONSTER_SYMBOL[mnum] === S_FUNGUS
             ? 'fungoid vegetation'
             : vegetarianCorpse(mnum) ? 'protoplasm' : 'meat';
-        const sickResistance = !!(
-            game.u?.sickResistance || game.u?.sick_resistance
-        );
+        const sickResistance = !!game.u.sicknessResistance;
         let sicknessTurns = null;
         if (!sickResistance) {
             sicknessTurns = rn1(10, 10);
@@ -338,7 +336,7 @@ function normalCorpseMeal(corpse, corpseName) {
     // eat.c handles a mildly stale cadaver before rottenfood() and before
     // ordinary taste prose.  This branch still starts the full meal, but its
     // first bite immediately damages the hero and owns the only message.
-    const sickResistance = !!game.u?.sickResistance;
+    const sickResistance = !!game.u.sicknessResistance;
     if ((rotted > 5 || (rotted > 3 && rn2(5) !== 0)) && !sickResistance) {
         return {
             ...mealTiming(corpse, baseReqtime, nutrition),

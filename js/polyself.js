@@ -33,7 +33,8 @@ import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
 import {
-    A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, STAIRS, Upolyd,
+    A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame,
+    STAIRS, STR18, STR19, Upolyd,
     POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT,
     W_ACCESSORY, W_ARMOR, W_SADDLE,
 } from './const.js';
@@ -43,11 +44,13 @@ import { nameToMonster, nameToMonsterClass } from './mondata.js';
 import { counterWereSpecies } from './monster_species.js';
 import { wereBeastForSpecies } from './were.js';
 import { getLine, promptYesNo } from './query.js';
-import { golemHitPoints } from './monster_hit_points.js';
+import { golemHitPoints, isHomeElemental } from './monster_hit_points.js';
+import { races } from './roles.js';
 import { finishHeroDeath } from './end.js';
-import { cureHeroSickness } from './hero_illness.js';
+import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import {
-    clearHeroPetrification, selfTouchPetrifyingWeapons,
+    clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying,
+    selfTouchPetrifyingWeapons,
 } from './stoning.js';
 import { heroHasNoHead, setHeroSpecies } from './hero_species.js';
 import { retouchEquipment } from './hero_retouch.js';
@@ -56,7 +59,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { isWeldedPrimary, releaseWeaponSlots } from './weapon_slots.js';
 import { vision_recalc } from './vision.js';
 import {
-    heroIsSliming, resetHeroSlimingCountdown,
+    clearHeroSliming, heroIsFlaming, heroIsSliming, resetHeroSlimingCountdown,
 } from './slime.js';
 
 const M1_NOEYES = 0x00001000;
@@ -70,6 +73,12 @@ const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;
 const M2_NEUTER = 0x00040000;
 const M2_STRONG = 0x04000000;
+const M2_UNDEAD = 0x00000002;
+const M2_ELF = 0x00000010;
+const M2_DWARF = 0x00000020;
+const M2_GNOME = 0x00000040;
+const M2_ORC = 0x00000080;
+const M2_GIANT = 0x00002000;
 const M2_NOPOLY = 0x00000001;
 const M2_PNAME = 0x00080000;
 const G_FREQ = 0x0007;
@@ -358,30 +367,53 @@ async function beginMonsterForm(mnum, {
         await plineWithContinuation(`You ${verb} ${article} ${name}!`);
     }
 
-    u.mtimedone = 500 + rn2(500);
+    if (heroIsPetrifying(game) && formCanBecomeStoneGolem(mnum)) {
+        mnum = MONSTER_NAME.indexOf('stone golem');
+        clearHeroPetrification(game);
+        await plineWithContinuation('You turn to stone!');
+    }
+    u.mtimedone = rn1(500, 500);
     setHeroSpecies(mnum, game);
     u.m_ap_type = 0;
     u.mappearance = 0;
     const strong = !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_STRONG);
-    if (strong) {
-        // polyself.c:uasmon_maxStr(): ordinary strong forms use STR18(100).
-        if (u.amax?.a) u.amax.a[A_STR] = 118;
-        if (u.acurr?.a) u.acurr.a[A_STR] = 118;
-    } else {
-        // Non-strong forms retain current Strength but cap exceptional
-        // Strength at 18 for the duration of the polymorph.
-        if (u.amax?.a)
-            u.amax.a[A_STR] = Math.min(u.amax.a[A_STR] ?? 18, 18);
-        if (u.acurr?.a)
-            u.acurr.a[A_STR] = Math.min(u.acurr.a[A_STR] ?? 18, 18);
+    const maximumStrength = formMaximumStrength(mnum);
+    u.amax.a[A_STR] = maximumStrength;
+    u.acurr.a[A_STR] = strong
+        ? maximumStrength : Math.min(u.acurr.a[A_STR], maximumStrength);
+
+    if (u.stoneResistance && heroIsPetrifying(game)) {
+        clearHeroPetrification(game);
+        await plineWithContinuation('You no longer seem to be petrifying.');
+    }
+    if (u.sicknessResistance && heroIsSick(game)) {
+        cureHeroSickness(game);
+        await plineWithContinuation('You no longer feel sick.');
+    }
+    if (heroIsSliming(game)) {
+        if (heroIsFlaming(game)) {
+            clearHeroSliming(game);
+            await plineWithContinuation('The slime burns away!');
+        } else if (MONSTER_NAME[mnum] === 'green slime') {
+            clearHeroSliming(game);
+        }
+    }
+    if (heroHasNoHands(game)) {
+        u.glibTurns = 0;
+        u.glib = false;
     }
 
     const monsterLevel = MONSTER_LEVEL[mnum] ?? 0;
     const fixedGolemHitPoints = golemHitPoints(mnum);
     if (fixedGolemHitPoints) u.mhmax = fixedGolemHitPoints;
-    else if (MONSTER_SYMBOL[mnum] === S_DRAGON && monsterLevel > 0)
-        u.mhmax = 4 * monsterLevel + d(monsterLevel, 4);
-    else u.mhmax = monsterLevel > 0 ? d(monsterLevel, 8) : rnd(4);
+    else if (MONSTER_SYMBOL[mnum] === S_DRAGON
+        && mnum >= MONSTER_NAME.indexOf('gray dragon'))
+        u.mhmax = In_endgame(game.u.uz)
+            ? 8 * monsterLevel : 4 * monsterLevel + d(monsterLevel, 4);
+    else {
+        u.mhmax = monsterLevel > 0 ? d(monsterLevel, 8) : rnd(4);
+        if (isHomeElemental(mnum)) u.mhmax *= 3;
+    }
     u.mh = u.mhmax;
     if ((u.ulevel ?? 1) < monsterLevel) {
         u.mtimedone = Math.trunc(
@@ -391,6 +423,28 @@ async function beginMonsterForm(mnum, {
     // polymon() does not repaint the accepted form until break_armor() has
     // completed.  A garment pager can therefore still expose the old hero
     // glyph even though monster HP and status metadata are already live.
+    return mnum;
+}
+
+// C polyself.c:uasmon_maxStr(). Racial limits also apply to undead relatives,
+// but living giants are stronger than giant zombies and mummies.
+function formMaximumStrength(mnum) {
+    const flags = MONSTER_FLAGS2[mnum];
+    let race;
+    if (flags & M2_ORC) {
+        if (!['Uruk-hai', 'orc captain'].includes(MONSTER_NAME[mnum]))
+            race = races.find(candidate => candidate.name === 'orc');
+    } else if (flags & M2_ELF) {
+        race = races.find(candidate => candidate.name === 'elf');
+    } else if (flags & M2_DWARF) {
+        race = races.find(candidate => candidate.name === 'dwarf');
+    } else if (flags & M2_GNOME) {
+        race = races.find(candidate => candidate.name === 'gnome');
+    }
+    race ||= races.find(candidate => candidate.mnum === mnum);
+    if (race) return race.attrmax[A_STR];
+    if (!(flags & M2_STRONG)) return 18;
+    return (flags & M2_GIANT) && !(flags & M2_UNDEAD) ? STR19(19) : STR18(100);
 }
 
 // C polyself.c:polymon(). Selection is separate from changing the body.
@@ -402,7 +456,7 @@ export async function polymonHero(mnum, options = {}) {
     }
 
     const previousCapacity = nearCapacity(game);
-    await beginMonsterForm(mnum, options);
+    mnum = await beginMonsterForm(mnum, options);
     if (game.uskin && dragonFormForArmor(game.uskin) !== mnum)
         await restoreDragonArmor(game);
     await changeArmorForHeroForm(mnum);

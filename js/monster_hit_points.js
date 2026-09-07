@@ -1,7 +1,9 @@
 // Hit-point rules shared by monster creation, revival, and polymorph.
 // C refs: makemon.c golemhp(), newmonhp(), and monhp_per_lvl().
 
-import { In_endgame } from './const.js';
+import {
+    In_endgame, Is_airlevel, Is_earthlevel, Is_firelevel, Is_waterlevel,
+} from './const.js';
 import { level_difficulty } from './dungeon.js';
 import { game } from './gstate.js';
 import { MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
@@ -28,6 +30,17 @@ const GOLEM_HIT_POINTS = new Map([
 export function golemHitPoints(mnum) {
     if (MONSTER_SYMBOL[mnum] !== 55) return null;
     return GOLEM_HIT_POINTS.get(MONSTER_NAME[mnum]) ?? null;
+}
+
+// C makemon.c:is_home_elemental(). The hero and other monsters use this rule.
+export function isHomeElemental(mnum) {
+    switch (MONSTER_NAME[mnum]) {
+    case 'air elemental': return Is_airlevel(game.u.uz);
+    case 'earth elemental': return Is_earthlevel(game.u.uz);
+    case 'fire elemental': return Is_firelevel(game.u.uz);
+    case 'water elemental': return Is_waterlevel(game.u.uz);
+    default: return false;
+    }
 }
 
 // C ref: makemon.c:adj_lev().  Creation and polymorph use the same adjusted
@@ -80,6 +93,7 @@ export function newMonsterHitPoints(mnum) {
     } else {
         minimumBase = level;
         hp = d(level, 8);
+        if (isHomeElemental(mnum)) hp *= 3;
     }
     if (minimumBase && hp === minimumBase) hp++;
     return { level, hp };

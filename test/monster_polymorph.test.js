@@ -24,6 +24,19 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
+test('fire elementals have triple health on their home plane', async () => {
+    const health = [];
+    for (const home of [false, true]) {
+        freshObjectRoom({ gameplaySeed: 29n });
+        game.fire_level = home ? { ...game.u.uz } : { dnum: 7, dlevel: 3 };
+
+        const monster = await createMonsterAt('fire elemental', 11, 10, NO_MINVENT);
+
+        health.push(monster.mhpmax);
+    }
+    assert.equal(health[1], 3 * health[0]);
+});
+
 test('a long worm loses its old body when it changes form', async () => {
     freshObjectRoom();
     const monster = await createMonsterAt('long worm', 11, 10);

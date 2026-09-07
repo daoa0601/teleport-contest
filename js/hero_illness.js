@@ -42,7 +42,7 @@ export function startHeroSickness({
     type = SICK_VOMITABLE,
 } = {}) {
     const hero = state.u || (state.u = {});
-    if (hero.sickResistance || hero.sick_resistance)
+    if (hero.sicknessResistance)
         return { started: false, newlySick: false, message: null };
     const oldTurns = hero.sickTurns ?? 0;
     const newlySick = !heroIsSick(state);
