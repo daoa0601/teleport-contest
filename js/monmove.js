@@ -115,7 +115,6 @@ import {
 } from './vision.js';
 import { wipeEngravingAt } from './engrave.js';
 import { moveVaultGuard } from './vault.js';
-import { collectNearbyCoords } from './u_init.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import {
     checkMonsterGearNextTurn, findMonsterArmorClass, reassessMonsterArmor,
@@ -159,7 +158,7 @@ import {
     randomMonsterRelocation, monsterIsScaredAt, teleportMonsterFromTrap,
 } from './teleport.js';
 import {
-    monsterGoodPosition, monsterTeleportRestricted,
+    findNearbyMonsterPosition, monsterGoodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
 import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
 import {
@@ -4773,12 +4772,9 @@ function relocateMonsterNextToHero(
 ) {
     if (!monster) return null;
     const oldx = monster.mx, oldy = monster.my;
-    const candidates = collectNearbyCoords(
-        state.u?.ux ?? oldx, state.u?.uy ?? oldy, 3, random, calls,
+    const destination = findNearbyMonsterPosition(
+        monster.mnum, state.u.ux, state.u.uy, { state, random, calls },
     );
-    const destination = candidates.find(({ x, y }) =>
-        (x !== oldx || y !== oldy)
-        && expulsionDestinationOk(monster, state, x, y));
     if (!destination) return null;
     monster.mx = destination.x;
     monster.my = destination.y;
@@ -5900,30 +5896,6 @@ function covetousUsesHarassStrategy(monster, state) {
         covetousExternalTargetExists(monster, state, mask));
 }
 
-function covetousTeleportDestination(monster, state, random, calls) {
-    // NEW_ENEXTO gathers and shuffles all three rings before goodpos() tests
-    // its first candidate.  If GP_CHECKSCARY rejects every coordinate,
-    // enexto() performs a second independently shuffled pass without it.
-    for (const checkScary of [true, false]) {
-        const candidates = collectNearbyCoords(
-            state?.u?.ux ?? monster.mx,
-            state?.u?.uy ?? monster.my,
-            3, random, calls,
-        );
-        const destination = candidates.find(({ x, y }) =>
-            // teleport.c:enexto_core()->goodpos() sees the relocating actor
-            // still occupying its old square, so that shuffled candidate is
-            // rejected just like any other MON_AT location.
-            (x !== monster.mx || y !== monster.my)
-            && expulsionDestinationOk(monster, state, x, y)
-            && (!checkScary || !monsterIsScaredAt(
-                monster, state, x, y,
-            )));
-        if (destination) return destination;
-    }
-    return null;
-}
-
 function runCovetousHarassTactics(monster, state, random, calls) {
     if (!covetousUsesHarassStrategy(monster, state)) return null;
     // tactics() replaces the previous strategy while retaining the two
@@ -5934,8 +5906,8 @@ function runCovetousHarassTactics(monster, state, random, calls) {
         || recordRandom(random, calls, monster.mflee ? 33 : 5) !== 0) {
         return null;
     }
-    const destination = covetousTeleportDestination(
-        monster, state, random, calls,
+    const destination = findNearbyMonsterPosition(
+        monster.mnum, state.u.ux, state.u.uy, { state, random, calls },
     );
     if (!destination) return null;
     const oldx = monster.mx;

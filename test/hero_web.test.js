@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { PIT, POOL, WEB } from '../js/const.js';
+import { PIT, POOL, STONE, WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { useHeroWeb } from '../js/hero_web.js';
 import { DART, ROCK } from '../js/object_data.js';
@@ -77,4 +77,27 @@ test('web fluid makes an animal release a swallowed spider', async () => {
     assert.equal(game.u.ustuck, null);
     assert.notDeepEqual([worm.mx, worm.my], [game.u.ux, game.u.uy]);
     assert.equal(result.spentTime, false);
+});
+
+test('an expelled worm finds room beyond the nearby blocked squares', async () => {
+    const level = freshMonsterAbilityRoom('giant spider', { right: 26 });
+    const x = game.u.ux;
+    const y = game.u.uy;
+    const worm = await createMonsterAt('purple worm', x + 4, y);
+    worm.mx = x;
+    worm.my = y;
+    worm.mspec_used = 7;
+    game.u.uswallow = 1;
+    game.u.ustuck = worm;
+    for (let nx = x - 3; nx <= x + 3; nx++) {
+        for (let ny = y - 3; ny <= y + 3; ny++) {
+            if (nx !== x || ny !== y) level.at(nx, ny).typ = STONE;
+        }
+    }
+
+    await useHeroWeb();
+
+    assert.equal(game.u.uswallow, 0);
+    assert.ok(Math.max(Math.abs(worm.mx - x), Math.abs(worm.my - y)) > 3);
+    assert.equal(worm.mspec_used, 7, 'release must not shorten an existing cooldown');
 });

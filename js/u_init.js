@@ -588,6 +588,8 @@ export function collectNearbyCoords(
     cx, cy, maxradius = 3, random = rn2, calls = null,
 ) {
     const coords = [];
+    const mapRadius = Math.max(cx, COLNO - 1 - cx, cy, ROWNO - 1 - cy);
+    maxradius = maxradius ? Math.min(maxradius, mapRadius) : mapRadius;
     for (let radius = 1; radius <= maxradius; radius++) {
         const start = coords.length;
         const lox = cx - radius, hix = cx + radius;

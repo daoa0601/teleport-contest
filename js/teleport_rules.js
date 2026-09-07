@@ -2,6 +2,7 @@
 // C refs: teleport.c noteleport_level(), goodpos(), goodpos_onscary().
 
 import { game } from './gstate.js';
+import { collectNearbyCoords } from './u_init.js';
 import { rn2 } from './rng.js';
 import {
     ALTAR, D_CLOSED, D_LOCKED, DOOR, IS_LAVA, IS_POOL,
@@ -129,6 +130,25 @@ export function monsterGoodPosition(
             && x >= zone.lx && x <= zone.hx
             && y >= zone.ly && y <= zone.hy)) return false;
     return true;
+}
+
+// C teleport.c:enexto()/enexto_core(). Search nearby first, then the rest
+// of the map. Only ignore scary squares after both searches fail.
+export function findNearbyMonsterPosition(mnum, x, y, {
+    state = game, random = rn2, calls = null,
+} = {}) {
+    for (const checkScary of [true, false]) {
+        const nearby = collectNearbyCoords(x, y, 3, random, calls);
+        const fits = point => monsterGoodPosition(
+            mnum, point.x, point.y, false, checkScary, false, state,
+        );
+        const close = nearby.find(fits);
+        if (close) return close;
+        const all = collectNearbyCoords(x, y, 0, random, calls);
+        const distant = all.slice(nearby.length).find(fits);
+        if (distant) return distant;
+    }
+    return null;
 }
 
 function monsterTypeScaredFromPosition(mndx, x, y, state) {
