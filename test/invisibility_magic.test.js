@@ -13,6 +13,7 @@ import {
     addInventoryObject, chargedWand,
 } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
+import { freshCasterRoom } from './support/hero-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 test('drinking an invisibility potion makes the hero invisible', async () => {
@@ -32,14 +33,14 @@ test('drinking an invisibility potion makes the hero invisible', async () => {
 
 test('the invisibility spell affects the hero without asking for a direction',
     async () => {
-        freshGameplayRoom({ role: 'wizard', heroLevel: 8, energy: 40 });
+        freshCasterRoom();
 
         await castKnownSpell({
             name: 'invisibility',
             otyp: SPE_INVISIBILITY,
             level: 5,
             category: 'escape',
-            fail: 0,
+            skill: 'expert',
         });
 
         assert.equal(game.u.invisible, true);

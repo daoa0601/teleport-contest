@@ -3,31 +3,15 @@ import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
 import { SPE_HASTE_SELF } from '../js/object_data.js';
-import { initRng } from '../js/rng.js';
 import { castKnownSpell } from '../js/spell.js';
-import { freshGame } from './support/game-state.js';
-
-function freshCaster() {
-    freshGame({
-        role: 'wizard',
-        hero: {
-            ulevel: 8,
-            uen: 40,
-            ualign: { type: 0, record: 0 },
-        },
-        moves: 40,
-        context: {},
-        flags: {},
-    });
-    initRng(701n);
-}
+import { freshCasterRoom } from './support/hero-state.js';
 
 test('haste self makes the hero very fast without asking for a direction',
     async () => {
-        freshCaster();
+        freshCasterRoom({ gameplaySeed: 701n });
         const spell = {
             name: 'haste self', otyp: SPE_HASTE_SELF,
-            level: 3, category: 'escape', skill: 'skilled', fail: 0,
+            level: 3, category: 'escape', skill: 'skilled',
         };
 
         await castKnownSpell(spell);

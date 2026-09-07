@@ -2,7 +2,7 @@ import { game } from '../../js/gstate.js';
 import { wearHeroAccessory } from '../../js/accessory.js';
 import { setHeroSpecies } from '../../js/hero_species.js';
 import {
-    P_EXPERT, P_NUM_SKILLS, W_BALL, W_CHAIN,
+    A_INT, A_WIS, P_EXPERT, P_NUM_SKILLS, W_BALL, W_CHAIN,
 } from '../../js/const.js';
 import { place_object } from '../../js/floor_object.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
@@ -14,6 +14,18 @@ import { freshObjectRoom } from './object-room.js';
 
 const PM_WEREWOLF = 21;
 const PM_HUMAN_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
+
+export function freshCasterRoom({ role = 'wizard', energy = 40, ...room } = {}) {
+    const level = freshObjectRoom({
+        ...room, role,
+        hero: { ulevel: 30, uen: energy, uenmax: energy },
+    });
+    for (const attribute of [A_INT, A_WIS]) {
+        game.u.acurr.a[attribute] = 18;
+        game.u.amax.a[attribute] = 18;
+    }
+    return level;
+}
 
 export function installHeroWeaponSkills(levelBySkill, maximumLevel = P_EXPERT) {
     const skills = Array.from({ length: P_NUM_SKILLS }, () => ({

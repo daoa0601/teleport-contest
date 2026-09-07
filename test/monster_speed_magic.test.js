@@ -11,6 +11,7 @@ import { castKnownSpell } from '../js/spell.js';
 import { dozap } from '../js/zap.js';
 import { chargedWand } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
+import { freshCasterRoom } from './support/hero-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 async function createJackal({ peaceful = false, speed = 0 } = {}) {
@@ -24,7 +25,7 @@ async function createJackal({ peaceful = false, speed = 0 } = {}) {
 function slowMonsterSpell() {
     return {
         name: 'slow monster', otyp: SPE_SLOW_MONSTER,
-        level: 2, category: 'enchantment', fail: 0,
+        level: 2, category: 'enchantment',
     };
 }
 
@@ -46,7 +47,7 @@ test('a speed-monster wand hastens a peaceful target without angering it',
 
 test('slow monster removes permanent speed and angers a peaceful target',
     async () => {
-        freshGameplayRoom({ heroLevel: 8, energy: 30 });
+        freshCasterRoom({ energy: 30 });
         const monster = await createJackal({ peaceful: true, speed: 2 });
         pushKeys('l');
 
@@ -58,7 +59,7 @@ test('slow monster removes permanent speed and angers a peaceful target',
     });
 
 test('slow monster aimed at yourself removes intrinsic speed', async () => {
-    freshGameplayRoom({ heroLevel: 8, energy: 30 });
+    freshCasterRoom({ energy: 30 });
     grantIntrinsicProperty('fast', 'role', game);
     pushKeys('.');
 

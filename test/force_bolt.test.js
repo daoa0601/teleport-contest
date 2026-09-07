@@ -22,6 +22,7 @@ import {
 } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
+import { freshCasterRoom } from './support/hero-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 const PM_JACKAL = 12;
@@ -33,24 +34,17 @@ async function createJackal(x = 12) {
     return jackal;
 }
 
-function freshWizard() {
-    return freshGameplayRoom({
-        role: 'wizard', heroLevel: 8, energy: 40,
-    });
-}
-
 function forceBoltSpell() {
     return {
         name: 'force bolt',
         otyp: SPE_FORCE_BOLT,
         level: 1,
         category: 'attack',
-        fail: 0,
     };
 }
 
 test('force bolt damages a monster in its path', async () => {
-    freshWizard();
+    freshCasterRoom();
     const monster = await createJackal();
     pushKeys('l');
 
@@ -78,7 +72,7 @@ test('magic resistance bounces a self-zapped wand of striking', async () => {
 
 test('force bolt breaks a locked door and continues through its square',
     async () => {
-        freshWizard();
+        freshCasterRoom();
         const door = game.level.at(12, 10);
         door.typ = DOOR;
         door.doormask = D_LOCKED;
@@ -91,7 +85,7 @@ test('force bolt breaks a locked door and continues through its square',
     });
 
 test('force bolt collapses a lowered drawbridge', async () => {
-    const level = freshWizard();
+    const level = freshCasterRoom();
     const bridge = level.at(12, 10);
     bridge.typ = DRAWBRIDGE_DOWN;
     bridge.drawbridgemask = DB_NORTH | DB_MOAT;
@@ -108,7 +102,7 @@ test('force bolt collapses a lowered drawbridge', async () => {
 });
 
 test('force bolt fractures a boulder into rocks', async () => {
-    freshWizard();
+    freshCasterRoom();
     const boulder = floorObject(BOULDER, 12, 10, {
         dknown: true,
     });
@@ -123,7 +117,7 @@ test('force bolt fractures a boulder into rocks', async () => {
 
 test('force bolt breaks fragile floor objects and continues past them',
     async () => {
-        freshWizard();
+        freshCasterRoom();
         const potion = floorObject(POT_WATER, 12, 10);
         const club = floorObject(CLUB, 12, 10);
         const monster = await createJackal(13);
@@ -138,7 +132,7 @@ test('force bolt breaks fragile floor objects and continues past them',
 
 test('force bolt detonates a pyrolisk egg through the fire explosion rules',
     async () => {
-        freshWizard();
+        freshCasterRoom();
         game.u.uhp = game.u.uhpmax = 100;
         const egg = floorObject(EGG, 11, 10, { corpsenm: 11 });
         pushKeys(`l${' '.repeat(60)}`);
@@ -150,7 +144,7 @@ test('force bolt detonates a pyrolisk egg through the fire explosion rules',
     });
 
 test('force bolt releases the monster from a statue trap', async () => {
-    freshWizard();
+    freshCasterRoom();
     initRng(9401n);
     const statue = mkcorpstat(STATUE, null, PM_JACKAL, 12, 10, 0);
     const club = knownObject(CLUB, { where: 'contained', spe: 0 });
@@ -174,7 +168,7 @@ test('force bolt releases the monster from a statue trap', async () => {
 });
 
 test('force bolt aimed down strikes the floor pile and engraving', async () => {
-    freshWizard();
+    freshCasterRoom();
     const boulder = floorObject(BOULDER, game.u.ux, game.u.uy, {
         dknown: true,
     });
@@ -191,7 +185,7 @@ test('force bolt aimed down strikes the floor pile and engraving', async () => {
 });
 
 test('a downward force bolt skips the object concealing the hero', async () => {
-    freshWizard();
+    freshCasterRoom();
     game.u.umonnum = 94;
     game.u.mtimedone = 20;
     game.u.uundetected = 1;
@@ -206,7 +200,7 @@ test('a downward force bolt skips the object concealing the hero', async () => {
 
 test('an upward force bolt hits only the object concealing the hero',
     async () => {
-        freshWizard();
+        freshCasterRoom();
         game.u.umonnum = 94;
         game.u.mtimedone = 20;
         game.u.uundetected = 1;
@@ -222,7 +216,7 @@ test('an upward force bolt hits only the object concealing the hero',
     });
 
 test('force bolt aimed up can dislodge a rock from the ceiling', async () => {
-    freshWizard();
+    freshCasterRoom();
     game.u.uhp = game.u.uhpmax = 100;
     initRng(1n);
     pushKeys('<');
@@ -235,7 +229,7 @@ test('force bolt aimed up can dislodge a rock from the ceiling', async () => {
 });
 
 test('force bolt shatters a trapdoor and schedules the fall', async () => {
-    freshWizard();
+    freshCasterRoom();
     game.u.uz = { dnum: 0, dlevel: 1 };
     game.dungeons = [{ num_dunlevs: 3 }];
     const trap = addTrap(

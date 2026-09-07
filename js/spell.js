@@ -216,7 +216,6 @@ export async function continueSpellbookStudy(occupation, g = game) {
             // be derived from game.moves without duplicating age_spells().
             know: 20001 + Math.max(0, (g.moves || 1) - 1),
             retention: 100,
-            fail: 0,
             otyp: details.otyp,
         };
         const index = spells.length;
@@ -245,8 +244,6 @@ export async function continueSpellbookStudy(occupation, g = game) {
 
 export function percentSuccess(spell) {
     const config = game.urole?.spellcasting;
-    if (!config) return 100 - (spell.fail ?? 0);
-
     const paladinBonus = game.urole?.key === 'knight'
         && spell.category === 'clerical';
     let splcaster = config.base;

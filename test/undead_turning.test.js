@@ -11,6 +11,7 @@ import { turnUndeadInDirection } from '../js/undead_turning.js';
 import { dozap } from '../js/zap.js';
 import { chargedWand, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
+import { freshCasterRoom } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const PM_TROLL = 220;
@@ -59,13 +60,13 @@ test('undead turning revives floor and carried corpses along its path',
     });
 
 test('the turn undead spell revives a carried corpse', async () => {
-    freshState();
+    freshCasterRoom({ role: 'priest' });
     const corpse = trollCorpse();
     corpse.where = 'inventory';
     game.inventory.push(corpse);
     const spell = {
         name: 'turn undead', otyp: SPE_TURN_UNDEAD,
-        level: 6, category: 'clerical', fail: 0,
+        level: 6, category: 'clerical', skill: 'expert',
     };
     pushKeys('.');
 
