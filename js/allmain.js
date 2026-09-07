@@ -1766,7 +1766,7 @@ function finishInitialTurnMaintenanceAfterMonsterDistress(
     });
 }
 
-function finishInitialTurnMaintenanceAfterObjectTimers({
+async function finishInitialTurnMaintenanceAfterObjectTimers({
     sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
 }) {
     // C timeout.c:nh_timeout() expires temporary confusion before regen,
@@ -1778,93 +1778,38 @@ function finishInitialTurnMaintenanceAfterObjectTimers({
     // that prayer-only flag is active.
     const prayerTimeoutFreeze = !!game.u?.invulnerable;
     if (!prayerTimeoutFreeze && heroIsPetrifying(game)) {
-        if (!deferAmbientMessage) {
-            throw new Error(
-                'petrification requires live turn maintenance',
-            );
-        }
-        return {
-            deferredPetrificationTimeout: true,
-            sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
-            prayerTimeoutFreeze,
-        };
+        await advanceHeroPetrification({
+            state: game,
+            publish: queueTurnMessage,
+            die: finishHeroDeath,
+        });
+        if (game.program_state?.gameover) return { moveAmount };
     }
-    return finishInitialTurnMaintenanceAfterPetrification({
-        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
-        prayerTimeoutFreeze,
-    });
-}
-
-function finishInitialTurnMaintenanceAfterPetrification({
-    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
-    prayerTimeoutFreeze,
-}) {
     if (!prayerTimeoutFreeze && heroIsSliming(game)) {
-        if (!deferAmbientMessage) {
-            throw new Error(
-                'slime transformation requires live turn maintenance',
-            );
-        }
-        return {
-            deferredSlimeTimeout: true,
-            sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
-            prayerTimeoutFreeze,
-        };
+        await advanceHeroSliming({
+            state: game,
+            publish: queueTurnMessage,
+            repaint: newsym,
+            randomMonsterName: randomDisplayMonsterName,
+            transform: polymonHero,
+            die: finishHeroDeath,
+        });
+        if (game.program_state?.gameover) return { moveAmount };
     }
-    return finishInitialTurnMaintenanceAfterSlime({
-        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
-        prayerTimeoutFreeze,
-    });
-}
-
-function finishInitialTurnMaintenanceAfterSlime({
-    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
-    prayerTimeoutFreeze,
-}) {
     if (!prayerTimeoutFreeze && heroIsVomiting(game)) {
-        if (!deferAmbientMessage) {
-            throw new Error(
-                'vomiting requires live turn maintenance',
-            );
-        }
-        return {
-            deferredVomitingTimeout: true,
-            sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
-            prayerTimeoutFreeze,
-        };
+        await advanceHeroVomiting({
+            state: game,
+            publish: queueTurnMessage,
+        });
     }
-    return finishInitialTurnMaintenanceAfterVomiting({
-        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
-        prayerTimeoutFreeze,
-    });
-}
-
-function finishInitialTurnMaintenanceAfterVomiting({
-    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
-    prayerTimeoutFreeze,
-}) {
     if (!prayerTimeoutFreeze && heroIsSick(game)) {
-        if (!deferAmbientMessage) {
-            throw new Error(
-                'fatal sickness requires live turn maintenance',
-            );
-        }
-        return {
-            deferredSicknessTimeout: true,
-            sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
-            prayerTimeoutFreeze,
-        };
+        await advanceHeroSickness({
+            state: game,
+            publish: queueTurnMessage,
+            die: finishHeroDeath,
+        });
+        if (game.program_state?.gameover) return { moveAmount };
     }
-    return finishInitialTurnMaintenanceAfterSickness({
-        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
-        prayerTimeoutFreeze,
-    });
-}
-
-function finishInitialTurnMaintenanceAfterSickness({
-    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
-    prayerTimeoutFreeze,
-}) {
     if (!prayerTimeoutFreeze && (game.u?.stunnedTurns ?? 0) > 0) {
         const remaining = game.u.stunnedTurns - 1;
         if (remaining === 0) {
@@ -2172,45 +2117,9 @@ async function initialTurnMaintenanceWithTty(
         );
         await runAndPresentClaimedObjectTimer(claimed, phase.sourceTurn);
         if (peekNextDueObjectTimer(game, phase.sourceTurn)) continue;
-        phase = finishInitialTurnMaintenanceAfterObjectTimers(phase);
+        phase = await finishInitialTurnMaintenanceAfterObjectTimers(phase);
     }
-    while (phase?.deferredPetrificationTimeout) {
-        await advanceHeroPetrification({
-            state: game,
-            publish: queueTurnMessage,
-            die: finishHeroDeath,
-        });
-        if (game.program_state?.gameover) return phase.moveAmount;
-        phase = finishInitialTurnMaintenanceAfterPetrification(phase);
-    }
-    while (phase?.deferredSlimeTimeout) {
-        await advanceHeroSliming({
-            state: game,
-            publish: queueTurnMessage,
-            repaint: newsym,
-            randomMonsterName: randomDisplayMonsterName,
-            transform: polymonHero,
-            die: finishHeroDeath,
-        });
-        if (game.program_state?.gameover) return phase.moveAmount;
-        phase = finishInitialTurnMaintenanceAfterSlime(phase);
-    }
-    while (phase?.deferredVomitingTimeout) {
-        await advanceHeroVomiting({
-            state: game,
-            publish: queueTurnMessage,
-        });
-        phase = finishInitialTurnMaintenanceAfterVomiting(phase);
-    }
-    while (phase?.deferredSicknessTimeout) {
-        await advanceHeroSickness({
-            state: game,
-            publish: queueTurnMessage,
-            die: finishHeroDeath,
-        });
-        if (game.program_state?.gameover) return phase.moveAmount;
-        phase = finishInitialTurnMaintenanceAfterSickness(phase);
-    }
+    if (game.program_state?.gameover) return phase.moveAmount;
     while (phase?.deferredTimeoutMessage) {
         await queueTurnMessage(phase.message);
         if (phase.timeoutKind === 'stun') {
