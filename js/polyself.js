@@ -8,7 +8,7 @@ import {
 } from './exper.js';
 import {
     MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1,
-    MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
+    MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor,
     monsterHasNoHands, monsterHornCount, monsterIsCentaur,
     monsterIsSlithy, monsterIsVampire, monsterIsVerySmall,
@@ -20,7 +20,7 @@ import {
 } from './monster_attack_types.js';
 import {
     AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE,
-    OBJECT_MATERIAL,
+    GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_MATERIAL, OBJECT_NAMES,
     RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS,
 } from './object_data.js';
 import {
@@ -28,16 +28,21 @@ import {
 } from './display.js';
 import { landFloorObject } from './floor_effects.js';
 import { deleteObject } from './object_delete.js';
-import { findArmorClass } from './armor.js';
+import { dragonFormForArmor, findArmorClass } from './armor.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
 import {
-    A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, STAIRS, Upolyd,
+    A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, STAIRS, Upolyd,
+    POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT,
     W_ACCESSORY, W_ARMOR, W_SADDLE,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { syncBlindness } from './senses.js';
+import { heroIsBlind, syncBlindness } from './senses.js';
+import { nameToMonster, nameToMonsterClass } from './mondata.js';
+import { counterWereSpecies } from './monster_species.js';
+import { wereBeastForSpecies } from './were.js';
+import { getLine, promptYesNo } from './query.js';
 import { golemHitPoints } from './monster_hit_points.js';
 import { finishHeroDeath } from './end.js';
 import { cureHeroSickness } from './hero_illness.js';
@@ -67,12 +72,28 @@ const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;
 const M2_NEUTER = 0x00040000;
 const M2_STRONG = 0x04000000;
+const M2_NOPOLY = 0x00000001;
+const M2_PNAME = 0x00080000;
+const G_FREQ = 0x0007;
+const G_NOGEN = 0x0200;
+const G_HELL = 0x0400;
+const G_NOHELL = 0x0800;
+const G_UNIQ = 0x1000;
 const S_MIMIC = 13;
 const S_DRAGON = 30;
 const MAXULEV = 30;
 const MUMMY_WRAPPING = 138;
 const ALCHEMY_SMOCK = 144;
 const LEATHER = 7;
+const PM_HUMAN = MONSTER_NAME.indexOf('human');
+const PM_WOLF = MONSTER_NAME.indexOf('wolf');
+const PM_FOG_CLOUD = MONSTER_NAME.indexOf('fog cloud');
+const PM_VAMPIRE_BAT = MONSTER_NAME.indexOf('vampire bat');
+const PM_VAMPIRE_LEADER = MONSTER_NAME.indexOf('vampire leader');
+const S_BAT = MONSTER_SYMBOL[MONSTER_NAME.indexOf('bat')];
+const S_LICH = MONSTER_SYMBOL[MONSTER_NAME.indexOf('lich')];
+const PLACEHOLDER_MONSTERS = new Set(['orc', 'giant', 'elf', 'human']
+    .map(name => MONSTER_NAME.indexOf(name)));
 const OLFACTIONLESS_SYMBOLS = new Set([
     2,  // S_BLOB
     5,  // S_EYE
@@ -211,7 +232,7 @@ export function heroHasOlfaction(state = game) {
 }
 
 // polyman() also runs when newman() renews an already-human body.
-function restoreHumanBody(state) {
+async function restoreHumanBody(state, publish = plineWithContinuation) {
     const u = state.u;
     const changed = heroIsPolymorphed(state);
     const wasBlindFromForm = !!state._blindFromMonsterForm;
@@ -228,6 +249,7 @@ function restoreHumanBody(state) {
     u.mh = 0;
     u.mhmax = 0;
     u.mtimedone = 0;
+    await restoreDragonArmor(state, publish);
     u.mcham = -1;
     u.uundetected = 0;
     delete u.formArmorClass;
@@ -265,7 +287,7 @@ export async function returnHeroToHumanForm(state = game, {
         return { changed: false, regainedSight: false, died };
     }
 
-    const restored = restoreHumanBody(state);
+    const restored = await restoreHumanBody(state, publish);
     if (restored.regainedSight) vision_recalc(0);
     await publish(`You return to ${restored.race} form!`);
     if (restored.regainedSight) await publish('You can see again.');
@@ -420,6 +442,8 @@ export async function polymonHero(mnum, options = {}) {
 
     const previousCapacity = nearCapacity(game);
     await beginMonsterForm(mnum, options);
+    if (game.uskin && dragonFormForArmor(game.uskin) !== mnum)
+        await restoreDragonArmor(game);
     await changeArmorForHeroForm(mnum);
     await dropPolymorphWeapons(true);
     findArmorClass(game);
@@ -735,7 +759,7 @@ function newHumanFormName() {
 
 // C newman(): rebuild the human level, health, power, and attributes.
 // Both random polymorph and a selected human form can reach this operation.
-export async function renewHumanForm() {
+async function renewHumanForm() {
     const u = game.u;
     const oldLevel = u.ulevel ?? 1;
     let newLevel = oldLevel + rn2(5) - 2;
@@ -813,7 +837,7 @@ export async function renewHumanForm() {
         }
     }
 
-    const restored = restoreHumanBody(game);
+    const restored = await restoreHumanBody(game);
     await pline(`You feel like a new ${newHumanFormName()}!`);
     if (heroIsSliming(game)) {
         await pline('Your body transforms, but there is still slime on you.');
@@ -838,33 +862,250 @@ export async function renewHumanForm() {
     };
 }
 
-// C polyself.c: ordinary random form selection. Reject illegal candidates
-// before deciding whether the change instead renews the human body.
-export async function polyselfRandomOrdinary() {
-    if (heroIsUnchanging(game))
-        return { transformed: false, learnEffect: false };
+// C polyself(): select a form, then use the same body-change operations
+// whether the request came from a wand, a throne, or a monster ability.
+export async function polymorphHero(flags = POLY_NOFLAGS) {
+    const hero = game.u;
+    if (heroIsUnchanging(game)) {
+        await plineWithContinuation('You fail to transform!');
+        return { transformed: false };
+    }
 
-    const constitution = game.u.acurr.a[A_CON];
-    if (!heroHasPolymorphControl(game) && rn2(20) > constitution) {
+    const armor = game.uarm || hero.uarm;
+    const dragon = dragonFormForArmor(armor);
+    const lycanthrope = Number.isInteger(hero.ulycn) && hero.ulycn >= 0;
+    const vampire = heroCanChangeVampireShape(game);
+    let forced = !!(flags & POLY_CONTROLLED);
+    let controlled = heroCanControlPolymorph(game);
+    let monsterChange = !!(flags & POLY_MONSTER);
+    let mnum = -1;
+
+    if (!heroHasPolymorphControl(game) && !forced
+        && dragon === null && !lycanthrope && !vampire
+        && rn2(20) > hero.acurr.a[A_CON]) {
         await plineWithContinuation('You shudder for a moment.');
         const died = await loseHeroHp(rnd(30), 'system shock');
         if (!died) exerciseAttribute(A_CON, false);
-        return { transformed: false, learnEffect: true, died };
+        return { transformed: false, died };
     }
 
-    const noPolymorph = 0x00000001; // M2_NOPOLY
-    const placeholders = ['orc', 'giant', 'elf', 'human']
-        .map(name => MONSTER_NAME.indexOf(name));
-    let mnum;
-    for (let attempts = 0; attempts < 200; attempts++) {
-        mnum = rn1(SPECIAL_PM, 0);
-        if (!(MONSTER_FLAGS2[mnum] & noPolymorph)
-            && !placeholders.includes(mnum)) break;
+    if (flags & POLY_REVERT) {
+        mnum = hero.mcham;
+        monsterChange = true;
+        controlled = false;
     }
-    const ownRace = !!(MONSTER_FLAGS2[mnum] & game.urace?.selfmask);
-    const result = (MONSTER_FLAGS2[mnum] & noPolymorph)
-        || rn2(5) === 0 || ownRace
-        ? await renewHumanForm()
-        : await polymonHero(mnum, { sexChangeAllowed: true });
-    return { ...result, learnEffect: true };
+    if (forced && (flags & POLY_LOW_CTRL)
+        && (dragon !== null || monsterChange || vampire || lycanthrope))
+        forced = false;
+
+    if (monsterChange && vampire)
+        return changeVampireForm(mnum, controlled);
+
+    if (controlled || forced) {
+        const choice = await chooseHeroForm({ forced, dragon, lycanthrope });
+        if (choice.cancelled) return { transformed: false };
+        if (choice.revert) {
+            const result = await returnHeroToHumanForm(game);
+            return { ...result, transformed: result.changed };
+        }
+        mnum = choice.mnum;
+        if (choice.were) return changeWereForm(mnum);
+        if (dragon !== null && (choice.random || mnum === dragon))
+            return mergeDragonArmor(armor, dragon);
+        if (vampire && (choice.random || mnum === PM_WOLF
+            || mnum === PM_FOG_CLOUD || MONSTER_SYMBOL[mnum] === S_BAT))
+            return changeVampireForm(mnum, controlled);
+    } else {
+        if (dragon !== null) return mergeDragonArmor(armor, dragon);
+        if (lycanthrope) return changeWereForm(mnum);
+        if (vampire) return changeVampireForm(mnum, controlled);
+    }
+
+    if (mnum < 0) {
+        for (let attempts = 0; attempts < 200; attempts++) {
+            mnum = rn1(SPECIAL_PM, 0);
+            if (legalPolymorph(mnum) && !PLACEHOLDER_MONSTERS.has(mnum)) break;
+        }
+    }
+    if (!legalPolymorph(mnum) || (!forced && rn2(5) === 0) || ownRace(mnum))
+        return renewHumanForm();
+    return polymonHero(mnum, { sexChangeAllowed: true });
+}
+
+function legalPolymorph(mnum) {
+    return !(MONSTER_FLAGS2[mnum] & M2_NOPOLY);
+}
+
+function ownRace(mnum) {
+    return !!(MONSTER_FLAGS2[mnum] & game.urace?.selfmask);
+}
+
+function mayChooseForm(mnum) {
+    return legalPolymorph(mnum) || mnum === PM_HUMAN
+        || mnum === game.u.umonster
+        || (ownRace(mnum) && !(MONSTER_GENO[mnum] & G_UNIQ));
+}
+
+async function chooseHeroForm({ forced, dragon, lycanthrope }) {
+    let tries = 5;
+    let mnum = -1;
+    do {
+        const answer = await getLine(
+            'Become what kind of monster? [type the name]',
+            (_character, key) => key >= 32 && key < 127,
+        );
+        if (answer === null && forced) {
+            await plineWithContinuation('Never mind.');
+            return { cancelled: true };
+        }
+        const name = answer === null ? '*' : answer.trim().replace(/\s+/g, ' ');
+        if (name === '*' || name === 'random')
+            return { mnum: -1, random: true };
+
+        mnum = nameToMonster(name);
+        const monsterClass = mnum < 0 ? nameToMonsterClass(name) : 0;
+        if (monsterClass) {
+            for (;;) {
+                mnum = dragon !== null && monsterClass === S_DRAGON
+                    ? dragon : pickFormFromClass(monsterClass);
+                if (mnum < 0 || mayChooseForm(mnum)) break;
+                if (rn2(3) || --tries > 0) continue;
+                tries++;
+                break;
+            }
+        } else if (PLACEHOLDER_MONSTERS.has(mnum)
+            && mnum !== PM_HUMAN && !ownRace(mnum)) {
+            const substitutes = {
+                orc: ['hill orc', 'Mordor orc'],
+                elf: ['Green-elf', 'Grey-elf'],
+                giant: ['stone giant', 'hill giant'],
+            }[MONSTER_NAME[mnum]];
+            mnum = nameToMonster(substitutes[rn2(3) ? 0 : 1]);
+        }
+
+        if (mnum < 0) {
+            await plineWithContinuation(monsterClass
+                ? "You can't polymorph into any of those."
+                : "I've never heard of such monsters.");
+            continue;
+        }
+        if (game.flags.debug && Upolyd(game.u)
+            && (mnum === game.u.umonster
+                || (game.urole.key === 'priest'
+                    && mnum === nameToMonster('aligned cleric')
+                    && !name.toLowerCase().includes('aligned'))))
+            return { revert: true };
+
+        if (lycanthrope && (wereBeastForSpecies(mnum) === game.u.ulycn
+            || mnum === counterWereSpecies(game.u.ulycn)
+            || (Upolyd(game.u) && mnum === PM_HUMAN)))
+            return { mnum, were: true };
+
+        if (mayChooseForm(mnum)) return { mnum, random: false };
+        await plineWithContinuation(
+            `You can't polymorph into ${formNameWithArticle(mnum)}.`,
+        );
+    } while (--tries > 0);
+
+    await plineWithContinuation("That's enough tries!");
+    return { mnum, random: true };
+}
+
+// C mkclass_poly(): choose by generation frequency, allowing extinction
+// but excluding genocide, placeholders, and specially generated monsters.
+function pickFormFromClass(monsterClass) {
+    const first = MONSTER_SYMBOL.indexOf(monsterClass);
+    if (first < 0 || first >= SPECIAL_PM) return -1;
+    const members = [];
+    let mask = G_NOGEN | G_UNIQ;
+    const inHell = !!game.dungeons?.[game.u.uz.dnum]?.flags?.hellish;
+    if (rn2(9) || monsterClass === S_LICH)
+        mask |= inHell ? G_NOHELL : G_HELL;
+    let total = 0;
+    for (let mnum = 0; mnum < SPECIAL_PM; mnum++) {
+        if (MONSTER_SYMBOL[mnum] !== monsterClass
+            || (MONSTER_GENO[mnum] & mask)
+            || (game.mvitals?.[mnum]?.mvflags & G_GENOD)
+            || PLACEHOLDER_MONSTERS.has(mnum)
+            || MONSTER_NAME[mnum] === 'mail daemon') continue;
+        const frequency = MONSTER_GENO[mnum] & G_FREQ;
+        members.push({ mnum, frequency });
+        total += frequency;
+    }
+    if (!total) return -1;
+    let choice = rnd(total);
+    for (const { mnum, frequency } of members) {
+        choice -= frequency;
+        if (choice <= 0) return mnum;
+    }
+}
+
+function formNameWithArticle(mnum) {
+    const name = monsterTypeName(mnum, game.flags.female);
+    if (MONSTER_FLAGS2[mnum] & M2_PNAME) return name;
+    if ((MONSTER_GENO[mnum] & G_UNIQ) && mnum !== SPECIAL_PM
+        && mnum !== nameToMonster('high cleric')) return `the ${name}`;
+    return `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
+}
+
+function changeWereForm(requested) {
+    return Upolyd(game.u) && wereBeastForSpecies(requested) !== game.u.ulycn
+        ? renewHumanForm()
+        : polymonHero(game.u.ulycn);
+}
+
+export function heroCanChangeVampireShape(state = game) {
+    return monsterIsVampire(state.u.umonnum)
+        || validVampireShiftForm(state.u.mcham, state.u.umonnum);
+}
+
+async function changeVampireForm(mnum, controlled) {
+    const hero = game.u;
+    if (mnum < 0 || (MONSTER_GENO[mnum] & G_UNIQ)) {
+        if (hero.umonnum === PM_VAMPIRE_LEADER && rn2(10) === 0)
+            mnum = PM_WOLF;
+        else
+            mnum = rn2(4) === 0 ? PM_FOG_CLOUD : PM_VAMPIRE_BAT;
+        if (Number.isInteger(hero.mcham) && hero.mcham >= 0
+            && !monsterIsVampire(hero.umonnum) && rn2(2) === 0)
+            mnum = hero.mcham;
+    }
+    if (controlled) {
+        const answer = await promptYesNo(
+            `Become ${formNameWithArticle(mnum)}? [yn] (n) `,
+        );
+        if (answer !== 'y') return { transformed: false };
+    }
+    return polymonHero(mnum);
+}
+
+async function mergeDragonArmor(armor, mnum) {
+    if (!(game.mvitals?.[mnum]?.mvflags & G_GENOD)) {
+        if (armor.otyp >= GRAY_DRAGON_SCALES) {
+            await plineWithContinuation('You merge with your scaly armor.');
+        } else {
+            const name = OBJECT_NAMES[armor.otyp].replace(' dragon ', ' ');
+            await plineWithContinuation(
+                `Your ${name} reverts to scales as you merge with them.`,
+            );
+            armor.otyp += GRAY_DRAGON_SCALES - GRAY_DRAGON_SCALE_MAIL;
+            armor.name = OBJECT_NAMES[armor.otyp];
+            if (!heroIsBlind(game)) armor.dknown = true;
+        }
+        game.uskin = armor;
+        game.uarm = game.u.uarm = null;
+        armor.owornmask |= I_SPECIAL;
+        armor.wornSlot = 'uskin';
+    }
+    return polymonHero(mnum);
+}
+
+async function restoreDragonArmor(state = game, publish = plineWithContinuation) {
+    const armor = state.uskin;
+    if (!armor) return;
+    await publish('Your skin returns to its original form.');
+    state.uarm = state.u.uarm = armor;
+    state.uskin = null;
+    armor.owornmask &= ~I_SPECIAL;
+    armor.wornSlot = 'uarm';
 }

@@ -8,8 +8,8 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { retouchEquipment } from '../js/hero_retouch.js';
-import { polyselfRandomOrdinary } from '../js/polyself.js';
-import { pushKeys } from '../js/input.js';
+import { polymorphHero } from '../js/polyself.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     CLOAK_OF_PROTECTION, HAWAIIAN_SHIRT, LEATHER_ARMOR, LONG_SWORD,
@@ -17,6 +17,7 @@ import {
 } from '../js/object_data.js';
 import { roles, races } from '../js/roles.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { cansee, vision_recalc } from '../js/vision.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -162,7 +163,7 @@ test('random polymorph can renew the human body instead of changing species', as
         game.u.uhunger = 1;
         pushKeys('                                ');
 
-        const result = await polyselfRandomOrdinary();
+        const result = await polymorphHero();
 
         assert.equal(result.transformed, true, `seed ${seed}`);
         if (result.newman) {
@@ -176,4 +177,27 @@ test('random polymorph can renew the human body instead of changing species', as
     }
     assert.ok(renewed, 'random polymorph never renewed the human body');
     assert.ok(changedSpecies, 'random polymorph never changed species');
+});
+
+test('a luminous form lights the dungeon until the hero changes back', async () => {
+    const level = freshObjectRoom({ flags: { debug: true } });
+    for (let x = 7; x <= 16; x++) {
+        for (let y = 6; y <= 14; y++)
+            Object.assign(level.at(x, y), { lit: false, waslit: false });
+    }
+    const x = game.u.ux + 2;
+    const y = game.u.uy;
+    vision_recalc(0);
+    assert.equal(cansee(x, y), false);
+    pushKeys('polyself\ngold dragon\n                ');
+
+    await rhack('#'.charCodeAt(0));
+    vision_recalc(0);
+
+    assert.equal(cansee(x, y), true);
+    resetInputState();
+    pushKeys('polyself\ncaveman\n                ');
+    await rhack('#'.charCodeAt(0));
+    vision_recalc(0);
+    assert.equal(cansee(x, y), false);
 });

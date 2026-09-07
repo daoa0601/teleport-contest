@@ -89,9 +89,7 @@ import {
 import {
     heroCanUseUnicornHorn, useUnicornHorn,
 } from './unicorn_horn.js';
-import {
-    heroCanChangeVampireShape, useHeroVampireShift,
-} from './vampire_shift.js';
+import { useHeroVampireShift } from './vampire_shift.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
 import { continueFoodMeal, doeat } from './eat.js';
@@ -312,7 +310,7 @@ import {
 } from './monster_passive.js';
 import {
     heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed,
-    heroHasOlfaction, heroIsVerySmall, polymonHero, renewHumanForm,
+    heroHasOlfaction, heroIsVerySmall, heroCanChangeVampireShape, polymorphHero,
 } from './polyself.js';
 import {
     applyEyewear, isEyewear, removeEyewear, wearEyewear,
@@ -400,7 +398,7 @@ import {
     W_ARMOR, W_ACCESSORY, W_SADDLE,
     W_BALL, W_CHAIN, LOST_THROWN,
     WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
-    P_BOW, P_SLING, PARANOID_HIT, is_pit, isok,
+    P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, is_pit, isok,
 } from './const.js';
 
 // Direction deltas: y u k
@@ -4581,29 +4579,9 @@ const WIZGENESIS_SUBSTITUTIONS = new Map([
     [285, 'doppelganger'], // Wizard of Yendor
 ]);
 
-// C wizcmds.c:wiz_polyself() forces the controlled selector even without a
-// polymorph-control property.  The wizard command is zero-time; getlin owns
-// all physical name bytes and the form transaction owns any --More-- keys.
+// C wiz_polyself(): allow a chosen form without consuming a game turn.
 async function wizPolyself() {
-    const value = await getLine(
-        'Become what kind of monster? [type the name]',
-        (_ch, key) => key >= 32 && key < 127,
-    );
-    if (value === null) {
-        await pline('Never mind.');
-        game.context.move = 0;
-        return;
-    }
-    const mnum = nameToMonster(value);
-    if (mnum < 0) {
-        await pline("I've never heard of such monsters.");
-        game.context.move = 0;
-        return;
-    }
-    // PM_HUMAN is a placeholder and deliberately fails polyok().  The C
-    // selector uses that failure to enter newman(), not polymon(PM_HUMAN).
-    if (mnum === 260) await renewHumanForm();
-    else await polymonHero(mnum, { sexChangeAllowed: true });
+    await polymorphHero(POLY_CONTROLLED);
     game.context.move = 0;
 }
 

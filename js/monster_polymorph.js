@@ -5,6 +5,7 @@ import {
     BOLT_LIM, IS_LAVA, IS_POOL, Is_rogue_level, STRAT_WAITFORU, W_ARM,
 } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { dragonFormForArmor } from './armor.js';
 import { game } from './gstate.js';
 import {
     monsterCanBeLeashed, releaseMonsterLeash,
@@ -21,10 +22,7 @@ import {
     adjustMonsterClothingAfterPolymorph, checkMonsterGearNextTurn,
 } from './monworn.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
-import {
-    BOULDER, CANDELABRUM_OF_INVOCATION, GRAY_DRAGON_SCALE_MAIL,
-    GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
-} from './object_data.js';
+import { BOULDER, CANDELABRUM_OF_INVOCATION } from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import {
     initializeMonsterWormBody, removeMonsterWormBody,
@@ -59,7 +57,6 @@ const PM_ARCHAEOLOGIST = MONSTER_NAME.indexOf('archeologist');
 const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
 const PM_STUDENT = MONSTER_NAME.indexOf('student');
 const PM_APPRENTICE = MONSTER_NAME.indexOf('apprentice');
-const PM_GRAY_DRAGON = MONSTER_NAME.indexOf('gray dragon');
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 const POLYMORPH_IMMUNE_MONSTERS = new Set([
     'Nazgul', 'erinys', 'Death', 'Pestilence', 'Famine',
@@ -162,16 +159,7 @@ function dragonArmorForm(monster) {
     const armor = (monster?.minvent || monster?.inventory || []).find(
         object => ((object.owornmask ?? 0) & W_ARM) !== 0,
     );
-    if (!armor) return null;
-    if (armor.otyp >= GRAY_DRAGON_SCALE_MAIL
-        && armor.otyp <= YELLOW_DRAGON_SCALE_MAIL) {
-        return PM_GRAY_DRAGON + armor.otyp - GRAY_DRAGON_SCALE_MAIL;
-    }
-    if (armor.otyp >= GRAY_DRAGON_SCALES
-        && armor.otyp <= YELLOW_DRAGON_SCALES) {
-        return PM_GRAY_DRAGON + armor.otyp - GRAY_DRAGON_SCALES;
-    }
-    return null;
+    return dragonFormForArmor(armor);
 }
 
 function selectOrdinaryPolymorphForm(monster) {

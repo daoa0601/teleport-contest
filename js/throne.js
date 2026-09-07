@@ -35,7 +35,7 @@ import {
     grantIntrinsicProperty, hasIntrinsicProperty, removeIntrinsicProperty,
 } from './properties.js';
 import {
-    heroHasEyes, heroIsPolymorphed, polyselfRandomOrdinary,
+    heroHasEyes, heroIsPolymorphed, polymorphHero,
 } from './polyself.js';
 import { getLine, promptYesNo } from './query.js';
 import { removeCurseEffect } from './read.js';
@@ -399,7 +399,7 @@ async function specialThroneEffect(effect, x, y, { gotoLevel }) {
                 'This throne was not meant for those such as you!',
             );
             await plineWithContinuation('You feel a change coming over you.');
-            await polyselfRandomOrdinary();
+            await polymorphHero();
         }
         break;
     case 12: {

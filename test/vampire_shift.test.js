@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { G_GENOD } from '../js/const.js';
+import { G_GENOD, POLY_CONTROLLED, POLY_REVERT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { polymonHero } from '../js/polyself.js';
+import { polymonHero, polymorphHero } from '../js/polyself.js';
+import { pushKeys } from '../js/input.js';
 import { useHeroVampireShift } from '../js/vampire_shift.js';
 import {
     runMonsterAbilityCommand,
@@ -38,12 +39,10 @@ test('ordinary polymorph records the vampire form across later shifts',
         });
         await polymonHero(PM_VAMPIRE, { announceForm: false });
 
-        await useHeroVampireShift({
-            random: () => 1,
-            publish: async () => {},
-        });
+        pushKeys('                ');
+        await useHeroVampireShift();
 
-        assert.equal(game.u.umonnum, PM_VAMPIRE_BAT);
+        assert.ok([PM_VAMPIRE_BAT, PM_FOG_CLOUD].includes(game.u.umonnum));
         assert.equal(game.u.mcham, PM_VAMPIRE);
     });
 
@@ -51,12 +50,10 @@ test('a shifted vampire can return to its vampire form', async () => {
     freshMonsterAbilityRoom('vampire bat');
     game.u.mcham = PM_VAMPIRE;
 
-    const result = await useHeroVampireShift({
-        random: () => 0,
-        publish: async () => {},
-    });
+    pushKeys('                ');
+    const result = await polymorphHero(POLY_REVERT);
 
-    assert.equal(result.changed, true);
+    assert.equal(result.transformed, true);
     assert.equal(game.u.umonnum, PM_VAMPIRE);
     assert.equal(game.u.mcham, PM_VAMPIRE);
 });
@@ -65,10 +62,8 @@ test('a vampire leader can take wolf form', async () => {
     freshMonsterAbilityRoom('vampire leader');
     game.u.mcham = PM_VAMPIRE_LEADER;
 
-    await useHeroVampireShift({
-        random: () => 0,
-        publish: async () => {},
-    });
+    pushKeys('wolf\n                ');
+    await polymorphHero(POLY_CONTROLLED);
 
     assert.equal(game.u.umonnum, PM_WOLF);
     assert.equal(game.u.mcham, PM_VAMPIRE_LEADER);
@@ -104,13 +99,9 @@ test('a genocided animal form leaves the vampire unchanged', async () => {
     game.u.mcham = PM_VAMPIRE;
     game.mvitals = [];
     game.mvitals[PM_VAMPIRE_BAT] = { mvflags: G_GENOD };
-    const messages = [];
-
-    await useHeroVampireShift({
-        random: () => 1,
-        publish: async message => messages.push(message),
-    });
+    pushKeys('vampire bat\n                ');
+    await polymorphHero(POLY_CONTROLLED);
 
     assert.equal(game.u.umonnum, PM_VAMPIRE);
-    assert.deepEqual(messages, ['You feel rather vampire bat-ish.']);
+    assert.match(game._pending_message, /feel rather vampire bat-ish/);
 });

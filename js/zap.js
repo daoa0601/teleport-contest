@@ -68,7 +68,7 @@ import {
 } from './object_timers.js';
 import { applySupportedPotionVapor } from './potion_hit.js';
 import {
-    heroHasNoHands, polyselfRandomOrdinary,
+    heroHasNoHands, heroIsUnchanging, polymorphHero,
 } from './polyself.js';
 import { createSteamCloud } from './regions.js';
 import { d, rn2, rnd } from './rng.js';
@@ -439,9 +439,12 @@ export async function dozap({
 
     if (wand.otyp === WAN_POLYMORPH && directionChar === '.') {
         const alreadyKnown = game._knownObjectTypes?.has(wand.otyp);
-        const result = await polyselfRandomOrdinary();
-        if (result.died) return;
-        if (result.learnEffect && wand.dknown && !alreadyKnown) {
+        const canChange = !heroIsUnchanging(game);
+        if (canChange) {
+            const result = await polymorphHero();
+            if (result.died) return;
+        }
+        if (canChange && wand.dknown && !alreadyKnown) {
             if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
             game._knownObjectTypes.add(wand.otyp);
             wand.typeKnown = true;

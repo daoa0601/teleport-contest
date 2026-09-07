@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 import {
     COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD,
     D_CLOSED, D_LOCKED, D_TRAPPED,
-    M_AP_OBJECT,
+    M_AP_OBJECT, Upolyd,
     SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7,
     IS_WALL,
 } from './const.js';
@@ -41,8 +41,10 @@ function mobileLightMap(level, couldSee) {
     const sources = (level?.monsters || []).filter(monster =>
         !monster.dead && monster.mx > 0 && monsterEmitsLight(monster.mnum))
         .map(monster => ({ x: monster.mx, y: monster.my, range: 1 }));
-    if ((game.u?.mtimedone ?? 0) > 0 && monsterEmitsLight(game.u.umonnum)) {
-        sources.push({ x: game.u.ux, y: game.u.uy, range: 1 });
+    if (Upolyd(game.u) && monsterEmitsLight(game.u.umonnum)) {
+        // C polyself() increases the hero's radius from one to two so
+        // the new light reaches beyond the adjacent visible squares.
+        sources.push({ x: game.u.ux, y: game.u.uy, range: 2 });
     }
     const addLamp = (object, x, y) => {
         if (object?.lamplit

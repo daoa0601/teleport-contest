@@ -5,11 +5,14 @@ import { game } from './gstate.js';
 import {
     AMULET_OF_GUARDING, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
     FUMBLE_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION,
+    GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES,
+    YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
     SHIELD_OF_DRAIN_RESISTANCE,
     OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, OBJECT_SPELL_LEVEL,
     WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { rnd } from './rng.js';
+import { MONSTER_NAME } from './monster_data.js';
 import {
     grantWornProperty, removeWornProperty,
 } from './properties.js';
@@ -60,6 +63,17 @@ const ARMOR_MASKS = Object.freeze({
 });
 const AC_MAX = 99;
 const SPEED_BOOTS = 166;
+
+// C armor_to_dragon(): scales and scale mail use the same color order.
+export function dragonFormForArmor(object) {
+    const type = object?.otyp;
+    const firstDragon = MONSTER_NAME.indexOf('gray dragon');
+    if (type >= GRAY_DRAGON_SCALE_MAIL && type <= YELLOW_DRAGON_SCALE_MAIL)
+        return firstDragon + type - GRAY_DRAGON_SCALE_MAIL;
+    if (type >= GRAY_DRAGON_SCALES && type <= YELLOW_DRAGON_SCALES)
+        return firstDragon + type - GRAY_DRAGON_SCALES;
+    return null;
+}
 
 export function heroIsDisplaced(state = game) {
     const cloak = state?.uarmc || state?.u?.uarmc;

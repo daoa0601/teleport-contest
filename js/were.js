@@ -45,6 +45,7 @@ const PM_WOLF = 20;
 const PM_WEREWOLF = 21;
 const PM_WARG = 23;
 const PM_WINTER_WOLF = 24;
+const PM_WINTER_WOLF_CUB = MONSTER_NAME.indexOf('winter wolf cub');
 const PM_HUMAN_WERERAT = 261;
 const PM_HUMAN_WEREJACKAL = 262;
 const PM_HUMAN_WEREWOLF = 263;
@@ -74,6 +75,17 @@ function summonedWereAlly(form, random) {
         return random(5) ? PM_WOLF
             : random(2) ? PM_WARG : PM_WINTER_WOLF;
     }
+    return null;
+}
+
+// C were_beastie(): ordinary relatives can request the infected beast form.
+export function wereBeastForSpecies(mnum) {
+    if ([PM_WERERAT, PM_SEWER_RAT, PM_GIANT_RAT, PM_RABID_RAT].includes(mnum))
+        return PM_WERERAT;
+    if ([PM_WEREJACKAL, PM_JACKAL, PM_FOX, PM_COYOTE].includes(mnum))
+        return PM_WEREJACKAL;
+    if ([PM_WEREWOLF, PM_WOLF, PM_WARG, PM_WINTER_WOLF, PM_WINTER_WOLF_CUB]
+        .includes(mnum)) return PM_WEREWOLF;
     return null;
 }
 
