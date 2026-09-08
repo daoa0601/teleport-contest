@@ -62,7 +62,7 @@ export function rn1(x, y) { return rn2(x) + y; }
 // rnl rather than rn2; only the conditional adjustment uses a nested rn2.
 export function rnl(x) {
     if (x <= 0) return 0;
-    let adjustment = game.u?.uluck || 0;
+    let adjustment = (game.u?.uluck || 0) + (game.u?.moreluck || 0);
     if (x <= 15) {
         adjustment = Math.trunc((Math.abs(adjustment) + 1) / 3)
             * Math.sign(adjustment);

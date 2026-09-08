@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
 import { initRng, rnl } from '../js/rng.js';
+import { LUCKSTONE } from '../js/object_data.js';
 import { freshGame } from './support/game-state.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 function firstLuckOutcome(luck) {
     freshGame({ hero: { uluck: luck } });
@@ -20,4 +23,16 @@ test('live rnl biases the same base draw according to current Luck', () => {
     assert.ok(unfortunate > neutral);
     assert.ok(fortunate >= 0);
     assert.ok(unfortunate < 20);
+});
+
+test('a carried luckstone improves luck-sensitive decisions', () => {
+    freshObjectRoom({ hero: { uluck: 0 } });
+    initRng(1n);
+    const withoutStone = rnl(20);
+
+    addInventoryObject(LUCKSTONE, { blessed: true });
+    initRng(1n);
+    const withStone = rnl(20);
+
+    assert.ok(withStone < withoutStone);
 });
