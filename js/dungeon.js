@@ -356,3 +356,32 @@ export function init_dungeons() {
         game.dungeons?.[branch.end2?.dnum]?.dname === 'Fort Ludios');
     if (knoxBranch) knoxBranch.end1.dnum = loaded.length;
 }
+
+export function specialDisplayName(name) {
+    if (name.startsWith('x-')) {
+        const code = game.urole?.filecode || 'Wiz';
+        return `${code}-${name.slice(2)}`;
+    }
+    return name;
+}
+
+export function specialPrototypeAt(dnum, dlevel) {
+    for (const [name, level] of game.specialLevels || []) {
+        if (level.dnum === dnum && level.dlevel === dlevel)
+            return specialDisplayName(name);
+    }
+
+    // C mklev.c:makelevel() sends otherwise ordinary Quest depths through
+    // the selected role's room-form filler.  The locate level is the split:
+    // shallower homes use <role>-fila, deeper homes use <role>-filb.  Named
+    // start/locate/goal levels won above and retain their own prototypes.
+    if (game.dungeons?.[dnum]?.dname === 'The Quest') {
+        const code = game.urole?.filecode;
+        const locate = Array.from(game.specialLevels || [])
+            .find(([name, level]) => level.dnum === dnum
+                && specialDisplayName(name) === `${code}-loca`);
+        if (code && locate)
+            return `${code}-fil${dlevel < locate[1].dlevel ? 'a' : 'b'}`;
+    }
+    return null;
+}

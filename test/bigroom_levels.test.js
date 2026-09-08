@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
     CLOUD, FOUNTAIN, IS_WALL, ROLLING_BOULDER_TRAP, ROOM, STONE,
 } from '../js/const.js';
-import { placeHeroAtRandomArrival } from '../js/cmd.js';
+import { placeHeroAtRandomArrival } from '../js/level_change.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import { generateBigRoom } from '../js/mklev.js';

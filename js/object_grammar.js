@@ -20,7 +20,7 @@ export function simpleObjectNameWithArticle(object) {
     const noun = OBJECT_NAMES[object?.otyp] || object?.name || 'object';
     const quantity = object?.quan ?? object?.quantity ?? 1;
     if (quantity > 1) return `${quantity} ${makePlural(noun)}`;
-    return `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
+    return `${indefiniteArticle(noun)} ${noun}`;
 }
 
 // C ref: objnam.c:makeplural().  This owner is also used for hallucinated
@@ -173,4 +173,8 @@ export function makePlural(value) {
     if (/[^aeiou]y$/i.test(stem))
         return stem.slice(0, -1) + caseLike(stem.at(-1), 'ies') + excess;
     return `${stem}s${excess}`;
+}
+
+export function indefiniteArticle(text) {
+    return /^[aeiou]/i.test(text) ? 'an' : 'a';
 }

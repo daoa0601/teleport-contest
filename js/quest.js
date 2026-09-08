@@ -2,6 +2,7 @@
 // C refs: quest.c, questpgr.c, sounds.c; Lua ref: dat/quest.lua.
 
 import { game } from './gstate.js';
+import { gotoLevel } from './level_change.js';
 import { nhgetch } from './input.js';
 import { flushPendingTopline, flush_screen, pline } from './display.js';
 import { showTextPages } from './windows.js';
@@ -721,5 +722,27 @@ export async function chatWithQuestLeader(monster, {
     if (!await qtPager('assignquest', g)) return true;
     if (exerciseWisdom) exerciseWisdom();
     status.got_quest = true;
+    return true;
+}
+
+// quest.c:expulsion(FALSE) schedules a portal arrival on the parent side of
+// the Quest branch.  The deferred transition is executed by moveloop after
+// the leader's modal dialogue returns, while the original hero action still
+// owns the surrounding monster/global-turn transaction.
+export async function performQuestExpulsion(g = game) {
+    const current = g.u?.uz || {};
+    const branch = g.branches?.find(candidate =>
+        (candidate.end1?.dnum === current.dnum
+            && candidate.end1?.dlevel === current.dlevel)
+        || (candidate.end2?.dnum === current.dnum
+            && candidate.end2?.dlevel === current.dlevel));
+    if (!branch) return false;
+    const destination = branch.end1?.dnum === current.dnum
+        && branch.end1?.dlevel === current.dlevel
+        ? branch.end2 : branch.end1;
+    if (!destination) return false;
+    await gotoLevel({ ...destination }, { arrival: 'portal' });
+    g._questExpulsionPending = null;
+    g.context.move = 1;
     return true;
 }

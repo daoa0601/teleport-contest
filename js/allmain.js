@@ -24,13 +24,11 @@ import {
     randomOffensiveMonsterItem,
 } from './muse.js';
 import {
-    applyHeroLiquidEffects, askTeleportDestination,
-    continueCountedCommand, continueRun,
-    finishDestinationSpotEffects,
-    finishArmorRemoval,
-    getLine, promptYesNo, performQuestExpulsion,
-    resurrectWizard, rhack,
+    applyHeroLiquidEffects, continueCountedCommand, continueRun,
+    finishDestinationSpotEffects, finishArmorRemoval, getLine, promptYesNo, rhack,
 } from './cmd.js';
+import { performQuestExpulsion } from './quest.js';
+import { resurrectWizard } from './wizard.js';
 import {
     finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
 } from './hero_monster_death.js';
@@ -48,20 +46,17 @@ import { exerciseAttribute } from './attrib.js';
 import { rndcurse } from './throne.js';
 import { stopRun } from './runmode.js';
 import {
-    docrt, cls, bot, flush_screen, pline, plineWithContinuation, newsym,
-    map_invisible,
-    randomDisplayMonsterName, randomDisplayMonsterSubject,
-    see_monsters, see_objects, see_traps,
-    show_glyph_cell, swallowed, transientObjectGlyph,
-    _statusLine1, _statusLine2, canProjectMonster, canSpotMonster,
-    lastDirtyMapCursor, shieldeff,
+    docrt, cls, bot, flush_screen, pline, plineWithContinuation, newsym, map_invisible,
+    randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
+    see_traps, show_glyph_cell, swallowed, transientObjectGlyph, _statusLine1,
+    _statusLine2, canProjectMonster, lastDirtyMapCursor, shieldeff,
 } from './display.js';
 import {
     cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset,
     init_vision_globals,
 } from './vision.js';
 import { nhgetch } from './input.js';
-import { NO_COLOR, CLR_WHITE, CLR_BRIGHT_BLUE } from './terminal.js';
+import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import {
     ACID_VENOM, AKLYS, ARROW, BATTLE_AXE, BOW, CLUB, CORPSE, CROSSBOW,
     CROSSBOW_BOLT, CRYSTAL_BALL, DAGGER, DART,

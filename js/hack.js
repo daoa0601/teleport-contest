@@ -872,3 +872,13 @@ export async function heroLiquidEffects(options = {}) {
     if (state.context) state.context.move = 0;
     return { entered: true, moved: false, died: true };
 }
+
+// Terrain that blocks ordinary movement. C hack.c.
+export function blocksMove(x, y) {
+    const loc = game.level?.at(x, y);
+    if (!loc) return true;
+    if (loc.typ === STONE) return true;
+    if (IS_WALL(loc.typ) || IS_OBSTRUCTED(loc.typ)) return true;
+    if (loc.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))) return true;
+    return false;
+}
