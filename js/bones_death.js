@@ -6,6 +6,7 @@ import {
 import {
     completeBonesMonster, giveHeroResistancesToMonster,
 } from './bones_monster.js';
+import { artifactEmitsLight } from './artifacts.js';
 import { game } from './gstate.js';
 import { endObjectBurn } from './light.js';
 import { place_object } from './floor_object.js';
@@ -73,7 +74,7 @@ export function dropHeroInventoryForBones(
     game.u.twoweap = false;
     while ((game.inventory || []).length) {
         const object = game.inventory.shift();
-        if (container && object.lamplit)
+        if ((container || artifactEmitsLight(object)) && object.lamplit)
             endObjectBurn(object, game, game.moves ?? 0);
         clearHeroCarriedState(object);
         if (rn2(5)) curseObjectState(object);

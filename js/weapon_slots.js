@@ -5,6 +5,8 @@ import {
     W_QUIVER, W_SWAPWEP, W_WEAPONS, W_WEP,
 } from './const.js';
 import { game } from './gstate.js';
+import { artifactEmitsLight } from './artifacts.js';
+import { endObjectBurn } from './light.js';
 import {
     HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_SUBTYPE, TIN_OPENER,
 } from './object_data.js';
@@ -27,6 +29,8 @@ function clearSlot(slot, mask, flag, state) {
     state[slot] = null;
     if (state.u) state.u[slot] = null;
     if (!object) return null;
+    if (slot === 'uwep' && artifactEmitsLight(object) && object.lamplit)
+        endObjectBurn(object, state);
     object[flag] = false;
     object.owornmask = (object.owornmask ?? 0) & ~mask;
     return object;
@@ -69,6 +73,9 @@ export function releaseWeaponSlots(object, state = game) {
     const primary = state.uwep === object || state.u?.uwep === object;
     const secondary = state.uswapwep === object
         || state.u?.uswapwep === object;
+
+    if (primary && artifactEmitsLight(object) && object.lamplit)
+        endObjectBurn(object, state);
 
     if (state.uwep === object) state.uwep = null;
     if (state.u?.uwep === object) state.u.uwep = null;

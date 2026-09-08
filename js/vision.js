@@ -10,10 +10,9 @@ import {
     IS_WALL,
 } from './const.js';
 import { newsym } from './display.js';
-import {
-    BOULDER, BRASS_LANTERN, MAGIC_LAMP, OIL_LAMP,
-} from './object_data.js';
+import { BOULDER } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
+import { objectLightRadius } from './light.js';
 
 const COULD_SEE = 0x1;
 const IN_SIGHT = 0x2;
@@ -38,7 +37,9 @@ function monsterEmitsLight(mnum) {
 
 function mobileLightMap(level, couldSee) {
     const lit = Array.from({ length: ROWNO }, () => new Uint8Array(COLNO));
-    const sources = (level?.monsters || []).filter(monster =>
+    const monsters = [...(level?.monsters || [])];
+    if (game.u.usteed && !monsters.includes(game.u.usteed)) monsters.push(game.u.usteed);
+    const sources = monsters.filter(monster =>
         !monster.dead && monster.mx > 0 && monsterEmitsLight(monster.mnum))
         .map(monster => ({ x: monster.mx, y: monster.my, range: 1 }));
     if (Upolyd(game.u) && monsterEmitsLight(game.u.umonnum)) {
@@ -46,22 +47,20 @@ function mobileLightMap(level, couldSee) {
         // the new light reaches beyond the adjacent visible squares.
         sources.push({ x: game.u.ux, y: game.u.uy, range: 2 });
     }
-    const addLamp = (object, x, y) => {
-        if (object?.lamplit
-            && [OIL_LAMP, BRASS_LANTERN, MAGIC_LAMP].includes(object.otyp))
-            sources.push({ x, y, range: 3 });
+    const addObjectLight = (object, x, y) => {
+        const range = objectLightRadius(object);
+        if (range) sources.push({ x, y, range });
     };
     for (let x = 1; x < COLNO; x++)
         for (let y = 0; y < ROWNO; y++)
             for (const object of level?.objects?.[x]?.[y] || [])
-                addLamp(object, x, y);
+                addObjectLight(object, x, y);
     for (const object of game.inventory || [])
-        addLamp(object, game.u.ux, game.u.uy);
-    for (const monster of level?.monsters || []) {
-        for (const object of monster.minvent || [])
-            addLamp(object, monster.mx, monster.my);
-        for (const object of monster.inventory || [])
-            addLamp(object, monster.mx, monster.my);
+        addObjectLight(object, game.u.ux, game.u.uy);
+    for (const monster of monsters) {
+        if (monster.dead || monster.mx < 1) continue;
+        for (const object of monster.minvent || monster.inventory || [])
+            addObjectLight(object, monster.mx, monster.my);
     }
 
     for (const source of sources) {

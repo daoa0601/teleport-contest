@@ -17,8 +17,9 @@ import { monsterCanEngulf } from './monster_data.js';
 import { plineWithContinuation } from './display.js';
 import { updateMonsterEquipment } from './monster_equipment.js';
 
-export function clearMonsterCarriedObjectState(object) {
+export function clearMonsterCarriedObjectState(object, state = game) {
     if (!object) return;
+    if (object.lamplit && artifactEmitsLight(object)) endObjectBurn(object, state);
     object.owornmask = 0;
     object.worn = false;
     object.wornSlot = null;
@@ -89,7 +90,7 @@ export function linkObjectToMonsterInventory(
 
 // Unlinking is separate from equipment effects, like C obj_extract_self().
 // Callers removing worn armor must use removeObjectFromMonsterInventory().
-export function unlinkMonsterObject(monster, object) {
+export function unlinkMonsterObject(monster, object, state = game) {
     if (!monster || !object) return false;
     const inventory = monster.minvent || monster.inventory || [];
     const index = inventory.indexOf(object);
@@ -110,7 +111,7 @@ export function unlinkMonsterObject(monster, object) {
         monster.saddle = null;
         monster.saddled = false;
     }
-    clearMonsterCarriedObjectState(object);
+    clearMonsterCarriedObjectState(object, state);
     object.where = 'free';
     return true;
 }
@@ -119,7 +120,7 @@ export async function removeObjectFromMonsterInventory(monster, object, state = 
     publish = plineWithContinuation,
 } = {}) {
     const worn = object.owornmask;
-    if (!unlinkMonsterObject(monster, object)) return false;
+    if (!unlinkMonsterObject(monster, object, state)) return false;
     if (worn) await updateMonsterEquipment(monster, object, false, state, { publish });
     return true;
 }

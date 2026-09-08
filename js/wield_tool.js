@@ -2,8 +2,10 @@
 // C ref: wield.c wield_tool().
 
 import { W_ACCESSORY, W_ARMOR } from './const.js';
-import { pline } from './display.js';
+import { pline, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { artifactEmitsLight } from './artifacts.js';
+import { equipmentLightMessage, lightWieldedArtifact } from './light.js';
 import { inventoryItemDescription } from './invent.js';
 import {
     HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_BIMANUAL, OBJECT_SUBTYPE,
@@ -133,7 +135,10 @@ export async function wieldTool(
     }
 
     const description = inventoryItemDescription(object);
+    const oldShining = current?.lamplit && artifactEmitsLight(current);
     setPrimaryWeapon(object, state);
+    if (oldShining && !state.blind && !state.u.blindTurns)
+        await plineWithContinuation(equipmentLightMessage(current, false, state));
     if (willWeld(object)) {
         const dominantSide = state.u?.rightHanded === false ? 'left' : 'right';
         const hand = isTwoHanded(object)
@@ -143,11 +148,12 @@ export async function wieldTool(
         const subject = quantityOf(object) === 1
             ? `The ${object.name || 'object'} welds itself`
             : `The ${pluralName} weld themselves`;
-        await pline(`${subject} to your ${hand}!`);
+        await plineWithContinuation(`${subject} to your ${hand}!`);
         object.bknown = true;
     } else {
-        await pline(`You now wield ${description}.`);
+        await plineWithContinuation(`You now wield ${description}.`);
     }
+    await lightWieldedArtifact(object, state);
 
     if (state.flags?.pushweapon && current && current !== object)
         setSecondaryWeapon(current, state);

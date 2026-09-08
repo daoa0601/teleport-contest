@@ -7,7 +7,9 @@ import { canSeeMonster, displayColorName, newsym, plineWithContinuation } from '
 import { inventoryItemDescription } from './invent.js';
 import { updateMonsterEquipment } from './monster_equipment.js';
 import { learnObjectType } from './object_knowledge.js';
-import { cansee } from './vision.js';
+import { artifactEmitsLight } from './artifacts.js';
+import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './light.js';
+import { cansee, vision_recalc } from './vision.js';
 import { heroIsDeaf } from './senses.js';
 import { surfaceName } from './terrain_name.js';
 import { monsterSentenceSubject } from './monster_sound.js';
@@ -28,8 +30,8 @@ import {
 import {
     AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
     ALCHEMY_SMOCK, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT,
-    IRON_SHOES, MUMMY_WRAPPING, ROBE,
-    OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_MATERIAL,
+    GOLD_DRAGON_SCALES, IRON_SHOES, MUMMY_WRAPPING, ROBE,
+    OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_MATERIAL, OBJECT_NAMES,
 } from './object_data.js';
 import {
     AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
@@ -199,7 +201,9 @@ async function wearSlot(monster, slot, creation, state, publish) {
     if (!best || best === old) return null;
 
     const wasVisible = canSeeMonster(monster, monster.mx, monster.my);
+    const sawSquare = cansee(monster.mx, monster.my);
     const subject = monsterSentenceSubject(monster);
+    const oldShining = old?.lamplit && artifactEmitsLight(old);
     const autocurse = !best.cursed
         && [DUNCE_CAP, HELM_OF_OPPOSITE_ALIGNMENT].includes(best.otyp);
     let delay = 0;
@@ -224,14 +228,31 @@ async function wearSlot(monster, slot, creation, state, publish) {
         monster.mfrozen = delay;
         if (delay) monster.mcanmove = 0;
     }
-    if (old)
+    if (old) {
         await updateMonsterEquipment(monster, old, false, state, { silently: creation, publish });
+        if (oldShining) endObjectBurn(old, state);
+    }
     monster.misc_worn_check = (monster.misc_worn_check ?? 0) | mask;
     best.owornmask = (best.owornmask ?? 0) | mask;
     best.worn = true;
     if (autocurse) {
         best.blessed = false;
         best.cursed = true;
+    }
+    if (artifactEmitsLight(best) && !best.lamplit) {
+        beginObjectBurn(best, state);
+        vision_recalc(1);
+        if (!creation && best.lamplit && cansee(monster.mx, monster.my)) {
+            const visibleNow = canSeeMonster(monster, monster.mx, monster.my);
+            const named = wasVisible || visibleNow;
+            const plural = named && best.otyp === GOLD_DRAGON_SCALES;
+            const name = named
+                ? `The ${OBJECT_NAMES[best.otyp]}` : 'Something';
+            const startsShining = wasVisible || (!visibleNow && sawSquare);
+            const verb = startsShining ? (plural ? 'begin to shine' : 'begins to shine')
+                : (plural ? 'are shining' : 'is shining');
+            await publish(`${name} ${verb} ${equipmentLightDescription(best, state)}.`);
+        }
     }
     await updateMonsterEquipment(monster, best, true, state, { silently: creation, publish });
     if (!creation && wasVisible && !canSeeMonster(monster, monster.mx, monster.my)

@@ -6625,7 +6625,7 @@ export async function moveloop_core() {
             // commits only after the continuation is acknowledged.
             if (delayed.finishMessage)
                 await plineWithContinuation(delayed.finishMessage);
-            finishArmorRemoval(delayed.object, { silent: true });
+            await finishArmorRemoval(delayed.object, { silent: true });
         }
         g._delayedAction = null;
     } else if (g._delayedAction

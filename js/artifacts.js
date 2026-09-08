@@ -5,11 +5,12 @@
 // that ordinary object, and oname() then commits the named artifact.
 
 import { ARTIFACT_DATA } from './artifact_data.js';
+import { W_ARM } from './const.js';
 import { heroHasDrainResistance } from './armor.js';
 import { game } from './gstate.js';
 import { d, rnd, rn2 } from './rng.js';
 import {
-    OBJECT_NAMES,
+    GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_NAMES,
 } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import {
@@ -339,6 +340,8 @@ export function artifactDoublesWeaponDamage(
 }
 
 export function artifactEmitsLight(object) {
+    if ([GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES].includes(object?.otyp)
+        && (object.owornmask & W_ARM)) return true;
     return artifactById(object?.oartifact)?.name === 'Sunsword';
 }
 

@@ -2,6 +2,8 @@
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
 
 import { game } from './gstate.js';
+import { artifactEmitsLight } from './artifacts.js';
+import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './light.js';
 import {
     AMULET_OF_GUARDING, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
     FUMBLE_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION,
@@ -177,11 +179,13 @@ export function wearHeroArmor(object, state = game) {
 export function removeHeroArmor(object, state = game) {
     const slot = armorSlotFor(object?.otyp);
     if (!slot) return false;
+    const wasShining = object.lamplit && artifactEmitsLight(object);
     if (state[slot] === object) state[slot] = null;
     if (state.u?.[slot] === object) state.u[slot] = null;
     object.worn = false;
     object.wornSlot = null;
     object.owornmask = (object.owornmask ?? 0) & ~ARMOR_MASKS[slot];
+    if (wasShining && !artifactEmitsLight(object)) endObjectBurn(object, state);
     removeArmorProperties(object, state);
 
     const hero = state.u || (state.u = {});
@@ -384,6 +388,14 @@ export function applyArmorOnEffects(object, state = game) {
         }
     } else if (color === 'red') {
         state.vision_full_recalc = 1;
+    }
+    if (artifactEmitsLight(object) && !object.lamplit) {
+        beginObjectBurn(object, state);
+        if (!state.blind && !state.u.blindTurns) {
+            const name = OBJECT_NAMES[object.otyp];
+            const verb = name.endsWith('scales') ? 'begin' : 'begins';
+            messages.push(`Your ${name} ${verb} to shine ${equipmentLightDescription(object, state)}!`);
+        }
     }
     return messages;
 }

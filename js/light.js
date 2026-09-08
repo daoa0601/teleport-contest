@@ -2,7 +2,7 @@
 // C refs: timeout.c begin_burn()/burn_object()/end_burn(), light.c.
 
 import { game } from './gstate.js';
-import { artifactEmitsLight } from './artifacts.js';
+import { artifactById, artifactEmitsLight } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     A_WIS, CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG,
@@ -19,7 +19,8 @@ import {
     monsterDigests, monsterIsWhirly, monsterTypeName,
 } from './monster_data.js';
 import {
-    BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, MAGIC_LAMP, OBJECT_NAMES,
+    BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL,
+    GOLD_DRAGON_SCALES, MAGIC_LAMP, OBJECT_NAMES,
     OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
 import {
@@ -50,6 +51,45 @@ const PM_BLACK_LIGHT = 119;
 export function objectShedsLight(object) {
     return !!object?.lamplit
         && (LIGHT_TYPES.has(object.otyp) || artifactEmitsLight(object));
+}
+
+export function objectLightRadius(object, state = game) {
+    if (!object?.lamplit) return 0;
+    // Clearing a worn slot precedes the message and the call that extinguishes it.
+    const goldArmor = object.otyp === GOLD_DRAGON_SCALE_MAIL || object.otyp === GOLD_DRAGON_SCALES;
+    if (goldArmor || artifactEmitsLight(object)) {
+        if (object === state.uskin) return 1;
+        const radius = object.blessed ? 3 : object.cursed ? 1 : 2;
+        return radius + Number(object.otyp === GOLD_DRAGON_SCALE_MAIL);
+    }
+    if (object.otyp === POT_OIL) return 1;
+    if (object.otyp === CANDELABRUM_OF_INVOCATION)
+        return object.spe < 4 ? 2 : object.spe < 7 ? 3 : 4;
+    if (object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE)
+        return Math.min(15, Math.floor(Math.sqrt(object.quan ?? object.quantity ?? 1)) + 1);
+    return LIGHT_TYPES.has(object.otyp) ? 3 : 0;
+}
+
+export function equipmentLightDescription(object, state = game) {
+    return ['strangely', 'dimly', 'brightly', 'brilliantly', 'radiantly'][
+        objectLightRadius(object, state)
+    ] || 'strangely';
+}
+
+export function equipmentLightMessage(object, shining, state = game) {
+    const artifact = artifactById(object.oartifact);
+    const name = artifact?.name || `The ${OBJECT_NAMES[object.otyp]}`;
+    const plural = object.otyp === GOLD_DRAGON_SCALES;
+    return shining
+        ? `${name} ${plural ? 'begin' : 'begins'} to shine ${equipmentLightDescription(object, state)}!`
+        : `${name} ${plural ? 'stop' : 'stops'} shining.`;
+}
+
+export async function lightWieldedArtifact(object, state = game, publish = plineWithContinuation) {
+    if (!artifactEmitsLight(object) || object.lamplit) return;
+    beginObjectBurn(object, state);
+    if (!state.blind && !state.u.blindTurns)
+        await publish(equipmentLightMessage(object, true, state));
 }
 
 function heroIsBlind() {
@@ -383,9 +423,10 @@ export function transformMagicLampToOilLamp(
 export function endObjectBurn(
     object, state = game, currentTurn = state.moves ?? 0,
 ) {
-    if (!object || !objectShedsLight(object))
+    if (!object?.lamplit)
         return false;
-    if (object.otyp === MAGIC_LAMP || artifactEmitsLight(object)) {
+    if (object.otyp === MAGIC_LAMP || artifactEmitsLight(object)
+        || object.otyp === GOLD_DRAGON_SCALE_MAIL || object.otyp === GOLD_DRAGON_SCALES) {
         object.lamplit = false;
         state.vision_full_recalc = 1;
         return true;

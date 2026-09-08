@@ -42,7 +42,7 @@ import {
     vision_reset_new_level,
 } from './vision.js';
 import {
-    beginObjectBurn, endObjectBurn, igniteItems,
+    beginObjectBurn, endObjectBurn, equipmentLightMessage, igniteItems, lightWieldedArtifact,
     transformMagicLampToOilLamp,
 } from './light.js';
 import {
@@ -165,7 +165,7 @@ import {
     objectStatePrefix, unseenObjectNoun,
 } from './objnam.js';
 import {
-    artifactById, artifactToHitBonus,
+    artifactById, artifactEmitsLight, artifactToHitBonus,
 } from './artifacts.js';
 import { applyArtifactHitToMonster } from './artifact_hit.js';
 import {
@@ -4444,6 +4444,7 @@ async function dotwoweapon() {
 async function doswapweapon() {
     const oldPrimary = game.uwep || game.u?.uwep || null;
     const oldSecondary = game.uswapwep || game.u?.uswapwep || null;
+    const oldShining = oldPrimary?.lamplit && artifactEmitsLight(oldPrimary);
     if (!oldSecondary) {
         game.u.twoweap = false;
         if (!oldPrimary) {
@@ -4452,7 +4453,9 @@ async function doswapweapon() {
             return;
         }
         setSecondaryWeapon(oldPrimary, game);
-        await pline('You are bare handed.');
+        if (oldShining && !game.blind && !game.u.blindTurns)
+            await plineWithContinuation(equipmentLightMessage(oldPrimary, false));
+        await plineWithContinuation('You are bare handed.');
         await plineWithContinuation(
             `${oldPrimary.invlet} - ${
                 inventoryItemDescription(oldPrimary)}.`,
@@ -4464,10 +4467,13 @@ async function doswapweapon() {
     game.u.twoweap = false;
     setSecondaryWeapon(null, game);
     setPrimaryWeapon(oldSecondary, game);
-    await pline(
+    if (oldShining && !game.blind && !game.u.blindTurns)
+        await plineWithContinuation(equipmentLightMessage(oldPrimary, false));
+    await plineWithContinuation(
         `${oldSecondary.invlet} - ${
             inventoryItemDescription(oldSecondary)}.`,
     );
+    await lightWieldedArtifact(oldSecondary);
 
     if (oldPrimary) {
         setSecondaryWeapon(oldPrimary, game);
@@ -7531,8 +7537,11 @@ function delayedArmorRemovalSimpleName(object) {
 // C ref: do_wear.c Armor_off()/off_msg().  Delayed removal calls this from
 // allmain only after negative multi has reached zero; zero-delay armor can use
 // the same state owner immediately.
-export function finishArmorRemoval(object, { silent = false } = {}) {
+export async function finishArmorRemoval(object, { silent = false } = {}) {
+    const wasShining = object.lamplit && artifactEmitsLight(object);
     removeHeroArmor(object, game);
+    if (wasShining && !object.lamplit && !game.blind && !game.u.blindTurns)
+        await plineWithContinuation(equipmentLightMessage(object, false));
     if (silent || game.flags?.verbose === false) return '';
     const description = armorRemovalDescription(object);
     return `You were wearing ${indefiniteArticle(description)} ${description}.`;
@@ -7652,7 +7661,7 @@ async function removeWornItem(action) {
         && canNoticeDisplacementChange
         ? 'You feel that monsters no longer have difficulty pinpointing your location.'
         : null;
-    const removalMessage = finishArmorRemoval(object);
+    const removalMessage = await finishArmorRemoval(object);
     if (removalMessage && game.u?.uac !== previousArmorClass)
         game._statusAcOverride = previousArmorClass;
     // do_wear.c:off_msg() is conditional on flags.verbose.  When disabled,
@@ -7779,8 +7788,12 @@ async function dowield(cannedInvlet = null) {
             game.context.move = 0;
             return;
         }
+        const oldWeapon = game.uwep;
+        const wasShining = oldWeapon.lamplit && artifactEmitsLight(oldWeapon);
         setPrimaryWeapon(null, game);
-        await pline('You are bare handed.');
+        if (wasShining && !game.blind && !game.u.blindTurns)
+            await plineWithContinuation(equipmentLightMessage(oldWeapon, false));
+        await plineWithContinuation('You are bare handed.');
         game.context.move = 1;
         return;
     }
@@ -7819,13 +7832,17 @@ async function dowield(cannedInvlet = null) {
 
     const description = inventoryItemDescription(object);
     const oldPrimary = game.uwep || game.u?.uwep || null;
+    const oldShining = oldPrimary?.lamplit && artifactEmitsLight(oldPrimary);
     setPrimaryWeapon(object, game);
+    if (oldShining && !game.blind && !game.u.blindTurns)
+        await plineWithContinuation(equipmentLightMessage(oldPrimary, false));
     const hand = game.u?.rightHanded ? 'right' : 'left';
     const suffix = object.class === 'Weapons' || object.oclass === 2
         ? object.name === 'quarterstaff'
             ? 'weapon in hands' : `weapon in ${hand} hand`
         : 'wielded';
-    await pline(`${object.invlet} - ${description} (${suffix}).`);
+    await plineWithContinuation(`${object.invlet} - ${description} (${suffix}).`);
+    await lightWieldedArtifact(object);
     // C dowield() applies pushweapon only after ready_weapon() has installed
     // the new primary.  The displaced primary becomes the authoritative
     // secondary object; preserving that identity is what makes a later
