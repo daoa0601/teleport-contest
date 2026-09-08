@@ -3,8 +3,7 @@
 
 import { game } from './gstate.js';
 import {
-    autopickupAtHero, basePickupObjectDescription, pickupAtHero,
-    preparePickedInventoryObject,
+    addPickedInventoryObject, autopickupAtHero, pickupAtHero,
 } from './pickup.js';
 import { gotoLevel } from './level_change.js';
 import {
@@ -6018,7 +6017,7 @@ async function putOnArmorObject(object) {
         object.known = true;
         object._armorApplied = true;
         const onMessage = `You are now wearing ${
-            basePickupObjectDescription(object)
+            floorObjectDescription(object)
         }.`;
         for (const message of effectMessages)
             await plineWithContinuation(message);
@@ -6251,7 +6250,7 @@ async function dopay() {
         heading: '',
         items: billed.map((item, index) => ({
             key: String.fromCharCode(97 + index),
-            text: `${item.price} Zm, ${basePickupObjectDescription(item.object)}`,
+            text: `${item.price} Zm, ${floorObjectDescription(item.object)}`,
             value: item,
         })),
     }];
@@ -6270,7 +6269,7 @@ async function dopay() {
     for (const item of selected) {
         if (!settleCarriedShopBillItem(resident, item)) continue;
         paidForItem = true;
-        await pline(`You bought ${basePickupObjectDescription(item.object)} for ${item.price} gold piece${item.price === 1 ? '' : 's'}.`);
+        await pline(`You bought ${floorObjectDescription(item.object)} for ${item.price} gold piece${item.price === 1 ? '' : 's'}.`);
     }
     if (!paid && !paidForItem) {
         game.context.move = 0;
@@ -6833,8 +6832,7 @@ async function doapply(cannedInvlet = null) {
                         monster, monster.mx, monster.my,
                     ),
                     holdObject: object => {
-                        preparePickedInventoryObject(object);
-                        game._capacityDirty = true;
+                        addPickedInventoryObject(object);
                         return true;
                     },
                 });
@@ -6852,8 +6850,7 @@ async function doapply(cannedInvlet = null) {
                     ),
                     describeTarget: wizardPositionDescription,
                     holdObject: async object => {
-                        const prepared = preparePickedInventoryObject(object);
-                        game._capacityDirty = true;
+                        const prepared = addPickedInventoryObject(object);
                         await plineWithContinuation(prepared.message);
                         return true;
                     },
@@ -8780,6 +8777,7 @@ export async function finishDestinationSpotEffects({
     // effects and before destination pickup or traps.
     await checkSpecialRoom();
     await autopickupAtHero();
+    if (game.program_state?.gameover) return true;
     if (await triggerHeroTrapAt(newx, newy, {
         finishTeleport: finishTeleportArrival,
         gotoLevel,

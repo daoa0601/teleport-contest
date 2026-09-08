@@ -1,6 +1,7 @@
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 
 import { game } from './gstate.js';
+import { autopickupAtHero } from './pickup.js';
 import { runDueTimers } from './timer_effects.js';
 import { loseHeroHp } from './hero_damage.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -26,7 +27,7 @@ import {
     unplaceBallAndChain,
 } from './ball.js';
 import { recordDungeonEntryAchievements } from './achievements.js';
-import { heroCannotTake, heroHasOlfaction } from './polyself.js';
+import { heroHasOlfaction } from './polyself.js';
 import { checkSpecialRoom } from './shk.js';
 import {
     displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall,
@@ -40,7 +41,6 @@ import {
     Is_rogue_level,
 } from './const.js';
 import { blocksMove } from './hack.js';
-import { floorObjectDescription, showFloorPile } from './floor_object_display.js';
 import { resurrectWizard } from './wizard.js';
 
 export async function gotoLevel(targetDepth, {
@@ -105,18 +105,7 @@ export async function gotoLevel(targetDepth, {
     // C do.c:goto_level() unplaces punishment before savelev(), retaining
     // object identity while removing both objects from the departing floor.
     // placebc() installs them on the destination after hero placement.
-    const migratingPunishment = heroIsPunished()
-        ? {
-            ball: game.uball || game.u?.uball,
-            chain: game.uchain || game.u?.uchain,
-            ballCarried: game.inventory?.includes(
-                game.uball || game.u?.uball,
-            ),
-        }
-        : null;
-    if (migratingPunishment) {
-        unplaceBallAndChain(game);
-    }
+    if (heroIsPunished()) unplaceBallAndChain(game);
     clearHeroTrap(game);
     game.u.ustuck = null;
     game.u.uswallow = game.uswallow = 0;
@@ -165,8 +154,6 @@ export async function gotoLevel(targetDepth, {
 
     const died = await arriveOnLevel(oldDepth, { arrival, ladder, followers });
     if (died) return true;
-    if (migratingPunishment)
-        migratingPunishment.ballCarried = game.inventory.includes(migratingPunishment.ball);
     const newDepth = { ...game.u.uz };
 
     // Each level saves the hero's trail. Bones loading already restores it;
@@ -304,70 +291,8 @@ export async function gotoLevel(targetDepth, {
         if (game.u.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
         if (await loseHeroHp(damage, 'falling down a mine shaft')) return true;
     }
-    // Describe floor items after the arrival messages. A pile window first
-    // dismisses any pending message.
-    const ordinaryArrivalPile =
-        game.level?.objects?.[game.u.ux]?.[game.u.uy] || [];
-    if (!migratingPunishment) {
-        if (ordinaryArrivalPile.length > 1) {
-            await showFloorPile(ordinaryArrivalPile);
-        } else if (ordinaryArrivalPile.length === 1) {
-            const sense = game.blind ? 'feel' : 'see';
-            await plineWithContinuation(
-                `You ${sense} here ${
-                    floorObjectDescription(ordinaryArrivalPile[0])
-                }.`,
-            );
-        }
-    }
-    // do.c:goto_level() converges at pickup(1).  Attached punishment objects
-    // cannot be collected, so an otherwise empty arrival square is described
-    // as a two-object floor pile after the destination redraw and messages.
-    if (migratingPunishment && !migratingPunishment.ballCarried) {
-        const arrivalPile = game.level?.objects?.[game.u.ux]?.[game.u.uy] || [];
-        if (arrivalPile.includes(migratingPunishment.chain)
-            && arrivalPile.includes(migratingPunishment.ball)) {
-            let feature = '';
-            for (let candidate = game.stairs; candidate;
-                candidate = candidate.next) {
-                if (candidate.sx !== game.u.ux
-                    || candidate.sy !== game.u.uy) continue;
-                if (candidate.tolev?.dnum !== newDepth.dnum) {
-                    const destinationName = (
-                        game.dungeons?.[candidate.tolev?.dnum]?.dname
-                        || 'another dungeon'
-                    ).replace(/^The\b/, 'the');
-                    feature = `There is a branch staircase ${
-                        candidate.up ? 'up' : 'down'
-                    } to ${destinationName} here.`;
-                } else if (candidate.tolev) {
-                    feature = `There is a staircase ${
-                        candidate.up ? 'up' : 'down'
-                    } to level ${dungeonDepth(
-                        candidate.tolev.dnum, candidate.tolev.dlevel,
-                    )} here.`;
-                }
-                break;
-            }
-            // invent.c:look_here() announces a blind tactile inspection
-            // before it opens the temporary pile window.  Each pline/menu
-            // transition owns a separate tty acknowledgement.
-            if (game.blind) {
-                await plineWithContinuation(
-                    'You try to feel what is lying here on the floor.',
-                );
-            }
-            await showFloorPile(arrivalPile, false, feature);
-            // pickup.c:pickup(1) performs check_here() before notake().
-            // A blind hero in a form which cannot carry objects sees this
-            // rejection only after dismissing the temporary pile window.
-            if (heroCannotTake(game)) {
-                await pline(
-                    'You are physically incapable of picking anything up.',
-                );
-            }
-        }
-    }
+    await autopickupAtHero();
+    if (game.program_state?.gameover) return true;
     await bot();
     game.u.uz0 = { ...game.u.uz };
     return true;

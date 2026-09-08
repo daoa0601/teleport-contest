@@ -6,6 +6,12 @@ import { A_WIS } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { OBJECT_BASES, OBJECT_NAMES } from './object_data.js';
 
+// C drawing.c:def_oc_syms, indexed by the object class from objclass.h.
+export const OBJECT_CLASS_SYMBOLS = [
+    '', ']', ')', '[', '=', '"', '(', '%', '!', '?', '+', '/', '$', '*',
+    '`', '0', '_', '.',
+];
+
 export const OBJECT_CLASS_LABELS = {
     2: 'Weapons',
     3: 'Armor',

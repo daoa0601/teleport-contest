@@ -11,11 +11,7 @@ import { MONSTER_NAME, monsterTypeName } from '../monster_data.js';
 import { game } from '../gstate.js';
 import { LuaTable, luaValueToJs } from './runtime.js';
 import { unwrapSelection } from './selection.js';
-
-export const OBJECT_CLASS_SYMBOLS = [
-    '', ']', ')', '[', '=', '"', '(', '%', '!', '?', '+', '/', '$', '*',
-    '`', '0', '_', '.',
-];
+import { OBJECT_CLASS_SYMBOLS } from '../object_knowledge.js';
 
 const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
     ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];

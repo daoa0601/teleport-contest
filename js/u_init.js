@@ -3,6 +3,7 @@
 
 import { game } from './gstate.js';
 import { finishInventoryAddition } from './hero_inventory.js';
+import { wishedObjectPresentation } from './objnam.js';
 import { setHeroSpecies } from './hero_species.js';
 import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
@@ -11,7 +12,7 @@ import { monsterGoodPosition } from './teleport_rules.js';
 import { MONSTER_MOVE, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
 import { armorSlotFor, findArmorClass, wearHeroArmor } from './armor.js';
 import { ensureQuestStatus } from './quest.js';
-import { A_CHA, A_CON, A_STR, COLNO, ROWNO } from './const.js';
+import { A_CHA, A_CON, A_STR, COLNO, ROWNO, LOST_NONE } from './const.js';
 import {
     ARROW, CROSSBOW_BOLT, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE,
     SHORT_SWORD,
@@ -899,9 +900,7 @@ export function finishStartingDiscoveries() {
 export function inventoryItem(raw, presentation = null) {
     let view = presentation || ITEM_PRESENTATION.get(raw.otyp)
         || (raw._startingInventory || raw.typeKnown
-            ? sourceKnownPresentation(raw) : null) || {
-        class: 'Other', name: `object ${raw.otyp}`, plural: `objects ${raw.otyp}`,
-    };
+            ? sourceKnownPresentation(raw) : null) || wishedObjectPresentation(raw.otyp);
     if (game.urole?.key === 'knight'
         && (raw.otyp === LONG_SWORD || raw.otyp === LANCE)) {
         view = { ...view, omitUncursed: true };
@@ -1002,6 +1001,9 @@ export function assignInventoryLetter(item) {
 }
 
 export function addInventoryItem(raw, presentation = null, observe = true) {
+    raw.how_lost = LOST_NONE;
+    raw.no_charge = false;
+    raw.ox = raw.oy = 0;
     let item = Object.assign(raw, inventoryItem(raw, presentation));
     if (observe) item.dknown = true;
     const merge = game.inventory.find(other => mergable(other, item, game));

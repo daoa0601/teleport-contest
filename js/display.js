@@ -43,11 +43,9 @@ import {
     BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE,
 } from './random_text_data.js';
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
-import { recordObjectEncounter } from './object_knowledge.js';
+import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.js';
 import { heroGoldAmount } from './hero_gold.js';
 
-const OBJECT_SYMBOLS = ['', ']', ')', '[', '=', '"', '(', '%', '!', '?',
-    '+', '/', '$', '*', '`', '0', '_', '.'];
 // C drawing.c:def_r_oc_syms.  Rogue deliberately resembles the older game:
 // armor uses ']', amulets ',', food ':', and coins share gems' '*'.
 const ROGUE_OBJECT_SYMBOLS = ['', ']', ')', ']', '=', ',', '(', ':', '!', '?',
@@ -57,7 +55,7 @@ const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
 
 function activeObjectSymbols() {
     return Is_rogue_level(game.u?.uz)
-        ? ROGUE_OBJECT_SYMBOLS : OBJECT_SYMBOLS;
+        ? ROGUE_OBJECT_SYMBOLS : OBJECT_CLASS_SYMBOLS;
 }
 
 const M3_INFRAVISIBLE = 0x0200;

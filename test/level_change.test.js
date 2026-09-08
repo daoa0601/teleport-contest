@@ -8,17 +8,18 @@ import { HOLE, NO_MINVENT, ROOM, STONE } from '../js/const.js';
 import { tameMonster } from '../js/dog.js';
 import { place_object, remove_object } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
+import { gotoLevel } from '../js/level_change.js';
 import { pushKeys } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { AMULET_OF_LIFE_SAVING, LEASH, LEATHER_GLOVES, OIL_LAMP } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, FOOD_RATION, LEASH, LEATHER_GLOVES, OIL_LAMP } from '../js/object_data.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer } from '../js/object_timers.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
-import { addInventoryObject, floorObject, untimedCorpse } from './support/game-objects.js';
+import { addInventoryObject, floorObject, knownObject, untimedCorpse } from './support/game-objects.js';
 import { installPolymorphedHero, installPunishedHero } from './support/hero-state.js';
 
 test('quest stairs require permission from the leader', async () => {
@@ -125,6 +126,35 @@ test('returning to a level burns out expired lamps and removes decayed corpses b
     assert.equal(lamp.lamplit, false, 'the lamp still burns after its fuel ran out');
     assert.equal(corpse.where, 'gone');
     assert.equal(game.level.objects[15][10].includes(corpse), false);
+});
+
+test('arriving downstairs picks up objects when autopickup is enabled', async () => {
+    const { destination } = freshConnectedLevels();
+    game.flags.pickup = true;
+    const ration = place_object(knownObject(FOOD_RATION), 12, 10, {
+        ...game, level: destination,
+    });
+    pushKeys(' '.repeat(8));
+
+    await rhack('>'.charCodeAt(0));
+
+    assert.equal(game.inventory.includes(ration), true);
+    assert.equal(destination.objects[12][10].includes(ration), false);
+});
+
+test('a sleeping hero does not pick up objects on level arrival', async () => {
+    const { destination } = freshConnectedLevels();
+    game.flags.pickup = true;
+    game._helplessTurns = 3;
+    game._helplessReason = 'sleeping off a magical draught';
+    const ration = place_object(knownObject(FOOD_RATION), 12, 10, {
+        ...game, level: destination,
+    });
+
+    await gotoLevel({ dnum: 0, dlevel: 2 }, { arrival: 'stairs' });
+
+    assert.equal(game.inventory.includes(ration), false);
+    assert.equal(destination.objects[12][10].includes(ration), true);
 });
 
 test('falling through a shaft hurts the hero for each level fallen', async () => {

@@ -8,7 +8,7 @@ import { pushKey, pushKeys } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_LIFE_SAVING, BOW, CHEST, CLUB, CORPSE, DART, FOOD_RATION,
-    HEAVY_IRON_BALL, LOADSTONE, ROCK, SCR_SCARE_MONSTER,
+    HEAVY_IRON_BALL, LEATHER_ARMOR, LOADSTONE, LUCKSTONE, ROCK, SCR_SCARE_MONSTER,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
@@ -17,6 +17,7 @@ import {
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { createStaffedShop } from './support/shop.js';
 
 function freshPickupGame() {
     freshPlayableRoom({ seed: 32001n });
@@ -71,6 +72,86 @@ test('a new pickup replaces the previous just-picked batch', async () => {
 
     assert.equal(club.pickup_prev, false);
     assert.equal(ration.pickup_prev, true);
+});
+
+test('weapons-only autopickup takes a weapon and leaves armor on the floor', async () => {
+    freshPickupGame();
+    Object.assign(game.flags, { pickup: true, pickup_types: ')' });
+    const darts = floorObject(DART, 11, 10, { quantity: 3 });
+    const armor = floorObject(LEATHER_ARMOR, 11, 10);
+    pushKeys(' '.repeat(8));
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(game.inventory.includes(darts), true);
+    assert.equal(game.inventory.includes(armor), false);
+    assert.equal(game.level.objects[11][10].includes(armor), true);
+});
+
+test('autopickup takes the hero\'s belongings in a shop but leaves stock for sale', async () => {
+    freshPickupGame();
+    const { shopkeeper } = await createStaffedShop({ keeperX: 14 });
+    game.flags.pickup = true;
+    const stock = floorObject(FOOD_RATION, 11, 10);
+    const belongings = floorObject(DART, 11, 10, { no_charge: true });
+    pushKeys(' '.repeat(12));
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(game.inventory.includes(belongings), true);
+    assert.equal(belongings.no_charge, false);
+    assert.equal(game.level.objects[11][10].includes(stock), true);
+    assert.equal(shopkeeper.eshk.bill.length, 0);
+});
+
+for (const [method, howLost, setting, picksUp] of [
+    ['thrown', 1, 'pickup_thrown', true],
+    ['stolen', 3, 'pickup_stolen', true],
+    ['dropped', 2, 'dropped_nopick', false],
+]) {
+    test(`autopickup honors the option for ${method} items before the class filter`, async () => {
+        freshPickupGame();
+        Object.assign(game.flags, {
+            pickup: true, pickup_types: picksUp ? '$' : ')', [setting]: true,
+        });
+        const darts = floorObject(DART, 11, 10, { how_lost: howLost });
+        pushKeys(' '.repeat(8));
+
+        await rhack('l'.charCodeAt(0));
+
+        assert.equal(game.inventory.includes(darts), picksUp);
+        assert.equal(game.level.objects[11][10].includes(darts), !picksUp);
+    });
+}
+
+test('picking up more luckstones updates luck when they merge into a carried stack', async () => {
+    freshPickupGame();
+    addInventoryObject(LUCKSTONE, { quantity: 3, cursed: true });
+    const carried = addInventoryObject(LUCKSTONE, { quantity: 2 });
+    floorObject(LUCKSTONE, 10, 10, { quantity: 2 });
+    assert.equal(game.u.moreluck, -3);
+
+    await rhack(','.charCodeAt(0));
+
+    assert.equal(carried.quan, 4);
+    assert.equal(game.u.moreluck, 3);
+});
+
+test('picking up several stacks applies the combined weight limit', async () => {
+    freshPickupGame();
+    addCarriedRocks(150);
+    Object.assign(game.flags, { pickup: true, pickup_burden: 5 });
+    floorObject(DART, 11, 10, { quantity: 100, nomerge: true });
+    floorObject(DART, 11, 10, { quantity: 100, nomerge: true });
+    pushKeys(' '.repeat(12));
+
+    await rhack('l'.charCodeAt(0));
+
+    const carried = game.inventory.filter(object => object.otyp === DART);
+    assert.equal(carried.reduce((count, object) => count + object.quan, 0), 149);
+    const remaining = game.level.objects[11][10];
+    assert.equal(remaining.length, 1);
+    assert.equal(remaining[0].quan, 51);
 });
 
 test('picking up a bones bow adjusts it for a left-handed hero', async () => {

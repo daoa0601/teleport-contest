@@ -1056,14 +1056,10 @@ export function mkgold(amount, x, y, state = game) {
         existing.owt = coinStackWeight(existing.quan);
         return existing;
     }
-    // mksobj_at(GOLD_PIECE) calls next_ident. Gold skips normal object
-    // initialization but is still linked into the floor-object chain.
-    const objectId = nextIdent();
-    return place_object({
-        otyp: GOLD_PIECE, oclass: COIN_CLASS, o_id: objectId, ox: x, oy: y,
-        quan: amount, quantity: amount, owt: coinStackWeight(amount),
-        cursed: false, blessed: false,
-    }, x, y, state);
+    const gold = mksobj(GOLD_PIECE, true, false);
+    gold.quan = gold.quantity = amount;
+    gold.owt = coinStackWeight(amount);
+    return place_object(gold, x, y, state);
 }
 
 const PM_LICHEN = 158;

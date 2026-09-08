@@ -23,7 +23,7 @@ import {
     OBJECT_PROPERTY_ID, OBJECT_SMALL_DAMAGE, OBJECT_TOUGH, OBJECT_UNIQUE,
     OBJECT_USES_KNOWN, OBJECT_WEIGHT,
 } from '../object_data.js';
-import { objectClassForType } from '../object_knowledge.js';
+import { OBJECT_CLASS_SYMBOLS, objectClassForType } from '../object_knowledge.js';
 import { isPoisonableObject } from '../object_properties.js';
 import {
     OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer,
@@ -32,7 +32,7 @@ import {
 import { readObjectName } from '../objnam.js';
 import { addInventoryItem } from '../u_init.js';
 import { objectWeight } from '../weight.js';
-import { OBJECT_CLASS_SYMBOLS, objectTypeForName } from './des.js';
+import { objectTypeForName } from './des.js';
 import { LuaTable, LuaUserdata, luaTableToObject, objectToLuaTable } from './runtime.js';
 
 const LOCATIONS = {

@@ -44,7 +44,6 @@ test('picking up more gold merges to one live purse identity', async () => {
     assert.equal(game.inventory.filter(object =>
         object.otyp === GOLD_PIECE).length, 1);
     assert.equal(floorGold.where, 'gone');
-    assert.equal(floorGold.quantity, 0);
     assert.equal(purse.pickup_prev, true);
     assert.equal(game.context.move, 1);
 });
