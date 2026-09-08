@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { NO_MINVENT, POOL, STONE } from '../js/const.js';
+import { NO_MINVENT, PIT, POOL, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
@@ -19,6 +19,7 @@ import { addInventoryObject, chargedWand } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { installSwallowedHero } from './support/hero-state.js';
+import { addTrap } from './support/level-state.js';
 
 function freshTurnArena() {
     freshGameplayRoom();
@@ -39,6 +40,23 @@ async function runUntilInput(inputGate, maxCycles) {
     const inputNeeded = inputGate.waitUntilBlocked().then(() => true);
     return Promise.race([turns, inputNeeded]);
 }
+
+test('a giant escapes its pit and continues moving during a game turn', async () => {
+    freshTurnArena();
+    const giant = await createMonsterAt('giant', 13, 10);
+    giant.mpeaceful = 1;
+    giant.mtrapped = 1;
+    giant.movement = 12;
+    const trap = addTrap(game.level, PIT, 13, 10);
+    pushKeys('.                                .');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(giant.mtrapped, 0);
+    assert.equal(trap.tseen, true);
+    assert.ok(giant.mx !== 13 || giant.my !== 10);
+});
 
 test('an engulfing monster releases the hero when its hold expires during a turn', async () => {
     freshTurnArena();

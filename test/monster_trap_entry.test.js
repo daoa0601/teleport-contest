@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    ANTI_MAGIC, BEAR_TRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, TELEP_TRAP,
+    ANTI_MAGIC, BEAR_TRAP, PIT, ROLLING_BOULDER_TRAP, RUST_TRAP, SPIKED_PIT, TELEP_TRAP,
     W_ARMF, W_ARMH, WEB,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
@@ -27,6 +27,50 @@ function monsterAtTrap(trapType, { monster = {}, trap = {} } = {}) {
         trap,
     });
 }
+
+test('a huge monster climbs out of a pit and exposes the trap', async () => {
+    const { monster, trap } = await freshMonsterTrapRoom(PIT, {
+        monster: { species: 'giant', mtrapped: 1 },
+    });
+    const messages = [];
+
+    const action = triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, {
+        publish: async message => messages.push(message),
+    });
+
+    assert.equal(monster.mtrapped, 0);
+    assert.equal(trap.tseen, true);
+    assert.ok(messages.some(message => /climbs easily out of the pit/.test(message)));
+});
+
+test('a rust monster eats the bear trap holding it', async () => {
+    const { monster, trap, level } = await freshMonsterTrapRoom(BEAR_TRAP, {
+        monster: { species: 'rust monster', mtrapped: 1 },
+    });
+    initRng(1n);
+
+    const action = triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, { publish: async () => {} });
+
+    assert.equal(monster.mtrapped, 0);
+    assert.equal(level.traps.includes(trap), false);
+    assert.equal(monster.meating, 5);
+});
+
+test('a rust monster eats pit spikes but remains in the pit', async () => {
+    const { monster, trap } = await freshMonsterTrapRoom(SPIKED_PIT, {
+        monster: { species: 'rust monster', mtrapped: 1 },
+    });
+    initRng(1n);
+
+    const action = triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, { publish: async () => {} });
+
+    assert.equal(trap.ttyp, PIT);
+    assert.equal(monster.mtrapped, 1);
+    assert.equal(monster.meating, 5);
+});
 
 test('a visible monster becomes caught in a web', async () => {
     const { monster, trap } = await monsterAtTrap(WEB);

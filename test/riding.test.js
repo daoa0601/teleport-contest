@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { P_RIDING } from '../js/const.js';
+import { BEAR_TRAP, P_RIDING, TT_BEARTRAP } from '../js/const.js';
 import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { SADDLE } from '../js/object_data.js';
@@ -13,6 +13,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { addTrap } from './support/level-state.js';
 
 test('an animal body cannot mount a saddled pony', async () => {
     freshObjectRoom({ role: 'knight' });
@@ -188,4 +189,22 @@ test('a medium humanoid form can stay on the same pony', async () => {
     assert.equal(game.u.usteed, pony);
     assert.equal(pony.mx, game.u.ux);
     assert.equal(pony.my, game.u.uy);
+});
+
+test('dismounting leaves the pony in the bear trap without striking it again', async () => {
+    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    const trap = addTrap(level, BEAR_TRAP, pony.mx, pony.my);
+    game.u.utrap = 5;
+    game.u.utraptype = TT_BEARTRAP;
+    const health = pony.mhp;
+
+    await runExtendedCommand('ride', ' ');
+
+    assert.equal(game.u.usteed, null);
+    assert.equal(game.u.utrap, 0);
+    assert.equal(pony.mhp, health);
+    assert.ok(level.monsters.includes(pony));
+    assert.equal(trap.tseen, true);
 });

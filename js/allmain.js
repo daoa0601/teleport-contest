@@ -2365,12 +2365,6 @@ function reluctantPetMessage(monster, movement) {
     } ${objectName}.`;
 }
 
-function monsterTrapEscapeMessage(monster) {
-    if (monster?.mnum === 100)
-        return 'The saddled pony pulls free of the bear trap.';
-    return 'The monster pulls free of the bear trap.';
-}
-
 function monsterAttackMessage(monster, attack, previousAttack = null) {
     if (attack.effect === 'engulf-tick'
         || attack.effect === 'item-theft') return null;
@@ -3585,6 +3579,19 @@ function restoreUnvisitedMonsterMovement(monsterScan, actorIndex) {
     }
 }
 
+async function resumeTrappedMonster(action) {
+    if (!action.movement?.escapingTrap) return;
+    game._deferVisibleMonsterContact = true;
+    try {
+        await resumeDeferredMonsterTrap(action, game, {
+            publish: queueTurnMessage,
+            describeMonster: visibleMonsterSubject,
+        });
+    } finally {
+        game._deferVisibleMonsterContact = false;
+    }
+}
+
 async function executeLiveQuietMonsterScan(monsterScan) {
     // Run one actor at a time so a tty --More-- inside an action suspends the
     // source transaction before later actors or post-message RNG execute.
@@ -3696,6 +3703,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         game._deferVisibleMonsterContact = true;
         const [action] = runQuietMonsterActions([actor], game);
         game._deferVisibleMonsterContact = false;
+        await resumeTrappedMonster(action);
         let { monster, movement } = action;
         if (movement?.spellCast?.cast) {
             // monmove.c's undirected cast bypasses m_move().  The casting
@@ -3778,6 +3786,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             } finally {
                 game._deferVisibleMonsterContact = false;
             }
+            await resumeTrappedMonster(action);
             movement = action.movement;
         }
         if (movement?.deferredPetMove) {
@@ -3972,8 +3981,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 );
             }
         }
-        if (movement?.trapEscape?.escaped && monsterIsSeen)
-            await queueTurnMessage(monsterTrapEscapeMessage(monster));
         if (movement?.trap?.kind === 'pit-trap'
             && movement.trap.visible) {
             const event = movement.trap;

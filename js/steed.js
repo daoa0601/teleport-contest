@@ -44,6 +44,7 @@ import {
 import { applyHeroLocationEffects, heroCouldMoveOntoBoulder } from './cmd.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 
 const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
@@ -462,6 +463,7 @@ export async function dismountHero(
     if (!steed) return { dismounted: false };
 
     const previousCapacity = nearCapacity(state);
+    const wasTrapped = !!hero.utrap;
     let repairLegs = hero._woundedLegTurns > 0;
     let landing = landingSpot(state, steed, reason, random);
     hero.usteed = null;
@@ -555,6 +557,12 @@ export async function dismountHero(
                         .some(object => object.otyp === BOULDER)) {
                     hero.uconduct.sokocheat = (hero.uconduct.sokocheat || 0) + 1;
                     hero.uluck = Math.max(-13, (hero.uluck || 0) - 1);
+                }
+                if (wasTrapped) {
+                    const action = triggerImmediateMonsterTrap(steed, state);
+                    await resumeDeferredMonsterTrap(action, state, {
+                        publish: announce, describeMonster: steedSubject,
+                    });
                 }
             }
         } else if (!moveSteedOffHero(state, steed, random)) {

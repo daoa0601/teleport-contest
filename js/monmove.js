@@ -5,6 +5,7 @@
 import { d, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
 import { beginPetRangedTurn } from './dogmove.js';
+import { tryMonsterTrapEscape } from './monster_trap_escape.js';
 import {
     beginMonsterSpitAttack, monsterSpitAttack, resolveMonsterSpitFlight,
 } from './monster_spit.js';
@@ -4104,22 +4105,6 @@ function trapAtMonster(monster, state) {
     return trapAt(state, monster.mx, monster.my);
 }
 
-// C ref: trap.c mintrap()/trapeffect_bear_trap().  An actor already held by
-// a bear trap gets its 1-in-40 escape attempt at the start of m_move(); one
-// which has just selected a destination triggers that square from postmov().
-// Keep d(2,4) as one dice operation rather than two visible rn2(4) calls.
-function releaseFromMonsterTrap(monster, state, random, calls) {
-    const trap = trapAtMonster(monster, state);
-    if (!trap) {
-        monster.mtrapped = 0;
-        return { held: false, escaped: false };
-    }
-    if (recordRandom(random, calls, 40) !== 0)
-        return { held: true, escaped: false, trap };
-    monster.mtrapped = 0;
-    return { held: false, escaped: true, trap };
-}
-
 function placeAndStackTrapMissile(object, state, x, y) {
     if (state === game) place_object(object, x, y);
     else placeThrownObject(state, object, x, y);
@@ -4618,6 +4603,10 @@ export function triggerImmediateMonsterTrap(
         moved: false,
         immediateTrap: true,
     };
+    if (monster.mtrapped) {
+        movement.escapingTrap = true;
+        return { monster, movement, event: null, calls };
+    }
     const event = triggerMonsterTrap(
         monster, state, movement, rn2, d, rnd, calls,
     );
@@ -7200,6 +7189,21 @@ export async function resumeDeferredMonsterTrap(
     } = {},
 ) {
     const movement = action?.movement;
+    if (movement?.escapingTrap) {
+        await tryMonsterTrapEscape(action.monster, state, {
+            random, publish, describeMonster,
+        });
+        delete movement.escapingTrap;
+        if (!movement.immediateTrap) {
+            const held = action.monster.mtrapped ? { ...movement, trapped: true } : null;
+            const next = moveMonsterAfterTrap(
+                action.monster, state, random, rollDice, rollOne,
+                action.calls, held,
+            );
+            action.movement = next.movement;
+        }
+        return action;
+    }
     const event = movement?.trap;
     if (!movement?.deferredAfterMonsterTrap) return action;
     delete movement.deferredAfterMonsterTrap;
@@ -7568,23 +7572,30 @@ export function quietMonsterActionRng(
         monster, state, random, calls,
     );
 
-    let trapRelease = null;
-    let movement = movementSpell?.cast ? {
+    const movement = movementSpell?.cast ? {
         oldx: monster.mx, oldy: monster.my,
         x: monster.mx, y: monster.my, moved: false,
         spellCast: movementSpell,
         deferredAfterMovementSpell: true,
     } : null;
     if (!movement && monster.mtrapped) {
-        trapRelease = releaseFromMonsterTrap(monster, state, random, calls);
-        if (trapRelease.held) {
-            movement = {
+        return {
+            calls,
+            movement: {
                 oldx: monster.mx, oldy: monster.my,
                 x: monster.mx, y: monster.my, moved: false,
-                trapped: true,
-            };
-        }
+                escapingTrap: true,
+            },
+        };
     }
+    return moveMonsterAfterTrap(
+        monster, state, random, rollDice, rollOne, calls, movement,
+    );
+}
+
+function moveMonsterAfterTrap(
+    monster, state, random, rollDice, rollOne, calls, movement,
+) {
     // monmove.c:m_move() lets a conceal-capable actor retain a valid
     // floor-object hiding place before visibility setup or destination
     // selection.  MMOVE_NOTHING still returns to dochug(), which performs
@@ -7628,7 +7639,6 @@ export function quietMonsterActionRng(
                 monster, state, random, rollDice, rollOne, calls,
             );
         }
-        if (trapRelease?.escaped) movement.trapEscape = trapRelease;
         if (movement.deferredPetMove
             || movement.deferredPetEating
             || movement.deferredPetRangedNoise
@@ -7665,7 +7675,6 @@ export function resumeDeferredRestrictedTenguTeleport(
         action.monster, state, random, rollDice, rollOne, action.calls,
         { afterRestrictedTenguTeleport: true },
     );
-    if (deferred.trapEscape) movement.trapEscape = deferred.trapEscape;
     action.movement = movement;
     completeMovedMonsterAction(
         action.monster, movement, state, random, rollDice, rollOne,
