@@ -9,22 +9,34 @@ import {
 } from './display.js';
 import { showIdentifiedInventory } from './invent.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
-import { showDisclosureOverlay } from './windows.js';
+import { showDisclosureOverlay, showTextPages } from './windows.js';
+import { artifactById } from './artifacts.js';
 import { MONSTER_DIFFICULTY, MONSTER_NAME } from './monster_data.js';
 import { hasRecordedMonsterDeaths } from './monster_vitals.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
-import { rn2 } from './rng.js';
-import { recordObjectKnowledge } from './object_knowledge.js';
+import { d, rn2 } from './rng.js';
+import { mksobj } from './mklev.js';
+import { adjustedMonsterLevel } from './monster_hit_points.js';
+import { deleteObject } from './object_delete.js';
+import { makePlural } from './object_grammar.js';
+import { objectName } from './objnam.js';
+import { objectClassForType, recordObjectKnowledge } from './object_knowledge.js';
 import { rebasePrayerAfterLifeSaving } from './pray.js';
-import { depth } from './hacklib.js';
+import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
+import { deepestLevelReached, depth } from './hacklib.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { place_object, stack_object } from './floor_object.js';
 import {
-    A_CON, A_WIS, ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, Upolyd, isok,
+    A_CON, A_WIS, ACCESSIBLE, DOOR, D_CLOSED, D_LOCKED, Is_astralevel,
+    STRAT_WAITFORU, Upolyd, isok,
 } from './const.js';
-import { AMULET_OF_LIFE_SAVING } from './object_data.js';
+import {
+    AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING,
+    CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES,
+    SPE_BOOK_OF_THE_DEAD,
+} from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { moreUntilDismissed } from './tty_prompts.js';
 import { promptYesNo } from './query.js';
@@ -33,6 +45,9 @@ import {
 } from './death_remains.js';
 
 export const SCORE_RECORD_STORAGE_KEY = 'teleport-contest:record:v1';
+
+const AMULET_CLASS = 5;
+const GEM_CLASS = 13;
 
 function isCurrentBranchLevel() {
     const here = game.u?.uz || { dnum: 0, dlevel: 1 };
@@ -270,7 +285,7 @@ function overviewLines(killer, deathVerb = 'killed', deathCause = null) {
         const current = (game.u?.uz?.dnum ?? 0) === 0
             && (game.u?.uz?.dlevel ?? 1) === level;
         lines.push(`   Level ${level}:${current ? ' <- You were here.' : ''}`);
-        if (current) {
+        if (current && !['quit', 'escaped', 'ascended'].includes(deathVerb)) {
             lines.push('      Final resting place for');
             lines.push(`         you, ${cause}.`);
         }
@@ -278,31 +293,22 @@ function overviewLines(killer, deathVerb = 'killed', deathCause = null) {
     return lines;
 }
 
-// C ref: dungeon.c:deepest_lev_reached(FALSE).  The JS cache is the
-// persistent record of visited floors; project every dungeon-local cache key
-// through depth() before comparing it with the current floor.
-function deepestVisitedDepth() {
-    let deepest = depth(game.u?.uz);
-    for (const key of game._levelCache?.keys?.() || []) {
-        const [dnum, dlevel] = String(key).split(':').map(Number);
-        if (!Number.isInteger(dnum) || !Number.isInteger(dlevel)) continue;
-        deepest = Math.max(deepest, depth({ dnum, dlevel }));
-    }
-    return deepest;
-}
-
-function deathSummaryValues() {
+function gameSummaryValues(outcome) {
     const visibleGold = heroGoldAmount(game);
     const gold = visibleGold + hiddenGold(game, true);
     const initialGold = game._initialGoldCount || 0;
     const gain = Math.max(0, gold - initialGold);
     const currentDepth = depth(game.u?.uz);
-    const deepest = deepestVisitedDepth();
+    const deepest = deepestLevelReached();
     let depthBonus = 50 * (deepest - 1);
     if (deepest > 20)
         depthBonus += 1000 * (deepest > 30 ? 10 : deepest - 20);
-    const score = (game.u?.urexp || 0) + gain - Math.trunc(gain / 10)
-        + depthBonus;
+    let score = (game.u?.urexp || 0) + gain + depthBonus;
+    if (outcome === 'died') score -= Math.trunc(gain / 10);
+    const original = game.u.ualignbase?.[1] ?? game.u.ualign.type;
+    const current = game.u.ualignbase?.[0] ?? game.u.ualign.type;
+    if (outcome === 'ascended' && game.u.ualign.type === original)
+        score += current === original ? score : Math.trunc(score / 2);
     return { gold, score, depth: currentDepth, moves: game.moves ?? 1 };
 }
 
@@ -434,11 +440,11 @@ function renderBlankDeathMore() {
     game.nhDisplay?.setCursor(8, 23);
 }
 
-function renderWizardScoreNotice() {
+function renderScoreModeNotice() {
     game.nhDisplay?.clearScreen();
     terminalLine(
         1, 0,
-        'Since you were in wizard mode, the score list will not be checked.',
+        `Since you were in ${game.flags.debug ? 'wizard' : 'explore'} mode, the score list will not be checked.`,
     );
     game.nhDisplay?.setCursor(0, 2);
 }
@@ -576,7 +582,7 @@ function currentScoreRecord(summary, {
         points: summary.score,
         deathdnum: game.u?.uz?.dnum ?? 0,
         deathlev: summary.depth,
-        maxlvl: deepestVisitedDepth(),
+        maxlvl: deepestLevelReached(true),
         hp: game.u?.uhp ?? 0,
         maxhp: game.u?.uhpmax ?? 1,
         ...scoreIdentity(),
@@ -589,7 +595,7 @@ function currentScoreRecord(summary, {
 
 function updateScoreRecord(current) {
     const prior = loadScoreRecords();
-    if (current.points < 1) {
+    if (current.points < 1 || game.flags.debug || game.flags.explore || game.discover) {
         return {
             records: prior,
             rank: prior.length + 1,
@@ -633,6 +639,12 @@ function scoreEntryText(record, rank) {
     const points = String(record.points || 0).padStart(10);
     let line = `${rankText} ${points}  ${record.name.slice(0, 10)}-${
         record.role}-${record.race}-${record.gender}-${record.align} `;
+    if (record.outcome === 'ascended')
+        return `${line}ascended to demigod${record.gender === 'Fem' ? 'dess' : ''}-hood.`;
+    if (record.outcome === 'escaped') {
+        const disgrace = record.death.includes('celestial disgrace') ? 'in celestial disgrace ' : '';
+        return `${line}escaped the dungeon ${disgrace}[max level ${record.maxlvl}].`;
+    }
     if (record.outcome === 'quit') {
         line += `quit in ${record.dungeon} on level ${record.deathlev}`;
         if (record.deathlev !== record.maxlvl)
@@ -774,34 +786,33 @@ function doneObjectCleanup() {
     game._thrownObject = null;
 }
 
-// The caller owns the fatal combat/RNG transaction and has already displayed
-// the death line.  It may pass an explicit inventory answer for older callers;
-// otherwise this function applies flags.end_disclose policy before owning the
-// remaining windows and really_done()'s tombstone/score tail.  It deliberately
-// performs no random calls.
-export async function finishOrdinaryDeath({
-    killer, possessionAnswer = null, deathVerb = 'died', deathCause = null,
-    deathType = null,
-}) {
-    if (deathType !== null) setHeroRemainsFromDeath(deathType, game);
-    game.program_state.gameover = true;
-    game._deathKiller = killer;
-    doneObjectCleanup();
-
+// Disclosure is shared by death, quitting, escape, and ascension.
+async function discloseGame({
+    killer = '', deathVerb = 'died', deathCause = null, possessionAnswer = null,
+} = {}) {
+    let livingCat = false;
+    for (const object of game.inventory) {
+        if (!isQuantumBox(object)) continue;
+        if (livingCat) object.spe = 0;
+        else {
+            await observeQuantumCat(object, { makeCat: false, showMessage: false });
+            livingCat = isQuantumBox(object);
+        }
+    }
     if (possessionAnswer === null) {
         possessionAnswer = await disclosureAnswer(
             'i', 'Do you want your possessions identified? [ynq] (n)',
         );
     }
     if (possessionAnswer === 'y') await showIdentifiedInventory();
-    if (possessionAnswer === 'q') return;
+    if (possessionAnswer === 'q') return false;
 
     const attributes = await disclosureAnswer(
         'a',
         'Do you want to see your attributes? [ynq] (n)',
     );
     if (attributes === 'y') await showFinalAttributes();
-    if (attributes === 'q') return;
+    if (attributes === 'q') return false;
 
     if (hasRecordedMonsterDeaths()) {
         const vanquished = await disclosureAnswer(
@@ -810,7 +821,7 @@ export async function finishOrdinaryDeath({
         );
         if (vanquished === 'y' || vanquished === 'a')
             await showDisclosureOverlay(vanquishedLines());
-        if (vanquished === 'q') return;
+        if (vanquished === 'q') return false;
     }
 
     const conduct = await disclosureAnswer(
@@ -819,7 +830,7 @@ export async function finishOrdinaryDeath({
     );
     if (conduct === 'y')
         await showDisclosureOverlay(finalConductLines());
-    if (conduct === 'q') return;
+    if (conduct === 'q') return false;
 
     const overview = await disclosureAnswer(
         'o',
@@ -832,17 +843,38 @@ export async function finishOrdinaryDeath({
             },
         );
     }
-    if (overview === 'q') return;
+    if (overview === 'q') return false;
+
+    return true;
+}
+
+export async function finishOrdinaryDeath({
+    killer, possessionAnswer = null, deathVerb = 'died', deathCause = null,
+    deathType = null,
+}) {
+    if (deathType !== null) setHeroRemainsFromDeath(deathType, game);
+    game.program_state.gameover = true;
+    game._deathKiller = killer;
+    doneObjectCleanup();
+
+    const showSummary = await discloseGame({ killer, deathVerb, deathCause, possessionAnswer });
 
     await createBonesFromDeath(promptDeathQuestion);
 
-    const summary = deathSummaryValues();
+    const summary = gameSummaryValues('died');
+    game.u.urexp = summary.score;
+    if (!showSummary) {
+        const current = currentScoreRecord(summary, { killer, deathVerb, deathCause });
+        updateScoreRecord(current);
+        game.context.move = 0;
+        return;
+    }
     renderDeathSummaryPage(killer, summary, { deathVerb, deathCause });
     await waitForCurrentMore();
     renderBlankDeathMore();
     await waitForCurrentMore();
     if (game._tutorialActive) renderTutorialScoreEntry(killer);
-    else if (game.flags?.debug) renderWizardScoreNotice();
+    else if (game.flags.debug || game.flags.explore || game.discover) renderScoreModeNotice();
     else {
         const current = currentScoreRecord(summary, {
             killer, deathVerb, deathCause,
@@ -871,49 +903,136 @@ export async function doquit() {
 // score-list handoff as one terminal transaction.
 export async function finishOrdinaryQuit() {
     game.program_state.gameover = true;
-
-    const possessionAnswer = await disclosureAnswer(
-        'i', 'Do you want your possessions identified? [ynq] (n)',
-    );
-    if (possessionAnswer === 'y') await showIdentifiedInventory();
-    if (possessionAnswer === 'q') return;
-
-    const attributes = await disclosureAnswer(
-        'a', 'Do you want to see your attributes? [ynq] (n)',
-    );
-    if (attributes === 'y') await showFinalAttributes();
-    if (attributes === 'q') return;
-
-    if (hasRecordedMonsterDeaths()) {
-        const vanquished = await disclosureAnswer(
-            'v',
-            'Do you want an account of creatures vanquished? [ynaq] (n)',
-        );
-        if (vanquished === 'y' || vanquished === 'a')
-            await showDisclosureOverlay(vanquishedLines());
-        if (vanquished === 'q') return;
-    }
-
-    const conduct = await disclosureAnswer(
-        'c', 'Do you want to see your conduct? [ynq] (n)',
-    );
-    if (conduct === 'y') await showDisclosureOverlay(finalConductLines());
-    if (conduct === 'q') return;
-
-    const overview = await disclosureAnswer(
-        'o', 'Do you want to see the dungeon overview? [ynq] (n)',
-    );
-    if (overview === 'y') {
-        await showDisclosureOverlay(overviewLines('', 'quit'), {
-            marker: '(end)', minWidth: 39,
-        });
-    }
-    if (overview === 'q') return;
-
-    const summary = deathSummaryValues();
-    renderQuitSummaryPage(summary);
-    await waitForCurrentMore();
+    const showSummary = await discloseGame({ deathVerb: 'quit' });
+    const summary = gameSummaryValues('quit');
+    game.u.urexp = summary.score;
     const current = currentScoreRecord(summary, { outcome: 'quit' });
-    renderScoreList(current, updateScoreRecord(current));
+    const update = updateScoreRecord(current);
+    if (showSummary) {
+        renderQuitSummaryPage(summary);
+        await waitForCurrentMore();
+        if (game.flags.debug || game.flags.explore || game.discover) renderScoreModeNotice();
+        else renderScoreList(current, update);
+    }
     game.context.move = 0;
+}
+
+export async function finishLivingGame(outcome) {
+    game.program_state.gameover = true;
+    const showSummary = await discloseGame({ deathVerb: outcome });
+    const pets = takeEscapingPets();
+    const summary = gameSummaryValues(outcome);
+    const possessions = collectFinalPossessions();
+    summary.score += possessions.points;
+    for (const pet of pets) summary.score += pet.mhp;
+    const names = pets.map(pet => pet.name || `the ${MONSTER_NAME[pet.mnum]}`);
+    if (possessions.quantumCat) {
+        summary.score += d(adjustedMonsterLevel(MONSTER_NAME.indexOf('housecat')), 8);
+        names.push("Schroedinger's cat");
+    }
+    game.u.urexp = summary.score;
+    const disgrace = outcome === 'escaped' && Is_astralevel(game.u.uz);
+    const current = currentScoreRecord(summary, {
+        outcome, deathCause: outcome + (disgrace ? ' (in celestial disgrace)' : ''),
+    });
+    const update = updateScoreRecord(current);
+    if (showSummary) {
+        const title = outcome === 'ascended'
+            ? (game.flags.female ? 'Demigoddess' : 'Demigod') : roleName();
+        const lines = [`${roleGoodbye()} ${game.plname || 'player'} the ${title}...`, ''];
+        const company = ['You', ...names].join(' and ');
+        if (names.length) lines.push(company);
+        const action = outcome === 'ascended' ? 'went to your reward' : 'escaped from the dungeon';
+        lines.push(`${names.length ? '' : 'You '}${action} with ${summary.score} point${summary.score === 1 ? '' : 's'},`);
+        lines.push(...finalPossessionLines(possessions));
+        lines.push(`and ${summary.gold} piece${summary.gold === 1 ? '' : 's'} of gold, after ${summary.moves} move${summary.moves === 1 ? '' : 's'}.`);
+        lines.push(`You were level ${game.u.ulevel} with a maximum of ${game.u.uhpmax} hit points when you ${outcome}.`);
+        const pages = [];
+        for (let first = 0; first < lines.length; first += 22) {
+            const page = lines.slice(first, first + 22);
+            while (page.length < 23) page.push('');
+            page.push('--More--');
+            pages.push({ lines: page, cursor: [8, 23] });
+        }
+        await showTextPages(pages, { validKeys: [27, 32, 10, 13] });
+        if (game.flags.debug || game.flags.explore || game.discover) renderScoreModeNotice();
+        else renderScoreList(current, update);
+    }
+    game.context.move = 0;
+}
+
+function takeEscapingPets() {
+    const pets = [];
+    for (const monster of game.level.monsters) {
+        if (!(monster.mtame > 0) || monster.dead || monster.mhp <= 0) continue;
+        monster.mtrapped = monster.meating = monster.msleeping = monster.mfrozen = 0;
+        monster.mcanmove = 1;
+        if (monster.mstrategy & STRAT_WAITFORU) continue;
+        if (Math.max(Math.abs(monster.mx - game.u.ux), Math.abs(monster.my - game.u.uy)) > 1) continue;
+        if ((monster.minvent || []).some(object => object.otyp === AMULET_OF_YENDOR)) continue;
+        pets.unshift(monster);
+        monster.mx = monster.my = 0;
+        monster.mlstmv = game.moves;
+    }
+    game.level.monsters = game.level.monsters.filter(monster => !pets.includes(monster));
+    return pets;
+}
+
+function collectFinalPossessions() {
+    const artifacts = [];
+    const valuables = new Map();
+    const lastGlass = OBJECT_NAMES.findLastIndex(name => name?.startsWith('worthless piece of'));
+    let points = 0;
+    const quantumCat = game.inventory.some(isQuantumBox);
+    function visit(objects) {
+        for (const object of objects) {
+            const artifact = artifactById(object.oartifact);
+            if (artifact || [BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD].includes(object.otyp)) {
+                const value = artifact ? artifact.cost || 100 * OBJECT_COST[object.otyp]
+                    : OBJECT_COST[object.otyp];
+                const score = Math.trunc(value * 5 / 2);
+                points += score;
+                artifacts.push({ object, value, points: score,
+                    name: artifact?.name || `The ${OBJECT_NAMES[object.otyp]}` });
+            } else if (!object.contents?.length
+                && (object.oclass === AMULET_CLASS
+                    || object.oclass === GEM_CLASS && object.otyp <= lastGlass)) {
+                const type = object.oclass === GEM_CLASS && object.otyp > JADE ? JADE + 1 : object.otyp;
+                valuables.set(type, (valuables.get(type) || 0) + object.quan);
+            }
+            if (object.contents?.length) visit(object.contents);
+        }
+    }
+    visit(game.inventory);
+    const groups = [...valuables].sort(([a, countA], [b, countB]) => {
+        const aIsGem = objectClassForType(a) === GEM_CLASS;
+        const bIsGem = objectClassForType(b) === GEM_CLASS;
+        return Number(aIsGem) - Number(bIsGem) || countB - countA || a - b;
+    });
+    for (const [type, count] of groups) points += count * OBJECT_COST[type];
+    return { points, artifacts, valuables: groups, quantumCat };
+}
+
+function finalPossessionLines(possessions) {
+    const lines = possessions.artifacts.map(({ object, value, points, name }) => {
+        recordObjectKnowledge(object.otyp);
+        object.known = object.dknown = object.bknown = object.rknown = true;
+        return `${name} (worth ${value} zorkmids and ${points} points)`;
+    });
+    for (const [type, count] of possessions.valuables) {
+        const worth = count * OBJECT_COST[type];
+        const prefix = String(count).padStart(8);
+        if (type === JADE + 1) {
+            lines.push(`${prefix} worthless piece${count === 1 ? '' : 's'} of colored glass,`);
+        } else {
+            const object = mksobj(type, false, false);
+            object.known = object.dknown = true;
+            object.quan = count;
+            recordObjectKnowledge(type);
+            const name = objectName(object);
+            lines.push(`${prefix} ${count === 1 ? name : makePlural(name)} (worth ${worth} zorkmids),`);
+            deleteObject(object);
+        }
+    }
+    return lines;
 }
