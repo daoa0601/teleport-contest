@@ -24,10 +24,11 @@ import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { addInventoryItem } from './u_init.js';
 import { untrap } from './untrap.js';
 import { objectWeight } from './weight.js';
+import { chooseObjectToCharge, rechargeObject } from './recharge.js';
 
 const SUPPORTED_POWERS = new Set([
     'healing', 'energy-boost', 'enlightening', 'create-ammo',
-    'invisibility', 'conflict', 'untrap',
+    'invisibility', 'conflict', 'untrap', 'charge-object',
 ]);
 
 const PROPERTY_POWERS = Object.freeze({
@@ -198,6 +199,17 @@ export async function invokeArtifactPower(
     if (!ready) return { used: true, ready: false };
 
     switch (power) {
+    case 'charge-object': {
+        const target = await chooseObjectToCharge(state);
+        if (!target) {
+            object.age = 0;
+            return { used: true, ready: true, spentTime: false };
+        }
+        const blessedEffect = object.blessed
+            && (!artifact.role || artifact.role === state.urole.key);
+        await rechargeObject(target, blessedEffect ? 1 : object.cursed ? -1 : 0, state);
+        break;
+    }
     case 'healing':
         await invokeHealing(object, state, publish);
         break;

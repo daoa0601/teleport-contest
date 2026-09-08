@@ -2,6 +2,7 @@
 // C refs: exper.c pluslvl()/experience()/more_experienced(), mon.c xkilled().
 
 import { game } from './gstate.js';
+import { currentAttribute } from './attrib.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { rnd, rn2 } from './rng.js';
 import { A_CON, A_WIS } from './const.js';
@@ -50,7 +51,7 @@ function levelHpIncrease() {
     let hp = (role[fixed] || 0) + (race[fixed] || 0);
     if ((role[random] || 0) > 0) hp += rnd(role[random]);
     if ((race[random] || 0) > 0) hp += rnd(race[random]);
-    const constitution = u.acurr?.a?.[A_CON] || 0;
+    const constitution = currentAttribute(A_CON);
     return Math.max(1, hp + constitutionHpBonus(constitution));
 }
 
@@ -70,7 +71,7 @@ function levelEnergyIncrease() {
     const lower = u.ulevel < (game.urole?.xlev ?? 10);
     const fixed = lower ? 'lofix' : 'hifix';
     const random = lower ? 'lornd' : 'hirnd';
-    const range = Math.trunc((u.acurr?.a?.[A_WIS] || 0) / 2)
+    const range = Math.trunc(currentAttribute(A_WIS) / 2)
         + (role[random] || 0) + (race[random] || 0);
     return Math.max(1, energyModifier(
         rn2(range) + (role[fixed] || 0) + (race[fixed] || 0),

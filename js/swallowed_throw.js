@@ -6,6 +6,7 @@ import {
     hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom,
 } from './hero_thrown_egg_pie_venom.js';
 import { plineWithContinuation } from './display.js';
+import { objectName } from './objnam.js';
 import { game } from './gstate.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
@@ -27,7 +28,7 @@ import {
 import { heroIsBlind } from './senses.js';
 import { detachThrownUnit } from './thrown_object.js';
 import {
-    applyLowStaminaThrow, applyThrowSlip, thrownObjectName,
+    applyLowStaminaThrow, applyThrowSlip,
 } from './throw_state.js';
 
 const PM_AIR_ELEMENTAL = 154;
@@ -248,13 +249,13 @@ export async function resolveGenericSwallowedThrow({
     const destination = trail
         ? `${possessive(monsterName)}${trail}` : monsterName;
     await plineWithContinuation(
-        `The ${thrownObjectName(thrown, state)} vanishes into ${destination}.`,
+        `The ${objectName(thrown, state)} vanishes into ${destination}.`,
     );
     const snuffLamp = thrown.lamplit && LAMP_TYPES.has(thrown.otyp)
         && monsterCanEngulf(engulfer);
     if (snuffLamp && !heroIsBlind(state)) {
         await plineWithContinuation(
-            `The ${thrownObjectName(thrown, state)} goes out.`,
+            `The ${objectName(thrown, state)} goes out.`,
         );
     }
     addObjectToMonsterInventory(

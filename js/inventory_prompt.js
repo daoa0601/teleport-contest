@@ -32,6 +32,7 @@ export async function promptInventoryObject(prompt, eligible, {
     allowMenu = false,
     allowCount = false,
     retainPromptOnCancel = false,
+    menuItems = eligible,
 } = {}) {
     let key = await promptKey(prompt);
     let count = null;
@@ -59,7 +60,7 @@ export async function promptInventoryObject(prompt, eligible, {
         }
         if (allowMenu && (key === 63 || key === 42)) {
             key = await selectInventoryObject({
-                items: eligible,
+                items: key === 63 ? menuItems : eligible,
                 includeGold: allowGold,
                 loopUntilValid: true,
             });

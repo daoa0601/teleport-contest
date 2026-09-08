@@ -2,6 +2,7 @@
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname().
 
 import { game } from './gstate.js';
+import { carriedObjectOwner, objectTypeKnown } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { mkobj, mksobj, rndClass } from './mklev.js';
 import { SPE_LIM } from './const.js';
@@ -13,6 +14,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { isLauncherAmmunition, isMissileObject, isWeaponTool } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { objectWeight } from './weight.js';
+import { heroIsBlind } from './senses.js';
 import {
     artifactByName, artifactExistCount, nameArtifact, uncreateArtifact,
 } from './artifacts.js';
@@ -48,6 +50,46 @@ const ROCK_CLASS = 14;
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
 const SCROLL_OF_MAIL = OBJECT_NAMES.indexOf('mail');
+
+// objnam.c:xname() visible name without inventory annotations.
+// Unlike doname(), this omits quantity, beatitude, enchantment, and article.
+export function objectName(object, state = game) {
+    const oclass = object.oclass;
+    if (!object.dknown && heroIsBlind(state)
+        && [RING_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS].includes(oclass))
+        return unseenObjectNoun(object);
+    const trueName = OBJECT_NAMES[object.otyp] || object.name || 'object';
+    const appearance = state.objectDescriptions?.[object.otyp]
+        ?? OBJECT_DESCRIPTIONS[object.otyp];
+    const known = objectTypeKnown(object, state);
+    let noun;
+    if (known) {
+        if (oclass === RING_CLASS) noun = `ring of ${trueName}`;
+        else if (oclass === POTION_CLASS) noun = `potion of ${trueName}`;
+        else if (oclass === SCROLL_CLASS) noun = `scroll of ${trueName}`;
+        else if (oclass === SPBOOK_CLASS) noun = `spellbook of ${trueName}`;
+        else if (oclass === WAND_CLASS) noun = `wand of ${trueName}`;
+        else noun = trueName;
+    } else if (oclass === RING_CLASS) noun = `${appearance || 'unknown'} ring`;
+    else if (oclass === POTION_CLASS) noun = `${appearance || 'unknown'} potion`;
+    else if (oclass === SCROLL_CLASS) noun = appearance === 'unlabeled'
+        ? 'unlabeled scroll' : `scroll labeled ${appearance || 'unknown'}`;
+    else if (oclass === SPBOOK_CLASS) noun = `${appearance || 'unknown'} spellbook`;
+    else if (oclass === WAND_CLASS) noun = `${appearance || 'unknown'} wand`;
+    else noun = appearance || trueName;
+
+    if (!known && object.dknown !== false) {
+        const callName = state._objectCallNames?.[object.otyp];
+        if (callName) noun += ` called ${callName}`;
+    }
+
+    const individualName = object.oextra?.oname || object.oname;
+    return individualName ? `${noun} named ${individualName}` : noun;
+}
+
+export function ownedObjectName(object, state = game) {
+    return `${carriedObjectOwner(object, state)} ${objectName(object, state)}`;
+}
 
 const CLASS_PRESENTATION = {
     [WEAPON_CLASS]: 'Weapons',

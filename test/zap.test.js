@@ -98,7 +98,6 @@ test('an empty wand does nothing without asking for a direction', async () => {
 
     assert.equal(game.inventory.includes(wand), true);
     assert.equal(wand.spe, 0);
-    assert.equal(wand.spe, 0);
     assert.equal(game._pending_message, 'Nothing happens.');
     assert.equal(game.context.move, 1);
 });

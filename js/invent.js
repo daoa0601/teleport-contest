@@ -28,6 +28,9 @@ import { objectTypeCallNoun } from './object_call.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
 import { objectUsesCharges } from './object_properties.js';
+import { deleteObject } from './object_delete.js';
+import { objectWeight } from './weight.js';
+import { moveUsedObjectToBill } from './shk.js';
 
 const COIN_CLASS = 12;
 const SCROLL_CLASS = 9;
@@ -252,13 +255,11 @@ export function inventoryItemDescription(item) {
     if (item.poisoned || item.opoisoned) parts.push('poisoned');
     parts.push(...itemErosionWords(item));
     if (item.rustproof) parts.push('rustproof');
-    const enchantment = Number.isInteger(item.enchantment)
-        ? item.enchantment : Number.isInteger(item.spe) ? item.spe : null;
     const weaponTool = item.oclass === 6
         && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0;
     const visibleEnchantment = item.known && OBJECT_CHARGED[item.otyp]
         && ([2, 3, 4].includes(item.oclass) || weaponTool)
-        ? enchantment : null;
+        ? item.spe : null;
     if (Number.isInteger(visibleEnchantment)) {
         parts.push(`${visibleEnchantment >= 0 ? '+' : ''}${visibleEnchantment}`);
     }
@@ -320,12 +321,16 @@ export function inventoryItemDescription(item) {
 export function consumeInventoryItem(item, state = game) {
     const quantity = item?.quantity ?? item?.quan ?? 1;
     if (quantity > 1) {
+        item.in_use = false;
         item.quantity = quantity - 1;
         item.quan = quantity - 1;
+        item.owt = objectWeight(item);
         return;
     }
     const index = state.inventory?.indexOf(item) ?? -1;
     if (index >= 0) state.inventory.splice(index, 1);
+    deleteObject(item, state);
+    moveUsedObjectToBill(item, state);
 }
 
 function rerollItemDescription(item) {
@@ -515,10 +520,6 @@ export async function showIdentifiedInventory() {
             : !redundantNeutral
                 && [3, 4, 5, 6, 7, 8, 9, 10, 13].includes(item.oclass)
                 ? 'uncursed' : '';
-        if (([2, 3].includes(item.oclass)
-            || (item.oclass === 4 && item.spe !== 0))
-            && !Number.isInteger(item.enchantment)
-            && Number.isInteger(item.spe)) item.enchantment = item.spe;
         if (item.oclass === 13 && OBJECT_NAMES[item.otyp])
             item.name = OBJECT_NAMES[item.otyp];
     }

@@ -21,12 +21,12 @@ import {
     pline, plineWithContinuation, shieldeff, show_glyph_cell,
 } from './display.js';
 import { game } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
+import { explodeWand } from './recharge.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { meltIce } from './ice.js';
-import { selectInventoryObject } from './invent.js';
+import { consumeInventoryItem, selectInventoryObject } from './invent.js';
 import {
     damageGremlinHeroWithLight, igniteItems, lightRoom,
 } from './light.js';
@@ -181,28 +181,10 @@ async function zappable(wand) {
     return true;
 }
 
-function removeWand(wand) {
-    removeDestroyedQuantity(
-        game, wand, wand.quan ?? wand.quantity ?? 1,
-    );
-}
-
 async function finishWandUse(wand) {
     if (!wand || wand.spe >= 0) return;
     await pline(`The ${className(wand)} turns to dust.`);
-    removeWand(wand);
-}
-
-async function backfireWand(wand) {
-    wand.in_use = true;
-    await pline(`The ${className(wand)} suddenly explodes!`);
-    let damage = d(Math.max(1, wand.spe + 2), 6);
-    if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
-        damage = Math.trunc((damage + 1) / 2);
-    removeWand(wand);
-    const died = await loseHeroHp(damage, 'exploding wand', { publish: pline });
-    if (died) return;
-    exerciseAttribute(A_STR, false);
+    consumeInventoryItem(wand);
 }
 
 function learnNoDirectionWand(wand) {
@@ -296,7 +278,7 @@ export async function dozap({
         return;
     }
     if (wand.cursed && rn2(100) === 0) {
-        await backfireWand(wand);
+        await explodeWand(wand);
         if (!game.program_state?.gameover) game.context.move = 1;
         return;
     }

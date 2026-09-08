@@ -5,50 +5,14 @@ import { exerciseAttribute } from './attrib.js';
 import { A_CON, Is_airlevel } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
-import {
-    OBJECT_DESCRIPTIONS, OBJECT_NAMES,
-} from './object_data.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { rn2 } from './rng.js';
-import { objectTypeKnown } from './shk.js';
+import { objectName } from './objnam.js';
 import {
     calcCapacity, objectWeight, SLT_ENCUMBER,
 } from './weight.js';
 
-// objnam.c:xname() presentation used by Tobjnam() during thrown contact.
-// Unlike doname(), this omits quantity, beatitude, enchantment, and article.
-export function thrownObjectName(object, state = game) {
-    const oclass = object.oclass;
-    const trueName = OBJECT_NAMES[object.otyp] || object.name || 'object';
-    const appearance = state.objectDescriptions?.[object.otyp]
-        ?? OBJECT_DESCRIPTIONS[object.otyp];
-    const known = objectTypeKnown(object, state);
-    let noun;
-    if (known) {
-        if (oclass === 4) noun = `ring of ${trueName}`;
-        else if (oclass === 8) noun = `potion of ${trueName}`;
-        else if (oclass === 9) noun = `scroll of ${trueName}`;
-        else if (oclass === 10) noun = `spellbook of ${trueName}`;
-        else if (oclass === 11) noun = `wand of ${trueName}`;
-        else noun = trueName;
-    } else if (oclass === 4) noun = `${appearance || 'unknown'} ring`;
-    else if (oclass === 8) noun = `${appearance || 'unknown'} potion`;
-    else if (oclass === 9) noun = appearance === 'unlabeled'
-        ? 'unlabeled scroll' : `scroll labeled ${appearance || 'unknown'}`;
-    else if (oclass === 10) noun = `${appearance || 'unknown'} spellbook`;
-    else if (oclass === 11) noun = `${appearance || 'unknown'} wand`;
-    else noun = appearance || trueName;
-
-    if (!known && object.dknown !== false) {
-        const callName = state._objectCallNames?.[object.otyp];
-        if (callName) noun += ` called ${callName}`;
-    }
-
-    const individualName = object.oextra?.oname || object.oname;
-    return individualName ? `${noun} named ${individualName}` : noun;
-}
-
-// throwit() evaluates this gate before its stamina branch.  A real slip
+// throwit() evaluates this gate before its stamina branch. A real slip
 // rewrites the persistent direction even while engulfed, where every result
 // still contacts the same monster.
 export async function applyThrowSlip({
@@ -63,10 +27,10 @@ export async function applyThrowSlip({
         || !(u.dx || u.dy) || rn2(7) !== 0) return false;
 
     if (launcher) {
-        await publish(`The ${thrownObjectName(object, state)} misfires!`);
+        await publish(`The ${objectName(object, state)} misfires!`);
     } else if (object.greased || throwingWeapon) {
         await publish(
-            `The ${thrownObjectName(object, state)} slips as you throw it!`,
+            `The ${objectName(object, state)} slips as you throw it!`,
         );
     } else {
         return false;
@@ -104,7 +68,7 @@ export async function applyLowStaminaThrow({
 
     await publish(
         `You have so little stamina, the ${
-            thrownObjectName(object, state)
+            objectName(object, state)
         } drops from your grasp.`,
     );
     // exercise() ignores physical attributes while polymorphed.

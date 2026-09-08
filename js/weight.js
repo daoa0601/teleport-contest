@@ -121,9 +121,8 @@ export function inventoryWeight(state) {
 }
 
 export function weightCapacity(state) {
-    const stats = state.u?.acurr?.a || [];
     const strength = condensedStrength(currentAttribute(A_STR, state));
-    const constitution = stats[A_CON] ?? 3;
+    const constitution = currentAttribute(A_CON, state);
     let capacity = 25 * (strength + constitution) + 50;
     if ((state.u?.mtimedone ?? 0) > 0
         && Number.isInteger(state.u?.umonnum)) {

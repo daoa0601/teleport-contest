@@ -22,7 +22,7 @@ import { freeHeroFromBuriedBall } from './hero_traps.js';
 import { mkobj } from './mklev.js';
 import { doClassGenocide, doGenocide } from './genocide.js';
 import {
-    HEAVY_IRON_BALL, LEASH, LOADSTONE, OBJECT_MERGE, SLING,
+    HEAVY_IRON_BALL, LEASH, LOADSTONE, OBJECT_MERGE, OBJECT_NAMES, SLING,
     SCR_BLANK_PAPER, SCR_DESTROY_ARMOR,
     SCR_ENCHANT_WEAPON, SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT,
     SCR_PUNISHMENT, SCR_REMOVE_CURSE, SCR_TELEPORTATION,
@@ -31,9 +31,12 @@ import {
 import {
     blessObjectState, curseObjectState, uncurseObjectState,
 } from './object_state.js';
-import { recordObjectCall, recordObjectKnowledge } from './object_knowledge.js';
+import {
+    learnObjectType, recordObjectCall, recordObjectKnowledge,
+} from './object_knowledge.js';
 import { getLine } from './query.js';
-import { rnd, rn2, rnl } from './rng.js';
+import { d, rnd, rn2, rnl } from './rng.js';
+import { chooseObjectToCharge, rechargeObject } from './recharge.js';
 import { studyBook } from './spell.js';
 import {
     moveHeroByTeleport, safeTeleportDestination,
@@ -55,6 +58,7 @@ const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
+const SCR_CHARGING = OBJECT_NAMES.indexOf('charging');
 const WEAPON_CLASS = 2;
 
 export async function doread({
@@ -135,6 +139,10 @@ export async function doread({
         await readIdentifyScroll(book);
         return;
     }
+    if (book?.otyp === SCR_CHARGING) {
+        await readChargingScroll(book);
+        return;
+    }
     if (book?.otyp === SCR_GENOCIDE) {
         await readGenocideScroll(book, { finishHeroDeath });
         return;
@@ -186,6 +194,31 @@ async function readPunishmentScroll(scroll) {
         recordObjectKnowledge(scroll.otyp);
     }
     consumeInventoryItem(scroll);
+    game.context.move = 1;
+}
+
+async function readChargingScroll(scroll) {
+    const blessing = scroll.cursed ? -1 : scroll.blessed ? 1 : 0;
+    await pline('As you read the scroll, it disappears.');
+    exerciseAttribute(A_WIS, true);
+    if (game.u.confusionTurns > 0) {
+        await plineWithContinuation(blessing < 0 ? 'You feel discharged.' : 'You feel charged up!');
+        if (blessing < 0) game.u.uen = 0;
+        else {
+            game.u.uen += d(blessing > 0 ? 6 : 4, 4);
+            game.u.uen = game.u.uenmax = Math.max(game.u.uen, game.u.uenmax);
+        }
+        consumeInventoryItem(scroll);
+    } else {
+        if (!game._knownObjectTypes?.has(scroll.otyp)) {
+            await plineWithContinuation('This is a charging scroll.');
+            learnObjectType(scroll.otyp);
+            game.u.urexp = (game.u.urexp || 0) + 10;
+        }
+        consumeInventoryItem(scroll);
+        const object = await chooseObjectToCharge();
+        if (object) await rechargeObject(object, blessing);
+    }
     game.context.move = 1;
 }
 

@@ -23,6 +23,12 @@ export async function applyInventoryObject(object = 'a', followupKeys = '') {
     await rhack('a'.charCodeAt(0));
 }
 
+export async function readInventoryObject(object, followupKeys = '') {
+    pushKey(object.invlet);
+    pushKeys(followupKeys);
+    await rhack('r'.charCodeAt(0));
+}
+
 export async function runMonsterAbilityCommand(followupKeys = '') {
     pushKeys(`monster\n${followupKeys}`);
     await rhack('#'.charCodeAt(0));

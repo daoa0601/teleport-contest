@@ -5732,16 +5732,6 @@ async function putOnAccessoryObject(object) {
 
     const ringSlot = hand === 'right' ? 'uright' : 'uleft';
     wearHeroAccessory(object, ringSlot, game);
-    if (object.otyp === RIN_PROTECTION) {
-        const enchantment = object.spe ?? object.enchantment ?? 0;
-        if (enchantment !== 0
-            && !game._knownObjectTypes?.has(object.otyp)) {
-            recordObjectKnowledge(object.otyp);
-            exerciseAttribute(A_WIS, true);
-        }
-        object.known = true;
-        findArmorClass(game);
-    }
     // Ring_on() uses the same prinv path as amulets after setworn().
     await pline(`${object.invlet} - ${inventoryItemDescription(object)}.`);
     game.context.move = 1;

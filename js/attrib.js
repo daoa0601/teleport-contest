@@ -2,6 +2,8 @@
 // C refs: attrib.c acurr(), acurrstr(), and exercise().
 
 import { game } from './gstate.js';
+import { artifactById } from './artifacts.js';
+import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2 } from './rng.js';
 import { DUNCE_CAP, GAUNTLETS_OF_POWER } from './object_data.js';
 import {
@@ -10,6 +12,8 @@ import {
 
 const STR25 = 125;
 const MAX_EXERCISE = 50;
+const PM_AMOROUS_DEMON = MONSTER_NAME.indexOf('amorous demon');
+const S_NYMPH = 14;
 
 const ATTRIBUTE_GAIN_WORD = [
     'stronger', 'smarter', 'wiser', 'more agile', 'tougher', 'more charismatic',
@@ -32,11 +36,29 @@ function wornObject(state, slot) {
 
 // Equipment changes the effective value without overwriting the base value.
 export function currentAttribute(attribute, state = game) {
-    if (attribute === A_STR
-        && wornObject(state, 'uarmg')?.otyp === GAUNTLETS_OF_POWER) {
-        return STR25;
-    }
-    return state?.u?.acurr?.a?.[attribute] ?? 10;
+    const hero = state.u;
+    let value = (hero.acurr?.a?.[attribute] ?? 10)
+        + (hero.abon?.a?.[attribute] ?? 0) + (hero.atemp?.a?.[attribute] ?? 0);
+    if (attribute === A_CHA && (MONSTER_SYMBOL[hero.umonnum] === S_NYMPH
+        || hero.umonnum === PM_AMOROUS_DEMON)) value = Math.max(18, value);
+    const [minimum, maximum] = attributeLimits(attribute, state);
+    return Math.max(minimum, Math.min(maximum, value));
+}
+
+function attributeLimits(attribute, state) {
+    if (attribute === A_STR)
+        return [wornObject(state, 'uarmg')?.otyp === GAUNTLETS_OF_POWER ? STR25 : 3, STR25];
+    if (attribute === A_CON
+        && artifactById(wornObject(state, 'uwep')?.oartifact)?.name === 'Ogresmasher')
+        return [25, 25];
+    if ((attribute === A_INT || attribute === A_WIS)
+        && wornObject(state, 'uarmh')?.otyp === DUNCE_CAP) return [6, 6];
+    return [3, 25];
+}
+
+export function attributeIsAtLimit(attribute, state = game) {
+    const value = currentAttribute(attribute, state);
+    return attributeLimits(attribute, state).includes(value);
 }
 
 export function adjustAttribute(attribute, amount, state = game) {

@@ -8,7 +8,7 @@ import { game } from './gstate.js';
 import { pline, plineWithContinuation } from './display.js';
 import { rn2 } from './rng.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
-import { exerciseAttribute } from './attrib.js';
+import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsDeaf } from './senses.js';
 import { A_CHA, A_WIS, MORGUE, OROOM, ROOMOFFSET, SHOPBASE } from './const.js';
 import { roomForRoomno } from './room.js';
@@ -369,7 +369,7 @@ export function shopObjectUnitCost(object, resident = null, state = game) {
         divisor *= 3;
     }
 
-    const charisma = state?.u?.acurr?.a?.[A_CHA] ?? 10;
+    const charisma = currentAttribute(A_CHA, state);
     if (charisma > 18) divisor *= 2;
     else if (charisma === 18) multiplier *= 2, divisor *= 3;
     else if (charisma >= 16) multiplier *= 3, divisor *= 4;
@@ -615,7 +615,6 @@ export function moveUsedObjectToBill(object, state = game) {
     if (!object?.unpaid) return null;
     const billed = billForObject(object, state);
     if (!billed) return null;
-    billed.entry.bquan = object.quan ?? object.quantity ?? 1;
     billed.entry.useup = true;
     billed.resident.eshk.billObjects ||= [];
     billed.resident.eshk.billObjects.push(object);
@@ -663,6 +662,25 @@ export function unpaidObjectCost(object, state = game) {
     const billed = billForObject(object, state);
     if (!billed) return 0;
     return billed.entry.price * (object?.quan ?? object?.quantity ?? 1);
+}
+
+// C shk.c:alter_cost(). An improvement can raise a bill, never lower it.
+export function updateUnpaidObjectPrice(object, state = game) {
+    const billed = billForObject(object, state);
+    if (!billed) return;
+    billed.entry.price = Math.max(
+        billed.entry.price, shopObjectUnitCost(object, billed.resident, state),
+    );
+}
+
+// C shk.c:shk_your(), for an item carried by the hero.
+export function carriedObjectOwner(object, state = game) {
+    if (!object.unpaid) return 'Your';
+    const shop = shopRoomAt(state, state.u.ux, state.u.uy, true);
+    const keeper = shop && shopkeeperForRoom(shop.roomno, state);
+    if (!keeper) return 'The';
+    const name = shopkeeperName(keeper);
+    return name.endsWith('s') ? `${name}'` : `${name}'s`;
 }
 
 export function addShopObjectToBill(object, state = game) {
