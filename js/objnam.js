@@ -2,16 +2,22 @@
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname().
 
 import { game } from './gstate.js';
-import { rn2 } from './rng.js';
+import { rn2, rnd } from './rng.js';
 import { mkobj, mksobj } from './mklev.js';
+import { nameToMonster } from './mondata.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { isLauncherAmmunition, isMissileObject } from './object_properties.js';
+import { promptYesNo } from './query.js';
+import { objectWeight } from './weight.js';
 import {
     artifactByName, artifactExistCount, nameArtifact,
 } from './artifacts.js';
 import {
-    CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, LENSES,
+    CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, LENSES, ROCK,
+    GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, TALLOW_CANDLE, WAX_CANDLE,
     OBJECT_BASES,
     OBJECT_DESCRIPTIONS,
-    OBJECT_NAMES, OBJECT_PROB,
+    OBJECT_NAMES, OBJECT_PROB, OBJECT_MERGE,
     OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
     OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
@@ -168,6 +174,7 @@ export function parseWishText(text) {
     let remaining = String(text || '').trim().replace(/\s+/g, ' ');
     const parsed = {
         count: 1,
+        globSize: 0,
         enchantment: null,
         buc: null,
         recharged: null,
@@ -192,6 +199,12 @@ export function parseWishText(text) {
             remaining = remaining.slice(match[0].length);
         } else if ((match = remaining.match(/^(\d+)\s+/))) {
             parsed.count = Math.max(1, Number(match[1]));
+            remaining = remaining.slice(match[0].length);
+        } else if ((match = remaining.match(
+            /^(very large|large|medium|small)\s+(?=.*\bglobs?\b)/i,
+        ))) {
+            parsed.globSize = ['small', 'medium', 'large', 'very large']
+                .indexOf(match[1].toLowerCase()) + 1;
             remaining = remaining.slice(match[0].length);
         } else if ((match = remaining.match(/^([+-])(\d+)\s+/))) {
             parsed.enchantment = Number(match[2]) * (match[1] === '-' ? -1 : 1);
@@ -337,8 +350,9 @@ function exactRealGemType(name) {
     return null;
 }
 
-export function readObjectName(text, { wizardWish = false } = {}) {
+export async function readObjectName(text, { wizardWish = false } = {}) {
     const parsed = parseWishText(text);
+    normalizeGlobWish(parsed);
     // C objnam.c:readobjnam(): an empty (or null fallback) request enters
     // `any`, selecting one of the 13 non-specific wish class symbols before
     // ordinary mkobj() construction.  Escape from makewish() is normalized
@@ -361,9 +375,12 @@ export function readObjectName(text, { wizardWish = false } = {}) {
     if (['nothing', 'nil', 'none'].includes(parsed.name)) {
         return { noWish: true, parsed };
     }
-    if (['gold piece', 'gold', 'money', 'coin', '$'].includes(parsed.name)) {
+    if (['gold piece', 'gold', 'money', 'coin', 'zorkmid'].includes(parsed.name)
+        || parsed.name.startsWith('$')) {
         const object = mksobj(GOLD_PIECE, false, false);
-        object.quan = Math.max(1, parsed.count);
+        object.quan = object.quantity = wizardWish
+            ? parsed.count : Math.min(5000, parsed.count);
+        object.owt = objectWeight(object);
         return {
             object, parsed, lookupOtyp: GOLD_PIECE,
             finalOtyp: GOLD_PIECE, isGold: true,
@@ -390,11 +407,7 @@ export function readObjectName(text, { wizardWish = false } = {}) {
         object.oclass = objectClass(finalType);
         object.owt = OBJECT_WEIGHT[finalType] ?? object.owt;
     }
-    // C readobjnam() applies an explicitly parsed count after mksobj().
-    // Debug wishing bypasses the ordinary quantity restriction, including an
-    // implicit singular count which must override generated ammo/rock stacks.
-    if (parsed.count > 1 || (wizardWish && object.quan > 1))
-        object.quan = parsed.count;
+    await applyWishQuantity(object, parsed, wizardWish);
     if (parsed.enchantment !== null) object.spe = parsed.enchantment;
     if (parsed.recharged !== null) object.recharged = parsed.recharged;
     if (parsed.charges !== null) object.spe = parsed.charges;
@@ -424,12 +437,59 @@ export function readObjectName(text, { wizardWish = false } = {}) {
     // caller tests wizard mode.  Even a debug wish therefore consumes this
     // call after the artifact existence bit has been committed.
     if (object.oartifact) rn2(Math.max(1, artifactExistCount()));
+    object.quantity = object.quan;
+    object.owt = objectWeight(object);
     return {
         object, parsed,
         lookupOtyp,
         finalOtyp: object.otyp,
         artifact,
     };
+}
+
+// C readobjnam_postparse1(): globs accept both "glob of gray ooze" and
+// "gray ooze glob". Unknown monster names request a random glob species.
+function normalizeGlobWish(parsed) {
+    const match = parsed.name.match(/^globs?(?: of (.+))?$/)
+        || parsed.name.match(/^(.+) globs?$/);
+    if (!match) return;
+    const monster = nameToMonster(match[1] || '');
+    if (monster < 0) {
+        const type = GLOB_OF_GRAY_OOZE
+            + rn2(GLOB_OF_BLACK_PUDDING - GLOB_OF_GRAY_OOZE);
+        parsed.name = OBJECT_NAMES[type];
+    } else {
+        parsed.name = `glob of ${MONSTER_NAME[monster]}`;
+    }
+    if (/\bglobs\b/.test(match[0]) && parsed.count < 2) parsed.count = 2;
+}
+
+async function applyWishQuantity(object, parsed, wizardWish) {
+    let count = parsed.count;
+    if (object.globby) {
+        object.quan = 1;
+        if (parsed.globSize > 1)
+            object.owt *= 6 + (parsed.globSize - 2) * 10;
+        if (count > 1) {
+            const limit = Math.min(rn2(5) + 2, 6 - parsed.globSize);
+            if (count > limit) {
+                const override = wizardWish && !game.program_state?.wizkit_wishing
+                    && await promptYesNo('Override glob weight limit? [yn] (n) ') === 'y';
+                if (!override) count = limit;
+            }
+            object.owt *= count;
+        }
+        return;
+    }
+    if (!OBJECT_MERGE[object.otyp]) return;
+    // The random allowance is checked even when a later ammunition or
+    // candle exception grants the whole request.
+    const allowed = wizardWish || count < rnd(6)
+        || (count <= 7 && [TALLOW_CANDLE, WAX_CANDLE].includes(object.otyp))
+        || (count <= 20 && (object.otyp === ROCK || object.otyp === FLINT
+            || isMissileObject(object)
+            || (object.oclass === WEAPON_CLASS && isLauncherAmmunition(object))));
+    if (allowed) object.quan = count;
 }
 
 function pluralizePair(name) {

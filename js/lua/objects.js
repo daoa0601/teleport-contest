@@ -132,10 +132,11 @@ export function createObjectApi(state = game) {
         if (carried) await finishInventoryRemoval(item, state);
     }
 
-    function create(value) {
+    async function create(value) {
         let item;
         if (typeof value === 'string') {
-            item = readObjectName(value, { wizardWish: !!state.flags?.debug })?.object || null;
+            const result = await readObjectName(value, { wizardWish: !!state.flags?.debug });
+            item = result?.object || null;
         } else if (value instanceof LuaTable) {
             const options = luaTableToObject(value);
             const type = options.id == null ? 0

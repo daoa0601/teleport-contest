@@ -90,8 +90,8 @@ export async function makeWish({
             await showWishHelp(5 - failedAttempts);
             continue;
         }
-        result = readObjectName(value ?? '', {
-            wizardWish: allowWizardTerrain,
+        result = await readObjectName(value ?? '', {
+            wizardWish: !!game.flags.debug,
         });
         const wizardTerrain = allowWizardTerrain
             ? (value ?? '').trim().toLowerCase() : '';
@@ -124,7 +124,7 @@ export async function makeWish({
     }
     if (!result) {
         await pline("That's enough tries!");
-        result = readObjectName('');
+        result = await readObjectName('', { wizardWish: !!game.flags.debug });
         if (!result) {
             game.context.move = 0;
             return;
