@@ -1780,6 +1780,7 @@ export async function flushPendingTopline() {
 // at the terminal layer so source callers can remain ordinary sequential
 // pline() producers.
 export async function plineWithContinuation(msg) {
+    if (!msg || game._suppressMessagesUntilInput) return;
     const pending = game._pending_message || '';
     const visibleLength = message => /[\x0e\x0f]|\x1b\[[0-9;]*C/.test(message)
         ? decodeMixedTopline(message).length : message.length;

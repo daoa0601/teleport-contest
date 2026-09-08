@@ -2,6 +2,7 @@
 // C ref: cmd.c rhack(), hack.c domove().
 
 import { game } from './gstate.js';
+import { runDueTimers } from './timer_effects.js';
 import { loseHeroHp } from './hero_damage.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -2649,6 +2650,8 @@ async function arriveOnLevel(from, { arrival, ladder, followers }) {
         await deliverMigratingObjects(game);
         for (const follower of followers) arriveWithHero(follower);
         await killGenocidedMonsters();
+        await runDueTimers();
+        if (game.program_state?.gameover) return true;
         resolveHeroArrivalCollision();
         if (Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz)) moveElementalBubbles();
         else if (game.level.flags.fumaroles) fumaroles(game);

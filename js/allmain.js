@@ -2,6 +2,7 @@
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 
 import { game } from './gstate.js';
+import { runObjectTimer } from './timer_effects.js';
 import { tryKnockback } from './knockback.js';
 import { finishMonsterGrowth } from './monster_growth.js';
 import { reassessMonsterArmor } from './monworn.js';
@@ -15,12 +16,8 @@ import {
     peaceMinded, rndmonnum,
     summonInsectsForMonster, summonNastyMonsters,
     u_on_upstairs, place_lregion,
-    finishBuriedZombieTimer,
-    runClaimedMeltIceTimer,
-    runClaimedObjectRotTimer,
 } from './mklev.js';
 import { initialShapechangedBirth } from './monster_polymorph.js';
-import { runClaimedCorpseRevivalTimer } from './corpse_revival.js';
 import { level_difficulty } from './dungeon.js';
 import {
     randomDefensiveMonsterItem, randomMiscMonsterItem,
@@ -105,28 +102,16 @@ import {
 } from './u_init.js';
 import { syncBlindness, syncDeafness } from './senses.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
-import {
-    igniteItems, runClaimedObjectBurnTimer,
-} from './light.js';
-import { finishMeltIce } from './ice.js';
+import { igniteItems } from './light.js';
 import {
     destroyColdInventory, destroyElectricInventory, destroyFireInventory,
 } from './zap.js';
 import { discoverReflectingShield } from './ray.js';
 import {
-    finishEggHatchTimer, runClaimedEggHatchTimer,
-} from './egg.js';
-import {
-    finishGlobTimer, runClaimedGlobTimer,
-} from './glob.js';
-import {
-    finishFigurineTimer, runClaimedFigurineTimer,
-} from './figurine.js';
-import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
 } from './monster_inventory.js';
 import {
-    claimNextDueObjectTimer, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
+    claimNextDueObjectTimer, OBJECT_TIMER_KIND,
     peekNextDueObjectTimer, stopObjectTimer,
 } from './object_timers.js';
 import { roles } from './roles.js';
@@ -1625,12 +1610,12 @@ async function beginInitialTurnMaintenance(completedTurn = game.moves || 1) {
     // periodic regeneration must inspect the preceding turn number.
     game.were_changes = 0;
     for await (const event of monsterDistressEvents(
-        game.level?.monsters || [], game, rn2, completedTurn - 1, queueTurnMessage,
+        game.level?.monsters || [], game, rn2, completedTurn - 1, plineWithContinuation,
     )) {
         if (event.kind === 'stationary-liquid') {
             if (game.vision_full_recalc) vision_recalc(0);
             await resolveMonsterLiquid(event.monster, game, {
-                announce: queueTurnMessage,
+                announce: plineWithContinuation,
                 monsterMoving: false,
                 finishDeath: finishHeroLiquidMonsterDeath,
             });
@@ -1640,7 +1625,7 @@ async function beginInitialTurnMaintenance(completedTurn = game.moves || 1) {
             continue;
         }
         await presentWereChange(event.change, {
-            publish: queueTurnMessage,
+            publish: plineWithContinuation,
             wakeNearby: (x, y, distance) =>
                 wakeMonstersNear(x, y, distance, game),
         });
@@ -1752,7 +1737,7 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({
     if (!prayerTimeoutFreeze && heroIsPetrifying(game)) {
         await advanceHeroPetrification({
             state: game,
-            publish: queueTurnMessage,
+            publish: plineWithContinuation,
             die: finishHeroDeath,
         });
         if (game.program_state?.gameover) return { moveAmount };
@@ -1760,7 +1745,7 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({
     if (!prayerTimeoutFreeze && heroIsSliming(game)) {
         await advanceHeroSliming({
             state: game,
-            publish: queueTurnMessage,
+            publish: plineWithContinuation,
             repaint: newsym,
             randomMonsterName: randomDisplayMonsterName,
             transform: polymonHero,
@@ -1771,13 +1756,13 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({
     if (!prayerTimeoutFreeze && heroIsVomiting(game)) {
         await advanceHeroVomiting({
             state: game,
-            publish: queueTurnMessage,
+            publish: plineWithContinuation,
         });
     }
     if (!prayerTimeoutFreeze && game.u.strangledTurns > 0) {
         await advanceHeroStrangulation({
             state: game,
-            publish: queueTurnMessage,
+            publish: plineWithContinuation,
             die: finishHeroDeath,
         });
         if (game.program_state?.gameover) return { moveAmount };
@@ -1785,7 +1770,7 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({
     if (!prayerTimeoutFreeze && heroIsSick(game)) {
         await advanceHeroSickness({
             state: game,
-            publish: queueTurnMessage,
+            publish: plineWithContinuation,
             die: finishHeroDeath,
         });
         if (game.program_state?.gameover) return { moveAmount };
@@ -1985,107 +1970,6 @@ function finishInitialTurnMaintenanceAfterConfusion({
     });
 }
 
-export function buriedZombieTimerMessage(event, options = {}) {
-    if (event?.kind !== 'revived' || !event.buried || !event.monster) return;
-    const { monster, trap } = event;
-    const visible = options.visible
-        ?? cansee(monster.mx, monster.my);
-    if (visible) {
-        const spotted = options.spotted ?? canSpotMonster(monster);
-        if (!spotted) {
-            return {
-                message: 'Something claws itself out of the ground!',
-                visible: true, trap,
-            };
-        }
-        const name = options.monsterName ?? quietMonsterName(monster);
-        const article = /^[aeiou]/i.test(name) ? 'An' : 'A';
-        return {
-            message: `${article} ${name} claws itself out of the ground!`,
-            visible: true, trap,
-        };
-    }
-    const heroX = options.heroX ?? game.u?.ux ?? monster.mx;
-    const heroY = options.heroY ?? game.u?.uy ?? monster.my;
-    const dx = monster.mx - heroX;
-    const dy = monster.my - heroY;
-    const deaf = options.deaf ?? !!(game.u?.deaf || game.deaf);
-    if (!deaf && dx * dx + dy * dy < 25) {
-        return {
-            message: 'You hear scratching noises.',
-            visible: false, trap,
-        };
-    }
-    return null;
-}
-
-async function presentBuriedZombieTimer(event) {
-    const presentation = buriedZombieTimerMessage(event);
-    if (!presentation) return;
-    if (presentation.visible && presentation.trap)
-        presentation.trap.tseen = true;
-    await queueTurnMessage(presentation.message);
-    if (presentation.visible)
-        newsym(event.monster.mx, event.monster.my);
-}
-
-async function runAndPresentClaimedObjectTimer(claimed, sourceTurn) {
-    if (!claimed) return null;
-    const kind = claimed.timer.kind;
-    if (kind === OBJECT_TIMER_KIND.BURN_OBJECT) {
-        return runClaimedObjectBurnTimer(claimed, game, sourceTurn);
-    }
-    if (kind === OBJECT_TIMER_KIND.HATCH_EGG) {
-        const event = await runClaimedEggHatchTimer(
-            claimed, game, sourceTurn,
-        );
-        if (event?.message) await queueTurnMessage(event.message);
-        if (event?.followupMessage)
-            await queueTurnMessage(event.followupMessage);
-        return finishEggHatchTimer(event, game, sourceTurn);
-    }
-    if (kind === OBJECT_TIMER_KIND.SHRINK_GLOB) {
-        const event = runClaimedGlobTimer(claimed, game, sourceTurn);
-        if (event?.message) await queueTurnMessage(event.message);
-        const finished = finishGlobTimer(event, game, sourceTurn);
-        if (finished?.followupMessage)
-            await queueTurnMessage(finished.followupMessage);
-        return finished;
-    }
-    if (kind === OBJECT_TIMER_KIND.FIG_TRANSFORM) {
-        const event = await runClaimedFigurineTimer(
-            claimed, game, sourceTurn,
-        );
-        for (const message of event?.waterMessages || [])
-            await queueTurnMessage(message);
-        if (event?.message) await queueTurnMessage(event.message);
-        return finishFigurineTimer(event, game);
-    }
-    if (kind === OBJECT_TIMER_KIND.REVIVE_MON
-        || kind === OBJECT_TIMER_KIND.ZOMBIFY_MON) {
-        const event = await runClaimedCorpseRevivalTimer(
-            claimed, game, sourceTurn,
-        );
-        for (const message of event?.messages || [])
-            await queueTurnMessage(message);
-        if (event?.buried) await presentBuriedZombieTimer(event);
-        return finishBuriedZombieTimer(event, game);
-    }
-    if (kind === LEVEL_TIMER_KIND.MELT_ICE_AWAY) {
-        const event = runClaimedMeltIceTimer(claimed, game);
-        return finishMeltIce(event, {
-            announce: queueTurnMessage,
-            wake: wakeMonstersNearWithMessages,
-        });
-    }
-    const event = runClaimedObjectRotTimer(claimed, game);
-    if (event?.where === 'floor') newsym(event.x, event.y);
-    if (kind === OBJECT_TIMER_KIND.ROT_CORPSE
-        && event?.where === 'inventory') {
-        await queueTurnMessage('Your corpse rots away.');
-    }
-    return event;
-}
 
 async function initialTurnMaintenanceWithTty(
     completedTurn = game.moves || 1,
@@ -2095,13 +1979,13 @@ async function initialTurnMaintenanceWithTty(
         const claimed = claimNextDueObjectTimer(
             game, phase.sourceTurn,
         );
-        await runAndPresentClaimedObjectTimer(claimed, phase.sourceTurn);
+        await runObjectTimer(claimed, phase.sourceTurn);
         if (peekNextDueObjectTimer(game, phase.sourceTurn)) continue;
         phase = await finishInitialTurnMaintenanceAfterObjectTimers(phase);
     }
     if (game.program_state?.gameover) return phase.moveAmount;
     while (phase?.deferredTimeoutMessage) {
-        await queueTurnMessage(phase.message);
+        await plineWithContinuation(phase.message);
         if (phase.timeoutKind === 'stun') {
             game.u.stunnedTurns = 0;
             refreshProperty('stunned', game);
@@ -2126,7 +2010,7 @@ async function initialTurnMaintenanceWithTty(
     }
     let result = phase;
     if (phase?.deferredAmbientMessage) {
-        await queueTurnMessage(phase.message);
+        await plineWithContinuation(phase.message);
         result = finishInitialTurnMaintenanceAfterAmbient(phase);
     }
     if (game._pendingDemigodIntervention) {
@@ -2155,7 +2039,7 @@ async function initialTurnMaintenanceWithTty(
                         adjacent ? 'next to you' : 'close by'
                     }!`;
                     if (game._pending_message !== message)
-                        await queueTurnMessage(message);
+                        await plineWithContinuation(message);
                 },
             });
             if (effect.deferredDemonSummon) effect = await msummon();
@@ -2217,13 +2101,13 @@ async function settleHeroLiquidAfterAction() {
     if (game.u?.utrap && game.u.utraptype === TT_LAVA) {
         return sinkHeroIntoLava({
             state: game,
-            publish: queueTurnMessage,
+            publish: plineWithContinuation,
             applyLandingEffects: finishLanding,
         });
     }
     if (game.u?.umoved) return null;
 
-    return applyHeroLiquidEffects(queueTurnMessage);
+    return applyHeroLiquidEffects(plineWithContinuation);
 }
 
 async function drainQueuedHelplessRecoveryMessage() {
@@ -2467,7 +2351,7 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
         const verb = wasAccessory ? 'removes' : 'takes off';
         removalMessage = `${subject} ${verb} ${removalObjectDescription}.`;
     }
-    if (removalMessage) await queueTurnMessage(removalMessage);
+    if (removalMessage) await plineWithContinuation(removalMessage);
 
     for (const slot of occupiedSlots) game[slot] = null;
     if (game.u) {
@@ -2495,10 +2379,10 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
     // urgent_pline() does not force a pager for its newly installed line.
     // It can first suspend while clearing the older worn-removal line; after
     // that acknowledgement, rloc() may append its own message to this one.
-    await queueTurnMessage(`${thief} stole ${stolenObjectDescription}.`);
+    await plineWithContinuation(`${thief} stole ${stolenObjectDescription}.`);
 
     if (monsterTeleportRestricted(monster, game)) {
-        await queueTurnMessage(
+        await plineWithContinuation(
             `A mysterious force prevents the ${quietMonsterName(monster)} from teleporting!`,
         );
     } else {
@@ -2513,7 +2397,7 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
                 monster, relocation, actorWasSeen,
             );
             if (relocationMessage)
-                await queueTurnMessage(relocationMessage);
+                await plineWithContinuation(relocationMessage);
         }
     }
     monster.mflee = 1;
@@ -2523,7 +2407,7 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
     await tryKnockback(monster, game.u, attack, {
         hit: attack.hit,
         weaponUsed: !!monsterWieldedWeapon(monster),
-        publish: queueTurnMessage,
+        publish: plineWithContinuation,
     });
     attack.theftResolved = true;
     return true;
@@ -2755,16 +2639,11 @@ function distantMonsterObjectName(object) {
     return petCarriedObjectName(object);
 }
 
-async function queueTurnMessage(message) {
-    if (game._suppressMessagesUntilInput) return;
-    if (!message) return;
-    return plineWithContinuation(message);
-}
 
 async function presentMonsterGrowth(monster, growth) {
     if (!growth?.changedSpecies || growth.applied) return;
     if (canProjectMonster(monster, monster.mx, monster.my))
-        await queueTurnMessage(growth.message);
+        await plineWithContinuation(growth.message);
     finishMonsterGrowth(monster, growth);
     newsym(monster.mx, monster.my);
     if (growth.genocided)
@@ -2775,13 +2654,13 @@ async function resolveErosionFormRehumanization(
     heroAttack, effectMessage,
 ) {
     let pagerOwned = false;
-    const effectDismissal = await queueTurnMessage(effectMessage);
+    const effectDismissal = await plineWithContinuation(effectMessage);
     if (effectDismissal !== null && effectDismissal !== undefined)
         pagerOwned = true;
 
     const restored = await returnHeroToHumanForm(game, {
         publish: async message => {
-            const dismissal = await queueTurnMessage(message);
+            const dismissal = await plineWithContinuation(message);
             if (dismissal !== null && dismissal !== undefined) pagerOwned = true;
         },
     });
@@ -2802,18 +2681,18 @@ async function resolveDeferredHeroFirePillar(action, heroAttack) {
         appliedDamage = Math.trunc((appliedDamage + 1) / 2);
 
     if (clearHeroSliming(game)) {
-        await queueTurnMessage(
+        await plineWithContinuation(
             'The slime that covers you is burned away!',
         );
     }
-    await burnHeroArmorByFire(game, queueTurnMessage, action.calls, rn2);
+    await burnHeroArmorByFire(game, plineWithContinuation, action.calls, rn2);
     await destroyFireInventory(originalDamage, {
         state: game,
-        publish: queueTurnMessage,
+        publish: plineWithContinuation,
     });
     await igniteItems(game.inventory, {
         state: game,
-        publish: queueTurnMessage,
+        publish: plineWithContinuation,
     });
 
     game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - appliedDamage);
@@ -2826,7 +2705,7 @@ async function resolveDeferredHeroLightningSpell(action, heroAttack) {
     if (!heroAttack?.deferredLightningSpell) return;
     const reflectedByShield = game.uarms?.otyp === SHIELD_OF_REFLECTION;
     if (reflectedByShield) {
-        await queueTurnMessage('It bounces off your shield.');
+        await plineWithContinuation('It bounces off your shield.');
         discoverReflectingShield();
         d(8, 6);
         action.calls.push('d(8,6)');
@@ -2845,12 +2724,12 @@ async function resolveDeferredHeroLightningSpell(action, heroAttack) {
 
     await destroyElectricInventory(originalDamage, {
         state: game,
-        publish: queueTurnMessage,
+        publish: plineWithContinuation,
     });
 
     const flashDuration = rnd(100);
     action.calls.push('rnd(100)');
-    await queueTurnMessage('You are blinded by the flash!');
+    await plineWithContinuation('You are blinded by the flash!');
     game.u.blindTurns = (game.u.blindTurns ?? 0) + flashDuration;
     syncBlindness(game);
     game.vision_full_recalc = 1;
@@ -2878,7 +2757,7 @@ async function resolveDeferredHeroInsectSpell(action, heroAttack) {
     } else {
         message = `${visibleMonsterSubject(action.monster)} summons insects!`;
     }
-    await queueTurnMessage(message);
+    await plineWithContinuation(message);
     heroAttack.summonedInsects = result.created || [];
     heroAttack.deferredInsectSpell = false;
 }
@@ -2895,7 +2774,7 @@ async function resolveDeferredHeroDeathTouch(action, heroAttack) {
     const demon = Number.isInteger(form)
         && !!((MONSTER_FLAGS2[form] ?? 0) & 0x00000100);
     if (nonliving || demon) {
-        await queueTurnMessage('You seem no deader than before.');
+        await plineWithContinuation('You seem no deader than before.');
         heroAttack.deferredDeathTouch = false;
         return;
     }
@@ -2909,17 +2788,17 @@ async function resolveDeferredHeroDeathTouch(action, heroAttack) {
         succeeds = successRoll > 12;
     }
     if (!succeeds) {
-        await queueTurnMessage("Lucky for you, it didn't work!");
+        await plineWithContinuation("Lucky for you, it didn't work!");
         heroAttack.deferredDeathTouch = false;
         return;
     }
     if (u.hallucinating || (u.hallucinationTurns ?? 0) > 0) {
-        await queueTurnMessage('You have an out of body experience.');
+        await plineWithContinuation('You have an out of body experience.');
         heroAttack.deferredDeathTouch = false;
         return;
     }
 
-    await queueTurnMessage('You feel drained...');
+    await plineWithContinuation('You feel drained...');
     const rolledDamage = d(8, 6);
     action.calls.push('d(8,6)');
     const damage = 50 + rolledDamage;
@@ -2953,7 +2832,7 @@ async function resolveDeferredHeroDestroyArmor(action, heroAttack) {
     if (!heroAttack?.deferredDestroyArmor) return;
     const antimagic = !!game.u?.antimagic;
     if (antimagic) {
-        await queueTurnMessage('A field of force surrounds you!');
+        await plineWithContinuation('A field of force surrounds you!');
         heroAttack.deferredDestroyArmor = false;
         return;
     }
@@ -2970,7 +2849,7 @@ async function resolveDeferredHeroDestroyArmor(action, heroAttack) {
         const kind = objectErosionKind(armor);
         if (!kind || armor.oerodeproof) continue;
         const message = objectErosionMessage(armor, kind);
-        await queueTurnMessage(message);
+        await plineWithContinuation(message);
         if ((armor[kind.field] || 0) >= 3) {
             destroyWornArmor(armor);
             changed.push({ armor, destroyed: true });
@@ -2980,7 +2859,7 @@ async function resolveDeferredHeroDestroyArmor(action, heroAttack) {
         changed.push({ armor, destroyed: false });
     }
     if (!changed.length)
-        await queueTurnMessage('Your skin itches.');
+        await plineWithContinuation('Your skin itches.');
     findArmorClass(game);
     heroAttack.destroyedArmor = changed;
     heroAttack.deferredDestroyArmor = false;
@@ -2989,7 +2868,7 @@ async function resolveDeferredHeroDestroyArmor(action, heroAttack) {
 async function resolveDeferredHeroCurseItems(heroAttack) {
     if (!heroAttack?.deferredCurseItems) return;
     heroAttack.cursedInventory = await rndcurse({
-        publish: queueTurnMessage,
+        publish: plineWithContinuation,
     });
     heroAttack.deferredCurseItems = false;
 }
@@ -3019,13 +2898,13 @@ async function resumeOffensivePotionVapor(potion) {
     if (!potion || potion.object?.otyp !== POT_SLEEPING) return;
 
     if (!heroHasFreeAction(game) && !game.u?.sleepResistance) {
-        await queueTurnMessage('You feel rather tired.');
+        await plineWithContinuation('You feel rather tired.');
         game._helplessTurns = rnd(5);
         game._helplessReason = 'sleeping off a magical draught';
         game._helplessDoneMessage = 'You can move again.';
         exerciseAttribute(A_DEX, false);
     } else {
-        await queueTurnMessage('You yawn.');
+        await plineWithContinuation('You yawn.');
     }
 
     const object = potion.object;
@@ -3043,7 +2922,7 @@ async function finishDeathSurvivalMessage(g = game) {
     delete g._deathSurvivalRunmodeDelayPending;
     await captureRunmodeDelay(g, runmodeDelayPending);
     g._deathSurvivedMessagePending = false;
-    await queueTurnMessage('You survived that attempt on your life.');
+    await plineWithContinuation('You survived that attempt on your life.');
     if (g._deathSurvivalHeroTookTimePending != null) {
         finishHeroTookTimeRng(g._deathSurvivalHeroTookTimePending);
         g._deathSurvivalHeroTookTimePending = null;
@@ -3175,7 +3054,7 @@ async function resolveMonsterMagicMissileBeam(action) {
             if (target) {
                 if (offensive.firstShotForcedMiss) {
                     if (cansee(x, y)) {
-                        await queueTurnMessage(
+                        await plineWithContinuation(
                             `The magic missile misses the ${
                                 quietMonsterName(target)
                             }.`,
@@ -3208,20 +3087,20 @@ async function resolveMonsterMagicMissileBeam(action) {
                                     spotted,
                                 },
                                 game,
-                                queueTurnMessage,
+                                plineWithContinuation,
                             );
                             contact.death = death;
                             contact.killed = !death.survived;
                             pendingMapFlushCursor = deathCursor;
                         } else if (cansee(x, y)) {
-                            await queueTurnMessage(
+                            await plineWithContinuation(
                                 `The magic missile hits the ${
                                     quietMonsterName(target)
                                 }!`,
                             );
                         }
                     } else if (cansee(x, y)) {
-                        await queueTurnMessage(
+                        await plineWithContinuation(
                             `The magic missile misses the ${
                                 quietMonsterName(target)
                             }.`,
@@ -3230,7 +3109,7 @@ async function resolveMonsterMagicMissileBeam(action) {
                 }
             } else if (x === game.u?.ux && y === game.u?.uy && range >= 0) {
                 if (offensive.firstShotForcedMiss) {
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         'The magic missile whizzes by you!',
                     );
                 } else {
@@ -3238,7 +3117,7 @@ async function resolveMonsterMagicMissileBeam(action) {
                     (offensive.contacts ||= []).push({ hero: true, hit });
                     if (hit) {
                         range -= 2;
-                        await queueTurnMessage('The magic missile hits you!');
+                        await plineWithContinuation('The magic missile hits you!');
                         const damage = finishHeroMagicMissileDamage(
                             action, game,
                         );
@@ -3252,7 +3131,7 @@ async function resolveMonsterMagicMissileBeam(action) {
                         ];
                         exerciseAttribute(A_STR, false);
                     } else {
-                        await queueTurnMessage(
+                        await plineWithContinuation(
                             'The magic missile whizzes by you!',
                         );
                     }
@@ -3265,7 +3144,7 @@ async function resolveMonsterMagicMissileBeam(action) {
             if (range > 0
                 && monsterBeamPositionIsValid(previousX, previousY)
                 && cansee(previousX, previousY)) {
-                await queueTurnMessage('The magic missile bounces!');
+                await plineWithContinuation('The magic missile bounces!');
             }
             // The reached carriers are cardinal.  Native dobuzz()
             // reverses a cardinal beam without a bounce-direction RNG draw.
@@ -3282,10 +3161,10 @@ async function resolvePetRangedResponse(monster, target, movement) {
     if (!target || !(monster.mtame || monster.pet)) return null;
     const response = await resolveRangedRetaliation(
         monster, target, game, {
-            publish: queueTurnMessage,
+            publish: plineWithContinuation,
             finishMonsterKill: (deadMonster, death) =>
                 finishMonsterRayDeath(
-                    deadMonster, death, game, queueTurnMessage,
+                    deadMonster, death, game, plineWithContinuation,
                 ),
         },
     );
@@ -3307,7 +3186,7 @@ async function resumeTrappedMonster(action) {
     game._deferVisibleMonsterContact = true;
     try {
         await resumeDeferredMonsterTrap(action, game, {
-            publish: queueTurnMessage,
+            publish: plineWithContinuation,
             describeMonster: visibleMonsterSubject,
         });
     } finally {
@@ -3372,7 +3251,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             game.u?.ux ?? actor.mx, game.u?.uy ?? actor.my,
         );
         const liquid = await resolveMonsterLiquid(actor, game, {
-            announce: queueTurnMessage,
+            announce: plineWithContinuation,
             finishDeath: finishMonsterLiquidDeath,
         });
         if (liquid?.dead) {
@@ -3412,7 +3291,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 continue;
             }
         }
-        const equipment = await reassessMonsterArmor(actor, game, { publish: queueTurnMessage });
+        const equipment = await reassessMonsterArmor(actor, game, { publish: plineWithContinuation });
         game._deferVisibleMonsterContact = true;
         let action;
         try {
@@ -3433,7 +3312,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             // line is a tty boundary; only after it resumes may the spell
             // create monsters and dochug() finish this actor.
             if (canProjectMonster(monster, monster.mx, monster.my)) {
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} casts a spell!`,
                 );
             }
@@ -3441,7 +3320,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 action, game,
             );
             if (spellEffect?.message)
-                await queueTurnMessage(spellEffect.message);
+                await plineWithContinuation(spellEffect.message);
             movement = action.movement;
         }
         // C postmov() snapshots visibility at the destination before door
@@ -3459,7 +3338,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 monster, movement.tenguRelocation, actorWasSeen,
             );
             if (relocationMessage)
-                await queueTurnMessage(relocationMessage);
+                await plineWithContinuation(relocationMessage);
             continue;
         }
         if (movement?.deferredFleeingRelocation) {
@@ -3472,7 +3351,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 monster, movement.fleeingRelocation, actorWasSeen,
             );
             if (relocationMessage)
-                await queueTurnMessage(relocationMessage);
+                await plineWithContinuation(relocationMessage);
             continue;
         }
         if (movement?.fleeingTeleportFailed) continue;
@@ -3482,7 +3361,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         // prose force the same tty continuation boundary.
         if (movement?.deferredAfterRestrictedTenguTeleport) {
             if (actorWasSeen) {
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `A mysterious force prevents the ${quietMonsterName(
                         monster,
                     )} from teleporting!`,
@@ -3502,7 +3381,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 monster, movement, actorWasSeen,
             );
             if (relocationMessage)
-                await queueTurnMessage(relocationMessage);
+                await plineWithContinuation(relocationMessage);
             game._deferVisibleMonsterContact = true;
             try {
                 await resumeDeferredCovetousRelocation(action, game);
@@ -3517,7 +3396,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 observeNearbyNamedObject(
                     movement.pickedUp, movement.oldx, movement.oldy,
                 );
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} picks up ${
                         petCarriedObjectName(movement.pickedUp)}.`,
                 );
@@ -3527,7 +3406,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 observeNearbyNamedObject(
                     movement.dropped[0], movement.oldx, movement.oldy,
                 );
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} drops ${
                         petCarriedObjectName(movement.dropped[0])}.`,
                 );
@@ -3548,7 +3427,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             const message = movement.petRangedAttack.cough
                 ? monsterCoughMessage(monster, game)
                 : monsterDryRattleMessage(monster, game);
-            if (message) await queueTurnMessage(message);
+            if (message) await plineWithContinuation(message);
             await resumeDeferredPetRangedNoise(action, game);
             movement = action.movement;
         }
@@ -3587,7 +3466,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     eatingMessage
                         = `${eatingSubject} eats a tripe ration.`;
                 }
-                if (eatingMessage) await queueTurnMessage(eatingMessage);
+                if (eatingMessage) await plineWithContinuation(eatingMessage);
             }
             await resumeDeferredPetEating(action, game);
             movement = action.movement;
@@ -3646,7 +3525,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         : seesDoor
                             ? 'You see a door open.'
                             : game.deaf ? null : 'You hear a door open.';
-                if (message) await queueTurnMessage(message);
+                if (message) await plineWithContinuation(message);
                 if (movement.deferredAfterDoorMessage) {
                     await resumeDeferredMonsterDoor(action, game);
                     movement = action.movement;
@@ -3659,7 +3538,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             // mintrap() message is what can force the reluctance line into a
             // tty --More-- before the destination is repainted.
             const message = reluctantPetMessage(monster, movement);
-            const dismissal = await queueTurnMessage(message);
+            const dismissal = await plineWithContinuation(message);
             newsym(movement.oldx, movement.oldy);
             // If the reluctance line itself did not have to page an older
             // topline, postmov() reaches mintrap() with the pet already
@@ -3673,7 +3552,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         if (movement.deferredAfterMonsterTrap) {
             const event = movement.trap;
             await resumeDeferredMonsterTrap(action, game, {
-                publish: queueTurnMessage,
+                publish: plineWithContinuation,
                 monsterName: quietMonsterName,
                 describeMonster: visibleMonsterSubject,
                 revealTrap: trap => newsym(trap.tx, trap.ty),
@@ -3685,11 +3564,11 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         if (movement?.trap?.kind === 'teleport-trap') {
             const event = movement.trap;
             if (event.leashReleased)
-                await queueTurnMessage('Your leash goes slack.');
+                await plineWithContinuation('Your leash goes slack.');
             if (event.cursedLeash && (event.visible || !game.deaf)) {
                 const verb = monsterYelpVerb(monster);
                 if (verb) {
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         `${visibleMonsterSubject(monster)} ${verb}!`,
                     );
                 }
@@ -3699,7 +3578,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 const outcome = canProjectMonster(
                     monster, monster.mx, monster.my,
                 ) ? 'seems disoriented.' : 'suddenly disappears!';
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} ${outcome}`,
                 );
             }
@@ -3717,7 +3596,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             monster.mhp = liveHp;
             const pitName = event.trap.ttyp === SPIKED_PIT
                 ? 'a spiked pit' : 'a pit';
-            await queueTurnMessage(
+            await plineWithContinuation(
                 `${visibleMonsterSubject(monster)} falls into ${pitName}!`,
             );
         }
@@ -3740,7 +3619,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     : `Click!  ${visibleMonsterSubject(monster)} triggers ${
                         event.wasSeen ? 'a rolling boulder trap' : 'something'
                     }.`;
-                await queueTurnMessage(trigger);
+                await plineWithContinuation(trigger);
             }
             if (event.released) {
                 vision_note_blocker_change(
@@ -3770,7 +3649,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             if (event.released && event.hit && event.seeSquare) {
                 const target = event.inSight
                     ? `the ${quietMonsterName(monster)}` : 'it';
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `The boulder hits ${target}!`,
                 );
                 if (event.killed) {
@@ -3779,14 +3658,14 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     const destroyed = monsterIsNonliving(monster.mnum)
                         || monsterIsVampireShifter(monster)
                         || !event.inSight;
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         `${subject} is ${destroyed ? 'destroyed' : 'killed'}!`,
                     );
                 }
             } else if (event.released && event.seeSquare) {
                 const target = event.inSight
                     ? `the ${quietMonsterName(monster)}` : 'it';
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `The boulder misses ${target}.`,
                 );
             }
@@ -3794,7 +3673,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 // ohitmon() finishes death/corpse work before launch_obj()
                 // resumes its two-delay traversal from the target cell.
                 await resumeDeferredMonsterRollingBoulderDeath(action, game, {
-                    publish: queueTurnMessage,
+                    publish: plineWithContinuation,
                 });
                 movement = action.movement;
                 const { dx, dy, glyph } = event.flight;
@@ -3822,7 +3701,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         if (movement?.trap?.kind === 'magic-portal-migration'
             && movement.trap.visible) {
             movement.trap.trap.tseen = true;
-            await queueTurnMessage(
+            await plineWithContinuation(
                 `Suddenly, the ${quietMonsterName(
                     monster,
                 )} disappears out of sight.`,
@@ -3833,7 +3712,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             movement.trap.trap.tseen = true;
             const fall = movement.trap.trap.ttyp === HOLE
                 ? 'falls into a hole' : 'falls through a trap door';
-            await queueTurnMessage(
+            await plineWithContinuation(
                 `Suddenly, the ${quietMonsterName(monster)} ${fall}.`,
             );
         }
@@ -3843,12 +3722,12 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 monster,
                 visible: true,
                 subject: actor => `The ${quietMonsterName(actor)}`,
-                announce: queueTurnMessage,
+                announce: plineWithContinuation,
             });
         }
         if (deferredTrapDestination) newsym(movement.x, movement.y);
         if (movement?.tunnelProbe?.crashingRockAudible && !game.deaf)
-            await queueTurnMessage('You hear crashing rock.');
+            await plineWithContinuation('You hear crashing rock.');
         if (deferredReluctantMove)
             newsym(movement.x, movement.y);
         if (movement?.hideUnder) {
@@ -3863,7 +3742,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 monster.mundetected = hiddenState;
                 const hidingPlace = concealment.under
                     || simpleObjectNameWithArticle(concealment.object);
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `You see the ${quietMonsterName(monster)} ${
                         concealment.verb
                     } under ${hidingPlace}.`,
@@ -3886,7 +3765,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             if (actorWasSeen || monsterIsSeen) {
                 offensive.object.dknown = true;
                 recordObjectEncounter(offensive.object.otyp);
-                offensiveLineDismissal = await queueTurnMessage(
+                offensiveLineDismissal = await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} zaps ${
                         distantMonsterObjectName(offensive.object)
                     }!`,
@@ -3899,7 +3778,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     game.u?.ux ?? monster.mx,
                     game.u?.uy ?? monster.my,
                 ) <= range * range ? 'nearby' : 'distant';
-                offensiveLineDismissal = await queueTurnMessage(
+                offensiveLineDismissal = await plineWithContinuation(
                     `You hear a ${proximity} zap.`,
                 );
                 offensive.object.dknown = false;
@@ -3932,7 +3811,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             if (actorWasSeen || monsterIsSeen) {
                 offensive.object.dknown = true;
                 recordObjectEncounter(offensive.object.otyp);
-                offensiveLineDismissal = await queueTurnMessage(
+                offensiveLineDismissal = await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} zaps ${
                         distantMonsterObjectName(offensive.object)
                     }!`,
@@ -3945,7 +3824,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     game.u?.ux ?? monster.mx,
                     game.u?.uy ?? monster.my,
                 ) <= range * range ? 'nearby' : 'distant';
-                offensiveLineDismissal = await queueTurnMessage(
+                offensiveLineDismissal = await plineWithContinuation(
                     `You hear a ${proximity} zap.`,
                 );
                 offensive.object.dknown = false;
@@ -3967,7 +3846,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             if (effect?.message === 'Boing!')
                 await shieldeff(game.u.ux, game.u.uy);
             if (effect?.message) {
-                const effectDismissal = await queueTurnMessage(effect.message);
+                const effectDismissal = await plineWithContinuation(effect.message);
                 if (effectDismissal !== null
                     && effectDismissal !== undefined) {
                     earlierActorPagerInScan = true;
@@ -3993,10 +3872,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     // really_done() calls paybill() before it forces the
                     // message window.  Preserve that shared ordering so a
                     // resident's inheritance line joins the fatal topline.
-                    await queueTurnMessage('You die...');
+                    await plineWithContinuation('You die...');
                     const settlement = settleShopkeepersAfterDeath(game);
                     if (settlement.message)
-                        await queueTurnMessage(settlement.message);
+                        await plineWithContinuation(settlement.message);
                     await waitForCurrentMonsterMore('You die...');
                     await finishOrdinaryDeath({ killer: 'wand' });
                     game.context.move = 0;
@@ -4043,7 +3922,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 && (game._pending_message || '')
                                     .endsWith(curseMessage);
                             if (curseMessage && !repeatedAudibleCurse)
-                                await queueTurnMessage(curseMessage);
+                                await plineWithContinuation(curseMessage);
                             previousHeroAttack = heroAttack;
                             heroAttack = await continueDeferredHeroAttack(
                                 action, game,
@@ -4057,7 +3936,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             monster, monster.mx, monster.my,
                         );
                         if (casterVisible || heroAttack.directed) {
-                            await queueTurnMessage(
+                            await plineWithContinuation(
                                 `${caster} casts a spell${
                                     heroAttack.directed ? ' at you' : ''
                                 }!`,
@@ -4110,7 +3989,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         if (heroAttack.spell === 'confuse-you')
                             resumeDeferredHeroSpell(action, game);
                         const effectDismissal = effectMessage
-                            ? await queueTurnMessage(effectMessage)
+                            ? await plineWithContinuation(effectMessage)
                             : null;
                         if (heroAttack.deferredSpellEffect)
                             resumeDeferredHeroSpell(action, game);
@@ -4134,16 +4013,16 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                     action, game,
                                 );
                             if (summoned?.message)
-                                await queueTurnMessage(summoned.message);
+                                await plineWithContinuation(summoned.message);
                         }
                         if (heroAttack.deferredCloneWizard) {
-                            await queueTurnMessage('Double Trouble...');
+                            await plineWithContinuation('Double Trouble...');
                             const clone
                                 = await beginDeferredHeroCloneWizard(
                                     action, game,
                                 );
                             if (clone?.message)
-                                await queueTurnMessage(clone.message);
+                                await plineWithContinuation(clone.message);
                             finishDeferredHeroCloneWizard(action, game);
                         }
                         if (heroAttack.deferredHasteSelf) {
@@ -4151,7 +4030,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 action, game,
                             );
                             if (haste?.message)
-                                await queueTurnMessage(haste.message);
+                                await plineWithContinuation(haste.message);
                         }
                         if (heroAttack.deferredAggravation)
                             resolveDeferredHeroAggravation(action, game);
@@ -4202,7 +4081,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         newsym(game.u.ux, game.u.uy);
                     }
                 if (heroAttack.deferredRevealUnder) {
-                    const revealDismissal = await queueTurnMessage(
+                    const revealDismissal = await plineWithContinuation(
                         heroAttack.revealUnderMessage,
                     );
                     newsym(monster.mx, monster.my);
@@ -4233,7 +4112,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 // when it would fit on the current tty topline.
                 const contactDismissal = heroAttack.deferredEngulf
                     ? await waitForMonsterMore(message)
-                    : message ? await queueTurnMessage(message) : undefined;
+                    : message ? await plineWithContinuation(message) : undefined;
                 if (message) earlierActorMessageInScan = true;
                 if (contactDismissal !== null
                     && contactDismissal !== undefined) {
@@ -4242,7 +4121,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 const activeHpKey = Upolyd(game.u) ? 'mh' : 'uhp';
                 const hpBeforeDeferredHit = game.u?.[activeHpKey] ?? 1;
                 const publishEquipmentMessage = async line => {
-                    const dismissal = await queueTurnMessage(line);
+                    const dismissal = await plineWithContinuation(line);
                     if (dismissal !== null && dismissal !== undefined) {
                         actorContactPagerOwned = true;
                         actorContactMessageAfterPager = game._pending_message === line;
@@ -4256,7 +4135,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 if (heroAttack.deferredStickingAfterHit)
                     resumeDeferredHeroSticking(action, game);
                 if (heroAttack.stickingMessage) {
-                    const stickingDismissal = await queueTurnMessage(
+                    const stickingDismissal = await plineWithContinuation(
                         heroAttack.stickingMessage,
                     );
                     heroAttack.stickingMessage = null;
@@ -4274,7 +4153,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 if (heroAttack.deferredEngulf) {
                     const engulf = resumeDeferredHeroEngulf(action, game);
                     if (engulf?.message) {
-                        const engulfDismissal = await queueTurnMessage(
+                        const engulfDismissal = await plineWithContinuation(
                             engulf.message,
                         );
                         if (engulfDismissal !== null
@@ -4286,7 +4165,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 if (heroAttack.deferredSlimeEffect)
                     resumeDeferredHeroSlime(action, game);
                 if (heroAttack.slimeEffectMessage) {
-                    const slimeDismissal = await queueTurnMessage(
+                    const slimeDismissal = await plineWithContinuation(
                         heroAttack.slimeEffectMessage,
                     );
                     heroAttack.slimeEffectMessage = null;
@@ -4300,7 +4179,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 if (heroAttack.deferredColdNegation)
                     resumeDeferredHeroColdSpecial(action, game);
                 if (heroAttack.coldEffectMessage) {
-                    const coldDismissal = await queueTurnMessage(
+                    const coldDismissal = await plineWithContinuation(
                         heroAttack.coldEffectMessage,
                     );
                     heroAttack.coldEffectMessage = null;
@@ -4310,7 +4189,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     }
                 }
                 if (heroAttack.coldResistanceMessage) {
-                    const coldResistanceDismissal = await queueTurnMessage(
+                    const coldResistanceDismissal = await plineWithContinuation(
                         heroAttack.coldResistanceMessage,
                     );
                     heroAttack.coldResistanceMessage = null;
@@ -4322,7 +4201,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 if (heroAttack.deferredFireNegation)
                     resumeDeferredHeroFireSpecial(action, game);
                 if (heroAttack.fireEffectMessage) {
-                    const fireDismissal = await queueTurnMessage(
+                    const fireDismissal = await plineWithContinuation(
                         heroAttack.fireEffectMessage,
                     );
                     heroAttack.fireEffectMessage = null;
@@ -4332,7 +4211,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     }
                 }
                 if (heroAttack.fireResistanceMessage) {
-                    const resistanceDismissal = await queueTurnMessage(
+                    const resistanceDismissal = await plineWithContinuation(
                         heroAttack.fireResistanceMessage,
                     );
                     heroAttack.fireResistanceMessage = null;
@@ -4342,7 +4221,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     }
                 }
                 if (heroAttack.slimeBurnedMessage) {
-                    const slimeDismissal = await queueTurnMessage(
+                    const slimeDismissal = await plineWithContinuation(
                         heroAttack.slimeBurnedMessage,
                     );
                     heroAttack.slimeBurnedMessage = null;
@@ -4354,7 +4233,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 if (heroAttack.deferredElectricNegation)
                     resumeDeferredHeroElectricSpecial(action, game);
                 if (heroAttack.electricEffectMessage) {
-                    const electricDismissal = await queueTurnMessage(
+                    const electricDismissal = await plineWithContinuation(
                         heroAttack.electricEffectMessage,
                     );
                     heroAttack.electricEffectMessage = null;
@@ -4364,7 +4243,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     }
                 }
                 if (heroAttack.electricResistanceMessage) {
-                    const electricResistanceDismissal = await queueTurnMessage(
+                    const electricResistanceDismissal = await plineWithContinuation(
                         heroAttack.electricResistanceMessage,
                     );
                     heroAttack.electricResistanceMessage = null;
@@ -4376,7 +4255,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 if (heroAttack.deferredLifeDrainGate)
                     resumeDeferredHeroLifeDrain(action, game);
                 if (heroAttack.lifeDrainMessage) {
-                    const lifeDrainDismissal = await queueTurnMessage(
+                    const lifeDrainDismissal = await plineWithContinuation(
                         heroAttack.lifeDrainMessage,
                     );
                     heroAttack.lifeDrainMessage = null;
@@ -4388,7 +4267,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 if (heroAttack.deferredStunGate)
                     resumeDeferredHeroStun(action, game);
                 if (heroAttack.stunMessage) {
-                    const stunDismissal = await queueTurnMessage(
+                    const stunDismissal = await plineWithContinuation(
                         heroAttack.stunMessage,
                     );
                     heroAttack.stunMessage = null;
@@ -4423,7 +4302,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     heroAttack.deferredPostHit = true;
                 }
                 if (heroAttack.drainMessage) {
-                    const drainDismissal = await queueTurnMessage(
+                    const drainDismissal = await plineWithContinuation(
                         heroAttack.drainMessage,
                     );
                     heroAttack.drainMessage = null;
@@ -4437,7 +4316,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     resumeDeferredHeroLegs(action, game);
                 if (heroAttack.deferredPostHit) {
                     const publishContactMessage = async message => {
-                        const dismissal = await queueTurnMessage(message);
+                        const dismissal = await plineWithContinuation(message);
                         if (dismissal !== null && dismissal !== undefined)
                             actorContactPagerOwned = true;
                     };
@@ -4467,12 +4346,12 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         }[inventoryDamage.damageType];
                         await destroyInventory(
                             inventoryDamage.sourceDamage,
-                            { state: game, publish: queueTurnMessage },
+                            { state: game, publish: plineWithContinuation },
                         );
                         if (inventoryDamage.damageType === 'fire') {
                             await igniteItems(game.inventory, {
                                 state: game,
-                                publish: queueTurnMessage,
+                                publish: plineWithContinuation,
                             });
                         }
                         heroAttack.deferredElementalInventory = null;
@@ -4498,7 +4377,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     if (toggledBlindness) vision_recalc(0);
                 }
                 if (heroAttack.effectMessage) {
-                    const effectDismissal = await queueTurnMessage(
+                    const effectDismissal = await plineWithContinuation(
                         heroAttack.effectMessage,
                     );
                     if (effectDismissal !== null
@@ -4509,7 +4388,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 if (heroAttack.deferredExpulsion) {
                     const expelled = await expelHero(monster, {
                         publish: async message => {
-                            const key = await queueTurnMessage(message);
+                            const key = await plineWithContinuation(message);
                             if (key != null) actorContactPagerOwned = true;
                             return key;
                         },
@@ -4534,7 +4413,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     const stopped = game._occupation.text
                         || 'waiting';
                     game._occupation = null;
-                    await queueTurnMessage(`You stop ${stopped}.`);
+                    await plineWithContinuation(`You stop ${stopped}.`);
                 }
                 if ((game.u?.[Upolyd(game.u) ? 'mh' : 'uhp'] ?? 1) > 0) {
                     previousHeroAttack = heroAttack;
@@ -4654,7 +4533,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     // really_done() installs the death line, then paybill()
                     // can append a shopkeeper inheritance line before
                     // display_nhwindow(WIN_MESSAGE) forces one pager.
-                    await queueTurnMessage('You die...');
+                    await plineWithContinuation('You die...');
                     const settlement = settleShopkeepersAfterDeath(game);
                     if (settlement.message) {
                         // paybill()/inherits() runs after done()'s forced
@@ -4663,7 +4542,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         // repaint boundary, unlike a merely accumulated actor
                         // line from before the fatal contact.
                         delete game._statusHpOverride;
-                        await queueTurnMessage(settlement.message);
+                        await plineWithContinuation(settlement.message);
                     }
                     await waitForCurrentMonsterMore('You die...');
                 }
@@ -4715,20 +4594,20 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             movement.deferredCuss = false;
             if (!game.deaf && !game.u?.deaf) {
                 const cussMessage = selectWizardCussMessage(action, monster);
-                await queueTurnMessage(cussMessage);
+                await plineWithContinuation(cussMessage);
                 wakeMonstersNear(monster.mx, monster.my, 25);
             }
         }
         if (movement?.breathAttack) {
             const breath = movement.breathAttack;
             if (breath.cough && !game.deaf) {
-                await queueTurnMessage(monsterIsSeen
+                await plineWithContinuation(monsterIsSeen
                     ? `The ${quietMonsterName(monster)} coughs.`
                     : 'You hear a cough.');
             }
             if (breath.launched) {
                 await resolveDeferredMonsterBreath(
-                    action, game, queueTurnMessage,
+                    action, game, plineWithContinuation,
                 );
                 if (game._occupation)
                     game._interruptedMultiActionDebt = true;
@@ -4740,14 +4619,14 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             const spit = movement.spitAttack;
             if (spit.dryRattle) {
                 const message = monsterDryRattleMessage(monster, game);
-                if (message) await queueTurnMessage(message);
+                if (message) await plineWithContinuation(message);
             }
             if (spit.launched) {
                 // spitmm() installs the visible launch line before entering
                 // m_throw().  Keeping traversal deferred here preserves that
                 // tty suspension boundary when the topline is already full.
                 if (monsterIsSeen) {
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         `The ${quietMonsterName(monster)} spits venom!`,
                     );
                 }
@@ -4804,31 +4683,31 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             || game.flags?.verbose === false;
                         if (!spit.hit) {
                             if (terse) {
-                                await queueTurnMessage('It misses.');
+                                await plineWithContinuation('It misses.');
                             } else if (spit.hitThreshold
                                 <= spit.hitRoll - 2) {
-                                await queueTurnMessage(
+                                await plineWithContinuation(
                                     `A ${spit.appearance} misses you.`,
                                 );
                             } else {
-                                await queueTurnMessage(
+                                await plineWithContinuation(
                                     `You are almost hit by a ${
                                         spit.appearance}.`,
                                 );
                             }
                         } else {
-                            await queueTurnMessage(terse
+                            await plineWithContinuation(terse
                                 ? 'You are hit.'
                                 : `You are hit by a ${spit.appearance}.`);
                             if (spit.resisted) {
-                                await queueTurnMessage(
+                                await plineWithContinuation(
                                     "It doesn't seem to hurt you.",
                                 );
                             } else if (spit.venom?.otyp === ACID_VENOM) {
-                                await queueTurnMessage('It burns!');
+                                await plineWithContinuation('It burns!');
                             }
                             if (spit.blindIncrement) {
-                                await queueTurnMessage(
+                                await plineWithContinuation(
                                     spit.blindMessage,
                                 );
                             }
@@ -4863,25 +4742,25 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     );
                     if (targetVisible) {
                         const targetName = quietMonsterName(spit.target);
-                        await queueTurnMessage(spit.hit
+                        await plineWithContinuation(spit.hit
                             ? `The ${spit.appearance} hits the ${targetName}.`
                             : `The ${spit.appearance} misses the ${targetName}.`);
                         if (spit.resisted) {
-                            await queueTurnMessage(
+                            await plineWithContinuation(
                                 `The ${targetName} is unaffected.`,
                             );
                         } else if (spit.hit
                             && spit.venom?.otyp === ACID_VENOM) {
-                            await queueTurnMessage(
+                            await plineWithContinuation(
                                 `The acid burns the ${targetName}!`,
                             );
                         } else if (spit.newlyBlinded) {
-                            await queueTurnMessage(
+                            await plineWithContinuation(
                                 `The ${targetName} is blinded by the venom.`,
                             );
                         }
                         if (spit.targetDied) {
-                            await queueTurnMessage(
+                            await plineWithContinuation(
                                 `The ${targetName} is killed!`,
                             );
                         }
@@ -4895,7 +4774,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                     spit.target.mx,
                                     spit.target.my,
                                 ),
-                                publish: queueTurnMessage,
+                                publish: plineWithContinuation,
                             },
                         );
                         spit.targetDied = !death.survived;
@@ -4927,7 +4806,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 recordObjectEncounter(potion.object.otyp);
             }
             if (actorWasSeen || monsterIsSeen) {
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `The ${quietMonsterName(monster)} hurls a ${
                         potion.appearance
                     } potion!`,
@@ -4985,17 +4864,17 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             };
             try {
                 if (potion.caught) {
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         `You catch the ${potion.appearance} potion!`,
                     );
                     await capturePotionImpactFrame();
                 } else {
-                    await queueTurnMessage(potion.impactMessage);
+                    await plineWithContinuation(potion.impactMessage);
                     // potionhit() applies impact damage after the crash line,
                     // then its evaporation pline crosses tty.  The await
                     // therefore owns the input50/input51 split while the last
                     // visible flight cell remains painted.
-                    await queueTurnMessage(potion.evaporationMessage);
+                    await plineWithContinuation(potion.evaporationMessage);
                     potion.vaporLinePresented = true;
                     game._pendingOffensivePotionEffect = potion;
                     await resumeOffensivePotionVapor(potion);
@@ -5071,7 +4950,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     ) ? `the ${quietMonsterName(rangedAttack.aimedAt)}`
                         : 'something'}`
                     : '';
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `The ${quietMonsterName(monster)} ${
                         rangedAttack.launched ? 'shoots' : 'throws'
                     } ${rangedObject}${aimedAt}!`,
@@ -5119,7 +4998,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 for (const cell of ranged.flightPath || []) {
                     if (cell.contact) {
                         await presentMonsterProjectileContact(
-                            cell.contact, queueTurnMessage,
+                            cell.contact, plineWithContinuation,
                         );
                     }
                     if (transientFlightCell)
@@ -5167,7 +5046,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 };
                 try {
                     const result = await hitHeroWithMonsterProjectile(ranged, game, {
-                        publish: queueTurnMessage,
+                        publish: plineWithContinuation,
                         finishDeath: async options => {
                             await waitForCurrentMonsterMore();
                             return finishHeroDeath(options);
@@ -5189,7 +5068,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     if (transientFlightCell)
                         newsym(transientFlightCell.x, transientFlightCell.y);
                 }
-                await finishMonsterProjectile(ranged, game, { publish: queueTurnMessage });
+                await finishMonsterProjectile(ranged, game, { publish: plineWithContinuation });
             }
             if (!ranged.heroTarget) {
                 const impactVisible = Number.isFinite(ranged.impactX)
@@ -5198,7 +5077,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 const { targetVisible } =
                     await presentMonsterProjectileShot(
                         ranged, projectileGlyph, game, {
-                            publish: queueTurnMessage,
+                            publish: plineWithContinuation,
                             showMissWithoutTarget: rangedAttack.volley > 1
                                 && (actorWasSeen || monsterIsSeen
                                     || impactVisible),
@@ -5213,9 +5092,9 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 spotted: canProjectMonster(
                                     target, target.mx, target.my,
                                 ),
-                                publish: queueTurnMessage,
+                                publish: plineWithContinuation,
                             }),
-                        publish: queueTurnMessage,
+                        publish: plineWithContinuation,
                     },
                 );
                 if (ranged.targetDied && !eggHit.deathFinished) {
@@ -5227,12 +5106,12 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                 ranged.target.mx,
                                 ranged.target.my,
                             ),
-                            publish: queueTurnMessage,
+                            publish: plineWithContinuation,
                         },
                     );
                     ranged.targetDied = !death.survived;
                 }
-                await finishMonsterProjectile(ranged, game, { publish: queueTurnMessage });
+                await finishMonsterProjectile(ranged, game, { publish: plineWithContinuation });
             }
             if (rangedAttack.missileStack) {
                 const nextShot = continueMonsterWeaponVolley(
@@ -5274,19 +5153,19 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         if (movement?.petBreath) {
             if (movement.petBreath.cough) {
                 const message = monsterCoughMessage(monster, game);
-                if (message) await queueTurnMessage(message);
+                if (message) await plineWithContinuation(message);
             }
             if (movement.petBreath.launched) {
                 const message = monsterBreathMessage(
                     monster, movement.petBreath,
                 );
-                if (message) await queueTurnMessage(message);
+                if (message) await plineWithContinuation(message);
                 await resolveMonsterBreathAttack(
                     monster, movement.petBreath, game, {
-                        publish: queueTurnMessage,
+                        publish: plineWithContinuation,
                         finishMonsterKill: (target, death) =>
                             finishMonsterRayDeath(
-                                target, death, game, queueTurnMessage,
+                                target, death, game, plineWithContinuation,
                             ),
                     },
                 );
@@ -5314,26 +5193,26 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             : sawEatingFood ? 'It' : null;
         if (movement?.ateFood?.otyp === 282 && eatingSubject
             && !movement.eatingMessageHandled)
-            await queueTurnMessage(
+            await plineWithContinuation(
                 `${eatingSubject} eats an uncursed carrot.`,
             );
         else if (movement?.ateFood?.otyp === CORPSE && eatingSubject
             && !movement.eatingMessageHandled) {
             const corpseName = movement.ateFood.name
                 || `${MONSTER_NAME[movement.ateFood.corpsenm] || 'monster'} corpse`;
-            await queueTurnMessage(
+            await plineWithContinuation(
                 `${eatingSubject} eats a ${corpseName}.`,
             );
         } else if (movement?.ateFood?.otyp === 264 && monster.mnum === 16
             && eatingSubject && !movement.eatingMessageHandled) {
-            await queueTurnMessage(`${eatingSubject} eats a tripe ration.`);
+            await plineWithContinuation(`${eatingSubject} eats a tripe ration.`);
         }
         if (movement?.pickedUp
             && cansee(movement.oldx, movement.oldy)) {
             observeNearbyNamedObject(
                 movement.pickedUp, movement.oldx, movement.oldy,
             );
-            await queueTurnMessage(
+            await plineWithContinuation(
                 `${visibleMonsterSubject(monster)} picks up ${
                     petCarriedObjectName(movement.pickedUp)}.`,
             );
@@ -5342,7 +5221,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             observeNearbyNamedObject(
                 movement.pickedUpHostile, monster.mx, monster.my,
             );
-            await queueTurnMessage(
+            await plineWithContinuation(
                 `${visibleMonsterSubject(monster)} picks up ${
                     distantMonsterObjectName(movement.pickedUpHostile)}.`,
             );
@@ -5367,7 +5246,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             observeNearbyNamedObject(
                 movement.dropped[0], movement.oldx, movement.oldy,
             );
-            await queueTurnMessage(
+            await plineWithContinuation(
                 `${visibleMonsterSubject(monster)} drops ${
                     petCarriedObjectName(movement.dropped[0])}.`,
             );
@@ -5376,31 +5255,31 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             const defensive = movement.usedDefensive;
             if (actorWasSeen) {
                 observeMonsterUsedObject(defensive.object);
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} drinks ${
                         petCarriedObjectName(defensive.object)}!`,
                 );
                 if (!defensive.deferredOccupant) {
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         `${visibleMonsterSubject(monster)} looks better.`,
                     );
                     game._knownObjectTypes?.add(POT_HEALING);
                 }
             } else if (!game.deaf) {
-                await queueTurnMessage('You hear a chugging sound.');
+                await plineWithContinuation('You hear a chugging sound.');
             }
         }
         if (movement?.usedMisc?.kind === 'potion-gain-level') {
             const misc = movement.usedMisc;
             if (actorWasSeen) {
                 observeMonsterUsedObject(misc.object);
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} drinks ${
                         petCarriedObjectName(misc.object)
                     }!`,
                 );
                 if (misc.object.cursed) {
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         `${visibleMonsterSubject(monster)} looks uneasy.`,
                     );
                     if (!game._knownObjectTypes?.has(misc.object.otyp)
@@ -5422,7 +5301,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             );
                     }
                 } else {
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         `${visibleMonsterSubject(monster)} seems more experienced.`,
                     );
                     if (!game._knownObjectTypes?.has(misc.object.otyp)) {
@@ -5431,7 +5310,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     }
                 }
             } else if (!game.deaf) {
-                await queueTurnMessage('You hear a chugging sound.');
+                await plineWithContinuation('You hear a chugging sound.');
             }
             finishDeferredMonsterMiscItem(action, game);
             await presentMonsterGrowth(monster, misc.growth);
@@ -5442,14 +5321,14 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             const monsterName = quietMonsterName(monster);
             if (actorWasSeen) {
                 observeMonsterUsedObject(misc.object);
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} drinks ${
                         petCarriedObjectName(misc.object)}!`,
                 );
             } else if (!game.deaf) {
                 // mquaffmsg() returns only after this line (and any pager
                 // needed to clear an older topline) has been accepted.
-                await queueTurnMessage('You hear a chugging sound.');
+                await plineWithContinuation('You hear a chugging sound.');
             }
             finishDeferredMonsterMiscItem(action, game);
             newsym(monster.mx, monster.my);
@@ -5458,11 +5337,11 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             );
             if (actorWasSeen && monster.minvis) {
                 if (stillSeen) {
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         `The ${monsterName}'s body takes on a strange transparency.`,
                     );
                 } else {
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         `Suddenly you cannot see the ${monsterName}.`,
                     );
                     if (cansee(monster.mx, monster.my))
@@ -5473,7 +5352,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     recordObjectKnowledge(misc.object.otyp);
                 }
             } else if (actorWasSeen && !monster.minvis) {
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} briefly seems to be transparent.`,
                 );
             }
@@ -5486,33 +5365,33 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             const hand = OBJECT_BIMANUAL[misc.target?.otyp]
                 ? 'hands' : 'hand';
             if (actorWasSeen) {
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} flicks a bullwhip towards your ${hand}!`,
                 );
             }
             const whip = actorWasSeen ? 'The bullwhip' : 'A whip';
-            await queueTurnMessage(
+            await plineWithContinuation(
                 `${whip} wraps around ${targetWithArticle} you're wielding!`,
             );
             finishDeferredMonsterMiscItem(action, game);
             newsym(monster.mx, monster.my);
             newsym(game.u.ux, game.u.uy);
             if (misc.whereTo === 0) {
-                await queueTurnMessage('The whip slips free.');
+                await plineWithContinuation('The whip slips free.');
             } else {
                 const subject = canProjectMonster(
                     monster, monster.mx, monster.my,
                 ) ? visibleMonsterSubject(monster) : 'It';
                 if (misc.whereTo === 1) {
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         `${subject} yanks ${targetWithArticle} from your ${hand}!`,
                     );
                 } else if (misc.whereTo === 2) {
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         `${subject} yanks ${targetWithArticle} to the floor!`,
                     );
                 } else {
-                    await queueTurnMessage(
+                    await plineWithContinuation(
                         `${subject} snatches ${targetWithArticle}!`,
                     );
                 }
@@ -5522,17 +5401,17 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             const misc = movement.usedMisc;
             if (actorWasSeen) {
                 observeMonsterUsedObject(misc.object);
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} drinks ${
                         petCarriedObjectName(misc.object)
                     }!`,
                 );
             } else if (!game.deaf) {
-                await queueTurnMessage('You hear a chugging sound.');
+                await plineWithContinuation('You hear a chugging sound.');
             }
             finishDeferredMonsterMiscItem(action, game);
             if (actorWasSeen && misc.speedChanged) {
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} is suddenly moving ${
                         misc.speedMuch ? 'much ' : ''
                     }faster.`,
@@ -5550,7 +5429,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 observeMonsterUsedObject(misc.object);
                 const reflexive = monster.female ? 'herself'
                     : monster.genderless ? 'itself' : 'himself';
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} zaps ${reflexive} with ${
                         petCarriedObjectName(misc.object)
                     }!`,
@@ -5563,12 +5442,12 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     game.u?.ux ?? monster.mx,
                     game.u?.uy ?? monster.my,
                 ) <= range * range ? 'nearby' : 'distant';
-                await queueTurnMessage(`You hear a ${proximity} zap.`);
+                await plineWithContinuation(`You hear a ${proximity} zap.`);
                 misc.object.dknown = false;
             }
             finishDeferredMonsterMiscItem(action, game);
             if (actorWasSeen && misc.speedChanged) {
-                await queueTurnMessage(
+                await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} is suddenly moving ${
                         misc.speedMuch ? 'much ' : ''
                     }faster.`,
@@ -5589,7 +5468,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
             game._pending_message = '';
         }
-        if (movement?.message) await queueTurnMessage(movement.message);
+        if (movement?.message) await plineWithContinuation(movement.message);
         if (movement?.deferredPostFlee) rn2(5);
         // C monmove.c:dochugw() interrupts an occupation when one actor has
         // newly become a visible threat within bolt range.  This happens
@@ -5610,7 +5489,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             && canProjectMonster(monster, monster.mx, monster.my)
             && couldsee(monster.mx, monster.my)) {
             game._occupation = null;
-            await queueTurnMessage('You stop searching.');
+            await plineWithContinuation('You stop searching.');
         }
         if (!movement?.moved) continue;
     }
