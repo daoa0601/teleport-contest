@@ -8,6 +8,18 @@ import { initRng } from '../../js/rng.js';
 import { vision_reset } from '../../js/vision.js';
 import { freshGame } from './game-state.js';
 
+export function createRoomLevel({ left = 8, right = 18, top = 8, bottom = 12 } = {}) {
+    const level = new GameMap();
+    for (let x = left; x <= right; x++) {
+        for (let y = top; y <= bottom; y++) {
+            Object.assign(level.at(x, y), {
+                typ: ROOM, lit: true, waslit: true, seenv: 255,
+            });
+        }
+    }
+    return level;
+}
+
 export function freshPlayableRoom({
     left = 8,
     right = 18,
@@ -20,17 +32,7 @@ export function freshPlayableRoom({
     hero = {},
     ...gameState
 } = {}) {
-    const level = new GameMap();
-    for (let x = left; x <= right; x++) {
-        for (let y = top; y <= bottom; y++) {
-            Object.assign(level.at(x, y), {
-                typ: ROOM,
-                lit: true,
-                waslit: true,
-                seenv: 255,
-            });
-        }
-    }
+    const level = createRoomLevel({ left, right, top, bottom });
 
     freshGame({ ...gameState, level, role, heroX, heroY, hero });
     initRng(seed);

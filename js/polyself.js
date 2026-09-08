@@ -320,7 +320,8 @@ export async function returnHeroToHumanForm(state = game, {
         await publish(restored.encumbranceMessage);
     const retouch = await retouchEquipment(2, { state, publish, die });
     if (retouch.died) return { ...restored, died: true };
-    const selfTouch = await selfTouchPetrifyingWeapons({ state, publish, die });
+    const selfTouch = state.uarmg || state.u?.uarmg ? { died: false }
+        : await selfTouchPetrifyingWeapons({ state, publish, die });
     return { ...restored, died: selfTouch.died };
 }
 
@@ -554,7 +555,8 @@ export async function polymonHero(mnum, options = {}) {
 
     const retouch = await retouchEquipment(2);
     if (retouch.died) return { transformed: true, mnum, died: true };
-    const selfTouch = await selfTouchPetrifyingWeapons();
+    const selfTouch = game.uarmg || game.u?.uarmg ? { died: false }
+        : await selfTouchPetrifyingWeapons();
     if (selfTouch.died) return { transformed: true, mnum, died: true };
 
     const currentForm = game.u.umonnum;
@@ -987,7 +989,7 @@ async function renewHumanForm() {
     if (restored.encumbranceMessage)
         await pline(restored.encumbranceMessage);
     const retouch = await retouchEquipment(2);
-    const selfTouch = retouch.died ? retouch
+    const selfTouch = retouch.died || game.uarmg || game.u?.uarmg ? retouch
         : await selfTouchPetrifyingWeapons();
     if (selfTouch.died) {
         return {

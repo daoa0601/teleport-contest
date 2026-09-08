@@ -2,16 +2,23 @@
 // C ref: ball.c bc_order(), move_bc(), and drag_ball().
 
 import { game } from './gstate.js';
-import { map_object, newsym, plineWithContinuation } from './display.js';
+import { clearMapDisplay, map_object, newsym, plineWithContinuation } from './display.js';
 import { place_object, remove_object } from './floor_object.js';
-import { applyFloorEffects } from './floor_effects.js';
+import { applyFloorEffects, landFloorObject } from './floor_effects.js';
+import { exerciseAttribute } from './attrib.js';
+import { loseHeroHp } from './hero_damage.js';
+import { removeHeroEquipment } from './hero_equipment.js';
+import { canLoseInventoryObject, finishInventoryRemoval } from './hero_inventory.js';
+import { unlinkObject } from './object_location.js';
+import { makePlural } from './object_grammar.js';
+import { isWeldedPrimary } from './weapon_slots.js';
 import { mksobj } from './mklev.js';
-import { rn2 } from './rng.js';
+import { rn2, rnd } from './rng.js';
 import {
-    D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, W_BALL, W_CHAIN,
+    A_STR, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, W_BALL, W_CHAIN,
 } from './const.js';
-import { IRON_CHAIN } from './object_data.js';
-import { nearCapacity, SLT_ENCUMBER } from './weight.js';
+import { IRON_CHAIN, OBJECT_NAMES } from './object_data.js';
+import { encumbranceMessage, nearCapacity, SLT_ENCUMBER, weightCapacity } from './weight.js';
 
 export const BC_BALL = 0x01;
 export const BC_CHAIN = 0x02;
@@ -22,6 +29,84 @@ export const BCPOS_BALL = 2;
 
 export function heroIsPunished(state = game) {
     return !!(state.uball || state.u?.uball);
+}
+
+// C ball.c:drag_down(). The ball can pull the hero forward or hit from behind.
+export async function dragBallDownStairs(state = game) {
+    const ball = state.uball || state.u.uball;
+    const weapon = state.uwep || state.u.uwep;
+    const forward = carried(ball, state)
+        && (weapon === ball || !weapon || rn2(3) === 0);
+    if (carried(ball, state) && !isWeldedPrimary(ball, state))
+        await plineWithContinuation('You lose your grip on the iron ball.');
+    clearMapDisplay();
+
+    if (forward) {
+        if (rn2(6)) {
+            await plineWithContinuation('The iron ball drags you downstairs!');
+            if (await ballDamage(rnd(6), 'dragged downstairs by an iron ball', state))
+                return true;
+            await scatterCarriedItems(state);
+        }
+    } else {
+        let dragChance = 3;
+        if (rn2(2)) {
+            await plineWithContinuation('The iron ball smacks into you!');
+            if (await ballDamage(rnd(20), 'iron ball collision', state)) return true;
+            exerciseAttribute(A_STR, false);
+            dragChance -= 2;
+        }
+        if (dragChance >= rnd(6)) {
+            await plineWithContinuation('The iron ball drags you downstairs!');
+            if (await ballDamage(rnd(3), 'dragged downstairs by an iron ball', state))
+                return true;
+            exerciseAttribute(A_STR, false);
+            await scatterCarriedItems(state);
+        }
+    }
+    if (state.program_state?.gameover) return true;
+    await releaseCarriedBall(state);
+    return !!state.program_state?.gameover;
+}
+
+async function ballDamage(amount, killer, state) {
+    if (state.u.halfPhysicalDamage) amount = Math.trunc((amount + 1) / 2);
+    return loseHeroHp(amount, killer, { state });
+}
+
+async function scatterCarriedItems(state) {
+    const capacity = weightCapacity(state);
+    const ball = state.uball || state.u.uball;
+    for (const object of [...state.inventory]) {
+        if (object === ball || rnd(capacity) > object.owt
+            || !canLoseInventoryObject(object, state)) continue;
+        const plural = object.quan !== 1;
+        const name = object.name || OBJECT_NAMES[object.otyp];
+        await plineWithContinuation(
+            `You drop your ${plural ? makePlural(name) : name} and `
+            + `${plural ? 'they fall' : 'it falls'} down the stairs with you.`,
+        );
+        removeHeroEquipment(object, state);
+        unlinkObject(object, state);
+        await finishInventoryRemoval(object, state);
+        await landFloorObject(object, state.u.ux, state.u.uy, {
+            state, publish: plineWithContinuation,
+        });
+        if (state.program_state?.gameover) return;
+    }
+}
+
+async function releaseCarriedBall(state) {
+    const ball = state.uball || state.u.uball;
+    if (!carried(ball, state) || isWeldedPrimary(ball, state)) return;
+    const previousCapacity = nearCapacity(state);
+    removeHeroEquipment(ball, state);
+    unlinkObject(ball, state);
+    await finishInventoryRemoval(ball, state);
+    const currentCapacity = nearCapacity(state);
+    state._encumbranceLevel = currentCapacity;
+    const message = encumbranceMessage(previousCapacity, currentCapacity);
+    if (message) await plineWithContinuation(message);
 }
 
 // C unplacebc()/placebc(): swallowing removes the floor pair but leaves a

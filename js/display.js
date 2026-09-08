@@ -1630,7 +1630,15 @@ function _buildScreenOutput() {
 
 // ── flush_screen ──
 export async function flush_screen(mode) {
+    // C display.c pauses map updates during level arrival. Message windows
+    // still write their own rows while the old map remains on screen.
+    if (mode === -1) game._mapFlushPaused = !game._mapFlushPaused;
+    if (game._mapFlushPaused) return;
     _buildScreenOutput();
+}
+
+export function clearMapDisplay() {
+    for (let row = 1; row <= ROWNO; row++) game.nhDisplay?.clearRow(row);
 }
 
 // ── cls ──

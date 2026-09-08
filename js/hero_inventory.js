@@ -4,17 +4,35 @@ import { artifactById, artifactByName } from './artifacts.js';
 import { deactivateArtifactProperty } from './artifact_invoke.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
-    FIGURINE, LOADSTONE, LUCKSTONE, SPE_BOOK_OF_THE_DEAD,
+    FIGURINE, LEASH, LOADSTONE, LUCKSTONE, SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
 import { curseObjectState } from './object_state.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
+import { isWeldedPrimary } from './weapon_slots.js';
 
 const CARRIED_FLAGS = new Map([
     [AMULET_OF_YENDOR, 'amulet'], [BELL_OF_OPENING, 'bell'],
     [CANDELABRUM_OF_INVOCATION, 'menorah'], [SPE_BOOK_OF_THE_DEAD, 'book'],
 ]);
+
+// C do.c:canletgo(obj, ""). Losing one's grip does not remove worn gear,
+// release a welded weapon, or break a cursed loadstone's hold.
+export function canLoseInventoryObject(object, state = game) {
+    if (object.owornmask & (W_ARMOR | W_ACCESSORY | W_SADDLE)) return false;
+    if (isWeldedPrimary(object, state)) {
+        object.bknown = true;
+        return false;
+    }
+    if (object.otyp === LOADSTONE && object.cursed) {
+        object.corpsenm = 0;
+        object.bknown = true;
+        return false;
+    }
+    return object.otyp !== LEASH || !object.leashmon;
+}
 
 export function finishInventoryAddition(object, state = game) {
     updateCarriedFlags(object, true, state);

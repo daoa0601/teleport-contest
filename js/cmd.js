@@ -109,18 +109,19 @@ import {
     showTextMenuOverlay, showTextPages,
     restoreMenuUnderlay, snapshotMenuUnderlay,
 } from './windows.js';
-import { d, rnd, rn2, rn2Display, rnl, rnz } from './rng.js';
+import {
+    d, rnd, rn2, rn2Display, rnl,
+} from './rng.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { landFloorObject } from './floor_effects.js';
 import {
     deliverMigratingObjects, shipObject,
 } from './object_migration.js';
-import { place_object, remove_object, stack_object } from './floor_object.js';
 import {
-    makemonNear, mklev,
-    mkgold, mkobj, mksobj,
-    rndClass,
-    u_on_downstairs, u_on_upstairs,
+    place_object,
+} from './floor_object.js';
+import {
+    makemonNear, mklev, mkgold, mksobj, rndClass, u_on_downstairs, u_on_upstairs,
 } from './mklev.js';
 import { mergable } from './object_merge.js';
 import {
@@ -163,7 +164,7 @@ import {
 } from './thrown_object.js';
 import { destroyMulchedProjectile, shouldMulchMissile } from './projectile.js';
 import {
-    objectStatePrefix, unseenObjectNoun,
+    unseenObjectNoun,
 } from './objnam.js';
 import {
     artifactById, artifactEmitsLight, artifactToHitBonus,
@@ -174,40 +175,26 @@ import {
 } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import {
-    SLING, BULLWHIP, GRAPPLING_HOOK,
-    CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, SLIME_MOLD, TIN,
-    LOCK_PICK, CREDIT_CARD,
-    STETHOSCOPE, TIN_OPENER, LOADSTONE, HEAVY_IRON_BALL,
-    GOLD_PIECE, CORPSE, BOULDER, ROCK, DART,
-    LONG_SWORD,
-    DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE,
-    QUARTERSTAFF, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
-    BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP,
-    STATUE, IRON_CHAIN, SCR_SCARE_MONSTER,
-    RIN_PROTECTION, RIN_CONFLICT,
-    POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_HEALING,
-    POT_EXTRA_HEALING, POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_OIL,
-    POT_GAIN_ENERGY,
-    LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS,
-    MAGIC_MARKER, UNICORN_HORN,
-    SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, GAUNTLETS_OF_POWER,
-    AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR,
-    CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING,
-    NOVEL,
-    OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES,
-    OBJECT_WEIGHT,
-    OBJECT_SUBTYPE,
-    OBJECT_SMALL_DAMAGE, OBJECT_LARGE_DAMAGE,
+    SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY,
+    SLIME_MOLD, TIN, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE,
+    CORPSE, BOULDER, ROCK, DART, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE,
+    LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN,
+    OIL_LAMP, MAGIC_LAMP, STATUE, SCR_SCARE_MONSTER, RIN_PROTECTION, RIN_CONFLICT,
+    POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_HEALING, POT_EXTRA_HEALING,
+    POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_GAIN_ENERGY, LENSES,
+    BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN,
+    SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, AMULET_OF_YENDOR,
+    AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, NOVEL, OBJECT_DELAY,
+    OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT,
+    OBJECT_SUBTYPE, OBJECT_SMALL_DAMAGE, OBJECT_LARGE_DAMAGE,
 } from './object_data.js';
 import {
     CLR_WHITE, NO_COLOR,
 } from './terminal.js';
 import {
-    MONSTER_COLOR, MONSTER_EXPERIENCE_META,
-    MONSTER_FLAGS1, MONSTER_FLAGS2,
-    MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE,
-    MONSTER_SYMBOL, MONSTER_ALIGNMENT,
-    monsterIsNonliving, monsterIsShade, monsterTypeName,
+    MONSTER_COLOR, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2,
+    MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT,
+    monsterIsShade, monsterTypeName,
 } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
 import { revealMimic } from './mimic.js';
@@ -221,7 +208,6 @@ import {
 import { heroIsStrangled } from './hero_strangulation.js';
 import { heroIsBreathless } from './hero_species.js';
 import { dosave } from './save.js';
-import { initTrack } from './track.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
@@ -248,7 +234,7 @@ import {
     publishMonsterGrowl, wakeAttackedMonster, wakeAttackedShopkeeper,
 } from './monster_anger.js';
 import { monsterNoiseMessage } from './monster_sound.js';
-import { doride, moveSteedWithHero, ridingPreventsMovement } from './steed.js';
+import { dismountHero, doride, moveSteedWithHero, ridingPreventsMovement } from './steed.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     heroStrengthDamageBonus, rollHeroMeleeWeaponDamage,
@@ -258,7 +244,7 @@ import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import {
-    heroCanMoveFromTrap, triggerHeroTrapAt,
+    clearHeroTrap, heroCanMoveFromTrap, triggerHeroTrapAt,
 } from './hero_traps.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import {
@@ -280,8 +266,7 @@ import {
 } from './object_knowledge.js';
 import {
     encumbranceLabel, encumbranceMessage, exceedsActionCapacity, nearCapacity,
-    invWeight, HVY_ENCUMBER, OVERLOADED, pickupLoadPrefix,
-    SLT_ENCUMBER,
+    invWeight, OVERLOADED, pickupLoadPrefix, SLT_ENCUMBER,
 } from './weight.js';
 import { hiddenGold } from './gold.js';
 import { makeWish } from './wish.js';
@@ -295,9 +280,10 @@ import {
 import {
     heroIsBlind, syncBlindness, syncDeafness,
 } from './senses.js';
-import { touchPetrifyingCorpse } from './stoning.js';
+import { selfTouchPetrifyingWeapons, touchPetrifyingCorpse } from './stoning.js';
 import {
-    beginBallAndChainMove, finishBallAndChainMove, heroIsPunished,
+    beginBallAndChainMove, dragBallDownStairs, finishBallAndChainMove,
+    heroIsPunished, placeBallAndChain, unplaceBallAndChain,
 } from './ball.js';
 import {
     doquit,
@@ -377,31 +363,18 @@ import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import { moveElementalBubbles } from './elemental.js';
 import {
-    A_CON, A_DEX, A_STR, A_WIS, SICK_NONVOMITABLE, SICK_VOMITABLE, Upolyd,
-    BOLT_LIM, COLNO, ROWNO, STONE, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD,
-    IRONBARS,
-    FOUNTAIN, SINK,
-    ALTAR, GRAVE, THRONE, WATER, MOAT, LAVAWALL, TREE,
-    D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED,
-    IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL,
-    IS_LAVA, IS_ROOM,
-    ZAP_POS,
-    SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, HOLE,
-    TRAPDOOR, DART_TRAP, MAGIC_TRAP,
-    TELEP_TRAP, LEVEL_TELEP, MAGIC_PORTAL, STATUE_TRAP,
-    WEB, ANTI_MAGIC,
-    G_GONE,
-    ER_NOTHING, ER_DAMAGED, ER_DESTROYED,
-    M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
-    STRAT_WAITFORU, STRAT_WAITMASK,
-    MM_NOEXCLAM, MM_NOMSG, MM_NOWAIT,
-    TEMPLE, SHOPBASE, ROOMOFFSET,
-    F_LOOTED,
-    In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level,
-    W_ARMOR, W_ACCESSORY, W_SADDLE,
-    W_BALL, W_CHAIN, LOST_THROWN,
-    WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV,
-    P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, is_pit, isok,
+    A_CON, A_DEX, A_STR, A_WIS, SICK_NONVOMITABLE, SICK_VOMITABLE, Upolyd, BOLT_LIM,
+    COLNO, ROWNO, STONE, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, DISMOUNT_FELL,
+    IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR,
+    D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, IS_WALL, IS_STWALL, IS_OBSTRUCTED,
+    IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP,
+    LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP,
+    TELEP_TRAP, LEVEL_TELEP, MAGIC_PORTAL, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE,
+    ER_NOTHING, ER_DAMAGED, ER_DESTROYED, M_AP_MONSTER, M_AP_OBJECT, STRAT_WAITFORU,
+    STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, MM_NOWAIT, SHOPBASE, ROOMOFFSET,
+    F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, W_ARMOR,
+    W_ACCESSORY, W_SADDLE, W_BALL, W_CHAIN, LOST_THROWN, WT_SPLASH_THRESHOLD,
+    WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, is_pit,
 } from './const.js';
 
 // Direction deltas: y u k
@@ -1243,9 +1216,9 @@ export async function rhack(key) {
     } else if (ch === ',') {
         await pickupAtHero();
     } else if (ch === '>') {
-        await ordinaryDescend();
+        await travelStairs(false);
     } else if (ch === '<') {
-        await ordinaryAscend();
+        await travelStairs(true);
     } else if (ch === 'z') {
         await dozap({
             finishMonsterKill: finishHeroMonsterKill,
@@ -1993,245 +1966,24 @@ async function fountainMonsterDetection() {
     await flush_screen(1);
 }
 
-async function ordinaryDescend() {
-    const stair = game.level?.dnstair;
-    if (!stair || game.u?.ux !== stair.x || game.u?.uy !== stair.y) {
-        await pline("You can't go down here.");
+async function travelStairs(up) {
+    game.u.dx = game.u.dy = 0;
+    game.u.dz = up ? -1 : 1;
+    let stairs = game.stairs;
+    while (stairs && (stairs.sx !== game.u.ux || stairs.sy !== game.u.uy
+        || !!stairs.up !== up)) stairs = stairs.next;
+    if (!stairs) {
+        await pline(`You can't go ${up ? 'up' : 'down'} here.`);
         game.context.move = 0;
         return false;
     }
-
-    await currentLuaLifecycle().runCallbacks(game, 'level_leave');
-
-    // do.c:goto_level() clears this before saving the departing floor.
-    // ordinaryDescend() owns a separate pager-preserving transition and must
-    // still discard the level-local destination selected on the old map.
-    game._travelTarget = null;
-
-    // C goto_level() creates/restores the destination before tty exposes the
-    // verbose descent pager. Preserve the old map and its already-rendered
-    // screen while mklev() owns getbones() and the full destination RNG.
-    const oldLevel = game.level;
-    const oldStairs = game.stairs;
-    const oldDepth = { ...(game.u.uz || {}) };
-    const oldKey = `${oldDepth.dnum ?? 0}:${oldDepth.dlevel ?? 1}`;
-    if (!game._levelCache) game._levelCache = new Map();
-    const migratingPunishment = heroIsPunished()
-        ? {
-            ball: game.uball || game.u?.uball,
-            chain: game.uchain || game.u?.uchain,
-            ballCarried: game.inventory?.includes(
-                game.uball || game.u?.uball,
-            ),
-        }
-        : null;
-    if (migratingPunishment) {
-        if (!migratingPunishment.ballCarried) {
-            const ballX = migratingPunishment.ball.ox;
-            const ballY = migratingPunishment.ball.oy;
-            remove_object(migratingPunishment.ball);
-            newsym(ballX, ballY);
-        }
-        const chainX = migratingPunishment.chain.ox;
-        const chainY = migratingPunishment.chain.oy;
-        remove_object(migratingPunishment.chain);
-        newsym(chainX, chainY);
-    }
-    const followers = levelFollowers(oldLevel);
-    if (followers.length) {
-        for (const follower of followers)
-            retainFollowerDepartureGlyph(oldLevel, follower);
-        oldLevel.monsters = oldLevel.monsters.filter(monster =>
-            !followers.includes(monster));
-    }
-    game._levelCache.set(oldKey, cachedLevelState(oldLevel, oldStairs));
-
-    let stairway = null;
-    for (let candidate = game.stairs; candidate; candidate = candidate.next) {
-        if (!candidate.up && candidate.sx === game.u.ux
-            && candidate.sy === game.u.uy) {
-            stairway = candidate;
-            break;
-        }
-    }
-    if (stairway) stairway.u_traversed = true;
-    const destinationDepth = stairway?.tolev
-        ? { ...stairway.tolev }
-        : {
-            ...oldDepth,
-            dlevel: (oldDepth.dlevel ?? 1) + 1,
-        };
-    const cached = game._levelCache.get(levelCacheKey(destinationDepth));
-    game.u.uz = destinationDepth;
-    if (cached) {
-        game.level = cached.level;
-        game.stairs = cached.stairs;
-        restoreCachedLevelMetadata(cached);
-        restoreCachedMonsterState(cached);
-    } else {
-        game._specialLevelPrototype = specialPrototypeAt(
-            destinationDepth.dnum, destinationDepth.dlevel,
-        );
-        await mklev();
-        creditTouristNewLevel();
-    }
-    u_on_upstairs();
-    for (let candidate = game.stairs; candidate; candidate = candidate.next) {
-        if (candidate.sx === game.u.ux && candidate.sy === game.u.uy
-            && candidate.tolev?.dnum === oldDepth.dnum
-            && candidate.tolev?.dlevel === oldDepth.dlevel) {
-            candidate.u_traversed = true;
-            break;
-        }
-    }
-    if (migratingPunishment) {
-        if (!migratingPunishment.ballCarried)
-            place_object(migratingPunishment.ball, game.u.ux, game.u.uy);
-        place_object(migratingPunishment.chain, game.u.ux, game.u.uy);
-        game.u.bc_order = migratingPunishment.ballCarried ? 2 : 1;
-    }
-    await deliverMigratingObjects(game);
-    let descentMessage = 'You descend the stairs.--More--';
-    let lowHitPointWarning = '';
-    const loseHitPoints = damage => {
-        game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - damage);
-        if (damage <= 0 || game.u.uhp <= 0
-            || game.u.uhp * 10 >= (game.u.uhpmax ?? game.u.uhp)
-            || (game.moves ?? 0) <= (game._wailmsg ?? 0) + 50)
-            return;
-        game._wailmsg = game.moves ?? 0;
-        const role = game.urole?.name?.m || '';
-        const elf = game.urace?.name === 'elf'
-            || game.urace?.noun === 'elf';
-        if (role === 'Wizard' || role === 'Valkyrie' || elf) {
-            const who = role === 'Wizard' || role === 'Valkyrie'
-                ? role : 'Elf';
-            lowHitPointWarning = game.u.uhp === 1
-                ? `${who} is about to die.`
-                : `${who}, your life force is running out.`;
-        } else {
-            lowHitPointWarning = game.u.uhp === 1
-                ? 'You hear the wailing of the Banshee...'
-                : 'You hear the howling of the CwnAnnwn...';
-        }
-    };
-    const flying = !!(game.u?.flying || game.flying);
-    const falls = !flying && (nearCapacity(game) > 0
-        || !!migratingPunishment
-        || game.u?.fumbling || (game.u?.fumblingTurns ?? 0) > 0);
-    if (flying) {
-        descentMessage = 'You fly down the stairs.--More--';
-    } else if (falls) {
-        descentMessage = 'You fall down the stairs.--More--';
-    }
-    // C goto_level() applies an ordinary stair-tumble's rnd(3) damage after
-    // placing the hero but before losedogs() brings followers onto the new
-    // level.  The old tty status remains on screen until the fall pager is
-    // acknowledged, so take the source-ordered roll here and commit its HP
-    // effect after that acknowledgement.  Keep punished descent on its
-    // existing continuation path: drag_down() can add its own messages and
-    // extra damage draws.
-    const ordinaryFallBeforeFollowers = falls && !game.u?.usteed
-        && !migratingPunishment;
-    const ordinaryFallDamage = ordinaryFallBeforeFollowers ? rnd(3) : 0;
-    for (const follower of followers) arriveWithHero(follower);
-    resolveHeroArrivalCollision();
-    const newLevel = game.level;
-    const newStairs = game.stairs;
-    const newPosition = { x: game.u.ux, y: game.u.uy };
-    recordDungeonEntryAchievements(game, oldDepth, destinationDepth);
-
-    game.level = oldLevel;
-    game.stairs = oldStairs;
-    game.u.uz = oldDepth;
-    await promptKey(descentMessage);
-    restoreFollowerDepartureGlyphs(oldLevel, followers);
-    if (ordinaryFallDamage)
-        loseHitPoints(ordinaryFallDamage);
-
-    // C emits the fall line before drag_down() and ordinary tumble damage.
-    // A punished collision clears the old map and owns a second pager after
-    // all of its damage/exercise calls and the final fall draw.
-    let ballImpactMessage = '';
-    if (falls && !game.u?.usteed && migratingPunishment) {
-        await cls();
-        let dragChance = 3;
-        if (rn2(2)) {
-            ballImpactMessage = 'The iron ball smacks into you!';
-            loseHitPoints(rnd(20));
-            exerciseAttribute(A_STR, false);
-            dragChance -= 2;
-        }
-        if (dragChance >= rnd(6)) {
-            ballImpactMessage = ballImpactMessage
-                ? `${ballImpactMessage}  The iron ball drags you downstairs!`
-                : 'The iron ball drags you downstairs!';
-            loseHitPoints(rnd(3));
-            exerciseAttribute(A_STR, false);
-        }
-        loseHitPoints(rnd(3));
-    }
-    if (ballImpactMessage) {
-        game._suppressMapStatusForFlush = true;
-        try {
-            await promptKey(`${ballImpactMessage}--More--`);
-        } finally {
-            game._suppressMapStatusForFlush = false;
-        }
-    }
-    if (lowHitPointWarning) {
-        await cls();
-        game._suppressMapStatusForFlush = true;
-        try {
-            await promptKey(`${lowHitPointWarning}--More--`);
-        } finally {
-            game._suppressMapStatusForFlush = false;
-        }
-    }
-
-    game.level = newLevel;
-    game.stairs = newStairs;
-    game.u.uz = destinationDepth;
-    game.u.ux = newPosition.x;
-    game.u.uy = newPosition.y;
-    restoreCachedHeroTrack(cached);
-    // Monsters on the destination start with no movement. The next cycle
-    // must allocate their first movement ration before reading a command.
-    game._ordinaryDescentLive = true;
-    game._pending_message = '';
-    game.context.move = 1;
-    await cls();
-    vision_reset();
-    vision_recalc(0);
-    await docrt();
-    if (migratingPunishment && !migratingPunishment.ballCarried) {
-        const destinationPile
-            = game.level?.objects?.[game.u.ux]?.[game.u.uy] || [];
-        if (destinationPile.includes(migratingPunishment.chain)
-            && destinationPile.includes(migratingPunishment.ball)) {
-            let feature = `There is a staircase up to level ${
-                dungeonDepth(oldDepth.dnum, oldDepth.dlevel)
-            } here.`;
-            for (let candidate = game.stairs; candidate;
-                candidate = candidate.next) {
-                if (candidate.sx !== game.u.ux || candidate.sy !== game.u.uy
-                    || candidate.tolev?.dnum === destinationDepth.dnum)
-                    continue;
-                const dungeon = game.dungeons?.[candidate.tolev?.dnum];
-                const destinationName = (dungeon?.dname || 'another dungeon')
-                    .replace(/^The\b/, 'the');
-                feature = `There is a branch staircase ${candidate.up ? 'up' : 'down'} to ${destinationName} here.`;
-                break;
-            }
-            await showFloorPile(
-                destinationPile,
-                false,
-                feature,
-            );
-        }
-    }
-    await bot();
-    return true;
+    stairs.u_traversed = true;
+    const changed = await gotoLevel(stairs.tolev, {
+        arrival: up ? 'downstairs' : 'stairs',
+        ladder: !!stairs.isladder,
+    });
+    if (changed !== false) game.context.move = 1;
+    return changed !== false;
 }
 
 function levelCacheKey(depth) {
@@ -2349,52 +2101,6 @@ function levelFollowers(level) {
             || (game.u?.uhave?.amulet && monster.iswiz)));
 }
 
-// Level departure can begin while an earlier message is still visible.
-// Preserve the displayed follower until that message is dismissed, then
-// restore the remembered terrain beneath it.
-function retainFollowerDepartureGlyph(level, follower) {
-    const loc = level?.at?.(follower.mx, follower.my);
-    if (!loc?.disp_ch || loc.disp_ch === ' ') return;
-    const terrain = terrain_glyph(loc, follower.mx, follower.my);
-    loc._followerDepartureUnderlay = loc.remembered_glyph
-        ? { ...loc.remembered_glyph }
-        : {
-            ch: terrain.ch,
-            color: terrain.color,
-            decgfx: !!terrain.dec,
-            kind: 'terrain',
-        };
-    loc.remembered_glyph = {
-        ch: loc.disp_ch,
-        color: loc.disp_color,
-        decgfx: !!loc.disp_decgfx,
-        attr: loc.disp_attr || 0,
-        kind: 'monster',
-    };
-}
-
-function restoreFollowerDepartureGlyphs(level, followers) {
-    for (const follower of followers) {
-        const loc = level?.at?.(follower.mx, follower.my);
-        if (!loc || !Object.hasOwn(loc, '_followerDepartureUnderlay'))
-            continue;
-        const underlay = loc._followerDepartureUnderlay;
-        delete loc._followerDepartureUnderlay;
-        if (underlay) {
-            loc.remembered_glyph = underlay;
-            loc.disp_ch = underlay.ch;
-            loc.disp_color = underlay.color;
-            loc.disp_decgfx = !!underlay.decgfx;
-            loc.disp_attr = underlay.attr || 0;
-        } else {
-            delete loc.remembered_glyph;
-            loc.disp_ch = ' ';
-            loc.disp_color = NO_COLOR;
-            loc.disp_decgfx = false;
-            loc.disp_attr = 0;
-        }
-    }
-}
 
 function randomArrivalCellOk(x, y) {
     const level = game.level;
@@ -2567,11 +2273,10 @@ export async function resurrectWizard() {
     return wizard;
 }
 
-// Shared first-visit level transaction.  The arrival route is explicit so
-// stair descent and wizard level teleport can share persistent construction
-// without sharing their coordinate or tty semantics.
+// C do.c:goto_level(). All routes share departure, loading, and arrival.
 async function gotoLevel(targetDepth, {
     arrival = 'random',
+    ladder = false,
     postMessage = '',
     preArrivalPager = '',
 } = {}) {
@@ -2599,7 +2304,7 @@ async function gotoLevel(targetDepth, {
         vision_recalc(0);
         await docrt();
         await bot();
-        return;
+        return false;
     }
     // C do.c:goto_level() applies the quest-start admission gate after the
     // destination has been resolved but before savelev()/mklev().  Wizard
@@ -2612,8 +2317,10 @@ async function gotoLevel(targetDepth, {
         && !okToQuest(game)) {
         game.context.move = 0;
         await pline('A mysterious force prevents you from descending.');
-        return;
+        return false;
     }
+
+    if (preArrivalPager) await promptKey(preArrivalPager);
 
     await currentLuaLifecycle().runCallbacks(game, 'level_leave');
 
@@ -2624,12 +2331,6 @@ async function gotoLevel(targetDepth, {
     const oldLevel = game.level;
     const oldStairs = game.stairs;
     const previousTemperature = oldLevel?.flags?.temperature || 0;
-    const oldPosition = {
-        x: game.u.ux,
-        y: game.u.uy,
-        x0: game.u.ux0,
-        y0: game.u.uy0,
-    };
     // C do.c:goto_level() unplaces punishment before savelev(), retaining
     // object identity while removing both objects from the departing floor.
     // placebc() installs them on the destination after hero placement.
@@ -2643,21 +2344,15 @@ async function gotoLevel(targetDepth, {
         }
         : null;
     if (migratingPunishment) {
-        if (!migratingPunishment.ballCarried) {
-            const ballX = migratingPunishment.ball.ox;
-            const ballY = migratingPunishment.ball.oy;
-            remove_object(migratingPunishment.ball);
-            newsym(ballX, ballY);
-        }
-        const chainX = migratingPunishment.chain.ox;
-        const chainY = migratingPunishment.chain.oy;
-        remove_object(migratingPunishment.chain);
-        newsym(chainX, chainY);
+        unplaceBallAndChain(game);
     }
-    const followers = levelFollowers(oldLevel);
+    clearHeroTrap(game);
+    game.u.ustuck = null;
+    game.u.uswallow = game.uswallow = 0;
+    game.u.uinwater = 0;
+    game.u.uundetected = false;
+    const followers = game.iflags?.nofollowers ? [] : levelFollowers(oldLevel);
     if (followers.length) {
-        for (const follower of followers)
-            retainFollowerDepartureGlyph(oldLevel, follower);
         oldLevel.monsters = oldLevel.monsters.filter(monster =>
             !followers.includes(monster));
     }
@@ -2682,99 +2377,28 @@ async function gotoLevel(targetDepth, {
     }
 
     const cached = game._levelCache.get(levelCacheKey(destinationDepth));
+    game.u.uz0 = oldDepth;
     game.u.uz = destinationDepth;
+    game.u.utolev = { ...destinationDepth };
+    game.u.utotype = 0;
     if (cached) {
         game.level = cached.level;
         game.stairs = cached.stairs;
         restoreCachedLevelMetadata(cached);
         restoreCachedMonsterState(cached);
     } else {
+        game._specialLevelPrototype = specialPrototypeAt(
+            destinationDepth.dnum, destinationDepth.dlevel,
+        );
         await mklev();
         creditTouristNewLevel();
     }
 
-    if (arrival === 'stairs') u_on_upstairs();
-    else if (arrival === 'downstairs') u_on_downstairs();
-    else if (arrival === 'portal') {
-        const portal = game.level?.traps?.find(trap =>
-            trap.ttyp === MAGIC_PORTAL);
-        if (portal) {
-            game.u.ux0 = game.u.ux;
-            game.u.uy0 = game.u.uy;
-            game.u.ux = portal.tx;
-            game.u.uy = portal.ty;
-            // deferred_goto(UTOTYPE_PORTAL) arrives through the trap, making
-            // it known before the hero's next intrinsic-search maintenance.
-            portal.tseen = true;
-        } else {
-            placeHeroAtRandomArrival(game.level?.upTeleportRegion);
-        }
-    }
-    else {
-        const goingDown = dungeonDepth(
-            destinationDepth.dnum, destinationDepth.dlevel,
-        ) > dungeonDepth(oldDepth.dnum, oldDepth.dlevel);
-        placeHeroAtRandomArrival(goingDown
-            ? game.level?.downTeleportRegion
-            : game.level?.upTeleportRegion);
-    }
-    if (migratingPunishment) {
-        if (!migratingPunishment.ballCarried) {
-            place_object(
-                migratingPunishment.ball, game.u.ux, game.u.uy,
-            );
-            game.u.bc_order = 1; // BCPOS_CHAIN
-        } else {
-            game.u.bc_order = 2; // BCPOS_DIFFER
-        }
-        place_object(
-            migratingPunishment.chain, game.u.ux, game.u.uy,
-        );
-    }
-    await deliverMigratingObjects(game);
-    for (const follower of followers) arriveWithHero(follower);
-    await killGenocidedMonsters();
-    resolveHeroArrivalCollision();
-    if (Is_airlevel(game.u?.uz) || Is_waterlevel(game.u?.uz))
-        moveElementalBubbles();
-    else if (game.level?.flags?.fumaroles) fumaroles(game);
-
-    const newLevel = game.level;
-    const newStairs = game.stairs;
-    const newDepth = { ...(game.u.uz || destinationDepth) };
-    const newPosition = {
-        x: game.u.ux,
-        y: game.u.uy,
-        x0: game.u.ux0,
-        y0: game.u.uy0,
-    };
-
-    // C schedule_goto()/deferred_goto() completes construction and follower
-    // arrival before tty asks for acknowledgement of an already-pending
-    // message.  Temporarily expose the cached source graph so that pager
-    // still renders the old level while all destination RNG remains on the
-    // source side of the input boundary.
-    if (preArrivalPager) {
-        game.level = oldLevel;
-        game.stairs = oldStairs;
-        game.u.uz = oldDepth;
-        game.u.ux = oldPosition.x;
-        game.u.uy = oldPosition.y;
-        game.u.ux0 = oldPosition.x0;
-        game.u.uy0 = oldPosition.y0;
-        await promptKey(preArrivalPager);
-        restoreFollowerDepartureGlyphs(oldLevel, followers);
-
-        game.level = newLevel;
-        game.stairs = newStairs;
-        game.u.uz = newDepth;
-        game.u.ux = newPosition.x;
-        game.u.uy = newPosition.y;
-        game.u.ux0 = newPosition.x0;
-        game.u.uy0 = newPosition.y0;
-    }
-    if (!preArrivalPager)
-        restoreFollowerDepartureGlyphs(oldLevel, followers);
+    const died = await arriveOnLevel(oldDepth, { arrival, ladder, followers });
+    if (died) return true;
+    if (migratingPunishment)
+        migratingPunishment.ballCarried = game.inventory.includes(migratingPunishment.ball);
+    const newDepth = { ...game.u.uz };
 
     // savelev()/getlev() serializes the pursuit ring with each level.  A new
     // destination starts empty; a revisited one resumes its own older trail.
@@ -2786,12 +2410,7 @@ async function gotoLevel(targetDepth, {
     game._ordinaryDescentLive = true;
     game._tutorialActive = Number.isInteger(tutorialDnum)
         && destinationDepth.dnum === tutorialDnum;
-    game._pending_message = '';
     game.context.move = 0;
-    await cls();
-    vision_reset_new_level();
-    vision_recalc(0);
-    await docrt({ visibleAlreadyProjected: true });
     // onquest()->qt_pager() loads and substitutes quest.lua before the tty
     // text window collides with an older pending materialization pline.
     // Preparation therefore belongs before the acknowledgement input even
@@ -2858,13 +2477,6 @@ async function gotoLevel(targetDepth, {
         }
         const specialMessages = game._activeSpecialLevel?.specialMessages || [];
         if (specialMessages.length) {
-            // do.c can expose level-teleport feedback during destination
-            // docrt(), before deliver_splev_message() starts its newline
-            // stream. Model that completed topline as separate from the
-            // custom arrival text; the later temperature message owns the
-            // pager which leaves both Air lines visible at input 110.
-            game._pending_message = '';
-            game._retained_message = '';
             for (const line of specialMessages)
                 await plineWithContinuation(line);
         }
@@ -2992,6 +2604,101 @@ async function gotoLevel(targetDepth, {
         }
     }
     await bot();
+    game.u.uz0 = { ...game.u.uz };
+    return true;
+}
+
+async function arriveOnLevel(from, { arrival, ladder, followers }) {
+    const atStairs = arrival === 'stairs' || arrival === 'downstairs';
+    const up = dungeonDepth(game.u.uz.dnum, game.u.uz.dlevel)
+        < dungeonDepth(from.dnum, from.dlevel);
+    vision_reset();
+    game.vision_full_recalc = 0;
+    await flush_screen(-1);
+    try {
+        if (atStairs && !In_endgame(game.u.uz)) {
+            let stairs = game.stairs;
+            while (stairs && (stairs.tolev?.dnum !== from.dnum
+                || stairs.tolev?.dlevel !== from.dlevel
+                || !!stairs.isladder !== ladder)) stairs = stairs.next;
+            if (stairs) {
+                game.u.ux0 = game.u.ux;
+                game.u.uy0 = game.u.uy;
+                game.u.ux = stairs.sx;
+                game.u.uy = stairs.sy;
+                stairs.u_traversed = true;
+                moveSteedWithHero();
+            } else if (up) u_on_downstairs();
+            else u_on_upstairs();
+            if (await applyStairTravelEffects(up, ladder)) return true;
+        } else if (arrival === 'portal' && !In_endgame(game.u.uz)) {
+            const portal = game.level.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
+            if (portal) {
+                game.u.ux0 = game.u.ux;
+                game.u.uy0 = game.u.uy;
+                game.u.ux = portal.tx;
+                game.u.uy = portal.ty;
+                portal.tseen = true;
+                moveSteedWithHero();
+            } else placeHeroAtRandomArrival(game.level.upTeleportRegion);
+        } else {
+            placeHeroAtRandomArrival(up
+                ? game.level.upTeleportRegion : game.level.downTeleportRegion);
+        }
+        if (heroIsPunished()) await placeBallAndChain();
+        await deliverMigratingObjects(game);
+        for (const follower of followers) arriveWithHero(follower);
+        await killGenocidedMonsters();
+        resolveHeroArrivalCollision();
+        if (Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz)) moveElementalBubbles();
+        else if (game.level.flags.fumaroles) fumaroles(game);
+        vision_reset_new_level();
+        vision_recalc(0);
+        await docrt({ visibleAlreadyProjected: true });
+        return false;
+    } finally {
+        if (game.program_state?.gameover) game._mapFlushPaused = false;
+        else await flush_screen(-1);
+    }
+}
+
+async function applyStairTravelEffects(up, ladder) {
+    const flying = game.u.flying || game.flying;
+    const noun = ladder ? 'ladder' : 'stairs';
+    const verbose = game.flags.verbose !== false;
+    if (up) {
+        const greatEffort = heroIsPunished() && !(game.u.levitating || game.levitating);
+        if (verbose || greatEffort) await plineWithContinuation(
+            `${greatEffort ? 'With great effort, you' : 'You'} `
+            + `${flying ? 'fly' : 'climb'} up${flying && ladder ? ' along' : ''} the ${noun}.`,
+        );
+    } else if (game.u.dz) {
+        if (flying) {
+            if (verbose) await plineWithContinuation(
+                `You fly down ${ladder ? 'along the ladder' : 'the stairs'}.`,
+            );
+        } else if (nearCapacity(game) > 0 || heroIsPunished()
+            || game.u.fumbling || game.u.fumblingTurns > 0) {
+            await plineWithContinuation(`You fall down the ${noun}.`);
+            if (heroIsPunished() && await dragBallDownStairs()) return true;
+            if (game.u.usteed) {
+                if ((await dismountHero(DISMOUNT_FELL)).died) return true;
+            } else {
+                let damage = rnd(3);
+                if (game.u.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
+                if (await loseHeroHp(damage, ladder
+                    ? 'falling off a ladder' : 'tumbling down a flight of stairs')) return true;
+            }
+            const touch = await selfTouchPetrifyingWeapons({
+                messageStart: 'Falling, you', publish: plineWithContinuation,
+            });
+            if (touch.died) return true;
+        } else if (verbose) {
+            await plineWithContinuation(ladder
+                ? 'You climb down the ladder.' : 'You descend the stairs.');
+        }
+    }
+    return false;
 }
 
 // quest.c:expulsion(FALSE) schedules a portal arrival on the parent side of
@@ -3016,44 +2723,6 @@ export async function performQuestExpulsion(g = game) {
     return true;
 }
 
-async function ordinaryAscend() {
-    const stair = game.level?.upstair;
-    if (!stair || game.u?.ux !== stair.x || game.u?.uy !== stair.y) {
-        await pline("You can't go up here.");
-        game.context.move = 0;
-        return false;
-    }
-
-    const oldDepth = { ...(game.u.uz || {}) };
-    let sourceStair = null;
-    for (let candidate = game.stairs; candidate; candidate = candidate.next) {
-        if (candidate.up && candidate.sx === game.u.ux
-            && candidate.sy === game.u.uy) {
-            sourceStair = candidate;
-            break;
-        }
-    }
-    const destinationDepth = sourceStair?.tolev
-        ? { ...sourceStair.tolev }
-        : {
-            ...oldDepth,
-            dlevel: Math.max(1, (oldDepth.dlevel ?? 1) - 1),
-        };
-    if (sourceStair) sourceStair.u_traversed = true;
-    const greatEffort = heroIsPunished()
-        && !(game.u?.levitating || game.u?.flying);
-    await gotoLevel(destinationDepth, {
-        arrival: 'downstairs',
-        preArrivalPager: greatEffort
-            ? 'With great effort, you climb up the stairs.--More--'
-            : 'You climb up the stairs.--More--',
-    });
-    // Stair travel consumes the source turn; after all transition pagers
-    // close, the destination's first monster maintenance precedes the next
-    // command.
-    game.context.move = 1;
-    return true;
-}
 
 function objectQuantity(object) {
     return object?.quan ?? object?.quantity ?? 1;

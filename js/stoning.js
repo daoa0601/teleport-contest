@@ -262,7 +262,7 @@ export async function selfTouchPetrifyingWeapons({
     publish = pline,
     die = finishHeroDeath,
 } = {}) {
-    if (state.uarmg || state.u?.uarmg || heroResistsStoning(state))
+    if (heroResistsStoning(state))
         return { touched: false, died: false };
 
     let touched = false;
