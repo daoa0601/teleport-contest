@@ -174,6 +174,28 @@ export function heroHeadName(state = game) {
     return monsterHeadName(currentHeroMonsterNumber(state));
 }
 
+export function heroLegName(state = game) {
+    const mnum = currentHeroMonsterNumber(state);
+    const symbol = MONSTER_SYMBOL[mnum];
+    if ([S_DOG, S_FELINE, S_RODENT].includes(symbol) || mnum === PM_OWLBEAR)
+        return 'rear leg';
+    if (symbol === S_YETI || symbol === S_COCKATRICE || mnum === PM_RAVEN)
+        return 'leg';
+    if ([S_CENTAUR, S_UNICORN].includes(symbol)
+        || mnum === PM_KI_RIN || mnum === PM_ROTHE) return 'rear leg';
+    if (symbol === S_LIGHT) return 'beam';
+    if (symbol === S_EEL && mnum !== PM_JELLYFISH) return 'peduncle';
+    if (symbol === S_WORM) return 'posterior';
+    if (symbol === S_SPIDER) return 'leg';
+    if (MONSTER_FLAGS1[mnum] & M1_SLITHY) return 'rear region';
+    if (symbol === S_EYE) return 'lower tentacle';
+    if ([S_JELLY, S_PUDDING, S_BLOB].includes(symbol) || mnum === PM_JELLYFISH)
+        return 'lower pseudopod';
+    if (symbol === S_VORTEX || symbol === S_ELEMENTAL) return 'lower current';
+    if (symbol === S_FUNGUS) return 'rhizome';
+    return MONSTER_FLAGS1[mnum] & M1_HUMANOID ? 'leg' : 'rear limb';
+}
+
 // C mbodypart(NECK). A body without a humanoid neck still has its own name
 // for that region, for example a spider's cephalothorax or an eye's equator.
 export function heroNeckName(state = game) {

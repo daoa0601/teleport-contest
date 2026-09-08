@@ -11,6 +11,9 @@ import { initRng } from '../js/rng.js';
 import { putSaddleOnMonster } from '../js/steed.js';
 import { vision_reset_new_level } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
+import { knownObject } from './support/game-objects.js';
+import { installPolymorphedHero } from './support/hero-state.js';
+import { freshObjectRoom } from './support/object-room.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 function freshKnightArena() {
@@ -24,6 +27,50 @@ async function extended(command, suffix = '') {
     pushKeys(`${command}\n${suffix}`);
     await rhack('#'.charCodeAt(0));
 }
+
+test('an animal body cannot mount a saddled pony', async () => {
+    freshObjectRoom({ role: 'knight' });
+    const pony = await createMonsterAt('pony', game.u.ux + 1, game.u.uy);
+    tameMonster(pony, game);
+    putSaddleOnMonster(knownObject(SADDLE), pony);
+    installPolymorphedHero('bat');
+
+    await extended('ride', 'l');
+
+    assert.ok(!game.u.usteed);
+    assert.equal(game.context.move, 0);
+    assert.match(game._pending_message, /won't fit on a saddle/);
+});
+
+test('a non-knight loses a barely tame mount before getting on', async () => {
+    freshObjectRoom({ role: 'barbarian', hero: { ulevel: 30 } });
+    const pony = await createMonsterAt('pony', game.u.ux + 1, game.u.uy);
+    tameMonster(pony, game);
+    pony.mtame = 1;
+    putSaddleOnMonster(knownObject(SADDLE), pony);
+
+    await extended('ride', 'l');
+
+    assert.ok(!game.u.usteed);
+    assert.equal(pony.mtame, 0);
+    assert.equal(game.context.move, 0);
+});
+
+test('slipping from a cursed saddle damages the active monster body', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const pony = await createMonsterAt('pony', game.u.ux + 1, game.u.uy);
+    tameMonster(pony, game);
+    putSaddleOnMonster(knownObject(SADDLE, { cursed: true }), pony);
+    installPolymorphedHero('vampire', { hitPoints: 1 });
+    const humanHealth = game.u.uhp;
+
+    await extended('ride', 'l                ');
+
+    assert.ok(!game.u.usteed);
+    assert.equal(game.u.umonnum, game.u.umonster);
+    assert.equal(game.u.uhp, humanHealth);
+    assert.equal(game.context.move, 0);
+});
 
 test('mount and voluntary dismount preserve the live pony identity', async () => {
     const level = freshKnightArena();

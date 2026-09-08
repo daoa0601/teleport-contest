@@ -496,7 +496,7 @@ function blocksMove(x, y) {
 // C ref: hack.c:could_move_onto_boulder().  Travel planning is allowed to
 // route through an ordinary boulder, then actual run-mode movement consults
 // this capability before deciding whether to stop or enter/push the square.
-function heroCouldMoveOntoBoulder(sx, sy, g = game) {
+export function heroCouldMoveOntoBoulder(sx, sy, g = game) {
     const mnum = Number.isInteger(g.u?.umonnum)
         ? g.u.umonnum : null;
     const flags1 = mnum === null ? 0 : MONSTER_FLAGS1[mnum] ?? 0;

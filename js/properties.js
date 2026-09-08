@@ -73,6 +73,14 @@ export function propertyHasOtherSources(property, state = game) {
         || timedSourceIsActive(property, hero);
 }
 
+// C Lev_at_will: an invoked artifact is controllable unless an independent
+// intrinsic or worn source also keeps the hero aloft. Timeouts do not block it.
+export function levitationAtWill(state = game) {
+    const record = existingPropertyRecord('levitation', state);
+    return !!record?.invoked && !record.worn.length
+        && !intrinsicSourceIsActive(record);
+}
+
 function projectProperty(property, state) {
     const record = propertyRecord(property, state);
     const hero = state.u;
