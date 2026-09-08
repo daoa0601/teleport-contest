@@ -8,11 +8,9 @@ import { W_ARMF } from './const.js';
 import { game } from './gstate.js';
 import { mksobj } from './mklev.js';
 import {
-    addObjectToMonsterInventory, removeObjectFromMonsterInventory,
+    addObjectToMonsterInventory, unlinkMonsterObject,
 } from './monster_inventory.js';
-import { monsterSelfTouchAfterPolymorph } from './monster_stoning.js';
-import { MONSTER_FLAGS2, monsterTypeName } from './monster_data.js';
-import { changeMonsterFormWithAppearance } from './monster_polymorph.js';
+import { changeMonsterForm } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import {
     IRON_SHOES, KICKING_BOOTS,
@@ -20,8 +18,6 @@ import {
 import { rn2 } from './rng.js';
 import { monsterTrapVisibility } from './trap.js';
 import { objectWeight } from './weight.js';
-
-const M2_NEUTER = 0x00040000;
 
 function copyBootState(source, replacement) {
     const quantity = source.quan ?? source.quantity ?? 1;
@@ -44,7 +40,7 @@ function transformWornIronShoes(monster, shoes, state) {
     monster.misc_worn_check = (monster.misc_worn_check ?? 0) & ~W_ARMF;
     shoes.owornmask = (shoes.owornmask ?? 0) & ~W_ARMF;
     shoes.worn = (shoes.owornmask ?? 0) !== 0;
-    removeObjectFromMonsterInventory(monster, shoes);
+    unlinkMonsterObject(monster, shoes);
     const linked = addObjectToMonsterInventory(monster, shoes, state);
 
     const replacement = mksobj(
@@ -71,22 +67,6 @@ function transformWornIronShoes(monster, shoes, state) {
     shoes.worn = false;
     delete shoes.carrierMid;
     return replacement;
-}
-
-function monsterSubject(monster, name = monsterTypeName(
-    monster?.mnum, !!monster?.female,
-)) {
-    if (monster?.name) return monster.name;
-    return monster?.mtame ? `Your ${name}` : `The ${name}`;
-}
-
-function leashReleaseMessage(monster, visible) {
-    if (!visible) return 'Your leash falls slack.';
-    const subject = monsterSubject(monster);
-    const sentenceSubject = subject.charAt(0).toUpperCase() + subject.slice(1);
-    const neuter = (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_NEUTER;
-    const pronoun = neuter ? 'its' : monster.female ? 'her' : 'his';
-    return `${sentenceSubject} pulls free of ${pronoun} leash!`;
 }
 
 export function applyMonsterPolymorphTrap(
@@ -130,17 +110,12 @@ export function applyMonsterPolymorphTrap(
         };
     }
 
-    const change = changeMonsterFormWithAppearance(monster, null, state);
-    const changed = !!change;
     return {
         kind: 'polymorph-trap',
         monster,
         trap,
-        changed,
-        leashReleaseMessage: change?.leashReleased
-            ? leashReleaseMessage(monster, change.leashReleaseVisible) : null,
-        formChangeMessage: change?.message ?? null,
-        finished: !changed && !visibility.inSight,
+        changed: false,
+        finished: false,
         ...visibility,
     };
 }
@@ -151,27 +126,16 @@ export async function finishMonsterPolymorphTrap(
         publish = async () => {},
         revealTrap = () => {},
         finishDeath,
-        rollOne,
         state = game,
     } = {},
 ) {
     if (!event || event.finished) return event;
 
-    if (event.leashReleaseMessage)
-        await publish(event.leashReleaseMessage);
-
-    if (event.formChangeMessage)
-        await publish(event.formChangeMessage);
-
-    if (event.changed) {
-        const selfTouch = await monsterSelfTouchAfterPolymorph(event.monster, {
-            finishDeath,
-            publish,
-            rollOne,
-            state,
-        });
-        if (!selfTouch.survived) event.killed = true;
-    }
+    const change = await changeMonsterForm(event.monster, null, state, {
+        showMessage: true, finishDeath, publish, polyspot: false,
+    });
+    event.changed = !!change;
+    event.killed = !!change && !change.selfTouch.survived;
 
     if (event.inSight) {
         event.trap.tseen = true;

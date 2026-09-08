@@ -285,7 +285,9 @@ function unseenWereHowl(monster, state) {
     return null;
 }
 
-export function wereChange(monster, state = game, random = rn2) {
+export async function wereChange(monster, state = game, random = rn2, {
+    publish = plineWithContinuation,
+} = {}) {
     if (!isWereMonster(monster)) return null;
 
     const changedFromHuman = isHumanWereMonster(monster);
@@ -301,9 +303,7 @@ export function wereChange(monster, state = game, random = rn2) {
     }
 
     const oldMnum = monster.mnum;
-    const subject = monsterSentenceSubject(monster);
-    const visibleBefore = canSeeMonster(monster, monster.mx, monster.my);
-    if (!transformWereMonster(monster, state, { repaint: false })) return null;
+    if (!await transformWereMonster(monster, state, { publish })) return null;
 
     state.were_changes = (state.were_changes ?? 0) + 1;
     const howler = changedFromHuman ? unseenWereHowl(monster, state) : null;
@@ -311,9 +311,6 @@ export function wereChange(monster, state = game, random = rn2) {
         monster,
         oldMnum,
         newMnum: monster.mnum,
-        transformationMessage: visibleBefore && !heroHallucinates(state)
-            ? `${subject} changes into a ${changedWereFormName(monster)}.`
-            : null,
         howlMessage: howler
             ? `You hear a ${howler} howling at the moon.` : null,
         wakeDistance: howler ? 16 : 0,
@@ -325,8 +322,6 @@ export async function presentWereChange(change, {
     wakeNearby,
 } = {}) {
     if (!change) return null;
-    if (change.transformationMessage)
-        await publish(change.transformationMessage);
     if (change.howlMessage) {
         await publish(change.howlMessage);
         if (typeof wakeNearby !== 'function') {
@@ -343,8 +338,9 @@ export async function presentWereChange(change, {
     return change;
 }
 
-export function transformWereMonster(monster, state = game, {
+export async function transformWereMonster(monster, state = game, {
     repaint = state === game,
+    publish = plineWithContinuation,
 } = {}) {
     if (!isWereMonster(monster)) return false;
     if (isHumanWereMonster(monster)
@@ -354,6 +350,10 @@ export function transformWereMonster(monster, state = game, {
     const newMnum = counterWereSpecies(oldMnum);
     if (!Number.isInteger(newMnum)) return false;
 
+    if (canSeeMonster(monster, monster.mx, monster.my) && !heroHallucinates(state)) {
+        const form = changedWereFormName({ mnum: newMnum });
+        await publish(`${monsterSentenceSubject(monster)} changes into a ${form}.`);
+    }
     setMonsterSpecies(monster, newMnum);
     if (monster.msleeping || monster.mfrozen || monster.mcanmove === 0) {
         monster.msleeping = 0;
@@ -365,7 +365,7 @@ export function transformWereMonster(monster, state = game, {
         monster.mhp = Math.min(monster.mhpmax, monster.mhp + healing);
     }
     if (repaint) newsym(monster.mx, monster.my);
-    adjustMonsterClothingAfterPolymorph(monster, state);
-    updateMonsterWeaponAfterPolymorph(monster, state);
+    await adjustMonsterClothingAfterPolymorph(monster, state, { publish });
+    await updateMonsterWeaponAfterPolymorph(monster, state);
     return true;
 }

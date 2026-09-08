@@ -35,7 +35,7 @@ export function bodyGenderFlags(body) {
     return 0;
 }
 
-export function restoreRevivedShapechanger(monster, state = game) {
+export async function restoreRevivedShapechanger(monster, state = game) {
     const naturalForm = Number.isInteger(monster.cham)
         && monster.cham >= 0 ? monster.cham : null;
     const protectedFromShapechangers = !!(
@@ -45,7 +45,7 @@ export function restoreRevivedShapechanger(monster, state = game) {
     if (protectedFromShapechangers || monster.mcan) {
         if (naturalForm != null) {
             const cancelled = monster.mcan;
-            changeMonsterForm(monster, naturalForm);
+            await changeMonsterForm(monster, naturalForm);
             monster.cham = -1;
             if (cancelled) monster.mcan = 1;
         }

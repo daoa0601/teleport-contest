@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
     MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT,
 } from '../js/const.js';
-import { tameMonster } from '../js/dog.js';
+import { petDroppableObject, tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { place_object } from '../js/floor_object.js';
 import { initializeRandomMonsterInventory } from '../js/allmain.js';
@@ -16,7 +16,7 @@ import {
     quietMonsterActionRng,
 } from '../js/monmove.js';
 import {
-    addObjectToMonsterInventory, linkObjectToMonsterInventory,
+    addObjectToMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory,
 } from '../js/monster_inventory.js';
 import {
     DAGGER, FAKE_AMULET_OF_YENDOR, FIGURINE, GLOB_OF_GRAY_OOZE,
@@ -28,9 +28,23 @@ import {
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { floorObjects } from './support/level-state.js';
-import { createMonsterAt } from './support/monsters.js';
+import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { knownObject } from './support/game-objects.js';
 
+test('a pet returns a fetched item but keeps its worn saddle', async () => {
+    freshObjectRoom();
+    const pony = await createSaddledSteed();
+    const saddle = pony.saddle;
+    const dagger = addObjectToMonsterInventory(pony, knownObject(DAGGER));
+
+    assert.equal(petDroppableObject(pony), dagger);
+    await removeObjectFromMonsterInventory(pony, dagger);
+
+    assert.equal(petDroppableObject(pony), null);
+    assert.equal(pony.saddle, saddle);
+    assert.equal(saddle.where, 'minvent');
+});
 
 const PM_LEPRECHAUN = 63;
 const PM_SHOPKEEPER = 271;

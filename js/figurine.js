@@ -21,7 +21,7 @@ import {
     monsterTypeName,
 } from './monster_data.js';
 import { BOULDER, FIGURINE, OBJECT_NAMES } from './object_data.js';
-import { removeObjectFromMonsterInventory } from './monster_inventory.js';
+import { unlinkMonsterObject } from './monster_inventory.js';
 import {
     OBJECT_TIMER_KIND, scheduleObjectTimer,
 } from './object_timers.js';
@@ -215,7 +215,7 @@ function deleteFigurine(figurine, state) {
     if (figurine.where === 'floor') remove_object(figurine);
     else if (figurine.where === 'minvent') {
         const carrier = monsterCarryingFigurine(figurine, state);
-        if (carrier) removeObjectFromMonsterInventory(carrier, figurine);
+        if (carrier) unlinkMonsterObject(carrier, figurine);
     }
     else {
         const index = (state.inventory || []).indexOf(figurine);

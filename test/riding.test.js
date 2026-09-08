@@ -14,6 +14,9 @@ import { knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addTrap } from './support/level-state.js';
+import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { nameToMonster } from '../js/mondata.js';
+import { removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
 
 test('an animal body cannot mount a saddled pony', async () => {
     freshObjectRoom({ role: 'knight' });
@@ -207,4 +210,61 @@ test('dismounting leaves the pony in the bear trap without striking it again', a
     assert.equal(pony.mhp, health);
     assert.ok(level.monsters.includes(pony));
     assert.equal(trap.tseen, true);
+});
+
+test('a mount becoming too small drops its saddle and throws the rider', async () => {
+    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    const saddle = pony.saddle;
+    const health = game.u.uhp;
+    const messages = [];
+
+    await changeMonsterForm(pony, nameToMonster('grid bug'), game, {
+        showMessage: true,
+        publish: async message => messages.push(message),
+    });
+
+    assert.equal(game.u.usteed, null);
+    assert.ok(level.monsters.includes(pony));
+    assert.equal(saddle.where, 'floor');
+    assert.ok(game.u.uhp <= health - 10 && game.u.uhp >= health - 19);
+    assert.ok(game.u._woundedLegTurns > 0);
+    assert.match(messages[0], /pony turns into a grid bug/);
+});
+
+test('a mount becoming a horse keeps its rider and saddle', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    const saddle = pony.saddle;
+    const health = game.u.uhp;
+    const messages = [];
+
+    await changeMonsterForm(pony, nameToMonster('horse'), game, {
+        publish: async message => messages.push(message),
+    });
+
+    assert.equal(game.u.usteed, pony);
+    assert.equal(pony.saddle, saddle);
+    assert.equal(saddle.where, 'minvent');
+    assert.equal(game.u.uhp, health);
+    assert.ok(messages.some(message => /adjust yourself.*new horse/.test(message)));
+});
+
+test('removing a worn saddle makes the rider fall', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    const saddle = pony.saddle;
+    const health = game.u.uhp;
+
+    await removeObjectFromMonsterInventory(pony, saddle, game, {
+        publish: async () => {},
+    });
+
+    assert.equal(game.u.usteed, null);
+    assert.equal(pony.saddle, null);
+    assert.equal(saddle.where, 'free');
+    assert.ok(game.u.uhp < health);
 });

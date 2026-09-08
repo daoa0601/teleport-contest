@@ -143,7 +143,7 @@ async function turnGolemToStone(monster, publish) {
             `${monsterSubject(monster)} solidifies...`,
         );
     }
-    const changed = !!changeMonsterForm(monster, PM_STONE_GOLEM);
+    const changed = !!await changeMonsterForm(monster, PM_STONE_GOLEM);
     if (visible) {
         await publish(changed
             ? `Now it's a ${monsterTypeName(monster.mnum)}.`
@@ -170,7 +170,7 @@ async function restoreShapechanger(monster, publish) {
         monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
     );
     monster.mhp = monster.mhpmax;
-    if (!changeMonsterForm(monster, baseForm)) return false;
+    if (!await changeMonsterForm(monster, baseForm)) return false;
     monster.cham = -1;
     if (canSeeMonster(monster, monster.mx, monster.my)) {
         const subject = vampire

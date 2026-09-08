@@ -24,7 +24,7 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SIZE,
     monsterTypeName,
 } from './monster_data.js';
-import { removeObjectFromMonsterInventory } from './monster_inventory.js';
+import { unlinkMonsterObject } from './monster_inventory.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     BOULDER, CORPSE, OBJECT_BIMANUAL,
@@ -215,7 +215,7 @@ async function damageHeroWithWhip(whip, state) {
 }
 
 function clearMonsterWeapon(monster, object) {
-    removeObjectFromMonsterInventory(monster, object);
+    unlinkMonsterObject(monster, object);
 }
 
 async function snatchPetrifyingCorpse(weapon, state) {

@@ -6377,7 +6377,7 @@ async function createLuaMonster(context, options) {
         if (monster.cham === PM_VAMPIRE_LEADER
             && monster.mnum !== PM_VAMPIRE_LEADER
             && options.appearance?.kind !== 'monster') {
-            changeMonsterForm(monster, PM_VAMPIRE_LEADER);
+            await changeMonsterForm(monster, PM_VAMPIRE_LEADER);
         }
     }
     if (monster && options.seentraps)

@@ -5,7 +5,7 @@ import { newsym, plineWithContinuation } from './display.js';
 import { ICE, isok } from './const.js';
 import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { removeObjectFromMonsterInventory } from './monster_inventory.js';
+import { unlinkMonsterObject } from './monster_inventory.js';
 import {
     GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, OBJECT_NAMES,
 } from './object_data.js';
@@ -212,7 +212,7 @@ function deleteGlob(glob, state, carrier = null) {
         glob.container = null;
     } else if (where === 'minvent') {
         const monster = carrier || carryingMonster(glob, state);
-        if (monster) removeObjectFromMonsterInventory(monster, glob);
+        if (monster) unlinkMonsterObject(monster, glob);
     } else if (where === 'buried') {
         const index = state.level?.buriedObjects?.indexOf(glob) ?? -1;
         if (index >= 0) state.level.buriedObjects.splice(index, 1);

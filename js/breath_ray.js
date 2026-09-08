@@ -409,19 +409,19 @@ async function disintegrateMonster(monster, state) {
 
     const shield = monsterWornObject(monster, W_ARMS);
     if (shield) {
-        destroyObjectFromMonsterInventory(monster, shield, state);
+        await destroyObjectFromMonsterInventory(monster, shield, state);
         return { damage: 0, armorDestroyed: shield, resisted: false };
     }
     const suit = monsterWornObject(monster, W_ARM);
     if (suit) {
         const cloak = monsterWornObject(monster, W_ARMC);
-        if (cloak) destroyObjectFromMonsterInventory(monster, cloak, state);
-        destroyObjectFromMonsterInventory(monster, suit, state);
+        if (cloak) await destroyObjectFromMonsterInventory(monster, cloak, state);
+        await destroyObjectFromMonsterInventory(monster, suit, state);
         return { damage: 0, armorDestroyed: suit, resisted: false };
     }
     for (const mask of [W_ARMC, W_ARMU]) {
         const object = monsterWornObject(monster, mask);
-        if (object) destroyObjectFromMonsterInventory(monster, object, state);
+        if (object) await destroyObjectFromMonsterInventory(monster, object, state);
     }
     monster.mhp = 0;
     return { damage: 0, disintegrated: true, noCorpse: true };
@@ -468,7 +468,7 @@ async function finishMonsterBreathHit(
         if (hit.disintegrated && visible)
             await publish(`The ${name} is disintegrated!`);
         if (hit.disintegrated)
-            destroyDisintegratedMonsterInventory(monster, state, random);
+            await destroyDisintegratedMonsterInventory(monster, state, random);
         await finishMonsterKill(monster, monster.mx, monster.my, {
             noCorpse: !!hit.noCorpse
                 || !!((MONSTER_GENO[monster.mnum] ?? 0) & G_NOCORPSE),
@@ -487,13 +487,13 @@ function wakeMonster(monster, angered) {
     if (angered) monster.mpeaceful = 0;
 }
 
-function destroyDisintegratedMonsterInventory(monster, state, random) {
+async function destroyDisintegratedMonsterInventory(monster, state, random) {
     const lifeSaver = wornMonsterLifeSaver(monster);
     const inventory = [...(monster.minvent || monster.inventory || [])];
     for (const object of inventory) {
         if (objectSurvivesDisintegration(object, lifeSaver, state, random))
             continue;
-        destroyObjectFromMonsterInventory(monster, object, state);
+        await destroyObjectFromMonsterInventory(monster, object, state);
     }
 }
 

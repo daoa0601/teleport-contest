@@ -17,7 +17,6 @@ import {
     runClaimedObjectRotTimer,
 } from './mklev.js';
 import { initialShapechangedBirth } from './monster_polymorph.js';
-import { monsterSelfTouchAfterPolymorph } from './monster_stoning.js';
 import { runClaimedCorpseRevivalTimer } from './corpse_revival.js';
 import { level_difficulty } from './dungeon.js';
 import {
@@ -1644,8 +1643,8 @@ async function beginInitialTurnMaintenance(completedTurn = game.moves || 1) {
     // boundary with the new displayed turn already in game.moves, so monster
     // periodic regeneration must inspect the preceding turn number.
     game.were_changes = 0;
-    for (const event of monsterDistressEvents(
-        game.level?.monsters || [], game, rn2, completedTurn - 1,
+    for await (const event of monsterDistressEvents(
+        game.level?.monsters || [], game, rn2, completedTurn - 1, queueTurnMessage,
     )) {
         if (event.kind === 'stationary-liquid') {
             if (game.vision_full_recalc) vision_recalc(0);
@@ -1657,15 +1656,6 @@ async function beginInitialTurnMaintenance(completedTurn = game.moves || 1) {
             continue;
         }
         if (event.kind === 'shape-change') {
-            if (event.change.message)
-                await queueTurnMessage(event.change.message);
-            await monsterSelfTouchAfterPolymorph(event.monster, {
-                creditHero: true,
-                finishDeath: (monster, options) =>
-                    finishEnvironmentalMonsterDeath(monster, game, options),
-                publish: queueTurnMessage,
-                state: game,
-            });
             continue;
         }
         await presentWereChange(event.change, {

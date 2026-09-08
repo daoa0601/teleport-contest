@@ -13,7 +13,7 @@ import {
     MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SOUND,
     MONSTER_SYMBOL, monsterTypeName, monsterYoungerForm,
 } from './monster_data.js';
-import { removeObjectFromMonsterInventory } from './monster_inventory.js';
+import { unlinkMonsterObject } from './monster_inventory.js';
 import { EGG } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import {
@@ -292,7 +292,7 @@ export function finishEggHatchTimer(
             if (index >= 0) state.inventory.splice(index, 1);
         } else if (egg.where === 'minvent') {
             const carrier = event.carrier || eggCarrier(egg, state);
-            if (carrier) removeObjectFromMonsterInventory(carrier, egg);
+            if (carrier) unlinkMonsterObject(carrier, egg);
         }
         egg.where = 'gone';
         egg.ocarry = null;

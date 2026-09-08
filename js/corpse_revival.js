@@ -22,7 +22,7 @@ import {
 import { restoreMonsterTraits } from './monster_traits.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import {
-    linkObjectToMonsterInventory, removeObjectFromMonsterInventory,
+    linkObjectToMonsterInventory, unlinkMonsterObject,
 } from './monster_inventory.js';
 import { BAG_OF_HOLDING, OBJECT_NAMES, STATUE } from './object_data.js';
 import {
@@ -240,7 +240,7 @@ function removeCorpse(corpse, location, state, entireStack = false) {
         if (index >= 0) state.inventory.splice(index, 1);
     } else if (corpse.where === 'minvent') {
         const carrier = location.monsterCarrier || carryingMonster(corpse, state);
-        if (carrier) removeObjectFromMonsterInventory(carrier, corpse);
+        if (carrier) unlinkMonsterObject(carrier, corpse);
     } else if (corpse.where === 'contained') {
         const container = location.directContainer || parentContainer(corpse, state);
         const index = container?.contents?.indexOf(corpse) ?? -1;
@@ -342,13 +342,13 @@ async function createRevivedMonster(corpse, location, state) {
     if (replacement != null) discardSavedBody(corpse);
     if (savedTraits && replacement == null) {
         restoreMonsterTraits(monster, savedTraits);
-        restoreRevivedShapechanger(monster, state);
+        await restoreRevivedShapechanger(monster, state);
         markQuestLeaderAlive(monster, state);
         if (monster.mtame && !monster.isminion)
             makePetWary(monster, { wasDead: true, state });
     } else if (replacement === PM_DOPPELGANGER) {
         if (monster.cham === PM_DOPPELGANGER)
-            changeMonsterForm(monster, originalMnum);
+            await changeMonsterForm(monster, originalMnum);
     } else if (replacement === PM_HUMAN_ZOMBIE) {
         monster.mhp = monster.mhpmax = 100;
         monster.permspeed = MFAST;

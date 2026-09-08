@@ -4,9 +4,8 @@
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { changeMonsterFormWithAppearance } from './monster_polymorph.js';
+import { changeMonsterForm } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
-import { monsterSelfTouchAfterPolymorph } from './monster_stoning.js';
 import { rn2 } from './rng.js';
 
 const POTION_ATTACK_LEVEL = 6;
@@ -74,33 +73,24 @@ export async function polymorphMonsterFromPotion(monster, {
                 throw new Error('polymorph fatality owner unavailable');
             await finishDeath(monster, { noCorpse: true });
         } else {
-            change = changeMonsterFormWithAppearance(monster, null, state);
             const heroInsideTarget = state.u?.uswallow
                 && state.u?.ustuck === monster;
-            if (!heroHallucinates(state)
-                && (targetSpotted || heroInsideTarget)
-                && change?.message) {
-                await publish(change.message);
-            }
-            if (change) {
-                selfTouch = await monsterSelfTouchAfterPolymorph(monster, {
-                    creditHero: true,
-                    finishDeath: (target, death) => {
-                        if (!finishDeath) {
-                            throw new Error(
-                                'polymorph self-touch fatality owner unavailable',
-                            );
-                        }
-                        return finishDeath(target, {
-                            ...death,
-                            showKillMessage: false,
-                            recordConduct: false,
-                        });
-                    },
-                    publish,
-                    state,
-                });
-            }
+            change = await changeMonsterForm(monster, null, state, {
+                showMessage: !heroHallucinates(state) && (targetSpotted || heroInsideTarget),
+                creditHero: true,
+                finishDeath: (target, death) => {
+                    if (!finishDeath)
+                        throw new Error('polymorph self-touch requires a monster death handler');
+                    return finishDeath(target, {
+                        ...death,
+                        showKillMessage: false,
+                        recordConduct: false,
+                    });
+                },
+                publish,
+                polyspot: true,
+            });
+            selfTouch = change?.selfTouch || null;
         }
         if (survived(monster)) markNewLongWorm(monster, state);
     }

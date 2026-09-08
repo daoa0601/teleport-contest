@@ -316,7 +316,7 @@ async function reviveShiftedVampire(
         }
     }
 
-    const change = changeMonsterForm(monster, baseMnum, state);
+    const change = await changeMonsterForm(monster, baseMnum, state);
     if (!change) {
         return {
             monster, survived: monster.mhp > 0, messageShown: false,

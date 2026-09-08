@@ -17,17 +17,17 @@ import {
 const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
 const S_MIMIC = 13;
 
-function restoreNaturalShape(monster, state) {
+async function restoreNaturalShape(monster, state, publish) {
     let changed = false;
     if (Number.isInteger(monster.cham) && monster.cham >= 0) {
         const cancelled = monster.mcan;
-        changed = !!changeMonsterForm(monster, monster.cham) || changed;
+        changed = !!await changeMonsterForm(monster, monster.cham, state, { publish }) || changed;
         monster.cham = -1;
         if (cancelled) monster.mcan = 1;
     }
     if (isWereMonster(monster) && !isHumanWereMonster(monster)) {
-        changed = transformWereMonster(monster, state, {
-            repaint: false,
+        changed = await transformWereMonster(monster, state, {
+            repaint: false, publish,
         }) || changed;
     }
 
@@ -61,7 +61,7 @@ export async function cancelMonster(monster, {
     }
 
     monster.mcan = 1;
-    const changedShape = restoreNaturalShape(monster, state);
+    const changedShape = await restoreNaturalShape(monster, state, publish);
     const clayGolem = monster.mnum === PM_CLAY_GOLEM;
     if (clayGolem && canProjectMonster(monster, monster.mx, monster.my)) {
         await publish(

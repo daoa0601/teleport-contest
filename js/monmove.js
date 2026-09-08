@@ -5,6 +5,7 @@
 import { d, rn2, rnd } from './rng.js';
 import { game } from './gstate.js';
 import { beginPetRangedTurn } from './dogmove.js';
+import { petDroppableObject } from './dog.js';
 import { tryMonsterTrapEscape } from './monster_trap_escape.js';
 import {
     beginMonsterSpitAttack, monsterSpitAttack, resolveMonsterSpitFlight,
@@ -133,9 +134,9 @@ import {
 } from './monster_death.js';
 import { priestIsInOwnTemple } from './priest.js';
 import {
-    addObjectToMonsterInventory, dropObjectFromMonsterInventory,
+    addObjectToMonsterInventory,
     linkObjectToMonsterInventory,
-    removeObjectFromMonsterInventory,
+    unlinkMonsterObject,
 } from './monster_inventory.js';
 import {
     currentMonsterLoad, monsterCanCarryObject, monsterCarryAmount,
@@ -1084,9 +1085,10 @@ export function heroEveryturnEffect(state = game, random = rn2) {
 // reverse of creation order just like movement allocation does. Yielding at
 // each transformation lets its messages and consequences finish before the
 // next source-ordered random decision.
-export function* monsterDistressEvents(
+export async function* monsterDistressEvents(
     monsters = [], state = {}, random = rn2,
     distressTurn = state.moves ?? 1,
+    publish = plineWithContinuation,
 ) {
     for (const monster of monstersInFmonOrder(monsters)) {
         if (!monster) continue;
@@ -1102,8 +1104,8 @@ export function* monsterDistressEvents(
         }
         if ((monster.mspec_used ?? 0) > 0) monster.mspec_used--;
 
-        const changedShape = decideMonsterShapeChange(
-            monster, state, random,
+        const changedShape = await decideMonsterShapeChange(
+            monster, state, random, { publish },
         );
         if (changedShape) {
             yield {
@@ -1112,7 +1114,7 @@ export function* monsterDistressEvents(
                 change: changedShape,
             };
         }
-        const changedWere = wereChange(monster, state, random);
+        const changedWere = await wereChange(monster, state, random, { publish });
         if (changedWere) {
             yield {
                 kind: 'were-change',
@@ -2325,19 +2327,21 @@ function petEatingDelay(object) {
 
 function petInventoryAction(monster, state, random, rollOne, calls) {
     if (monster?.meating || monster?.mfrozen || monster?.msleeping) return null;
-    const carried = monster.minvent || monster.inventory || [];
     const udist = dist2(
         monster.mx, monster.my,
         state?.u?.ux ?? monster.mx, state?.u?.uy ?? monster.my,
     );
-    if (carried.length) {
+    if (petDroppableObject(monster)) {
         const apport = Math.max(1, monster.edog?.apport ?? 1);
         let release = recordRandom(random, calls, udist + 1) === 0;
         if (!release) release = recordRandom(random, calls, apport) === 0;
         if (release && recordRandom(random, calls, 10) < apport) {
-            const dropped = [...carried];
-            for (const object of dropped)
-                dropObjectFromMonsterInventory(monster, object, state);
+            const dropped = [];
+            for (let object; (object = petDroppableObject(monster));) {
+                unlinkMonsterObject(monster, object);
+                place_object(object, monster.mx, monster.my, state);
+                dropped.push(object);
+            }
             if ((monster.edog?.apport ?? 1) > 1) monster.edog.apport--;
             if (monster.edog) {
                 monster.edog.dropdist = udist;

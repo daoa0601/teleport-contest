@@ -122,7 +122,7 @@ export async function killGenocidedMonsters(state = game) {
             && !baseWasGenocided) continue;
         if (Number.isInteger(monster.cham) && monster.cham >= 0
             && !baseWasGenocided) {
-            if (changeMonsterForm(monster)) reshaped.push(monster);
+            if (await changeMonsterForm(monster)) reshaped.push(monster);
             continue;
         }
         killed.push(await killGenocidedMonster(monster, state));

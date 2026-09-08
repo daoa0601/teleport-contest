@@ -113,10 +113,10 @@ function monsterFoodNutrition(monster, object) {
     return partiallyEatenValue(nutrition, object, fullNutrition);
 }
 
-function consumeOneCure(monster, object, state) {
+async function consumeOneCure(monster, object, state) {
     const quantity = object.quan ?? object.quantity ?? 1;
     if (quantity <= 1) {
-        destroyObjectFromMonsterInventory(monster, object, state);
+        await destroyObjectFromMonsterInventory(monster, object, state);
         return;
     }
     object.quan = object.quantity = quantity - 1;
@@ -169,7 +169,7 @@ export async function useMonsterStoningCure(monster, {
         ? null : monsterSpeedMessage(speed, monsterSubject(monster));
     if (visible && speedMessage) await publish(speedMessage);
     await describeCure(monster, cure, visible, state, publish);
-    consumeOneCure(monster, cure, state);
+    await consumeOneCure(monster, cure, state);
 
     if (acidic && !tinned && !monsterHasAcidResistance(monster)) {
         monster.mhp -= rollOne(15);

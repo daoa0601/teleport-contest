@@ -3257,10 +3257,10 @@ function preparePickedInventoryObject(object) {
     };
 }
 
-function removePickupObjects(source, selected) {
+async function removePickupObjects(source, selected) {
     if (source.monster) {
         for (const object of selected)
-            removeObjectFromMonsterInventory(source.monster, object);
+            await removeObjectFromMonsterInventory(source.monster, object);
         return;
     }
 
@@ -3271,8 +3271,8 @@ function removePickupObjects(source, selected) {
     }
 }
 
-function collectPickupMessages(source, selected) {
-    removePickupObjects(source, selected);
+async function collectPickupMessages(source, selected) {
+    await removePickupObjects(source, selected);
     const messages = [];
     const shopQuotes = [];
     const comparisonMessages = [];
@@ -3463,7 +3463,7 @@ async function commitPickup(source, selected) {
     }
     const {
         messages, shopQuotes, comparisonMessages,
-    } = collectPickupMessages(source, pickup.lifted);
+    } = await collectPickupMessages(source, pickup.lifted);
     const capacity = nearCapacity(game);
     const loadPrefix = pickupLoadPrefix(capacity);
     const pickupMessage = loadPrefix

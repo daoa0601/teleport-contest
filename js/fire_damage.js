@@ -134,7 +134,7 @@ async function burnContainer(object, context) {
             await context.publish('Its contents fall out.');
         await dropContents(object, context);
     }
-    removeObject(object, context.carrier, context.state);
+    await removeObject(object, context.carrier, context.state);
     return true;
 }
 
@@ -169,7 +169,7 @@ async function burnPaperOrPotion(object, context) {
     } else {
         return false;
     }
-    removeObject(object, context.carrier, context.state);
+    await removeObject(object, context.carrier, context.state);
     return true;
 }
 
@@ -208,7 +208,7 @@ async function burnErodibleObject(object, context) {
             `${objectSubject(object, context.carrier)} smoulders away!`,
         );
     }
-    removeObject(object, context.carrier, context.state);
+    await removeObject(object, context.carrier, context.state);
     return true;
 }
 

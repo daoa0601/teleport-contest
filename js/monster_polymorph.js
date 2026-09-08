@@ -4,14 +4,15 @@
 import {
     BOLT_LIM, IS_LAVA, IS_POOL, Is_rogue_level, STRAT_WAITFORU, W_ARM,
 } from './const.js';
-import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { dragonFormForArmor } from './armor.js';
 import { game } from './gstate.js';
 import {
     monsterCanBeLeashed, releaseMonsterLeash,
 } from './monster_leash.js';
 import { newMonsterHitPoints } from './monster_hit_points.js';
-import { dropObjectFromMonsterInventory } from './monster_inventory.js';
+import { unlinkMonsterObject } from './monster_inventory.js';
+import { landFloorObject } from './floor_effects.js';
 import {
     MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM,
@@ -22,6 +23,9 @@ import {
     adjustMonsterClothingAfterPolymorph, checkMonsterGearNextTurn,
 } from './monworn.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
+import { monsterSelfTouchAfterPolymorph } from './monster_stoning.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { adjustRiderAfterSteedPolymorph } from './steed.js';
 import { BOULDER, CANDELABRUM_OF_INVOCATION } from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import {
@@ -295,12 +299,22 @@ function naturalShapechanger(mnum) {
     return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_SHAPESHIFTER);
 }
 
-function dropBouldersTheNewFormCannotCarry(monster, state) {
+async function dropBouldersTheNewFormCannotCarry(monster, state, polyspot, publish) {
     if ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ROCKTHROW) return [];
     const boulders = (monster.minvent || monster.inventory || [])
         .filter(object => object.otyp === BOULDER);
-    return boulders.map(object =>
-        dropObjectFromMonsterInventory(monster, object, state)).filter(Boolean);
+    const dropped = [];
+    for (const object of boulders) {
+        if (monster.dead || monster.mhp <= 0) break;
+        if (polyspot) {
+            object.bypass = true;
+            state.context.bypasses = true;
+        }
+        unlinkMonsterObject(monster, object);
+        const placed = await landFloorObject(object, monster.mx, monster.my, { state, publish });
+        if (placed) dropped.push(placed);
+    }
+    return dropped;
 }
 
 function initialShapechangedMonster(monster, targetMnum) {
@@ -365,8 +379,15 @@ export function initialShapechangedBirth(monster) {
     return initialShapechangedMonster(monster, targetMnum);
 }
 
-export function changeMonsterForm(
+export async function changeMonsterForm(
     monster, forcedTargetMnum = null, state = game,
+    {
+        showMessage = false,
+        publish = plineWithContinuation,
+        finishDeath = (target, options) => finishEnvironmentalMonsterDeath(target, state, options),
+        creditHero = !state.context?.mon_moving,
+        polyspot = false,
+    } = {},
 ) {
     let baseMnum = Number.isInteger(monster?.cham) && monster.cham >= 0
         ? monster.cham : -1;
@@ -397,6 +418,8 @@ export function changeMonsterForm(
     if (targetMnum == null || targetMnum === monster.mnum) return null;
 
     const oldMnum = monster.mnum;
+    const oldSubject = monsterFormSubject(monster, oldMnum);
+    const wasSpotted = canSpotMonster(monster);
     if (monster.wormno) removeMonsterWormBody(monster);
     const oldHp = Math.max(1, monster.mhp ?? 1);
     const oldMax = Math.max(1, monster.mhpmax ?? oldHp);
@@ -419,6 +442,12 @@ export function changeMonsterForm(
         leashReleaseVisible = canSeeMonster(monster, monster.mx, monster.my);
         releaseMonsterLeash(monster, state);
         leashReleased = true;
+        const subject = monsterFormSubject(monster);
+        const neuter = MONSTER_FLAGS2[monster.mnum] & M2_NEUTER;
+        const owner = neuter ? 'its' : monster.female ? 'her' : 'his';
+        await publish(leashReleaseVisible
+            ? `${subject} pulls free of ${owner} leash!`
+            : 'Your leash falls slack.');
     }
     if (!monster.perminvis || oldNaturallyInvisible)
         monster.perminvis = naturallyInvisible;
@@ -440,10 +469,33 @@ export function changeMonsterForm(
         initializeMonsterWormBody(monster);
     monster.meverseen = 0;
 
-    const droppedWeapon = updateMonsterWeaponAfterPolymorph(monster, state);
-    const clothing = adjustMonsterClothingAfterPolymorph(monster, state);
+    newsym(monster.mx, monster.my);
+    let message = null;
+    if (showMessage) {
+        const newName = monsterTypeName(monster.mnum, !!monster.female);
+        const nowSpotted = canSpotMonster(monster);
+        if (wasSpotted && nowSpotted)
+            message = `${oldSubject} turns into a ${newName}!`;
+        else if (wasSpotted)
+            message = `${oldSubject} disappears!`;
+        else if (nowSpotted)
+            message = `${monster.mtame ? 'Your' : 'A'} ${newName} appears!`;
+        if (message) await publish(message);
+    }
+    const droppedWeapon = await updateMonsterWeaponAfterPolymorph(monster, state);
+    if (polyspot && droppedWeapon) {
+        droppedWeapon.bypass = true;
+        state.context.bypasses = true;
+    }
+    const clothing = await adjustMonsterClothingAfterPolymorph(monster, state, { publish, polyspot });
+    const selfTouch = await monsterSelfTouchAfterPolymorph(monster, {
+        finishDeath, creditHero, publish, state,
+    });
     checkMonsterGearNextTurn(monster);
-    const droppedBoulders = dropBouldersTheNewFormCannotCarry(monster, state);
+    const droppedBoulders = selfTouch.survived
+        ? await dropBouldersTheNewFormCannotCarry(monster, state, polyspot, publish) : [];
+    if (state.u.usteed === monster)
+        await adjustRiderAfterSteedPolymorph(monster, oldMnum, state, publish);
     return {
         oldMnum,
         newMnum: targetMnum,
@@ -453,6 +505,8 @@ export function changeMonsterForm(
         droppedClothing: clothing.dropped,
         destroyedClothing: clothing.destroyed,
         droppedBoulders,
+        selfTouch,
+        message,
     };
 }
 
@@ -462,30 +516,6 @@ function monsterFormSubject(monster, mnum = monster?.mnum) {
     return monster?.mtame ? `Your ${name}` : `The ${name}`;
 }
 
-export function changeMonsterFormWithAppearance(
-    monster, forcedTargetMnum = null, state = game,
-) {
-    const oldMnum = monster.mnum;
-    const oldSubject = monsterFormSubject(monster, oldMnum);
-    const wasSpotted = canSpotMonster(monster);
-    const change = changeMonsterForm(monster, forcedTargetMnum, state);
-    if (!change) return null;
-
-    newsym(monster.mx, monster.my);
-    const newName = monsterTypeName(monster.mnum, !!monster.female);
-    const nowSpotted = canSpotMonster(monster);
-    let message = null;
-    if (wasSpotted && nowSpotted) {
-        message = `${oldSubject} turns into a ${newName}!`;
-    } else if (wasSpotted) {
-        message = `${oldSubject} disappears!`;
-    } else if (nowSpotted) {
-        const subject = monster.mtame ? `Your ${newName}` : `A ${newName}`;
-        message = `${subject} appears!`;
-    }
-    return { ...change, message };
-}
-
 function vampireMayShiftOutOfSight(monster, state) {
     const visible = canSeeMonster(monster, monster.mx, monster.my);
     const dx = monster.mx - (state.u?.ux ?? monster.mx);
@@ -493,8 +523,9 @@ function vampireMayShiftOutOfSight(monster, state) {
     return !visible || dx * dx + dy * dy > BOLT_LIM * BOLT_LIM;
 }
 
-export function decideMonsterShapeChange(
+export async function decideMonsterShapeChange(
     monster, state = game, random = rn2,
+    { publish = plineWithContinuation } = {},
 ) {
     const baseMnum = Number.isInteger(monster.cham) && monster.cham >= 0
         ? monster.cham : null;
@@ -532,8 +563,8 @@ export function decideMonsterShapeChange(
     if (!shouldChange) return null;
 
     const wasFemale = !!monster.female;
-    const change = changeMonsterFormWithAppearance(
-        monster, targetMnum, state,
+    const change = await changeMonsterForm(
+        monster, targetMnum, state, { showMessage: true, publish },
     );
     if (change && vampireShifter) {
         const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;

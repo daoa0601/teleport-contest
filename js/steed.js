@@ -133,6 +133,20 @@ export async function handleRidingAfterFormChange() {
     return { died: false };
 }
 
+export async function adjustRiderAfterSteedPolymorph(
+    steed, oldMnum, state = game, publish = plineWithContinuation,
+) {
+    if (!monsterCanBeSaddled(steed) || !heroCanRideSteed(steed, state))
+        return dismountHero(DISMOUNT_FELL, { state, announce: publish });
+    const givenName = MGIVENNAME(steed);
+    const name = givenName || `your ${oldMnum !== steed.mnum ? 'new ' : ''}${
+        monsterTypeName(steed.mnum, !!steed.female)
+    }`;
+    await publish(`You adjust yourself in the saddle on ${name}.`);
+    refreshMovementProperties(state);
+    return { dismounted: false };
+}
+
 export async function ridingPreventsMovement() {
     const steed = game.u.usteed;
     if (!steed || !monsterIsHelpless(steed)) return false;

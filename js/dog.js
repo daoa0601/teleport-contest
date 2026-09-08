@@ -2,7 +2,7 @@
 // C refs: dog.c tamedog(), newedog(), initedog(), and abuse_dog().
 
 import { currentAttribute } from './attrib.js';
-import { A_CHA } from './const.js';
+import { A_CHA, W_ARMS } from './const.js';
 import { newsym } from './display.js';
 import { game } from './gstate.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -10,11 +10,76 @@ import {
     publishKickedPetYelp, publishMonsterGrowl,
 } from './monster_anger.js';
 import { releaseMonsterLeash } from './monster_leash.js';
-import { MONSTER_FLAGS2, MONSTER_SOUND } from './monster_data.js';
-import { RIN_AGGRAVATE_MONSTER } from './object_data.js';
+import {
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SOUND,
+    monsterHasNoHands, monsterIsVerySmall,
+} from './monster_data.js';
+import {
+    CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE,
+    RIN_AGGRAVATE_MONSTER, SKELETON_KEY, UNICORN_HORN,
+} from './object_data.js';
 import { rn2, rnd } from './rng.js';
 
 const M2_DOMESTIC = 0x00400000;
+const M1_ANIMAL = 0x00040000;
+const M1_MINDLESS = 0x00010000;
+const M1_TUNNEL = 0x20;
+const M1_NEEDPICK = 0x40;
+
+// C dogmove.c:droppables(). Pets keep equipment and usable tools.
+export function petDroppableObject(monster) {
+    const flags = MONSTER_FLAGS1[monster.mnum];
+    const animalOrMindless = !!(flags & (M1_ANIMAL | M1_MINDLESS));
+    const canDig = (flags & (M1_TUNNEL | M1_NEEDPICK)) === (M1_TUNNEL | M1_NEEDPICK);
+    const canUnlock = !monsterHasNoHands(monster.mnum) && !monsterIsVerySmall(monster.mnum);
+    const weapon = monster.mw;
+    // An unusable tool counts as an artifact already kept, as in C's dummy object.
+    const notNeeded = { oartifact: true };
+    let pick = animalOrMindless || !canDig ? notNeeded : null;
+    let horn = animalOrMindless ? notNeeded : null;
+    let key = animalOrMindless || !canUnlock ? notNeeded : null;
+    if (weapon) {
+        if ([PICK_AXE, DWARVISH_MATTOCK].includes(weapon.otyp)) pick = weapon;
+        if (weapon.otyp === UNICORN_HORN) horn = weapon;
+    }
+    for (const object of monster.minvent || []) {
+        switch (object.otyp) {
+        case DWARVISH_MATTOCK:
+            if (monster.misc_worn_check & W_ARMS) break;
+            if (pick?.otyp === PICK_AXE && pick !== weapon
+                && (!pick.oartifact || object.oartifact)) return pick;
+            // A usable mattock competes with the same digging tool as a pick-axe.
+        case PICK_AXE:
+            if (!pick || (object.oartifact && !pick.oartifact)) {
+                if (pick) return pick;
+                pick = object;
+                continue;
+            }
+            break;
+        case UNICORN_HORN:
+            if (object.cursed) break;
+            if (!horn || (object.oartifact && !horn.oartifact)) {
+                if (horn) return horn;
+                horn = object;
+                continue;
+            }
+            break;
+        case SKELETON_KEY:
+        case LOCK_PICK:
+        case CREDIT_CARD:
+            if (key && object.otyp < key.otyp
+                && (!key.oartifact || object.oartifact)) return key;
+            if (!key || (object.oartifact && !key.oartifact)) {
+                if (key) return key;
+                key = object;
+                continue;
+            }
+            break;
+        }
+        if (!object.owornmask && object !== weapon) return object;
+    }
+    return null;
+}
 
 function heroAggravatesMonsters(state) {
     const rings = [

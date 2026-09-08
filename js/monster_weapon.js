@@ -26,7 +26,7 @@ export function unwieldMonsterWeapon(monster) {
     return weapon;
 }
 
-export function updateMonsterWeaponAfterPolymorph(monster, state = game) {
+export async function updateMonsterWeaponAfterPolymorph(monster, state = game) {
     const weapon = monsterWieldedWeapon(monster);
     if (!weapon) return null;
 
@@ -38,7 +38,7 @@ export function updateMonsterWeaponAfterPolymorph(monster, state = game) {
     }
 
     if (!MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
-        const dropped = dropObjectFromMonsterInventory(monster, weapon, state);
+        const dropped = await dropObjectFromMonsterInventory(monster, weapon, state);
         monster.weaponCheck = NO_WEAPON_WANTED;
         return stack_object(dropped, state);
     }

@@ -42,7 +42,7 @@ test('a long worm loses its old body when it changes form', async () => {
     const monster = await createMonsterAt('long worm', 11, 10);
     initRng(1n);
 
-    changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
+    await changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
 
     assert.equal(monster.wormno, 0);
     assert.deepEqual(monster.wormSegments, []);
@@ -53,7 +53,7 @@ test('a monster receives a worm body when it becomes a long worm', async () => {
     const monster = await createMonsterAt('little dog', 11, 10);
     initRng(1n);
 
-    changeMonsterForm(monster, MONSTER_NAME.indexOf('long worm'));
+    await changeMonsterForm(monster, MONSTER_NAME.indexOf('long worm'));
 
     assert.ok(monster.wormno > 0);
     assert.ok(Array.isArray(monster.wormSegments));
@@ -69,7 +69,7 @@ test('a leashed monster pulls free when its new body cannot be leashed',
         });
         initRng(1n);
 
-        changeMonsterForm(monster, MONSTER_NAME.indexOf('long worm'));
+        await changeMonsterForm(monster, MONSTER_NAME.indexOf('long worm'));
 
         assert.equal(monster.mleashed, 0);
         assert.equal(leash.leashmon, 0);
@@ -85,7 +85,7 @@ test('a monster drops its weapon when its new form cannot wield one',
         );
         initRng(1n);
 
-        changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
+        await changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
 
         assert.equal(monster.mw, null);
         assert.equal(monster.weaponCheck, NO_WEAPON_WANTED);
@@ -106,7 +106,9 @@ test('a large new body destroys ordinary torso clothing', async () => {
     ];
     initRng(1n);
 
-    changeMonsterForm(monster, MONSTER_NAME.indexOf('giant'));
+    await changeMonsterForm(monster, MONSTER_NAME.indexOf('giant'), game, {
+        publish: async () => {},
+    });
 
     for (const object of clothing)
         assert.equal(object.where, 'gone', `${object.name} should be destroyed`);
@@ -129,7 +131,9 @@ test('a tiny new body drops gear that no longer fits', async () => {
     ];
     initRng(1n);
 
-    changeMonsterForm(monster, MONSTER_NAME.indexOf('grid bug'));
+    await changeMonsterForm(monster, MONSTER_NAME.indexOf('grid bug'), game, {
+        publish: async () => {},
+    });
 
     for (const object of gear)
         assert.equal(object.where, 'floor', `${object.name} should be dropped`);
@@ -142,7 +146,7 @@ test('a former giant drops boulders its new form cannot carry', async () => {
     const boulder = equipMonsterObject(monster, knownObject(BOULDER), 0);
     initRng(1n);
 
-    changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
+    await changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
 
     assert.equal(boulder.where, 'floor');
     assert.equal(boulder.ox, monster.mx);
@@ -158,7 +162,7 @@ test('a monster drops its saddle when its new body cannot wear one',
         );
         initRng(1n);
 
-        changeMonsterForm(monster, MONSTER_NAME.indexOf('grid bug'));
+        await changeMonsterForm(monster, MONSTER_NAME.indexOf('grid bug'));
 
         assert.equal(saddle.where, 'floor');
         assert.equal(monster.saddled, false);
@@ -171,7 +175,9 @@ test('a visible werewolf announces its natural change', async () => {
     const monster = await createMonsterAt(263, 11, 10);
     const messages = [];
 
-    const change = wereChange(monster, game, () => 0);
+    const change = await wereChange(monster, game, () => 0, {
+        publish: async message => messages.push(message),
+    });
     await presentWereChange(change, {
         publish: async message => messages.push(message),
         wakeNearby: wakeMonstersNear,
@@ -192,7 +198,7 @@ test('an unseen werejackal howls and wakes nearby monsters', async () => {
     sleeper.msleeping = 1;
     const messages = [];
 
-    const change = wereChange(werejackal, game, () => 0);
+    const change = await wereChange(werejackal, game, () => 0);
     await presentWereChange(change, {
         publish: async message => messages.push(message),
         wakeNearby: wakeMonstersNear,
@@ -212,7 +218,7 @@ test('a wounded vampire shape returns to its natural form', async () => {
     });
     initRng(1n);
 
-    const change = decideMonsterShapeChange(monster, game, () => 1);
+    const change = await decideMonsterShapeChange(monster, game, () => 1);
 
     assert.equal(monster.mnum, MONSTER_NAME.indexOf('vampire'));
     assert.equal(change.message, 'The fog cloud turns into a vampire!');

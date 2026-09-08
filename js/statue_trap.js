@@ -74,13 +74,13 @@ async function createStatueMonster(statue, x, y, state) {
 
     if (useSavedTraits) {
         restoreMonsterTraits(monster, savedTraits);
-        restoreRevivedShapechanger(monster, state);
+        await restoreRevivedShapechanger(monster, state);
         markQuestLeaderAlive(monster, state);
         if (monster.mtame && !monster.isminion)
             makePetWary(monster, { wasDead: true, state });
     } else if (replacement === PM_DOPPELGANGER
         && monster.cham === PM_DOPPELGANGER) {
-        changeMonsterForm(monster, statue.corpsenm);
+        await changeMonsterForm(monster, statue.corpsenm);
     }
     return monster;
 }

@@ -4,7 +4,7 @@
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import {
     I_SPECIAL, LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN,
-    NEED_WEAPON, W_SADDLE, W_WEP,
+    DISMOUNT_FELL, NEED_WEAPON, W_SADDLE, W_WEP,
 } from './const.js';
 import { place_object } from './floor_object.js';
 import { game } from './gstate.js';
@@ -14,6 +14,8 @@ import { removeObjectAndContentsFromBill } from './shk.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
 import { monsterCanEngulf } from './monster_data.js';
+import { dismountHero } from './steed.js';
+import { plineWithContinuation } from './display.js';
 
 export function clearMonsterCarriedObjectState(object) {
     if (!object) return;
@@ -85,7 +87,9 @@ export function linkObjectToMonsterInventory(
     return object;
 }
 
-export function removeObjectFromMonsterInventory(monster, object) {
+// Unlinking is separate from equipment effects, like C obj_extract_self().
+// Callers removing worn armor must use removeObjectFromMonsterInventory().
+export function unlinkMonsterObject(monster, object) {
     if (!monster || !object) return false;
     const inventory = monster.minvent || monster.inventory || [];
     const index = inventory.indexOf(object);
@@ -111,16 +115,26 @@ export function removeObjectFromMonsterInventory(monster, object) {
     return true;
 }
 
-export function dropObjectFromMonsterInventory(
-    monster, object, state = game,
+export async function removeObjectFromMonsterInventory(monster, object, state = game, {
+    publish = plineWithContinuation,
+} = {}) {
+    const removedSaddle = !!(object.owornmask & W_SADDLE);
+    if (!unlinkMonsterObject(monster, object)) return false;
+    if (removedSaddle && state.u.usteed === monster)
+        await dismountHero(DISMOUNT_FELL, { state, announce: publish });
+    return true;
+}
+
+export async function dropObjectFromMonsterInventory(
+    monster, object, state = game, options = {},
 ) {
-    if (!removeObjectFromMonsterInventory(monster, object)) return null;
+    if (!await removeObjectFromMonsterInventory(monster, object, state, options)) return null;
     return place_object(object, monster.mx, monster.my, state);
 }
 
-export function destroyObjectFromMonsterInventory(
-    monster, object, state = game,
+export async function destroyObjectFromMonsterInventory(
+    monster, object, state = game, options = {},
 ) {
-    if (!removeObjectFromMonsterInventory(monster, object)) return false;
+    if (!await removeObjectFromMonsterInventory(monster, object, state, options)) return false;
     return deleteObject(object, state);
 }

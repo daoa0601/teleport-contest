@@ -2,12 +2,20 @@
 // C refs: makemon.c:makemon(), mon.c:check_gear_next_turn() and
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
 
-import { armorBonus, armorSlotFor } from './armor.js';
+import { armorBonus, armorSlotFor, dragonFormForArmor } from './armor.js';
+import { newsym, plineWithContinuation } from './display.js';
+import { cansee } from './vision.js';
+import { heroIsDeaf } from './senses.js';
+import { surfaceName } from './terrain_name.js';
+import { monsterSentenceSubject } from './monster_sound.js';
+import { dismountHero, heroCanRideSteed } from './steed.js';
+import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
+import { rnl } from './rng.js';
 import { game } from './gstate.js';
 import {
-    MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE,
+    MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SIZE,
     monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands,
-    monsterIsCentaur,
+    monsterIsCentaur, monsterIsWhirly, monsterTypeName,
     monsterHornCount, monsterIsSlithy, monsterIsVerySmall,
     monsterSlipsArmor, monsterWrappingAllowed,
 } from './monster_data.js';
@@ -16,17 +24,18 @@ import {
 } from './monster_inventory.js';
 import {
     AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
-    IRON_SHOES, MUMMY_WRAPPING,
+    ALCHEMY_SMOCK, IRON_SHOES, MUMMY_WRAPPING, ROBE,
     OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_MATERIAL,
 } from './object_data.js';
 import {
-    AC_MAX, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
+    AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
     W_ARMS, W_ARMU, W_SADDLE,
 } from './const.js';
 
 const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
+const M2_NEUTER = 0x00040000;
 const MZ_SMALL = 1;
 const LEATHER = 7;
 const SPEED_BOOTS = 166;
@@ -207,53 +216,105 @@ export function nameMonsterForCreationArmorChecks(monster, nameMonster) {
     return slots.length;
 }
 
-function dropWornObject(monster, object, state, dropped) {
-    if (!object) return;
-    const placed = dropObjectFromMonsterInventory(monster, object, state);
-    if (placed) dropped.push(placed);
-}
-
-function destroyWornObject(monster, object, state, destroyed) {
-    if (!object) return;
-    if (destroyObjectFromMonsterInventory(monster, object, state))
-        destroyed.push(object);
-}
-
-export function adjustMonsterClothingAfterPolymorph(
+export async function adjustMonsterClothingAfterPolymorph(
     monster, state = game,
+    { publish = plineWithContinuation, polyspot = false } = {},
 ) {
     const dropped = [];
     const destroyed = [];
     const mnum = monster.mnum;
     const wrappingFits = monsterWrappingAllowed(mnum);
+    const visible = cansee(monster.mx, monster.my);
+    const name = () => monsterSentenceSubject(monster);
+    const possessive = () => {
+        const subject = name();
+        return `${subject}${subject.endsWith('s') ? "'" : "'s"}`;
+    };
+    const neuter = !!(MONSTER_FLAGS2[mnum] & M2_NEUTER);
+    const pronoun = neuter ? 'it' : monster.female ? 'her' : 'him';
+    const owner = neuter ? 'its' : monster.female ? 'her' : 'his';
+    const cloakName = object => object.otyp === ROBE ? 'robe'
+        : object.otyp === MUMMY_WRAPPING ? 'mummy wrapping'
+            : object.otyp === ALCHEMY_SMOCK ? 'apron' : 'cloak';
+    const drop = async object => {
+        if (!object) return;
+        const placed = await dropObjectFromMonsterInventory(monster, object, state, { publish });
+        if (!placed) return;
+        if (polyspot) {
+            placed.bypass = true;
+            state.context.bypasses = true;
+        }
+        dropped.push(placed);
+        newsym(monster.mx, monster.my);
+    };
+    const destroy = async object => {
+        if (object && await destroyObjectFromMonsterInventory(monster, object, state, { publish }))
+            destroyed.push(object);
+    };
+    const hear = async sound => {
+        if (!heroIsDeaf(state)) await publish(`You hear ${sound}.`);
+    };
+    let object;
 
     if (monsterBreaksArmor(mnum)) {
-        destroyWornObject(monster, wornInSlot(monster, W_ARM), state, destroyed);
+        if ((object = wornInSlot(monster, W_ARM))) {
+            if (dragonFormForArmor(object) !== mnum) {
+                if (visible) await publish(`${name()} breaks out of ${owner} armor!`);
+                else await hear('a cracking sound');
+            }
+            await destroy(object);
+        }
 
         const cloak = wornInSlot(monster, W_ARMC);
         if (cloak && (cloak.otyp !== MUMMY_WRAPPING || !wrappingFits)) {
-            if (cloak.oartifact)
-                dropWornObject(monster, cloak, state, dropped);
-            else
-                destroyWornObject(monster, cloak, state, destroyed);
+            if (cloak.oartifact) {
+                if (visible) await publish(`${possessive()} ${cloakName(cloak)} falls off!`);
+                await drop(cloak);
+            } else {
+                if (visible) await publish(`${possessive()} ${cloakName(cloak)} tears apart!`);
+                else await hear('a ripping sound');
+                await destroy(cloak);
+            }
         }
-        destroyWornObject(
-            monster, wornInSlot(monster, W_ARMU), state, destroyed,
-        );
+        if ((object = wornInSlot(monster, W_ARMU))) {
+            if (visible) await publish(`${possessive()} shirt rips to shreds!`);
+            else await hear('a ripping sound');
+            await destroy(object);
+        }
     } else if (monsterSlipsArmor(mnum)) {
-        dropWornObject(monster, wornInSlot(monster, W_ARM), state, dropped);
+        if ((object = wornInSlot(monster, W_ARM))) {
+            if (visible) await publish(`${possessive()} armor falls around ${pronoun}!`);
+            else await hear('a thud');
+            await drop(object);
+        }
 
         const cloak = wornInSlot(monster, W_ARMC);
-        if (cloak && (cloak.otyp !== MUMMY_WRAPPING || !wrappingFits))
-            dropWornObject(monster, cloak, state, dropped);
-        dropWornObject(monster, wornInSlot(monster, W_ARMU), state, dropped);
+        if (cloak && (cloak.otyp !== MUMMY_WRAPPING || !wrappingFits)) {
+            if (visible) await publish(monsterIsWhirly(monster)
+                ? `${possessive()} ${cloakName(cloak)} falls, unsupported!`
+                : `${name()} shrinks out of ${owner} ${cloakName(cloak)}!`);
+            await drop(cloak);
+        }
+        if ((object = wornInSlot(monster, W_ARMU))) {
+            if (visible) await publish(MONSTER_SIZE[mnum] > MZ_SMALL
+                ? `${name()} seeps right through ${owner} shirt!`
+                : `${name()} becomes much too small for ${owner} shirt!`);
+            await drop(object);
+        }
     }
 
     const handlessOrTiny = monsterHasNoHands(mnum)
         || monsterIsVerySmall(mnum);
     if (handlessOrTiny) {
-        dropWornObject(monster, wornInSlot(monster, W_ARMG), state, dropped);
-        dropWornObject(monster, wornInSlot(monster, W_ARMS), state, dropped);
+        if ((object = wornInSlot(monster, W_ARMG))) {
+            if (visible) await publish(`${name()} drops ${owner} gloves${monster.mw ? ' and weapon' : ''}!`);
+            await drop(object);
+        }
+        if ((object = wornInSlot(monster, W_ARMS))) {
+            if (visible) await publish(`${name()} can no longer hold ${owner} shield!`);
+            else await hear('a clank');
+            await drop(object);
+        }
     }
 
     const helmet = wornInSlot(monster, W_ARMH);
@@ -261,14 +322,38 @@ export function adjustMonsterClothingAfterPolymorph(
         && (OBJECT_MATERIAL[helmet.otyp] ?? Infinity) <= LEATHER;
     if (helmet && (handlessOrTiny
         || (monsterHornCount(mnum) && !helmetIsFlimsy))) {
-        dropWornObject(monster, helmet, state, dropped);
+        if (visible) await publish(`${possessive()} helmet falls to the ${
+            surfaceName(monster.mx, monster.my, state)
+        }!`);
+        else await hear('a clank');
+        await drop(helmet);
     }
 
-    if (handlessOrTiny || monsterIsSlithy(mnum) || monsterIsCentaur(mnum))
-        dropWornObject(monster, wornInSlot(monster, W_ARMF), state, dropped);
+    if ((handlessOrTiny || monsterIsSlithy(mnum) || monsterIsCentaur(mnum))
+        && (object = wornInSlot(monster, W_ARMF))) {
+        if (visible) await publish(monsterIsWhirly(monster)
+            ? `${possessive()} boots fall away!`
+            : `${possessive()} boots ${monsterIsVerySmall(mnum) ? 'slide' : 'are pushed'} off ${owner} feet!`);
+        await drop(object);
+    }
 
-    if (!monsterCanBeSaddled(monster))
-        dropWornObject(monster, wornInSlot(monster, W_SADDLE), state, dropped);
+    if (!monsterCanBeSaddled(monster)) {
+        if ((object = wornInSlot(monster, W_SADDLE))) {
+            await drop(object);
+            if (visible) await publish(`${possessive()} saddle falls off.`);
+        }
+    }
+    if (state.u.usteed === monster
+        && (!monsterCanBeSaddled(monster) || !heroCanRideSteed(monster, state))) {
+        const steed = name();
+        await publish(`You can no longer ride ${steed[0].toLowerCase()}${steed.slice(1)}.`);
+        if (touchPetrifies(mnum) && !state.u.stoneResistance && rnl(3)) {
+            await publish(`You touch ${steed[0].toLowerCase()}${steed.slice(1)}.`);
+            await resolveImmediatePetrification({ state, publish,
+                killer: `falling off a ${monsterTypeName(mnum, !!monster.female)}` });
+        }
+        await dismountHero(DISMOUNT_FELL, { state, announce: publish });
+    }
 
     return { dropped, destroyed };
 }

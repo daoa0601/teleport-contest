@@ -89,7 +89,7 @@ test('a dead werewolf returns to its human species', async () => {
     freshObjectRoom();
     const humanWerewolf = MONSTER_NAME.lastIndexOf('werewolf');
     const monster = await createMonsterAt(humanWerewolf, 11, 10);
-    transformWereMonster(monster, game);
+    await transformWereMonster(monster, game);
     const killedForm = monster.mnum;
 
     const death = await finishEnvironmentalMonsterDeath(monster, game, {
