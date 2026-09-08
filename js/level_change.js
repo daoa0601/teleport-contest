@@ -13,7 +13,7 @@ import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js
 import { d, rnd, rn2 } from './rng.js';
 import { deliverMigratingObjects, impactDrop } from './object_migration.js';
 import { mklev, u_on_downstairs, u_on_upstairs } from './mklev.js';
-import { level_difficulty, specialPrototypeAt } from './dungeon.js';
+import { dungeonBuildsUp, level_difficulty, specialPrototypeAt } from './dungeon.js';
 import { collectNearbyCoords } from './u_init.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
 import { killGenocidedMonsters } from './mon.js';
@@ -139,6 +139,11 @@ export async function gotoLevel(targetDepth, {
     game.u.uz = destinationDepth;
     game.u.utolev = { ...destinationDepth };
     game.u.utotype = 0;
+    const dungeon = game.dungeons[destinationDepth.dnum];
+    const reached = dungeon.dunlev_ureached || 0;
+    dungeon.dunlev_ureached = dungeonBuildsUp(destinationDepth) && reached
+        ? Math.min(reached, destinationDepth.dlevel)
+        : Math.max(reached, destinationDepth.dlevel);
     if (cached) {
         game.level = cached.level;
         game.stairs = cached.stairs;

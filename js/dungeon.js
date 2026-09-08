@@ -9,7 +9,7 @@ import {
     ALTAR, COLNO, FOUNTAIN, GRAVE, In_endgame, ROOMOFFSET, ROWNO,
     SHOPBASE, SINK, THRONE, TREE,
 } from './const.js';
-import { depth } from './hacklib.js';
+import { deepestLevelReached, depth } from './hacklib.js';
 
 const WIZARD_TOWER_LEVELS = new Set(['wizard1', 'wizard2', 'wizard3']);
 
@@ -25,8 +25,15 @@ export function insideWizardTower(x, y, state = game) {
         && y >= boundary.ly && y <= boundary.hy;
 }
 
-// Upward-building branches are harder than their displayed local depth because
-// the hero must descend to the branch entrance before climbing back up.
+// C dungeon.c:builds_up(): a branch can enter at its bottom level.
+export function dungeonBuildsUp(level = game.u.uz, state = game) {
+    const dungeon = state.dungeons[level.dnum];
+    if (dungeon.num_dunlevs > 1) return dungeon.entry_lev === dungeon.num_dunlevs;
+    const branch = state.branches?.find(branch =>
+        branch.end2.dnum === level.dnum && branch.end2.dlevel === level.dlevel);
+    return !!branch?.end1_up;
+}
+
 export function level_difficulty() {
     const uz = game.u?.uz;
     if (In_endgame(uz)) {
@@ -34,18 +41,12 @@ export function level_difficulty() {
             + Math.trunc((game.u?.ulevel || 1) / 2);
     }
     if (game.u?.uhave?.amulet) {
-        let deepest = depth(uz);
-        for (const key of game._levelCache?.keys?.() || []) {
-            const [dnum, dlevel] = String(key).split(':').map(Number);
-            if (!Number.isInteger(dnum) || !Number.isInteger(dlevel))
-                continue;
-            deepest = Math.max(deepest, depth({ dnum, dlevel }));
-        }
-        return deepest;
+        return deepestLevelReached();
     }
     let difficulty = depth(uz);
     const dungeon = game.dungeons?.[uz?.dnum ?? 0];
-    if ((dungeon?.entry_lev ?? 1) > 1) {
+    // Reaching an upward branch requires descending to its entrance first.
+    if (dungeon && dungeonBuildsUp(uz)) {
         difficulty += 2 * (dungeon.entry_lev - (uz?.dlevel ?? 1) + 1);
     }
     return difficulty;
@@ -296,6 +297,7 @@ export function init_dungeons() {
             dname: definition.name,
             num_dunlevs,
             entry_lev: entryLevel(definition, num_dunlevs),
+            dunlev_ureached: dnum === 0 ? 1 : 0,
             depth_start: dnum === 0 || definition.unconnected ? 1 : 0,
             flags: { ...(definition.flags || {}) },
             bonetag: definition.bonetag,

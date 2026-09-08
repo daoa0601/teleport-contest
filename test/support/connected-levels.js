@@ -12,7 +12,8 @@ export function freshConnectedLevels({
     destination.upstair = { x: 12, y: 10 };
     game.u.uz = { dnum: 0, dlevel: 1 };
     game.dungeons = [{
-        dname: dungeonName, depth_start: 1, num_dunlevs: destinationDepth, flags: {},
+        dname: dungeonName, depth_start: 1, num_dunlevs: destinationDepth,
+        entry_lev: 1, dunlev_ureached: 1, flags: {},
     }];
     game.stairs = {
         sx: 10, sy: 10, up: false, isladder: ladder,

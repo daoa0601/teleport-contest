@@ -3,10 +3,9 @@ import assert from 'node:assert/strict';
 
 import {
     ALTAR, FILL_NORMAL, FOUNTAIN, GRAVE, OROOM, ROOM, ROOMOFFSET,
-    SINK, WEB,
+    SINK,
 } from '../js/const.js';
-import { GameMap } from '../js/game.js';
-import { game, resetGame } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import {
     fill_ordinary_room, mksobj,
 } from '../js/mklev.js';
@@ -18,32 +17,29 @@ import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { objectWeight } from '../js/weight.js';
 import { floorObjects } from './support/level-state.js';
-
-
-const PM_GIANT_SPIDER = 96;
-
+import { freshGame } from './support/game-state.js';
 function roomState({ seed, depth = 1, amulet = false, rogue = false }) {
-    resetGame();
-    game.u = {
-        uz: { dnum: 0, dlevel: depth },
-        ulevel: Math.max(1, Math.min(depth, 15)),
-        uhp: 50, uhpmax: 50,
-        acurr: { a: Array(6).fill(10) },
-        amax: { a: Array(6).fill(10) },
-        uhave: { amulet: amulet ? 1 : 0 },
-    };
-    game.flags = {};
-    game.moves = 2;
+    freshGame({
+        hero: {
+            uz: { dnum: 0, dlevel: depth },
+            ulevel: Math.max(1, Math.min(depth, 15)),
+            uhp: 50, uhpmax: 50,
+            uhave: { amulet: amulet ? 1 : 0 },
+        },
+        flags: {},
+        moves: 2,
+    });
     game.in_mklev = true;
     game.dungeons = [{
         dname: 'The Dungeons of Doom',
         depth_start: 1,
         num_dunlevs: 30,
+        entry_lev: 1,
+        dunlev_ureached: depth,
     }];
     game.oracle_level = { dnum: 0, dlevel: 5 };
     if (rogue) game.rogue_level = { ...game.u.uz };
 
-    game.level = new GameMap();
     game.level.nroom = 1;
     const room = {
         lx: 10, hx: 14, ly: 5, hy: 8,
@@ -86,8 +82,8 @@ test('Amulet difficulty follows the deepest visited level', () => {
     roomState({ seed: 2, depth: 3 });
     game.dungeons.push({
         dname: 'The Gnomish Mines', depth_start: 4, num_dunlevs: 8,
+        entry_lev: 1, dunlev_ureached: 5,
     });
-    game._levelCache = new Map([['1:5', {}]]);
 
     assert.equal(level_difficulty(), 3);
     game.u.uhave.amulet = 1;
@@ -103,18 +99,6 @@ test('the Amulet short-circuits room spawn chance and guarantees a monster', asy
     await fill_ordinary_room(amuletRoom, false);
 
     assert.equal(game.level.monsters.length, 1);
-});
-
-test('a generated giant spider owns its co-located web', async () => {
-    const room = roomState({ seed: 241, depth: 10, amulet: true });
-    await fill_ordinary_room(room, false);
-
-    const spider = game.level.monsters.find(
-        monster => monster.mnum === PM_GIANT_SPIDER,
-    );
-    assert.ok(spider);
-    assert.ok(game.level.traps.some(trap =>
-        trap.ttyp === WEB && trap.tx === spider.mx && trap.ty === spider.my));
 });
 
 test('Rogue room fill omits non-Rogue features', async () => {

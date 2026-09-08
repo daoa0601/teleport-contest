@@ -6,17 +6,20 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { HOLE, NO_MINVENT, ROOM, STONE } from '../js/const.js';
 import { tameMonster } from '../js/dog.js';
+import { level_difficulty } from '../js/dungeon.js';
 import { place_object, remove_object } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
 import { gotoLevel } from '../js/level_change.js';
 import { pushKeys } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { AMULET_OF_LIFE_SAVING, FOOD_RATION, LEASH, LEATHER_GLOVES, OIL_LAMP } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, FOOD_RATION, LEASH, LEATHER_GLOVES, OIL_LAMP } from '../js/object_data.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer } from '../js/object_timers.js';
 import { addInventoryItem } from '../js/u_init.js';
+import { restoreGame, saveGame } from '../js/save.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject, floorObject, knownObject, untimedCorpse } from './support/game-objects.js';
@@ -91,6 +94,20 @@ test('a carried punishment ball is dropped on the destination after a stair tumb
     assert.ok(pile.includes(ball));
     assert.ok(pile.includes(chain));
     assert.equal(game.uball, ball);
+});
+
+test('Amulet difficulty remembers the deepest visit after returning upstairs and restoring', async () => {
+    freshConnectedLevels({ destinationDepth: 4 });
+    game.plname = 'Climber';
+    const storage = memoryStorage();
+
+    await gotoLevel({ dnum: 0, dlevel: 4 }, { arrival: 'stairs' });
+    await gotoLevel({ dnum: 0, dlevel: 1 }, { arrival: 'stairs' });
+    assert.equal(saveGame(storage), true);
+    assert.equal(restoreGame('Climber', storage), true);
+    addInventoryObject(AMULET_OF_YENDOR);
+
+    assert.equal(level_difficulty(), 4);
 });
 
 test('falling can force contact with a wielded cockatrice corpse through gloves', async () => {

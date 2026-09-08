@@ -38,6 +38,19 @@ export function depth(uz, dungeons = game?.dungeons) {
     return dungeonDepth(uz?.dnum ?? 0, uz?.dlevel ?? 1, dungeons);
 }
 
+// C dungeon.c:deepest_lev_reached(). Endgame planes have negative depths
+// and do not reduce the deepest dungeon level the hero has visited.
+export function deepestLevelReached(noQuest = false, state = game) {
+    let deepest = 0;
+    for (const [dnum, dungeon] of (state.dungeons || []).entries()) {
+        if (!dungeon.dunlev_ureached) continue;
+        if (noQuest && dnum === state.quest_dnum) continue;
+        deepest = Math.max(deepest,
+            dungeonDepth(dnum, dungeon.dunlev_ureached, state.dungeons));
+    }
+    return deepest;
+}
+
 // C ref: dungeon.c:ledger_no().  Ledger numbers are save-file bookkeeping
 // coordinates: every preceding dungeon contributes all of its local levels.
 // They deliberately differ from both a branch-local dlevel and display depth.
