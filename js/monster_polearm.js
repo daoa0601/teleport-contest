@@ -2,24 +2,19 @@
 // C refs: mthrowu.c thrwmu() polearm branch and thitu().
 
 import { artifactById } from './artifacts.js';
-import { exerciseAttribute } from './attrib.js';
-import { A_CON, A_STR } from './const.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
-import { heroHatesSilver, heroSpecies } from './hero_species.js';
+import { hitHeroWithObject } from './hero_object_hit.js';
+import { heroSpecies } from './hero_species.js';
 import { MONSTER_SIZE } from './monster_data.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
-import { OBJECT_MATERIAL, OBJECT_NAMES } from './object_data.js';
+import { OBJECT_NAMES } from './object_data.js';
 import { stopHeroOccupation } from './occupation.js';
 import { rn2, rnd } from './rng.js';
-import { heroIsBlind } from './senses.js';
 import { couldsee } from './vision.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { isPolearm, monsterWeaponSwingVerb } from './weapon_type.js';
-
-const SILVER = 14;
 
 export async function attackHeroWithPolearm(monster, weapon, state = game, {
     publish = plineWithContinuation,
@@ -44,30 +39,6 @@ export async function attackHeroWithPolearm(monster, weapon, state = game, {
     const heroDistance = Math.max(Math.abs(state.u.ux - monster.mx), Math.abs(state.u.uy - monster.my));
     let accuracy = Math.max(-4, 3 - heroDistance) + 8 + (weapon.spe ?? 0);
     if (MONSTER_SIZE[heroSpecies(state)] >= 3) accuracy++;
-    const roll = rollOne(20);
-    const threshold = state.u.uac + accuracy;
-    const hit = threshold > roll;
-    const terse = heroIsBlind(state) || state.flags.verbose === false;
-    if (!hit) {
-        if (terse) await publish('It misses.');
-        else if (threshold <= roll - 2) {
-            const subject = description.charAt(0).toUpperCase() + description.slice(1);
-            await publish(`${subject} misses you.`);
-        } else await publish(`You are almost hit by ${description}.`);
-        await stopHeroOccupation(state, publish);
-        return;
-    }
-
-    const punctuation = damage > 4 ? '!' : '.';
-    await publish(terse ? `You are hit${punctuation}`
-        : `You are hit by ${description}${punctuation}`);
-    if (OBJECT_MATERIAL[weapon.otyp] === SILVER && heroHatesSilver(state)) {
-        await publish('The silver sears your flesh!');
-        exerciseAttribute(A_CON, false, state);
-    }
-    const died = await loseHeroHp(damage, description, { state, publish });
-    if (!died) {
-        exerciseAttribute(A_STR, false, state);
-        await stopHeroOccupation(state, publish);
-    }
+    const result = await hitHeroWithObject(weapon, damage, accuracy, { state, publish, rollOne });
+    if (!result.died) await stopHeroOccupation(state, publish);
 }

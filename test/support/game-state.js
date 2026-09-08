@@ -49,6 +49,7 @@ export function freshGame({
         uy0: heroY,
         uhp: 12,
         uhpmax: 12,
+        uac: 10,
         ulevel: 1,
         uhunger: 900,
         acurr: { a: attributes.slice() },

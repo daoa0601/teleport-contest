@@ -85,7 +85,7 @@ import {
 import {
     continueMonsterWeaponVolley,
     finishMonsterProjectile,
-    finishHeroProjectileHit, finishMonsterProjectileHit,
+    hitHeroWithMonsterProjectile, finishMonsterProjectileHit,
     presentMonsterProjectileContact, presentMonsterProjectileShot,
 } from './monster_throw.js';
 import {
@@ -5505,8 +5505,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             const { attack: rangedAttack, ranged, announce }
                 = rangedQueue[rangedIndex];
             const rangedAppearance = ranged.appearance || 'weapon';
-            const rangedArticle = /^[aeiou]/i.test(rangedAppearance)
-                ? 'an' : 'a';
             const launchAppearance = rangedAttack.appearance
                 || rangedAppearance;
             const launchArticle = /^[aeiou]/i.test(launchAppearance)
@@ -5569,8 +5567,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 // while thitu() tries to add its hit/miss line.  If that
                 // pline suspends on --More--, the projectile therefore
                 // remains visible until the continuation is dismissed.
-                if (ranged.hit)
-                    game._statusHpOverride = ranged.preHitHp;
                 // A getpos/yn prompt can remain physically painted even
                 // though it is no longer a logical pending message.  Native
                 // tmp_at delays retain that row until thitu installs its
@@ -5649,61 +5645,26 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     await game.animationFrame?.();
                 };
                 try {
-                    if (ranged.caught) {
-                        await queueTurnMessage(
-                            `You catch the ${ranged.appearance}!`,
-                        );
-                        await captureImpactFrame();
-                    } else if (ranged.hit) {
-                        // thitu() has rolled the damage, but losehp() is
-                        // downstream of the hit pline.  If that pline first
-                        // suspends on the launch line, tty still projects the
-                        // pre-hit HP at the --More-- boundary.
-                        const impactSuffix = (ranged.damage ?? 0) > 4
-                            ? '!' : '.';
-                        try {
-                            await queueTurnMessage(
-                                game.flags?.verbose === false || game.blind
-                                    ? `You are hit${impactSuffix}`
-                                    : `You are hit by ${rangedArticle} ${
-                                        rangedAppearance}${impactSuffix}`,
-                            );
-                            const fatal = (game.u?.uhp ?? 1) < 1;
-                            if (fatal) {
-                                await waitForCurrentMonsterMore();
-                                delete game._statusHpOverride;
-                            }
-                            const result = await finishHeroProjectileHit(
-                                ranged, game, {
-                                    publish: queueTurnMessage,
-                                    beforeFinalDeath: () =>
-                                        restoreUnvisitedMonsterMovement(
-                                            monsterScan, actorIndex,
-                                        ),
-                                },
-                            );
-                            if (result.died) {
-                                game.context.move = 0;
-                                return;
-                            }
-                            delete game._statusHpOverride;
-                            await captureImpactFrame();
-                        } finally {
-                            delete game._statusHpOverride;
-                        }
+                    const result = await hitHeroWithMonsterProjectile(ranged, game, {
+                        publish: queueTurnMessage,
+                        finishDeath: async options => {
+                            await waitForCurrentMonsterMore();
+                            return finishHeroDeath(options);
+                        },
+                        beforeFinalDeath: () => restoreUnvisitedMonsterMovement(
+                            monsterScan, actorIndex,
+                        ),
+                    });
+                    if (result.died) {
+                        game.context.move = 0;
+                        return;
+                    }
+                    await captureImpactFrame();
+                    if (ranged.hit) {
                         await bot();
                         await flush_screen(1);
-                    } else {
-                        await queueTurnMessage(game.flags?.verbose === false
-                            || game.blind
-                            ? 'It misses.'
-                            : `${
-                                rangedArticle === 'an' ? 'An' : 'A'
-                            } ${rangedAppearance} misses you.`);
-                        await captureImpactFrame();
                     }
                 } finally {
-                    delete game._statusHpOverride;
                     if (transientFlightCell)
                         newsym(transientFlightCell.x, transientFlightCell.y);
                 }

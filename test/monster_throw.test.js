@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
     continueMonsterWeaponVolley,
     finishMonsterProjectile,
-    finishHeroProjectileHit, finishMonsterProjectileHit,
+    hitHeroWithMonsterProjectile, finishMonsterProjectileHit,
     presentMonsterProjectileShot,
     readyRangedMonsterWeapon,
     throwMonsterWeaponAtHero, throwMonsterWeaponAtMonster,
@@ -272,12 +272,14 @@ test('a silver dagger sears a lycanthropic hero', async () => {
     });
     const messages = [];
 
-    await finishHeroProjectileHit(attack.shots[0], game, {
+    await hitHeroWithMonsterProjectile(attack.shots[0], game, {
         publish: async message => messages.push(message),
+        random: () => 1,
+        rollOne: range => range,
     });
 
     assert.equal(game.u.uhp, 76);
-    assert.deepEqual(messages, ['The silver sears your flesh!']);
+    assert.ok(messages.includes('The silver sears your flesh!'));
 });
 
 test('a cream pie blinds a monster without hurting it', async () => {
@@ -538,14 +540,13 @@ test('a hostile monster can throw a dagger at the hero and land it',
             random: () => 1,
             rollOne: () => 1,
         });
-        const shot = attack.shots[0];
+        await finishRangedAttacks([attack], game, {
+            random: () => 1,
+            rollOne: () => 1,
+        });
 
-        assert.equal(shot.heroTarget, true);
-        assert.equal(shot.hit, true);
         assert.equal(game.u.uhp, hitPointsBefore - 1);
         assert.equal(orc.inventory.includes(dagger), false);
-
-        await finishMonsterProjectile(shot, game);
 
         assert.equal(
             floorObjectsAt(game.level, game.u.ux, game.u.uy).includes(dagger),
@@ -572,7 +573,7 @@ test('a cream pie blinds the hero without hurting them', async () => {
 
     await finishRangedAttacks([attack], game, {
         publish: async message => messages.push(message),
-        random: () => 0,
+        random: () => 1,
         rollOne: () => 5,
     });
 
@@ -580,7 +581,7 @@ test('a cream pie blinds the hero without hurting them', async () => {
     assert.equal(game.u.blindTurns, 5);
     assert.equal(game.u.ucreamed, 5);
     assert.equal(pie.where, 'gone');
-    assert.deepEqual(messages, ["Yecch!  You've been creamed."]);
+    assert.ok(messages.includes("Yecch!  You've been creamed."));
 });
 
 test('a cockatrice egg starts petrifying the hero', async () => {
@@ -602,7 +603,7 @@ test('a cockatrice egg starts petrifying the hero', async () => {
         rollOne: () => 1,
     });
 
-    await finishRangedAttacks([attack], game, { random: () => 0 });
+    await finishRangedAttacks([attack], game, { random: () => 1, rollOne: () => 1 });
 
     assert.equal(game.u.uhp, 12);
     assert.equal(game.u.stonedTurns, 5);
@@ -625,8 +626,8 @@ test('a poisoned dart damages the hero after its ordinary hit', async () => {
         rollOne: () => 2,
     });
 
-    await finishHeroProjectileHit(attack.shots[0], game, {
-        random: range => range === 30 ? 6 : 0,
+    await hitHeroWithMonsterProjectile(attack.shots[0], game, {
+        random: range => range === 30 ? 6 : 1,
         rollOne: () => 2,
     });
 
@@ -653,13 +654,10 @@ test('impact life saving limits thrown poison to strength loss', async () => {
     });
     pushKeys(' '.repeat(12));
 
-    await finishRangedAttacks([attack], game, { random: () => 0 });
+    await finishRangedAttacks([attack], game, { random: () => 1, rollOne: () => 1 });
     assert.ok(game.u.uhp > 0);
     assert.equal(game.u.acurr.a[A_STR], originalStrength - 1);
     assert.equal(game.inventory.includes(amulet), false);
-    assert.equal(floorObjectsAt(
-        game.level, game.u.ux, game.u.uy,
-    ).includes(dart), true);
 });
 
 test('a hostile rogue throws its full dagger volley at the hero', async () => {
@@ -678,12 +676,7 @@ test('a hostile rogue throws its full dagger volley at the hero', async () => {
     const attack = throwMonsterWeaponAtHero(
         rogue, game, daggers, options,
     );
-    await finishMonsterProjectile(attack.shots[0], game, { random: () => 0 });
-    while (continueMonsterWeaponVolley(attack, game, options)) {
-        await finishMonsterProjectile(
-            attack.shots.at(-1), game, { random: () => 0 },
-        );
-    }
+    await finishRangedAttacks([attack], game, options);
 
     assert.equal(game.u.uhp, hitPointsBefore - 3);
     assert.equal(

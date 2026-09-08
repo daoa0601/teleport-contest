@@ -23,7 +23,7 @@ import {
     AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER,
     BAG_OF_TRICKS, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE,
     ICE_BOX,
-    LARGE_BOX, LEASH, LOADSTONE, OBJECT_BIMANUAL, OBJECT_NAMES,
+    LARGE_BOX, LEASH, LOADSTONE, OBJECT_NAMES,
     OILSKIN_SACK, SACK, SPE_BOOK_OF_THE_DEAD, STATUE, WAN_CANCELLATION,
 } from './object_data.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
@@ -40,6 +40,7 @@ import { touchPetrifyingCorpse } from './stoning.js';
 import { NO_COLOR } from './terminal.js';
 import { assignInventoryLetter } from './u_init.js';
 import { objectWeight } from './weight.js';
+import { heroHasFreeHand } from './weapon_type.js';
 import {
     restoreMenuUnderlay, showChoiceWindow,
     showMultiSelectWindow,
@@ -241,14 +242,6 @@ async function chooseObjects(title, objects, useInventoryLetters) {
         left: 41,
         returnCounts: true,
     });
-}
-
-function heroHasFreeHand(state) {
-    const weapon = state.uwep || state.u?.uwep;
-    if (!weapon || !weapon.cursed) return true;
-    const twoHanded = !!(weapon.bimanual || OBJECT_BIMANUAL[weapon.otyp]);
-    const shield = state.uarms || state.u?.uarms;
-    return !twoHanded && !(shield && shield.cursed);
 }
 
 function updateContainerWeights(container) {

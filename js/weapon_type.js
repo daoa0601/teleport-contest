@@ -3,7 +3,7 @@
 
 import { AKLYS_LIM, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_POLEARMS, P_SABER, P_WHIP } from './const.js';
 import { artifactById } from './artifacts.js';
-import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL } from './object_data.js';
+import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_BIMANUAL, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL } from './object_data.js';
 import { rn2 } from './rng.js';
 
 const WEAPON_CLASS = 2;
@@ -30,6 +30,14 @@ export function willWeld(object) {
     const weaponTool = object.oclass === 6 && OBJECT_SUBTYPE[object.otyp] !== 0;
     return object.oclass === WEAPON_CLASS || weaponTool
         || [HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER].includes(object.otyp);
+}
+
+// C engrave.c:freehand(). A removable item does not occupy the hand permanently.
+export function heroHasFreeHand(state) {
+    const weapon = state.uwep || state.u.uwep;
+    if (!willWeld(weapon)) return true;
+    const shield = state.uarms || state.u.uarms;
+    return !OBJECT_BIMANUAL[weapon.otyp] && !shield?.cursed;
 }
 
 // Snickersnee has the same reach as a polearm despite being a katana.

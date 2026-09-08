@@ -1,5 +1,5 @@
 import {
-    continueMonsterWeaponVolley, finishHeroProjectileHit, finishMonsterProjectile,
+    continueMonsterWeaponVolley, hitHeroWithMonsterProjectile, finishMonsterProjectile,
 } from '../../js/monster_throw.js';
 import { freshObjectRoom } from './object-room.js';
 
@@ -15,15 +15,16 @@ export function freshRangedCombatRoom(options = {}) {
 }
 
 export async function finishRangedAttacks(attacks, state, options = {}) {
+    const effects = { publish: async () => {}, ...options };
     for (const attack of attacks || []) {
         let shot = attack.shots[0];
         while (shot) {
-            if (shot.heroTarget && shot.hit) {
-                const result = await finishHeroProjectileHit(shot, state, options);
+            if (shot.heroTarget) {
+                const result = await hitHeroWithMonsterProjectile(shot, state, effects);
                 if (result.died) return;
             }
             await finishMonsterProjectile(
-                shot, state, options,
+                shot, state, effects,
             );
             shot = continueMonsterWeaponVolley(attack, state, options);
         }
