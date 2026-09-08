@@ -4,22 +4,30 @@
 
 import { game } from './gstate.js';
 import {
-    D_BROKEN, D_CLOSED, D_LOCKED, DOOR, IRONBARS, IS_OBSTRUCTED, IS_POOL,
-    IS_STWALL, Is_airlevel, Is_waterlevel, W_NONPASSWALL, W_WEP, isok,
+    D_CLOSED, D_LOCKED, DOOR, IRONBARS, IS_OBSTRUCTED,
+    IS_STWALL, IS_WATERWALL, W_ARM, W_ARMC, W_ARMU, W_NONPASSWALL, isok,
 } from './const.js';
-import { artifactById } from './artifacts.js';
-import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, newsym, plineWithContinuation } from './display.js';
+import { wakeMonster as awakenMonster } from './monster_anger.js';
+import { monsterSentenceSubject } from './monster_sound.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE,
     MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { AD_CORR, AD_RUST } from './monster_attack_types.js';
-import { BOULDER, LOADSTONE } from './object_data.js';
-import {
-    isBluntWeapon, isFlimsyObject,
-} from './object_properties.js';
+import { BOULDER } from './object_data.js';
 import { resolveMonsterLiquid } from './mon.js';
-import { triggerImmediateMonsterTrap } from './monmove.js';
+import {
+    finishDeferredMonsterRollingBoulderPlacement,
+    resumeDeferredMonsterRollingBoulderDeath, resumeDeferredMonsterTrap,
+    triggerImmediateMonsterTrap,
+} from './monmove.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { monsterWearsTorsoArmor, petrifyMonsterImmediately } from './monster_stoning.js';
+import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
+import { stopHeroOccupation } from './occupation.js';
+import { setMonsterApparentHeroPosition } from './monster_perception.js';
+import { vision_recalc } from './vision.js';
 import { rn2, rnd } from './rng.js';
 
 const M1_FLY = 0x00000001;
@@ -35,7 +43,6 @@ const S_EYE = 5;
 const S_LIGHT = 25;
 const S_VORTEX = 22;
 const PM_GRID_BUG = 116;
-const PM_HUMAN = 260;
 
 function monsterAt(state, x, y, ignoredMonster) {
     return state.level?.monsters?.find(monster =>
@@ -79,16 +86,16 @@ function destinationIsOpen(monster, state, x, y) {
         || !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ROCKTHROW);
 }
 
-function staggerVerb(monster) {
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[monster.mnum];
+export function staggerVerb(mnum) {
+    const flags = MONSTER_FLAGS1[mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[mnum];
     if (symbol === S_EYE || symbol === S_LIGHT) return 'wobbles';
     if (flags & M1_FLY)
-        return (MONSTER_SIZE[monster.mnum] ?? 2) <= 1
+        return (MONSTER_SIZE[mnum] ?? 2) <= 1
             ? 'flutters' : 'staggers';
     if (flags & M1_SLITHY) return 'falters';
     if (flags & M1_AMORPHOUS) return 'trembles';
-    if ((MONSTER_MOVE[monster.mnum] ?? 0) === 0) return 'pulsates';
+    if ((MONSTER_MOVE[mnum] ?? 0) === 0) return 'pulsates';
     if ((flags & M1_NOLIMBS) === M1_NOLIMBS) return 'falters';
     return 'staggers';
 }
@@ -97,186 +104,146 @@ async function hurtleOneSquare(monster, dx, dy, {
     state,
     announce,
     nameMonster,
-    wakeMonster,
-    finishLiquidDeath,
+    finishMonsterDeath,
+    monsterMoving,
+    random,
 }) {
-    await wakeMonster();
-    monster.movement = 0;
-    monster.mstun = 1;
-
-    if ((MONSTER_SIZE[monster.mnum] ?? 2) >= 4
-        || monster === state.u?.ustuck || monster.mtrapped) {
-        if (canSpotMonster(monster, monster.mx, monster.my))
-            await announce(`${nameMonster(monster)} doesn't budge!`);
-        return { moved: false, dead: false };
-    }
-
-    dx = Math.sign(dx);
-    dy = Math.sign(dy);
-    if ((!dx && !dy) || (dx && dy && monster.mnum === PM_GRID_BUG))
-        return { moved: false, dead: false };
-
-    if (monster.mundetected) {
-        monster.mundetected = 0;
-        newsym(monster.mx, monster.my);
-    }
-    if (monster.m_ap_type) {
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
-    }
-
     const oldX = monster.mx;
     const oldY = monster.my;
     const nextX = oldX + dx;
     const nextY = oldY + dy;
-    if (!destinationIsOpen(monster, state, nextX, nextY)) {
+    if (!willMonsterHurtle(monster, state, nextX, nextY)) {
         const occupant = monsterAt(state, nextX, nextY, monster);
-        if (occupant && (canSpotMonster(monster, oldX, oldY)
-            || canSpotMonster(occupant, nextX, nextY))) {
-            const otherName = MONSTER_SYMBOL[occupant.mnum] == null
-                ? 'a monster' : `a ${nameMonster(occupant)}`;
-            await announce(`${nameMonster(monster)} bumps into ${otherName}.`);
+        if (occupant) {
+            if (canSeeMonster(monster, oldX, oldY)
+                || canSeeMonster(occupant, nextX, nextY)) {
+                const name = nameMonster(occupant).replace(/^(?:the|The|your) /u, '');
+                await announce(`${monsterSentenceSubject(monster)} bumps into ${/^[aeiou]/iu.test(name) ? 'an' : 'a'} ${name}.`);
+            }
+            await awakenMonster(occupant, { attacked: !monsterMoving });
+            const contact = { publish: announce, finishDeath: finishMonsterDeath, creditHero: !monsterMoving };
+            if (touchPetrifies(occupant.mnum) && !monsterWearsTorsoArmor(monster))
+                await petrifyMonsterImmediately(monster, contact);
+            if (touchPetrifies(monster.mnum) && !monsterWearsTorsoArmor(occupant))
+                await petrifyMonsterImmediately(occupant, contact);
+        } else if (nextX === state.u.ux && nextY === state.u.uy) {
+            await announce(`${monsterSentenceSubject(monster)} bumps into you.`);
+            await stopHeroOccupation(state, announce);
+            if (touchPetrifies(state.u.umonnum) && !monsterWearsTorsoArmor(monster)) {
+                await petrifyMonsterImmediately(monster, {
+                    publish: announce, finishDeath: finishMonsterDeath, creditHero: true,
+                });
+            }
+            const torsoArmor = state.inventory.some(object => object.owornmask & (W_ARM | W_ARMC | W_ARMU));
+            if (touchPetrifies(monster.mnum) && !torsoArmor) {
+                const noun = nameMonster(monster).replace(/^(?:the|The|your) /u, '');
+                await resolveImmediatePetrification({
+                    state, publish: announce,
+                    killer: `being hit by ${monster.mtame ? 'your' : 'a'} hurtling ${noun}`,
+                });
+            }
         }
-        if (occupant) occupant.msleeping = 0;
-        return { moved: false, dead: false, occupant };
+        return { moved: false, dead: !!monster.dead || monster.mhp <= 0, occupant };
     }
 
     monster.mx = nextX;
     monster.my = nextY;
     newsym(oldX, oldY);
-    newsym(nextX, nextY);
-
-    const trap = triggerImmediateMonsterTrap(monster, state);
-    if (trap.event) {
-        return {
-            moved: true,
-            dead: (monster.mhp ?? 1) <= 0,
-            trap: trap.event,
-        };
+    if (monster === state.u.usteed) {
+        state.u.ux0 = state.u.ux;
+        state.u.uy0 = state.u.uy;
+        state.u.ux = nextX;
+        state.u.uy = nextY;
+        vision_recalc(0);
     }
-
-    const liquid = await resolveMonsterLiquid(monster, state, {
-        announce,
-        finishDeath: finishLiquidDeath,
-        monsterMoving: false,
-    });
+    newsym(nextX, nextY);
+    await flush_screen(1);
+    await state.animationFrame?.();
+    setMonsterApparentHeroPosition(monster, state, random);
+    if (IS_WATERWALL(state.level.at(nextX, nextY).typ))
+        return { moved: true, stopped: true };
+    await applyHurtleTrap(monster, { state, announce, finishMonsterDeath, random }, true);
     return {
         moved: true,
-        dead: !!liquid?.dead || (monster.mhp ?? 1) <= 0,
-        liquid,
+        dead: !!monster.dead || monster.mhp <= 0,
+        stopped: !!monster.mtrapped || !monster.mcanmove
+            || monster.mx !== nextX || monster.my !== nextY
+            || (monster !== state.u.usteed && !state.level.monsters.includes(monster)),
     };
 }
 
-async function hurtleMonster(monster, dx, dy, distance, options) {
+async function applyHurtleTrap(monster, options, inAir) {
+    const { state, announce, finishMonsterDeath, random } = options;
+    const action = triggerImmediateMonsterTrap(monster, state, { inAir, force: !inAir, random });
+    if (action.movement.escapingTrap) return;
+    if (action.event?.kind === 'web-trap' && canSeeMonster(monster, monster.mx, monster.my))
+        await announce(`${monsterSentenceSubject(monster)} is caught in a spider web.`);
+    if (action.event?.kind === 'rolling-boulder') {
+        if (action.event.released && canSeeMonster(monster, monster.mx, monster.my))
+            await announce(`A boulder ${action.event.hit ? 'hits' : 'misses'} ${monsterSentenceSubject(monster).replace(/^The /u, 'the ')}!`);
+        await resumeDeferredMonsterRollingBoulderDeath(action, state, { publish: announce, random });
+        await finishDeferredMonsterRollingBoulderPlacement(action, state, random);
+    } else await resumeDeferredMonsterTrap(action, state, {
+        publish: announce, random, finishDeath: finishMonsterDeath,
+    });
+}
+
+export async function hurtleMonster(monster, dx, dy, distance, options = {}) {
+    const { monsterMoving = false } = options;
+    options = {
+        state: game,
+        announce: plineWithContinuation,
+        nameMonster: monsterSentenceSubject,
+        random: rn2,
+        ...options,
+        wakeMonster: options.wakeMonster
+            || (() => awakenMonster(monster, { attacked: !monsterMoving })),
+    };
+    const { state, announce, random } = options;
+    options.finishMonsterDeath ||= (target, death) =>
+        finishEnvironmentalMonsterDeath(target, state, { ...death, publish: announce, random });
+    await options.wakeMonster();
+    monster.movement = 0;
+    monster.mstun = 1;
+    if (MONSTER_SIZE[monster.mnum] >= 4 || monster === state.u.ustuck || monster.mtrapped) {
+        if (canSeeMonster(monster, monster.mx, monster.my))
+            await announce(`${monsterSentenceSubject(monster)} doesn't budge!`);
+        return { moved: false, dead: false };
+    }
+    dx = Math.sign(dx);
+    dy = Math.sign(dy);
+    if (!distance || (!dx && !dy) || (dx && dy && monster.mnum === PM_GRID_BUG))
+        return { moved: false, dead: false };
+    if (monster.mundetected) {
+        monster.mundetected = 0;
+        newsym(monster.mx, monster.my);
+    }
+    monster.m_ap_type = 0;
+    monster.mappearance = 0;
     let result = { moved: false, dead: false };
     for (let step = 0; step < distance; step++) {
         const next = await hurtleOneSquare(monster, dx, dy, options);
         result = { ...next, moved: result.moved || next.moved };
-        if (!next.moved || next.dead || next.trap || next.liquid) break;
+        if (!next.moved || next.dead || next.stopped) break;
     }
+    if (!monster.dead && monster.mhp > 0
+        && (monster === state.u.usteed || state.level.monsters.includes(monster))) {
+        if (state.level.traps.some(trap => trap.tx === monster.mx && trap.ty === monster.my))
+            await applyHurtleTrap(monster, options, false);
+        else await resolveMonsterLiquid(monster, state, {
+            announce, finishDeath: options.finishLiquidDeath || options.finishMonsterDeath,
+            monsterMoving,
+        });
+    }
+    result.dead = !!monster.dead || monster.mhp <= 0;
     return result;
 }
 
-function monsterWeapon(monster) {
-    const inventory = monster.minvent || monster.inventory || [];
-    return monster.mw || inventory.find(object =>
-        object.wielded || ((object.owornmask ?? 0) & W_WEP));
-}
-
-function monsterIsSteadfast(monster, state) {
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const heroLocation = state.level?.at?.(state.u?.ux, state.u?.uy);
-    const floatingLevel = Is_airlevel(state.u?.uz)
-        || (Is_waterlevel(state.u?.uz) && !IS_POOL(heroLocation?.typ));
-    if ((flags & M1_FLY) || floatingLevel) return false;
-
-    const weapon = monsterWeapon(monster);
-    if (artifactById(weapon?.oartifact)?.name === 'Giantslayer') return true;
-    const inventory = monster.minvent || monster.inventory || [];
-    return inventory.some(object => object.otyp === LOADSTONE);
-}
-
-function heroSize(state) {
-    return MONSTER_SIZE[state.urace?.mnum ?? PM_HUMAN] ?? 2;
-}
-
-function intactDoorway(location) {
-    return location?.typ === DOOR
-        && !!((location.doormask ?? 0) & ~D_BROKEN);
-}
-
-function canHurtleTo(monster, state, x, y) {
+export function willMonsterHurtle(monster, state, x, y) {
     return (MONSTER_SIZE[monster.mnum] ?? 2) < 4
         && monster !== state.u?.ustuck
         && !monster.mtrapped
         && destinationIsOpen(monster, state, x, y);
-}
-
-function capitalize(text) {
-    return text ? text[0].toUpperCase() + text.slice(1) : text;
-}
-
-export async function tryHeroWeaponKnockback(monster, weapon, {
-    dx,
-    dy,
-    state = game,
-    announce = async () => {},
-    nameMonster = target => target?.name || 'monster',
-    wakeMonster = async () => {
-        monster.msleeping = 0;
-    },
-    finishLiquidDeath,
-    random = rn2,
-} = {}) {
-    const distance = random(3) ? 1 : 2;
-    const chance = artifactById(weapon?.oartifact)?.name === 'Ogresmasher'
-        ? 2 : 6;
-    if (random(chance) !== 0) return { knocked: false };
-
-    if (heroSize(state) <= (MONSTER_SIZE[monster.mnum] ?? 2) + 1
-        || isFlimsyObject(weapon) || !isBluntWeapon(weapon)) {
-        return { knocked: false };
-    }
-    const diagonal = !!dx && !!dy;
-    if (diagonal && intactDoorway(
-        state.level?.at?.(monster.mx, monster.my),
-    )) return { knocked: false };
-
-    if (monsterIsSteadfast(monster, state)) {
-        if (canSeeMonster(monster, monster.mx, monster.my))
-            await announce(
-                `${capitalize(nameMonster(monster))} doesn't budge.`,
-            );
-        return { knocked: false };
-    }
-
-    const destinationOpen = canHurtleTo(
-        monster, state, monster.mx + Math.sign(dx), monster.my + Math.sign(dy),
-    );
-    const knockedHow = destinationOpen ? 'backward' : 'back';
-    const strength = random(2) ? 'forceful' : 'powerful';
-    const contact = random(2) ? 'blow' : 'strike';
-    if (canSeeMonster(monster, monster.mx, monster.my)) {
-        await announce(
-            `You knock ${nameMonster(monster)} ${knockedHow} with a ${
-                strength
-            } ${contact}!`,
-        );
-    } else {
-        await announce(`You feel something be knocked ${knockedHow}!`);
-    }
-
-    const hurtle = await hurtleMonster(
-        monster, dx, dy, distance, {
-            state,
-            announce,
-            nameMonster,
-            wakeMonster,
-            finishLiquidDeath,
-        },
-    );
-    if (!hurtle.dead) random(4);
-    return { knocked: true, ...hurtle };
 }
 
 export async function tryUnarmedStagger(monster, {
@@ -300,7 +267,7 @@ export async function tryUnarmedStagger(monster, {
 
     if (canSpotMonster(monster, monster.mx, monster.my)) {
         await announce(
-            `${nameMonster(monster)} ${staggerVerb(monster)} from your powerful strike!`,
+            `${nameMonster(monster)} ${staggerVerb(monster.mnum)} from your powerful strike!`,
         );
     }
     if (damage >= (monster.mhp ?? 1)) return { staggered: true };

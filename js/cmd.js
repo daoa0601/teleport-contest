@@ -17,7 +17,7 @@ import { nhgetch } from './input.js';
 import {
     compactInventoryLetters, promptInventoryObject,
 } from './inventory_prompt.js';
-import { AT_KICK, AT_WEAP } from './monster_attack_types.js';
+import { AD_PHYS, AT_KICK, AT_WEAP } from './monster_attack_types.js';
 import { moreUntilDismissed, promptKey } from './tty_prompts.js';
 import {
     getLine, paranoidQuery, promptYesNo, promptYesNoQuit,
@@ -357,9 +357,8 @@ import {
 } from './monmove.js';
 import { finishMonsterRayDeath } from './monster_death.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
-import {
-    tryHeroWeaponKnockback, tryUnarmedStagger,
-} from './monster_hurtle.js';
+import { tryUnarmedStagger } from './monster_hurtle.js';
+import { tryKnockback } from './knockback.js';
 import { announceInvocationSquare } from './invocation.js';
 import {
     abuseKickedPet, kickConductViolation, levitatingKickMisses,
@@ -10561,15 +10560,14 @@ async function attackHostileMonster(monster, x, y, {
         await wakeMonsterAfterHit();
         if (!bareHanded && damage > 1 && !polymorphed
             && !twoWeaponActive) {
-            const knockback = await tryHeroWeaponKnockback(
-                monster, attackWeapon, {
-                    dx: x - (game.u?.ux ?? x),
-                    dy: y - (game.u?.uy ?? y),
-                    announce: plineWithContinuation,
+            const knockback = await tryKnockback(
+                game.u, monster, { attackType: AT_WEAP, damageType: AD_PHYS }, {
+                    weaponUsed: true,
+                    publish: plineWithContinuation,
                     nameMonster: target => target === monster
                         ? displayedMonsterObject()
                         : monsterInstanceDisplayName(target),
-                    wakeMonster: wakeMonsterAfterHit,
+                    wakeDefender: wakeMonsterAfterHit,
                     finishLiquidDeath: (victim, death) =>
                         finishHeroLiquidMonsterDeath(victim, {
                             ...death,
@@ -10578,7 +10576,7 @@ async function attackHostileMonster(monster, x, y, {
                         }),
                 },
             );
-            if (knockback.dead) {
+            if (knockback.defenderDied) {
                 await applyPassive(true);
                 return true;
             }

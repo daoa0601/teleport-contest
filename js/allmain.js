@@ -2,6 +2,7 @@
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 
 import { game } from './gstate.js';
+import { tryKnockback } from './knockback.js';
 import { finishMonsterGrowth } from './monster_growth.js';
 import { reassessMonsterArmor } from './monworn.js';
 import { newMonsterHitPoints } from './monster_hit_points.js';
@@ -2434,11 +2435,6 @@ function heroPassiveResponseMessage(monster, passive) {
     return null;
 }
 
-function recordContactRn2(action, range) {
-    action?.calls?.push(`rn2(${range})`);
-    return rn2(range);
-}
-
 function wornTheftObjectDescription(object) {
     // C steal.c:worn_item_removal() starts from doname(), then massages only
     // the ownership and equipment-location suffix for its pre-removal line.
@@ -2547,8 +2543,11 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
     // hitmu() enters this shared tail even when mhitm_ad_sedu() marked the
     // aggressor done.  A zero-damage claw still probes both knockback gates
     // after steal() has finished its messages and fleeing transition.
-    recordContactRn2(action, 3);
-    recordContactRn2(action, 6);
+    await tryKnockback(monster, game.u, attack, {
+        hit: attack.hit,
+        weaponUsed: !!monsterWieldedWeapon(monster),
+        publish: queueTurnMessage,
+    });
     attack.theftResolved = true;
     return true;
 }

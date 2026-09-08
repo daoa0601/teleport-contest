@@ -20,7 +20,7 @@ import {
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import {
-    heroBadRock, heroLiquidEffects, heroTightDiagonalReason,
+    blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason,
 } from './hack.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { igniteItems } from './light.js';
@@ -155,6 +155,15 @@ function obstacleAt(x, y) {
         }
     }
     return null;
+}
+
+// C test_move(TEST_MOVE), before a blow can start the hero hurtling.
+export function canKnockHeroToward(dx, dy) {
+    const { ux, uy } = game.u;
+    const x = ux + dx;
+    const y = uy + dy;
+    return isok(x, y) && !obstacleAt(x, y)
+        && !(dx && dy && blocksDiagonalDoor(game.level.at(ux, uy), game.level.at(x, y)));
 }
 
 async function hitObstacle(obstacle, x, y, remaining) {

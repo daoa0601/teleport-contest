@@ -143,6 +143,7 @@ import {
 import { isPermanentlyPoisonedObject } from './object_properties.js';
 import { canSeeMonsterCombat, showMonsterCombatAttack, showMonsterCombatDeath } from './monster_combat_messages.js';
 import { monsterSentenceSubject } from './monster_sound.js';
+import { tryKnockback } from './knockback.js';
 import {
     finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
     finishMonsterRayDeath,
@@ -2404,7 +2405,7 @@ async function finishMonsterCombatDeath(
 }
 
 function monsterCombatDeathResult(aggressor, defender, death, state, {
-    random, rollOne, calls,
+    random, rollOne, calls, grantExperience = true,
 }) {
     if (death.survived) {
         return {
@@ -2412,13 +2413,13 @@ function monsterCombatDeathResult(aggressor, defender, death, state, {
             growth: null, aggressor,
         };
     }
-    const growth = growMonster(aggressor, {
+    const growth = grantExperience ? growMonster(aggressor, {
         victim: defender,
         state,
         random,
         rollOne,
         calls,
-    });
+    }) : null;
     return {
         survived: false,
         corpseCreated: !!death.corpse,
@@ -2465,20 +2466,21 @@ async function monsterMeleeAttack(
     const results = [];
     let struck = false;
     let death = null;
-    const finishStoningDeath = async (monster, options) => {
+    const finishContactDeath = async (monster, options, grantExperience = true) => {
         const outcome = await finishEnvironmentalMonsterDeath(monster, state, {
             ...options, random, publish: plineWithContinuation,
         });
         if (monster === defender) {
             death = monsterCombatDeathResult(aggressor, defender, outcome, state, {
-                random, rollOne, calls,
+                random, rollOne, calls, grantExperience,
             });
         }
         return outcome;
     };
 
     for (const attack of attacks) {
-        if ((defender?.mhp ?? 1) <= 0) break;
+        if (aggressor.dead || aggressor.mhp <= 0 || defender.dead || defender.mhp <= 0) break;
+        if (distmin(aggressor.mx, aggressor.my, defender.mx, defender.my) > 1) break;
         const wield = await monsterVersusMonsterWieldAction(
             aggressor, defender, attack, state,
         );
@@ -2515,7 +2517,7 @@ async function monsterMeleeAttack(
                 const petrification = await petrifyMonsterAttacker(aggressor, {
                     visible: combatVisible
                         && canSpotMonster(aggressor, aggressor.mx, aggressor.my),
-                    finishDeath: finishStoningDeath,
+                    finishDeath: finishContactDeath,
                 });
                 damage = 0;
                 stopped = true;
@@ -2529,7 +2531,7 @@ async function monsterMeleeAttack(
                     state, rollOne,
                     visible: combatVisible
                         && canSeeMonster(defender, defender.mx, defender.my),
-                    finishDeath: finishStoningDeath,
+                    finishDeath: finishContactDeath,
                 });
                 damage = attack.damageType === AD_STON ? 0 : petrification.damage;
                 stopped = petrification.stopped;
@@ -2556,8 +2558,18 @@ async function monsterMeleeAttack(
             // mdamagem() checks generic knockback before applying damage,
             // including for an ultimately fatal physical hit.
             if (!attackerTouchesStone) {
-                recordRandom(random, calls, 3);
-                recordRandom(random, calls, 6);
+                const finishKnockbackDeath = (monster, options) =>
+                    finishContactDeath(monster, options, false);
+                const knockback = await tryKnockback(aggressor, defender, attack, {
+                    state, random, weaponUsed: !!monsterWieldedWeapon(aggressor),
+                    finishMonsterDeath: finishKnockbackDeath,
+                    finishLiquidDeath: finishKnockbackDeath,
+                });
+                if (knockback.knocked) {
+                    damage = 0;
+                    stopped = true;
+                    struck = true;
+                }
             }
             if (!stopped && damage) {
                 defender.mhp = Math.max(0, (defender.mhp ?? 1) - damage);
@@ -2566,7 +2578,8 @@ async function monsterMeleeAttack(
         }
         result.damage = damage;
         results.push(result);
-        if (aggressor.dead || aggressor.mhp <= 0 || (death && !death.survived)) break;
+        if (aggressor.dead || aggressor.mhp <= 0 || (death && !death.survived)
+            || !state.level.monsters.includes(defender)) break;
         if (defender.mhp <= 0) {
             await showMonsterCombatDeath(defender, state);
             death = await finishMonsterCombatDeath(aggressor, defender, state, {
@@ -2579,12 +2592,14 @@ async function monsterMeleeAttack(
         }
         // passivemm() is reached after every attempted contact attack while
         // the defender survives, including an ordinary miss.
-        if ((defender.mhp ?? 0) > 0) recordRandom(random, calls, 3);
+        if ((defender.mhp ?? 0) > 0
+            && distmin(aggressor.mx, aggressor.my, defender.mx, defender.my) <= 1)
+            recordRandom(random, calls, 3);
     }
     return {
         kind: 'monster-attack', aggressor, defender, results, struck,
         aggressorDied: !!aggressor.dead || aggressor.mhp <= 0,
-        defenderDied: !!death && !death.survived,
+        defenderDied: !!defender.dead || defender.mhp <= 0,
         death,
     };
 }
@@ -4161,7 +4176,7 @@ function triggerMonsterTrap(
         const fixedDestination = trap.teledest
             && isok(trap.teledest.x, trap.teledest.y);
         if (!fixedDestination && monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4184,7 +4199,7 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp === RUST_TRAP) {
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4201,7 +4216,7 @@ function triggerMonsterTrap(
     if (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) {
         if (monsterAvoidsPit(monster)) return null;
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4230,7 +4245,7 @@ function triggerMonsterTrap(
         const implicitlyKnowsHole = trap.ttyp === HOLE
             && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS);
         if ((monsterKnowsTrap(monster, trap) || implicitlyKnowsHole)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4254,7 +4269,7 @@ function triggerMonsterTrap(
         // the trap gets mintrap()'s ordinary three-in-four avoidance chance.
         if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY) return null;
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4322,7 +4337,7 @@ function triggerMonsterTrap(
         const event = beginMonsterSqueakyBoard(monster, trap, state);
         if (!event) return null;
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const avoided = {
                 kind: 'known-trap-avoided', trap, damage: 0,
             };
@@ -4337,7 +4352,7 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp === SLP_GAS_TRAP) {
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4358,7 +4373,7 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp === ARROW_TRAP || trap.ttyp === DART_TRAP) {
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4380,7 +4395,7 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp === ROCKTRAP) {
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4402,7 +4417,7 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp === LANDMINE) {
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4425,7 +4440,7 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp === FIRE_TRAP) {
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4449,7 +4464,7 @@ function triggerMonsterTrap(
         // discovers that webmakers cross safely, so they still learn an
         // unknown web and own later avoidance probes.
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4471,7 +4486,7 @@ function triggerMonsterTrap(
         // monster to enter.  A monster which has learned this trap type gets
         // the ordinary 3-in-4 avoidance check before the effect selector.
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4499,7 +4514,7 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp === ANTI_MAGIC) {
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4536,7 +4551,7 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp === POLY_TRAP) {
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4552,7 +4567,7 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp === VIBRATING_SQUARE) {
         if (monsterKnowsTrap(monster, trap)
-            && recordRandom(random, calls, 4) !== 0) {
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
@@ -4566,7 +4581,7 @@ function triggerMonsterTrap(
     }
     if (trap.ttyp !== BEAR_TRAP || monsterInAir(monster, state)) return null;
     if (monsterKnowsTrap(monster, trap)
-        && recordRandom(random, calls, 4) !== 0) {
+        && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapLanding) {
         const event = { kind: 'known-trap-avoided', trap, damage: 0 };
         movement.trap = event;
         return event;
@@ -4587,6 +4602,7 @@ function triggerMonsterTrap(
 export function triggerImmediateMonsterTrap(
     monster,
     state = game,
+    { inAir = false, force = false, random = rn2, rollDice = d, rollOne = rnd } = {},
 ) {
     const calls = DISCARDED_CALL_LOG;
     const movement = {
@@ -4596,13 +4612,24 @@ export function triggerImmediateMonsterTrap(
         y: monster?.my,
         moved: false,
         immediateTrap: true,
+        forcedTrapLanding: force,
     };
+    const trap = trapAtMonster(monster, state);
+    const floorTriggered = trap && [
+        ARROW_TRAP, DART_TRAP, ROCKTRAP, SQKY_BOARD, BEAR_TRAP, LANDMINE,
+        ROLLING_BOULDER_TRAP, SLP_GAS_TRAP, RUST_TRAP, FIRE_TRAP,
+        PIT, SPIKED_PIT, HOLE, TRAPDOOR,
+    ].includes(trap.ttyp);
+    const sokobanFall = state.level.flags.sokoban_rules && trap && !trap.madeby_u
+        && [PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
+    if (inAir && floorTriggered && !sokobanFall)
+        return { monster, movement, event: null, calls };
     if (monster.mtrapped) {
         movement.escapingTrap = true;
         return { monster, movement, event: null, calls };
     }
     const event = triggerMonsterTrap(
-        monster, state, movement, rn2, d, rnd, calls,
+        monster, state, movement, random, rollDice, rollOne, calls,
     );
     return { monster, movement, event, calls };
 }
@@ -5044,6 +5071,7 @@ async function basicMonsterAttack(
             await plineWithContinuation(`${subject} hits you with the ${
                 MONSTER_NAME[contactWeapon.corpsenm]} corpse.`);
             if (await startHeroPetrificationFromMonster(monster, state)) {
+                await knockHeroFromMonster(monster, { attackType, damageType, hit }, state, random);
                 return retainHeroAttackContinuation({
                     kind: 'hero-attack', roll, threshold, hit, damage: 0,
                     attackType, damageType, effect: 'petrifying-corpse',
@@ -5081,8 +5109,9 @@ async function basicMonsterAttack(
                 damage: 0, heroDied: true, attackType,
             }, monster, attackIndex);
         }
-        recordRandom(random, calls, 3);
-        recordRandom(random, calls, 6);
+        const knockback = await knockHeroFromMonster(monster, { attackType, damageType, hit }, state, random);
+        if (knockback.defenderDied)
+            return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
         damage = reduceHeroContactDamage(damage, state, rollOne, calls);
         applyHeroContactDamage(state, damage);
         const passive = damage > 0 ? applyHeroPassiveAfterContact(
@@ -5107,8 +5136,9 @@ async function basicMonsterAttack(
         } else {
             damage = 0;
         }
-        recordRandom(random, calls, 3);
-        recordRandom(random, calls, 6);
+        const knockback = await knockHeroFromMonster(monster, { attackType, damageType, hit }, state, random);
+        if (knockback.defenderDied)
+            return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
         damage = reduceHeroContactDamage(damage, state, rollOne, calls);
         applyHeroContactDamage(state, damage);
         return retainHeroAttackContinuation({
@@ -5142,8 +5172,9 @@ async function basicMonsterAttack(
                 damage: 0, heroDied: true, attackType,
             }, monster, attackIndex);
         }
-        recordRandom(random, calls, 3);
-        recordRandom(random, calls, 6);
+        const knockback = await knockHeroFromMonster(monster, { attackType, damageType, hit }, state, random);
+        if (knockback.defenderDied)
+            return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
         damage = reduceHeroContactDamage(damage, state, rollOne, calls);
         applyHeroContactDamage(state, damage);
         return retainHeroAttackContinuation({
@@ -5521,8 +5552,9 @@ async function basicMonsterAttack(
         }
         // hitmu() enters mhitm_knockback() after ordinary physical damage.
         // Attack eligibility is tested only after both chance gates.
-        recordRandom(random, calls, 3);
-        recordRandom(random, calls, 6);
+        const knockback = await knockHeroFromMonster(monster, { attackType, damageType, hit }, state, random);
+        if (knockback.defenderDied)
+            return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
         damage = reduceHeroContactDamage(damage, state, rollOne, calls);
         applyHeroContactDamage(state, damage);
         const passive = damage > 0 ? applyHeroPassiveAfterContact(
@@ -5896,6 +5928,17 @@ function runCovetousHarassTactics(monster, state, random, calls) {
     };
 }
 
+async function knockHeroFromMonster(monster, attack, state, random, publish = plineWithContinuation) {
+    const finishDeath = (target, options) =>
+        finishEnvironmentalMonsterDeath(target, state, { ...options, publish });
+    return tryKnockback(monster, state.u, attack, {
+        state, random, publish, hit: attack.hit,
+        weaponUsed: !!monsterWieldedWeapon(monster),
+        finishMonsterDeath: finishDeath,
+        finishLiquidDeath: finishDeath,
+    });
+}
+
 // Continue an ordinary natural hit after its visible hit message has been
 // accepted.  C ref: mhitu.c:hitmu() -> mhitm_knockback(), then losehp().
 export async function resumeDeferredHeroContact(
@@ -5909,6 +5952,7 @@ export async function resumeDeferredHeroContact(
     const calls = action.calls;
     if (attack.damageType === AD_STON
         && await applyMonsterStoningAttack(action.monster, { state, random, publish })) {
+        await knockHeroFromMonster(action.monster, attack, state, random, publish);
         attack.deferredPostHit = false;
         return action;
     }
@@ -5986,8 +6030,13 @@ export async function resumeDeferredHeroContact(
         attack.deferredElectricInventory = false;
         delete attack.electricOriginalDamage;
     }
-    recordRandom(random, calls, 3);
-    recordRandom(random, calls, 6);
+    const knockback = await knockHeroFromMonster(action.monster, attack, state, random, publish);
+    if (knockback.moved || knockback.defenderLeftLevel) delete attack.nextAttackIndex;
+    if (knockback.defenderDied) {
+        attack.heroDied = true;
+        attack.deferredPostHit = false;
+        return action;
+    }
     attack.appliedDamage = reduceHeroContactDamage(
         attack.damage, state, rollOne, calls,
     );
@@ -7102,6 +7151,7 @@ export async function resumeDeferredMonsterTrap(
         monsterName,
         describeMonster,
         revealTrap,
+        finishDeath = (monster, options) => finishEnvironmentalMonsterDeath(monster, state, options),
     } = {},
 ) {
     const movement = action?.movement;
@@ -7125,8 +7175,6 @@ export async function resumeDeferredMonsterTrap(
     delete movement.deferredAfterMonsterTrap;
 
     const calls = action.calls || DISCARDED_CALL_LOG;
-    const finishDeath = (monster, options) =>
-        finishEnvironmentalMonsterDeath(monster, state, options);
     const recordedRandom = range => recordRandom(random, calls, range);
     const recordedRollOne = range => {
         const result = rollOne(range);

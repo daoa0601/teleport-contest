@@ -58,6 +58,22 @@ test('a cockatrice hiss starts petrification during an ordinary turn', async () 
     assert.equal(game.u.stoneKiller, 'cockatrice');
 });
 
+test('a giant knocks a small hero backward during an ordinary turn', async () => {
+    freshTurnRoom();
+    installPolymorphedHero('kobold');
+    const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
+    giant.mpeaceful = false;
+    giant.movement = 12;
+    initRng(2n);
+    pushKeys('m.                    ');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.ok(game.u.ux < 10);
+    assert.ok(game.u.mh < game.u.mhmax);
+});
+
 test('a weapon rusts on the hero\'s monster body during an ordinary turn', async () => {
     freshTurnRoom();
     installPolymorphedHero('rust monster');

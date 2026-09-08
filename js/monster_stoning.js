@@ -94,7 +94,7 @@ export async function monsterSelfTouch(monster, {
             } corpse.`,
         );
     }
-    const petrification = await petrifyMonster(monster, {
+    const petrification = await petrifyMonsterImmediately(monster, {
         creditHero, finishDeath, publish,
     });
     if (petrification.survived && !monsterWearsGloves(monster)
@@ -131,7 +131,7 @@ export async function petrifyMonsterFromContact(monster, {
             cure,
         };
     }
-    return petrifyMonster(monster, {
+    return petrifyMonsterImmediately(monster, {
         creditHero, finishDeath, publish,
     });
 }
@@ -276,7 +276,7 @@ async function createStoneRemains(monster, publish) {
     return stack_object(statue, game);
 }
 
-async function petrifyMonster(monster, {
+export async function petrifyMonsterImmediately(monster, {
     creditHero = false,
     finishDeath,
     publish = plineWithContinuation,
