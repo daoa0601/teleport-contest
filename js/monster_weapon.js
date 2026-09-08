@@ -15,7 +15,7 @@ import { MONSTER_FLAGS2, MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME } from './monst
 import { monsterCanTouchObject } from './monster_carry.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { monsterSentenceSubject } from './monster_sound.js';
-import { BULLWHIP, CLUB, CORPSE, OBJECT_BIMANUAL, OBJECT_NAMES } from './object_data.js';
+import { BULLWHIP, CLUB, CORPSE, EGG, OBJECT_BIMANUAL, OBJECT_NAMES } from './object_data.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
@@ -56,7 +56,7 @@ export function selectHandToHandWeapon(monster, state = game) {
     else if (monster.mnum === PM_BALROG && (state.uwep || state.u?.uwep))
         favorite = BULLWHIP;
     if (favorite !== null) {
-        const object = firstSafeWeaponOfType(monster, favorite, state);
+        const object = selectMonsterWeaponOfType(monster, favorite, state);
         if (object) return object;
     }
 
@@ -64,17 +64,17 @@ export function selectHandToHandWeapon(monster, state = game) {
         if (OBJECT_BIMANUAL[type] && !canUseBothHands) continue;
         if (type === CORPSE && !(monster.misc_worn_check & W_ARMG)
             && !monsterHasStoneResistance(monster)) continue;
-        const object = firstSafeWeaponOfType(monster, type, state);
+        const object = selectMonsterWeaponOfType(monster, type, state);
         if (object) return object;
     }
     return null;
 }
 
 // C oselect(): keep inventory order among items of the same type.
-function firstSafeWeaponOfType(monster, type, state) {
+export function selectMonsterWeaponOfType(monster, type, state = game) {
     return (monster.minvent || monster.inventory || []).find(object =>
         object.otyp === type
-        && (type !== CORPSE || touchPetrifies(object.corpsenm))
+        && (![CORPSE, EGG].includes(type) || touchPetrifies(object.corpsenm))
         && monsterCanTouchObject(monster, object, state)) || null;
 }
 

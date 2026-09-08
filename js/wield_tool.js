@@ -7,10 +7,8 @@ import { game } from './gstate.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { equipmentLightMessage, lightWieldedArtifact } from './light.js';
 import { inventoryItemDescription } from './invent.js';
-import {
-    HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_BIMANUAL, OBJECT_SUBTYPE,
-    TIN_OPENER,
-} from './object_data.js';
+import { OBJECT_BIMANUAL } from './object_data.js';
+import { willWeld } from './weapon_type.js';
 import {
     heroHasNoHands, heroIsVerySmall,
 } from './polyself.js';
@@ -45,18 +43,6 @@ function simpleName(object) {
 
 function isWeapon(object) {
     return object.class === 'Weapons' || object.oclass === 2;
-}
-
-function isWeaponTool(object) {
-    return object.oclass === 6 && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0;
-}
-
-function willWeld(object) {
-    return !!object?.cursed && (
-        isWeapon(object)
-        || isWeaponTool(object)
-        || [HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER].includes(object.otyp)
-    );
 }
 
 function isTwoHanded(object) {

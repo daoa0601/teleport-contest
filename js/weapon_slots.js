@@ -7,17 +7,10 @@ import {
 import { game } from './gstate.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { endObjectBurn } from './light.js';
-import {
-    HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_SUBTYPE, TIN_OPENER,
-} from './object_data.js';
+import { willWeld } from './weapon_type.js';
 
 export function isWeldedPrimary(object, state = game) {
-    if (object !== (state.uwep || state.u?.uwep) || !object?.cursed)
-        return false;
-    const weaponTool = object.oclass === 6
-        && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0;
-    return object.oclass === 2 || weaponTool
-        || [HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER].includes(object.otyp);
+    return object === (state.uwep || state.u?.uwep) && willWeld(object);
 }
 
 function slotObject(slot, state) {

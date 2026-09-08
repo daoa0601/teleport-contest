@@ -3,7 +3,8 @@
 
 import {
     A_CON, A_DEX, A_STR, BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON,
-    POISONING, P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR,
+    NO_WEAPON_WANTED, POISONING, P_BOW, P_CROSSBOW, P_DAGGER, P_DART,
+    P_SHURIKEN, P_SLING, P_SPEAR,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import {
@@ -22,11 +23,15 @@ import {
     monsterTypeName,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon, selectMonsterWeaponOfType } from './monster_weapon.js';
+import { game } from './gstate.js';
 import {
-    BLINDING_VENOM, CREAM_PIE, EGG, FLINT, OBJECT_DESCRIPTIONS,
+    BLINDING_VENOM, BOULDER, BOW, CREAM_PIE, CROSSBOW, DART, EGG,
+    ELVEN_BOW, FLINT, LOADSTONE, OBJECT_DESCRIPTIONS,
     OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT,
+    ORCISH_BOW, SLING, YUMI,
 } from './object_data.js';
+import { ammunitionMatchesLauncher, isAmmunition, willWeld } from './weapon_type.js';
 import { deleteObject } from './object_delete.js';
 import { isPoisonableObject } from './object_properties.js';
 import {
@@ -51,8 +56,11 @@ const M2_GNOME = 0x00000040;
 const M2_ORC = 0x00000080;
 const M2_LORD = 0x00000400;
 const M2_PRINCE = 0x00000800;
+const M2_ROCKTHROW = 0x08000000;
+const M2_JEWELS = 0x20000000;
 const M1_AMORPHOUS = 0x00000004;
 const S_GHOST = 54;
+const S_KOP = 37;
 const SILVER = 14;
 const PM_CAVE_DWELLER = MONSTER_NAME.indexOf('cave dweller');
 const PM_MONK = MONSTER_NAME.indexOf('monk');
@@ -72,20 +80,7 @@ const RANGED_WEAPON_PREFERENCE = [
     'orcish arrow', 'crossbow bolt', 'silver dagger', 'elven dagger',
     'dagger', 'orcish dagger', 'knife', 'flint', 'rock', 'loadstone',
     'luckstone', 'dart', 'cream pie',
-];
-
-export const RANGED_LAUNCHERS = new Map([
-    ['ya', new Set(['yumi'])],
-    ['silver arrow', new Set(['yumi', 'elven bow', 'bow', 'orcish bow'])],
-    ['elven arrow', new Set(['yumi', 'elven bow', 'bow', 'orcish bow'])],
-    ['arrow', new Set(['yumi', 'elven bow', 'bow', 'orcish bow'])],
-    ['orcish arrow', new Set(['yumi', 'elven bow', 'bow', 'orcish bow'])],
-    ['crossbow bolt', new Set(['crossbow'])],
-    ['flint', new Set(['sling'])],
-    ['rock', new Set(['sling'])],
-    ['loadstone', new Set(['sling'])],
-    ['luckstone', new Set(['sling'])],
-]);
+].map(name => OBJECT_NAMES.indexOf(name));
 
 export const MONSTER_POLEARMS = new Set([
     'halberd', 'bardiche', 'spetum', 'bill-guisarme', 'voulge', 'ranseur',
@@ -94,39 +89,74 @@ export const MONSTER_POLEARMS = new Set([
 ]);
 
 export function objectTypeName(object) {
-    return object?.name || OBJECT_NAMES[object?.otyp] || '';
+    return OBJECT_NAMES[object?.otyp] || '';
 }
 
-export function selectRangedWeapon(monster) {
-    const inventory = monster?.minvent || monster?.inventory || [];
-    const carriedNames = new Set(inventory.map(objectTypeName));
-    for (const name of RANGED_WEAPON_PREFERENCE) {
-        const launcherNames = RANGED_LAUNCHERS.get(name);
-        if (launcherNames
-            && !Array.from(launcherNames).some(launcher =>
-                carriedNames.has(launcher))) continue;
-        const weapon = inventory.find(object =>
-            objectTypeName(object) === name
-            && !(name === 'loadstone' && object.cursed)
-            && !(object.artifact || object.oartifact));
-        if (weapon) return weapon;
+// The disposable-missile branches of C select_rwep(). Returning both objects
+// keeps the selected launcher with its ammunition without C's global propellor.
+export function selectMonsterMissile(monster, state = game) {
+    const inventory = monster.minvent || monster.inventory || [];
+    const egg = selectMonsterWeaponOfType(monster, EGG, state);
+    if (egg) return { missile: egg, launcher: null };
+    if (MONSTER_SYMBOL[monster.mnum] === S_KOP) {
+        const pie = selectMonsterWeaponOfType(monster, CREAM_PIE, state);
+        if (pie) return { missile: pie, launcher: null };
+    }
+    if (MONSTER_FLAGS2[monster.mnum] & M2_ROCKTHROW) {
+        const boulder = selectMonsterWeaponOfType(monster, BOULDER, state);
+        if (boulder) return { missile: boulder, launcher: null };
+    }
+
+    const current = monsterWieldedWeapon(monster);
+    const cannotSwitch = willWeld(current) && monster.weaponCheck === NO_WEAPON_WANTED;
+    for (const type of RANGED_WEAPON_PREFERENCE) {
+        if (type === DART && !(MONSTER_FLAGS2[monster.mnum] & M2_JEWELS)) {
+            const sling = inventory.find(object => object.otyp === SLING);
+            if (sling) {
+                const gem = inventory.find(object => object.oclass === GEM_CLASS
+                    && (object.otyp !== LOADSTONE || !object.cursed));
+                if (gem) return { missile: gem, launcher: sling };
+            }
+        }
+
+        const skill = OBJECT_SUBTYPE[type];
+        const launcher = selectMissileLauncher(monster, skill, state);
+        const needsLauncher = skill >= -P_CROSSBOW && skill <= -P_BOW;
+        if (needsLauncher && !launcher) continue;
+        if (skill < 0 && cannotSwitch && launcher !== current) continue;
+        if (type === LOADSTONE) {
+            const stone = inventory.find(object => object.otyp === LOADSTONE && !object.cursed);
+            if (stone) return { missile: stone, launcher };
+        } else {
+            const missile = selectMonsterWeaponOfType(monster, type, state);
+            if (missile && !missile.oartifact
+                && !(missile === current && willWeld(missile))) return { missile, launcher };
+        }
+    }
+    return null;
+}
+
+function selectMissileLauncher(monster, skill, state) {
+    let types;
+    if (skill === -P_BOW) types = [YUMI, ELVEN_BOW, BOW, ORCISH_BOW];
+    else if (skill === -P_SLING) types = [SLING];
+    else if (skill === -P_CROSSBOW) types = [CROSSBOW];
+    else return null;
+    for (const type of types) {
+        const launcher = selectMonsterWeaponOfType(monster, type, state);
+        if (launcher) return launcher;
     }
     return null;
 }
 
 // Switching to a launcher consumes this action. If no launcher is needed,
 // or the correct launcher is already wielded, the monster may shoot now.
-export function readyRangedMonsterWeapon(monster) {
+export function readyRangedMonsterWeapon(monster, state = game) {
     const current = monsterWieldedWeapon(monster);
     if (monster?.weaponCheck !== NEED_WEAPON && current) return null;
 
     monster.weaponCheck = NEED_RANGED_WEAPON;
-    const missile = selectRangedWeapon(monster);
-    const launcherNames = RANGED_LAUNCHERS.get(objectTypeName(missile));
-    const inventory = monster?.minvent || monster?.inventory || [];
-    const launcher = launcherNames
-        ? inventory.find(object => launcherNames.has(objectTypeName(object)))
-        : null;
+    const launcher = selectMonsterMissile(monster, state)?.launcher;
 
     if (!launcher) {
         monster.weaponCheck = NEED_WEAPON;
@@ -171,10 +201,8 @@ export function monsterVolleyCount(
 ) {
     const quantity = missile?.quan ?? missile?.quantity ?? 1;
     const missileName = objectTypeName(missile);
-    const launcherNames = RANGED_LAUNCHERS.get(missileName);
-    const ammunition = !!launcherNames;
-    const matchingLauncher = !!(launcherNames
-        && launcherNames.has(objectTypeName(launcher)));
+    const ammunition = isAmmunition(missile);
+    const matchingLauncher = ammunitionMatchesLauncher(missile, launcher);
     const stackableWeapon = missile?.oclass === WEAPON_CLASS
         || missile?.class === 'Weapons';
     if (quantity <= 1 || monster?.mconf
@@ -818,9 +846,7 @@ export function throwMonsterWeaponAtHero(
     } = {},
 ) {
     const launcher = monsterWieldedWeapon(source);
-    const launcherNames = RANGED_LAUNCHERS.get(objectTypeName(weapon));
-    const launched = !!(launcherNames
-        && launcherNames.has(objectTypeName(launcher)));
+    const launched = ammunitionMatchesLauncher(weapon, launcher);
     const volley = monsterVolleyCount(source, weapon, launcher, rollOne);
     source.weaponCheck = NEED_WEAPON;
     const shot = throwOneMonsterMissileAtHero(
@@ -871,7 +897,7 @@ export function throwMonsterWeaponAtMonster(
         rollOne = rnd,
     } = {},
 ) {
-    const readiedWeapon = readyRangedMonsterWeapon(source);
+    const readiedWeapon = readyRangedMonsterWeapon(source, state);
     if (readiedWeapon) {
         return {
             attempted: true,
@@ -880,18 +906,15 @@ export function throwMonsterWeaponAtMonster(
         };
     }
 
-    const weapon = selectRangedWeapon(source);
-    if (!weapon || MONSTER_POLEARMS.has(objectTypeName(weapon))
-        || !positionsAreLinedUp(source, target)) return null;
+    const weapon = selectMonsterMissile(source, state)?.missile;
+    if (!weapon || !positionsAreLinedUp(source, target)) return null;
 
     const distance = distmin(source.mx, source.my, target.mx, target.my);
     const hesitationRange = Math.max(BOLT_LIM - distance, 1);
     if (target.mflee && random(hesitationRange) !== 0) return null;
 
     const launcher = monsterWieldedWeapon(source);
-    const launcherNames = RANGED_LAUNCHERS.get(objectTypeName(weapon));
-    const launched = !!(launcherNames
-        && launcherNames.has(objectTypeName(launcher)));
+    const launched = ammunitionMatchesLauncher(weapon, launcher);
     if (launched
         && dist2(source.mx, source.my, target.mx, target.my) > 36) {
         return null;

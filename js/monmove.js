@@ -13,10 +13,11 @@ import {
 import {
     MONSTER_POLEARMS,
     objectTypeName, placeAndStackThrownObject, placeThrownObject,
-    RANGED_LAUNCHERS, readyRangedMonsterWeapon, selectRangedWeapon,
+    readyRangedMonsterWeapon, selectMonsterMissile,
     throwMonsterWeaponAtHero,
 } from './monster_throw.js';
 import { monsterWieldedWeapon, selectHandToHandWeapon } from './monster_weapon.js';
+import { ammunitionMatchesLauncher } from './weapon_type.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';
 import { growMonster } from './monster_growth.js';
 import { currentAttribute } from './attrib.js';
@@ -489,15 +490,9 @@ function readyMonsterDiggingWeapon(monster, state, x, y) {
 }
 
 function monsterHasLauncherAndAmmo(monster) {
-    const carriedNames = new Set(
-        (monster?.minvent || monster?.inventory || []).map(objectTypeName),
-    );
-    for (const [ammo, launchers] of RANGED_LAUNCHERS) {
-        if (carriedNames.has(ammo)
-            && Array.from(launchers).some(name => carriedNames.has(name)))
-            return true;
-    }
-    return false;
+    const inventory = monster.minvent || monster.inventory || [];
+    return inventory.some(ammo => inventory.some(launcher =>
+        ammunitionMatchesLauncher(ammo, launcher)));
 }
 
 function monsterHasAvailableDistanceAttack(monster) {
@@ -3560,9 +3555,9 @@ function maybeThrowRangedWeapon(
     // reached at all for an actor beyond BOLT_LIM.
     if (!monsterHasWeaponAttack(monster)
         || !reachesDistantPhaseFour(monster, movement, state)) return null;
-    const wieldedWeapon = readyRangedMonsterWeapon(monster);
+    const wieldedWeapon = readyRangedMonsterWeapon(monster, state);
     if (wieldedWeapon) return { wieldedWeapon };
-    const weapon = selectRangedWeapon(monster);
+    const weapon = selectMonsterMissile(monster, state)?.missile;
     if (!weapon || !hostileLinedUp(monster, state, random, calls)) return null;
 
     const heroX = state?.u?.ux ?? monster.mx;

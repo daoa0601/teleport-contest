@@ -6,19 +6,19 @@ import {
     finishDeferredRangedProjectileHit,
     finishHeroProjectileHit, finishMonsterProjectileHit,
     presentMonsterProjectileShot,
-    readyRangedMonsterWeapon, selectRangedWeapon,
+    readyRangedMonsterWeapon, selectMonsterMissile,
     throwMonsterWeaponAtHero, throwMonsterWeaponAtMonster,
 } from '../js/monster_throw.js';
 import {
     A_STR, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NEED_WEAPON,
-    NO_MINVENT, W_AMUL, W_WEP,
+    NO_MINVENT, NO_WEAPON_WANTED, W_AMUL, W_WEP,
 } from '../js/const.js';
 import { tameMonster } from '../js/dog.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
-    AMULET_OF_LIFE_SAVING, ARROW, BOW, CORPSE, CREAM_PIE,
+    AMULET_OF_LIFE_SAVING, ARROW, BOULDER, BOW, CORPSE, CREAM_PIE,
     CROSSBOW, CROSSBOW_BOLT, DAGGER, DART, EGG, ELVEN_ARROW,
-    ELVEN_BOW, OBJECT_NAMES, STATUE,
+    ELVEN_BOW, OBJECT_NAMES, SLING, STATUE, YA, YUMI,
 } from '../js/object_data.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -80,7 +80,73 @@ test('a monster readies the launcher required by its ammunition', async () => {
     assert.equal(readied, bow);
     assert.equal(archer.mw, bow);
     assert.equal(bow.wielded, true);
-    assert.equal(selectRangedWeapon(archer), arrows);
+    assert.equal(selectMonsterMissile(archer)?.missile, arrows);
+});
+
+test('a monster can shoot ya from an ordinary bow', async () => {
+    freshRangedCombatRoom();
+    const arrows = uninitializedObject(YA, { quan: 6 });
+    const orc = await combatant('orc', { inventory: [arrows] });
+    equipMonsterObject(orc, uninitializedObject(BOW), W_WEP);
+    orc.weaponCheck = NEED_WEAPON;
+    const target = await combatant('lichen', { x: 12 });
+
+    const attack = throwMonsterWeaponAtMonster(orc, target, game);
+
+    assert.equal(attack?.launched, true);
+    assert.ok(arrows.quan < 6);
+    finishRangedAttacks([attack], game);
+});
+
+test('a monster prefers a yumi to a more recently acquired ordinary bow', async () => {
+    freshRangedCombatRoom();
+    const orc = await combatant('orc', {
+        inventory: [uninitializedObject(ARROW), uninitializedObject(YUMI), uninitializedObject(BOW)],
+    });
+
+    const selection = selectMonsterMissile(orc);
+
+    assert.equal(selection?.missile.otyp, ARROW);
+    assert.equal(selection?.launcher.otyp, YUMI);
+});
+
+test('a monster keeps its welded dagger but can throw a spare one', async () => {
+    freshRangedCombatRoom();
+    const orc = await combatant('orc');
+    const held = equipMonsterObject(orc, uninitializedObject(DAGGER, { cursed: true }), W_WEP);
+    orc.weaponCheck = NO_WEAPON_WANTED;
+    assert.equal(selectMonsterMissile(orc), null);
+    const spare = addObjectToMonsterInventory(orc, uninitializedObject(DAGGER));
+
+    assert.equal(selectMonsterMissile(orc)?.missile.o_id, spare.o_id);
+    assert.equal(orc.mw?.o_id, held.o_id);
+});
+
+test('Kops choose pies and giants choose boulders before ordinary missiles', async () => {
+    freshRangedCombatRoom();
+    const kop = await combatant('Keystone Kop', {
+        inventory: [uninitializedObject(CREAM_PIE), uninitializedObject(DAGGER)],
+    });
+    const giant = await combatant('giant', {
+        x: 10,
+        inventory: [uninitializedObject(BOULDER), uninitializedObject(DAGGER)],
+    });
+
+    assert.equal(selectMonsterMissile(kop)?.missile.otyp, CREAM_PIE);
+    assert.equal(selectMonsterMissile(giant)?.missile.otyp, BOULDER);
+});
+
+test('a monster that does not collect gems uses one in its sling before throwing darts', async () => {
+    freshRangedCombatRoom();
+    const gem = uninitializedObject(OBJECT_NAMES.indexOf('emerald'));
+    const soldier = await combatant('soldier', {
+        inventory: [gem, uninitializedObject(SLING), uninitializedObject(DART)],
+    });
+
+    const selection = selectMonsterMissile(soldier);
+
+    assert.equal(selection?.missile.o_id, gem.o_id);
+    assert.equal(selection?.launcher.otyp, SLING);
 });
 
 test('a tame orc throws a dagger at a distant monster', async () => {
