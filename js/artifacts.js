@@ -5,12 +5,16 @@
 // that ordinary object, and oname() then commits the named artifact.
 
 import { ARTIFACT_DATA } from './artifact_data.js';
-import { W_ARM } from './const.js';
+import { P_BASIC, P_SKILLED, W_ARM } from './const.js';
 import { heroHasDrainResistance } from './armor.js';
 import { game } from './gstate.js';
+import { mksobj } from './mklev.js';
+import { ensureHeroSkills } from './skills.js';
+import { races } from './roles.js';
+import { objectClassForType } from './object_knowledge.js';
 import { d, rnd, rn2 } from './rng.js';
 import {
-    GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_NAMES,
+    GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_NAMES, OBJECT_SUBTYPE,
 } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import {
@@ -193,6 +197,45 @@ export function uncreateArtifact(object, state = game) {
 
 export function artifactExistCount() {
     return game._artifactExistCount ?? existenceSet().size;
+}
+
+// C artifact.c:mk_artifact(), when choosing a divine gift by alignment.
+export function createArtifactGift(alignment, maximumValue, state = game) {
+    const candidates = [];
+    const fallback = [];
+    const skills = ensureHeroSkills(state);
+    for (const artifact of artifactList(state)) {
+        if (state._artifactExists?.has(artifact.id) || artifact.noGeneration) continue;
+        const roleGift = artifact.role === state.urole.key;
+        if (artifact.giftValue > maximumValue && !roleGift) continue;
+        if (artifact.alignment !== null && artifact.alignment !== alignment) continue;
+        const artifactRace = races.find(race => race.name === artifact.race);
+        if (artifactRace && (artifactRace.selfmask & state.urace.hatemask)) continue;
+        if (roleGift) {
+            candidates.length = 0;
+            candidates.push(artifact);
+            break;
+        }
+        const weapon = objectClassForType(artifact.baseType) === 2;
+        const skill = Math.abs(OBJECT_SUBTYPE[artifact.baseType]);
+        const compatibility = weapon ? skills?.[skill]?.maxSkill ?? 0 : P_SKILLED;
+        if ((artifact.alignment !== null || state.u.ugifts > 0 || !rn2(3))
+            && (!rn2(4) || compatibility >= P_SKILLED
+                || compatibility >= P_BASIC && rn2(2))) {
+            candidates.push(artifact);
+        } else if (!candidates.length) {
+            fallback.push(artifact);
+        }
+    }
+    const choices = candidates.length ? candidates : fallback;
+    if (!choices.length) return null;
+    const artifact = choices[rn2(choices.length)];
+    const object = mksobj(artifact.baseType, true, false);
+    object.oeroded = object.oeroded2 = 0;
+    nameArtifact(object, artifact);
+    const enchantment = object.spe + artifact.generationEnchantment;
+    if (enchantment >= -10 && enchantment < 10) object.spe = enchantment;
+    return object;
 }
 
 function defendedByArtifact(artifact, damageType) {

@@ -95,7 +95,7 @@ function normalDemon(alignment) {
         ? mnum : null;
 }
 
-function demonLord(alignment) {
+export function demonLord(alignment) {
     const attempts = In_endgame(game.u?.uz) ? 0 : 20;
     for (let left = attempts; left > 0; left--) {
         const mnum = rn1(PM_YEENOGHU + 1 - PM_JUIBLEX, PM_JUIBLEX);

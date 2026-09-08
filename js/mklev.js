@@ -1411,16 +1411,8 @@ export function peaceMinded(mndx) {
     // alignment abuse instead of the ordinary co-aligned random chance.
     if (mndx === PM_ERINYS) return !(game.u?.ualign?.abuse ?? 0);
 
-    const race = game.urace?.noun || game.urace?.name || 'human';
-    const loveMask = race === 'elf' ? M2_ELF
-        : race === 'dwarf' ? M2_DWARF | M2_GNOME
-        : race === 'gnome' ? M2_DWARF | M2_GNOME : 0;
-    const hateMask = race === 'elf' || race === 'dwarf' ? M2_ORC
-        : race === 'gnome' ? M2_HUMAN
-        : race === 'orc' ? M2_HUMAN | M2_ELF | M2_DWARF
-        : M2_GNOME | M2_ORC;
-    if (flags & loveMask) return true;
-    if (flags & hateMask) return false;
+    if (flags & game.urace.lovemask) return true;
+    if (flags & game.urace.hatemask) return false;
 
     const monsterAlignment = MONSTER_ALIGNMENT[mndx] || 0;
     const heroAlignment = game.u?.ualign?.type || 0;

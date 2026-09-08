@@ -100,7 +100,7 @@ export async function applyMonsterStoningAttack(monster, {
     return startHeroPetrificationFromMonster(monster, state);
 }
 
-function heroResistsStoning(state = game) {
+export function heroResistsStoning(state = game) {
     return !!state.u?.stoneResistance;
 }
 

@@ -1,7 +1,7 @@
 // Divine retaliation.
 // C pray.c:gods_upset(), angrygods(), god_zaps_you(), fry_by_god().
 
-import { deityName } from './alignment.js';
+import { adjustHeroAlignment, deityName } from './alignment.js';
 import { disintegrateWornArmor } from './armor.js';
 import { adjustAttribute, attributeChangeMessage } from './attrib.js';
 import {
@@ -61,6 +61,17 @@ export async function godsUpset(alignment, state = game) {
         state.u.ugangr = (state.u.ugangr || 0) + 1;
     else if (state.u.ugangr > 0) state.u.ugangr--;
     await angryGods(alignment, state);
+}
+
+export async function desecrateAltar(highAltar, alignment, state = game) {
+    if (alignment === state.u.ualign.type) {
+        adjustHeroAlignment(-20, state);
+        state.u.ugangr = (state.u.ugangr || 0) + 5;
+    }
+    await pline('You feel the air around you grow charged...');
+    await pline(`Suddenly, you realize that ${deityName(alignment, state)} has noticed you...`);
+    await godVoice(alignment, `So, mortal!  You dare desecrate my ${highAltar ? 'High Temple' : 'altar'}!`, state);
+    await godZapsHero(alignment, state);
 }
 
 export async function angryGods(alignment, state = game) {

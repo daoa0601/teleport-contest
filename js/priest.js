@@ -5,6 +5,7 @@
 
 import { game } from './gstate.js';
 import { deityName } from './alignment.js';
+import { angerMonster, wakeMonster } from './monster_anger.js';
 import { plineWithContinuation } from './display.js';
 import { cansee } from './vision.js';
 import { d, rn2 } from './rng.js';
@@ -41,6 +42,26 @@ export function priestIsInOwnTemple(priest, state = game) {
 function findPriest(roomno, state = game) {
     return state.level?.monsters?.find(priest => !priest.dead
         && priestInOwnTemple(priest, roomno, state)) || null;
+}
+
+// C priest.c:angry_priest(). A converted or destroyed altar frees its
+// priest to roam instead of guarding a shrine which is no longer theirs.
+export async function angerTemplePriest(state = game, onlyIfDifferent = false) {
+    const temple = templeRoomAt(state, state.u.ux, state.u.uy);
+    const priest = temple && findPriest(temple.roomno, state);
+    if (!priest || onlyIfDifferent && priestIsCoaligned(priest, state)) return;
+    await wakeMonster(priest);
+    await angerMonster(priest);
+    const shrine = priestData(priest);
+    const altar = state.level.at(shrine.shrpos.x, shrine.shrpos.y);
+    if (!IS_ALTAR(altar.typ) || Amask2align(altar.flags) !== shrine.shralign) {
+        priest.ispriest = 0;
+        priest.isminion = 1;
+        priest.emin = { min_align: shrine.shralign, renegade: 0 };
+        priest.mextra = { ...priest.mextra, emin: priest.emin };
+        delete priest.epri;
+        delete priest.mextra.epri;
+    }
 }
 
 function hasShrine(priest, state = game) {

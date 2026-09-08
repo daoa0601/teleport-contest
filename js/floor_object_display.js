@@ -14,7 +14,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import { getCostOfShopItem, objectTypeKnown } from './shk.js';
 import { W_BALL, W_CHAIN } from './const.js';
-import { indefiniteArticle } from './object_grammar.js';
+import { indefiniteArticle, makePlural } from './object_grammar.js';
 import { objectQuantity } from './object_stack.js';
 
 const BALL_CLASS = 15;
@@ -120,7 +120,9 @@ export function floorObjectDescription(object) {
     if (object.otyp === CORPSE) {
         const species = MONSTER_NAME[object.corpsenm];
         const corpseName = object.name || (species ? `${species} corpse` : 'corpse');
-        return `${indefiniteArticle(corpseName)} ${corpseName}`;
+        const name = `${object.oeaten ? 'partly eaten ' : ''}${corpseName}`;
+        const quantity = objectQuantity(object);
+        return quantity > 1 ? `${quantity} ${makePlural(name)}` : `${indefiniteArticle(name)} ${name}`;
     }
     if (object.otyp === LARGE_BOX || object.otyp === CHEST) {
         const noun = object.otyp === LARGE_BOX ? 'large box' : 'chest';

@@ -244,6 +244,7 @@ import {
 import { hiddenGold } from './gold.js';
 import { makeWish } from './wish.js';
 import { dopray } from './pray.js';
+import { dosacrifice } from './sacrifice.js';
 import { detachHeroGold, heroGoldAmount, setHeroGoldAmount } from './hero_gold.js';
 import {
     resolveDirectGoldThrow, resolveQuiveredGoldThrow,
@@ -3658,7 +3659,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['force', doforce],
     ['jump', dojump],
     ['overview', doDungeonOverview],
-    ['offer', dooffer],
+    ['offer', dosacrifice],
     ['dip', dodip],
     ['turn', doturn],
     ['untrap', () => doUntrap({ enterTrap: moveIntoFailedUntrap })],
@@ -3906,30 +3907,6 @@ async function dorub(cannedInvlet = null) {
     } else {
         await plineWithContinuation('Nothing happens.');
     }
-    game.context.move = 1;
-}
-
-// C ref: pray.c dosacrifice().  The command-table and altar-eligibility
-// boundary are shared even when no sacrifice transaction begins.
-async function dooffer() {
-    const loc = game.level?.at?.(game.u.ux, game.u.uy);
-    if (loc?.typ !== ALTAR || game.u?.uswallow) {
-        const relation = (game.u?.levitating || game.u?.flying)
-            ? 'over' : 'on';
-        await pline(`You are not ${relation} an altar.`);
-        game.context.move = 0;
-        return;
-    }
-    if ((game.u?.confusionTurns ?? 0) > 0
-        || (game.u?.stunnedTurns ?? 0) > 0) {
-        await pline('You are too impaired to perform the rite.');
-        game.context.move = 0;
-        return;
-    }
-
-    // TODO: implement sacrifice valuation, altar conversion, rewards, and
-    // high-altar ascension.
-    await pline('Nothing happens.');
     game.context.move = 1;
 }
 

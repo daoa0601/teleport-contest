@@ -470,6 +470,7 @@ const M2_ORC = 0x00000080;
 export const races = [
     { name: 'human', noun: 'human', adj: 'human', filecode: 'Hum',
       raceIndex: 0, selfmask: M2_HUMAN,
+      lovemask: 0, hatemask: M2_GNOME | M2_ORC,
       mnum: 260, mummynum: 192, zombienum: 244,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [118, 18, 18, 18, 18, 18],
       hpadv: {
@@ -480,6 +481,7 @@ export const races = [
       } },
     { name: 'elf', noun: 'elf', adj: 'elven', filecode: 'Elf',
       raceIndex: 1, selfmask: M2_ELF,
+      lovemask: M2_ELF, hatemask: M2_ORC,
       mnum: 264, mummynum: 191, zombienum: 243,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [18, 20, 20, 18, 16, 18],
       hpadv: {
@@ -490,6 +492,7 @@ export const races = [
       } },
     { name: 'dwarf', noun: 'dwarf', adj: 'dwarven', filecode: 'Dwa',
       raceIndex: 2, selfmask: M2_DWARF,
+      lovemask: M2_DWARF | M2_GNOME, hatemask: M2_ORC,
       mnum: 44, mummynum: 190, zombienum: 242,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [118, 16, 16, 20, 20, 16],
       hpadv: {
@@ -500,6 +503,7 @@ export const races = [
       } },
     { name: 'gnome', noun: 'gnome', adj: 'gnomish', filecode: 'Gno',
       raceIndex: 3, selfmask: M2_GNOME,
+      lovemask: M2_DWARF | M2_GNOME, hatemask: M2_HUMAN,
       mnum: 165, mummynum: 188, zombienum: 240,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [68, 19, 18, 18, 18, 18],
       hpadv: {
@@ -510,6 +514,7 @@ export const races = [
       } },
     { name: 'orc', noun: 'orc', adj: 'orcish', filecode: 'Orc',
       raceIndex: 4, selfmask: M2_ORC,
+      lovemask: 0, hatemask: M2_HUMAN | M2_ELF | M2_DWARF,
       mnum: 72, mummynum: 189, zombienum: 241,
       attrmin: [3, 3, 3, 3, 3, 3], attrmax: [68, 16, 16, 18, 18, 16],
       hpadv: {
