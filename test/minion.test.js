@@ -2,14 +2,34 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
+import { NO_MINVENT } from '../js/const.js';
+import { pushKeys } from '../js/input.js';
 import { msummon } from '../js/minion.js';
 import { MONSTER_FLAGS2 } from '../js/monster_data.js';
-import { resumeDeferredMovementSpell } from '../js/monmove.js';
+import { resumeDeferredMovementSpell, runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 const M2_DEMON = 0x00000100;
+
+for (const cancelled of [false, true]) {
+    test(`a ${cancelled ? 'cancelled demon cannot summon' : 'demon can summon'} help during an attack`, async () => {
+        freshObjectRoom({ flags: { verbose: false } });
+        const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
+        demon.mpeaceful = false;
+        demon.mcan = cancelled;
+        pushKeys(' '.repeat(40));
+
+        await runMonsterAction(demon, game, () => 0, count => count, () => 1);
+
+        const summoned = game.level.monsters.filter(monster => monster !== demon);
+        assert.equal(summoned.length > 0, !cancelled);
+        assert.ok(summoned.every(monster => MONSTER_FLAGS2[monster.mnum] & M2_DEMON));
+        assert.ok(game.u.uhp < game.u.uhpmax, 'the demon should also attack');
+    });
+}
 
 test('the Wizard summons demons beside the hero', async () => {
     freshGameplayRoom();

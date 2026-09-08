@@ -17,6 +17,8 @@ import {
 } from './monster_throw.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, swingMonsterWeapon, wieldMonsterWeapon } from './monster_weapon.js';
 import { attackHeroWithPolearm } from './monster_polearm.js';
+import { tryDemonSummon } from './minion.js';
+import { releaseMonsterLeash } from './monster_leash.js';
 import { ammunitionMatchesLauncher, isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
 import { killGenocidedMonster, levelHasCeiling, monsterInAir } from './mon.js';
 import { finishMonsterGrowth, growMonster } from './monster_growth.js';
@@ -239,6 +241,7 @@ const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
 const M1_METALLIVORE = 0x80000000;
 const M1_REGEN = 0x00800000;
+const M2_NEUTER = 0x00040000;
 const M2_WANDER = 0x00800000;
 const M2_ROCKTHROW = 0x08000000;
 const M2_GREEDY = 0x10000000;
@@ -2663,51 +2666,27 @@ export function maxPassiveMonsterDamage(defender, aggressor) {
     return 0;
 }
 
-function petAttacksHero(pet, state, random, rollDice, rollOne, calls) {
-    // PM_PONY: AT_KICK 1d6 followed by AT_BITE 1d2. mattacku() raises the
-    // to-hit die from rnd(20) to rnd(21) for the second attack.
-    const attacks = [
-        { type: 'kick', die: 20, damn: 1, damd: 6 },
-        { type: 'bite', die: 21, damn: 1, damd: 2 },
-    ];
-    const threshold = sourceHeroArmorClass(state, rollOne, calls) + 10
-        + (pet.m_lev ?? MONSTER_LEVEL[pet.mnum] ?? 0)
-        + (heroHasNegativeMulti(state) ? 4 : 0);
-    const results = [];
-    for (const attack of attacks) {
-        const roll = rollOne(attack.die);
-        calls.push(`rnd(${attack.die})`);
-        const hit = threshold > roll;
-        let damage = 0;
-        if (hit) {
-            damage = rollDice(attack.damn, attack.damd);
-            calls.push(`d(${attack.damn},${attack.damd})`);
-            // Physical attacks check knockback after rolling damage.
-            recordRandom(random, calls, 3);
-            recordRandom(random, calls, 6);
-            damage = reduceHeroContactDamage(
-                damage, state, rollOne, calls,
-            );
-            state.u.uhp = Math.max(0, (state.u.uhp ?? 1) - damage);
-        }
-        results.push({ ...attack, roll, threshold, hit, damage });
-    }
-    return { kind: 'pet-hero-attack', aggressor: pet, results };
-}
-
-function finishPetMovePlan(
+async function finishPetMovePlan(
     monster, state, plan, random, rollDice, rollOne, calls,
 ) {
     const {
         oldx, oldy, nix, niy, selectedInfo, reluctant, inventoryAction,
     } = plan;
     if (selectedInfo & ALLOW_U) {
-        const attack = petAttacksHero(
-            monster, state, random, rollDice, rollOne, calls,
+        if (monster.mleashed) {
+            const pronoun = MONSTER_FLAGS2[monster.mnum] & M2_NEUTER
+                ? 'its' : monster.female ? 'her' : 'his';
+            const subject = canProjectMonster(monster, monster.mx, monster.my)
+                ? monsterSentenceSubject(monster) : 'It';
+            await plineWithContinuation(`${subject} breaks loose of ${pronoun} leash!`);
+            releaseMonsterLeash(monster, state);
+        }
+        const attack = await beginHeroAttackOrStrikingWand(
+            monster, state, random, rollOne, rollDice, calls,
         );
         return {
-            oldx, oldy, x: oldx, y: oldy, moved: false, attack,
-            deferredPostFlee: true,
+            oldx, oldy, x: oldx, y: oldy, moved: false, ...attack,
+            actionCompleted: true, deferredPostFlee: true,
             ...inventoryAction,
         };
     }
@@ -3530,9 +3509,11 @@ function maybeBeginOffensiveWand(
 async function beginHeroAttackOrStrikingWand(
     monster, state, random, rollOne, rollDice, calls,
 ) {
+    if (monster === state.u.usteed) return { attack: null };
     const threshold = monsterAttackThreshold(
         monster, state, rollOne, calls,
     );
+    await tryDemonSummon(monster, state, random);
     const offensive = maybeBeginOffensiveWand(
         monster, state, random, calls,
     );
@@ -6982,7 +6963,7 @@ async function completeMovedMonsterAction(
     }
     // dog_move() reports MMOVE_MOVED even when candidate selection leaves
     // a pet on its original square, so postmov() still rechecks a trap there.
-    if (!trapAlreadyHandled && !movement.swallowedHold
+    if (!trapAlreadyHandled && !movement.swallowedHold && !movement.actionCompleted
         && (movement.moved || monster?.pet || monster?.mtame))
         triggerMonsterTrap(
             monster, state, movement, random, rollDice, rollOne, calls,
@@ -7799,7 +7780,7 @@ export async function resumeDeferredPetRangedNoise(
     const deferred = action?.movement;
     if (!deferred?.deferredPetRangedNoise) return action;
     const monster = action.monster;
-    const movement = finishPetMovePlan(
+    const movement = await finishPetMovePlan(
         monster, state, deferred.petMovePlan,
         random, rollDice, rollOne, action.calls,
     );

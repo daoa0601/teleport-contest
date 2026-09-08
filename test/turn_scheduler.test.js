@@ -42,6 +42,48 @@ test('a monster\'s poisoned weapon weakens the hero during an ordinary turn', as
     assert.ok(game.u.acurr.a[A_STR] < strength);
 });
 
+test('a water demon uses the enchantment of its actual wielded weapon', async () => {
+    const damage = [];
+    for (const spe of [0, 8]) {
+        freshTurnRoom();
+        game.u.uhp = game.u.uhpmax = 100;
+        const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
+        demon.mpeaceful = false;
+        demon.movement = 12;
+        equipMonsterObject(demon, knownObject(CLUB, { spe }), W_WEP);
+        initRng(2n);
+        pushKeys('m.                    ');
+
+        await moveloop_core();
+        await moveloop_core();
+
+        assert.equal(!!game.program_state.gameover, false);
+        damage.push(100 - game.u.uhp);
+    }
+    assert.ok(damage[1] > damage[0], 'the enchanted club should deal more damage');
+});
+
+test('a healthy hero survives repeated water-demon attacks', async () => {
+    const input = freshTurnRoom();
+    const startingTurn = game.moves;
+    game.u.uhp = game.u.uhpmax = 1000;
+    const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
+    demon.mpeaceful = false;
+    demon.movement = 12;
+    initRng(2n);
+
+    for (let turn = 0; turn < 3; turn++) {
+        input.clear();
+        pushKeys('m.                    ');
+        await moveloop_core();
+        await moveloop_core();
+    }
+
+    assert.equal(!!game.program_state.gameover, false);
+    assert.ok(game.u.uhp > 0 && game.u.uhp < game.u.uhpmax);
+    assert.ok(game.moves >= startingTurn + 3, 'three turns should have elapsed');
+});
+
 test('a cockatrice hiss starts petrification during an ordinary turn', async () => {
     freshTurnRoom();
     game.flags.moonphase = NEW_MOON;

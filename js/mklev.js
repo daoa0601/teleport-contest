@@ -1679,7 +1679,6 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         }
     }
 
-    let monsterWeaponQuantity;
     let hasMonsterInventory = false;
     const allowMonsterInventory = !(mmflags & NO_MINVENT);
     let skipCommonMonsterInventory = Is_rogue_level(game.u?.uz);
@@ -2543,10 +2542,6 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             (game.context.no_of_wizards || 0) + 1;
     }
     await initializeMonsterArmor(monster);
-    if (typeof monsterWeaponQuantity !== 'undefined') {
-        monster.weaponQuantity = monsterWeaponQuantity;
-        monster.weaponReady = false;
-    }
     if (isMimic) {
         monster.m_ap_type = M_AP_OBJECT;
         monster.mappearance = mimicInitialAppearance;

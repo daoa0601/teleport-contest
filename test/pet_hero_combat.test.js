@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { wearHeroAccessory } from '../js/accessory.js';
+import { NO_MINVENT } from '../js/const.js';
+import { tameMonster } from '../js/dog.js';
+import { game } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
+import { runMonsterAction } from '../js/monmove.js';
+import { LEASH, RIN_CONFLICT } from '../js/object_data.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { installPolymorphedHero } from './support/hero-state.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+
+test('a pet driven by Conflict breaks its leash and attacks the hero\'s current body', async () => {
+    freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10, flags: { verbose: false } });
+    installPolymorphedHero('floating eye');
+    wearHeroAccessory(addInventoryObject(RIN_CONFLICT), 'uleft');
+    const cat = await createMonsterAt('housecat', 11, 10, NO_MINVENT);
+    tameMonster(cat, game);
+    const leash = addInventoryObject(LEASH, { leashmon: cat.m_id });
+    cat.mleashed = 1;
+    const humanHealth = game.u.uhp;
+    const formHealth = game.u.mh;
+    pushKeys(' '.repeat(40));
+
+    await runMonsterAction(cat, game, range => Math.min(1, range - 1), count => count, () => 1);
+
+    assert.equal(game.u.uhp, humanHealth);
+    assert.ok(game.u.mh < formHealth);
+    assert.equal(cat.mcanmove, 0);
+    assert.equal(cat.mleashed, 0);
+    assert.equal(leash.leashmon, 0);
+});

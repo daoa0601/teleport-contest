@@ -32,6 +32,18 @@ const ELEMENTALS = [
     'air elemental', 'fire elemental', 'earth elemental', 'water elemental',
 ].map(name => MONSTER_NAME.indexOf(name));
 
+// C mhitu.c:summonmu(), before the demon chooses an offensive item or attacks.
+export async function tryDemonSummon(monster, state = game, random = rn2) {
+    if (monster.mcan || monster.cham >= 0
+        || !(MONSTER_FLAGS2[monster.mnum] & M2_DEMON)
+        || ['balrog', 'amorous demon'].includes(MONSTER_NAME[monster.mnum])) return null;
+    if (Math.abs(monster.mx - monster.mux) > 1
+        || Math.abs(monster.my - monster.muy) > 1) return null;
+    const inHell = !!state.dungeons?.[state.u.uz.dnum]?.flags?.hellish;
+    if (random(inHell ? 10 : 16) !== 0) return null;
+    return msummon(monster);
+}
+
 function monsterIsGone(mnum) {
     return !!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE);
 }

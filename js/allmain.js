@@ -3085,119 +3085,6 @@ async function waitForCurrentMonsterMore(fallbackMessage = '') {
     return key;
 }
 
-// C refs: mhitu.c mattacku()/summonmu()/hitmu() and uhitm.c
-// mhitm_knockback(). The bite damage is rolled before its message, while its
-// knockback checks happen after the player dismisses that message.
-async function waterDemonAdjacentAttack(monster) {
-    const calls = [];
-    rn2(5); calls.push(5); // first distfleeck()
-    rn2(16); calls.push(16); // summonmu() does not summon
-
-    const daggerStack = (monster.minvent || monster.inventory || [])
-        .find(object => object.otyp === DAGGER);
-    const quantity = daggerStack?.quan ?? daggerStack?.quantity
-        ?? monster.weaponQuantity ?? 1;
-    if (!monster.weaponReady) {
-        // AT_WEAP spends this attack slot wielding the carried dagger stack.
-        monster.weaponReady = true;
-
-        const clawRoll = rnd(21); calls.push('rnd(21)');
-        const clawHit = clawRoll < 28;
-        let clawDamage = 0;
-        if (clawHit) {
-            clawDamage = d(1, 3); calls.push('d(1,3)');
-            game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - clawDamage);
-            rn2(3); calls.push(3);
-            rn2(6); calls.push(6);
-        }
-
-        const biteRoll = rnd(22); calls.push('rnd(22)');
-        const biteHit = biteRoll < 28;
-        let biteDamage = 0;
-        if (biteHit) {
-            biteDamage = d(1, 3); calls.push('d(1,3)');
-        }
-
-        await waitForMonsterMore(
-            `The water demon wields ${quantity} daggers!  The water demon hits!`,
-        );
-        await pline('The water demon bites!');
-        if (biteHit) {
-            // hitmsg() owns the preceding --More--; damage is committed only
-            // after that message has been acknowledged.
-            game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - biteDamage);
-            rn2(3); calls.push(3);
-            rn2(6); calls.push(6);
-        }
-        return {
-            calls,
-            movement: {
-                oldx: monster.mx, oldy: monster.my,
-                x: monster.mx, y: monster.my, moved: false,
-                attack: {
-                    kind: 'water-demon-attack',
-                    results: [
-                        { type: 'claw', hit: clawHit, damage: clawDamage },
-                        { type: 'bite', hit: biteHit, damage: biteDamage },
-                    ],
-                },
-            },
-        };
-    }
-
-    const weaponRoll = rnd(20); calls.push('rnd(20)');
-    const weaponHit = weaponRoll < 28;
-    let weaponDamage = 0;
-    if (weaponHit) {
-        weaponDamage = d(1, 3); calls.push('d(1,3)');
-        const daggerDamage = rnd(4); calls.push('rnd(4)');
-        weaponDamage += daggerDamage;
-        game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - weaponDamage);
-        rn2(3); calls.push(3);
-        rn2(6); calls.push(6);
-    }
-
-    const clawRoll = rnd(21); calls.push('rnd(21)');
-    const clawHit = clawRoll < 28;
-    const clawDamage = clawHit ? d(1, 3) : 0;
-    if (clawHit) calls.push('d(1,3)');
-
-    await waitForMonsterMore(
-        'The water demon thrusts one of his daggers.  The water demon hits!',
-    );
-    if (clawHit) {
-        game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - clawDamage);
-        rn2(3); calls.push(3);
-        rn2(6); calls.push(6);
-    }
-    await waitForMonsterMore('The water demon hits!');
-
-    rn2(1); calls.push(1); // can_make_bones()
-    await waitForMonsterMore('You die...');
-    await pline('Do you want your possessions identified? [ynq] (n)');
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(51, 0);
-    const possessionAnswer = String.fromCharCode(await nhgetch()).toLowerCase();
-    await finishOrdinaryDeath({
-        killer: 'water demon', possessionAnswer,
-    });
-    game.context.move = 0;
-    return {
-        calls,
-        movement: {
-            oldx: monster.mx, oldy: monster.my,
-            x: monster.mx, y: monster.my, moved: false,
-            attack: {
-                kind: 'water-demon-attack',
-                results: [
-                    { type: 'weapon', hit: weaponHit, damage: weaponDamage },
-                    { type: 'claw', hit: clawHit, damage: clawDamage },
-                ],
-            },
-        },
-    };
-}
-
 function monsterBeamPositionIsValid(x, y) {
     return x >= 1 && x < COLNO && y >= 0 && y < ROWNO;
 }
@@ -3532,17 +3419,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     await performQuestExpulsion(game);
                     break;
                 }
-                continue;
-            }
-        }
-        const demonNearby = actor.mnum === 289
-            && Math.abs(actor.mx - (game.u?.ux ?? actor.mx)) <= 1
-            && Math.abs(actor.my - (game.u?.uy ?? actor.my)) <= 1;
-        if (demonNearby) {
-            const demonAction = await waterDemonAdjacentAttack(actor);
-            if (demonAction) {
-                actions.push({ monster: actor, ...demonAction });
-                if (game.program_state?.gameover) break;
                 continue;
             }
         }
@@ -5724,26 +5600,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             game._pending_message = '';
         }
         if (movement?.message) await queueTurnMessage(movement.message);
-        if (movement?.attack?.kind === 'pet-hero-attack'
-            && !game._suppressMessagesUntilInput) {
-            const messages = movement.attack.results.map(result => {
-                const verb = result.hit
-                    ? result.type === 'kick' ? 'kicks' : 'bites'
-                    : 'misses';
-                return `The saddled pony ${verb}!`;
-            });
-            if (game._pending_message && messages.length) {
-                const more = `${game._pending_message}  ${messages.shift()}--More--`;
-                await pline(more);
-                await flush_screen(1);
-                game.nhDisplay?.setCursor(more.length, 0);
-                let key;
-                do key = await nhgetch();
-                while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
-                game._pending_message = '';
-            }
-            for (const message of messages) await pline(message);
-        }
         if (movement?.deferredPostFlee) rn2(5);
         // C monmove.c:dochugw() interrupts an occupation when one actor has
         // newly become a visible threat within bolt range.  This happens
