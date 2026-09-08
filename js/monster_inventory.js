@@ -4,7 +4,7 @@
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import {
     I_SPECIAL, LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN,
-    DISMOUNT_FELL, NEED_WEAPON, W_SADDLE, W_WEP,
+    NEED_WEAPON, W_SADDLE, W_WEP,
 } from './const.js';
 import { place_object } from './floor_object.js';
 import { game } from './gstate.js';
@@ -14,8 +14,8 @@ import { removeObjectAndContentsFromBill } from './shk.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
 import { monsterCanEngulf } from './monster_data.js';
-import { dismountHero } from './steed.js';
 import { plineWithContinuation } from './display.js';
+import { updateMonsterEquipment } from './monster_equipment.js';
 
 export function clearMonsterCarriedObjectState(object) {
     if (!object) return;
@@ -118,10 +118,9 @@ export function unlinkMonsterObject(monster, object) {
 export async function removeObjectFromMonsterInventory(monster, object, state = game, {
     publish = plineWithContinuation,
 } = {}) {
-    const removedSaddle = !!(object.owornmask & W_SADDLE);
+    const worn = object.owornmask;
     if (!unlinkMonsterObject(monster, object)) return false;
-    if (removedSaddle && state.u.usteed === monster)
-        await dismountHero(DISMOUNT_FELL, { state, announce: publish });
+    if (worn) await updateMonsterEquipment(monster, object, false, state, { publish });
     return true;
 }
 

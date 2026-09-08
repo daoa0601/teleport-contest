@@ -3,11 +3,11 @@
 
 import { MFAST, MSLOW } from './const.js';
 import { MONSTER_MOVE } from './monster_data.js';
-import { SPEED_BOOTS } from './object_data.js';
+import { OBJECT_PROPERTY } from './object_data.js';
 
-function wearsSpeedBoots(monster) {
+function wearsSpeedItem(monster) {
     return (monster?.minvent || monster?.inventory || []).some(object =>
-        object?.otyp === SPEED_BOOTS && (object.owornmask ?? 0) !== 0);
+        OBJECT_PROPERTY[object.otyp] === 'fast' && (object.owornmask ?? 0) !== 0);
 }
 
 function naturalSpeed(monster) {
@@ -29,7 +29,7 @@ export function adjustMonsterSpeed(monster, amount) {
         if (monster.permspeed === MFAST) monster.permspeed = 0;
     }
 
-    monster.mspeed = wearsSpeedBoots(monster)
+    monster.mspeed = wearsSpeedItem(monster)
         ? MFAST : monster.permspeed ?? 0;
     return {
         amount,

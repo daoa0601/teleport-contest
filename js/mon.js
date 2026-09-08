@@ -15,11 +15,12 @@ import {
 } from './mondeath.js';
 import { splitMonster } from './monster_clone.js';
 import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_RESISTS,
+    MONSTER_FLAGS1, MONSTER_NAME,
     MONSTER_SYMBOL, monsterYoungerForm,
 } from './monster_data.js';
 import { place_object, stack_object } from './floor_object.js';
 import { changeMonsterForm } from './monster_polymorph.js';
+import { monsterHasFireResistance } from './monster_resistance.js';
 import { EGG } from './object_data.js';
 import {
     OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer,
@@ -43,7 +44,6 @@ const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_SALAMANDER = 329;
-const MR_FIRE = 0x01;
 const S_EEL = 57;
 
 function speciesWasGenocided(mnum, state) {
@@ -219,9 +219,7 @@ export function monsterLavaReaction(monster, state = game) {
     const likesLava = monsterLikesLava(monster);
     if (monsterInAir(monster, state) || (flags & M1_CLING) || likesLava)
         return { kind: 'safe' };
-    const fireResistant = !!(
-        (MONSTER_RESISTS[monster.mnum] ?? 0) & MR_FIRE
-    );
+    const fireResistant = monsterHasFireResistance(monster);
     return { kind: fireResistant ? 'scorch' : 'burn' };
 }
 

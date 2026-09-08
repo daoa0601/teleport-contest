@@ -117,7 +117,7 @@ import { wipeEngravingAt } from './engrave.js';
 import { moveVaultGuard } from './vault.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import {
-    checkMonsterGearNextTurn, findMonsterArmorClass, reassessMonsterArmor,
+    checkMonsterGearNextTurn, findMonsterArmorClass,
     nameMonsterForCreationArmorChecks,
 } from './monworn.js';
 import { inTown } from './room.js';
@@ -8085,20 +8085,6 @@ export function runQuietMonsterActions(
 ) {
     return actors.map(monster => {
         const calls = DISCARDED_CALL_LOG;
-        // C movemon_singlemon() reassesses newly acquired/replacement armor
-        // after movement debit but before hider state, Conflict, or dochug().
-        // Dressing is RNG-free and may freeze the actor for the armor delay.
-        const equipment = reassessMonsterArmor(monster);
-        if (equipment?.consumed) {
-            return {
-                monster, calls,
-                movement: {
-                    oldx: monster.mx, oldy: monster.my,
-                    x: monster.mx, y: monster.my,
-                    moved: false, equipment,
-                },
-            };
-        }
         // C mon.c:movemon_singlemon() debits movement before restrap().
         // These early returns belong only to is_hider() (M1_HIDE): a cobra
         // with M1_CONCEAL remains active after hiding beneath an object and

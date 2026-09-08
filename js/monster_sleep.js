@@ -1,13 +1,14 @@
 // Monster sleep resistance and timed sleep state.
 // C refs: mondata.h resists_sleep(), mon.c sleep_monst().
 
-import { MONSTER_FLAGS1, MONSTER_RESISTS } from './monster_data.js';
+import { MONSTER_FLAGS1 } from './monster_data.js';
+import { monsterResistanceBits } from './monster_resistance.js';
 
 const M1_BREATHLESS = 0x00000400;
 const MR_SLEEP = 0x04;
 
 export function monsterResistsSleep(monster) {
-    return !!((MONSTER_RESISTS[monster?.mnum] ?? 0) & MR_SLEEP)
+    return !!(monsterResistanceBits(monster) & MR_SLEEP)
         || !!monster?.sleepResistance
         || !!monster?.sleep_resistance
         || !!monster?.defendedSleep;

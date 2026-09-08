@@ -3,7 +3,10 @@
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
 
 import { armorBonus, armorSlotFor, dragonFormForArmor } from './armor.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, displayColorName, newsym, plineWithContinuation } from './display.js';
+import { inventoryItemDescription } from './invent.js';
+import { updateMonsterEquipment } from './monster_equipment.js';
+import { learnObjectType } from './object_knowledge.js';
 import { cansee } from './vision.js';
 import { heroIsDeaf } from './senses.js';
 import { surfaceName } from './terrain_name.js';
@@ -13,7 +16,7 @@ import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { rnl } from './rng.js';
 import { game } from './gstate.js';
 import {
-    MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SIZE,
+    MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL,
     monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands,
     monsterIsCentaur, monsterIsWhirly, monsterTypeName,
     monsterHornCount, monsterIsSlithy, monsterIsVerySmall,
@@ -24,7 +27,8 @@ import {
 } from './monster_inventory.js';
 import {
     AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
-    ALCHEMY_SMOCK, IRON_SHOES, MUMMY_WRAPPING, ROBE,
+    ALCHEMY_SMOCK, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT,
+    IRON_SHOES, MUMMY_WRAPPING, ROBE,
     OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_MATERIAL,
 } from './object_data.js';
 import {
@@ -39,6 +43,7 @@ const M2_NEUTER = 0x00040000;
 const MZ_SMALL = 1;
 const LEATHER = 7;
 const SPEED_BOOTS = 166;
+const S_MUMMY = MONSTER_SYMBOL[MONSTER_NAME.indexOf('kobold mummy')];
 
 const SLOT_MASK = Object.freeze({
     uamul: W_AMUL,
@@ -64,7 +69,9 @@ function monsterCanDress(monster, creation) {
         || (flags & M1_ANIMAL)) return false;
     // Creation is the source exception for skeletons and mummies. Other
     // mindless monsters cannot dress themselves later.
-    if ((flags & M1_MINDLESS) && !creation) return false;
+    if ((flags & M1_MINDLESS) && (!creation
+        || (MONSTER_SYMBOL[monster.mnum] !== S_MUMMY
+            && MONSTER_NAME[monster.mnum] !== 'skeleton'))) return false;
     return true;
 }
 
@@ -94,9 +101,11 @@ function monsterCreationWearSnapshotSlots(monster) {
 function slotAllowed(monster, slot) {
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     if (slot === 'uamul') return true;
-    if (slot === 'uarm' || slot === 'uarmu')
-        return monsterCanWearSuit(monster);
-    if (slot === 'uarmc') return monsterCanWearSuit(monster);
+    if (slot === 'uarm')
+        return monsterCanWearSuit(monster) || MONSTER_NAME[monster.mnum] === 'hobbit';
+    if (slot === 'uarmu') return monsterCanWearSuit(monster);
+    if (slot === 'uarmc')
+        return monsterCanWearSuit(monster) || monsterWrappingAllowed(monster.mnum);
     if (slot === 'uarmh') return !(flags & M1_NOHEAD);
     if (slot === 'uarmf')
         return !monsterIsSlithy(monster.mnum)
@@ -137,7 +146,7 @@ export function findMonsterArmorClass(monster) {
     return Math.max(-AC_MAX, Math.min(AC_MAX, armorClass));
 }
 
-function bestForSlot(monster, slot) {
+function bestForSlot(monster, slot, creation, state) {
     const mask = SLOT_MASK[slot];
     const old = wornInSlot(monster, mask);
     if (old?.cursed) return { old, best: old };
@@ -160,6 +169,18 @@ function bestForSlot(monster, slot) {
     for (const object of monster?.minvent || monster?.inventory || []) {
         if (armorSlotFor(object?.otyp) !== slot) continue;
         if ((object.owornmask ?? 0) && object !== old) continue;
+        if (slot === 'uarmc') {
+            if (MONSTER_SIZE[monster.mnum] > 2 && object.otyp !== MUMMY_WRAPPING) continue;
+            if (object.otyp === MUMMY_WRAPPING && monster.minvis
+                && !state.u.seeInvisible && !creation) continue;
+        }
+        if (slot === 'uarmh') {
+            if (object.otyp === HELM_OF_OPPOSITE_ALIGNMENT
+                && (monster.ispriest || monster.isminion)) continue;
+            if (monsterHornCount(monster.mnum) && OBJECT_MATERIAL[object.otyp] > LEATHER) continue;
+        }
+        if (slot === 'uarm' && !monsterCanWearSuit(monster)
+            && object.otyp !== ELVEN_MITHRIL_COAT) continue;
         if (best && preference(monster, best) >= preference(monster, object))
             continue;
         best = object;
@@ -167,40 +188,66 @@ function bestForSlot(monster, slot) {
     return { old, best };
 }
 
-function wearSlot(monster, slot, creation) {
+async function wearSlot(monster, slot, creation, state, publish) {
+    if (monster.mfrozen) return null;
     if (!slotAllowed(monster, slot)) return null;
     if (slot === 'uarmu' && ((monster.misc_worn_check ?? 0) & W_ARM))
         return null;
     const mask = SLOT_MASK[slot];
-    const { old, best } = bestForSlot(monster, slot);
+    if (slot === 'uarms' && OBJECT_BIMANUAL[monster.mw?.otyp]) return null;
+    const { old, best } = bestForSlot(monster, slot, creation, state);
     if (!best || best === old) return null;
 
+    const wasVisible = canSeeMonster(monster, monster.mx, monster.my);
+    const subject = monsterSentenceSubject(monster);
+    const autocurse = !best.cursed
+        && [DUNCE_CAP, HELM_OF_OPPOSITE_ALIGNMENT].includes(best.otyp);
     let delay = 0;
     if ((slot === 'uarm' || slot === 'uarmu')
         && ((monster.misc_worn_check ?? 0) & W_ARMC)) delay += 2;
     if (old) {
         delay += OBJECT_DELAY[old.otyp] ?? 0;
-        old.owornmask = (old.owornmask ?? 0) & ~mask;
-        old.worn = (old.owornmask ?? 0) !== 0;
+        old.owornmask = 0;
+        old.worn = false;
     }
-    monster.misc_worn_check = (monster.misc_worn_check ?? 0) | mask;
-    best.owornmask = (best.owornmask ?? 0) | mask;
-    best.worn = true;
-
     if (!creation) {
+        if (wasVisible) {
+            const oldName = old ? inventoryItemDescription(old) : '';
+            let newName = inventoryItemDescription(best);
+            if (newName.toLowerCase() === oldName.toLowerCase())
+                newName = newName.replace(/^an? /i, 'another ');
+            await publish(`${subject}${old ? ` removes ${oldName} and` : ''} puts on ${newName}.`);
+            if (autocurse)
+                await publish(`${subject}'s ${best.name} glows ${displayColorName('black', state)} for a moment.`);
+        }
         delay += OBJECT_DELAY[best.otyp] ?? 0;
         monster.mfrozen = delay;
         if (delay) monster.mcanmove = 0;
     }
+    if (old)
+        await updateMonsterEquipment(monster, old, false, state, { silently: creation, publish });
+    monster.misc_worn_check = (monster.misc_worn_check ?? 0) | mask;
+    best.owornmask = (best.owornmask ?? 0) | mask;
+    best.worn = true;
+    if (autocurse) {
+        best.blessed = false;
+        best.cursed = true;
+    }
+    await updateMonsterEquipment(monster, best, true, state, { silently: creation, publish });
+    if (!creation && wasVisible && !canSeeMonster(monster, monster.mx, monster.my)
+        && monster.minvis && !state.u.seeInvisible) {
+        await publish(`Suddenly you cannot see ${subject.replace(/^The /, 'the ')}.`);
+        learnObjectType(best.otyp, state);
+    }
     return { slot, mask, old, best, delay };
 }
 
-export function initializeMonsterArmor(monster) {
+export async function initializeMonsterArmor(monster, state = game) {
     if (!monsterCanDress(monster, true)) return [];
     monster.misc_worn_check ??= 0;
     const changes = [];
     for (const slot of WEAR_ORDER) {
-        const change = wearSlot(monster, slot, true);
+        const change = await wearSlot(monster, slot, true, state, plineWithContinuation);
         if (change) changes.push(change);
     }
     return changes;
@@ -365,7 +412,9 @@ export function checkMonsterGearNextTurn(monster) {
 
 // Hostile monsters wait to change armor while they believe the hero is close.
 // `consumed` says whether dressing used this turn.
-export function reassessMonsterArmor(monster) {
+export async function reassessMonsterArmor(monster, state = game, {
+    publish = plineWithContinuation,
+} = {}) {
     if (!((monster?.misc_worn_check ?? 0) & I_SPECIAL)) return null;
     const apparentX = Number.isFinite(monster.mux) ? monster.mux : 0;
     const apparentY = Number.isFinite(monster.muy) ? monster.muy : 0;
@@ -380,7 +429,7 @@ export function reassessMonsterArmor(monster) {
     if (monsterCanDress(monster, false)) {
         for (const slot of WEAR_ORDER) {
             if ((monster.mfrozen ?? 0) > 0) break;
-            const candidate = wearSlot(monster, slot, false);
+            const candidate = await wearSlot(monster, slot, false, state, publish);
             if (candidate && !change) change = candidate;
         }
     }

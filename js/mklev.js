@@ -2542,7 +2542,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         game.context.no_of_wizards =
             (game.context.no_of_wizards || 0) + 1;
     }
-    initializeMonsterArmor(monster);
+    await initializeMonsterArmor(monster);
     if (typeof monsterWeaponQuantity !== 'undefined') {
         monster.weaponQuantity = monsterWeaponQuantity;
         monster.weaponReady = false;
@@ -6852,7 +6852,7 @@ function createLuaLevelSession() {
                 } finally {
                     monsterInventories.pop();
                 }
-                if (monster) initializeMonsterArmor(monster);
+                if (monster) await initializeMonsterArmor(monster);
             }
             return monster;
         },

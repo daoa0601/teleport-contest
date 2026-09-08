@@ -2,7 +2,7 @@
 // C refs: zap.c resist() and mondata.c Resists_Elem().
 
 import {
-    W_ACCESSORY, W_ARM, W_ARMC, W_ARMOR, W_WEP,
+    W_ARM, W_WEP,
 } from './const.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
 import {
@@ -10,9 +10,7 @@ import {
     monsterIsVampireShifter,
 } from './monster_data.js';
 import {
-    ALCHEMY_SMOCK, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES,
-    RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE,
-    YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
+    BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES,
 } from './object_data.js';
 import { rn2 } from './rng.js';
 
@@ -30,12 +28,6 @@ const PM_BLACK_DRAGON = MONSTER_NAME.indexOf('black dragon');
 const ARTIFACT_BY_ID = new Map(
     ARTIFACT_DATA.map(artifact => [artifact.id, artifact]),
 );
-const FIRE_RESISTANCE_OBJECTS = new Set([
-    RED_DRAGON_SCALE_MAIL,
-    RED_DRAGON_SCALES,
-    RIN_FIRE_RESISTANCE,
-]);
-
 function artifactForObject(object) {
     return ARTIFACT_BY_ID.get(object?.oartifact) || null;
 }
@@ -55,7 +47,7 @@ function monsterWearsOneOf(monster, objectTypes, mask) {
         && !!((object?.owornmask ?? 0) & mask));
 }
 
-function monsterResistanceBits(monster) {
+export function monsterResistanceBits(monster) {
     return (MONSTER_RESISTS[monster?.mnum] ?? 0)
         | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
 }
@@ -68,12 +60,8 @@ export function monsterHasFireResistance(monster) {
     if (artifactForObject(monsterWeapon(monster))?.defense === 'fire')
         return true;
 
-    const wornSlots = W_ARMOR | W_ACCESSORY | W_WEP;
-    return monsterInventory(monster).some(object => {
-        if (artifactForObject(object)?.carriedDefense === 'fire') return true;
-        return FIRE_RESISTANCE_OBJECTS.has(object?.otyp)
-            && !!((object?.owornmask ?? 0) & wornSlots);
-    });
+    return monsterInventory(monster).some(object =>
+        artifactForObject(object)?.carriedDefense === 'fire');
 }
 
 export function monsterHasColdResistance(monster) {
@@ -105,26 +93,8 @@ export function monsterHasDrainResistance(monster) {
 }
 
 export function monsterHasAcidResistance(monster) {
-    const resistanceBits = monsterResistanceBits(monster);
-    if ((resistanceBits & MR_ACID) || monster?.acidResistance
-        || monster?.acid_resistance) return true;
-
-    const dragonArmor = monsterWearsOneOf(
-        monster,
-        [
-            YELLOW_DRAGON_SCALE_MAIL,
-            YELLOW_DRAGON_SCALES,
-        ],
-        W_ARMOR,
-    );
-    if (dragonArmor) return true;
-
-    return (monster?.minvent || monster?.inventory || []).some(object => {
-        const wornMask = object?.owornmask ?? 0;
-        const smock = object?.otyp === ALCHEMY_SMOCK
-            && !!(wornMask & W_ARMC);
-        return smock;
-    });
+    return !!(monsterResistanceBits(monster) & MR_ACID)
+        || !!monster?.acidResistance || !!monster?.acid_resistance;
 }
 
 export function monsterHasPoisonResistance(monster) {

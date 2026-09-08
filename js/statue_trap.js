@@ -134,7 +134,7 @@ function nameReleasedMonster(monster, statue) {
     monster.mextra = { ...(monster.mextra || {}), mgivenname: name };
 }
 
-function transferStatueContents(statue, monster, state) {
+async function transferStatueContents(statue, monster, state) {
     while (statue.contents?.length) {
         const object = statue.contents.shift();
         object.where = 'free';
@@ -142,7 +142,7 @@ function transferStatueContents(statue, monster, state) {
         object.ocontainer = null;
         addObjectToMonsterInventory(monster, object, state);
     }
-    initializeMonsterArmor(monster);
+    await initializeMonsterArmor(monster, state);
 }
 
 function deleteStatue(statue) {
@@ -185,7 +185,7 @@ async function animateTrapStatue(statue, x, y, state, shatter) {
         await pline('You feel guilty that the historic statue is now gone.');
         adjustHeroAlignment(-1, state);
     }
-    transferStatueContents(statue, monster, state);
+    await transferStatueContents(statue, monster, state);
     deleteStatue(statue);
     revealHeroWithoutCover(x, y, state);
     return { monster, unique: false };

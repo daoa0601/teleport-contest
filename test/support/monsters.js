@@ -7,6 +7,7 @@ import { tameMonster } from '../../js/dog.js';
 import { SADDLE } from '../../js/object_data.js';
 import { putSaddleOnMonster } from '../../js/steed.js';
 import { knownObject } from './game-objects.js';
+import { applyMonsterEquipmentProperties } from '../../js/monster_equipment.js';
 
 export async function createMonsterAt(species, x, y, flags = 0) {
     const mnum = typeof species === 'number' ? species : nameToMonster(species);
@@ -41,5 +42,6 @@ export function equipMonsterObject(monster, object, wornMask, state = game) {
         monster.saddle = carried;
         monster.saddled = true;
     }
+    if (wornMask) applyMonsterEquipmentProperties(monster, carried, true);
     return carried;
 }

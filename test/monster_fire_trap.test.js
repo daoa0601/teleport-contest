@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    FIRE_TRAP, MAGIC_TRAP, W_AMUL, W_ARM,
+    FIRE_TRAP, MAGIC_TRAP, W_AMUL,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
     resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { initializeMonsterArmor } from '../js/monworn.js';
 import {
     AMULET_OF_LIFE_SAVING, CORPSE, POT_OIL, RED_DRAGON_SCALE_MAIL,
     SCR_IDENTIFY, TOWEL,
@@ -65,15 +66,14 @@ test('a fire trap burns a vulnerable monster', async () => {
 
 test('worn fire resistance stops the flame but not an exploding potion',
     async () => {
-        const { monster } = await freshMonsterFireTrap();
+        const { monster } = await freshMonsterFireTrap({ species: 'soldier' });
         const potion = knownObject(POT_OIL, { where: 'monster' });
         const towel = knownObject(TOWEL, { spe: 2, where: 'monster' });
-        const armor = knownObject(RED_DRAGON_SCALE_MAIL, {
-            owornmask: W_ARM, where: 'monster',
-        });
+        const armor = knownObject(RED_DRAGON_SCALE_MAIL);
         addObjectToMonsterInventory(monster, potion, game);
         addObjectToMonsterInventory(monster, towel, game);
         addObjectToMonsterInventory(monster, armor, game);
+        await initializeMonsterArmor(monster);
         const messages = [];
         let fiveSidedRolls = 0;
         const random = range => {

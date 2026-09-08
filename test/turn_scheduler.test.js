@@ -8,18 +8,20 @@ import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
-    AMULET_OF_STRANGULATION, POT_PARALYSIS, WAN_MAGIC_MISSILE,
+    AMULET_OF_STRANGULATION, OBJECT_NAMES, POT_PARALYSIS, WAN_MAGIC_MISSILE,
 } from '../js/object_data.js';
 import {
     startHeroSickness, startHeroVomiting,
 } from '../js/hero_illness.js';
 import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
-import { addInventoryObject, chargedWand } from './support/game-objects.js';
+import { addInventoryObject, chargedWand, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
+import { checkMonsterGearNextTurn } from '../js/monworn.js';
+import { canSeeMonster } from '../js/display.js';
 
 function freshTurnArena() {
     freshGameplayRoom();
@@ -30,6 +32,25 @@ function freshTurnArena() {
     game.u.umovement = 12;
     return resetInputState();
 }
+
+test('a monster can put on an invisibility cloak during its turn', async () => {
+    freshTurnArena();
+    const soldier = await createMonsterAt('soldier', 12, 10, NO_MINVENT);
+    soldier.mpeaceful = 1;
+    soldier.movement = 12;
+    const cloak = addObjectToMonsterInventory(soldier,
+        knownObject(OBJECT_NAMES.indexOf('cloak of invisibility')));
+    checkMonsterGearNextTurn(soldier);
+    pushKeys('.                                .');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(cloak.worn, true);
+    assert.equal(canSeeMonster(soldier, soldier.mx, soldier.my), false);
+    assert.equal(soldier.mx, 12);
+    assert.equal(soldier.my, 10);
+});
 
 async function runUntilInput(inputGate, maxCycles) {
     const turns = (async () => {

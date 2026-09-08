@@ -167,7 +167,7 @@ export async function createBonesFromDeath(promptDeathQuestion) {
         giveHeroResistancesToMonster(monster, game);
         dropHeroInventoryForBones(x, y, { carrier: monster });
         addMummyWrapping(monster);
-        initializeMonsterArmor(monster);
+        await initializeMonsterArmor(monster);
         completeBonesMonster(monster, game);
         game._bonesSaved = saveBonesLevel();
         return game._bonesSaved;

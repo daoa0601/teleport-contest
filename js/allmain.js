@@ -3,6 +3,7 @@
 
 import { game } from './gstate.js';
 import { finishMonsterGrowth } from './monster_growth.js';
+import { reassessMonsterArmor } from './monworn.js';
 import { newMonsterHitPoints } from './monster_hit_points.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextIdent } from './ident.js';
@@ -3690,8 +3691,15 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 continue;
             }
         }
+        const equipment = await reassessMonsterArmor(actor, game, { publish: queueTurnMessage });
         game._deferVisibleMonsterContact = true;
-        const [action] = runQuietMonsterActions([actor], game);
+        const action = equipment?.consumed ? {
+            monster: actor, calls: [],
+            movement: {
+                oldx: actor.mx, oldy: actor.my, x: actor.mx, y: actor.my,
+                moved: false, equipment,
+            },
+        } : runQuietMonsterActions([actor], game)[0];
         game._deferVisibleMonsterContact = false;
         await resumeTrappedMonster(action);
         let { monster, movement } = action;

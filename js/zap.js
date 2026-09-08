@@ -35,6 +35,7 @@ import { buryFloorObjectsAt } from './buried_object.js';
 import { createCritters, maketrap } from './mklev.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { cancelMonster } from './monster_cancellation.js';
+import { monsterResistanceBits } from './monster_resistance.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
 import {
@@ -43,7 +44,7 @@ import {
 import { makePlural } from './object_grammar.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE,
-    MONSTER_NAME, MONSTER_RESISTS,
+    MONSTER_NAME,
     monsterIsNonliving,
 } from './monster_data.js';
 import {
@@ -925,7 +926,7 @@ export function applyFireToFloorAt(x, y, state = game) {
 }
 
 export function monsterHasElementalResistance(monster, mask, explicit) {
-    return !!((MONSTER_RESISTS[monster?.mnum] || 0) & mask)
+    return !!(monsterResistanceBits(monster) & mask)
         || !!monster?.[explicit];
 }
 
