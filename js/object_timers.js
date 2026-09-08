@@ -111,6 +111,7 @@ export function objectsInTimerGraph(state = game) {
     for (const object of state.level?.buriedObjects || []) visit(object);
     for (const object of state.inventory || []) visit(object);
     for (const object of state._tutorialState?.inventory || []) visit(object);
+    for (const reference of state._luaObjectRefs || []) visit(reference.deref());
     for (const object of state.migratingObjects || []) visit(object);
     for (const monster of state.level?.monsters || []) {
         for (const object of monster.minvent || []) visit(object);

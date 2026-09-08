@@ -2,6 +2,7 @@
 // C refs: u_init.c, attrib.c, dog.c, teleport.c, makemon.c.
 
 import { game } from './gstate.js';
+import { finishInventoryAddition } from './hero_inventory.js';
 import { setHeroSpecies } from './hero_species.js';
 import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
@@ -36,7 +37,7 @@ import {
     WAN_SLEEP, WAN_WISHING, GOLD_PIECE, AMULET_OF_YENDOR,
     TOUCHSTONE, FLINT, ROCK,
     OBJECT_NAMES, OBJECT_DESCRIPTIONS, OBJECT_BASES, OBJECT_CHARGED, OBJECT_WEIGHT,
-    OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, MAGIC_OBJECTS,
+    OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, OBJECT_MAGIC,
     ELVEN_SHORT_SWORD, ELVEN_ARROW, ELVEN_BOW, ELVEN_SPEAR, ELVEN_DAGGER,
     ELVEN_BROADSWORD, ELVEN_MITHRIL_COAT, ELVEN_LEATHER_HELM, ELVEN_SHIELD,
     ELVEN_BOOTS, ELVEN_CLOAK, ORCISH_ARROW, ORCISH_SPEAR, ORCISH_DAGGER,
@@ -497,6 +498,7 @@ export function uInitMisc(handednessRoll) {
     const g = game;
     const u = g.u || (g.u = {});
     u._propertySources = {};
+    u.uhave = {};
     initializeHeroSpecies(g);
     const hp = initialRoll(g.urole?.hpadv) + initialRoll(g.urace?.hpadv);
     const pw = initialRoll(g.urole?.enadv) + (g._initialPwBonus || 0)
@@ -817,7 +819,7 @@ function knowsClass(oclass, role) {
         SMALL_SHIELD,
     ]);
     for (let otyp = low; otyp < high; otyp++) {
-        if (MAGIC_OBJECTS.has(otyp)) continue;
+        if (OBJECT_MAGIC[otyp]) continue;
         if (oclass === ARMOR_CLASS && excludedArmor.has(otyp)) continue;
         if (oclass === WEAPON_CLASS) {
             const skill = OBJECT_SUBTYPE[otyp] || 0;
@@ -1000,13 +1002,17 @@ export function assignInventoryLetter(item) {
 }
 
 export function addInventoryItem(raw, presentation = null, observe = true) {
-    const item = inventoryItem(raw, presentation);
+    let item = Object.assign(raw, inventoryItem(raw, presentation));
     if (observe) item.dknown = true;
     const merge = game.inventory.find(other => mergable(other, item, game));
-    if (merge) return mergeObjectStacks(merge, item, game);
-    assignInventoryLetter(item);
-    item.where = 'inventory';
-    game.inventory.push(item);
+    if (merge) {
+        item = mergeObjectStacks(merge, item, game);
+    } else {
+        assignInventoryLetter(item);
+        item.where = 'inventory';
+        game.inventory.push(item);
+    }
+    finishInventoryAddition(item, game);
     attachCursedFigurineTimer(item, game);
     return item;
 }

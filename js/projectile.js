@@ -2,7 +2,7 @@
 // C ref: dothrow.c should_mulch_missile().
 
 import {
-    FLINT, HARD_GEM_TYPES, MAGIC_OBJECTS, OBJECT_NAMES, OBJECT_SUBTYPE,
+    FLINT, HARD_GEM_TYPES, OBJECT_MAGIC, OBJECT_NAMES, OBJECT_SUBTYPE,
 } from './object_data.js';
 import { rn2, rnl } from './rng.js';
 
@@ -32,7 +32,7 @@ export function destroyMulchedProjectile(object) {
 export function shouldMulchMissile(object, { monsterMoving = false } = {}) {
     if (!object || !projectileKind(object)
         || OBJECT_NAMES[object.otyp] === 'boomerang'
-        || MAGIC_OBJECTS.has(object.otyp)) return false;
+        || OBJECT_MAGIC[object.otyp]) return false;
 
     const erosion = Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0);
     const enchantment = object.spe ?? object.enchantment ?? 0;

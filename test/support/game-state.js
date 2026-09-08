@@ -58,6 +58,7 @@ export function freshGame({
         amax: { a: attributes.slice() },
         ualign: { type: 1, record: 10 },
         uconduct: {},
+        uhave: {},
     };
     initializeHeroSpecies(game);
     Object.assign(game.u, hero);

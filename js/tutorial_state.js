@@ -6,18 +6,11 @@ import {
     W_SWAPWEP, W_TOOL, W_WEP,
 } from './const.js';
 import { plineWithContinuation } from './display.js';
-import { artifactById } from './artifacts.js';
-import { deactivateArtifactProperty } from './artifact_invoke.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { game } from './gstate.js';
 import { removeHeroEquipment } from './hero_equipment.js';
+import { finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
 import { deleteObject } from './object_delete.js';
-import {
-    AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
-    FIGURINE, LOADSTONE, SPE_BOOK_OF_THE_DEAD,
-} from './object_data.js';
-import { curseObjectState } from './object_state.js';
-import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
 import { syncBlindness } from './senses.js';
 import { assignInventoryLetter } from './u_init.js';
 import { findArmorClass } from './armor.js';
@@ -29,11 +22,6 @@ const WORN_SLOTS = [
     ['uswapwep', W_SWAPWEP], ['uquiver', W_QUIVER], ['uamul', W_AMUL],
     ['ublindf', W_TOOL], ['uball', W_BALL], ['uchain', W_CHAIN],
 ];
-
-const UNIQUE_CARRIED_FLAGS = new Map([
-    [AMULET_OF_YENDOR, 'amulet'], [BELL_OF_OPENING, 'bell'],
-    [CANDELABRUM_OF_INVOCATION, 'menorah'], [SPE_BOOK_OF_THE_DEAD, 'book'],
-]);
 
 export async function changeTutorialState(state = game, restoring = false) {
     if (restoring) {
@@ -63,22 +51,11 @@ async function storeTutorialState(state) {
         object.owornmask = 0;
         object.worn = false;
         object.where = 'free';
-        object.pickup_prev = 0;
         state.inventory = state.inventory.filter(candidate => candidate !== object);
-        const carriedFlag = UNIQUE_CARRIED_FLAGS.get(object.otyp);
-        if (carriedFlag) state.u.uhave[carriedFlag] = false;
-        const artifact = artifactById(object.oartifact, state);
-        if (artifact?.questArtifact) state.u.uhave.questart = false;
-        if (artifact) await deactivateArtifactProperty(object, artifact, {
-            state, publish: plineWithContinuation,
-        });
-        if (object.otyp === LOADSTONE) curseObjectState(object);
-        if (object.otyp === FIGURINE)
-            stopObjectTimer(object, OBJECT_TIMER_KIND.FIG_TRANSFORM);
+        await finishInventoryRemoval(object, state);
         object.owornmask = mask;
     }
     state._lastInvNr = 51;
-    state.u.moreluck = 0;
     // The C struct copies its embedded attributes and skills but retains
     // monster pointers. Equipment aliases have been cleared above.
     const { ustuck, usteed, umonst, ...hero } = state.u;
@@ -109,6 +86,7 @@ async function restoreTutorialState(state) {
         object.where = 'inventory';
         // addinv_nomerge() must keep each original identity and stack.
         state.inventory.push(object);
+        finishInventoryAddition(object, state);
         restoreWornItem(object, state);
         attachCursedFigurineTimer(object, state);
     }

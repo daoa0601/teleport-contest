@@ -8,10 +8,11 @@ import {
     OBJECT_BASES, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
 } from '../object_data.js';
 import { MONSTER_NAME, monsterTypeName } from '../monster_data.js';
+import { game } from '../gstate.js';
 import { LuaTable, luaValueToJs } from './runtime.js';
 import { unwrapSelection } from './selection.js';
 
-const OBJECT_CLASS_SYMBOLS = [
+export const OBJECT_CLASS_SYMBOLS = [
     '', ']', ')', '[', '=', '"', '(', '%', '!', '?', '+', '/', '$', '*',
     '`', '0', '_', '.',
 ];
@@ -81,7 +82,7 @@ function objectClassForSymbol(symbol) {
     return objectClass;
 }
 
-export function objectTypeForName(name, classSymbol = null) {
+export function objectTypeForName(name, classSymbol = null, state = game) {
     const prefixes = [
         ['ring of ', 4],
         ['potion of ', 8],
@@ -89,9 +90,9 @@ export function objectTypeForName(name, classSymbol = null) {
         ['spellbook of ', 10],
         ['wand of ', 11],
     ];
-    let desiredClass = classSymbol
-        ? objectClassForSymbol(classSymbol) : null;
+    let desiredClass = Math.max(0, OBJECT_CLASS_SYMBOLS.indexOf(classSymbol));
     let target = String(name).toLowerCase();
+    if (!target) return 0; // STRANGE_OBJECT: request a random object.
     for (const [prefix, prefixClass] of prefixes) {
         if (!target.startsWith(prefix)) continue;
         target = target.slice(prefix.length);
@@ -102,9 +103,11 @@ export function objectTypeForName(name, classSymbol = null) {
         if (desiredClass && desiredClass !== objectClassForType(type)) continue;
         if (OBJECT_NAMES[type]?.toLowerCase() === target) return type;
     }
-    for (let type = 0; type < OBJECT_DESCRIPTIONS.length; type++) {
-        if (desiredClass && desiredClass !== objectClassForType(type)) continue;
-        if (OBJECT_DESCRIPTIONS[type]?.toLowerCase() === target) return type;
+    // C find_objtype() uses shuffled descriptions and does not constrain
+    // its description search by the requested object class.
+    const descriptions = state.objectDescriptions ?? OBJECT_DESCRIPTIONS;
+    for (let type = 0; type < descriptions.length; type++) {
+        if (descriptions[type]?.toLowerCase() === target) return type;
     }
     throw new Error(`unknown Lua object ${name}`);
 }

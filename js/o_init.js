@@ -9,7 +9,7 @@ import { rn2 } from './rng.js';
 import { bot, docrtRecalc, flush_screen } from './display.js';
 import { ATR_INVERSE, showTextPages } from './windows.js';
 import {
-    FLINT, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES,
+    FLINT, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH,
 } from './object_data.js';
 import {
     DISCOVERY_CLASS_ORDER, OBJECT_CLASS_LABELS, objectClassForType,
@@ -41,6 +41,7 @@ export function initializeObjectDescriptions() {
     const descriptionIndex = OBJECT_DESCRIPTIONS.map((_, index) => index);
     const colors = OBJECT_COLOR.slice();
     const materials = OBJECT_MATERIAL.slice();
+    const toughness = OBJECT_TOUGH.slice();
 
     const sapphire = objectId('sapphire');
     if (rn2(2)) {
@@ -69,6 +70,8 @@ export function initializeObjectDescriptions() {
                 [descriptionIndex[picked], descriptionIndex[current]];
             [colors[current], colors[picked]] =
                 [colors[picked], colors[current]];
+            [toughness[current], toughness[picked]] =
+                [toughness[picked], toughness[current]];
             if (shuffleMaterial) {
                 [materials[current], materials[picked]] =
                     [materials[picked], materials[current]];
@@ -95,6 +98,7 @@ export function initializeObjectDescriptions() {
     );
     game.objectColors = colors;
     game.objectMaterials = materials;
+    game.objectToughness = toughness;
     game.wandNothingDirection = rn2(2);
     return game.objectDescriptions;
 }

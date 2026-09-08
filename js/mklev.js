@@ -11,14 +11,15 @@ import {
 } from './lua/des.js';
 import { createSelectionApi } from './lua/selection.js';
 import {
-    LuaUserdata, luaTableToArray, objectToLuaTable,
+    luaTableToArray, objectToLuaTable,
 } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
+import { deleteObject } from './object_delete.js';
 import {
     place_object, remove_object, stack_object, updateCorpseIceTimer,
 } from './floor_object.js';
 import {
-    addBuriedObject, buryFloorObject, buryFloorObjectsAt,
+    addBuriedObject, buryObject, buryFloorObjectsAt,
 } from './buried_object.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { GameMap } from './game.js';
@@ -74,7 +75,7 @@ import {
     OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL, OBJECT_DIR,
     OBJECT_SPELL_LEVEL,
     OBJECT_SUBTYPE, OBJECT_MERGE, OBJECT_USES_KNOWN, OBJECT_WEIGHT,
-    CHARGED_OBJECTS,
+    OBJECT_CHARGED,
     WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT,
     GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS,
     AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE,
@@ -750,7 +751,7 @@ function mksobj_init(otmp, artif) {
         }
         break;
     case RING_CLASS:
-        if (CHARGED_OBJECTS.has(otyp)) {
+        if (OBJECT_CHARGED[otyp]) {
             blessorcurse(otmp, 3);
             if (rn2(10)) {
                 if (rn2(10) && bcsign(otmp)) {
@@ -3096,91 +3097,6 @@ export async function maketrap(x, y, typ) {
     return trap;
 }
 
-function containingObject(target, state = game) {
-    return objectsInTimerGraph(state).find(object =>
-        object !== target && object.contents?.includes(target));
-}
-
-function extractObjectFromGraph(object, state = game) {
-    const where = object.where;
-    const x = object.ox, y = object.oy;
-    let removed = false;
-    if (where === 'floor') {
-        const pile = state.level?.objects?.[x]?.[y];
-        const index = pile?.indexOf(object) ?? -1;
-        if (index >= 0) {
-            pile.splice(index, 1);
-            removed = true;
-        }
-    } else if (where === 'buried') {
-        const index = state.level?.buriedObjects?.indexOf(object) ?? -1;
-        if (index >= 0) {
-            state.level.buriedObjects.splice(index, 1);
-            removed = true;
-        }
-    } else if (where === 'contained') {
-        const container = containingObject(object, state);
-        const index = container?.contents?.indexOf(object) ?? -1;
-        if (index >= 0) {
-            container.contents.splice(index, 1);
-            container.owt = objectWeight(container);
-            removed = true;
-        }
-    } else if (where === 'inventory') {
-        const index = state.inventory?.indexOf(object) ?? -1;
-        if (index >= 0) {
-            state.inventory.splice(index, 1);
-            removed = true;
-        }
-    } else if (where === 'minvent') {
-        for (const monster of state.level?.monsters || []) {
-            const lists = new Set([monster.minvent, monster.inventory]);
-            for (const list of lists) {
-                const index = list?.indexOf(object) ?? -1;
-                if (index >= 0) {
-                    list.splice(index, 1);
-                    removed = true;
-                }
-            }
-        }
-    }
-    stopAllObjectTimers(object);
-    object.where = 'gone';
-    object.buried = false;
-    object.ox = object.oy = 0;
-    return { removed, where, x, y };
-}
-
-function buryContainedObject(object, container, x, y, state = game) {
-    if (objectResistsDestruction(object, 0, 0)) return false;
-    const index = container.contents?.indexOf(object) ?? -1;
-    if (index >= 0) container.contents.splice(index, 1);
-    container.owt = objectWeight(container);
-    object.where = 'free';
-    object.ox = x;
-    object.oy = y;
-
-    if (object.lamplit && object.otyp !== POT_OIL) {
-        object.lamplit = false;
-        stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
-        state.vision_full_recalc = 1;
-    }
-    if (object.otyp === ROCK || object.otyp === BOULDER) {
-        extractObjectFromGraph(object, state);
-        return true;
-    }
-    if (object.otyp !== CORPSE
-        && (OBJECT_MATERIAL[object.otyp] ?? Infinity) <= 8
-        && !objectResistsDestruction(object, 5, 95)) {
-        scheduleObjectTimer(
-            object, OBJECT_TIMER_KIND.ROT_ORGANIC,
-            (state.moves ?? 0) + 250 + rnd(250), state,
-        );
-    }
-    addBuriedObject(object, x, y, state);
-    return true;
-}
-
 // revive_corpse() reaches fill_pit() only after its visible or audible
 // presentation has completed.
 export function finishBuriedZombieTimer(event, state = game) {
@@ -3473,15 +3389,16 @@ export function runClaimedObjectRotTimer(claimed, state = game) {
     if (kind === OBJECT_TIMER_KIND.ROT_ORGANIC) {
         while (object.contents?.length) {
             const content = object.contents[0];
-            if (!buryContainedObject(
-                content, object, object.ox, object.oy, state,
-            )) {
+            content.ox = object.ox;
+            content.oy = object.oy;
+            if (buryObject(content, state) === false) {
                 return { kind: 'blocked-organic-rot', object };
             }
         }
     }
-    const location = extractObjectFromGraph(object, state);
-    return { kind, object, ...location };
+    const { where, ox: x, oy: y } = object;
+    deleteObject(object, state);
+    return { kind, object, where, x, y };
 }
 
 function make_engr_at(
@@ -6280,7 +6197,7 @@ async function createLuaObject(
             addObjectToMonsterInventory(parentMonster, object, game);
     } else {
         if (options.lit) beginObjectBurn(object);
-        if (options.buried && buryFloorObject(object) === null) object = null;
+        if (options.buried && buryObject(object) === null) object = null;
     }
     if (!object) return null;
     if (options.contents && typeof options.contents === 'object')
@@ -6551,40 +6468,6 @@ async function ensureWaysOut() {
     }
 }
 
-function luaObjectValue(object) {
-    if (!object) return null;
-    const rawObject = value => value instanceof LuaUserdata
-        ? value.value : value;
-    return new LuaUserdata(object, {
-        __index: {
-            addcontent: (self, value) => addToContainer(
-                rawObject(self), rawObject(value),
-            ),
-            class: self => objectToLuaTable({
-                material: OBJECT_MATERIAL[rawObject(self).otyp] === 19
-                    ? 'glass' : 'other',
-            }),
-            start_timer: (self, kind, timeout) => scheduleObjectTimer(
-                rawObject(self), String(kind),
-                (game.moves ?? 0) + Number(timeout), game,
-            ),
-            stop_timer: (self, kind) => stopObjectTimer(
-                rawObject(self), String(kind),
-            ),
-            totable: self => objectToLuaTable({
-                ox: rawObject(self).ox,
-                oy: rawObject(self).oy,
-            }),
-        },
-    });
-}
-
-function newLuaObject(name) {
-    const type = objectTypeForName(String(name));
-    rn2((OBJECT_PROB[type] || 0) + 1);
-    return luaObjectValue(mksobj(type, true, false));
-}
-
 function createLuaLevelSession() {
     const wholeLevel = {
         xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
@@ -6600,7 +6483,7 @@ function createLuaLevelSession() {
     const invokeObjectContents = async (callback, object) => {
         containers.push(object);
         try {
-            await luaState.callValueAsync(callback, [luaObjectValue(object)]);
+            await luaState.callValueAsync(callback, [luaState.objects.wrap(object)]);
         } finally {
             containers.pop();
         }
@@ -6827,7 +6710,7 @@ function createLuaLevelSession() {
             if (options.stocked)
                 await fillEmptySpecialMaze(context, mappedContexts);
         },
-        object: async options => luaObjectValue(await createLuaObject(
+        object: async options => luaState.objects.wrap(await createLuaObject(
             context,
             options,
             containers.at(-1) ?? null,
@@ -6884,7 +6767,6 @@ function createLuaLevelSession() {
             },
         },
         des: createDesBindings(operations, selectionApi.wrap),
-        obj: { new: name => newLuaObject(name) },
         selection: selectionApi.bindings,
     };
     return {
@@ -6906,6 +6788,9 @@ function createLuaLevelSession() {
         },
         bindState(state) {
             luaState = state;
+            state.objects.toAbsolute = (x, y) => ({
+                x: x + context.xstart, y: y + context.ystart,
+            });
             active.align = luaTableToArray(state.getGlobal('align'));
         },
         beginRoom() {
@@ -6955,7 +6840,6 @@ async function beginLuaThemerooms() {
         );
         themedLuaSessions.set(state, session);
     } else {
-        lifecycle.refreshUser(state, game);
         session.beginLevel(active, { special: false });
     }
 

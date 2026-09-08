@@ -1,11 +1,12 @@
-import { COLNO, Invocation_lev, ROWNO } from '../const.js';
+import { COLNO, ROWNO } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
-import { depth } from '../hacklib.js';
 import { commandKeyDescription } from '../command_keys.js';
 import { parseNethackrc } from '../options.js';
 import { rn2 } from '../rng.js';
 import { changeTutorialState } from '../tutorial_state.js';
 import { luaPline, luaText } from './messages.js';
+import { LuaHeroTable } from './hero.js';
+import { createObjectApi } from './objects.js';
 import {
     LuaState, LuaTable, luaType, luaTableToArray, luaTableToObject, luaValueToJs,
     objectToLuaTable,
@@ -13,15 +14,9 @@ import {
 
 const CALLBACK_NAMES = ['cmd_before', 'level_enter', 'level_leave', 'end_turn'];
 
-function bindingsFor(gameState, lifecycle, additionalBindings = {}) {
+function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
     const { nh: additionalNh = {}, ...remainingBindings }
         = additionalBindings;
-    const roleKey = gameState.urole?.key;
-    const roleName = gameState.urole?.name?.m
-        ?? gameState.u?.role
-        ?? (roleKey
-            ? roleKey[0].toUpperCase() + roleKey.slice(1)
-            : undefined);
     const parseConfig = line => {
         const parsed = parseNethackrc(String(line));
         Object.assign(gameState.flags || (gameState.flags = {}), parsed.flags);
@@ -48,19 +43,10 @@ function bindingsFor(gameState, lifecycle, additionalBindings = {}) {
             ...additionalNh,
         },
         nhc: { COLNO, ROWNO },
-        u: {
-            ...(gameState.u || {}),
-            moves: gameState.moves,
-            dnum: gameState.u?.uz?.dnum,
-            dlevel: gameState.u?.uz?.dlevel,
-            uhave_amulet: Number(!!gameState.u?.uhave?.amulet),
-            depth: depth(gameState.u?.uz, gameState.dungeons),
-            invocation_level: Invocation_lev(gameState.u?.uz),
-            role: roleName,
-        },
+        u: new LuaHeroTable(gameState, objects),
         des: {},
         selection: {},
-        obj: {},
+        obj: objects.bindings,
         ...remainingBindings,
     };
 }
@@ -74,7 +60,9 @@ export class LuaLifecycle {
     }
 
     createState(gameState, bindings = {}) {
-        const state = new LuaState(bindingsFor(gameState, this, bindings));
+        const objects = createObjectApi(gameState);
+        const state = new LuaState(bindingsFor(gameState, this, objects, bindings), objects.destroy);
+        state.objects = objects;
         state.execute(LUA_SOURCES['nhlib.lua'], 'nhlib.lua');
         return state;
     }
@@ -112,7 +100,6 @@ export class LuaLifecycle {
             this.unavailableHooks.add(name);
             return;
         }
-        this.refreshUser(this.core, gameState);
         await this.core.callValueAsync(hook, []);
         this.syncVariables(gameState);
     }
@@ -144,7 +131,6 @@ export class LuaLifecycle {
 
     async runCallbacks(gameState, name, ...args) {
         if (!this.core || !this.callbackCounts.get(name)) return true;
-        this.refreshUser(this.core, gameState);
         const result = await this.core.callValueAsync(
             this.core.getGlobal('nh_callback_run'), [name, ...args],
         );
@@ -199,10 +185,6 @@ export class LuaLifecycle {
         state.execute(source, filename);
         this.themed.set(dungeonNumber, { gameState, state });
         return state;
-    }
-
-    refreshUser(state, gameState) {
-        state.setGlobal('u', bindingsFor(gameState, this).u);
     }
 
     syncVariables(gameState) {

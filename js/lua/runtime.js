@@ -94,6 +94,7 @@ export class LuaUserdata {
     get(key) {
         const index = this.metatable.__index;
         if (typeof index === 'function') return index(this, key);
+        if (index instanceof LuaTable) return index.get(key);
         return index?.[key] ?? null;
     }
 
@@ -334,8 +335,9 @@ function binaryValue(operator, left, right) {
 }
 
 export class LuaState {
-    constructor(bindings = {}) {
+    constructor(bindings = {}, cleanup = null) {
         this.destroyed = false;
+        this.cleanup = cleanup;
         this.globals = new Environment();
         this.installStandardLibrary();
         for (const [name, value] of Object.entries(bindings))
@@ -412,8 +414,13 @@ export class LuaState {
     }
 
     destroy() {
-        this.destroyed = true;
-        this.globals = null;
+        if (this.destroyed) return;
+        try {
+            this.cleanup?.();
+        } finally {
+            this.destroyed = true;
+            this.globals = null;
+        }
     }
 
     getGlobal(name) {

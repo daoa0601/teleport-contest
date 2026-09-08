@@ -433,8 +433,13 @@ export function endObjectBurn(
     }
     const timer = stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
     if (!timer || !Number.isFinite(timer.deadline)) return false;
-    object.age = (object.age ?? 0)
-        + Math.max(0, timer.deadline - currentTurn);
+    return cleanupObjectBurn(object, timer.deadline, state, currentTurn);
+}
+
+// C cleanup_burn(), also called when Lua stops a burning object's timer.
+export function cleanupObjectBurn(object, deadline, state = game, currentTurn = state.moves ?? 0) {
+    if (!object.lamplit) return false;
+    object.age = (object.age ?? 0) + deadline - currentTurn;
     object.lamplit = false;
     state.vision_full_recalc = 1;
     return true;

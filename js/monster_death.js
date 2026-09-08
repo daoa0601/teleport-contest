@@ -6,7 +6,7 @@ import {
     G_NOCORPSE, Is_rogue_level,
     IS_POOL,
 } from './const.js';
-import { buryFloorObject } from './buried_object.js';
+import { buryObject } from './buried_object.js';
 import {
     canProjectMonster, newsym, plineWithContinuation, unmap_invisible,
 } from './display.js';
@@ -316,7 +316,7 @@ export async function createMonsterRemains(
     if (corpseForm !== monster.mnum)
         corpse.age = (corpse.age ?? state.moves ?? 1) - 51;
     if (buried) {
-        const result = buryFloorObject(corpse, state);
+        const result = buryObject(corpse, state);
         if (result === null) return null;
         if (result === true) return corpse;
     }

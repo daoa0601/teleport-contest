@@ -24,7 +24,7 @@ const persistentNames = `
     flying fruitName gamelog iflags in_mk_themerooms in_mklev initAlignment
     inventory invisible js juiblex_level knox_level lastStrTurn level
     levitating made_branch maxSkill medusa_level migratingObjects mines_dnum mode moves
-    multi mvitals name nethackrc nh_lua_variables objectColors objectDescriptionIndex objectDescriptions objectMaterials
+    multi mvitals name nethackrc nh_lua_variables objectColors objectDescriptionIndex objectDescriptions objectMaterials objectToughness
     oracle_level plname polymorphControl preferred_pet protectionFromShapeChangers quest_dnum quest_status
     race reflecting rndencode rogue_level sanctum_level seer_turn skill
     smeq sokoban_dnum specialLevels spells splev_align stairs startingPet
@@ -39,7 +39,7 @@ const persistentNames = `
 const transientNames = `
     _armorClassDirtyAfterDelayedFrame _cannedCommands _capacityDirty _cursorOverride _deathSurvivalHeroTookTimePending _deathSurvivalRunmodeDelayPending _deathSurvivedMessagePending
     _deferVisibleMonsterContact _delayedAction _heroMeleeThisCommand _heroTimePending _interruptedMultiActionDebt _lastMonsterAllocations
-    _lastMonsterScan _liveQuietTurnConsumed _liveQuietTurnRequested _migratingMonsters _multi _occupation _ordinaryDescentLive
+    _lastMonsterScan _liveQuietTurnConsumed _liveQuietTurnRequested _luaObjectRefs _migratingMonsters _multi _occupation _ordinaryDescentLive
     _pendingAngryGodOutcome _pendingDemigodIntervention _pendingFireRayDamage _pendingOffensivePotionEffect _pending_message _prayerHeroTookTimePending
     _queuedHelplessRecoveryMessage _retained_message _runState _samuraiLiveScheduler _saveExitPending _screen_output _silentPrefixRetainedTopline
     _statusAcOverride _statusDeafOverride _statusGoldOverride _statusHpOverride _statusProjectedAc _statusTurnOverride _suppressMapStatusForFlush

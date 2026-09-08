@@ -43,12 +43,10 @@ while ((match = entryPattern.exec(preprocessed))) {
     ]);
 }
 
-// objects.h ends its description initializer with a null/null sentinel which
-// is not part of objects[].  The configured contest table has 481 objects.
+// objects.h ends with a null/null sentinel which is not part of objects[].
 if (entries.at(-1)?.[0] === null && entries.at(-1)?.[1] === null)
     entries.pop();
-if (entries.length !== 481)
-    throw new Error(`expected 481 configured objects, found ${entries.length}`);
+if (!entries.length) throw new Error('objects.h produced no object descriptions');
 
 const names = entries.map(([name]) => name);
 const descriptions = entries.map(([, description]) => description);
@@ -56,21 +54,15 @@ const objectInitializers = execFileSync(compiler, [
     '-E', '-P', '-DOBJECTS_INIT', '-DMAIL_STRUCTURES',
     '-include', 'color.h', `-I${includeDir}`, source,
 ], { encoding: 'utf8' });
-const colors = objectInitializers.split('\n')
+const initializerFields = objectInitializers.split('\n')
     .map(line => line.trim())
     .filter(line => line.startsWith('{') && line.endsWith('},'))
     .map(line => {
         const fields = line.slice(1, -2).split(',').map(field => field.trim());
         if (fields.length !== 33)
             throw new Error(`expected 33 object initializer fields: ${line}`);
-        return Number(fields[20]); // struct objclass.oc_color
+        return fields;
     });
-if (colors.length !== 481 || colors.some(color => !Number.isInteger(color)))
-    throw new Error(`expected 481 configured object colors, found ${colors.length}`);
-const initializerFields = objectInitializers.split('\n')
-    .map(line => line.trim())
-    .filter(line => line.startsWith('{') && line.endsWith('},'))
-    .map(line => line.slice(1, -2).split(',').map(field => field.trim()));
 function parseIntegerInitializer(value) {
     if (/^-?\d+$/.test(value)) return Number(value);
     const symbolic = {
@@ -86,14 +78,19 @@ function parseIntegerInitializer(value) {
         + Number(match[3]);
     match = value.match(/^(-?\d+)\s*\*\s*(-?\d+)$/);
     if (match) return Number(match[1]) * Number(match[2]);
+    match = value.match(/^\(\s*(-?\d+)\s*>=\s*(-?\d+)\s*\)$/);
+    if (match) return Number(Number(match[1]) >= Number(match[2]));
     return NaN;
 }
 
 const numericField = (index, label) => {
     const values = initializerFields.map(fields =>
         parseIntegerInitializer(fields[index]));
-    if (values.length !== 481 || values.some(value => !Number.isInteger(value)))
-        throw new Error(`expected 481 configured ${label} values, found ${values.length}`);
+    if (values.length !== entries.length)
+        throw new Error(`expected ${entries.length} ${label} values, found ${values.length}`);
+    const invalid = values.findIndex(value => !Number.isInteger(value));
+    if (invalid >= 0)
+        throw new Error(`invalid ${label} for ${names[invalid]}: ${initializerFields[invalid][index]}`);
     return values;
 };
 const spellCategories = initializerFields.map(fields => ({
@@ -172,6 +169,25 @@ const costs = numericField(23, 'oc_cost');
 const smallDamage = numericField(24, 'oc_wsdam');
 const largeDamage = numericField(25, 'oc_wldam');
 const hitBonuses = numericField(26, 'oc_hitbon');
+const initialKnown = numericField(3, 'oc_name_known');
+const colors = numericField(20, 'oc_color');
+const magic = numericField(7, 'oc_magic');
+const unique = numericField(9, 'oc_unique');
+const nowish = numericField(10, 'oc_nowish');
+const tough = numericField(12, 'oc_tough');
+const propertyIds = new Map([...readFileSync(join(includeDir, 'prop.h'), 'utf8')
+    .matchAll(/^\s*(\w+)\s*=\s*(\d+)\s*,/gm)]
+    .map(([, name, value]) => [name, Number(value)]));
+const objectPropertyIds = initializerFields.map(fields => {
+    if (fields[17] === '0') return 0;
+    const id = propertyIds.get(fields[17]);
+    if (id === undefined) throw new Error(`unknown property id ${fields[17]}`);
+    return id;
+});
+const materials = readFileSync(join(root, 'nethack-c/upstream/src/decl.c'), 'utf8')
+    .match(/const char \*materialnm\[\]\s*=\s*\{([\s\S]*?)\};/)[1];
+const materialNames = [...materials.matchAll(/"(?:\\.|[^"\\])*"/g)]
+    .map(match => JSON.parse(match[0]));
 const generated = [
     begin,
     `export const OBJECT_NAMES = ${JSON.stringify(names)};`,
@@ -179,12 +195,19 @@ const generated = [
     `export const OBJECT_COLOR = ${JSON.stringify(colors)};`,
     `export const OBJECT_MERGE = ${JSON.stringify(merges)};`,
     `export const OBJECT_USES_KNOWN = ${JSON.stringify(usesKnown)};`,
+    `export const OBJECT_INITIAL_KNOWN = ${JSON.stringify(initialKnown)};`,
+    `export const OBJECT_MAGIC = ${JSON.stringify(magic)};`,
+    `export const OBJECT_UNIQUE = ${JSON.stringify(unique)};`,
+    `export const OBJECT_NOWISH = ${JSON.stringify(nowish)};`,
+    `export const OBJECT_TOUGH = ${JSON.stringify(tough)};`,
     `export const OBJECT_CHARGED = ${JSON.stringify(charged)};`,
     `export const OBJECT_BIMANUAL = ${JSON.stringify(bimanual)};`,
     `export const OBJECT_DELAY = ${JSON.stringify(delays)};`,
     `export const OBJECT_SPELL_LEVEL = ${JSON.stringify(spellLevels)};`,
     `export const OBJECT_SPELL_CATEGORY = ${JSON.stringify(spellCategories)};`,
     `export const OBJECT_PROPERTY = ${JSON.stringify(objectProperties)};`,
+    `export const OBJECT_PROPERTY_ID = ${JSON.stringify(objectPropertyIds)};`,
+    `export const OBJECT_MATERIAL_NAMES = ${JSON.stringify(materialNames)};`,
     `export const OBJECT_NUTRITION = ${JSON.stringify(nutrition)};`,
     `export const OBJECT_WEIGHT = ${JSON.stringify(weights)};`,
     `export const OBJECT_COST = ${JSON.stringify(costs)};`,
