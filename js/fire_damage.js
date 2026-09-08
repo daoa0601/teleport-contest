@@ -9,42 +9,22 @@ import { heroIsBlind } from './senses.js';
 import { igniteItems } from './light.js';
 import { destroyLavaFloorObjects } from './trap.js';
 import { deleteObject } from './object_delete.js';
+import { erodeObject } from './object_erosion.js';
 import { objectClassForType } from './object_knowledge.js';
 import { makePlural } from './object_grammar.js';
 import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import { monsterTypeName } from './monster_data.js';
 import {
-    BAG_OF_TRICKS, CHEST, FIRE_HORN, ICE_BOX, LARGE_BOX,
-    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE, POT_OIL,
-    RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE,
+    BAG_OF_TRICKS, CHEST, ICE_BOX, LARGE_BOX,
+    OBJECT_MATERIAL, OBJECT_NAMES, POT_OIL,
     SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, STATUE,
-    TALLOW_CANDLE, WAN_FIRE, WAX_CANDLE,
 } from './object_data.js';
 import { rnl, rn2 } from './rng.js';
 import { couldsee } from './vision.js';
 
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const TOOL_CLASS = 6;
 const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
-const BALL_CLASS = 15;
-const CHAIN_CLASS = 16;
-const WOOD = 8;
-const PLASTIC = 18;
-
-const FIRE_RESISTANT_OBJECTS = new Set([
-    RED_DRAGON_SCALE_MAIL,
-    RED_DRAGON_SCALES,
-    RIN_FIRE_RESISTANCE,
-]);
-const PRIMARY_EROSION_CLASSES = new Set([
-    WEAPON_CLASS,
-    ARMOR_CLASS,
-    BALL_CLASS,
-    CHAIN_CLASS,
-]);
 
 function objectClass(object) {
     return Number.isInteger(object?.oclass)
@@ -72,20 +52,6 @@ function monsterName(monster) {
 function objectSubject(object, carrier) {
     const owner = carrier ? `The ${monsterName(carrier)}'s` : 'The';
     return `${owner} ${objectName(object)}`;
-}
-
-function objectCanBurn(object) {
-    if ([TALLOW_CANDLE, WAX_CANDLE, FIRE_HORN, WAN_FIRE]
-        .includes(object.otyp)
-        || FIRE_RESISTANT_OBJECTS.has(object.otyp)) return false;
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
-    return (material > 1 && material <= WOOD) || material === PLASTIC;
-}
-
-function primaryErosionMatters(object) {
-    const oclass = objectClass(object);
-    return PRIMARY_EROSION_CLASSES.has(oclass)
-        || oclass === TOOL_CLASS && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0;
 }
 
 function removeObject(object, carrier, state) {
@@ -173,45 +139,6 @@ async function burnPaperOrPotion(object, context) {
     return true;
 }
 
-async function burnErodibleObject(object, context) {
-    if (!primaryErosionMatters(object) || !objectCanBurn(object)) return false;
-    if (object.oerodeproof && object.rknown) return false;
-    if (object.oerodeproof
-        || object.blessed && context.luckRandom(4) === 0) {
-        if (object.oerodeproof) {
-            object.rknown = true;
-            if (context.carrierVisible) {
-                const subject = objectSubject(object, context.carrier)
-                    .replace(/^The /u, 'the ');
-                await context.publish(
-                    `Somehow, ${subject} is not affected by the heat.`,
-                );
-            }
-        }
-        return false;
-    }
-
-    const erosion = object.oeroded ?? 0;
-    if (erosion < 3) {
-        object.oeroded = erosion + 1;
-        if (context.carrierVisible) {
-            const suffix = object.oeroded === 3
-                ? ' completely' : erosion ? ' further' : '';
-            await context.publish(
-                `${objectSubject(object, context.carrier)} smoulders${suffix}!`,
-            );
-        }
-        return false;
-    }
-    if (context.carrierVisible) {
-        await context.publish(
-            `${objectSubject(object, context.carrier)} smoulders away!`,
-        );
-    }
-    await removeObject(object, context.carrier, context.state);
-    return true;
-}
-
 async function fireDamageObject(object, context) {
     const ignited = await igniteItems([object], {
         carrierName: context.carrier ? monsterName(context.carrier) : null,
@@ -231,7 +158,12 @@ async function fireDamageObject(object, context) {
         return false;
     }
     if (await burnPaperOrPotion(object, context)) return true;
-    return burnErodibleObject(object, context);
+    const erosion = await erodeObject(object, 'burn', {
+        state: context.state, publish: context.publish,
+        random: context.random, luckRandom: context.luckRandom,
+        destroy: true, position: { x: context.x, y: context.y },
+    });
+    return erosion === 'destroyed';
 }
 
 export async function fireDamageChain(

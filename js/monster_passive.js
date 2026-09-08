@@ -13,9 +13,7 @@ import {
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
-import {
-    corrodeHeroObject, corrodeRandomHeroArmor,
-} from './hero_erosion.js';
+import { erodeArmor, erodeObject } from './object_erosion.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName,
 } from './monster_data.js';
@@ -32,7 +30,7 @@ import {
 } from './monster_attack_types.js';
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
-    DWARVISH_CLOAK, OBJECT_CHARGED, OBJECT_MATERIAL, OBJECT_NAMES,
+    OBJECT_CHARGED, OBJECT_NAMES,
     SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
 import { hasWornProperty } from './properties.js';
@@ -40,9 +38,8 @@ import {
     heroMonsterForm, returnHeroToHumanForm,
 } from './polyself.js';
 import { heroReflectionSource, heroReflectsRay } from './ray.js';
-import { d, rnl, rn2 } from './rng.js';
+import { d, rn2 } from './rng.js';
 import { resolveImmediatePetrification } from './stoning.js';
-import { cansee } from './vision.js';
 
 const MR_FIRE = 0x01;
 const MR_COLD = 0x02;
@@ -144,7 +141,7 @@ async function applyAcidPassive({
         }
 
         if (!heroDied && random(30) === 0) {
-            await corrodeRandomHeroArmor({
+            await erodeArmor(state.u, 'corrosion', {
                 state,
                 publish,
                 random,
@@ -154,7 +151,7 @@ async function applyAcidPassive({
 
     const object = objectTouchedByAttack(state, attackType, weapon);
     if (!heroDied && hit && object && random(6) === 0) {
-        await corrodeHeroObject(object, {
+        await erodeObject(object, 'corrosion', {
             state,
             publish,
             random,
@@ -558,129 +555,16 @@ function capitalize(text) {
 // passive_obj() runs after a projectile or held object touches the monster.
 // The caller still owns the object's eventual inventory or floor location.
 export async function applyMonsterPassiveToObject(
-    monster,
-    object,
-    {
-        carried = false,
-        attackType = null,
-        state = game,
+    monster, object, {
+        carried = false, attackType = null, state = game,
     } = {},
 ) {
     const passive = passiveAttack(monster);
     if (!passive) return;
-    const objectName = object.name || OBJECT_NAMES[object.otyp] || 'object';
-    const subject = `${carried ? 'Your' : 'The'} ${objectName}`;
-    const lowerSubject = `${carried ? 'your' : 'the'} ${objectName}`;
-    const agreement = objectIsPlural(object, objectName) ? 'are' : 'is';
-    const visible = carried || cansee(monster.mx, monster.my);
-    const verbose = attackType === AT_KICK;
-    const passiveDamageType = passive[1];
-
-    if (passiveDamageType === AD_FIRE) {
-        if (rn2(6) !== 0 || monster.mcan
-            || (attackType !== AT_KICK
-                && MONSTER_NAME[monster.mnum] === 'steam vortex')) return;
-        if (carried && inventoryProtectsObject(
-            'fireResistance', state, rn2, true,
-        )) return;
-        const material = OBJECT_MATERIAL[object.otyp] ?? 0;
-        const flammable = (material > 1 && material <= 8)
-            || material === 18;
-        if (!flammable
-            || (object.oerodeproof || object.fireproof) && object.rknown) {
-            if (verbose && visible) {
-                await plineWithContinuation(
-                    `${subject} ${agreement} not affected by heat.`,
-                );
-            }
-            return;
-        }
-        if (object.oerodeproof || object.fireproof) {
-            object.rknown = true;
-            if (visible) {
-                await plineWithContinuation(
-                    `Somehow, ${lowerSubject} ${agreement} not affected by the heat.`,
-                );
-            }
-            return;
-        }
-        if (object.blessed && rnl(4) === 0) return;
-
-        const oldBurn = object.oeroded ?? 0;
-        if (oldBurn >= 3) {
-            if (verbose && visible) {
-                await plineWithContinuation(
-                    `${subject} ${agreement === 'are' ? 'look' : 'looks'} completely burnt.`,
-                );
-            }
-            return;
-        }
-        object.oeroded = oldBurn + 1;
-        if (carried) state._armorClassDirty = true;
-        const adverb = oldBurn + 1 === 3
-            ? ' completely' : oldBurn ? ' further' : '';
-        await plineWithContinuation(`${subject} smoulders${adverb}!`);
-        return;
-    }
-
-    if (passiveDamageType === AD_RUST) {
+    const type = passive[1];
+    if (type === AD_ENCH) {
         if (monster.mcan) return;
-        if (object.greased) {
-            await applyGreaseProtection(
-                object, subject, agreement, carried, visible,
-            );
-            return;
-        }
-        if ((OBJECT_MATERIAL[object.otyp] ?? 0) !== 11
-            || (object.oerodeproof || object.rustproof) && object.rknown) {
-            if (verbose && visible) {
-                await plineWithContinuation(
-                    `${subject} ${agreement} not affected by oxidation.`,
-                );
-            }
-            return;
-        }
-        if (object.oerodeproof || object.rustproof) {
-            object.rknown = true;
-            if (visible) {
-                await plineWithContinuation(
-                    `Somehow, ${lowerSubject} ${agreement} not affected by the oxidation.`,
-                );
-            }
-            return;
-        }
-        if (object.blessed && rnl(4) === 0) return;
-
-        const oldRust = object.oeroded ?? 0;
-        if (oldRust >= 3) {
-            if (verbose && visible) {
-                await plineWithContinuation(
-                    `${subject} ${agreement === 'are' ? 'look' : 'looks'} completely rusted.`,
-                );
-            }
-            return;
-        }
-        object.oeroded = oldRust + 1;
-        if (carried) state._armorClassDirty = true;
-        const adverb = oldRust + 1 === 3
-            ? ' completely' : oldRust ? ' further' : '';
-        await plineWithContinuation(`${subject} rusts${adverb}!`);
-        return;
-    }
-
-    if (passiveDamageType === AD_CORR) {
-        if (monster.mcan) return;
-        await corrodeStrikingObject(object, {
-            subject, lowerSubject, agreement, carried, state, verbose, visible,
-        });
-        return;
-    }
-
-    if (passiveDamageType === AD_ENCH) {
-        if (monster.mcan) return;
-        const enchantment = Number.isInteger(object.spe)
-            ? object.spe : Number.isInteger(object.enchantment)
-                ? object.enchantment : 0;
+        const enchantment = object.spe;
         if (!OBJECT_CHARGED[object.otyp] || enchantment <= 0
             || [AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD,
                 CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING]
@@ -689,94 +573,33 @@ export async function applyMonsterPassiveToObject(
         object.spe = enchantment - 1;
         object.enchantment = object.spe;
         if (carried) state._armorClassDirty = true;
-        if (carried && (object.known || object.typeKnown
-            || object.oclass === 3)) {
-            const verb = objectIsPlural(object, objectName) ? 'seem' : 'seems';
-            await plineWithContinuation(
-                `${subject} ${verb} less effective.`,
-            );
+        if (carried && (object.known || object.typeKnown || object.oclass === 3)) {
+            const name = object.name || OBJECT_NAMES[object.otyp];
+            const verb = objectIsPlural(object, name) ? 'seem' : 'seems';
+            await plineWithContinuation(`Your ${name} ${verb} less effective.`);
         }
         return;
     }
 
-    if (passiveDamageType !== AD_ACID || rn2(6) !== 0) return;
-    await corrodeStrikingObject(object, {
-        subject, lowerSubject, agreement, carried, state, verbose, visible,
+    let kind;
+    if (type === AD_FIRE) {
+        if (rn2(6) !== 0 || monster.mcan
+            || (attackType !== AT_KICK
+                && MONSTER_NAME[monster.mnum] === 'steam vortex')) return;
+        kind = 'burn';
+    } else if (type === AD_RUST || type === AD_CORR) {
+        if (monster.mcan) return;
+        kind = type === AD_RUST ? 'rust' : 'corrosion';
+    } else if (type === AD_ACID) {
+        if (rn2(6) !== 0) return;
+        kind = 'corrosion';
+    } else {
+        return;
+    }
+    await erodeObject(object, kind, {
+        state, verbose: attackType === AT_KICK,
+        position: { x: monster.mx, y: monster.my },
     });
-}
-
-async function corrodeStrikingObject(
-    object,
-    {
-        subject, lowerSubject, agreement, carried, state, verbose, visible,
-    },
-) {
-    if (carried && inventoryProtectsObject(
-        'acidResistance', state, rn2,
-    )) return;
-    if (object.greased) {
-        await applyGreaseProtection(
-            object, subject, agreement, carried, visible,
-        );
-        return;
-    }
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
-    if (![11, 13].includes(material)
-        || (object.oerodeproof || object.corrodeproof) && object.rknown) {
-        if (verbose && visible) {
-            await plineWithContinuation(
-                `${subject} ${agreement} not affected by corrosion.`,
-            );
-        }
-        return;
-    }
-    if (object.oerodeproof || object.corrodeproof) {
-        object.rknown = true;
-        if (visible) {
-            await plineWithContinuation(
-                `Somehow, ${lowerSubject} ${agreement} not affected by the corrosion.`,
-            );
-        }
-        return;
-    }
-    if (object.blessed && rnl(4) === 0) return;
-
-    const oldCorrosion = object.oeroded2 ?? 0;
-    if (oldCorrosion >= 3) {
-        if (verbose && visible) {
-            await plineWithContinuation(
-                `${subject} ${agreement === 'are' ? 'look' : 'looks'} completely corroded.`,
-            );
-        }
-        return;
-    }
-    object.oeroded2 = oldCorrosion + 1;
-    if (carried) state._armorClassDirty = true;
-    const adverb = oldCorrosion + 1 === 3
-        ? ' completely' : oldCorrosion ? ' further' : '';
-    await plineWithContinuation(`${subject} corrodes${adverb}!`);
-}
-
-async function applyGreaseProtection(
-    object, subject, agreement, carried, visible,
-) {
-    if (carried && visible) {
-        await plineWithContinuation(
-            `${subject} ${agreement} protected by the layer of grease!`,
-        );
-    }
-    if (rn2(2) !== 0) return;
-    object.greased = false;
-    if (carried) await plineWithContinuation('The grease dissolves.');
-}
-
-function inventoryProtectsObject(
-    property, state, random, dwarvishCloakProtects = false,
-) {
-    if (hasWornProperty(property, state)) return random(100) < 99;
-    if (!dwarvishCloakProtects) return false;
-    const cloak = state.uarmc || state.u?.uarmc;
-    return cloak?.otyp === DWARVISH_CLOAK && random(100) < 90;
 }
 
 function objectIsPlural(object, name) {

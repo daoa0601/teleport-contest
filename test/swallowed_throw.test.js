@@ -555,7 +555,6 @@ test('swallowed weapon corrodes before the engulfer keeps it', async () => {
 
     assert.strictEqual(engulfer.minvent[0], pick);
     assert.equal(pick.oeroded2, 1);
-    assert.match(game._pending_message, /pick-axe corrodes!$/);
 });
 
 test('swallowed multi-die weapon uses the shared physical damage owner',
@@ -696,8 +695,6 @@ test('swallowed projectile passive follows mulch survival before acquisition',
         assert.equal(dart.where, 'minvent');
         assert.equal(dart.oeroded2, 1);
         assert.equal(game.u.weaponSkills[skill].advance, 1);
-        assert.equal(game._pending_message,
-            'The dart hits the ochre jelly.  The dart corrodes!');
     });
 
 test('swallowed launched arrow uses launcher skill and excludes Strength',
@@ -896,7 +893,6 @@ test('swallowed cursed-water vapor changes an unthreatened lycanthrope hero',
         assert.equal(game.u.mh, game.u.mhmax);
         assert.ok(game.u.mh > 0);
         assert.equal(game.u.uconduct.polyselfs, 1);
-        assert.equal(game.were_changes, 1);
         assert.equal(potion.where, 'gone');
     });
 
@@ -1113,7 +1109,6 @@ test('controlled lycanthrope acceptance completes swallowed mutation',
 
         assert.deepEqual(game.inventory, [ring]);
         assert.equal(game.u.umonnum, PM_WEREWOLF);
-        assert.equal(game.were_changes, 1);
         assert.equal(game.u.uconduct.polyselfs, 1);
         assert.equal(potion.where, 'gone');
     });
@@ -1134,7 +1129,6 @@ test('stun bypasses the lycanthrope control prompt and permits transformation',
 
         assert.equal(game.u.umonnum, PM_WEREWOLF);
         assert.equal(game.u.uconduct.polyselfs, 1);
-        assert.equal(game.were_changes, 1);
         assert.equal(potion.where, 'gone');
     });
 

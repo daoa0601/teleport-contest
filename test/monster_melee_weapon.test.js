@@ -11,8 +11,22 @@ import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { DAGGER, GAUNTLETS_OF_POWER, OBJECT_NAMES } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+test('striking a rust-monster body rusts the attacking weapon', async () => {
+    freshObjectRoom({ flags: { verbose: false } });
+    installPolymorphedHero('rust monster');
+    const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+    goblin.mpeaceful = false;
+    const dagger = knownObject(DAGGER, { spe: 0 });
+    equipMonsterObject(goblin, dagger, W_WEP);
+
+    await runMonsterAction(goblin, game, () => 0, count => count, () => 1);
+
+    assert.equal(dagger.oeroded, 1);
+});
 
 test('weapon enchantment helps a monster hit an armored hero', async () => {
     const damage = [];

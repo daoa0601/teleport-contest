@@ -5,10 +5,11 @@ import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { IRONBARS, NEED_WEAPON, NO_MINVENT, NO_WEAPON_WANTED, PIT, POOL, STONE, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { tameMonster } from '../js/dog.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
-    AKLYS, AMULET_OF_STRANGULATION, CLUB, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, WAN_MAGIC_MISSILE,
+    AKLYS, AMULET_OF_STRANGULATION, CLUB, DAGGER, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, WAN_MAGIC_MISSILE,
 } from '../js/object_data.js';
 import {
     startHeroSickness, startHeroVomiting,
@@ -18,7 +19,7 @@ import { startHeroPetrification } from '../js/stoning.js';
 import { addInventoryObject, chargedWand, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
-import { installSwallowedHero } from './support/hero-state.js';
+import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { checkMonsterGearNextTurn } from '../js/monworn.js';
 import { canSeeMonster } from '../js/display.js';
@@ -32,6 +33,40 @@ function freshTurnArena(room = {}) {
     game.u.umovement = 12;
     return resetInputState();
 }
+
+test('a weapon rusts on the hero\'s monster body during an ordinary turn', async () => {
+    freshTurnArena();
+    installPolymorphedHero('rust monster');
+    const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+    goblin.mpeaceful = false;
+    goblin.movement = 12;
+    const dagger = knownObject(DAGGER, { spe: 8 });
+    equipMonsterObject(goblin, dagger, W_WEP);
+    pushKeys('m.                                m.');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.ok(dagger.oeroded > 0);
+});
+
+test('a pet\'s weapon rusts when it hits a rust monster during an ordinary turn', async () => {
+    freshTurnArena({ heroX: 18, right: 20 });
+    const captain = await createMonsterAt('captain', 10, 10, NO_MINVENT);
+    tameMonster(captain, game);
+    captain.movement = 12;
+    const dagger = knownObject(DAGGER, { spe: 8 });
+    equipMonsterObject(captain, dagger, W_WEP);
+    const rustMonster = await createMonsterAt('rust monster', 11, 10, NO_MINVENT);
+    rustMonster.mpeaceful = false;
+    rustMonster.movement = 0;
+    pushKeys('.                                .');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.ok(dagger.oeroded > 0);
+});
 
 test('a giant chooses its club over a sword during its turn', async () => {
     freshTurnArena();

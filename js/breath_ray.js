@@ -15,9 +15,7 @@ import {
     effectiveBreathDamage, hitHeroWithBreath,
 } from './hero_breath.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import {
-    damageMonsterObjectWithAcid, corrodeRandomMonsterArmor,
-} from './monster_erosion.js';
+import { erodeArmor, damageObjectWithAcid } from './object_erosion.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import {
@@ -379,14 +377,14 @@ async function hitMonsterWithBreath(
         }
     } else if (damageType === AD_ACID && !inherentResistance) {
         if (random(6) === 0) {
-            await damageMonsterObjectWithAcid(
-                monster, monsterWieldedWeapon(monster),
+            await damageObjectWithAcid(
+                monsterWieldedWeapon(monster),
                 { state, publish, random },
             );
         }
         if (random(6) === 0) {
-            await corrodeRandomMonsterArmor(
-                monster, { state, publish, random },
+            await erodeArmor(
+                monster, 'corrosion', { state, publish, random },
             );
         }
     }

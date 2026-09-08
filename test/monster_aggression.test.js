@@ -5,10 +5,7 @@ import { runClaimedCorpseRevivalTimer } from '../js/corpse_revival.js';
 import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import {
-    finishDeferredMonsterDeath, takeMonsterTurn,
-    resumeDeferredMonsterContact,
-} from '../js/monmove.js';
+import { takeMonsterTurn } from '../js/monmove.js';
 import { CORPSE } from '../js/object_data.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
@@ -41,22 +38,13 @@ test('a zombie attacks a nearby giant and the giant rises as a zombie',
             movement: 12, mhp: 8, mhpmax: 8, m_lev: 6,
         });
         giant.name = 'Bram';
-        game._deferVisibleMonsterContact = true;
 
-        const action = await takeMonsterTurn(
+        await takeMonsterTurn(
             zombie, game,
             () => 0,
-            () => 20,
+            (count, sides) => count * sides,
             () => 1,
         );
-        await resumeDeferredMonsterContact(
-            action, game, () => 0, () => 20, () => 1,
-        );
-        await finishDeferredMonsterDeath(action, game, {
-            random: () => 0,
-            rollOne: () => 1,
-            publish: async () => {},
-        });
 
         assert.equal(game.level.monsters.includes(giant), false);
         assert.deepEqual([zombie.mx, zombie.my], [10, 10]);
@@ -86,19 +74,10 @@ test('a fatal monster attack makes a shifted vampire rise', async () => {
         mux: game.u.ux, muy: game.u.uy, movement: 12,
         mhp: 1, mhpmax: 20, m_lev: 6, cham: vampireLeader,
     });
-    game._deferVisibleMonsterContact = true;
 
-    const action = await takeMonsterTurn(
-        dragon, game, () => 0, () => 20, () => 1,
+    await takeMonsterTurn(
+        dragon, game, () => 0, count => count, () => 1,
     );
-    await resumeDeferredMonsterContact(
-        action, game, () => 0, () => 20, () => 1,
-    );
-    await finishDeferredMonsterDeath(action, game, {
-        random: () => 0,
-        rollOne: () => 1,
-        publish: async () => {},
-    });
 
     assert.equal(wolf.mnum, vampireLeader);
     assert.equal(wolf.mhp > 0, true);

@@ -9,9 +9,7 @@ import {
 import { plineWithContinuation, shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
-import {
-    corrodeRandomHeroArmor, damageHeroObjectWithAcid,
-} from './hero_erosion.js';
+import { erodeArmor, damageObjectWithAcid } from './object_erosion.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { igniteItems } from './light.js';
 import {
@@ -253,19 +251,19 @@ async function hitWithAcid(context) {
     const hero = state.u;
     const twoWeapons = !!hero.twoweap;
     if (random(twoWeapons ? 3 : 6) === 0) {
-        await damageHeroObjectWithAcid(
+        await damageObjectWithAcid(
             state.uwep || hero.uwep,
             { state, publish, random },
         );
     }
     if (twoWeapons && random(3) === 0) {
-        await damageHeroObjectWithAcid(
+        await damageObjectWithAcid(
             state.uswapwep || hero.uswapwep,
             { state, publish, random },
         );
     }
     if (random(6) === 0)
-        await corrodeRandomHeroArmor({ state, publish, random });
+        await erodeArmor(state.u, 'corrosion', { state, publish, random });
 
     return applyOrdinaryBreathDamage(
         context, damage, 'blast of acid', resisted,

@@ -130,6 +130,8 @@ import { touchPetrifies } from './stoning.js';
 import { clearHeroSliming } from './slime.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
+import { erodeAttackingWeapon } from './object_erosion.js';
+import { showMonsterCombatAttack, showMonsterCombatDeath } from './monster_combat_messages.js';
 import {
     finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
     finishMonsterRayDeath,
@@ -2437,12 +2439,16 @@ async function monsterMeleeAttack(
     aggressor.mlstmv = sourceMonsterTurn(state);
     let threshold = findMonsterArmorClass(defender)
         + (aggressor?.m_lev ?? MONSTER_LEVEL[aggressor?.mnum] ?? 0);
+    if (defender.mconf || !defender.mcanmove || defender.msleeping) {
+        threshold += 4;
+        defender.msleeping = 0;
+    }
     const results = [];
     let struck = false;
+    let death = null;
 
-    for (let index = 0; index < attacks.length; index++) {
+    for (const attack of attacks) {
         if ((defender?.mhp ?? 1) <= 0) break;
-        const attack = attacks[index];
         const wield = await monsterVersusMonsterWieldAction(
             aggressor, defender, attack, state,
         );
@@ -2455,12 +2461,15 @@ async function monsterMeleeAttack(
             threshold += weaponHitBonus(weapon, defender, { state, random, rollOne });
         }
         const attackThreshold = threshold;
-        const roll = rollOne(20 + index);
-        calls.push(`rnd(${20 + index})`);
+        const hitDie = 20 + attack.attackIndex;
+        const roll = rollOne(hitDie);
+        calls.push(`rnd(${hitDie})`);
         const hit = threshold > roll;
         // C evaluates hitval again here, including any artifact roll.
         if (usesWeaponAccuracy)
             threshold -= weaponHitBonus(weapon, defender, { state, random, rollOne });
+        const result = { ...attack, roll, threshold: attackThreshold, hit, damage: 0 };
+        await showMonsterCombatAttack(aggressor, defender, result, state);
         let damage = 0;
         if (hit) {
             damage = rollDice(attack.damn, attack.damd);
@@ -2468,6 +2477,7 @@ async function monsterMeleeAttack(
             if (attack.damageType === AD_PHYS && weapon) {
                 damage += rollPhysicalWeaponDamage(weapon, defender, { rollOne, rollDice });
                 damage = Math.max(1, damage + monsterWeaponStrengthBonus(aggressor, random));
+                await erodeAttackingWeapon(defender, weapon, { state, random });
             }
             // mdamagem() checks generic knockback before applying damage,
             // including for an ultimately fatal physical hit.
@@ -2476,19 +2486,26 @@ async function monsterMeleeAttack(
             defender.mhp = Math.max(0, (defender.mhp ?? 1) - damage);
             struck = true;
         }
+        result.damage = damage;
+        results.push(result);
+        if (defender.mhp <= 0) {
+            await showMonsterCombatDeath(defender, state);
+            death = await finishMonsterCombatDeath(aggressor, defender, state, {
+                random, rollOne, calls, killingAttack: result,
+                publish: plineWithContinuation,
+            });
+            newsym(defender.mx, defender.my);
+            newsym(aggressor.mx, aggressor.my);
+            if (!death.survived) break;
+        }
         // passivemm() is reached after every attempted contact attack while
         // the defender survives, including an ordinary miss.
         if ((defender.mhp ?? 0) > 0) recordRandom(random, calls, 3);
-        results.push({ ...attack, roll, threshold: attackThreshold, hit, damage });
     }
-    const defenderDied = (defender?.mhp ?? 0) <= 0;
     return {
         kind: 'monster-attack', aggressor, defender, results, struck,
-        defenderDied,
-        death: null,
-        deathPending: defenderDied,
-        contactAttacks: attacks,
-        nextAttackIndex: results.length,
+        defenderDied: !!death && !death.survived,
+        death,
     };
 }
 
@@ -2498,13 +2515,10 @@ function sourceMonsterMeleeAttacks(monster) {
         6: 'sting', 7: 'hug', [AT_WEAP]: 'weapon',
     };
     return (MONSTER_ATTACKS[monster?.mnum] || [])
-        // Attack type zero terminates the native attack array.  Recognized
-        // nonzero slots remain real attacks even when their damage dice are
-        // 0d0, as with a lichen's sticky touch.
-        .filter(([attackType]) => attackNames[attackType])
-        .map(([attackType, damageType, damn, damd]) => ({
-            type: attackNames[attackType], attackType, damageType, damn, damd,
-        }));
+        .map(([attackType, damageType, damn, damd], attackIndex) => ({
+            type: attackNames[attackType], attackType, damageType, damn, damd, attackIndex,
+        }))
+        .filter(attack => attack.type);
 }
 
 function sourceMonsterTurn(state) {
@@ -2555,33 +2569,6 @@ async function beginMonsterMeleeAttack(
     aggressor, defender, attacks, state, random, rollDice, rollOne, calls,
     retaliationRule,
 ) {
-    const firstAttack = attacks[0];
-    const wield = await monsterVersusMonsterWieldAction(
-        aggressor, defender, firstAttack, state,
-    );
-    if (wield) return wield;
-
-    if (state?._deferVisibleMonsterContact && firstAttack) {
-        aggressor.mlstmv = sourceMonsterTurn(state);
-        const threshold = findMonsterArmorClass(defender)
-            + (aggressor.m_lev ?? MONSTER_LEVEL[aggressor.mnum] ?? 0);
-        const roll = rollOne(20);
-        calls.push('rnd(20)');
-        return {
-            kind: 'monster-attack', aggressor, defender,
-            results: [{
-                ...firstAttack, roll, threshold,
-                hit: threshold > roll, damage: 0,
-            }],
-            struck: false, defenderDied: false, death: null,
-            deferredContact: true,
-            contactAttacks: attacks,
-            pendingResultIndex: 0,
-            nextAttackIndex: 1,
-            retaliationRule,
-        };
-    }
-
     const result = await monsterMeleeAttack(
         aggressor, defender, attacks, state,
         random, rollDice, rollOne, calls,
@@ -2768,7 +2755,6 @@ async function movePet(
             );
             return {
                 oldx, oldy, x: oldx, y: oldy, moved: false, attack,
-                deferredPostFlee: !!attack.deferredContact,
                 ...inventoryAction,
             };
         }
@@ -3303,7 +3289,6 @@ async function moveHostile(
                 oldx, oldy, x: oldx, y: oldy, moved: false,
                 actionCompleted: true,
                 attack,
-                deferredPostFlee: !!attack.deferredContact,
             });
         }
     }
@@ -4988,6 +4973,7 @@ async function basicMonsterAttack(
                 oldFormMnum, deferredPostHit: true,
             }, monster, attackIndex);
         }
+        await erodeAttackingWeapon(state.u, contactWeapon, { state, random });
         recordRandom(random, calls, 3);
         recordRandom(random, calls, 6);
         damage = reduceHeroContactDamage(damage, state, rollOne, calls);
@@ -8066,227 +8052,4 @@ export async function runMonsterAction(
     calls.push(...actionCalls);
     if (wokeFromDisturb) movement.wokeFromDisturb = true;
     return { monster, calls, movement };
-}
-
-async function continueMonsterContactAttack(
-    attack, state, random, rollOne, calls,
-) {
-    const nextAttackIndex = attack.nextAttackIndex ?? 1;
-    const nextAttack = attack.contactAttacks?.[nextAttackIndex];
-    if (nextAttack) {
-        const threshold = attack.results[0]?.threshold ?? 0;
-        const roll = rollOne(20 + nextAttackIndex);
-        calls.push(`rnd(${20 + nextAttackIndex})`);
-        attack.results.push({
-            ...nextAttack, roll, threshold,
-            hit: threshold > roll, damage: 0,
-        });
-        attack.pendingResultIndex = attack.results.length - 1;
-        attack.nextAttackIndex = nextAttackIndex + 1;
-        attack.deferredContact = true;
-        return;
-    }
-
-    if (defenderCanCounterattack(attack, state, random, calls)) {
-        const { aggressor, defender } = attack;
-        const counterattacks = sourceMonsterMeleeAttacks(defender);
-        const counterattack = counterattacks[0];
-        if (counterattack) {
-            defender.mlstmv = sourceMonsterTurn(state);
-            attack.counterattack = await monsterVersusMonsterWieldAction(
-                defender, aggressor, counterattack, state,
-            );
-            if (!attack.counterattack) {
-                const threshold = findMonsterArmorClass(aggressor)
-                    + (defender.m_lev ?? MONSTER_LEVEL[defender.mnum] ?? 0);
-                const roll = rollOne(20);
-                calls.push('rnd(20)');
-                attack.counterattack = {
-                    kind: 'monster-attack', aggressor: defender,
-                    defender: aggressor, struck: false, defenderDied: false,
-                    deferredContact: true,
-                    results: [{
-                        ...counterattack, roll, threshold,
-                        hit: threshold > roll, damage: 0,
-                    }],
-                    contactAttacks: counterattacks,
-                    pendingResultIndex: 0,
-                    nextAttackIndex: 1,
-                };
-            }
-            attack.postCounterFleePending = attack.counterattack.kind !== 'monster-wield';
-        }
-    }
-    if (!attack.postCounterFleePending) recordRandom(random, calls, 5);
-    attack.deferredContact = false;
-}
-
-// Continue a pet contact attack after tty has accepted its hit/miss message.
-// C's mattackm() emits that message before damage, passive retaliation, death
-// construction, and dochug()'s second distfleeck(), so a --More-- prompt can
-// split one actor transaction at precisely this boundary.
-export async function resumeDeferredMonsterContact(
-    action, state, random = rn2, rollDice = d, rollOne = rnd,
-) {
-    const attack = action?.movement?.attack;
-    if (!attack?.deferredContact) return action;
-    const resultIndex = attack.pendingResultIndex ?? 0;
-    const result = attack.results[resultIndex];
-    const { defender } = attack;
-    const calls = action.calls;
-
-    if (result.hit) {
-        result.damage = rollDice(result.damn, result.damd);
-        calls.push(`d(${result.damn},${result.damd})`);
-        recordRandom(random, calls, 3);
-        recordRandom(random, calls, 6);
-        defender.mhp = Math.max(0, (defender.mhp ?? 1) - result.damage);
-        attack.struck = true;
-    }
-    if ((defender.mhp ?? 0) > 0) recordRandom(random, calls, 3);
-
-    attack.defenderDied = (defender.mhp ?? 0) <= 0;
-    if (attack.defenderDied) {
-        // mhitm.c prints the visible death line before monkilled() enters
-        // corpse_chance()/grow_up().  tty may suspend that pline(), so leave
-        // construction pending for the scheduler-facing continuation.
-        attack.deathPending = true;
-    }
-
-    if (attack.deathPending) {
-        attack.postDeathFleePending = true;
-        attack.deferredContact = false;
-    } else {
-        await continueMonsterContactAttack(
-            attack, state, random, rollOne, calls,
-        );
-    }
-    action.movement.deferredPostFlee = false;
-    return action;
-}
-
-function continueMonsterCounterattack(action, random, rollOne) {
-    const attack = action.movement.attack;
-    const counterattack = attack.counterattack;
-    const nextAttackIndex = counterattack.nextAttackIndex ?? 1;
-    const nextAttack = counterattack.contactAttacks?.[nextAttackIndex];
-    if (nextAttack) {
-        const threshold = counterattack.results[0]?.threshold ?? 0;
-        const roll = rollOne(20 + nextAttackIndex);
-        action.calls.push(`rnd(${20 + nextAttackIndex})`);
-        counterattack.results.push({
-            ...nextAttack, roll, threshold,
-            hit: threshold > roll, damage: 0,
-        });
-        counterattack.pendingResultIndex = counterattack.results.length - 1;
-        counterattack.nextAttackIndex = nextAttackIndex + 1;
-        counterattack.deferredContact = true;
-        return;
-    }
-
-    counterattack.deferredContact = false;
-    if (attack.postCounterFleePending) {
-        recordRandom(random, action.calls, 5);
-        attack.postCounterFleePending = false;
-    }
-}
-
-// Finish the counterattack only after its visible hit/miss line has entered
-// tty's topline transaction.  In C, passivemm() and damage occur after that
-// pline(), so a later message can suspend between the to-hit roll and tail.
-export function resumeDeferredMonsterCounterattack(
-    action, state, random = rn2, rollDice = d, rollOne = rnd,
-) {
-    const counterattack = action?.movement?.attack?.counterattack;
-    if (!counterattack?.deferredContact) return action;
-    const resultIndex = counterattack.pendingResultIndex ?? 0;
-    const result = counterattack.results[resultIndex];
-    if (result.hit) {
-        result.damage = rollDice(result.damn, result.damd);
-        action.calls.push(`d(${result.damn},${result.damd})`);
-        recordRandom(random, action.calls, 3);
-        recordRandom(random, action.calls, 6);
-        counterattack.defender.mhp = Math.max(
-            0, (counterattack.defender.mhp ?? 1) - result.damage,
-        );
-        counterattack.struck = true;
-    }
-    if ((counterattack.defender.mhp ?? 0) > 0)
-        recordRandom(random, action.calls, 3);
-    counterattack.defenderDied = (counterattack.defender.mhp ?? 0) <= 0;
-    if (counterattack.defenderDied) counterattack.deathPending = true;
-
-    if (counterattack.deathPending)
-        counterattack.deferredContact = false;
-    else continueMonsterCounterattack(action, random, rollOne);
-    return action;
-}
-
-
-export async function finishDeferredMonsterCounterattackDeath(
-    action, state, {
-        random = rn2,
-        rollOne = rnd,
-        publish = plineWithContinuation,
-    } = {},
-) {
-    const attack = action?.movement?.attack;
-    const counterattack = attack?.counterattack;
-    if (!counterattack?.deathPending || counterattack.death) return action;
-    const death = await finishMonsterCombatDeath(
-        counterattack.aggressor, counterattack.defender, state, {
-            random,
-            rollOne,
-            calls: action.calls,
-            killingAttack: counterattack.results?.at(-1),
-            publish,
-        },
-    );
-    counterattack.deathPending = false;
-    if (death.survived) {
-        counterattack.defenderDied = false;
-        recordRandom(random, action.calls, 3);
-        continueMonsterCounterattack(action, random, rollOne);
-        return action;
-    }
-    counterattack.death = death;
-    attack.postCounterFleePending = false;
-    return action;
-}
-
-export async function finishDeferredMonsterDeath(
-    action, state, {
-        random = rn2,
-        rollOne = rnd,
-        publish = plineWithContinuation,
-    } = {},
-) {
-    const attack = action?.movement?.attack;
-    if (!attack?.deathPending || attack.death) return action;
-    const death = await finishMonsterCombatDeath(
-        attack.aggressor, attack.defender, state, {
-            random,
-            rollOne,
-            calls: action.calls,
-            killingAttack: attack.results?.at(-1),
-            publish,
-        },
-    );
-    attack.deathPending = false;
-    if (death.survived) {
-        attack.defenderDied = false;
-        attack.postDeathFleePending = false;
-        recordRandom(random, action.calls, 3);
-        await continueMonsterContactAttack(
-            attack, state, random, rollOne, action.calls,
-        );
-        action.movement.deferredPostFlee = false;
-        return action;
-    }
-    attack.death = death;
-    if (attack.postDeathFleePending) {
-        recordRandom(random, action.calls, 5);
-        attack.postDeathFleePending = false;
-    }
-    return action;
 }

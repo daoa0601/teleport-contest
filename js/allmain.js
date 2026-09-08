@@ -154,7 +154,6 @@ import {
     resumeDeferredCovetousRelocation,
     resumeDeferredRestrictedTenguTeleport,
     resumeDeferredMovementSpell,
-    resumeDeferredMonsterContact, resumeDeferredMonsterCounterattack,
     resumeDeferredMonsterTrap,
     resumeDeferredMonsterHideUnder,
     resumeDeferredMonsterDoor, resumeDeferredMonsterPickup,
@@ -170,8 +169,6 @@ import {
     resumeDeferredPetRangedNoise,
     resumeDeferredPetEating, resumeDeferredPetMove,
     resolveDeferredMonsterBreath, resumeDeferredSpitAttack,
-    finishDeferredMonsterDeath,
-    finishDeferredMonsterCounterattackDeath,
     fumaroles,
     heroEveryturnEffect, runMonsterEveryturnEffects,
     runMonsterAction,
@@ -182,12 +179,8 @@ import {
     finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
     finishMonsterRayDeath,
 } from './monster_death.js';
-import {
-    finishDeferredHeroCorrosionArmor, finishDeferredHeroDecayArmor,
-    finishDeferredHeroRustArmor,
-    resumeDeferredHeroCorrosionArmor, resumeDeferredHeroDecayArmor,
-    resumeDeferredHeroRustArmor,
-} from './hero_erosion.js';
+import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
+import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     killGenocidedMonster, resolveMonsterLiquid,
 } from './mon.js';
@@ -2797,97 +2790,6 @@ function distantMonsterObjectName(object) {
     return petCarriedObjectName(object);
 }
 
-// C mon.c:hideunder() snapshots ansimpleoname() before the actor becomes
-// undetected. Unlike doname(), this deliberately omits BUC, enchantment,
-// and shuffled-description knowledge.
-// C mhitm.c:hitmm().  Monster-versus-monster wording has its own switch:
-// unlike hero-facing combat, AT_KICK is not special and falls through to
-// "hits".  Keep the simple attack names normalized by monmove.js here.
-function visibleMonsterCombatVerb(result) {
-    if (!result.hit) return 'misses';
-    if (result.type === 'bite') return 'bites';
-    if (result.type === 'sting') return 'stings';
-    if (result.type === 'butt') return 'butts';
-    if (result.type === 'touch') return 'touches';
-    return 'hits';
-}
-
-function visibleMonsterCombatMessage(attack) {
-    const { aggressor, defender } = attack;
-    const aggressorSpotted = canSpotMonster(
-        aggressor, aggressor.mx, aggressor.my,
-    );
-    const defenderSpotted = canSpotMonster(
-        defender, defender.mx, defender.my,
-    );
-    // C mhitm.c:mattackm() sets gv.vis only when at least one participant is
-    // both in optical sight and actually spotted.  missmm()/hitmm() then run
-    // pre_mm_attack(): an unspotted participant in that otherwise visible
-    // fight leaves a persistent invisible-presence marker at its own square.
-    const visible = (cansee(aggressor.mx, aggressor.my) && aggressorSpotted)
-        || (cansee(defender.mx, defender.my) && defenderSpotted);
-    if (!visible) return null;
-    if (!aggressorSpotted) map_invisible(aggressor.mx, aggressor.my);
-    if (!defenderSpotted) map_invisible(defender.mx, defender.my);
-    const aggressorName = quietMonsterName(aggressor);
-    const defenderName = quietMonsterName(defender);
-    const results = attack.deferredContact
-        && Number.isInteger(attack.pendingResultIndex)
-        ? [attack.results[attack.pendingResultIndex]]
-        : attack.results;
-    return results.map(result => {
-        const verb = visibleMonsterCombatVerb(result);
-        // mhitm.c uses Monnam(magr): a named pet is a proper noun, while an
-        // unnamed actor keeps the capitalized definite article.
-        const subject = aggressorSpotted
-            ? aggressor.pet && aggressor.name
-                ? aggressor.name : `The ${aggressorName}`
-            : 'It';
-        // mon_nam_too(mdef, magr) likewise preserves a named defender.
-        const object = defenderSpotted
-            ? defender.pet && defender.name
-                ? defender.name : `the ${defenderName}`
-            : 'it';
-        const compatibleNymphContact = aggressor.mnum === 68
-            && !aggressor.mcan
-            && [21, 22].includes(result.damageType);
-        if (compatibleNymphContact) {
-            if (!result.hit) {
-                return `${subject} pretends to be friendly to ${object}.`;
-            }
-            const verb = defender.mcansee === false
-                || defender.mcansee === 0 ? 'talks to' : 'smiles at';
-            const manner = !!aggressor.female === !!defender.female
-                ? 'engagingly' : 'seductively';
-            return `${subject} ${verb} ${object} ${manner}.`;
-        }
-        return `${subject} ${verb} ${object}.`;
-    }).join('  ');
-}
-
-// C ref: mhitm.c:noises().  Monster combat which cannot be seen reports one
-// nearby/distant sound until either the distance class changes or ten turns
-// have elapsed.  This is message policy, but it is also a scheduler boundary:
-// an extra sound can make tty request --More-- before the actor scan finishes.
-async function reportUnseenMonsterCombat(attack) {
-    if (game._suppressMessagesUntilInput) return;
-    if (game.deaf) return;
-    const { aggressor } = attack;
-    const far = dist2(
-        aggressor.mx, aggressor.my,
-        game.u?.ux ?? aggressor.mx, game.u?.uy ?? aggressor.my,
-    ) > 15;
-    const moves = game.moves ?? 0;
-    const lastFar = game._farMonsterNoise ?? false;
-    const lastMove = game._monsterNoiseTime ?? 0;
-    if (far === lastFar && moves - lastMove <= 10) return;
-    game._farMonsterNoise = far;
-    game._monsterNoiseTime = moves;
-    await plineWithContinuation(
-        `You hear some noises${far ? ' in the distance' : ''}.`,
-    );
-}
-
 async function queueTurnMessage(message) {
     if (game._suppressMessagesUntilInput) return;
     if (!message) return;
@@ -4498,6 +4400,18 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 }
                 const activeHpKey = Upolyd(game.u) ? 'mh' : 'uhp';
                 const hpBeforeDeferredHit = game.u?.[activeHpKey] ?? 1;
+                const publishEquipmentMessage = async line => {
+                    const dismissal = await queueTurnMessage(line);
+                    if (dismissal !== null && dismissal !== undefined) {
+                        actorContactPagerOwned = true;
+                        actorContactMessageAfterPager = game._pending_message === line;
+                    }
+                };
+                if (heroAttack.hit && heroAttack.effect === 'physical-weapon') {
+                    await erodeAttackingWeapon(game.u, monsterWieldedWeapon(monster), {
+                        publish: publishEquipmentMessage,
+                    });
+                }
                 if (heroAttack.deferredStickingAfterHit)
                     resumeDeferredHeroSticking(action, game);
                 if (heroAttack.stickingMessage) {
@@ -4650,93 +4564,22 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     actorContactPagerOwned ||= rustFormPagerOwned;
                     heroAttack.deferredRustRehumanize = false;
                 }
-                while (heroAttack.deferredRustArmor) {
-                    const rustArmor = resumeDeferredHeroRustArmor(action, game);
-                    if (rustArmor?.message) {
-                        const rustDismissal = await queueTurnMessage(
-                            rustArmor.message,
-                        );
-                        if (rustDismissal !== null
-                            && rustDismissal !== undefined) {
-                            actorContactPagerOwned = true;
-                        }
-                    }
-                    const rustFinal = finishDeferredHeroRustArmor(action, game);
-                    if (rustFinal?.message) {
-                        const dissolveDismissal = await queueTurnMessage(
-                            rustFinal.message,
-                        );
-                        if (dissolveDismissal !== null
-                            && dissolveDismissal !== undefined) {
-                            actorContactPagerOwned = true;
-                        }
-                    }
-                }
-                while (heroAttack.deferredCorrosionArmor) {
-                    const corrosionArmor = resumeDeferredHeroCorrosionArmor(
-                        action, game,
-                    );
-                    if (corrosionArmor?.message) {
-                        const corrosionDismissal = await queueTurnMessage(
-                            corrosionArmor.message,
-                        );
-                        if (corrosionDismissal !== null
-                            && corrosionDismissal !== undefined) {
-                            actorContactPagerOwned = true;
-                            // The key can dismiss the preceding hit message
-                            // before this armor message appears. A later death
-                            // screen must show the HP after the hit.
-                            actorContactMessageAfterPager
-                                = game._pending_message
-                                    === corrosionArmor.message;
-                        }
-                    }
-                    const corrosionFinal = finishDeferredHeroCorrosionArmor(
-                        action, game,
-                    );
-                    if (corrosionFinal?.message) {
-                        const dissolveDismissal = await queueTurnMessage(
-                            corrosionFinal.message,
-                        );
-                        if (dissolveDismissal !== null
-                            && dissolveDismissal !== undefined) {
-                            actorContactPagerOwned = true;
-                        }
-                    }
-                }
                 if (heroAttack.deferredDecayRehumanize) {
-                    const decayFormPagerOwned
-                        = await resolveErosionFormRehumanization(
-                            heroAttack, 'You rot!',
-                        );
-                    actorContactPagerOwned ||= decayFormPagerOwned;
+                    const decayPagerOwned = await resolveErosionFormRehumanization(
+                        heroAttack, 'You rot!',
+                    );
+                    actorContactPagerOwned ||= decayPagerOwned;
                     heroAttack.deferredDecayRehumanize = false;
                 }
-                while (heroAttack.deferredDecayArmor) {
-                    const decayArmor = resumeDeferredHeroDecayArmor(
-                        action, game,
-                    );
-                    if (decayArmor?.message) {
-                        const decayDismissal = await queueTurnMessage(
-                            decayArmor.message,
-                        );
-                        if (decayDismissal !== null
-                            && decayDismissal !== undefined) {
-                            actorContactPagerOwned = true;
-                        }
-                    }
-                    const decayFinal = finishDeferredHeroDecayArmor(
-                        action, game,
-                    );
-                    if (decayFinal?.message) {
-                        const decayFinalDismissal = await queueTurnMessage(
-                            decayFinal.message,
-                        );
-                        if (decayFinalDismissal !== null
-                            && decayFinalDismissal !== undefined) {
-                            actorContactPagerOwned = true;
-                        }
-                    }
+                const armorErosion = heroAttack.deferredRustArmor ? 'rust'
+                    : heroAttack.deferredCorrosionArmor ? 'corrosion'
+                        : heroAttack.deferredDecayArmor ? 'rot' : null;
+                if (armorErosion) {
+                    await erodeArmor(game.u, armorErosion, { publish: publishEquipmentMessage });
+                    heroAttack.deferredRustArmor = false;
+                    heroAttack.deferredCorrosionArmor = false;
+                    heroAttack.deferredDecayArmor = false;
+                    heroAttack.deferredPostHit = true;
                 }
                 if (heroAttack.drainMessage) {
                     const drainDismissal = await queueTurnMessage(
@@ -5083,70 +4926,10 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             if (heroDied) break;
         }
         if (movement?.attack?.kind === 'monster-attack') {
-            do {
-                const message = visibleMonsterCombatMessage(movement.attack);
-                if (message) await queueTurnMessage(message);
-                else await reportUnseenMonsterCombat(movement.attack);
-                if (movement.attack.deferredContact)
-                    await resumeDeferredMonsterContact(action, game);
-                if (movement.attack.deathPending
-                    && cansee(movement.attack.defender.mx,
-                        movement.attack.defender.my)) {
-                    const defender = quietMonsterName(movement.attack.defender);
-                    await queueTurnMessage(`The ${defender} is killed!`);
-                }
-                if (movement.attack.deathPending) {
-                    await finishDeferredMonsterDeath(action, game, {
-                        publish: queueTurnMessage,
-                    });
-                    newsym(movement.attack.defender.mx,
-                        movement.attack.defender.my);
-                    newsym(movement.attack.aggressor.mx,
-                        movement.attack.aggressor.my);
-                }
-                if (movement.attack.defenderDied) break;
-                if (!movement.attack.deferredContact) break;
-            } while (movement.attack.deferredContact);
+            const combat = movement.attack;
+            await presentMonsterGrowth(combat.aggressor, combat.death?.growth);
             await presentMonsterGrowth(
-                movement.attack.aggressor,
-                movement.attack.death?.growth,
-            );
-            if (movement.attack.counterattack?.deferredContact) {
-                const counterattack = movement.attack.counterattack;
-                do {
-                    const counterMessage = visibleMonsterCombatMessage(
-                        counterattack,
-                    );
-                    if (counterMessage)
-                        await queueTurnMessage(counterMessage);
-                    else await reportUnseenMonsterCombat(counterattack);
-                    if (counterattack.deferredContact)
-                        resumeDeferredMonsterCounterattack(action, game);
-                    if (counterattack.deathPending
-                        && cansee(counterattack.defender.mx,
-                            counterattack.defender.my)) {
-                        const defender = quietMonsterName(
-                            counterattack.defender,
-                        );
-                        await queueTurnMessage(`The ${defender} is killed!`);
-                    }
-                    if (counterattack.deathPending) {
-                        await finishDeferredMonsterCounterattackDeath(
-                            action, game, { publish: queueTurnMessage },
-                        );
-                        newsym(counterattack.defender.mx,
-                            counterattack.defender.my);
-                        newsym(counterattack.aggressor.mx,
-                            counterattack.aggressor.my);
-                    }
-                    if (counterattack.defenderDied) break;
-                    if (!counterattack.deferredContact) break;
-                } while (counterattack.deferredContact);
-            }
-            const counterattack = movement.attack.counterattack;
-            await presentMonsterGrowth(
-                counterattack?.aggressor,
-                counterattack?.death?.growth,
+                combat.counterattack?.aggressor, combat.counterattack?.death?.growth,
             );
         }
         // monmove.c:dochug() performs the vile-monster emotional attack only

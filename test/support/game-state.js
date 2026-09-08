@@ -2,7 +2,7 @@ import { COLNO, COULD_SEE, IN_SIGHT, ROWNO } from '../../js/const.js';
 import { GameMap } from '../../js/game.js';
 import { game, resetGame } from '../../js/gstate.js';
 import { resetInputState } from '../../js/input.js';
-import { roles } from '../../js/roles.js';
+import { races, roles } from '../../js/roles.js';
 import { initializeHeroSpecies } from '../../js/u_init.js';
 
 function visibleGrid() {
@@ -15,6 +15,7 @@ function visibleGrid() {
 export function freshGame({
     level = new GameMap(),
     role = roles[0],
+    race = races[0],
     heroX = 10,
     heroY = 10,
     hero = {},
@@ -33,6 +34,7 @@ export function freshGame({
         moves,
         viz_array: visibleGrid(),
         inventory,
+        urace: race,
         uwep: null,
         uswapwep: null,
         uquiver: null,
