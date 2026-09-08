@@ -80,7 +80,7 @@ import {
 } from './monster_data.js';
 import {
     AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CORR, AD_DCAY, AD_DREN,
-    AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS,
+    AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS,
     AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON,
     AD_STUN, AD_WRAP, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE,
     AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP,
@@ -131,6 +131,11 @@ import { clearHeroSliming } from './slime.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
 import { erodeAttackingWeapon } from './object_erosion.js';
+import { specialAttackNegated } from './magic_negation.js';
+import {
+    poisonAttackAttribute, poisonHeroFromMonster, poisonMonsterFromAttack,
+} from './monster_poison.js';
+import { isPermanentlyPoisonedObject } from './object_properties.js';
 import { showMonsterCombatAttack, showMonsterCombatDeath } from './monster_combat_messages.js';
 import {
     finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
@@ -2478,6 +2483,18 @@ async function monsterMeleeAttack(
                 damage += rollPhysicalWeaponDamage(weapon, defender, { rollOne, rollDice });
                 damage = Math.max(1, damage + monsterWeaponStrengthBonus(aggressor, random));
                 await erodeAttackingWeapon(defender, weapon, { state, random });
+                if ((weapon.opoisoned || isPermanentlyPoisonedObject(weapon))
+                    && random(4) === 0) {
+                    damage = await poisonMonsterFromAttack(
+                        aggressor, defender, attack.attackType, damage, { random },
+                    );
+                }
+            } else if (poisonAttackAttribute(attack.damageType) !== null
+                && !specialAttackNegated(aggressor, defender, { state, random })
+                && random(8) === 0) {
+                damage = await poisonMonsterFromAttack(
+                    aggressor, defender, attack.attackType, damage, { random },
+                );
             }
             // mdamagem() checks generic knockback before applying damage,
             // including for an ultimately fatal physical hit.
@@ -4951,6 +4968,9 @@ async function basicMonsterAttack(
     const contactWeapon = attackType === AT_WEAP
         ? monsterWieldedWeapon(monster) : null;
     if (hit && contactWeapon && damageType === AD_PHYS) {
+        const poison = roll <= 5
+            && (contactWeapon.opoisoned || isPermanentlyPoisonedObject(contactWeapon))
+            ? { attribute: A_STR, fatal: 10 } : null;
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const weaponDamage = rollPhysicalWeaponDamageAgainstHero(
@@ -4970,10 +4990,19 @@ async function basicMonsterAttack(
             return retainHeroAttackContinuation({
                 kind: 'hero-attack', roll, threshold, hit, damage,
                 attackType, damageType, effect: 'physical-weapon',
-                oldFormMnum, deferredPostHit: true,
+                oldFormMnum, poison, deferredPostHit: true,
             }, monster, attackIndex);
         }
         await erodeAttackingWeapon(state.u, contactWeapon, { state, random });
+        if (poison) {
+            const effect = await poisonHeroFromMonster(monster, attackType, {
+                ...poison, state, random, rollOne, rollDice,
+            });
+            if (effect.died) return retainHeroAttackContinuation({
+                kind: 'hero-attack', roll, threshold, hit,
+                damage: 0, heroDied: true, attackType,
+            }, monster, attackIndex);
+        }
         recordRandom(random, calls, 3);
         recordRandom(random, calls, 6);
         damage = reduceHeroContactDamage(damage, state, rollOne, calls);
@@ -5009,27 +5038,32 @@ async function basicMonsterAttack(
             attackType,
             effect: negated ? 'electric-avoided' : 'electric-zap',
         }, monster, attackIndex);
-    } else if (hit && [7, 8, 9].includes(damageType)
-        && dice > 0 && sides > 0) {
+    } else if (hit && poisonAttackAttribute(damageType) !== null) {
         // uhitm.c:mhitm_ad_drst() family.  Poisonous natural attacks roll
         // their physical damage first, then magic cancellation; only a
         // non-negated attack reaches the one-in-eight attribute-poison gate.
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
-        const armorProtection = state?.u?._magicNegation ?? 0;
-        const negated = !!monster.mcan
-            || recordRandom(random, calls, 10) < 3 * armorProtection;
+        const negated = specialAttackNegated(monster, state.u, { state, random });
+        const poison = negated ? null
+            : { attribute: poisonAttackAttribute(damageType), chance: 8 };
         if (deferVisibleContact) {
             return retainHeroAttackContinuation({
                 kind: 'hero-attack', roll, threshold, hit, damage,
                 attackType, effect: 'poisonous-natural',
-                poisonAttribute: damageType - 7,
-                negated, deferredPoisonCheck: !negated,
+                poison,
                 deferredPostHit: true,
             }, monster, attackIndex);
         }
-        let poisoned = false;
-        if (!negated) poisoned = recordRandom(random, calls, 8) === 0;
+        if (poison) {
+            const effect = await poisonHeroFromMonster(monster, attackType, {
+                ...poison, state, random, rollOne, rollDice,
+            });
+            if (effect.died) return retainHeroAttackContinuation({
+                kind: 'hero-attack', roll, threshold, hit,
+                damage: 0, heroDied: true, attackType,
+            }, monster, attackIndex);
+        }
         recordRandom(random, calls, 3);
         recordRandom(random, calls, 6);
         damage = reduceHeroContactDamage(damage, state, rollOne, calls);
@@ -5037,7 +5071,6 @@ async function basicMonsterAttack(
         return retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit, damage,
             attackType, effect: 'poisonous-natural',
-            poisonAttribute: damageType - 7, poisoned,
         }, monster, attackIndex);
     } else if (hit && damageType === AD_SAMU
         && dice > 0 && sides > 0) {
@@ -5791,28 +5824,25 @@ function runCovetousHarassTactics(monster, state, random, calls) {
 // Continue an ordinary natural hit after its visible hit message has been
 // accepted.  C ref: mhitu.c:hitmu() -> mhitm_knockback(), then losehp().
 export async function resumeDeferredHeroContact(
-    action, state, random = rn2, rollOne = rnd,
-    publish = plineWithContinuation,
+    action, state, {
+        random = rn2, rollOne = rnd, rollDice = d,
+        publish = plineWithContinuation, die,
+    } = {},
 ) {
     const attack = action?.movement?.attack;
     if (!attack?.deferredPostHit) return action;
     const calls = action.calls;
-    // mhitm_ad_drst() prints hitmsg() after magic cancellation but before the
-    // one-in-eight poison gate.  A tty pager can therefore split those two
-    // draws across captured input steps.
-    if (attack.deferredPoisonCheck) {
-        attack.poisoned = recordRandom(random, calls, 8) === 0;
-        attack.deferredPoisonCheck = false;
-        // mhitm_ad_drst() calls poisoned() before hitmu() reaches
-        // mhitm_knockback().  The poison notice can itself suspend in tty,
-        // so leave the post-hit tail resumable until the display owner has
-        // completed that nested transaction.
-        if (attack.poisoned) {
-            attack.deferredPoisonEffect = true;
+    if (attack.poison) {
+        const poison = await poisonHeroFromMonster(action.monster, attack.attackType, {
+            ...attack.poison, state, random, rollOne, rollDice, publish, die,
+        });
+        attack.poison = null;
+        if (poison.died) {
+            attack.heroDied = true;
+            attack.deferredPostHit = false;
             return action;
         }
     }
-    if (attack.deferredPoisonEffect) return action;
     if (attack.deferredAmuletTheftGate) {
         const stealGate = recordRandom(random, calls, 20);
         attack.deferredAmuletTheftGate = false;

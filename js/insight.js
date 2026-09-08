@@ -13,7 +13,8 @@ import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
 import {
     ATTRIBUTE_DISPLAY_ORDER, currentAttribute, exerciseAttribute,
 } from './attrib.js';
-import { heroIsDisplaced, magicNegation } from './armor.js';
+import { heroIsDisplaced } from './armor.js';
+import { magicNegation } from './magic_negation.js';
 import { invWeight, nearCapacity } from './weight.js';
 import {
     ACH_HELL, ACH_MINE, ACH_RNK1, ACH_RNK8, ACH_TOWN,
@@ -311,7 +312,7 @@ function liveAttributePropertyLines() {
                 ? ` because of your ${teleportRing.name}` : '';
         lines.push(`  You have teleport control${suffix}.`);
     }
-    const armorCancellation = magicNegation(game);
+    const armorCancellation = magicNegation(game.u);
     if (armorCancellation) {
         lines.push(`  You are ${['', 'warded', 'guarded', 'protected'][
             Math.min(3, armorCancellation)]}.`);
@@ -700,7 +701,7 @@ function finalAttributePages() {
                 page2[row++] = ' You were poison resistant.';
             if (u.infravision) page2[row++] = ' You had infravision.';
             if (u.stealth) page2[row++] = ' You were stealthy.';
-            const sleepyCancellation = magicNegation(game);
+            const sleepyCancellation = magicNegation(game.u);
             if (sleepyCancellation)
                 page2[row++] = ` You were ${['', 'warded', 'guarded', 'protected'][Math.min(3, sleepyCancellation)]}.`;
             if ((u.uluck || 0) > 0) page2[row++] = ' You were lucky.';
@@ -737,7 +738,7 @@ function finalAttributePages() {
         if (game.uarmc?.otyp === 148)
             page2[attributeRow++] = ' You were magic-protected.';
         if (u.infravision) page2[attributeRow++] = ' You had infravision.';
-        const magicCancellation = magicNegation(game);
+        const magicCancellation = magicNegation(game.u);
         if (magicCancellation)
             page2[attributeRow++] = ` You were ${['', 'warded', 'guarded', 'protected'][Math.min(3, magicCancellation)]}.`;
         if ((u.uluck || 0) > 0) page2[attributeRow++] = ' You were lucky.';

@@ -2,18 +2,32 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
-import { NO_MINVENT, W_ARM, W_ARMG, W_WEP } from '../js/const.js';
+import { A_STR, NO_MINVENT, W_ARM, W_ARMG, W_WEP } from '../js/const.js';
 import { pline } from '../js/display.js';
 import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { runMonsterAction } from '../js/monmove.js';
-import { DAGGER, GAUNTLETS_OF_POWER, OBJECT_NAMES } from '../js/object_data.js';
-import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { CLOAK_OF_PROTECTION, DAGGER, GAUNTLETS_OF_POWER, OBJECT_NAMES } from '../js/object_data.js';
+import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+test('weapon poison weakens the hero despite armor magic cancellation', async () => {
+    freshObjectRoom({ flags: { verbose: false } });
+    wearHeroArmor(addInventoryObject(CLOAK_OF_PROTECTION));
+    findArmorClass();
+    const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+    goblin.mpeaceful = false;
+    equipMonsterObject(goblin, artifactObject('Grimtooth'), W_WEP);
+    const strength = game.u.acurr.a[A_STR];
+
+    await runMonsterAction(goblin, game, () => 1, count => count, () => 1);
+
+    assert.ok(game.u.acurr.a[A_STR] < strength);
+});
 
 test('striking a rust-monster body rusts the attacking weapon', async () => {
     freshObjectRoom({ flags: { verbose: false } });

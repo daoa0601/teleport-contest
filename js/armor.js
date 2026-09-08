@@ -2,6 +2,7 @@
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
 
 import { game } from './gstate.js';
+import { magicNegation } from './magic_negation.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './light.js';
 import {
@@ -10,7 +11,7 @@ import {
     GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES,
     YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
     SHIELD_OF_DRAIN_RESISTANCE,
-    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, OBJECT_SPELL_LEVEL,
+    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY,
     WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { rnd } from './rng.js';
@@ -440,33 +441,6 @@ function equippedObject(state, slot) {
     return state.u?.[slot] || null;
 }
 
-// C ref: worn.c:magic_negation().  objects[].a_can is generated into the
-// shared oc_oc2 field (OBJECT_SPELL_LEVEL in the current metadata module).
-// The strongest worn armor contribution owns magical-cancellation checks;
-// armor class by itself cannot stand in for it.
-export function magicNegation(state = game) {
-    let cancellation = Math.max(0, ...ARMOR_SLOTS.map(slot => {
-        const armor = equippedObject(state, slot);
-        return armor ? (OBJECT_SPELL_LEVEL[armor.otyp] || 0) : 0;
-    }));
-    const protectionRing = [
-        equippedObject(state, 'uleft'), equippedObject(state, 'uright'),
-    ].some(object => object?.otyp === RIN_PROTECTION);
-    const guardingAmulet
-        = equippedObject(state, 'uamul')?.otyp === AMULET_OF_GUARDING;
-    if (guardingAmulet) cancellation += 2;
-    else if (protectionRing) cancellation += 1;
-    else if (cancellation < 1) {
-        const hero = state.u || {};
-        if (((hero.intrinsicProtection || hero.protectionIntrinsic)
-                && (hero.ublessed ?? 0) > 0)
-            || (hero.uspellprot ?? hero.spellProtection ?? 0) > 0) {
-            cancellation = 1;
-        }
-    }
-    return Math.min(3, cancellation);
-}
-
 function protectionItemBonus(object, expectedType) {
     return object?.otyp === expectedType ? objectEnchantment(object) : 0;
 }
@@ -500,7 +474,7 @@ export function projectedArmorClass(state = game) {
 
 export function findArmorClass(state = game) {
     const hero = state.u || (state.u = {});
-    hero._magicNegation = magicNegation(state);
+    hero._magicNegation = magicNegation(hero, state);
     hero.uac = projectedArmorClass(state);
     return hero.uac;
 }

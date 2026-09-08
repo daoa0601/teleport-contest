@@ -3,6 +3,7 @@ import { findArmorClass } from '../../js/armor.js';
 import { GameMap } from '../../js/game.js';
 import { GameDisplay } from '../../js/game_display.js';
 import { game } from '../../js/gstate.js';
+import { resetInputState } from '../../js/input.js';
 import { initRng } from '../../js/rng.js';
 import { vision_reset } from '../../js/vision.js';
 import { freshGame } from './game-state.js';
@@ -59,4 +60,13 @@ export function freshGameplayRoom({
     });
     findArmorClass();
     return level;
+}
+
+export function freshTurnRoom(room = {}) {
+    freshGameplayRoom({ ...room, role: 'valkyrie' });
+    game._moveloopStarted = true;
+    game._maintenanceMove = 1;
+    game._monsterMovementInitialized = true;
+    game.u.umovement = 12;
+    return resetInputState();
 }

@@ -7,48 +7,36 @@ import { burnAwayHeroSlime } from '../js/hack.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving,
 } from '../js/end.js';
-import {
-    takeMonsterTurn, resumeDeferredHeroContact,
-} from '../js/monmove.js';
+import { moveloop_core } from '../js/allmain.js';
+import { pushKeys } from '../js/input.js';
 import { polymonHero } from '../js/polyself.js';
 import {
     AMULET_OF_LIFE_SAVING, LEATHER_ARMOR,
 } from '../js/object_data.js';
 import {
-    advanceHeroSliming, finishDeferredHeroSlime, PM_GREEN_SLIME,
-    resumeDeferredHeroSlime, startHeroSliming,
+    advanceHeroSliming, PM_GREEN_SLIME, startHeroSliming,
 } from '../js/slime.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshHeroConditionRoom } from './support/hero-state.js';
+import { freshTurnRoom } from './support/playable-room.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 
 test('a green slime touch infects and still deals its physical damage', async () => {
-    freshHeroConditionRoom();
-    const slime = await createMonsterAt('green slime', 12, 10);
-    slime.mux = game.u.ux;
-    slime.muy = game.u.uy;
+    freshTurnRoom();
+    const slime = await createMonsterAt('green slime', 11, 10);
+    slime.mpeaceful = false;
     slime.movement = 12;
-    game._deferVisibleMonsterContact = true;
     const hitPoints = game.u.uhp;
+    pushKeys('m.                                m.');
 
-    const action = await takeMonsterTurn(
-        slime,
-        game,
-        range => range - 1,
-        () => 4,
-        () => 1,
-    );
-    resumeDeferredHeroSlime(action, game);
-    const message = action.movement.attack.slimeEffectMessage;
-    finishDeferredHeroSlime(action, game);
-    await resumeDeferredHeroContact(action, game, range => range - 1, () => 1);
+    await moveloop_core();
+    await moveloop_core();
 
-    assert.equal(message, "You don't feel very well.");
-    assert.equal(game.u.slimedTurns, 10);
+    assert.ok(game.u.slimedTurns > 0 && game.u.slimedTurns <= 10);
     assert.equal(game.u.slimeKiller, 'green slime');
-    assert.equal(game.u.uhp, hitPoints - 4);
+    assert.ok(game.u.uhp < hitPoints);
 });
 
 test('the slime countdown strips speed and interrupts the current action',

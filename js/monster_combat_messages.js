@@ -5,12 +5,18 @@ import { game } from './gstate.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { cansee } from './vision.js';
 
+export function canSeeMonsterCombat(attacker, defender) {
+    return (cansee(attacker.mx, attacker.my)
+            && canSpotMonster(attacker, attacker.mx, attacker.my))
+        || (cansee(defender.mx, defender.my)
+            && canSpotMonster(defender, defender.mx, defender.my));
+}
+
 export async function showMonsterCombatAttack(aggressor, defender, attack, state = game) {
     if (state._suppressMessagesUntilInput) return;
     const attackerSpotted = canSpotMonster(aggressor, aggressor.mx, aggressor.my);
     const defenderSpotted = canSpotMonster(defender, defender.mx, defender.my);
-    const visible = (cansee(aggressor.mx, aggressor.my) && attackerSpotted)
-        || (cansee(defender.mx, defender.my) && defenderSpotted);
+    const visible = canSeeMonsterCombat(aggressor, defender);
     if (!visible) {
         await reportCombatNoise(aggressor, state);
         return;

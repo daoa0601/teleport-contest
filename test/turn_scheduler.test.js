@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { IRONBARS, NEED_WEAPON, NO_MINVENT, NO_WEAPON_WANTED, PIT, POOL, STONE, W_WEP } from '../js/const.js';
+import { A_STR, IRONBARS, NEED_WEAPON, NO_MINVENT, NO_WEAPON_WANTED, PIT, POOL, STONE, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { tameMonster } from '../js/dog.js';
-import { pushKeys, resetInputState } from '../js/input.js';
+import { pushKeys } from '../js/input.js';
+import { initRng } from '../js/rng.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AKLYS, AMULET_OF_STRANGULATION, CLUB, DAGGER, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, WAN_MAGIC_MISSILE,
@@ -16,26 +17,33 @@ import {
 } from '../js/hero_illness.js';
 import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
-import { addInventoryObject, chargedWand, knownObject } from './support/game-objects.js';
+import { addInventoryObject, artifactObject, chargedWand, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
-import { freshGameplayRoom } from './support/playable-room.js';
+import { freshTurnRoom } from './support/playable-room.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { checkMonsterGearNextTurn } from '../js/monworn.js';
 import { canSeeMonster } from '../js/display.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 
-function freshTurnArena(room = {}) {
-    freshGameplayRoom({ ...room, role: 'valkyrie' });
-    game._moveloopStarted = true;
-    game._maintenanceMove = 1;
-    game._monsterMovementInitialized = true;
-    game.u.umovement = 12;
-    return resetInputState();
-}
+test('a monster\'s poisoned weapon weakens the hero during an ordinary turn', async () => {
+    freshTurnRoom();
+    const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+    goblin.mpeaceful = false;
+    goblin.movement = 12;
+    equipMonsterObject(goblin, artifactObject('Grimtooth'), W_WEP);
+    const strength = game.u.acurr.a[A_STR];
+    initRng(2n);
+    pushKeys('m.                    ');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.ok(game.u.acurr.a[A_STR] < strength);
+});
 
 test('a weapon rusts on the hero\'s monster body during an ordinary turn', async () => {
-    freshTurnArena();
+    freshTurnRoom();
     installPolymorphedHero('rust monster');
     const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     goblin.mpeaceful = false;
@@ -51,7 +59,7 @@ test('a weapon rusts on the hero\'s monster body during an ordinary turn', async
 });
 
 test('a pet\'s weapon rusts when it hits a rust monster during an ordinary turn', async () => {
-    freshTurnArena({ heroX: 18, right: 20 });
+    freshTurnRoom({ heroX: 18, right: 20 });
     const captain = await createMonsterAt('captain', 10, 10, NO_MINVENT);
     tameMonster(captain, game);
     captain.movement = 12;
@@ -69,7 +77,7 @@ test('a pet\'s weapon rusts when it hits a rust monster during an ordinary turn'
 });
 
 test('a giant chooses its club over a sword during its turn', async () => {
-    freshTurnArena();
+    freshTurnRoom();
     const giant = await createMonsterAt('giant', 12, 10, NO_MINVENT);
     giant.mpeaceful = false;
     giant.movement = 12;
@@ -85,7 +93,7 @@ test('a giant chooses its club over a sword during its turn', async () => {
 });
 
 test('a failed weapon switch costs the monster its turn and leaves its welded weapon held', async () => {
-    freshTurnArena();
+    freshTurnRoom();
     const giant = await createMonsterAt('giant', 12, 10, NO_MINVENT);
     giant.mpeaceful = false;
     giant.movement = 12;
@@ -106,7 +114,7 @@ test('a failed weapon switch costs the monster its turn and leaves its welded we
 });
 
 test('a caged soldier spends a turn wielding its lance before striking through the bars', async () => {
-    freshTurnArena();
+    freshTurnRoom();
     const soldier = await createMonsterAt('soldier', 12, 11, NO_MINVENT);
     soldier.mpeaceful = false;
     soldier.movement = 12;
@@ -136,7 +144,7 @@ test('a caged soldier spends a turn wielding its lance before striking through t
 });
 
 test('a soldier throws and recovers its tethered club during an ordinary turn', async () => {
-    freshTurnArena({ top: 10, bottom: 10 });
+    freshTurnRoom({ top: 10, bottom: 10 });
     vision_recalc(0);
     const soldier = await createMonsterAt('soldier', 14, 10, NO_MINVENT);
     soldier.mpeaceful = false;
@@ -163,7 +171,7 @@ test('a soldier throws and recovers its tethered club during an ordinary turn', 
 });
 
 test('a monster can put on an invisibility cloak during its turn', async () => {
-    freshTurnArena();
+    freshTurnRoom();
     const soldier = await createMonsterAt('soldier', 12, 10, NO_MINVENT);
     soldier.mpeaceful = 1;
     soldier.movement = 12;
@@ -192,7 +200,7 @@ async function runUntilInput(inputGate, maxCycles) {
 }
 
 test('a giant escapes its pit and continues moving during a game turn', async () => {
-    freshTurnArena();
+    freshTurnRoom();
     const giant = await createMonsterAt('giant', 13, 10);
     giant.mpeaceful = 1;
     giant.mtrapped = 1;
@@ -209,7 +217,7 @@ test('a giant escapes its pit and continues moving during a game turn', async ()
 });
 
 test('an engulfing monster releases the hero when its hold expires during a turn', async () => {
-    freshTurnArena();
+    freshTurnRoom();
     const cloud = await createMonsterAt('fog cloud', game.u.ux + 1, game.u.uy);
     cloud.movement = 12;
     installSwallowedHero(cloud, 1);
@@ -224,7 +232,7 @@ test('an engulfing monster releases the hero when its hold expires during a turn
 });
 
 test('strangulation advances during world turns and pauses during prayer', async () => {
-    const inputGate = freshTurnArena();
+    const inputGate = freshTurnRoom();
     wearHeroAccessory(addInventoryObject(AMULET_OF_STRANGULATION), 'uamul');
     pushKeys('h');
 
@@ -245,7 +253,7 @@ test('strangulation advances during world turns and pauses during prayer', async
 
 test('helplessness advances through live global turns',
     async () => {
-        const inputGate = freshTurnArena();
+        const inputGate = freshTurnRoom();
         addInventoryObject(POT_PARALYSIS, {
             initialize: false,
             invlet: 'a',
@@ -263,7 +271,7 @@ test('helplessness advances through live global turns',
 
 test('a burdened hero waits for a complete movement ration',
     async () => {
-        const inputGate = freshTurnArena();
+        const inputGate = freshTurnRoom();
         // Strength 10 + Constitution 10 carries 550 units.  A 600-unit
         // payload is Burdened, so each global allocation grants 9 rather than
         // 12 movement points.  One wait therefore needs two world turns.
@@ -290,7 +298,7 @@ test('a burdened hero waits for a complete movement ration',
 
 test('a stationary monster in water is checked during world maintenance',
     async () => {
-        const inputGate = freshTurnArena();
+        const inputGate = freshTurnRoom();
         game.level.at(12, 10).typ = POOL;
         const oracle = await createMonsterAt('Oracle', 12, 10);
         oracle.mpeaceful = 1;
@@ -305,7 +313,7 @@ test('a stationary monster in water is checked during world maintenance',
     });
 
 test('a monster-fired magic missile can kill another monster', async () => {
-    const inputGate = freshTurnArena();
+    const inputGate = freshTurnRoom();
     const target = await createMonsterAt('jackal', 13, 10);
     Object.assign(target, {
         mhp: 1, mhpmax: 1, mac: 20,
@@ -334,7 +342,7 @@ test('a monster-fired magic missile can kill another monster', async () => {
 });
 
 test('poison clouds act after old blindness expires for the turn', async () => {
-    const inputGate = freshTurnArena();
+    const inputGate = freshTurnRoom();
     game.u.uhp = game.u.uhpmax = 40;
     game.u.blindTurns = 1;
     game.blind = true;
@@ -358,7 +366,7 @@ test('poison clouds act after old blindness expires for the turn', async () => {
 });
 
 test('slime infection advances during an ordinary world turn', async () => {
-    const inputGate = freshTurnArena();
+    const inputGate = freshTurnRoom();
     startHeroSliming({ state: game, turns: 7, killer: 'green slime' });
     pushKeys('h');
 
@@ -373,7 +381,7 @@ test('slime infection advances during an ordinary world turn', async () => {
 });
 
 test('petrification advances during an ordinary world turn', async () => {
-    const inputGate = freshTurnArena();
+    const inputGate = freshTurnRoom();
     startHeroPetrification({ state: game, killer: 'cockatrice egg' });
     pushKeys('h');
 
@@ -388,7 +396,7 @@ test('petrification advances during an ordinary world turn', async () => {
 });
 
 test('fatal sickness advances during an ordinary world turn', async () => {
-    const inputGate = freshTurnArena();
+    const inputGate = freshTurnRoom();
     startHeroSickness({
         state: game,
         turns: 7,
@@ -408,7 +416,7 @@ test('fatal sickness advances during an ordinary world turn', async () => {
 
 test('nausea advances before sickness during an ordinary world turn',
     async () => {
-        const inputGate = freshTurnArena();
+        const inputGate = freshTurnRoom();
         startHeroVomiting({ state: game, turns: 15 });
         startHeroSickness({
             state: game,

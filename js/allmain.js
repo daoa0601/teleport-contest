@@ -46,7 +46,6 @@ import { aggravateMonsters, angerMonster } from './monster_anger.js';
 import { animateRollingBoulderCell } from './hero_traps.js';
 import { grantAmuletWish } from './wish.js';
 import { exerciseAttribute } from './attrib.js';
-import { poisonHero } from './poison.js';
 import { rndcurse } from './throne.js';
 import { stopRun } from './runmode.js';
 import {
@@ -2434,20 +2433,9 @@ function heroPassiveResponseMessage(monster, passive) {
     return null;
 }
 
-function poisonAttackNoun(attack) {
-    if (attack?.attackType === 6) return 'sting';
-    if (attack?.attackType === 2) return 'bite';
-    return 'attack';
-}
-
 function recordContactRn2(action, range) {
     action?.calls?.push(`rn2(${range})`);
     return rn2(range);
-}
-
-function recordContactDice(action, count, sides) {
-    action?.calls?.push(`d(${count},${sides})`);
-    return d(count, sides);
 }
 
 function wornTheftObjectDescription(object) {
@@ -4600,8 +4588,20 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         if (dismissal !== null && dismissal !== undefined)
                             actorContactPagerOwned = true;
                     };
+                    const contactOptions = {
+                        publish: publishContactMessage,
+                        die: async options => {
+                            await waitForCurrentMonsterMore();
+                            return finishHeroDeath({
+                                ...options,
+                                beforeFinalDeath: () => restoreUnvisitedMonsterMovement(
+                                    monsterScan, actorIndex,
+                                ),
+                            });
+                        },
+                    };
                     await resumeDeferredHeroContact(
-                        action, game, rn2, rnd, publishContactMessage,
+                        action, game, contactOptions,
                     );
                     if (game.program_state?.gameover) return;
                     if (heroAttack.deferredElementalInventory) {
@@ -4629,40 +4629,12 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         const hitPoints = Upolyd(game.u) ? 'mh' : 'uhp';
                         if ((game.u?.[hitPoints] ?? 1) > 0) {
                             await resumeDeferredHeroContact(
-                                action, game, rn2, rnd, publishContactMessage,
+                                action, game, contactOptions,
                             );
                         } else {
                             heroAttack.heroDied = true;
                             heroAttack.deferredPostHit = false;
                         }
-                    }
-                    if (heroAttack.deferredPoisonEffect) {
-                        const subject = game.blind ? 'Its'
-                            : `The ${quietMonsterName(monster)}'s`;
-                        const poison = await poisonHero({
-                            reason: `${subject} ${poisonAttackNoun(heroAttack)}`,
-                            killer: monsterTypeName(monster.mnum, !!monster.female),
-                            attribute: heroAttack.poisonAttribute ?? 0,
-                            state: game,
-                            random: range => recordContactRn2(action, range),
-                            rollDice: (count, sides) => recordContactDice(action, count, sides),
-                            publish: queueTurnMessage,
-                            die: async options => {
-                                await waitForCurrentMonsterMore();
-                                return finishHeroDeath({
-                                    ...options,
-                                    beforeFinalDeath: () => restoreUnvisitedMonsterMovement(
-                                        monsterScan, actorIndex,
-                                    ),
-                                });
-                            },
-                        });
-                        if (poison.died) return;
-                        actorContactPagerOwned ||= poison.pagerOwned;
-                        heroAttack.deferredPoisonEffect = false;
-                        await resumeDeferredHeroContact(
-                            action, game, rn2, rnd, publishContactMessage,
-                        );
                     }
                     if (game.program_state?.gameover) return;
                 }
