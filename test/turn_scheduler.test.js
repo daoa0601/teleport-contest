@@ -74,6 +74,26 @@ test('a giant knocks a small hero backward during an ordinary turn', async () =>
     assert.ok(game.u.mh < game.u.mhmax);
 });
 
+test('an acid blob splashes a pet that kills it during an ordinary turn', async () => {
+    freshTurnRoom({ heroX: 18, right: 20 });
+    const soldier = await createMonsterAt('soldier', 10, 10, NO_MINVENT);
+    tameMonster(soldier, game);
+    soldier.movement = 12;
+    const blob = await createMonsterAt('acid blob', 11, 10, NO_MINVENT);
+    blob.mpeaceful = false;
+    blob.mhp = 1;
+    blob.movement = 0;
+    const health = soldier.mhp;
+    initRng(2n);
+    pushKeys('.                    ');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(game.level.monsters.includes(blob), false);
+    assert.ok(soldier.mhp < health);
+});
+
 test('a weapon rusts on the hero\'s monster body during an ordinary turn', async () => {
     freshTurnRoom();
     installPolymorphedHero('rust monster');

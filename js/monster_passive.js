@@ -13,9 +13,10 @@ import {
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
+import { healMonster } from './mon.js';
 import { erodeArmor, erodeObject } from './object_erosion.js';
 import {
-    MONSTER_ATTACKS, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName,
 } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
 import {
@@ -28,11 +29,8 @@ import {
     AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG,
     AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
-import {
-    AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
-    OBJECT_CHARGED, OBJECT_NAMES,
-    SPE_BOOK_OF_THE_DEAD,
-} from './object_data.js';
+import { OBJECT_NAMES } from './object_data.js';
+import { drainObjectEnchantment } from './object_state.js';
 import { hasWornProperty } from './properties.js';
 import {
     heroMonsterForm, returnHeroToHumanForm,
@@ -332,7 +330,7 @@ async function applyColdPassive(context) {
     });
     if (heroDied) return { appliedDamage: damage, heroDied };
 
-    healMonsterFromCold(monster, damage, random);
+    healMonster(monster, Math.trunc((damage + random(2)) / 2), Math.trunc((damage + 1) / 2));
     if ((monster.mhpmax ?? 0) > ((monster.m_lev ?? 0) + 1) * 8)
         splitMonster(monster, state);
     return { appliedDamage: damage, heroDied: false };
@@ -458,19 +456,6 @@ function monsterNearHero(monster, state) {
     ) <= 1;
 }
 
-function healMonsterFromCold(monster, damage, random) {
-    const amount = Math.trunc((damage + random(2)) / 2);
-    const overheal = Math.trunc((damage + 1) / 2);
-    const maximum = monster.mhpmax ?? monster.mhp ?? 0;
-    if ((monster.mhp ?? 0) + amount > maximum + overheal) {
-        monster.mhpmax = maximum + overheal;
-        monster.mhp = monster.mhpmax;
-        return;
-    }
-    monster.mhp = (monster.mhp ?? 0) + amount;
-    if (monster.mhp > maximum) monster.mhpmax = monster.mhp;
-}
-
 async function applyGolemEffects(damageType, damage, state, publish) {
     const form = heroMonsterForm(state);
     const name = form === null ? null : MONSTER_NAME[form];
@@ -486,16 +471,16 @@ async function applyGolemEffects(damageType, damage, state, publish) {
     exerciseAttribute(A_STR, true, state);
 }
 
-function passiveAttack(monster) {
+export function passiveAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || []).find(
         ([attackType]) => attackType === AT_NONE,
     ) || null;
 }
 
-function passiveDamage(monster, attack, rollDice) {
+export function passiveDamage(monster, attack, rollDice) {
     const [, , dice, sides] = attack;
     if (dice > 0) return rollDice(dice, sides);
-    if (sides > 0) return rollDice((monster.m_lev ?? 0) + 1, sides);
+    if (sides > 0) return rollDice(MONSTER_LEVEL[monster.mnum] + 1, sides);
     return 0;
 }
 
@@ -547,14 +532,7 @@ export async function applyMonsterPassiveToObject(
     const type = passive[1];
     if (type === AD_ENCH) {
         if (monster.mcan) return;
-        const enchantment = object.spe;
-        if (!OBJECT_CHARGED[object.otyp] || enchantment <= 0
-            || [AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD,
-                CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING]
-                .includes(object.otyp)) return;
-        if (rn2(100) < (object.oartifact ? 90 : 10)) return;
-        object.spe = enchantment - 1;
-        object.enchantment = object.spe;
+        if (!drainObjectEnchantment(object)) return;
         if (carried) state._armorClassDirty = true;
         if (carried && (object.known || object.typeKnown || object.oclass === 3)) {
             const name = object.name || OBJECT_NAMES[object.otyp];

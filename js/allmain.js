@@ -4874,13 +4874,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             earlierActorPagerInScan ||= actorContactPagerOwned;
             if (heroDied) break;
         }
-        if (movement?.attack?.kind === 'monster-attack') {
-            const combat = movement.attack;
-            await presentMonsterGrowth(combat.aggressor, combat.death?.growth);
-            await presentMonsterGrowth(
-                combat.counterattack?.aggressor, combat.counterattack?.death?.growth,
-            );
-        }
         // monmove.c:dochug() performs the vile-monster emotional attack only
         // after the complete standard attack set.  Even a nonzero result is
         // RNG-visible before ambient/global maintenance.

@@ -1,14 +1,14 @@
-// Monster terrain rules.
-// C ref: mon.c m_in_air() and minliquid().
+// Monster body and terrain rules.
+// C ref: mon.c.
 
 import { game } from './gstate.js';
 import {
     FOUNTAIN, G_GENOD, In_endgame, Is_earthlevel, Is_waterlevel, IS_LAVA,
-    IS_POOL, WATER,
+    IS_POOL, MSLOW, WATER,
 } from './const.js';
 import { dryFountainAt } from './fountain_terrain.js';
 import {
-    canSeeMonster, newsym,
+    canSeeMonster, newsym, plineWithContinuation,
 } from './display.js';
 import {
     lifeSaveMonster, preventMonsterDeath, wornMonsterLifeSaver,
@@ -31,6 +31,9 @@ import { monsterTeleportRestricted } from './teleport_rules.js';
 import { fireDamageChain } from './fire_damage.js';
 import { waterDamageChain } from './trap.js';
 import { cansee } from './vision.js';
+import { AD_COLD, AD_ELEC, AD_FIRE } from './monster_attack_types.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
+import { monsterSentenceSubject } from './monster_sound.js';
 
 const M1_FLY = 0x00000001;
 const M1_SWIM = 0x00000002;
@@ -45,6 +48,38 @@ const PM_IRON_GOLEM = 259;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_SALAMANDER = 329;
 const S_EEL = 57;
+
+// C healmon(). Overhealing can increase the monster's maximum health.
+export function healMonster(monster, amount, overheal = 0) {
+    const before = monster.mhp;
+    monster.mhp = Math.min(monster.mhp + amount, monster.mhpmax + overheal);
+    monster.mhpmax = Math.max(monster.mhpmax, monster.mhp);
+    return monster.mhp - before;
+}
+
+export async function applyMonsterGolemEffects(monster, damageType, damage, {
+    state = game, publish = plineWithContinuation,
+} = {}) {
+    const species = MONSTER_NAME[monster.mnum];
+    let healing = 0;
+    let slow = false;
+    if (species === 'flesh golem') {
+        if (damageType === AD_ELEC) healing = Math.trunc((damage + 5) / 6);
+        else slow = damageType === AD_FIRE || damageType === AD_COLD;
+    } else if (species === 'iron golem') {
+        slow = damageType === AD_ELEC;
+        if (damageType === AD_FIRE) healing = damage;
+    } else return;
+
+    if (slow && monster.mspeed !== MSLOW) {
+        const change = adjustMonsterSpeed(monster, -1);
+        const message = monsterSpeedMessage(change, monsterSentenceSubject(monster));
+        if (message && !state.in_mklev && canSeeMonster(monster, monster.mx, monster.my))
+            await publish(message);
+    }
+    if (healing && healMonster(monster, healing) && cansee(monster.mx, monster.my))
+        await publish(`${monsterSentenceSubject(monster)} seems healthier.`);
+}
 
 function speciesWasGenocided(mnum, state) {
     return !!((state.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD);

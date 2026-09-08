@@ -18,8 +18,9 @@ import {
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, swingMonsterWeapon, wieldMonsterWeapon } from './monster_weapon.js';
 import { attackHeroWithPolearm } from './monster_polearm.js';
 import { ammunitionMatchesLauncher, isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
-import { levelHasCeiling, monsterInAir } from './mon.js';
-import { growMonster } from './monster_growth.js';
+import { killGenocidedMonster, levelHasCeiling, monsterInAir } from './mon.js';
+import { finishMonsterGrowth, growMonster } from './monster_growth.js';
+import { drainObjectEnchantment } from './object_state.js';
 import { currentAttribute } from './attrib.js';
 import { loseExperienceLevel } from './exper.js';
 import {
@@ -94,7 +95,7 @@ import {
     FAKE_AMULET_OF_YENDOR, FLINT,
     ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK,
     ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES,
-    OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_DESCRIPTIONS,
+    OBJECT_BIMANUAL, OBJECT_DESCRIPTIONS,
     OBJECT_LARGE_DAMAGE, OBJECT_NAMES,
     OBJECT_SMALL_DAMAGE,
     OBJECT_SUBTYPE, PICK_AXE, ROCK,
@@ -143,6 +144,7 @@ import {
 import { isPermanentlyPoisonedObject } from './object_properties.js';
 import { canSeeMonsterCombat, showMonsterCombatAttack, showMonsterCombatDeath } from './monster_combat_messages.js';
 import { monsterSentenceSubject } from './monster_sound.js';
+import { applyMonsterContactPassive } from './monster_contact_passive.js';
 import { tryKnockback } from './knockback.js';
 import {
     finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
@@ -2404,7 +2406,7 @@ async function finishMonsterCombatDeath(
     });
 }
 
-function monsterCombatDeathResult(aggressor, defender, death, state, {
+async function monsterCombatDeathResult(aggressor, defender, death, state, {
     random, rollOne, calls, grantExperience = true,
 }) {
     if (death.survived) {
@@ -2420,6 +2422,13 @@ function monsterCombatDeathResult(aggressor, defender, death, state, {
         rollOne,
         calls,
     }) : null;
+    if (growth?.changedSpecies) {
+        if (canProjectMonster(aggressor, aggressor.mx, aggressor.my))
+            await plineWithContinuation(growth.message);
+        finishMonsterGrowth(aggressor, growth);
+        newsym(aggressor.mx, aggressor.my);
+        if (growth.genocided) await killGenocidedMonster(aggressor, state);
+    }
     return {
         survived: false,
         corpseCreated: !!death.corpse,
@@ -2466,12 +2475,13 @@ async function monsterMeleeAttack(
     const results = [];
     let struck = false;
     let death = null;
+    let fatalPassive = false;
     const finishContactDeath = async (monster, options, grantExperience = true) => {
         const outcome = await finishEnvironmentalMonsterDeath(monster, state, {
             ...options, random, publish: plineWithContinuation,
         });
         if (monster === defender) {
-            death = monsterCombatDeathResult(aggressor, defender, outcome, state, {
+            death = await monsterCombatDeathResult(aggressor, defender, outcome, state, {
                 random, rollOne, calls, grantExperience,
             });
         }
@@ -2578,9 +2588,8 @@ async function monsterMeleeAttack(
         }
         result.damage = damage;
         results.push(result);
-        if (aggressor.dead || aggressor.mhp <= 0 || (death && !death.survived)
-            || !state.level.monsters.includes(defender)) break;
-        if (defender.mhp <= 0) {
+        if (aggressor.dead || aggressor.mhp <= 0) break;
+        if (defender.mhp <= 0 && !defender.dead && (!death || death.survived)) {
             await showMonsterCombatDeath(defender, state);
             death = await finishMonsterCombatDeath(aggressor, defender, state, {
                 random, rollOne, calls, killingAttack: result,
@@ -2588,16 +2597,24 @@ async function monsterMeleeAttack(
             });
             newsym(defender.mx, defender.my);
             newsym(aggressor.mx, aggressor.my);
-            if (!death.survived) break;
         }
-        // passivemm() is reached after every attempted contact attack while
-        // the defender survives, including an ordinary miss.
-        if ((defender.mhp ?? 0) > 0
-            && distmin(aggressor.mx, aggressor.my, defender.mx, defender.my) <= 1)
-            recordRandom(random, calls, 3);
+        // Acid and disenchantment can retaliate after the defender's death.
+        if (!aggressor.dead && aggressor.mhp > 0
+            && (defender.dead || defender.mhp <= 0 || state.level.monsters.includes(defender))
+            && distmin(aggressor.mx, aggressor.my, defender.mx, defender.my) <= 1) {
+            const passive = await applyMonsterContactPassive(aggressor, defender, {
+                hit, weapon: usesWeaponAccuracy ? weapon : null,
+                state, random, rollDice,
+            });
+            if (passive.hit) struck = true;
+            fatalPassive = !!passive.fatal;
+            if (passive.stopped) break;
+        }
+        if (defender.dead || defender.mhp <= 0 || !state.level.monsters.includes(defender)
+            || !aggressor.mcanmove || aggressor.mfrozen > 0) break;
     }
     return {
-        kind: 'monster-attack', aggressor, defender, results, struck,
+        kind: 'monster-attack', aggressor, defender, results, struck, fatalPassive,
         aggressorDied: !!aggressor.dead || aggressor.mhp <= 0,
         defenderDied: !!defender.dead || defender.mhp <= 0,
         death,
@@ -2648,7 +2665,8 @@ function defenderCanAnswerMovementAttack(defender, random, calls) {
 function defenderCanCounterattack(
     attack, state, random, calls,
 ) {
-    if (!attack.struck || attack.defenderDied || attack.aggressorDied) return false;
+    if (!attack.struck || attack.defenderDied || attack.aggressorDied || attack.fatalPassive)
+        return false;
     if (attack.retaliationRule === 'movement') {
         return defenderCanAnswerMovementAttack(
             attack.defender, random, calls,
@@ -4750,28 +4768,6 @@ function selectHeroDisenchantmentTarget(state, random, calls) {
     ][fallback] || null;
 }
 
-function drainHeroItemByDisenchanter(object, random, calls) {
-    if (!object) return false;
-    const enchantment = Number.isInteger(object.spe)
-        ? object.spe : Number.isInteger(object.enchantment)
-            ? object.enchantment : 0;
-    const objectClass = object.oclass ?? object.class;
-    const chargeable = !!OBJECT_CHARGED[object.otyp]
-        || objectClass === WEAPON_CLASS || objectClass === ARMOR_CLASS
-        || object.class === 'Weapons' || object.class === 'Armor';
-    if (!chargeable || enchantment <= 0) return false;
-    if ([AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD,
-        CANDELABRUM_OF_INVOCATION, BELL_OF_OPENING].includes(object.otyp)) {
-        return false;
-    }
-    const artifact = !!(object.oartifact || object.artifact);
-    if (recordRandom(random, calls, 100) < (artifact ? 90 : 10))
-        return false;
-    object.spe = enchantment - 1;
-    object.enchantment = object.spe;
-    return true;
-}
-
 // C mon.c:mnexto()->teleport.c:enexto().  All three rings are collected and
 // shuffled before goodpos() selects a destination; the relocating monster's
 // old square remains occupied during that selection and is rejected.
@@ -5495,7 +5491,7 @@ async function basicMonsterAttack(
             const target = selectHeroDisenchantmentTarget(
                 state, random, calls,
             );
-            if (drainHeroItemByDisenchanter(target, random, calls))
+            if (drainObjectEnchantment(target, range => recordRandom(random, calls, range)))
                 drainedObject = target;
         }
         const quantity = drainedObject?.quantity
