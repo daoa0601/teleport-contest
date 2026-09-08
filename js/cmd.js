@@ -8740,6 +8740,7 @@ async function doapply(cannedInvlet = null) {
         const item = applicable.find(candidate => candidate.invlet
             === String.fromCharCode(key));
         if (item) {
+            if (cannedInvlet === null) game._pending_message = '';
             if (item.otyp === BULLWHIP) {
                 const wielded = await wieldTool(
                     item,
