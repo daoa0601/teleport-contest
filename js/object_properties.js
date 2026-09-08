@@ -7,19 +7,31 @@ import {
     P_SHURIKEN, P_SPEAR,
 } from './const.js';
 import {
-    AKLYS, OBJECT_DIR, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE,
+    AKLYS, OBJECT_CHARGED, OBJECT_DIR, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE,
     WAR_HAMMER,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
+const WAND_CLASS = 11;
 const GEM_CLASS = 13;
 const LEATHER = 7;
 const WHACK = 4;
 
 function objectClass(object) {
     return object?.oclass || objectClassForType(object?.otyp);
+}
+
+export function isWeaponTool(object) {
+    return objectClass(object) === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0;
+}
+
+// C objnam.c:doname() displays charges for wands and charged non-weapon tools.
+export function objectUsesCharges(object) {
+    return objectClass(object) === WAND_CLASS
+        || (objectClass(object) === TOOL_CLASS && !isWeaponTool(object)
+            && !!OBJECT_CHARGED[object.otyp]);
 }
 
 export function isMissileObject(object) {

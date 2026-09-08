@@ -516,7 +516,6 @@ async function disarmSqueakyBoard(trap, options) {
 
     if (tool.otyp === CAN_OF_GREASE) {
         tool.spe = Math.max(0, (tool.spe ?? 0) - 1);
-        if (tool.charges) tool.charges.current = tool.spe;
     } else {
         consumeOne(tool, options.state);
         recordObjectKnowledge(POT_OIL, options.state);

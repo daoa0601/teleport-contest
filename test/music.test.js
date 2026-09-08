@@ -16,7 +16,6 @@ import { freshGameplayRoom } from './support/playable-room.js';
 function instrument(otyp, spe = 0) {
     return Object.assign(mksobj(otyp, true, false), {
         spe,
-        charges: { current: spe, recharged: 0 },
     });
 }
 

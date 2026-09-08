@@ -199,14 +199,6 @@ async function announceImprovisation(instrument) {
     }
 }
 
-function consumeCharge(instrument) {
-    const current = Number.isInteger(instrument.spe)
-        ? instrument.spe : instrument.charges?.current ?? 0;
-    const remaining = Math.max(0, current - 1);
-    instrument.spe = remaining;
-    if (instrument.charges) instrument.charges.current = remaining;
-}
-
 async function putMonstersToSleep(distance) {
     for (const monster of liveMonsters()) {
         if (monsterDistance(monster) >= distance) continue;
@@ -303,7 +295,7 @@ function charmMonsters(distance) {
 }
 
 async function playMagicFlute(instrument, familiar) {
-    consumeCharge(instrument);
+    instrument.spe--;
     await plineWithContinuation(
         `You ${heroIsDeaf() ? 'seem to ' : ''}produce ${
             heroIsHallucinating() ? 'piped' : 'soft'
@@ -372,7 +364,7 @@ async function playElementalHorn(
     element,
     { finishMonsterKill } = {},
 ) {
-    consumeCharge(instrument);
+    instrument.spe--;
     const direction = await readHornDirection();
     game._pending_message = '';
     if (direction === null) {
@@ -424,7 +416,7 @@ async function playBugle(instrument, familiar) {
 }
 
 async function playMagicHarp(instrument, familiar) {
-    consumeCharge(instrument);
+    instrument.spe--;
     await plineWithContinuation(heroIsDeaf()
         ? 'You feel very soothing vibrations.'
         : `Your ${instrumentName(instrument)} produces very attractive${
@@ -496,7 +488,7 @@ function levelDescription() {
 }
 
 async function playEarthquakeDrum(instrument) {
-    consumeCharge(instrument);
+    instrument.spe--;
     await plineWithContinuation('You produce a heavy, thunderous rolling!');
     await plineWithContinuation(
         `The entire ${levelDescription()} is shaking around you!`,
@@ -511,7 +503,7 @@ async function improvise(instrument, options) {
     const canUseSpecial = !heroIsImpaired();
     let effectiveType = instrument.otyp;
     let mundaneDrum = false;
-    const charges = instrument.spe ?? instrument.charges?.current ?? 0;
+    const charges = instrument.spe;
     if (!canUseSpecial || charges <= 0) {
         if (effectiveType === MAGIC_FLUTE) effectiveType = WOODEN_FLUTE;
         if (effectiveType === MAGIC_HARP) effectiveType = WOODEN_HARP;

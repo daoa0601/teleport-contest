@@ -10,7 +10,7 @@ import { plineWithContinuation } from './display.js';
 import { deleteObject } from './object_delete.js';
 import { nameToMonster } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { isLauncherAmmunition, isMissileObject } from './object_properties.js';
+import { isLauncherAmmunition, isMissileObject, isWeaponTool } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { objectWeight } from './weight.js';
 import {
@@ -482,9 +482,8 @@ function applyWishEnchantment(object, parsed, wizardWish, luck) {
     let value = requested === null ? object.spe
         : Math.min(SPE_LIM, Math.abs(requested));
     if (requested !== null && !wizardWish) {
-        const weaponTool = object.oclass === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0;
         const enchantable = object.oclass === ARMOR_CLASS || object.oclass === WEAPON_CLASS
-            || weaponTool || (object.oclass === RING_CLASS && OBJECT_CHARGED[object.otyp]);
+            || isWeaponTool(object) || (object.oclass === RING_CLASS && OBJECT_CHARGED[object.otyp]);
         if (enchantable) {
             if (value > rnd(5) && value > object.spe) value = 0;
             if (value > 2 && luck < 0) sign = -1;
@@ -657,7 +656,6 @@ export function wishedObjectPresentation(otyp) {
         name,
         plural: pluralizePair(name),
         enchanted: cls === WEAPON_CLASS || cls === ARMOR_CLASS,
-        charged: cls === WAND_CLASS,
         showBuc: false,
         // readobjnam() only chooses and constructs the object.  The spell
         // identity remains ordinary objects[] metadata which spell.c's

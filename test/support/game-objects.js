@@ -79,7 +79,6 @@ export function chargedWand(otyp, { charges = 3, ...overrides } = {}) {
         invlet: 'a',
         where: 'inventory',
         spe: charges,
-        charges: { current: charges, recharged: 0 },
         ...overrides,
     });
 }

@@ -447,13 +447,13 @@ const ITEM_PRESENTATION = new Map([
     }],
     [EXPENSIVE_CAMERA, {
         class: 'Tools', name: 'expensive camera', plural: 'expensive cameras',
-        charged: true, showBuc: false,
+        showBuc: false,
     }],
     [CREDIT_CARD, { class: 'Tools', name: 'credit card', plural: 'credit cards' }],
     [TIN_OPENER, { class: 'Tools', name: 'tin opener', plural: 'tin openers' }],
     [PICK_AXE, { class: 'Tools', name: 'pick-axe', plural: 'pick-axes', enchanted: true }],
     [TINNING_KIT, {
-        class: 'Tools', name: 'tinning kit', plural: 'tinning kits', charged: true,
+        class: 'Tools', name: 'tinning kit', plural: 'tinning kits',
         showBuc: false,
     }],
     [TOUCHSTONE, {
@@ -464,17 +464,17 @@ const ITEM_PRESENTATION = new Map([
     [TOWEL, { class: 'Tools', name: 'towel', plural: 'towels' }],
     [MAGIC_MARKER, {
         class: 'Tools', name: 'magic marker', plural: 'magic markers',
-        charged: true, showBuc: false,
+        showBuc: false,
     }],
     [BLINDFOLD, { class: 'Tools', name: 'blindfold', plural: 'blindfolds' }],
     [OIL_LAMP, { class: 'Tools', name: 'oil lamp', plural: 'oil lamps' }],
     [WAN_WISHING, {
         class: 'Wands', name: 'wand of wishing', plural: 'wands of wishing',
-        charged: true, showBuc: false,
+        showBuc: false,
     }],
     [WAN_SLEEP, {
         class: 'Wands', name: 'wand of sleep', plural: 'wands of sleep',
-        charged: true, showBuc: false,
+        showBuc: false,
     }],
 ]);
 
@@ -744,7 +744,6 @@ function sourceKnownPresentation(raw) {
         name, plural,
         enchanted: raw.oclass === WEAPON_CLASS || raw.oclass === ARMOR_CLASS
             || (raw.oclass === RING_CLASS && raw.spe !== 0),
-        charged: raw.oclass === WAND_CLASS && !!OBJECT_CHARGED[raw.otyp],
         showBuc: raw.oclass === WAND_CLASS ? false : undefined,
         spellName: raw.oclass === SPBOOK_CLASS ? OBJECT_NAMES[raw.otyp] : undefined,
         spellLevel: raw.oclass === SPBOOK_CLASS
@@ -955,7 +954,6 @@ export function inventoryItem(raw, presentation = null) {
         enchantment: view.enchanted ? raw.spe : undefined,
         buc: view.showBuc === false || (view.omitUncursed && buc === 'uncursed')
             ? undefined : buc,
-        charges: view.charged ? { recharged: raw.recharged ?? 0, current: raw.spe } : undefined,
         rustproof: !!view.rustproof,
     };
 }

@@ -10,6 +10,7 @@ import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { meltIce } from '../js/ice.js';
 import { pushKey, pushKeys } from '../js/input.js';
+import { inventoryItemDescription } from '../js/invent.js';
 import {
     AMULET_OF_LIFE_SAVING, APPLE, OIL_LAMP, POT_ACID, SCR_IDENTIFY,
     WAN_CREATE_MONSTER,
@@ -36,6 +37,17 @@ function highestRoll(range) {
     return range - 1;
 }
 
+test('using an identified wand leaves its remaining charge count visible', async () => {
+    freshGameplayRoom();
+    const wand = chargedWand(WAN_LIGHT, { charges: 2 });
+    game.inventory = [wand];
+    pushKey('a');
+
+    await rhack('z'.charCodeAt(0));
+
+    assert.match(inventoryItemDescription(wand), /\(0:1\)/);
+});
+
 test('sleep resistance prevents self-zap helplessness', async () => {
     freshGameplayRoom();
     game.urole = { key: 'healer' };
@@ -47,7 +59,7 @@ test('sleep resistance prevents self-zap helplessness', async () => {
 
     await rhack('z'.charCodeAt(0));
 
-    assert.equal(wand.charges.current, 2);
+    assert.equal(wand.spe, 2);
     assert.equal(wand.typeKnown, true);
     assert.equal(game._helplessTurns, undefined);
     assert.equal(game._pending_message, "You don't feel sleepy!");
@@ -86,7 +98,7 @@ test('an empty wand does nothing without asking for a direction', async () => {
 
     assert.equal(game.inventory.includes(wand), true);
     assert.equal(wand.spe, 0);
-    assert.equal(wand.charges.current, 0);
+    assert.equal(wand.spe, 0);
     assert.equal(game._pending_message, 'Nothing happens.');
     assert.equal(game.context.move, 1);
 });

@@ -597,7 +597,7 @@ export function mksobj(otyp, init, artif) {
         age: Math.max(game.moves ?? 0, 1),
         owt: OBJECT_WEIGHT[otyp] ?? 1,
         dknown, known: !OBJECT_USES_KNOWN[otyp],
-        cursed: false, blessed: false, olocked: false, spe: 0,
+        cursed: false, blessed: false, olocked: false, spe: 0, recharged: 0,
         artifact: false };
     if (init) {
         mksobj_init(otmp, artif);

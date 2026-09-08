@@ -27,6 +27,7 @@ import { armorPresentationName } from './object_grammar.js';
 import { objectTypeCallNoun } from './object_call.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
+import { objectUsesCharges } from './object_properties.js';
 
 const COIN_CLASS = 12;
 const SCROLL_CLASS = 9;
@@ -281,8 +282,8 @@ export function inventoryItemDescription(item) {
         description = `the ${description}`;
     else description = `${indefiniteArticle(description)} ${description}`;
 
-    if (item.charges && item.known && item.chargesKnown !== false)
-        description += ` (${item.charges.recharged || 0}:${item.charges.current})`;
+    if (objectUsesCharges(item) && item.known)
+        description += ` (${item.recharged ?? 0}:${item.spe})`;
     if (item.cknown && Array.isArray(item.contents) && item.contents.length) {
         const count = item.contents.length;
         description += ` containing ${count} item${count === 1 ? '' : 's'}`;
@@ -338,7 +339,6 @@ function rerollItemDescription(item) {
         bknown: true,
         dknown: true,
         rknown: true,
-        chargesKnown: true,
         overrideIdentified: true,
     });
 }
@@ -510,7 +510,7 @@ export async function showIdentifiedInventory() {
         item.rknown = true;
         item.overrideIdentified = true;
         const redundantNeutral = item.oclass === 2 || item.oclass === 11
-            || (item.oclass === 6 && !!item.charges);
+            || (item.oclass === 6 && objectUsesCharges(item));
         item.buc = item.blessed ? 'blessed' : item.cursed ? 'cursed'
             : !redundantNeutral
                 && [3, 4, 5, 6, 7, 8, 9, 10, 13].includes(item.oclass)
@@ -521,9 +521,6 @@ export async function showIdentifiedInventory() {
             && Number.isInteger(item.spe)) item.enchantment = item.spe;
         if (item.oclass === 13 && OBJECT_NAMES[item.otyp])
             item.name = OBJECT_NAMES[item.otyp];
-        if (item.oclass === 11 && Number.isInteger(item.spe) && !item.charges)
-            item.charges = { recharged: item.recharged ?? 0, current: item.spe };
-        if (item.charges) item.chargesKnown = true;
     }
     game._pending_message = '';
     game.nhDisplay?.clearRow(0);

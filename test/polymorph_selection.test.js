@@ -53,7 +53,7 @@ test('a selected monster class excludes its genocided members', async () => {
 test('a controlled polymorph wand lets a lycanthrope request its wolf form', async () => {
     freshObjectRoom();
     const wand = addInventoryObject(WAN_POLYMORPH, {
-        spe: 3, charges: { current: 3, recharged: 0 },
+        spe: 3,
     });
     wearPolymorphControlRing();
     game.u.ulycn = nameToMonster('werewolf');

@@ -34,8 +34,7 @@ function keepIndividualName(object) {
 
 function clearPresentation(object) {
     for (const key of [
-        'name', 'plural', 'class', 'enchantment', 'buc', 'charges',
-        'chargesKnown', 'rustproof',
+        'name', 'plural', 'class', 'enchantment', 'buc', 'rustproof',
     ]) delete object[key];
 }
 

@@ -61,5 +61,5 @@ test('a make-invisible wand turns a visible monster transparent', async () => {
 
     assert.equal(monster.minvis, 1);
     assert.equal(wand.typeKnown, true);
-    assert.equal(wand.charges.current, 1);
+    assert.equal(wand.spe, 1);
 });

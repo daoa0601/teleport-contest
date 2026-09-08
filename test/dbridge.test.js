@@ -46,7 +46,6 @@ function harp() {
         otyp: WOODEN_HARP,
         name: 'wooden harp',
         spe: 0,
-        charges: { current: 0, recharged: 0 },
     };
 }
 

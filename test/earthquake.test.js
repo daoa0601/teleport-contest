@@ -41,7 +41,6 @@ function earthquakeDrum(charges) {
         otyp: DRUM_OF_EARTHQUAKE,
         name: 'drum of earthquake',
         spe: charges,
-        charges: { current: charges, recharged: 0 },
     };
 }
 

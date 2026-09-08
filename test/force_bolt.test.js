@@ -67,7 +67,7 @@ test('magic resistance bounces a self-zapped wand of striking', async () => {
 
     assert.equal(game.u.uhp, startingHitPoints);
     assert.equal(wand.typeKnown, true);
-    assert.equal(wand.charges.current, 1);
+    assert.equal(wand.spe, 1);
 });
 
 test('force bolt breaks a locked door and continues through its square',

@@ -27,7 +27,7 @@ test('debug wishing creates a live charged polymorph wand', async () => {
 
     const wand = game.inventory.find(object => object.otyp === WAN_POLYMORPH);
     assert.ok(wand);
-    assert.equal(wand.charges.current, 30);
+    assert.equal(wand.spe, 30);
     assert.equal(wand.spe, 30);
     assert.equal(game.u.uconduct.wishes, 1);
     assert.equal(game.context.move, 0);

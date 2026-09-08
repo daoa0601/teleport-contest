@@ -172,22 +172,12 @@ async function zapDig(direction) {
     exerciseAttribute(A_WIS, true);
 }
 
-function wandChargeCount(wand) {
-    return Number.isInteger(wand?.spe)
-        ? wand.spe : wand?.charges?.current ?? -1;
-}
-
-function setWandChargeCount(wand, count) {
-    wand.spe = count;
-    if (wand.charges) wand.charges.current = count;
-}
-
 async function zappable(wand) {
-    const charges = wandChargeCount(wand);
+    const charges = wand.spe;
     if (charges < 0 || (charges === 0 && rn2(121) !== 0)) return false;
     if (charges === 0)
         await pline('You wrest one last charge from the worn-out wand.');
-    setWandChargeCount(wand, charges - 1);
+    wand.spe = charges - 1;
     return true;
 }
 
@@ -198,7 +188,7 @@ function removeWand(wand) {
 }
 
 async function finishWandUse(wand) {
-    if (!wand || wandChargeCount(wand) >= 0) return;
+    if (!wand || wand.spe >= 0) return;
     await pline(`The ${className(wand)} turns to dust.`);
     removeWand(wand);
 }
@@ -206,7 +196,7 @@ async function finishWandUse(wand) {
 async function backfireWand(wand) {
     wand.in_use = true;
     await pline(`The ${className(wand)} suddenly explodes!`);
-    let damage = d(Math.max(1, wandChargeCount(wand) + 2), 6);
+    let damage = d(Math.max(1, wand.spe + 2), 6);
     if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
         damage = Math.trunc((damage + 1) / 2);
     removeWand(wand);
@@ -313,7 +303,6 @@ export async function dozap({
 
     if (await zapNoDirection(wand, { finishMonsterKill })) {
         if (game.program_state?.gameover) return;
-        wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
         return;
@@ -339,7 +328,6 @@ export async function dozap({
             recordObjectEncounter(wand.otyp);
             wand.typeKnown = true;
         }
-        wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
         return;
@@ -356,7 +344,6 @@ export async function dozap({
             recordObjectEncounter(wand.otyp);
             wand.typeKnown = true;
         }
-        wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
         return;
@@ -369,7 +356,6 @@ export async function dozap({
             recordObjectEncounter(wand.otyp);
             wand.typeKnown = true;
         }
-        wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
         return;
@@ -384,7 +370,6 @@ export async function dozap({
             recordObjectEncounter(wand.otyp);
             wand.typeKnown = true;
         }
-        wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
         return;
@@ -395,7 +380,6 @@ export async function dozap({
         wand.typeKnown = true;
         recordObjectKnowledge(wand.otyp);
         recordObjectEncounter(wand.otyp);
-        wand.chargesKnown = false;
         game._pending_message = '';
         game.context.move = 1;
         await finishWandUse(wand);
@@ -432,7 +416,6 @@ export async function dozap({
             recordObjectEncounter(wand.otyp);
             wand.typeKnown = true;
         }
-        wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
         return;
@@ -451,7 +434,6 @@ export async function dozap({
             wand.typeKnown = true;
             exerciseAttribute(A_WIS, true);
         }
-        wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
         return;
@@ -469,7 +451,6 @@ export async function dozap({
         if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
         game._knownObjectTypes.add(wand.otyp);
         wand.typeKnown = true;
-        wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
         return;
@@ -483,7 +464,6 @@ export async function dozap({
             game._knownObjectTypes.add(wand.otyp);
             wand.typeKnown = true;
         }
-        wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
         return;
@@ -505,7 +485,6 @@ export async function dozap({
         }
         if (wasUnknown)
             game.u.urexp = (game.u.urexp || 0) + 10;
-        wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
         return;
@@ -524,7 +503,6 @@ export async function dozap({
             game._knownObjectTypes.add(wand.otyp);
             wand.typeKnown = true;
         }
-        wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
         return;
@@ -533,7 +511,6 @@ export async function dozap({
     if (wand.otyp === WAN_CANCELLATION
         && DIR_DX[directionChar] !== undefined && directionChar !== '.') {
         await zapCancellationRay(directionChar, { wakeMonster });
-        wand.chargesKnown = false;
         game.context.move = 1;
         await finishWandUse(wand);
         return;

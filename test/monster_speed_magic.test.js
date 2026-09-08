@@ -95,5 +95,5 @@ test('a speed-monster wand aimed down hastens the hero\'s mount', async () => {
     await dozap();
 
     assert.equal(steed.mspeed, 2);
-    assert.equal(wand.charges.current, 1);
+    assert.equal(wand.spe, 1);
 });
