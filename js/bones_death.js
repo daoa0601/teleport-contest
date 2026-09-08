@@ -63,7 +63,7 @@ function nearbyMonsterForDeathDrop(x, y) {
 
 function giveDeathDropToNearbyMonster(object, x, y) {
     const monster = nearbyMonsterForDeathDrop(x, y);
-    if (!monster || !monsterCanCarryObject(monster, object)) return false;
+    if (!monster || !monsterCanCarryObject(monster, object, game)) return false;
     linkObjectToMonsterInventory(monster, object);
     return true;
 }

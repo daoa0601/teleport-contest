@@ -1,16 +1,22 @@
-// C refs: mon.c:curr_mon_load(), max_mon_load(), and can_carry().
+// C refs: mon.c can_touch_safely(), curr_mon_load(), max_mon_load(), and can_carry().
 
-import { MAX_CARR_CAP, WT_HUMAN } from './const.js';
+import { MAX_CARR_CAP, W_ARMG, WT_HUMAN } from './const.js';
+import { monsterCanTouchArtifact } from './artifacts.js';
+import { game } from './gstate.js';
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2,
-    MONSTER_HAS_WEAPON_ATTACK, MONSTER_SIZE, MONSTER_SYMBOL,
+    MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
+    monsterHatesSilver, monsterIsCovetous,
 } from './monster_data.js';
 import { AT_ENGL } from './monster_attack_types.js';
 import {
-    BOULDER, CORPSE, GOLD_PIECE, OBJECT_WEIGHT,
+    BELL_OF_OPENING, BOULDER, CORPSE, GOLD_PIECE, OBJECT_MATERIAL, OBJECT_WEIGHT,
 } from './object_data.js';
+import { monsterHasStoneResistance } from './monster_resistance.js';
+import { touchPetrifies } from './stoning.js';
 
 const GEM_CLASS = 13;
+const M1_NOTAKE = 0x00000800;
 const M1_NOHANDS = 0x00002000;
 const M2_STRONG = 0x04000000;
 const M2_ROCKTHROW = 0x08000000;
@@ -20,6 +26,21 @@ const M2_COLLECT = 0x40000000;
 const M2_MAGIC = 0x80000000;
 const MZ_HUMAN = 2;
 const S_DRAGON = 30;
+const SILVER = 14;
+const RIDERS = new Set(['Death', 'Pestilence', 'Famine']
+    .map(name => MONSTER_NAME.indexOf(name)));
+
+export function monsterCanTouchObject(monster, object, state = game) {
+    if (object.otyp === CORPSE) {
+        if (touchPetrifies(object.corpsenm)
+            && !(monster.misc_worn_check & W_ARMG)
+            && !monsterHasStoneResistance(monster)) return false;
+        if (RIDERS.has(object.corpsenm)) return false;
+    }
+    if (OBJECT_MATERIAL[object.otyp] === SILVER && monsterHatesSilver(monster)
+        && (object.otyp !== BELL_OF_OPENING || !monsterIsCovetous(monster))) return false;
+    return monsterCanTouchArtifact(monster, object, state);
+}
 
 function monsterObjectWeight(object) {
     if (!object) return 0;
@@ -57,11 +78,12 @@ function maxMonsterLoad(monster) {
     return Math.max(1, capacity);
 }
 
-export function monsterCarryAmount(monster, object) {
+export function monsterCarryAmount(monster, object, state = game) {
     if (!monster || !object) return 0;
     const quantity = object.quan ?? object.quantity ?? 1;
     const flags1 = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const flags2 = MONSTER_FLAGS2[monster.mnum] ?? 0;
+    if ((flags1 & M1_NOTAKE) || !monsterCanTouchObject(monster, object, state)) return 0;
     if (quantity > 1) {
         const canTakeWholeStack = MONSTER_SYMBOL[monster.mnum] === S_DRAGON
             && (object.otyp === GOLD_PIECE || object.oclass === GEM_CLASS)
@@ -76,8 +98,8 @@ export function monsterCarryAmount(monster, object) {
         <= maxMonsterLoad(monster) ? quantity : 0;
 }
 
-export function monsterCanCarryObject(monster, object) {
-    return monsterCarryAmount(monster, object) > 0;
+export function monsterCanCarryObject(monster, object, state = game) {
+    return monsterCarryAmount(monster, object, state) > 0;
 }
 
 export function monsterLikesObjects(monster) {

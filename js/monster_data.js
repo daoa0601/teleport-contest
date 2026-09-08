@@ -186,6 +186,10 @@ export function monsterIsPlayerMonster(mnum) {
     return mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD;
 }
 
+export function monsterIsCovetous(monster) {
+    return !!(MONSTER_FLAGS3[monster.mnum] & 0x001f);
+}
+
 export function monsterIsPlainHuman(mnum) {
     return mnum === PM_HUMAN;
 }

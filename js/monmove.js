@@ -16,7 +16,7 @@ import {
     RANGED_LAUNCHERS, readyRangedMonsterWeapon, selectRangedWeapon,
     throwMonsterWeaponAtHero,
 } from './monster_throw.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon, selectHandToHandWeapon } from './monster_weapon.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';
 import { growMonster } from './monster_growth.js';
 import { currentAttribute } from './attrib.js';
@@ -75,7 +75,7 @@ import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_FLAGS3,
     MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL,
+    MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous,
 } from './monster_data.js';
 import {
     AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CORR, AD_DCAY, AD_DREN,
@@ -221,7 +221,6 @@ const M1_HERBIVORE = 0x40000000;
 const M1_METALLIVORE = 0x80000000;
 const M1_REGEN = 0x00800000;
 const M2_WANDER = 0x00800000;
-const M2_STRONG = 0x04000000;
 const M2_ROCKTHROW = 0x08000000;
 const M2_GREEDY = 0x10000000;
 const M2_JEWELS = 0x20000000;
@@ -246,7 +245,6 @@ const PM_AIR_ELEMENTAL = 154;
 const PM_SALAMANDER = 329;
 const M2_COLLECT = 0x40000000;
 const M2_MAGIC = 0x80000000;
-const M3_COVETOUS = 0x001f;
 const M3_WANTSAMUL = 0x0001;
 const M3_WANTSBELL = 0x0002;
 const M3_WANTSBOOK = 0x0004;
@@ -442,55 +440,9 @@ function monsterSpellEffectPreview(spell, damage, state) {
     return { effectDamage, effectMessage };
 }
 
-// C weapon.c:hwep[], strongest/preferred first. The object data does not yet
-// expose this table, so these names select the matching object types.
-const HAND_TO_HAND_WEAPON_PREFERENCE = [
-    'tsurugi', 'runesword', 'dwarvish mattock', 'two-handed sword',
-    'battle-axe', 'katana', 'unicorn horn', 'crysknife', 'trident',
-    'long sword', 'elven broadsword', 'broadsword', 'scimitar',
-    'silver saber', 'morning star', 'elven short sword',
-    'dwarvish short sword', 'short sword', 'orcish short sword',
-    'silver mace', 'mace', 'axe', 'dwarvish spear', 'silver spear',
-    'elven spear', 'spear', 'orcish spear', 'flail', 'bullwhip',
-    'quarterstaff', 'javelin', 'aklys', 'club', 'pick-axe',
-    'rubber hose', 'war hammer', 'silver dagger', 'elven dagger',
-    'dagger', 'orcish dagger', 'athame', 'scalpel', 'knife', 'worm tooth',
-];
-const HAND_TO_HAND_WEAPON_RANK = new Map(
-    HAND_TO_HAND_WEAPON_PREFERENCE.map((name, index) => [name, index]),
-);
-
 function monsterHasWeaponAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || [])
         .some(([attackType]) => attackType === AT_WEAP);
-}
-
-function selectHandToHandWeapon(monster) {
-    const inventory = monster?.minvent || monster?.inventory || [];
-    const strong = !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_STRONG);
-    const wearingShield = !!((monster?.misc_worn_check ?? 0) & W_ARMS);
-    let best = null;
-    let bestRank = Number.POSITIVE_INFINITY;
-    for (const object of inventory) {
-        if (object?.oclass !== WEAPON_CLASS && object?.class !== 'Weapons')
-            continue;
-        // C select_hwep() rejects every bimanual candidate unless the
-        // monster is strong and has both hands free.  Keep an unusable
-        // weapon in minvent; mon_wield_item() simply fails and lets an
-        // adjacent AT_WEAP slot continue bare-handed.
-        if (OBJECT_BIMANUAL[object.otyp] && (!strong || wearingShield))
-            continue;
-        // select_hwep() is an allowlist, not a generic "any weapon" choice.
-        // In particular, carried polearms are deliberately absent because
-        // their close-range owner is the ranged/polearm path.
-        const rank = HAND_TO_HAND_WEAPON_RANK.get(objectTypeName(object));
-        if (rank === undefined) continue;
-        if (!best || rank < bestRank) {
-            best = object;
-            bestRank = rank;
-        }
-    }
-    return best;
 }
 
 // C monmove.c:m_digweapon_check().  A pick-dependent tunneller may select a
@@ -634,12 +586,12 @@ function pickUpMonsterFloorObject(monster, state) {
     const index = pile.findIndex(object => !specialFloorPrize(object)
         && monsterWantsFloorObject(monster, object)
         && !monsterRejectsOrdinaryCorpsePickup(monster, object)
-        && monsterCanCarryObject(monster, object));
+        && monsterCanCarryObject(monster, object, state));
     if (index < 0) return null;
 
     const object = pile[index];
     const quantity = object.quan ?? object.quantity ?? 1;
-    const carryAmount = monsterCarryAmount(monster, object);
+    const carryAmount = monsterCarryAmount(monster, object, state);
     let carriedObject;
     if (carryAmount < quantity) {
         // mon.c:mpickstuff() splits the carryable portion from the floor
@@ -672,7 +624,7 @@ function readyCloseMonsterWeapon(monster, state) {
         || dist2(monster.mx, monster.my, apparentX, apparentY) > 8) return null;
 
     monster.weaponCheck = NEED_HTH_WEAPON;
-    const weapon = selectHandToHandWeapon(monster);
+    const weapon = selectHandToHandWeapon(monster, state);
     if (!weapon || monster.mw?.otyp === weapon.otyp) {
         monster.weaponCheck = NEED_WEAPON;
         return null;
@@ -1256,10 +1208,6 @@ function monstersAreAggressive(attacker, defender, state) {
 
 function isUnicorn(monster) {
     return monster?.mnum >= 101 && monster?.mnum <= 103;
-}
-
-function monsterIsCovetous(monster) {
-    return !!((MONSTER_FLAGS3[monster?.mnum] ?? 0) & M3_COVETOUS);
 }
 
 function monsterCanTunnel(monster, state) {
@@ -2042,10 +1990,6 @@ function petCanReachObject(monster, object, state) {
         );
 }
 
-function petCanCarryObject(monster, object) {
-    return monsterCanCarryObject(monster, object);
-}
-
 function couldSeeFromHero(state, x, y) {
     // COULD_SEE is bit 0 in vision.c/js/vision.js.  Focused unit states omit
     // the vision buffer and are treated as unobstructed; live games always
@@ -2186,7 +2130,7 @@ function dogGoal(monster, state, random, calls) {
                 ))
             && petCanReachObject(monster, object, state)
             && (monster.edog?.apport ?? 0) > recordRandom(random, calls, 8)
-            && petCanCarryObject(monster, object)) {
+            && monsterCanCarryObject(monster, object, state)) {
             apportGoal = object;
         }
     }
@@ -2383,7 +2327,7 @@ function petInventoryAction(monster, state, random, rollOne, calls) {
         return { ateFood: object };
     }
     const carryAmount = fetchableClass
-        ? monsterCarryAmount(monster, object) : 0;
+        ? monsterCarryAmount(monster, object, state) : 0;
     if (carryAmount > 0 && !object.cursed) {
         // C dog_invent(): a failed pickup leaves the floor pile unchanged.
         const apport = Math.max(1, monster.edog?.apport ?? 1);
@@ -2502,13 +2446,13 @@ function killingAttackMakesZombie(aggressor, defender, attack) {
 // C mhitm.c:mattackm() handles an AT_WEAP slot before its to-hit roll.
 // An unarmed weapon attacker first calls mon_wield_item(); selecting a new
 // carried weapon consumes the complete counterattack action.
-function monsterVersusMonsterWieldAction(aggressor, defender, attack) {
+function monsterVersusMonsterWieldAction(aggressor, defender, attack, state) {
     if (attack?.attackType !== AT_WEAP) return null;
     const currentWeapon = monsterWieldedWeapon(aggressor);
     if (aggressor.weaponCheck !== NEED_WEAPON && currentWeapon) return null;
 
     aggressor.weaponCheck = NEED_HTH_WEAPON;
-    const selectedWeapon = selectHandToHandWeapon(aggressor);
+    const selectedWeapon = selectHandToHandWeapon(aggressor, state);
     if (!selectedWeapon
         || selectedWeapon.otyp === currentWeapon?.otyp) {
         aggressor.weaponCheck = NEED_WEAPON;
@@ -2541,7 +2485,7 @@ function monsterMeleeAttack(
         if ((defender?.mhp ?? 1) <= 0) break;
         const attack = attacks[index];
         const wield = monsterVersusMonsterWieldAction(
-            aggressor, defender, attack,
+            aggressor, defender, attack, state,
         );
         if (wield) return wield;
         const roll = rollOne(20 + index);
@@ -2639,7 +2583,7 @@ function beginMonsterMeleeAttack(
 ) {
     const firstAttack = attacks[0];
     const wield = monsterVersusMonsterWieldAction(
-        aggressor, defender, firstAttack,
+        aggressor, defender, firstAttack, state,
     );
     if (wield) return wield;
 
@@ -3049,7 +2993,7 @@ function monsterFloorItemGoal(monster, state) {
                 // excludes them from goal search even for rock throwers.
                 if (object.otyp === ROCK || specialFloorPrize(object)) continue;
                 if (!monsterWantsFloorObject(monster, object)) continue;
-                if (!monsterCanCarryObject(monster, object)) continue;
+                if (!monsterCanCarryObject(monster, object, state)) continue;
                 radius = distmin(originX, originY, x, y);
                 goal = { x, y, object };
                 break;
@@ -4971,7 +4915,7 @@ function basicMonsterAttack(
         const currentWeapon = monsterWieldedWeapon(monster);
         if (monster.weaponCheck === NEED_WEAPON || !currentWeapon) {
             monster.weaponCheck = NEED_HTH_WEAPON;
-            const selectedWeapon = selectHandToHandWeapon(monster);
+            const selectedWeapon = selectHandToHandWeapon(monster, state);
             if (selectedWeapon
                 && selectedWeapon.otyp !== currentWeapon?.otyp) {
                 if (currentWeapon) currentWeapon.wielded = false;
@@ -8241,7 +8185,7 @@ function continueMonsterContactAttack(
         if (counterattack) {
             defender.mlstmv = sourceMonsterTurn(state);
             attack.counterattack = monsterVersusMonsterWieldAction(
-                defender, aggressor, counterattack,
+                defender, aggressor, counterattack, state,
             );
             if (!attack.counterattack) {
                 const threshold = findMonsterArmorClass(aggressor)

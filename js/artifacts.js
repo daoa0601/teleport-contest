@@ -15,9 +15,10 @@ import {
 import { objectMaterial } from './object_material.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE,
-    MONSTER_SYMBOL,
+    MONSTER_SYMBOL, monsterIsCovetous, monsterIsPlayerMonster,
 } from './monster_data.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterAlignmentType } from './monster_alignment.js';
 import {
     monsterHasColdResistance, monsterHasDrainResistance,
     monsterHasFireResistance, monsterHasShockResistance,
@@ -294,8 +295,7 @@ function artifactAttackApplies(
         return MONSTER_SYMBOL[mnum]
             === SYMBOL_TARGETS[attack.target.value];
     case 'alignment': {
-        const alignment = hero ? state.u?.ualign?.type
-            : defender.maligntyp ?? MONSTER_ALIGNMENT[mnum];
+        const alignment = hero ? state.u?.ualign?.type : MONSTER_ALIGNMENT[mnum];
         if (hero) return alignment !== artifact.alignment;
         return alignment === -128
             || Math.sign(alignment) !== artifact.alignment;
@@ -355,6 +355,21 @@ export function artifactBaneApplies(artifact, state = game) {
     return artifactAttackApplies(
         artifact, { mnum: heroSpecies(state) }, { hero: true, state },
     );
+}
+
+// Unlike the hero, a monster refuses a hostile artifact without taking a blast.
+export function monsterCanTouchArtifact(monster, object, state = game) {
+    const artifact = artifactById(object.oartifact, state);
+    if (!artifact) return true;
+    if (!monsterIsCovetous(monster) && !monsterIsPlayerMonster(monster.mnum)) {
+        if (artifact.selfWilled && artifact.role && artifact.name !== 'Excalibur')
+            return false;
+        if (artifact.restricted && artifact.alignment !== null
+            && artifact.alignment !== monsterAlignmentType(monster)) return false;
+    }
+    const targetsMonsterKind = ['flag2', 'symbol', 'alignment']
+        .includes(artifact.attack.target.kind);
+    return !targetsMonsterKind || !artifactAttackApplies(artifact, monster, { state });
 }
 
 // C artifact.c:touch_artifact() hero branch up to its blast message.

@@ -1,5 +1,5 @@
 // Alignment value assigned to a live monster.
-// C ref: makemon.c set_malign().
+// C refs: priest.c mon_aligntyp() and makemon.c set_malign().
 
 import { A_NONE } from './const.js';
 import { game } from './gstate.js';
@@ -10,15 +10,21 @@ import {
 const M2_HOSTILE = 0x00100000;
 const M2_PEACEFUL = 0x00200000;
 
+function monsterAlignmentValue(monster) {
+    if (monster.ispriest) return monster.epri.shralign;
+    if (monster.isminion) return monster.emin.min_align;
+    return MONSTER_ALIGNMENT[monster.mnum];
+}
+
+export function monsterAlignmentType(monster) {
+    const alignment = monsterAlignmentValue(monster);
+    return alignment === A_NONE ? A_NONE : Math.sign(alignment);
+}
+
 export function setMonsterMalign(monster, state = game) {
-    let alignment = MONSTER_ALIGNMENT[monster?.mnum] ?? 0;
-    if (monster?.ispriest || monster?.isminion) {
-        if (monster.ispriest && monster.epri)
-            alignment = monster.epri.shralign;
-        else if (monster.isminion && monster.emin)
-            alignment = monster.emin.min_align;
-        if (alignment !== A_NONE) alignment *= 5;
-    }
+    let alignment = monsterAlignmentValue(monster);
+    if ((monster.ispriest || monster.isminion) && alignment !== A_NONE)
+        alignment *= 5;
 
     const peaceful = !!monster?.mpeaceful;
     const coaligned = Math.sign(alignment)

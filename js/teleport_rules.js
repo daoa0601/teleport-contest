@@ -9,8 +9,8 @@ import {
     WATER, W_NONPASSWALL, isok,
 } from './const.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO,
-    MONSTER_SYMBOL,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
+    MONSTER_SYMBOL, monsterIsCovetous,
 } from './monster_data.js';
 import { BOULDER, SCR_SCARE_MONSTER } from './object_data.js';
 import { engravingAt } from './engrave.js';
@@ -23,7 +23,6 @@ const M1_NOEYES = 0x00001000;
 const M2_LORD = 0x00000400;
 const M2_PRINCE = 0x00000800;
 const M2_ROCKTHROW = 0x08000000;
-const M3_COVETOUS = 0x001f;
 const G_UNIQ = 0x1000;
 const S_ANGEL = 27;
 const S_DEMON = 56;
@@ -42,10 +41,6 @@ function monsterIsDemonRuler(monster) {
     const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
     return MONSTER_SYMBOL[monster?.mnum] === S_DEMON
         && !!(flags & (M2_LORD | M2_PRINCE));
-}
-
-function monsterIsCovetous(monster) {
-    return !!((MONSTER_FLAGS3[monster?.mnum] ?? 0) & M3_COVETOUS);
 }
 
 function demonCourtBlocksTeleport(monster, state) {
