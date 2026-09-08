@@ -11,13 +11,13 @@ import {
     beginMonsterSpitAttack, monsterSpitAttack, resolveMonsterSpitFlight,
 } from './monster_spit.js';
 import {
-    MONSTER_POLEARMS,
     objectTypeName, placeAndStackThrownObject, placeThrownObject,
-    readyRangedMonsterWeapon, selectMonsterMissile,
+    readyRangedMonsterWeapon,
     throwMonsterWeaponAtHero,
 } from './monster_throw.js';
-import { monsterWieldedWeapon, wieldMonsterWeapon } from './monster_weapon.js';
-import { ammunitionMatchesLauncher, willWeld } from './weapon_type.js';
+import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon } from './monster_weapon.js';
+import { attackHeroWithPolearm } from './monster_polearm.js';
+import { ammunitionMatchesLauncher, isPolearm, willWeld } from './weapon_type.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';
 import { growMonster } from './monster_growth.js';
 import { currentAttribute } from './attrib.js';
@@ -2979,7 +2979,7 @@ function monsterApproachPolicy(monster, state, oldPolicy, targetX, targetY) {
 
     const wielded = monsterWieldedWeapon(monster);
     const wieldedName = objectTypeName(wielded);
-    if (wielded && MONSTER_POLEARMS.has(wieldedName) && distance <= 5)
+    if (isPolearm(wielded) && distance <= 5)
         return { policy: -1, min: 0, max: 0 };
     if (wieldedName === 'aklys')
         return { policy: -2, min: 4, max: 16 };
@@ -3502,7 +3502,7 @@ async function beginHeroAttackOrStrikingWand(
     };
 }
 
-async function maybeThrowRangedWeapon(
+async function attackHeroWithRangedWeapon(
     monster, movement, state, random, rollOne, calls,
 ) {
     // dochug() only enters mattacku() when the second distfleeck() still
@@ -3510,11 +3510,19 @@ async function maybeThrowRangedWeapon(
     // before it checks for a usable missile or clear line, but it is never
     // reached at all for an actor beyond BOLT_LIM.
     if (!monsterHasWeaponAttack(monster)
-        || !reachesDistantPhaseFour(monster, movement, state)) return null;
-    const spentWielding = await readyRangedMonsterWeapon(monster, state);
-    if (spentWielding) return { spentWielding: true };
-    const weapon = selectMonsterMissile(monster, state)?.missile;
-    if (!weapon || !hostileLinedUp(monster, state, random, calls)) return null;
+        || !reachesDistantPhaseFour(monster, movement, state)) return;
+    if (await readyRangedMonsterWeapon(monster, state)) {
+        movement.actionCompleted = true;
+        return;
+    }
+    const weapon = selectMonsterRangedWeapon(monster, state)?.weapon;
+    if (!weapon) return;
+    if (isPolearm(weapon)) {
+        await attackHeroWithPolearm(monster, weapon, state, { random, rollOne });
+        movement.actionCompleted = true;
+        return;
+    }
+    if (!hostileLinedUp(monster, state, random, calls)) return;
 
     const heroX = state?.u?.ux ?? monster.mx;
     const heroY = state?.u?.uy ?? monster.my;
@@ -3525,9 +3533,9 @@ async function maybeThrowRangedWeapon(
     );
     if (distance > previousDistance
         && recordRandom(random, calls, Math.max(1, BOLT_LIM - distance)) !== 0)
-        return null;
+        return;
 
-    return throwMonsterWeaponAtHero(monster, state, weapon, {
+    movement.rangedAttack = throwMonsterWeaponAtHero(monster, state, weapon, {
         random: range => recordRandom(random, calls, range),
         rollOne,
     });
@@ -6899,12 +6907,9 @@ async function finishDochugAfterMovement(
             monster, movement, state, random, rollOne, calls,
         );
         if (spitAttack) movement.spitAttack = spitAttack;
-        const rangedAttack = await maybeThrowRangedWeapon(
+        await attackHeroWithRangedWeapon(
             monster, movement, state, random, rollOne, calls,
         );
-        if (rangedAttack?.spentWielding)
-            movement.actionCompleted = true;
-        else if (rangedAttack) movement.rangedAttack = rangedAttack;
     }
 }
 

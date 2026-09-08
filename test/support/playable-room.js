@@ -1,4 +1,5 @@
 import { ROOM } from '../../js/const.js';
+import { findArmorClass } from '../../js/armor.js';
 import { GameMap } from '../../js/game.js';
 import { GameDisplay } from '../../js/game_display.js';
 import { game } from '../../js/gstate.js';
@@ -55,5 +56,6 @@ export function freshGameplayRoom({
         },
         seed: 28101n,
     });
+    findArmorClass();
     return level;
 }

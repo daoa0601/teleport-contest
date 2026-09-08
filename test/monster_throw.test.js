@@ -6,9 +6,10 @@ import {
     finishDeferredRangedProjectileHit,
     finishHeroProjectileHit, finishMonsterProjectileHit,
     presentMonsterProjectileShot,
-    readyRangedMonsterWeapon, selectMonsterMissile,
+    readyRangedMonsterWeapon,
     throwMonsterWeaponAtHero, throwMonsterWeaponAtMonster,
 } from '../js/monster_throw.js';
+import { selectMonsterRangedWeapon } from '../js/monster_weapon.js';
 import {
     A_STR, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NEED_WEAPON,
     NO_MINVENT, NO_WEAPON_WANTED, W_AMUL, W_WEP,
@@ -80,7 +81,7 @@ test('a monster readies the launcher required by its ammunition', async () => {
     assert.equal(readied, true);
     assert.equal(archer.mw, bow);
     assert.equal(bow.wielded, true);
-    assert.equal(selectMonsterMissile(archer)?.missile, arrows);
+    assert.equal(selectMonsterRangedWeapon(archer)?.weapon, arrows);
 });
 
 test('trying to ready a bow spends the attack when the current weapon is welded', async () => {
@@ -122,9 +123,9 @@ test('a monster prefers a yumi to a more recently acquired ordinary bow', async 
         inventory: [uninitializedObject(ARROW), uninitializedObject(YUMI), uninitializedObject(BOW)],
     });
 
-    const selection = selectMonsterMissile(orc);
+    const selection = selectMonsterRangedWeapon(orc);
 
-    assert.equal(selection?.missile.otyp, ARROW);
+    assert.equal(selection?.weapon.otyp, ARROW);
     assert.equal(selection?.launcher.otyp, YUMI);
 });
 
@@ -133,10 +134,10 @@ test('a monster keeps its welded dagger but can throw a spare one', async () => 
     const orc = await combatant('orc');
     const held = equipMonsterObject(orc, uninitializedObject(DAGGER, { cursed: true }), W_WEP);
     orc.weaponCheck = NO_WEAPON_WANTED;
-    assert.equal(selectMonsterMissile(orc), null);
+    assert.equal(selectMonsterRangedWeapon(orc), null);
     const spare = addObjectToMonsterInventory(orc, uninitializedObject(DAGGER));
 
-    assert.equal(selectMonsterMissile(orc)?.missile.o_id, spare.o_id);
+    assert.equal(selectMonsterRangedWeapon(orc)?.weapon.o_id, spare.o_id);
     assert.equal(orc.mw?.o_id, held.o_id);
 });
 
@@ -150,8 +151,8 @@ test('Kops choose pies and giants choose boulders before ordinary missiles', asy
         inventory: [uninitializedObject(BOULDER), uninitializedObject(DAGGER)],
     });
 
-    assert.equal(selectMonsterMissile(kop)?.missile.otyp, CREAM_PIE);
-    assert.equal(selectMonsterMissile(giant)?.missile.otyp, BOULDER);
+    assert.equal(selectMonsterRangedWeapon(kop)?.weapon.otyp, CREAM_PIE);
+    assert.equal(selectMonsterRangedWeapon(giant)?.weapon.otyp, BOULDER);
 });
 
 test('a monster that does not collect gems uses one in its sling before throwing darts', async () => {
@@ -161,9 +162,9 @@ test('a monster that does not collect gems uses one in its sling before throwing
         inventory: [gem, uninitializedObject(SLING), uninitializedObject(DART)],
     });
 
-    const selection = selectMonsterMissile(soldier);
+    const selection = selectMonsterRangedWeapon(soldier);
 
-    assert.equal(selection?.missile.o_id, gem.o_id);
+    assert.equal(selection?.weapon.o_id, gem.o_id);
     assert.equal(selection?.launcher.otyp, SLING);
 });
 

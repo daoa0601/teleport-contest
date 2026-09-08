@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { NEED_WEAPON, NO_MINVENT, NO_WEAPON_WANTED, PIT, POOL, STONE, W_WEP } from '../js/const.js';
+import { IRONBARS, NEED_WEAPON, NO_MINVENT, NO_WEAPON_WANTED, PIT, POOL, STONE, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
-    AMULET_OF_STRANGULATION, CLUB, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, WAN_MAGIC_MISSILE,
+    AMULET_OF_STRANGULATION, CLUB, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, WAN_MAGIC_MISSILE,
 } from '../js/object_data.js';
 import {
     startHeroSickness, startHeroVomiting,
@@ -22,10 +22,10 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { checkMonsterGearNextTurn } from '../js/monworn.js';
 import { canSeeMonster } from '../js/display.js';
+import { vision_recalc, vision_reset } from '../js/vision.js';
 
 function freshTurnArena() {
-    freshGameplayRoom();
-    game.urole = { key: 'valkyrie' };
+    freshGameplayRoom({ role: 'valkyrie' });
     game._moveloopStarted = true;
     game._maintenanceMove = 1;
     game._monsterMovementInitialized = true;
@@ -68,6 +68,36 @@ test('a failed weapon switch costs the monster its turn and leaves its welded we
     assert.equal(sword.bknown, true);
     assert.equal(giant.weaponCheck, NO_WEAPON_WANTED);
     assert.equal(game.u.uhp, health);
+});
+
+test('a caged soldier spends a turn wielding its lance before striking through the bars', async () => {
+    freshTurnArena();
+    const soldier = await createMonsterAt('soldier', 12, 11, NO_MINVENT);
+    soldier.mpeaceful = false;
+    soldier.movement = 12;
+    soldier.weaponCheck = NEED_WEAPON;
+    const lance = addObjectToMonsterInventory(soldier, knownObject(LANCE, { spe: 3 }));
+    for (let x = 11; x <= 13; x++) {
+        for (let y = 10; y <= 12; y++) {
+            if (x !== 12 || y !== 11) game.level.at(x, y).typ = IRONBARS;
+        }
+    }
+    vision_reset();
+    vision_recalc(0);
+    const health = game.u.uhp;
+    pushKeys('...');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(soldier.mw, lance);
+    assert.equal(game.u.uhp, health, 'wielding the lance should use the first turn');
+
+    await moveloop_core();
+
+    assert.ok(game.u.uhp < health, 'the next turn should strike through the bars');
+    assert.equal(soldier.mw, lance);
+    assert.ok(soldier.minvent.includes(lance));
 });
 
 test('a monster can put on an invisibility cloak during its turn', async () => {

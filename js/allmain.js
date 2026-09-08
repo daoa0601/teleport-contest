@@ -258,6 +258,8 @@ import {
 } from './shk.js';
 import { visiblePriestName } from './priest.js';
 import { inventoryItemDescription, rerollMenu } from './invent.js';
+import { isPolearm, monsterWeaponSwingVerb } from './weapon_type.js';
+import { artifactById } from './artifacts.js';
 import { refreshProperty } from './properties.js';
 import { msummon } from './minion.js';
 import { presentMonsterWebTrap } from './monster_trap_events.js';
@@ -4484,8 +4486,9 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         const weaponName = distantMonsterObjectName(
                             heroAttack.weapon,
                         ).replace(/^(?:an?|the) /, '');
-                        const verb = /dagger|spear|lance|trident|stiletto/i
-                            .test(weaponName) ? 'thrusts' : 'swings';
+                        const bash = isPolearm(heroAttack.weapon)
+                            && artifactById(heroAttack.weapon.oartifact)?.name !== 'Snickersnee';
+                        const verb = monsterWeaponSwingVerb(heroAttack.weapon, bash);
                         await queueTurnMessage(
                             `${visibleMonsterSubject(monster)} ${verb} ${
                                 monster.female ? 'her' : 'his'

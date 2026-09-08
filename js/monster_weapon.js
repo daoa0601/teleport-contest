@@ -4,7 +4,8 @@
 
 import {
     NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE,
-    NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, W_ARMG, W_ARMS, W_WEP,
+    NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING,
+    W_ARMG, W_ARMS, W_WEP,
 } from './const.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
@@ -14,25 +15,114 @@ import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './light.js';
-import { MONSTER_FLAGS2, MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterCanTouchObject } from './monster_carry.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { monsterSentenceSubject } from './monster_sound.js';
-import { selectMonsterMissile } from './monster_throw.js';
 import {
-    AKLYS, AXE, BATTLE_AXE, BULLWHIP, CLUB, CORPSE, DWARVISH_MATTOCK,
-    EGG, OBJECT_BIMANUAL, OBJECT_NAMES, PICK_AXE,
+    AKLYS, AXE, BATTLE_AXE, BOULDER, BOW, BULLWHIP, CLUB, CORPSE, CREAM_PIE,
+    CROSSBOW, DART, DWARVISH_MATTOCK, EGG, ELVEN_BOW, LOADSTONE,
+    OBJECT_BIMANUAL, OBJECT_NAMES, OBJECT_SUBTYPE, ORCISH_BOW, PICK_AXE, SLING, YUMI,
 } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { touchPetrifies } from './stoning.js';
-import { cansee } from './vision.js';
+import { cansee, couldsee } from './vision.js';
 import { willWeld } from './weapon_type.js';
 
 const M2_GIANT = 0x00002000;
 const M2_STRONG = 0x04000000;
+const M2_ROCKTHROW = 0x08000000;
+const M2_JEWELS = 0x20000000;
 const WEAPON_CLASS = 2;
+const GEM_CLASS = 13;
+const S_KOP = 37;
 const PM_BALROG = MONSTER_NAME.indexOf('balrog');
+
+// C weapon.c:rwep[] order. A melee weapon is not automatically a missile.
+const RANGED_WEAPON_PREFERENCE = [
+    'dwarvish spear', 'silver spear', 'elven spear', 'spear', 'orcish spear',
+    'javelin', 'shuriken', 'ya', 'silver arrow', 'elven arrow', 'arrow',
+    'orcish arrow', 'crossbow bolt', 'silver dagger', 'elven dagger',
+    'dagger', 'orcish dagger', 'knife', 'flint', 'rock', 'loadstone',
+    'luckstone', 'dart', 'cream pie',
+].map(name => OBJECT_NAMES.indexOf(name));
+
+const POLEARM_PREFERENCE = [
+    'halberd', 'bardiche', 'spetum', 'bill-guisarme', 'voulge', 'ranseur',
+    'guisarme', 'glaive', 'lucern hammer', 'bec de corbin', 'fauchard',
+    'partisan', 'lance',
+].map(name => OBJECT_NAMES.indexOf(name));
+
+// C select_rwep(). Keep the selected weapon and launcher together instead of
+// storing the launcher in C's global propellor.
+export function selectMonsterRangedWeapon(monster, state = game) {
+    const inventory = monster.minvent || monster.inventory || [];
+    const egg = selectMonsterWeaponOfType(monster, EGG, state);
+    if (egg) return { weapon: egg, launcher: null };
+    if (MONSTER_SYMBOL[monster.mnum] === S_KOP) {
+        const pie = selectMonsterWeaponOfType(monster, CREAM_PIE, state);
+        if (pie) return { weapon: pie, launcher: null };
+    }
+    if (MONSTER_FLAGS2[monster.mnum] & M2_ROCKTHROW) {
+        const boulder = selectMonsterWeaponOfType(monster, BOULDER, state);
+        if (boulder) return { weapon: boulder, launcher: null };
+    }
+
+    const current = monsterWieldedWeapon(monster);
+    const cannotSwitch = willWeld(current) && monster.weaponCheck === NO_WEAPON_WANTED;
+    const distance = (monster.mx - monster.mux) ** 2 + (monster.my - monster.muy) ** 2;
+    if (distance <= 13 && couldsee(monster.mx, monster.my)) {
+        if (artifactById(current?.oartifact, state)?.name === 'Snickersnee')
+            return { weapon: current, launcher: current };
+        const twoHands = (MONSTER_FLAGS2[monster.mnum] & M2_STRONG)
+            && !(monster.misc_worn_check & W_ARMS);
+        for (const type of POLEARM_PREFERENCE) {
+            if (OBJECT_BIMANUAL[type] && !twoHands) continue;
+            const polearm = selectMonsterWeaponOfType(monster, type, state);
+            if (polearm && (polearm === current || !cannotSwitch))
+                return { weapon: polearm, launcher: polearm };
+        }
+    }
+    for (const type of RANGED_WEAPON_PREFERENCE) {
+        if (type === DART && !(MONSTER_FLAGS2[monster.mnum] & M2_JEWELS)) {
+            const sling = inventory.find(object => object.otyp === SLING);
+            if (sling) {
+                const gem = inventory.find(object => object.oclass === GEM_CLASS
+                    && (object.otyp !== LOADSTONE || !object.cursed));
+                if (gem) return { weapon: gem, launcher: sling };
+            }
+        }
+
+        const skill = OBJECT_SUBTYPE[type];
+        const launcher = selectMissileLauncher(monster, skill, state);
+        const needsLauncher = skill >= -P_CROSSBOW && skill <= -P_BOW;
+        if (needsLauncher && !launcher) continue;
+        if (skill < 0 && cannotSwitch && launcher !== current) continue;
+        if (type === LOADSTONE) {
+            const stone = inventory.find(object => object.otyp === LOADSTONE && !object.cursed);
+            if (stone) return { weapon: stone, launcher };
+        } else {
+            const missile = selectMonsterWeaponOfType(monster, type, state);
+            if (missile && !missile.oartifact
+                && !(missile === current && willWeld(missile))) return { weapon: missile, launcher };
+        }
+    }
+    return null;
+}
+
+function selectMissileLauncher(monster, skill, state) {
+    let types;
+    if (skill === -P_BOW) types = [YUMI, ELVEN_BOW, BOW, ORCISH_BOW];
+    else if (skill === -P_SLING) types = [SLING];
+    else if (skill === -P_CROSSBOW) types = [CROSSBOW];
+    else return null;
+    for (const type of types) {
+        const launcher = selectMonsterWeaponOfType(monster, type, state);
+        if (launcher) return launcher;
+    }
+    return null;
+}
 
 // C weapon.c:hwep[], in preference order.
 const HAND_TO_HAND_WEAPONS = [
@@ -169,7 +259,7 @@ function weaponForCurrentAction(monster, state) {
     case NEED_HTH_WEAPON:
         return selectHandToHandWeapon(monster, state);
     case NEED_RANGED_WEAPON:
-        return selectMonsterMissile(monster, state)?.launcher;
+        return selectMonsterRangedWeapon(monster, state)?.launcher;
     case NEED_PICK_AXE:
         return carrying(PICK_AXE) || (!shield && carrying(DWARVISH_MATTOCK));
     case NEED_AXE:
