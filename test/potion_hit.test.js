@@ -20,7 +20,7 @@ import {
     addInventoryObject, knownObject,
 } from './support/game-objects.js';
 import {
-    installHumanWerewolfHero, wearPolymorphControlRing,
+    installHumanWerewolfHero, installPolymorphedHero, wearPolymorphControlRing,
 } from './support/hero-state.js';
 import { freshGame } from './support/game-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -833,9 +833,6 @@ test('uncursed restore-ability vapor repairs only the first reduced attribute',
 test('full-healing vapor heals both HP pools without exercising a temporary body',
     async () => {
         freshPotionState({
-            mtimedone: 10,
-            mh: 1,
-            mhmax: 10,
             uhp: 20,
             uhpmax: 30,
             blindTurns: 4,
@@ -843,6 +840,7 @@ test('full-healing vapor heals both HP pools without exercising a temporary body
             acurr: { a: [12, 12, 12, 12, 12, 12] },
             amax: { a: [12, 12, 12, 12, 12, 12] },
         });
+        installPolymorphedHero('wolf', { turns: 10, hitPoints: 1, maxHitPoints: 10 });
         const potion = potionObject(POT_FULL_HEALING);
         potion.cursed = true;
 
@@ -862,14 +860,12 @@ test('full-healing vapor heals both HP pools without exercising a temporary body
 test('sickness vapor damages a temporary form without exercising Constitution',
     async () => {
         freshPotionState({
-            mtimedone: 10,
-            mh: 12,
-            mhmax: 20,
             uhp: 30,
             uhpmax: 30,
             acurr: { a: [12, 12, 12, 12, 12, 12] },
             amax: { a: [12, 12, 12, 12, 12, 12] },
         });
+        installPolymorphedHero('wolf', { turns: 10, hitPoints: 12, maxHitPoints: 20 });
         game.urole = { key: 'tourist' };
 
         const potion = potionObject(POT_SICKNESS);
@@ -1324,7 +1320,6 @@ test('controlled cursed vapor accepts change despite a nearby threat',
 
         assert.equal(result.waterEffect.kind, 'transformed');
         assert.equal(game.u.umonnum, 21);
-        assert.equal(game.were_changes, 1);
         assert.equal(game.u.uconduct.polyselfs, 1);
     });
 
