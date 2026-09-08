@@ -88,6 +88,7 @@ import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';
 import { finishHeroDeath } from './end.js';
 import { triggerHeroAntiMagicTrap } from './anti_magic_trap.js';
 import { destroyFireInventory } from './zap.js';
+import { woundHeroLegs } from './hero_legs.js';
 
 const M1_CLING = 0x00000010;
 const M1_WALLWALK = 0x00000008;
@@ -977,14 +978,7 @@ async function triggerBearTrap(trap, { failedUntrap = false } = {}) {
 
     const legSide = rn2(2) ? 'right' : 'left';
     const legTurns = 10 + rn2(10);
-    const wasWounded = (hero._woundedLegTurns ?? 0) > 0;
-    hero._woundedLegTurns = Math.max(
-        hero._woundedLegTurns ?? 0, legTurns,
-    );
-    if (!hero._woundedLegSide) hero._woundedLegSide = legSide;
-    else if (hero._woundedLegSide !== legSide)
-        hero._woundedLegSide = 'both';
-    if (!wasWounded && hero.acurr?.a) hero.acurr.a[A_DEX]--;
+    woundHeroLegs(legSide, legTurns);
 
     const currentCapacity = nearCapacity(game);
     const capacityMessage = encumbranceMessage(

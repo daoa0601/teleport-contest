@@ -64,6 +64,7 @@ import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './punishment.js';
 import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
 import { heroLikesLava } from './hack.js';
+import { handleRidingAfterFormChange } from './steed.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import {
     expelHero, holdingMonsterSubject, releaseHeroGrip,
@@ -533,10 +534,12 @@ export async function polymonHero(mnum, options = {}) {
     } else if (wasHolding && !heroFormSticks()) {
         await releaseHeroGrip();
     }
+    const riding = await handleRidingAfterFormChange();
+    if (riding.died) return { transformed: true, mnum, died: true };
     if (!wasExpelled
         && ((!hero.levitation && !hero.flying && !hero.ustuck
                 && (isPoolAt(hero.ux, hero.uy) || isLavaAt(hero.ux, hero.uy)))
-            || (game.underwater && !hero.swimming))) {
+            || (hero.uinwater && !hero.swimming))) {
         const result = await applyHeroLocationEffects();
         if (result.died) return { transformed: true, mnum, died: true };
     }

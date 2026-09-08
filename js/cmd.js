@@ -247,7 +247,7 @@ import {
     publishMonsterGrowl, wakeAttackedMonster, wakeAttackedShopkeeper,
 } from './monster_anger.js';
 import { monsterNoiseMessage } from './monster_sound.js';
-import { doride } from './steed.js';
+import { doride, moveSteedWithHero, ridingPreventsMovement } from './steed.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     heroStrengthDamageBonus, rollHeroMeleeWeaponDamage,
@@ -10856,7 +10856,7 @@ export function applyHeroLiquidEffects(publish = plineWithContinuation) {
 // the hero on the same square. It does not count as a movement attempt.
 export async function applyHeroLocationEffects(publish = plineWithContinuation) {
     const liquid = await applyHeroLiquidEffects(publish);
-    if (liquid?.moved || liquid?.died) return liquid;
+    if (liquid?.moved || liquid?.died || liquid?.dismounted) return liquid;
     const { ux: x, uy: y } = game.u;
     await finishDestinationSpotEffects({
         oldx: x, oldy: y, newx: x, newy: y,
@@ -10896,7 +10896,7 @@ async function finishMovedHero({
     const liquid = await applyHeroLiquidEffects();
     if (liquid?.moved && explicitAttempt)
         maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
-    if (liquid?.moved || liquid?.died) return true;
+    if (liquid?.moved || liquid?.died || liquid?.dismounted) return true;
 
     const finished = await finishDestinationSpotEffects({
         oldx, oldy, newx, newy, loc, explicitAttempt, trapOptions,
@@ -11079,6 +11079,7 @@ async function domove(dx, dy, explicitAttempt = true) {
             const oldx = u.ux, oldy = u.uy;
             u.ux0 = oldx; u.uy0 = oldy;
             u.ux = newx; u.uy = newy;
+            moveSteedWithHero();
             monster.mx = oldx; monster.my = oldy;
             const swapName = tame ? tameName
                 : monster.name ? `peaceful ${speciesName}`
@@ -11104,6 +11105,11 @@ async function domove(dx, dy, explicitAttempt = true) {
 
     if (await fightEmptyDestination(newx, newy))
         return true;
+
+    if (await ridingPreventsMovement()) {
+        stopRun(game);
+        return true;
+    }
 
     if (!await heroCanMoveFromTrap(newx, newy)) return true;
 
@@ -11290,6 +11296,7 @@ async function domove(dx, dy, explicitAttempt = true) {
     u.uy0 = oldy;
     u.ux = newx;
     u.uy = newy;
+    moveSteedWithHero();
     return finishMovedHero({
         oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove,
     });

@@ -3,6 +3,10 @@ import { game } from '../../js/gstate.js';
 import { makemonAt } from '../../js/mklev.js';
 import { nameToMonster } from '../../js/mondata.js';
 import { addObjectToMonsterInventory } from '../../js/monster_inventory.js';
+import { tameMonster } from '../../js/dog.js';
+import { SADDLE } from '../../js/object_data.js';
+import { putSaddleOnMonster } from '../../js/steed.js';
+import { knownObject } from './game-objects.js';
 
 export async function createMonsterAt(species, x, y, flags = 0) {
     const mnum = typeof species === 'number' ? species : nameToMonster(species);
@@ -11,6 +15,17 @@ export async function createMonsterAt(species, x, y, flags = 0) {
     if (!monster)
         throw new Error(`Could not create ${species} at ${x},${y}`);
     return monster;
+}
+
+export async function createSaddledSteed(species = 'pony', {
+    x = game.u.ux + 1,
+    y = game.u.uy,
+    saddle = {},
+} = {}) {
+    const steed = await createMonsterAt(species, x, y);
+    tameMonster(steed, game);
+    putSaddleOnMonster(knownObject(SADDLE, saddle), steed);
+    return steed;
 }
 
 export function equipMonsterObject(monster, object, wornMask, state = game) {

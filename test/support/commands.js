@@ -1,6 +1,11 @@
 import { rhack } from '../../js/cmd.js';
 import { pushKey, pushKeys } from '../../js/input.js';
 
+export async function runExtendedCommand(command, answers = '') {
+    pushKeys(`${command}\n${answers}`);
+    await rhack('#'.charCodeAt(0));
+}
+
 export async function throwInventoryObject(
     object,
     direction = 'l',

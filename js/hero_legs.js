@@ -9,6 +9,7 @@ import {
 
 export function healHeroLegs(state = game, {
     showBodyMessage = true,
+    dismounting = false,
 } = {}) {
     const hero = state.u || (state.u = {});
     if (!(hero._woundedLegTurns > 0) && !hero._woundedLegSide)
@@ -20,6 +21,7 @@ export function healHeroLegs(state = game, {
     hero._woundedLegTurns = 0;
     hero._woundedLegSide = null;
     if (hero.acurr?.a) hero.acurr.a[A_DEX]++;
+    if (dismounting) return { healed: true, messages: [] };
 
     const currentCapacity = nearCapacity(state);
     state._encumbranceLevel = currentCapacity;
@@ -34,4 +36,12 @@ export function healHeroLegs(state = game, {
     );
     if (capacityMessage) messages.push(capacityMessage);
     return { healed: true, messages };
+}
+
+export function woundHeroLegs(side, turns, state = game) {
+    const hero = state.u;
+    if (!(hero._woundedLegTurns > 0)) hero.acurr.a[A_DEX]--;
+    hero._woundedLegTurns = Math.max(hero._woundedLegTurns || 0, turns);
+    if (!hero._woundedLegSide) hero._woundedLegSide = side;
+    else if (hero._woundedLegSide !== side) hero._woundedLegSide = 'both';
 }

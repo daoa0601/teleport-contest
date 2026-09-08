@@ -2,7 +2,7 @@
 // C ref: hack.c pooleffects() and trap.c drown().
 
 import {
-    BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_GENERIC, DISSOLVED,
+    BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED,
     DOOR, ICE, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_WALL, IS_WATERWALL,
     Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE,
     TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL,
@@ -661,21 +661,22 @@ async function leaveWater({
     return true;
 }
 
-export async function heroLiquidEffects({
-    state = game,
-    publish = plineWithContinuation,
-    random = rn2,
-    recalculateVision = vision_recalc,
-    resetVision = vision_reset,
-    repaint = newsym,
-    rollDice = d,
-    rollOne = rnd,
-    chooseTeleportDestination = null,
-    applyLandingEffects = async () => {},
-    burnInventory = async () => {},
-    igniteInventory = async () => {},
-    die = finishOrdinaryDeath,
-} = {}) {
+export async function heroLiquidEffects(options = {}) {
+    const {
+        state = game,
+        publish = plineWithContinuation,
+        random = rn2,
+        recalculateVision = vision_recalc,
+        resetVision = vision_reset,
+        repaint = newsym,
+        rollDice = d,
+        rollOne = rnd,
+        chooseTeleportDestination = null,
+        applyLandingEffects = async () => {},
+        burnInventory = async () => {},
+        igniteInventory = async () => {},
+        die = finishOrdinaryDeath,
+    } = options;
     const u = state.u;
     let x = u?.ux;
     let y = u?.uy;
@@ -694,36 +695,25 @@ export async function heroLiquidEffects({
         return leftWater ? { left: true } : null;
 
     if (u.usteed) {
-        const dismount = await dismountHero(DISMOUNT_GENERIC, {
+        const from = { x, y };
+        const dismount = await dismountHero(u.uinwater ? DISMOUNT_FELL : DISMOUNT_GENERIC, {
             state,
             random,
             announce: publish,
+            land: async () => {
+                const effect = await heroLiquidEffects(options);
+                if (!effect?.moved && !effect?.died) {
+                    await applyLandingEffects({ from, to: { x: u.ux, y: u.uy } });
+                }
+                return effect;
+            },
         });
-        if (dismount.movement) {
-            const from = {
-                x: dismount.movement.oldx,
-                y: dismount.movement.oldy,
-            };
-            repaint(from.x, from.y);
-            resetVision();
-            recalculateVision(0);
-            repaint(u.ux, u.uy);
-            await applyLandingEffects({
-                from,
-                to: { x: u.ux, y: u.uy },
-            });
-            x = u.ux;
-            y = u.uy;
-            location = state.level?.at?.(x, y);
-            if (!IS_POOL(location?.typ) && !IS_LAVA(location?.typ)) {
-                u.uinwater = 0;
-                state.underwater = false;
-                return {
-                    entered: true, moved: true, died: false,
-                    from, to: { x, y },
-                };
-            }
-        }
+        return {
+            entered: true, dismounted: dismount.dismounted,
+            moved: !!dismount.movement || !!dismount.location?.moved,
+            died: !!dismount.died,
+            from, to: { x: u.ux, y: u.uy },
+        };
     }
 
     if (IS_LAVA(location.typ)) {

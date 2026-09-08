@@ -16,7 +16,9 @@ import {
 } from '../js/object_data.js';
 import { vision_reset } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';
-import { createMonsterAt } from './support/monsters.js';
+import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
+import { runExtendedCommand } from './support/commands.js';
+import { freshObjectRoom } from './support/object-room.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 function liquidAtHero(terrain) {
@@ -259,14 +261,14 @@ test('a no-teleport level blocks escape without spending power', async () => {
     );
 });
 
-test('a grounded steed drowns before the hero tries to crawl out', async () => {
-    const level = poolAtHero();
-    const steed = await createMonsterAt('pony', 11, 10);
-    tameMonster(steed, game);
-    steed.mx = game.u.ux;
-    steed.my = game.u.uy;
-    game.u.usteed = steed;
-    level.monsters = level.monsters.filter(monster => monster !== steed);
+test('a neutral rider is blamed when the pony drowns before the rider escapes', async () => {
+    const level = freshObjectRoom({
+        role: 'barbarian',
+        hero: { ulevel: 30, ualign: { type: 0, record: 10 } },
+    });
+    const steed = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l ');
+    level.at(game.u.ux, game.u.uy).typ = POOL;
     const alignmentBefore = game.u.ualign.record;
 
     const result = await heroLiquidEffects({
@@ -279,18 +281,16 @@ test('a grounded steed drowns before the hero tries to crawl out', async () => {
     assert.equal(game.u.usteed, null);
     assert.equal(steed.dead, true);
     assert.equal(level.monsters.includes(steed), false);
-    assert.equal(game.u.ualign.record, alignmentBefore - 1);
+    // C adds the pet penalty, the coaligned peaceful penalty, and the riding penalty.
+    assert.equal(game.u.ualign.record, alignmentBefore - 25);
     assert.equal(result.moved, true);
 });
 
 test('a flying steed keeps its rider above the pool', async () => {
-    const level = poolAtHero();
-    const steed = await createMonsterAt('couatl', 11, 10);
-    tameMonster(steed, game);
-    steed.mx = game.u.ux;
-    steed.my = game.u.uy;
-    game.u.usteed = steed;
-    level.monsters = level.monsters.filter(monster => monster !== steed);
+    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const steed = await createSaddledSteed('silver dragon');
+    await runExtendedCommand('ride', 'l ');
+    level.at(game.u.ux, game.u.uy).typ = POOL;
 
     const result = await heroLiquidEffects({
         ...noDisplay,
@@ -300,7 +300,7 @@ test('a flying steed keeps its rider above the pool', async () => {
 
     assert.equal(result, null);
     assert.equal(game.u.usteed, steed);
-    assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
 });
 
 test('a hidden piercer stays above the pool', async () => {
