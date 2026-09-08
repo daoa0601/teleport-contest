@@ -15,7 +15,7 @@ import {
 } from './object_delete.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
-import { resolvePoisonedHero } from './poison.js';
+import { poisonHero } from './poison.js';
 import { createPoisonGasCloud } from './regions.js';
 import { d, rn2 } from './rng.js';
 import {
@@ -146,8 +146,9 @@ async function releaseNoxiousGas(
         `A cloud of noxious gas billows from the ${objectName(container)}.`,
     );
     if (random(3) !== 0) {
-        await resolvePoisonedHero({
-            reason: 'The gas cloud',
+        const poison = await poisonHero({
+            reason: 'gas cloud',
+            killer: 'cloud of poison gas',
             attribute: A_STR,
             fatal: 15,
             state,
@@ -155,6 +156,7 @@ async function releaseNoxiousGas(
             rollDice,
             publish,
         });
+        if (poison.died) return { outcome: 'noxious-gas', destroyed: false, died: true };
     } else {
         createPoisonGasCloud(
             state, location.x, location.y, 1, 8, random,
@@ -166,8 +168,9 @@ async function releaseNoxiousGas(
 
 async function prickHero(state, publish, random, rollDice, bodyPart) {
     await publish(`You feel a needle prick your ${bodyPart}.`);
-    const poison = await resolvePoisonedHero({
-        reason: 'The needle',
+    const poison = await poisonHero({
+        reason: 'needle',
+        killer: 'poisoned needle',
         attribute: A_CON,
         fatal: 10,
         state,
@@ -175,11 +178,12 @@ async function prickHero(state, publish, random, rollDice, bodyPart) {
         rollDice,
         publish,
     });
-    exerciseAttribute(A_CON, false, state);
+    if (!poison.died) exerciseAttribute(A_CON, false, state);
     return {
         outcome: 'poisoned-needle',
         damage: poison.damage,
         destroyed: false,
+        died: poison.died,
     };
 }
 
@@ -299,6 +303,6 @@ export async function triggerChestTrap(container, {
         result = await confuseHero(container, state, publish, random);
     }
 
-    if (!result.destroyed) container.tknown = true;
+    if (!result.destroyed && !result.died) container.tknown = true;
     return result;
 }

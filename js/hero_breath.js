@@ -23,7 +23,7 @@ import {
 } from './monster_attack_types.js';
 import { hasWornProperty } from './properties.js';
 import { heroMonsterForm, returnHeroToHumanForm } from './polyself.js';
-import { resolvePoisonedHero } from './poison.js';
+import { poisonHero } from './poison.js';
 import { d, rn2, rnd } from './rng.js';
 import { clearHeroSliming } from './slime.js';
 import { burnHeroArmorByFire } from './trap.js';
@@ -220,24 +220,21 @@ async function hitWithLightning(context) {
 
 async function hitWithPoison(context) {
     const { state, random, rollDice, publish, die } = context;
-    const poison = await resolvePoisonedHero({
+    const poison = await poisonHero({
         reason: 'blast',
+        killer: 'poisoned blast',
         attribute: A_DEX,
         fatal: 15,
         state,
         random,
         rollDice,
         publish,
-        onResisted: () => shieldHero(state),
-        poisonResistant: !!state.u.poisonResistance,
+        die,
     });
-    let heroDied = false;
-    if (poison.deadly)
-        heroDied = await die({ killer: 'poisoned blast' });
     return {
         resisted: !!poison.resisted,
         damage: poison.damage ?? 0,
-        heroDied,
+        heroDied: poison.died,
     };
 }
 

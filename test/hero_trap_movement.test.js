@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import {
-    ANTI_MAGIC, ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, ROCKTRAP, ROOM,
+    ANTI_MAGIC, ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, PIT, ROCKTRAP, ROOM,
     SLP_GAS_TRAP, RUST_TRAP, SQKY_BOARD,
-    TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, VIBRATING_SQUARE,
+    TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, Upolyd, VIBRATING_SQUARE,
 } from '../js/const.js';
 import { tameMonster } from '../js/dog.js';
 import { GameMap } from '../js/game.js';
@@ -26,6 +26,7 @@ import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 
 test('escaping a web takes a movement attempt without moving the hero',
     async () => {
@@ -48,6 +49,19 @@ test('climbing from a pit leaves the hero on the pit square', async () => {
 
     assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
     assert.equal(game.u.utrap, 0);
+});
+
+test('falling into a pit can destroy a monster body without hurting saved human health', async () => {
+    freshGameplayRoom();
+    installPolymorphedHero('minotaur', { hitPoints: 1 });
+    const health = game.u.uhp;
+    addTrap(game.level, PIT, 11, 10);
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(Upolyd(game.u), false);
+    assert.equal(game.u.uhp, health);
+    assert.equal(!!game.program_state.gameover, false);
 });
 
 test('a trapped hero cannot swap places with a pet', async () => {

@@ -8,23 +8,24 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { hitHeroWithMonsterProjectile, throwMonsterWeaponAtHero } from '../js/monster_throw.js';
-import { DAGGER } from '../js/object_data.js';
+import { DAGGER, DART } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-async function throwDaggerAtHero() {
+async function throwWeaponAtHero(type = DAGGER, properties = {}) {
     const soldier = await createMonsterAt('soldier', 12, 10, NO_MINVENT);
-    const dagger = addObjectToMonsterInventory(soldier, knownObject(DAGGER, { spe: 5 }));
+    const weapon = addObjectToMonsterInventory(soldier,
+        knownObject(type, { spe: 5, ...properties }));
     findArmorClass();
-    return throwMonsterWeaponAtHero(soldier, game, dagger).shots[0];
+    return throwMonsterWeaponAtHero(soldier, game, weapon).shots[0];
 }
 
 test('projectile damage waits until the hit message can be shown', async () => {
     freshObjectRoom();
     const health = game.u.uhp;
-    const shot = await throwDaggerAtHero();
+    const shot = await throwWeaponAtHero();
     assert.equal(game.u.uhp, health, 'a projectile still in flight must not deal damage');
     const input = resetInputState();
     await pline('You hear a loud rumbling sound somewhere deep in the dungeon.');
@@ -42,7 +43,7 @@ test('a thrown weapon hurts the current monster body without changing saved huma
     freshObjectRoom();
     installPolymorphedHero('minotaur', { hitPoints: 60 });
     const humanHealth = game.u.uhp;
-    const shot = await throwDaggerAtHero();
+    const shot = await throwWeaponAtHero();
 
     await hitHeroWithMonsterProjectile(shot, game, { publish: async () => {} });
 
@@ -51,11 +52,26 @@ test('a thrown weapon hurts the current monster body without changing saved huma
     assert.equal(Upolyd(game.u), true);
 });
 
+test('poison on a thrown dart damages the same monster body as its point', async () => {
+    freshObjectRoom();
+    installPolymorphedHero('minotaur', { hitPoints: 60 });
+    const shot = await throwWeaponAtHero(DART, { opoisoned: 1 });
+
+    await hitHeroWithMonsterProjectile(shot, game, {
+        random: range => range === 30 ? 6 : 1,
+        rollOne: () => 1,
+        publish: async () => {},
+    });
+
+    assert.equal(game.u.mh, 53);
+    assert.equal(game.u.uhp, 40);
+});
+
 test('a projectile that destroys the monster body returns the hero to human form', async () => {
     freshObjectRoom();
     installPolymorphedHero('minotaur', { hitPoints: 1 });
     const humanHealth = game.u.uhp;
-    const shot = await throwDaggerAtHero();
+    const shot = await throwWeaponAtHero();
 
     await hitHeroWithMonsterProjectile(shot, game, { publish: async () => {} });
 
@@ -69,7 +85,7 @@ test('half physical damage reduces a thrown weapon hit, rounding up', async () =
     for (const halfPhysicalDamage of [false, true]) {
         freshObjectRoom({ hero: { halfPhysicalDamage } });
         const health = game.u.uhp;
-        const shot = await throwDaggerAtHero();
+        const shot = await throwWeaponAtHero();
 
         await hitHeroWithMonsterProjectile(shot, game, { publish: async () => {} });
 

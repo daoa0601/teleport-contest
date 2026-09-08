@@ -26,6 +26,7 @@ export async function hitHeroWithObject(object, damage, accuracy, {
     rollOne = rnd,
     die = finishHeroDeath,
     name = artifactById(object.oartifact, state)?.name || OBJECT_NAMES[object.otyp],
+    killer = OBJECT_NAMES[object.otyp],
 } = {}) {
     const description = object.oartifact
         ? name : `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
@@ -59,7 +60,7 @@ export async function hitHeroWithObject(object, damage, accuracy, {
             exerciseAttribute(A_CON, false, state);
         }
         if (object.otyp === ACID_VENOM) await publish('It burns!');
-        if (await loseHeroHp(damage, OBJECT_NAMES[object.otyp], { state, publish, die }))
+        if (await loseHeroHp(damage, killer, { state, publish, die }))
             return { hit: true, died: true };
         exerciseAttribute(A_STR, false, state);
     }

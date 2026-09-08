@@ -3,7 +3,7 @@
 
 import {
     A_DEX, A_STR, BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON,
-    POISONING, P_BOW, P_DAGGER, P_DART, SLT_ENCUMBER,
+    P_BOW, P_DAGGER, P_DART, SLT_ENCUMBER,
     P_SHURIKEN, P_SLING, P_SPEAR,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
@@ -37,7 +37,7 @@ import { isPoisonableObject } from './object_properties.js';
 import {
     monsterHasPoisonResistance, monsterHasStoneResistance,
 } from './monster_resistance.js';
-import { resolvePoisonedHero } from './poison.js';
+import { poisonHero } from './poison.js';
 import { d, rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { heroSpecies } from './hero_species.js';
@@ -304,8 +304,9 @@ export async function hitHeroWithMonsterProjectile(
     let lifeSaved = (hero.umortality || 0) > mortality;
     const poisoned = weapon.opoisoned && isPoisonableObject(weapon);
     if (poisoned) {
-        const poison = await resolvePoisonedHero({
+        const poison = await poisonHero({
             reason: shot.appearance,
+            killer: `poisoned ${killer}`,
             attribute: A_STR,
             fatal: lifeSaved ? 0 : 10,
             state,
@@ -313,18 +314,11 @@ export async function hitHeroWithMonsterProjectile(
             rollDice,
             rollOne,
             publish,
+            die: options => finishDeath({ ...options, beforeFinalDeath }),
             thrownWeapon: true,
         });
-        if (poison.deadly) {
-            if (await finishDeath({
-                killer,
-                beforeFinalDeath,
-                deathType: POISONING,
-            })) {
-                return { died: true, lifeSaved: false };
-            }
-            lifeSaved = true;
-        }
+        if (poison.died) return { died: true, lifeSaved: false };
+        lifeSaved ||= (hero.umortality || 0) > mortality;
     }
     if (BLINDING_PROJECTILES.has(weapon.otyp)) {
         const blindness = blindHeroWithThrownObject(

@@ -3,7 +3,7 @@
 // tele_trap().
 
 import {
-    adjustAttribute, currentAttribute, exerciseAttribute,
+    currentAttribute, exerciseAttribute,
 } from './attrib.js';
 import { objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroHeadName } from './body_parts.js';
@@ -24,6 +24,8 @@ import {
     transientObjectGlyph,
 } from './display.js';
 import { game } from './gstate.js';
+import { loseHeroHp } from './hero_damage.js';
+import { hitHeroWithObject } from './hero_object_hit.js';
 import { refreshMovementProperties } from './properties.js';
 import { heroLiquidEffects } from './hack.js';
 import {
@@ -68,7 +70,7 @@ import { hasInvokedProperty } from './properties.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { activateMagicPortal } from './magic_portal.js';
 import { activateStatueTrapAt } from './statue_trap.js';
-import { resolvePoisonedHero } from './poison.js';
+import { poisonHero } from './poison.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
@@ -141,36 +143,6 @@ function heroPassesWalls() {
     return !!game.u?.passesWalls || !!(heroFormFlags() & M1_WALLWALK);
 }
 
-async function applySpikePoison() {
-    if (rn2(6) !== 0) return;
-    await plineWithContinuation('The spikes were poisoned!');
-    if (game.u?.poisonResistance || game.u?.poison_resistance) {
-        await plineWithContinuation("The poison doesn't seem to affect you.");
-        return;
-    }
-    const outcome = rn2(8);
-    if (outcome === 0) {
-        const loss = 6 + d(4, 6);
-        if ((game.u.uhp ?? 1) <= loss) {
-            game.u.uhp = 0;
-            await plineWithContinuation('The poison was deadly...');
-            return;
-        }
-        const minimumMaximumHitPoints = Math.max(game.u.ulevel ?? 1, 3);
-        game.u.uhpmax = Math.max(
-            minimumMaximumHitPoints,
-            (game.u.uhpmax ?? 1) - Math.trunc(loss / 2),
-        );
-        loseHitPoints(loss);
-        adjustAttribute(A_CON, -1, game);
-        adjustAttribute(A_STR, -3, game);
-    } else if (outcome > 5) {
-        loseHitPoints(rn2(10) + 6);
-    } else {
-        adjustAttribute(A_STR, -d(2, 2), game);
-    }
-}
-
 async function triggerPit(
     trap,
     { viaSitting = false, failedUntrap = false } = {},
@@ -202,8 +174,17 @@ async function triggerPit(
     hero.utrap = rn2(6) + 2;
     hero.utraptype = TT_PIT;
     refreshMovementProperties(game);
-    losePhysicalHitPoints(spiked ? rnd(10) : rnd(6));
-    if (spiked) await applySpikePoison();
+    const mortality = hero.umortality || 0;
+    const damage = physicalDamage(spiked ? rnd(10) : rnd(6));
+    const killer = spiked ? 'fell into a pit of iron spikes' : 'fell into a pit';
+    if (await loseHeroHp(damage, killer)) return;
+    if (spiked && rn2(6) === 0) {
+        const poison = await poisonHero({
+            reason: 'spikes', killer: 'fall onto poison spikes', attribute: A_STR,
+            fatal: (hero.umortality || 0) > mortality ? 0 : 8,
+        });
+        if (poison.died) return;
+    }
     game.vision_full_recalc = 1;
     exerciseAttribute(A_STR, false);
     exerciseAttribute(A_DEX, false);
@@ -688,7 +669,6 @@ async function triggerProjectileTrap(trap) {
     const arrowTrap = trap.ttyp === ARROW_TRAP;
     const objectType = arrowTrap ? ARROW : DART;
     const noun = arrowTrap ? 'arrow' : 'little dart';
-    const article = arrowTrap ? 'an' : 'a';
     const subject = arrowTrap ? 'An arrow' : 'A little dart';
     const attackLevel = arrowTrap ? 8 : 7;
 
@@ -713,27 +693,23 @@ async function triggerProjectileTrap(trap) {
     const damage = physicalDamage(
         rollPhysicalWeaponDamageAgainstHero(missile, game),
     );
-    const dieroll = rnd(20);
-    const threshold = (hero.uac ?? 10) + attackLevel;
-    const hit = threshold > dieroll;
-    if (hit) {
-        const punctuation = damage <= 4 ? '.' : '!';
-        await plineWithContinuation(
-            blind || game.flags?.verbose === false
-                ? `You are hit${punctuation}`
-                : `You are hit by ${article} ${noun}${punctuation}`,
-        );
-        loseHitPoints(damage);
-        exerciseAttribute(A_STR, false);
+    const mortality = hero.umortality || 0;
+    const hit = await hitHeroWithObject(missile, damage, attackLevel, {
+        name: noun, killer: noun,
+    });
+    if (hit.died) return;
+    if (hit.hit) {
         if (missile.opoisoned) {
-            await resolvePoisonedHero({
+            const poison = await poisonHero({
                 reason: 'dart',
+                killer: 'little dart',
                 attribute: A_CON,
-                fatal: 10,
+                fatal: (hero.umortality || 0) > mortality ? 0 : 10,
                 state: game,
                 thrownWeapon: true,
                 publish: plineWithContinuation,
             });
+            if (poison.died) return;
         }
         deleteObject(missile, game);
         return;
@@ -743,12 +719,6 @@ async function triggerProjectileTrap(trap) {
     if (!blind) recordObjectEncounter(objectType, game);
     stack_object(missile, game);
     newsym(trap.tx, trap.ty);
-    const miss = blind || game.flags?.verbose === false
-        ? 'It misses.'
-        : threshold > dieroll - 2
-            ? `You are almost hit by ${article} ${noun}.`
-            : `${subject} misses you.`;
-    await plineWithContinuation(miss);
 }
 
 async function triggerSqueakyBoard(

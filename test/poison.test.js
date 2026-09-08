@@ -1,34 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { A_CON, A_STR } from '../js/const.js';
-import { resolvePoisonedHero } from '../js/poison.js';
-
-function heroState(hitPoints) {
-    return {
-        inventory: [],
-        u: {
-            uhp: hitPoints,
-            uhpmax: hitPoints,
-            ulevel: 5,
-            acurr: { a: [10, 10, 10, 10, 10, 10] },
-            amax: { a: [18, 18, 18, 18, 18, 18] },
-        },
-        urace: {
-            attrmin: [3, 3, 3, 3, 3, 3],
-            attrmax: [18, 18, 18, 18, 18, 18],
-        },
-    };
-}
+import { wearHeroAccessory } from '../js/accessory.js';
+import { A_CON, A_STR, Upolyd } from '../js/const.js';
+import { game } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
+import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
+import { poisonHero } from '../js/poison.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { installPolymorphedHero } from './support/hero-state.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 test('surviving severe poison lowers maximum HP and attributes', async () => {
-    const state = heroState(40);
+    freshObjectRoom();
     const messages = [];
 
-    const result = await resolvePoisonedHero({
+    await poisonHero({
         reason: "The killer bee's sting",
+        killer: 'killer bee',
         attribute: A_STR,
-        state,
         random: () => 0,
         rollDice: () => 4,
         publish: message => {
@@ -36,32 +26,88 @@ test('surviving severe poison lowers maximum HP and attributes', async () => {
         },
     });
 
-    assert.equal(result.deadly, false);
-    assert.equal(state.u.uhpmax, 35);
-    assert.equal(state.u.uhp, 30);
-    assert.equal(state.u.acurr.a[A_CON], 9);
-    assert.equal(state.u.acurr.a[A_STR], 7);
+    assert.equal(game.u.uhpmax, 35);
+    assert.equal(game.u.uhp, 30);
+    assert.equal(game.u.acurr.a[A_CON], 11);
+    assert.equal(game.u.acurr.a[A_STR], 9);
     assert.ok(messages.includes('You feel very sick!'));
     assert.ok(messages.includes('You feel weaker!'));
 });
 
-test('severe poison reports death when its damage reaches current HP',
-    async () => {
-        const state = heroState(10);
-        const messages = [];
+test('ordinary poison damages the current monster body', async () => {
+    freshObjectRoom();
+    installPolymorphedHero('minotaur');
 
-        const result = await resolvePoisonedHero({
-            reason: "The killer bee's sting",
-            attribute: A_STR,
-            state,
-            random: () => 0,
-            rollDice: () => 4,
-            publish: message => {
-                messages.push(message);
-            },
+    await poisonHero({
+        reason: 'sting', killer: 'killer bee', attribute: A_STR,
+        random: range => range === 30 ? 6 : 0,
+        publish: async () => {},
+    });
+
+    assert.equal(game.u.mh, 34);
+    assert.equal(game.u.uhp, 40);
+});
+
+test('poison can destroy a monster body without killing the human underneath', async () => {
+    freshObjectRoom();
+    installPolymorphedHero('minotaur', { hitPoints: 5 });
+
+    await poisonHero({
+        reason: 'sting', killer: 'killer bee', attribute: A_STR,
+        random: range => range === 30 ? 6 : 0,
+        publish: async () => {},
+    });
+
+    assert.equal(Upolyd(game.u), false);
+    assert.equal(game.u.uhp, 40);
+    assert.equal(!!game.program_state.gameover, false);
+});
+
+test('severe poison lowers human maximum health even while polymorphed', async () => {
+    freshObjectRoom();
+    installPolymorphedHero('minotaur');
+
+    await poisonHero({
+        reason: 'sting', killer: 'killer bee', attribute: A_STR,
+        random: () => 0, rollDice: () => 4,
+        publish: async () => {},
+    });
+
+    assert.equal(game.u.uhpmax, 35);
+    assert.equal(game.u.uhp, 35);
+    assert.equal(game.u.mhmax, 40);
+    assert.equal(game.u.mh, 30);
+});
+
+for (const reason of ['blast', 'gas cloud']) {
+    test(`half gas damage reduces poison from a ${reason}`, async () => {
+        freshObjectRoom({ hero: { halfGasDamage: true } });
+
+        await poisonHero({
+            reason, killer: 'cloud of poison gas', attribute: A_STR,
+            random: range => range === 30 ? 6 : 0,
+            publish: async () => {},
         });
 
-        assert.equal(result.deadly, true);
-        assert.equal(state.u.uhp, -1);
-        assert.equal(messages.at(-1), 'The poison was deadly...');
+        assert.equal(game.u.uhp, 37);
     });
+}
+
+test('severe poison can trigger life saving through low human health while polymorphed', async () => {
+    freshObjectRoom({ hero: { uhp: 10, uhpmax: 40 } });
+    installPolymorphedHero('minotaur', { hitPoints: 60 });
+    const amulet = addInventoryObject(AMULET_OF_LIFE_SAVING);
+    wearHeroAccessory(amulet, 'uamul');
+    pushKeys('  ');
+
+    await poisonHero({
+        reason: 'sting', killer: 'killer bee', attribute: A_STR,
+        random: () => 0, rollDice: () => 4,
+        publish: async () => {},
+    });
+
+    assert.equal(game.u.umortality, 1);
+    assert.ok(game.u.uhp > 0);
+    assert.ok(game.u.mh > 0);
+    assert.equal(game.inventory.includes(amulet), false);
+});

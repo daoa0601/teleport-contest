@@ -46,7 +46,7 @@ import { aggravateMonsters, angerMonster } from './monster_anger.js';
 import { animateRollingBoulderCell } from './hero_traps.js';
 import { grantAmuletWish } from './wish.js';
 import { exerciseAttribute } from './attrib.js';
-import { resolvePoisonedHero } from './poison.js';
+import { poisonHero } from './poison.js';
 import { rndcurse } from './throne.js';
 import { stopRun } from './runmode.js';
 import {
@@ -2574,25 +2574,6 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
     return true;
 }
 
-// C refs: uhitm.c:mhitm_ad_drst(), attrib.c:poisoned().  The initial poison
-// line is nested inside hitmu(), before its shared knockback and physical
-// damage tail.  Keep this async so tty can suspend on each intervening pline
-// without letting the actor advance to that tail.
-async function resolveDeferredHeroPoison(action, monster, attack) {
-    const subject = game.blind ? 'Its'
-        : `The ${quietMonsterName(monster)}'s`;
-    const result = await resolvePoisonedHero({
-        reason: `${subject} ${poisonAttackNoun(attack)}`,
-        attribute: attack.poisonAttribute ?? 0,
-        state: game,
-        random: range => recordContactRn2(action, range),
-        rollDice: (count, sides) =>
-            recordContactDice(action, count, sides),
-        publish: queueTurnMessage,
-    });
-    return result.pagerOwned;
-}
-
 function quietMonsterName(monster) {
     const name = monsterTypeName(monster?.mnum, !!monster?.female);
     return monster?.saddled ? `saddled ${name}` : name;
@@ -4841,11 +4822,28 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         }
                     }
                     if (heroAttack.deferredPoisonEffect) {
-                        const poisonPagerOwned
-                            = await resolveDeferredHeroPoison(
-                                action, monster, heroAttack,
-                            );
-                        actorContactPagerOwned ||= poisonPagerOwned;
+                        const subject = game.blind ? 'Its'
+                            : `The ${quietMonsterName(monster)}'s`;
+                        const poison = await poisonHero({
+                            reason: `${subject} ${poisonAttackNoun(heroAttack)}`,
+                            killer: monsterTypeName(monster.mnum, !!monster.female),
+                            attribute: heroAttack.poisonAttribute ?? 0,
+                            state: game,
+                            random: range => recordContactRn2(action, range),
+                            rollDice: (count, sides) => recordContactDice(action, count, sides),
+                            publish: queueTurnMessage,
+                            die: async options => {
+                                await waitForCurrentMonsterMore();
+                                return finishHeroDeath({
+                                    ...options,
+                                    beforeFinalDeath: () => restoreUnvisitedMonsterMovement(
+                                        monsterScan, actorIndex,
+                                    ),
+                                });
+                            },
+                        });
+                        if (poison.died) return;
+                        actorContactPagerOwned ||= poison.pagerOwned;
                         heroAttack.deferredPoisonEffect = false;
                         await resumeDeferredHeroContact(
                             action, game, rn2, rnd, publishContactMessage,
