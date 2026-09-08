@@ -8,7 +8,7 @@ import {
     beginHeroLifeSaving, completeHeroLifeSaving,
 } from '../js/end.js';
 import {
-    quietMonsterActionRng, resumeDeferredHeroContact,
+    takeMonsterTurn, resumeDeferredHeroContact,
 } from '../js/monmove.js';
 import { polymonHero } from '../js/polyself.js';
 import {
@@ -33,7 +33,7 @@ test('a green slime touch infects and still deals its physical damage', async ()
     game._deferVisibleMonsterContact = true;
     const hitPoints = game.u.uhp;
 
-    const action = quietMonsterActionRng(
+    const action = await takeMonsterTurn(
         slime,
         game,
         range => range - 1,

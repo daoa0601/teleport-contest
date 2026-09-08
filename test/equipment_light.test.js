@@ -4,13 +4,14 @@ import assert from 'node:assert/strict';
 import { applyArmorOnEffects, removeHeroArmor, wearHeroArmor } from '../js/armor.js';
 import { dropHeroInventoryForBones } from '../js/bones_death.js';
 import { rhack } from '../js/cmd.js';
-import { NO_MINVENT, W_WEP } from '../js/const.js';
+import { NEED_HTH_WEAPON, NO_MINVENT, W_WEP } from '../js/const.js';
+import { pline } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory, removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
 import { initializeMonsterArmor } from '../js/monworn.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
-import { unwieldMonsterWeapon } from '../js/monster_weapon.js';
+import { unwieldMonsterWeapon, wieldMonsterWeapon } from '../js/monster_weapon.js';
 import { OBJECT_NAMES, OIL_LAMP, WAX_CANDLE } from '../js/object_data.js';
 import { beginObjectBurn, endObjectBurn } from '../js/light.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
@@ -168,4 +169,25 @@ test('a monster can unwield Sunsword without dropping it or leaving its light be
     assert.equal(sword.lamplit, false);
     assert.equal(cansee(16, 10), false);
     assert.ok(messages.some(message => /Sunsword.*stops shining/.test(message)));
+});
+
+test('Sunsword starts lighting the room after the monster\'s wielding message is acknowledged', async () => {
+    darkRoom();
+    const input = resetInputState();
+    const giant = await createMonsterAt('giant', 14, 10, NO_MINVENT);
+    addObjectToMonsterInventory(giant, artifactObject('Sunsword'));
+    giant.weaponCheck = NEED_HTH_WEAPON;
+    beginObjectBurn(floorObject(OIL_LAMP, 11, 10, { age: 100 }));
+    vision_recalc(0);
+    await pline('You hear a loud rumbling sound somewhere deep in the dungeon.');
+
+    const wielding = wieldMonsterWeapon(giant);
+    await input.waitUntilBlocked();
+    assert.equal(cansee(16, 10), false);
+    input.feed('   ');
+    await wielding;
+    vision_recalc(0);
+
+    assert.equal(cansee(16, 10), true);
+    assert.equal(giant.mw.lamplit, true);
 });

@@ -22,7 +22,7 @@ import { game } from '../js/gstate.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { DAGGER } from '../js/object_data.js';
 import { finishMonsterRayDeath } from '../js/monster_death.js';
-import { quietMonsterActionRng } from '../js/monmove.js';
+import { takeMonsterTurn } from '../js/monmove.js';
 
 const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT
     | NO_MINVENT;
@@ -63,7 +63,7 @@ test('a tame dragon breathes at a distant monster instead of moving',
         const target = await breathTarget();
         const hungryBefore = dragon.edog.hungrytime;
 
-        const action = quietMonsterActionRng(
+        const action = await takeMonsterTurn(
             dragon,
             game,
             () => 1,
@@ -125,16 +125,16 @@ test('an iron golem throws before using its breath attack', async () => {
     target.mhp = target.mhpmax = 200;
     const hungryBefore = golem.edog.hungrytime;
 
-    const action = quietMonsterActionRng(golem, game);
+    const action = await takeMonsterTurn(golem, game);
     finishRangedAttacks(action.movement.rangedAttacks, game, {
         random: () => 0,
     });
     const hitPointsAfterDagger = target.mhp;
-    const breath = continueMonsterRangedTurn(
+    const breath = (await continueMonsterRangedTurn(
         action.movement.petRangedTurn,
         game,
         { random: () => 1 },
-    )?.attack;
+    ))?.attack;
     await resolveBreath(golem, breath);
 
     const daggerLanded = floorObjectsAt(game.level, 12, 10)
@@ -152,7 +152,7 @@ test('a ranged target can throw weapons back at a pet', async () => {
     const target = await breathTarget();
     target.mhp = target.mhpmax = 200;
     addObjectToMonsterInventory(target, daggers, game);
-    const action = quietMonsterActionRng(
+    const action = await takeMonsterTurn(
         dragon,
         game,
         () => 1,

@@ -229,7 +229,7 @@ function rangedTargetStillPresent(turn, state) {
         && (turn.target?.mhp ?? 0) > 0;
 }
 
-export function continueMonsterRangedTurn(
+export async function continueMonsterRangedTurn(
     turn, state, {
         random = rn2,
         rollOne = rnd,
@@ -247,13 +247,10 @@ export function continueMonsterRangedTurn(
     while (turn.nextSlot < attacks.length) {
         const attack = attacks[turn.nextSlot++];
         if (attack[0] === AT_WEAP && turn.target !== state.u) {
-            const weaponAttack = throwMonsterWeaponAtMonster(
+            const weaponAttack = await throwMonsterWeaponAtMonster(
                 turn.monster, turn.target, state, { random, rollOne },
             );
-            if (weaponAttack?.readiedWeapon) {
-                turn.readiedWeapon = weaponAttack.readiedWeapon;
-                continue;
-            }
+            if (weaponAttack?.spentWielding) continue;
             if (weaponAttack?.madeAttack) {
                 turn.usedWeapon = true;
                 turn.current = { kind: 'weapon', attack: weaponAttack };
@@ -286,7 +283,7 @@ export function continueMonsterRangedTurn(
     return null;
 }
 
-export function beginMonsterRangedTurn(
+export async function beginMonsterRangedTurn(
     monster, target, state, options = {},
 ) {
     monster.mlstmv = sourceTurn(state);
@@ -296,14 +293,13 @@ export function beginMonsterRangedTurn(
         nextSlot: 0,
         current: null,
         complete: false,
-        readiedWeapon: null,
         usedWeapon: false,
     };
-    continueMonsterRangedTurn(turn, state, options);
+    await continueMonsterRangedTurn(turn, state, options);
     return turn;
 }
 
-export function beginPetRangedTurn(
+export async function beginPetRangedTurn(
     pet, state, {
         forced = false,
         random = rn2,
@@ -321,11 +317,10 @@ export function beginPetRangedTurn(
             target,
             current: null,
             complete: true,
-            readiedWeapon: null,
             makeNoise: forced,
         };
     }
-    return beginMonsterRangedTurn(
+    return await beginMonsterRangedTurn(
         pet, target, state, { random, rollOne },
     );
 }
@@ -448,7 +443,7 @@ async function resolveRetaliationAttack(
                 }
             }
         }
-        continueMonsterRangedTurn(turn, state, { random, rollOne });
+        await continueMonsterRangedTurn(turn, state, { random, rollOne });
     }
     return turn;
 }
@@ -470,7 +465,7 @@ export async function resolveRangedRetaliation(
         return null;
     }
 
-    const response = beginMonsterRangedTurn(
+    const response = await beginMonsterRangedTurn(
         target, attacker, state, { random, rollOne },
     );
     await resolveRetaliationAttack(

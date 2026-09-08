@@ -213,7 +213,7 @@ test('a boulder-hit vampire rises while the boulder keeps rolling',
 
         const action = triggerImmediateMonsterTrap(monster, game);
         await resumeDeferredMonsterRollingBoulderDeath(action, game);
-        finishDeferredMonsterRollingBoulderPlacement(action, game);
+        await finishDeferredMonsterRollingBoulderPlacement(action, game);
 
         assert.equal(monster.mnum, vampireLeader);
         assert.equal(game.level.monsters.includes(monster), true);

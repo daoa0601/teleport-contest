@@ -26,7 +26,7 @@ import {
     beginMonsterRangedTurn, continueMonsterRangedTurn,
 } from '../js/dogmove.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
-import { quietMonsterActionRng } from '../js/monmove.js';
+import { takeMonsterTurn } from '../js/monmove.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     addInventoryObject, uninitializedObject,
@@ -75,12 +75,30 @@ test('a monster readies the launcher required by its ammunition', async () => {
     });
     archer.weaponCheck = NEED_WEAPON;
 
-    const readied = readyRangedMonsterWeapon(archer);
+    const readied = await readyRangedMonsterWeapon(archer);
 
-    assert.equal(readied, bow);
+    assert.equal(readied, true);
     assert.equal(archer.mw, bow);
     assert.equal(bow.wielded, true);
     assert.equal(selectMonsterMissile(archer)?.missile, arrows);
+});
+
+test('trying to ready a bow spends the attack when the current weapon is welded', async () => {
+    freshRangedCombatRoom();
+    const arrows = uninitializedObject(ARROW, { quan: 6 });
+    const orc = await combatant('orc', { inventory: [arrows, uninitializedObject(BOW)] });
+    const dagger = equipMonsterObject(orc, uninitializedObject(DAGGER, { cursed: true }), W_WEP);
+    orc.weaponCheck = NEED_WEAPON;
+    const target = await combatant('lichen', { x: 12 });
+    const health = target.mhp;
+    pushKeys('  ');
+
+    const attack = await throwMonsterWeaponAtMonster(orc, target, game);
+
+    assert.equal(attack.spentWielding, true);
+    assert.equal(orc.mw?.o_id, dagger.o_id);
+    assert.equal(arrows.quan, 6);
+    assert.equal(target.mhp, health);
 });
 
 test('a monster can shoot ya from an ordinary bow', async () => {
@@ -91,7 +109,7 @@ test('a monster can shoot ya from an ordinary bow', async () => {
     orc.weaponCheck = NEED_WEAPON;
     const target = await combatant('lichen', { x: 12 });
 
-    const attack = throwMonsterWeaponAtMonster(orc, target, game);
+    const attack = await throwMonsterWeaponAtMonster(orc, target, game);
 
     assert.equal(attack?.launched, true);
     assert.ok(arrows.quan < 6);
@@ -158,7 +176,7 @@ test('a tame orc throws a dagger at a distant monster', async () => {
     });
     const target = await combatant('jackal', { x: 12, hitPoints: 1 });
 
-    const action = quietMonsterActionRng(
+    const action = await takeMonsterTurn(
         orc, game,
         () => 1,
         (count, sides) => count * sides,
@@ -193,7 +211,7 @@ test('a poisoned dart adds poison damage to a susceptible monster',
         });
         const options = { random: () => 1, rollOne: () => 1 };
 
-        const attack = throwMonsterWeaponAtMonster(
+        const attack = await throwMonsterWeaponAtMonster(
             orc, target, game, options,
         );
         finishRangedAttacks([attack], game, options);
@@ -215,7 +233,7 @@ test('a silver dagger sears a vampire', async () => {
     const rolls = [1, 4, 20];
     const options = { random: () => 1, rollOne: () => rolls.shift() };
 
-    const attack = throwMonsterWeaponAtMonster(
+    const attack = await throwMonsterWeaponAtMonster(
         orc, vampire, game, options,
     );
     const messages = [];
@@ -271,7 +289,7 @@ test('a cream pie blinds a monster without hurting it', async () => {
     const target = await combatant('jackal', { x: 12 });
     const hitPointsBefore = target.mhp;
 
-    const attack = throwMonsterWeaponAtMonster(orc, target, game, {
+    const attack = await throwMonsterWeaponAtMonster(orc, target, game, {
         random: () => 1,
         rollOne: () => 1,
     });
@@ -427,7 +445,7 @@ test('poison resistance stops the poison on a thrown dart', async () => {
     });
     const options = { random: () => 1, rollOne: () => 1 };
 
-    const attack = throwMonsterWeaponAtMonster(
+    const attack = await throwMonsterWeaponAtMonster(
         orc, target, game, options,
     );
     const messages = [];
@@ -461,7 +479,7 @@ test('deadly poison on a thrown dart kills the monster', async () => {
     });
     const options = { random: () => 0, rollOne: () => 1 };
 
-    const attack = throwMonsterWeaponAtMonster(
+    const attack = await throwMonsterWeaponAtMonster(
         orc, target, game, options,
     );
     const messages = [];
@@ -489,7 +507,7 @@ test('a tame orc shoots an arrow with its bow', async () => {
     equipMonsterObject(orc, bow, W_WEP);
     const target = await combatant('jackal', { x: 12, hitPoints: 12 });
 
-    const action = quietMonsterActionRng(orc, game);
+    const action = await takeMonsterTurn(orc, game);
     finishRangedAttacks(action.movement.rangedAttacks, game, {
         random: () => 0,
     });
@@ -739,7 +757,7 @@ test('a monster life-saves before the next dagger is thrown', async () => {
         rollOne: () => rolls.shift(),
     };
 
-    const attack = throwMonsterWeaponAtMonster(
+    const attack = await throwMonsterWeaponAtMonster(
         rogue, target, game, options,
     );
 
@@ -782,7 +800,7 @@ test('a missed intervening monster does not hide the later hit', async () => {
     });
     const rolls = [20, 1, 1];
 
-    const attack = throwMonsterWeaponAtMonster(orc, target, game, {
+    const attack = await throwMonsterWeaponAtMonster(orc, target, game, {
         random: () => 1,
         rollOne: () => rolls.shift(),
     });
@@ -819,7 +837,7 @@ test('a crossbow bolt gets its source damage against a large monster',
             random: () => 0,
             rollOne: range => range === 20 ? 1 : range,
         };
-        const attack = throwMonsterWeaponAtMonster(
+        const attack = await throwMonsterWeaponAtMonster(
             orc, target, game, options,
         );
         finishRangedAttacks([attack], game, options);
@@ -840,7 +858,7 @@ test('an elven lord fires every arrow in a three-shot volley', async () => {
         random: () => 0,
         rollOne: range => range === 20 ? 1 : range,
     };
-    const attack = throwMonsterWeaponAtMonster(
+    const attack = await throwMonsterWeaponAtMonster(
         archer, target, game, options,
     );
     finishRangedAttacks([attack], game, options);
@@ -866,7 +884,7 @@ test('a rogue player monster gets its dagger volley bonus', async () => {
         random: () => 0,
         rollOne: range => range,
     };
-    const attack = throwMonsterWeaponAtMonster(
+    const attack = await throwMonsterWeaponAtMonster(
         rogue, target, game, options,
     );
     finishRangedAttacks([attack], game, options);
@@ -888,7 +906,7 @@ test('a second weapon attack starts after the first dagger lands', async () => {
     });
     const options = { random: () => 0, rollOne: () => 1 };
 
-    const turn = beginMonsterRangedTurn(captain, target, game, options);
+    const turn = await beginMonsterRangedTurn(captain, target, game, options);
     const firstAttack = turn.current.attack;
 
     assert.equal(daggers.quan, 1);
@@ -896,9 +914,9 @@ test('a second weapon attack starts after the first dagger lands', async () => {
 
     finishRangedAttacks([firstAttack], game, options);
     const hitPointsAfterFirstAttack = target.mhp;
-    const secondAttack = continueMonsterRangedTurn(
+    const secondAttack = (await continueMonsterRangedTurn(
         turn, game, options,
-    ).attack;
+    )).attack;
 
     assert.ok(target.mhp < hitPointsAfterFirstAttack);
     assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 1);

@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 
 import {
     allocateMonsterMovement, mcalcmove, mfndpos, naturalMonsterSpeed,
-    quietMonsterActionRng,
-    resolveDeferredMonsterBreath, runQuietMonsterActions,
+    takeMonsterTurn,
+    resolveDeferredMonsterBreath, runMonsterAction,
 } from '../js/monmove.js';
 import { finishMonsterLiquidDeath } from '../js/monster_death.js';
 import {
@@ -91,7 +91,7 @@ test('a tame red dragon bites and claws an adjacent enemy', async () => {
     goblin.m_lev = 1;
     goblin.mac = 100;
 
-    const action = quietMonsterActionRng(
+    const action = await takeMonsterTurn(
         dragon,
         game,
         () => 1,
@@ -128,7 +128,7 @@ test('a silver weapon sears a lycanthropic hero in melee', async () => {
     });
     equipMonsterObject(soldier, silverDagger, W_WEP);
 
-    const action = quietMonsterActionRng(
+    const action = await takeMonsterTurn(
         soldier,
         game,
         () => 1,
@@ -153,8 +153,8 @@ test('a monster fire blast makes a shifted vampire rise', async () => {
     Object.assign(wolf, {
         mhp: 1, mhpmax: 20, cham: vampireLeader,
     });
-    const [action] = runQuietMonsterActions(
-        [dragon], game, () => 1, (count, sides) => count * sides, () => 1,
+    const action = await runMonsterAction(
+        dragon, game, () => 1, (count, sides) => count * sides, () => 1,
     );
 
     await resolveDeferredMonsterBreath(

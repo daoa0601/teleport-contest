@@ -13,7 +13,7 @@ import {
 } from '../js/mklev.js';
 import {
     finishDeferredHeroCloneWizard, finishDeferredMonsterMiscItem,
-    quietMonsterActionRng,
+    takeMonsterTurn,
 } from '../js/monmove.js';
 import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory,
@@ -184,7 +184,7 @@ test('pet mpickobj ownership survives the complete pickup and release cycle',
         dagger.cursed = false;
         place_object(dagger, pet.mx, pet.my);
 
-        const pickup = quietMonsterActionRng(
+        const pickup = await takeMonsterTurn(
             pet, game,
             range => (range > 1 ? 1 : 0),
             (count, sides) => count * sides,
@@ -196,7 +196,7 @@ test('pet mpickobj ownership survives the complete pickup and release cycle',
         assertMonsterOwns(pet, dagger);
         assert.equal(game.level.objects[pet.mx][pet.my].includes(dagger), false);
 
-        const dropped = quietMonsterActionRng(
+        const dropped = await takeMonsterTurn(
             pet, game,
             range => (range === 10 ? 0 : Math.min(1, range - 1)),
             (count, sides) => count * sides,
@@ -230,7 +230,7 @@ test('covetous ground tactics head-link the source artifact through mpickobj',
         const book = mksobj(SPE_BOOK_OF_THE_DEAD, true, false);
         place_object(book, wizard.mx, wizard.my);
 
-        quietMonsterActionRng(
+        await takeMonsterTurn(
             wizard, game,
             range => Math.max(0, range - 1),
             (count, sides) => count * sides,

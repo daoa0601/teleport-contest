@@ -23,7 +23,7 @@ import {
     monsterTypeName,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { monsterWieldedWeapon, selectMonsterWeaponOfType } from './monster_weapon.js';
+import { monsterWieldedWeapon, selectMonsterWeaponOfType, wieldMonsterWeapon } from './monster_weapon.js';
 import { game } from './gstate.js';
 import {
     BLINDING_VENOM, BOULDER, BOW, CREAM_PIE, CROSSBOW, DART, EGG,
@@ -151,27 +151,12 @@ function selectMissileLauncher(monster, skill, state) {
 
 // Switching to a launcher consumes this action. If no launcher is needed,
 // or the correct launcher is already wielded, the monster may shoot now.
-export function readyRangedMonsterWeapon(monster, state = game) {
+export async function readyRangedMonsterWeapon(monster, state = game) {
     const current = monsterWieldedWeapon(monster);
     if (monster?.weaponCheck !== NEED_WEAPON && current) return null;
 
     monster.weaponCheck = NEED_RANGED_WEAPON;
-    const launcher = selectMonsterMissile(monster, state)?.launcher;
-
-    if (!launcher) {
-        monster.weaponCheck = NEED_WEAPON;
-        return null;
-    }
-    if (current?.otyp === launcher.otyp) {
-        monster.weaponCheck = NEED_WEAPON;
-        return null;
-    }
-
-    if (current) current.wielded = false;
-    monster.mw = launcher;
-    launcher.wielded = true;
-    monster.weaponCheck = NEED_WEAPON;
-    return launcher;
+    return wieldMonsterWeapon(monster, state);
 }
 
 function monsterClassVolleyBonus(monster, missile, launcher) {
@@ -891,18 +876,18 @@ export function continueMonsterWeaponVolley(
     return shot;
 }
 
-export function throwMonsterWeaponAtMonster(
+export async function throwMonsterWeaponAtMonster(
     source, target, state, {
         random = rn2,
         rollOne = rnd,
     } = {},
 ) {
-    const readiedWeapon = readyRangedMonsterWeapon(source, state);
-    if (readiedWeapon) {
+    const spentWielding = await readyRangedMonsterWeapon(source, state);
+    if (spentWielding) {
         return {
             attempted: true,
             launched: false,
-            readiedWeapon,
+            spentWielding: true,
         };
     }
 

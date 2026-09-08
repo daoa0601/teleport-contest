@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { NEED_WEAPON, NO_MINVENT, PIT, POOL, STONE } from '../js/const.js';
+import { NEED_WEAPON, NO_MINVENT, NO_WEAPON_WANTED, PIT, POOL, STONE, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
@@ -16,7 +16,7 @@ import {
 import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { addInventoryObject, chargedWand, knownObject } from './support/game-objects.js';
-import { createMonsterAt } from './support/monsters.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
@@ -47,6 +47,27 @@ test('a giant chooses its club over a sword during its turn', async () => {
     await moveloop_core();
 
     assert.equal(giant.mw?.otyp, CLUB);
+});
+
+test('a failed weapon switch costs the monster its turn and leaves its welded weapon held', async () => {
+    freshTurnArena();
+    const giant = await createMonsterAt('giant', 12, 10, NO_MINVENT);
+    giant.mpeaceful = false;
+    giant.movement = 12;
+    giant.weaponCheck = NEED_WEAPON;
+    const sword = equipMonsterObject(giant,
+        knownObject(LONG_SWORD, { cursed: true, bknown: false }), W_WEP);
+    addObjectToMonsterInventory(giant, knownObject(CLUB));
+    const health = game.u.uhp;
+    pushKeys('.                                .');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(giant.mw?.o_id, sword.o_id);
+    assert.equal(sword.bknown, true);
+    assert.equal(giant.weaponCheck, NO_WEAPON_WANTED);
+    assert.equal(game.u.uhp, health);
 });
 
 test('a monster can put on an invisibility cloak during its turn', async () => {

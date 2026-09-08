@@ -16,8 +16,8 @@ import {
     readyRangedMonsterWeapon, selectMonsterMissile,
     throwMonsterWeaponAtHero,
 } from './monster_throw.js';
-import { monsterWieldedWeapon, selectHandToHandWeapon } from './monster_weapon.js';
-import { ammunitionMatchesLauncher } from './weapon_type.js';
+import { monsterWieldedWeapon, wieldMonsterWeapon } from './monster_weapon.js';
+import { ammunitionMatchesLauncher, willWeld } from './weapon_type.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';
 import { growMonster } from './monster_growth.js';
 import { currentAttribute } from './attrib.js';
@@ -449,7 +449,7 @@ function monsterHasWeaponAttack(monster) {
 // C monmove.c:m_digweapon_check().  A pick-dependent tunneller may select a
 // diggable destination while unarmed, but it must spend this action readying
 // the appropriate tool before a later turn can enter and excavate the square.
-function readyMonsterDiggingWeapon(monster, state, x, y) {
+async function readyMonsterDiggingWeapon(monster, state, x, y) {
     const loc = state?.level?.at?.(x, y);
     if (!loc || !monsterCanTunnel(monster, state)
         || !((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_NEEDPICK))
@@ -461,32 +461,16 @@ function readyMonsterDiggingWeapon(monster, state, x, y) {
     const rock = IS_STWALL(loc.typ) && !tree;
     if (!closedDoor && !tree && !rock) return null;
 
-    const inventory = monster?.minvent || monster?.inventory || [];
-    const hasShield = inventory.some(object =>
-        ((object?.owornmask ?? 0) & W_ARMS) !== 0);
-    const isPick = object => object?.otyp === PICK_AXE
-        || object?.otyp === DWARVISH_MATTOCK && !hasShield;
-    const isAxe = object => object?.otyp === AXE
-        || object?.otyp === BATTLE_AXE && !hasShield;
-    const accepts = closedDoor
-        ? object => isPick(object) || isAxe(object)
-        : tree ? isAxe : isPick;
     const current = monsterWieldedWeapon(monster);
-    if (accepts(current)) {
-        monster.weaponCheck = NO_WEAPON_WANTED;
-        return null;
-    }
-    if (current?.cursed) return null;
-
-    monster.weaponCheck = closedDoor ? NEED_PICK_OR_AXE
-        : tree ? NEED_AXE : NEED_PICK_AXE;
-    const tool = inventory.find(accepts);
-    if (!tool) return null;
-    if (current) current.wielded = false;
-    monster.mw = tool;
-    tool.wielded = true;
-    monster.weaponCheck = NO_WEAPON_WANTED;
-    return tool;
+    if (willWeld(current)) return false;
+    // C reconsiders the tool for a closed door even when a pick is held.
+    if (closedDoor) monster.weaponCheck = NEED_PICK_OR_AXE;
+    else if (tree && ![AXE, BATTLE_AXE].includes(current?.otyp))
+        monster.weaponCheck = NEED_AXE;
+    else if (rock && ![PICK_AXE, DWARVISH_MATTOCK].includes(current?.otyp))
+        monster.weaponCheck = NEED_PICK_AXE;
+    return monster.weaponCheck >= NEED_PICK_AXE
+        ? wieldMonsterWeapon(monster, state) : false;
 }
 
 function monsterHasLauncherAndAmmo(monster) {
@@ -607,7 +591,7 @@ function pickUpMonsterFloorObject(monster, state) {
 // C monmove.c:dochug() phase two.  A close weapon attacker may spend its
 // whole action readying carried equipment before phase-three movement.  This
 // transition is deliberately RNG-free but changes every later actor's stream.
-function readyCloseMonsterWeapon(monster, state) {
+async function readyCloseMonsterWeapon(monster, state) {
     if (monster?.mpeaceful || monster?.pet || monster?.mtame
         || !monsterHasWeaponAttack(monster)
         || monster.weaponCheck !== NEED_WEAPON) return null;
@@ -619,16 +603,7 @@ function readyCloseMonsterWeapon(monster, state) {
         || dist2(monster.mx, monster.my, apparentX, apparentY) > 8) return null;
 
     monster.weaponCheck = NEED_HTH_WEAPON;
-    const weapon = selectHandToHandWeapon(monster, state);
-    if (!weapon || monster.mw?.otyp === weapon.otyp) {
-        monster.weaponCheck = NEED_WEAPON;
-        return null;
-    }
-    if (monster.mw) monster.mw.wielded = false;
-    monster.mw = weapon;
-    weapon.wielded = true;
-    monster.weaponCheck = NEED_WEAPON;
-    return weapon;
+    return wieldMonsterWeapon(monster, state);
 }
 
 function heroCanReleaseWeapon(object) {
@@ -2441,29 +2416,17 @@ function killingAttackMakesZombie(aggressor, defender, attack) {
 // C mhitm.c:mattackm() handles an AT_WEAP slot before its to-hit roll.
 // An unarmed weapon attacker first calls mon_wield_item(); selecting a new
 // carried weapon consumes the complete counterattack action.
-function monsterVersusMonsterWieldAction(aggressor, defender, attack, state) {
+async function monsterVersusMonsterWieldAction(aggressor, defender, attack, state) {
     if (attack?.attackType !== AT_WEAP) return null;
     const currentWeapon = monsterWieldedWeapon(aggressor);
     if (aggressor.weaponCheck !== NEED_WEAPON && currentWeapon) return null;
 
     aggressor.weaponCheck = NEED_HTH_WEAPON;
-    const selectedWeapon = selectHandToHandWeapon(aggressor, state);
-    if (!selectedWeapon
-        || selectedWeapon.otyp === currentWeapon?.otyp) {
-        aggressor.weaponCheck = NEED_WEAPON;
-        return null;
-    }
-    if (currentWeapon) currentWeapon.wielded = false;
-    aggressor.mw = selectedWeapon;
-    selectedWeapon.wielded = true;
-    aggressor.weaponCheck = NEED_WEAPON;
-    return {
-        kind: 'monster-wield', aggressor, defender,
-        weapon: selectedWeapon, deferredWield: true,
-    };
+    return await wieldMonsterWeapon(aggressor, state)
+        ? { kind: 'monster-wield', aggressor, defender } : null;
 }
 
-function monsterMeleeAttack(
+async function monsterMeleeAttack(
     aggressor, defender, attacks, state, random, rollDice, rollOne, calls,
 ) {
     // C mhitm.c:mattackm() marks its aggressor as having acted in the current
@@ -2479,7 +2442,7 @@ function monsterMeleeAttack(
     for (let index = 0; index < attacks.length; index++) {
         if ((defender?.mhp ?? 1) <= 0) break;
         const attack = attacks[index];
-        const wield = monsterVersusMonsterWieldAction(
+        const wield = await monsterVersusMonsterWieldAction(
             aggressor, defender, attack, state,
         );
         if (wield) return wield;
@@ -2572,12 +2535,12 @@ function defenderCanCounterattack(
         );
 }
 
-function beginMonsterMeleeAttack(
+async function beginMonsterMeleeAttack(
     aggressor, defender, attacks, state, random, rollDice, rollOne, calls,
     retaliationRule,
 ) {
     const firstAttack = attacks[0];
-    const wield = monsterVersusMonsterWieldAction(
+    const wield = await monsterVersusMonsterWieldAction(
         aggressor, defender, firstAttack, state,
     );
     if (wield) return wield;
@@ -2603,14 +2566,14 @@ function beginMonsterMeleeAttack(
         };
     }
 
-    const result = monsterMeleeAttack(
+    const result = await monsterMeleeAttack(
         aggressor, defender, attacks, state,
         random, rollDice, rollOne, calls,
     );
     if (result.kind !== 'monster-attack') return result;
     result.retaliationRule = retaliationRule;
     if (defenderCanCounterattack(result, state, random, calls)) {
-        result.counterattack = monsterMeleeAttack(
+        result.counterattack = await monsterMeleeAttack(
             defender, aggressor, sourceMonsterMeleeAttacks(defender), state,
             random, rollDice, rollOne, calls,
         );
@@ -2618,11 +2581,11 @@ function beginMonsterMeleeAttack(
     return result;
 }
 
-function petAttacksMonster(
+async function petAttacksMonster(
     pet, target, state, random, rollDice, rollOne, calls,
 ) {
     const attacks = sourceMonsterMeleeAttacks(pet);
-    return beginMonsterMeleeAttack(
+    return await beginMonsterMeleeAttack(
         pet, target, attacks, state, random, rollDice, rollOne, calls,
         'pet',
     );
@@ -2691,7 +2654,6 @@ function finishPetMovePlan(
 ) {
     const {
         oldx, oldy, nix, niy, selectedInfo, reluctant, inventoryAction,
-        wieldedWeapon,
     } = plan;
     if (selectedInfo & ALLOW_U) {
         const attack = petAttacksHero(
@@ -2700,7 +2662,6 @@ function finishPetMovePlan(
         return {
             oldx, oldy, x: oldx, y: oldy, moved: false, attack,
             deferredPostFlee: true,
-            wieldedWeapon,
             ...inventoryAction,
         };
     }
@@ -2715,14 +2676,13 @@ function finishPetMovePlan(
     const movement = {
         oldx, oldy, x: nix, y: niy,
         moved: nix !== oldx || niy !== oldy,
-        wieldedWeapon,
         ...inventoryAction,
     };
     if (movement.moved && reluctant) movement.reluctant = true;
     return movement;
 }
 
-function movePet(
+async function movePet(
     monster, state, random, rollDice, rollOne, calls,
     resumeAfterInventory = false,
 ) {
@@ -2787,7 +2747,7 @@ function movePet(
                 continue;
             if (maxPassiveMonsterDamage(target, monster)
                 >= (monster.mhp ?? 1)) continue;
-            const attack = petAttacksMonster(
+            const attack = await petAttacksMonster(
                 monster, target, state, random, rollDice, rollOne, calls,
             );
             return {
@@ -2900,7 +2860,7 @@ function movePet(
     const movePlan = {
         oldx, oldy, nix, niy, selectedInfo, reluctant, inventoryAction,
     };
-    const rangedTurn = beginPetRangedTurn(monster, state, {
+    const rangedTurn = await beginPetRangedTurn(monster, state, {
         random: range => recordRandom(random, calls, range),
         rollOne: range => {
             const result = rollOne(range);
@@ -2908,7 +2868,6 @@ function movePet(
             return result;
         },
     });
-    movePlan.wieldedWeapon = rangedTurn.readiedWeapon;
     const current = rangedTurn.current;
     if (current && (current.attack.launched || rangedTurn.usedWeapon)) {
         const attack = current.kind === 'spit'
@@ -2918,7 +2877,6 @@ function movePet(
                 : { petBreath: current.attack };
         return {
             oldx, oldy, x: oldx, y: oldy, moved: false,
-            wieldedWeapon: rangedTurn.readiedWeapon,
             petRangedTurn: rangedTurn,
             ...attack,
             actionCompleted: true,
@@ -3035,7 +2993,7 @@ function monsterApproachPolicy(monster, state, oldPolicy, targetX, targetY) {
     return { policy: oldPolicy, min: 0, max: 0 };
 }
 
-function moveHostile(
+async function moveHostile(
     monster, state, random, rollDice, rollOne, calls, options = {},
 ) {
     const oldx = monster.mx;
@@ -3315,7 +3273,7 @@ function moveHostile(
     if (selectedInfo & ALLOW_M) {
         const defender = monsterAt(state, nix, niy, monster);
         if (defender) {
-            const attack = beginMonsterMeleeAttack(
+            const attack = await beginMonsterMeleeAttack(
                 monster, defender, sourceMonsterMeleeAttacks(monster),
                 state, random, rollDice, rollOne, calls, 'movement',
             );
@@ -3323,7 +3281,6 @@ function moveHostile(
                 return finishMovement({
                     oldx, oldy, x: oldx, y: oldy, moved: false,
                     actionCompleted: true,
-                    wieldedWeapon: attack.weapon,
                 });
             }
             return finishMovement({
@@ -3334,13 +3291,12 @@ function moveHostile(
             });
         }
     }
-    const diggingWeapon = selected
-        ? readyMonsterDiggingWeapon(monster, state, nix, niy) : null;
-    if (diggingWeapon) {
+    const spentDigging = selected
+        ? await readyMonsterDiggingWeapon(monster, state, nix, niy) : null;
+    if (spentDigging) {
         return finishMovement({
             oldx, oldy, x: oldx, y: oldy, moved: false,
-            wieldedWeapon: diggingWeapon,
-            preparedDigging: true,
+            actionCompleted: true,
         });
     }
     monster.mx = nix;
@@ -3527,7 +3483,7 @@ function maybeBeginOffensiveWand(
     };
 }
 
-function beginHeroAttackOrStrikingWand(
+async function beginHeroAttackOrStrikingWand(
     monster, state, random, rollOne, rollDice, calls,
 ) {
     const threshold = monsterAttackThreshold(
@@ -3538,7 +3494,7 @@ function beginHeroAttackOrStrikingWand(
     );
     if (offensive.action) return { offensiveWand: offensive.action };
     return {
-        attack: basicMonsterAttack(
+        attack: await basicMonsterAttack(
             monster, state, random, rollOne, rollDice, calls,
             0, threshold, null, !!state?._deferVisibleMonsterContact,
             false, offensive.probed,
@@ -3546,7 +3502,7 @@ function beginHeroAttackOrStrikingWand(
     };
 }
 
-function maybeThrowRangedWeapon(
+async function maybeThrowRangedWeapon(
     monster, movement, state, random, rollOne, calls,
 ) {
     // dochug() only enters mattacku() when the second distfleeck() still
@@ -3555,8 +3511,8 @@ function maybeThrowRangedWeapon(
     // reached at all for an actor beyond BOLT_LIM.
     if (!monsterHasWeaponAttack(monster)
         || !reachesDistantPhaseFour(monster, movement, state)) return null;
-    const wieldedWeapon = readyRangedMonsterWeapon(monster, state);
-    if (wieldedWeapon) return { wieldedWeapon };
+    const spentWielding = await readyRangedMonsterWeapon(monster, state);
+    if (spentWielding) return { spentWielding: true };
     const weapon = selectMonsterMissile(monster, state)?.missile;
     if (!weapon || !hostileLinedUp(monster, state, random, calls)) return null;
 
@@ -4726,7 +4682,7 @@ export function relocateMonsterAfterTheft(
     );
 }
 
-function basicMonsterAttack(
+async function basicMonsterAttack(
     monster, state, random, rollOne, rollDice, calls, attackIndex = 0,
     retainedThreshold = null, retainedAttackRoll = null,
     deferVisibleContact = !!state?._deferVisibleMonsterContact,
@@ -4874,7 +4830,7 @@ function basicMonsterAttack(
     if (attackType === AT_BOOM) {
         const nextAttackIndex = nextHeroAttackIndex(monster, attackIndex);
         if (nextAttackIndex === null) return null;
-        return basicMonsterAttack(
+        return await basicMonsterAttack(
             monster, state, random, rollOne, rollDice, calls,
             nextAttackIndex, threshold, null, deferVisibleContact,
         );
@@ -4888,7 +4844,7 @@ function basicMonsterAttack(
     if (attackType === AT_BREA || attackType === AT_SPIT) {
         const nextAttackIndex = nextHeroAttackIndex(monster, attackIndex);
         if (nextAttackIndex === null) return null;
-        return basicMonsterAttack(
+        return await basicMonsterAttack(
             monster, state, random, rollOne, rollDice, calls,
             nextAttackIndex, threshold, null, deferVisibleContact,
         );
@@ -4902,29 +4858,19 @@ function basicMonsterAttack(
             effect: 'engulf-cooldown-miss',
         }, monster, attackIndex);
     }
-    // An AT_WEAP slot gets a last close-range wield attempt even when the
-    // actor reached mattacku() with weapon_check=NO_WEAPON_WANTED.  A legal
-    // replacement consumes the action; failure is zero-RNG and leaves the
-    // slot active as a bare-handed attack using its declared damage dice.
+    // Wielding uses this AT_WEAP slot, then mattacku() tries the next slot.
+    // If no replacement is needed, this slot attacks with the current weapon
+    // or the monster's bare-handed damage dice.
     if (attackType === AT_WEAP) {
         const currentWeapon = monsterWieldedWeapon(monster);
         if (monster.weaponCheck === NEED_WEAPON || !currentWeapon) {
             monster.weaponCheck = NEED_HTH_WEAPON;
-            const selectedWeapon = selectHandToHandWeapon(monster, state);
-            if (selectedWeapon
-                && selectedWeapon.otyp !== currentWeapon?.otyp) {
-                if (currentWeapon) currentWeapon.wielded = false;
-                monster.mw = selectedWeapon;
-                selectedWeapon.wielded = true;
-                monster.weaponCheck = NEED_WEAPON;
-                return {
-                    kind: 'monster-wield',
-                    weapon: selectedWeapon,
-                    threshold,
-                    attackIndex,
-                };
+            if (await wieldMonsterWeapon(monster, state)) {
+                const next = nextHeroAttackIndex(monster, attackIndex);
+                if (next === null) return null;
+                return await basicMonsterAttack(monster, state, random, rollOne, rollDice,
+                    calls, next, threshold, null, deferVisibleContact);
             }
-            monster.weaponCheck = NEED_WEAPON;
         }
         const wieldedWeapon = monsterWieldedWeapon(monster);
         if (wieldedWeapon && deferVisibleContact && !weaponSwingComplete) {
@@ -5475,13 +5421,13 @@ function basicMonsterAttack(
 // Resume mattacku() after mswings() has crossed any older tty topline.
 // Weapon selection, AC_VALUE(), and the offensive probe are already owned by
 // the pre-swing half; the attack die and damage begin only here.
-export function resumeDeferredHeroWeaponSwing(
+export async function resumeDeferredHeroWeaponSwing(
     action, state, random = rn2, rollOne = rnd, rollDice = d,
 ) {
     const attack = action?.movement?.attack;
     if (!attack?.deferredWeaponSwing) return attack;
     attack.deferredWeaponSwing = false;
-    const resumed = basicMonsterAttack(
+    const resumed = await basicMonsterAttack(
         action.monster, state, random, rollOne, rollDice, action.calls,
         attack.attackIndex, attack.threshold, null, true, true,
     );
@@ -5980,12 +5926,12 @@ export function resumeDeferredHeroSticking(action, state) {
 // Resume hitmu() after its concealed-attacker line has crossed tty.  The
 // mattacku() to-hit die belongs before that line; base damage and every later
 // contact effect belong after it.
-export function resumeDeferredHeroReveal(
+export async function resumeDeferredHeroReveal(
     action, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
     const attack = action?.movement?.attack;
     if (!attack?.deferredRevealUnder) return attack;
-    const resumed = basicMonsterAttack(
+    const resumed = await basicMonsterAttack(
         action.monster, state, random, rollOne, rollDice, action.calls,
         attack.attackIndex, attack.threshold,
         { roll: attack.roll, hit: attack.hit },
@@ -6111,7 +6057,7 @@ export function resumeDeferredHeroStoning(
 // Resume mattacku() at the next natural attack slot.  The tty driver calls
 // this only after the preceding hit/miss message and post-hit tail have both
 // completed, keeping one C actor transaction alive across pline() suspension.
-export function continueDeferredHeroAttack(
+export async function continueDeferredHeroAttack(
     action, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
     const previous = action?.movement?.attack;
@@ -6128,7 +6074,7 @@ export function continueDeferredHeroAttack(
     if (state) state._deferVisibleMonsterContact = true;
     let attack;
     try {
-        attack = basicMonsterAttack(
+        attack = await basicMonsterAttack(
             action.monster, state, random, rollOne, rollDice,
             action.calls, attackIndex, previous.threshold,
         );
@@ -6139,30 +6085,6 @@ export function continueDeferredHeroAttack(
     return attack;
 }
 
-// C mattacku() keeps walking its six-slot table after an AT_WEAP slot spends
-// that slot wielding a replacement.  Resume at the following attack index;
-// beginning a fresh sequence would incorrectly swing the new weapon at slot0.
-export function resumeDeferredHeroAttackAfterWield(
-    action, state, random = rn2, rollDice = d, rollOne = rnd,
-) {
-    const movement = action?.movement;
-    const pending = movement?.deferredHeroWield;
-    if (!pending) return null;
-    delete movement.deferredHeroWield;
-    const attackIndex = nextHeroAttackIndex(
-        action.monster, pending.attackIndex,
-    );
-    if (attackIndex === null) {
-        movement.attack = null;
-        return null;
-    }
-    const attack = basicMonsterAttack(
-        action.monster, state, random, rollOne, rollDice, action.calls,
-        attackIndex, pending.threshold, null, true,
-    );
-    movement.attack = attack;
-    return attack;
-}
 
 // Resume castmu() after the casting line.  Damage is pre-rolled before the
 // concrete effect line, but not before a casting line which itself pages.
@@ -6727,7 +6649,7 @@ export async function resumeDeferredMovementSpell(
     spellCast.deferredSpellEffect = false;
     movement.deferredAfterMovementSpell = false;
     movement.spellEffect = effect;
-    finishDochugAfterMovement(
+    await finishDochugAfterMovement(
         action.monster, movement, state, random, rollOne, rollDice,
         action.calls,
     );
@@ -6881,7 +6803,7 @@ function revealMonsterAfterLeavingHidingPlace(monster, movement, state) {
     }
 }
 
-function finishDochugAfterMovement(
+async function finishDochugAfterMovement(
     monster, movement, state, random, rollOne, rollDice, calls,
 ) {
     if (!movement.deferredPostFlee)
@@ -6910,18 +6832,12 @@ function finishDochugAfterMovement(
             if (state?.u?.uswallow && state.u.ustuck !== monster) {
                 movement.swallowedAttackSkipped = true;
             } else {
-                const phaseFour = beginHeroAttackOrStrikingWand(
+                const phaseFour = await beginHeroAttackOrStrikingWand(
                     monster, state, random, rollOne, rollDice, calls,
                 );
                 if (phaseFour.offensiveWand) {
                     movement.offensiveWand = phaseFour.offensiveWand;
                     movement.actionCompleted = true;
-                } else if (phaseFour.attack?.kind === 'monster-wield') {
-                    movement.wieldedWeapon = phaseFour.attack.weapon;
-                    movement.deferredHeroWield = {
-                        attackIndex: phaseFour.attack.attackIndex,
-                        threshold: phaseFour.attack.threshold,
-                    };
                 } else {
                     movement.attack = phaseFour.attack;
                 }
@@ -6983,11 +6899,11 @@ function finishDochugAfterMovement(
             monster, movement, state, random, rollOne, calls,
         );
         if (spitAttack) movement.spitAttack = spitAttack;
-        const rangedAttack = maybeThrowRangedWeapon(
+        const rangedAttack = await maybeThrowRangedWeapon(
             monster, movement, state, random, rollOne, calls,
         );
-        if (rangedAttack?.wieldedWeapon)
-            movement.wieldedWeapon = rangedAttack.wieldedWeapon;
+        if (rangedAttack?.spentWielding)
+            movement.actionCompleted = true;
         else if (rangedAttack) movement.rangedAttack = rangedAttack;
     }
 }
@@ -7029,7 +6945,7 @@ function distantPhaseFourAttackSetup(
 // ordinary hostile or pet destination choice. Message-producing movement
 // can resume here without repeating set_apparxy(), species checks, or path
 // selection.
-function completeMovedMonsterAction(
+async function completeMovedMonsterAction(
     monster, movement, state, random, rollDice, rollOne, calls,
     { trapAlreadyHandled = false } = {},
 ) {
@@ -7071,7 +6987,7 @@ function completeMovedMonsterAction(
         }
         // dochug() recomputes distfleeck() for every non-died m_move status,
         // including MMOVE_DONE, before its switch suppresses phase four.
-        finishDochugAfterMovement(
+        await finishDochugAfterMovement(
             monster, movement, state, random, rollOne, rollDice, calls,
         );
         return movement;
@@ -7102,17 +7018,17 @@ function completeMovedMonsterAction(
     postMoveHideUnder(monster, movement, state, random, calls);
     if (!movement.deferredAfterHideUnder
         && !movement.deferredAfterMovementSpell)
-        finishDochugAfterMovement(
+        await finishDochugAfterMovement(
             monster, movement, state, random, rollOne, rollDice, calls,
         );
     return movement;
 }
 
-function continueAfterMonsterTrap(
+async function continueAfterMonsterTrap(
     action, state, random, rollDice, rollOne, calls,
 ) {
     if (action.movement?.immediateTrap) return action;
-    completeMovedMonsterAction(
+    await completeMovedMonsterAction(
         action.monster, action.movement, state,
         random, rollDice, rollOne, calls,
         { trapAlreadyHandled: true },
@@ -7139,7 +7055,7 @@ export async function resumeDeferredMonsterTrap(
         delete movement.escapingTrap;
         if (!movement.immediateTrap) {
             const held = action.monster.mtrapped ? { ...movement, trapped: true } : null;
-            const next = moveMonsterAfterTrap(
+            const next = await moveMonsterAfterTrap(
                 action.monster, state, random, rollDice, rollOne,
                 action.calls, held,
             );
@@ -7289,20 +7205,20 @@ export async function resumeDeferredMonsterTrap(
         movement.actionCompleted = true;
         return action;
     }
-    continueAfterMonsterTrap(
+    await continueAfterMonsterTrap(
         action, state, random, rollDice, rollOne, calls,
     );
     return action;
 }
 
-export function resumeDeferredMonsterDoor(
+export async function resumeDeferredMonsterDoor(
     action, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
     const movement = action?.movement;
     if (!movement?.deferredAfterDoorMessage) return action;
     delete movement.deferredAfterDoorMessage;
     movement.doorMessagePresented = true;
-    completeMovedMonsterAction(
+    await completeMovedMonsterAction(
         action.monster, movement, state, random, rollDice, rollOne,
         action.calls,
     );
@@ -7312,7 +7228,7 @@ export function resumeDeferredMonsterDoor(
 // Resume m_move() immediately after mpickstuff() has crossed its optional
 // visible pline.  Invisible/non-verbose pickup reaches this continuation in
 // the same capture; a full topline can suspend before any of this tail runs.
-export function resumeDeferredMonsterPickup(
+export async function resumeDeferredMonsterPickup(
     action, state, random = rn2, rollOne = rnd, rollDice = d,
 ) {
     const movement = action?.movement;
@@ -7326,7 +7242,7 @@ export function resumeDeferredMonsterPickup(
     );
     if (!movement.deferredAfterHideUnder
         && !movement.deferredAfterMovementSpell) {
-        finishDochugAfterMovement(
+        await finishDochugAfterMovement(
             action.monster, movement, state, random, rollOne, rollDice,
             action.calls,
         );
@@ -7337,7 +7253,7 @@ export function resumeDeferredMonsterPickup(
 // First non-combat slice of monmove.c:dochug(), m_move(), and dog_move().
 // distfleeck() always draws the brave-gremlin roll; ordinary starting actors
 // then choose and own a live adjacent destination before the post-move draw.
-export function quietMonsterActionRng(
+export async function takeMonsterTurn(
     monster, state, random = rn2, rollDice = d, rollOne = rnd,
     options = {},
 ) {
@@ -7413,14 +7329,13 @@ export function quietMonsterActionRng(
         };
     }
     watchOnDutyRng(monster, state, random, calls);
-    const wieldedWeapon = readyCloseMonsterWeapon(monster, state);
-    if (wieldedWeapon) {
+    if (await readyCloseMonsterWeapon(monster, state)) {
         return {
             calls,
             movement: {
                 oldx: monster.mx, oldy: monster.my,
                 x: monster.mx, y: monster.my, moved: false,
-                wieldedWeapon,
+                actionCompleted: true,
             },
         };
     }
@@ -7482,7 +7397,7 @@ export function quietMonsterActionRng(
                 },
             };
         }
-        const phaseFour = beginHeroAttackOrStrikingWand(
+        const phaseFour = await beginHeroAttackOrStrikingWand(
             monster, state, random, rollOne, rollDice, calls,
         );
         const movement = {
@@ -7492,12 +7407,6 @@ export function quietMonsterActionRng(
         if (phaseFour.offensiveWand) {
             movement.offensiveWand = phaseFour.offensiveWand;
             movement.actionCompleted = true;
-        } else if (phaseFour.attack?.kind === 'monster-wield') {
-            movement.wieldedWeapon = phaseFour.attack.weapon;
-            movement.deferredHeroWield = {
-                attackIndex: phaseFour.attack.attackIndex,
-                threshold: phaseFour.attack.threshold,
-            };
         } else {
             movement.attack = phaseFour.attack;
         }
@@ -7531,12 +7440,12 @@ export function quietMonsterActionRng(
             },
         };
     }
-    return moveMonsterAfterTrap(
+    return await moveMonsterAfterTrap(
         monster, state, random, rollDice, rollOne, calls, movement,
     );
 }
 
-function moveMonsterAfterTrap(
+async function moveMonsterAfterTrap(
     monster, state, random, rollDice, rollOne, calls, movement,
 ) {
     // monmove.c:m_move() lets a conceal-capable actor retain a valid
@@ -7557,7 +7466,7 @@ function moveMonsterAfterTrap(
     }
     if (!movement) {
         if (monster?.pet || monster?.mtame) {
-            movement = movePet(
+            movement = await movePet(
                 monster, state, random, rollDice, rollOne, calls,
             );
             // dog_move() reports MMOVE_MOVED after ordinary destination
@@ -7578,7 +7487,7 @@ function moveMonsterAfterTrap(
         } else {
             // C dochug(): Conflict gives every ordinary hostile its own
             // resistance check before m_move(), even with nothing to attack.
-            movement = moveHostile(
+            movement = await moveHostile(
                 monster, state, random, rollDice, rollOne, calls,
             );
         }
@@ -7590,7 +7499,7 @@ function moveMonsterAfterTrap(
             || movement.rangedAttacks?.length
             || movement.deferredAfterRestrictedTenguTeleport)
             return { calls, movement };
-        completeMovedMonsterAction(
+        await completeMovedMonsterAction(
             monster, movement, state, random, rollDice, rollOne, calls,
         );
         return { calls, movement };
@@ -7600,7 +7509,7 @@ function moveMonsterAfterTrap(
     postMoveHideUnder(monster, movement, state, random, calls);
     if (!movement.deferredAfterHideUnder
         && !movement.deferredAfterMovementSpell)
-        finishDochugAfterMovement(
+        await finishDochugAfterMovement(
             monster, movement, state, random, rollOne, rollDice, calls,
         );
     return { calls, movement };
@@ -7609,17 +7518,17 @@ function moveMonsterAfterTrap(
 // Resume m_move() immediately after tele_restrict() has emitted the visible
 // failed-teleport line.  The same actor still owns ordinary destination
 // selection, postmov(), the second distfleeck(), and any phase-four attack.
-export function resumeDeferredRestrictedTenguTeleport(
+export async function resumeDeferredRestrictedTenguTeleport(
     action, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
     const deferred = action?.movement;
     if (!deferred?.deferredAfterRestrictedTenguTeleport) return action;
-    const movement = moveHostile(
+    const movement = await moveHostile(
         action.monster, state, random, rollDice, rollOne, action.calls,
         { afterRestrictedTenguTeleport: true },
     );
     action.movement = movement;
-    completeMovedMonsterAction(
+    await completeMovedMonsterAction(
         action.monster, movement, state, random, rollDice, rollOne,
         action.calls,
     );
@@ -7630,11 +7539,11 @@ export function resumeDeferredRestrictedTenguTeleport(
 // monster's arrival line.  pline() can suspend there on an older topline, so
 // the second set_apparxy(), distfleeck(), and contact attack must remain
 // unconsumed until the tty pager is dismissed.
-export function resumeDeferredCovetousRelocation(
+export async function resumeDeferredCovetousRelocation(
     action, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
     if (!action?.movement?.deferredCovetousRelocation) return action;
-    const continuation = quietMonsterActionRng(
+    const continuation = await takeMonsterTurn(
         action.monster, state, random, rollDice, rollOne,
         { afterCovetousRelocation: true },
     );
@@ -7643,13 +7552,13 @@ export function resumeDeferredCovetousRelocation(
     return action;
 }
 
-export function resumeDeferredMonsterHideUnder(
+export async function resumeDeferredMonsterHideUnder(
     action, state, random = rn2, rollOne = rnd, rollDice = d,
 ) {
     const movement = action?.movement;
     if (!movement?.deferredAfterHideUnder) return action;
     delete movement.deferredAfterHideUnder;
-    finishDochugAfterMovement(
+    await finishDochugAfterMovement(
         action.monster, movement, state, random, rollOne, rollDice,
         action.calls,
     );
@@ -7842,7 +7751,7 @@ export async function resumeDeferredMonsterRollingBoulderDeath(
 
 // launch_obj() keeps rolling after ohitmon() returns.  Endpoint placement is
 // later than death/corpse resolution and every remaining per-cell delay.
-export function finishDeferredMonsterRollingBoulderPlacement(
+export async function finishDeferredMonsterRollingBoulderPlacement(
     action, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
     const movement = action?.movement;
@@ -7857,7 +7766,7 @@ export function finishDeferredMonsterRollingBoulderPlacement(
         if (state === game)
             vision_note_blocker_change(event.endpoint.x, event.endpoint.y);
         if (!event.killed) {
-            continueAfterMonsterTrap(
+            await continueAfterMonsterTrap(
                 action, state, random, rollDice, rollOne,
                 action.calls || DISCARDED_CALL_LOG,
             );
@@ -7866,7 +7775,7 @@ export function finishDeferredMonsterRollingBoulderPlacement(
     return action;
 }
 
-export function resumeDeferredPetRangedNoise(
+export async function resumeDeferredPetRangedNoise(
     action, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
     const deferred = action?.movement;
@@ -7879,7 +7788,7 @@ export function resumeDeferredPetRangedNoise(
     if (!movement.actorDied && !movement.actorLeftLevel)
         movement.petPostmov = true;
     action.movement = movement;
-    completeMovedMonsterAction(
+    await completeMovedMonsterAction(
         monster, movement, state, random, rollDice, rollOne, action.calls,
     );
     return action;
@@ -7889,13 +7798,13 @@ export function resumeDeferredPetRangedNoise(
 // chance to acknowledge its pickup/drop message.  C remains inside the same
 // actor transaction here: dog_goal(), destination choice, postmov(), the
 // second distfleeck(), and any ranged action all occur after that boundary.
-export function resumeDeferredPetMove(
+export async function resumeDeferredPetMove(
     action, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
     if (!action?.movement?.deferredPetMove) return action;
     const monster = action.monster;
     const calls = action.calls;
-    const movement = movePet(
+    const movement = await movePet(
         monster, state, random, rollDice, rollOne, calls, true,
     );
     if (!movement.actorDied && !movement.actorLeftLevel)
@@ -7913,7 +7822,7 @@ export function resumeDeferredPetMove(
     }
     postMoveHideUnder(monster, movement, state, random, calls);
     if (!movement.deferredAfterHideUnder)
-        finishDochugAfterMovement(
+        await finishDochugAfterMovement(
             monster, movement, state, random, rollOne, rollDice, calls,
         );
     action.movement = movement;
@@ -7922,7 +7831,7 @@ export function resumeDeferredPetMove(
 
 // Resume dog_eat() after its visible line has crossed tty.  The object is
 // still on the destination square while the older topline owns --More--.
-export function resumeDeferredPetEating(
+export async function resumeDeferredPetEating(
     action, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
     const movement = action?.movement;
@@ -7951,7 +7860,7 @@ export function resumeDeferredPetEating(
     movement.eatingMessageHandled = true;
     if (!movement.actorDied && !movement.actorLeftLevel)
         movement.petPostmov = true;
-    completeMovedMonsterAction(
+    await completeMovedMonsterAction(
         monster, movement, state, random, rollDice, rollOne, calls,
     );
     return action;
@@ -8019,142 +7928,140 @@ function attemptMonsterRestrap(monster, state, random, calls) {
     return false;
 }
 
-export function runQuietMonsterActions(
-    actors, state, random = rn2, rollDice = d, rollOne = rnd,
+export async function runMonsterAction(
+    monster, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
-    return actors.map(monster => {
-        const calls = DISCARDED_CALL_LOG;
-        // C mon.c:movemon_singlemon() debits movement before restrap().
-        // These early returns belong only to is_hider() (M1_HIDE): a cobra
-        // with M1_CONCEAL remains active after hiding beneath an object and
-        // can spend another movement ration in this same movemon() pass.
-        const restrapped = attemptMonsterRestrap(
+    const calls = DISCARDED_CALL_LOG;
+    // C mon.c:movemon_singlemon() debits movement before restrap().
+    // These early returns belong only to is_hider() (M1_HIDE): a cobra
+    // with M1_CONCEAL remains active after hiding beneath an object and
+    // can spend another movement ration in this same movemon() pass.
+    const restrapped = attemptMonsterRestrap(
+        monster, state, random, calls,
+    );
+    const isHider = !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_HIDE);
+    if (isHider && (restrapped
+        || monster.m_ap_type === M_AP_FURNITURE
+        || monster.m_ap_type === M_AP_OBJECT
+        || monster.mundetected)) {
+        return {
+            monster, calls,
+            movement: {
+                oldx: monster.mx, oldy: monster.my,
+                x: monster.mx, y: monster.my,
+                moved: false, hidden: true,
+            },
+        };
+    }
+    // Eels get one pre-dochug opportunity to hide again.  A stranded eel
+    // still owns the 1-in-4 probe, but hideunder() fails on dry terrain.
+    const eel = MONSTER_SYMBOL[monster.mnum] === S_EEL;
+    const eelInSight = !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2);
+    const canSeeInvisible = !!(state?.u?.seeInvisible
+        || state?.u?.see_invisible);
+    const canSeeMonster = !state?.blind
+        && !(state?.u?.blindTurns > 0)
+        && eelInSight && (!monster.minvis || canSeeInvisible)
+        && !monster.mundetected;
+    const nextToHero = distmin(
+        monster.mx, monster.my,
+        state?.u?.ux ?? monster.mx, state?.u?.uy ?? monster.my,
+    ) <= 1;
+    if (eel && !monster.mundetected
+        && (monster.mflee || !nextToHero)
+        && !canSeeMonster
+        && recordRandom(random, calls, 4) === 0
+        && IS_POOL(state?.level?.at?.(
+            monster.mx, monster.my,
+        )?.typ)) {
+        monster.mundetected = 1;
+        return {
+            monster, calls,
+            movement: {
+                oldx: monster.mx, oldy: monster.my,
+                x: monster.mx, y: monster.my, moved: false, hidden: true,
+            },
+        };
+    }
+    // C movemon_singlemon() gives a nearby, mutually visible monster a
+    // Conflict resistance check before dochug() starts.  This is separate
+    // from mon_allowflags()'s later check, so an actor can legitimately
+    // own two rnd(20) calls in one scan even when there is nobody adjacent
+    // for fightm() to attack.
+    const inSight = !state?.viz_array
+        || !!(state.viz_array?.[monster.my]?.[monster.mx] & 0x2);
+    if (heroHasConflict(state) && !monster.iswiz
+        && couldSeeFromHero(state, monster.mx, monster.my)
+        && inSight
+        && dist2(monster.mx, monster.my,
+            state?.u?.ux ?? monster.mx,
+            state?.u?.uy ?? monster.my) <= BOLT_LIM * BOLT_LIM) {
+        resistConflict(monster, state, rollOne, calls);
+    }
+    // monmove.c:dochug() checks the strategy wait mask before ordinary
+    // sleep disturbance.  A squeaky board wakes indeterminate sleep, but
+    // wake_nearto() deliberately preserves meditation for unique
+    // monsters such as the Wizard.  WAITFORU is released only once the
+    // actor can see the hero or has been hurt.
+    if (((monster.mstrategy ?? 0) & STRAT_WAITFORU)
+        && ((monster.mhp ?? 0) < (monster.mhpmax ?? monster.mhp ?? 0)
+            || (monster.mcansee !== 0
+                && couldSeeFromHero(
+                    state, monster.mx, monster.my,
+                )))) {
+        monster.mstrategy &= ~STRAT_WAITFORU;
+    }
+    if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
+        return {
+            monster, calls,
+            movement: {
+                oldx: monster.mx, oldy: monster.my,
+                x: monster.mx, y: monster.my,
+                moved: false, waiting: true,
+            },
+        };
+    }
+    // Frozen and sleeping actors are rejected by dochug(), after the
+    // shared hider, eel, and Conflict phases above.  In particular, a
+    // sleeping piercer still owns restrap()'s one-in-three probe.
+    if (monster.mcanmove === 0 || (monster.mfrozen ?? 0) > 0) {
+        return {
+            monster, calls,
+            movement: {
+                oldx: monster.mx, oldy: monster.my,
+                x: monster.mx, y: monster.my,
+                moved: false, immobile: true,
+            },
+        };
+    }
+    // movemon_singlemon() has already debited this actor's movement.
+    // dochug() gives a movable sleeper one source-ordered disturbance
+    // attempt before returning ahead of set_apparxy()/distfleeck().
+    let wokeFromDisturb = false;
+    if (monster.msleeping) {
+        wokeFromDisturb = disturbSleepingMonster(
             monster, state, random, calls,
         );
-        const isHider = !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_HIDE);
-        if (isHider && (restrapped
-            || monster.m_ap_type === M_AP_FURNITURE
-            || monster.m_ap_type === M_AP_OBJECT
-            || monster.mundetected)) {
+        if (!wokeFromDisturb) {
             return {
                 monster, calls,
                 movement: {
                     oldx: monster.mx, oldy: monster.my,
                     x: monster.mx, y: monster.my,
-                    moved: false, hidden: true,
+                    moved: false, sleeping: true,
                 },
             };
         }
-        // Eels get one pre-dochug opportunity to hide again.  A stranded eel
-        // still owns the 1-in-4 probe, but hideunder() fails on dry terrain.
-        const eel = MONSTER_SYMBOL[monster.mnum] === S_EEL;
-        const eelInSight = !!(state?.viz_array?.[monster.my]?.[monster.mx] & 0x2);
-        const canSeeInvisible = !!(state?.u?.seeInvisible
-            || state?.u?.see_invisible);
-        const canSeeMonster = !state?.blind
-            && !(state?.u?.blindTurns > 0)
-            && eelInSight && (!monster.minvis || canSeeInvisible)
-            && !monster.mundetected;
-        const nextToHero = distmin(
-            monster.mx, monster.my,
-            state?.u?.ux ?? monster.mx, state?.u?.uy ?? monster.my,
-        ) <= 1;
-        if (eel && !monster.mundetected
-            && (monster.mflee || !nextToHero)
-            && !canSeeMonster
-            && recordRandom(random, calls, 4) === 0
-            && IS_POOL(state?.level?.at?.(
-                monster.mx, monster.my,
-            )?.typ)) {
-            monster.mundetected = 1;
-            return {
-                monster, calls,
-                movement: {
-                    oldx: monster.mx, oldy: monster.my,
-                    x: monster.mx, y: monster.my, moved: false, hidden: true,
-                },
-            };
-        }
-        // C movemon_singlemon() gives a nearby, mutually visible monster a
-        // Conflict resistance check before dochug() starts.  This is separate
-        // from mon_allowflags()'s later check, so an actor can legitimately
-        // own two rnd(20) calls in one scan even when there is nobody adjacent
-        // for fightm() to attack.
-        const inSight = !state?.viz_array
-            || !!(state.viz_array?.[monster.my]?.[monster.mx] & 0x2);
-        if (heroHasConflict(state) && !monster.iswiz
-            && couldSeeFromHero(state, monster.mx, monster.my)
-            && inSight
-            && dist2(monster.mx, monster.my,
-                state?.u?.ux ?? monster.mx,
-                state?.u?.uy ?? monster.my) <= BOLT_LIM * BOLT_LIM) {
-            resistConflict(monster, state, rollOne, calls);
-        }
-        // monmove.c:dochug() checks the strategy wait mask before ordinary
-        // sleep disturbance.  A squeaky board wakes indeterminate sleep, but
-        // wake_nearto() deliberately preserves meditation for unique
-        // monsters such as the Wizard.  WAITFORU is released only once the
-        // actor can see the hero or has been hurt.
-        if (((monster.mstrategy ?? 0) & STRAT_WAITFORU)
-            && ((monster.mhp ?? 0) < (monster.mhpmax ?? monster.mhp ?? 0)
-                || (monster.mcansee !== 0
-                    && couldSeeFromHero(
-                        state, monster.mx, monster.my,
-                    )))) {
-            monster.mstrategy &= ~STRAT_WAITFORU;
-        }
-        if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
-            return {
-                monster, calls,
-                movement: {
-                    oldx: monster.mx, oldy: monster.my,
-                    x: monster.mx, y: monster.my,
-                    moved: false, waiting: true,
-                },
-            };
-        }
-        // Frozen and sleeping actors are rejected by dochug(), after the
-        // shared hider, eel, and Conflict phases above.  In particular, a
-        // sleeping piercer still owns restrap()'s one-in-three probe.
-        if (monster.mcanmove === 0 || (monster.mfrozen ?? 0) > 0) {
-            return {
-                monster, calls,
-                movement: {
-                    oldx: monster.mx, oldy: monster.my,
-                    x: monster.mx, y: monster.my,
-                    moved: false, immobile: true,
-                },
-            };
-        }
-        // movemon_singlemon() has already debited this actor's movement.
-        // dochug() gives a movable sleeper one source-ordered disturbance
-        // attempt before returning ahead of set_apparxy()/distfleeck().
-        let wokeFromDisturb = false;
-        if (monster.msleeping) {
-            wokeFromDisturb = disturbSleepingMonster(
-                monster, state, random, calls,
-            );
-            if (!wokeFromDisturb) {
-                return {
-                    monster, calls,
-                    movement: {
-                        oldx: monster.mx, oldy: monster.my,
-                        x: monster.mx, y: monster.my,
-                        moved: false, sleeping: true,
-                    },
-                };
-            }
-        }
-        const { calls: actionCalls, movement } = quietMonsterActionRng(
-            monster, state, random, rollDice, rollOne,
-        );
-        calls.push(...actionCalls);
-        if (wokeFromDisturb) movement.wokeFromDisturb = true;
-        return { monster, calls, movement };
-    });
+    }
+    const { calls: actionCalls, movement } = await takeMonsterTurn(
+        monster, state, random, rollDice, rollOne,
+    );
+    calls.push(...actionCalls);
+    if (wokeFromDisturb) movement.wokeFromDisturb = true;
+    return { monster, calls, movement };
 }
 
-function continueMonsterContactAttack(
+async function continueMonsterContactAttack(
     attack, state, random, rollOne, calls,
 ) {
     const nextAttackIndex = attack.nextAttackIndex ?? 1;
@@ -8179,7 +8086,7 @@ function continueMonsterContactAttack(
         const counterattack = counterattacks[0];
         if (counterattack) {
             defender.mlstmv = sourceMonsterTurn(state);
-            attack.counterattack = monsterVersusMonsterWieldAction(
+            attack.counterattack = await monsterVersusMonsterWieldAction(
                 defender, aggressor, counterattack, state,
             );
             if (!attack.counterattack) {
@@ -8200,7 +8107,7 @@ function continueMonsterContactAttack(
                     nextAttackIndex: 1,
                 };
             }
-            attack.postCounterFleePending = true;
+            attack.postCounterFleePending = attack.counterattack.kind !== 'monster-wield';
         }
     }
     if (!attack.postCounterFleePending) recordRandom(random, calls, 5);
@@ -8211,7 +8118,7 @@ function continueMonsterContactAttack(
 // C's mattackm() emits that message before damage, passive retaliation, death
 // construction, and dochug()'s second distfleeck(), so a --More-- prompt can
 // split one actor transaction at precisely this boundary.
-export function resumeDeferredMonsterContact(
+export async function resumeDeferredMonsterContact(
     action, state, random = rn2, rollDice = d, rollOne = rnd,
 ) {
     const attack = action?.movement?.attack;
@@ -8243,7 +8150,7 @@ export function resumeDeferredMonsterContact(
         attack.postDeathFleePending = true;
         attack.deferredContact = false;
     } else {
-        continueMonsterContactAttack(
+        await continueMonsterContactAttack(
             attack, state, random, rollOne, calls,
         );
     }
@@ -8308,24 +8215,6 @@ export function resumeDeferredMonsterCounterattack(
     return action;
 }
 
-// A visible mattackm() weapon switch has the same tty ownership as a visible
-// hit or miss, but no damage/passive tail.  Once its line has crossed tty,
-// return to dog_move()/dochug() and consume the pet actor's trailing flee
-// check in the same transaction.
-export function resumeDeferredMonsterCounterWield(
-    action, state, random = rn2,
-) {
-    const attack = action?.movement?.attack;
-    const counterattack = attack?.counterattack;
-    if (counterattack?.kind !== 'monster-wield'
-        || !counterattack.deferredWield) return action;
-    counterattack.deferredWield = false;
-    if (attack.postCounterFleePending) {
-        recordRandom(random, action.calls, 5);
-        attack.postCounterFleePending = false;
-    }
-    return action;
-}
 
 export async function finishDeferredMonsterCounterattackDeath(
     action, state, {
@@ -8381,7 +8270,7 @@ export async function finishDeferredMonsterDeath(
         attack.defenderDied = false;
         attack.postDeathFleePending = false;
         recordRandom(random, action.calls, 3);
-        continueMonsterContactAttack(
+        await continueMonsterContactAttack(
             attack, state, random, rollOne, action.calls,
         );
         action.movement.deferredPostFlee = false;

@@ -6,7 +6,7 @@ import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
-    finishDeferredMonsterDeath, quietMonsterActionRng,
+    finishDeferredMonsterDeath, takeMonsterTurn,
     resumeDeferredMonsterContact,
 } from '../js/monmove.js';
 import { CORPSE } from '../js/object_data.js';
@@ -43,13 +43,13 @@ test('a zombie attacks a nearby giant and the giant rises as a zombie',
         giant.name = 'Bram';
         game._deferVisibleMonsterContact = true;
 
-        const action = quietMonsterActionRng(
+        const action = await takeMonsterTurn(
             zombie, game,
             () => 0,
             () => 20,
             () => 1,
         );
-        resumeDeferredMonsterContact(
+        await resumeDeferredMonsterContact(
             action, game, () => 0, () => 20, () => 1,
         );
         await finishDeferredMonsterDeath(action, game, {
@@ -88,10 +88,10 @@ test('a fatal monster attack makes a shifted vampire rise', async () => {
     });
     game._deferVisibleMonsterContact = true;
 
-    const action = quietMonsterActionRng(
+    const action = await takeMonsterTurn(
         dragon, game, () => 0, () => 20, () => 1,
     );
-    resumeDeferredMonsterContact(
+    await resumeDeferredMonsterContact(
         action, game, () => 0, () => 20, () => 1,
     );
     await finishDeferredMonsterDeath(action, game, {

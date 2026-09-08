@@ -5696,7 +5696,7 @@ async function wizMap() {
 
 // C ref: cmd.c:domonability().
 async function useSteedBreathAbility(steed) {
-    const turn = beginPetRangedTurn(steed, game, { forced: true });
+    const turn = await beginPetRangedTurn(steed, game, { forced: true });
     const breath = turn.current?.kind === 'breath'
         ? turn.current.attack : null;
     if (turn.makeNoise) {

@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { NO_MINVENT, W_ARMG, W_ARMS } from '../js/const.js';
+import { NEED_PICK_OR_AXE, NO_MINVENT, W_ARMG, W_ARMS } from '../js/const.js';
+import { game } from '../js/gstate.js';
 import { monsterCanCarryObject, monsterCanTouchObject } from '../js/monster_carry.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { selectHandToHandWeapon } from '../js/monster_weapon.js';
+import { selectHandToHandWeapon, wieldMonsterWeapon } from '../js/monster_weapon.js';
 import {
-    BELL_OF_OPENING, CLUB, DAGGER, LEATHER_GLOVES, OBJECT_NAMES,
+    BELL_OF_OPENING, CLUB, DAGGER, DWARVISH_MATTOCK, LEATHER_GLOVES, OBJECT_NAMES, PICK_AXE,
     SMALL_SHIELD, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { artifactObject, knownObject, untimedCorpse } from './support/game-objects.js';
@@ -15,6 +16,22 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
+
+test('a digging monster uses a mattock with free hands and a pick-axe with a shield', async () => {
+    for (const shield of [false, true]) {
+        freshObjectRoom();
+        const dwarf = await createMonsterAt('dwarf', 11, 10, NO_MINVENT);
+        addObjectToMonsterInventory(dwarf, knownObject(DWARVISH_MATTOCK));
+        addObjectToMonsterInventory(dwarf, knownObject(PICK_AXE));
+        if (shield) equipMonsterObject(dwarf, knownObject(SMALL_SHIELD), W_ARMS);
+        dwarf.weaponCheck = NEED_PICK_OR_AXE;
+
+        const spentTurn = await wieldMonsterWeapon(dwarf, game, { publish: async () => {} });
+
+        assert.equal(spentTurn, true);
+        assert.equal(dwarf.mw?.otyp, shield ? PICK_AXE : DWARVISH_MATTOCK);
+    }
+});
 
 test('a lawful giant prefers Excalibur to its otherwise favored club', async () => {
     freshObjectRoom();

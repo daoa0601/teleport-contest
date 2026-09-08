@@ -12,7 +12,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, HELMET } from '../js/object_data.js';
 import { resolveRangedRetaliation } from '../js/dogmove.js';
-import { quietMonsterActionRng } from '../js/monmove.js';
+import { takeMonsterTurn } from '../js/monmove.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
@@ -152,7 +152,7 @@ test('a tame black naga spits at a distant monster instead of moving',
         target.mhp = target.mhpmax = 12;
         const hungryBefore = naga.edog.hungrytime;
 
-        const action = quietMonsterActionRng(
+        const action = await takeMonsterTurn(
             naga, game,
             () => 0,
             (count, sides) => count * sides,
