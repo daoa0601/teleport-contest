@@ -19,16 +19,20 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME
 import { monsterCanTouchObject } from './monster_carry.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { monsterSentenceSubject } from './monster_sound.js';
+import { isPoisonableObject } from './object_properties.js';
+import { recordObjectEncounter } from './object_knowledge.js';
 import {
     AKLYS, AXE, BATTLE_AXE, BOULDER, BOW, BULLWHIP, CLUB, CORPSE, CREAM_PIE,
     CROSSBOW, DART, DWARVISH_MATTOCK, EGG, ELVEN_BOW, LOADSTONE,
-    OBJECT_BIMANUAL, OBJECT_NAMES, OBJECT_SUBTYPE, ORCISH_BOW, PICK_AXE, SLING, YUMI,
+    OBJECT_BIMANUAL, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_SUBTYPE, ORCISH_BOW, PICK_AXE, SLING, YUMI,
 } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { touchPetrifies } from './stoning.js';
+import { heroIsBlind } from './senses.js';
+import { rn2 } from './rng.js';
 import { cansee, couldsee } from './vision.js';
-import { returningWeaponRangeSquared, willWeld } from './weapon_type.js';
+import { isPolearm, monsterWeaponSwingVerb, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
 
 const M2_GIANT = 0x00002000;
 const M2_STRONG = 0x04000000;
@@ -40,6 +44,49 @@ const WEAPON_CLASS = 2;
 const GEM_CLASS = 13;
 const S_KOP = 37;
 const PM_BALROG = MONSTER_NAME.indexOf('balrog');
+
+// C mhitu.c:mswings() and mhitm.c:mswingsm().
+export async function swingMonsterWeapon(monster, weapon, state = game, {
+    defender = null,
+    publish = plineWithContinuation,
+    random = rn2,
+} = {}) {
+    if (!state.flags.verbose || heroIsBlind(state)
+        || !canSeeMonster(monster, monster.mx, monster.my)) return;
+    weapon.dknown = true;
+    recordObjectEncounter(weapon.otyp, state);
+    const x = defender ? defender.mx : state.u.ux;
+    const y = defender ? defender.my : state.u.uy;
+    const bash = isPolearm(weapon)
+        && artifactById(weapon.oartifact, state)?.name !== 'Snickersnee'
+        && (monster.mx - x) ** 2 + (monster.my - y) ** 2 <= 2;
+    const verb = monsterWeaponSwingVerb(weapon, bash, random);
+    const name = meleeWeaponName(weapon, state);
+    const quantity = weapon.quan > 1 ? 'one of ' : '';
+    const possessive = monster.female ? 'her' : 'his';
+    let target = '';
+    if (defender) {
+        const targetName = canSeeMonster(defender, x, y)
+            ? monsterSentenceSubject(defender).replace(/^The /, 'the ') : 'it';
+        target = ` at ${targetName}`;
+    }
+    await publish(`${monsterSentenceSubject(monster)} ${verb} ${quantity}${possessive} ${name}${target}.`);
+}
+
+// mswings uses xname(), so it does not show BUC or enchantment.
+function meleeWeaponName(weapon, state) {
+    const artifact = artifactById(weapon.oartifact, state);
+    if (artifact) return artifact.name;
+    const known = weapon.typeKnown || state._knownObjectTypes?.has(weapon.otyp);
+    const appearance = state.objectDescriptions?.[weapon.otyp] ?? OBJECT_DESCRIPTIONS[weapon.otyp];
+    let name = weapon.otyp === CORPSE
+        ? `${MONSTER_NAME[weapon.corpsenm]} corpse`
+        : known ? OBJECT_NAMES[weapon.otyp] : appearance || OBJECT_NAMES[weapon.otyp];
+    if (weapon.quan > 1) name = makePlural(name);
+    if (weapon.opoisoned && isPoisonableObject(weapon)) name = `poisoned ${name}`;
+    if (weapon.oextra?.oname) name += ` named ${weapon.oextra.oname}`;
+    return name;
+}
 
 // C weapon.c:rwep[] order. A melee weapon is not automatically a missile.
 const RANGED_WEAPON_PREFERENCE = [

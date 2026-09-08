@@ -149,7 +149,6 @@ import {
     resolveDeferredHeroSummonMonsters,
     resolveDeferredHeroHasteSelf,
     resolveDeferredHeroAggravation,
-    resumeDeferredHeroWeaponSwing,
     finishDeferredMonsterMiscItem,
     finishDeferredHeroCloneWizard,
     resumeDeferredCovetousRelocation,
@@ -258,8 +257,6 @@ import {
 } from './shk.js';
 import { visiblePriestName } from './priest.js';
 import { inventoryItemDescription, rerollMenu } from './invent.js';
-import { isPolearm, monsterWeaponSwingVerb } from './weapon_type.js';
-import { artifactById } from './artifacts.js';
 import { refreshProperty } from './properties.js';
 import { msummon } from './minion.js';
 import { presentMonsterWebTrap } from './monster_trap_events.js';
@@ -4454,31 +4451,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         heroAttack = await continueDeferredHeroAttack(action, game);
                         continue;
                     }
-                if (heroAttack.deferredWeaponSwing) {
-                    const swingVisible = game.flags?.verbose !== false
-                        && !game.blind
-                        && canProjectMonster(
-                            monster, monster.mx, monster.my,
-                        );
-                    if (swingVisible) {
-                        observeNearbyNamedObject(
-                            heroAttack.weapon, monster.mx, monster.my,
-                        );
-                        const weaponName = distantMonsterObjectName(
-                            heroAttack.weapon,
-                        ).replace(/^(?:an?|the) /, '');
-                        const bash = isPolearm(heroAttack.weapon)
-                            && artifactById(heroAttack.weapon.oartifact)?.name !== 'Snickersnee';
-                        const verb = monsterWeaponSwingVerb(heroAttack.weapon, bash);
-                        await queueTurnMessage(
-                            `${visibleMonsterSubject(monster)} ${verb} ${
-                                monster.female ? 'her' : 'his'
-                            } ${weaponName}.`,
-                        );
-                    }
-                    heroAttack = await resumeDeferredHeroWeaponSwing(action, game);
-                    movement.attack = heroAttack;
-                }
                 if (heroAttack.deferredEngulf) {
                         // gulpmu() remove_monster() leaves the old tty glyph
                         // intact while urgent_pline() waits.  Only the new

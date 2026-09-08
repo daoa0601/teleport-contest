@@ -7,11 +7,11 @@ import {
 import { currentAttribute } from './attrib.js';
 import {
     A_STR, P_AXE, P_BOOMERANG, P_BOW, P_CROSSBOW, P_DART, P_LANCE,
-    P_POLEARMS, Upolyd, WT_IRON_BALL_INCR,
+    P_POLEARMS, Upolyd, W_ARMG, WT_IRON_BALL_INCR,
 } from './const.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import {
-    HEAVY_IRON_BALL, OBJECT_LARGE_DAMAGE, OBJECT_MATERIAL, OBJECT_NAMES,
+    GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, OBJECT_LARGE_DAMAGE, OBJECT_MATERIAL, OBJECT_NAMES,
     OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
 import {
@@ -20,7 +20,7 @@ import {
     monsterIsWooden,
 } from './monster_data.js';
 import { objectClassForType } from './object_knowledge.js';
-import { rnd } from './rng.js';
+import { rn2, rnd } from './rng.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
@@ -29,6 +29,12 @@ const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
 const LEATHER = 7;
 const SILVER = 14;
+
+// C uhitm.c:mhitm_ad_phys(). Carrying these gloves is not enough.
+export function monsterWeaponStrengthBonus(monster, random = rn2) {
+    const gloves = (monster.minvent || []).find(object => object.owornmask & W_ARMG);
+    return gloves?.otyp === GAUNTLETS_OF_POWER ? 3 + random(4) : 0;
+}
 
 function objectTypes(names) {
     return new Set(names.map(name => OBJECT_NAMES.indexOf(name))

@@ -15,7 +15,7 @@ import {
     readyRangedMonsterWeapon,
     throwMonsterWeaponAtHero,
 } from './monster_throw.js';
-import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon, selectMonsterRangedWeapon, swingMonsterWeapon, wieldMonsterWeapon } from './monster_weapon.js';
 import { attackHeroWithPolearm } from './monster_polearm.js';
 import { ammunitionMatchesLauncher, isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';
@@ -82,7 +82,7 @@ import {
     AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CORR, AD_DCAY, AD_DREN,
     AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS,
     AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON,
-    AD_STUN, AD_WRAP, AD_RUST, AT_BOOM, AT_BREA, AT_ENGL, AT_GAZE,
+    AD_STUN, AD_WRAP, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE,
     AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
 import {
@@ -128,7 +128,7 @@ import {
 import { syncBlindness } from './senses.js';
 import { touchPetrifies } from './stoning.js';
 import { clearHeroSliming } from './slime.js';
-import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
+import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import {
     finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
     finishMonsterRayDeath,
@@ -2446,6 +2446,10 @@ async function monsterMeleeAttack(
             aggressor, defender, attack, state,
         );
         if (wield) return wield;
+        const weapon = [AT_WEAP, AT_CLAW].includes(attack.attackType)
+            ? monsterWieldedWeapon(aggressor) : null;
+        if (attack.attackType === AT_WEAP && weapon)
+            await swingMonsterWeapon(aggressor, weapon, state, { defender, random });
         const roll = rollOne(20 + index);
         calls.push(`rnd(${20 + index})`);
         const hit = threshold > roll;
@@ -2453,6 +2457,10 @@ async function monsterMeleeAttack(
         if (hit) {
             damage = rollDice(attack.damn, attack.damd);
             calls.push(`d(${attack.damn},${attack.damd})`);
+            if (attack.damageType === AD_PHYS && weapon) {
+                damage += rollPhysicalWeaponDamage(weapon, defender, { rollOne, rollDice });
+                damage = Math.max(1, damage + monsterWeaponStrengthBonus(aggressor, random));
+            }
             // mdamagem() checks generic knockback before applying damage,
             // including for an ultimately fatal physical hit.
             recordRandom(random, calls, 3);
@@ -3497,7 +3505,7 @@ async function beginHeroAttackOrStrikingWand(
         attack: await basicMonsterAttack(
             monster, state, random, rollOne, rollDice, calls,
             0, threshold, null, !!state?._deferVisibleMonsterContact,
-            false, offensive.probed,
+            offensive.probed,
         ),
     };
 }
@@ -4698,7 +4706,6 @@ async function basicMonsterAttack(
     monster, state, random, rollOne, rollDice, calls, attackIndex = 0,
     retainedThreshold = null, retainedAttackRoll = null,
     deferVisibleContact = !!state?._deferVisibleMonsterContact,
-    weaponSwingComplete = false,
     offensiveProbeComplete = false,
 ) {
     // C evaluates AC_VALUE once at mattacku() entry, before selecting the
@@ -4802,7 +4809,7 @@ async function basicMonsterAttack(
     // mhitu.c:mattacku() probes find_offensive() once before the attack
     // table.  Its initial lined_up() call is RNG-visible for a concealed
     // polymorphed hero even when no carried item is ultimately usable.
-    if (attackIndex === 0 && !retainedAttackRoll && !weaponSwingComplete
+    if (attackIndex === 0 && !retainedAttackRoll
         && !offensiveProbeComplete
         && !monster.mpeaceful && !state?.u?.uswallow
         && !((MONSTER_FLAGS1[monster.mnum] ?? 0)
@@ -4885,14 +4892,8 @@ async function basicMonsterAttack(
             }
         }
         const wieldedWeapon = monsterWieldedWeapon(monster);
-        if (wieldedWeapon && deferVisibleContact && !weaponSwingComplete) {
-            return {
-                kind: 'hero-attack', threshold,
-                attackType, damageType, attackIndex,
-                deferredWeaponSwing: true,
-                weapon: wieldedWeapon,
-            };
-        }
+        if (wieldedWeapon && !retainedAttackRoll)
+            await swingMonsterWeapon(monster, wieldedWeapon, state, { random });
     }
     // getmattk() converts a lich's first cold touch to weaker physical
     // damage when the defender resists cold.  The attack method and message
@@ -4966,7 +4967,7 @@ async function basicMonsterAttack(
                 },
             },
         );
-        damage += weaponDamage;
+        damage = Math.max(1, damage + weaponDamage + monsterWeaponStrengthBonus(monster, random));
         if (deferVisibleContact) {
             return retainHeroAttackContinuation({
                 kind: 'hero-attack', roll, threshold, hit, damage,
@@ -5428,23 +5429,6 @@ async function basicMonsterAttack(
     return retainHeroAttackContinuation({
         kind: 'hero-attack', roll, threshold, hit, damage, attackType,
     }, monster, attackIndex);
-}
-
-// Resume mattacku() after mswings() has crossed any older tty topline.
-// Weapon selection, AC_VALUE(), and the offensive probe are already owned by
-// the pre-swing half; the attack die and damage begin only here.
-export async function resumeDeferredHeroWeaponSwing(
-    action, state, random = rn2, rollOne = rnd, rollDice = d,
-) {
-    const attack = action?.movement?.attack;
-    if (!attack?.deferredWeaponSwing) return attack;
-    attack.deferredWeaponSwing = false;
-    const resumed = await basicMonsterAttack(
-        action.monster, state, random, rollOne, rollDice, action.calls,
-        attack.attackIndex, attack.threshold, null, true, true,
-    );
-    action.movement.attack = resumed;
-    return resumed;
 }
 
 function energyDrainDice(state, dice = 2, sides = 6) {
