@@ -2577,6 +2577,15 @@ async function gotoLevel(targetDepth, {
 } = {}) {
     const oldDepth = { ...(game.u.uz || {}) };
     const destinationDepth = { ...oldDepth, ...targetDepth };
+    const tutorialDnum = game.specialLevels?.get('tut-1')?.dnum;
+    const leavingTutorial = Number.isInteger(tutorialDnum)
+        && oldDepth.dnum === tutorialDnum && destinationDepth.dnum !== tutorialDnum;
+    if (oldDepth.dnum !== destinationDepth.dnum) {
+        if (leavingTutorial)
+            await currentLuaLifecycle().changeTutorialMode(game, false);
+        else if (destinationDepth.dnum === tutorialDnum)
+            await currentLuaLifecycle().changeTutorialMode(game, true);
+    }
     // C do.c:goto_level() silently returns when a forced Wizard-menu
     // destination is the level already occupied.  The tty menu still closes
     // and exposes a fresh map, but no level cache, actor migration, arrival
@@ -2663,6 +2672,14 @@ async function gotoLevel(targetDepth, {
     game._levelCache.set(
         levelCacheKey(oldDepth), cachedLevelState(oldLevel, oldStairs),
     );
+    if (leavingTutorial) {
+        for (const key of game._levelCache.keys()) {
+            if (Number(key.split(':')[0]) === tutorialDnum) game._levelCache.delete(key);
+        }
+        const lifecycle = currentLuaLifecycle();
+        lifecycle.themed.get(tutorialDnum)?.state.destroy();
+        lifecycle.themed.delete(tutorialDnum);
+    }
 
     const cached = game._levelCache.get(levelCacheKey(destinationDepth));
     game.u.uz = destinationDepth;
@@ -2767,6 +2784,8 @@ async function gotoLevel(targetDepth, {
     // because this destination was not present in the live level cache.
     if (!game._restoredBones) restoreCachedHeroTrack(cached);
     game._ordinaryDescentLive = true;
+    game._tutorialActive = Number.isInteger(tutorialDnum)
+        && destinationDepth.dnum === tutorialDnum;
     game._pending_message = '';
     game.context.move = 0;
     await cls();

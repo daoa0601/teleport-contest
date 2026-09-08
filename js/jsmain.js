@@ -14,6 +14,7 @@ import {
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
 import { restoreGame } from './save.js';
+import { discardTutorialState } from './tutorial_state.js';
 
 const UNICODE_TO_DEC = new Map(
     Object.entries(DEC_TO_UNICODE).map(([dec, unicode]) => [unicode, dec]),
@@ -985,7 +986,10 @@ export class Engine {
             while (!this.state.program_state?.gameover) await moveloop_core();
         } finally {
             this.rngLog = [...getRngLog()];
-            if (this.state.program_state?.gameover) this.lua.destroy();
+            if (this.state.program_state?.gameover) {
+                discardTutorialState(this.state);
+                this.lua.destroy();
+            }
         }
     }
 

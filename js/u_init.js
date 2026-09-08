@@ -960,6 +960,10 @@ export function inventoryItem(raw, presentation = null) {
 }
 
 export function assignInventoryLetter(item) {
+    if (item.oclass === COIN_CLASS) {
+        item.invlet = '$';
+        return item;
+    }
     // invent.c:assigninvlet() uses a persistent rotating cursor rather than
     // inventory length.  Consuming p and r must not make a later wished item
     // reuse q; after the last assignment was r, the next free slot is s.

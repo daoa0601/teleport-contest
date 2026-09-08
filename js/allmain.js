@@ -7,6 +7,7 @@ import { finishMonsterGrowth } from './monster_growth.js';
 import { reassessMonsterArmor } from './monworn.js';
 import { newMonsterHitPoints } from './monster_hit_points.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
+import { readEngravingAt } from './engrave.js';
 import { nextIdent } from './ident.js';
 import { d, rn2, rnd } from './rng.js';
 import {
@@ -531,20 +532,8 @@ async function enterTutorial() {
         level: oldLevel, stairs: oldStairs,
     });
 
-    const wornSlots = [
-        'uarm', 'uarmc', 'uarmh', 'uarmf', 'uarms', 'uarmg', 'uarmu',
-    ];
-    game._tutorialState = {
-        depth: oldDepth,
-        inventory: [...(game.inventory || [])],
-        worn: Object.fromEntries(wornSlots.map(slot => [slot, game[slot] || null])),
-        weapon: game.uwep || null,
-    };
-    game.inventory = [];
-    game.uwep = null;
-    for (const slot of wornSlots) game[slot] = null;
-
     game.u.ucamefrom = { ...oldDepth };
+    await currentLuaLifecycle().changeTutorialMode(game, true);
     game.u.uz = { ...target };
     game._specialLevelPrototype = 'tut-1';
     await mklev();
@@ -584,10 +573,11 @@ async function enterTutorial() {
     vision_reset();
     vision_recalc(0);
     await docrt();
-    await showInlineMore('Something is engraved here on the floor.');
-    await showInlineMore('You read: "Move around with h j k l".');
+    await readEngravingAt(game.u.ux, game.u.uy, {
+        showMore: showInlineMore,
+        showLine: plineWithContinuation,
+    });
     findArmorClass(game);
-    game._pending_message = '';
     game._maintenanceMove = game.moves || 1;
     await docrt();
     await flush_screen(1);

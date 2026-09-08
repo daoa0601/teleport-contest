@@ -16,7 +16,7 @@ const persistentNames = `
     _prayerForced _prayerLastTickMove _prayerOpeningMessage _prayerTurnsRemaining _preserveLeadingStyledBlanks _prevDecorType _priestPantheonIndex
     _questExpulsionPending _restoredBones _rndmonstAlignment _rndmonstAlignmentMove _runtimeVersionInfoInitialized _shopRooms _specialLevelPrototype
     _specialRooms _startingEffectsApplied _startingPwMinimum _stethoscopeSeq _templeRooms _tipSwimShown
-    _travelTipShown _tributeBookstock _tutorialActive _tutorialDeclined _tutorialState _unresolvedDemigodIntervention _unweapon
+    _travelTipShown _tributeBookstock _tutorialActive _tutorialDeclined _unresolvedDemigodIntervention _unweapon
     _useInitialMaintenance _vaultGuard _vaultHiddenGold _wailmsg advance aggravateMonster
     aggravate_monster air_level antimagic astral_level blind branches castleTune
     commandBindings context deaf detectMonsters discover discoveries displaced
@@ -43,7 +43,7 @@ const transientNames = `
     _pendingAngryGodOutcome _pendingDemigodIntervention _pendingFireRayDamage _pendingOffensivePotionEffect _pending_message _prayerHeroTookTimePending
     _queuedHelplessRecoveryMessage _retained_message _runState _samuraiLiveScheduler _saveExitPending _screen_output _silentPrefixRetainedTopline
     _statusAcOverride _statusDeafOverride _statusGoldOverride _statusHpOverride _statusProjectedAc _statusTurnOverride _suppressMapStatusForFlush
-    _suppressMessagesUntilInput _thrownObject _travelTarget _vaultGuardArrivalPending _vaultHeroTookTimePending _vaultMaintenanceContinuation _viz_rmax
+    _suppressMessagesUntilInput _thrownObject _travelTarget _tutorialState _vaultGuardArrivalPending _vaultHeroTookTimePending _vaultMaintenanceContinuation _viz_rmax
     _viz_rmin active_buf animationFrame coreCtx cs_left cs_right cs_rows
     currentSeed datetime displayCtx fmon getScreens mockStorage n_rects
     nhDisplay nhrect program_state rect_cnt storage vis_func vis_start_col

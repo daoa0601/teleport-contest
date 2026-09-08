@@ -4,6 +4,7 @@ import { depth } from '../hacklib.js';
 import { commandKeyDescription } from '../command_keys.js';
 import { parseNethackrc } from '../options.js';
 import { rn2 } from '../rng.js';
+import { changeTutorialState } from '../tutorial_state.js';
 import { luaPline, luaText } from './messages.js';
 import {
     LuaState, LuaTable, luaType, luaTableToArray, luaTableToObject, luaValueToJs,
@@ -35,7 +36,9 @@ function bindingsFor(gameState, lifecycle, additionalBindings = {}) {
             rn2: range => rn2(range),
             random: (start, range) => Number(start) + rn2(range),
             callback: (...args) => lifecycle.registerCallback(...args),
-            gamestate: () => null,
+            gamestate: (...args) => changeTutorialState(
+                gameState, args.at(-1) != null && args.at(-1) !== false,
+            ),
             pline: luaPline,
             text: luaText,
             eckey: command => commandKeyDescription(
@@ -112,6 +115,14 @@ export class LuaLifecycle {
         this.refreshUser(this.core, gameState);
         await this.core.callValueAsync(hook, []);
         this.syncVariables(gameState);
+    }
+
+    async changeTutorialMode(gameState, entering) {
+        await this.callCore(gameState, entering ? 'enter_tutorial' : 'leave_tutorial');
+        if (!entering) {
+            this.unavailableHooks.add('enter_tutorial');
+            this.unavailableHooks.add('leave_tutorial');
+        }
     }
 
     // C nhl_callback() stores names in the persistent core, even when the
