@@ -366,6 +366,6 @@ export async function transformWereMonster(monster, state = game, {
     }
     if (repaint) newsym(monster.mx, monster.my);
     await adjustMonsterClothingAfterPolymorph(monster, state, { publish });
-    await updateMonsterWeaponAfterPolymorph(monster, state);
+    await updateMonsterWeaponAfterPolymorph(monster, state, { publish });
     return true;
 }

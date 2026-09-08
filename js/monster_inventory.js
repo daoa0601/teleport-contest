@@ -4,7 +4,7 @@
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import {
     I_SPECIAL, LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN,
-    NEED_WEAPON, W_SADDLE, W_WEP,
+    W_ARM, W_SADDLE, W_WEP,
 } from './const.js';
 import { place_object } from './floor_object.js';
 import { game } from './gstate.js';
@@ -16,6 +16,7 @@ import { endObjectBurn, objectShedsLight } from './light.js';
 import { monsterCanEngulf } from './monster_data.js';
 import { plineWithContinuation } from './display.js';
 import { updateMonsterEquipment } from './monster_equipment.js';
+import { unwieldMonsterWeapon } from './monster_weapon.js';
 
 export function clearMonsterCarriedObjectState(object, state = game) {
     if (!object) return;
@@ -88,30 +89,20 @@ export function linkObjectToMonsterInventory(
     return object;
 }
 
-// Unlinking is separate from equipment effects, like C obj_extract_self().
-// Callers removing worn armor must use removeObjectFromMonsterInventory().
-export function unlinkMonsterObject(monster, object, state = game) {
+// C obj_extract_self(): only unlink the object. Worn items must go through
+// removeObjectFromMonsterInventory() to update the monster and its equipment.
+export function unlinkMonsterObject(monster, object) {
     if (!monster || !object) return false;
     const inventory = monster.minvent || monster.inventory || [];
     const index = inventory.indexOf(object);
     if (index < 0) return false;
 
-    const wornMask = object.owornmask ?? 0;
     inventory.splice(index, 1);
     monster.minvent = inventory;
     monster.inventory = inventory;
     monster.hasInventory = inventory.length > 0;
-    monster.misc_worn_check = (monster.misc_worn_check ?? 0) & ~wornMask;
-    if (wornMask) monster.misc_worn_check |= I_SPECIAL;
-    if (monster.mw === object || object.wielded || (wornMask & W_WEP)) {
-        monster.mw = null;
-        monster.weaponCheck = NEED_WEAPON;
-    }
-    if (monster.saddle === object || (wornMask & W_SADDLE)) {
-        monster.saddle = null;
-        monster.saddled = false;
-    }
-    clearMonsterCarriedObjectState(object, state);
+    object.ocarry = null;
+    delete object.carrierMid;
     object.where = 'free';
     return true;
 }
@@ -119,9 +110,28 @@ export function unlinkMonsterObject(monster, object, state = game) {
 export async function removeObjectFromMonsterInventory(monster, object, state = game, {
     publish = plineWithContinuation,
 } = {}) {
-    const worn = object.owornmask;
-    if (!unlinkMonsterObject(monster, object, state)) return false;
-    if (worn) await updateMonsterEquipment(monster, object, false, state, { publish });
+    const worn = object.owornmask ?? 0;
+    const wielded = monster.mw === object || object.wielded || (worn & W_WEP);
+    if (!unlinkMonsterObject(monster, object)) return false;
+    if ((worn & W_ARM) && object.lamplit && artifactEmitsLight(object))
+        endObjectBurn(object, state);
+    object.owornmask = 0;
+    object.worn = false;
+    object.wornSlot = null;
+    if (worn) {
+        if (!monster.dead && monster.mhp > 0)
+            await updateMonsterEquipment(monster, object, false, state, { publish });
+        monster.misc_worn_check = (monster.misc_worn_check ?? 0) & ~worn;
+        monster.misc_worn_check |= I_SPECIAL;
+    }
+    if (monster.saddle === object || (worn & W_SADDLE)) {
+        monster.saddle = null;
+        monster.saddled = false;
+    }
+    if (wielded) await unwieldMonsterWeapon(monster, state, { weapon: object, publish });
+    object.wielded = false;
+    object.alternate = false;
+    object.ready = false;
     return true;
 }
 

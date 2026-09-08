@@ -22,7 +22,7 @@ import {
 import { restoreMonsterTraits } from './monster_traits.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import {
-    linkObjectToMonsterInventory, unlinkMonsterObject,
+    linkObjectToMonsterInventory, removeObjectFromMonsterInventory,
 } from './monster_inventory.js';
 import { BAG_OF_HOLDING, OBJECT_NAMES, STATUE } from './object_data.js';
 import {
@@ -218,7 +218,7 @@ function updateContainerWeights(container, state) {
     }
 }
 
-function removeCorpse(corpse, location, state, entireStack = false) {
+async function removeCorpse(corpse, location, state, entireStack = false) {
     const quantity = corpse.quan ?? corpse.quantity ?? 1;
     if (quantity > 1 && !entireStack) {
         corpse.quan = quantity - 1;
@@ -240,7 +240,7 @@ function removeCorpse(corpse, location, state, entireStack = false) {
         if (index >= 0) state.inventory.splice(index, 1);
     } else if (corpse.where === 'minvent') {
         const carrier = location.monsterCarrier || carryingMonster(corpse, state);
-        if (carrier) unlinkMonsterObject(carrier, corpse);
+        if (carrier) await removeObjectFromMonsterInventory(carrier, corpse, state);
     } else if (corpse.where === 'contained') {
         const container = location.directContainer || parentContainer(corpse, state);
         const index = container?.contents?.indexOf(corpse) ?? -1;
@@ -456,7 +456,7 @@ async function reviveCorpse(
         );
         if (message) messages.push(message);
     }
-    removeCorpse(corpse, location, state);
+    await removeCorpse(corpse, location, state);
     newsym(monster.mx, monster.my);
 
     let trap = null;
@@ -483,10 +483,10 @@ export async function reviveCorpseByMagic(corpse, state = game) {
     return event;
 }
 
-function rotCorpseNow(corpse, state) {
+async function rotCorpseNow(corpse, state) {
     const originalWhere = corpse.where;
     const location = revivalLocation(corpse, state, corpse.where === 'buried');
-    removeCorpse(corpse, location || {}, state, true);
+    await removeCorpse(corpse, location || {}, state, true);
     return {
         kind: 'rotted', corpse, monster: null,
         messages: originalWhere === 'inventory'

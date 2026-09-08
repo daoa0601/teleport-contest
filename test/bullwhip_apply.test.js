@@ -52,7 +52,7 @@ test('an archeologist can pull a wielded weapon from an adjacent monster',
         const bugbear = await createMonsterAt('bugbear', 11, 10);
         equipMonsterObject(bugbear, club, W_WEP);
         initRng(7102n);
-        await applyInventoryObject(whip, 'l');
+        await applyInventoryObject(whip, 'l ');
 
         assert.equal(bugbear.mw, null);
         assert.equal(bugbear.minvent.includes(club), false);

@@ -95,7 +95,7 @@ export async function monsterSelfTouch(monster, {
     });
     if (petrification.survived && !monsterWearsGloves(monster)
         && !monsterHasStoneResistance(monster)) {
-        unwieldMonsterWeapon(monster);
+        await unwieldMonsterWeapon(monster, state, { publish });
     }
     return { touched: true, corpse, ...petrification };
 }

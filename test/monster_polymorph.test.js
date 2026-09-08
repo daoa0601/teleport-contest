@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    DOOR, D_CLOSED, D_NODOOR, I_SPECIAL, NO_MINVENT, NO_WEAPON_WANTED,
+    DOOR, D_CLOSED, D_NODOOR, I_SPECIAL, LAVAPOOL, NO_MINVENT, NO_WEAPON_WANTED,
     W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE,
     W_WEP,
 } from '../js/const.js';
@@ -15,7 +15,7 @@ import {
     changeMonsterForm, decideMonsterShapeChange,
 } from '../js/monster_polymorph.js';
 import {
-    BOULDER, CHAIN_MAIL, DAGGER, ELVEN_CLOAK, HAWAIIAN_SHIRT, HELMET,
+    BOULDER, CHAIN_MAIL, CLUB, DAGGER, ELVEN_CLOAK, HAWAIIAN_SHIRT, HELMET,
     LEASH, LEATHER_GLOVES, SADDLE, SMALL_SHIELD, SPEED_BOOTS,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -93,6 +93,22 @@ test('a monster drops its weapon when its new form cannot wield one',
         assert.equal(dagger.ox, monster.mx);
         assert.equal(dagger.oy, monster.my);
     });
+
+test('a wooden weapon burns when a new monster body drops it into lava', async () => {
+    const level = freshObjectRoom();
+    const monster = await createMonsterAt('giant', 11, 10, NO_MINVENT);
+    const club = equipMonsterObject(monster, knownObject(CLUB), W_WEP);
+    level.at(11, 10).typ = LAVAPOOL;
+
+    await changeMonsterForm(monster, MONSTER_NAME.indexOf('fire elemental'), game, {
+        publish: async () => {},
+    });
+
+    assert.equal(monster.mw, null);
+    assert.equal(monster.minvent.includes(club), false);
+    assert.equal(club.where, 'gone');
+    assert.equal(level.objects[11]?.[10]?.includes(club) ?? false, false);
+});
 
 test('a large new body destroys ordinary torso clothing', async () => {
     freshObjectRoom();

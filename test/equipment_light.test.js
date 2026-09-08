@@ -4,12 +4,13 @@ import assert from 'node:assert/strict';
 import { applyArmorOnEffects, removeHeroArmor, wearHeroArmor } from '../js/armor.js';
 import { dropHeroInventoryForBones } from '../js/bones_death.js';
 import { rhack } from '../js/cmd.js';
-import { NO_MINVENT } from '../js/const.js';
+import { NO_MINVENT, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { addObjectToMonsterInventory, removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
 import { initializeMonsterArmor } from '../js/monworn.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { unwieldMonsterWeapon } from '../js/monster_weapon.js';
 import { OBJECT_NAMES, OIL_LAMP, WAX_CANDLE } from '../js/object_data.js';
 import { beginObjectBurn, endObjectBurn } from '../js/light.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
@@ -17,7 +18,7 @@ import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
-import { createMonsterAt } from './support/monsters.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const GOLD_MAIL = OBJECT_NAMES.indexOf('gold dragon scale mail');
@@ -147,4 +148,24 @@ test('hero death extinguishes equipment light but leaves a dropped lamp burning'
     assert.equal(armor.lamplit, false);
     assert.equal(sword.lamplit, false);
     assert.equal(lamp.lamplit, true);
+});
+
+test('a monster can unwield Sunsword without dropping it or leaving its light behind', async () => {
+    darkRoom();
+    const giant = await createMonsterAt('giant', 14, 10, NO_MINVENT);
+    const sword = equipMonsterObject(giant, artifactObject('Sunsword'), W_WEP);
+    beginObjectBurn(sword);
+    vision_recalc(0);
+    const messages = [];
+
+    await unwieldMonsterWeapon(giant, game, {
+        publish: async message => messages.push(message),
+    });
+    vision_recalc(0);
+
+    assert.equal(giant.mw, null);
+    assert.equal(giant.minvent.includes(sword), true);
+    assert.equal(sword.lamplit, false);
+    assert.equal(cansee(16, 10), false);
+    assert.ok(messages.some(message => /Sunsword.*stops shining/.test(message)));
 });

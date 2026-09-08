@@ -11,7 +11,7 @@ import {
     LAVAWALL, ROWNO, TT_PIT, W_NONPASSWALL, isok,
 } from './const.js';
 import {
-    canSpotMonster, map_invisible, newsym, pline,
+    canSpotMonster, map_invisible, newsym, pline, plineWithContinuation,
 } from './display.js';
 import {
     detachFloorObjectUnit, place_object, remove_object, stack_object,
@@ -24,7 +24,7 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SIZE,
     monsterTypeName,
 } from './monster_data.js';
-import { unlinkMonsterObject } from './monster_inventory.js';
+import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     BOULDER, CORPSE, OBJECT_BIMANUAL,
@@ -214,10 +214,6 @@ async function damageHeroWithWhip(whip, state) {
         { state, publish: pline });
 }
 
-function clearMonsterWeapon(monster, object) {
-    unlinkMonsterObject(monster, object);
-}
-
 async function snatchPetrifyingCorpse(weapon, state) {
     const petrification = await touchPetrifyingCorpse(weapon, {
         action: 'Snatching',
@@ -250,16 +246,16 @@ async function disarmMonster(monster, weapon, proficiency, holdObject, state) {
         return;
     }
 
-    clearMonsterWeapon(monster, weapon);
+    await removeObjectFromMonsterInventory(monster, weapon, state);
     switch (rn2(proficiency + 1)) {
     case 2:
-        await pline(`You yank ${objectWithArticle(weapon)} to the ${
+        await plineWithContinuation(`You yank ${objectWithArticle(weapon)} to the ${
             surfaceName(state.u.ux, state.u.uy, state)}!`);
         place_object(weapon, state.u.ux, state.u.uy);
         stack_object(weapon, state);
         break;
     case 3:
-        await pline(`You snatch ${objectWithArticle(weapon)}!`);
+        await plineWithContinuation(`You snatch ${objectWithArticle(weapon)}!`);
         if (await snatchPetrifyingCorpse(weapon, state)) break;
         if (!await holdObject(weapon)) {
             place_object(weapon, state.u.ux, state.u.uy);
@@ -267,7 +263,7 @@ async function disarmMonster(monster, weapon, proficiency, holdObject, state) {
         }
         break;
     default:
-        await pline(
+        await plineWithContinuation(
             `You yank ${objectWithArticle(weapon)} from ${
                 possessive(monsterObject(monster))} ${hands}!`,
         );

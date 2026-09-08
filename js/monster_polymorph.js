@@ -482,11 +482,7 @@ export async function changeMonsterForm(
             message = `${monster.mtame ? 'Your' : 'A'} ${newName} appears!`;
         if (message) await publish(message);
     }
-    const droppedWeapon = await updateMonsterWeaponAfterPolymorph(monster, state);
-    if (polyspot && droppedWeapon) {
-        droppedWeapon.bypass = true;
-        state.context.bypasses = true;
-    }
+    const droppedWeapon = await updateMonsterWeaponAfterPolymorph(monster, state, { publish, polyspot });
     const clothing = await adjustMonsterClothingAfterPolymorph(monster, state, { publish, polyspot });
     const selfTouch = await monsterSelfTouchAfterPolymorph(monster, {
         finishDeath, creditHero, publish, state,
