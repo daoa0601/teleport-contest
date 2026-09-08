@@ -14,9 +14,7 @@ import { liftObject } from './lift_object.js';
 import { endObjectBurn } from './light.js';
 import { addObjectToContainer } from './object_container.js';
 import { place_object } from './floor_object.js';
-import {
-    makemonNear, startCorpseTimeout,
-} from './mklev.js';
+import { startCorpseTimeout } from './mklev.js';
 import { MONSTER_SIZE } from './monster_data.js';
 import { deleteObject } from './object_delete.js';
 import {
@@ -34,6 +32,7 @@ import {
     OBJECT_TIMER_KIND, stopObjectTimer,
 } from './object_timers.js';
 import { heroHasNoHands } from './polyself.js';
+import { observeQuantumCat } from './quantum_cat.js';
 import { d, rn2 } from './rng.js';
 import { rejoinShopBill, splitShopBill } from './shk.js';
 import { touchPetrifyingCorpse } from './stoning.js';
@@ -312,38 +311,6 @@ async function loseCursedBagContents(container, state) {
             `${description[0].toUpperCase()}${description.slice(1)} vanished!`,
         );
     }
-    return true;
-}
-
-async function observeQuantumCat(container, state) {
-    if (container.otyp !== LARGE_BOX || container.spe !== 1) return false;
-    const corpse = container.contents?.find(object => object.otyp === CORPSE);
-    const alive = rn2(2) === 0;
-    if (alive) {
-        const x = container.where === 'floor' ? container.ox : state.u.ux;
-        const y = container.where === 'floor' ? container.oy : state.u.uy;
-        const cat = await makemonNear(33, x, y);
-        if (!cat) return false;
-        cat.mpeaceful = 1;
-        cat.name = "Schroedinger's Cat";
-        if (corpse) deleteObject(corpse, state);
-        container.spe = 0;
-        state.u.uexp = (state.u.uexp ?? 0) + 10;
-        state.score = (state.score ?? 0) + 20;
-        await pline("The housecat inside the box is still alive!");
-    } else {
-        container.spe = 0;
-        if (corpse) {
-            corpse.age = state.moves ?? 0;
-            corpse.corpsenm = 33;
-            corpse.oname = "Schroedinger's Cat";
-            startCorpseTimeout(corpse);
-        }
-        state.u.uexp = (state.u.uexp ?? 0) + 20;
-        state.score = (state.score ?? 0) + 10;
-        await pline('The housecat inside the box is dead!');
-    }
-    updateContainerWeights(container);
     return true;
 }
 
@@ -728,7 +695,7 @@ export async function useContainer(container, {
         };
     }
 
-    let spentTime = await observeQuantumCat(container, game);
+    let spentTime = await observeQuantumCat(container);
     if (await loseCursedBagContents(container, game)) spentTime = true;
     const keys = actionKeys();
     let action;

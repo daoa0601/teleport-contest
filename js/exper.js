@@ -27,6 +27,27 @@ export function newExperienceThreshold(level) {
     return 10000000 * (level - 19);
 }
 
+// C exper.c:more_experienced(). Experience and score are separate awards.
+export function addExperience(experience, scoreBonus = 0, state = game) {
+    state.u.uexp = (state.u.uexp || 0) + experience;
+    state.u.urexp = (state.u.urexp || 0) + 4 * experience + scoreBonus;
+    if (state.u.urexp >= (state.urole.key === 'wizard' ? 1000 : 2000))
+        state.flags.beginner = false;
+}
+
+// C exper.c:newexplevel(). One award can raise the hero by at most one level.
+export async function checkExperienceLevel() {
+    const hero = game.u;
+    if (hero.ulevel >= 30 || (hero.uexp || 0) < newExperienceThreshold(hero.ulevel)) return;
+    const oldLevel = hero.ulevel;
+    const returning = (hero.ulevelmax ?? oldLevel) > oldLevel;
+    gainExperienceLevel({ incremental: true });
+    await plineWithContinuation(
+        `Welcome ${returning ? 'back ' : ''}to experience level ${hero.ulevel}.`,
+    );
+    await adjustLevelAbilities(oldLevel, hero.ulevel);
+}
+
 function xlevToRank(level) {
     return level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
 }
@@ -269,7 +290,6 @@ export function awardMonsterExperience(monster, {
     state = game, killCount = 1, amphibious = false,
 } = {}) {
     const award = monsterExperience(monster, { killCount, amphibious });
-    state.u.uexp = (state.u.uexp || 0) + award;
-    state.u.urexp = (state.u.urexp || 0) + 4 * award;
+    addExperience(award, 0, state);
     return award;
 }

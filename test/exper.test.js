@@ -34,11 +34,12 @@ test('revived monster awards use the source repeated-kill bands', () => {
 });
 
 test('awarding experience adds four times as much score', () => {
-    const state = { u: { uexp: 2, urexp: 8 } };
-    assert.equal(awardMonsterExperience(experienceTarget('lichen'), {
-        state,
-    }), 4);
-    assert.deepEqual(state.u, { uexp: 6, urexp: 24 });
+    freshGame({ hero: { uexp: 2, urexp: 8 } });
+
+    assert.equal(awardMonsterExperience(experienceTarget('lichen')), 4);
+
+    assert.equal(game.u.uexp, 6);
+    assert.equal(game.u.urexp, 24);
 });
 
 test('a gained level retains the HP and power that losing it removes', () => {

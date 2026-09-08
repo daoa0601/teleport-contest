@@ -6,6 +6,8 @@ import { W_AMUL } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKeys } from '../js/input.js';
+import { inventoryItemDescription } from '../js/invent.js';
+import { addInventoryItem } from '../js/u_init.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BAG_OF_HOLDING, CHEST, CLUB,
     CORPSE, DART, ICE_BOX, LARGE_BOX, LEATHER_GLOVES, LOADSTONE,
@@ -16,7 +18,7 @@ import {
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
 import {
-    addInventoryObject, artifactObject, floorObject, knownObject,
+    addInventoryObject, artifactObject, floorObject, knownObject, unopenedCatBox,
 } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -329,25 +331,37 @@ test('putting one bag of holding inside another destroys both bags',
     });
 
 test('opening a quantum box resolves its cat once', async () => {
-    const box = unlockedContainer(LARGE_BOX, 'a', {
-        cknown: false,
-        spe: 1,
-    });
-    const corpse = knownObject(CORPSE, {
-        invlet: 'b',
-        where: 'contained',
-        container: box,
-        corpsenm: 33,
-    });
-    box.contents = [corpse];
+    const box = addInventoryItem(unopenedCatBox({ invlet: 'a' }));
+    const corpse = box.contents[0];
     game.moves = 40;
     initRng(1n);
 
     await applyInventoryObject('a', 'q');
+    assert.equal(game.context.move, 1);
+    await applyInventoryObject('a', 'q');
 
     assert.equal(box.spe, 0);
-    assert.equal(corpse.oname, "Schroedinger's Cat");
+    assert.match(inventoryItemDescription(corpse), /named Schroedinger's Cat/);
     assert.ok(objectTimers(corpse).some(timer =>
         timer.kind === OBJECT_TIMER_KIND.ROT_CORPSE));
-    assert.equal(game.context.move, 1);
+    assert.equal(game.u.uexp, 20);
+    assert.equal(game.u.urexp, 90);
+    assert.equal(game.u.ulevel, 2);
+    assert.equal(game.context.move, 0);
+});
+
+test('opening a living cat box releases a peaceful cat beside the hero', async () => {
+    const box = addInventoryItem(unopenedCatBox({ invlet: 'a' }));
+    game.u.ulevel = 8;
+    initRng(4n);
+
+    await applyInventoryObject('a', 'q');
+
+    const cat = game.level.monsters.find(monster => monster.name === "Schroedinger's Cat");
+    assert.ok(cat, 'the box did not release its living cat');
+    assert.equal(cat.mpeaceful, 1);
+    assert.ok(cat.mx !== game.u.ux || cat.my !== game.u.uy);
+    assert.equal(box.contents.length, 0);
+    assert.equal(game.u.uexp, 10);
+    assert.equal(game.u.urexp, 60);
 });

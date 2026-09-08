@@ -1,4 +1,6 @@
-import { CORPSE } from '../../js/object_data.js';
+import { CORPSE, LARGE_BOX } from '../../js/object_data.js';
+import { MONSTER_NAME } from '../../js/monster_data.js';
+import { addObjectToContainer } from '../../js/object_container.js';
 import { artifactByName } from '../../js/artifacts.js';
 import { place_object } from '../../js/floor_object.js';
 import { mksobj, set_corpsenm } from '../../js/mklev.js';
@@ -83,9 +85,25 @@ export function chargedWand(otyp, { charges = 3, ...overrides } = {}) {
     });
 }
 
-export function untimedCorpse(species, overrides = {}) {
+export function corpseObject(species, overrides = {}) {
     const corpse = mksobj(CORPSE, true, false);
     set_corpsenm(corpse, species);
+    Object.assign(corpse, overrides);
+    corpse.owt = objectWeight(corpse);
+    return corpse;
+}
+
+export function untimedCorpse(species, overrides = {}) {
+    const corpse = corpseObject(species, overrides);
     stopAllObjectTimers(corpse);
-    return Object.assign(corpse, overrides);
+    return corpse;
+}
+
+export function unopenedCatBox(overrides = {}) {
+    const box = uninitializedObject(LARGE_BOX, {
+        spe: 1, cknown: false, olocked: false, otrapped: false, ...overrides,
+    });
+    addObjectToContainer(box, untimedCorpse(MONSTER_NAME.indexOf('housecat')));
+    box.owt = objectWeight(box);
+    return box;
 }

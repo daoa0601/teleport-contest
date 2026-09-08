@@ -9,10 +9,7 @@ import {
     randomDisplayMonsterName, see_monsters, unmap_invisible,
 } from './display.js';
 import { recordHeroKillConduct } from './end.js';
-import {
-    adjustLevelAbilities, awardMonsterExperience, gainExperienceLevel,
-    newExperienceThreshold,
-} from './exper.js';
+import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
 import { landFloorObject } from './floor_effects.js';
 import { game } from './gstate.js';
 import { mkobj } from './mklev.js';
@@ -395,18 +392,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
         killCount,
         amphibious: !!game.u?.amphibious,
     });
-    if ((game.u?.ulevel ?? 1) < 30
-        && (game.u?.uexp ?? 0)
-            >= newExperienceThreshold(game.u?.ulevel ?? 1)) {
-        const oldLevel = game.u.ulevel;
-        const returning = (game.u.ulevelmax ?? oldLevel) >= oldLevel + 1;
-        gainExperienceLevel({ incremental: true });
-        await plineWithContinuation(
-            `Welcome ${returning ? 'back ' : ''}to experience level ${
-                game.u.ulevel}.`,
-        );
-        await adjustLevelAbilities(oldLevel, game.u.ulevel);
-    }
+    await checkExperienceLevel();
     if (!wasInside) newsym(x, y);
     if (!wasInside && explosionDamage !== null) {
         await createPhysicalMonsterExplosion(
