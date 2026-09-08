@@ -522,7 +522,7 @@ export async function showIdentifiedInventory() {
         if (item.oclass === 13 && OBJECT_NAMES[item.otyp])
             item.name = OBJECT_NAMES[item.otyp];
         if (item.oclass === 11 && Number.isInteger(item.spe) && !item.charges)
-            item.charges = { recharged: 0, current: item.spe };
+            item.charges = { recharged: item.recharged ?? 0, current: item.spe };
         if (item.charges) item.chargesKnown = true;
     }
     game._pending_message = '';

@@ -3,25 +3,34 @@
 
 import { game } from './gstate.js';
 import { rn2, rnd } from './rng.js';
-import { mkobj, mksobj } from './mklev.js';
+import { mkobj, mksobj, rndClass } from './mklev.js';
+import { SPE_LIM } from './const.js';
+import { heroHandName } from './body_parts.js';
+import { plineWithContinuation } from './display.js';
+import { deleteObject } from './object_delete.js';
 import { nameToMonster } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { isLauncherAmmunition, isMissileObject } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { objectWeight } from './weight.js';
 import {
-    artifactByName, artifactExistCount, nameArtifact,
+    artifactByName, artifactExistCount, nameArtifact, uncreateArtifact,
 } from './artifacts.js';
 import {
     CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, LENSES, ROCK,
     GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, TALLOW_CANDLE, WAX_CANDLE,
+    ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM,
+    CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR,
+    FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP,
+    SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE,
+    TIN, TOWEL, WAN_WISHING,
     OBJECT_BASES,
     OBJECT_DESCRIPTIONS,
-    OBJECT_NAMES, OBJECT_PROB, OBJECT_MERGE,
+    OBJECT_NAMES, OBJECT_PROB, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED,
     OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
     OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
-import { armorUsesPairGrammar } from './object_grammar.js';
+import { armorUsesPairGrammar, makePlural } from './object_grammar.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -38,6 +47,7 @@ const GEM_CLASS = 13;
 const ROCK_CLASS = 14;
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
+const SCROLL_OF_MAIL = OBJECT_NAMES.indexOf('mail');
 
 const CLASS_PRESENTATION = {
     [WEAPON_CLASS]: 'Weapons',
@@ -185,10 +195,8 @@ export function parseWishText(text) {
         greased: false,
     };
 
-    const chargeMatch = remaining.match(/\s*\((-?\d+):(-?\d+)\)\s*$/);
+    const chargeMatch = remaining.match(/\s*\((?:(-?\d+):)?(-?\d+)\)\s*$/);
     if (chargeMatch) {
-        parsed.recharged = Number(chargeMatch[1]);
-        parsed.charges = Number(chargeMatch[2]);
         remaining = remaining.slice(0, chargeMatch.index).trim();
     }
 
@@ -248,6 +256,22 @@ export function parseWishText(text) {
         }
     }
 
+    if (chargeMatch) {
+        // C's parenthesized charge parser consumes digits, not minus signs.
+        // A malformed suffix clears its numbers but preserves a prefix sign.
+        const malformed = chargeMatch.slice(1).some(value => value?.startsWith('-'));
+        if (malformed) {
+            parsed.recharged = 0;
+            if (parsed.enchantment !== null) {
+                const negative = parsed.enchantment < 0 || Object.is(parsed.enchantment, -0);
+                parsed.charges = negative ? -0 : 0;
+            }
+        } else {
+            const recharge = Number(chargeMatch[1] || 0);
+            parsed.recharged = recharge > 7 ? 7 : recharge;
+            parsed.charges = Math.min(SPE_LIM, Number(chargeMatch[2]));
+        }
+    }
     const requestedName = normalizeName(remaining);
     parsed.name = singularizeObjectName(requestedName);
     if (parsed.name !== requestedName && parsed.count === 1)
@@ -353,28 +377,8 @@ function exactRealGemType(name) {
 export async function readObjectName(text, { wizardWish = false } = {}) {
     const parsed = parseWishText(text);
     normalizeGlobWish(parsed);
-    // C objnam.c:readobjnam(): an empty (or null fallback) request enters
-    // `any`, selecting one of the 13 non-specific wish class symbols before
-    // ordinary mkobj() construction.  Escape from makewish() is normalized
-    // to this empty request; it is not the same as explicitly wishing for
-    // "nothing".
-    if (!parsed.name) {
-        const wishClasses = [
-            WAND_CLASS, RING_CLASS, POTION_CLASS, SCROLL_CLASS, GEM_CLASS,
-            AMULET_CLASS, SPBOOK_CLASS, SPBOOK_CLASS, WEAPON_CLASS,
-            ARMOR_CLASS, TOOL_CLASS, FOOD_CLASS, FOOD_CLASS,
-        ];
-        const object = mkobj(wishClasses[rn2(wishClasses.length)], false);
-        return {
-            object, parsed,
-            lookupOtyp: object.otyp,
-            finalOtyp: object.otyp,
-            artifact: null,
-        };
-    }
-    if (['nothing', 'nil', 'none'].includes(parsed.name)) {
+    if (['nothing', 'nil', 'none'].includes(parsed.name))
         return { noWish: true, parsed };
-    }
     if (['gold piece', 'gold', 'money', 'coin', 'zorkmid'].includes(parsed.name)
         || parsed.name.startsWith('$')) {
         const object = mksobj(GOLD_PIECE, false, false);
@@ -386,65 +390,151 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
             finalOtyp: GOLD_PIECE, isGold: true,
         };
     }
+
     const artifact = artifactByName(parsed.name);
     let lookupOtyp;
     let object;
     let finalType = null;
-    if (artifact) {
-        lookupOtyp = artifact.baseType;
-        object = mksobj(lookupOtyp, true, false);
-        nameArtifact(object, artifact);
+    if (!parsed.name) {
+        // C's empty request selects a class and retains the generated count.
+        const wishClasses = [
+            WAND_CLASS, RING_CLASS, POTION_CLASS, SCROLL_CLASS, GEM_CLASS,
+            AMULET_CLASS, SPBOOK_CLASS, SPBOOK_CLASS, WEAPON_CLASS,
+            ARMOR_CLASS, TOOL_CLASS, FOOD_CLASS, FOOD_CLASS,
+        ];
+        parsed.count = 0;
+        object = mkobj(wishClasses[rn2(wishClasses.length)], false);
+        lookupOtyp = object.otyp;
     } else {
         const lookup = namedLookupPlan(parsed.name);
-        lookupOtyp = exactRealGemType(lookup.lookupName)
+        lookupOtyp = artifact?.baseType ?? exactRealGemType(lookup.lookupName)
             ?? rndObjectTypeByName(lookup.lookupName, 1);
         if (lookupOtyp === null) return null;
         finalType = lookup.finalType;
-        object = mksobj(lookupOtyp, true, false);
+        const type = wizardWish ? lookupOtyp : permittedWishType(lookupOtyp);
+        if (type === null) return null;
+        object = mksobj(type, true, false);
     }
+
+    await applyWishQuantity(object, parsed, wizardWish);
+    const luck = (game.u.uluck || 0) + (game.u.moreluck || 0);
+    const enchantmentSign = applyWishEnchantment(object, parsed, wizardWish, luck);
     if (finalType !== null && lookupOtyp === GENERIC_SCALE_MAIL) {
         object.otyp = finalType;
         object.oclass = objectClass(finalType);
-        object.owt = OBJECT_WEIGHT[finalType] ?? object.owt;
     }
-    await applyWishQuantity(object, parsed, wizardWish);
-    if (parsed.enchantment !== null) object.spe = parsed.enchantment;
-    if (parsed.recharged !== null) object.recharged = parsed.recharged;
-    if (parsed.charges !== null) object.spe = parsed.charges;
-    if (parsed.greased) object.greased = true;
+    applyWishBlessing(object, parsed, wizardWish, luck, enchantmentSign);
     if (erosionMatters(object)) {
+        object.oeroded = object.oeroded2 = 0;
         if (parsed.eroded !== null && objectAcceptsPrimaryErosion(object))
             object.oeroded = Math.min(3, parsed.eroded);
         if (parsed.eroded2 !== null && objectAcceptsSecondaryErosion(object))
             object.oeroded2 = Math.min(3, parsed.eroded2);
+        if (parsed.erodeproof && (objectIsDamageable(object) || object.otyp === CRYSKNIFE))
+            object.oerodeproof = luck >= 0 || wizardWish;
     }
-    if (parsed.erodeproof && erosionMatters(object)
-        && (objectIsDamageable(object) || object.otyp === CRYSKNIFE)) {
-        object.oerodeproof = true;
+    if (object.oclass === WAND_CLASS) {
+        object.recharged = object.otyp === WAN_WISHING && !wizardWish
+            ? 1 : parsed.recharged ?? 0;
     }
-    if (object.otyp === 364) object.spe = 1; // wished scroll of mail
-    if (parsed.buc === 'blessed') {
-        object.blessed = true;
-        object.cursed = false;
-    } else if (parsed.buc === 'cursed') {
-        object.blessed = false;
-        object.cursed = true;
-    } else if (parsed.buc === 'uncursed') {
-        object.blessed = false;
-        object.cursed = false;
+    if (parsed.greased) object.greased = true;
+
+    if (artifact) {
+        nameArtifact(object, artifact);
+        object.quan = 1;
+        game.u.uconduct ||= {};
+        game.u.uconduct.wisharti = (game.u.uconduct.wisharti || 0) + 1;
     }
-    // readobjnam() performs the anti-artifact-wish range probe before its
-    // caller tests wizard mode.  Even a debug wish therefore consumes this
-    // call after the artifact existence bit has been committed.
-    if (object.oartifact) rn2(Math.max(1, artifactExistCount()));
+    const deniedArtifact = object.oartifact
+        && (artifact.questArtifact || rn2(artifactExistCount()) > 1);
+    if (deniedArtifact && !wizardWish) {
+        uncreateArtifact(object);
+        deleteObject(object);
+        await plineWithContinuation(
+            `For a moment, you feel something in your ${makePlural(heroHandName())}, but it disappears!`,
+        );
+        return { noWish: true, parsed };
+    }
     object.quantity = object.quan;
     object.owt = objectWeight(object);
     return {
-        object, parsed,
-        lookupOtyp,
-        finalOtyp: object.otyp,
-        artifact,
+        object, parsed, lookupOtyp, finalOtyp: object.otyp, artifact,
     };
+}
+
+function permittedWishType(type) {
+    switch (type) {
+    case AMULET_OF_YENDOR: return FAKE_AMULET_OF_YENDOR;
+    case CANDELABRUM_OF_INVOCATION: return rndClass(TALLOW_CANDLE, WAX_CANDLE);
+    case BELL_OF_OPENING: return BELL;
+    case SPE_BOOK_OF_THE_DEAD: return SPE_BLANK_PAPER;
+    case MAGIC_LAMP: return OIL_LAMP;
+    default: return OBJECT_NOWISH[type] ? null : type;
+    }
+}
+
+function applyWishEnchantment(object, parsed, wizardWish, luck) {
+    const requested = parsed.charges ?? parsed.enchantment;
+    // A request for -0 still curses the item, as a negative C spesgn does.
+    let sign = 0;
+    if (requested !== null)
+        sign = requested < 0 || Object.is(requested, -0) ? -1 : 1;
+    let value = requested === null ? object.spe
+        : Math.min(SPE_LIM, Math.abs(requested));
+    if (requested !== null && !wizardWish) {
+        const weaponTool = object.oclass === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0;
+        const enchantable = object.oclass === ARMOR_CLASS || object.oclass === WEAPON_CLASS
+            || weaponTool || (object.oclass === RING_CLASS && OBJECT_CHARGED[object.otyp]);
+        if (enchantable) {
+            if (value > rnd(5) && value > object.spe) value = 0;
+            if (value > 2 && luck < 0) sign = -1;
+        } else {
+            const cancelable = object.oclass === WAND_CLASS || object.otyp === CRYSTAL_BALL;
+            if (sign < 0) value = Math.min(value, cancelable ? 1 : 0);
+            if (value > object.spe) value = object.spe;
+        }
+    }
+    if (sign < 0) value = -value;
+    switch (object.otyp) {
+    case TIN:
+        object.spe = 0;
+        break;
+    case TOWEL:
+    case SLIME_MOLD:
+    case SKELETON_KEY:
+    case CHEST:
+    case LARGE_BOX:
+    case HEAVY_IRON_BALL:
+    case IRON_CHAIN:
+    case STATUE:
+    case FIGURINE:
+    case CORPSE:
+        break;
+    case ACID_VENOM:
+    case BLINDING_VENOM:
+    case SCROLL_OF_MAIL:
+        object.spe = 1;
+        break;
+    case WAN_WISHING:
+        object.spe = wizardWish ? value : rn2(10) ? -1 : 0;
+        break;
+    default:
+        object.spe = value;
+    }
+    return sign;
+}
+
+function applyWishBlessing(object, parsed, wizardWish, luck, enchantmentSign) {
+    if (parsed.buc === 'cursed') {
+        object.blessed = false;
+        object.cursed = true;
+    } else if (parsed.buc === 'uncursed' || parsed.buc === 'blessed') {
+        object.blessed = parsed.buc === 'blessed' && (luck >= 0 || wizardWish);
+        object.cursed = luck < 0 && !wizardWish;
+    } else if (enchantmentSign < 0) {
+        object.blessed = false;
+        object.cursed = true;
+    }
 }
 
 // C readobjnam_postparse1(): globs accept both "glob of gray ooze" and
@@ -481,7 +571,7 @@ async function applyWishQuantity(object, parsed, wizardWish) {
         }
         return;
     }
-    if (!OBJECT_MERGE[object.otyp]) return;
+    if (count <= 0 || !OBJECT_MERGE[object.otyp]) return;
     // The random allowance is checked even when a later ammunition or
     // candle exception grants the whole request.
     const allowed = wizardWish || count < rnd(6)

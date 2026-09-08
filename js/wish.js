@@ -148,7 +148,7 @@ export async function makeWish({
 
     const clericBucKnowledge = game.urole?.key === 'priest';
     if (clericBucKnowledge) result.object.bknown = true;
-    if (result.artifact) {
+    if (result.object.oartifact) {
         const touch = await touchArtifactByHero(
             result.object, result.artifact,
         );

@@ -78,7 +78,7 @@ test('a Lua handle follows its stack when the item merges into inventory', async
 });
 
 test('adding luckstones to an existing stack changes the carried luck balance', async t => {
-    freshObjectRoom();
+    freshObjectRoom({ flags: { debug: true } });
     const core = startLuaCore(t);
     await core.executeAsync(`
         u.giveobj(obj.new("3 cursed luckstones"))

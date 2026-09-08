@@ -955,7 +955,7 @@ export function inventoryItem(raw, presentation = null) {
         enchantment: view.enchanted ? raw.spe : undefined,
         buc: view.showBuc === false || (view.omitUncursed && buc === 'uncursed')
             ? undefined : buc,
-        charges: view.charged ? { recharged: 0, current: raw.spe } : undefined,
+        charges: view.charged ? { recharged: raw.recharged ?? 0, current: raw.spe } : undefined,
         rustproof: !!view.rustproof,
     };
 }
