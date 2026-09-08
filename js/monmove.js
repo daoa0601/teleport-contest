@@ -1108,13 +1108,10 @@ export function mcalcmove(
 export function allocateMonsterMovement(
     monsters = [], random = rn2, state = game,
 ) {
-    const allocations = [];
     for (const monster of monstersInFmonOrder(monsters)) {
         const amount = mcalcmove(monster, true, random, state);
         monster.movement += amount;
-        allocations.push({ monster, amount, movement: monster.movement });
     }
-    return allocations;
 }
 
 function schedulable(monster) {
@@ -1123,41 +1120,6 @@ function schedulable(monster) {
         && monster.mx !== 0;
 }
 
-// The quiet part of mon.c:movemon(): scan in fmon order, debit one ration
-// from every eligible actor, and repeat only while an actor retained another
-// full ration. Actor behavior is deliberately left to dochug()/dog_move().
-export function scanMonsterMovement(monsters = [], options = {}) {
-    const heroMovement = options.heroMovement ?? 0;
-    const rounds = [];
-    const visits = [];
-    let somebodyCanMove;
-
-    do {
-        somebodyCanMove = false;
-        const actors = [];
-        const roundVisits = [];
-        for (const monster of monstersInFmonOrder(monsters)) {
-            initializeMonsterMovement(monster);
-            if (!schedulable(monster)) continue;
-            roundVisits.push(monster);
-            if (monster.movement < NORMAL_SPEED)
-                continue;
-            monster.movement -= NORMAL_SPEED;
-            actors.push(monster);
-            if (monster.movement >= NORMAL_SPEED) somebodyCanMove = true;
-        }
-        visits.push(roundVisits);
-        rounds.push(actors);
-        if (heroMovement >= NORMAL_SPEED) break;
-    } while (somebodyCanMove);
-
-    return {
-        rounds,
-        visits,
-        actors: rounds.flat(),
-        somebodyCanMove,
-    };
-}
 
 function dist2(x1, y1, x2, y2) {
     const dx = x1 - x2;
@@ -2002,17 +1964,7 @@ function dogGoal(monster, state, random, calls) {
     // dog_move() computes this before dog_goal() and uses it again while
     // scoring movement candidates, including when dog_goal() finds food.
     const whistletime = monster?.edog?.whistletime ?? 0;
-    const moveOffset = state?.urole?.key === 'tourist'
-            && (state?._liveQuietTurnRequested || state?._ordinaryDescentLive)
-        ? 1 : 0;
-    // The scheduler can pre-increment JS bookkeeping before executing the
-    // source movemon() pass.  Its override is the active C `svm.moves` for
-    // every role, including Wizards; dog_goal() must consume that turn for
-    // whistle age instead of the already-prepared next turn.
-    const sourceMove = Number.isInteger(state?._statusTurnOverride)
-        ? state._statusTurnOverride
-        : Math.max(0, (state?.moves ?? 1) - moveOffset);
-    const whappr = sourceMove - whistletime < 5;
+    const whappr = (state.moves ?? 1) - whistletime < 5;
     let foodGoal = null;
     let foodType = UNDEF;
     let apportGoal = null;
@@ -2396,7 +2348,7 @@ async function monsterMeleeAttack(
     // source turn before the first attack slot.  dog_move() consults this
     // stamp when deciding whether a struck defender may counterattack out of
     // sequence; even a miss therefore prevents another action this round.
-    aggressor.mlstmv = sourceMonsterTurn(state);
+    aggressor.mlstmv = state.moves ?? 1;
     let threshold = findMonsterArmorClass(defender)
         + (aggressor?.m_lev ?? MONSTER_LEVEL[aggressor?.mnum] ?? 0);
     if (defender.mconf || !defender.mcanmove || defender.msleeping) {
@@ -2564,19 +2516,11 @@ function sourceMonsterMeleeAttacks(monster) {
         .filter(attack => attack.type);
 }
 
-function sourceMonsterTurn(state) {
-    if (Number.isInteger(state?._statusTurnOverride))
-        return state._statusTurnOverride;
-    if (Number.isInteger(state?._maintenanceMove))
-        return state._maintenanceMove;
-    return state?.moves ?? 1;
-}
-
 function defenderCanAnswerPetAttack(
     aggressor, defender, state, random, calls,
 ) {
     return recordRandom(random, calls, 4) !== 0
-        && defender.mlstmv !== sourceMonsterTurn(state)
+        && defender.mlstmv !== (state.moves ?? 1)
         && !monsterIsScaredAt(
             defender, state, aggressor.mx, aggressor.my,
         )
@@ -6068,7 +6012,7 @@ export async function continueDeferredHeroAttack(
     if (previous?.passive?.attackerStopped || previous?.heroDied
         || action?.monster?.dead
         || (action?.monster?.mhp ?? 1) <= 0) return null;
-    // executeLiveQuietMonsterScan() clears its broad deferral marker after
+    // executeMonsterTurns() clears its broad deferral marker after
     // the first synchronous actor slice.  A later slot is still inside that
     // same visible mattacku() transaction, so force only this contact through
     // the deferred hit/message path and restore the caller's marker.

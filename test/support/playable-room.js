@@ -65,10 +65,8 @@ export function freshGameplayRoom({
 }
 
 export function freshTurnRoom(room = {}) {
-    freshGameplayRoom({ ...room, role: 'valkyrie' });
+    freshGameplayRoom({ role: 'valkyrie', ...room });
     game._moveloopStarted = true;
-    game._maintenanceMove = 1;
-    game._monsterMovementInitialized = true;
     game.u.umovement = 12;
     return resetInputState();
 }

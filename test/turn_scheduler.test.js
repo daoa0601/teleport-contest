@@ -26,6 +26,18 @@ import { checkMonsterGearNextTurn } from '../js/monworn.js';
 import { canSeeMonster } from '../js/display.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 
+test('a Knight with movement left can act again without advancing global time', async () => {
+    freshTurnRoom({ role: 'knight' });
+    game.u.umovement = 24;
+    const turn = game.moves;
+    pushKeys('.\x1b');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(game.moves, turn);
+});
+
 test('a monster\'s poisoned weapon weakens the hero during an ordinary turn', async () => {
     freshTurnRoom();
     const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);

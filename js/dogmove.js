@@ -196,11 +196,6 @@ function resolvedBreathAttack(attack, random) {
     return [attack[0], damageType, attack[2], attack[3]];
 }
 
-function sourceTurn(state) {
-    return state._statusTurnOverride ?? state._maintenanceMove
-        ?? state.moves ?? 1;
-}
-
 export function monsterBreathAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || []).find(
         ([attackType]) => attackType === AT_BREA,
@@ -211,7 +206,7 @@ function beginBreathAtTarget(
     monster, target, state, random,
     declaredAttack = monsterBreathAttack(monster),
 ) {
-    monster.mlstmv = sourceTurn(state);
+    monster.mlstmv = state.moves ?? 1;
     if (target === state.u)
         return { target, launched: false, attackedHero: true };
     if (!declaredAttack) return { target, launched: false };
@@ -286,7 +281,7 @@ export async function continueMonsterRangedTurn(
 export async function beginMonsterRangedTurn(
     monster, target, state, options = {},
 ) {
-    monster.mlstmv = sourceTurn(state);
+    monster.mlstmv = state.moves ?? 1;
     const turn = {
         monster,
         target,

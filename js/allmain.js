@@ -2,6 +2,7 @@
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 
 import { game } from './gstate.js';
+import { NORMAL_SPEED } from './const.js';
 import { runObjectTimer } from './timer_effects.js';
 import { tryKnockback } from './knockback.js';
 import { finishMonsterGrowth } from './monster_growth.js';
@@ -153,7 +154,7 @@ import {
     fumaroles,
     heroEveryturnEffect, runMonsterEveryturnEffects,
     runMonsterAction,
-    scanMonsterMovement,
+    monstersInFmonOrder,
     monsterDistressEvents,
 } from './monmove.js';
 import {
@@ -415,7 +416,6 @@ export function fixedCalendar(datetime) {
 export async function restoregamePreamble() {
     l_nhcore_init();
     game._moveloopStarted = true;
-    game._maintenanceMove = game.moves || 1;
 
     const race = game.urace?.adj || game.urace?.noun || 'human';
     const role = game.flags?.female && game.urole?.name?.f
@@ -558,7 +558,6 @@ async function enterTutorial() {
         showLine: plineWithContinuation,
     });
     findArmorClass(game);
-    game._maintenanceMove = game.moves || 1;
     await docrt();
     await flush_screen(1);
     return true;
@@ -1216,10 +1215,11 @@ function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
     if (Is_airlevel(game.u?.uz) || Is_waterlevel(game.u?.uz))
         moveElementalBubbles();
     else if (game.level?.flags?.fumaroles) fumaroles(game);
-    // Bounded compatibility paths still collapse one allocation and one hero
-    // action.  Source movement-ration paths own the real post-loop boundary
-    // in moveloop_core() and must not reschedule the Seer mid-action.
-    if (!usesSourceMovementRation(game)) finishHeroTookTimeRng(sourceTurn);
+    if ((game._delayedAction?.remainingGlobalTurns ?? 0) > 0) {
+        game._delayedAction.remainingGlobalTurns--;
+        if (game._delayedAction.remainingGlobalTurns === 0)
+            game._delayedAction.ready = true;
+    }
     // C allmain.c increments negative `multi` only after the complete global
     // turn (monster allocation, timeouts, sounds, hunger, and engraving wear).
     // Keep the counter here rather than in the command which caused the
@@ -1236,11 +1236,7 @@ function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
             // async moveloop owner.  Queue recovery there so an occupied
             // topline can page before unmul's message replaces it, as tty
             // pline() does in C.
-            if (doneMessage) {
-                if (usesQueuedHelplessRecovery(game))
-                    game._queuedHelplessRecoveryMessage = doneMessage;
-                else appendTurnMessage(doneMessage);
-            }
+            if (doneMessage) game._queuedHelplessRecoveryMessage = doneMessage;
             game._helplessReason = null;
             game._helplessDoneMessage = null;
         }
@@ -1483,6 +1479,7 @@ function finishInitialTurnMaintenanceAfterAutomaticSearch({
 function finishInitialTurnMaintenanceAfterRegions({
     sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
 }) {
+    if (game.u.ublesscnt > 0) game.u.ublesscnt--;
     // allmain.c:regen_hp() runs after nh_timeout().  If a timeout pline
     // suspended at tty, no regeneration or later maintenance may run until
     // that exact source stack resumes.
@@ -1596,16 +1593,13 @@ async function runLevelRegionTurn() {
     });
 }
 
-async function beginInitialTurnMaintenance(completedTurn = game.moves || 1) {
+async function beginInitialTurnMaintenance() {
     // allmain.c runs mcalcdistress() before allocating the next movement
     // ration. Regeneration, were-change checks, and temporary maladies count
     // down once per global turn, independent of the monster's own speed.
-    // C calls mcalcdistress() before incrementing svm.moves.  JS reaches this
-    // boundary with the new displayed turn already in game.moves, so monster
-    // periodic regeneration must inspect the preceding turn number.
     game.were_changes = 0;
     for await (const event of monsterDistressEvents(
-        game.level?.monsters || [], game, rn2, completedTurn - 1, plineWithContinuation,
+        game.level?.monsters || [], game, rn2, game.moves, plineWithContinuation,
     )) {
         if (event.kind === 'stationary-liquid') {
             if (game.vision_full_recalc) vision_recalc(0);
@@ -1625,21 +1619,11 @@ async function beginInitialTurnMaintenance(completedTurn = game.moves || 1) {
                 wakeMonstersNear(x, y, distance, game),
         });
     }
-    return finishInitialTurnMaintenanceAfterMonsterDistress(
-        completedTurn, true,
-    );
+    return finishInitialTurnMaintenanceAfterMonsterDistress(true);
 }
 
-function finishInitialTurnMaintenanceAfterMonsterDistress(
-    completedTurn, deferAmbientMessage,
-) {
-    const allocations = allocateMonsterMovement(
-        game.level?.monsters || [], rn2, game,
-    );
-    game._monsterMovementInitialized = true;
-    game._lastMonsterAllocations = allocations.map(({ monster, amount, movement }) => ({
-        mnum: monster.mnum, pet: !!monster.pet, amount, movement,
-    }));
+async function finishInitialTurnMaintenanceAfterMonsterDistress(deferAmbientMessage) {
+    allocateMonsterMovement(game.level?.monsters || [], rn2, game);
     // allmain.c:maybe_generate_rnd_mon().  Monster pressure increases below
     // the Castle and again after demigodhood; the denominator is topology
     // state, not a fixed scheduler constant.
@@ -1653,20 +1637,6 @@ function finishInitialTurnMaintenanceAfterMonsterDistress(
     const generationRate = game.u?.uevent?.udemigod ? 25
         : currentDepth > strongholdDepth ? 50 : 70;
     if (rn2(generationRate) === 0) generateRandomMonster();
-    // C allmain.c: ublesscnt ages once per newly allocated global turn,
-    // before prayer eligibility or enlightenment can observe it.
-    if ((game.u?.ublesscnt ?? 0) > 0) game.u.ublesscnt--;
-
-    // allmain.c advances a negative `multi` once per newly allocated global
-    // turn, not once per completed hero action.  Burden can require multiple
-    // allocations before the hero regains 12 movement points, and every one
-    // of those allocations advances an armor-donning occupation.
-    if ((game._delayedAction?.remainingGlobalTurns ?? 0) > 0) {
-        game._delayedAction.remainingGlobalTurns--;
-        if (game._delayedAction.remainingGlobalTurns === 0)
-            game._delayedAction.ready = true;
-    }
-
     const polymorphed = (game.u?.mtimedone ?? 0) > 0
         && Number.isInteger(game.u?.umonnum);
     let moveAmount = polymorphed
@@ -1694,13 +1664,17 @@ function finishInitialTurnMaintenanceAfterMonsterDistress(
     // C records the hero's current square after monster movement/allocation
     // and before the new global turn's callbacks.  Pets which lose sight of
     // the hero consult this ring on their next action.
+    addHeroMovementRation(game, moveAmount);
     setTrack(game);
+    game.moves = (game.moves || 1) + 1;
+    game._heroActionSeq = game.moves * 8;
+    await currentLuaLifecycle().callCore(game, 'moveloop_turn');
 
     // nh_timeout() precedes regeneration and exerchk() in the C loop.  Keep
     // the first timed impairment live rather than treating its setup rolls as
     // disposable: bear-trap leg damage lowers Dexterity until this countdown
     // expires.
-    const sourceTurn = completedTurn;
+    const sourceTurn = game.moves;
     if ((game.u?.mtimedone ?? 0) > 0) game.u.mtimedone--;
     if (peekNextDueObjectTimer(game, sourceTurn)) {
         if (!deferAmbientMessage) {
@@ -1966,10 +1940,9 @@ function finishInitialTurnMaintenanceAfterConfusion({
 }
 
 
-async function initialTurnMaintenanceWithTty(
-    completedTurn = game.moves || 1,
-) {
-    let phase = await beginInitialTurnMaintenance(completedTurn);
+async function advanceWorldTurn() {
+    let phase = await beginInitialTurnMaintenance();
+    const completedTurn = game.moves;
     while (phase?.deferredObjectTimer) {
         const claimed = claimNextDueObjectTimer(
             game, phase.sourceTurn,
@@ -2122,79 +2095,6 @@ async function drainQueuedHelplessRecoveryMessage() {
     }
 }
 
-function liveQuietKnight(state = game) {
-    return state.urole?.key === 'knight';
-}
-
-function liveQuietMonk(state = game) {
-    return state.urole?.key === 'monk';
-}
-
-function liveQuietRogue(state = game) {
-    return state.urole?.key === 'rogue';
-}
-
-function liveQuietHealer(state = game) {
-    return state.urole?.key === 'healer';
-}
-
-function liveQuietRanger(state = game) {
-    return state.urole?.key === 'ranger';
-}
-
-function liveQuietPriest(state = game) {
-    return state.urole?.key === 'priest';
-}
-
-function liveQuietSamurai(state = game) {
-    return state.urole?.key === 'samurai';
-}
-
-function liveQuietCaveman(state = game) {
-    return state.urole?.key === 'caveman';
-}
-
-function liveQuietValkyrie(state = game) {
-    return state.urole?.key === 'valkyrie';
-}
-
-function liveQuietTourist(state = game) {
-    return state.urole?.key === 'tourist';
-}
-
-function liveQuietWizard(state = game) {
-    return state.urole?.key === 'wizard';
-}
-
-// Archeologist and Barbarian have no role/session-specific turn owner.  They
-// share the ordinary movement-ration and fmon scan for every legal race and
-// command stream; role identity belongs to startup and mechanics, not to the
-// scheduler selection boundary.
-function liveBaseRole(state = game) {
-    return ['archeologist', 'barbarian'].includes(state.urole?.key);
-}
-
-function liveDebugSourceRation(state = game) {
-    return !!state.flags?.debug
-        && ((state.u?.ulevel ?? 1) > 1
-            || (state.u?.mtimedone ?? 0) > 0);
-}
-
-function usesSourceMovementRation(state = game) {
-    return liveBaseRole(state)
-        || liveQuietKnight(state) || liveQuietMonk(state)
-        || liveQuietRogue(state) || liveQuietHealer(state)
-        || liveQuietRanger(state)
-        || liveQuietPriest(state) || liveQuietSamurai(state)
-        || liveQuietCaveman(state) || liveQuietValkyrie(state)
-        || liveQuietTourist(state)
-        || liveQuietWizard(state)
-        || liveDebugSourceRation(state);
-}
-
-function usesQueuedHelplessRecovery(state = game) {
-    return usesSourceMovementRation(state);
-}
 
 // allmain.c:u_calc_moveamt() clamps a negative movement balance after every
 // global allocation.  Without this, a slow polymorph can carry the action
@@ -3167,14 +3067,6 @@ async function resolvePetRangedResponse(monster, target, movement) {
     return response;
 }
 
-function restoreUnvisitedMonsterMovement(monsterScan, actorIndex) {
-    for (let index = actorIndex + 1;
-        index < monsterScan.actors.length;
-        index++) {
-        const monster = monsterScan.actors[index];
-        monster.movement = (monster.movement ?? 0) + 12;
-    }
-}
 
 async function resumeTrappedMonster(action) {
     if (!action.movement?.escapingTrap) return;
@@ -3189,56 +3081,20 @@ async function resumeTrappedMonster(action) {
     }
 }
 
-async function executeLiveQuietMonsterScan(monsterScan) {
-    // Run one actor at a time so a tty --More-- inside an action suspends the
-    // source transaction before later actors or post-message RNG execute.
-    const actions = [];
-    const everyturnVisits = new Map();
-    let actorOffset = 0;
-    for (let round = 0;
-        round < (monsterScan.rounds?.length ?? 0);
-        round++) {
-        const active = monsterScan.rounds[round] || [];
-        const visits = monsterScan.visits?.[round] || active;
-        let visitOffset = 0;
-        for (const actor of active) {
-            const batch = [];
-            while (visitOffset < visits.length) {
-                const visit = visits[visitOffset++];
-                batch.push(visit);
-                if (visit === actor) break;
-            }
-            everyturnVisits.set(actorOffset, [
-                ...(everyturnVisits.get(actorOffset) || []), ...batch,
-            ]);
-            actorOffset++;
-        }
-        everyturnVisits.set(actorOffset, [
-            ...(everyturnVisits.get(actorOffset) || []),
-            ...visits.slice(visitOffset),
-        ]);
-    }
-    const runEveryturnVisits = offset => {
-        const visits = everyturnVisits.get(offset) || [];
-        runMonsterEveryturnEffects(
-            visits, game, rn2, { fmonOrdered: true },
-        );
-        everyturnVisits.delete(offset);
-    };
-    let earlierActorMessageInScan = false;
+async function executeMonsterTurns() {
+    const level = game.level;
+    let somebodyCanMove = false;
     let earlierActorPagerInScan = false;
-    for (let actorIndex = 0;
-        actorIndex < monsterScan.actors.length;
-        actorIndex++) {
-        runEveryturnVisits(actorIndex);
-        const actor = monsterScan.actors[actorIndex];
-        // C iter_mons_safe() snapshots pointers, but movemon_singlemon()
-        // rechecks DEADMONSTER and mon_offmap when each saved identity is
-        // reached.  An earlier pet action can kill and unlink a later actor
-        // without invalidating the snapshot; that stale identity must not
-        // receive movement, fleeing, or distfleeck RNG.
-        if (!game.level?.monsters?.includes(actor)
-            || (actor.mhp ?? 1) <= 0 || actor.mx === 0) continue;
+    // C iter_mons_safe() snapshots identities, not their remaining movement.
+    for (const actor of monstersInFmonOrder(level.monsters)) {
+        if (game.level !== level || game.u.utotype || game.program_state?.gameover)
+            return false;
+        if (!level.monsters.includes(actor) || (actor.mhp ?? 1) <= 0 || actor.mx === 0)
+            continue;
+        runMonsterEveryturnEffects([actor], game, rn2, { fmonOrdered: true });
+        if (actor.movement < NORMAL_SPEED) continue;
+        actor.movement -= NORMAL_SPEED;
+        if (actor.movement >= NORMAL_SPEED) somebodyCanMove = true;
         const actorWasSeen = canProjectMonster(actor, actor.mx, actor.my);
         const actorWasCouldSee = couldsee(actor.mx, actor.my);
         const actorOldDistance = dist2(
@@ -3249,10 +3105,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             announce: plineWithContinuation,
             finishDeath: finishMonsterLiquidDeath,
         });
-        if (liquid?.dead) {
-            actions.push({ monster: actor, calls: [], movement: liquid });
-            continue;
-        }
+        if (liquid?.dead) continue;
         // C monmove.c:dochug() clears STRAT_WAITFORU when the quest leader
         // can see the adjacent hero, but STRAT_CLOSE remains a wait-mask bit.
         // That sends the actor through quest_talk() without ordinary movement
@@ -3266,16 +3119,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 actor.mstrategy &= ~STRAT_WAITFORU;
             if (actor.mcanmove !== 0 && !actor.msleeping && adjacent
                 && ((actor.mstrategy ?? 0) & STRAT_CLOSE)) {
-                const action = {
-                    monster: actor,
-                    calls: [],
-                    movement: {
-                        oldx: actor.mx, oldy: actor.my,
-                        x: actor.mx, y: actor.my,
-                        moved: false, questTalk: true,
-                    },
-                };
-                actions.push(action);
                 await chatWithQuestLeader(actor, {
                     exerciseWisdom: () => exerciseAttribute(A_WIS, true),
                 });
@@ -3325,7 +3168,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         // still contains the pre-rebuild destination answer.
         const didSeeOpenedDoor = !!(movement?.openedDoor
             && cansee(monster.mx, monster.my));
-        actions.push(action);
         if (movement?.deferredTenguRelocation) {
             newsym(movement.oldx, movement.oldy);
             newsym(movement.x, movement.y);
@@ -3797,7 +3639,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
             resumeDeferredMonsterMagicMissileWand(action, game);
             await resolveMonsterMagicMissileBeam(action);
             monster.mwandexp = true;
-            earlierActorMessageInScan = true;
             movement = action.movement;
         }
         if (movement?.offensiveWand?.kind === 'offensive-wand-striking') {
@@ -3883,7 +3724,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 recordObjectKnowledge(effect.object.otyp);
             }
             monster.mwandexp = true;
-            earlierActorMessageInScan = true;
             movement = action.movement;
         }
         if (movement?.attack?.kind === 'hero-attack') {
@@ -4108,7 +3948,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                 const contactDismissal = heroAttack.deferredEngulf
                     ? await waitForMonsterMore(message)
                     : message ? await plineWithContinuation(message) : undefined;
-                if (message) earlierActorMessageInScan = true;
                 if (contactDismissal !== null
                     && contactDismissal !== undefined) {
                     actorContactPagerOwned = true;
@@ -4319,12 +4158,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         publish: publishContactMessage,
                         die: async options => {
                             await waitForCurrentMonsterMore();
-                            return finishHeroDeath({
-                                ...options,
-                                beforeFinalDeath: () => restoreUnvisitedMonsterMovement(
-                                    monsterScan, actorIndex,
-                                ),
-                            });
+                            return finishHeroDeath(options);
                         },
                     };
                     await resumeDeferredHeroContact(
@@ -4706,14 +4540,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                                     spit.blindMessage,
                                 );
                             }
-                            const died = await finishHeroSpitHit(
-                                spit, game, {
-                                    beforeFinalDeath: () =>
-                                        restoreUnvisitedMonsterMovement(
-                                            monsterScan, actorIndex,
-                                        ),
-                                },
-                            );
+                            const died = await finishHeroSpitHit(spit, game);
                             if (died) {
                                 game.context.move = 0;
                                 return;
@@ -5046,9 +4873,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                             await waitForCurrentMonsterMore();
                             return finishHeroDeath(options);
                         },
-                        beforeFinalDeath: () => restoreUnvisitedMonsterMovement(
-                            monsterScan, actorIndex,
-                        ),
                     });
                     if (result.died) {
                         game.context.move = 0;
@@ -5488,7 +5312,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
         }
         if (!movement?.moved) continue;
     }
-    runEveryturnVisits(monsterScan.actors.length);
     delete game._statusAcOverride;
     // Erosion mutates worn armor during movemon(), but C does not run
     // find_ac() until the actor scan has finished.  Only after that boundary
@@ -5497,29 +5320,17 @@ async function executeLiveQuietMonsterScan(monsterScan) {
     if (game._armorClassDirty
         && !game._armorClassDirtyAfterDelayedFrame)
         game._statusProjectedAc = projectedArmorClass(game);
-    return actions;
+    return game.level === level && somebodyCanMove;
 }
 
-// C increments `moves` after movemon(). The internal counter advances earlier,
-// so status messages during the monster scan must display the source turn.
-async function executeSourceTurnMonsterScan(monsterScan) {
-    const previousStatusTurn = game._statusTurnOverride;
-    const context = game.context || (game.context = {});
-    const previousMonsterMoving = !!context.mon_moving;
-    const sourceTurn = game._maintenanceMove;
-    if (Number.isInteger(sourceTurn) && sourceTurn !== game.moves)
-        game._statusTurnOverride = sourceTurn;
-    context.mon_moving = true;
+async function moveMonsters() {
+    const previousMonsterMoving = game.context.mon_moving;
+    game.context.mon_moving = true;
     try {
-        return await executeLiveQuietMonsterScan(monsterScan);
+        return await executeMonsterTurns();
     } finally {
-        context.mon_moving = previousMonsterMoving;
-        game._statusTurnOverride = previousStatusTurn;
+        game.context.mon_moving = previousMonsterMoving;
     }
-}
-
-function monsterScanHasVisits(monsterScan) {
-    return !!monsterScan?.visits?.some(visits => visits.length);
 }
 
 // C ref: allmain.c newgame()
@@ -5559,8 +5370,6 @@ export async function newgame() {
     // to the hero rather than next to the level-generation origin.
     u_on_upstairs();
 
-    if (g.urole?.key === 'samurai')
-        g._samuraiLiveScheduler = true;
     makedog();
     uInitInventoryAttrs();
     // Initial display
@@ -5591,7 +5400,6 @@ export async function newgame() {
     // finished; the first time-taking command owns the first movemon and
     // maintenance pass.  Compatibility paths historically hid this by
     // skipping the generic maintenance block altogether.
-    g._maintenanceMove = g.moves || 1;
 
     // allmain.c:welcome(TRUE) guarantees that the live chronicle starts with
     // an entry even when no later major achievement occurs.
@@ -5640,94 +5448,22 @@ export async function moveloop_core() {
         g._capacityDirty = false;
     }
 
-    // C allmain.c keeps cycling movemon/global turns until the hero has a
-    // complete movement ration.  This is observable once wounded legs make
-    // the Knight Burdened: a 12-point action is replenished by only 9 points,
-    // so some commands need a second monster/global round before input.
-    const livePrayerTurn = (g._prayerTurnsRemaining || 0) > 0
-        && (g.urole?.key === 'wizard' || liveQuietKnight(g));
-    if ((usesSourceMovementRation(g) && !liveQuietKnight(g))
-        && g._heroTimePending) {
-        const consumeInterruptedMultiAction = () => {
-            if (!g._interruptedMultiActionDebt
-                || (g.u.umovement ?? 0) < 12) return false;
-            // C re-enters moveloop_core() with context.move still set after
-            // nomul(0), debiting one action before it can read a new key.
-            g._interruptedMultiActionDebt = false;
-            g.u.umovement -= 12;
-            return true;
-        };
+    if (g._heroTimePending) {
         for (;;) {
-            const monsterScan = scanMonsterMovement(
-                g.level?.monsters || [],
-                { heroMovement: g.u.umovement ?? 0, state: g },
-            );
-            g._lastMonsterScan = monsterScan.rounds.map(round => round.map(
-                monster => ({
-                    mnum: monster.mnum, pet: !!monster.pet,
-                    movement: monster.movement,
-                }),
-            ));
-            if (monsterScanHasVisits(monsterScan)) {
-                await executeSourceTurnMonsterScan(monsterScan);
-                // C done()/really_done() is noreturn.  The JavaScript
-                // endgame presenter returns after drawing the score list, so
-                // model that source control-flow edge explicitly before this
-                // scheduler can allocate another global turn.
+            const somebodyCanMove = await moveMonsters();
+            if (g.program_state?.gameover) return;
+            if (!somebodyCanMove && g.u.umovement < NORMAL_SPEED) {
+                await advanceWorldTurn();
                 if (g.program_state?.gameover) return;
             }
-            // allmain.c checks this immediately after each movemon() pass.
-            // Intrinsic Fast can leave a complete hero ration, in which case
-            // no new global turn or movement allocation occurs.
-            if ((g.u.umovement ?? 0) >= 12) {
-                if (consumeInterruptedMultiAction()) continue;
-                break;
-            }
-
-            // With less than a full hero ration, scanMonsterMovement() has
-            // exhausted every monster which could move in this round.  Only
-            // then does C allocate the next global turn to monsters and hero.
-            if (monsterScan?.somebodyCanMove) continue;
-            g.moves = (g.moves || 1) + 1;
-            // This is now the source turn whose freshly allocated movement
-            // will be scanned.  A later monster-owned tty pager must expose
-            // that turn, not the turn on which the hero spent the action.
-            g._maintenanceMove = g.moves;
-            addHeroMovementRation(
-                g, await initialTurnMaintenanceWithTty(),
-            );
-            if (g.u.umovement >= 12) {
-                if (consumeInterruptedMultiAction()) continue;
-                break;
-            }
+            if (g.u.umovement < NORMAL_SPEED) continue;
+            if (!g._interruptedMultiActionDebt) break;
+            g._interruptedMultiActionDebt = false;
+            g.u.umovement -= NORMAL_SPEED;
         }
         g._heroTimePending = false;
-        g._maintenanceMove = g.moves || 1;
+        g._heroActionSeq = (g._heroActionSeq ?? 0) + 1;
         if (!g.program_state?.gameover)
-            finishOrDeferHeroTookTimeRng(g.moves || 1);
-    }
-    if ((liveQuietKnight(g) || livePrayerTurn) && g._heroTimePending) {
-        do {
-            const monsterScan = scanMonsterMovement(
-                g.level?.monsters || [], { state: g },
-            );
-            g._lastMonsterScan = monsterScan.rounds.map(round => round.map(monster => ({
-                    mnum: monster.mnum, pet: !!monster.pet,
-                    movement: monster.movement,
-            })));
-            if (monsterScanHasVisits(monsterScan)) {
-                await executeSourceTurnMonsterScan(monsterScan);
-                if (g.program_state?.gameover) return;
-            }
-            g.moves = (g.moves || 1) + 1;
-            g._maintenanceMove = g.moves;
-            addHeroMovementRation(
-                g, await initialTurnMaintenanceWithTty(),
-            );
-        } while (g.u.umovement < 12);
-        g._heroTimePending = false;
-        g._maintenanceMove = g.moves || 1;
-        if (usesSourceMovementRation(g) && !g.program_state?.gameover)
             finishOrDeferHeroTookTimeRng(g.moves || 1);
     }
 
@@ -5761,82 +5497,7 @@ export async function moveloop_core() {
         delete g._statusProjectedAc;
     }
 
-    // C's turn maintenance runs once per elapsed turn.  Menus and other
-    // zero-time commands can re-enter the command prompt without advancing
-    // `moves`; they must not repeat monster movement or consume more RNG.
-    if (g._maintenanceMove !== (g.moves || 1)) {
-        // Every legal role shares one source-owned actor/global maintenance
-        // boundary.  Role identity may change mechanics inside that boundary,
-        // but it does not select a recorded turn transcript.
-        const liveQuietRole = usesSourceMovementRation(g);
-        let monsterScan = null;
-        if (g._monsterMovementInitialized || liveQuietRole) {
-            monsterScan = scanMonsterMovement(
-                g.level?.monsters || [], { state: g },
-            );
-            g._lastMonsterScan = monsterScan.rounds.map(round => round.map(monster => ({
-                mnum: monster.mnum, pet: !!monster.pet,
-                movement: monster.movement,
-            })));
-        }
-        const hasMonsterVisits = monsterScanHasVisits(monsterScan);
-        // bca6ac9 moved stateful first-round effects out of speculative
-        // planning so active actors could interleave them in live fmon order.
-        // A scan with no full-ration actor still visits every identity in C;
-        // run only that inactive tail here without promoting the scan into a
-        // live-role maintenance transaction or executing any actor action.
-        if (!g._tutorialActive
-            && !monsterScan?.actors?.length && hasMonsterVisits) {
-            await executeSourceTurnMonsterScan(monsterScan);
-        }
-        if (liveQuietRole && !g._tutorialActive
-            && (monsterScan?.actors?.length || g._ordinaryDescentLive
-                || (g.flags?.debug && (g.u?.ulevel ?? 1) > 1))) {
-            if (monsterScan?.actors?.length)
-                await executeSourceTurnMonsterScan(monsterScan);
-            if (!g.program_state?.gameover) {
-                // dosounds() is inside the global-turn transaction and its
-                // pline can overflow an attack topline.  Keep the live-role
-                // path on the same awaited tty boundary as the source-ration
-                // loop so hunger and later maintenance resume only after the
-                // ambient line's acknowledgement.
-                await initialTurnMaintenanceWithTty();
-            }
-            g._liveQuietTurnConsumed = true;
-            // C done() does not return to moveloop_core().  Preserve the
-            // terminal score projection instead of letting the ordinary
-            // bot()/flush_screen() tail repaint the live dungeon over it.
-            if (g.program_state?.gameover) return;
-        } else if (g._tutorialActive) {
-            // tut-1's three actors are created with STRAT_WAITFORU.  They
-            // receive ordinary movement allocations every global turn but
-            // do not act while the hero traverses the instructional rooms.
-            await initialTurnMaintenanceWithTty();
-        } else {
-            // A turn with no full-ration actor still executes ordinary global
-            // maintenance, including recovery from negative multi.
-            await initialTurnMaintenanceWithTty();
-        }
-        g._maintenanceMove = g.moves || 1;
-        if (!g.program_state?.gameover) {
-            await settleHeroLiquidAfterAction();
-            if (g.program_state?.gameover) return;
-        }
-    }
-
-    // A generic live-role actor scan is reached from the maintenance block
-    // below the early source-ration checkpoint above.  Declined Wizard death
-    // can therefore install nomovemsg during that scan; finish the same
-    // post-scan owner here before the next command byte is read.
-    await finishDeathSurvivalMessage(g);
-
-    if (g._liveQuietTurnRequested
-        && g._maintenanceMove === (g.moves || 1)) {
-        g._liveQuietTurnRequested = false;
-    }
-
-    if ((g._prayerTurnsRemaining || 0) > 0
-        && g._maintenanceMove === (g.moves || 1)) {
+    if ((g._prayerTurnsRemaining || 0) > 0) {
         const prayerTurn = g.moves || 1;
         // C advances negative multi only in the newly allocated global-turn
         // block.  A Fast hero can retain another full action in that same
@@ -5869,8 +5530,7 @@ export async function moveloop_core() {
     // global maintenance round, then invokes do_wear.c's afternmv callback.
     // Keep this separate from counted occupations: no extra hero action is
     // taken when the delayed armor effect and nomovemsg are committed.
-    if (g._delayedAction?.ready
-        && g._maintenanceMove === (g.moves || 1)) {
+    if (g._delayedAction?.ready) {
         const delayed = g._delayedAction;
         if (delayed.kind === 'wear') {
             delayed.object.known = true;
@@ -5912,22 +5572,12 @@ export async function moveloop_core() {
             await finishArmorRemoval(delayed.object, { silent: true });
         }
         g._delayedAction = null;
-    } else if (g._delayedAction
-        && g._maintenanceMove === (g.moves || 1)) {
-        // A negative source `multi` skips rhack() but consumes another hero
-        // action. Source-ration roles preserve movement overage so Burdened
-        // allocations produce the same alternating one-/two-global-turn
-        // topology. Legacy/non-ration roles request their next global
-        // maintenance pass by advancing `moves`; subtracting movement there
-        // has no matching `_heroTimePending` consumer and would stall multi.
+    } else if (g._delayedAction) {
+        // A delayed action spends movement without reading another command.
         g.u.umoved = false;
         g.context.move = 1;
-        if (usesSourceMovementRation(g)) {
-            g.u.umovement = (g.u.umovement ?? 12) - 12;
-            g._heroTimePending = true;
-        } else {
-            g.moves = (g.moves || 1) + 1;
-        }
+        g.u.umovement = (g.u.umovement ?? 12) - 12;
+        g._heroTimePending = true;
         return;
     }
 
@@ -5987,12 +5637,8 @@ export async function moveloop_core() {
     if ((g._helplessTurns || 0) > 0) {
         g.u.umoved = false;
         g.context.move = 1;
-        if (usesSourceMovementRation(g)) {
-            g.u.umovement = (g.u.umovement ?? 12) - 12;
-            g._heroTimePending = true;
-        } else {
-            g.moves = (g.moves || 1) + 1;
-        }
+        g.u.umovement = (g.u.umovement ?? 12) - 12;
+        g._heroTimePending = true;
         await currentLuaLifecycle().runCallbacks(g, 'end_turn');
         return;
     }
@@ -6004,12 +5650,8 @@ export async function moveloop_core() {
         g.u.umoved = false;
         const acted = await continueCountedCommand(g);
         if (acted && g.context?.move) {
-            if (usesSourceMovementRation(g)) {
-                g.u.umovement = (g.u.umovement ?? 12) - 12;
-                g._heroTimePending = true;
-            } else {
-                g.moves = (g.moves || 1) + 1;
-            }
+            g.u.umovement = (g.u.umovement ?? 12) - 12;
+            g._heroTimePending = true;
         }
         const countedMultiActive = (g._occupation?.key === 's'
             || g._occupation?.key === '.')
@@ -6026,12 +5668,8 @@ export async function moveloop_core() {
         g.u.umoved = false;
         const moved = await continueRun(g);
         if (moved) {
-            if (usesSourceMovementRation(g)) {
-                g.u.umovement = (g.u.umovement ?? 12) - 12;
-                g._heroTimePending = true;
-            } else {
-                g.moves = (g.moves || 1) + 1;
-            }
+            g.u.umovement = (g.u.umovement ?? 12) - 12;
+            g._heroTimePending = true;
         }
         if (moved) await currentLuaLifecycle().runCallbacks(g, 'end_turn');
         return;
@@ -6048,17 +5686,8 @@ export async function moveloop_core() {
 
     // Advance turn
     if (g.context?.move) {
-        // C allmain.c increments hero_seq once for every time-taking hero
-        // action.  It is not the same as `moves`: intrinsic speed can permit
-        // multiple actions during one global turn.  Stethoscope's one-free-
-        // use rule observes this finer sequence boundary.
-        g._heroActionSeq = (g._heroActionSeq ?? 0) + 1;
-        if (usesSourceMovementRation(g)) {
-            g.u.umovement = (g.u.umovement ?? 12) - 12;
-            g._heroTimePending = true;
-        } else {
-            g.moves = (g.moves || 1) + 1;
-        }
+        g.u.umovement = (g.u.umovement ?? 12) - 12;
+        g._heroTimePending = true;
     }
     if (!g.program_state?.gameover)
         await currentLuaLifecycle().runCallbacks(g, 'end_turn');

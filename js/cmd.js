@@ -1477,7 +1477,6 @@ async function doquaff() {
     }
     consumeInventoryItem(potion);
     game._capacityDirty = true;
-    game._liveQuietTurnRequested = true;
     game.context.move = 1;
 }
 
@@ -5681,7 +5680,6 @@ async function putOnAccessoryObject(object) {
 
     if (isEyewear(object)) {
         const worn = await wearEyewear(object);
-        if (worn) game._liveQuietTurnRequested = true;
         game.context.move = worn ? 1 : 0;
         return;
     }
@@ -5873,7 +5871,6 @@ async function removeWornItem(action) {
     if (object === game.ublindf) {
         game._pending_message = '';
         const removed = await removeEyewear(object);
-        if (removed) game._liveQuietTurnRequested = true;
         game.context.move = removed ? 1 : 0;
         return;
     }
@@ -6872,8 +6869,7 @@ async function doapply(cannedInvlet = null) {
             }
             if ([BLINDFOLD, LENSES].includes(item.otyp)) {
                 game._pending_message = '';
-                const changed = await applyEyewear(item);
-                if (changed) game._liveQuietTurnRequested = true;
+                await applyEyewear(item);
                 game.context.move = 1;
                 return;
             }

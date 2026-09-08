@@ -159,7 +159,6 @@ export async function gotoLevel(targetDepth, {
     // Each level saves the hero's trail. Bones loading already restores it;
     // otherwise use the cached trail or start an empty one.
     if (!game._restoredBones) restoreCachedHeroTrack(cached);
-    game._ordinaryDescentLive = true;
     game._tutorialActive = Number.isInteger(tutorialDnum)
         && destinationDepth.dnum === tutorialDnum;
     game.context.move = 0;
@@ -191,10 +190,6 @@ export async function gotoLevel(targetDepth, {
             '',
         ];
         const familiarMessage = familiarMessages[rn2(4)];
-        // getlev() has made awake restored monsters ready for the first
-        // new-hero movement cycle. The newly arriving companion retains its
-        // own movement balance and joins after that initial actor scan.
-        game._monsterMovementInitialized = true;
         if (postMessage) {
             await pline(postMessage);
             await flushPendingTopline();

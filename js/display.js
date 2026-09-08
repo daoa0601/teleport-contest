@@ -1510,7 +1510,7 @@ export function _statusLine2() {
         if (game.flags?.showexp) line += `/${u.uexp || 0}`;
     }
     if (game.flags?.time)
-        line += ` T:${game._statusTurnOverride ?? game.moves ?? 1}`;
+        line += ` T:${game.moves ?? 1}`;
     if (u.usteed) line += ' Ride';
     const hunger = u.uhunger ?? 900;
     if (hunger > 1000) line += ' Satiated';

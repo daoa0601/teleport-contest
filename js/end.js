@@ -278,11 +278,6 @@ function overviewLines(killer, deathVerb = 'killed', deathCause = null) {
     return lines;
 }
 
-function sourceMove() {
-    return game._statusTurnOverride ?? game._maintenanceMove
-        ?? game.moves ?? 1;
-}
-
 // C ref: dungeon.c:deepest_lev_reached(FALSE).  The JS cache is the
 // persistent record of visited floors; project every dungeon-local cache key
 // through depth() before comparing it with the current floor.
@@ -308,7 +303,7 @@ function deathSummaryValues() {
         depthBonus += 1000 * (deepest > 30 ? 10 : deepest - 20);
     const score = (game.u?.urexp || 0) + gain - Math.trunc(gain / 10)
         + depthBonus;
-    return { gold, score, depth: currentDepth, moves: sourceMove() };
+    return { gold, score, depth: currentDepth, moves: game.moves ?? 1 };
 }
 
 function terminalLine(row, col, value, attr = 0) {

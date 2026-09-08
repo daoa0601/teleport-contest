@@ -10,7 +10,7 @@ const persistentNames = `
     _fobjSerial _genocidedMonsters _helplessAfter _helplessDoneMessage _helplessReason
     _helplessRunmodeDelayPending _helplessTurns _heroActionSeq _heroTrack _initialGoldCount _initialPwBonus _kickedLoc
     _knownObjectTypes _lastBoulderPushMove _lastDemigodAggravation _lastDemigodNasty _lastInvNr _lastPushedBoulder _lastRandomMonsterGeneration
-    _last_message _levelAnnotations _levelCache _lifeSavedCount _maintenanceMove _monsterMovementInitialized
+    _last_message _levelAnnotations _levelCache _lifeSavedCount
     _monsterNoiseTime _moveloopStarted _nextAttribCheck _nextIdent _nextObjectTimerId _objectCallNames
     _objectDiscoveryOrder _objectPriceQuotes _optionsInitialized _overviewRecords _prayerAlignment _prayerCompletionMessage _prayerDeity
     _prayerForced _prayerLastTickMove _prayerOpeningMessage _prayerTurnsRemaining _preserveLeadingStyledBlanks _prevDecorType _priestPantheonIndex
@@ -38,11 +38,11 @@ const persistentNames = `
 
 const transientNames = `
     _armorClassDirtyAfterDelayedFrame _cannedCommands _capacityDirty _cursorOverride _deathSurvivalHeroTookTimePending _deathSurvivalRunmodeDelayPending _deathSurvivedMessagePending
-    _deferVisibleMonsterContact _delayedAction _heroMeleeThisCommand _heroTimePending _interruptedMultiActionDebt _lastMonsterAllocations
-    _lastMonsterScan _liveQuietTurnConsumed _liveQuietTurnRequested _luaObjectRefs _mapFlushPaused _migratingMonsters _multi _occupation _ordinaryDescentLive
+    _deferVisibleMonsterContact _delayedAction _heroMeleeThisCommand _heroTimePending _interruptedMultiActionDebt
+    _luaObjectRefs _mapFlushPaused _migratingMonsters _multi _occupation
     _pendingAngryGodOutcome _pendingDemigodIntervention _pendingFireRayDamage _pendingOffensivePotionEffect _pending_message _prayerHeroTookTimePending
-    _queuedHelplessRecoveryMessage _retained_message _runState _samuraiLiveScheduler _saveExitPending _screen_output _silentPrefixRetainedTopline
-    _statusAcOverride _statusDeafOverride _statusGoldOverride _statusHpOverride _statusProjectedAc _statusTurnOverride _suppressMapStatusForFlush
+    _queuedHelplessRecoveryMessage _retained_message _runState _saveExitPending _screen_output _silentPrefixRetainedTopline
+    _statusAcOverride _statusDeafOverride _statusGoldOverride _statusHpOverride _statusProjectedAc _suppressMapStatusForFlush
     _suppressMessagesUntilInput _thrownObject _travelTarget _tutorialState _vaultGuardArrivalPending _vaultHeroTookTimePending _vaultMaintenanceContinuation _viz_rmax
     _viz_rmin active_buf animationFrame coreCtx cs_left cs_right cs_rows
     currentSeed datetime displayCtx fmon getScreens mockStorage n_rects

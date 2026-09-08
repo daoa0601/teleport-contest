@@ -626,8 +626,7 @@ function finalAttributePages() {
         .map(([key, name]) => `${name} (${key})`);
     const dungeonName = (game.dungeons?.[u.uz?.dnum || 0]?.dname
         || 'The Dungeons of Doom').replace(/^The\b/, 'the');
-    const sourceTurn = game._statusTurnOverride ?? game._maintenanceMove
-        ?? game.moves ?? 1;
+    const sourceTurn = game.moves ?? 1;
     const stats = u.acurr?.a || [];
     const hour = Number(String(game.datetime || '').slice(8, 10));
     const nighttime = Number.isFinite(hour) && (hour < 6 || hour >= 22);

@@ -7,6 +7,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { mklev } from '../js/mklev.js';
+import { TIN_WHISTLE } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { levelStairs } from './support/level-state.js';
 import { startLuaCore } from './support/lua-game.js';
@@ -89,6 +90,29 @@ test('Lua end-turn callbacks run after a command that does not use game time', a
 
     assert.equal(game.moves, turn);
     assert.match(game._pending_message, /You survey your surroundings/);
+});
+
+test('a Lua world-turn hook grants an item only when global time advances', async t => {
+    freshTurnRoom();
+    game.u.umovement = 24;
+    const core = startLuaCore(t);
+    core.execute(`
+        function nhcore.moveloop_turn()
+            u.giveobj(obj.new("tin whistle"))
+        end
+    `);
+    pushKeys('.\x1b');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(game.inventory.some(object => object.otyp === TIN_WHISTLE), false);
+    pushKeys('.\x1b');
+    await moveloop_core();
+    await moveloop_core();
+
+    const whistles = game.inventory.filter(object => object.otyp === TIN_WHISTLE);
+    assert.equal(whistles.length, 1);
 });
 
 test('Lua can forbid an extended command before it spends a turn', async t => {

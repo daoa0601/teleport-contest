@@ -541,7 +541,6 @@ async function readTeleportationScroll(scroll, { gotoLevel } = {}) {
                 postMessage: 'You materialize on a different level!',
             },
         );
-        game._liveQuietTurnRequested = true;
         game.context.move = 1;
         return;
     }
