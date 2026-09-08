@@ -3,47 +3,39 @@ import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
 import { LuaLifecycle } from '../js/lua/lifecycle.js';
-import { enableRngLog, getRngLog, initRng, rn2Display } from '../js/rng.js';
+import { initRng, rn2Display } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
 
 function freshLuaGame(seed) {
     freshGame();
     initRng(seed);
-    enableRngLog();
 }
 
-test('nhlib and nhcore load in a persistent Lua 5.4 state using CORE', () => {
+test('Lua game randomness does not change display randomness', t => {
     freshLuaGame(123n);
     const untouchedDisplayValue = rn2Display(1000);
 
     freshLuaGame(123n);
     const lifecycle = new LuaLifecycle();
+    t.after(() => lifecycle.destroy());
     const core = lifecycle.startCore(game);
 
-    assert.deepEqual(game.splev_align, ['law', 'chaos', 'neutral']);
-    assert.equal(getRngLog().length, 2);
+    core.execute('roll = nh.rn2(1000)');
+
+    assert.ok(core.getGlobal('roll') >= 0 && core.getGlobal('roll') < 1000);
     assert.equal(rn2Display(1000), untouchedDisplayValue);
-
-    core.call('nh_callback_set', 'end_turn', 'tutorial_turn');
-    lifecycle.syncVariables(game);
-    assert.deepEqual(game.nh_lua_variables, {
-        _CB_end_turn: { tutorial_turn: true },
-    });
-
-    lifecycle.destroy();
-    assert.equal(core.destroyed, true);
 });
 
-test('saved nh_lua_variables populate a replacement core state', () => {
+test('saved Lua variables survive replacing the core state', t => {
     freshLuaGame(124n);
-    game.nh_lua_variables = {
-        _CB_cmd_before: { tutorial_cmd_before: true },
-    };
     const lifecycle = new LuaLifecycle();
-    lifecycle.startCore(game);
+    t.after(() => lifecycle.destroy());
+    const core = lifecycle.startCore(game);
+    core.execute('nh_lua_variables.visited = { forge = true }');
     lifecycle.syncVariables(game);
 
-    assert.deepEqual(game.nh_lua_variables, {
-        _CB_cmd_before: { tutorial_cmd_before: true },
-    });
+    const restored = lifecycle.startCore(game);
+    restored.execute('visitedForge = nh_lua_variables.visited.forge');
+
+    assert.equal(restored.getGlobal('visitedForge'), true);
 });

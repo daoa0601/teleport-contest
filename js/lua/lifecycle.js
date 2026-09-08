@@ -4,8 +4,9 @@ import { depth } from '../hacklib.js';
 import { commandKeyDescription } from '../command_keys.js';
 import { parseNethackrc } from '../options.js';
 import { rn2 } from '../rng.js';
+import { luaPline, luaText } from './messages.js';
 import {
-    LuaState, luaTableToArray, luaTableToObject, luaValueToJs,
+    LuaState, LuaTable, luaType, luaTableToArray, luaTableToObject, luaValueToJs,
     objectToLuaTable,
 } from './runtime.js';
 
@@ -33,8 +34,8 @@ function bindingsFor(gameState, additionalBindings = {}) {
             random: (start, range) => Number(start) + rn2(range),
             callback: () => null,
             gamestate: () => null,
-            pline: () => null,
-            text: () => null,
+            pline: luaPline,
+            text: luaText,
             eckey: command => commandKeyDescription(
                 command, gameState.commandBindings,
             ),
@@ -59,6 +60,7 @@ export class LuaLifecycle {
     constructor() {
         this.core = null;
         this.themed = new Map();
+        this.unavailableHooks = new Set();
     }
 
     createState(gameState, bindings = {}) {
@@ -69,6 +71,7 @@ export class LuaLifecycle {
 
     startCore(gameState) {
         this.core?.destroy();
+        this.unavailableHooks.clear();
         const savedVariables = gameState.nh_lua_variables || null;
         this.core = this.createState(gameState);
         this.core.execute(LUA_SOURCES['nhcore.lua'], 'nhcore.lua');
@@ -82,6 +85,25 @@ export class LuaLifecycle {
         );
         this.syncVariables(gameState);
         return this.core;
+    }
+
+    // C l_nhcore_call() stops trying a hook after finding it undefined.
+    async callCore(gameState, name) {
+        if (!this.core || this.unavailableHooks.has(name)) return;
+        const hooks = this.core.getGlobal('nhcore');
+        if (!(hooks instanceof LuaTable)) {
+            this.core.destroy();
+            this.core = null;
+            return;
+        }
+        const hook = hooks.get(name);
+        if (luaType(hook) !== 'function') {
+            this.unavailableHooks.add(name);
+            return;
+        }
+        this.refreshUser(this.core, gameState);
+        await this.core.callValueAsync(hook, []);
+        this.syncVariables(gameState);
     }
 
     createSpecialState(gameState, bindings = {}) {

@@ -172,18 +172,20 @@ export async function showDisclosureOverlay(lines, {
  * NHW_MENU/PICK_NONE window in C.  With tty menu_overlay enabled, sparse menu
  * rows are painted over the live map at the computed corner offset.
  */
-export async function showTextMenuOverlay(lines, { validKeys = null } = {}) {
+export async function showTextMenuOverlay(lines) {
     const d = display();
     if (!d) return 27;
 
-    const rows = [...lines, '(end)'].map(line => typeof line === 'string'
+    const rows = lines.map(line => typeof line === 'string'
         ? { text: line, attr: ATR_NONE }
         : { text: line.text || '', attr: line.attr || ATR_NONE });
-    const widest = Math.max(...rows.map(row => row.text.length));
+    const pageSize = d.rows - 1;
+    const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+    const widest = Math.max(5, ...rows.map(row => row.text.length));
     // tty's maxcol includes a leading and trailing margin; process_menu_window
     // writes the content one cell east of offx.
     const maxcol = widest + 2;
-    const boundary = Math.max(0, Math.min(
+    const boundary = pageCount > 1 ? 0 : Math.max(0, Math.min(
         82, Math.floor(d.cols / 2), d.cols - maxcol - 1,
     ));
     d.clearRow(0);
@@ -194,24 +196,39 @@ export async function showTextMenuOverlay(lines, { validKeys = null } = {}) {
     // deliberate overlay survives the menu exactly as it does in tty.
     const underlay = d.grid.map(row => row.map(cell => ({ ...cell })));
     const underlayCursor = [d.cursorCol, d.cursorRow, d.cursorVisible];
-    clearRect(boundary, 0, d.cols, Math.min(d.rows, rows.length));
-    for (let row = 0; row < rows.length && row < d.rows; row++)
-        putLine(boundary + 1, row, rows[row].text, rows[row].attr);
+    let page = 0;
+    try {
+        for (;;) {
+            const pageRows = rows.slice(page * pageSize, (page + 1) * pageSize);
+            if (pageCount > 1) d.clearScreen();
+            else clearRect(boundary, 0, d.cols, pageRows.length + 1);
+            for (let row = 0; row < pageRows.length; row++)
+                putLine(boundary + 1, row, pageRows[row].text, pageRows[row].attr);
+            const marker = pageCount > 1 ? `(${page + 1} of ${pageCount})` : '(end)';
+            putLine(boundary + 1, pageRows.length, marker);
+            d.setCursor(Math.min(d.cols - 1, boundary + marker.length + 2), pageRows.length);
 
-    const endRow = Math.min(rows.length - 1, d.rows - 1);
-    d.setCursor(Math.min(d.cols - 1, boundary + 7), endRow);
-    let key;
-    do key = await nhgetch();
-    while (validKeys && !validKeys.includes(key));
-    for (let row = 0; row < d.rows; row++) {
-        for (let col = 0; col < d.cols; col++) {
-            const cell = underlay[row][col];
-            d.setCell(col, row, cell.ch, cell.color, cell.attr);
+            const key = await nhgetch();
+            if ([0, 27, 10, 13].includes(key)) return key;
+            if (key === 32 && page === pageCount - 1) return key;
+            switch (String.fromCharCode(key)) {
+            case ' ':
+            case '>': page = Math.min(page + 1, pageCount - 1); break;
+            case '<': page = Math.max(0, page - 1); break;
+            case '^': page = 0; break;
+            case '|': page = pageCount - 1; break;
+            }
         }
+    } finally {
+        for (let row = 0; row < d.rows; row++) {
+            for (let col = 0; col < d.cols; col++) {
+                const cell = underlay[row][col];
+                d.setCell(col, row, cell.ch, cell.color, cell.attr);
+            }
+        }
+        d.setCursor(underlayCursor[0], underlayCursor[1]);
+        d.cursorVisible = underlayCursor[2];
     }
-    d.setCursor(underlayCursor[0], underlayCursor[1]);
-    d.cursorVisible = underlayCursor[2];
-    return key;
 }
 
 /**

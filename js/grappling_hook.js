@@ -12,7 +12,7 @@ import {
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import {
-    farlookTipUntilDismissed, selectMapPosition,
+    shouldShowGetposTip, showGetposTip, selectMapPosition,
 } from './getpos.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
@@ -24,7 +24,6 @@ import { OBJECT_SUBTYPE } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { ensureHeroSkills } from './skills.js';
 import { surfaceName } from './terrain_name.js';
-import { moreUntilDismissed } from './tty_prompts.js';
 import { cansee, couldsee } from './vision.js';
 import { showPagedPickOneMenu } from './windows.js';
 
@@ -60,21 +59,10 @@ function monsterObject(monster) {
 }
 
 async function chooseTarget(describeTarget, state) {
-    const firstUse = !state._travelTipShown;
+    const firstUse = shouldShowGetposTip(state);
     if (firstUse) {
-        const dismissal = await moreUntilDismissed(
-            'Where do you want to hit?--More--',
-        );
-        if (dismissal === 27) {
-            state._pending_message = '';
-            return null;
-        }
-        state._travelTipShown = true;
-        const tipDismissal = await farlookTipUntilDismissed();
-        if (tipDismissal === 27) {
-            state._pending_message = '';
-            return null;
-        }
+        await pline('Where do you want to hit?');
+        await showGetposTip(state);
     }
 
     return selectMapPosition({

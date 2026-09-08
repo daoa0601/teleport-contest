@@ -165,7 +165,7 @@ function truthy(value) {
     return value !== null && value !== false;
 }
 
-function luaType(value) {
+export function luaType(value) {
     value = first(value);
     if (value === null || value === undefined) return 'nil';
     if (value instanceof LuaTable) return 'table';

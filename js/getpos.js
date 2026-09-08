@@ -6,8 +6,8 @@ import {
 } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
+import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { NO_COLOR } from './terminal.js';
-import { showTextMenuOverlay } from './windows.js';
 
 // When getpos receives a byte which is not one of its editor commands, it
 // first maps that byte to every eligible cmap entry and only then searches
@@ -61,23 +61,16 @@ export function moveGetposCursor(cursor, dx, dy) {
     cursor.y += dy;
 }
 
-function farlookTipLines() {
-    return [
-        'Tip: Farlooking or selecting a map location',
-        '',
-        'You are now in a "farlook" mode - the movement keys move the cursor,',
-        'not your character.  Game time does not advance.  This mode is used',
-        'to look around the map, or to select a location on it.',
-        '',
-        'When in this mode, you can press ESC to return to normal game mode,',
-        'and pressing ? will show the key help.',
-    ];
+export function shouldShowGetposTip(state = game) {
+    return state.flags?.tips !== false && !state._travelTipShown;
 }
 
-export async function farlookTipUntilDismissed() {
-    return showTextMenuOverlay(farlookTipLines(), {
-        validKeys: [27, 32, 10, 13],
-    });
+// C hack.c:handle_tip(). Dismissing the tip does not cancel map selection.
+export async function showGetposTip(state = game) {
+    if (!shouldShowGetposTip(state)) return false;
+    state._travelTipShown = true;
+    await currentLuaLifecycle().callCore(state, 'getpos_tip');
+    return true;
 }
 
 function getposFeatureMatches(x, y, symbol, state) {

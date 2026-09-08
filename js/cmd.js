@@ -346,7 +346,7 @@ import {
     maybeSmudgeEngravings, readEngravingAt, wipeEngravingAt,
 } from './engrave.js';
 import {
-    farlookTipUntilDismissed, moveGetposCursor, selectMapPosition,
+    shouldShowGetposTip, showGetposTip, moveGetposCursor, selectMapPosition,
 } from './getpos.js';
 import {
     chatWithQuestLeader, displayPreparedQuestArrival, prepareQuestArrival,
@@ -1963,8 +1963,9 @@ function farlookDelta(key) {
 async function fountainMonsterDetection() {
     const displaySnapshot = captureMapDisplay();
     showDetectedMonsters();
-    await moreUntilDismissed('You sense the presence of monsters.--More--');
-    await farlookTipUntilDismissed();
+    await pline('You sense the presence of monsters.');
+    await flushPendingTopline();
+    await showGetposTip();
 
     let cursorX = game.u.ux;
     let cursorY = game.u.uy;
@@ -3710,27 +3711,10 @@ async function doTerrainOverview() {
 
     const displaySnapshot = captureMapDisplay();
     showKnownTerrain();
-    const firstUse = !game._travelTipShown;
+    const firstUse = shouldShowGetposTip();
     if (firstUse) {
-        const terrainDismissal = await moreUntilDismissed(
-            'Showing known terrain only...--More--',
-        );
-        if (terrainDismissal === 27) {
-            restoreMapDisplay(displaySnapshot);
-            game._pending_message = '';
-            await flush_screen(1);
-            game.context.move = 0;
-            return;
-        }
-        game._travelTipShown = true;
-        const tipDismissal = await farlookTipUntilDismissed();
-        if (tipDismissal === 27) {
-            restoreMapDisplay(displaySnapshot);
-            game._pending_message = '';
-            await flush_screen(1);
-            game.context.move = 0;
-            return;
-        }
+        await pline('Showing known terrain only...');
+        await showGetposTip();
     }
     const cursor = { x: game.u.ux, y: game.u.uy };
     let browseMessage = firstUse
@@ -4702,11 +4686,10 @@ async function wizKill() {
         return;
     }
 
-    const firstUse = !game._travelTipShown;
+    const firstUse = shouldShowGetposTip();
     if (firstUse) {
-        await moreUntilDismissed('Pick first monster to slay:--More--');
-        game._travelTipShown = true;
-        await farlookTipUntilDismissed();
+        await pline('Pick first monster to slay:');
+        await showGetposTip();
     }
 
     const cursor = await selectMapPosition({
@@ -6738,21 +6721,10 @@ function roomAtPosition(x, y) {
 }
 
 export async function askTeleportDestination() {
-    const firstUse = !game._travelTipShown;
+    const firstUse = shouldShowGetposTip();
     if (firstUse) {
-        const dismissal = await moreUntilDismissed(
-            'Where do you want to be teleported?--More--',
-        );
-        if (dismissal === 27) {
-            game._pending_message = '';
-            return { destination: null, editorOpened: false };
-        }
-        game._travelTipShown = true;
-        const tipDismissal = await farlookTipUntilDismissed();
-        if (tipDismissal === 27) {
-            game._pending_message = '';
-            return { destination: null, editorOpened: false };
-        }
+        await pline('Where do you want to be teleported?');
+        await showGetposTip();
     }
 
     game._travelTarget = null;
@@ -7040,23 +7012,10 @@ function jumpLocationDescription(x, y) {
 // dat/nhcore.lua:show_getpos_tip().  Jump shares getpos's one-time tutorial
 // with travel and controlled teleport, but owns its own validity predicate.
 async function dojump() {
-    const firstUse = !game._travelTipShown;
+    const firstUse = shouldShowGetposTip();
     if (firstUse) {
-        const dismissal = await moreUntilDismissed(
-            'Where do you want to jump?--More--',
-        );
-        if (dismissal === 27) {
-            game._pending_message = '';
-            game.context.move = 0;
-            return;
-        }
-        game._travelTipShown = true;
-        const tipDismissal = await farlookTipUntilDismissed();
-        if (tipDismissal === 27) {
-            game._pending_message = '';
-            game.context.move = 0;
-            return;
-        }
+        await pline('Where do you want to jump?');
+        await showGetposTip();
     }
 
     const initialHighlight = lastJumpHighlight();
@@ -7151,15 +7110,10 @@ function verboseFarlookDescription(x, y) {
 // window own distinct input boundaries; after the tutorial, getpos retains
 // its cursor and accepts terrain-symbol cycling before one of the pick keys.
 async function dotravel() {
-    const morePrompt = 'Where do you want to travel to?--More--';
-    const firstUse = !game._travelTipShown;
+    const firstUse = shouldShowGetposTip();
     if (firstUse) {
-        // tty's message pager accepts only escape, space, newline, or return;
-        // invalid keys redisplay the same boundary rather than advancing to
-        // the Lua tutorial.
-        await moreUntilDismissed(morePrompt);
-        game._travelTipShown = true;
-        await farlookTipUntilDismissed();
+        await pline('Where do you want to travel to?');
+        await showGetposTip();
     }
 
     const cursor = await selectMapPosition({
@@ -7219,17 +7173,10 @@ async function dotravel() {
 // cursor with travel, paints a short automatic description after movement,
 // then restores the gameplay cursor while showing the verbose selection.
 async function doFarlook() {
-    const firstUse = !game._travelTipShown;
+    const firstUse = shouldShowGetposTip();
     if (firstUse) {
-        // pager.c prints the caller's short prompt before getpos() invokes
-        // the shared Lua TIP_GETPOS window.  Opening that text window first
-        // suspends the pending tty line; after the tutorial, getpos's
-        // show_goal_msg path replaces it with the positioning prompt.
-        await moreUntilDismissed(
-            'Pick a monster, object or location.--More--',
-        );
-        game._travelTipShown = true;
-        await farlookTipUntilDismissed();
+        await pline('Pick a monster, object or location.');
+        await showGetposTip();
     }
 
     const cursor = await selectMapPosition({
