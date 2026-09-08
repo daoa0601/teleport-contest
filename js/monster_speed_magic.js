@@ -6,12 +6,10 @@ import {
     A_DEX, COLNO, DOOR, D_CLOSED, D_LOCKED, ROWNO, TIMEOUT, ZAP_POS,
 } from './const.js';
 import {
-    canProjectMonster, newsym, pline,
+    canProjectMonster, pline,
 } from './display.js';
 import { game } from './gstate.js';
-import {
-    beginDeferredHeroExpulsion, finishDeferredHeroExpulsion,
-} from './monmove.js';
+import { expelHero, holdingMonsterName } from './hero_expulsion.js';
 import { wakeMonster } from './monster_anger.js';
 import {
     monsterIsWhirly, monsterTypeName,
@@ -46,26 +44,6 @@ function rayCellIsOpen(x, y, state) {
         || !(location.doormask & (D_CLOSED | D_LOCKED));
 }
 
-async function expelHero(monster, state, random, roll) {
-    const name = monsterTypeName(monster.mnum, !!monster.female);
-    await pline(`You disrupt the ${name}!`);
-    await pline('A huge hole opens up...');
-    await pline('You get expelled!');
-    const action = {
-        monster,
-        calls: [],
-        movement: { attack: { deferredExpulsion: true } },
-    };
-    beginDeferredHeroExpulsion(action, state);
-    const relocation = finishDeferredHeroExpulsion(
-        action, state, random, roll,
-    );
-    if (relocation) {
-        newsym(relocation.oldx, relocation.oldy);
-        newsym(relocation.x, relocation.y);
-    }
-}
-
 async function affectMonster(monster, kind, source, state, options) {
     const attackLevel = source === 'wand' ? 12 : state.u?.ulevel ?? 1;
     const resisted = monsterResistsEffect(
@@ -87,7 +65,11 @@ async function affectMonster(monster, kind, source, state, options) {
         }
         if (kind === 'slow' && state.u?.uswallow
             && state.u?.ustuck === monster && monsterIsWhirly(monster)) {
-            await expelHero(monster, state, options.random, options.roll);
+            await pline(`You disrupt ${holdingMonsterName(monster)}!`);
+            await pline('A huge hole opens up...');
+            await expelHero(monster, {
+                state, random: options.random, rollOne: options.roll,
+            });
         }
     }
     await wakeMonster(monster, { attacked: kind === 'slow' });

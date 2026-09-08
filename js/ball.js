@@ -2,8 +2,9 @@
 // C ref: ball.c bc_order(), move_bc(), and drag_ball().
 
 import { game } from './gstate.js';
-import { map_object, newsym } from './display.js';
+import { map_object, newsym, plineWithContinuation } from './display.js';
 import { place_object, remove_object } from './floor_object.js';
+import { applyFloorEffects } from './floor_effects.js';
 import { mksobj } from './mklev.js';
 import { rn2 } from './rng.js';
 import {
@@ -21,6 +22,35 @@ export const BCPOS_BALL = 2;
 
 export function heroIsPunished(state = game) {
     return !!(state.uball || state.u?.uball);
+}
+
+// C unplacebc()/placebc(): swallowing removes the floor pair but leaves a
+// carried ball in the pack. Expulsion returns the chain to the hero's square.
+export function unplaceBallAndChain(state = game) {
+    const ball = state.uball || state.u.uball;
+    const chain = state.uchain || state.u.uchain;
+    if (!ball || !chain) return;
+    if (!carried(ball, state)) remove_object(ball, state);
+    remove_object(chain, state);
+}
+
+export async function placeBallAndChain(
+    state = game, publish = plineWithContinuation,
+) {
+    const ball = state.uball || state.u.uball;
+    const chain = state.uchain || state.u.uchain;
+    if (!ball || !chain) return;
+    const { ux: x, uy: y } = state.u;
+    await applyFloorEffects(chain, x, y, { state, publish });
+    if (carried(ball, state)) {
+        state.u.bc_order = BCPOS_DIFFER;
+    } else {
+        await applyFloorEffects(ball, x, y, { state, publish });
+        place_object(ball, x, y, state);
+        state.u.bc_order = BCPOS_CHAIN;
+    }
+    place_object(chain, x, y, state);
+    newsym(x, y);
 }
 
 export function attachBuriedBall(ball) {

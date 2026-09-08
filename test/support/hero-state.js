@@ -2,6 +2,9 @@ import { game } from '../../js/gstate.js';
 import { wearHeroAccessory } from '../../js/accessory.js';
 import { setHeroSpecies } from '../../js/hero_species.js';
 import { addBuriedObject } from '../../js/buried_object.js';
+import { unplaceBallAndChain } from '../../js/ball.js';
+import { swallowed } from '../../js/display.js';
+import { vision_recalc } from '../../js/vision.js';
 import { refreshMovementProperties } from '../../js/properties.js';
 import {
     A_INT, A_WIS, P_EXPERT, P_NUM_SKILLS, TT_BURIEDBALL, W_BALL, W_CHAIN,
@@ -158,4 +161,15 @@ export function installHeroChainedToBuriedBall({
     game.u.utraptype = TT_BURIEDBALL;
     refreshMovementProperties(game);
     return ball;
+}
+
+export function installSwallowedHero(monster, turns = 10) {
+    unplaceBallAndChain();
+    monster.mx = game.u.ux;
+    monster.my = game.u.uy;
+    monster.mtrapped = 0;
+    vision_recalc(2);
+    Object.assign(game.u, { ustuck: monster, uswallow: 1, uswldtim: turns });
+    game.vision_full_recalc = 1;
+    swallowed(true);
 }

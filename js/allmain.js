@@ -25,7 +25,7 @@ import {
     randomOffensiveMonsterItem,
 } from './muse.js';
 import {
-    askTeleportDestination,
+    applyHeroLiquidEffects, askTeleportDestination,
     continueCountedCommand, continueRun,
     finishDestinationSpotEffects,
     finishArmorRemoval,
@@ -136,7 +136,6 @@ import {
 import {
     allocateMonsterMovement, beginDeferredHeroCloneWizard,
     continueDeferredHeroAttack,
-    beginDeferredHeroExpulsion, finishDeferredHeroExpulsion,
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
     resumeDeferredHeroFireSpecial,
     resumeDeferredHeroElectricSpecial,
@@ -200,7 +199,7 @@ import {
 } from './monster_wake.js';
 import { presentWereChange } from './were.js';
 import { burnHeroArmorByFire } from './trap.js';
-import { heroLiquidEffects, sinkHeroIntoLava } from './hack.js';
+import { sinkHeroIntoLava } from './hack.js';
 import {
     monsterGoodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
@@ -218,6 +217,7 @@ import {
     advanceHeroPetrification, heroIsPetrifying,
 } from './stoning.js';
 import { advanceHeroStrangulation } from './hero_strangulation.js';
+import { expelHero } from './hero_expulsion.js';
 import { setTrack } from './track.js';
 import {
     applyArmorOnEffects, armorOnIdentifiesType, findArmorClass,
@@ -2252,23 +2252,7 @@ async function settleHeroLiquidAfterAction() {
     }
     if (game.u?.umoved) return null;
 
-    return heroLiquidEffects({
-        state: game,
-        publish: queueTurnMessage,
-        chooseTeleportDestination: async () => {
-            const choice = await askTeleportDestination();
-            return choice.destination;
-        },
-        applyLandingEffects: finishLanding,
-        burnInventory: damage => destroyFireInventory(damage, {
-            state: game,
-            publish: queueTurnMessage,
-        }),
-        igniteInventory: () => igniteItems(game.inventory, {
-            state: game,
-            publish: queueTurnMessage,
-        }),
-    });
+    return applyHeroLiquidEffects(queueTurnMessage);
 }
 
 async function drainQueuedHelplessRecoveryMessage() {
@@ -4959,32 +4943,22 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     }
                 }
                 if (heroAttack.deferredExpulsion) {
-                    const expelDismissal = await queueTurnMessage(
-                        'You get expelled!',
-                    );
-                    if (expelDismissal !== null
-                        && expelDismissal !== undefined) {
-                        actorContactPagerOwned = true;
-                    }
-                    // expels()->unstuck() clears swallowed state before its
-                    // docrt() flushes WIN_MESSAGE.  That flush is the exact
-                    // tty suspension point; mnexto() must remain after it.
-                    beginDeferredHeroExpulsion(action, game);
-                    const redrawDismissal = await waitForCurrentMonsterMore();
-                    if (redrawDismissal !== null
-                        && redrawDismissal !== undefined) {
-                        actorContactPagerOwned = true;
-                    }
-                    vision_reset();
-                    vision_recalc(0);
-                    await docrt();
-                    const relocation = finishDeferredHeroExpulsion(
-                        action, game,
-                    );
-                    if (relocation) {
-                        newsym(relocation.oldx, relocation.oldy);
-                        newsym(relocation.x, relocation.y);
-                    }
+                    const expelled = await expelHero(monster, {
+                        publish: async message => {
+                            const key = await queueTurnMessage(message);
+                            if (key != null) actorContactPagerOwned = true;
+                            return key;
+                        },
+                        redraw: async () => {
+                            const key = await waitForCurrentMonsterMore();
+                            if (key != null) actorContactPagerOwned = true;
+                            vision_reset();
+                            vision_recalc(0);
+                            await docrt();
+                        },
+                    });
+                    heroAttack.deferredExpulsion = false;
+                    if (expelled.died) return;
                 }
                 // C hitmu()/missmu() calls stop_occupation() after the whole
                 // contact transaction, including passiveum().  In

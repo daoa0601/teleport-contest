@@ -11,7 +11,7 @@ import { castKnownSpell } from '../js/spell.js';
 import { dozap } from '../js/zap.js';
 import { chargedWand } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
-import { freshCasterRoom } from './support/hero-state.js';
+import { freshCasterRoom, installSwallowedHero } from './support/hero-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 async function createJackal({ peaceful = false, speed = 0 } = {}) {
@@ -28,6 +28,20 @@ function slowMonsterSpell() {
         level: 2, category: 'enchantment',
     };
 }
+
+test('slowing an engulfing cloud releases the hero', async () => {
+    freshCasterRoom({ energy: 30 });
+    const cloud = await createMonsterAt('fog cloud', game.u.ux + 1, game.u.uy);
+    installSwallowedHero(cloud);
+    pushKeys('l                                ');
+
+    await castKnownSpell(slowMonsterSpell());
+
+    assert.equal(game.u.uswallow, 0);
+    assert.equal(game.u.ustuck, null);
+    assert.ok(cloud.mx !== game.u.ux || cloud.my !== game.u.uy);
+    assert.ok(game.u.uen < 30);
+});
 
 test('a speed-monster wand hastens a peaceful target without angering it',
     async () => {

@@ -18,6 +18,7 @@ import { startHeroPetrification } from '../js/stoning.js';
 import { addInventoryObject, chargedWand } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { installSwallowedHero } from './support/hero-state.js';
 
 function freshTurnArena() {
     freshGameplayRoom();
@@ -38,6 +39,21 @@ async function runUntilInput(inputGate, maxCycles) {
     const inputNeeded = inputGate.waitUntilBlocked().then(() => true);
     return Promise.race([turns, inputNeeded]);
 }
+
+test('an engulfing monster releases the hero when its hold expires during a turn', async () => {
+    freshTurnArena();
+    const cloud = await createMonsterAt('fog cloud', game.u.ux + 1, game.u.uy);
+    cloud.movement = 12;
+    installSwallowedHero(cloud, 1);
+    pushKeys('.                                ');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(game.u.uswallow, 0);
+    assert.equal(game.u.ustuck, null);
+    assert.ok(cloud.mx !== game.u.ux || cloud.my !== game.u.uy);
+});
 
 test('strangulation advances during world turns and pauses during prayer', async () => {
     const inputGate = freshTurnArena();

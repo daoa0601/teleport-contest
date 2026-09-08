@@ -11,19 +11,17 @@ import {
 } from './const.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { newsym, plineWithContinuation } from './display.js';
-import {
-    moveExpelledMonster, releaseHeroFromMonster,
-} from './hero_expulsion.js';
+import { expelHero } from './hero_expulsion.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { game } from './gstate.js';
 import { buryFloorObjectsAt } from './buried_object.js';
 import { maketrap } from './mklev.js';
 import {
-    MONSTER_ATTACKS, MONSTER_NAME, monsterDigests, monsterIsAnimal,
+    MONSTER_ATTACKS, MONSTER_NAME, monsterIsAnimal,
     monsterIsWhirly, monsterTypeName,
 } from './monster_data.js';
 import {
-    AD_COLD, AD_ELEC, AD_FIRE, AD_WRAP, AT_ENGL,
+    AD_COLD, AD_ELEC, AD_FIRE, AT_ENGL,
 } from './monster_attack_types.js';
 import { heroMonsterForm } from './polyself.js';
 import { promptKey } from './tty_prompts.js';
@@ -85,27 +83,12 @@ function whirlyWebMessage(monster) {
     return `The web ${action}is swept away!`;
 }
 
-async function expelHero(monster, state, publish, refresh) {
-    const name = monsterName(monster);
-    if (monsterDigests(monster)) {
-        await publish('You get regurgitated!');
-    } else if (engulfingAttack(monster)?.[1] === AD_WRAP) {
-        await publish(`The ${name} unfolds and you are released!`);
-    } else {
-        await publish(`You get expelled from the ${name} with a squelch!`);
-    }
-    releaseHeroFromMonster(monster, state);
-    moveExpelledMonster(monster, state);
-    refresh(state.u.ux, state.u.uy);
-    refresh(monster.mx, monster.my);
-}
-
 async function spinWhileSwallowed(state, publish, refresh) {
     const monster = state.u.ustuck;
     const name = monsterName(monster);
     await publish(`You release web fluid inside the ${name}.`);
     if (monsterIsAnimal(monster)) {
-        await expelHero(monster, state, publish, refresh);
+        await expelHero(monster, { state, publish, refresh });
     } else if (monsterIsWhirly(monster)) {
         await publish(whirlyWebMessage(monster));
     } else {

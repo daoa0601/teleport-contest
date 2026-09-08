@@ -66,6 +66,11 @@ import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
 import { heroLikesLava } from './hack.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import {
+    expelHero, holdingMonsterSubject, releaseHeroGrip,
+} from './hero_expulsion.js';
+import { applyHeroLocationEffects } from './cmd.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+import {
     restartAmuletStrangulation, stopStrangulationInImmuneForm,
 } from './hero_strangulation.js';
 import {
@@ -99,6 +104,7 @@ const G_UNIQ = 0x1000;
 const S_MIMIC = 13;
 const S_DRAGON = 30;
 const MZ_SMALL = 1;
+const MZ_HUGE = 4;
 const MAXULEV = 30;
 const MUMMY_WRAPPING = 138;
 const ALCHEMY_SMOCK = 144;
@@ -252,6 +258,7 @@ async function restoreHumanBody(state, publish = plineWithContinuation) {
     const u = state.u;
     const changed = heroIsPolymorphed(state);
     const wasBlind = heroIsBlind(state);
+    const wasHolding = u.ustuck && !u.uswallow && heroFormSticks(state);
     const previousEncumbrance = Number.isInteger(state._encumbranceLevel)
         ? state._encumbranceLevel : nearCapacity(state);
     if (changed) {
@@ -267,6 +274,7 @@ async function restoreHumanBody(state, publish = plineWithContinuation) {
     u.mtimedone = 0;
     await restoreDragonArmor(state, publish);
     u.uundetected = 0;
+    if (wasHolding) await releaseHeroGrip(state, publish);
     const regainedSight = wasBlind && !heroIsBlind(state);
 
     findArmorClass(state);
@@ -296,10 +304,9 @@ export async function returnHeroToHumanForm(state = game, {
     }
 
     const restored = await restoreHumanBody(state, publish);
-    if (restored.regainedSight) vision_recalc(0);
     await publish(`You return to ${restored.race} form!`);
-    if (restored.regainedSight) await publish('You can see again.');
-    await restartAmuletStrangulation(state, publish);
+    if (await finishHumanFormChange(restored, state, publish))
+        return { ...restored, died: true };
     if (state.u.uhp < 1) {
         await publish('Your old form was not healthy enough to survive.');
         const died = await die({
@@ -314,6 +321,23 @@ export async function returnHeroToHumanForm(state = game, {
     if (retouch.died) return { ...restored, died: true };
     const selfTouch = await selfTouchPetrifyingWeapons({ state, publish, die });
     return { ...restored, died: selfTouch.died };
+}
+
+async function finishHumanFormChange(restored, state, publish) {
+    const hero = state.u;
+    if (hero.utrap && hero.utraptype === TT_PIT) hero.utrap = rn1(6, 2);
+    if (restored.regainedSight) {
+        vision_recalc(0);
+        await publish('You can see again.');
+    }
+    await restartAmuletStrangulation(state, publish);
+    if (!hero.levitation && !hero.ustuck
+        && (isPoolAt(hero.ux, hero.uy, state) || isLavaAt(hero.ux, hero.uy, state))) {
+        const result = await applyHeroLocationEffects(publish);
+        if (result.died) return true;
+    }
+    see_monsters();
+    return false;
 }
 
 async function dropCarriedObject(object) {
@@ -469,6 +493,8 @@ export async function polymonHero(mnum, options = {}) {
     }
 
     const previousCapacity = nearCapacity(game);
+    const wasHolding = game.u.ustuck && !game.u.uswallow && heroFormSticks(game);
+    const wasBlind = heroIsBlind(game);
     mnum = await beginMonsterForm(mnum, options);
     if (game.uskin && dragonFormForArmor(game.uskin) !== mnum)
         await restoreDragonArmor(game);
@@ -477,9 +503,43 @@ export async function polymonHero(mnum, options = {}) {
     findArmorClass(game);
     if (game.u.utrap && game.u.utraptype === TT_PIT)
         game.u.utrap = rn1(6, 2);
+    if (wasBlind && !heroIsBlind(game)) {
+        vision_recalc(0);
+        await plineWithContinuation('You can see again.');
+    }
     game.vision_full_recalc = 1;
     newsym(game.u.ux, game.u.uy);
 
+    const hero = game.u;
+    const holder = hero.ustuck;
+    const unsolid = monsterIsUnsolid({ mnum: hero.umonnum });
+    let wasExpelled = false;
+    if (hero.uswallow) {
+        const size = MONSTER_SIZE[hero.umonnum];
+        if (unsolid || size >= MZ_HUGE
+            || (size > MONSTER_SIZE[holder.mnum] && !monsterIsWhirly(holder))) {
+            if (unsolid) {
+                await plineWithContinuation(
+                    `${holdingMonsterSubject(holder)} can no longer contain you.`,
+                );
+            }
+            const result = await expelHero(holder, { message: !unsolid });
+            if (result.died) return { transformed: true, mnum, died: true };
+            wasExpelled = true;
+        }
+    } else if (holder && !wasHolding && (heroFormSticks() || unsolid)) {
+        hero.ustuck = null;
+        await plineWithContinuation(`${holdingMonsterSubject(holder)} loses its grip on you.`);
+    } else if (wasHolding && !heroFormSticks()) {
+        await releaseHeroGrip();
+    }
+    if (!wasExpelled
+        && ((!hero.levitation && !hero.flying && !hero.ustuck
+                && (isPoolAt(hero.ux, hero.uy) || isLavaAt(hero.ux, hero.uy)))
+            || (game.underwater && !hero.swimming))) {
+        const result = await applyHeroLocationEffects();
+        if (result.died) return { transformed: true, mnum, died: true };
+    }
     await escapeTrapsAfterFormChange();
     await restartAmuletStrangulation();
 
@@ -914,7 +974,8 @@ async function renewHumanForm() {
 
     const restored = await restoreHumanBody(game);
     await pline(`You feel like a new ${newHumanFormName()}!`);
-    await restartAmuletStrangulation();
+    if (await finishHumanFormChange(restored, game, pline))
+        return { transformed: true, newman: true, oldLevel, newLevel, died: true };
     if (heroIsSliming(game)) {
         await pline('Your body transforms, but there is still slime on you.');
         resetHeroSlimingCountdown(game);

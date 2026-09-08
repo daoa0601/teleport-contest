@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 
 import { wearHeroArmor } from '../js/armor.js';
 import { touchArtifactByHero } from '../js/artifact_touch.js';
-import { A_CON, A_STR, BEAR_TRAP, STR18, STR19, WEB } from '../js/const.js';
+import {
+    A_CON, A_STR, BEAR_TRAP, PIT, POOL, STR18, STR19, TT_PIT, WEB,
+} from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
@@ -26,8 +28,101 @@ import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import {
     installHeroChainedToBuriedBall, installPolymorphedHero, installPunishedHero,
+    installSwallowedHero,
 } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
+import { createMonsterAt } from './support/monsters.js';
+
+test('a giant body is expelled and falls into the pit beneath the monster', async () => {
+    const level = freshObjectRoom({ flags: { debug: true } });
+    const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
+    addTrap(level, PIT, game.u.ux, game.u.uy);
+    installSwallowedHero(worm);
+    pushKeys('polyself\nhill giant\n                                ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.uswallow, 0);
+    assert.equal(game.u.ustuck, null);
+    assert.ok(worm.mx !== game.u.ux || worm.my !== game.u.uy);
+    assert.equal(game.u.utraptype, TT_PIT);
+    assert.ok(game.u.utrap > 0);
+});
+
+test('an unsolid body escapes an engulfer even without becoming huge', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
+    installSwallowedHero(worm);
+    pushKeys('polyself\nfog cloud\n                                ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.uswallow, 0);
+    assert.equal(game.u.ustuck, null);
+});
+
+test('a small new body remains inside a large engulfer', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
+    installSwallowedHero(worm);
+    pushKeys('polyself\ngoblin\n                                ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.uswallow, 1);
+    assert.equal(game.u.ustuck, worm);
+});
+
+test('a grabbing body makes its holder release rather than swapping who holds whom', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    const python = await createMonsterAt('python', game.u.ux + 1, game.u.uy);
+    game.u.ustuck = python;
+    pushKeys('polyself\nowlbear\n                                ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.ustuck, null);
+});
+
+test('returning to human form releases a monster held by the old body', async () => {
+    freshObjectRoom();
+    const python = await createMonsterAt('python', game.u.ux + 1, game.u.uy);
+    installPolymorphedHero('owlbear');
+    game.u.ustuck = python;
+    pushKeys('                                ');
+
+    await loseHeroHp(game.u.mh, 'injury');
+
+    assert.equal(game.u.umonnum, game.u.umonster);
+    assert.equal(game.u.ustuck, null);
+});
+
+test('losing flight puts a swimming body into the water below', async () => {
+    const level = freshObjectRoom({ flags: { debug: true } });
+    installPolymorphedHero('bat');
+    level.at(game.u.ux, game.u.uy).typ = POOL;
+    pushKeys('polyself\nnewt\n                                ');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.u.flying, false);
+    assert.equal(game.u.swimming, true);
+    assert.equal(game.u.uinwater, 1);
+});
+
+test('losing a flying body over water makes the human seek dry land', async () => {
+    const level = freshObjectRoom();
+    installPolymorphedHero('bat');
+    level.at(game.u.ux, game.u.uy).typ = POOL;
+    pushKeys('                                ');
+
+    await loseHeroHp(game.u.mh, 'injury');
+
+    assert.equal(game.u.umonnum, game.u.umonster);
+    assert.equal(game.u.flying, false);
+    assert.notEqual(level.at(game.u.ux, game.u.uy).typ, POOL);
+    assert.ok(game.u.uhp > 0);
+});
 
 for (const [trapType, form] of [
     [WEB, 'fog cloud'], [WEB, 'giant spider'], [BEAR_TRAP, 'newt'],

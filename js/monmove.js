@@ -63,9 +63,7 @@ import {
     beginMonsterRustTrap, finishMonsterRustTrap,
 } from './rust_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
-import {
-    moveExpelledMonster, releaseHeroFromMonster,
-} from './hero_expulsion.js';
+import { unplaceBallAndChain } from './ball.js';
 import { splitObjectStack } from './object_stack.js';
 import {
     canProjectMonster, map_invisible, newsym, randomDisplayMonsterName,
@@ -5268,6 +5266,7 @@ function basicMonsterAttack(
         calls.push(`d(${dice},${sides})`);
         const engulfOldX = monster.mx;
         const engulfOldY = monster.my;
+        unplaceBallAndChain(state);
         monster.mx = state.u.ux;
         monster.my = state.u.uy;
         state.u.ustuck = monster;
@@ -5805,17 +5804,6 @@ export function resumeDeferredHeroStun(
     return action;
 }
 
-// C mhitu.c:expels() crosses a tty boundary inside unstuck()->docrt().  Split
-// the state release from the post-redraw cooldown/relocation so allmain can
-// suspend on that message window without consuming mnexto()'s RNG early.
-export function beginDeferredHeroExpulsion(action, state) {
-    const attack = action?.movement?.attack;
-    if (!attack?.deferredExpulsion || attack.expulsionBegun) return null;
-    const monster = action.monster;
-    attack.expulsionBegun = true;
-    return releaseHeroFromMonster(monster, state);
-}
-
 function covetousObjectMatchesMask(object, mask, state) {
     if (!object) return false;
     if (mask === M3_WANTSAMUL) return object.otyp === AMULET_OF_YENDOR;
@@ -5924,21 +5912,6 @@ function runCovetousHarassTactics(monster, state, random, calls) {
         deferredCovetousRelocation: true,
         covetousRelocation: { appearMessage },
     };
-}
-
-export function finishDeferredHeroExpulsion(
-    action, state, random = rn2, rollOne = rnd,
-) {
-    const attack = action?.movement?.attack;
-    if (!attack?.expulsionBegun || !attack.deferredExpulsion) return null;
-    const monster = action.monster;
-    const calls = action.calls;
-    const movement = moveExpelledMonster(monster, state, {
-        random, rollOne, calls,
-    });
-    attack.deferredExpulsion = false;
-    attack.expulsionBegun = false;
-    return movement;
 }
 
 // Continue an ordinary natural hit after its visible hit message has been

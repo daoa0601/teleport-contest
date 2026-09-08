@@ -4,10 +4,13 @@ import assert from 'node:assert/strict';
 import { PIT, POOL, STONE, WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { useHeroWeb } from '../js/hero_web.js';
+import { pushKeys } from '../js/input.js';
 import { DART, ROCK } from '../js/object_data.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { floorObject } from './support/game-objects.js';
-import { freshMonsterAbilityRoom } from './support/hero-state.js';
+import {
+    freshMonsterAbilityRoom, installPunishedHero, installSwallowedHero,
+} from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 
@@ -66,10 +69,8 @@ test('web fluid makes an animal release a swallowed spider', async () => {
     const worm = await createMonsterAt(
         'purple worm', game.u.ux + 1, game.u.uy,
     );
-    worm.mx = game.u.ux;
-    worm.my = game.u.uy;
-    game.u.uswallow = 1;
-    game.u.ustuck = worm;
+    installSwallowedHero(worm);
+    pushKeys('                ');
 
     const result = await useHeroWeb({ state: game });
 
@@ -84,20 +85,35 @@ test('an expelled worm finds room beyond the nearby blocked squares', async () =
     const x = game.u.ux;
     const y = game.u.uy;
     const worm = await createMonsterAt('purple worm', x + 4, y);
-    worm.mx = x;
-    worm.my = y;
     worm.mspec_used = 7;
-    game.u.uswallow = 1;
-    game.u.ustuck = worm;
+    installSwallowedHero(worm);
     for (let nx = x - 3; nx <= x + 3; nx++) {
         for (let ny = y - 3; ny <= y + 3; ny++) {
             if (nx !== x || ny !== y) level.at(nx, ny).typ = STONE;
         }
     }
+    pushKeys('                ');
 
     await useHeroWeb();
 
     assert.equal(game.u.uswallow, 0);
     assert.ok(Math.max(Math.abs(worm.mx - x), Math.abs(worm.my - y)) > 3);
     assert.equal(worm.mspec_used, 7, 'release must not shorten an existing cooldown');
+});
+
+test('expulsion restores the punishment ball and chain to the floor', async () => {
+    const level = freshMonsterAbilityRoom('giant spider');
+    const { ball, chain } = installPunishedHero();
+    const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
+    installSwallowedHero(worm);
+    assert.ok(!level.objects[game.u.ux][game.u.uy].includes(chain));
+    pushKeys('                                ');
+
+    await useHeroWeb();
+
+    const pile = level.objects[game.u.ux][game.u.uy];
+    assert.ok(pile.includes(ball));
+    assert.ok(pile.includes(chain));
+    assert.equal(game.uball, ball);
+    assert.equal(game.uchain, chain);
 });

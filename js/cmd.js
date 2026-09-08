@@ -10834,6 +10834,37 @@ export async function finishDestinationSpotEffects({
     return true;
 }
 
+export function applyHeroLiquidEffects(publish = plineWithContinuation) {
+    return heroLiquidEffects({
+        publish,
+        chooseTeleportDestination: async () => {
+            const choice = await askTeleportDestination();
+            return choice.destination;
+        },
+        applyLandingEffects: ({ from, to }) => finishDestinationSpotEffects({
+            oldx: from.x, oldy: from.y,
+            newx: to.x, newy: to.y,
+            loc: game.level.at(to.x, to.y),
+            explicitAttempt: false,
+        }),
+        burnInventory: damage => destroyFireInventory(damage, { state: game, publish }),
+        igniteInventory: () => igniteItems(game.inventory, { state: game, publish }),
+    });
+}
+
+// C spoteffects(TRUE) also applies when expulsion or a body change leaves
+// the hero on the same square. It does not count as a movement attempt.
+export async function applyHeroLocationEffects(publish = plineWithContinuation) {
+    const liquid = await applyHeroLiquidEffects(publish);
+    if (liquid?.moved || liquid?.died) return liquid;
+    const { ux: x, uy: y } = game.u;
+    await finishDestinationSpotEffects({
+        oldx: x, oldy: y, newx: x, newy: y,
+        loc: game.level.at(x, y), explicitAttempt: false,
+    });
+    return { died: !!game.program_state?.gameover };
+}
+
 // C hack.c:domove_core() common tail after the hero's coordinates have been
 // committed.  Ordinary moves and pet displacement both pass through run
 // termination, u_on_newpos/vision work, and spoteffects in this order.
@@ -10862,28 +10893,7 @@ async function finishMovedHero({
     await announceInvocationSquare();
     if (ballChainMove) finishBallAndChainMove(ballChainMove);
 
-    const liquid = await heroLiquidEffects({
-        chooseTeleportDestination: async () => {
-            const choice = await askTeleportDestination();
-            return choice.destination;
-        },
-        applyLandingEffects: ({ from, to }) => finishDestinationSpotEffects({
-            oldx: from.x,
-            oldy: from.y,
-            newx: to.x,
-            newy: to.y,
-            loc: game.level?.at?.(to.x, to.y),
-            explicitAttempt: false,
-        }),
-        burnInventory: damage => destroyFireInventory(damage, {
-            state: game,
-            publish: plineWithContinuation,
-        }),
-        igniteInventory: () => igniteItems(game.inventory, {
-            state: game,
-            publish: plineWithContinuation,
-        }),
-    });
+    const liquid = await applyHeroLiquidEffects();
     if (liquid?.moved && explicitAttempt)
         maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
     if (liquid?.moved || liquid?.died) return true;

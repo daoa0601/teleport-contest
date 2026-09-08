@@ -10,9 +10,7 @@ import {
     canSpotMonster, flush_screen, newsym, pline, plineWithContinuation,
 } from './display.js';
 import { game } from './gstate.js';
-import {
-    moveExpelledMonster, releaseHeroFromMonster,
-} from './hero_expulsion.js';
+import { expelHero } from './hero_expulsion.js';
 import { nhgetch } from './input.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
 import { makePetWary } from './dog.js';
@@ -310,8 +308,9 @@ async function reviveShiftedVampire(
 
     if (state.u?.ustuck === monster) {
         if (state.u.uswallow) {
-            releaseHeroFromMonster(monster, state);
-            moveExpelledMonster(monster, state, { random, rollOne });
+            await expelHero(monster, {
+                state, publish, message: false, random, rollOne,
+            });
         } else {
             state.u.ustuck = null;
         }
