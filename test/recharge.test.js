@@ -33,7 +33,7 @@ test('reading a blessed charging scroll restores a cancelled directional wand', 
     const scroll = addInventoryObject(SCR_CHARGING, { blessed: true });
     const wand = addInventoryObject(WAN_FIRE, { spe: -1 });
 
-    await readInventoryObject(scroll, `${wand.invlet}                    `);
+    await readInventoryObject(scroll, wand.invlet);
 
     assert.ok(wand.spe >= 4 && wand.spe <= 8, `wand has ${wand.spe} charges`);
     assert.equal(wand.recharged, 1);
@@ -59,7 +59,7 @@ test('a confused charging scroll restores energy instead of charging an item', a
     freshObjectRoom({ hero: { confusionTurns: 4, uen: 0, uenmax: 100 } });
     const scroll = addInventoryObject(SCR_CHARGING);
 
-    await readInventoryObject(scroll, '                    ');
+    await readInventoryObject(scroll, '\x1b');
 
     assert.equal(game.u.uen, 100);
     assert.equal(game.u.uenmax, 100);
@@ -70,7 +70,7 @@ test('a confused blessed charging scroll can increase maximum energy', async () 
     freshObjectRoom({ hero: { confusionTurns: 4, uen: 20, uenmax: 20 } });
     const scroll = addInventoryObject(SCR_CHARGING, { blessed: true });
 
-    await readInventoryObject(scroll, '                    ');
+    await readInventoryObject(scroll, '\x1b');
 
     assert.ok(game.u.uenmax >= 26 && game.u.uenmax <= 44);
     assert.equal(game.u.uen, game.u.uenmax);
@@ -80,7 +80,7 @@ test('a confused cursed charging scroll empties energy without reducing its maxi
     freshObjectRoom({ hero: { confusionTurns: 4, uen: 20, uenmax: 20 } });
     const scroll = addInventoryObject(SCR_CHARGING, { cursed: true });
 
-    await readInventoryObject(scroll, '                    ');
+    await readInventoryObject(scroll, '\x1b');
 
     assert.equal(game.u.uen, 0);
     assert.equal(game.u.uenmax, 20);
@@ -92,7 +92,7 @@ test('a magic marker cannot be refilled a second time', async () => {
     await rechargeObject(marker, 1);
     assert.equal(marker.spe, 50);
     marker.spe = 2;
-    pushKeys('                    ');
+    pushKeys('\x1b');
 
     await rechargeObject(marker, 1);
 
@@ -105,7 +105,7 @@ test('cursed charging drains an ordinary wand but not a blessed one', async () =
     freshObjectRoom();
     const plain = addInventoryObject(WAN_FIRE, { spe: 5 });
     const blessed = addInventoryObject(WAN_FIRE, { spe: 5, blessed: true });
-    pushKeys('                    ');
+    pushKeys('\x1b');
 
     await rechargeObject(plain, -1);
     await rechargeObject(blessed, -1);
@@ -129,7 +129,7 @@ test('blind charging describes a vibration without revealing an unseen wand', as
 test('a second recharge destroys a wishing wand and hurts its user', async () => {
     freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     const wand = addInventoryObject(WAN_WISHING, { spe: 0, recharged: 1 });
-    pushKeys('                    ');
+    pushKeys('\x1b');
 
     await rechargeObject(wand, 1);
 
@@ -198,7 +198,7 @@ test('an exploding worn ring loses its effect before dealing damage', async () =
     const ring = addInventoryObject(RIN_GAIN_STRENGTH, { spe: -5 });
     wearHeroAccessory(ring, 'uleft');
     const strength = currentAttribute(A_STR);
-    pushKeys('                    ');
+    pushKeys('\x1b');
 
     await rechargeObject(ring, 1);
 
@@ -211,7 +211,7 @@ test('an exploding worn ring loses its effect before dealing damage', async () =
 test('charging changes a crystal ball\'s blessing and can remove its curse', async () => {
     freshObjectRoom();
     const ball = addInventoryObject(CRYSTAL_BALL, { spe: 3, blessed: true });
-    pushKeys('                    ');
+    pushKeys('\x1b');
     await rechargeObject(ball, -1);
     assert.equal(ball.cursed, true);
     assert.equal(ball.spe, 0);
@@ -228,7 +228,7 @@ test('charging changes a crystal ball\'s blessing and can remove its curse', asy
 test('refilling a lamp restores fuel, and cursed charging extinguishes it', async () => {
     freshObjectRoom();
     const lamp = addInventoryObject(OIL_LAMP, { spe: 0, age: 0 });
-    pushKeys('                    ');
+    pushKeys('\x1b');
     await rechargeObject(lamp, 1);
     assert.equal(lamp.age, 1500);
     assert.equal(lamp.spe, 1);
@@ -255,7 +255,7 @@ test('grease and the invocation bell stop at their own charge limits', async () 
     freshObjectRoom();
     const grease = addInventoryObject(CAN_OF_GREASE, { spe: 49 });
     const bell = addInventoryObject(BELL_OF_OPENING, { spe: 5 });
-    pushKeys('                    ');
+    pushKeys('\x1b');
 
     await rechargeObject(grease, 1);
     await rechargeObject(bell, 1);
@@ -272,7 +272,7 @@ test('invoking the Card charges an item and starts its cooldown', async () => {
     game.inventory.push(card);
     const ball = addInventoryObject(CRYSTAL_BALL, { spe: 0 });
 
-    await invokeInventoryObject(card, `${ball.invlet}                    `);
+    await invokeInventoryObject(card, ball.invlet);
 
     assert.equal(ball.spe, 7);
     assert.equal(ball.blessed, true);
@@ -297,7 +297,7 @@ test('the Card\'s blessing does not improve charging for another role', async ()
     freshObjectRoom({ role: 'wizard' });
     const card = artifactObject('The Platinum Yendorian Express Card', { blessed: true });
     const ball = addInventoryObject(CRYSTAL_BALL, { spe: 0 });
-    pushKeys(`${ball.invlet}                    `);
+    pushKeys(ball.invlet);
 
     await invokeArtifactPower(card, artifactByName('The Platinum Yendorian Express Card'));
 
@@ -309,7 +309,7 @@ test('destroying an unpaid wand preserves the amount owed to the shop', async ()
     freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     const { shopkeeper } = await createStaffedShop();
     const wand = floorObject(WAN_WISHING, 10, 10, { spe: 0, recharged: 1 });
-    pushKeys('                    ');
+    pushKeys('\x1b');
     await pickupAtHero();
     const debt = unpaidObjectCost(wand);
 

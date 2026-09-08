@@ -66,6 +66,10 @@ export async function promptInventoryObject(prompt, eligible, {
             });
             continue;
         }
+        // C tty_yn_function() marks an answered prompt as already read.
+        // The command's result must not pause to acknowledge it again.
+        game._pending_message = '';
+        game._retained_message = '';
         const letter = String.fromCharCode(key);
         const object = eligible.find(candidate => candidate.invlet === letter);
         if (object) {
