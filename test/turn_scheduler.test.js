@@ -8,7 +8,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
-    AMULET_OF_STRANGULATION, CLUB, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, WAN_MAGIC_MISSILE,
+    AKLYS, AMULET_OF_STRANGULATION, CLUB, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, WAN_MAGIC_MISSILE,
 } from '../js/object_data.js';
 import {
     startHeroSickness, startHeroVomiting,
@@ -24,8 +24,8 @@ import { checkMonsterGearNextTurn } from '../js/monworn.js';
 import { canSeeMonster } from '../js/display.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 
-function freshTurnArena() {
-    freshGameplayRoom({ role: 'valkyrie' });
+function freshTurnArena(room = {}) {
+    freshGameplayRoom({ ...room, role: 'valkyrie' });
     game._moveloopStarted = true;
     game._maintenanceMove = 1;
     game._monsterMovementInitialized = true;
@@ -98,6 +98,33 @@ test('a caged soldier spends a turn wielding its lance before striking through t
     assert.ok(game.u.uhp < health, 'the next turn should strike through the bars');
     assert.equal(soldier.mw, lance);
     assert.ok(soldier.minvent.includes(lance));
+});
+
+test('a soldier throws and recovers its tethered club during an ordinary turn', async () => {
+    freshTurnArena({ top: 10, bottom: 10 });
+    vision_recalc(0);
+    const soldier = await createMonsterAt('soldier', 14, 10, NO_MINVENT);
+    soldier.mpeaceful = false;
+    soldier.movement = 12;
+    soldier.weaponCheck = NEED_WEAPON;
+    const aklys = addObjectToMonsterInventory(soldier, knownObject(AKLYS, { spe: 3 }));
+    const health = game.u.uhp;
+    pushKeys('.');
+    await moveloop_core();
+
+    // Acknowledge the wielding message, then wait for the next turn.
+    pushKeys(' .');
+    await moveloop_core();
+    assert.equal(soldier.mw?.o_id, aklys.o_id);
+    assert.equal(game.u.uhp, health);
+
+    // Acknowledge the throw and return messages, then wait again.
+    pushKeys(' .');
+    await moveloop_core();
+
+    assert.ok(game.u.uhp < health, 'the thrown club should hurt the hero');
+    assert.equal(soldier.mw?.o_id, aklys.o_id);
+    assert.equal(aklys.where, 'minvent');
 });
 
 test('a monster can put on an invisibility cloak during its turn', async () => {

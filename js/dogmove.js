@@ -21,7 +21,7 @@ import {
     resolveMonsterSpitFlight,
 } from './monster_spit.js';
 import {
-    continueMonsterWeaponVolley, finishDeferredRangedProjectileHit,
+    continueMonsterWeaponVolley, finishMonsterProjectile,
     finishMonsterProjectileHit, presentMonsterProjectileContact,
     throwMonsterWeaponAtMonster,
 } from './monster_throw.js';
@@ -383,7 +383,7 @@ async function presentRetaliationWeapons(
                 shot.targetDied = !state.level?.monsters?.includes(shot.target)
                     || (shot.target.mhp ?? 0) <= 0;
             }
-            finishDeferredRangedProjectileHit(shot, state, random);
+            await finishMonsterProjectile(shot, state, { random, rollOne, publish });
             if (shot.targetDied && shot.target === attack.aimedAt) return true;
             shot = continueMonsterWeaponVolley(
                 attack, state, { random, rollOne },

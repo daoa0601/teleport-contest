@@ -39,9 +39,10 @@ export function freshPlayableRoom({
 }
 
 export function freshGameplayRoom({
-    role = 'caveman', heroLevel = 1, energy = 0,
+    role = 'caveman', heroLevel = 1, energy = 0, ...room
 } = {}) {
     const level = freshPlayableRoom({
+        ...room,
         role,
         hero: {
             ulevel: heroLevel,

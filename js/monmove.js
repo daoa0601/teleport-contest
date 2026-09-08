@@ -17,7 +17,7 @@ import {
 } from './monster_throw.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon } from './monster_weapon.js';
 import { attackHeroWithPolearm } from './monster_polearm.js';
-import { ammunitionMatchesLauncher, isPolearm, willWeld } from './weapon_type.js';
+import { ammunitionMatchesLauncher, isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
 import { levelHasCeiling, monsterInAir } from './mon.js';
 import { growMonster } from './monster_growth.js';
 import { currentAttribute } from './attrib.js';
@@ -3522,6 +3522,10 @@ async function attackHeroWithRangedWeapon(
         movement.actionCompleted = true;
         return;
     }
+    const returnRange = returningWeaponRangeSquared(weapon);
+    const returning = returnRange !== null && !willWeld(weapon);
+    if (returning && (dist2(monster.mx, monster.my, monster.mux, monster.muy) > returnRange
+        || !couldsee(monster.mx, monster.my))) return;
     if (!hostileLinedUp(monster, state, random, calls)) return;
 
     const heroX = state?.u?.ux ?? monster.mx;
@@ -3531,7 +3535,7 @@ async function attackHeroWithRangedWeapon(
         monster.mx, monster.my,
         state?.u?.ux0 ?? heroX, state?.u?.uy0 ?? heroY,
     );
-    if (distance > previousDistance
+    if (distance > previousDistance && !returning
         && recordRandom(random, calls, Math.max(1, BOLT_LIM - distance)) !== 0)
         return;
 

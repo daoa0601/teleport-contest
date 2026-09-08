@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
     continueMonsterWeaponVolley,
-    finishDeferredRangedProjectileHit,
+    finishMonsterProjectile,
     finishHeroProjectileHit, finishMonsterProjectileHit,
     presentMonsterProjectileShot,
     readyRangedMonsterWeapon,
@@ -114,7 +114,7 @@ test('a monster can shoot ya from an ordinary bow', async () => {
 
     assert.equal(attack?.launched, true);
     assert.ok(arrows.quan < 6);
-    finishRangedAttacks([attack], game);
+    await finishRangedAttacks([attack], game);
 });
 
 test('a monster prefers a yumi to a more recently acquired ordinary bow', async () => {
@@ -183,7 +183,7 @@ test('a tame orc throws a dagger at a distant monster', async () => {
         (count, sides) => count * sides,
         () => 1,
     );
-    finishRangedAttacks(action.movement.rangedAttacks, game, {
+    await finishRangedAttacks(action.movement.rangedAttacks, game, {
         random: () => 0,
     });
 
@@ -215,7 +215,7 @@ test('a poisoned dart adds poison damage to a susceptible monster',
         const attack = await throwMonsterWeaponAtMonster(
             orc, target, game, options,
         );
-        finishRangedAttacks([attack], game, options);
+        await finishRangedAttacks([attack], game, options);
 
         assert.equal(target.mhp, 18);
     });
@@ -299,7 +299,7 @@ test('a cream pie blinds a monster without hurting it', async () => {
     await presentMonsterProjectileShot(shot, PROJECTILE_GLYPH, game, {
         publish: async message => messages.push(message),
     });
-    finishDeferredRangedProjectileHit(shot, game, () => 0);
+    await finishMonsterProjectile(shot, game, { random: () => 0 });
 
     assert.equal(target.mhp, hitPointsBefore);
     assert.equal(target.mcansee, 0);
@@ -348,7 +348,7 @@ test('a cockatrice egg turns an intervening monster into a statue',
                     publish,
                 }),
         });
-        finishDeferredRangedProjectileHit(shot, game, () => 0);
+        await finishMonsterProjectile(shot, game, { random: () => 0 });
 
         assert.equal(result.deathFinished, true);
         assert.equal(game.level.monsters.includes(target), false);
@@ -411,7 +411,7 @@ test('a monster eats a lizard corpse before a cockatrice egg petrifies it',
                     publish,
                 }),
         });
-        finishDeferredRangedProjectileHit(shot, game, () => 0);
+        await finishMonsterProjectile(shot, game, { random: () => 0 });
 
         assert.equal(target.mhp, 12);
         assert.equal(target.inventory.includes(lizard), false);
@@ -509,7 +509,7 @@ test('a tame orc shoots an arrow with its bow', async () => {
     const target = await combatant('jackal', { x: 12, hitPoints: 12 });
 
     const action = await takeMonsterTurn(orc, game);
-    finishRangedAttacks(action.movement.rangedAttacks, game, {
+    await finishRangedAttacks(action.movement.rangedAttacks, game, {
         random: () => 0,
     });
 
@@ -545,7 +545,7 @@ test('a hostile monster can throw a dagger at the hero and land it',
         assert.equal(game.u.uhp, hitPointsBefore - 1);
         assert.equal(orc.inventory.includes(dagger), false);
 
-        finishDeferredRangedProjectileHit(shot, game);
+        await finishMonsterProjectile(shot, game);
 
         assert.equal(
             floorObjectsAt(game.level, game.u.ux, game.u.uy).includes(dagger),
@@ -570,7 +570,7 @@ test('a cream pie blinds the hero without hurting them', async () => {
     });
     const messages = [];
 
-    await finishHeroProjectileHit(attack.shots[0], game, {
+    await finishRangedAttacks([attack], game, {
         publish: async message => messages.push(message),
         random: () => 0,
         rollOne: () => 5,
@@ -602,9 +602,7 @@ test('a cockatrice egg starts petrifying the hero', async () => {
         rollOne: () => 1,
     });
 
-    await finishHeroProjectileHit(attack.shots[0], game, {
-        random: () => 0,
-    });
+    await finishRangedAttacks([attack], game, { random: () => 0 });
 
     assert.equal(game.u.uhp, 12);
     assert.equal(game.u.stonedTurns, 5);
@@ -655,11 +653,7 @@ test('impact life saving limits thrown poison to strength loss', async () => {
     });
     pushKeys(' '.repeat(12));
 
-    const result = await finishHeroProjectileHit(
-        attack.shots[0], game, { random: () => 0 },
-    );
-
-    assert.equal(result.lifeSaved, true);
+    await finishRangedAttacks([attack], game, { random: () => 0 });
     assert.ok(game.u.uhp > 0);
     assert.equal(game.u.acurr.a[A_STR], originalStrength - 1);
     assert.equal(game.inventory.includes(amulet), false);
@@ -684,10 +678,10 @@ test('a hostile rogue throws its full dagger volley at the hero', async () => {
     const attack = throwMonsterWeaponAtHero(
         rogue, game, daggers, options,
     );
-    finishDeferredRangedProjectileHit(attack.shots[0], game, () => 0);
+    await finishMonsterProjectile(attack.shots[0], game, { random: () => 0 });
     while (continueMonsterWeaponVolley(attack, game, options)) {
-        finishDeferredRangedProjectileHit(
-            attack.shots.at(-1), game, () => 0,
+        await finishMonsterProjectile(
+            attack.shots.at(-1), game, { random: () => 0 },
         );
     }
 
@@ -718,15 +712,7 @@ test('life saving lets a hostile monster finish its dagger volley', async () => 
     );
     pushKeys(' '.repeat(12));
 
-    await finishHeroProjectileHit(
-        attack.shots[0], game, { random: () => 0 },
-    );
-    let nextShot;
-    while ((nextShot = continueMonsterWeaponVolley(
-        attack, game, options,
-    ))) {
-        await finishHeroProjectileHit(nextShot, game, { random: () => 0 });
-    }
+    await finishRangedAttacks([attack], game, options);
 
     assert.ok(game.u.uhp > 0);
     assert.equal(game.inventory.includes(amulet), false);
@@ -771,10 +757,10 @@ test('a monster life-saves before the next dagger is thrown', async () => {
         publish: async () => {},
         random: () => 0,
     });
-    finishDeferredRangedProjectileHit(attack.shots[0], game, () => 0);
+    await finishMonsterProjectile(attack.shots[0], game, { random: () => 0 });
     let shot;
     while ((shot = continueMonsterWeaponVolley(attack, game, options))) {
-        finishDeferredRangedProjectileHit(shot, game, () => 0);
+        await finishMonsterProjectile(shot, game, { random: () => 0 });
     }
 
     assert.equal(game.level.monsters.includes(target), true);
@@ -841,7 +827,7 @@ test('a crossbow bolt gets its source damage against a large monster',
         const attack = await throwMonsterWeaponAtMonster(
             orc, target, game, options,
         );
-        finishRangedAttacks([attack], game, options);
+        await finishRangedAttacks([attack], game, options);
 
         assert.equal(target.mhp, 93);
     });
@@ -862,7 +848,7 @@ test('an elven lord fires every arrow in a three-shot volley', async () => {
     const attack = await throwMonsterWeaponAtMonster(
         archer, target, game, options,
     );
-    finishRangedAttacks([attack], game, options);
+    await finishRangedAttacks([attack], game, options);
 
     assert.equal(floorObjectQuantityAt(game.level, 12, 10, ELVEN_ARROW), 3);
     assert.equal(archer.inventory.includes(arrows), false);
@@ -888,7 +874,7 @@ test('a rogue player monster gets its dagger volley bonus', async () => {
     const attack = await throwMonsterWeaponAtMonster(
         rogue, target, game, options,
     );
-    finishRangedAttacks([attack], game, options);
+    await finishRangedAttacks([attack], game, options);
 
     assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 3);
     assert.equal(daggers.quan, 1);
@@ -913,7 +899,7 @@ test('a second weapon attack starts after the first dagger lands', async () => {
     assert.equal(daggers.quan, 1);
     assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 0);
 
-    finishRangedAttacks([firstAttack], game, options);
+    await finishRangedAttacks([firstAttack], game, options);
     const hitPointsAfterFirstAttack = target.mhp;
     const secondAttack = (await continueMonsterRangedTurn(
         turn, game, options,
@@ -922,7 +908,7 @@ test('a second weapon attack starts after the first dagger lands', async () => {
     assert.ok(target.mhp < hitPointsAfterFirstAttack);
     assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 1);
 
-    finishRangedAttacks([secondAttack], game, options);
+    await finishRangedAttacks([secondAttack], game, options);
 
     assert.equal(captain.inventory.includes(daggers), false);
     assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 2);

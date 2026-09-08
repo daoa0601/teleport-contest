@@ -15,7 +15,7 @@ import { place_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './light.js';
-import { MONSTER_FLAGS2, MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterCanTouchObject } from './monster_carry.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { monsterSentenceSubject } from './monster_sound.js';
@@ -28,12 +28,14 @@ import { makePlural } from './object_grammar.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { touchPetrifies } from './stoning.js';
 import { cansee, couldsee } from './vision.js';
-import { willWeld } from './weapon_type.js';
+import { returningWeaponRangeSquared, willWeld } from './weapon_type.js';
 
 const M2_GIANT = 0x00002000;
 const M2_STRONG = 0x04000000;
 const M2_ROCKTHROW = 0x08000000;
 const M2_JEWELS = 0x20000000;
+const M1_MINDLESS = 0x00010000;
+const M1_ANIMAL = 0x00040000;
 const WEAPON_CLASS = 2;
 const GEM_CLASS = 13;
 const S_KOP = 37;
@@ -83,6 +85,11 @@ export function selectMonsterRangedWeapon(monster, state = game) {
             if (polearm && (polearm === current || !cannotSwitch))
                 return { weapon: polearm, launcher: polearm };
         }
+    }
+    if (!cannotSwitch && !(MONSTER_FLAGS1[monster.mnum] & (M1_MINDLESS | M1_ANIMAL))) {
+        const aklys = selectMonsterWeaponOfType(monster, AKLYS, state);
+        if (aklys && distance <= returningWeaponRangeSquared(aklys)
+            && couldsee(monster.mx, monster.my)) return { weapon: aklys, launcher: aklys };
     }
     for (const type of RANGED_WEAPON_PREFERENCE) {
         if (type === DART && !(MONSTER_FLAGS2[monster.mnum] & M2_JEWELS)) {

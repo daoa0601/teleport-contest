@@ -126,7 +126,7 @@ test('an iron golem throws before using its breath attack', async () => {
     const hungryBefore = golem.edog.hungrytime;
 
     const action = await takeMonsterTurn(golem, game);
-    finishRangedAttacks(action.movement.rangedAttacks, game, {
+    await finishRangedAttacks(action.movement.rangedAttacks, game, {
         random: () => 0,
     });
     const hitPointsAfterDagger = target.mhp;

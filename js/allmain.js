@@ -84,7 +84,7 @@ import {
 } from './object_grammar.js';
 import {
     continueMonsterWeaponVolley,
-    finishDeferredRangedProjectileHit,
+    finishMonsterProjectile,
     finishHeroProjectileHit, finishMonsterProjectileHit,
     presentMonsterProjectileContact, presentMonsterProjectileShot,
 } from './monster_throw.js';
@@ -5707,7 +5707,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     if (transientFlightCell)
                         newsym(transientFlightCell.x, transientFlightCell.y);
                 }
-                finishDeferredRangedProjectileHit(ranged, game);
+                await finishMonsterProjectile(ranged, game, { publish: queueTurnMessage });
             }
             if (!ranged.heroTarget) {
                 const impactVisible = Number.isFinite(ranged.impactX)
@@ -5750,7 +5750,7 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                     );
                     ranged.targetDied = !death.survived;
                 }
-                finishDeferredRangedProjectileHit(ranged, game);
+                await finishMonsterProjectile(ranged, game, { publish: queueTurnMessage });
             }
             if (rangedAttack.missileStack) {
                 const nextShot = continueMonsterWeaponVolley(

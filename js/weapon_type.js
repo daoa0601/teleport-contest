@@ -1,9 +1,9 @@
 // Shared weapon predicates.
 // C refs: obj.h is_blade(), is_ammo(), ammo_and_launcher(); wield.c will_weld().
 
-import { P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_POLEARMS, P_SABER, P_WHIP } from './const.js';
+import { AKLYS_LIM, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_POLEARMS, P_SABER, P_WHIP } from './const.js';
 import { artifactById } from './artifacts.js';
-import { HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL } from './object_data.js';
+import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL } from './object_data.js';
 import { rn2 } from './rng.js';
 
 const WEAPON_CLASS = 2;
@@ -38,6 +38,11 @@ export function isPolearm(object) {
     const skill = OBJECT_SUBTYPE[object.otyp];
     return skill === P_POLEARMS || skill === P_LANCE
         || artifactById(object.oartifact)?.name === 'Snickersnee';
+}
+
+// C weapon.c:autoreturn_weapon(). The pinned game only includes the aklys.
+export function returningWeaponRangeSquared(object) {
+    return object?.otyp === AKLYS ? AKLYS_LIM * AKLYS_LIM : null;
 }
 
 // C mhitu.c:mswings_verb(). The mixed-strike roll occurs even when bashing.

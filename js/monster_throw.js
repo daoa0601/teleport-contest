@@ -24,12 +24,14 @@ import {
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon } from './monster_weapon.js';
+import { unlinkMonsterObject } from './monster_inventory.js';
+import { returnMonsterWeapon } from './monster_returning_weapon.js';
 import { game } from './gstate.js';
 import {
     BLINDING_VENOM, CREAM_PIE, EGG, FLINT, OBJECT_DESCRIPTIONS,
     OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
-import { ammunitionMatchesLauncher, isAmmunition, isPolearm } from './weapon_type.js';
+import { ammunitionMatchesLauncher, isAmmunition, isPolearm, returningWeaponRangeSquared } from './weapon_type.js';
 import { deleteObject } from './object_delete.js';
 import { isPoisonableObject } from './object_properties.js';
 import {
@@ -144,7 +146,6 @@ export function monsterVolleyCount(
 }
 
 export function splitMonsterMissile(monster, missile) {
-    const inventory = monster.minvent || monster.inventory || [];
     const quantity = missile.quan ?? missile.quantity ?? 1;
     if (quantity > 1) {
         const single = { ...missile };
@@ -153,17 +154,18 @@ export function splitMonsterMissile(monster, missile) {
         single.owt = OBJECT_WEIGHT[single.otyp] ?? single.owt ?? 1;
         single.wielded = false;
         single.worn = false;
+        single.owornmask = 0;
+        delete single.carrierMid;
         single.where = 'free';
         missile.quan = missile.quantity = quantity - 1;
         missile.owt = (OBJECT_WEIGHT[missile.otyp] ?? 1) * (quantity - 1);
         return single;
     }
 
-    const index = inventory.indexOf(missile);
-    if (index >= 0) inventory.splice(index, 1);
+    unlinkMonsterObject(monster, missile);
     if (monster.mw === missile) monster.mw = null;
-    monster.minvent = inventory;
-    monster.inventory = inventory;
+    monster.misc_worn_check &= ~(missile.owornmask || 0);
+    missile.owornmask = 0;
     missile.wielded = false;
     missile.worn = false;
     missile.where = 'free';
@@ -192,12 +194,20 @@ export function placeAndStackThrownObject(state, object, x, y) {
     return object;
 }
 
-export function finishDeferredRangedProjectileHit(
-    shot, state, random = rn2,
-) {
+export async function finishMonsterProjectile(shot, state, {
+    random = rn2, rollOne = rnd, publish = async () => {},
+} = {}) {
     if (!shot?.deferredFloorResolution || !shot.weapon) return shot;
     shot.deferredFloorResolution = false;
     const object = shot.weapon;
+    if (shot.tetheredTo) {
+        await returnMonsterWeapon(shot.tetheredTo, object, shot.impactX, shot.impactY, {
+            state, publish, random, rollOne,
+        });
+        clearThrownObject(state, object);
+        shot.floorResolved = true;
+        return shot;
+    }
     const subtype = OBJECT_SUBTYPE[object.otyp] ?? 0;
     const ammo = (object.oclass === WEAPON_CLASS
             || object.oclass === GEM_CLASS)
@@ -292,7 +302,6 @@ export async function finishHeroProjectileHit(
     }
     if (shot.hit && shot.weapon?.otyp === EGG)
         await hitByPetrifyingEgg(shot.weapon, state);
-    finishDeferredRangedProjectileHit(shot, state, random);
     return { died: false, lifeSaved };
 }
 
@@ -601,6 +610,8 @@ function throwOneMonsterMissile(
 function throwOneMonsterMissileAtHero(
     source, state, weapon, launched, random, rollOne,
 ) {
+    const tetheredTo = weapon === monsterWieldedWeapon(source)
+        && returningWeaponRangeSquared(weapon) !== null ? source : null;
     const missile = splitMonsterMissile(source, weapon);
     state._thrownObject = missile;
     const heroX = state.u?.ux ?? source.mx;
@@ -644,7 +655,7 @@ function throwOneMonsterMissileAtHero(
             const dexterity = state.u?.acurr?.a?.[A_DEX] ?? 10;
             const catchChance = 100 - dexterity
                 - (['monk', 'rogue'].includes(state.urole?.key) ? 20 : 0);
-            const catchEligible = !state.blind
+            const catchEligible = !tetheredTo && !state.blind
                 && !(state.u?.blindTurns > 0)
                 && !state.u?.confused
                 && !state.u?.stunned
@@ -694,6 +705,7 @@ function throwOneMonsterMissileAtHero(
                     damage,
                     silverSears,
                     preHitHp,
+                    tetheredTo,
                     launched,
                     flightPath,
                     flightGlyph: ')',
@@ -705,7 +717,7 @@ function throwOneMonsterMissileAtHero(
 
             random(5);
             const disappears = BLINDING_PROJECTILES.has(missile.otyp);
-            if (!disappears)
+            if (!disappears && !tetheredTo)
                 placeAndStackThrownObject(state, missile, x, y);
             return {
                 weapon: missile,
@@ -716,11 +728,12 @@ function throwOneMonsterMissileAtHero(
                 hitLevel,
                 damage,
                 launched,
+                tetheredTo,
                 flightPath,
                 flightGlyph: ')',
                 impactX: x,
                 impactY: y,
-                deferredFloorResolution: disappears,
+                deferredFloorResolution: disappears || !!tetheredTo,
             };
         }
 
