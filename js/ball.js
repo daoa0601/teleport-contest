@@ -6,6 +6,8 @@ import { clearMapDisplay, map_object, newsym, plineWithContinuation } from './di
 import { place_object, remove_object } from './floor_object.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { exerciseAttribute } from './attrib.js';
+import { objectIsHardHelmet } from './armor.js';
+import { heroHeadName } from './body_parts.js';
 import { loseHeroHp } from './hero_damage.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { canLoseInventoryObject, finishInventoryRemoval } from './hero_inventory.js';
@@ -69,6 +71,32 @@ export async function dragBallDownStairs(state = game) {
     return !!state.program_state?.gameover;
 }
 
+// C ball.c:ballfall(). An unwielded ball can strike the hero after a fall.
+export async function fallWithIronBall(state = game) {
+    const ball = state.uball || state.u.uball;
+    if (!ball || (carried(ball, state) && isWeldedPrimary(ball, state))) return false;
+    const weapon = state.uwep || state.u.uwep;
+    const hits = (ball.ox !== state.u.ux || ball.oy !== state.u.uy)
+        && weapon !== ball && rn2(5) !== 0;
+    await releaseCarriedBall(state, true);
+    if (!hits) return false;
+
+    let damage = rn2(7) + 25;
+    await plineWithContinuation(`The iron ball falls on your ${heroHeadName(state)}.`);
+    const helmet = state.uarmh || state.u.uarmh;
+    if (helmet) {
+        if (objectIsHardHelmet(helmet)) {
+            await plineWithContinuation('Fortunately, you are wearing a hard helmet.');
+            damage = 3;
+        } else if (state.flags.verbose !== false) {
+            await plineWithContinuation(
+                `Your ${helmet.name || OBJECT_NAMES[helmet.otyp]} does not protect you.`,
+            );
+        }
+    }
+    return ballDamage(damage, 'crunched in the head by an iron ball', state);
+}
+
 async function ballDamage(amount, killer, state) {
     if (state.u.halfPhysicalDamage) amount = Math.trunc((amount + 1) / 2);
     return loseHeroHp(amount, killer, { state });
@@ -96,9 +124,10 @@ async function scatterCarriedItems(state) {
     }
 }
 
-async function releaseCarriedBall(state) {
+async function releaseCarriedBall(state, showMessage = false) {
     const ball = state.uball || state.u.uball;
     if (!carried(ball, state) || isWeldedPrimary(ball, state)) return;
+    if (showMessage) await plineWithContinuation('Startled, you drop the iron ball.');
     const previousCapacity = nearCapacity(state);
     removeHeroEquipment(ball, state);
     unlinkObject(ball, state);

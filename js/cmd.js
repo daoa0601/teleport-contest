@@ -116,7 +116,7 @@ import {
 import { landObjectOnAltar } from './altar_object.js';
 import { landFloorObject } from './floor_effects.js';
 import {
-    deliverMigratingObjects, shipObject,
+    deliverMigratingObjects, impactDrop, shipObject,
 } from './object_migration.js';
 import {
     place_object,
@@ -283,7 +283,7 @@ import {
 } from './senses.js';
 import { selfTouchPetrifyingWeapons, touchPetrifyingCorpse } from './stoning.js';
 import {
-    beginBallAndChainMove, dragBallDownStairs, finishBallAndChainMove,
+    beginBallAndChainMove, dragBallDownStairs, fallWithIronBall, finishBallAndChainMove,
     heroIsPunished, placeBallAndChain, unplaceBallAndChain,
 } from './ball.js';
 import {
@@ -356,7 +356,7 @@ import {
 import { kickFloorObject } from './object_kick.js';
 import { waterDamageChain } from './trap.js';
 import {
-    heroTeleportDestinationOk, moveHeroByTeleport,
+    bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport,
     randomMonsterRelocation, safeTeleportDestination,
 } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
@@ -1974,7 +1974,20 @@ async function travelStairs(up) {
     while (stairs && (stairs.sx !== game.u.ux || stairs.sy !== game.u.uy
         || !!stairs.up !== up)) stairs = stairs.next;
     if (!stairs) {
+        const hole = !up && game.level.traps.find(trap =>
+            trap.tx === game.u.ux && trap.ty === game.u.uy
+            && (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) && trap.tseen);
+        if (hole) {
+            await triggerHeroTrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
+            game.context.move = 1;
+            return true;
+        }
         await pline(`You can't go ${up ? 'up' : 'down'} here.`);
+        game.context.move = 0;
+        return false;
+    }
+    if (!await bringLeashedFollowers()) {
+        await plineWithContinuation('You are held back by your pet!');
         game.context.move = 0;
         return false;
     }
@@ -2325,6 +2338,10 @@ async function gotoLevel(targetDepth, {
 
     await currentLuaLifecycle().runCallbacks(game, 'level_leave');
 
+    if (arrival === 'falling') await impactDrop(null, game.u.ux, game.u.uy, {
+        destinationLevel: destinationDepth.dlevel, publish: plineWithContinuation,
+    });
+
     // C goto_level() resets iflags.travelcc because map coordinates are
     // level-local.  A destination from the departing floor must never seed a
     // later getpos cursor on the destination floor.
@@ -2537,6 +2554,14 @@ async function gotoLevel(targetDepth, {
     // empty here so a destination temple or shop is an actual entry even
     // though random arrival initializes ux0 to the destination coordinates.
     await checkSpecialRoom({ newLevel: true });
+    await deliverMigratingObjects(game, { nearHero: true, publish: plineWithContinuation });
+    if (arrival === 'falling') {
+        const distance = dungeonDepth(newDepth.dnum, newDepth.dlevel)
+            - dungeonDepth(oldDepth.dnum, oldDepth.dlevel);
+        let damage = d(Math.max(distance, 1), 6);
+        if (game.u.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
+        if (await loseHeroHp(damage, 'falling down a mine shaft')) return true;
+    }
     // C goto_level() converges through pickup(1), whose check_here() describes
     // an ordinary pile when it is not collected.  Keep the floor transaction
     // after Quest/special-room arrival messages so tty continuation owns any
@@ -2645,6 +2670,13 @@ async function arriveOnLevel(from, { arrival, ladder, followers }) {
         } else {
             placeHeroAtRandomArrival(up
                 ? game.level.upTeleportRegion : game.level.downTeleportRegion);
+            if (arrival === 'falling') {
+                if (heroIsPunished() && await fallWithIronBall()) return true;
+                const contact = await selfTouchPetrifyingWeapons({
+                    messageStart: 'Falling, you', publish: plineWithContinuation,
+                });
+                if (contact.died) return true;
+            }
         }
         if (heroIsPunished()) await placeBallAndChain();
         await deliverMigratingObjects(game);

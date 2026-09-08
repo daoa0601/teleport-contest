@@ -4,7 +4,7 @@
 import { In_endgame } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
-import { prepareHeroTeleport } from './teleport.js';
+import { bringLeashedFollowers } from './teleport.js';
 
 function dungeonName(level) {
     return game.dungeons?.[level?.dnum]?.dname || '';
@@ -24,10 +24,7 @@ function addPortalStun() {
 }
 
 export async function activateMagicPortal(trap, gotoLevel) {
-    const preparation = prepareHeroTeleport();
-    for (const message of preparation.messages)
-        await plineWithContinuation(message);
-    if (!preparation.allowed) {
+    if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You shudder for a moment.');
         return true;
     }

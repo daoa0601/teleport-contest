@@ -4,16 +4,20 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { wearHeroArmor } from '../js/armor.js';
+import { HOLE, NO_MINVENT, ROOM, STONE } from '../js/const.js';
+import { tameMonster } from '../js/dog.js';
 import { place_object, remove_object } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { AMULET_OF_LIFE_SAVING, LEATHER_GLOVES, OIL_LAMP } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, LEASH, LEATHER_GLOVES, OIL_LAMP } from '../js/object_data.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer } from '../js/object_timers.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
+import { addTrap } from './support/level-state.js';
+import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject, floorObject, untimedCorpse } from './support/game-objects.js';
 import { installPolymorphedHero, installPunishedHero } from './support/hero-state.js';
 
@@ -121,4 +125,53 @@ test('returning to a level burns out expired lamps and removes decayed corpses b
     assert.equal(lamp.lamplit, false, 'the lamp still burns after its fuel ran out');
     assert.equal(corpse.where, 'gone');
     assert.equal(game.level.objects[15][10].includes(corpse), false);
+});
+
+test('falling through a shaft hurts the hero for each level fallen', async () => {
+    const { source, destination } = freshConnectedLevels({ destinationDepth: 4 });
+    game.u.uhp = game.u.uhpmax = 100;
+    addTrap(source, HOLE, 11, 10, { dst: { dnum: 0, dlevel: 4 }, tseen: true });
+    pushKeys(' '.repeat(16));
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.ok(game.level === destination, 'the fall did not reach the shaft destination');
+    const damage = 100 - game.u.uhp;
+    assert.ok(damage >= 3 && damage <= 18, `a three-level fall dealt ${damage} damage`);
+});
+
+test('a flying hero can deliberately descend through a known hole without fall damage', async () => {
+    const { source, destination } = freshConnectedLevels({ destinationDepth: 4 });
+    game.stairs = null;
+    source.at(10, 10).typ = ROOM;
+    installPolymorphedHero('vampire bat');
+    const health = game.u.mh;
+    addTrap(source, HOLE, 10, 10, { dst: { dnum: 0, dlevel: 4 }, tseen: true });
+    pushKeys(' '.repeat(16));
+
+    await rhack('>'.charCodeAt(0));
+
+    assert.ok(game.level === destination, 'the flying hero could not descend through the hole');
+    assert.equal(game.u.mh, health);
+});
+
+test('a cursed leash holds the hero back when the pet cannot get beside the stairs', async () => {
+    const { source } = freshConnectedLevels();
+    const pet = await createMonsterAt('housecat', 14, 10, NO_MINVENT);
+    tameMonster(pet, game);
+    const leash = addInventoryObject(LEASH, { cursed: true, leashmon: pet.m_id });
+    pet.mleashed = 1;
+    for (let x = 9; x <= 11; x++) {
+        for (let y = 9; y <= 11; y++) {
+            if (x !== 10 || y !== 10) source.at(x, y).typ = STONE;
+        }
+    }
+    pushKeys(' '.repeat(8));
+
+    await rhack('>'.charCodeAt(0));
+
+    assert.ok(game.level === source, 'the hero left a pet held by a cursed leash');
+    assert.equal(leash.leashmon, pet.m_id);
+    assert.equal(pet.mleashed, 1);
+    assert.match(game._pending_message, /held back by your pet/);
 });

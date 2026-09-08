@@ -6,7 +6,7 @@ import { place_object } from '../js/floor_object.js';
 import { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';
 import {
-    deliverMigratingObjects, shipObject,
+    deliverMigratingObjects, impactDrop, shipObject,
 } from '../js/object_migration.js';
 import {
     APPLE, ARROW, CARROT, CHAIN_MAIL, CLUB, MIRROR, ROCK,
@@ -125,6 +125,25 @@ test('an object falling through a hole lands inside the lower arrival region',
         assert.equal(floorObjects(destination).includes(club), true);
         assert.deepEqual([club.ox, club.oy], [14, 9]);
     });
+
+test('objects knocked down a shaft with the hero arrive beside the hero on the same level', async () => {
+    const source = sourceLevel();
+    game.stairs = null;
+    game.dungeons[0].num_dunlevs = 4;
+    addTrap(source, HOLE, 10, 10, { tseen: true });
+    const club = place_object(knownObject(CLUB), 10, 10);
+
+    await impactDrop(null, 10, 10, { destinationLevel: 4, random: () => 0 });
+    const destination = enterDestination({ ladder: null });
+    game.u.uz.dlevel = 4;
+    game.u.ux = 15;
+    game.u.uy = 11;
+    await deliverMigratingObjects(game, { nearHero: true });
+
+    assert.ok(floorObjects(destination).includes(club));
+    assert.equal(club.ox, 15);
+    assert.equal(club.oy, 11);
+});
 
 test('a mirror can break while falling and carries its Luck penalty',
     async () => {

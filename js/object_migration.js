@@ -227,10 +227,15 @@ export async function impactDrop(
         state = game,
         publish = async () => {},
         random = rn2,
+        destinationLevel = 0,
     } = {},
 ) {
     const gate = downwardGate(state, x, y);
     if (!gate) return 0;
+    if (destinationLevel) {
+        gate.arrival = MIGR_WITH_HERO;
+        gate.destination = { ...gate.destination, dlevel: destinationLevel };
+    }
 
     const pile = [...pileAt(state, x, y)];
     const total = pile.reduce((count, object) =>

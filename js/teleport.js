@@ -2,6 +2,7 @@
 // C ref: teleport.c teleok(), safe_teleds(), teleds(), and tele_trap().
 
 import { game } from './gstate.js';
+import { newsym, plineWithContinuation } from './display.js';
 import {
     leashAttachedToMonster, releaseMonsterLeash,
 } from './monster_leash.js';
@@ -350,9 +351,9 @@ export async function teleportHeroAtWill({
     const energy = 5 * OBJECT_SPELL_LEVEL[SPE_TELEPORT_AWAY];
     state.u.uen -= energy;
 
-    const preparation = prepareHeroTeleport(state, random);
-    const messages = [...preparation.messages];
-    if (!preparation.allowed) {
+    const followersReady = await bringLeashedFollowers(state, random);
+    const messages = [];
+    if (!followersReady) {
         messages.push('You shudder for a moment.');
         return { moved: false, messages };
     }
@@ -577,32 +578,32 @@ function moveLeashedMonsterNextToHero(monster, state, random) {
     monster.mx = destination.x;
     monster.my = destination.y;
     monster.mtrack = [];
-    if (distanceToHero(monster, state) > 1) {
-        monster.mx = oldx;
-        monster.my = oldy;
+    if (state === game) {
+        newsym(oldx, oldy);
+        newsym(monster.mx, monster.my);
     }
 }
 
-export function prepareHeroTeleport(state = game, random = rn2) {
-    const messages = [];
-    for (const monster of state.level?.monsters || []) {
+// C apply.c:next_to_u(), used before stairs, falls, and teleportation.
+export async function bringLeashedFollowers(state = game, random = rn2) {
+    for (const monster of [...(state.level?.monsters || [])].reverse()) {
         if (!monster?.mleashed || (monster.mhp ?? 1) <= 0) continue;
         moveLeashedMonsterNextToHero(monster, state, random);
         if (distanceToHero(monster, state) <= 1) continue;
 
         const leash = leashAttachedToMonster(monster, state);
-        if (!leash || leash.cursed) return { allowed: false, messages };
+        if (!leash || leash.cursed) return false;
         releaseMonsterLeash(monster, state);
         const leashedCount = state.level.monsters.filter(candidate =>
             candidate.mleashed).length;
-        messages.push(`You feel ${leashedCount ? 'a' : 'the'} leash go slack.`);
+        await plineWithContinuation(`You feel ${leashedCount > 1 ? 'a' : 'the'} leash go slack.`);
     }
 
     const steed = state.u?.usteed;
     const steedInventory = steed?.minvent || steed?.inventory || [];
     if (steedInventory.some(object => object.otyp === AMULET_OF_YENDOR))
-        return { allowed: false, messages };
-    return { allowed: true, messages };
+        return false;
+    return true;
 }
 
 export function prepareMonsterTeleport(

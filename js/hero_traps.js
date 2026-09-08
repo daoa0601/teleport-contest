@@ -15,7 +15,7 @@ import {
     ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP,
     SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
-    TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok,
+    TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold,
     squeakyBoardNoteWithArticle,
 } from './const.js';
 import {
@@ -31,7 +31,7 @@ import { heroLiquidEffects } from './hack.js';
 import {
     hasInternalInvisibility, syncHeroInvisibility,
 } from './hero_invisibility.js';
-import { distmin } from './hacklib.js';
+import { distmin, dungeonDepth } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { igniteItems } from './light.js';
@@ -42,13 +42,14 @@ import {
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { somexyspace } from './mkroom.js';
 import {
-    MONSTER_FLAGS1, MONSTER_SIZE, monsterTypeName,
+    MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
 import {
     ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_BIMANUAL,
     OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, ROCK,
 } from './object_data.js';
 import { deleteObject } from './object_delete.js';
+import { impactDrop } from './object_migration.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import { d, rn2, rnd } from './rng.js';
 import { stopRun } from './runmode.js';
@@ -56,8 +57,8 @@ import { artifactById } from './artifacts.js';
 import { attachBuriedBall } from './ball.js';
 import { setTrack } from './track.js';
 import {
-    clearFixedTeleportDestination, heroTeleportDestinationOk,
-    heroTeleportTrapBlock, moveHeroByTeleport, prepareHeroTeleport,
+    bringLeashedFollowers, clearFixedTeleportDestination, heroTeleportDestinationOk,
+    heroTeleportTrapBlock, moveHeroByTeleport,
     safeTeleportDestination,
 } from './teleport.js';
 import { CLR_GREEN } from './terminal.js';
@@ -93,6 +94,8 @@ import { destroyFireInventory } from './zap.js';
 import { woundHeroLegs } from './hero_legs.js';
 
 const M1_CLING = 0x00000010;
+const M1_HIDE = 0x00000100;
+const S_MIMIC = 13;
 const M1_WALLWALK = 0x00000008;
 const M1_BREATHLESS = 0x00000400;
 const M1_UNSOLID = 0x00100000;
@@ -543,10 +546,7 @@ async function triggerTeleportTrap(trap, finishTeleport) {
             return true;
         }
 
-        const preparation = prepareHeroTeleport();
-        for (const message of preparation.messages)
-            await plineWithContinuation(message);
-        if (!preparation.allowed) {
+        if (!await bringLeashedFollowers()) {
             await plineWithContinuation('You shudder for a moment.');
             return true;
         }
@@ -1065,46 +1065,59 @@ async function triggerRustTrap(trap) {
     }
 }
 
-export async function prepareHoleFall(trap) {
+export async function prepareHoleFall(trap, { tookPlunge = false } = {}) {
     if (!trap || (trap.ttyp !== HOLE && trap.ttyp !== TRAPDOOR)) return null;
-    if (!canFallThrough(game.u?.uz)) {
-        trap.tseen = true;
-        return null;
-    }
-
     const sokoban = !!game.level?.flags?.sokoban_rules;
     const levitating = !!(game.u?.levitating || game.levitating);
     if (game.blind && levitating && !sokoban) return null;
 
     trap.tseen = true;
-    await pline(trap.ttyp === TRAPDOOR
-        ? 'A trap door opens up under you!'
-        : "There's a gaping hole under you!");
+    if (!sokoban && !tookPlunge) await plineWithContinuation(trap.ttyp === TRAPDOOR
+        ? 'A trap door opens up under you!' : "There's a gaping hole under you!");
 
     const form = heroMonsterForm();
+    const flying = !!(game.u.flying || game.flying);
     const clinging = !!(heroFormFlags() & M1_CLING);
+    const hidingAbove = game.u.uundetected && (heroFormFlags() & M1_HIDE)
+        && MONSTER_SYMBOL[form] !== S_MIMIC;
     const tooLarge = Number.isInteger(form)
         && (MONSTER_SIZE[form] ?? 0) >= MZ_HUGE;
-    const avoidsFall = !sokoban && (
-        levitating || game.u?.flying || game.flying || clinging
-        || game.u?.ustuck
-    );
-    if (avoidsFall || tooLarge) {
-        await pline(tooLarge ? "You don't fit through." : "You don't fall in.");
+    const forced = sokoban && canFallThrough(game.u.uz);
+    const avoidsFall = levitating || game.u.ustuck
+        || (!canFallThrough(game.u.uz) && !game.level.at(game.u.ux, game.u.uy).candig)
+        || ((flying || clinging || hidingAbove) && !tookPlunge);
+    let refusal;
+    if (!forced && avoidsFall) refusal = "You don't fall in.";
+    else if (!forced && tooLarge) refusal = "You don't fit through.";
+    else if (!forced) {
+        if (!await bringLeashedFollowers(game)) refusal = 'You are jerked back by your pet!';
+    }
+    if (refusal) {
+        await plineWithContinuation(refusal);
+        await impactDrop(null, game.u.ux, game.u.uy, { publish: plineWithContinuation });
         return null;
     }
+    if ((flying || clinging) && tookPlunge) await plineWithContinuation(
+        `You ${flying ? 'swoop' : 'deliberately drop'} down `
+        + `${trap.ttyp === TRAPDOOR ? 'through the trap door' : 'into the gaping hole'}!`,
+    );
 
     const current = game.u?.uz || { dnum: 0, dlevel: 1 };
-    const bottom = game.dungeons?.[current.dnum]?.num_dunlevs
-        ?? current.dlevel + 1;
-    const destination = {
-        dnum: trap.dst?.dnum ?? current.dnum,
-        dlevel: Math.min(
-            trap.dst?.dlevel ?? current.dlevel + 1,
-            bottom,
-        ),
-    };
-    return { destination, arrival: 'falling' };
+    const destination = Is_stronghold(current) && game.valley_level
+        ? { ...game.valley_level }
+        : {
+            dnum: trap.dst?.dnum ?? current.dnum,
+            dlevel: trap.dst?.dlevel ?? current.dlevel + 1,
+        };
+    destination.dlevel = Math.min(destination.dlevel,
+        game.dungeons[destination.dnum].num_dunlevs);
+    const distance = dungeonDepth(destination.dnum, destination.dlevel)
+        - dungeonDepth(current.dnum, current.dlevel);
+    if (distance > 1) await plineWithContinuation(
+        `You ${flying ? 'fly' : 'fall'} down a ${distance > 3 ? 'very ' : ''}`
+        + `${distance > 2 ? 'deep ' : ''}shaft!`,
+    );
+    return { destination, arrival: flying ? 'random' : 'falling' };
 }
 
 export async function triggerHeroTrap(trap, {
@@ -1112,13 +1125,14 @@ export async function triggerHeroTrap(trap, {
     gotoLevel = null,
     viaSitting = false,
     failedUntrap = false,
+    tookPlunge = false,
 } = {}) {
     if (!trap) return false;
     stopRun();
     switch (trap.ttyp) {
     case HOLE:
     case TRAPDOOR: {
-        const fall = await prepareHoleFall(trap);
+        const fall = await prepareHoleFall(trap, { tookPlunge });
         if (!fall || !gotoLevel) break;
         await gotoLevel(fall.destination, { arrival: fall.arrival });
         return true;
