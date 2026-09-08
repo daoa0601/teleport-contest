@@ -198,6 +198,26 @@ test('a tame orc throws a dagger at a distant monster', async () => {
     );
 });
 
+test('enchantment helps a monster hit with a thrown dagger', async () => {
+    const damage = [];
+    for (const spe of [0, 8]) {
+        freshRangedCombatRoom();
+        const dagger = uninitializedObject(DAGGER, { spe });
+        const orc = await combatant('orc', { inventory: [dagger] });
+        const captain = await combatant('captain', { x: 12 });
+        const health = captain.mhp;
+        const options = { random: () => 1, rollOne: range => range };
+
+        const attack = await throwMonsterWeaponAtMonster(orc, captain, game, options);
+        await finishRangedAttacks([attack], game, options);
+
+        damage.push(health - captain.mhp);
+    }
+
+    assert.equal(damage[0], 0, 'the ordinary dagger should miss');
+    assert.ok(damage[1] > 0, 'the enchanted dagger should hit');
+});
+
 test('a poisoned dart adds poison damage to a susceptible monster',
     async () => {
         freshRangedCombatRoom({ gameplaySeed: 1n });

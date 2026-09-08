@@ -7,6 +7,8 @@ import {
     P_SHURIKEN, P_SLING, P_SPEAR,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
+import { artifactToHitBonus } from './artifacts.js';
+import { rangedTargetHitBonus } from './weapon_accuracy.js';
 import {
     blindHeroWithThrownObject, blindMonsterWithThrownObject,
 } from './blinding_attack.js';
@@ -524,10 +526,18 @@ function positionsAreLinedUp(source, target) {
 function hitMonsterWithMissile(
     source, intendedTarget, defender, missile, state, random, rollOne,
 ) {
-    let hitThreshold = 5 + findMonsterArmorClass(defender);
+    let hitThreshold = 5 + findMonsterArmorClass(defender)
+        + rangedTargetHitBonus(missile, defender, { state, random, rollOne });
     const sourceLevel = source.m_lev ?? MONSTER_LEVEL[source.mnum] ?? 0;
-    if (defender === intendedTarget && sourceLevel > 5)
-        hitThreshold += sourceLevel - 5;
+    if (defender === intendedTarget) {
+        if (sourceLevel > 5) hitThreshold += sourceLevel - 5;
+        const launcher = monsterWieldedWeapon(source);
+        if (launcher?.oartifact) {
+            hitThreshold += artifactToHitBonus(launcher, defender, rollOne, {
+                state, random,
+            });
+        }
+    }
     const hitRoll = rollOne(20);
     const hit = hitThreshold >= hitRoll;
     let damage = hit

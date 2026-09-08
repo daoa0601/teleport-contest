@@ -2392,7 +2392,7 @@ function monsterAttackMessage(monster, attack, previousAttack = null) {
     if (!attack.hit) {
         // mhitu.c:missmu() discloses a near miss only in verbose mode.
         const verb = game.flags?.verbose !== false
-            && attack.roll === attack.threshold
+            && attack.nearMiss
             ? 'just misses' : 'misses';
         return `${subject} ${verb}!`;
     }

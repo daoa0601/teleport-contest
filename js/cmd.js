@@ -196,7 +196,7 @@ import {
     OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES,
     OBJECT_WEIGHT,
     OBJECT_SUBTYPE,
-    OBJECT_SMALL_DAMAGE, OBJECT_LARGE_DAMAGE, OBJECT_HIT_BONUS,
+    OBJECT_SMALL_DAMAGE, OBJECT_LARGE_DAMAGE,
 } from './object_data.js';
 import {
     CLR_WHITE, NO_COLOR,
@@ -252,6 +252,7 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     heroStrengthDamageBonus, rollHeroMeleeWeaponDamage,
 } from './weapon_damage.js';
+import { rangedTargetHitBonus, weaponHitBonus } from './weapon_accuracy.js';
 import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
@@ -9897,12 +9898,10 @@ async function dothrow(
                 Math.abs(contact.my - game.u.uy),
             );
             threshold += Math.max(-4, 3 - distance);
-            threshold += (MONSTER_SIZE[contact.mnum] ?? 2) - 2;
-            if (contact.msleeping) threshold += 2;
-            if (!contact.mcanmove || !(contact.mmove
-                ?? MONSTER_MOVE[contact.mnum] ?? 0)) threshold += 4;
-            threshold += thrownMineral.hitbon ?? thrownMineral.oc_hitbon
-                ?? OBJECT_HIT_BONUS[thrownMineral.otyp] ?? 0;
+            threshold += rangedTargetHitBonus(thrownMineral, contact, {
+                defenderNotices: true,
+            });
+            const dieroll = rnd(20);
             if (matchingSlingGem) {
                 const slingSkill = Math.abs(
                     OBJECT_SUBTYPE[game.uwep.otyp] || 0,
@@ -9912,12 +9911,12 @@ async function dothrow(
                         game.uwep.oeroded ?? 0,
                         game.uwep.oeroded2 ?? 0,
                     )
-                    + weaponSkillHitBonus(game, slingSkill);
+                    + weaponSkillHitBonus(game, slingSkill)
+                    + artifactToHitBonus(game.uwep, contact);
             } else {
                 threshold -= 4;
             }
 
-            const dieroll = rnd(20);
             const monsterBaseName = MONSTER_NAME[contact.mnum] || 'monster';
             const hallucinating = !!(game.u?.hallucinating
                 || (game.u?.hallucinationTurns ?? 0) > 0);
@@ -10300,10 +10299,9 @@ async function attackHostileMonster(monster, x, y, {
         || (monster.mfrozen ?? 0) > 0);
     const caitiffMessage = primaryStrike
         ? await applyCaitiffPenalty(monster, game) : false;
-    // weapon.c:hitval() asks the wielded artifact for its special accuracy
-    // before hitum() rolls the ordinary d20.
-    const artifactHitBonus = attackWeapon
-        ? artifactToHitBonus(attackWeapon, monster)
+    // Artifact accuracy can roll dice, so hitval must precede the hit roll.
+    const weaponAccuracy = attackWeapon
+        ? weaponHitBonus(attackWeapon, monster)
         : 0;
     const dieroll = rnd(20);
     // uhitm.c:find_roll_to_hit() begins with abon(), target AC, intrinsic
@@ -10338,12 +10336,7 @@ async function attackHostileMonster(monster, x, y, {
         const weaponSkill = Math.abs(
             OBJECT_SUBTYPE[attackWeapon.otyp] || 0,
         );
-        threshold += (attackWeapon.spe ?? attackWeapon.enchantment ?? 0)
-            + (attackWeapon.hitbon ?? attackWeapon.oc_hitbon
-                ?? OBJECT_HIT_BONUS[attackWeapon.otyp] ?? 0)
-            + (attackWeapon.skillHitBonus ?? 0)
-            + artifactHitBonus
-            + weaponSkillHitBonus(game, weaponSkill);
+        threshold += weaponAccuracy + weaponSkillHitBonus(game, weaponSkill);
     }
     threshold -= meleeEncumbrancePenalty();
     if (game.u?.utrap) threshold -= 3;

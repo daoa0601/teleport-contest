@@ -36,6 +36,7 @@ export const YA = 22;
 export const DART = 24;
 export const BOOMERANG = 26;
 export const SPEAR = 27;
+export const TRIDENT = 33;
 export const ELVEN_SPEAR = 28;
 export const ORCISH_SPEAR = 29;
 export const DWARVISH_SPEAR = 30;

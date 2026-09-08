@@ -307,10 +307,10 @@ function artifactAttackApplies(
 
 // C weapon.c:hitval() calls spec_abon() before hitum() rolls its ordinary d20.
 export function artifactToHitBonus(
-    object, defender, roll = rnd, { random = rn2, state = game } = {},
+    object, defender, roll = rnd, { hero = false, random = rn2, state = game } = {},
 ) {
     const artifact = artifactById(object?.oartifact, state);
-    if (!artifactAttackApplies(artifact, defender, { random, state })
+    if (!artifactAttackApplies(artifact, defender, { hero, random, state })
         || !(artifact.attack.toHitDie > 0)) return 0;
     return roll(artifact.attack.toHitDie);
 }

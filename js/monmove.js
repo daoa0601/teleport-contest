@@ -129,6 +129,7 @@ import { syncBlindness } from './senses.js';
 import { touchPetrifies } from './stoning.js';
 import { clearHeroSliming } from './slime.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
+import { weaponHitBonus } from './weapon_accuracy.js';
 import {
     finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
     finishMonsterRayDeath,
@@ -2434,7 +2435,7 @@ async function monsterMeleeAttack(
     // stamp when deciding whether a struck defender may counterattack out of
     // sequence; even a miss therefore prevents another action this round.
     aggressor.mlstmv = sourceMonsterTurn(state);
-    const threshold = findMonsterArmorClass(defender)
+    let threshold = findMonsterArmorClass(defender)
         + (aggressor?.m_lev ?? MONSTER_LEVEL[aggressor?.mnum] ?? 0);
     const results = [];
     let struck = false;
@@ -2448,11 +2449,18 @@ async function monsterMeleeAttack(
         if (wield) return wield;
         const weapon = [AT_WEAP, AT_CLAW].includes(attack.attackType)
             ? monsterWieldedWeapon(aggressor) : null;
-        if (attack.attackType === AT_WEAP && weapon)
+        const usesWeaponAccuracy = attack.attackType === AT_WEAP && !!weapon;
+        if (usesWeaponAccuracy) {
             await swingMonsterWeapon(aggressor, weapon, state, { defender, random });
+            threshold += weaponHitBonus(weapon, defender, { state, random, rollOne });
+        }
+        const attackThreshold = threshold;
         const roll = rollOne(20 + index);
         calls.push(`rnd(${20 + index})`);
         const hit = threshold > roll;
+        // C evaluates hitval again here, including any artifact roll.
+        if (usesWeaponAccuracy)
+            threshold -= weaponHitBonus(weapon, defender, { state, random, rollOne });
         let damage = 0;
         if (hit) {
             damage = rollDice(attack.damn, attack.damd);
@@ -2471,7 +2479,7 @@ async function monsterMeleeAttack(
         // passivemm() is reached after every attempted contact attack while
         // the defender survives, including an ordinary miss.
         if ((defender.mhp ?? 0) > 0) recordRandom(random, calls, 3);
-        results.push({ ...attack, roll, threshold, hit, damage });
+        results.push({ ...attack, roll, threshold: attackThreshold, hit, damage });
     }
     const defenderDied = (defender?.mhp ?? 0) <= 0;
     return {
@@ -4880,6 +4888,7 @@ async function basicMonsterAttack(
     // Wielding uses this AT_WEAP slot, then mattacku() tries the next slot.
     // If no replacement is needed, this slot attacks with the current weapon
     // or the monster's bare-handed damage dice.
+    let weaponAccuracy = 0;
     if (attackType === AT_WEAP) {
         const currentWeapon = monsterWieldedWeapon(monster);
         if (monster.weaponCheck === NEED_WEAPON || !currentWeapon) {
@@ -4892,8 +4901,12 @@ async function basicMonsterAttack(
             }
         }
         const wieldedWeapon = monsterWieldedWeapon(monster);
-        if (wieldedWeapon && !retainedAttackRoll)
+        if (wieldedWeapon && !retainedAttackRoll) {
+            weaponAccuracy = weaponHitBonus(wieldedWeapon, state.u, {
+                state, random, rollOne,
+            });
             await swingMonsterWeapon(monster, wieldedWeapon, state, { random });
+        }
     }
     // getmattk() converts a lich's first cold touch to weaker physical
     // damage when the defender resists cold.  The attack method and message
@@ -4918,7 +4931,7 @@ async function basicMonsterAttack(
     } else if (!alreadyEngulfing) {
         roll = rollOne(toHitSides);
         calls.push(`rnd(${toHitSides})`);
-        hit = threshold > roll;
+        hit = threshold + weaponAccuracy > roll;
     }
     // C hitmu() reveals a concealed attacker before rolling base damage.
     // That pline can suspend behind an older tty topline, so preserve the
@@ -5428,6 +5441,7 @@ async function basicMonsterAttack(
     }
     return retainHeroAttackContinuation({
         kind: 'hero-attack', roll, threshold, hit, damage, attackType,
+        nearMiss: !hit && roll === threshold + weaponAccuracy,
     }, monster, attackIndex);
 }
 

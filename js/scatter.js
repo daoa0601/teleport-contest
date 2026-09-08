@@ -13,12 +13,10 @@ import { place_object, remove_object, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { wakeMonster } from './monster_anger.js';
 import { wakeMonstersNear } from './monster_wake.js';
-import {
-    MONSTER_NAME, MONSTER_SIZE, monsterHatesBlessings,
-} from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
-    BOULDER, EGG, OBJECT_HIT_BONUS, OBJECT_MATERIAL, OBJECT_NAMES,
+    BOULDER, EGG, OBJECT_MATERIAL, OBJECT_NAMES,
     ROCK, STATUE,
 } from './object_data.js';
 import {
@@ -32,6 +30,7 @@ import { objectWeight } from './weight.js';
 import {
     rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
 } from './weapon_damage.js';
+import { rangedTargetHitBonus } from './weapon_accuracy.js';
 
 const GEM_CLASS = 13;
 const GLASS = 19;
@@ -99,15 +98,6 @@ function objectName(object) {
     return object.name || OBJECT_NAMES[object.otyp] || 'object';
 }
 
-function monsterHitBonus(monster, object) {
-    let bonus = (MONSTER_SIZE[monster.mnum] ?? 2) - 2;
-    if (monster.msleeping) bonus += 2;
-    if (!monster.mcanmove) bonus += 4;
-    bonus += (object.spe ?? 0) + (OBJECT_HIT_BONUS[object.otyp] ?? 0);
-    if (object.blessed && monsterHatesBlessings(monster)) bonus += 2;
-    return bonus;
-}
-
 async function finishScatteredMonsterDeath(
     monster, x, y, death, state, options,
 ) {
@@ -150,7 +140,9 @@ async function breakAtRest(object, state, options) {
 async function hitMonster(monster, node, state, options) {
     const visible = monsterIsVisible(monster, state);
     const threshold = 5 + findMonsterArmorClass(monster)
-        + monsterHitBonus(monster, node.object);
+        + rangedTargetHitBonus(node.object, monster, {
+            state, random: options.random, rollOne: options.rollOne,
+        });
     if (threshold < options.rollOne(20)) {
         if (visible)
             await options.publish(`The ${objectName(node.object)} misses the ${

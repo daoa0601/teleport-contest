@@ -17,13 +17,13 @@ import { resolveHeroWeaponPoison } from './hero_weapon_poison.js';
 import { abusePetAfterHeroHit } from './dog.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
-    MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_SIZE,
+    MONSTER_FLAGS2, MONSTER_LEVEL,
     monsterIsShade, monsterTypeName,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
     BOOMERANG, ELVEN_ARROW, ELVEN_BOW, GAUNTLETS_OF_FUMBLING,
-    GAUNTLETS_OF_POWER, OBJECT_HIT_BONUS, OBJECT_NAMES, OBJECT_SUBTYPE,
+    GAUNTLETS_OF_POWER, OBJECT_NAMES, OBJECT_SUBTYPE,
     YA, YUMI,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
@@ -43,11 +43,10 @@ import {
     heroStrengthDamageBonus, rollPhysicalWeaponDamage,
     shadeBlocksWeaponBaseDamage,
 } from './weapon_damage.js';
+import { rangedTargetHitBonus } from './weapon_accuracy.js';
 
-const M2_DEMON = 0x00000100;
 const M2_ELF = 0x00000010;
 const M2_ORC = 0x00000080;
-const M2_UNDEAD = 0x00000002;
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
 const GEM_CLASS = 13;
@@ -118,39 +117,21 @@ function baseRangedHitThreshold(monster, weapon, state) {
         Math.abs(monster.mx - state.u.ux),
         Math.abs(monster.my - state.u.uy),
     );
-    const movement = monster.mmove ?? MONSTER_MOVE[monster.mnum] ?? 0;
-    const immobilized = monster.mcanmove === 0
-        || monster.mcanmove === false || !movement;
     const polymorphed = heroIsPolymorphed(state);
     const heroLevel = polymorphed
         ? state.u?.m_lev ?? MONSTER_LEVEL[state.u?.umonnum]
             ?? state.u?.ulevel ?? 1
         : state.u?.ulevel ?? 1;
     const targetFlags = MONSTER_FLAGS2[monster.mnum] ?? 0;
-    let threshold = -1
+    const threshold = -1
         + (state.u?.uluck ?? state.u?.luck ?? state.Luck ?? 0)
         + findMonsterArmorClass(monster)
         + (state.u?.uhitinc ?? 0)
         + heroLevel
         + dexterityHitBonus(state)
         + Math.max(-4, 3 - distance)
-        + (MONSTER_SIZE[monster.mnum] ?? 2) - 2
-        + bowGlovePenalty(state);
-
-    if (monster.msleeping) threshold += 2;
-    if (immobilized) {
-        threshold += 4;
-        if (movement && rn2(10) === 0) {
-            monster.mcanmove = 1;
-            monster.mfrozen = 0;
-        }
-    }
-    threshold += (weapon.spe ?? weapon.enchantment ?? 0)
-        + (weapon.hitbon ?? weapon.oc_hitbon
-            ?? OBJECT_HIT_BONUS[weapon.otyp] ?? 0)
-        + artifactToHitBonus(weapon, monster);
-    if (weapon.blessed && (targetFlags & (M2_UNDEAD | M2_DEMON)))
-        threshold += 2;
+        + bowGlovePenalty(state)
+        + rangedTargetHitBonus(weapon, monster, { state, defenderNotices: true });
 
     const targetIsOrc = !!(targetFlags & M2_ORC);
     const heroIsElf = polymorphed
@@ -159,32 +140,25 @@ function baseRangedHitThreshold(monster, weapon, state) {
     return threshold + (targetIsOrc && heroIsElf ? 1 : 0);
 }
 
-function appliedHitThreshold(monster, weapon, state) {
-    const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0);
-    return baseRangedHitThreshold(monster, weapon, state)
-        + weaponSkillHitBonus(state, skill);
-}
-
-function thrownHitThreshold(monster, weapon, state) {
-    let threshold = baseRangedHitThreshold(monster, weapon, state);
+function throwingHitBonus(monster, weapon, state) {
     const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0);
     if (isLauncherAmmunition(weapon)) {
         const launcher = state.uwep;
-        if (!launcherMatchesAmmo(weapon, launcher)) return threshold - 4;
+        if (!launcherMatchesAmmo(weapon, launcher)) return -4;
         const erosion = Math.max(
             launcher.oeroded ?? 0, launcher.oeroded2 ?? 0,
         );
-        return threshold + (launcher.spe ?? 0) - erosion
+        return launcher.spe - erosion
             + weaponSkillHitBonus(
                 state, Math.abs(OBJECT_SUBTYPE[launcher.otyp] ?? 0),
             )
-            + artifactToHitBonus(launcher, monster)
+            + artifactToHitBonus(launcher, monster, rnd, { state })
             + bowTrainingHitBonus(state, launcher);
     }
 
-    if (weapon.otyp === BOOMERANG) threshold += 4;
-    else threshold += isThrowingWeapon(weapon) ? 2 : -2;
-    return threshold + weaponSkillHitBonus(state, skill);
+    const bonus = weapon.otyp === BOOMERANG ? 4
+        : isThrowingWeapon(weapon) ? 2 : -2;
+    return bonus + weaponSkillHitBonus(state, skill);
 }
 
 async function rollRangedObjectDamage(
@@ -304,15 +278,16 @@ async function hitMonsterWithRangedObject(
     const targetKnown = guaranteedHit;
     const targetVisible = guaranteedHit ? !heroIsBlind(state) : null;
     if (applied) await applyCaitiffPenalty(monster, state);
-    let threshold;
-    if (applied) threshold = appliedHitThreshold(monster, object, state);
-    else if (mode === 'thrown')
-        threshold = thrownHitThreshold(monster, object, state);
-    else {
-        threshold = baseRangedHitThreshold(monster, object, state)
-            - (isLauncherAmmunition(object) ? 5 : 3);
-    }
+    let threshold = baseRangedHitThreshold(monster, object, state);
     const dieRoll = rnd(20);
+    if (applied) {
+        const skill = Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0);
+        threshold += weaponSkillHitBonus(state, skill);
+    } else if (mode === 'thrown') {
+        threshold += throwingHitBonus(monster, object, state);
+    } else {
+        threshold -= isLauncherAmmunition(object) ? 5 : 3;
+    }
     const plainName = object.name || OBJECT_NAMES[object.otyp] || 'object';
     const name = object.opoisoned && isPoisonableObject(object)
         ? `poisoned ${plainName}` : plainName;

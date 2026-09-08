@@ -1,17 +1,39 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { NO_MINVENT, W_ARMG, W_WEP } from '../js/const.js';
+import { findArmorClass, wearHeroArmor } from '../js/armor.js';
+import { NO_MINVENT, W_ARM, W_ARMG, W_WEP } from '../js/const.js';
 import { pline } from '../js/display.js';
 import { tameMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { runMonsterAction } from '../js/monmove.js';
-import { DAGGER, GAUNTLETS_OF_POWER } from '../js/object_data.js';
-import { knownObject } from './support/game-objects.js';
+import { DAGGER, GAUNTLETS_OF_POWER, OBJECT_NAMES } from '../js/object_data.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+test('weapon enchantment helps a monster hit an armored hero', async () => {
+    const damage = [];
+    for (const spe of [0, 8]) {
+        freshObjectRoom({ flags: { verbose: false } });
+        wearHeroArmor(addInventoryObject(OBJECT_NAMES.indexOf('plate mail')));
+        findArmorClass();
+        const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+        goblin.mpeaceful = false;
+        equipMonsterObject(goblin, knownObject(DAGGER, { spe }), W_WEP);
+        const health = game.u.uhp;
+
+        await runMonsterAction(goblin, game, () => 0, count => count,
+            range => range);
+
+        damage.push(health - game.u.uhp);
+    }
+
+    assert.equal(damage[0], 0, 'the ordinary dagger should miss');
+    assert.ok(damage[1] > 0, 'the enchanted dagger should hit');
+});
 
 test('a monster\'s enchanted weapon does more damage to another monster', async () => {
     const damage = [];
@@ -31,6 +53,29 @@ test('a monster\'s enchanted weapon does more damage to another monster', async 
 
     assert.ok(damage[0] > 0, 'the unenchanted weapon should hit');
     assert.ok(damage[1] > damage[0], 'enchantment should add damage');
+});
+
+test('weapon enchantment helps a monster hit an armored opponent', async () => {
+    const damage = [];
+    for (const spe of [0, 8]) {
+        freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
+        const attacker = await createMonsterAt('captain', 10, 10, NO_MINVENT);
+        tameMonster(attacker, game);
+        equipMonsterObject(attacker, knownObject(DAGGER, { spe }), W_WEP);
+        const captain = await createMonsterAt('captain', 11, 10, NO_MINVENT);
+        captain.mpeaceful = false;
+        equipMonsterObject(captain,
+            knownObject(OBJECT_NAMES.indexOf('plate mail')), W_ARM);
+        const health = captain.mhp;
+
+        await runMonsterAction(attacker, game, () => 0, count => count,
+            range => range);
+
+        damage.push(health - captain.mhp);
+    }
+
+    assert.equal(damage[0], 0, 'the ordinary dagger should miss');
+    assert.ok(damage[1] > 0, 'the enchanted dagger should hit');
 });
 
 test('power gauntlets strengthen a monster\'s weapon hit only while worn', async () => {
