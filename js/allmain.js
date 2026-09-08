@@ -144,7 +144,7 @@ import {
     resumeDeferredHeroLegs,
     resumeDeferredHeroPassive, resumeDeferredHeroReveal,
     rollDeferredHeroSpellDamage,
-    resumeDeferredHeroSpell, resumeDeferredHeroStoning,
+    resumeDeferredHeroSpell,
     resolveDeferredHeroSummonMonsters,
     resolveDeferredHeroHasteSelf,
     resolveDeferredHeroAggravation,
@@ -2346,6 +2346,7 @@ function reluctantPetMessage(monster, movement) {
 }
 
 function monsterAttackMessage(monster, attack, previousAttack = null) {
+    if (attack.effect === 'petrifying-corpse') return null;
     if (attack.effect === 'engulf-tick'
         || attack.effect === 'item-theft') return null;
     const actorSpotted = canProjectMonster(
@@ -4643,29 +4644,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         action, game,
                     );
                     if (toggledBlindness) vision_recalc(0);
-                }
-                if (heroAttack.deferredStoningEffect) {
-                    resumeDeferredHeroStoning(action, game);
-                    if (heroAttack.stoningSpecialMessage) {
-                        const stoningDismissal = await queueTurnMessage(
-                            heroAttack.stoningSpecialMessage,
-                        );
-                        heroAttack.stoningSpecialMessage = null;
-                        if (stoningDismissal !== null
-                            && stoningDismissal !== undefined) {
-                            actorContactPagerOwned = true;
-                        }
-                    }
-                    if (heroAttack.stoningSpecialFollowup) {
-                        const kissDismissal = await queueTurnMessage(
-                            heroAttack.stoningSpecialFollowup,
-                        );
-                        heroAttack.stoningSpecialFollowup = null;
-                        if (kissDismissal !== null
-                            && kissDismissal !== undefined) {
-                            actorContactPagerOwned = true;
-                        }
-                    }
                 }
                 if (heroAttack.passive?.messageKind) {
                     const passiveDismissal = await queueTurnMessage(

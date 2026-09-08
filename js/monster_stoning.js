@@ -12,16 +12,20 @@ import { game } from './gstate.js';
 import { endObjectBurn } from './light.js';
 import { addObjectToContainer } from './object_container.js';
 import { place_object, stack_object } from './floor_object.js';
+import { landFloorObject } from './floor_effects.js';
 import {
     lifeSaveMonster, wornMonsterLifeSaver,
 } from './mondeath.js';
-import { clearMonsterCarriedObjectState } from './monster_inventory.js';
+import {
+    clearMonsterCarriedObjectState, removeObjectFromMonsterInventory,
+} from './monster_inventory.js';
+import { applyMonsterEquipmentProperties } from './monster_equipment.js';
 import {
     monsterWieldedWeapon, unwieldMonsterWeapon,
 } from './monster_weapon.js';
 import { mkcorpstat, mksobj } from './mklev.js';
 import {
-    MONSTER_GENO, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
+    MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { BOULDER, CORPSE, ROCK, STATUE } from './object_data.js';
@@ -37,6 +41,7 @@ import { objectWeight } from './weight.js';
 const S_GOLEM = 55;
 const PM_STONE_GOLEM = 257;
 const G_UNIQ = 0x1000;
+const M2_NEUTER = 0x00040000;
 const VAMPIRE_FORMS = new Set([226, 227, 228]);
 const TORSO_ARMOR = W_ARM | W_ARMC | W_ARMU;
 
@@ -73,7 +78,6 @@ export async function monsterSelfTouch(monster, {
     creditHero = false,
     finishDeath,
     publish = plineWithContinuation,
-    rollOne = rnd,
     state = game,
 } = {}) {
     const corpse = monsterWieldedWeapon(monster);
@@ -90,8 +94,8 @@ export async function monsterSelfTouch(monster, {
             } corpse.`,
         );
     }
-    const petrification = await petrifyMonsterFromContact(monster, {
-        creditHero, finishDeath, publish, rollOne, state,
+    const petrification = await petrifyMonster(monster, {
+        creditHero, finishDeath, publish,
     });
     if (petrification.survived && !monsterWearsGloves(monster)
         && !monsterHasStoneResistance(monster)) {
@@ -130,6 +134,35 @@ export async function petrifyMonsterFromContact(monster, {
     return petrifyMonster(monster, {
         creditHero, finishDeath, publish,
     });
+}
+
+// C mhitm.c:mdamagem(). Touching the defender leaves no time to eat a cure.
+export async function petrifyMonsterAttacker(monster, {
+    publish = plineWithContinuation,
+    visible = canSeeMonster(monster, monster.mx, monster.my),
+    ...options
+} = {}) {
+    if (await turnGolemToStone(monster, publish)) return { survived: true };
+    if (visible) await publish(`${monsterSubject(monster)} turns to stone!`);
+    return finishMonsterPetrification(monster, { ...options, publish });
+}
+
+// C uhitm.c:do_stone_mon(). A cure or life saving ends this hit.
+export async function petrifyMonsterDefender(monster, {
+    publish = plineWithContinuation,
+    visible = canSeeMonster(monster, monster.mx, monster.my),
+    ...options
+} = {}) {
+    const cure = await useMonsterStoningCure(monster, { ...options, publish });
+    if (cure.consumed)
+        return { survived: !cure.died, stopped: true, damage: 0, cure };
+    if (await turnGolemToStone(monster, publish))
+        return { survived: true, stopped: false, damage: 0 };
+    if (monsterHasStoneResistance(monster))
+        return { survived: true, stopped: false, damage: 1 };
+    if (visible) await publish(`${monsterSubject(monster)} turns to stone!`);
+    const result = await finishMonsterPetrification(monster, { ...options, publish });
+    return { ...result, stopped: true, damage: 0 };
 }
 
 async function turnGolemToStone(monster, publish) {
@@ -189,19 +222,19 @@ function putInStatue(statue, object) {
     addObjectToContainer(statue, object);
 }
 
-function dropBesideStatue(object, x, y) {
+async function dropBesideStatue(object, x, y, publish) {
     clearMonsterCarriedObjectState(object);
-    place_object(object, x, y);
-    return stack_object(object, game);
+    return landFloorObject(object, x, y, { state: game, publish });
 }
 
 function statueFlags(monster) {
-    let flags = monster.female ? 0x02 : 0x01;
+    let flags = monster.female ? 0x02
+        : MONSTER_FLAGS2[monster.mnum] & M2_NEUTER ? 0 : 0x01;
     if ((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ) flags |= 0x04;
     return flags;
 }
 
-function createStoneRemains(monster) {
+async function createStoneRemains(monster, publish) {
     const x = monster.mx;
     const y = monster.my;
     const frequency = (MONSTER_GENO[monster.mnum] ?? 0) & 0x07;
@@ -214,10 +247,16 @@ function createStoneRemains(monster) {
     }
 
     const contained = [];
-    for (const object of monster.minvent || monster.inventory || []) {
+    for (const object of [...(monster.minvent || [])]) {
+        const worn = object.owornmask;
+        await removeObjectFromMonsterInventory(monster, object, game, {
+            publish: async () => {},
+        });
+        // monstone saves traits only after removing item-granted properties.
+        if (worn) applyMonsterEquipmentProperties(monster, object, false);
         if (object.otyp === BOULDER
             || objectResistsDestruction(object, 0, 0)) {
-            dropBesideStatue(object, x, y);
+            await dropBesideStatue(object, x, y, publish);
         } else {
             contained.push(object);
         }
@@ -263,12 +302,24 @@ async function petrifyMonster(monster, {
     }
     if (creditHero) recordHeroKillConduct();
 
+    return finishMonsterPetrification(monster, { finishDeath, publish });
+}
+
+// C mon.c:monstone(). Reversion and life saving precede statue creation.
+async function finishMonsterPetrification(monster, {
+    finishDeath,
+    publish = plineWithContinuation,
+} = {}) {
+    if (await restoreShapechanger(monster, publish))
+        return { changed: true, survived: true };
+
     monster.mhp = 0;
     const lifeSaver = wornMonsterLifeSaver(monster);
     if (lifeSaver) {
         await lifeSaveMonster(monster, lifeSaver, {
             visible: cansee(monster.mx, monster.my),
             spotted: canSeeMonster(monster, monster.mx, monster.my),
+            publish,
         });
         if ((monster.mhp ?? 0) > 0)
             return { changed: true, survived: true };
@@ -277,7 +328,7 @@ async function petrifyMonster(monster, {
     if (typeof finishDeath !== 'function')
         throw new TypeError('petrifyMonster requires a death function');
     monster.mtrapped = 0;
-    const remains = createStoneRemains(monster);
+    const remains = await createStoneRemains(monster, publish);
     await finishDeath(monster, { noCorpse: true });
     newsym(monster.mx, monster.my);
     return { changed: true, survived: false, remains };

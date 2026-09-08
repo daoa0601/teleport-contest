@@ -39,7 +39,7 @@ import {
 } from './polyself.js';
 import { heroReflectionSource, heroReflectsRay } from './ray.js';
 import { d, rn2 } from './rng.js';
-import { resolveImmediatePetrification } from './stoning.js';
+import { contactIsProtected, resolveImmediatePetrification } from './stoning.js';
 
 const MR_FIRE = 0x01;
 const MR_COLD = 0x02;
@@ -181,8 +181,11 @@ async function applyEquipmentPassive(context) {
 async function applyStonePassive({
     monster, hit, attackType, weapon, weaponWasDestroyed, state, publish, die,
 }) {
-    if (!hit || attackProtectedFromStone(
-        attackType, weapon, weaponWasDestroyed, state,
+    const wornMask = (state.inventory || []).reduce(
+        (mask, object) => mask | object.owornmask, 0,
+    );
+    if (!hit || contactIsProtected(
+        attackType, wornMask, !!weapon || weaponWasDestroyed,
     ) || heroResists(state, 'stoneResistance', MR_STONE)) {
         return { heroDied: false };
     }
@@ -438,26 +441,6 @@ function objectTouchedByEnchantment(state, attackType, weapon) {
         || (attackType >= AT_STNG && attackType < AT_WEAP)) return null;
     return weapon || state.uwep || state.u?.uwep
         || state.uarmg || state.u?.uarmg || null;
-}
-
-function attackProtectedFromStone(
-    attackType, weapon, weaponWasDestroyed, state,
-) {
-    if ([AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA]
-        .includes(attackType)) return true;
-    if ([AT_CLAW, AT_TUCH, AT_WEAP, AT_MAGC].includes(attackType)) {
-        return !!(state.uarmg || state.u?.uarmg
-            || weapon || weaponWasDestroyed);
-    }
-    if (attackType === AT_KICK)
-        return !!(state.uarmf || state.u?.uarmf);
-    if (attackType === AT_BUTT)
-        return !!(state.uarmh || state.u?.uarmh);
-    if (attackType === AT_HUGS) {
-        return !!(state.uarmc || state.u?.uarmc)
-            && !!(state.uarmg || state.u?.uarmg);
-    }
-    return false;
 }
 
 function freezeHero(state, turns, reason, showRecoveryMessage) {

@@ -69,7 +69,7 @@ import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { unplaceBallAndChain } from './ball.js';
 import { splitObjectStack } from './object_stack.js';
 import {
-    canProjectMonster, map_invisible, newsym, randomDisplayMonsterName,
+    canProjectMonster, canSeeMonster, canSpotMonster, map_invisible, newsym, randomDisplayMonsterName,
     randomDisplayMonsterSubject, swallowed, plineWithContinuation,
 } from './display.js';
 import {
@@ -126,7 +126,12 @@ import {
     createHarmlessGasCloudSelection, createSteamCloud,
 } from './regions.js';
 import { syncBlindness } from './senses.js';
-import { touchPetrifies } from './stoning.js';
+import {
+    applyMonsterStoningAttack, contactIsProtected,
+    startHeroPetrificationFromMonster, touchPetrifies,
+} from './stoning.js';
+import { petrifyMonsterAttacker, petrifyMonsterDefender } from './monster_stoning.js';
+import { monsterHasStoneResistance } from './monster_resistance.js';
 import { clearHeroSliming } from './slime.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
@@ -136,7 +141,8 @@ import {
     poisonAttackAttribute, poisonHeroFromMonster, poisonMonsterFromAttack,
 } from './monster_poison.js';
 import { isPermanentlyPoisonedObject } from './object_properties.js';
-import { showMonsterCombatAttack, showMonsterCombatDeath } from './monster_combat_messages.js';
+import { canSeeMonsterCombat, showMonsterCombatAttack, showMonsterCombatDeath } from './monster_combat_messages.js';
+import { monsterSentenceSubject } from './monster_sound.js';
 import {
     finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
     finishMonsterRayDeath,
@@ -2392,6 +2398,14 @@ async function finishMonsterCombatDeath(
             aggressor, defender, killingAttack,
         ),
     });
+    return monsterCombatDeathResult(aggressor, defender, death, state, {
+        random, rollOne, calls,
+    });
+}
+
+function monsterCombatDeathResult(aggressor, defender, death, state, {
+    random, rollOne, calls,
+}) {
     if (death.survived) {
         return {
             survived: true, corpseCreated: false, corpse: null,
@@ -2451,6 +2465,17 @@ async function monsterMeleeAttack(
     const results = [];
     let struck = false;
     let death = null;
+    const finishStoningDeath = async (monster, options) => {
+        const outcome = await finishEnvironmentalMonsterDeath(monster, state, {
+            ...options, random, publish: plineWithContinuation,
+        });
+        if (monster === defender) {
+            death = monsterCombatDeathResult(aggressor, defender, outcome, state, {
+                random, rollOne, calls,
+            });
+        }
+        return outcome;
+    };
 
     for (const attack of attacks) {
         if ((defender?.mhp ?? 1) <= 0) break;
@@ -2479,7 +2504,39 @@ async function monsterMeleeAttack(
         if (hit) {
             damage = rollDice(attack.damn, attack.damd);
             calls.push(`d(${attack.damn},${attack.damd})`);
-            if (attack.damageType === AD_PHYS && weapon) {
+            const combatVisible = canSeeMonsterCombat(aggressor, defender);
+            const attackerTouchesStone = touchPetrifies(defender.mnum)
+                && !monsterHasStoneResistance(aggressor)
+                && !contactIsProtected(
+                    attack.attackType, aggressor.misc_worn_check, usesWeaponAccuracy,
+                );
+            let stopped = false;
+            if (attackerTouchesStone) {
+                const petrification = await petrifyMonsterAttacker(aggressor, {
+                    visible: combatVisible
+                        && canSpotMonster(aggressor, aggressor.mx, aggressor.my),
+                    finishDeath: finishStoningDeath,
+                });
+                damage = 0;
+                stopped = true;
+                struck ||= petrification.survived;
+                if (!petrification.survived && aggressor.mtame && !combatVisible)
+                    await plineWithContinuation('You have a peculiarly sad feeling for a moment, then it passes.');
+            } else if ((attack.damageType === AD_PHYS && weapon?.otyp === CORPSE
+                && touchPetrifies(weapon.corpsenm))
+                || (attack.damageType === AD_STON && !aggressor.mcan)) {
+                const petrification = await petrifyMonsterDefender(defender, {
+                    state, rollOne,
+                    visible: combatVisible
+                        && canSeeMonster(defender, defender.mx, defender.my),
+                    finishDeath: finishStoningDeath,
+                });
+                damage = attack.damageType === AD_STON ? 0 : petrification.damage;
+                stopped = petrification.stopped;
+                if (!petrification.survived && defender.mtame && !combatVisible)
+                    await plineWithContinuation('You have a peculiarly sad feeling for a moment, then it passes.');
+            }
+            if (!stopped && attack.damageType === AD_PHYS && weapon) {
                 damage += rollPhysicalWeaponDamage(weapon, defender, { rollOne, rollDice });
                 damage = Math.max(1, damage + monsterWeaponStrengthBonus(aggressor, random));
                 await erodeAttackingWeapon(defender, weapon, { state, random });
@@ -2489,7 +2546,7 @@ async function monsterMeleeAttack(
                         aggressor, defender, attack.attackType, damage, { random },
                     );
                 }
-            } else if (poisonAttackAttribute(attack.damageType) !== null
+            } else if (!stopped && poisonAttackAttribute(attack.damageType) !== null
                 && !specialAttackNegated(aggressor, defender, { state, random })
                 && random(8) === 0) {
                 damage = await poisonMonsterFromAttack(
@@ -2498,13 +2555,18 @@ async function monsterMeleeAttack(
             }
             // mdamagem() checks generic knockback before applying damage,
             // including for an ultimately fatal physical hit.
-            recordRandom(random, calls, 3);
-            recordRandom(random, calls, 6);
-            defender.mhp = Math.max(0, (defender.mhp ?? 1) - damage);
-            struck = true;
+            if (!attackerTouchesStone) {
+                recordRandom(random, calls, 3);
+                recordRandom(random, calls, 6);
+            }
+            if (!stopped && damage) {
+                defender.mhp = Math.max(0, (defender.mhp ?? 1) - damage);
+                struck = true;
+            }
         }
         result.damage = damage;
         results.push(result);
+        if (aggressor.dead || aggressor.mhp <= 0 || (death && !death.survived)) break;
         if (defender.mhp <= 0) {
             await showMonsterCombatDeath(defender, state);
             death = await finishMonsterCombatDeath(aggressor, defender, state, {
@@ -2521,6 +2583,7 @@ async function monsterMeleeAttack(
     }
     return {
         kind: 'monster-attack', aggressor, defender, results, struck,
+        aggressorDied: !!aggressor.dead || aggressor.mhp <= 0,
         defenderDied: !!death && !death.survived,
         death,
     };
@@ -2570,7 +2633,7 @@ function defenderCanAnswerMovementAttack(defender, random, calls) {
 function defenderCanCounterattack(
     attack, state, random, calls,
 ) {
-    if (!attack.struck || attack.defenderDied) return false;
+    if (!attack.struck || attack.defenderDied || attack.aggressorDied) return false;
     if (attack.retaliationRule === 'movement') {
         return defenderCanAnswerMovementAttack(
             attack.defender, random, calls,
@@ -2597,6 +2660,8 @@ async function beginMonsterMeleeAttack(
             defender, aggressor, sourceMonsterMeleeAttacks(defender), state,
             random, rollDice, rollOne, calls,
         );
+        result.aggressorDied = !!aggressor.dead || aggressor.mhp <= 0;
+        result.defenderDied = !!defender.dead || defender.mhp <= 0;
     }
     return result;
 }
@@ -4973,6 +5038,19 @@ async function basicMonsterAttack(
             ? { attribute: A_STR, fatal: 10 } : null;
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
+        if (contactWeapon.otyp === CORPSE && touchPetrifies(contactWeapon.corpsenm)) {
+            const subject = canProjectMonster(monster, monster.mx, monster.my)
+                ? monsterSentenceSubject(monster) : 'It';
+            await plineWithContinuation(`${subject} hits you with the ${
+                MONSTER_NAME[contactWeapon.corpsenm]} corpse.`);
+            if (await startHeroPetrificationFromMonster(monster, state)) {
+                return retainHeroAttackContinuation({
+                    kind: 'hero-attack', roll, threshold, hit, damage: 0,
+                    attackType, damageType, effect: 'petrifying-corpse',
+                }, monster, attackIndex);
+            }
+            damage = 1;
+        }
         const weaponDamage = rollPhysicalWeaponDamageAgainstHero(
             contactWeapon, state, {
                 rollOne: range => {
@@ -5307,15 +5385,12 @@ async function basicMonsterAttack(
             oldFormMnum,
         }, monster, attackIndex);
     } else if (hit && damageType === AD_STON) {
-        // mhitm_ad_ston() rolls the declared 0d0 before hitmsg().  Its hiss
-        // gate belongs after that visible contact line, so keep the remaining
-        // effect explicitly deferred at the tty boundary.
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         return retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit, damage,
             attackType, damageType, effect: 'stoning-natural',
-            deferredStoningEffect: true,
+            deferredPostHit: true,
         }, monster, attackIndex);
     } else if (hit && damageType === AD_RUST) {
         // uhitm.c:mhitm_ad_rust() still receives hitmu()'s declared 0d0
@@ -5832,6 +5907,11 @@ export async function resumeDeferredHeroContact(
     const attack = action?.movement?.attack;
     if (!attack?.deferredPostHit) return action;
     const calls = action.calls;
+    if (attack.damageType === AD_STON
+        && await applyMonsterStoningAttack(action.monster, { state, random, publish })) {
+        attack.deferredPostHit = false;
+        return action;
+    }
     if (attack.poison) {
         const poison = await poisonHeroFromMonster(action.monster, attack.attackType, {
             ...attack.poison, state, random, rollOne, rollDice, publish, die,
@@ -6032,53 +6112,6 @@ export function resumeDeferredHeroBlindness(
     return toggled;
 }
 
-// Resume mhitm_ad_ston() after hitmsg() has crossed tty.  A cockatrice touch
-// first owns its one-in-three hiss/petrification gate, then the shared
-// mhitm_knockback() prefix runs even though the declared contact is 0d0 and
-// the attack method can never actually knock the hero back.
-export function resumeDeferredHeroStoning(
-    action, state, random = rn2,
-) {
-    const attack = action?.movement?.attack;
-    if (!attack?.deferredStoningEffect) return action;
-    const special = recordRandom(random, action.calls, 3);
-    attack.stoningSpecialTriggered = special === 0;
-    if (attack.stoningSpecialTriggered) {
-        attack.deferredStoningSpecial = true;
-        const monster = action.monster;
-        const name = MONSTER_NAME[monster?.mnum] || 'monster';
-        const deaf = !!state?.deaf || (state?.u?.deafTurns ?? 0) > 0;
-        const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
-        const hallucinating = !!state?.u?.hallucinating
-            || (state?.u?.hallucinationTurns ?? 0) > 0;
-        if (monster?.mcan) {
-            if (!deaf)
-                attack.stoningSpecialMessage = `You hear a cough from the ${name}!`;
-        } else if (hallucinating && !blind) {
-            if (!deaf) attack.stoningSpecialMessage = 'You hear hissing.';
-            attack.stoningSpecialFollowup
-                = `The ${name} appears to be blowing you a kiss...`;
-        } else if (!deaf) {
-            attack.stoningSpecialMessage
-                = `You hear the ${name}'s hissing!`;
-        } else if (!blind) {
-            attack.stoningSpecialMessage = `The ${name} seems to grimace.`;
-        }
-        if (!monster?.mcan) {
-            attack.stoningPetrificationSelected
-                = recordRandom(random, action.calls, 10) === 0;
-            // do_stone_u(), including new-moon override and resistance/
-            // delayed-polyform handling, remains a separate successor.
-            if (attack.stoningPetrificationSelected)
-                attack.deferredHeroPetrification = true;
-        }
-    }
-    recordRandom(random, action.calls, 3);
-    recordRandom(random, action.calls, 6);
-    attack.deferredStoningEffect = false;
-    attack.stoningContactResolved = true;
-    return action;
-}
 
 // Resume mattacku() at the next natural attack slot.  The tty driver calls
 // this only after the preceding hit/miss message and post-hit tail have both
@@ -6832,6 +6865,7 @@ function revealMonsterAfterLeavingHidingPlace(monster, movement, state) {
 async function finishDochugAfterMovement(
     monster, movement, state, random, rollOne, rollDice, calls,
 ) {
+    if (monster.dead || monster.mhp <= 0) return;
     if (!movement.deferredPostFlee)
         recordRandom(random, calls, 5); // distfleeck() after movement
     // m_move() maps a successful defensive escape action to MMOVE_DONE.

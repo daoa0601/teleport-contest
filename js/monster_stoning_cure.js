@@ -186,7 +186,7 @@ export async function useMonsterStoningCure(monster, {
                 );
             }
             await finishDeath(monster, { noCorpse: false });
-            return { consumed: true, cure, died: true };
+            return { consumed: true, cure, died: monster.mhp <= 0 || !!monster.dead };
         }
     }
 

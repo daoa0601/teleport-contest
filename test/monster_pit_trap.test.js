@@ -10,7 +10,8 @@ import {
 import {
     AMULET_OF_LIFE_SAVING, CORPSE, STATUE,
 } from '../js/object_data.js';
-import { knownObject } from './support/game-objects.js';
+import { knownObject, untimedCorpse } from './support/game-objects.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { equipMonsterObject } from './support/monsters.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
@@ -48,13 +49,14 @@ test('a flying monster passes over a pit', async () => {
     assert.equal(trap.tseen ?? false, false);
 });
 
-test('falling makes a monster touch its wielded cockatrice corpse',
+test('falling forces contact with a wielded cockatrice corpse before the monster can eat a cure',
     async () => {
         const { level, monster } = await freshMonsterTrapRoom(PIT, {
             monster: { species: 'giant' },
         });
         const corpse = knownObject(CORPSE, { corpsenm: 10 });
         equipMonsterObject(monster, corpse, W_WEP);
+        equipMonsterObject(monster, untimedCorpse(MONSTER_NAME.indexOf('lizard')), 0);
         const messages = [];
 
         const action = triggerImmediateMonsterTrap(monster, game);

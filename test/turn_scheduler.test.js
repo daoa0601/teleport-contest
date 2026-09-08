@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { A_STR, IRONBARS, NEED_WEAPON, NO_MINVENT, NO_WEAPON_WANTED, PIT, POOL, STONE, W_WEP } from '../js/const.js';
+import { A_STR, IRONBARS, NEED_WEAPON, NEW_MOON, NO_MINVENT, NO_WEAPON_WANTED, PIT, POOL, STONE, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { tameMonster } from '../js/dog.js';
 import { pushKeys } from '../js/input.js';
@@ -40,6 +40,22 @@ test('a monster\'s poisoned weapon weakens the hero during an ordinary turn', as
     await moveloop_core();
 
     assert.ok(game.u.acurr.a[A_STR] < strength);
+});
+
+test('a cockatrice hiss starts petrification during an ordinary turn', async () => {
+    freshTurnRoom();
+    game.flags.moonphase = NEW_MOON;
+    const cockatrice = await createMonsterAt('cockatrice', 11, 10, NO_MINVENT);
+    cockatrice.mpeaceful = false;
+    cockatrice.movement = 12;
+    initRng(2n);
+    pushKeys('m.                    ');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(game.u.stonedTurns, 4);
+    assert.equal(game.u.stoneKiller, 'cockatrice');
 });
 
 test('a weapon rusts on the hero\'s monster body during an ordinary turn', async () => {

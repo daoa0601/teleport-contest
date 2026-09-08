@@ -4,13 +4,20 @@
 // potion.c make_stoned(), and timeout.c stoned_dialogue().
 
 import { exerciseAttribute } from './attrib.js';
-import { A_DEX, G_GENOD, STONING } from './const.js';
-import { pline, plineWithContinuation } from './display.js';
+import { A_DEX, G_GENOD, NEW_MOON, STONING, W_ARMC, W_ARMF, W_ARMG, W_ARMH } from './const.js';
+import {
+    canSpotMonster, pline, plineWithContinuation, randomDisplayMonsterSubject,
+} from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { cureHeroVomiting } from './hero_illness.js';
 import { healHeroLegs } from './hero_legs.js';
-import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import {
+    AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC,
+    AT_CLAW, AT_TUCH, AT_WEAP, AT_KICK, AT_BUTT, AT_HUGS,
+} from './monster_attack_types.js';
+import { monsterSentenceSubject } from './monster_sound.js';
 import { CORPSE, EGG } from './object_data.js';
 import {
     heroHasNoLimbs, heroIsPolymorphed, polymonHero,
@@ -20,6 +27,8 @@ import { clearHeroSliming } from './slime.js';
 import { stopRun } from './runmode.js';
 import { stopHeroOccupation } from './occupation.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { rn2 } from './rng.js';
 
 const PM_CHICKATRICE = 9;
 const PM_COCKATRICE = 10;
@@ -33,6 +42,62 @@ export function touchPetrifies(mnum) {
 
 export function fleshPetrifies(mnum) {
     return touchPetrifies(mnum) || mnum === PM_MEDUSA;
+}
+
+// C mhitm.c:attk_protection(). Bites cannot be insulated by worn armor.
+export function contactIsProtected(attackType, wornMask, usedWeapon = false) {
+    if ([AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC]
+        .includes(attackType)) return true;
+    if ([AT_CLAW, AT_TUCH, AT_WEAP].includes(attackType))
+        return usedWeapon || !!(wornMask & W_ARMG);
+    if (attackType === AT_KICK) return !!(wornMask & W_ARMF);
+    if (attackType === AT_BUTT) return !!(wornMask & W_ARMH);
+    if (attackType === AT_HUGS)
+        return (wornMask & (W_ARMC | W_ARMG)) === (W_ARMC | W_ARMG);
+    return false;
+}
+
+// C uhitm.c:do_stone_u(). A successful golem transformation avoids the timer.
+export async function startHeroPetrificationFromMonster(monster, state = game) {
+    if (heroIsPetrifying(state) || heroResistsStoning(state)) return false;
+    if (formCanBecomeStoneGolem(state.u.umonnum, state)) {
+        const transformed = await polymonHero(PM_STONE_GOLEM);
+        if (transformed.transformed) return false;
+    }
+    return startHeroPetrification({
+        state, killer: monsterTypeName(monster.mnum, !!monster.female),
+    });
+}
+
+// C uhitm.c:mhitm_ad_ston(), after the ordinary hit message.
+export async function applyMonsterStoningAttack(monster, {
+    state = game, random = rn2, publish = plineWithContinuation,
+} = {}) {
+    if (random(3) !== 0) return false;
+    const spotted = canSpotMonster(monster, monster.mx, monster.my);
+    const hallucinating = state.u.hallucinating || state.u.hallucinationTurns > 0;
+    const subject = () => !spotted ? 'It'
+        : hallucinating ? randomDisplayMonsterSubject() : monsterSentenceSubject(monster);
+    const target = () => spotted ? subject().replace(/^The /u, 'the ') : 'it';
+    const deaf = heroIsDeaf(state);
+    if (monster.mcan) {
+        if (!deaf) await publish(`You hear a cough from ${target()}!`);
+        return false;
+    }
+    const blind = heroIsBlind(state);
+    if (hallucinating && !blind) {
+        if (!deaf) await publish('You hear hissing.');
+        await publish(`${subject()} appears to be blowing you a kiss...`);
+    } else if (!deaf) {
+        const name = target();
+        const possessive = name === 'it' ? 'its'
+            : name.endsWith('s') ? `${name}'` : `${name}'s`;
+        await publish(`You hear ${possessive} hissing!`);
+    } else if (!blind) {
+        await publish(`${subject()} seems to grimace.`);
+    }
+    if (random(10) !== 0 && state.flags.moonphase !== NEW_MOON) return false;
+    return startHeroPetrificationFromMonster(monster, state);
 }
 
 function heroResistsStoning(state = game) {
