@@ -61,7 +61,7 @@ export async function applyHeroContactPassive(monster, {
     if (!attack) return { handled: false, heroDied: false };
 
     const damageType = attack[1];
-    const damage = passiveDamage(monster, attack, rollDice);
+    const damage = passiveDamage(monster.mnum, attack, rollDice);
     const context = {
         monster,
         damageType,
@@ -477,10 +477,10 @@ export function passiveAttack(monster) {
     ) || null;
 }
 
-export function passiveDamage(monster, attack, rollDice) {
+export function passiveDamage(species, attack, rollDice) {
     const [, , dice, sides] = attack;
     if (dice > 0) return rollDice(dice, sides);
-    if (sides > 0) return rollDice(MONSTER_LEVEL[monster.mnum] + 1, sides);
+    if (sides > 0) return rollDice(MONSTER_LEVEL[species] + 1, sides);
     return 0;
 }
 
@@ -532,7 +532,7 @@ export async function applyMonsterPassiveToObject(
     const type = passive[1];
     if (type === AD_ENCH) {
         if (monster.mcan) return;
-        if (!drainObjectEnchantment(object)) return;
+        if (!await drainObjectEnchantment(object, { state })) return;
         if (carried) state._armorClassDirty = true;
         if (carried && (object.known || object.typeKnown || object.oclass === 3)) {
             const name = object.name || OBJECT_NAMES[object.otyp];

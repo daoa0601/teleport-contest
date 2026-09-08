@@ -5,7 +5,7 @@ import {
     G_GENOD, W_ARM, W_ARMC, W_ARMG, W_ARMU,
 } from './const.js';
 import {
-    canSeeMonster, newsym, plineWithContinuation,
+    canSeeMonster, canSpotMonster, newsym, plineWithContinuation,
 } from './display.js';
 import { recordHeroKillConduct } from './end.js';
 import { game } from './gstate.js';
@@ -50,6 +50,7 @@ function speciesWasGenocided(mnum) {
 }
 
 function monsterSubject(monster) {
+    if (!canSpotMonster(monster, monster.mx, monster.my)) return 'It';
     if (monster.name) return monster.name;
     return `The ${monsterTypeName(monster.mnum, !!monster.female)}`;
 }
@@ -140,10 +141,12 @@ export async function petrifyMonsterFromContact(monster, {
 export async function petrifyMonsterAttacker(monster, {
     publish = plineWithContinuation,
     visible = canSeeMonster(monster, monster.mx, monster.my),
+    creditHero = false,
     ...options
 } = {}) {
     if (await turnGolemToStone(monster, publish)) return { survived: true };
     if (visible) await publish(`${monsterSubject(monster)} turns to stone!`);
+    if (creditHero) recordHeroKillConduct();
     return finishMonsterPetrification(monster, { ...options, publish });
 }
 

@@ -143,7 +143,7 @@ import {
     resumeDeferredHeroSticking,
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
     resumeDeferredHeroLegs,
-    resumeDeferredHeroPassive, resumeDeferredHeroReveal,
+    resumeDeferredHeroReveal,
     rollDeferredHeroSpellDamage,
     resumeDeferredHeroSpell,
     resolveDeferredHeroSummonMonsters,
@@ -2421,19 +2421,6 @@ function monsterAttackMessage(monster, attack, previousAttack = null) {
     return `${subject} ${verb}${again}!`;
 }
 
-function heroPassiveResponseMessage(monster, passive) {
-    if (!passive?.messageKind) return null;
-    const name = game.u?.hallucinating
-        || (game.u?.hallucinationTurns ?? 0) > 0
-        ? randomDisplayMonsterName()
-        : monsterTypeName(monster?.mnum, !!monster?.female);
-    const subject = game.blind ? 'It' : `The ${name}`;
-    if (passive.messageKind === 'cold-resistant')
-        return `${subject} is mildly chilly.`;
-    if (passive.messageKind === 'cold')
-        return `${subject} is suddenly very cold!`;
-    return null;
-}
 
 function wornTheftObjectDescription(object) {
     // C steal.c:worn_item_removal() starts from doname(), then massages only
@@ -4643,33 +4630,6 @@ async function executeLiveQuietMonsterScan(monsterScan) {
                         action, game,
                     );
                     if (toggledBlindness) vision_recalc(0);
-                }
-                if (heroAttack.passive?.messageKind) {
-                    const passiveDismissal = await queueTurnMessage(
-                        heroPassiveResponseMessage(monster, heroAttack.passive),
-                    );
-                    heroAttack.passive.messageKind = null;
-                    resumeDeferredHeroPassive(action, game);
-                    if (heroAttack.passive?.attackerDied) {
-                        const passiveDeathName = () => game.u?.hallucinating
-                            || (game.u?.hallucinationTurns ?? 0) > 0
-                            ? randomDisplayMonsterName()
-                            : MONSTER_NAME[monster?.mnum] || 'monster';
-                        const deathSubject = canProjectMonster(
-                            monster, monster.mx, monster.my,
-                        ) ? `The ${passiveDeathName()}` : 'It';
-                        await queueTurnMessage(`${deathSubject} dies!`);
-                        await finishHeroMonsterKill(
-                            monster, monster.mx, monster.my, {
-                                nameMonster: passiveDeathName,
-                                showKillMessage: false,
-                            },
-                        );
-                    }
-                    if (passiveDismissal !== null
-                        && passiveDismissal !== undefined) {
-                        actorContactPagerOwned = true;
-                    }
                 }
                 if (heroAttack.effectMessage) {
                     const effectDismissal = await queueTurnMessage(

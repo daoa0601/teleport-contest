@@ -4,7 +4,7 @@
 import { game } from './gstate.js';
 import {
     FOUNTAIN, G_GENOD, In_endgame, Is_earthlevel, Is_waterlevel, IS_LAVA,
-    IS_POOL, MSLOW, WATER,
+    IS_POOL, MSLOW, STRAT_WAITFORU, WATER,
 } from './const.js';
 import { dryFountainAt } from './fountain_terrain.js';
 import {
@@ -48,6 +48,14 @@ const PM_IRON_GOLEM = 259;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_SALAMANDER = 329;
 const S_EEL = 57;
+
+// C mhitm.c:paralyze_monst(). Paralysis also interrupts eating and waiting.
+export function paralyzeMonster(monster, turns) {
+    monster.mcanmove = 0;
+    monster.mfrozen = Math.min(127, turns);
+    monster.meating = 0;
+    monster.mstrategy &= ~STRAT_WAITFORU;
+}
 
 // C healmon(). Overhealing can increase the monster's maximum health.
 export function healMonster(monster, amount, overheal = 0) {

@@ -1,10 +1,9 @@
 // A monster's passive response to another monster's melee attack.
 // C mhitm.c:passivemm() and paralyze_monst().
 
-import { STRAT_WAITFORU } from './const.js';
 import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
-import { applyMonsterGolemEffects, healMonster } from './mon.js';
+import { applyMonsterGolemEffects, healMonster, paralyzeMonster } from './mon.js';
 import {
     AD_ACID, AD_COLD, AD_ELEC, AD_ENCH, AD_FIRE, AD_PLYS, AD_STUN,
 } from './monster_attack_types.js';
@@ -37,7 +36,7 @@ export async function applyMonsterContactPassive(attacker, defender, {
     const passive = passiveAttack(defender);
     if (!passive) return { stopped: false };
     const type = passive[1];
-    let damage = passiveDamage(defender, passive, rollDice);
+    let damage = passiveDamage(defender.mnum, passive, rollDice);
     const visible = canSeeMonster(attacker, attacker.mx, attacker.my);
 
     if (type === AD_ACID) {
@@ -54,7 +53,7 @@ export async function applyMonsterContactPassive(attacker, defender, {
             await damageObjectWithAcid(monsterWieldedWeapon(attacker), { state, random, publish });
     } else {
         if (type === AD_ENCH && hit && !defender.mcan && weapon)
-            drainObjectEnchantment(weapon, random);
+            await drainObjectEnchantment(weapon, { random, state });
         if (defender.dead || defender.mhp <= 0 || defender.mcan || random(3) === 0)
             return { stopped: false };
         switch (type) {
@@ -137,10 +136,7 @@ async function paralyzeAttacker(attacker, defender, duration, {
     } else if (visible) {
         await publish(`${monsterSentenceSubject(attacker)} is frozen by ${monsterSentenceSubject(defender).replace(/^The /u, 'the ')}.`);
     }
-    attacker.mcanmove = 0;
-    attacker.mfrozen = duration;
-    attacker.meating = 0;
-    attacker.mstrategy &= ~STRAT_WAITFORU;
+    paralyzeMonster(attacker, duration);
     return { stopped: true };
 }
 

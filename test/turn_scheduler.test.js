@@ -94,6 +94,22 @@ test('an acid blob splashes a pet that kills it during an ordinary turn', async 
     assert.ok(soldier.mhp < health);
 });
 
+test('a floating-eye hero freezes an attacker during an ordinary turn', async () => {
+    freshTurnRoom();
+    installPolymorphedHero('floating eye');
+    const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+    goblin.mpeaceful = false;
+    goblin.movement = 12;
+    initRng(2n);
+    pushKeys('m.                    ');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(goblin.mcanmove, 0);
+    assert.ok(goblin.mfrozen > 0);
+});
+
 test('a weapon rusts on the hero\'s monster body during an ordinary turn', async () => {
     freshTurnRoom();
     installPolymorphedHero('rust monster');

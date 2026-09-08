@@ -145,6 +145,7 @@ import { isPermanentlyPoisonedObject } from './object_properties.js';
 import { canSeeMonsterCombat, showMonsterCombatAttack, showMonsterCombatDeath } from './monster_combat_messages.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { applyMonsterContactPassive } from './monster_contact_passive.js';
+import { applyHeroFormPassive } from './hero_form_passive.js';
 import { tryKnockback } from './knockback.js';
 import {
     finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath,
@@ -1628,90 +1629,17 @@ function applyHeroContactDamage(state, damage) {
     state.u[key] = Math.max(0, (state.u[key] ?? 1) - damage);
 }
 
-// C mhitu.c:passiveum().  A damaging monster contact completes the old hero
-// form's first AT_NONE/AT_BOOM response before mattacku() advances to another
-// attack slot.  Even forms without an effective passive retain the rn2(3)
-// gate from their first blank AT_NONE slot while polymorphed.
-function applyHeroPassiveAfterContact(
-    monster, state, random, rollDice, calls, oldFormMnum,
-    deferColdAfterMessage = false,
-) {
-    if (!Number.isInteger(oldFormMnum)) return null;
-    const passive = (MONSTER_ATTACKS[oldFormMnum] || [])
-        .find(([attackType]) => attackType === 0 || attackType === 14);
-    if (!passive) return null;
-    const [, damageType = AD_PHYS, dice = 0, sides = 0] = passive;
-    let damage = dice > 0
-        ? rollDice(dice, sides)
-        : sides > 0
-            ? rollDice((MONSTER_LEVEL[oldFormMnum] ?? 0) + 1, sides)
-            : 0;
-    if (dice > 0) calls.push(`d(${dice},${sides})`);
-    else if (sides > 0) {
-        calls.push(`d(${(MONSTER_LEVEL[oldFormMnum] ?? 0) + 1},${sides})`);
+// Complete body loss before applying the old form's passive response.
+async function finishHeroContactDamage(monster, damage, attackType, oldForm, state, {
+    random = rn2, rollDice = d, publish = plineWithContinuation, die,
+} = {}) {
+    applyHeroContactDamage(state, damage);
+    if (Upolyd(state.u) && state.u.mh < 1) {
+        const restored = await returnHeroToHumanForm(state, { publish, die });
+        if (restored.died) return { heroDied: true, attackerStopped: true };
     }
-
-    // The old form selects the passive and its damage dice, but most effects
-    // only fire if the hero remains polymorphed after the incoming damage.
-    if (!Upolyd(state?.u) || recordRandom(random, calls, 3) === 0) damage = 0;
-
-    let messageKind = null;
-    if (damage > 0 && damageType === AD_COLD) {
-        if ((MONSTER_RESISTS[monster?.mnum] ?? 0) & 0x02) {
-            messageKind = 'cold-resistant';
-            damage = 0;
-        } else {
-            messageKind = 'cold';
-            if (deferColdAfterMessage) {
-                return {
-                    damageType, damage: 0, messageKind,
-                    deferredColdDamage: damage,
-                    attackerDied: false,
-                };
-            }
-            const healingRemainder = recordRandom(random, calls, 2);
-            state.u.mh += Math.trunc((damage + healingRemainder) / 2);
-            if ((state.u.mhmax ?? 0) < state.u.mh)
-                state.u.mhmax = state.u.mh;
-        }
-    } else if (damageType !== AD_PHYS) {
-        // TODO: apply the remaining non-physical passive effects.
-        damage = 0;
-    }
-
-    if (damage > 0) {
-        monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
-        if (monster.mhp <= 0) monster.dead = true;
-    }
-    return {
-        damageType, damage, messageKind,
-        attackerDied: (monster?.mhp ?? 0) <= 0,
-    };
-}
-
-// C mhitu.c:passiveum(AD_COLD) prints the cold-response line before its
-// healing remainder draw and before assess_dmg(). A tty overflow can suspend
-// exactly there, so the live actor driver resumes this tail only after that
-// line has been accepted.
-export function resumeDeferredHeroPassive(
-    action, state, random = rn2,
-) {
-    const passive = action?.movement?.attack?.passive;
-    const damage = passive?.deferredColdDamage;
-    if (!Number.isFinite(damage)) return passive;
-
-    const healingRemainder = recordRandom(random, action.calls, 2);
-    state.u.mh += Math.trunc((damage + healingRemainder) / 2);
-    if ((state.u.mhmax ?? 0) < state.u.mh)
-        state.u.mhmax = state.u.mh;
-
-    const monster = action.monster;
-    monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
-    if (monster.mhp <= 0) monster.dead = true;
-    passive.damage = damage;
-    passive.attackerDied = monster.mhp <= 0;
-    delete passive.deferredColdDamage;
-    return passive;
+    if (damage <= 0) return { attackerStopped: false };
+    return applyHeroFormPassive(monster, oldForm, attackType, { state, random, rollDice, publish });
 }
 
 function heroHasNegativeMulti(state) {
@@ -4819,7 +4747,7 @@ async function basicMonsterAttack(
     let damageType = sourceDamageType;
     let dice = sourceDice;
     let sides = sourceSides;
-    const oldFormMnum = Upolyd(state?.u) ? state.u.umonnum : null;
+    const oldFormMnum = state.u.umonnum;
     // mhitu.c:getmattk() keeps a recently released elemental engulfer from
     // immediately swallowing again.  It preserves the elemental damage but
     // substitutes a touch method until mcalcdistress() ages mspec_used out.
@@ -5109,13 +5037,12 @@ async function basicMonsterAttack(
         if (knockback.defenderDied)
             return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
         damage = reduceHeroContactDamage(damage, state, rollOne, calls);
-        applyHeroContactDamage(state, damage);
-        const passive = damage > 0 ? applyHeroPassiveAfterContact(
-            monster, state, random, rollDice, calls, oldFormMnum,
-        ) : null;
+        const passive = await finishHeroContactDamage(
+            monster, damage, attackType, oldFormMnum, state, { random, rollDice },
+        );
         return retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit, damage,
-            attackType, damageType, effect: 'physical-weapon', passive,
+            attackType, damageType, effect: 'physical-weapon', passive, heroDied: passive.heroDied,
         }, monster, attackIndex);
     } else if (hit && monster.mnum === 116 && !deferVisibleContact) {
         // PM_GRID_BUG: AT_BITE AD_ELEC 1d1.  The electric special checks
@@ -5136,10 +5063,12 @@ async function basicMonsterAttack(
         if (knockback.defenderDied)
             return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
         damage = reduceHeroContactDamage(damage, state, rollOne, calls);
-        applyHeroContactDamage(state, damage);
+        const passive = await finishHeroContactDamage(
+            monster, damage, attackType, oldFormMnum, state, { random, rollDice },
+        );
         return retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit, damage,
-            attackType,
+            attackType, passive, heroDied: passive.heroDied,
             effect: negated ? 'electric-avoided' : 'electric-zap',
         }, monster, attackIndex);
     } else if (hit && poisonAttackAttribute(damageType) !== null) {
@@ -5172,10 +5101,12 @@ async function basicMonsterAttack(
         if (knockback.defenderDied)
             return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
         damage = reduceHeroContactDamage(damage, state, rollOne, calls);
-        applyHeroContactDamage(state, damage);
+        const passive = await finishHeroContactDamage(
+            monster, damage, attackType, oldFormMnum, state, { random, rollDice },
+        );
         return retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit, damage,
-            attackType, effect: 'poisonous-natural',
+            attackType, effect: 'poisonous-natural', passive, heroDied: passive.heroDied,
         }, monster, attackIndex);
     } else if (hit && damageType === AD_SAMU
         && dice > 0 && sides > 0) {
@@ -5491,7 +5422,9 @@ async function basicMonsterAttack(
             const target = selectHeroDisenchantmentTarget(
                 state, random, calls,
             );
-            if (drainObjectEnchantment(target, range => recordRandom(random, calls, range)))
+            if (await drainObjectEnchantment(target, {
+                state, random: range => recordRandom(random, calls, range),
+            }))
                 drainedObject = target;
         }
         const quantity = drainedObject?.quantity
@@ -5552,13 +5485,12 @@ async function basicMonsterAttack(
         if (knockback.defenderDied)
             return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
         damage = reduceHeroContactDamage(damage, state, rollOne, calls);
-        applyHeroContactDamage(state, damage);
-        const passive = damage > 0 ? applyHeroPassiveAfterContact(
-            monster, state, random, rollDice, calls, oldFormMnum,
-        ) : null;
+        const passive = await finishHeroContactDamage(
+            monster, damage, attackType, oldFormMnum, state, { random, rollDice },
+        );
         return retainHeroAttackContinuation({
             kind: 'hero-attack', roll, threshold, hit, damage,
-            attackType, damageType, effect: physicalEffect, passive,
+            attackType, damageType, effect: physicalEffect, passive, heroDied: passive.heroDied,
         }, monster, attackIndex);
     }
     return retainHeroAttackContinuation({
@@ -6036,26 +5968,11 @@ export async function resumeDeferredHeroContact(
     attack.appliedDamage = reduceHeroContactDamage(
         attack.damage, state, rollOne, calls,
     );
-    const wasPolymorphed = Upolyd(state?.u);
-    applyHeroContactDamage(state, attack.appliedDamage);
-    if (wasPolymorphed && (state.u?.mh ?? 0) < 1) {
-        // mdamageu() finishes rehumanization, including equipment effects,
-        // before passiveum() decides which effects survive the lost form.
-        const restored = await returnHeroToHumanForm(state, { publish });
-        if (restored.died) {
-            attack.heroDied = true;
-            attack.deferredPostHit = false;
-            return action;
-        }
-    }
-    if (attack.appliedDamage > 0) {
-        attack.passive = applyHeroPassiveAfterContact(
-            action.monster, state, random, d, calls,
-            attack.oldFormMnum
-                ?? (Upolyd(state?.u) ? state.u.umonnum : null),
-            true,
-        );
-    }
+    attack.passive = await finishHeroContactDamage(
+        action.monster, attack.appliedDamage, attack.attackType,
+        attack.oldFormMnum ?? state.u.umonnum, state, { random, rollDice, publish, die },
+    );
+    if (attack.passive.heroDied) attack.heroDied = true;
     attack.deferredPostHit = false;
     return action;
 }
@@ -6167,7 +6084,7 @@ export async function continueDeferredHeroAttack(
     const previous = action?.movement?.attack;
     const attackIndex = previous?.nextAttackIndex;
     if (attackIndex === undefined || attackIndex === null) return null;
-    if (previous?.passive?.attackerDied
+    if (previous?.passive?.attackerStopped || previous?.heroDied
         || action?.monster?.dead
         || (action?.monster?.mhp ?? 1) <= 0) return null;
     // executeLiveQuietMonsterScan() clears its broad deferral marker after

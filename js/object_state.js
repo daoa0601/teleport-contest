@@ -10,7 +10,9 @@ import {
     BAG_OF_HOLDING, CORPSE, OBJECT_CHARGED, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
 import { artifactById } from './artifacts.js';
+import { game } from './gstate.js';
 import { rn2 } from './rng.js';
+import { chargeAlteredUnpaidObject } from './shk.js';
 import { objectWeight } from './weight.js';
 
 const WEAPON_CLASS = 2;
@@ -20,8 +22,10 @@ const COIN_CLASS = 12;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
 
-// C zap.c:drain_item(). Callers handle worn-item effects and messages.
-export function drainObjectEnchantment(object, random = rn2) {
+// C zap.c:drain_item(). Billing precedes the loss of a charge.
+export async function drainObjectEnchantment(object, {
+    random = rn2, byHero = false, state = game,
+} = {}) {
     if (!object || !(object.spe > 0)) return false;
     const weaponTool = object.oclass === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0;
     if (!OBJECT_CHARGED[object.otyp]
@@ -30,6 +34,7 @@ export function drainObjectEnchantment(object, random = rn2) {
     const artifact = artifactById(object.oartifact);
     if (artifact?.defense === 'life-drain' || artifact?.carriedDefense === 'life-drain'
         || objectResistsDestruction(object, 10, 90, random)) return false;
+    if (byHero) await chargeAlteredUnpaidObject(object, 'drain', state);
     object.spe--;
     object.enchantment = object.spe;
     return true;
