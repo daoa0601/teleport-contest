@@ -22,6 +22,7 @@ import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME,
 } from './monster_data.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterHasDisintegrationResistance } from './monster_resistance.js';
 import {
     AD_ACID, AD_BLND, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE,
     AD_MAGM, AD_RBRE, AD_SLEE, AT_EXPL, AT_GAZE,
@@ -400,7 +401,7 @@ async function disintegrateMonster(monster, state) {
         monster.mhp = monster.mhpmax;
         return { damage: 0, reintegrated: true, resisted: true };
     }
-    if (monsterResistsDisintegration(monster)) {
+    if (monsterHasDisintegrationResistance(monster)) {
         await shieldeff(monster.mx, monster.my, state);
         return { damage: 0, resisted: true };
     }
@@ -423,15 +424,6 @@ async function disintegrateMonster(monster, state) {
     }
     monster.mhp = 0;
     return { damage: 0, disintegrated: true, noCorpse: true };
-}
-
-function monsterResistsDisintegration(monster) {
-    if (monsterHasElementalResistance(
-        monster, MR_DISINT, 'defendedDisintegration',
-    )) return true;
-    const suit = monsterWornObject(monster, W_ARM);
-    return !!suit && [BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES]
-        .includes(suit.otyp);
 }
 
 async function finishMonsterBreathHit(

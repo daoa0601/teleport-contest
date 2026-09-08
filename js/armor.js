@@ -2,6 +2,13 @@
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
 
 import { game } from './gstate.js';
+import { plineWithContinuation } from './display.js';
+import { consumeInventoryItem } from './invent.js';
+import { objectResistsDestruction } from './object_state.js';
+import { stopHeroOccupation } from './occupation.js';
+import { objectTypeKnown } from './shk.js';
+import { selfTouchPetrifyingWeapons } from './stoning.js';
+import { surfaceName } from './terrain_name.js';
 import { magicNegation } from './magic_negation.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './light.js';
@@ -10,8 +17,8 @@ import {
     FUMBLE_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION,
     GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES,
     YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
-    SHIELD_OF_DRAIN_RESISTANCE,
-    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY,
+    SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION,
+    OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY,
     WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { rnd } from './rng.js';
@@ -249,8 +256,78 @@ export function objectErosionMessage(object, kind) {
 }
 
 export function destroyWornArmor(armor, state = game) {
-    removeHeroArmor(armor, state);
-    state.inventory = (state.inventory || []).filter(item => item !== armor);
+    consumeInventoryItem(armor, state);
+}
+
+// C do_wear.c:disintegrate_arm(), with a specified worn piece.
+export async function disintegrateWornArmor(armor, {
+    state = game, publish = plineWithContinuation,
+} = {}) {
+    const slot = armorSlotFor(armor.otyp);
+    if (!slot || equippedObject(state, slot) !== armor
+        || objectResistsDestruction(armor, 0, 90)) return false;
+    armor.in_use = true;
+    const noun = simpleArmorName(armor, slot, state);
+    let message;
+    switch (slot) {
+    case 'uarmc': message = `Your ${noun} crumbles and turns to dust!`; break;
+    case 'uarm': {
+        if (armor.lamplit) endObjectBurn(armor, state);
+        const plural = noun === 'dragon scales';
+        const surface = surfaceName(state.u.ux, state.u.uy, state);
+        message = `Your ${noun} ${plural ? 'turn' : 'turns'} to dust and ${plural ? 'fall' : 'falls'} to the ${surface}!`;
+        break;
+    }
+    case 'uarmu': message = `Your ${noun} crumbles into tiny threads and falls apart!`; break;
+    case 'uarmh': message = `Your ${noun} turns to dust and is blown away!`; break;
+    case 'uarmg': message = `Your ${noun} vanish!`; break;
+    case 'uarmf': message = `Your ${noun} disintegrate!`; break;
+    case 'uarms': message = `Your ${noun} crumbles away!`; break;
+    }
+    await publish(message);
+    if (state._delayedAction?.object === armor) {
+        state._delayedAction = null;
+        state.multi = 0;
+    }
+    destroyWornArmor(armor, state);
+    state._armorClassDirty = true;
+    if (slot === 'uarmg') {
+        const result = await selfTouchPetrifyingWeapons({ messageStart: 'You', state, publish });
+        if (result.died) return true;
+    }
+    await stopHeroOccupation(state, publish);
+    return true;
+}
+
+function simpleArmorName(armor, slot, state) {
+    const name = OBJECT_NAMES[armor.otyp];
+    const appearance = state.objectDescriptions?.[armor.otyp]
+        || OBJECT_DESCRIPTIONS[armor.otyp] || name;
+    const known = objectTypeKnown(armor, state);
+    switch (slot) {
+    case 'uarm':
+        if (name.endsWith('dragon scale mail')) return 'dragon mail';
+        if (name.endsWith('dragon scales')) return 'dragon scales';
+        if (name.endsWith(' mail')) return 'mail';
+        return name.endsWith(' jacket') ? 'jacket' : 'suit';
+    case 'uarmc':
+        if (name === 'robe') return 'robe';
+        if (name === 'mummy wrapping') return 'wrapping';
+        if (name === 'alchemy smock') return known && armor.dknown ? 'smock' : 'apron';
+        return 'cloak';
+    case 'uarmh': return objectIsHardHelmet(armor) ? 'helm' : 'hat';
+    case 'uarmu': return 'shirt';
+    case 'uarmg':
+        return armor.dknown && (known ? name : appearance).includes('gauntlets')
+            ? 'gauntlets' : 'gloves';
+    case 'uarmf':
+        return armor.dknown && (appearance.includes('shoes') || known && name.includes('shoes'))
+            ? 'shoes' : 'boots';
+    case 'uarms':
+        if (armor.otyp === SHIELD_OF_REFLECTION)
+            return armor.dknown ? 'silver shield' : 'smooth shield';
+        return 'shield';
+    }
 }
 
 export function armorBaseBonus(otyp) {

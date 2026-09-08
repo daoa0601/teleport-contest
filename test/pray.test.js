@@ -1,9 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-    angryGodMaximum, rebasePrayerAfterLifeSaving,
-} from '../js/pray.js';
+import { angryGodMaximum } from '../js/divine_wrath.js';
+import { rebasePrayerAfterLifeSaving } from '../js/pray.js';
 
 test('angrygods computes the live same-alignment range', () => {
     assert.equal(angryGodMaximum({

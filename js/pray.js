@@ -8,30 +8,20 @@ import { flush_screen, pline, plineWithContinuation } from './display.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { promptYesNo } from './query.js';
 import { rn2, rnd, rnz } from './rng.js';
-import { loseExperienceLevel } from './exper.js';
+import { deityName } from './alignment.js';
+import { godsUpset, godVoice } from './divine_wrath.js';
 import { A_WIS, Amask2align } from './const.js';
 import { adjustAttribute, attributeChangeMessage } from './attrib.js';
 
 const STRIDENT = 4;
-const GOD_VOICES = ['booms out', 'thunders', 'rings out', 'booms'];
-
-function deityForAlignment(alignment, state = game) {
-    const key = alignment > 0 ? 'lawful'
-        : alignment < 0 ? 'chaotic' : 'neutral';
-    return state.urole?.gods?.[key] || 'your god';
-}
-
 export async function altarWrath(x, y, state = game) {
     const altarAlignment = Amask2align(state.level?.at(x, y)?.flags ?? 0);
     const heroAlignment = state.u?.ualign?.type ?? 0;
     const alignmentRecord = state.u?.ualign?.record ?? 0;
-    const deity = deityForAlignment(altarAlignment, state);
+    const deity = deityName(altarAlignment, state);
 
     if (heroAlignment === altarAlignment && alignmentRecord > -rn2(4)) {
-        const voice = GOD_VOICES[rn2(GOD_VOICES.length)];
-        await pline(
-            `The voice of ${deity} ${voice}: "How darest thou desecrate my altar!"`,
-        );
+        await godVoice(altarAlignment, 'How darest thou desecrate my altar!', state);
         const change = adjustAttribute(A_WIS, -1, state);
         const message = attributeChangeMessage(A_WIS, change);
         if (message) await pline(message);
@@ -61,8 +51,7 @@ export async function dopray() {
     if (firstPrayer)
         recordGameLogEvent('rejected atheism with a prayer');
 
-    const alignment = game.initAlignment?.name || 'neutral';
-    const deity = game.urole?.gods?.[alignment] || 'your god';
+    const deity = deityName(game.u.ualign.type);
     const beginMessage = `You begin praying to ${deity}.`;
     const openingLine = game.flags?.debug
         ? `${beginMessage}--More--` : beginMessage;
@@ -98,27 +87,6 @@ export async function dopray() {
     game._prayerTurnsRemaining = 3;
     game._prayerLastTickMove = game.moves || 1;
     game.context.move = 1;
-}
-
-// pray.c:angrygods().  This is deliberately a pure projection so every
-// outcome branch shares the same live alignment/anger/Luck calculation.
-export function angryGodMaximum({
-    responseAlignment,
-    heroAlignment,
-    alignmentRecord = 0,
-    anger = 0,
-    luck = 0,
-}) {
-    let maximum;
-    if (responseAlignment !== heroAlignment) {
-        maximum = Math.trunc(alignmentRecord / 2)
-            + (luck > 0 ? Math.trunc(-luck / 3) : -luck);
-    } else {
-        maximum = 3 * anger
-            + ((luck > 0 || alignmentRecord >= STRIDENT)
-                ? Math.trunc(-luck / 3) : -luck);
-    }
-    return Math.max(1, Math.min(15, maximum));
 }
 
 // end.c:savelife() replaces any negative multi value with -1 but leaves
@@ -157,10 +125,6 @@ async function prayerContinuationLine(message, state = game) {
     await plineWithContinuation(message);
 }
 
-function samePrayerAlignment(state) {
-    return state._prayerAlignment ?? state.u?.ualign?.type ?? 0;
-}
-
 // C pray.c:critically_low_hp().  The prayer trouble threshold becomes less
 // generous as the hero advances through the role-rank bands.
 function criticallyLowPrayerHp(state) {
@@ -185,10 +149,7 @@ async function fixCriticalPrayerHp(state) {
     return true;
 }
 
-// prayer_done() is invoked by allmain's after-move scheduler boundary.  The
-// favorable and too-soon paths currently exercised by the engine live here;
-// unported high-anger punish/curse/zap outcomes remain explicitly identified
-// in state instead of being misrepresented as a level-drain result.
+// C prayer_done(), called after the prayer occupation ends.
 export async function finishPrayerOccupation(state = game) {
     const deity = state._prayerDeity || 'your god';
     const completion = state._prayerCompletionMessage
@@ -238,60 +199,11 @@ export async function finishPrayerOccupation(state = game) {
     state.u.ublesscnt = (state.u.ublesscnt || 0) + rnz(250);
     state.u.uluck = Math.max(-13, (state.u.uluck || 0) - 3);
 
-    const responseAlignment = state.u?.ualign?.type ?? 0;
-    const prayerAlignment = samePrayerAlignment(state);
-    if (responseAlignment === prayerAlignment) {
-        state.u.ugangr = (state.u.ugangr || 0) + 1;
-    } else if ((state.u.ugangr || 0) > 0) {
-        state.u.ugangr--;
-    }
-    const maximum = angryGodMaximum({
-        responseAlignment,
-        heroAlignment: state.u?.ualign?.type ?? 0,
-        alignmentRecord: state.u?.ualign?.record ?? 0,
-        anger: state.u?.ugangr ?? 0,
-        luck: state.u?.uluck ?? 0,
-    });
-    const outcome = rn2(maximum);
-
-    if (outcome <= 1) {
-        await prayerContinuationLine(
-            `You feel that ${deity} is displeased.`, state,
-        );
-    } else if (outcome <= 3) {
-        const voice = [
-            'booms out', 'thunders', 'rings out', 'booms',
-        ][rn2(4)];
-        await prayerContinuationLine(
-            `The voice of ${deity} ${voice}: `, state,
-        );
-        await prayerContinuationLine('"Thou art arrogant, mortal."', state);
-        await prayerContinuationLine(
-            '"Thou must relearn thy lessons!"', state,
-        );
-        if (state.u?.acurr?.a) state.u.acurr.a[A_WIS]--;
-        const loss = loseExperienceLevel(state);
-        await prayerContinuationLine('You feel foolish!', state);
-        if (loss.oldLevel > 1)
-            await prayerContinuationLine(
-                `Goodbye level ${loss.oldLevel}.`, state,
-            );
-    } else {
-        // Cases 4+ delegate to curse, punishment, minion, and divine-zap
-        // subsystems.  Preserve the exact selected boundary for the next
-        // source port instead of silently applying the wrong case 2/3 state.
-        state._pendingAngryGodOutcome = {
-            outcome, maximum, responseAlignment,
-        };
-    }
-
-    const nextBlessCount = rnz(300);
-    if (nextBlessCount > (state.u.ublesscnt || 0))
-        state.u.ublesscnt = nextBlessCount;
+    await godsUpset(state.u.ualign.type, state);
     state._prayerDeity = null;
     state._prayerAlignment = null;
     state._prayerCompletionMessage = null;
     state._prayerOpeningMessage = null;
     state._prayerLastTickMove = null;
-    return { outcome, maximum };
+    return { outcome: 'angry' };
 }

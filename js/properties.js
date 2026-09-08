@@ -193,3 +193,8 @@ export function hasWornProperty(property, state = game) {
 export function firstWornPropertySource(property, state = game) {
     return existingPropertyRecord(property, state)?.worn[0] || null;
 }
+
+export function wornObjectGrantsProperty(object, property, state = game) {
+    return !!existingPropertyRecord(property, state)?.worn.some(source =>
+        source.objectId === object.o_id);
+}

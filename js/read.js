@@ -2,11 +2,10 @@
 // C refs: read.c doread(), seffects(), and their helpers.
 
 import { exerciseAttribute } from './attrib.js';
-import { BCPOS_CHAIN, heroIsPunished } from './ball.js';
+import { heroIsPunished } from './ball.js';
 import {
     A_CON, A_DEX, A_STR, A_WIS, TT_BURIEDBALL,
-    W_ART, W_ARTI, W_BALL, W_CHAIN,
-    WT_IRON_BALL_INCR,
+    W_ART, W_ARTI, W_BALL,
 } from './const.js';
 import {
     flush_screen, newsym, pline, plineWithContinuation,
@@ -17,9 +16,7 @@ import {
 } from './invent.js';
 import { nhgetch } from './input.js';
 import { readLightScroll } from './light.js';
-import { place_object } from './floor_object.js';
 import { freeHeroFromBuriedBall } from './hero_traps.js';
-import { mkobj } from './mklev.js';
 import { doClassGenocide, doGenocide } from './genocide.js';
 import {
     HEAVY_IRON_BALL, LEASH, LOADSTONE, OBJECT_MERGE, OBJECT_NAMES, SLING,
@@ -50,10 +47,8 @@ import {
 } from './armor.js';
 import { exceedsActionCapacity } from './weight.js';
 import { monsterSaddle } from './steed.js';
-import { unpunishHero } from './punishment.js';
+import { punishHero, unpunishHero } from './punishment.js';
 
-const BALL_CLASS = 15;
-const CHAIN_CLASS = 16;
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const SCROLL_CLASS = 9;
@@ -150,44 +145,17 @@ export async function doread({
     await studyBook(book);
 }
 
-function attachBallAndChain() {
-    // read.c:punish() creates and wears the chain first, then the ball.
-    // ball.c:placebc_core() places the ball followed by the chain, leaving
-    // the chain as the visible top object at their shared square.
-    const chain = mkobj(CHAIN_CLASS, true);
-    const ball = mkobj(BALL_CLASS, true);
-    chain.quantity = chain.quan ?? 1;
-    ball.quantity = ball.quan ?? 1;
-    chain.owornmask = W_CHAIN;
-    ball.owornmask = W_BALL;
-    game.uchain = chain;
-    game.uball = ball;
-    game.u.uchain = chain;
-    game.u.uball = ball;
-    game.u.punished = true;
-    place_object(ball, game.u.ux, game.u.uy);
-    place_object(chain, game.u.ux, game.u.uy);
-    game.u.bc_order = BCPOS_CHAIN;
-    newsym(game.u.ux, game.u.uy);
-}
-
 async function readPunishmentScroll(scroll) {
     const disappearance = 'As you read the scroll, it disappears.';
-    const punishment = 'You are being punished for your misbehavior!';
     const alreadyKnown = game._knownObjectTypes?.has(scroll.otyp);
 
     await pline(disappearance);
     exerciseAttribute(A_WIS, true); // seffects(): exercise(A_WIS, TRUE)
 
-    // Show the disappearance before creating the ball and chain.
-    await plineWithContinuation(punishment);
-    if (heroIsPunished()) {
-        // A second punishment makes the existing ball heavier.
-        await plineWithContinuation('Your iron ball gets heavier.');
-        game.uball.owt = (game.uball.owt ?? 480) + WT_IRON_BALL_INCR;
-    } else {
-        attachBallAndChain();
-    }
+    if (scroll.blessed || game.u.confusionTurns > 0)
+        await plineWithContinuation('You feel guilty.');
+    else
+        await punishHero(scroll);
 
     if (!alreadyKnown) {
         exerciseAttribute(A_WIS, true); // learnscroll() -> makeknown()

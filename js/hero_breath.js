@@ -1,7 +1,7 @@
 // Breath weapons used by a polymorphed hero against their own square.
 // C refs: polyself.c dobreathe() and zap.c ubreatheu()/zhitu().
 
-import { destroyWornArmor } from './armor.js';
+import { disintegrateWornArmor } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     A_CON, A_DEX, A_STR, Upolyd,
@@ -156,38 +156,26 @@ async function hitWithDisintegration(context) {
 
     const shield = wornObject(state, 'uarms');
     if (shield) {
-        await disintegrateArmor(shield, 'Your shield crumbles away!', state,
-            publish);
+        await disintegrateWornArmor(shield, { state, publish });
         return { resisted: false, damage: 0, heroDied: false };
     }
     const suit = wornObject(state, 'uarm');
     if (suit) {
         const cloak = wornObject(state, 'uarmc');
         if (cloak) {
-            await disintegrateArmor(
-                cloak, 'Your cloak crumbles and turns to dust!', state,
-                publish,
-            );
+            await disintegrateWornArmor(cloak, { state, publish });
         }
-        await disintegrateArmor(
-            suit, 'Your armor turns to dust and falls to the floor!', state,
-            publish,
-        );
+        await disintegrateWornArmor(suit, { state, publish });
         return { resisted: false, damage: 0, heroDied: false };
     }
 
     const cloak = wornObject(state, 'uarmc');
     if (cloak) {
-        await disintegrateArmor(
-            cloak, 'Your cloak crumbles and turns to dust!', state, publish,
-        );
+        await disintegrateWornArmor(cloak, { state, publish });
     }
     const shirt = wornObject(state, 'uarmu');
     if (shirt) {
-        await disintegrateArmor(
-            shirt, 'Your shirt crumbles into tiny threads and falls apart!',
-            state, publish,
-        );
+        await disintegrateWornArmor(shirt, { state, publish });
     }
     const reflexive = state.flags?.female ? 'herself' : 'himself';
     const heroDied = await die({
@@ -304,12 +292,6 @@ export function effectiveBreathDamage(damageType) {
 
 function wornObject(state, slot) {
     return state[slot] || state.u?.[slot] || null;
-}
-
-async function disintegrateArmor(object, message, state, publish) {
-    await publish(message);
-    destroyWornArmor(object, state);
-    state._armorClassDirty = true;
 }
 
 function shieldHero(state) {

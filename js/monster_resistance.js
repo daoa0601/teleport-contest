@@ -16,6 +16,7 @@ import { rn2 } from './rng.js';
 
 const MR_FIRE = 0x01;
 const MR_COLD = 0x02;
+const MR_DISINTEGRATION = 0x08;
 const MR_ELECTRIC = 0x10;
 const MR_ACID = 0x40;
 const MR_POISON = 0x20;
@@ -76,6 +77,13 @@ export function monsterHasShockResistance(monster) {
         || !!monster?.shockResistance
         || !!monster?.shock_resistance
         || !!monster?.defendedShock;
+}
+
+export function monsterHasDisintegrationResistance(monster) {
+    return !!(monsterResistanceBits(monster) & MR_DISINTEGRATION)
+        || !!monster.defendedDisintegration
+        || monsterWearsOneOf(monster,
+            [BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES], W_ARM);
 }
 
 export function monsterHasDrainResistance(monster) {

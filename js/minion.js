@@ -2,16 +2,18 @@
 // C ref: minion.c msummon(), dprince(), dlord(), and ndemon().
 
 import { artifactById } from './artifacts.js';
+import { deityName } from './alignment.js';
 import {
-    A_NONE, In_endgame, MM_EMIN, MM_NOMSG,
+    A_NONE, In_endgame, MM_EMIN, MM_NOMSG, STRAT_APPEARMSG,
 } from './const.js';
-import { canSeeMonster, pline } from './display.js';
+import { canSeeMonster, canSpotMonster, pline, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { makemonNear, mkclassAligned } from './mklev.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { rn1, rn2 } from './rng.js';
+import { heroIsDeaf } from './senses.js';
 
 const S_DEMON = 56;
 const M2_DEMON = 0x00000100;
@@ -31,6 +33,38 @@ const PM_DEMOGORGON = MONSTER_NAME.indexOf('Demogorgon');
 const ELEMENTALS = [
     'air elemental', 'fire elemental', 'earth elemental', 'water elemental',
 ].map(name => MONSTER_NAME.indexOf(name));
+
+// C minion.c:summon_minion(). The new servant is hostile without changing
+// the alignment penalty for killing it.
+export async function summonMinion(alignment, talk = false) {
+    const mnum = alignment === 1 ? lawfulMinion()
+        : alignment === 0 ? ELEMENTALS[rn2(ELEMENTALS.length)]
+            : normalDemon(alignment);
+    if (mnum == null) return null;
+    const specialRole = ['shopkeeper', 'guard', 'aligned cleric', 'high cleric']
+        .includes(MONSTER_NAME[mnum]);
+    const flags = MM_NOMSG | (specialRole ? 0 : MM_EMIN);
+    const monster = await makemonNear(mnum, game.u.ux, game.u.uy, flags, false);
+    if (!monster) return null;
+    if (!specialRole) {
+        monster.isminion = 1;
+        monster.emin = { min_align: alignment, renegade: 0 };
+        monster.mextra = { ...monster.mextra, emin: monster.emin };
+    }
+    if (talk) {
+        const deity = deityName(alignment);
+        const possessive = deity.endsWith('s') ? `${deity}'` : `${deity}'s`;
+        await plineWithContinuation(heroIsDeaf(game)
+            ? `You feel ${possessive} booming voice:`
+            : `The voice of ${deity} booms:`);
+        await plineWithContinuation('"Thou shalt pay for thine indiscretion!"');
+        if (canSpotMonster(monster))
+            await plineWithContinuation(`${summonedMonsterName(monster)} appears before you.`);
+        monster.mstrategy &= ~STRAT_APPEARMSG;
+    }
+    monster.mpeaceful = false;
+    return monster;
+}
 
 // C mhitu.c:summonmu(), before the demon chooses an offensive item or attacks.
 export async function tryDemonSummon(monster, state = game, random = rn2) {

@@ -4,6 +4,7 @@
 // with the hero after movement or a level transition.
 
 import { game } from './gstate.js';
+import { deityName } from './alignment.js';
 import { plineWithContinuation } from './display.js';
 import { cansee } from './vision.js';
 import { d, rn2 } from './rng.js';
@@ -57,11 +58,7 @@ export function priestAlignment(priest) {
 }
 
 function priestDeityName(priest, state = game) {
-    const alignment = priestAlignment(priest);
-    if (alignment === A_NONE) return 'Moloch';
-    const key = alignment > 0
-        ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
-    return state.urole?.gods?.[key] || 'the gods';
+    return deityName(priestAlignment(priest), state);
 }
 
 export function priestIsCoaligned(priest, state = game) {

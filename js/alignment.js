@@ -2,6 +2,13 @@
 // C ref: attrib.c adjalign().
 
 import { game } from './gstate.js';
+import { A_NONE } from './const.js';
+
+export function deityName(alignment, state = game) {
+    if (alignment === A_NONE) return 'Moloch';
+    const key = alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
+    return state.urole?.gods?.[key] || 'your god';
+}
 
 export function adjustHeroAlignment(amount, state = game) {
     if (!amount || !state.u?.ualign) return;

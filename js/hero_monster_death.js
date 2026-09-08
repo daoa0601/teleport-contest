@@ -195,7 +195,8 @@ export async function finishHeroMonsterKill(monster, x, y, {
     recordConduct = true,
     zombifyCorpse = false,
 } = {}) {
-    const wasInside = deathContext?.kind === 'swallowed-projectile'
+    const wasInside = (game.u.uswallow && game.u.ustuck === monster)
+        || deathContext?.kind === 'swallowed-projectile'
         || deathContext?.kind === 'swallowed-potion'
         || deathContext?.kind === 'swallowed-breath'
         || deathContext?.kind === 'swallowed-venom'
@@ -205,7 +206,7 @@ export async function finishHeroMonsterKill(monster, x, y, {
             `unsupported monster death context ${deathContext.kind}`,
         );
     }
-    if (wasInside && !['swallowed-breath', 'swallowed-venom']
+    if (wasInside && deathContext && !['swallowed-breath', 'swallowed-venom']
         .includes(deathContext.kind)
         && typeof deathContext.finishDestinationEffects !== 'function') {
         throw new TypeError(
