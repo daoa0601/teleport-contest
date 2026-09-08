@@ -4,20 +4,13 @@ import assert from 'node:assert/strict';
 import { askTeleportDestination } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { bindLuaLifecycle, currentLuaLifecycle, LuaLifecycle } from '../js/lua/lifecycle.js';
+import { startLuaCore } from './support/lua-game.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 function freshLuaRoom(t) {
     freshPlayableRoom();
     const input = resetInputState();
-    const lifecycle = new LuaLifecycle();
-    const previousLifecycle = currentLuaLifecycle();
-    bindLuaLifecycle(lifecycle);
-    const state = lifecycle.startCore(game);
-    t.after(() => {
-        bindLuaLifecycle(previousLifecycle);
-        lifecycle.destroy();
-    });
+    const state = startLuaCore(t);
     return { input, state };
 }
 

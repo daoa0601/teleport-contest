@@ -10,7 +10,9 @@ import {
     objectToLuaTable,
 } from './runtime.js';
 
-function bindingsFor(gameState, additionalBindings = {}) {
+const CALLBACK_NAMES = ['cmd_before', 'level_enter', 'level_leave', 'end_turn'];
+
+function bindingsFor(gameState, lifecycle, additionalBindings = {}) {
     const { nh: additionalNh = {}, ...remainingBindings }
         = additionalBindings;
     const roleKey = gameState.urole?.key;
@@ -32,7 +34,7 @@ function bindingsFor(gameState, additionalBindings = {}) {
         nh: {
             rn2: range => rn2(range),
             random: (start, range) => Number(start) + rn2(range),
-            callback: () => null,
+            callback: (...args) => lifecycle.registerCallback(...args),
             gamestate: () => null,
             pline: luaPline,
             text: luaText,
@@ -45,6 +47,10 @@ function bindingsFor(gameState, additionalBindings = {}) {
         nhc: { COLNO, ROWNO },
         u: {
             ...(gameState.u || {}),
+            moves: gameState.moves,
+            dnum: gameState.u?.uz?.dnum,
+            dlevel: gameState.u?.uz?.dlevel,
+            uhave_amulet: Number(!!gameState.u?.uhave?.amulet),
             depth: depth(gameState.u?.uz, gameState.dungeons),
             invocation_level: Invocation_lev(gameState.u?.uz),
             role: roleName,
@@ -61,10 +67,11 @@ export class LuaLifecycle {
         this.core = null;
         this.themed = new Map();
         this.unavailableHooks = new Set();
+        this.callbackCounts = new Map();
     }
 
     createState(gameState, bindings = {}) {
-        const state = new LuaState(bindingsFor(gameState, bindings));
+        const state = new LuaState(bindingsFor(gameState, this, bindings));
         state.execute(LUA_SOURCES['nhlib.lua'], 'nhlib.lua');
         return state;
     }
@@ -72,6 +79,7 @@ export class LuaLifecycle {
     startCore(gameState) {
         this.core?.destroy();
         this.unavailableHooks.clear();
+        this.callbackCounts.clear();
         const savedVariables = gameState.nh_lua_variables || null;
         this.core = this.createState(gameState);
         this.core.execute(LUA_SOURCES['nhcore.lua'], 'nhcore.lua');
@@ -104,6 +112,34 @@ export class LuaLifecycle {
         this.refreshUser(this.core, gameState);
         await this.core.callValueAsync(hook, []);
         this.syncVariables(gameState);
+    }
+
+    // C nhl_callback() stores names in the persistent core, even when the
+    // registration comes from a temporary level-generation Lua state.
+    registerCallback(...args) {
+        if (!this.core) throw new Error('Lua callbacks require an initialized core');
+        if (args.length !== 2 && args.length !== 3) return;
+        let [name, fn, remove] = args;
+        if (![name, fn].every(value => ['string', 'number'].includes(typeof value)))
+            throw new TypeError('nh.callback expects an event name and function name');
+        name = String(name);
+        fn = String(fn);
+        if (!CALLBACK_NAMES.includes(name)) return;
+        const removing = remove != null && remove !== false;
+        this.callbackCounts.set(name,
+            (this.callbackCounts.get(name) || 0) + (removing ? -1 : 1));
+        this.core.call(removing ? 'nh_callback_rm' : 'nh_callback_set', name, fn);
+    }
+
+    async runCallbacks(gameState, name, ...args) {
+        if (!this.core || !this.callbackCounts.get(name)) return true;
+        this.refreshUser(this.core, gameState);
+        const result = await this.core.callValueAsync(
+            this.core.getGlobal('nh_callback_run'), [name, ...args],
+        );
+        this.syncVariables(gameState);
+        const value = result.values[0];
+        return value != null && value !== false;
     }
 
     createSpecialState(gameState, bindings = {}) {
@@ -155,7 +191,7 @@ export class LuaLifecycle {
     }
 
     refreshUser(state, gameState) {
-        state.setGlobal('u', bindingsFor(gameState).u);
+        state.setGlobal('u', bindingsFor(gameState, this).u);
     }
 
     syncVariables(gameState) {

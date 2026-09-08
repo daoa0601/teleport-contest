@@ -3875,6 +3875,7 @@ export async function mklev() {
     if (await getbones()) return;
     g.in_mklev = true;
     await makelevel();
+    await currentLuaLifecycle().runCallbacks(g, 'level_enter');
     recount_level_features();
     level_finalize_topology();
     g.in_mklev = false;

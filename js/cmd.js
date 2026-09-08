@@ -11,7 +11,8 @@ import {
     heroShouldAvoidLiquid,
     heroTightDiagonalReason,
 } from './hack.js';
-import { defaultCommandKey } from './command_keys.js';
+import { controlRushDirection, defaultCommandKey, defaultCommandName } from './command_keys.js';
+import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextIdent } from './ident.js';
 import { nhgetch } from './input.js';
 import {
@@ -438,18 +439,6 @@ function monsterInstanceDisplayName(monster) {
 
 function isMovementKey(ch) {
     return 'hjklyubn'.includes(ch);
-}
-
-// C cmd.c:reset_commands() overlays each non-numpad Ctrl-direction binding
-// onto its ordinary command (for example Ctrl-L replaces redraw with rush
-// east).  Carriage return is normalized by tty to Ctrl-J/rush south.
-const CONTROL_RUSH_DIRECTION = new Map([
-    [2, 'b'], [8, 'h'], [10, 'j'], [11, 'k'],
-    [12, 'l'], [14, 'n'], [21, 'u'], [25, 'y'],
-]);
-
-function controlRushDirection(key) {
-    return CONTROL_RUSH_DIRECTION.get(key === 13 ? 10 : key) || null;
 }
 
 function remapConfiguredCommand(key) {
@@ -1038,6 +1027,13 @@ async function performWaitCommand(force = false) {
     game.context.move = 1;
 }
 
+async function commandAllowed(name) {
+    if (!name || await currentLuaLifecycle().runCallbacks(game, 'cmd_before', name))
+        return true;
+    game.context.move = 0;
+    return false;
+}
+
 // C ref: cmd.c rhack — main command dispatcher
 export async function rhack(key) {
     // C cmd.c:rhack() resets the request-menu/movement-prefix bit for each
@@ -1083,6 +1079,10 @@ export async function rhack(key) {
         game.context.move = 0;
         return;
     }
+
+    const commandName = cannedCommand?.kind === 'swap-weapon'
+        ? 'swap' : cannedCommand?.kind || defaultCommandName(ch);
+    if (!await commandAllowed(commandName)) return;
 
     // C cmd.c:rhack() pops CQ_CANNED before parse() asks tty for another
     // byte.  Tool commands use this to resume the original operation after
@@ -1163,6 +1163,7 @@ export async function rhack(key) {
         const nextKey = await nhgetch();
         const direction = String.fromCharCode(nextKey).toLowerCase();
         game._pending_message = '';
+        if (!await commandAllowed(defaultCommandName(String.fromCharCode(nextKey)))) return;
         if (isMovementKey(direction)) {
             game.context.nopick = true;
             const moved = await domove(
@@ -2000,6 +2001,8 @@ async function ordinaryDescend() {
         return false;
     }
 
+    await currentLuaLifecycle().runCallbacks(game, 'level_leave');
+
     // do.c:goto_level() clears this before saving the departing floor.
     // ordinaryDescend() owns a separate pager-preserving transition and must
     // still discard the level-local destination selected on the old map.
@@ -2602,6 +2605,8 @@ async function gotoLevel(targetDepth, {
         await pline('A mysterious force prevents you from descending.');
         return;
     }
+
+    await currentLuaLifecycle().runCallbacks(game, 'level_leave');
 
     // C goto_level() resets iflags.travelcc because map coordinates are
     // level-local.  A destination from the departing floor must never seed a
@@ -5308,54 +5313,60 @@ function completeExtendedCommand(command) {
     return null;
 }
 
-async function runExtendedCommand(command) {
-    if (command === 'conduct') return doconduct();
-    if (command === 'chronicle') return doChronicle();
-    if (command === 'vanquished') return doVanquished();
-    if (command === 'genocided') return doGenocided();
-    if (command === 'terrain') return doTerrainOverview();
-    if (command === 'version') return doextversion();
-    if (command === 'quit') return doquit();
-    if (command === 'twoweapon') return dotwoweapon();
-    if (command === 'enhance') return doenhance();
-    if (command === 'chat') return dochat();
-    if (command === 'sit') return dosit({
+const EXTENDED_COMMAND_HANDLERS = new Map([
+    ['conduct', doconduct],
+    ['chronicle', doChronicle],
+    ['vanquished', doVanquished],
+    ['genocided', doGenocided],
+    ['terrain', doTerrainOverview],
+    ['version', doextversion],
+    ['quit', doquit],
+    ['twoweapon', dotwoweapon],
+    ['enhance', doenhance],
+    ['chat', dochat],
+    ['sit', () => dosit({
         finishTeleport: finishTeleportArrival,
         gotoLevel,
         chooseTeleportDestination: askTeleportDestination,
-    });
-    if (command === 'pray') return dopray();
-    if (command === 'name') return doname();
-    if (command === 'invoke') return doinvoke();
-    if (command === 'ride') return doride();
-    if (command === 'rub') return dorub();
-    if (command === 'loot') return doloot();
-    if (command === 'tip') return dotip();
-    if (command === 'force') return doforce();
-    if (command === 'jump') return dojump();
-    if (command === 'overview') return doDungeonOverview();
-    if (command === 'offer') return dooffer();
-    if (command === 'dip') return dodip();
-    if (command === 'turn') return doturn();
-    if (command === 'untrap') {
-        return doUntrap({ enterTrap: moveIntoFailedUntrap });
+    })],
+    ['pray', dopray],
+    ['name', doname],
+    ['invoke', doinvoke],
+    ['ride', doride],
+    ['rub', dorub],
+    ['loot', doloot],
+    ['tip', dotip],
+    ['force', doforce],
+    ['jump', dojump],
+    ['overview', doDungeonOverview],
+    ['offer', dooffer],
+    ['dip', dodip],
+    ['turn', doturn],
+    ['untrap', () => doUntrap({ enterTrap: moveIntoFailedUntrap })],
+    ['wipe', dowipe],
+    ['monster', domonability],
+    ['polyself', wizPolyself],
+    ['annotate', doannotate],
+    ['herecmdmenu', doherecmdmenu],
+    ['adjust', doadjust],
+    ['levelchange', wizLevelChange],
+    ['wizwhere', wizWhere],
+    ['wizwish', wizWish],
+    ['wizgenesis', wizGenesis],
+    ['wizkill', wizKill],
+    ['wizidentify', wizIdentify],
+    ['wizintrinsic', wizIntrinsic],
+    ['wizmap', wizMap],
+]);
+
+async function runExtendedCommand(command) {
+    const handler = EXTENDED_COMMAND_HANDLERS.get(command);
+    if (!handler) {
+        await pline(`#${command}: unknown extended command.`);
+        game.context.move = 0;
+        return;
     }
-    if (command === 'wipe') return dowipe();
-    if (command === 'monster') return domonability();
-    if (command === 'polyself') return wizPolyself();
-    if (command === 'annotate') return doannotate();
-    if (command === 'herecmdmenu') return doherecmdmenu();
-    if (command === 'adjust') return doadjust();
-    if (command === 'levelchange') return wizLevelChange();
-    if (command === 'wizwhere') return wizWhere();
-    if (command === 'wizwish') return wizWish();
-    if (command === 'wizgenesis') return wizGenesis();
-    if (command === 'wizkill') return wizKill();
-    if (command === 'wizidentify') return wizIdentify();
-    if (command === 'wizintrinsic') return wizIntrinsic();
-    if (command === 'wizmap') return wizMap();
-    await pline(`#${command}: unknown extended command.`);
-    game.context.move = 0;
+    if (await commandAllowed(command)) return handler();
 }
 
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
@@ -7966,6 +7977,7 @@ async function doforcefight() {
         game.context.move = 0;
         return;
     }
+    if (!await commandAllowed(defaultCommandName(direction))) return;
     game.context.forcefight = true;
     try {
         const moved = await domove(

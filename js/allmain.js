@@ -5991,6 +5991,7 @@ export async function moveloop_core() {
             g.u.umoved = false;
             g.u.umovement = (g.u.umovement ?? 12) - 12;
             g._heroTimePending = true;
+            await currentLuaLifecycle().runCallbacks(g, 'end_turn');
             return;
         }
         await finishPrayerOccupation(g);
@@ -6128,6 +6129,7 @@ export async function moveloop_core() {
         } else {
             g.moves = (g.moves || 1) + 1;
         }
+        await currentLuaLifecycle().runCallbacks(g, 'end_turn');
         return;
     }
 
@@ -6167,6 +6169,7 @@ export async function moveloop_core() {
                 g.moves = (g.moves || 1) + 1;
             }
         }
+        if (moved) await currentLuaLifecycle().runCallbacks(g, 'end_turn');
         return;
     }
 
@@ -6193,6 +6196,8 @@ export async function moveloop_core() {
             g.moves = (g.moves || 1) + 1;
         }
     }
+    if (!g.program_state?.gameover)
+        await currentLuaLifecycle().runCallbacks(g, 'end_turn');
 }
 
 // C ref: allmain.c moveloop()
