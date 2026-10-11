@@ -6611,20 +6611,23 @@ async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, b
         maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
     // C domove_core(): landing and pickup finish before nomul(-2).
     // A longer trap-induced delay survives, but its completion prose changes.
-    if (ballChainMove?.causeDelay) {
-        if ((game._helplessTurns ?? 0) <= 2) {
-            u.invulnerable = false;
-            u.usleep = 0;
-            game.multi = 0;
-            stopRun();
-            game._cannedCommands = [];
-            game._helplessTurns = 2;
-        }
-        game._helplessReason = 'dragging an iron ball';
-        game._helplessDoneMessage = '';
-        await captureRunmodeDelay(game, true, game.moves || 0, { preservePhysicalTopline: true });
-    }
+    if (ballChainMove?.causeDelay)
+        await delayAfterDraggingBall();
     return true;
+}
+// C domove_core() applies the dragging delay even when a pet refuses the swap.
+async function delayAfterDraggingBall() {
+    if ((game._helplessTurns ?? 0) <= 2) {
+        game.u.invulnerable = false;
+        game.u.usleep = 0;
+        game.multi = 0;
+        stopRun();
+        game._cannedCommands = [];
+        game._helplessTurns = 2;
+    }
+    game._helplessReason = 'dragging an iron ball';
+    game._helplessDoneMessage = '';
+    await captureRunmodeDelay(game, true, game.moves || 0, { preservePhysicalTopline: true });
 }
 // C hack.c:domove() clears kickedloc after even an unsuccessful attempt.
 async function domove(dx, dy, explicitAttempt = true) {
@@ -6815,19 +6818,22 @@ async function domoveCore(dx, dy, explicitAttempt) {
             if (u.utrap
                 && !await heroCanMoveFromTrap(newx, newy))
                 return true;
-            // hack.c:domove_swap_with_pet() refuses to send a peaceful
-            // companion onto any trap, including one the hero has not seen.
-            if (monster.mpeaceful && game.level.traps.some(trap => trap.tx === u.ux && trap.ty === u.uy)) {
-                const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
-                await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
-                return true;
-            }
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
                 if (ballChainMove.blockedMessage)
                     await pline(ballChainMove.blockedMessage);
                 game.context.move = Number(ballChainMove.consumedTurn);
                 return ballChainMove.consumedTurn;
+            }
+            // C drag_ball() can pull the hero back before the swap check.
+            // A refused swap still completes ball placement and its delay.
+            if (monster.mpeaceful && game.level.traps.some(trap => trap.tx === u.ux && trap.ty === u.uy)) {
+                const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
+                await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
+                await finishBallAndChainMove(ballChainMove);
+                if (ballChainMove?.causeDelay)
+                    await delayAfterDraggingBall();
+                return true;
             }
             const oldx = u.ux, oldy = u.uy;
             u.ux0 = oldx;
