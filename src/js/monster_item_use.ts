@@ -11,6 +11,7 @@ import { inventoryItemDescription } from './invent.js';
 import { AD_RBRE } from './monster_attack_types.js';
 import { MONSTER_GENO } from './monster_data.js';
 import { finishMonsterKilled } from './monster_death.js';
+import { paralyzeMonster } from './mon.js';
 import { destroyObjectFromMonsterInventory, forgetObjectKnowledge } from './monster_inventory.js';
 import { monsterName, monsterReflexiveAction, monsterSubjectPronoun } from './monster_name.js';
 import type { MonsterOffensiveOptions } from './monster_offensive_types.js';
@@ -85,19 +86,17 @@ export async function prepareMonsterItemUse(monster: Monster, object: GameObject
                     await publish(`As ${subject} opens the bottle, an enormous ${occupantName} emerges!`);
                     await publish(`${monsterName(monster, { state, capitalized: true })} is frightened to death, and unable to move.`);
                 }
-                monster.mcanmove = 0;
-                monster.mfrozen = 3;
+                paralyzeMonster(monster, 3);
             } else {
-                const subject = monsterName(occupant, { state, capitalized: true });
                 if (visible) await publish(`In a cloud of smoke, ${monsterName(occupant, { state, article: 'a' })} emerges!`);
-                await publish(`${visible ? subject : 'Something'} speaks.`);
+                await publish(`${visible ? monsterName(occupant, { state, capitalized: true }) : 'Something'} speaks.`);
                 if (random(2)) {
                     if (!heroIsDeaf(state)) await publish('"You freed me!"');
                     occupant.mpeaceful = 1;
                     setMonsterMalign(occupant, state);
                 } else {
                     if (!heroIsDeaf(state)) await publish('"It is about time."');
-                    if (visible) await publish(`${subject} vanishes.`);
+                    if (visible) await publish(`${monsterName(occupant, { state, capitalized: true })} vanishes.`);
                     await removeMonsterFromGame(occupant);
                 }
             }

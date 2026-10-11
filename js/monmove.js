@@ -57,6 +57,8 @@ import { tryDemonSummon } from './minion.js';
 import { releaseMonsterLeash } from './monster_leash.js';
 import { ammunitionMatchesLauncher, isPolearm, returningWeaponRangeSquared, willWeld, } from './weapon_type.js';
 import { growMonster } from './monster_growth.js';
+import { monsterLocomotion } from './monster_locomotion.js';
+import { verbForSubject } from './object_grammar.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { initializeMonsterMovement, mcalcmove, naturalMonsterSpeed } from './monster_speed.js';
@@ -88,7 +90,7 @@ import { respondMedusa } from './monster_gaze.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, randomDisplayMonsterName, randomDisplayMonsterSubject, plineWithContinuation, } from './display.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
-import { AMULET_OF_YENDOR, APPLE, BANANA, BELL_OF_OPENING, BULLWHIP, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
+import { AMULET_OF_YENDOR, APPLE, BANANA, BELL_OF_OPENING, BULLWHIP, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_MATERIAL, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
 import { unlinkObject } from './object_location.js';
 import { removeWornHeroItem } from './hero_equipment.js';
@@ -249,6 +251,7 @@ const PM_WATCH_CAPTAIN = 283;
 const S_GOLEM = 55;
 const POT_SPEED = 302;
 const LOW_BOOTS = 163;
+const IRON = 11;
 const RING_CLASS = 4;
 const TOOL_CLASS = 6;
 const COIN_CLASS = 12;
@@ -471,7 +474,8 @@ async function useMonsterMiscItem(monster, state, random, calls) {
     const weak = (MONSTER_DIFFICULTY[monster.mnum] ?? 0) < 6;
     const naturalForm = (monster.cham ?? -1) < 0;
     if (!stuck && MONSTER_MOVE[monster.mnum] && !monster.mtrapped && naturalForm && weak
-        && !inventory.some(object => object.otyp === IRON_SHOES && !!object.owornmask)) {
+        && !inventory.some(object => !!((object.owornmask ?? 0) & W_ARMF)
+            && OBJECT_MATERIAL[object.otyp] === IRON)) {
         for (let x = monster.mx - 1; x <= monster.mx + 1; x++) {
             for (let y = monster.my - 1; y <= monster.my + 1; y++) {
                 if (!isok(x, y) || x === heroX && y === heroY
@@ -645,9 +649,13 @@ export async function finishDeferredMonsterMiscItem(action, state = requireIniti
     if (!monster || !misc?.deferredEffect || misc.effectApplied)
         return misc;
     if (misc.kind === 'polymorph-trap') {
-        if (canSeeMonster(monster) || cansee(misc.trap.tx, misc.trap.ty)) {
+        const trapVisible = cansee(misc.trap.tx, misc.trap.ty);
+        if (cansee(monster.mx, monster.my) || trapVisible)
             misc.trap.tseen = true;
-            await plineWithContinuation(`${canonicalMonsterName(monster, { state, capitalized: true })} deliberately jumps onto a polymorph trap!`);
+        if (canSeeMonster(monster) || trapVisible) {
+            const subject = canonicalMonsterName(monster, { state, capitalized: true, augmentIt: true });
+            const verb = verbForSubject(subject, monsterLocomotion(monster.mnum, 'jump'));
+            await plineWithContinuation(`${subject} deliberately ${verb} onto a ${misc.trap.tseen ? 'polymorph trap' : 'hidden trap'}!`);
         }
         const oldx = monster.mx, oldy = monster.my;
         placeMonsterAt(monster, misc.trap.tx, misc.trap.ty);
@@ -4432,9 +4440,9 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             attackIndex,
             spell: spell.key,
             cast: true,
-            spellDice,
+            spellDice: foundHero ? spellDice : 0,
             spellSides,
-            deferredSpellDamage: foundHero,
+            deferredSpellDamage: true,
             directed: !(spell.flags & MCF_INDIRECT),
             deferredSpellEffect: true,
         };
@@ -5781,8 +5789,13 @@ export function rollDeferredHeroSpellDamage(action, state, rollDice = d) {
         return attack;
     if (attack.spellDice === undefined || attack.spellSides === undefined)
         throw new Error('A deferred spell damage roll needs its selected dice');
-    let damage = rollDice(attack.spellDice, attack.spellSides);
-    action.calls.push(`d(${attack.spellDice},${attack.spellSides})`);
+    // Undirected spells still produce their effects when aimed at a false
+    // position. Native castmu() passes zero damage without rolling dice.
+    let damage = 0;
+    if (attack.spellDice > 0) {
+        damage = rollDice(attack.spellDice, attack.spellSides);
+        action.calls.push(`d(${attack.spellDice},${attack.spellSides})`);
+    }
     if (heroHasHalfSpellDamage(state))
         damage = Math.trunc((damage + 1) / 2);
     const spell = (attack.damageType === AD_CLRC ? MONSTER_CLERIC_SPELLS : MONSTER_WIZARD_SPELLS).find((candidate) => candidate.key === attack.spell);

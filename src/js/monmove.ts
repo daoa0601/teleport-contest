@@ -136,6 +136,8 @@ import {
     willWeld,
 } from './weapon_type.js';
 import { growMonster } from './monster_growth.js';
+import { monsterLocomotion } from './monster_locomotion.js';
+import { verbForSubject } from './object_grammar.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { initializeMonsterMovement, mcalcmove, naturalMonsterSpeed } from './monster_speed.js';
@@ -295,6 +297,7 @@ import {
     BATTLE_AXE,
     DART,
     IRON_SHOES,
+    OBJECT_MATERIAL,
     OBJECT_BIMANUAL,
     OBJECT_LARGE_DAMAGE,
     OBJECT_NAMES,
@@ -649,6 +652,7 @@ const PM_WATCH_CAPTAIN = 283;
 const S_GOLEM = 55;
 const POT_SPEED = 302;
 const LOW_BOOTS = 163;
+const IRON = 11;
 const RING_CLASS = 4;
 const TOOL_CLASS = 6;
 const COIN_CLASS = 12;
@@ -905,7 +909,8 @@ async function useMonsterMiscItem(
     const weak = (MONSTER_DIFFICULTY[monster.mnum] ?? 0) < 6;
     const naturalForm = (monster.cham ?? -1) < 0;
     if (!stuck && MONSTER_MOVE[monster.mnum] && !monster.mtrapped && naturalForm && weak
-        && !inventory.some(object => object.otyp === IRON_SHOES && !!object.owornmask)) {
+        && !inventory.some(object => !!((object.owornmask ?? 0) & W_ARMF)
+            && OBJECT_MATERIAL[object.otyp] === IRON)) {
         for (let x = monster.mx - 1; x <= monster.mx + 1; x++) {
             for (let y = monster.my - 1; y <= monster.my + 1; y++) {
                 if (!isok(x, y) || x === heroX && y === heroY
@@ -1089,9 +1094,12 @@ export async function finishDeferredMonsterMiscItem(
     if (!monster || !misc?.deferredEffect || misc.effectApplied) return misc;
 
     if (misc.kind === 'polymorph-trap') {
-        if (canSeeMonster(monster) || cansee(misc.trap.tx, misc.trap.ty)) {
-            misc.trap.tseen = true;
-            await plineWithContinuation(`${canonicalMonsterName(monster, { state, capitalized: true })} deliberately jumps onto a polymorph trap!`);
+        const trapVisible = cansee(misc.trap.tx, misc.trap.ty);
+        if (cansee(monster.mx, monster.my) || trapVisible) misc.trap.tseen = true;
+        if (canSeeMonster(monster) || trapVisible) {
+            const subject = canonicalMonsterName(monster, { state, capitalized: true, augmentIt: true });
+            const verb = verbForSubject(subject, monsterLocomotion(monster.mnum, 'jump'));
+            await plineWithContinuation(`${subject} deliberately ${verb} onto a ${misc.trap.tseen ? 'polymorph trap' : 'hidden trap'}!`);
         }
         const oldx = monster.mx, oldy = monster.my;
         placeMonsterAt(monster, misc.trap.tx, misc.trap.ty);
@@ -5521,9 +5529,9 @@ async function beginHeroAttackSlot(
             attackIndex,
             spell: spell.key,
             cast: true,
-            spellDice,
+            spellDice: foundHero ? spellDice : 0,
             spellSides,
-            deferredSpellDamage: foundHero,
+            deferredSpellDamage: true,
             directed: !(spell.flags & MCF_INDIRECT),
             deferredSpellEffect: true,
         };
@@ -7022,8 +7030,13 @@ export function rollDeferredHeroSpellDamage(
     if (attack?.kind !== 'hero-spell' || !attack.deferredSpellDamage) return attack;
     if (attack.spellDice === undefined || attack.spellSides === undefined)
         throw new Error('A deferred spell damage roll needs its selected dice');
-    let damage = rollDice(attack.spellDice, attack.spellSides);
-    action.calls.push(`d(${attack.spellDice},${attack.spellSides})`);
+    // Undirected spells still produce their effects when aimed at a false
+    // position. Native castmu() passes zero damage without rolling dice.
+    let damage = 0;
+    if (attack.spellDice > 0) {
+        damage = rollDice(attack.spellDice, attack.spellSides);
+        action.calls.push(`d(${attack.spellDice},${attack.spellSides})`);
+    }
     if (heroHasHalfSpellDamage(state)) damage = Math.trunc((damage + 1) / 2);
     const spell = (
         attack.damageType === AD_CLRC ? MONSTER_CLERIC_SPELLS : MONSTER_WIZARD_SPELLS

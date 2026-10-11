@@ -532,9 +532,6 @@ export interface MonsterTeleportTrapEvent {
     damage: 0;
     killed: false;
     restricted?: boolean;
-    leashReleased?: boolean;
-    cursedLeash?: boolean;
-    teleportAttempted?: boolean;
 }
 
 export interface MonsterAttackInitiation {

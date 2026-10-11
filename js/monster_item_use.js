@@ -8,6 +8,7 @@ import { inventoryItemDescription } from './invent.js';
 import { AD_RBRE } from './monster_attack_types.js';
 import { MONSTER_GENO } from './monster_data.js';
 import { finishMonsterKilled } from './monster_death.js';
+import { paralyzeMonster } from './mon.js';
 import { destroyObjectFromMonsterInventory, forgetObjectKnowledge } from './monster_inventory.js';
 import { monsterName, monsterReflexiveAction, monsterSubjectPronoun } from './monster_name.js';
 import { sameMonsterRace } from './monster_race.js';
@@ -65,14 +66,12 @@ export async function prepareMonsterItemUse(monster, object, options) {
                     await publish(`As ${subject} opens the bottle, an enormous ${occupantName} emerges!`);
                     await publish(`${monsterName(monster, { state, capitalized: true })} is frightened to death, and unable to move.`);
                 }
-                monster.mcanmove = 0;
-                monster.mfrozen = 3;
+                paralyzeMonster(monster, 3);
             }
             else {
-                const subject = monsterName(occupant, { state, capitalized: true });
                 if (visible)
                     await publish(`In a cloud of smoke, ${monsterName(occupant, { state, article: 'a' })} emerges!`);
-                await publish(`${visible ? subject : 'Something'} speaks.`);
+                await publish(`${visible ? monsterName(occupant, { state, capitalized: true }) : 'Something'} speaks.`);
                 if (random(2)) {
                     if (!heroIsDeaf(state))
                         await publish('"You freed me!"');
@@ -83,7 +82,7 @@ export async function prepareMonsterItemUse(monster, object, options) {
                     if (!heroIsDeaf(state))
                         await publish('"It is about time."');
                     if (visible)
-                        await publish(`${subject} vanishes.`);
+                        await publish(`${monsterName(occupant, { state, capitalized: true })} vanishes.`);
                     await removeMonsterFromGame(occupant);
                 }
             }

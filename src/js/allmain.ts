@@ -2102,23 +2102,6 @@ function visibleMonsterSubject(monster: Monster): string {
     return monsterName(monster, { capitalized: true });
 }
 
-function monsterYelpVerb(monster: Monster): string | null {
-    const game = requireInitializedGame();
-    if (monster?.mcanmove === 0 || monster?.msleeping
-        || (monster?.mfrozen ?? 0) > 0) return null;
-    const sound = MONSTER_SOUND[monster?.mnum] ?? 0;
-    const verbs: Readonly<Partial<Record<number, string>>> = game.deaf
-        ? {
-            1: 'recoils', 2: 'arches', 3: 'bluffs',
-            6: 'quivers', 8: 'thrashes', 14: 'cringes',
-        }
-        : {
-            1: 'yelps', 2: 'yowls', 3: 'snarls', 5: 'yelps',
-            6: 'squeals', 8: 'screaks', 14: 'wails',
-        };
-    return verbs[sound] || null;
-}
-
 function covetousRelocationMessage(
     monster: Monster, movement: MonsterMovement, actorWasSpotted: boolean,
 ): string | null {
@@ -3333,26 +3316,6 @@ async function presentMonsterPostMove(
         movement = action.movement;
         if ('seeSquare' in event && event.seeSquare && event.kind !== 'vibrating-square')
             newsym(event.trap.tx, event.trap.ty);
-    }
-    if (movement?.trap?.kind === 'teleport-trap') {
-        const event = movement.trap;
-        if (event.leashReleased)
-            await plineWithContinuation('Your leash goes slack.');
-        if (event.cursedLeash && (event.visible || !game.deaf)) {
-            const verb = monsterYelpVerb(monster);
-            if (verb) {
-                await plineWithContinuation(
-                    `${visibleMonsterSubject(monster)} ${verb}!`,
-                );
-            }
-        }
-        if (event.teleportAttempted && event.visible) {
-            event.trap.tseen = true;
-            const outcome = canSeeMonster(monster) ? 'seems disoriented.' : 'suddenly disappears!';
-            await plineWithContinuation(
-                `${visibleMonsterSubject(monster)} ${outcome}`,
-            );
-        }
     }
     if (movement?.trap?.kind === 'rolling-boulder') {
         const event = movement.trap;

@@ -20,7 +20,7 @@ import { findNearbyMonsterPosition } from './teleport_rules.js';
 
 const S_ANT = 1;
 const S_SNAKE = 45;
-const M1_SEE_INVIS = 0x00020000;
+const M1_SEE_INVIS = 0x01000000;
 
 export async function summonMonsterInsects(caster: Monster, state: PlayingGameState): Promise<MonsterSpellEffect> {
     const monsterClass = mkclassAligned(S_ANT, 0) === null ? S_SNAKE : S_ANT;

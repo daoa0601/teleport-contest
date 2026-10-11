@@ -28,6 +28,7 @@ import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { monsterName } from './monster_name.js';
+import { publishMonsterYelp } from './monster_anger.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { tryMonsterTrapEscape } from './monster_trap_escape.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -776,18 +777,27 @@ export async function bringLeashedFollowers(state = game, random = rn2) {
         return false;
     return true;
 }
-export function prepareMonsterTeleport(monster, state = game, force = false) {
-    if (monster === state?.u?.usteed)
-        return { allowed: false, leashReleased: false };
-    if (!monster?.mleashed)
-        return { allowed: true, leashReleased: false };
+// C teleport_pet(): feedback may wait for input while the leash is attached.
+async function teleportMonsterPet(monster, state, force, publish) {
+    if (monster === state.u.usteed)
+        return false;
+    if (!monster.mleashed)
+        return true;
     const leash = leashAttachedToMonster(monster, state);
-    if (leash?.cursed && !force)
-        return { allowed: false, leashReleased: false, cursedLeash: true };
+    if (!leash) {
+        await impossible(`${monsterName(monster, { state, capitalized: true })} is leashed, without a leash.`, { state });
+    }
+    else if (leash.cursed && !force) {
+        await publishMonsterYelp(monster);
+        return false;
+    }
+    else {
+        await publish('Your leash goes slack.');
+    }
     releaseMonsterLeash(monster, state);
-    return { allowed: true, leashReleased: true };
+    return true;
 }
-export async function teleportMonsterFromTrap(monster, trap, { state = game, calls = [], random = rn2, rollOne = rnd, } = {}) {
+export async function teleportMonsterFromTrap(monster, trap, { state = game, calls = [], random = rn2, rollOne = rnd, publish = plineWithContinuation, } = {}) {
     requireLevel(state);
     const event = {
         kind: 'teleport-trap', trap,
@@ -801,13 +811,9 @@ export async function teleportMonsterFromTrap(monster, trap, { state = game, cal
         event.restricted = true;
         return event;
     }
-    const preparation = prepareMonsterTeleport(monster, state);
-    event.leashReleased = preparation.leashReleased;
-    if (!preparation.allowed) {
-        if (preparation.cursedLeash !== undefined)
-            event.cursedLeash = preparation.cursedLeash;
+    if (!await teleportMonsterPet(monster, state, false, publish))
         return event;
-    }
+    const subject = monsterName(monster, { state, capitalized: true });
     const fixedDestination = trap.teledest
         && isok(trap.teledest.x, trap.teledest.y);
     if (trap.once) {
@@ -826,13 +832,16 @@ export async function teleportMonsterFromTrap(monster, trap, { state = game, cal
             && state.u?.uy === trap.teledest.y;
         const occupiedByMonster = monsterAtPosition(state.level, trap.teledest.x, trap.teledest.y);
         if (!occupiedByHero && !occupiedByMonster) {
-            event.relocation = await relocateMonsterTo(monster, trap.teledest.x, trap.teledest.y, { state, random, rollOne, calls });
+            event.relocation = await relocateMonsterTo(monster, trap.teledest.x, trap.teledest.y, { state, random, rollOne, calls, flags: RLOC_MSG });
         }
     }
     else {
         event.relocation = await randomMonsterRelocation(monster, { state, calls, random, rollOne, flags: RLOC_NONE });
     }
-    event.teleportAttempted = true;
+    if (event.visible) {
+        await publish(`${subject} ${canSeeMonster(monster) ? 'seems disoriented.' : 'suddenly disappears!'}`);
+        trap.tseen = true;
+    }
     return event;
 }
 export async function moveHeroByTeleport(x, y, state = game, { allowDrag = false } = {}) {
@@ -906,30 +915,27 @@ function teleportSpellLevel() {
 }
 // C teleport.c:mlevel_tele_trap(), the LEVEL_TELEP branch. The destination
 // follows the hero's current dungeon, even for a monster with another home.
-export async function teleportMonsterToRandomLevel(monster, trap, { state = game, random = rn2, rollOne = rnd, force = false, } = {}) {
+export async function teleportMonsterToRandomLevel(monster, trap, { state = game, random = rn2, rollOne = rnd, force = false, publish = plineWithContinuation, } = {}) {
     requirePlayingGame(state);
     if (monster === state.u.ustuck)
         return null;
-    const pet = prepareMonsterTeleport(monster, state, force);
-    const seen = canSeeMonster(monster) || monster === state.u.usteed;
-    if (!pet.allowed)
+    if (!await teleportMonsterPet(monster, state, force, publish))
         return null;
-    if (pet.leashReleased)
-        await plineWithContinuation('You feel the leash go slack.');
+    const seen = canSeeMonster(monster) || monster === state.u.usteed;
     const subject = () => monsterName(monster, { state, capitalized: true });
     if (In_endgame(state.u.uz) || (monster.minvent || []).some(object => object.otyp === AMULET_OF_YENDOR)) {
         if (seen)
-            await plineWithContinuation(`${subject()} seems very disoriented for a moment.`);
+            await publish(`${subject()} seems very disoriented for a moment.`);
         return null;
     }
     const destination = randomTeleportDepth(state, random, rollOne);
     if (destination === depth(state.u.uz, state.dungeons)) {
         if (seen)
-            await plineWithContinuation(`${subject()} shudders for a moment.`);
+            await publish(`${subject()} shudders for a moment.`);
         return null;
     }
     if (seen) {
-        await plineWithContinuation(`Suddenly, ${monsterName(monster, { state })} disappears out of sight.`);
+        await publish(`Suddenly, ${monsterName(monster, { state })} disappears out of sight.`);
         trap.tseen = true;
     }
     if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT_CNTRL))

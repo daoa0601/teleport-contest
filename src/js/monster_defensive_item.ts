@@ -25,6 +25,8 @@ import {
 import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
 import { monsterName } from './monster_name.js';
+import { monsterLocomotion } from './monster_locomotion.js';
+import { verbForSubject } from './object_grammar.js';
 import { touchPetrifies } from './stoning.js';
 import { monsterPolymorphsWhenStoned } from './monster_stoning.js';
 import { monsterLinedUpWithHero } from './monster_ranged_alignment.js';
@@ -376,10 +378,16 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
     }
     case 'trap': {
         const trap = choice.trap;
-        if (is_hole(trap.ttyp) && atBottom(state)) return { nativeResult: 0, heroDied: false };
+        const hole = is_hole(trap.ttyp);
+        if (hole && atBottom(state)) return { nativeResult: 0, heroDied: false };
         await fleeForEscape(monster, options);
         const visible = cansee(monster.mx, monster.my);
-        if (visible) await publish(`${subject()} jumps ${is_hole(trap.ttyp) ? 'into' : 'onto'} a ${is_hole(trap.ttyp) ? trap.ttyp === HOLE ? 'hole' : 'trap door' : 'teleportation trap'}!`);
+        if (visible) {
+            const name = subject();
+            const verb = verbForSubject(name, monsterLocomotion(monster.mnum, 'jump'));
+            const trapName = hole ? trap.ttyp === HOLE ? 'hole' : 'trap door' : 'teleportation trap';
+            await publish(`${name} ${verb} ${hole ? 'into' : 'onto'} a ${trapName}!`);
+        }
         const cell = state.level.requireAt(trap.tx, trap.ty);
         if (cell.typ === SCORR) { cell.typ = CORR; cell.flags = 0; vision_note_blocker_change(trap.tx, trap.ty); }
         if (visible) trap.tseen = true;
@@ -389,7 +397,7 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         if (monster.wormno) advanceMonsterWormBody(monster, { state, random, rollOne, rollDice });
         maybeUnhideAt(monster.mx, monster.my, state);
         newsym(monster.mx, monster.my);
-        if (is_hole(trap.ttyp)) await migrateMonsterOffLevel(monster, state, { dst: { dnum: state.u.uz.dnum, dlevel: state.u.uz.dlevel + 1 } });
+        if (hole) await migrateMonsterOffLevel(monster, state, { dst: { dnum: state.u.uz.dnum, dlevel: state.u.uz.dlevel + 1 } });
         else await teleportForEscape(monster, 0, seen, options, trap);
         return spent();
     }
