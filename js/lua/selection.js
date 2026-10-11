@@ -1,6 +1,7 @@
-import { SpecialSelection, specialSelectionFillRect, specialSelectionFloodFill, specialSelectionLine, specialSelectionMatch, specialSelectionRandLine, specialSelectionRandomPoint, specialSelectionRect, selection_from_mkroom, } from '../selvar.js';
+import { SpecialSelection, specialSelectionFillRect, specialSelectionFloodFill, specialSelectionLine, specialSelectionMatch, specialSelectionRandLine, specialSelectionRect, selection_from_mkroom, } from '../selvar.js';
 import { LuaTable, LuaUserdata } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
+import { ANY_LOC, getLocationCoord } from '../special_location.js';
 function selectionValue(value) {
     if (!(value instanceof LuaUserdata)
         || !(value.value instanceof SpecialSelection))
@@ -32,24 +33,15 @@ export function createSelectionApi(context, invoke = null) {
             y: point.y - active.ystart,
         };
     };
-    const set = (self, x = null, y = null, value = 1) => {
+    const set = async (self, x = null, y = null, value = 1) => {
         const selection = selectionValue(self);
-        if (x != null || y != null) {
-            const active = currentContext();
-            const absoluteX = active.xstart + luaInteger(x);
-            const absoluteY = active.ystart + luaInteger(y);
-            if (luaInteger(value ?? 1))
-                selection.add(absoluteX, absoluteY);
-            else
-                selection.remove(absoluteX, absoluteY);
-        }
-        else {
-            const point = specialSelectionRandomPoint(currentContext())
-                .randomCoordinate();
-            if (!point)
-                throw new Error('Random point selection is empty');
+        const coordinate = x === null && y === null ? null
+            : { x: luaInteger(x), y: luaInteger(y) };
+        const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
+        if (luaInteger(value ?? 1))
             selection.add(point.x, point.y);
-        }
+        else
+            selection.remove(point.x, point.y);
         return self;
     };
     const clone = (self) => wrap(selectionValue(self).clone());

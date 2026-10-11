@@ -637,9 +637,6 @@ export function specialSelectionFloodFill(context, x, y, diagonals = false) {
     const terrain = game.level?.at?.(start.x, start.y)?.typ;
     return new SpecialSelection().floodFill(start.x, start.y, diagonals, (nextX, nextY) => game.level?.at?.(nextX, nextY)?.typ === terrain);
 }
-export function specialSelectionRandomPoint(context) {
-    return new SpecialSelection().add(context.xstart + rn2(context.width), context.ystart + rn2(context.height));
-}
 const MAP_CHAR_TYPES = {
     ' ': STONE,
     '#': CORR,
