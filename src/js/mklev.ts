@@ -1850,6 +1850,19 @@ async function makemon(
         hasMonsterInventory = true;
         return object;
     };
+    // C makemon.c:m_initthrow(). Throwing stacks bypass mongets(): the raw
+    // mksobj() result goes straight into the inventory, so demons keep any
+    // blessing, the quantity is replaced with rn1(oquan, 3), and orcish
+    // arrows are always created poisoned.
+    const mInitthrow = async (otyp: number, oquan: number): Promise<void> => {
+        const object = await mksobj(otyp, true, false);
+        object.quan = 3 + rn2(oquan);
+        object.quantity = object.quan;
+        object.owt = (OBJECT_WEIGHT[otyp] ?? 1) * object.quan;
+        if (otyp === ORCISH_ARROW) object.opoisoned = true;
+        await addCreatedObjectToMonsterInventory(pendingMonster, object, game);
+        hasMonsterInventory = true;
+    };
     const mkmonmoney = async (amount: number): Promise<GameObject> => {
         const gold = await mksobj(GOLD_PIECE, false, false);
         gold.quan = amount;
@@ -1869,31 +1882,25 @@ async function makemon(
         const bias = ((genderFlags & M2_LORD) ? 1 : 0)
             + ((genderFlags & M2_PRINCE) ? 2 : 0)
             + ((genderFlags & M2_NASTY) ? 1 : 0);
-        const initThrow = async (otyp: number, quantityRange: number): Promise<void> => {
-            const object = await mongets(otyp);
-            object.quan = 3 + rn2(quantityRange);
-            object.quantity = object.quan;
-            object.owt = (OBJECT_WEIGHT[otyp] ?? 1) * object.quan;
-        };
         switch (rnd(14 - 2 * bias)) {
         case 1:
             if (genderFlags & M2_STRONG) await mongets(BATTLE_AXE);
-            else await initThrow(DART, 12);
+            else await mInitthrow(DART, 12);
             break;
         case 2:
             if (genderFlags & M2_STRONG) await mongets(TWO_HANDED_SWORD);
             else {
                 await mongets(CROSSBOW);
-                await initThrow(CROSSBOW_BOLT, 12);
+                await mInitthrow(CROSSBOW_BOLT, 12);
             }
             break;
         case 3:
             await mongets(BOW);
-            await initThrow(18, 12); // ARROW
+            await mInitthrow(18, 12); // ARROW
             break;
         case 4:
             if (genderFlags & M2_STRONG) await mongets(LONG_SWORD);
-            else await initThrow(DAGGER, 3);
+            else await mInitthrow(DAGGER, 3);
             break;
         case 5:
             await mongets((genderFlags & M2_STRONG) ? LUCERN_HAMMER : AKLYS);
@@ -1925,14 +1932,7 @@ async function makemon(
         await giveGeneralMonsterWeapon();
     } else if (mndx >= 59 && mndx <= 61) { // kobold through kobold leader
         // C ref: makemon.c m_initweap(), S_KOBOLD.
-        if (!rn2(4)) {
-            const darts = await mongets(DART);
-            // mksobj() first initializes an ordinary multigen stack, then
-            // m_initthrow() deliberately replaces that quantity.
-            darts.quan = 3 + rn2(12); // rn1(12, 3)
-            darts.quantity = darts.quan;
-            darts.owt = (OBJECT_WEIGHT[DART] ?? 1) * darts.quan;
-        }
+        if (!rn2(4)) await mInitthrow(DART, 12);
         rn2(75); // final m_initweap() offensive-item check
     } else if (mndx >= 70 && mndx <= 73) {
         // C ref: makemon.c m_initweap(), S_ORC.  Goblins, hobgoblins,
@@ -1982,9 +1982,7 @@ async function makemon(
         else if (weaponRoll === 1) await mongets(ELVEN_DAGGER);
         else {
             await mongets(SLING);
-            const missile = await mongets(!rn2(4) ? FLINT : ROCK);
-            missile.quan = 3 + rn2(6);
-            missile.quantity = missile.quan;
+            await mInitthrow(!rn2(4) ? FLINT : ROCK, 6);
         }
         if (!rn2(10)) await mongets(ELVEN_MITHRIL_COAT);
         if (!rn2(10)) await mongets(DWARVISH_CLOAK);
@@ -2024,9 +2022,7 @@ async function makemon(
             if (!rn2(4)) await mongets(ELVEN_SHIELD);
             if (rn2(3)) await mongets(ELVEN_SHORT_SWORD);
             await mongets(ELVEN_BOW);
-            const arrows = await mongets(ELVEN_ARROW);
-            arrows.quan = 3 + rn2(12);
-            arrows.quantity = arrows.quan;
+            await mInitthrow(ELVEN_ARROW, 12);
             break;
         }
         case 1:
@@ -2223,10 +2219,7 @@ async function makemon(
         if (!rn2(3)) await mongets(LEATHER_CLOAK);
         if (!rn2(3)) {
             await mongets(BOW);
-            const arrows = await mongets(ARROW);
-            arrows.quan = 3 + rn2(12);
-            arrows.quantity = arrows.quan;
-            arrows.owt = (OBJECT_WEIGHT[ARROW] ?? 1) * arrows.quan;
+            await mInitthrow(ARROW, 12);
         }
         await giveOffensiveMonsterItem();
     } else if (MONSTER_SYMBOL[mndx] === 15
@@ -2248,9 +2241,7 @@ async function makemon(
             if (!rn2(3)) await mongets(IRON_SHOES);
             if (!rn2(3)) {
                 await mongets(ORCISH_BOW);
-                const arrows = await mongets(ORCISH_ARROW);
-                arrows.quan = 3 + rn2(12);
-                arrows.quantity = arrows.quan;
+                await mInitthrow(ORCISH_ARROW, 12);
             }
             if (!rn2(3)) await mongets(URUK_HAI_SHIELD);
         } else if (mndx !== 76 && rn2(2)) { // not PM_ORC_SHAMAN
@@ -2305,9 +2296,7 @@ async function makemon(
         if (rn2(2)) {
             const forest = mndx === 131;
             await mongets(forest ? BOW : CROSSBOW);
-            const missiles = await mongets(forest ? 18 : CROSSBOW_BOLT); // ARROW
-            missiles.quan = 3 + rn2(12);
-            missiles.quantity = missiles.quan;
+            await mInitthrow(forest ? 18 : CROSSBOW_BOLT, 12); // ARROW
         }
         await giveOffensiveMonsterItem();
     } else if (mndx === PM_SALAMANDER) {
@@ -2325,30 +2314,25 @@ async function makemon(
             + ((genderFlags & 0x00000800) ? 2 : 0)
             + ((genderFlags & M2_NASTY) ? 1 : 0);
         const weaponRoll = rnd(14 - (2 * bias));
-        const initThrow = async (otyp: number, quantityRange: number): Promise<void> => {
-            const object = await mongets(otyp);
-            object.quan = 3 + rn2(quantityRange);
-            object.quantity = object.quan;
-        };
         switch (weaponRoll) {
         case 1:
             if (genderFlags & M2_STRONG) await mongets(BATTLE_AXE);
-            else await initThrow(DART, 12);
+            else await mInitthrow(DART, 12);
             break;
         case 2:
             if (genderFlags & M2_STRONG) await mongets(TWO_HANDED_SWORD);
             else {
                 await mongets(CROSSBOW);
-                await initThrow(CROSSBOW_BOLT, 12);
+                await mInitthrow(CROSSBOW_BOLT, 12);
             }
             break;
         case 3:
             await mongets(BOW);
-            await initThrow(18, 12); // ARROW
+            await mInitthrow(18, 12); // ARROW
             break;
         case 4:
             if (genderFlags & M2_STRONG) await mongets(LONG_SWORD);
-            else await initThrow(DAGGER, 3);
+            else await mInitthrow(DAGGER, 3);
             break;
         case 5:
             await mongets((genderFlags & M2_STRONG) ? LUCERN_HAMMER : AKLYS);

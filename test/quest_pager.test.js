@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { game } from '../js/gstate.js';
+import { ensureQuestStatus } from '../js/quest.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { convertQuestLine } from '../js/quest_pager.js';
+function dungeonNamed(dname) {
+    return {
+        dname,
+        num_dunlevs: 1, entry_lev: 1, dunlev_ureached: 1, depth_start: 1,
+        flags: { maze_like: false, hellish: false, alignment: null },
+        bonetag: undefined, protofile: undefined,
+        levelFill: undefined, themeRooms: undefined,
+    };
+}
+void test('quest text substitutions follow the native code table', () => {
+    freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
+    game.plname = 'Sigrid';
+    game.u.ulevel = 14;
+    game.u.ualign = { type: 1, record: 10 };
+    game.u.ualignbase = [1, 1];
+    game.dungeons = [dungeonNamed('The Dungeons of Doom')];
+    const status = ensureQuestStatus(game);
+    status.ldrgend = 1;
+    // dat/quest.lua Val assignquest lines exercise the artifacts, ranks,
+    // guardians, deities, pronouns, and possessives of convert_line().
+    assert.equal(convertQuestLine('and unless %oh is returned into my care, %n may start Ragnarok.', game), 'and unless it is returned into my care, Lord Surtur may start Ragnarok.');
+    assert.equal(convertQuestLine('had asked %d for a group of %gP', game), 'had asked Tyr for a group of The warriors');
+    assert.equal(convertQuestLine('you will find %ns lair', game), "you will find Lord Surtur's lair");
+    assert.equal(convertQuestLine('you %x about the hill', game), 'you see about the hill');
+    assert.equal(convertQuestLine('only when you have returned %Ra', game), 'only when you have returned a Warrior');
+    assert.equal(convertQuestLine('%lh summons you, %p, and %c answers.', game), 'she summons you, Sigrid, and Valkyrie answers.');
+    assert.equal(convertQuestLine('100%% of %Z', game), '100% of The Dungeons of Doom');
+});
+//# sourceMappingURL=quest_pager.test.js.map

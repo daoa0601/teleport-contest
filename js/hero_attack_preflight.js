@@ -3,6 +3,7 @@
 import { heroIsHallucinating } from './senses.js';
 import { observeObjectForNaming } from './objnam.js';
 import { artifactById } from './artifacts.js';
+import { AD_STCK } from './monster_attack_types.js';
 import { IS_POOL, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, PARANOID_HIT, STRAT_WAITMASK, } from './const.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, glyphAt, map_invisible, newsym, plineWithContinuation, randomDisplayMonsterName, } from './display.js';
 import { floorObjectDescription } from './floor_object_display.js';
@@ -10,7 +11,7 @@ import { game } from './gstate.js';
 import { revealMimic } from './mimic.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { wakeAttackedMonster } from './monster_anger.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData, } from './monster_data.js';
 import { paranoidQuery } from './query.js';
 const M1_CONCEAL = 0x00000080;
 const S_EEL = 57;
@@ -46,6 +47,17 @@ function hidesUnder(monster) {
 }
 function isEel(monster) {
     return MONSTER_SYMBOL[monster?.mnum] === S_EEL;
+}
+// C dmgtype(mtmp->data, AD_STCK): any attack of the species adheres.
+function hasStickyAttack(monster) {
+    return requireMonsterData(MONSTER_ATTACKS, monster.mnum)
+        .some(attack => attack[1] === AD_STCK);
+}
+// C m_next2u(m): the squared euclidean distance to the hero is at most 2.
+function isAdjacentToHero(monster, state) {
+    const dx = monster.mx - (state.u?.ux ?? monster.mx);
+    const dy = monster.my - (state.u?.uy ?? monster.my);
+    return dx * dx + dy * dy <= 2;
 }
 function targetName(monster) {
     if (monster.name)
@@ -128,6 +140,13 @@ export async function prepareAppliedWeaponAttack(monster, weapon, { state = game
         && !hiddenUnderVisibleCover) {
         await plineWithContinuation("Wait!  There's something there you can't see!");
         map_invisible(monster.mx, monster.my);
+        // An unseen mimic sticks to the hero before being woken, exactly
+        // as if it had been stumbled upon while visible.
+        if (hasUnrevealedAppearance(monster, state) && !state.u.ustuck
+            && !monster.mflee && hasStickyAttack(monster)
+            && isAdjacentToHero(monster, state)) {
+            state.u.ustuck = monster;
+        }
         await wakeAttackedMonster(monster);
         return { proceed: false, spentTime: true };
     }

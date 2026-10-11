@@ -46,6 +46,7 @@ import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
 import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
+import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
@@ -237,7 +238,6 @@ import {
     MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData,
 } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
-import { revealMimic } from './mimic.js';
 import { nameToMonster } from './mondata.js';
 import {
     addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience,
@@ -6907,29 +6907,6 @@ async function pushBoulder(boulder: GameObject, x: number, y: number, dx: number
     return true;
 }
 
-// C uhitm.c:attack_checks().  An ordinary direction into an actor which the
-// hero cannot spot is not yet a melee attack unless warning or a remembered
-// invisible-monster glyph has already identified the occupied square.
-// Returning true means that this preflight consumed the turn.
-async function markUnseenMonsterBeforeAttack(monster: Monster, x: number, y: number): Promise<boolean> {
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    if (game.context?.forcefight
-        || canSpotMonster(monster)
-        || monsterHasWarningProjection(monster)
-        || game.level?.at(x, y)?.remembered_glyph?.kind === 'invisible') {
-        return false;
-    }
-
-    await plineWithContinuation(
-        "Wait!  There's something there you can't see!",
-    );
-    map_invisible(x, y);
-
-    // mon.c:wakeup() clears sleep here.
-    // TODO: add mimic reveal, peaceful response, and the sleeping growl.
-    monster.msleeping = 0;
-    return true;
-}
 
 // C ref: hack.c:domove_fight_empty(). Forced attacks at the map edge and
 // ordinary moves into remembered invisible-monster knowledge converge here.
@@ -7296,10 +7273,13 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                 ballChainMove,
             });
         }
-        if (await revealMimic(monster))
-            return true;
-        if (await markUnseenMonsterBeforeAttack(monster, newx, newy))
-            return true;
+        // attack() runs the whole attack_checks() reveal sequence: the
+        // unseen-monster marker, the disguised-mimic stumble, and the
+        // hidden-under reveal, each able to consume the move on its own.
+        const verdict = await prepareAppliedWeaponAttack(
+            monster, game.uwep ?? null, { state: game });
+        if (!verdict.proceed)
+            return verdict.spentTime;
         if (await attackHostileMonster(monster, newx, newy)) return true;
     }
 
