@@ -906,11 +906,11 @@ function teleportSpellLevel() {
 }
 // C teleport.c:mlevel_tele_trap(), the LEVEL_TELEP branch. The destination
 // follows the hero's current dungeon, even for a monster with another home.
-export async function teleportMonsterToRandomLevel(monster, trap, { state = game, random = rn2, rollOne = rnd, } = {}) {
+export async function teleportMonsterToRandomLevel(monster, trap, { state = game, random = rn2, rollOne = rnd, force = false, } = {}) {
     requirePlayingGame(state);
     if (monster === state.u.ustuck)
         return null;
-    const pet = prepareMonsterTeleport(monster, state);
+    const pet = prepareMonsterTeleport(monster, state, force);
     const seen = canSeeMonster(monster) || monster === state.u.usteed;
     if (!pet.allowed)
         return null;

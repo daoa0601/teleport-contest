@@ -7,10 +7,11 @@ import { inventoryItemDescription } from './invent.js';
 import { monsterCanCarryObject } from './monster_carry.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterName, monsterSubjectPronoun } from './monster_name.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 import { addObjectToContainer } from './object_container.js';
 import { unlinkObject } from './object_location.js';
 import { BAG_OF_HOLDING, ICE_BOX } from './object_data.js';
-import { objectCombatName, observeObjectForNaming } from './objnam.js';
+import { objectName, observeDistantObjectForNaming, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { rn2 } from './rng.js';
 import { objectWeight } from './weight.js';
@@ -36,8 +37,12 @@ export async function lootMonsterContainer(monster, container, { state, random =
         if (!name) {
             if (distance <= 49)
                 observeObjectForNaming(container, { state });
-            name = objectCombatName(container, { state });
-            name = /^[aeiou]/i.test(name) ? `an ${name}` : `a ${name}`;
+            else
+                observeDistantObjectForNaming(container, state);
+            name = objectName(container, state);
+            if (container.quan !== 1)
+                name = pluralizeObjectNoun(container, name);
+            name = withIndefiniteArticle(name);
         }
         unlinkObject(object, state);
         if (monsterCanCarryObject(monster, object, state, random)) {

@@ -427,7 +427,8 @@ import { LEVEL_TELEP } from './const.js';
 import { teleportMonsterToRandomLevel } from './teleport.js';
 import { learnObjectType } from './object_knowledge.js';
 import { changeMonsterForm } from './monster_polymorph.js';
-import { rndmonstAdj, summonInsectsForMonster } from './mklev.js';
+import { rndmonstAdj } from './mklev.js';
+import { summonMonsterInsects } from './monster_spell_insects.js';
 import { BAG_OF_TRICKS, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH } from './object_data.js';
 import { lootMonsterContainer } from './monster_container_loot.js';
 import { isContainer } from './container.js';
@@ -4578,7 +4579,9 @@ async function triggerMonsterTrap(
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        const event = await teleportMonsterToRandomLevel(monster, trap, { state, random, rollOne });
+        const event = await teleportMonsterToRandomLevel(monster, trap, {
+            state, random, rollOne, force: !!movement.forcedTrapLanding,
+        });
         if (event) {
             movement.trap = event;
             movement.actorLeftLevel = true;
@@ -7587,14 +7590,7 @@ export async function resumeDeferredMovementSpell(
         await publish('You feel that monsters are aware of your presence.');
         aggravateMonsters(state, random);
     } else if (spellCast.spell === 'insects') {
-        const insects = await summonInsectsForMonster(action.monster);
-        for (const monster of insects.created) newsym(monster.mx, monster.my);
-        const what = insects.monsterClass === 45 ? 'snakes' : 'insects';
-        effect = { count: insects.created.length, created: insects.created,
-            message: state.blind ? `You hear someone summoning ${what}.`
-                : !insects.created.length ? `${canonicalMonsterName(action.monster, { state, capitalized: true })} casts at a clump of sticks, but nothing happens.`
-                    : insects.monsterClass === 45 ? `${canonicalMonsterName(action.monster, { state, capitalized: true })} transforms a clump of sticks into snakes!`
-                        : `${canonicalMonsterName(action.monster, { state, capitalized: true })} summons insects!` };
+        effect = await summonMonsterInsects(action.monster, state);
     } else if (spellCast.spell === 'summon-monsters') {
         effect = await monsterSummonSpellEffect(action.monster, state);
     } else if (spellCast.spell === 'haste-self') {

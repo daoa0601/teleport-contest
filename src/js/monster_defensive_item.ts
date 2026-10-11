@@ -336,7 +336,7 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         }
         const trap = await maketrap(x, y, hole ? HOLE : PIT);
         if (!trap) return spent();
-        trap.tseen = true;
+        trap.tseen = !!hole || cansee(x, y);
         vision_note_blocker_change(x, y);
         if (cansee(x, y)) {
             await publish(`${subject()} has made a ${hole ? 'hole' : 'pit'} in the ${surfaceName(x, y, state)}.`);
@@ -364,7 +364,7 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         let mode = stair.tolev.dnum !== state.u.uz.dnum ? MIGR_SSTAIRS
             : stair.isladder ? stair.up ? MIGR_LADDER_DOWN : MIGR_LADDER_UP
                 : stair.up ? MIGR_STAIRS_DOWN : MIGR_STAIRS_UP;
-        if (stair.up && !stair.isladder && state.dungeons[state.u.uz.dnum]?.flags.hellish
+        if (mode === MIGR_STAIRS_DOWN && state.dungeons[state.u.uz.dnum]?.flags.hellish
             && hasAmulet(monster) && !random(4)
             && state.u.uz.dlevel < (state.dungeons[state.u.uz.dnum]?.num_dunlevs ?? 0) - 3) {
             if (seen) await publish(`As ${monsterName(monster, { state })} climbs the stairs, a mysterious force momentarily surrounds ${monster.female ? 'her' : 'him'}...`);

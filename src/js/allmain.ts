@@ -59,9 +59,10 @@ import { readEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { d, rn2, rnd } from './rng.js';
 import {
     mklev, l_nhcore_init, makemonAt, recorderLocalEpochSeconds,
-    summonInsectsForMonster, summonNastyMonsters,
+    summonNastyMonsters,
     u_on_upstairs,
 } from './mklev.js';
+import { summonMonsterInsects } from './monster_spell_insects.js';
 import {
     applyHeroLiquidEffects, continueCountedCommand, continueRun,
     finishArmorRemoval, getLine, promptYesNo, rhack,
@@ -2412,22 +2413,9 @@ async function resolveDeferredHeroInsectSpell(
 ): Promise<void> {
     const game = requireInitializedGame();
     if (!heroAttack?.deferredInsectSpell) return;
-    const result = await summonInsectsForMonster(action.monster);
-    for (const monster of result.created || []) newsym(monster.mx, monster.my);
-    const snakes = result.monsterClass === 45;
-    const what = snakes ? 'snakes' : 'insects';
-    let message;
-    if (game.blind) {
-        message = `You hear someone summoning ${what}.`;
-    } else if (!(result.created || []).length) {
-        message = `${visibleMonsterSubject(action.monster)} casts at a clump of sticks, but nothing happens.`;
-    } else if (snakes) {
-        message = `${visibleMonsterSubject(action.monster)} transforms a clump of sticks into snakes!`;
-    } else {
-        message = `${visibleMonsterSubject(action.monster)} summons insects!`;
-    }
-    await plineWithContinuation(message);
-    heroAttack.summonedInsects = result.created || [];
+    const result = await summonMonsterInsects(action.monster, game);
+    if (result.message) await plineWithContinuation(result.message);
+    heroAttack.summonedInsects = result.created;
     heroAttack.deferredInsectSpell = false;
 }
 

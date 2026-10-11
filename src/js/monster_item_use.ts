@@ -3,7 +3,7 @@ import { BOLT_LIM, G_GONE, MM_NOMSG, QBUFSZ, WAND_BACKFIRE_CHANCE } from './cons
 import { impossible } from './diagnostics.js';
 import {
     canSeeMonster, canSenseMonster, flashGlyphAt, map_invisible, newsym,
-    plineWithContinuation, transientMonsterGlyph,
+    plineWithContinuation, randomDisplayMonsterName, transientMonsterGlyph,
 } from './display.js';
 import { heroSpecies } from './hero_species.js';
 import { formatHeardMessage } from './hero_speech.js';
@@ -80,7 +80,9 @@ export async function prepareMonsterItemUse(monster: Monster, object: GameObject
                 if (visible) await publish('The potion turns out to be empty.');
             } else if (species === 287) {
                 if (visible) {
-                    await publish(`As ${monsterName(monster, { state })} opens the bottle, an enormous ghost emerges!`);
+                    const subject = monsterName(monster, { state });
+                    const occupantName = heroIsHallucinating(state) ? randomDisplayMonsterName() : 'ghost';
+                    await publish(`As ${subject} opens the bottle, an enormous ${occupantName} emerges!`);
                     await publish(`${monsterName(monster, { state, capitalized: true })} is frightened to death, and unable to move.`);
                 }
                 monster.mcanmove = 0;

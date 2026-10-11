@@ -1,7 +1,7 @@
 // Shared monster item feedback and cursed-wand precheck. C muse.c.
 import { BOLT_LIM, G_GONE, MM_NOMSG, QBUFSZ, WAND_BACKFIRE_CHANCE } from './const.js';
 import { impossible } from './diagnostics.js';
-import { canSeeMonster, canSenseMonster, flashGlyphAt, map_invisible, newsym, plineWithContinuation, transientMonsterGlyph, } from './display.js';
+import { canSeeMonster, canSenseMonster, flashGlyphAt, map_invisible, newsym, plineWithContinuation, randomDisplayMonsterName, transientMonsterGlyph, } from './display.js';
 import { heroSpecies } from './hero_species.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { inventoryItemDescription } from './invent.js';
@@ -60,7 +60,9 @@ export async function prepareMonsterItemUse(monster, object, options) {
             }
             else if (species === 287) {
                 if (visible) {
-                    await publish(`As ${monsterName(monster, { state })} opens the bottle, an enormous ghost emerges!`);
+                    const subject = monsterName(monster, { state });
+                    const occupantName = heroIsHallucinating(state) ? randomDisplayMonsterName() : 'ghost';
+                    await publish(`As ${subject} opens the bottle, an enormous ${occupantName} emerges!`);
                     await publish(`${monsterName(monster, { state, capitalized: true })} is frightened to death, and unable to move.`);
                 }
                 monster.mcanmove = 0;
