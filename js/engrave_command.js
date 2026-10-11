@@ -25,12 +25,12 @@ import { MONSTER_FLAGS2, MONSTER_SYMBOL, monsterHasNoHands, monsterIsAnimal, mon
 import { exceedsActionCapacity } from './weight.js';
 import { learnWand, zappable } from './wand_charge.js';
 import { explodeWand } from './recharge.js';
-import { chargeUnpaidUsage, carriedObjectOwner, objectTypeKnown } from './shk.js';
+import { chargeUnpaidUsage, objectTypeKnown } from './shk.js';
 import { zapWithoutDirection } from './wand_effects.js';
 import { dryTowel } from './towel.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { inventoryItemDescription, selectInventoryObject } from './invent.js';
-import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName } from './objnam.js';
+import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName, } from './objnam.js';
 import { artifactByName } from './artifacts.js';
 import { exerciseWisdom } from './attrib.js';
 import { addExperience } from './exper.js';
@@ -414,7 +414,7 @@ export async function doengrave(state = game) {
         observeObjectForNaming(object, { state });
     const writer = stylus === 'hands'
         ? `your ${heroFingerTipName(state)}`
-        : `${carriedObjectOwner(stylus, state).toLowerCase()} ${objectName(stylus, state)}`;
+        : ownedObjectName(stylus, state, { capitalized: false });
     // There's no reason you should be able to write with a wand while both
     // your hands are tied up.
     const wielded = state.uwep || state.u.uwep;
@@ -536,7 +536,7 @@ export async function doengrave(state = game) {
                         await pline(`${ownedObjectName(object, state)} can only scratch the ${surfaceName(hero.ux, hero.uy, state)}.`);
                     }
                     else if ((object.spe ?? 0) <= -3) {
-                        await pline(`${ownedObjectName(object, state)}${objectNameIsPlural(object, state) ? ' are' : ' is'} too dull for engraving.`);
+                        await pline(`${ownedObjectAction(object, 'are', state)} too dull for engraving.`);
                     }
                     else {
                         setup.type = ENGRAVE;

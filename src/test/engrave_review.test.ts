@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
-import { DB_ICE, DRAWBRIDGE_UP, DUST, ENGRAVE, MARK } from '../js/const.js';
+import { ALTAR, AM_NEUTRAL, DB_ICE, DRAWBRIDGE_UP, DUST, ENGRAVE, MARK } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -12,9 +12,10 @@ import { objectTypeKnown } from '../js/shk.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
 import { requireFixtureGame } from './support/game-state.js';
-import { installPolymorphedHero } from './support/hero-state.js';
+import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
@@ -36,6 +37,63 @@ void test('a dull blade warning is acknowledged before the writing announcement'
     assert.equal(dagger.spe, -3);
     assert.equal(game._occupation ?? null, null);
     assert.equal(engravingAt(game.u.ux, game.u.uy, game.level), null);
+});
+
+void test('the dull blade warning includes the number of daggers in a stack', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const daggers = await addInventoryWeapon(DAGGER, { quan: 3, spe: -3 });
+    const input = resetInputState();
+    input.feed(daggers.invlet);
+
+    await answerPrompts(rhack('E'.charCodeAt(0)), input, [
+        { prompt: /Your 3 daggers are too dull for engraving\.[\s\S]*--More--/, keys: ' ' },
+        { prompt: /You write in the dust with/, keys: ' ' },
+        { prompt: /What do you want to write in the dust here\?/, keys: '\x1b' },
+    ]);
+
+    assert.equal(daggers.quan, 3);
+    assert.equal(daggers.spe, -3);
+    assert.equal(game._occupation ?? null, null);
+});
+
+void test('writing inside a jelly names the stack of daggers in the plural', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const jelly = await createMonsterAt('ochre jelly', game.u.ux + 1, game.u.uy);
+    installSwallowedHero(jelly);
+    const daggers = await addInventoryWeapon(DAGGER, { quan: 3 });
+    const input = resetInputState();
+    input.feed(daggers.invlet);
+
+    await answerPrompts(rhack('E'.charCodeAt(0)), input, [
+        { prompt: /You tickle the ochre jelly with your daggers\.[\s\S]*--More--/, keys: ' ' },
+    ]);
+
+    assert.equal(game._pending_message, 'Your message dissolves...');
+    assert.equal(daggers.quan, 3);
+    assert.equal(game._occupation ?? null, null);
+});
+
+void test('writing on an altar names the stack of daggers in the plural', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const square = game.level.requireAt(game.u.ux, game.u.uy);
+    square.typ = ALTAR;
+    square.flags = AM_NEUTRAL;
+    game.u.ualign.record = 10;
+    const daggers = await addInventoryWeapon(DAGGER, { quan: 3 });
+    const input = resetInputState();
+    input.feed(daggers.invlet);
+
+    await answerPrompts(rhack('E'.charCodeAt(0)), input, [
+        { prompt: /You make a motion towards the altar with your daggers\.[\s\S]*--More--/, keys: ' ' },
+        { prompt: /How darest thou desecrate my altar![\s\S]*--More--/, keys: ' ' },
+    ]);
+
+    assert.equal(game.u.ualign.record, 9);
+    assert.equal(daggers.quan, 3);
+    assert.equal(game._occupation ?? null, null);
 });
 
 void test('blind polymorph replaces a carving with unknown pristine text', async () => {
