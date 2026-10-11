@@ -91,8 +91,9 @@ unit's run.
 - Run at most four units at once. More of them would queue on the corpus
   lock rather than go faster.
 - Do not edit `src/` files that a running unit is likely to touch.
-- Before merging, run `codex exec review --base main` in the unit's
-  worktree, asking it to check the diff against the named C source. Send
+- Before merging, run a read-only Codex review in the unit's worktree:
+  `codex exec -s read-only -o .cache/agents/UNIT/review.md - < .cache/agents/review-prompt.md`.
+  (`codex exec review --base` does not accept custom instructions.) Send
   back real findings; do not fix them in the main checkout.
 - Merge finished branches one at a time: compile and run the unit's
   focused tests after each merge. Resolve conflicts by reading both sides
