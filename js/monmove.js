@@ -12,7 +12,7 @@ import { watchDigging } from './digging_watch.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
-import { d, rn2, rnd } from './rng.js';
+import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { performMonsterHeroAttack } from './allmain.js';
 import { selectMonsterOffensiveItem } from './monster_offensive_selection.js';
@@ -168,7 +168,7 @@ import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } f
 import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted, } from './teleport_rules.js';
 import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
 import { wereChange } from './were.js';
-import { aggravateMonsters, angerWatchGuards } from './monster_anger.js';
+import { aggravateMonsters, angerMonster, angerWatchGuards } from './monster_anger.js';
 import { stopHeroOccupation } from './occupation.js';
 import { rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';
 import { diggingTimeToHole } from './hero_digging.js';
@@ -665,7 +665,6 @@ export async function finishDeferredMonsterMiscItem(action, state = requireIniti
         maybeUnhideAt(monster.mx, monster.my, state);
         newsym(monster.mx, monster.my);
         await changeMonsterForm(monster, null, state, { showMessage: true });
-        newsym(monster.mx, monster.my);
         misc.effectApplied = true;
         return misc;
     }
@@ -3530,7 +3529,7 @@ async function placeAndStackTrapMissile(object, state, x, y) {
     placeObjectSynchronously(object, x, y, state);
     return await stack_object(object, state);
 }
-async function triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls) {
+async function triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls, publish = plineWithContinuation) {
     const trap = trapAtMonster(monster, state);
     if (!trap || monster.mtrapped)
         return null;
@@ -3587,11 +3586,14 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
+        if (trap.madeby_u && rnl(5))
+            await angerMonster(monster);
         const event = await teleportMonsterFromTrap(monster, trap, {
             state,
             calls,
             random,
             rollOne,
+            publish,
         });
         movement.trap = event;
         movement.postMoveStatus = MMOVE_DIED;
@@ -4056,7 +4058,7 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
 // this boundary intentionally does not run tunneling, pickup, concealment,
 // distfleeck(), or an attack tail.  Callers must present and resume any
 // deferred trap event before continuing their own source transaction.
-export async function triggerImmediateMonsterTrap(monster, state = requireInitializedGame(), { inAir = false, force = false, forceBungle = false, random = rn2, rollDice = d, rollOne = rnd } = {}) {
+export async function triggerImmediateMonsterTrap(monster, state = requireInitializedGame(), { inAir = false, force = false, forceBungle = false, random = rn2, rollDice = d, rollOne = rnd, publish = plineWithContinuation, } = {}) {
     const calls = DISCARDED_CALL_LOG;
     const movement = {
         oldx: monster?.mx,
@@ -4098,7 +4100,7 @@ export async function triggerImmediateMonsterTrap(monster, state = requireInitia
         movement.escapingTrap = true;
         return { monster, movement, event: null, calls };
     }
-    const event = await triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls);
+    const event = await triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls, publish);
     return { monster, movement, event, calls };
 }
 // Complete mintrap() for a source effect without running a movement tail.
@@ -6930,10 +6932,15 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
         if (result.nativeResult)
             return {
                 calls, dochugContext,
-                movement: { oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
-                    moved: false, actionCompleted: true, heroDied: result.heroDied,
+                movement: {
+                    oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                    moved: false,
+                    actionCompleted: true,
+                    usedDefense: result,
+                    heroDied: result.heroDied,
                     actorLeftLevel: !monsterHasMapPosition(monster, state),
-                    actorDied: monster.dead || monster.mhp <= 0 },
+                    actorDied: monster.dead || monster.mhp <= 0,
+                },
             };
     }
     const miscItem = defense ? null : await useMonsterMiscItem(monster, state, random, calls);

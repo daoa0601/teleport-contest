@@ -56,7 +56,7 @@ import { heroIsDeaf } from './senses.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { surfaceName } from './terrain_name.js';
-import { randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
+import { randomMonsterRelocation } from './teleport.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { monsterKnowsTrap, monsterLearnsTrap } from './trap_knowledge.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
@@ -428,7 +428,7 @@ async function fleeForEscape(monster: Monster, options: MonsterOffensiveOptions)
 }
 
 async function teleportForEscape(monster: Monster, type: number, seen: boolean, options: MonsterOffensiveOptions, trap: Trap | null = null): Promise<void> {
-    const { state, random = rn2, publish = plineWithContinuation } = options;
+    const { state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation } = options;
     if (await reportMonsterTeleportRestriction(monster, { state, publish })) {
         if (seen && type) learnObjectType(type, state);
         monsterLearnsTrap(monster, { ttyp: TELEP_TRAP });
@@ -436,8 +436,10 @@ async function teleportForEscape(monster: Monster, type: number, seen: boolean, 
         if (seen) await publish(`${monsterName(monster, { state, capitalized: true })} seems disoriented for a moment.`);
     } else {
         if (seen && type) learnObjectType(type, state);
-        if (trap) await teleportMonsterFromTrap(monster, trap, options);
-        else await randomMonsterRelocation(monster, { ...options, flags: RLOC_MSG });
+        if (trap) {
+            const action = await triggerImmediateMonsterTrap(monster, state, { force: true, random, rollOne, rollDice, publish });
+            await finishImmediateMonsterTrap(action, state, { publish, random, rollOne, rollDice });
+        } else await randomMonsterRelocation(monster, { ...options, flags: RLOC_MSG });
     }
 }
 

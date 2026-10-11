@@ -3239,6 +3239,9 @@ async function executeMonsterTurns(messageContext) {
             return false;
         if (action.conflictFight)
             continue;
+        // C dochug() returns immediately after a completed defensive action.
+        if (action.movement?.usedDefense)
+            continue;
         await resumeTrappedMonster(action);
         let { monster, movement } = action;
         if (movement?.spellCast?.cast) {

@@ -40,7 +40,7 @@ import { heroIsDeaf } from './senses.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { surfaceName } from './terrain_name.js';
-import { randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
+import { randomMonsterRelocation } from './teleport.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { monsterKnowsTrap, monsterLearnsTrap } from './trap_knowledge.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
@@ -486,7 +486,7 @@ async function fleeForEscape(monster, options) {
         await makeMonsterFlee(monster, { ...options, turns, announce: false });
 }
 async function teleportForEscape(monster, type, seen, options, trap = null) {
-    const { state, random = rn2, publish = plineWithContinuation } = options;
+    const { state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation } = options;
     if (await reportMonsterTeleportRestriction(monster, { state, publish })) {
         if (seen && type)
             learnObjectType(type, state);
@@ -499,8 +499,10 @@ async function teleportForEscape(monster, type, seen, options, trap = null) {
     else {
         if (seen && type)
             learnObjectType(type, state);
-        if (trap)
-            await teleportMonsterFromTrap(monster, trap, options);
+        if (trap) {
+            const action = await triggerImmediateMonsterTrap(monster, state, { force: true, random, rollOne, rollDice, publish });
+            await finishImmediateMonsterTrap(action, state, { publish, random, rollOne, rollDice });
+        }
         else
             await randomMonsterRelocation(monster, { ...options, flags: RLOC_MSG });
     }
