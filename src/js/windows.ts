@@ -425,9 +425,24 @@ function inventorySearchMatches(query: string, text: string): boolean {
  */
 export async function showDisclosureOverlay(lines: readonly string[], {
     marker = '--More--', minWidth = 38, restoreUnderlay = false,
-}: { marker?: string; minWidth?: number; restoreUnderlay?: boolean } = {}): Promise<number> {
+    pagerStyle = 'text',
+}: {
+    marker?: string; minWidth?: number; restoreUnderlay?: boolean;
+    pagerStyle?: 'text' | 'menu';
+} = {}): Promise<number> {
     const d = display();
     if (!d) return 27;
+
+    // Native tty_display_nhwindow(): a putstr-built menu keeps its corner
+    // placement only while it fits the screen and leaves the corner past
+    // its minimum offset; taller (or menu-overlay-disabled) windows switch
+    // to the full-screen paged layout of process_text_window().
+    const dataWidth = lines.reduce((widest, line) => Math.max(widest, line.length), 0);
+    const cornerOffset = Math.min(82, Math.floor(d.cols / 2), d.cols - dataWidth - 2);
+    if (lines.length >= d.rows || cornerOffset === 10
+        || game.flags.menu_overlay === false) {
+        return await pageDisclosureWindow(d, lines, { marker, pagerStyle, restoreUnderlay });
+    }
 
     const widest = Math.max(marker.length, ...lines.map(line => line.length));
     // process_menu_window() leaves one terminal column to the right of a
@@ -455,6 +470,53 @@ export async function showDisclosureOverlay(lines: readonly string[], {
     const cursorOffset = marker === '(end)' ? marker.length + 1 : marker.length;
     d.setCursor(Math.min(d.cols - 1, left + cursorOffset), markerRow);
     const key = await nhgetch();
+    if (underlay && underlayCursor) {
+        for (const [row, cells] of underlay.entries()) {
+            for (const [col, cell] of cells.entries()) {
+                d.setCell(col, row, cell.ch, cell.color, cell.attr);
+            }
+        }
+        d.setCursor(underlayCursor.col, underlayCursor.row);
+        d.cursorVisible = underlayCursor.visible;
+    }
+    return key;
+}
+
+/**
+ * Full-screen paged rendering for an oversized disclosure window.
+ * C wintty.c process_text_window(): one page per screen minus its marker
+ * row, rows at the left edge (menu-built windows keep their selector
+ * column), pager markers one column in, and the whole screen cleared
+ * between pages.  Menu-style windows page their items the same way and
+ * label every page but the single-page case with "(x of y)".
+ */
+async function pageDisclosureWindow(
+    d: GameDisplay, lines: readonly string[],
+    { marker, pagerStyle, restoreUnderlay }: {
+        marker: string; pagerStyle: 'text' | 'menu'; restoreUnderlay: boolean;
+    },
+): Promise<number> {
+    const rowColumn = pagerStyle === 'menu' ? 1 : 0;
+    const pageSize = d.rows - 1;
+    const pageCount = Math.max(1, Math.ceil(lines.length / pageSize));
+    const underlay = restoreUnderlay
+        ? d.grid.map(row => row.map(cell => ({ ...cell }))) : null;
+    const underlayCursor = restoreUnderlay
+        ? { col: d.cursorCol, row: d.cursorRow, visible: d.cursorVisible } : null;
+    const pages: TextPage[] = [];
+    for (let page = 0; page < pageCount; page++) {
+        const content = lines.slice(page * pageSize, (page + 1) * pageSize);
+        const markerText = pagerStyle === 'menu' && pageCount > 1
+            ? `(${page + 1} of ${pageCount})` : marker;
+        // tty_end_menu() keeps a trailing blank on its "(end) " morestr.
+        const markerLength = markerText === '(end)' ? 6 : markerText.length;
+        pages.push({
+            lines: [...content.map(text => ({ text, col: rowColumn })),
+                { text: markerText, col: 1 }],
+            cursor: [1 + markerLength, pageSize],
+        });
+    }
+    const key = await showTextPages(pages, { validKeys: [27, 32, 10, 13] });
     if (underlay && underlayCursor) {
         for (const [row, cells] of underlay.entries()) {
             for (const [col, cell] of cells.entries()) {

@@ -8,6 +8,7 @@ import { finishOrdinaryDeath, vanquishedLines } from '../js/end.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME } from '../js/monster_data.js';
+import { makePlural } from '../js/object_grammar.js';
 import { G_EXTINCT, G_GENOD } from '../js/const.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -19,6 +20,11 @@ function visibleRow() {
     const row = display.grid[0];
     assert.ok(row, 'the display has a message row');
     return row.map(cell => cell.ch).join('').trimEnd();
+}
+function screenText() {
+    const display = game.nhDisplay;
+    assert.ok(display, 'disclosure assertions need a live display');
+    return display.grid.map(rowCells => rowCells.map(cell => cell.ch).join('').trimEnd()).join('\n');
 }
 function recordSpecies(name, count, mvflags = 0) {
     const mnum = MONSTER_NAME.indexOf(name);
@@ -170,5 +176,131 @@ void test('unique vanquished species keep their proper-name spelling', () => {
         '',
         '2 creatures vanquished.',
     ]);
+});
+void test('a single genocided species keeps the special default in its prompt', async () => {
+    freshPlayableRoom();
+    requirePlayingGame(game);
+    recordSpecies('gnome', 1, G_GENOD);
+    game.flags.disclose = '?g';
+    const input = resetInputState();
+    const ending = deathWithPrompts();
+    const row = await advanceToQuestion(input, /species genocided/);
+    assert.equal(row, 'Do you want a list of species genocided? [ynq] (a)');
+    await declineRemainingPrompts(input, ending);
+});
+void test("answering 'a' picks a sort order before the vanquished list", async () => {
+    freshPlayableRoom();
+    requirePlayingGame(game);
+    recordSpecies('newt', 5);
+    recordSpecies('jackal', 2);
+    const input = resetInputState();
+    const ending = deathWithPrompts();
+    await advanceToQuestion(input, /creatures vanquished/);
+    input.feed('a');
+    await input.waitUntilBlocked();
+    // set_vanq_order(): the preselected traditional order carries '+',
+    // and the menu names both lists it governs.
+    let screen = screenText();
+    assert.match(screen, /Sort order for vanquished monster counts/);
+    assert.match(screen, /t \+ traditional: by monster level/);
+    assert.match(screen, /a - alphabetically, first unique monsters, then others/);
+    input.feed('a');
+    await input.waitUntilBlocked();
+    // Alphabetical order lists the jackals before the newt regardless of
+    // their kill counts.
+    screen = screenText();
+    assert.ok(screen.indexOf('2 jackals') >= 0, 'the list names the jackals');
+    assert.ok(screen.indexOf('5 newts') > screen.indexOf('2 jackals'), 'alphabetical order puts jackals first');
+    input.feed(' ');
+    await declineRemainingPrompts(input, ending);
+});
+void test('escaping the sort-order menu skips the list without stopping disclosure', async () => {
+    freshPlayableRoom();
+    requirePlayingGame(game);
+    recordSpecies('newt', 1);
+    recordSpecies('jackal', 2);
+    recordSpecies('gnome', 1, G_GENOD);
+    const input = resetInputState();
+    const ending = deathWithPrompts();
+    await advanceToQuestion(input, /creatures vanquished/);
+    input.feed('a');
+    await input.waitUntilBlocked();
+    assert.match(screenText(), /Sort order for vanquished monster counts/);
+    input.feed(27);
+    await input.waitUntilBlocked();
+    // ESC cancels only the vanquished list; the genocided question still
+    // gets asked instead of the disclosure being cut short.
+    assert.equal(visibleRow(), 'Do you want a list of species genocided? [ynq] (n)');
+    await declineRemainingPrompts(input, ending);
+});
+void test('a count order chosen for vanquished degrades to alphabetical for genocided', async () => {
+    freshPlayableRoom();
+    requirePlayingGame(game);
+    recordSpecies('newt', 5);
+    recordSpecies('jackal', 2);
+    recordSpecies('gnome leader', 1, G_GENOD);
+    recordSpecies('gnome', 1, G_GENOD);
+    const input = resetInputState();
+    const ending = deathWithPrompts();
+    await advanceToQuestion(input, /creatures vanquished/);
+    input.feed('a');
+    await input.waitUntilBlocked();
+    input.feed('n');
+    await input.waitUntilBlocked();
+    // By count, high to low: the five newts lead the two jackals.
+    let screen = screenText();
+    assert.ok(screen.indexOf('5 newts') >= 0);
+    assert.ok(screen.indexOf('a newt') < 0, 'counts pluralize the newts');
+    assert.ok(screen.indexOf('2 jackals') > screen.indexOf('5 newts'));
+    input.feed(' ');
+    const row = await advanceToQuestion(input, /species genocided/);
+    assert.equal(row, 'Do you want a list of species genocided? [ynaq] (n)');
+    input.feed('a');
+    await input.waitUntilBlocked();
+    // The genocided menu hides the counting orders; its alphabetical
+    // choice orders the species list rather than reusing the count order.
+    screen = screenText();
+    assert.match(screen, /Sort order for genocided monster types/);
+    assert.doesNotMatch(screen, /n [-+] by count, high to low/);
+    input.feed('a');
+    await input.waitUntilBlocked();
+    screen = screenText();
+    assert.ok(screen.indexOf(' gnomes') < screen.indexOf(' gnome leaders'), 'the genocided list stays alphabetical');
+    input.feed(' ');
+    await declineRemainingPrompts(input, ending);
+});
+void test('a long genocided list pages through every species and its totals', async () => {
+    freshPlayableRoom();
+    requirePlayingGame(game);
+    const species = MONSTER_NAME.filter((name, mnum) => mnum > 0
+        && !((MONSTER_GENO[mnum] ?? 0) & G_UNIQ)).slice(0, 30);
+    assert.equal(species.length, 30, 'thirty ordinary species are needed');
+    for (const name of species)
+        recordSpecies(name, 0, G_GENOD);
+    const input = resetInputState();
+    const ending = deathWithPrompts();
+    await advanceToQuestion(input, /species genocided/);
+    input.feed('y');
+    await input.waitUntilBlocked();
+    // The first page fills the screen and waits behind its pager marker.
+    const display = game.nhDisplay;
+    assert.ok(display);
+    const markerRowCells = display.grid[display.rows - 1];
+    assert.ok(markerRowCells, 'the pager marker owns the bottom row');
+    assert.equal(markerRowCells.map(cell => cell.ch).join('').trim(), '--More--');
+    const firstPage = screenText();
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    // The second page keeps the remaining species and the footers that
+    // truncation used to drop.
+    const secondPage = screenText();
+    assert.match(secondPage, /30 species genocided\./);
+    const pagedLines = [...firstPage.split('\n'), ...secondPage.split('\n')]
+        .map(line => line.trimEnd());
+    for (const name of species) {
+        assert.ok(pagedLines.includes(` ${makePlural(name)}`), `the paged list still names the ${makePlural(name)}`);
+    }
+    input.feed(' ');
+    await declineRemainingPrompts(input, ending);
 });
 //# sourceMappingURL=end_disclosure.test.js.map

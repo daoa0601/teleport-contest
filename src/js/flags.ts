@@ -43,6 +43,8 @@ export interface GameFlags extends Partial<Record<GameBooleanFlag, boolean>> {
     runmode?: string;
     sortloot?: LootSortMode;
     suppress_alert?: string;
+    /** insight.c vanq_sortmode: VANQ_* order of vanquished/genocided lists. */
+    vanqSortmode?: number;
 }
 
 export interface InterfaceFlags {
