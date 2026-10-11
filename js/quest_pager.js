@@ -10,9 +10,8 @@ import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from './object_grammar.js';
 import { heroIsBlind } from './senses.js';
 const M2_PNAME = 0x00080000;
-// C questpgr.c:ldrname()/neminame()/guardname() share one rule: the role's
-// named species is used directly when its name is a proper name, and with a
-// "the" prefix otherwise.
+// C questpgr.c:ldrname()/neminame() use the role's named species directly
+// when its name is a proper name, and with a "the" prefix otherwise.
 function roleMonsterName(mnum) {
     if (mnum === undefined || !Number.isInteger(mnum))
         return '';
@@ -27,8 +26,12 @@ export function questLeaderName(g = game) {
 export function questNemesisName(g = game) {
     return roleMonsterName(g.urole?.neminum);
 }
+// C questpgr.c:guardname() returns the species name without an article.
 export function questGuardianName(g = game) {
-    return roleMonsterName(g.urole?.guardnum);
+    const mnum = g.urole?.guardnum;
+    if (mnum === undefined || !Number.isInteger(mnum))
+        return '';
+    return MONSTER_NAME[mnum] ?? '';
 }
 export function questHomebase(g = game) {
     return g.urole?.homebase ?? '';
@@ -58,17 +61,13 @@ function alignmentName(alignment) {
         return 'neutral';
     return alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
 }
-// C pray.c:align_gname(): the god of the given alignment, with the goddess
-// marker underscore stripped from the role's table entry.
+// C pray.c:align_gname(). Role data stores names without the goddess marker.
 function godNameOf(alignment, g) {
-    const name = g.urole?.gods?.[alignment];
-    return name !== undefined ? name.replace(/^_/, '') : '';
+    return g.urole?.gods?.[alignment] ?? '';
 }
-// C pray.c:align_gtitle(): "goddess" when the original alignment's god is
-// marked with the underscore prefix, "god" otherwise.
+// C pray.c:align_gtitle(). goddessAlignments preserves role.c's '_' marker.
 function godTitleOf(alignment, g) {
-    const marked = g.urole?.gods?.[alignment];
-    return marked !== undefined && marked.startsWith('_') ? 'goddess' : 'god';
+    return g.urole?.goddessAlignments?.includes(alignment) ? 'goddess' : 'god';
 }
 function capitalize(text) {
     return text.charAt(0).toUpperCase() + text.slice(1);

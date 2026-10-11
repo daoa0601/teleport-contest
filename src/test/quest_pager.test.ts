@@ -5,6 +5,7 @@ import { game } from '../js/gstate.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { convertQuestLine } from '../js/quest_pager.js';
+import type { AlignmentValue, RoleKey } from '../js/roles.js';
 
 function dungeonNamed(dname: string) {
     return {
@@ -34,7 +35,7 @@ void test('quest text substitutions follow the native code table', () => {
     );
     assert.equal(
         convertQuestLine('had asked %d for a group of %gP', game),
-        'had asked Tyr for a group of The warriors',
+        'had asked Tyr for a group of Warriors',
     );
     assert.equal(
         convertQuestLine('you will find %ns lair', game),
@@ -54,3 +55,35 @@ void test('quest text substitutions follow the native code table', () => {
     );
     assert.equal(convertQuestLine('100%% of %Z', game), '100% of The Dungeons of Doom');
 });
+
+void test('quest guardians are named without an article in singular and plural', () => {
+    freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
+
+    assert.equal(convertQuestLine('%g; %gp; %gP', game), 'warrior; warriors; Warriors');
+});
+
+const deityCases: {
+    role: RoleKey;
+    alignment: AlignmentValue;
+    deity: string;
+    title: 'god' | 'goddess';
+}[] = [
+    { role: 'caveman', alignment: 0, deity: 'Ishtar', title: 'goddess' },
+    { role: 'ranger', alignment: 0, deity: 'Venus', title: 'goddess' },
+    { role: 'tourist', alignment: 0, deity: 'The Lady', title: 'goddess' },
+    { role: 'valkyrie', alignment: 1, deity: 'Tyr', title: 'god' },
+];
+
+for (const { role, alignment, deity, title } of deityCases) {
+    void test(`quest text addresses ${deity} as a ${title} after an alignment change`, () => {
+        freshObjectRoom({ role, gameplaySeed: 11n });
+        game.u.ualignbase = [alignment, alignment];
+        game.u.ualign = { type: -1, record: 0 };
+
+        // dat/quest.lua uses the original deity even after conversion.
+        assert.equal(
+            convertQuestLine('Your %G %d seeks to possess the Amulet, and with it', game),
+            `Your ${title} ${deity} seeks to possess the Amulet, and with it`,
+        );
+    });
+}

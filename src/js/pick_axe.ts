@@ -52,6 +52,7 @@ import { connectPits } from './pit_connections.js';
 
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
+import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 
@@ -170,6 +171,7 @@ async function attackWithTool(
     attackMonster: PickAxeDirectionOptions['attackMonster'],
     payShopkeeper: PickAxeDirectionOptions['payShopkeeper'],
     state: GameState,
+    struckAt: Position,
 ) {
     const hero = state.u;
     const safe =
@@ -222,7 +224,8 @@ async function attackWithTool(
         // so the caller continues against the terrain rather than swapping.
         return false;
     }
-    const verdict = await prepareAppliedWeaponAttack(monster, tool, { state });
+    const verdict = await prepareAppliedWeaponAttack(
+        monster, tool, { state, struckAt });
     if (verdict.proceed) await attackMonster(monster);
     return true;
 }
@@ -339,7 +342,8 @@ export async function applyPickAxeDirection(
     if (
         hero.uswallow &&
         hero.ustuck &&
-        (await attackWithTool(tool, hero.ustuck, attackMonster, payShopkeeper, state))
+        (await attackWithTool(tool, hero.ustuck, attackMonster, payShopkeeper, state,
+            { x: hero.ux + hero.dx, y: hero.uy + hero.dy }))
     ) {
         return { spentTime: true };
     }
@@ -378,7 +382,8 @@ export async function applyPickAxeDirection(
                 mon.mx === x &&
                 mon.my === y,
         );
-        if (monster && (await attackWithTool(tool, monster, attackMonster, payShopkeeper, state)))
+        if (monster && (await attackWithTool(
+            tool, monster, attackMonster, payShopkeeper, state, { x, y })))
             return { spentTime: true };
         if (diggingTarget(tool, x, y, state) === DIGTYP_UNDIGGABLE)
             await strikeUndiggable(tool, x, y, state);

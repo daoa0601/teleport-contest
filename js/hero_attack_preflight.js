@@ -31,8 +31,8 @@ function shapechangerProtection(state) {
     return !!(state.u?.protectionFromShapeChangers
         || state.protectionFromShapeChangers);
 }
-function targetGlyphState(monster, state) {
-    const glyph = glyphAt(monster.mx, monster.my, state);
+function targetGlyphState(at, state) {
+    const glyph = glyphAt(at.x, at.y, state);
     return {
         invisible: glyph?.kind === 'invisible',
         warning: glyph?.kind === 'warning',
@@ -124,13 +124,15 @@ async function revealDisguisedMonster(monster, state) {
 function stormbringerOverridesConfirmation(weapon, state) {
     return artifactById(weapon?.oartifact, state)?.name === 'Stormbringer';
 }
-export async function prepareAppliedWeaponAttack(monster, weapon, { state = game } = {}) {
+export async function prepareAppliedWeaponAttack(monster, weapon, { state = game, struckAt } = {}) {
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
     if (state.u?.uswallow && state.u?.ustuck === monster)
         return { proceed: true, spentTime: false };
     if (state.context?.forcefight)
         return { proceed: true, spentTime: false };
-    const glyph = targetGlyphState(monster, state);
+    // Read and mark the struck square, including when it is a worm tail.
+    const struck = struckAt ?? { x: monster.mx, y: monster.my };
+    const glyph = targetGlyphState(struck, state);
     const sensed = canSenseMonster(monster);
     const unrevealedAppearance = hasUnrevealedAppearance(monster, state);
     const spotted = canSpotMonster(monster);
@@ -139,7 +141,7 @@ export async function prepareAppliedWeaponAttack(monster, weapon, { state = game
     if (!spotted && !glyph.warning && !glyph.invisible
         && !hiddenUnderVisibleCover) {
         await plineWithContinuation("Wait!  There's something there you can't see!");
-        map_invisible(monster.mx, monster.my);
+        map_invisible(struck.x, struck.y);
         // An unseen mimic sticks to the hero before being woken, exactly
         // as if it had been stumbled upon while visible.
         if (hasUnrevealedAppearance(monster, state) && !state.u.ustuck

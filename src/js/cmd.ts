@@ -7276,8 +7276,10 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         // attack() runs the whole attack_checks() reveal sequence: the
         // unseen-monster marker, the disguised-mimic stumble, and the
         // hidden-under reveal, each able to consume the move on its own.
+        // C gb.bhitpos is the struck square, even for a worm tail.
         const verdict = await prepareAppliedWeaponAttack(
-            monster, game.uwep ?? null, { state: game });
+            monster, game.uwep ?? null,
+            { state: game, struckAt: { x: newx, y: newy } });
         if (!verdict.proceed)
             return verdict.spentTime;
         if (await attackHostileMonster(monster, newx, newy)) return true;

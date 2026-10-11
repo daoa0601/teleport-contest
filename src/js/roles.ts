@@ -358,6 +358,7 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
           { m: 'Marksman', f: 'Markswoman' },
       ],
       gods: { lawful: 'Mercury', neutral: 'Venus', chaotic: 'Mars' },
+      goddessAlignments: ['neutral'],
       attrbase: [13, 13, 13, 9, 13, 7],
       attrdist: [30, 10, 10, 20, 20, 10],
       hpadv: {
@@ -455,6 +456,7 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
           { m: 'Adventurer', f: 'Adventurer' },
       ],
       gods: { lawful: 'Blind Io', neutral: 'The Lady', chaotic: 'Offler' },
+      goddessAlignments: ['neutral'],
       attrbase: [7, 10, 6, 7, 7, 10],
       attrdist: [15, 10, 10, 15, 30, 20],
       hpadv: {

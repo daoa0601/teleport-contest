@@ -101,7 +101,7 @@ function tendedShopAt(monster, state) {
         return keeper && !keeper.dead && (keeper.mhp ?? 1) > 0;
     });
 }
-async function attackWithTool(tool, monster, attackMonster, payShopkeeper, state) {
+async function attackWithTool(tool, monster, attackMonster, payShopkeeper, state, struckAt) {
     const hero = state.u;
     const safe = state.flags?.safe_dog !== false &&
         monster.mpeaceful &&
@@ -146,7 +146,7 @@ async function attackWithTool(tool, monster, attackMonster, payShopkeeper, state
         // so the caller continues against the terrain rather than swapping.
         return false;
     }
-    const verdict = await prepareAppliedWeaponAttack(monster, tool, { state });
+    const verdict = await prepareAppliedWeaponAttack(monster, tool, { state, struckAt });
     if (verdict.proceed)
         await attackMonster(monster);
     return true;
@@ -253,7 +253,7 @@ export async function applyPickAxeDirection(tool, { state = game, attackMonster,
     const verbing = isPick(tool) ? 'digging' : 'chopping';
     if (hero.uswallow &&
         hero.ustuck &&
-        (await attackWithTool(tool, hero.ustuck, attackMonster, payShopkeeper, state))) {
+        (await attackWithTool(tool, hero.ustuck, attackMonster, payShopkeeper, state, { x: hero.ux + hero.dx, y: hero.uy + hero.dy }))) {
         return { spentTime: true };
     }
     if (state.underwater || hero.uinwater) {
@@ -282,7 +282,7 @@ export async function applyPickAxeDirection(tool, { state = game, attackMonster,
             (mon.mhp ?? 1) > 0 &&
             mon.mx === x &&
             mon.my === y);
-        if (monster && (await attackWithTool(tool, monster, attackMonster, payShopkeeper, state)))
+        if (monster && (await attackWithTool(tool, monster, attackMonster, payShopkeeper, state, { x, y })))
             return { spentTime: true };
         if (diggingTarget(tool, x, y, state) === DIGTYP_UNDIGGABLE)
             await strikeUndiggable(tool, x, y, state);
