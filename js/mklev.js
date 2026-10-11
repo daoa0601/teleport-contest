@@ -4895,18 +4895,38 @@ async function finishSpecialTrapConstruction(trap, { spiderOnWeb = true, seen = 
     }
     return trap;
 }
-async function specialTrapOfType(context, typ, options) {
+// sp_lev.c:create_trap() checks stairs after get_location_coord(), even
+// when the water plane accepts every terrain during coordinate selection.
+async function specialTrapLocation(context, coordinate) {
     const level = requireGameLevel();
-    const point = await specialRandomLocation(context, (loc, x, y) => SPACE_POS(loc.typ)
-        && loc.typ !== STAIRS
-        && !level.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER));
+    const room = context._room;
+    if (room) {
+        const point = await getLocationCoord(context, coordinate, DRY);
+        if (level.at(point.x, point.y)?.typ === ROOM)
+            return point;
+        // get_free_room_loc() falls back to room floor, including when
+        // an explicit coordinate names furniture or other terrain.
+        for (let attempt = 0; attempt <= 100; attempt++) {
+            if (!somexy(room, point))
+                throw new Error("get_room_loc: can't find a place!");
+            if (level.at(point.x, point.y)?.typ === ROOM)
+                return point;
+        }
+        throw new Error("get_free_room_loc: can't find a place!");
+    }
+    for (let attempt = 0; attempt <= 100; attempt++) {
+        const point = await getLocationCoord(context, coordinate, DRY);
+        const terrain = level.at(point.x, point.y)?.typ;
+        if (terrain !== STAIRS && terrain !== LADDER)
+            return point;
+    }
+    return null;
+}
+async function specialTrapOfType(context, typ, options, coordinate) {
+    const point = await specialTrapLocation(context, coordinate);
     if (!point)
         return null;
     const trap = await maketrap(point.x, point.y, typ);
-    return finishSpecialTrapConstruction(trap, options);
-}
-async function specialTrapAt(context, typ, x, y, options) {
-    const trap = await maketrap(context.xstart + x, context.ystart + y, typ);
     return finishSpecialTrapConstruction(trap, options);
 }
 function specialRandomTrapType(inHell = false) {
@@ -4952,11 +4972,8 @@ function specialRandomTrapType(inHell = false) {
             return type;
     }
 }
-async function specialTrap(context, options) {
-    const level = requireGameLevel();
-    const point = await specialRandomLocation(context, (loc, x, y) => SPACE_POS(loc.typ)
-        && loc.typ !== STAIRS && loc.typ !== LADDER
-        && !level.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER));
+async function specialTrap(context, options, coordinate) {
+    const point = await specialTrapLocation(context, coordinate);
     if (!point)
         return;
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
@@ -6077,13 +6094,10 @@ async function createLuaTrap(context, options) {
     };
     let trap;
     if (trapType == null) {
-        trap = await specialTrap(context, construction);
-    }
-    else if (point) {
-        trap = await specialTrapAt(context, trapType, point.x, point.y, construction);
+        trap = await specialTrap(context, construction, point);
     }
     else {
-        trap = await specialTrapOfType(context, trapType, construction);
+        trap = await specialTrapOfType(context, trapType, construction, point);
     }
     const teleportDestination = luaCoordinate({ coord: options.teledest });
     if (trap && teleportDestination) {

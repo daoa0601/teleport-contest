@@ -2,7 +2,7 @@ import test from 'node:test';
 import type { TestContext } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { COLNO, CORR, DOOR, D_NODOOR, M_AP_FURNITURE, ROOMOFFSET, ROWNO, SCORR, THEMEROOM } from '../js/const.js';
+import { COLNO, CORR, DOOR, D_NODOOR, LADDER, M_AP_FURNITURE, ROOM, ROOMOFFSET, ROWNO, SCORR, STAIRS, THEMEROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
@@ -16,6 +16,33 @@ import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
 import { createDungeon } from './support/topology.js';
 import { floorObjects } from './support/level-state.js';
+
+for (const terrain of [STAIRS, LADDER]) {
+    void test(`water-plane traps retry a selected ${terrain === STAIRS ? 'stair' : 'ladder'} square`, async t => {
+        const level = await buildThemedLevel(t, `
+            themerooms = {{ frequency = 1, contents = function()
+                des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+            end }}
+        `);
+        const lua = currentLuaLifecycle().getThemedState(game, 0);
+        assert.ok(lua);
+        await lua.executeAsync('des.map({ coord = {10,6}, map = [[..]] })');
+        requirePlayingGame(game);
+        game.water_level = { ...game.u.uz, flags: { town: false }, alignment: null };
+        level.traps = [];
+        level.requireAt(11, 6).typ = terrain;
+        initRng(17);
+
+        await lua.executeAsync('des.trap({ type = "pit", victim = false })');
+
+        assert.equal(level.traps.length, 1, 'rejecting a stair or ladder must retry rather than discard the trap');
+        const trap = level.traps[0];
+        assert.ok(trap);
+        assert.equal(trap.tx, 10);
+        assert.equal(trap.ty, 6);
+        assert.equal(level.requireAt(11, 6).typ, terrain);
+    });
+}
 
 async function buildThemedLevel(t: TestContext, definition: string) {
     freshGame({ flags: { bones: false } });
@@ -35,6 +62,29 @@ async function buildThemedLevel(t: TestContext, definition: string) {
     await mklev();
     return game.level;
 }
+
+void test('an explicit room trap falls back from stairs to its room floor', async t => {
+    const level = await buildThemedLevel(t, `
+        themerooms = {{ frequency = 1, contents = function()
+            des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1,
+                contents = function()
+                    des.stair("down", 0, 0)
+                    des.trap({ type = "pit", x = 0, y = 0, victim = false })
+                end })
+        end }}
+    `);
+
+    const rooms = level.rooms.slice(0, level.nroom).filter(isRoom);
+    assert.ok(rooms.length > 0);
+    for (const room of rooms) {
+        const trap = level.traps.find(candidate =>
+            candidate.tx >= room.lx && candidate.tx <= room.hx
+            && candidate.ty >= room.ly && candidate.ty <= room.hy);
+        assert.ok(trap, `room at ${room.lx},${room.ly} must retain its requested trap`);
+        assert.equal(level.requireAt(trap.tx, trap.ty).typ, ROOM);
+        assert.equal(level.requireAt(room.lx, room.ly).typ, STAIRS);
+    }
+});
 
 void test('random corridors leave unjoined irregular regions sealed', async t => {
     const level = await buildThemedLevel(t, `
