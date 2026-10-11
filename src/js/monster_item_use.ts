@@ -1,5 +1,5 @@
 // Shared monster item feedback and cursed-wand precheck. C muse.c.
-import { BOLT_LIM, QBUFSZ, WAND_BACKFIRE_CHANCE } from './const.js';
+import { BOLT_LIM, G_GONE, MM_NOMSG, QBUFSZ, WAND_BACKFIRE_CHANCE } from './const.js';
 import { impossible } from './diagnostics.js';
 import {
     canSeeMonster, canSenseMonster, flashGlyphAt, map_invisible, newsym,
@@ -22,6 +22,12 @@ import type { GameObject } from './object_types.js';
 import { minimalObjectName, objectCombatName, observeObjectForNaming } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
 import { d, rn2 } from './rng.js';
+import { makemonAt } from './mklev.js';
+import { findNearbyMonsterPosition } from './teleport_rules.js';
+import { OBJECT_DESCRIPTIONS } from './object_data.js';
+import { setMonsterMalign } from './monster_alignment.js';
+import { removeMonsterFromGame } from './monster_departure.js';
+import type { MonsterOffensiveResult } from './monster_offensive_types.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { cansee, couldsee } from './vision.js';
@@ -40,6 +46,65 @@ export interface MonsterWandBackfireResult {
 
 const WAND_CLASS = 11;
 const G_UNIQ = 0x1000;
+
+export async function presentMonsterQuaff(monster: Monster, object: GameObject, {
+    state, publish = plineWithContinuation,
+}: MonsterOffensiveOptions): Promise<boolean> {
+    const seen = canSeeMonster(monster);
+    if (seen) {
+        observeObject(object, state);
+        observeObjectForNaming(object, { state });
+        const name = inventoryItemDescription({ ...object, quan: 1, quantity: 1 });
+        await publish(`${monsterName(monster, { state, capitalized: true })} drinks ${name}!`);
+    } else if (!heroIsDeaf(state)) await publish('You hear a chugging sound.');
+    return seen;
+}
+
+// Return null when the selected item can still be used. An exploded wand
+// spends no action if its owner survives, but cancels the selected choice.
+export async function prepareMonsterItemUse(monster: Monster, object: GameObject,
+    options: MonsterOffensiveOptions): Promise<MonsterOffensiveResult | null> {
+    const { state, random = rn2, publish = plineWithContinuation } = options;
+    if (object.oclass === 8) {
+        const appearance = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
+        const species = appearance === 'milky' ? 287 : appearance === 'smoky' ? 315 : null;
+        if (species !== null && !((state.mvitals?.[species]?.mvflags ?? 0) & G_GONE)
+            && !random(13 + 2 * (state.mvitals?.[species]?.born ?? 0))) {
+            const point = findNearbyMonsterPosition(species, monster.mx, monster.my, { state, random });
+            if (!point) return null;
+            const visible = cansee(monster.mx, monster.my);
+            await presentMonsterQuaff(monster, object, options);
+            await consumeMonsterItem(monster, object, state);
+            const occupant = await makemonAt(species, point.x, point.y, MM_NOMSG);
+            if (!occupant) {
+                if (visible) await publish('The potion turns out to be empty.');
+            } else if (species === 287) {
+                if (visible) {
+                    await publish(`As ${monsterName(monster, { state })} opens the bottle, an enormous ghost emerges!`);
+                    await publish(`${monsterName(monster, { state, capitalized: true })} is frightened to death, and unable to move.`);
+                }
+                monster.mcanmove = 0;
+                monster.mfrozen = 3;
+            } else {
+                const subject = monsterName(occupant, { state, capitalized: true });
+                if (visible) await publish(`In a cloud of smoke, ${monsterName(occupant, { state, article: 'a' })} emerges!`);
+                await publish(`${visible ? subject : 'Something'} speaks.`);
+                if (random(2)) {
+                    if (!heroIsDeaf(state)) await publish('"You freed me!"');
+                    occupant.mpeaceful = 1;
+                    setMonsterMalign(occupant, state);
+                } else {
+                    if (!heroIsDeaf(state)) await publish('"It is about time."');
+                    if (visible) await publish(`${subject} vanishes.`);
+                    await removeMonsterFromGame(occupant);
+                }
+            }
+            return { nativeResult: 2, heroDied: !!state.program_state.gameover };
+        }
+    }
+    const backfire = await checkMonsterWandBackfire(monster, object, options);
+    return backfire.exploded ? { nativeResult: backfire.nativeResult, heroDied: backfire.heroDied } : null;
+}
 
 export async function presentMonsterWandUse(monster: Monster, object: GameObject, {
     state, self = false, publish = plineWithContinuation,

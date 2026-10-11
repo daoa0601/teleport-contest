@@ -6,6 +6,7 @@ import type { MessagePublisher } from './display.js';
 import type { reassessMonsterArmor } from './monworn.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import type { DungeonLocation } from './dungeon_types.js';
 import type { Position, Trap } from './map_types.js';
 import type { rndcurse } from './throne.js';
 import type { finishMonsterAttackDeath } from './monster_attack_death.js';
@@ -221,7 +222,6 @@ export interface MovementSpellCast {
     blocked?: boolean;
     fumbled?: boolean;
     deferredSpellEffect?: boolean;
-    unimplementedSpellEffect?: boolean;
 }
 
 export interface MonsterAttackPaging {
@@ -343,7 +343,8 @@ export interface HeroSpellAttack extends HeroAttackProgress {
     directed?: boolean;
     blocked?: boolean;
     fumbled?: boolean;
-    curseKind?: 'visible-undirected' | 'visible-directed' | 'audible' | null;
+    misdirected?: boolean;
+    curseKind?: 'visible-undirected' | 'visible-directed' | 'visible-general' | 'visible-displaced' | 'audible' | null;
     deferredSpellDamage?: boolean;
     deferredSpellEffect?: boolean;
     effectDamage?: number;
@@ -457,12 +458,6 @@ export interface HeroAttackSequence {
     done: boolean;
 }
 
-export interface MonsterPotionOccupant {
-    appearance: string;
-    occupant: 'ghost' | 'djinni';
-    triggered: boolean;
-}
-
 interface MiscItemProgress {
     object: GameObject;
     index: number;
@@ -473,11 +468,12 @@ interface MiscItemProgress {
 export type MonsterMiscItem =
     | (MiscItemProgress & {
           kind: 'potion-gain-level';
-          cursedGainLevel?: boolean;
+          riseDestination?: DungeonLocation;
           growth?: MonsterGrowth;
           increase?: number;
       })
-    | (MiscItemProgress & { kind: 'potion-invisibility' })
+    | (MiscItemProgress & { kind: 'potion-invisibility' | 'wand-invisibility' | 'container' | 'wand-polymorph' | 'potion-polymorph' })
+    | { kind: 'polymorph-trap'; trap: Trap; deferredEffect: true; effectApplied?: boolean }
     | (MiscItemProgress & {
           kind: 'wand-speed-monster' | 'potion-speed';
           oldSpeed?: number;
@@ -491,19 +487,7 @@ export type MonsterMiscItem =
           target?: GameObject | null;
           whereTo?: number;
       })
-    | (MiscItemProgress &
-          MonsterPotionOccupant & {
-              kind: 'potion-occupant';
-              deferredOccupant: true;
-          });
-
-export interface MonsterDefensiveItem {
-    kind: 'potion-healing';
-    object: GameObject;
-    occupant?: 'ghost' | 'djinni';
-    deferredOccupant?: boolean;
-    amount?: number;
-}
+    | (MiscItemProgress & { kind: 'item-result'; nativeResult: 0 | 1 | 2; heroDied: boolean });
 
 export type MonsterTrapEvent =
     | MonsterBearTrapEvent
@@ -607,7 +591,6 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     reluctant?: boolean;
     attack?: MonsterCombatResult;
     usedMisc?: MonsterMiscItem;
-    usedDefensive?: MonsterDefensiveItem;
     trap?: MonsterTrapEvent | null;
     petMovePlan?: PetMovePlan;
     equipment?: Awaited<ReturnType<typeof reassessMonsterArmor>>;

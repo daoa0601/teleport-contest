@@ -8392,6 +8392,10 @@ async function stockShopRoom(sroom: Room): Promise<void> {
     const shopDoor = goodShopDoor(sroom);
     if (!shopDoor) return;
     const shopIndex = sroom.rtype - SHOPBASE;
+    // shknam.c:shkinit() relocates an existing occupant before creating
+    // the resident; it does not abandon this shop when its doorway is busy.
+    const occupant = monsterAtPosition(level, shopDoor.x, shopDoor.y);
+    if (occupant) await randomMonsterRelocation(occupant, { flags: RLOC_NOMSG });
     const shopkeeper = await makemon(PM_SHOPKEEPER, shopDoor.x, shopDoor.y, 0);
     if (!shopkeeper) return;
     shopkeeper.eshk = {

@@ -6,10 +6,12 @@ import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { askMonsterTeleportDestination, askTeleportDestination } from './cmd.js';
-import { insideWizardTower, levelIsWizardTower } from './dungeon.js';
+import { randomTeleportDepth } from './level_teleport.js';
+import { depth } from './hacklib.js';
+import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { finishTeleportArrival } from './location_effects.js';
-import { canSenseMonster, canSpotMonster, docrt, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, plineWithContinuation } from './display.js';
 import {
     leashAttachedToMonster, releaseMonsterLeash,
 } from './monster_leash.js';
@@ -59,7 +61,7 @@ import { promptYesNo } from './query.js';
 import { heroIsBlind, heroIsHallucinating, setHeroBlindnessTurns } from './senses.js';
 import { buriedBallToPunishment } from './buried_object.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { migrateMonsterToLevel, sendMonsterToLimbo } from './monster_migration.js';
+import { migrateMonsterOffLevel, migrateMonsterToLevel, sendMonsterToLimbo } from './monster_migration.js';
 import { isHomeElemental } from './monster_hit_points.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { Is_astralevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
@@ -1022,4 +1024,33 @@ function teleportSpellLevel(): number {
     const level = OBJECT_SPELL_LEVEL[SPE_TELEPORT_AWAY];
     if (level === undefined) throw new Error('Missing teleport spell level.');
     return level;
+}
+
+// C teleport.c:mlevel_tele_trap(), the LEVEL_TELEP branch. The destination
+// follows the hero's current dungeon, even for a monster with another home.
+export async function teleportMonsterToRandomLevel(monster: Monster, trap: Trap, {
+    state = game, random = rn2, rollOne = rnd,
+}: RelocationOptions = {}) {
+    requirePlayingGame(state);
+    if (monster === state.u.ustuck) return null;
+    const pet = prepareMonsterTeleport(monster, state);
+    const seen = canSeeMonster(monster) || monster === state.u.usteed;
+    if (!pet.allowed) return null;
+    if (pet.leashReleased) await plineWithContinuation('You feel the leash go slack.');
+    const subject = () => monsterName(monster, { state, capitalized: true });
+    if (In_endgame(state.u.uz) || (monster.minvent || []).some(object => object.otyp === AMULET_OF_YENDOR)) {
+        if (seen) await plineWithContinuation(`${subject()} seems very disoriented for a moment.`);
+        return null;
+    }
+    const destination = randomTeleportDepth(state, random, rollOne);
+    if (destination === depth(state.u.uz, state.dungeons)) {
+        if (seen) await plineWithContinuation(`${subject()} shudders for a moment.`);
+        return null;
+    }
+    if (seen) {
+        await plineWithContinuation(`Suddenly, ${monsterName(monster, { state })} disappears out of sight.`);
+        trap.tseen = true;
+    }
+    if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT_CNTRL)) monster.mconf = 1;
+    return migrateMonsterOffLevel(monster, state, { ...trap, dst: levelAtDepth(destination, { state }) });
 }

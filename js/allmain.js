@@ -14,6 +14,11 @@ import { isRoom } from './map_types.js';
 import { clearImmediateZapBypasses } from './immediate_zap.js';
 import { MON_FLOOR } from './const.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
+import { ceilingName } from './terrain_name.js';
+import { tryCallObjectType } from './object_call.js';
+import { monsterGainLevelRiseDestination } from './monmove.js';
+import { WATER } from './const.js';
+import { presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse } from './monster_item_use.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
 import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
@@ -57,7 +62,7 @@ import { canSpotMonster, docrt, redrawMap, bot, flush_screen, flushPendingToplin
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset, init_vision_globals, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
-import { ACID_VENOM, CORPSE, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MATERIAL, POT_HEALING, SHIELD_OF_REFLECTION, } from './object_data.js';
+import { ACID_VENOM, CORPSE, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MATERIAL, SHIELD_OF_REFLECTION, } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { objectHasPersonalName, objectName, observeObjectForNaming, } from './objnam.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, STONE, ZAP_POS, COURT, VAULT, SHOPBASE, ROOMOFFSET, STRAT_CLOSE, STRAT_WAITFORU, STRAT_WAITMASK, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_LAVA, } from './const.js';
@@ -100,7 +105,7 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NA
 import { finishHeroDeath, } from './end.js';
 import { runLevelRegions } from './regions.js';
 import { maintainVaultResidence, continueVaultGuardArrival, } from './vault.js';
-import { objectClassForType, observeObject, recordObjectCall, recordObjectEncounter, recordObjectKnowledge, learnObjectType, } from './object_knowledge.js';
+import { objectClassForType, observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType, } from './object_knowledge.js';
 import { automaticSearch } from './detect.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
@@ -143,15 +148,7 @@ function observeMonsterUsedObject(object) {
 }
 // C muse.c:mquaffmsg(). Sensing the drinker does not reveal the potion.
 async function presentMonsterQuaff(monster, object) {
-    const seen = canSeeMonster(monster);
-    if (seen) {
-        observeMonsterUsedObject(object);
-        await plineWithContinuation(`${visibleMonsterSubject(monster)} drinks ${petCarriedObjectName(object, 1)}!`);
-    }
-    else if (!heroIsDeaf()) {
-        await plineWithContinuation('You hear a chugging sound.');
-    }
-    return seen;
+    return publishMonsterQuaff(monster, object, { state: requireInitializedGame() });
 }
 function putLine(col, row, text, attr = 0) {
     const game = requireInitializedGame();
@@ -2428,7 +2425,12 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     };
                     if (!heroAttack.cast) {
                         let curseMessage = null;
-                        if (heroAttack.fumbled && !game.deaf
+                        if (heroAttack.misdirected) {
+                            const water = game.level.at(monster.mux ?? 0, monster.muy ?? 0)?.typ === WATER;
+                            const caster = canSeeMonster(monster) ? visibleMonsterSubject(monster) : 'Something';
+                            curseMessage = `${caster} casts a spell at ${water ? 'empty water' : 'thin air'}!`;
+                        }
+                        else if (heroAttack.fumbled && !game.deaf
                             && canSeeMonster(monster)) {
                             curseMessage = `The air crackles around the ${quietMonsterName(monster)}.`;
                         }
@@ -2440,7 +2442,11 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                             curseMessage = heroAttack.curseKind
                                 === 'visible-undirected'
                                 ? `${caster} points all around, then curses.`
-                                : `${caster} points at you, then curses.`;
+                                : heroAttack.curseKind === 'visible-general'
+                                    ? `${caster} points and curses in your general direction.`
+                                    : heroAttack.curseKind === 'visible-displaced'
+                                        ? `${caster} points and curses at your displaced image.`
+                                        : `${caster} points at you, then curses.`;
                         }
                         const repeatedAudibleCurse = heroAttack.curseKind === 'audible'
                             && curseMessage !== null
@@ -3116,17 +3122,6 @@ async function presentPetMovementPrelude(action, game, actorWasOpticallySeen) {
         await resumeDeferredPetReluctance(action, game);
     }
 }
-async function presentMovementDefensiveItem(action) {
-    const { monster, movement } = action;
-    if (movement?.usedDefensive?.kind === 'potion-healing') {
-        const defensive = movement.usedDefensive;
-        const sawDrinking = await presentMonsterQuaff(monster, defensive.object);
-        if (sawDrinking && !defensive.deferredOccupant) {
-            await plineWithContinuation(`${visibleMonsterSubject(monster)} looks better.`);
-            learnObjectType(POT_HEALING);
-        }
-    }
-}
 async function presentMonsterMoveMessage(action, game) {
     const movement = action.movement;
     if (movement?.guardFinished && !game._suppressMessagesUntilInput) {
@@ -3214,7 +3209,6 @@ export async function moveMonsterForHeroAttack(monster, state = requireInitializ
     }
     if (!heroDied) {
         await presentMonsterPickups(action, state);
-        await presentMovementDefensiveItem(action);
         await presentMonsterMoveMessage(action, state);
     }
     const status = action.movement.postMoveStatus;
@@ -3302,9 +3296,7 @@ async function executeMonsterTurns(messageContext) {
             if (canSpotMonster(monster)) {
                 await plineWithContinuation(`${visibleMonsterSubject(monster)} casts a spell!`);
             }
-            const spellEffect = await resumeDeferredMovementSpell(action, game);
-            if (spellEffect?.message)
-                await plineWithContinuation(spellEffect.message);
+            await resumeDeferredMovementSpell(action, game);
             movement = action.movement;
         }
         // A fleeing teleport spends this actor's turn, even if no destination was found.
@@ -3372,38 +3364,46 @@ async function executeMonsterTurns(messageContext) {
         }
         await presentMonsterPickups(action, game);
         movement = action.movement;
-        await presentMovementDefensiveItem(action);
+        if (movement?.usedMisc?.kind === 'polymorph-trap'
+            || movement?.usedMisc?.kind === 'wand-polymorph' || movement?.usedMisc?.kind === 'potion-polymorph')
+            await finishDeferredMonsterMiscItem(action, game);
         if (movement?.usedMisc?.kind === 'potion-gain-level') {
             const misc = movement.usedMisc;
             const sawDrinking = await presentMonsterQuaff(monster, misc.object);
             if (sawDrinking) {
                 if (misc.object.cursed) {
-                    await plineWithContinuation(`${visibleMonsterSubject(monster)} looks uneasy.`);
-                    if (!game._knownObjectTypes?.has(misc.object.otyp)
-                        && !game._objectCallNames?.[misc.object.otyp]) {
-                        await waitForCurrentMonsterMore();
-                        const appearance = game.objectDescriptions?.[misc.object.otyp] || 'strange';
-                        const description = appearance + ' potion';
-                        const article = /^[aeiou]/i.test(description)
-                            ? 'an' : 'a';
-                        const callName = await getLine('Call ' + article + ' ' + description + ':', (_ch, key) => key >= 32 && key < 127);
-                        if (callName?.trim())
-                            recordObjectCall(misc.object.otyp, callName.trim());
-                    }
+                    const destination = monsterGainLevelRiseDestination(monster, game);
+                    if (destination)
+                        misc.riseDestination = destination;
+                    await plineWithContinuation(destination
+                        ? `${visibleMonsterSubject(monster)} rises up, through the ${ceilingName(monster.mx, monster.my, game)}!`
+                        : `${visibleMonsterSubject(monster)} looks uneasy.`);
+                    await tryCallObjectType(misc.object, game);
                 }
                 else {
                     await plineWithContinuation(`${visibleMonsterSubject(monster)} seems more experienced.`);
                     learnObjectType(misc.object.otyp);
                 }
             }
+            if (misc.object.cursed && !sawDrinking) {
+                const destination = monsterGainLevelRiseDestination(monster, game);
+                if (destination)
+                    misc.riseDestination = destination;
+            }
             await finishDeferredMonsterMiscItem(action, game);
             await presentMonsterGrowth(monster, misc.growth);
             movement = action.movement;
         }
-        if (movement?.usedMisc?.kind === 'potion-invisibility') {
+        if (movement?.usedMisc?.kind === 'potion-invisibility' || movement?.usedMisc?.kind === 'wand-invisibility') {
             const misc = movement.usedMisc;
             const monsterName = quietMonsterName(monster);
-            const sawDrinking = await presentMonsterQuaff(monster, misc.object);
+            let sawDrinking;
+            if (misc.kind === 'wand-invisibility') {
+                sawDrinking = canSeeMonster(monster);
+                await presentMonsterWandUse(monster, misc.object, { state: game, self: true });
+            }
+            else
+                sawDrinking = await presentMonsterQuaff(monster, misc.object);
             await finishDeferredMonsterMiscItem(action, game);
             newsym(monster.mx, monster.my);
             const stillSeen = canSpotMonster(monster);
@@ -3466,18 +3466,7 @@ async function executeMonsterTurns(messageContext) {
         }
         if (movement?.usedMisc?.kind === 'wand-speed-monster') {
             const misc = movement.usedMisc;
-            if (actorWasOpticallySeen) {
-                observeMonsterUsedObject(misc.object);
-                const reflexive = monster.female ? 'herself' : 'himself';
-                await plineWithContinuation(`${visibleMonsterSubject(monster)} zaps ${reflexive} with ${petCarriedObjectName(misc.object)}!`);
-            }
-            else if (!game.deaf) {
-                const range = couldsee(monster.mx, monster.my)
-                    ? BOLT_LIM + 1 : BOLT_LIM - 3;
-                const proximity = dist2(monster.mx, monster.my, game.u?.ux ?? monster.mx, game.u?.uy ?? monster.my) <= range * range ? 'nearby' : 'distant';
-                await plineWithContinuation(`You hear a ${proximity} zap.`);
-                misc.object.dknown = false;
-            }
+            await presentMonsterWandUse(monster, misc.object, { state: game, self: true });
             await finishDeferredMonsterMiscItem(action, game);
             if (actorWasOpticallySeen && misc.speedChanged) {
                 await plineWithContinuation(`${visibleMonsterSubject(monster)} is suddenly moving ${misc.speedMuch ? 'much ' : ''}faster.`);
