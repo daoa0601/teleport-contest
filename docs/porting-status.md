@@ -170,6 +170,7 @@ units (`docs/orchestration.md`), largest and most separable first:
 | End of game | `end.c` `done()`, disclosure, goodbye | ~20 | Missing "Be seeing you..." (11); vanquished-creature and worn-item disclosure lines differ (~9) |
 | `#engrave` | `cmd.c` extended-command table, `engrave.c` | 7 | Port answers "#engrave: unknown extended command." |
 | Native tty menus and prompts | `wintty.c` menu owner, `yn_function` choices | ~12 | Cursor row 22 vs 21 (7), `[ynq] (q)` suffix missing (3), getobj letter list spacing (2) |
+| Special-level arrival display | Gehennom filler lighting (`hellfill.lua`, `sp_lev.c`) or arrival vision (`do.c` `goto_level`, `vision.c`) | 19 | After a wizard Ctrl-V teleport to Dlvl 30-45, the port shows room walls and floor that C leaves unseen; screen differs before any random call. Next batch, Codex; brief in `.cache/agents/special-level-display.md` |
 | Random-call tail | various | 59 | `mkclass_aligned` 5, `get_location` 5, `makecorridors` 4, `next_ident` 3, `summonmu` 3, `escape_from_sticky_mon` 3, then singletons |
 
 The 28 map-cell and remaining message differences are not yet grouped. The
