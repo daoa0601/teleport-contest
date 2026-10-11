@@ -19,6 +19,7 @@ import { makemonNear, mkclassAligned } from './mklev.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn1, rn2 } from './rng.js';
 import { heroIsDeaf } from './senses.js';
+import { isWereMonster, summonWereAttackHelp } from './were.js';
 
 const S_DEMON = 56;
 const M2_DEMON = 0x00000100;
@@ -84,8 +85,8 @@ export async function summonMinion(alignment: number, talk = false): Promise<Mon
     return monster;
 }
 
-// C mhitu.c:summonmu(), before the demon chooses an offensive item or attacks.
-export async function tryDemonSummon(
+// C mhitu.c:summonmu(), before offensive items and attack slots.
+export async function summonMonsterAttackHelp(
     monster: Monster,
     state: PlayingGameState = requireInitializedGame(),
     random: RandomBelow = rn2,
@@ -93,13 +94,19 @@ export async function tryDemonSummon(
     if (
         monster.mcan ||
         (monster.cham ?? -1) >= 0 ||
-        !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DEMON) ||
-        ['balrog', 'amorous demon'].includes(MONSTER_NAME[monster.mnum] ?? '')
+        (!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DEMON)
+            && !isWereMonster(monster))
     )
         return null;
     if (monster.mux === undefined || monster.muy === undefined)
-        throw new Error('A demon summon requires the perceived hero position');
+        throw new Error('Summoning during an attack requires the perceived hero position');
     if (Math.abs(monster.mx - monster.mux) > 1 || Math.abs(monster.my - monster.muy) > 1)
+        return null;
+    if (isWereMonster(monster)) {
+        await summonWereAttackHelp(monster, state, random);
+        return null;
+    }
+    if (['balrog', 'amorous demon'].includes(MONSTER_NAME[monster.mnum] ?? ''))
         return null;
     const inHell = !!state.dungeons?.[state.u.uz.dnum]?.flags?.hellish;
     if (random(inHell ? 10 : 16) !== 0) return null;

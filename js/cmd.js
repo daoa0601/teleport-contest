@@ -48,7 +48,7 @@ import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { doOptions } from './options.js';
-import { blocksDiagonalDoor, blocksMove, heroBadRock, heroCanPassWallAt, heroLiquidEffects, heroShouldAvoidLiquid, heroTightDiagonalReason, } from './hack.js';
+import { blocksDiagonalDoor, blocksMove, escapeFromStickyMonster, heroBadRock, heroCanPassWallAt, heroLiquidEffects, heroShouldAvoidLiquid, heroTightDiagonalReason, } from './hack.js';
 import { commandExecutionKey, controlRushDirection, promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -6611,20 +6611,23 @@ async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, b
         maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
     // C domove_core(): landing and pickup finish before nomul(-2).
     // A longer trap-induced delay survives, but its completion prose changes.
-    if (ballChainMove?.causeDelay) {
-        if ((game._helplessTurns ?? 0) <= 2) {
-            u.invulnerable = false;
-            u.usleep = 0;
-            game.multi = 0;
-            stopRun();
-            game._cannedCommands = [];
-            game._helplessTurns = 2;
-        }
-        game._helplessReason = 'dragging an iron ball';
-        game._helplessDoneMessage = '';
-        await captureRunmodeDelay(game, true, game.moves || 0, { preservePhysicalTopline: true });
-    }
+    if (ballChainMove?.causeDelay)
+        await delayAfterDraggingBall();
     return true;
+}
+// C domove_core() applies the dragging delay even when a pet refuses the swap.
+async function delayAfterDraggingBall() {
+    if ((game._helplessTurns ?? 0) <= 2) {
+        game.u.invulnerable = false;
+        game.u.usleep = 0;
+        game.multi = 0;
+        stopRun();
+        game._cannedCommands = [];
+        game._helplessTurns = 2;
+    }
+    game._helplessReason = 'dragging an iron ball';
+    game._helplessDoneMessage = '';
+    await captureRunmodeDelay(game, true, game.moves || 0, { preservePhysicalTopline: true });
 }
 // C hack.c:domove() clears kickedloc after even an unsuccessful attempt.
 async function domove(dx, dy, explicitAttempt = true) {
@@ -6745,6 +6748,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
     const newy = u.uy + dy;
     if (!isok(newx, newy))
         return moveOutOfBounds(newx, newy);
+    if (await escapeFromStickyMonster(newx, newy))
+        return true;
     const loc = game.level?.at(newx, newy);
     // C domove_core() resolves a destination monster before test_move()
     // applies terrain restrictions.  In particular, the hero can attack
@@ -6820,12 +6825,30 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 game.context.move = Number(ballChainMove.consumedTurn);
                 return ballChainMove.consumedTurn;
             }
+            // C trains riding during the tentative move, even if the pet
+            // later refuses to swap and both rider and steed move back.
             const oldx = u.ux, oldy = u.uy;
             u.ux0 = oldx;
             u.uy0 = oldy;
             u.ux = newx;
             u.uy = newy;
             await moveSteedWithHero();
+            // C drag_ball() can pull the hero back before the swap check.
+            // A refused swap still completes ball placement and its delay.
+            if (monster.mpeaceful && game.level.traps.some(trap => trap.tx === oldx && trap.ty === oldy)) {
+                const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
+                await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
+                u.ux = oldx;
+                u.uy = oldy;
+                if (u.usteed) {
+                    u.usteed.mx = oldx;
+                    u.usteed.my = oldy;
+                }
+                await finishBallAndChainMove(ballChainMove);
+                if (ballChainMove?.causeDelay)
+                    await delayAfterDraggingBall();
+                return true;
+            }
             monster.mx = oldx;
             monster.my = oldy;
             const swapName = tame ? tameName

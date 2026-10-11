@@ -4439,22 +4439,55 @@ async function fillZooRoom(room) {
                         || (y === room.hy && entrance.y === y + 1)))) {
                 continue;
             }
-            const monster = await makemon(null, x, y, MM_ASLEEP | MM_NOGRP);
+            const species = room.rtype === LEPREHALL ? MONSTER_NAME.indexOf('leprechaun')
+                : room.rtype === COCKNEST ? MONSTER_NAME.indexOf('cockatrice')
+                    : room.rtype === ANTHOLE ? antholeMonsterType() : null;
+            const monster = await makemon(species, x, y, MM_ASLEEP | MM_NOGRP);
             if (monster)
                 monster.msleeping = 1;
-            let amountRange = goldlim;
-            if (room.doorct && entrance) {
-                const dx = x - entrance.x, dy = y - entrance.y;
-                const distanceSquared = dx * dx + dy * dy;
-                amountRange = distanceSquared * distanceSquared;
+            if (room.rtype === ANTHOLE) {
+                if (!rn2(3))
+                    await mkobj_at(FOOD_CLASS, x, y, false);
             }
-            if (amountRange >= goldlim)
-                amountRange = 5 * level_difficulty();
-            goldlim -= amountRange;
-            await mkgold(rn1(amountRange, 10), x, y);
+            else if (room.rtype === COCKNEST) {
+                if (!rn2(3)) {
+                    const statue = await createToptenObject(STATUE, x, y);
+                    for (let count = rn2(5); count > 0; count--)
+                        await addToContainer(statue, await mkobj(RANDOM_CLASS, false));
+                    statue.owt = objectWeight(statue);
+                }
+            }
+            else {
+                let amountRange = goldlim;
+                if (room.doorct && entrance) {
+                    const dx = x - entrance.x, dy = y - entrance.y;
+                    const distanceSquared = dx * dx + dy * dy;
+                    amountRange = distanceSquared * distanceSquared;
+                }
+                if (amountRange >= goldlim)
+                    amountRange = 5 * level_difficulty();
+                goldlim -= amountRange;
+                await mkgold(rn1(amountRange, 10), x, y);
+            }
         }
     }
-    level.flags.has_zoo = true;
+    if (room.rtype === ZOO)
+        level.flags.has_zoo = true;
+}
+// C mkroom.c:antholemon(). A level's colony uses one birthday-derived
+// species, trying the next two species if genocide or extinction forbids it.
+function antholeMonsterType() {
+    const species = ['soldier ant', 'fire ant', 'giant ant'];
+    const start = ((game.ubirthday ?? 0) % 3) + level_difficulty();
+    for (let attempt = 0; attempt < 3; attempt++) {
+        const name = species[(start + attempt) % 3];
+        if (!name)
+            throw new RangeError('Anthole species selection is out of range');
+        const mnum = MONSTER_NAME.indexOf(name);
+        if (!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE))
+            return mnum;
+    }
+    return null;
 }
 export function courtMonsterType() {
     const roll = rn2(60) + rn2(3 * level_difficulty());
@@ -8221,12 +8254,15 @@ async function stockShopRoom(sroom) {
     }
     level.flags.has_shop = true;
 }
-async function fillSpecialRoom(croom) {
+export async function fillSpecialRoom(croom) {
     const level = requireGameLevel();
     if (!croom)
         return;
     for (const subroom of croom.sbrooms || [])
         await fillSpecialRoom(subroom);
+    if (croom.rtype === OROOM || croom.rtype === THEMEROOM
+        || croom.needfill === FILL_NONE)
+        return;
     if (croom.needfill === FILL_NORMAL) {
         if (croom.rtype >= SHOPBASE)
             await stockShopRoom(croom);
@@ -8234,7 +8270,7 @@ async function fillSpecialRoom(croom) {
             await fillVault(croom);
         else if (croom.rtype === COURT)
             await fillCourtRoom(croom);
-        else if (croom.rtype === ZOO)
+        else if ([ZOO, LEPREHALL, COCKNEST, ANTHOLE].includes(croom.rtype))
             await fillZooRoom(croom);
         else if (croom.rtype === BEEHIVE)
             await fillBeehiveRoom(croom);

@@ -3,7 +3,9 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { NORMAL_SPEED } from '../js/const.js';
+import { rhack } from '../js/cmd.js';
+import { NORMAL_SPEED, NO_MINVENT, P_BASIC, P_RIDING, WEB } from '../js/const.js';
+import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
@@ -18,6 +20,8 @@ import { restoreGame, saveGame } from '../js/save.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { floorObject, knownObject } from './support/game-objects.js';
+import { installHeroWeaponSkills } from './support/hero-state.js';
+import { addTrap } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -38,6 +42,37 @@ async function mountedPony() {
     await runExtendedCommand('ride', 'l');
     assert.equal(game.u.usteed, pony);
     return pony;
+}
+for (const refusesSwap of [true, false]) {
+    void test(`a ${refusesSwap ? 'refused' : 'successful'} pet swap trains riding once`, async () => {
+        const pony = await mountedPony();
+        requirePlayingGame(game);
+        const oldx = game.u.ux, oldy = game.u.uy;
+        const dog = await createMonsterAt('little dog', oldx + 1, oldy, NO_MINVENT);
+        initializePet(dog, { state: game });
+        if (refusesSwap)
+            addTrap(game.level, WEB, oldx, oldy);
+        const skills = installHeroWeaponSkills({ [P_RIDING]: P_BASIC });
+        const riding = skills[P_RIDING];
+        assert.ok(riding);
+        game.u.urideturns = 99;
+        installPagerInput(resetInputState(), {
+            expected: /You mount|swap places/,
+            limit: 2,
+        });
+        initRng(1);
+        await rhack('l'.charCodeAt(0));
+        assert.equal(game.u.urideturns, 0);
+        assert.equal(riding.advance, 1);
+        assert.equal(game.u.ux, oldx + (refusesSwap ? 0 : 1));
+        assert.equal(game.u.uy, oldy);
+        assert.equal(pony.mx, game.u.ux);
+        assert.equal(pony.my, game.u.uy);
+        assert.equal(dog.mx, oldx + (refusesSwap ? 1 : 0));
+        assert.equal(dog.my, oldy);
+        assert.match(game._last_message, refusesSwap
+            ? /doesn't want to swap places/ : /You swap places/);
+    });
 }
 void test('mounting clears map occupancy and dismounting restores it without relinking the actor', async () => {
     freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });

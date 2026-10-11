@@ -11,7 +11,10 @@ import {
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
-import { heroPassesWalls } from './hero_species.js';
+import { heroPassesWalls, heroFormSticks } from './hero_species.js';
+import { heroHasConflict } from './hero_conflict.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
+import { monsterName } from './monster_name.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
 } from './end.js';
@@ -77,6 +80,38 @@ export interface LiquidLanding {
     pick?: boolean;
 }
 type LandingEffect = (landing: LiquidLanding) => Promise<{ died?: boolean } | null | void>;
+
+// C hack.c:escape_from_sticky_mon(). True means this attempt was spent
+// struggling; release clears the grip directly, without unstuck's cooldown.
+export async function escapeFromStickyMonster(x: number, y: number): Promise<boolean> {
+    const state = game;
+    const holder = state.u.ustuck;
+    if (!holder || x === holder.mx && y === holder.my) return false;
+    if (Math.abs(holder.mx - state.u.ux) > 1 || Math.abs(holder.my - state.u.uy) > 1) {
+        state.u.ustuck = null;
+        return false;
+    }
+    const name = () => monsterName(holder, { state, article: 'your' });
+    if (heroFormSticks(state)) {
+        state.u.ustuck = null;
+        await plineWithContinuation(`You release ${name()}.`);
+        return false;
+    }
+    const frozen = !holder.mcanmove;
+    const escape = rn2(frozen ? 8 : 40);
+    if (escape === 3 && frozen) {
+        holder.mfrozen = 1;
+        holder.msleeping = 0;
+    }
+    if (escape > 2 && (heroHasConflict(state) || holder.mconf || !holder.mtame)) {
+        await plineWithContinuation(`You cannot escape from ${name()}!`);
+        endVoluntaryMultiTurn(state);
+        return true;
+    }
+    state.u.ustuck = null;
+    await plineWithContinuation(`You pull free from ${name()}.`);
+    return false;
+}
 type WaterFormEffect =
     | { kind: 'split'; clone: Monster; died?: never }
     | { kind: 'rust'; damage: number; died: boolean };

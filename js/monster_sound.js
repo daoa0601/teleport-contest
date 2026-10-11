@@ -28,6 +28,7 @@ const MS_BURBLE = 16;
 const MS_TRUMPET = 17;
 const MS_ANIMAL = 17;
 const MS_HUMANOID = 25;
+const MS_GROAN = 44;
 const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
 const COIN_CLASS = 12;
@@ -44,6 +45,26 @@ export function monsterSentenceSubject(monster) {
 export function sessionIsNight(datetime) {
     const hour = Number(String(datetime || '').slice(8, 10));
     return Number.isInteger(hour) && (hour < 6 || hour > 21);
+}
+// C sounds.c:growl_sound(). Summoning uses the same noise while unseen.
+export function monsterGrowlSound(monster) {
+    switch (MONSTER_SOUND[monster.mnum] ?? MS_SILENT) {
+        case MS_MEW:
+        case MS_HISS: return 'hiss';
+        case MS_BARK:
+        case MS_GROWL: return 'growl';
+        case MS_ROAR: return 'roar';
+        case MS_BELLOW: return 'bellow';
+        case MS_BUZZ: return 'buzz';
+        case MS_SQEEK: return 'squeal';
+        case MS_SQAWK: return 'screech';
+        case MS_NEIGH: return 'neigh';
+        case MS_WAIL: return 'wail';
+        case MS_GROAN: return 'groan';
+        case MS_MOO: return 'low';
+        case MS_SILENT: return 'commotion';
+        default: return 'scream';
+    }
 }
 // C sounds.c:beg(). Speech is deliberately not gated by deafness here:
 // native verbalize() publishes text; only domonnoise() has a hearing guard.

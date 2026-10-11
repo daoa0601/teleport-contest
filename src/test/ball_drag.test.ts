@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { MM_ANGRY, MOAT, NO_MINVENT, PIT, TT_PIT, W_AMUL } from '../js/const.js';
+import { MM_ANGRY, MOAT, NO_MINVENT, PIT, TT_PIT, WEB, W_AMUL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
+import { initializePet } from '../js/dog.js';
 import { moveObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -20,7 +21,7 @@ async function readyToDrag() {
     freshObjectRoom({ flags: { pickup: false, verbose: true } });
     requirePlayingGame(game);
     installPagerInput(resetInputState(), {
-        expected: /punish|iron ball|jackal|pit|medallion|But wait|reconstitut|kill|fall|hit|welcome|Things that are here:/i,
+        expected: /punish|iron ball|jackal|pit|medallion|But wait|reconstitut|kill|fall|hit|welcome|swap places|Things that are here:/i,
         limit: 15,
     });
     await punishHero();
@@ -51,6 +52,46 @@ void test('a pit under the chain pulls the hero backward and places the ball in 
     assert.ok(floorObjectsAt(game.level, 9, 10).includes(ball));
     assert.ok(floorObjectsAt(game.level, 9, 10).includes(chain));
     assert.equal(game.context.move, 1, 'Being jerked back spends the attempted move.');
+});
+
+void test('the chain pulls the hero into a pit before a pet can refuse to swap onto a trap', async () => {
+    const { ball, chain } = await readyToDrag();
+    requirePlayingGame(game);
+    const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
+    initializePet(dog, { state: game });
+    addTrap(game.level, WEB, 10, 10);
+    const pit = addTrap(game.level, PIT, 9, 10);
+    initRng(1);
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(game.u.ux, 9, 'The iron ball pulls the hero away from the pet.');
+    assert.equal(game.u.utraptype, TT_PIT);
+    assert.ok((game.u.utrap ?? 0) > 0);
+    assert.equal(pit.tseen, true);
+    assert.equal(dog.mx, 11);
+    assert.ok(floorObjectsAt(game.level, 9, 10).includes(ball));
+    assert.ok(floorObjectsAt(game.level, 9, 10).includes(chain));
+    assert.equal(game.context.move, 1);
+});
+
+void test('a refused pet swap still places the dragged ball and delays the hero', async () => {
+    const { ball, chain } = await readyToDrag();
+    requirePlayingGame(game);
+    const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
+    initializePet(dog, { state: game });
+    addTrap(game.level, WEB, 10, 10);
+    initRng(1);
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(game.u.ux, 10);
+    assert.equal(dog.mx, 11);
+    assert.ok(floorObjectsAt(game.level, 9, 10).includes(ball));
+    assert.ok(floorObjectsAt(game.level, 10, 10).includes(chain));
+    assert.equal(game._helplessTurns, 2);
+    assert.equal(game.context.move, 1);
+    assert.match(game._last_message, /doesn't want to swap places/);
 });
 
 void test('the dragging ball hurts a surviving monster without moving the hero onto it', async () => {

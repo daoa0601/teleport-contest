@@ -4,7 +4,10 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsHallucinating } from './senses.js';
 import { BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DOOR, ICE, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
-import { heroPassesWalls } from './hero_species.js';
+import { heroPassesWalls, heroFormSticks } from './hero_species.js';
+import { heroHasConflict } from './hero_conflict.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
+import { monsterName } from './monster_name.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath, } from './end.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
@@ -31,6 +34,38 @@ import { inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED, } from './we
 import { destroyWornArmor, findArmorClass, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, } from './armor.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './terrain_properties.js';
+// C hack.c:escape_from_sticky_mon(). True means this attempt was spent
+// struggling; release clears the grip directly, without unstuck's cooldown.
+export async function escapeFromStickyMonster(x, y) {
+    const state = game;
+    const holder = state.u.ustuck;
+    if (!holder || x === holder.mx && y === holder.my)
+        return false;
+    if (Math.abs(holder.mx - state.u.ux) > 1 || Math.abs(holder.my - state.u.uy) > 1) {
+        state.u.ustuck = null;
+        return false;
+    }
+    const name = () => monsterName(holder, { state, article: 'your' });
+    if (heroFormSticks(state)) {
+        state.u.ustuck = null;
+        await plineWithContinuation(`You release ${name()}.`);
+        return false;
+    }
+    const frozen = !holder.mcanmove;
+    const escape = rn2(frozen ? 8 : 40);
+    if (escape === 3 && frozen) {
+        holder.mfrozen = 1;
+        holder.msleeping = 0;
+    }
+    if (escape > 2 && (heroHasConflict(state) || holder.mconf || !holder.mtame)) {
+        await plineWithContinuation(`You cannot escape from ${name()}!`);
+        endVoluntaryMultiTurn(state);
+        return true;
+    }
+    state.u.ustuck = null;
+    await plineWithContinuation(`You pull free from ${name()}.`);
+    return false;
+}
 const CRAWL_DX = [-1, -1, 0, 1, 1, 1, 0, -1];
 const CRAWL_DY = [0, -1, -1, -1, 0, 1, 1, 1];
 const M1_SWIM = 0x00000002;
