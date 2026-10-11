@@ -750,13 +750,6 @@ export function specialSelectionFloodFill(context: SelectionArea, x: number, y: 
     );
 }
 
-export function specialSelectionRandomPoint(context: SelectionArea) {
-    return new SpecialSelection().add(
-        context.xstart + rn2(context.width),
-        context.ystart + rn2(context.height),
-    );
-}
-
 const MAP_CHAR_TYPES: Readonly<Record<string, number>> = {
     ' ': STONE,
     '#': CORR,

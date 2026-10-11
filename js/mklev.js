@@ -50,6 +50,7 @@ import { depth as depth_of_level, ledgerNo, maxLedgerNo, } from './hacklib.js';
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
 import { mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
+import { DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
 import { A_CHA, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
 import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL, OBJECT_SPELL_LEVEL, OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE, ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE, QUARTERSTAFF, BULLWHIP, FEDORA, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ORCISH_ARROW, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, SCIMITAR, AXE, PICK_AXE, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, IRON_SHOES, HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, MIRROR, POT_OBJECT_DETECTION, SHIELD_OF_REFLECTION, SADDLE, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, } from './object_data.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND, MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS, SPECIAL_PM, monsterClassSymbol, requireMonsterData, } from './monster_data.js';
@@ -1141,13 +1142,16 @@ export function mkclassAligned(monsterClass, spc = 0, atyp = A_NONE) {
         && (geno & G_FREQ));
     const weights = new Map();
     let totalWeight = 0;
-    let lastCandidate = null;
+    let previousDifficulty = 0;
     let ignoreGone = false;
     if (spc & G_IGNORE) {
         ignoreGone = true;
         spc &= ~G_IGNORE;
     }
     for (const mndx of classMembers) {
+        const difficulty = requireMonsterData(MONSTER_DIFFICULTY, mndx);
+        const strongerThanPrevious = difficulty > previousDifficulty;
+        previousDifficulty = difficulty;
         if (atyp !== A_NONE
             && Math.sign(requireMonsterData(MONSTER_ALIGNMENT, mndx)) !== Math.sign(atyp)) {
             continue;
@@ -1157,14 +1161,13 @@ export function mkclassAligned(monsterClass, spc = 0, atyp = A_NONE) {
             generationMask |= inHell ? G_NOHELL : G_HELL;
         generationMask &= ~spc;
         const geno = requireMonsterData(MONSTER_GENO, mndx);
-        const gone = !!((game.mvitals?.[mndx]?.mvflags ?? 0) & 0x03);
+        const gone = !!((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GONE);
         if (!(geno & generationMask)
             && (ignoreGone || !gone)
-            && !PLACEHOLDER_MONSTERS.has(mndx)) {
-            if (totalWeight && lastCandidate !== null
-                && requireMonsterData(MONSTER_DIFFICULTY, mndx) > maxMonsterLevel
-                && requireMonsterData(MONSTER_DIFFICULTY, mndx)
-                    > requireMonsterData(MONSTER_DIFFICULTY, lastCandidate)
+            && !PLACEHOLDER_MONSTERS.has(mndx)
+            && MONSTER_NAME[mndx] !== 'mail daemon') {
+            if (totalWeight && difficulty > maxMonsterLevel
+                && strongerThanPrevious
                 && rn2(2)) {
                 break;
             }
@@ -1176,7 +1179,6 @@ export function mkclassAligned(monsterClass, spc = 0, atyp = A_NONE) {
                 totalWeight += weight;
             }
         }
-        lastCandidate = mndx;
     }
     if (!totalWeight)
         return null;
@@ -3812,31 +3814,9 @@ function rightCenterSpecialMap(width, height) {
         ystart++;
     return { xstart, ystart, width, height };
 }
-function specialRandomLocation(context, acceptable = loc => SPACE_POS(loc.typ), { allowWalls = false } = {}) {
-    const level = requireGameLevel();
-    // get_location() draws both axes on every attempt, including rejected
-    // wall or special-terrain locations.  When a mkroom owns the coordinate,
-    // get_location() delegates each attempt to somexy(), which also excludes
-    // the walls and one-cell boundary of every immediate subroom.
-    for (let attempts = 0; attempts < 100; attempts++) {
-        const x = context.xstart + rn2(context.width);
-        const y = context.ystart + rn2(context.height);
-        const loc = level.at(x, y);
-        const inSubroom = context._room?.sbrooms?.some(subroom => x >= subroom.lx - 1 && x <= subroom.hx + 1
-            && y >= subroom.ly - 1 && y <= subroom.hy + 1);
-        if (loc && (allowWalls || !IS_WALL(loc.typ))
-            && !inSubroom && acceptable(loc, x, y))
-            return { x, y };
-    }
-    for (let dx = 0; dx < context.width; dx++) {
-        for (let dy = 0; dy < context.height; dy++) {
-            const x = context.xstart + dx, y = context.ystart + dy;
-            const loc = level.at(x, y);
-            if (loc && acceptable(loc, x, y))
-                return { x, y };
-        }
-    }
-    return null;
+async function specialRandomLocation(context, acceptable) {
+    const point = await getLocationCoord(context, null, DRY, acceptable);
+    return point.x === -1 && point.y === -1 ? null : point;
 }
 // C ref: mkmaze.c set_levltyp().  Terrain mutation owns persistent tile
 // side-effects; in particular, every lava form becomes lit even when the Lua
@@ -4017,39 +3997,25 @@ async function fillEmptySpecialMaze(context, mappedContexts = [context]) {
         await maketrap(point.x, point.y, typ);
     }
 }
-function specialMonsterLocationAcceptable(mndx, loc, x = -1, y = -1, allowDryFallback = false) {
-    if (!loc)
-        return false;
-    const level = requireGameLevel();
-    const flags = mndx === null ? 0 : MONSTER_FLAGS1[mndx] || 0;
-    const flies = !!(flags & 0x00000001);
-    const symbol = mndx === null ? undefined : MONSTER_SYMBOL[mndx];
-    const floats = symbol === 5 || symbol === 25; // S_EYE / S_LIGHT
-    const waterOnly = symbol === 57
-        || !!(flags & (0x00000002 | 0x00000200)); // eel/swim/amphibious
-    const wet = waterOnly || flies || floats;
-    const hot = flies || floats
-        || mndx === 30 || mndx === 110
-        || mndx === PM_FIRE_ELEMENTAL || mndx === PM_SALAMANDER;
-    // pm_to_humidity() starts with DRY, but amphibious/swimming species
-    // replace it with WET before flying/floating adds HOT|WET.  Floating
-    // eyes are amphibious floaters, so their first two 100-location scans on
-    // the all-Air map must fail before create_monster() adds DRY as fallback.
-    const dry = !waterOnly || allowDryFallback;
-    const boulder = x >= 0 && y >= 0
-        && level.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER);
-    if (dry && SPACE_POS(loc.typ) && !boulder)
-        return true;
-    if (wet && IS_POOL(loc.typ))
-        return true;
-    if (hot && (loc.typ === LAVAPOOL || loc.typ === LAVAWALL))
-        return true;
+// C ref: sp_lev.c pm_to_humidity().
+function specialMonsterHumidity(mndx) {
+    if (mndx === null)
+        return DRY;
+    const flags = MONSTER_FLAGS1[mndx] ?? 0;
+    const symbol = MONSTER_SYMBOL[mndx];
+    let humidity = symbol === 57 || (flags & (0x00000002 | 0x00000200))
+        ? WET : DRY;
+    if ((flags & 0x00000001) || symbol === 5 || symbol === 25)
+        humidity |= HOT | WET;
     if ((flags & 0x00000008) || symbol === 54)
-        return IS_OBSTRUCTED(loc.typ);
-    return false;
+        humidity |= SOLID;
+    if (mndx === 30 || mndx === 110
+        || mndx === PM_FIRE_ELEMENTAL || mndx === PM_SALAMANDER)
+        humidity |= HOT;
+    return humidity;
 }
-function specialStair(context, up) {
-    const point = specialRandomLocation(context, loc => loc.typ === ROOM || loc.typ === CORR || loc.typ === ICE);
+async function specialStair(context, up) {
+    const point = await specialRandomLocation(context, loc => loc.typ === ROOM || loc.typ === CORR || loc.typ === ICE);
     if (point)
         mkstairs(point.x, point.y, up, null);
 }
@@ -4082,23 +4048,19 @@ function specialSelectionNonDiggable(selection) {
     });
 }
 async function specialObject(context) {
-    const level = requireGameLevel();
-    const point = specialRandomLocation(context, (loc, x, y) => SPACE_POS(loc.typ)
-        && !level.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER));
+    const point = await specialRandomLocation(context);
     if (point)
         return await mkobj_at(RANDOM_CLASS, point.x, point.y, true);
     return null;
 }
 async function specialObjectOfClass(context, objectClass) {
-    const level = requireGameLevel();
-    const point = specialRandomLocation(context, (loc, x, y) => SPACE_POS(loc.typ)
-        && !level.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER));
+    const point = await specialRandomLocation(context);
     if (point)
         return await mkobj_at(objectClass, point.x, point.y, true);
     return null;
 }
 async function specialCorpseOf(context, mndx) {
-    const point = specialRandomLocation(context);
+    const point = await specialRandomLocation(context);
     if (!point)
         return null;
     const corpse = await mksobj_at(CORPSE, point.x, point.y, true, false);
@@ -4106,12 +4068,12 @@ async function specialCorpseOf(context, mndx) {
     return corpse;
 }
 async function specialObjectOfType(context, otyp) {
-    const point = specialRandomLocation(context);
+    const point = await specialRandomLocation(context);
     return point ? await mksobj_at(otyp, point.x, point.y, true, true) : null;
 }
-function specialFeatureOfType(context, typ) {
+async function specialFeatureOfType(context, typ) {
     const level = requireGameLevel();
-    const point = specialRandomLocation(context, loc => SPACE_POS(loc.typ) && !IS_FURNITURE(loc.typ));
+    const point = await specialRandomLocation(context, loc => SPACE_POS(loc.typ) && !IS_FURNITURE(loc.typ));
     if (!point)
         return null;
     const loc = level.at(point.x, point.y);
@@ -4162,6 +4124,10 @@ function specialIrregularRoom(context, x, y, rtype, lit, needfill) {
     const seedX = context.xstart + x, seedY = context.ystart + y;
     const seedType = level.at(seedX, seedY)?.typ;
     const roomNumber = level.nroom + ROOMOFFSET;
+    const equivalence = game.smeq;
+    if (!equivalence)
+        throw new Error('Irregular room creation requires room equivalence.');
+    equivalence[level.nroom] = level.nroom;
     const pending = [{ x: seedX, y: seedY }];
     const visited = new Map();
     let lx = seedX, hx = seedX, ly = seedY, hy = seedY;
@@ -4803,7 +4769,7 @@ async function specialMonsterClassAt(context, monsterClass, x, y, appearance = n
     return monster;
 }
 export async function giveSpecialMonsterObject(context, monster, otyp, spe) {
-    const point = specialRandomLocation(context);
+    const point = await specialRandomLocation(context);
     if (!point || !monster)
         return null;
     const object = await mksobj_at(otyp, point.x, point.y, true, true);
@@ -4822,20 +4788,12 @@ function specialNonPasswall(context) {
         }
     }
 }
-function specialMonsterRandomLocation(context, mndx) {
-    const nativeHumidity = (loc, x, y) => specialMonsterLocationAcceptable(mndx, loc, x, y);
-    const locationOptions = { allowWalls: true };
-    let point = specialRandomLocation(context, nativeHumidity, locationOptions);
-    // get_location_coord() repeats a failed random coordinate with the same
-    // supplied humidity before create_monster() sees (-1,-1).
-    if (!point) {
-        point = specialRandomLocation(context, nativeHumidity, locationOptions);
-    }
-    // create_monster() then adds DRY and calls get_location_coord() again.
-    if (!point) {
-        point = specialRandomLocation(context, (loc, x, y) => specialMonsterLocationAcceptable(mndx, loc, x, y, true), locationOptions);
-    }
-    return point;
+async function specialMonsterRandomLocation(context, mndx) {
+    const humidity = specialMonsterHumidity(mndx);
+    let point = await getLocationCoord(context, null, humidity | NO_LOC_WARN);
+    if (point.x === -1 && point.y === -1)
+        point = await getLocationCoord(context, null, humidity | DRY);
+    return point.x === -1 && point.y === -1 ? null : point;
 }
 async function specialExplicitMonster(context, mndx, appearance = null, { randomGender = true, randomAlignment = true, peaceful = null, asleep = null, mmflags = 0, roamerAlignment = null, } = {}) {
     const level = requireGameLevel();
@@ -4852,7 +4810,7 @@ async function specialExplicitMonster(context, mndx, appearance = null, { random
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
     const selectedSpecies = applyMinesSameRaceMonsterGate(mndx);
-    const point = specialMonsterRandomLocation(context, selectedSpecies);
+    const point = await specialMonsterRandomLocation(context, selectedSpecies);
     if (!point)
         return null;
     const occupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, game) && candidate.mhp > 0
@@ -4889,7 +4847,7 @@ async function specialMonsterOfClass(context, monsterClass, { randomAlignment = 
     // by mkclass(class, G_NOGEN).
     let mndx = mkclass(monsterClass, 0x0200);
     mndx = applyMinesSameRaceMonsterGate(mndx);
-    const point = specialMonsterRandomLocation(context, mndx);
+    const point = await specialMonsterRandomLocation(context, mndx);
     if (!point || mndx == null)
         return null;
     const occupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, game) && candidate.mhp > 0
@@ -4939,7 +4897,7 @@ async function finishSpecialTrapConstruction(trap, { spiderOnWeb = true, seen = 
 }
 async function specialTrapOfType(context, typ, options) {
     const level = requireGameLevel();
-    const point = specialRandomLocation(context, (loc, x, y) => SPACE_POS(loc.typ)
+    const point = await specialRandomLocation(context, (loc, x, y) => SPACE_POS(loc.typ)
         && loc.typ !== STAIRS
         && !level.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER));
     if (!point)
@@ -4996,7 +4954,7 @@ function specialRandomTrapType(inHell = false) {
 }
 async function specialTrap(context, options) {
     const level = requireGameLevel();
-    const point = specialRandomLocation(context, (loc, x, y) => SPACE_POS(loc.typ)
+    const point = await specialRandomLocation(context, (loc, x, y) => SPACE_POS(loc.typ)
         && loc.typ !== STAIRS && loc.typ !== LADDER
         && !level.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER));
     if (!point)
@@ -5015,7 +4973,7 @@ async function specialMonster(context, { randomAlignment = true, peaceful = null
         consumeSpecialMonsterAlignment();
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
-    const point = specialRandomLocation(context);
+    const point = await specialRandomLocation(context);
     if (!point)
         return;
     const occupiedPoint = level.monsters.some(monster => monsterHasMapPosition(monster, game) && monster.mhp > 0
@@ -5408,9 +5366,7 @@ async function fillSpecialLevel(options, active) {
             icedPools: !!active.icedPools,
         });
         active.defaultLit = lit;
-        return {
-            xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
-        };
+        return;
     }
     if (options.style === 'swamp') {
         const foreground = mapCharacterType(options.fg ?? '.');
@@ -5420,9 +5376,7 @@ async function fillSpecialLevel(options, active) {
         const lit = !!options.lit;
         fillSpecialSwamp(foreground, background, lit);
         active.defaultLit = lit;
-        return {
-            xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
-        };
+        return;
     }
     if (options.style === 'mazegrid') {
         const type = mapCharacterType(options.bg ?? '-');
@@ -5430,14 +5384,12 @@ async function fillSpecialLevel(options, active) {
             throw new Error(`unknown Lua map character ${options.bg}`);
         fillSpecialMazeGrid(type);
         active.defaultLit = false;
-        return {
-            xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
-        };
+        return;
     }
     if (options.style === 'maze') {
         createMaze(options.corrwid ?? -1, options.wallthick ?? -1, options.deadends === false);
         active.defaultLit = false;
-        return { xstart: 0, ystart: 0, width: 76, height: 19 };
+        return;
     }
     if (options.style !== 'solidfill')
         throw new Error(`unsupported Lua level style ${options.style}`);
@@ -5451,7 +5403,7 @@ async function fillSpecialLevel(options, active) {
             level.requireAt(x, y).lit = active.defaultLit;
         }
     }
-    return null;
+    return;
 }
 function setLuaLevelFlags(active, flags) {
     const level = requireGameLevel();
@@ -5537,7 +5489,7 @@ function replaceLuaTerrain(context, options) {
             loc.horizontal = true;
     });
 }
-function createLuaFeature(context, { type, point }) {
+async function createLuaFeature(context, { type, point }) {
     const level = requireGameLevel();
     const types = {
         fountain: FOUNTAIN, sink: SINK, pool: POOL,
@@ -5557,7 +5509,7 @@ function createLuaFeature(context, { type, point }) {
         }
         return;
     }
-    if (specialFeatureOfType(context, featureType)) {
+    if (await specialFeatureOfType(context, featureType)) {
         if (featureType === FOUNTAIN)
             level.flags.nfountains++;
         else if (featureType === SINK)
@@ -5624,7 +5576,7 @@ async function createLuaAltar(context, options) {
             x: context.xstart + coordinate.x,
             y: context.ystart + coordinate.y,
         }
-        : specialRandomLocation(context);
+        : await specialRandomLocation(context);
     if (!point)
         return;
     const altar = level.at(point.x, point.y);
@@ -5717,7 +5669,8 @@ function createLuaRoomRegion(context, options) {
         throw new TypeError('des.region requires four coordinates');
     const roomType = luaRoomType(options.type);
     const lit = luaRoomLighting(options.lit ?? -1);
-    if (roomType === OROOM && !options.irregular && !options.arrival_room) {
+    if (roomType === OROOM && !options.irregular && !options.arrival_room
+        && !game.in_mk_themerooms) {
         lightSpecialArea(context, x1, y1, x2, y2, lit);
         return null;
     }
@@ -5725,6 +5678,7 @@ function createLuaRoomRegion(context, options) {
     const room = options.irregular
         ? specialIrregularRoom(context, x1, y1, roomType, lit, needFill)
         : specialRectangularRoom(context, x1, y1, x2, y2, roomType, lit, needFill);
+    room.needjoining = options.joined === undefined || !!options.joined;
     if (room && options.arrival_room)
         room.arrival_room = true;
     return room;
@@ -5751,12 +5705,12 @@ function luaRoomSpec(options) {
         yalign,
     };
 }
-function createLuaStair(context, { direction, point }) {
+async function createLuaStair(context, { direction, point }) {
     const up = direction === 'up';
     if (point)
         specialStairAt(context, point.x, point.y, up);
     else
-        specialStair(context, up);
+        await specialStair(context, up);
 }
 function createLuaDoor(context, { state, point, wall = 'all', pos = -1, }) {
     if (!point) {
@@ -5804,13 +5758,13 @@ function createLuaDrawbridge(context, options) {
         throw new Error(`unknown Lua drawbridge state ${options.state}`);
     makeSpecialDrawbridge(context, coordinate.x, coordinate.y, direction, open);
 }
-function createLuaEngraving(context, options) {
+async function createLuaEngraving(context, options) {
     const point = options.point
         ? {
             x: context.xstart + options.point.x,
             y: context.ystart + options.point.y,
         }
-        : specialRandomLocation(context);
+        : await specialRandomLocation(context);
     if (!point)
         return null;
     const types = {
@@ -5834,7 +5788,7 @@ async function createLuaGold(context, options) {
             x: context.xstart + options.point.x,
             y: context.ystart + options.point.y,
         }
-        : specialRandomLocation(context);
+        : await specialRandomLocation(context);
     if (!point)
         return null;
     const requestedAmount = options.amount ?? -1;
@@ -5843,6 +5797,14 @@ async function createLuaGold(context, options) {
 }
 async function createLuaObject(context, options, parentContainer, parentMonster, invokeContents) {
     const { point, objectClass, objectType } = options;
+    // lspo_object() resolves montype before create_object() chooses a
+    // coordinate or initializes the object's random attributes.
+    let corpseSpecies = options.monsterType;
+    if (options.monsterClass !== null) {
+        corpseSpecies = mkclass(options.monsterClass, G_NOGEN | G_IGNORE);
+        if (corpseSpecies === null)
+            throw new Error('Unknown montype');
+    }
     let object;
     const randomMedusaStatue = objectType === STATUE
         && game._activeSpecialLevel?.prototype === 'medusa'
@@ -5888,6 +5850,8 @@ async function createLuaObject(context, options, parentContainer, parentMonster,
     else if (options.buc === 'not-blessed') {
         object.blessed = false;
     }
+    if (corpseSpecies !== null)
+        set_corpsenm(object, corpseSpecies);
     if (options.spe !== undefined && Number.isInteger(options.spe))
         object.spe = options.spe;
     if (options.spinachTin) {
@@ -5921,12 +5885,6 @@ async function createLuaObject(context, options, parentContainer, parentMonster,
     if (options.trapped && Object.hasOwn(options, 'tknown'))
         object.tknown = !!options.tknown;
     object.greased = !!options.greased;
-    if (options.monsterType != null)
-        set_corpsenm(object, options.monsterType);
-    else if (options.monsterClass != null) {
-        const species = mkclass(options.monsterClass, G_NOGEN | G_IGNORE);
-        set_corpsenm(object, species ?? -1);
-    }
     if (object.otyp === STATUE || object.otyp === CORPSE) {
         object.spe = (options.historic ? CORPSTAT_HISTORIC : 0)
             | (options.male ? CORPSTAT_MALE : 0)
@@ -6284,13 +6242,7 @@ function createLuaLevelSession() {
         }
     };
     const operations = {
-        levelInit: async (options) => {
-            const initializedContext = await fillSpecialLevel(options, currentLevel());
-            if (initializedContext) {
-                context = initializedContext;
-                currentLevel().context = context;
-            }
-        },
+        levelInit: async (options) => await fillSpecialLevel(options, currentLevel()),
         levelFlags: flags => setLuaLevelFlags(currentLevel(), flags),
         message: value => {
             const messages = currentLevel().specialMessages ??= [];
@@ -6549,6 +6501,7 @@ function createLuaLevelSession() {
         beginLevel(nextActive, { special = true } = {}) {
             active = nextActive;
             context = wholeLevel;
+            active.context = context;
             containers.length = 0;
             monsterInventories.length = 0;
             mappedContexts.length = 0;
@@ -6708,7 +6661,7 @@ async function medusaEmptyStatue(context, fixedPoint = null) {
             x: context.xstart + fixedPoint.x,
             y: context.ystart + fixedPoint.y,
         }
-        : specialRandomLocation(context);
+        : await specialRandomLocation(context);
     if (!point)
         return null;
     const statue = await mksobj_at(STATUE, point.x, point.y, true, true);
@@ -7620,7 +7573,7 @@ async function makelevel() {
     if (isRogueLevel) {
         level.flags.is_rogue_level = true;
         level.flags.rogue_level = true;
-        makeroguerooms();
+        await makeroguerooms();
         await makerogueghost();
         if (level.nroom <= 0)
             return;
@@ -8408,7 +8361,7 @@ function roguejoin(x1, y1, x2, y2, horiz) {
             rogueCorrCell(x2, y);
     }
 }
-function roguecorr(grid, x, y, dir) {
+async function roguecorr(grid, x, y, dir) {
     const level = requireGameLevel();
     let fromx, fromy, tox, toy;
     const source = rogueGridCell(grid, x, y);
@@ -8421,7 +8374,7 @@ function roguecorr(grid, x, y, dir) {
         else {
             fromx = source.rlx + rn2(source.dx) + 1 + 26 * x;
             fromy = source.rly + source.dy + 7 * y;
-            dodoor(fromx, fromy, rogueGridRoom(source));
+            await dodoor(fromx, fromy, rogueGridRoom(source));
             level.requireAt(fromx, fromy).doormask = D_NODOOR;
             fromy++;
         }
@@ -8436,7 +8389,7 @@ function roguecorr(grid, x, y, dir) {
         else {
             tox = dest.rlx + rn2(dest.dx) + 1 + 26 * x;
             toy = dest.rly - 1 + 7 * y;
-            dodoor(tox, toy, rogueGridRoom(dest));
+            await dodoor(tox, toy, rogueGridRoom(dest));
             level.requireAt(tox, toy).doormask = D_NODOOR;
             toy--;
         }
@@ -8452,7 +8405,7 @@ function roguecorr(grid, x, y, dir) {
         else {
             fromx = source.rlx + source.dx + 1 + 26 * x;
             fromy = source.rly + rn2(source.dy) + 7 * y;
-            dodoor(fromx, fromy, rogueGridRoom(source));
+            await dodoor(fromx, fromy, rogueGridRoom(source));
             level.requireAt(fromx, fromy).doormask = D_NODOOR;
             fromx++;
         }
@@ -8467,7 +8420,7 @@ function roguecorr(grid, x, y, dir) {
         else {
             tox = dest.rlx - 1 + 1 + 26 * x;
             toy = dest.rly + rn2(dest.dy) + 7 * y;
-            dodoor(tox, toy, rogueGridRoom(dest));
+            await dodoor(tox, toy, rogueGridRoom(dest));
             level.requireAt(tox, toy).doormask = D_NODOOR;
             tox--;
         }
@@ -8517,7 +8470,7 @@ function rogueMiniwalk(grid, x, y) {
         rogueMiniwalk(grid, x, y);
     }
 }
-function makeroguerooms() {
+async function makeroguerooms() {
     const g = game;
     const level = requireGameLevel();
     const roomEquivalence = g.smeq;
@@ -8565,9 +8518,9 @@ function makeroguerooms() {
         for (let x = 0; x < 3; x++) {
             const room = rogueGridCell(grid, x, y);
             if (room.doortable & XL_DOWN)
-                roguecorr(grid, x, y, XL_DOWN);
+                await roguecorr(grid, x, y, XL_DOWN);
             if (room.doortable & XL_RIGHT)
-                roguecorr(grid, x, y, XL_RIGHT);
+                await roguecorr(grid, x, y, XL_RIGHT);
         }
     }
 }
@@ -9381,7 +9334,7 @@ export async function dig_corridor(org, dest, npoints_out, nxcor, ftyp, btyp) {
     return true;
 }
 // C ref: mklev.c dosdoor()
-function dosdoor(x, y, aroom, type) {
+async function dosdoor(x, y, aroom, type) {
     const map = requireGameLevel();
     const loc = map.at(x, y);
     if (!loc)
@@ -9411,8 +9364,13 @@ function dosdoor(x, y, aroom, type) {
         if (Is_rogue_level(game.u?.uz))
             loc.doormask = D_NODOOR;
         if (loc.doormask & D_TRAPPED) {
-            if (level_difficulty() >= 9 && !rn2(5)) {
+            if (level_difficulty() >= 9 && !rn2(5)
+                && MONSTER_SYMBOL.some((symbol, mndx) => symbol === S_MIMIC
+                    && !((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GONE))) {
                 loc.doormask = D_NODOOR;
+                const mimic = await makemon(mkclass(S_MIMIC, 0), x, y, 0);
+                if (mimic)
+                    await setMimicAppearance(mimic);
             }
         }
     }
@@ -9426,8 +9384,8 @@ function dosdoor(x, y, aroom, type) {
     }
     add_door(x, y, aroom);
 }
-function dodoor(x, y, aroom) {
-    dosdoor(x, y, aroom, maybe_sdoor(8) ? SDOOR : DOOR);
+async function dodoor(x, y, aroom) {
+    await dosdoor(x, y, aroom, maybe_sdoor(8) ? SDOOR : DOOR);
 }
 function add_door(x, y, aroom) {
     const level = requireGameLevel();
@@ -9445,10 +9403,14 @@ function add_door(x, y, aroom) {
             throw new Error(`Missing door at index ${tmp - 1}`);
         level.doors[tmp] = door;
     }
-    for (const broom of level.rooms) {
-        if (!isRoom(broom) || broom.hx <= 0 || broom === aroom || !(broom.doorct > 0))
+    const otherRooms = [
+        ...level.rooms.slice(0, level.nroom),
+        ...(level.subrooms ?? []).slice(0, level.nsubroom ?? 0),
+    ];
+    for (const broom of otherRooms) {
+        if (!isRoom(broom) || broom === aroom || !broom.doorct)
             continue;
-        if ((broom.fdoor ?? 0) >= aroom.fdoor)
+        if (broom.fdoor >= aroom.fdoor)
             broom.fdoor++;
     }
     level.doors[aroom.fdoor] = { x, y };
@@ -9535,14 +9497,14 @@ async function join(a, b, nxcor) {
     const org = { x: xx + dx, y: yy + dy };
     const dest = { x: tx, y: ty };
     const npoints = { v: 0 };
-    const ftyp = CORR;
+    const ftyp = level.flags.arboreal ? ROOM : CORR;
     const dig_result = await dig_corridor(org, dest, npoints, nxcor, ftyp, STONE);
     if ((npoints.v > 0) && (okdoor(xx, yy) || !nxcor))
-        dodoor(xx, yy, croom);
+        await dodoor(xx, yy, croom);
     if (!dig_result)
         return;
     if (okdoor(tt.x, tt.y) || !nxcor)
-        dodoor(tt.x, tt.y, troom);
+        await dodoor(tt.x, tt.y, troom);
     const equivalence = g.smeq;
     const first = equivalence?.[a], second = equivalence?.[b];
     if (!equivalence || first === undefined || second === undefined)
@@ -9560,8 +9522,6 @@ async function makecorridors() {
     if (!equivalence)
         throw new Error('Corridors require initialized room equivalence.');
     let unjoinedRooms = true;
-    for (let i = 0; i < level.nroom; i++)
-        equivalence[i] = i;
     for (let a = 0; a < level.nroom - 1; a++) {
         await join(a, a + 1, false);
         if (!rn2(50))
@@ -9767,12 +9727,12 @@ async function makeniche(trap_type) {
                     }
                 }
             }
-            dosdoor(xx, yy, aroom, SDOOR);
+            await dosdoor(xx, yy, aroom, SDOOR);
         }
         else {
             rm.typ = CORR;
             if (rn2(7)) {
-                dosdoor(xx, yy, aroom, rn2(5) ? SDOOR : DOOR);
+                await dosdoor(xx, yy, aroom, rn2(5) ? SDOOR : DOOR);
             }
             else {
                 const loc = level.at(xx, yy);
