@@ -4169,10 +4169,13 @@ function specialIrregularRoom(context, x, y, rtype, lit, needfill) {
             }
         }
     }
-    add_room(lx, ly, hx, hy, lit, rtype, true);
+    // lspo_region() registers the bounds with lighting off: flood_fill_rm()
+    // already lit the room's floor and boundary, not the whole rectangle.
+    add_room(lx, ly, hx, hy, false, rtype, true);
     const room = level.rooms[level.nroom - 1];
     if (!isRoom(room))
         throw new Error('Irregular room creation did not install a room.');
+    room.rlit = lit ? 1 : 0;
     room.irregular = true;
     room.needjoining = true;
     room.needfill = needfill;
@@ -4595,7 +4598,7 @@ async function fillCourtRoom(room) {
     chest.spe = 2;
     level.flags.has_court = true;
 }
-function loadSpecialAsciiMap(rows, defaultLit, origin = null) {
+function loadSpecialAsciiMap(rows, lit, origin = null) {
     const level = requireGameLevel();
     const width = Math.max(...rows.map(row => row.length));
     const context = origin
@@ -4615,7 +4618,7 @@ function loadSpecialAsciiMap(rows, defaultLit, origin = null) {
             // column lies beyond NetHack's usable map and is ignored.
             if (!loc)
                 continue;
-            loc.lit = defaultLit;
+            loc.lit = lit;
             loc.horizontal = row[dx] === '-';
             if (row[dx] === '.')
                 loc.typ = ROOM;
@@ -4647,10 +4650,8 @@ function loadSpecialAsciiMap(rows, defaultLit, origin = null) {
                 loc.typ = MOAT;
             else if (row[dx] === 'W')
                 loc.typ = WATER;
-            else if (row[dx] === 'A') {
+            else if (row[dx] === 'A')
                 loc.typ = AIR;
-                loc.lit = true;
-            }
             else if (row[dx] === 'L') {
                 loc.typ = LAVAPOOL;
                 loc.lit = true;
@@ -6309,6 +6310,9 @@ function createLuaLevelSession() {
             const source = typeof value === 'string' ? value : value.map;
             if (source === undefined)
                 throw new TypeError('des.map requires map text');
+            // lspo_map() defaults to unlit in both forms, independently of
+            // the lighting des.level_init() gave the underlying level.
+            const lit = typeof value !== 'string' && !!value.lit;
             const rows = specialMapRows(source);
             const width = Math.max(...rows.map(row => row.length));
             const unplacedThemedMap = currentLevel().prototype === 'themerms'
@@ -6318,7 +6322,7 @@ function createLuaLevelSession() {
                 && value.halign == null && value.valign == null;
             let mapContext;
             if (unplacedThemedMap) {
-                mapContext = placeThemedMap(rows);
+                mapContext = placeThemedMap(rows, lit);
                 if (!mapContext) {
                     roomFailed = true;
                     return new SpecialSelection();
@@ -6328,8 +6332,7 @@ function createLuaLevelSession() {
                 const origin = typeof value === 'string'
                     ? centeredSpecialMap(width, rows.length)
                     : mapOrigin(value, width, rows.length, !!currentLevel().levelInitialized);
-                mapContext = loadSpecialAsciiMap(rows, typeof value === 'string'
-                    ? !!currentLevel().defaultLit : !!value.lit, origin);
+                mapContext = loadSpecialAsciiMap(rows, lit, origin);
             }
             mappedContexts.push(mapContext);
             const mapSelection = specialMapSelection(mapContext, rows);
@@ -8728,7 +8731,7 @@ function themedMapFits(rows, xstart, ystart) {
     }
     return true;
 }
-function placeThemedMap(rows) {
+function placeThemedMap(rows, lit) {
     const level = requireGameLevel();
     const width = Math.max(...rows.map(row => row.length));
     const height = rows.length;
@@ -8755,7 +8758,7 @@ function placeThemedMap(rows) {
             loc.horizontal = terrain === HWALL;
             loc.roomno = 0;
             loc.edge = false;
-            loc.lit = false;
+            loc.lit = lit || IS_LAVA(terrain);
         }
     }
     return { xstart, ystart, width, height };
