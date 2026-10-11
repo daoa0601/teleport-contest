@@ -1,928 +1,431 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
-import {
-    continueMonsterWeaponVolley,
-    finishMonsterProjectile,
-    hitHeroWithMonsterProjectile, finishMonsterProjectileHit,
-    presentMonsterProjectileShot,
-    readyRangedMonsterWeapon,
-    throwMonsterWeaponAtHero, throwMonsterWeaponAtMonster,
-} from '../js/monster_throw.js';
-import { selectMonsterRangedWeapon } from '../js/monster_weapon.js';
-import {
-    A_STR, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NEED_WEAPON,
-    NO_MINVENT, NO_WEAPON_WANTED, W_AMUL, W_WEP,
-} from '../js/const.js';
-import { tameMonster } from '../js/dog.js';
+import { A_DEX, IRONBARS, M_ATTK_MISS, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOTAIL, MM_NOWAIT, NEED_WEAPON, NO_MINVENT, NO_WEAPON_WANTED, STONE, W_AMUL, W_WEP, } from '../js/const.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { initializePet } from '../js/dog.js';
+import { resetInputState, pushKeys } from '../js/input.js';
+import { resolveMonsterCombatThrow } from '../js/monster_combat_throw.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import {
-    AMULET_OF_LIFE_SAVING, ARROW, BOULDER, BOW, CORPSE, CREAM_PIE,
-    CROSSBOW, CROSSBOW_BOLT, DAGGER, DART, EGG, ELVEN_ARROW,
-    ELVEN_BOW, OBJECT_NAMES, SLING, STATUE, YA, YUMI,
-} from '../js/object_data.js';
-import { game } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
-import {
-    beginMonsterRangedTurn, continueMonsterRangedTurn,
-} from '../js/dogmove.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
-import { takeMonsterTurn } from '../js/monmove.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import {
-    addInventoryObject, uninitializedObject,
-} from './support/game-objects.js';
-import { wearHeroAccessory } from '../js/accessory.js';
-import {
-    floorObjectQuantityAt, floorObjectsAt,
-} from './support/level-state.js';
-import {
-    createMonsterAt, equipMonsterObject,
-} from './support/monsters.js';
-import {
-    finishRangedAttacks, freshRangedCombatRoom,
-} from './support/ranged-combat.js';
-
-const PROJECTILE_GLYPH = { ch: ')', color: 0, decgfx: false, attr: 0 };
+import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { monsterVolleyCount, readyRangedMonsterWeapon, throwMonsterProjectile, throwMonsterWeaponAtMonster } from '../js/monster_throw.js';
+import { selectMonsterRangedWeapon } from '../js/monster_weapon.js';
+import { AMULET_OF_LIFE_SAVING, ARROW, BOULDER, BOW, CREAM_PIE, DAGGER, DART, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, POT_CONFUSION, SLING, STATUE, YA, YUMI } from '../js/object_data.js';
+import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
+import { uninitializedObject, untimedCorpse } from './support/game-objects.js';
+import { floorObjectQuantityAt, floorObjectsAt } from './support/level-state.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
+import { freshRangedCombatRoom } from './support/ranged-combat.js';
+import { installPagerInput } from './support/pager-input.js';
+import { assertWormBody } from './support/worms.js';
+const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT | NO_MINVENT;
 const SILVER_DAGGER = OBJECT_NAMES.indexOf('silver dagger');
-const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT
-    | NO_MINVENT;
-
-async function combatant(species, {
-    x = 9,
-    y = 10,
-    hitPoints,
-    tame = false,
-    inventory = [],
-} = {}) {
-    const monster = await createMonsterAt(
-        species, x, y, TEST_MONSTER_FLAGS,
-    );
-    if (tame) tameMonster(monster, game);
+async function combatant(species, { x = 9, y = 10, hitPoints, tame = false, inventory = [], } = {}) {
+    const monster = await createMonsterAt(species, x, y, TEST_MONSTER_FLAGS);
+    if (tame)
+        initializePet(monster, { state: game });
     if (hitPoints !== undefined)
         monster.mhp = monster.mhpmax = hitPoints;
     for (const object of inventory)
-        addObjectToMonsterInventory(monster, object, game);
+        await addObjectToMonsterInventory(monster, object, game);
     return monster;
 }
-
-test('a monster readies the launcher required by its ammunition', async () => {
+function projectileRoom() {
+    const level = freshRangedCombatRoom({ gameplaySeed: 37n, recalculateVision: true });
+    requirePlayingGame(game);
+    game.context.mon_moving = true;
+    installPagerInput(resetInputState(), {
+        expected: /shoot|throw|hit|miss|stone|poison|sear|blind|reconstitut|medallion|looks much better|kill|destroy|Splat|snap|Clonk|clang|moves|wield|slowing down|eats a lizard corpse|seems limber/,
+        limit: 30,
+    });
+    return level;
+}
+const ordinaryChoices = (bound) => Math.min(1, bound - 1);
+const minimumRoll = () => 1;
+for (const adjacent of [true, false]) {
+    void test(`monster-thrown potion vapor ${adjacent ? 'can reach an adjacent hero' : 'cannot reach a distant hero'}`, async () => {
+        projectileRoom();
+        requirePlayingGame(game);
+        const source = await combatant('orc');
+        const target = await combatant('orc', { x: 12, hitPoints: 30 });
+        game.u.ux = adjacent ? 12 : 18;
+        game.u.uy = 11;
+        game.u.acurr.a[A_DEX] = 3;
+        game.u.confusionTurns = 0;
+        vision_recalc(0);
+        installPagerInput(resetInputState(), {
+            expected: /crashes on|evaporates|You feel somewhat dizzy/,
+            limit: 24,
+        });
+        // Exposure is a Dexterity roll. Give the nearby hero several real
+        // chances without pinning the test to one random draw.
+        const attempts = adjacent ? 8 : 1;
+        for (let attempt = 0; attempt < attempts && !game.u.confusionTurns; attempt++) {
+            const potion = await uninitializedObject(POT_CONFUSION);
+            await addObjectToMonsterInventory(source, potion);
+            const shot = await throwMonsterProjectile(source, potion, {
+                state: game, dx: 1, dy: 0, range: 3, target,
+                random: ordinaryChoices, rollOne: minimumRoll,
+            });
+            assert.equal(shot.hit, true);
+            assert.equal(potion.where, 'gone');
+            assert.equal(source.minvent.includes(potion), false);
+        }
+        assert.equal(game.u.confusionTurns > 0, adjacent);
+        assert.equal(game._thrownObject, null);
+    });
+}
+void test('a monster readies the launcher required by its ammunition', async () => {
     freshRangedCombatRoom();
-    const bow = uninitializedObject(BOW);
-    const arrows = uninitializedObject(ARROW, { quan: 6 });
+    requirePlayingGame(game);
+    const bow = await uninitializedObject(BOW);
+    const arrows = await uninitializedObject(ARROW, { quan: 6 });
     const archer = await combatant('orc', {
         x: 10,
         inventory: [arrows, bow],
     });
     archer.weaponCheck = NEED_WEAPON;
-
     const readied = await readyRangedMonsterWeapon(archer);
-
     assert.equal(readied, true);
     assert.equal(archer.mw, bow);
     assert.equal(bow.wielded, true);
     assert.equal(selectMonsterRangedWeapon(archer)?.weapon, arrows);
 });
-
-test('trying to ready a bow spends the attack when the current weapon is welded', async () => {
+void test('trying to ready a bow spends the attack when the current weapon is welded', async () => {
     freshRangedCombatRoom();
-    const arrows = uninitializedObject(ARROW, { quan: 6 });
-    const orc = await combatant('orc', { inventory: [arrows, uninitializedObject(BOW)] });
-    const dagger = equipMonsterObject(orc, uninitializedObject(DAGGER, { cursed: true }), W_WEP);
+    requirePlayingGame(game);
+    const arrows = await uninitializedObject(ARROW, { quan: 6 });
+    const orc = await combatant('orc', { inventory: [arrows, await uninitializedObject(BOW)] });
+    const dagger = await equipMonsterObject(orc, await uninitializedObject(DAGGER, { cursed: true }), W_WEP);
     orc.weaponCheck = NEED_WEAPON;
     const target = await combatant('lichen', { x: 12 });
     const health = target.mhp;
     pushKeys('  ');
-
     const attack = await throwMonsterWeaponAtMonster(orc, target, game);
-
-    assert.equal(attack.spentWielding, true);
+    assert.equal(attack?.spentWielding, true);
     assert.equal(orc.mw?.o_id, dagger.o_id);
     assert.equal(arrows.quan, 6);
     assert.equal(target.mhp, health);
 });
-
-test('a monster can shoot ya from an ordinary bow', async () => {
+void test('a monster can shoot ya from an ordinary bow', async () => {
     freshRangedCombatRoom();
-    const arrows = uninitializedObject(YA, { quan: 6 });
+    requirePlayingGame(game);
+    const arrows = await uninitializedObject(YA, { quan: 6 });
     const orc = await combatant('orc', { inventory: [arrows] });
-    equipMonsterObject(orc, uninitializedObject(BOW), W_WEP);
+    await equipMonsterObject(orc, await uninitializedObject(BOW), W_WEP);
     orc.weaponCheck = NEED_WEAPON;
     const target = await combatant('lichen', { x: 12 });
-
     const attack = await throwMonsterWeaponAtMonster(orc, target, game);
-
+    assert.ok(attack && 'shots' in attack);
     assert.equal(attack?.launched, true);
     assert.ok(arrows.quan < 6);
-    await finishRangedAttacks([attack], game);
 });
-
-test('a monster prefers a yumi to a more recently acquired ordinary bow', async () => {
+void test('a monster prefers a yumi to a more recently acquired ordinary bow', async () => {
     freshRangedCombatRoom();
+    requirePlayingGame(game);
     const orc = await combatant('orc', {
-        inventory: [uninitializedObject(ARROW), uninitializedObject(YUMI), uninitializedObject(BOW)],
+        inventory: [await uninitializedObject(ARROW), await uninitializedObject(YUMI), await uninitializedObject(BOW)],
     });
-
     const selection = selectMonsterRangedWeapon(orc);
-
     assert.equal(selection?.weapon.otyp, ARROW);
-    assert.equal(selection?.launcher.otyp, YUMI);
+    assert.equal(selection?.launcher?.otyp, YUMI);
 });
-
-test('a monster keeps its welded dagger but can throw a spare one', async () => {
+void test('a monster keeps its welded dagger but can throw a spare one', async () => {
     freshRangedCombatRoom();
+    requirePlayingGame(game);
     const orc = await combatant('orc');
-    const held = equipMonsterObject(orc, uninitializedObject(DAGGER, { cursed: true }), W_WEP);
+    const held = await equipMonsterObject(orc, await uninitializedObject(DAGGER, { cursed: true }), W_WEP);
     orc.weaponCheck = NO_WEAPON_WANTED;
     assert.equal(selectMonsterRangedWeapon(orc), null);
-    const spare = addObjectToMonsterInventory(orc, uninitializedObject(DAGGER));
-
+    const spare = await addObjectToMonsterInventory(orc, await uninitializedObject(DAGGER));
+    assert.ok(spare);
     assert.equal(selectMonsterRangedWeapon(orc)?.weapon.o_id, spare.o_id);
     assert.equal(orc.mw?.o_id, held.o_id);
 });
-
-test('Kops choose pies and giants choose boulders before ordinary missiles', async () => {
+void test('Kops choose pies and giants choose boulders before ordinary missiles', async () => {
     freshRangedCombatRoom();
+    requirePlayingGame(game);
     const kop = await combatant('Keystone Kop', {
-        inventory: [uninitializedObject(CREAM_PIE), uninitializedObject(DAGGER)],
+        inventory: [await uninitializedObject(CREAM_PIE), await uninitializedObject(DAGGER)],
     });
     const giant = await combatant('giant', {
         x: 10,
-        inventory: [uninitializedObject(BOULDER), uninitializedObject(DAGGER)],
+        inventory: [await uninitializedObject(BOULDER), await uninitializedObject(DAGGER)],
     });
-
     assert.equal(selectMonsterRangedWeapon(kop)?.weapon.otyp, CREAM_PIE);
     assert.equal(selectMonsterRangedWeapon(giant)?.weapon.otyp, BOULDER);
 });
-
-test('a monster that does not collect gems uses one in its sling before throwing darts', async () => {
+void test('a monster that does not collect gems uses one in its sling before throwing darts', async () => {
     freshRangedCombatRoom();
-    const gem = uninitializedObject(OBJECT_NAMES.indexOf('emerald'));
+    requirePlayingGame(game);
+    const gem = await uninitializedObject(OBJECT_NAMES.indexOf('emerald'));
     const soldier = await combatant('soldier', {
-        inventory: [gem, uninitializedObject(SLING), uninitializedObject(DART)],
+        inventory: [gem, await uninitializedObject(SLING), await uninitializedObject(DART)],
     });
-
     const selection = selectMonsterRangedWeapon(soldier);
-
     assert.equal(selection?.weapon.o_id, gem.o_id);
-    assert.equal(selection?.launcher.otyp, SLING);
+    assert.equal(selection?.launcher?.otyp, SLING);
 });
-
-test('a tame orc throws a dagger at a distant monster', async () => {
-    freshRangedCombatRoom({ gameplaySeed: 1n });
-    const dagger = uninitializedObject(DAGGER);
-    const orc = await combatant('orc', {
-        tame: true,
-        inventory: [dagger],
-    });
-    const target = await combatant('jackal', { x: 12, hitPoints: 1 });
-
-    const action = await takeMonsterTurn(
-        orc, game,
-        () => 1,
-        (count, sides) => count * sides,
-        () => 1,
-    );
-    await finishRangedAttacks(action.movement.rangedAttacks, game, {
-        random: () => 0,
-    });
-
-    assert.deepEqual([orc.mx, orc.my], [9, 10]);
-    assert.equal(target.mhp, 0);
-    assert.equal(orc.inventory.includes(dagger), false);
-    assert.equal(
-        floorObjectsAt(game.level, 12, 10).some(
-            object => object.otyp === DAGGER,
-        ),
-        true,
-    );
+void test('a completed throw detaches, damages, and lands one dagger before returning', async () => {
+    const level = projectileRoom();
+    const dagger = await uninitializedObject(DAGGER, { quan: 3 });
+    const source = await combatant('orc', { inventory: [dagger] });
+    const target = await combatant('lichen', { x: 12, hitPoints: 30 });
+    const volley = await throwMonsterWeaponAtMonster(source, target, game, { random: ordinaryChoices, rollOne: minimumRoll });
+    assert.ok(volley?.madeAttack);
+    assert.equal(volley.heroDied, false);
+    assert.equal(dagger.quan, 2);
+    assert.ok(target.mhp < 30);
+    assert.equal(floorObjectQuantityAt(level, 12, 10, DAGGER), 1);
+    assert.equal(game._thrownObject, null);
 });
-
-test('enchantment helps a monster hit with a thrown dagger', async () => {
-    const damage = [];
-    for (const spe of [0, 8]) {
-        freshRangedCombatRoom();
-        const dagger = uninitializedObject(DAGGER, { spe });
-        const orc = await combatant('orc', { inventory: [dagger] });
-        const captain = await combatant('captain', { x: 12 });
-        const health = captain.mhp;
-        const options = { random: () => 1, rollOne: range => range };
-
-        const attack = await throwMonsterWeaponAtMonster(orc, captain, game, options);
-        await finishRangedAttacks([attack], game, options);
-
-        damage.push(health - captain.mhp);
+void test('spending the slot to ready a launcher is a native miss without a projectile', async () => {
+    projectileRoom();
+    const arrows = await uninitializedObject(ARROW, { quan: 4 });
+    const bow = await uninitializedObject(BOW);
+    const source = await combatant('orc', { inventory: [arrows, bow] });
+    source.weaponCheck = NEED_WEAPON;
+    const target = await combatant('lichen', { x: 12, hitPoints: 30 });
+    const result = await resolveMonsterCombatThrow(source, target, { state: game });
+    assert.equal(result.nativeResult, M_ATTK_MISS);
+    assert.equal(source.mw, bow);
+    assert.equal(arrows.quan, 4);
+    assert.equal(target.mhp, 30);
+});
+void test('a monster cannot shoot another monster through intervening stone', async () => {
+    const level = projectileRoom();
+    const dagger = await uninitializedObject(DAGGER, { quan: 3 });
+    const source = await combatant('orc', { inventory: [dagger] });
+    const target = await combatant('lichen', { x: 12, hitPoints: 30 });
+    level.requireAt(11, 10).typ = STONE;
+    vision_note_blocker_change(11, 10);
+    vision_recalc(0);
+    const result = await resolveMonsterCombatThrow(source, target, { state: game });
+    assert.equal(result.nativeResult, M_ATTK_MISS);
+    assert.equal(target.mhp, 30);
+    assert.equal(dagger.quan, 3);
+});
+void test('polearms are not applied against monster targets', async () => {
+    projectileRoom();
+    const source = await combatant('soldier');
+    await equipMonsterObject(source, await uninitializedObject(OBJECT_NAMES.indexOf('halberd')), W_WEP);
+    source.weaponCheck = NO_WEAPON_WANTED;
+    const target = await combatant('lichen', { x: 12 });
+    const health = target.mhp;
+    const result = await resolveMonsterCombatThrow(source, target, { state: game });
+    assert.equal(result.nativeResult, M_ATTK_MISS);
+    assert.equal(target.mhp, health);
+});
+void test('launcher range prevents distant shots even along a clear diagonal', async () => {
+    projectileRoom();
+    const arrows = await uninitializedObject(ARROW, { quan: 4 });
+    const source = await combatant('orc', { x: 8, y: 6, inventory: [arrows] });
+    await equipMonsterObject(source, await uninitializedObject(BOW), W_WEP);
+    source.weaponCheck = NO_WEAPON_WANTED;
+    const target = await combatant('lichen', { x: 13, y: 11 });
+    const result = await resolveMonsterCombatThrow(source, target, { state: game });
+    assert.equal(result.nativeResult, M_ATTK_MISS);
+    assert.equal(arrows.quan, 4);
+});
+void test('a fleeing target can make its pursuer withhold the throw', async () => {
+    projectileRoom();
+    const daggers = await uninitializedObject(DAGGER, { quan: 3 });
+    const source = await combatant('orc', { inventory: [daggers] });
+    const target = await combatant('lichen', { x: 12 });
+    target.mflee = 1;
+    const result = await resolveMonsterCombatThrow(source, target, { state: game, random: ordinaryChoices });
+    assert.equal(result.nativeResult, M_ATTK_MISS);
+    assert.equal(daggers.quan, 3);
+});
+void test('a poisoned dart harms susceptible targets but resistance prevents its extra damage', async () => {
+    const losses = [];
+    for (const species of ['lichen', 'green dragon']) {
+        projectileRoom();
+        const source = await combatant('orc');
+        const target = await combatant(species, { x: 12, hitPoints: 50 });
+        const dart = await uninitializedObject(DART, { opoisoned: 1 });
+        await throwMonsterProjectile(source, dart, {
+            state: game, dx: 1, dy: 0, range: 3, target,
+            random: ordinaryChoices, rollOne: minimumRoll,
+        });
+        losses.push(50 - target.mhp);
     }
-
-    assert.equal(damage[0], 0, 'the ordinary dagger should miss');
-    assert.ok(damage[1] > 0, 'the enchanted dagger should hit');
+    const [poisoned, resistant] = losses;
+    assert.ok(poisoned !== undefined && resistant !== undefined);
+    assert.equal(poisoned, resistant + 1);
 });
-
-test('a poisoned dart adds poison damage to a susceptible monster',
-    async () => {
-        freshRangedCombatRoom({ gameplaySeed: 1n });
-        const dart = uninitializedObject(DART, { opoisoned: 1 });
-        const orc = await combatant('orc', {
-            tame: true,
-            inventory: [dart],
-        });
-        const target = await combatant('purple worm', {
-            x: 12,
-            hitPoints: 20,
-        });
-        const options = { random: () => 1, rollOne: () => 1 };
-
-        const attack = await throwMonsterWeaponAtMonster(
-            orc, target, game, options,
-        );
-        await finishRangedAttacks([attack], game, options);
-
-        assert.equal(target.mhp, 18);
+void test('deadly projectile poison resolves actual death without hero kill credit during a monster turn', async () => {
+    projectileRoom();
+    const source = await combatant('orc');
+    const target = await combatant('lichen', { x: 12, hitPoints: 50 });
+    const dart = await uninitializedObject(DART, { opoisoned: 1 });
+    const shot = await throwMonsterProjectile(source, dart, {
+        state: game, dx: 1, dy: 0, range: 3, target, rollOne: minimumRoll,
+        random: bound => bound === 30 ? 0 : ordinaryChoices(bound),
     });
-
-test('a silver dagger sears a vampire', async () => {
-    freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
-    const dagger = uninitializedObject(SILVER_DAGGER);
-    const orc = await combatant('orc', {
-        tame: true,
-        inventory: [dagger],
-    });
-    const vampire = await combatant('vampire', {
-        x: 12,
-        hitPoints: 100,
-    });
-    const rolls = [1, 4, 20];
-    const options = { random: () => 1, rollOne: () => rolls.shift() };
-
-    const attack = await throwMonsterWeaponAtMonster(
-        orc, vampire, game, options,
-    );
-    const messages = [];
-    await presentMonsterProjectileShot(
-        attack.shots[0], PROJECTILE_GLYPH, game, {
-            publish: async message => messages.push(message),
-        },
-    );
-
-    assert.equal(vampire.mhp, 76);
-    assert.equal(messages.length, 2);
-    assert.match(messages[0], /^The silver dagger hits the /);
-    assert.match(messages[1], /^The silver sears .*flesh!$/);
+    assert.equal(shot.targetDied, true);
+    assert.equal(target.dead, true);
+    assert.equal(game.u.uconduct?.killer ?? 0, 0);
 });
-
-test('a silver dagger sears a lycanthropic hero', async () => {
-    freshRangedCombatRoom({
-        heroX: 12,
-        heroY: 10,
-        gameplaySeed: 1n,
-        hero: {
-            uac: 30,
-            uhp: 100,
-            uhpmax: 100,
-            ulycn: MONSTER_NAME.indexOf('werewolf'),
-        },
-    });
-    const dagger = uninitializedObject(SILVER_DAGGER);
-    const orc = await combatant('orc', {
-        inventory: [dagger],
-    });
-    const attack = throwMonsterWeaponAtHero(orc, game, dagger, {
-        random: () => 1,
-        rollOne: range => range,
-    });
+void test('silver missiles deal their silver damage and show searing feedback', async () => {
+    projectileRoom();
+    const source = await combatant('orc');
+    const target = await combatant('vampire', { x: 12, hitPoints: 80 });
+    const dagger = await uninitializedObject(SILVER_DAGGER);
     const messages = [];
-
-    await hitHeroWithMonsterProjectile(attack.shots[0], game, {
-        publish: async message => messages.push(message),
-        random: () => 1,
-        rollOne: range => range,
+    await throwMonsterProjectile(source, dagger, {
+        state: game, dx: 1, dy: 0, range: 3, target, rollOne: minimumRoll,
+        random: ordinaryChoices, publish: message => { messages.push(message); },
     });
-
-    assert.equal(game.u.uhp, 76);
-    assert.ok(messages.includes('The silver sears your flesh!'));
+    assert.ok(target.mhp <= 78);
+    assert.ok(messages.some(message => /silver sears/.test(message)));
 });
-
-test('a cream pie blinds a monster without hurting it', async () => {
-    freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
-    const pie = uninitializedObject(CREAM_PIE);
-    const orc = await combatant('orc', {
-        tame: true,
-        inventory: [pie],
+void test('a cream pie blinds its real monster target without removing HP', async () => {
+    projectileRoom();
+    const source = await combatant('Keystone Kop');
+    const target = await combatant('orc', { x: 12, hitPoints: 30 });
+    const pie = await uninitializedObject(CREAM_PIE);
+    await throwMonsterProjectile(source, pie, {
+        state: game, dx: 1, dy: 0, range: 3, target, random: ordinaryChoices, rollOne: minimumRoll,
     });
-    const target = await combatant('jackal', { x: 12 });
-    const hitPointsBefore = target.mhp;
-
-    const attack = await throwMonsterWeaponAtMonster(orc, target, game, {
-        random: () => 1,
-        rollOne: () => 1,
-    });
-    const shot = attack.shots[0];
-    const messages = [];
-    await presentMonsterProjectileShot(shot, PROJECTILE_GLYPH, game, {
-        publish: async message => messages.push(message),
-    });
-    await finishMonsterProjectile(shot, game, { random: () => 0 });
-
-    assert.equal(target.mhp, hitPointsBefore);
+    assert.equal(target.mhp, 30);
     assert.equal(target.mcansee, 0);
     assert.equal(target.mblinded, 21);
     assert.equal(pie.where, 'gone');
-    assert.deepEqual(messages, [
-        'The cream pie hits the jackal.',
-        'The jackal is blinded by the pie.',
-    ]);
 });
-
-test('a cockatrice egg turns an intervening monster into a statue',
-    async () => {
-        freshRangedCombatRoom({
-            heroX: 12,
-            heroY: 10,
-            gameplaySeed: 1n,
-            recalculateVision: true,
-        });
-        const egg = uninitializedObject(EGG, {
-            corpsenm: 10,
-            known: true,
-        });
-        const orc = await combatant('orc', {
-            inventory: [egg],
-        });
-        const target = await combatant('jackal', {
-            x: 11,
-        });
-        const attack = throwMonsterWeaponAtHero(orc, game, egg, {
-            random: () => 1,
-            rollOne: () => 1,
-        });
-        const shot = attack.shots[0];
-        const messages = [];
-        const publish = async message => messages.push(message);
-
-        await presentMonsterProjectileShot(
-            shot, PROJECTILE_GLYPH, game, { publish },
-        );
-        const result = await finishMonsterProjectileHit(shot, game, {
-            publish,
-            finishMonsterDeath: (monster, death) =>
-                finishEnvironmentalMonsterDeath(monster, game, {
-                    noCorpse: death.noCorpse,
-                    publish,
-                }),
-        });
-        await finishMonsterProjectile(shot, game, { random: () => 0 });
-
-        assert.equal(result.deathFinished, true);
-        assert.equal(game.level.monsters.includes(target), false);
-        assert.equal(
-            floorObjectsAt(game.level, 11, 10).some(
-                object => object.otyp === STATUE
-                    && object.corpsenm === target.mnum,
-            ),
-            true,
-        );
-        assert.equal(egg.where, 'gone');
-        assert.deepEqual(messages, [
-            'Splat!  The jackal is hit with a cockatrice egg!',
-            'The jackal is slowing down.',
-            'The jackal turns to stone.',
-        ]);
+void test('a petrifying egg turns an intervening monster into a statue during flight', async () => {
+    const level = projectileRoom();
+    const source = await combatant('orc');
+    const blocker = await combatant('orc', { x: 11, hitPoints: 30 });
+    const target = await combatant('lichen', { x: 13, hitPoints: 30 });
+    const egg = await uninitializedObject(EGG, { corpsenm: MONSTER_NAME.indexOf('cockatrice') });
+    await throwMonsterProjectile(source, egg, {
+        state: game, dx: 1, dy: 0, range: 4, target, random: ordinaryChoices, rollOne: minimumRoll,
     });
-
-test('a monster eats a lizard corpse before a cockatrice egg petrifies it',
-    async () => {
-        freshRangedCombatRoom({
-            heroX: 12,
-            heroY: 10,
-            gameplaySeed: 1n,
-            recalculateVision: true,
-        });
-        const egg = uninitializedObject(EGG, {
-            corpsenm: 10,
-            known: true,
-        });
-        const lizard = uninitializedObject(CORPSE, {
-            corpsenm: MONSTER_NAME.indexOf('lizard'),
-        });
-        const orc = await combatant('orc', {
-            inventory: [egg],
-        });
-        const target = await combatant('jackal', {
-            x: 11,
-            hitPoints: 12,
-            inventory: [lizard],
-        });
-        target.movement = 12;
-        const attack = throwMonsterWeaponAtHero(orc, game, egg, {
-            random: () => 1,
-            rollOne: () => 1,
-        });
-        const shot = attack.shots[0];
-        const messages = [];
-        const publish = async message => messages.push(message);
-
-        await presentMonsterProjectileShot(
-            shot, PROJECTILE_GLYPH, game, { publish },
-        );
-        await finishMonsterProjectileHit(shot, game, {
-            publish,
-            rollOne: () => 1,
-            finishMonsterDeath: (monster, death) =>
-                finishEnvironmentalMonsterDeath(monster, game, {
-                    noCorpse: death.noCorpse,
-                    publish,
-                }),
-        });
-        await finishMonsterProjectile(shot, game, { random: () => 0 });
-
-        assert.equal(target.mhp, 12);
-        assert.equal(target.inventory.includes(lizard), false);
-        assert.equal(target.movement, 0);
-        assert.equal(
-            floorObjectsAt(game.level, 11, 10).some(
-                object => object.otyp === STATUE,
-            ),
-            false,
-        );
-        assert.deepEqual(messages, [
-            'Splat!  The jackal is hit with a cockatrice egg!',
-            'The jackal is slowing down.',
-            'The jackal eats a lizard corpse.',
-            'The jackal seems limber!',
-        ]);
-    });
-
-test('poison resistance stops the poison on a thrown dart', async () => {
-    freshRangedCombatRoom({
-        gameplaySeed: 1n,
-        recalculateVision: true,
-    });
-    const dart = uninitializedObject(DART, { opoisoned: 1 });
-    const orc = await combatant('orc', {
-        tame: true,
-        inventory: [dart],
-    });
-    const target = await combatant('green dragon', {
-        x: 12,
-        hitPoints: 20,
-    });
-    const options = { random: () => 1, rollOne: () => 1 };
-
-    const attack = await throwMonsterWeaponAtMonster(
-        orc, target, game, options,
-    );
-    const messages = [];
-    await presentMonsterProjectileShot(
-        attack.shots[0],
-        PROJECTILE_GLYPH,
-        game,
-        { publish: async message => messages.push(message) },
-    );
-
-    assert.equal(target.mhp, 19);
-    assert.deepEqual(messages, [
-        'The poisoned dart hits the green dragon.',
-        "The poison doesn't seem to affect the green dragon.",
-    ]);
-});
-
-test('deadly poison on a thrown dart kills the monster', async () => {
-    freshRangedCombatRoom({
-        gameplaySeed: 1n,
-        recalculateVision: true,
-    });
-    const dart = uninitializedObject(DART, { opoisoned: 1 });
-    const orc = await combatant('orc', {
-        tame: true,
-        inventory: [dart],
-    });
-    const target = await combatant('purple worm', {
-        x: 12,
-        hitPoints: 20,
-    });
-    const options = { random: () => 0, rollOne: () => 1 };
-
-    const attack = await throwMonsterWeaponAtMonster(
-        orc, target, game, options,
-    );
-    const messages = [];
-    await presentMonsterProjectileShot(
-        attack.shots[0],
-        PROJECTILE_GLYPH,
-        game,
-        { publish: async message => messages.push(message) },
-    );
-
-    assert.equal(target.mhp, 0);
-    assert.deepEqual(messages, [
-        'The poisoned dart hits the purple worm.',
-        'The poison was deadly...',
-        'The purple worm is killed!',
-    ]);
-});
-
-test('a tame orc shoots an arrow with its bow', async () => {
-    freshRangedCombatRoom({ gameplaySeed: 1n });
-    const arrow = uninitializedObject(ARROW);
-    const bow = uninitializedObject(BOW);
-    const orc = await combatant('orc', { tame: true });
-    equipMonsterObject(orc, arrow, 0);
-    equipMonsterObject(orc, bow, W_WEP);
-    const target = await combatant('jackal', { x: 12, hitPoints: 12 });
-
-    const action = await takeMonsterTurn(orc, game);
-    await finishRangedAttacks(action.movement.rangedAttacks, game, {
-        random: () => 0,
-    });
-
-    assert.deepEqual([orc.mx, orc.my], [9, 10]);
-    assert.ok(target.mhp < 12);
-    assert.equal(orc.mw, bow);
-    assert.equal(orc.inventory.includes(arrow), false);
-    assert.equal(
-        floorObjectsAt(game.level, 12, 10).some(
-            object => object.otyp === ARROW,
-        ),
-        true,
-    );
-});
-
-test('a hostile monster can throw a dagger at the hero and land it',
-    async () => {
-        freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
-        const dagger = uninitializedObject(DAGGER);
-        const orc = await combatant('orc', {
-            inventory: [dagger],
-        });
-        const hitPointsBefore = game.u.uhp;
-
-        const attack = throwMonsterWeaponAtHero(orc, game, dagger, {
-            random: () => 1,
-            rollOne: () => 1,
-        });
-        await finishRangedAttacks([attack], game, {
-            random: () => 1,
-            rollOne: () => 1,
-        });
-
-        assert.equal(game.u.uhp, hitPointsBefore - 1);
-        assert.equal(orc.inventory.includes(dagger), false);
-
-        assert.equal(
-            floorObjectsAt(game.level, game.u.ux, game.u.uy).includes(dagger),
-            true,
-        );
-    });
-
-test('a cream pie blinds the hero without hurting them', async () => {
-    freshRangedCombatRoom({
-        heroX: 12,
-        heroY: 10,
-        hero: { uhp: 12, uhpmax: 12 },
-        gameplaySeed: 1n,
-    });
-    const pie = uninitializedObject(CREAM_PIE);
-    const orc = await combatant('orc', {
-        inventory: [pie],
-    });
-    const attack = throwMonsterWeaponAtHero(orc, game, pie, {
-        random: () => 1,
-        rollOne: () => 1,
-    });
-    const messages = [];
-
-    await finishRangedAttacks([attack], game, {
-        publish: async message => messages.push(message),
-        random: () => 1,
-        rollOne: () => 5,
-    });
-
-    assert.equal(game.u.uhp, 12);
-    assert.equal(game.u.blindTurns, 5);
-    assert.equal(game.u.ucreamed, 5);
-    assert.equal(pie.where, 'gone');
-    assert.ok(messages.includes("Yecch!  You've been creamed."));
-});
-
-test('a cockatrice egg starts petrifying the hero', async () => {
-    freshRangedCombatRoom({
-        heroX: 12,
-        heroY: 10,
-        hero: { uhp: 12, uhpmax: 12 },
-        gameplaySeed: 1n,
-    });
-    const egg = uninitializedObject(EGG, {
-        corpsenm: 10,
-        known: true,
-    });
-    const orc = await combatant('orc', {
-        inventory: [egg],
-    });
-    const attack = throwMonsterWeaponAtHero(orc, game, egg, {
-        random: () => 1,
-        rollOne: () => 1,
-    });
-
-    await finishRangedAttacks([attack], game, { random: () => 1, rollOne: () => 1 });
-
-    assert.equal(game.u.uhp, 12);
-    assert.equal(game.u.stonedTurns, 5);
+    assert.equal(blocker.dead, true);
+    assert.equal(target.mhp, 30);
+    assert.ok(floorObjectsAt(level, 11, 10).some(object => object.otyp === STATUE));
     assert.equal(egg.where, 'gone');
 });
-
-test('a poisoned dart damages the hero after its ordinary hit', async () => {
-    freshRangedCombatRoom({
-        heroX: 12,
-        heroY: 10,
-        hero: { uhp: 12, uhpmax: 12 },
-        gameplaySeed: 1n,
+void test('a defender consumes its lizard cure before a petrifying egg can make a statue', async () => {
+    const level = projectileRoom();
+    const source = await combatant('orc');
+    const target = await combatant('orc', { x: 12, hitPoints: 30 });
+    const cure = await untimedCorpse(MONSTER_NAME.indexOf('lizard'));
+    await addObjectToMonsterInventory(target, cure);
+    const egg = await uninitializedObject(EGG, { corpsenm: MONSTER_NAME.indexOf('cockatrice') });
+    await throwMonsterProjectile(source, egg, {
+        state: game, dx: 1, dy: 0, range: 3, target, random: ordinaryChoices, rollOne: minimumRoll,
     });
-    const dart = uninitializedObject(DART, { opoisoned: 1 });
-    const orc = await combatant('orc', {
-        inventory: [dart],
-    });
-    const attack = throwMonsterWeaponAtHero(orc, game, dart, {
-        random: () => 1,
-        rollOne: () => 2,
-    });
-
-    await hitHeroWithMonsterProjectile(attack.shots[0], game, {
-        random: range => range === 30 ? 6 : 1,
-        rollOne: () => 2,
-    });
-
-    assert.equal(game.u.uhp, 8);
-});
-
-test('impact life saving limits thrown poison to strength loss', async () => {
-    freshRangedCombatRoom({
-        heroX: 12,
-        heroY: 10,
-        gameplaySeed: 1n,
-    });
-    const amulet = addInventoryObject(AMULET_OF_LIFE_SAVING);
-    wearHeroAccessory(amulet, 'uamul');
-    game.u.uhp = 1;
-    const originalStrength = game.u.acurr.a[A_STR];
-    const dart = uninitializedObject(DART, { opoisoned: 1 });
-    const orc = await combatant('orc', {
-        inventory: [dart],
-    });
-    const attack = throwMonsterWeaponAtHero(orc, game, dart, {
-        random: () => 1,
-        rollOne: () => 1,
-    });
-    pushKeys(' '.repeat(12));
-
-    await finishRangedAttacks([attack], game, { random: () => 1, rollOne: () => 1 });
-    assert.ok(game.u.uhp > 0);
-    assert.equal(game.u.acurr.a[A_STR], originalStrength - 1);
-    assert.equal(game.inventory.includes(amulet), false);
-});
-
-test('a hostile rogue throws its full dagger volley at the hero', async () => {
-    freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
-    const daggers = uninitializedObject(DAGGER, { quan: 4 });
-    const rogue = await combatant('rogue', {
-        inventory: [daggers],
-    });
-    const hitPointsBefore = game.u.uhp;
-    const rolls = [2, 1, 1, 1, 1, 1, 1];
-    const options = {
-        random: () => 1,
-        rollOne: () => rolls.shift(),
-    };
-
-    const attack = throwMonsterWeaponAtHero(
-        rogue, game, daggers, options,
-    );
-    await finishRangedAttacks([attack], game, options);
-
-    assert.equal(game.u.uhp, hitPointsBefore - 3);
-    assert.equal(
-        floorObjectQuantityAt(game.level, game.u.ux, game.u.uy, DAGGER),
-        3,
-    );
-    assert.equal(daggers.quan, 1);
-});
-
-test('life saving lets a hostile monster finish its dagger volley', async () => {
-    freshRangedCombatRoom({ heroX: 12, heroY: 10, gameplaySeed: 1n });
-    const amulet = addInventoryObject(AMULET_OF_LIFE_SAVING);
-    wearHeroAccessory(amulet, 'uamul');
-    game.u.uhp = 1;
-    const daggers = uninitializedObject(DAGGER, { quan: 4 });
-    const rogue = await combatant('rogue', {
-        inventory: [daggers],
-    });
-    const rolls = [2, 1, 1, 1, 1, 1, 1];
-    const options = {
-        random: () => 1,
-        rollOne: () => rolls.shift(),
-    };
-    const attack = throwMonsterWeaponAtHero(
-        rogue, game, daggers, options,
-    );
-    pushKeys(' '.repeat(12));
-
-    await finishRangedAttacks([attack], game, options);
-
-    assert.ok(game.u.uhp > 0);
-    assert.equal(game.inventory.includes(amulet), false);
-    assert.equal(
-        floorObjectQuantityAt(game.level, game.u.ux, game.u.uy, DAGGER),
-        3,
-    );
-});
-
-test('a monster life-saves before the next dagger is thrown', async () => {
-    freshRangedCombatRoom({ gameplaySeed: 1n });
-    const daggers = uninitializedObject(DAGGER, { quan: 4 });
-    const rogue = await combatant('rogue', {
-        tame: true,
-        inventory: [daggers],
-    });
-    const amulet = uninitializedObject(AMULET_OF_LIFE_SAVING, {
-        owornmask: W_AMUL,
-        worn: true,
-    });
-    const target = await combatant('jackal', {
-        x: 12,
-        hitPoints: 1,
-    });
-    equipMonsterObject(target, amulet, W_AMUL);
-    const rolls = [2, 1, 1, 1, 1, 1, 1];
-    const options = {
-        random: () => 0,
-        rollOne: () => rolls.shift(),
-    };
-
-    const attack = await throwMonsterWeaponAtMonster(
-        rogue, target, game, options,
-    );
-
-    assert.equal(target.mhp, 0);
-    assert.equal(daggers.quan, 3);
-    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 0);
-
-    await finishEnvironmentalMonsterDeath(target, game, {
-        visible: false,
-        publish: async () => {},
-        random: () => 0,
-    });
-    await finishMonsterProjectile(attack.shots[0], game, { random: () => 0 });
-    let shot;
-    while ((shot = continueMonsterWeaponVolley(attack, game, options))) {
-        await finishMonsterProjectile(shot, game, { random: () => 0 });
-    }
-
-    assert.equal(game.level.monsters.includes(target), true);
+    assert.equal(cure.where, 'gone');
     assert.ok(target.mhp > 0);
-    assert.equal(target.inventory.includes(amulet), false);
-    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 3);
-    assert.equal(daggers.quan, 1);
+    assert.equal(floorObjectsAt(level, 12, 10).some(object => object.otyp === STATUE), false);
 });
-
-test('a missed intervening monster does not hide the later hit', async () => {
-    freshRangedCombatRoom({ gameplaySeed: 1n, recalculateVision: true });
-    const dagger = uninitializedObject(DAGGER);
-    const orc = await combatant('orc', {
-        tame: true,
-        inventory: [dagger],
+void test('a missed intervening monster does not stop a missile aimed at a later monster', async () => {
+    projectileRoom();
+    const source = await combatant('orc');
+    source.m_lev = 30;
+    const blocker = await combatant('arch-lich', { x: 11, hitPoints: 100 });
+    const target = await combatant('lichen', { x: 13, hitPoints: 100 });
+    const dagger = await uninitializedObject(DAGGER);
+    const shot = await throwMonsterProjectile(source, dagger, {
+        state: game, dx: 1, dy: 0, range: 4, target, archer: source,
+        random: ordinaryChoices, rollOne: sides => sides,
     });
-    const bystander = await combatant('goblin', {
-        x: 11,
-        hitPoints: 12,
-    });
-    const target = await combatant('jackal', {
-        x: 13,
-        hitPoints: 12,
-    });
-    const rolls = [20, 1, 1];
-
-    const attack = await throwMonsterWeaponAtMonster(orc, target, game, {
-        random: () => 1,
-        rollOne: () => rolls.shift(),
-    });
-    const messages = [];
-    await presentMonsterProjectileShot(
-        attack.shots[0],
-        PROJECTILE_GLYPH,
-        game,
-        { publish: async message => messages.push(message) },
-    );
-
-    assert.equal(bystander.mhp, 12);
-    assert.equal(target.mhp, 11);
-    assert.deepEqual(messages, [
-        'The dagger misses the goblin.',
-        'The dagger hits the jackal.',
-    ]);
-});
-
-test('a crossbow bolt gets its source damage against a large monster',
-    async () => {
-        freshRangedCombatRoom({ gameplaySeed: 1n });
-        const bolt = uninitializedObject(CROSSBOW_BOLT);
-        const crossbow = uninitializedObject(CROSSBOW);
-        const orc = await combatant('orc', { tame: true });
-        equipMonsterObject(orc, bolt, 0);
-        equipMonsterObject(orc, crossbow, W_WEP);
-        const target = await combatant('purple worm', {
-            x: 12,
-            hitPoints: 100,
-        });
-
-        const options = {
-            random: () => 0,
-            rollOne: range => range === 20 ? 1 : range,
-        };
-        const attack = await throwMonsterWeaponAtMonster(
-            orc, target, game, options,
-        );
-        await finishRangedAttacks([attack], game, options);
-
-        assert.equal(target.mhp, 93);
-    });
-
-test('an elven lord fires every arrow in a three-shot volley', async () => {
-    freshRangedCombatRoom({ gameplaySeed: 1n });
-    const arrows = uninitializedObject(ELVEN_ARROW, { quan: 3 });
-    const bow = uninitializedObject(ELVEN_BOW);
-    const archer = await combatant('elf-noble', { tame: true });
-    equipMonsterObject(archer, arrows, 0);
-    equipMonsterObject(archer, bow, W_WEP);
-    const target = await combatant('jackal', { x: 12, hitPoints: 100 });
-
-    const options = {
-        random: () => 0,
-        rollOne: range => range === 20 ? 1 : range,
-    };
-    const attack = await throwMonsterWeaponAtMonster(
-        archer, target, game, options,
-    );
-    await finishRangedAttacks([attack], game, options);
-
-    assert.equal(floorObjectQuantityAt(game.level, 12, 10, ELVEN_ARROW), 3);
-    assert.equal(archer.inventory.includes(arrows), false);
+    assert.equal(blocker.mhp, 100);
     assert.ok(target.mhp < 100);
+    assert.equal(shot.target, target);
+    assert.equal(dagger.ox, 13);
 });
-
-test('a rogue player monster gets its dagger volley bonus', async () => {
-    freshRangedCombatRoom({ gameplaySeed: 1n });
-    const daggers = uninitializedObject(DAGGER, { quan: 4 });
-    const rogue = await combatant('rogue', {
-        tame: true,
-        inventory: [daggers],
+void test('worm-tail collision uses its occupied square for hit context and landing', async () => {
+    const level = projectileRoom();
+    const source = await combatant('orc');
+    const worm = await createMonsterAt('long worm', 13, 11, NO_MINVENT | MM_NOTAIL);
+    initializeMonsterWormBody(worm, { segmentCount: 0 });
+    assertWormBody(worm);
+    worm.wormSegments = [{ x: 12, y: 10 }];
+    worm.mhp = worm.mhpmax = 30;
+    const dagger = await uninitializedObject(DAGGER);
+    await throwMonsterProjectile(source, dagger, {
+        state: game, dx: 1, dy: 0, range: 4, target: worm, random: ordinaryChoices, rollOne: minimumRoll,
     });
-    const target = await combatant('jackal', {
-        x: 12,
-        hitPoints: 100,
-    });
-
-    const options = {
-        random: () => 0,
-        rollOne: range => range,
-    };
-    const attack = await throwMonsterWeaponAtMonster(
-        rogue, target, game, options,
-    );
-    await finishRangedAttacks([attack], game, options);
-
-    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 3);
-    assert.equal(daggers.quan, 1);
+    assert.ok(worm.mhp < 30);
+    assert.equal(game.notonhead, true);
+    assert.deepEqual(game.bhitpos, { x: 12, y: 10 });
+    assert.ok(floorObjectsAt(level, 12, 10).includes(dagger));
 });
-
-test('a second weapon attack starts after the first dagger lands', async () => {
-    freshRangedCombatRoom({ gameplaySeed: 1n });
-    const daggers = uninitializedObject(DAGGER, { quan: 2 });
-    const captain = await combatant('orc-captain', {
-        tame: true,
-        inventory: [daggers],
+void test('a monster-targeted shot can strike the hero standing in its path', async () => {
+    projectileRoom();
+    requirePlayingGame(game);
+    game.u.ux = 11;
+    game.u.uy = 10;
+    const source = await combatant('orc');
+    const target = await combatant('lichen', { x: 13, hitPoints: 30 });
+    const health = game.u.uhp;
+    const dagger = await uninitializedObject(DAGGER);
+    const shot = await throwMonsterProjectile(source, dagger, {
+        state: game, dx: 1, dy: 0, range: 4, target, random: ordinaryChoices, rollOne: minimumRoll,
     });
-    const target = await combatant('jackal', {
-        x: 12,
-        hitPoints: 100,
-    });
-    const options = { random: () => 0, rollOne: () => 1 };
-
-    const turn = await beginMonsterRangedTurn(captain, target, game, options);
-    const firstAttack = turn.current.attack;
-
-    assert.equal(daggers.quan, 1);
-    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 0);
-
-    await finishRangedAttacks([firstAttack], game, options);
-    const hitPointsAfterFirstAttack = target.mhp;
-    const secondAttack = (await continueMonsterRangedTurn(
-        turn, game, options,
-    )).attack;
-
-    assert.ok(target.mhp < hitPointsAfterFirstAttack);
-    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 1);
-
-    await finishRangedAttacks([secondAttack], game, options);
-
-    assert.equal(captain.inventory.includes(daggers), false);
-    assert.equal(floorObjectQuantityAt(game.level, 12, 10, DAGGER), 2);
+    assert.equal(shot.heroTarget, true);
+    assert.ok(game.u.uhp < health);
+    assert.equal(target.mhp, 30);
 });
+void test('a cursed throw can land at its source when it slips with no remaining direction', async () => {
+    const level = projectileRoom();
+    const source = await combatant('orc');
+    const dagger = await uninitializedObject(DAGGER, { cursed: true });
+    await throwMonsterProjectile(source, dagger, {
+        state: game, dx: 1, dy: 0, range: 4,
+        random: bound => bound === 7 ? 0 : ordinaryChoices(bound),
+    });
+    assert.ok(floorObjectsAt(level, source.mx, source.my).includes(dagger));
+    assert.equal(game._thrownObject, null);
+});
+void test('a large projectile stops before iron bars', async () => {
+    const level = projectileRoom();
+    level.requireAt(10, 10).typ = IRONBARS;
+    const source = await combatant('giant');
+    const boulder = await uninitializedObject(BOULDER);
+    await throwMonsterProjectile(source, boulder, {
+        state: game, dx: 1, dy: 0, range: 4, random: ordinaryChoices,
+    });
+    assert.ok(floorObjectsAt(level, 9, 10).includes(boulder));
+});
+void test('a rogue completes its multishot volley even after the intended target dies', async () => {
+    const level = projectileRoom();
+    const daggers = await uninitializedObject(DAGGER, { quan: 4 });
+    const source = await combatant('rogue', { inventory: [daggers] });
+    const target = await combatant('lichen', { x: 12, hitPoints: 1 });
+    const volley = await throwMonsterWeaponAtMonster(source, target, game, {
+        random: ordinaryChoices, rollOne: minimumRoll,
+    });
+    assert.ok(volley?.madeAttack);
+    assert.equal(volley.volley, 2);
+    assert.equal(volley.shots.length, 2);
+    assert.equal(target.dead, true);
+    assert.equal(daggers.quan, 2);
+    assert.equal(floorObjectQuantityAt(level, 12, 10, DAGGER), 2);
+});
+void test('life saving completes before the next missile in a volley arrives', async () => {
+    projectileRoom();
+    const daggers = await uninitializedObject(DAGGER, { quan: 4 });
+    const source = await combatant('rogue', { inventory: [daggers] });
+    const target = await combatant('orc', { x: 12, hitPoints: 1 });
+    target.mhpmax = 30;
+    const amulet = await equipMonsterObject(target, await uninitializedObject(AMULET_OF_LIFE_SAVING), W_AMUL);
+    const volley = await throwMonsterWeaponAtMonster(source, target, game, { random: ordinaryChoices, rollOne: minimumRoll });
+    assert.ok(volley?.madeAttack);
+    assert.equal(volley.shots.length, 2);
+    assert.equal(amulet.where, 'gone');
+    assert.ok(target.mhp > 0 && target.mhp < target.mhpmax);
+    assert.equal(volley.shots[0]?.targetDied, false);
+});
+void test('native multishot accounts for elven equipment and launcher enchantment', async () => {
+    projectileRoom();
+    const source = await combatant('elf-lord');
+    const arrows = await uninitializedObject(ELVEN_ARROW, { quan: 8 });
+    const bow = await uninitializedObject(ELVEN_BOW, { spe: 5 });
+    const count = monsterVolleyCount(source, arrows, bow, sides => sides);
+    assert.equal(count, 7);
+});
+//# sourceMappingURL=monster_throw.test.js.map

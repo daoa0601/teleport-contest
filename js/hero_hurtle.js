@@ -1,86 +1,63 @@
 // Moving the hero through the air after a forceful action.
 // C ref: dothrow.c hurtle() and hurtle_step().
-
+import { endVoluntaryMultiTurn } from './command_state.js';
 import { heroHasWaterWalking } from './armor.js';
-import {
-    beginBallAndChainMove, finishBallAndChainMove, heroIsPunished,
-} from './ball.js';
-import {
-    D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS,
-    IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_WATERWALL, Is_waterlevel,
-    MAGIC_PORTAL, MOAT, TREE, TRAP_EXPLANATIONS,
-    TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd,
-    VIBRATING_SQUARE, W_NONPASSWALL,
-    is_hole, is_pit, isok,
-} from './const.js';
-import {
-    canSpotMonster, flush_screen, map_invisible, newsym,
-    plineWithContinuation,
-} from './display.js';
+import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, } from './ball.js';
+import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_WATERWALL, Is_waterlevel, MAGIC_PORTAL, MOAT, TREE, TRAP_EXPLANATIONS, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok, } from './const.js';
+import { canSpotMonster, flush_screen, glyphAt, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { finishHeroDeath } from './end.js';
-import { game } from './gstate.js';
-import {
-    blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason,
-} from './hack.js';
-import { triggerHeroTrap } from './hero_traps.js';
-import { igniteItems } from './light.js';
+import { game, requirePlayingGame } from './gstate.js';
+import { blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason, } from './hack.js';
+import { triggerHeroTrap, triggerHeroTrapAt } from './hero_traps.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
-import {
-    monsterWearsTorsoArmor, petrifyMonsterFromContact,
-} from './monster_stoning.js';
-import {
-    MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName,
-} from './monster_data.js';
+import { monsterWearsTorsoArmor, petrifyMonsterFromContact, } from './monster_stoning.js';
+import { MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName, } from './monster_data.js';
 import { BOULDER } from './object_data.js';
 import { loseHeroHp } from './hero_damage.js';
+import { placeHeroOnLevel } from './hero_location.js';
+import { monsterHasMapPosition } from './monster_location.js';
+import { monsterName, monsterObjectPronoun } from './monster_name.js';
+import { objectName } from './objnam.js';
 import { rnd } from './rng.js';
 import { stopRun } from './runmode.js';
 import { checkSpecialRoom } from './shk.js';
 import { touchPetrifies } from './stoning.js';
 import { inventoryWeight } from './weight.js';
-import { destroyFireInventory } from './zap.js';
 import { vision_recalc } from './vision.js';
-
+import { switchHeroTerrain } from './terrain_movement.js';
+import { walkPathCells } from './path_walk.js';
 const M1_WALLWALK = 0x00000008;
 const HUMAN_WEIGHT = 1450;
-
 function heroForm() {
+    requirePlayingGame(game);
     return Upolyd(game.u) ? game.u.umonnum : null;
 }
-
 function heroFormFlags() {
-    return MONSTER_FLAGS1[heroForm()] ?? 0;
+    const form = heroForm();
+    return form === null ? 0 : MONSTER_FLAGS1[form] ?? 0;
 }
-
 function heroBodyWeight(state = game) {
     const form = Upolyd(state.u)
         ? state.u.umonnum
-        : state.urace?.malenum ?? state.urace?.mnum;
-    return MONSTER_BODY_META[form]?.[0] ?? HUMAN_WEIGHT;
+        : state.urace?.mnum;
+    return form === undefined ? HUMAN_WEIGHT : MONSTER_BODY_META[form]?.[0] ?? HUMAN_WEIGHT;
 }
-
 export function kickRecoilRange(monsterMnum, state = game) {
     const targetWeight = MONSTER_BODY_META[monsterMnum]?.[0] ?? 0;
-    const movingWeight = Math.max(
-        1, heroBodyWeight(state) + inventoryWeight(state),
-    );
+    const movingWeight = Math.max(1, heroBodyWeight(state) + inventoryWeight(state));
     return Math.max(1, Math.trunc(3 * targetWeight / movingWeight));
 }
-
 function floorBoulder(x, y) {
     return (game.level?.objects?.[x]?.[y] || [])
         .find(object => object.otyp === BOULDER) || null;
 }
-
 function monsterAt(x, y) {
-    return game.level?.monsters?.find(monster =>
-        !monster.dead && (monster.mhp ?? 1) > 0
+    return game.level?.monsters?.find(monster => monsterHasMapPosition(monster) && !monster.dead && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y) || null;
 }
-
 function wallPassage(location) {
-    const hasAbility = !!(game.u?.passesWalls || game.u?.passes_walls
+    const hasAbility = !!(game.u.passesWalls
         || (heroFormFlags() & M1_WALLWALK));
     return {
         hasAbility,
@@ -88,30 +65,30 @@ function wallPassage(location) {
             && !((location.wall_info ?? 0) & W_NONPASSWALL),
     };
 }
-
 function obstacleReason(location, openDoorFrame) {
-    if (location.typ === TREE) return 'bumping into a tree';
-    if (openDoorFrame) return 'bumping into a door frame';
-    if (location.typ === DOOR) return 'bumping into a closed door';
+    if (location.typ === TREE)
+        return 'bumping into a tree';
+    if (openDoorFrame)
+        return 'bumping into a door frame';
+    if (location.typ === DOOR)
+        return 'bumping into a closed door';
     return 'bumping into a wall';
 }
-
 async function loseImpactHitPoints(amount, killer) {
-    if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
+    if (game.u.halfPhysicalDamage)
         amount = Math.trunc((amount + 1) / 2);
     return loseHeroHp(amount, killer);
 }
-
 function obstacleAt(x, y) {
     const hero = game.u;
     const location = game.level?.at?.(x, y);
-    if (!location) return null;
+    if (!location)
+        return null;
     const diagonal = hero.ux !== x && hero.uy !== y;
     const closedDoor = location.typ === DOOR
         && ((location.doormask ?? 0) & (D_CLOSED | D_LOCKED));
     const openDoorFrame = diagonal && location.typ === DOOR
-        && ((location.doormask ?? 0) & D_ISOPEN);
-
+        && !!((location.doormask ?? 0) & D_ISOPEN);
     const passage = wallPassage(location);
     if (!passage.hasAbility || !passage.mayPass) {
         if (IS_OBSTRUCTED(location.typ) || closedDoor || openDoorFrame) {
@@ -127,9 +104,10 @@ function obstacleAt(x, y) {
                 reason: 'crashing into iron bars',
             };
         }
-        if (floorBoulder(x, y)) {
+        const boulder = floorBoulder(x, y);
+        if (boulder) {
             return {
-                message: 'You bump into a boulder.  Ouch!',
+                message: `You bump into a ${objectName(boulder)}.  Ouch!`,
                 reason: 'bumping into a boulder',
             };
         }
@@ -140,8 +118,7 @@ function obstacleAt(x, y) {
             };
         }
     }
-
-    if (diagonal
+    if ((!passage.hasAbility || !passage.mayPass) && diagonal
         && heroBadRock(game, hero.ux, y)
         && heroBadRock(game, x, hero.uy)) {
         const tight = heroTightDiagonalReason(game);
@@ -156,16 +133,15 @@ function obstacleAt(x, y) {
     }
     return null;
 }
-
 // C test_move(TEST_MOVE), before a blow can start the hero hurtling.
 export function canKnockHeroToward(dx, dy) {
+    requirePlayingGame(game);
     const { ux, uy } = game.u;
     const x = ux + dx;
     const y = uy + dy;
     return isok(x, y) && !obstacleAt(x, y)
         && !(dx && dy && blocksDiagonalDoor(game.level.at(ux, uy), game.level.at(x, y)));
 }
-
 async function hitObstacle(obstacle, x, y, remaining) {
     await plineWithContinuation(obstacle.message);
     if (obstacle.followup)
@@ -173,42 +149,29 @@ async function hitObstacle(obstacle, x, y, remaining) {
     await loseImpactHitPoints(rnd(2 + remaining), obstacle.reason);
     wakeMonstersNear(x, y, 10);
 }
-
-function monsterName(monster) {
-    return monster.name || monsterTypeName(monster.mnum, !!monster.female);
-}
-
 function indefiniteName(name) {
     return `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
 }
-
-function indefiniteMonsterName(monster) {
-    if (monster.name) return monster.name;
-    return indefiniteName(monsterName(monster));
-}
-
 function heroWearsTorsoArmor() {
     return !!(game.uarmu || game.uarm || game.uarmc
         || game.u?.uarmu || game.u?.uarm || game.u?.uarmc);
 }
-
 async function collideWithMonster(monster, x, y, options) {
+    const glyph = glyphAt(x, y);
     monster.mundetected = 0;
-    const spotted = canSpotMonster(monster, x, y);
-    await plineWithContinuation(spotted
-        ? `You bump into ${indefiniteMonsterName(monster)}.`
-        : 'You find something by bumping into it.');
+    const name = monsterName(monster, { article: 'a', augmentIt: true });
+    await plineWithContinuation(glyph?.kind === 'monster' || glyph?.kind === 'invisible'
+        ? `You bump into ${name}.`
+        : `You find ${name} by bumping into ${monsterObjectPronoun(monster, { noIt: true })}.`);
     await wakeMonster(monster);
-    if (!canSpotMonster(monster, x, y)) map_invisible(x, y);
+    if (!canSpotMonster(monster))
+        map_invisible(x, y);
     await angerMonster(monster);
-
     if (touchPetrifies(monster.mnum) && !heroWearsTorsoArmor()
-        && !(game.u?.stoneResistance || game.u?.stone_resistance)) {
+        && !(game.u.stoneResistance)) {
         await plineWithContinuation('You turn to stone...');
         const died = await finishHeroDeath({
-            killer: `bumping into ${indefiniteName(monsterTypeName(
-                monster.mnum, !!monster.female,
-            ))}`,
+            killer: `bumping into ${indefiniteName(monsterTypeName(monster.mnum, !!monster.female))}`,
             deathVerb: 'turned to stone',
             deathLineShown: true,
         });
@@ -217,49 +180,60 @@ async function collideWithMonster(monster, x, y, options) {
             return;
         }
     }
-    if (touchPetrifies(heroForm()) && !monsterWearsTorsoArmor(monster)) {
+    const form = heroForm();
+    if (form !== null && touchPetrifies(form) && !monsterWearsTorsoArmor(monster)) {
         await petrifyMonsterFromContact(monster, {
             creditHero: true,
-            finishDeath: options.finishMonsterDeath,
+            finishDeath: options.finishMonsterDeath ?? undefined,
         });
     }
     wakeMonstersNear(x, y, 10);
 }
-
 function anchoredMessage() {
     const type = game.u?.utraptype;
-    if (type === TT_WEB) return 'You are anchored by the web.';
-    if (type === TT_LAVA) return 'You are anchored by the lava.';
+    if (type === TT_WEB)
+        return 'You are anchored by the web.';
+    if (type === TT_LAVA)
+        return 'You are anchored by the lava.';
     if (type === TT_BURIEDBALL)
         return 'You are anchored by the buried ball.';
     if (type === TT_INFLOOR)
         return 'You are anchored by the ground.';
     return 'You are anchored by the trap.';
 }
-
 function stopHurtle() {
     stopRun();
     game._helplessTurns = 0;
     game._helplessReason = null;
     game._helplessDoneMessage = null;
 }
-
 async function triggerLandingTrap(trap, options, remaining) {
-    if (!trap) return false;
+    requirePlayingGame(game);
+    if (!trap)
+        return false;
+    // Jump's final square is handled by teleds(), after the path walk.
+    if (options.jumping && remaining.value < 2)
+        return false;
     const before = {
         level: game.level, x: game.u.ux, y: game.u.uy,
     };
-    if (trap.ttyp === VIBRATING_SQUARE) {
+    const sokobanFall = game.level.flags.sokoban_rules
+        && (is_pit(trap.ttyp) || is_hole(trap.ttyp));
+    if (trap.ttyp === VIBRATING_SQUARE)
         await plineWithContinuation('The ground vibrates as you pass it.');
-        await triggerHeroTrap(trap, options);
-    } else if (trap.ttyp === FIRE_TRAP || trap.ttyp === MAGIC_PORTAL) {
-        await triggerHeroTrap(trap, options);
-    } else if (game.level?.flags?.sokoban_rules
-        && (is_pit(trap.ttyp) || is_hole(trap.ttyp))) {
-        await triggerHeroTrap(trap, options);
-        remaining.value = 0;
-        return true;
-    } else if (trap.tseen) {
+    if ([VIBRATING_SQUARE, FIRE_TRAP, MAGIC_PORTAL].includes(trap.ttyp) || sokobanFall) {
+        const result = sokobanFall && options.jumping
+            ? { died: false } : await triggerHeroTrap(trap, options);
+        if (result.died)
+            return true;
+        if (trap.ttyp === MAGIC_PORTAL)
+            return true;
+        if (sokobanFall) {
+            remaining.value = 0;
+            return !options.jumping;
+        }
+    }
+    else if (trap.tseen) {
         const name = TRAP_EXPLANATIONS[trap.ttyp] || 'trap';
         const article = /^[aeiou]/i.test(name) ? 'an' : 'a';
         await plineWithContinuation(`You pass right over ${article} ${name}.`);
@@ -267,71 +241,58 @@ async function triggerLandingTrap(trap, options, remaining) {
     return game.level !== before.level
         || game.u.ux !== before.x || game.u.uy !== before.y;
 }
-
 async function applyForcedLandingEffects(options) {
     await checkSpecialRoom();
-    const trap = game.level?.traps?.find(candidate =>
-        candidate.tx === game.u.ux && candidate.ty === game.u.uy);
-    if (trap) await triggerHeroTrap(trap, options);
+    return triggerHeroTrapAt(game.u.ux, game.u.uy, options);
 }
-
-async function settleLiquid(options) {
+async function settleLiquid(options, remaining) {
+    requirePlayingGame(game);
     const location = game.level?.at?.(game.u.ux, game.u.uy);
-    if (!location) return null;
+    if (!location)
+        return null;
     if (IS_LAVA(location.typ)) {
-        await plineWithContinuation('You move over some lava.');
+        if (!options.jumping || remaining.value >= 2)
+            await plineWithContinuation('You move over some lava.', { noRepeat: true });
         return null;
     }
-    if (!IS_POOL(location.typ) || game.u?.uinwater) return null;
-
+    if (!IS_POOL(location.typ) || game.u?.uinwater)
+        return null;
     const staysAboveWater = game.u?.levitating || game.u?.levitation
-        || game.u?.flying || game.u?.flight
-        || heroHasWaterWalking(game);
+        || game.u.flying
+        || heroHasWaterWalking(game) || options.jumping;
     if (!IS_WATERWALL(location.typ) && staysAboveWater) {
-        if (!Is_waterlevel(game.u?.uz)) {
-            await plineWithContinuation(
-                `You move over ${location.typ === MOAT ? 'a moat' : 'a pool'}.`,
-            );
+        if (!Is_waterlevel(game.u?.uz)
+            && (!options.jumping || remaining.value >= 2)) {
+            await plineWithContinuation(`You move over ${location.typ === MOAT ? 'a moat' : 'a pool'}.`, { noRepeat: true });
         }
         return null;
     }
-
     game._helplessTurns = 0;
     game._helplessReason = null;
     game._helplessDoneMessage = null;
     return heroLiquidEffects({
-        chooseTeleportDestination: options.chooseTeleportDestination,
+        chooseTeleportDestination: options.chooseTeleportDestination ?? null,
         applyLandingEffects: () => applyForcedLandingEffects(options),
-        burnInventory: damage => destroyFireInventory(damage, {
-            state: game,
-            publish: plineWithContinuation,
-        }),
-        igniteInventory: () => igniteItems(game.inventory, {
-            state: game,
-            publish: plineWithContinuation,
-        }),
     });
 }
-
 async function moveOneSquare(x, y, options, remaining) {
+    requirePlayingGame(game);
     if (!isok(x, y)) {
         await plineWithContinuation('You feel the spirits holding you back.');
         return false;
     }
-    if (!remaining.value) return false;
-
+    if (!remaining.value)
+        return false;
     const obstacle = obstacleAt(x, y);
     if (obstacle) {
         await hitObstacle(obstacle, x, y, remaining.value);
         return false;
     }
-
     const monster = monsterAt(x, y);
     if (monster) {
         await collideWithMonster(monster, x, y, options);
         return false;
     }
-
     const hero = game.u;
     const diagonal = hero.ux !== x && hero.uy !== y;
     if (diagonal && game.level?.flags?.sokoban_rules
@@ -340,53 +301,63 @@ async function moveOneSquare(x, y, options, remaining) {
         await plineWithContinuation('You come to an abrupt halt!');
         return false;
     }
-
-    const ballAndChain = beginBallAndChainMove(x, y);
+    const ballAndChain = await beginBallAndChainMove(x, y);
     if (ballAndChain?.blocked) {
-        await plineWithContinuation(ballAndChain.blockedMessage);
-        return false;
+        if (ballAndChain.blockedMessage)
+            await plineWithContinuation(ballAndChain.blockedMessage);
+        if (!options.jumping)
+            return false;
     }
-    if (ballAndChain) ballAndChain.causeDelay = false;
-
+    if (ballAndChain && !ballAndChain.blocked)
+        await finishBallAndChainMove(ballAndChain);
     const oldx = hero.ux;
     const oldy = hero.uy;
     hero.ux0 = oldx;
     hero.uy0 = oldy;
-    hero.ux = x;
-    hero.uy = y;
+    await placeHeroOnLevel(x, y);
     hero.umoved = true;
-    if (hero.usteed) {
-        hero.usteed.mx = x;
-        hero.usteed.my = y;
-    }
     newsym(oldx, oldy);
     vision_recalc(1);
-    newsym(x, y);
-    if (ballAndChain) finishBallAndChainMove(ballAndChain);
     await flush_screen(1);
+    const previousLocation = game.level.at(oldx, oldy);
+    const currentLocation = game.level.at(x, y);
+    if (!previousLocation || !currentLocation)
+        throw new Error(`Hurtle moved between invalid map cells ${oldx},${oldy} and ${x},${y}`);
+    if (options.jumping && previousLocation.typ !== currentLocation.typ)
+        await switchHeroTerrain(game);
     await checkSpecialRoom();
-
-    const liquid = await settleLiquid(options);
-    if (liquid?.moved || liquid?.died) return false;
-
-    const trap = game.level?.traps?.find(candidate =>
-        candidate.tx === x && candidate.ty === y);
-    if (await triggerLandingTrap(trap, options, remaining)) return false;
-
+    const liquid = await settleLiquid(options, remaining);
+    if (liquid?.moved || liquid?.died)
+        return false;
+    const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
+    if (await triggerLandingTrap(trap, options, remaining))
+        return false;
     remaining.value = Math.max(0, remaining.value - 1);
-    if (remaining.value) await game.animationFrame?.();
+    if (remaining.value)
+        await game.animationFrame?.();
     return true;
 }
-
-export async function hurtleHero(dx, dy, range, {
-    verbose = false,
-    finishTeleport = null,
-    gotoLevel = null,
-    chooseTeleportDestination = null,
-    finishMonsterDeath = null,
-} = {}) {
+// C hurtle_jump() walks an irregular jump with the same collisions as hurtle.
+// The caller owns trap escape, the final landing, and the one-turn delay.
+export async function hurtleJumpTo(x, y, options = {}) {
+    requirePlayingGame(game);
+    const path = walkPathCells(game.u.ux, game.u.uy, x, y);
+    const remaining = { value: path.length };
+    let reached = { x: game.u.ux, y: game.u.uy };
+    for (const point of path) {
+        if (!await moveOneSquare(point.x, point.y, { ...options, jumping: true }, remaining))
+            break;
+        reached = point;
+    }
+    // walk_path() rolls its destination back to the preceding accepted
+    // square on failure, even if a portal or liquid moved the actor.
+    return reached;
+}
+export async function hurtleHero(dx, dy, range, { verbose = false, finishTeleport = null, gotoLevel = null, chooseTeleportDestination = null, finishMonsterDeath = null, } = {}) {
+    requirePlayingGame(game);
+    const ball = game.uball || game.u.uball;
     if (heroIsPunished()
-        && !game.inventory?.includes(game.uball || game.u?.uball)) {
+        && (!ball || !game.inventory.includes(ball))) {
         await plineWithContinuation('You feel a tug from the iron ball.');
         stopHurtle();
         return false;
@@ -396,22 +367,19 @@ export async function hurtleHero(dx, dy, range, {
         stopHurtle();
         return false;
     }
-
     dx = Math.sign(dx);
     dy = Math.sign(dy);
     range = Math.max(0, Math.trunc(range));
-    if (!range || (!dx && !dy) || game.u?.ustuck) return false;
-
+    if (!range || (!dx && !dy) || game.u?.ustuck)
+        return false;
     stopRun();
+    endVoluntaryMultiTurn(game);
     game._helplessTurns = range;
     game._helplessReason = 'moving through the air';
     game._helplessDoneMessage = '';
     if (verbose) {
-        await plineWithContinuation(
-            `You ${range > 1 ? 'hurtle' : 'float'} in the opposite direction.`,
-        );
+        await plineWithContinuation(`You ${range > 1 ? 'hurtle' : 'float'} in the opposite direction.`);
     }
-
     const remaining = { value: range };
     const options = {
         finishTeleport, gotoLevel, chooseTeleportDestination,
@@ -420,7 +388,9 @@ export async function hurtleHero(dx, dy, range, {
     while (remaining.value) {
         const x = game.u.ux + dx;
         const y = game.u.uy + dy;
-        if (!await moveOneSquare(x, y, options, remaining)) break;
+        if (!await moveOneSquare(x, y, options, remaining))
+            break;
     }
     return true;
 }
+//# sourceMappingURL=hero_hurtle.js.map

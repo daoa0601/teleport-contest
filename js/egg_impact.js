@@ -1,7 +1,6 @@
 // Egg state changes shared by throwing and floor breakage.
 // C refs: obj.h stale_egg, uhitm.c hmon_hitmon_misc_obj(),
 // and dothrow.c breakobj().
-
 import { createFireExplosion } from './fire_explosion.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -9,37 +8,28 @@ import { EGG, ROCK } from './object_data.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { d } from './rng.js';
 import { objectWeight } from './weight.js';
-
 const GEM_CLASS = 13;
 const MAX_EGG_HATCH_TIME = 200;
 const PM_PYROLISK = MONSTER_NAME.indexOf('pyrolisk');
-
 export function eggHasMonsterSpecies(egg) {
-    return Number.isInteger(egg?.corpsenm)
+    return !!egg && egg.corpsenm !== undefined && Number.isInteger(egg.corpsenm)
         && egg.corpsenm >= 0
         && egg.corpsenm < MONSTER_NAME.length;
 }
-
 export function eggIsStale(egg, state = game) {
     return (state.moves ?? 0) - (egg?.age ?? 0) > 2 * MAX_EGG_HATCH_TIME;
 }
-
 export function applyHeroEggLuckPenalty(egg, state = game) {
     if (egg?.otyp !== EGG || !egg.spe || !eggHasMonsterSpecies(egg))
         return 0;
     const quantity = egg.quan ?? egg.quantity ?? 1;
     const penalty = Math.min(quantity, 5);
-    state.u.uluck = Math.max(
-        -13,
-        Math.min(13, (state.u?.uluck ?? 0) - penalty),
-    );
+    state.u.uluck = Math.max(-13, Math.min(13, (state.u?.uluck ?? 0) - penalty));
     return penalty;
 }
-
 export function isPyroliskEgg(egg) {
     return egg?.otyp === EGG && egg.corpsenm === PM_PYROLISK;
 }
-
 export function turnEggIntoRock(egg) {
     stopAllObjectTimers(egg);
     egg.otyp = ROCK;
@@ -55,22 +45,12 @@ export function turnEggIntoRock(egg) {
     egg.owt = objectWeight(egg);
     return egg;
 }
-
-export function explodePyroliskEggAt(x, y, {
-    state = game,
-    heroCaused = true,
-    publish,
-    random,
-    rollDice = d,
-    explodeFire = createFireExplosion,
-    finishMonsterKill,
-} = {}) {
-    return explodeFire(x, y, rollDice(3, 6), {
+export function explodePyroliskEggAt(x, y, { state = game, heroCaused = true, publish, random, rollDice = d, } = {}) {
+    return createFireExplosion(x, y, rollDice(3, 6), {
         state,
-        name: 'fireball',
         heroCaused,
-        publish,
-        random,
-        finishMonsterKill,
+        ...(publish ? { publish } : {}),
+        ...(random ? { random } : {}),
     });
 }
+//# sourceMappingURL=egg_impact.js.map

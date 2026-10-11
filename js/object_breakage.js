@@ -1,38 +1,25 @@
 // Object breakage and its immediate effects.
 // C refs: dothrow.c breaktest(), hero_breaks(), and breakobj().
-
-import {
-    ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EGG, EXPENSIVE_CAMERA,
-    CRYSTAL_BALL, LENSES, MELON, MIRROR, OBJECT_MATERIAL, OBJECT_NAMES,
-    POT_OIL, POT_WATER,
-} from './object_data.js';
-import {
-    newsym, plineWithContinuation,
-} from './display.js';
+import { ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EGG, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, OBJECT_MATERIAL, OBJECT_NAMES, POT_OIL, POT_WATER, } from './object_data.js';
+import { newsym, plineWithContinuation, } from './display.js';
 import { releaseCameraDemon } from './camera.js';
-import {
-    applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg,
-} from './egg_impact.js';
+import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg, } from './egg_impact.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
-import { remove_object } from './floor_object.js';
-import { game } from './gstate.js';
+import { game, requireLiveGame } from './gstate.js';
+import { deleteObject } from './object_delete.js';
 import { makemonAt } from './mklev.js';
 import { objectResistsDestruction } from './object_state.js';
-import { stopAllObjectTimers } from './object_timers.js';
-import {
-    applySupportedPotionVapor, heroPotionVaporProfile,
-    potionImpactObjectName,
-} from './potion_hit.js';
+import { applySupportedPotionVapor, heroPotionVaporProfile, potionImpactObjectName, } from './potion_hit.js';
 import { d, rnl, rn2 } from './rng.js';
-import { heroIsDeaf } from './senses.js';
-import { chargeUnpaidObjectAsDebt } from './shk.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { costlySpot, insideShopRoomAt, settleThrownShopObject, } from './shk.js';
+import { stolenValue } from './shop_loss.js';
+import { makeAngryShopkeeper } from './shop_damage.js';
 import { cansee } from './vision.js';
-
 const ARMOR_CLASS = 3;
 const POTION_CLASS = 8;
 const GEM_CLASS = 13;
 const GLASS = 19;
-
 const BREAKABLE_TYPES = new Set([
     EXPENSIVE_CAMERA,
     EGG,
@@ -41,35 +28,31 @@ const BREAKABLE_TYPES = new Set([
     ACID_VENOM,
     BLINDING_VENOM,
 ]);
-
 export function objectBreaksOnImpact(object, random = rn2) {
     const glassArmor = object.oclass === ARMOR_CLASS
         && OBJECT_MATERIAL[object.otyp] === GLASS;
     const ordinaryResistance = glassArmor ? 90 : 1;
-    if (objectResistsDestruction(
-        object, ordinaryResistance, 99, random,
-    )) return false;
-
+    if (objectResistsDestruction(object, ordinaryResistance, 99, random))
+        return false;
     const glassObject = OBJECT_MATERIAL[object.otyp] === GLASS
         && !object.oartifact && !object.artifact
         && object.oclass !== GEM_CLASS;
     return glassObject || object.oclass === POTION_CLASS
         || BREAKABLE_TYPES.has(object.otyp);
 }
-
 function objectName(object) {
     if (object.oclass === POTION_CLASS)
         return potionImpactObjectName(object);
     return object.name || OBJECT_NAMES[object.otyp] || 'object';
 }
-
 async function publishBreakMessage(object, visible, audible, publish) {
     if ([EGG, MELON].includes(object.otyp)) {
         await publish('Splat!');
         return;
     }
     if (object.otyp === CREAM_PIE) {
-        if (visible) await publish('What a mess!');
+        if (visible)
+            await publish('What a mess!');
         return;
     }
     if ([ACID_VENOM, BLINDING_VENOM].includes(object.otyp)) {
@@ -77,39 +60,29 @@ async function publishBreakMessage(object, visible, audible, publish) {
         return;
     }
     if (!visible) {
-        if (audible) await publish('You hear something shatter!');
+        if (audible)
+            await publish('You hear something shatter!');
         return;
     }
-
     const quantity = object.quan ?? object.quantity ?? 1;
     const intoPieces = [LENSES, MIRROR, CRYSTAL_BALL, EXPENSIVE_CAMERA]
         .includes(object.otyp) ? ' into a thousand pieces' : '';
-    await publish(`The ${objectName(object)} ${
-        quantity === 1 ? 'shatters' : 'shatter'
-    }${intoPieces}!`);
+    await publish(`The ${objectName(object)} ${quantity === 1 ? 'shatters' : 'shatter'}${intoPieces}!`);
 }
-
-function deleteObject(object) {
-    if (object.where === 'floor') remove_object(object);
-    stopAllObjectTimers(object);
-    object.where = 'gone';
-    object.ox = object.oy = 0;
-    object.ocarry = null;
-    object.lamplit = false;
-    object.in_use = false;
-    delete object.carrierMid;
+async function deleteBrokenObject(object, state) {
+    await deleteObject(object, state);
 }
-
-async function crackGlassArmor(object, visible, publish, luckRandom) {
+async function crackGlassArmor(object, visible, publish, luckRandom, state) {
     const name = objectName(object);
-    if (object.oerodeproof && object.rknown) return false;
+    if (object.oerodeproof && object.rknown)
+        return false;
     if (object.oerodeproof || (object.blessed && luckRandom(4) === 0)) {
         if (visible)
             await publish(`Somehow, the ${name} is not affected by the impact.`);
-        if (object.oerodeproof) object.rknown = true;
+        if (object.oerodeproof)
+            object.rknown = true;
         return false;
     }
-
     const erosion = object.oeroded ?? 0;
     if (erosion < 3) {
         object.oeroded = erosion + 1;
@@ -120,78 +93,79 @@ async function crackGlassArmor(object, visible, publish, luckRandom) {
         }
         return false;
     }
-
-    if (visible) await publish(`The ${name} shatters!`);
-    deleteObject(object);
+    if (visible)
+        await publish(`The ${name} shatters!`);
+    await deleteBrokenObject(object, state);
     return true;
 }
-
 async function applyPotionBreakEffect(object, x, y, state, publish) {
-    if (object.otyp === POT_OIL && object.lamplit) return false;
-    const nearby = Math.max(
-        Math.abs(x - state.u.ux), Math.abs(y - state.u.uy),
-    ) <= 1;
-    if (!nearby) return false;
-
+    if (object.otyp === POT_OIL && object.lamplit)
+        return false;
+    const nearby = Math.max(Math.abs(x - state.u.ux), Math.abs(y - state.u.uy)) <= 1;
+    if (!nearby)
+        return false;
     const profile = heroPotionVaporProfile(state);
     if (object.otyp !== POT_WATER && !state.u?.halfGasDamage) {
-        if (!profile.breathless) await publish('You smell a peculiar odor...');
-        else if (profile.hasEyes) await publish('Your eyes water.');
+        if (!profile.breathless)
+            await publish('You smell a peculiar odor...');
+        else if (profile.hasEyes)
+            await publish('Your eyes water.');
     }
     await applySupportedPotionVapor({ state, potion: object, publish });
     return true;
 }
-
-export async function breakFloorObject(object, {
-    state = game,
-    heroCaused = true,
-    publish = plineWithContinuation,
-    random = rn2,
-    luckRandom = rnl,
-    rollDice = d,
-    summonMonster = makemonAt,
-    finishMonsterKill,
-} = {}) {
+async function settleBrokenShopObject(object, x, y, fromInventory, state, publish) {
+    if (fromInventory || object.unpaid) {
+        if ((state.u.ushops?.length ?? 0) || object.unpaid)
+            await settleThrownShopObject(object, x, y, state, publish, { broken: true });
+        return;
+    }
+    const spot = !object.no_charge && costlySpot(x, y, state);
+    if (!spot)
+        return;
+    const { resident, roomno } = spot;
+    const shop = resident.eshk;
+    if (!shop)
+        throw new Error('A costly shop square has no shopkeeper account.');
+    const sequence = state._heroActionSeq ?? 0;
+    if (sequence !== shop.break_seq)
+        shop.seq_peaceful = resident.mpeaceful;
+    const loss = await stolenValue(object, x, y, shop.seq_peaceful, {
+        silent: false, state, publish,
+    });
+    if (loss > 0 && sequence !== shop.break_seq
+        && (roomno !== state.u.ushops?.[0]
+            || !insideShopRoomAt(state, state.u.ux, state.u.uy)))
+        await makeAngryShopkeeper(resident, state);
+    shop.break_seq = sequence;
+}
+export async function breakFloorObject(object, { x = object.ox, y = object.oy, fromInventory = false, inView = null, state = game, heroCaused = true, publish = plineWithContinuation, random = rn2, luckRandom = rnl, rollDice = d, summonMonster = makemonAt, } = {}) {
+    requireLiveGame(state);
     if (!objectBreaksOnImpact(object, random)) {
         return { destroyed: false, observed: false };
     }
     return breakObjectAtLocation(object, {
-        state, heroCaused, publish, random, luckRandom, rollDice,
-        summonMonster, finishMonsterKill,
+        x, y, fromInventory, inView, state, heroCaused, publish, random, luckRandom, rollDice,
+        summonMonster,
     });
 }
-
-export async function breakObjectAtLocation(object, {
-    state = game,
-    heroCaused = true,
-    showBreakMessage = true,
-    publish = plineWithContinuation,
-    random = rn2,
-    luckRandom = rnl,
-    rollDice = d,
-    summonMonster = makemonAt,
-    finishMonsterKill,
-} = {}) {
-    const x = object.ox, y = object.oy;
-    const visible = cansee(x, y);
+export async function breakObjectAtLocation(object, { x = object.ox, y = object.oy, fromInventory = false, inView = null, state = game, heroCaused = true, showBreakMessage = true, publish = plineWithContinuation, random = rn2, luckRandom = rnl, rollDice = d, summonMonster = makemonAt, } = {}) {
+    requireLiveGame(state);
+    const visible = !heroIsBlind(state)
+        && (inView ?? (fromInventory || cansee(x, y)));
     const audible = !heroIsDeaf(state);
-
     const glassArmor = object.oclass === ARMOR_CLASS
         && OBJECT_MATERIAL[object.otyp] === GLASS;
     if (glassArmor) {
-        const destroyed = await crackGlassArmor(
-            object, visible, publish, luckRandom,
-        );
-        if (destroyed) newsym(x, y);
+        const destroyed = await crackGlassArmor(object, visible, publish, luckRandom, state);
+        if (destroyed)
+            newsym(x, y);
         return { destroyed, observed: destroyed && (visible || audible) };
     }
-
     if (showBreakMessage)
         await publishBreakMessage(object, visible, audible, publish);
     if (heroCaused && object.otyp === MIRROR) {
-        state.u.uluck = Math.max(
-            -13, Math.min(13, (state.u.uluck ?? 0) - 2),
-        );
+        state.u.uluck = Math.max(-13, Math.min(13, (state.u.uluck ?? 0) - 2));
     }
     const cameraDemon = object.otyp === EXPENSIVE_CAMERA
         ? await releaseCameraDemon(object, x, y, {
@@ -202,27 +176,27 @@ export async function breakObjectAtLocation(object, {
         // potion again while breakage is still finishing.
         object.in_use = true;
         await applyPotionBreakEffect(object, x, y, state, publish);
+        if (state.program_state?.gameover)
+            return { destroyed: false, observed: visible || audible };
     }
-
     const oilExplosion = object.otyp === POT_OIL && object.lamplit;
     const eggExplosion = isPyroliskEgg(object);
-    if (heroCaused) applyHeroEggLuckPenalty(object, state);
-    if (heroCaused) {
-        await chargeUnpaidObjectAsDebt(object, state, publish);
-    }
-
+    if (heroCaused)
+        applyHeroEggLuckPenalty(object, state);
     if (oilExplosion) {
-        await explodeLitOilPotion(object, x, y, {
+        const explosion = await explodeLitOilPotion(object, x, y, {
             state, heroCaused, publish, random, rollDice,
-            finishMonsterKill,
         });
+        if (explosion.heroDied)
+            return { destroyed: false, observed: visible || audible, heroDied: true };
     }
-    deleteObject(object);
+    if (heroCaused)
+        await settleBrokenShopObject(object, x, y, fromInventory, state, publish);
+    await deleteBrokenObject(object, state);
     newsym(x, y);
     if (eggExplosion) {
         await explodePyroliskEggAt(x, y, {
             state, heroCaused, publish, random, rollDice,
-            finishMonsterKill,
         });
     }
     return {
@@ -231,3 +205,4 @@ export async function breakObjectAtLocation(object, {
         cameraDemon,
     };
 }
+//# sourceMappingURL=object_breakage.js.map

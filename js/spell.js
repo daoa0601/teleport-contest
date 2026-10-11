@@ -1,507 +1,230 @@
-// spell.js — Spell menus and the first live spell-casting path.
-// C refs: spell.c dovspell(), docast(), spelleffects_check().
-
-import { game } from './gstate.js';
-import {
-    flush_screen, pline, plineWithContinuation,
-} from './display.js';
-import { nhgetch } from './input.js';
-import { NO_COLOR, ATR_INVERSE } from './terminal.js';
-import { rnd, rn2, d } from './rng.js';
-import {
-    A_DEX, A_INT, A_WIS, TIMEOUT,
-} from './const.js';
-import { currentAttribute, exerciseAttribute } from './attrib.js';
-import {
-    OBJECT_DELAY, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SPELL_CATEGORY,
-    OBJECT_SPELL_LEVEL, OBJECT_WEIGHT, QUARTERSTAFF, ROBE, SMALL_SHIELD,
-    SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_INVISIBILITY, SPE_SLOW_MONSTER,
-    SPE_TURN_UNDEAD,
-} from './object_data.js';
-import { applyPotionLikeInvisibility } from './hero_invisibility.js';
-import { forceBoltInDirection } from './force_bolt.js';
-import { aggravateMonsters } from './monster_anger.js';
-import { recordObjectKnowledge } from './object_knowledge.js';
-import { changeMonsterSpeedInDirection } from './monster_speed_magic.js';
-import { turnUndeadInDirection } from './undead_turning.js';
-
-const HEALING_SPELLS = new Set([
-    'healing', 'extra healing', 'cure blindness', 'cure sickness',
-    'restore ability', 'remove curse',
-]);
-
-const SPELL_SKILL = {
-    restricted: 1,
-    unskilled: 1,
-    basic: 2,
-    skilled: 3,
-    expert: 4,
-};
-
-function isMetallic(object) {
-    const material = object ? OBJECT_MATERIAL[object.otyp] : 0;
-    return material >= 11 && material <= 17;
+import { requirePlayingGame } from './gstate.js';
+// Spell learning and the native spell.c:spelleffects() transaction.
+import { game, requireLiveGame } from './gstate.js';
+import { plineWithContinuation } from './display.js';
+import { promptDirection } from './tty_prompts.js';
+import { P_SKILLED } from './const.js';
+import { exerciseWisdom } from './attrib.js';
+import { heroHeadName } from './body_parts.js';
+import { impossible } from './diagnostics.js';
+import { makeFamiliar } from './familiar.js';
+import { loseHeroHp } from './hero_damage.js';
+import { zapHeroWithObject } from './hero_self_zap.js';
+import { jumpHero } from './jumping.js';
+import { mapVicinity } from './magic_detection.js';
+import { mksobj } from './mklev.js';
+import { deleteObject } from './object_delete.js';
+import { useHeroSkill } from './skills.js';
+import { castChainLightning, castSkilledElementalSpell } from './spell_attack_effects.js';
+import { checkSpellCast, currentSpellKnowledge, liveSpellSkill, spellSkillType } from './spell_casting_rules.js';
+import { selectSpellToCast, viewKnownSpells } from './spell_menu.js';
+import { castCureBlindness, castCureSickness, castProtection } from './spell_misc_effects.js';
+import { applyPotionSpell } from './spell_potion_effects.js';
+import { applyScrollEffects } from './scroll_effects.js';
+import { applyWandEffect } from './wand_effects.js';
+import { CORNUTHAUM, OBJECT_DIR, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CANCELLATION, SPE_CAUSE_FEAR, SPE_CHAIN_LIGHTNING, SPE_CHARM_MONSTER, SPE_CLAIRVOYANCE, SPE_CONE_OF_COLD, SPE_CONFUSE_MONSTER, SPE_CREATE_FAMILIAR, SPE_CREATE_MONSTER, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_HEALING, SPE_IDENTIFY, SPE_INVISIBILITY, SPE_JUMPING, SPE_KNOCK, SPE_LEVITATION, SPE_LIGHT, SPE_MAGIC_MAPPING, SPE_MAGIC_MISSILE, SPE_POLYMORPH, SPE_PROTECTION, SPE_REMOVE_CURSE, SPE_RESTORE_ABILITY, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK, } from './object_data.js';
+export function knownSpell(otyp, state = game) {
+    const spell = (state.spells || []).find(spell => spell.otyp === otyp);
+    if (!spell)
+        return 'unknown';
+    const remaining = currentSpellKnowledge(spell, state);
+    return remaining > 2000 ? 'fresh' : remaining > 0 ? 'stale' : 'forgotten';
 }
-
-function castingStat(config) {
-    const attribute = config.stat === 'wisdom' ? A_WIS : A_INT;
-    return currentAttribute(attribute);
-}
-
-function exerciseWisdom(improving = true, g = game) {
-    exerciseAttribute(A_WIS, improving, g);
-}
-
-function spellbookDetails(book) {
-    if (!book || book.oclass !== 10) return null;
-    const name = book.spellName || OBJECT_NAMES[book.otyp];
-    const level = book.spellLevel ?? OBJECT_SPELL_LEVEL[book.otyp];
-    const category = book.spellCategory
-        ?? OBJECT_SPELL_CATEGORY[book.otyp];
-    if (!name || !Number.isInteger(level) || level < 1 || !category)
+// C spell.c:force_learn_spell(). Divine teaching skips book study and conduct.
+export function forceLearnSpell(otyp, state = game) {
+    if ([SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD].includes(otyp)
+        || knownSpell(otyp, state) === 'fresh')
         return null;
-    return { name, level, category, otyp: book.otyp };
-}
-
-function spellbookDelay({ level, otyp }) {
-    const delay = OBJECT_DELAY[otyp] || 1;
-    if (level <= 2) return -delay;
-    if (level <= 4) return -(level - 1) * delay;
-    if (level <= 6) return -level * delay;
-    return -8 * delay;
-}
-
-function consumeSpellbook(book, g = game) {
-    const quantity = book.quan ?? book.quantity ?? 1;
-    if (quantity > 1) {
-        book.quan = book.quantity = quantity - 1;
-        return;
+    const spells = state.spells ||= [];
+    let index = spells.findIndex(spell => spell.otyp === otyp);
+    if (index < 0)
+        index = spells.length;
+    if (index >= 52)
+        return null;
+    const existing = spells[index];
+    if (existing) {
+        existing.level = spellLevel(otyp);
+        existing.know = 20000 + Math.max(0, (state.moves || 1) - 1);
     }
-    const index = (g.inventory || []).indexOf(book);
-    if (index >= 0) g.inventory.splice(index, 1);
-    book.where = 'gone';
+    else
+        spells[index] = createMemorizedSpell(otyp, 20000, state);
+    return String.fromCharCode(index < 26 ? 97 + index : 65 + index - 26);
 }
-
-function spellSkill(category, g = game) {
-    return (g.urole?.key === 'wizard'
-            && ['attack', 'enchantment'].includes(category))
-        || ['healer', 'monk'].includes(g.urole?.key)
-        || (g.urole?.key === 'priest' && category === 'clerical')
-        ? 'basic' : 'unskilled';
-}
-
-function currentSpellKnowledge(spell, g = game) {
-    if (!Number.isInteger(spell?.know)) return 0;
-    return Math.max(0, spell.know - Math.max(0, (g.moves || 1) - 1));
-}
-
-async function askRefreshKnownSpell(details, g = game) {
-    const known = `You know "${details.name}" quite well already.--More--`;
-    await pline(known);
-    await flush_screen(1);
-    g.nhDisplay?.setCursor(known.length, 0);
-    let dismissal;
-    do dismissal = await nhgetch();
-    while (dismissal !== 10 && dismissal !== 13);
-
-    const prompt = 'Refresh your memory anyway? [yn] (n) ';
-    await pline(prompt);
-    await flush_screen(1);
-    g.nhDisplay?.setCursor(prompt.length, 0);
-    let answer;
-    do answer = await nhgetch();
-    while (![27, 10, 13, 89, 78, 121, 110].includes(answer));
-    return answer === 89 || answer === 121;
-}
-
-// C refs: spell.c study_book() and learn().  Starting the study is one timed
-// command; learn() then owns its negative delay through set_occupation().
-// Monster movement and once-per-turn maintenance remain in allmain.js.
-export async function studyBook(book, g = game) {
-    const details = spellbookDetails(book);
-    if (!details) {
-        g.context.move = 0;
-        return false;
-    }
-    Object.assign(book, {
-        spellName: details.name,
-        spellLevel: details.level,
-        spellCategory: details.category,
-    });
-
-    const knownSpell = (g.spells || []).find(spell =>
-        spell.otyp === details.otyp);
-    if (knownSpell && currentSpellKnowledge(knownSpell, g) > 2000
-        && !await askRefreshKnownSpell(details, g)) {
-        g.context.move = 0;
-        return false;
-    }
-
-    book.in_use = true;
-    let tooHard = !!book.cursed;
-    if (!book.blessed && !book.cursed) {
-        const intelligence = currentAttribute(A_INT, g);
-        const readAbility = intelligence + 4
-            + Math.trunc((g.u?.ulevel ?? 1) / 2)
-            - 2 * details.level;
-        tooHard = rnd(20) > readAbility;
-    }
-    if (tooHard) {
-        // C spell.c:cursed_book(). An ordinary book can reach the same bad
-        // effect after a failed comprehension roll.
-        const badEffect = rn2(details.level);
-        if (badEffect === 1) {
-            await pline('You feel threatened.');
-            aggravateMonsters(g);
-        }
-
-        g._helplessTurns = Math.max(1, -spellbookDelay(details));
-        g._helplessReason = 'reading a book';
-        g._helplessDoneMessage = 'You can move again.';
-        if (rn2(3) === 0) {
-            await plineWithContinuation('The spellbook crumbles to dust!');
-            consumeSpellbook(book, g);
-        } else {
-            book.in_use = false;
-        }
-        g.context.move = 1;
-        return true;
-    }
-
-    book.in_use = false;
-    await pline('You begin to memorize the runes.');
-    g._occupation = {
-        key: 'study-book',
-        text: 'studying',
-        delay: spellbookDelay(details),
-        book,
-        details,
+export function createMemorizedSpell(otyp, knowledge, state) {
+    const category = OBJECT_SPELL_CATEGORY[otyp];
+    const name = OBJECT_NAMES[otyp];
+    if (category == null || name == null)
+        throw new RangeError(`Object type ${otyp} is not a spellbook.`);
+    return {
+        name, level: spellLevel(otyp), category,
+        know: knowledge + Math.max(0, (state.moves || 1) - 1),
+        otyp,
     };
-    g.context.move = 1;
+}
+export async function learnInitialSpell(book, state = game) {
+    const spells = state.spells;
+    if (spells.length >= 52)
+        await impossible('Too many spells memorized!', { state });
+    else if (spells.some(spell => spell.otyp === book.otyp))
+        await impossible(`Spell ${OBJECT_NAMES[book.otyp]} already known.`, { state });
+    else
+        spells.push(createMemorizedSpell(book.otyp, 20000, state));
+}
+// Every successful cast creates the same real temporary object as C.
+// Its class/BUC/quantity control shared effects; it never enters inventory.
+export async function castSpell(otyp, { atSelf = false, force = false, state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const admission = force ? { allowed: true, energy: 0, spentTime: false }
+        : await checkSpellCast({ otyp }, { state });
+    if (!admission.allowed) {
+        state.context.move = Number(admission.spentTime);
+        return { spentTime: admission.spentTime, heroDied: !!state.program_state.gameover };
+    }
+    state.u.uen -= admission.energy;
+    exerciseWisdom(true, state);
+    const source = await mksobj(otyp, false, false);
+    source.blessed = source.cursed = false;
+    source.quan = source.quantity = 20;
+    const skill = liveSpellSkill(otyp, state);
+    const handled = await applySpellEffect(source, skill, atSelf, state);
+    if (state.program_state.gameover)
+        return { spentTime: true, heroDied: true };
+    if (handled && !force)
+        await useHeroSkill(spellSkillType(otyp), spellLevel(otyp), { state });
+    await deleteObject(source, state);
+    state.context.move = Number(handled);
+    return { spentTime: handled, heroDied: false };
+}
+async function applySpellEffect(source, skill, atSelf, state) {
+    const skilled = skill >= P_SKILLED;
+    switch (source.otyp) {
+        case SPE_FIREBALL:
+        case SPE_CONE_OF_COLD:
+            if (skilled) {
+                await castSkilledElementalSpell(source, { state });
+                break;
+            }
+            await applyDirectedSpell(source, atSelf, state);
+            break;
+        case SPE_FORCE_BOLT:
+        case SPE_SLEEP:
+        case SPE_MAGIC_MISSILE:
+        case SPE_KNOCK:
+        case SPE_SLOW_MONSTER:
+        case SPE_WIZARD_LOCK:
+        case SPE_DIG:
+        case SPE_TURN_UNDEAD:
+        case SPE_POLYMORPH:
+        case SPE_TELEPORT_AWAY:
+        case SPE_CANCELLATION:
+        case SPE_FINGER_OF_DEATH:
+        case SPE_LIGHT:
+        case SPE_DETECT_UNSEEN:
+        case SPE_HEALING:
+        case SPE_EXTRA_HEALING:
+        case SPE_DRAIN_LIFE:
+        case SPE_STONE_TO_FLESH:
+            if (skilled && [SPE_HEALING, SPE_EXTRA_HEALING].includes(source.otyp))
+                source.blessed = true;
+            await applyDirectedSpell(source, atSelf, state);
+            break;
+        case SPE_REMOVE_CURSE:
+        case SPE_CONFUSE_MONSTER:
+        case SPE_DETECT_FOOD:
+        case SPE_CAUSE_FEAR:
+        case SPE_IDENTIFY:
+        case SPE_CHARM_MONSTER:
+            source.blessed = skilled;
+            await applyScrollEffects(source, { state });
+            break;
+        case SPE_MAGIC_MAPPING:
+        case SPE_CREATE_MONSTER:
+            await applyScrollEffects(source, { state });
+            break;
+        case SPE_HASTE_SELF:
+        case SPE_DETECT_TREASURE:
+        case SPE_DETECT_MONSTERS:
+        case SPE_LEVITATION:
+        case SPE_RESTORE_ABILITY:
+            source.blessed = skilled;
+            await applyPotionSpell(source, { state });
+            break;
+        case SPE_INVISIBILITY:
+            await applyPotionSpell(source, { state });
+            break;
+        case SPE_CURE_BLINDNESS:
+            await castCureBlindness({ state });
+            break;
+        case SPE_CURE_SICKNESS:
+            await castCureSickness({ state });
+            break;
+        case SPE_CREATE_FAMILIAR:
+            await makeFamiliar(null, state.u.ux, state.u.uy, false, { state });
+            break;
+        case SPE_CLAIRVOYANCE:
+            if (state.uarmh?.otyp === CORNUTHAUM && state.urole.key !== 'wizard')
+                await plineWithContinuation(`You sense a pointy hat on top of your ${heroHeadName(state)}.`);
+            else {
+                source.blessed = skilled;
+                await mapVicinity(source, { state });
+            }
+            break;
+        case SPE_PROTECTION:
+            await castProtection({ state });
+            break;
+        case SPE_JUMPING:
+            if (!(await jumpHero(Math.max(skill, 1), { state })).spentTime
+                && !state.program_state.gameover)
+                await plineWithContinuation('Nothing happens.');
+            break;
+        case SPE_CHAIN_LIGHTNING:
+            await castChainLightning({ state });
+            break;
+        default:
+            await impossible(`Unknown spell ${source.otyp} attempted.`, { state });
+            return false;
+    }
     return true;
 }
-
-// Returns the same truth value as C spell.c:learn(): true while the
-// occupation remains installed, false after its completion.  The surrounding
-// command scheduler owns the timed action for every invocation, including
-// the completion invocation.
-export async function continueSpellbookStudy(occupation, g = game) {
-    if (occupation.delay) {
-        occupation.delay++;
-        g.context.move = 1;
-        return true;
-    }
-
-    const { book, details } = occupation;
-    exerciseWisdom(true, g);
-    const spells = g.spells || (g.spells = []);
-    let spell = spells.find(candidate => candidate.otyp === details.otyp);
-    const typeKnown = g._knownObjectTypes?.has(details.otyp);
-    const quotedName = typeKnown
-        ? `"${details.name}"` : `the "${details.name}" spell`;
-
-    if (spell) {
-        spell.know = 20001 + Math.max(0, (g.moves || 1) - 1);
-        book.spestudied = (book.spestudied || 0) + 1;
-        exerciseWisdom(true, g);
-        await plineWithContinuation(
-            `Your knowledge of ${quotedName} is keener.`,
-        );
-    } else {
-        spell = {
-            name: details.name,
-            level: details.level,
-            category: details.category,
-            skill: spellSkill(details.category, g),
-            // JS keeps an absolute expiry anchor so spell-menu retention can
-            // be derived from game.moves without duplicating age_spells().
-            know: 20001 + Math.max(0, (g.moves || 1) - 1),
-            retention: 100,
-            otyp: details.otyp,
-        };
-        const index = spells.length;
-        spells.push(spell);
-        book.spestudied = (book.spestudied || 0) + 1;
-        if (index === 0) {
-            await plineWithContinuation(`You learn ${quotedName}.`);
-        } else {
-            await plineWithContinuation(
-                `You add ${quotedName} to your repertoire, as '${
-                    String.fromCharCode(97 + index)
-                }'.`,
-            );
+async function applyDirectedSpell(source, atSelf, state) {
+    const hero = state.u;
+    if (OBJECT_DIR[source.otyp] !== 1) {
+        if (atSelf)
+            hero.dx = hero.dy = hero.dz = 0;
+        else if (!await promptDirection()) {
+            // Native cancellation releases the spell in the retained direction.
+            await plineWithContinuation('The magical energy is released!');
+        }
+        if (!hero.dx && !hero.dy && !hero.dz) {
+            const effect = await zapHeroWithObject(source, { state });
+            if (effect.heroDied || !effect.damage)
+                return;
+            const damage = source.otyp === SPE_FORCE_BOLT && hero.halfPhysicalDamage
+                ? Math.ceil(effect.damage / 2) : effect.damage;
+            const cause = `zapped ${state.flags.female ? 'herself' : 'himself'} with a spell`;
+            await loseHeroHp(damage, cause, { state, deathCause: cause });
+            return;
         }
     }
-
-    if (!typeKnown) {
-        // makeknown() follows the learning message and credits Wisdom only on
-        // the first discovery of this concrete spellbook type.
-        exerciseWisdom(true, g);
-        recordObjectKnowledge(details.otyp);
-    }
-    g.context.move = 1;
-    return false;
+    await applyWandEffect(source, { state });
 }
-
-export function percentSuccess(spell) {
-    const config = game.urole?.spellcasting;
-    const paladinBonus = game.urole?.key === 'knight'
-        && spell.category === 'clerical';
-    let splcaster = config.base;
-
-    if (game.uarm && isMetallic(game.uarm) && !paladinBonus) {
-        splcaster += game.uarmc?.otyp === ROBE
-            ? Math.trunc(config.armor / 2) : config.armor;
-    } else if (game.uarmc?.otyp === ROBE) {
-        splcaster -= config.armor;
-    }
-    if (game.uarms) splcaster += config.shield;
-    if (game.uwep?.otyp === QUARTERSTAFF) splcaster -= 3;
-
-    if (!paladinBonus) {
-        if (isMetallic(game.uarmh)) splcaster += 4;
-        if (isMetallic(game.uarmg)) splcaster += 6;
-        if (isMetallic(game.uarmf)) splcaster += 2;
-    }
-
-    if (spell.name === config.special) splcaster += config.specialBonus;
-    if (HEALING_SPELLS.has(spell.name)) splcaster += config.healing;
-    splcaster = Math.min(20, splcaster);
-
-    let chance = Math.trunc(11 * castingStat(config) / 2);
-    const skill = Math.max(SPELL_SKILL[spell.skill] ?? 1, 1) - 1;
-    const level = Math.max(1, spell.level ?? 1);
-    const heroLevel = game.u?.ulevel ?? 1;
-    const difficulty = (level - 1) * 4
-        - (skill * 6 + Math.trunc(heroLevel / 3) + 1);
-
-    if (difficulty > 0) {
-        chance -= Math.floor(Math.sqrt(900 * difficulty + 2000));
-    } else {
-        const learning = Math.trunc(15 * -difficulty / level);
-        chance += Math.min(20, learning);
-    }
-    chance = Math.max(0, Math.min(120, chance));
-
-    const shieldWeight = game.uarms
-        ? (OBJECT_WEIGHT[game.uarms.otyp] ?? game.uarms.owt ?? 0) : 0;
-    if (game.uarms && shieldWeight > OBJECT_WEIGHT[SMALL_SHIELD]) {
-        chance = Math.trunc(chance
-            / (spell.name === config.special ? 2 : 4));
-    }
-
-    chance = Math.trunc(chance * (20 - splcaster) / 15) - splcaster;
-    return Math.max(0, Math.min(100, chance));
-}
-
-function putLine(col, row, text, attr = 0) {
-    const display = game.nhDisplay;
-    for (let i = 0; i < text.length && col + i < display.cols; i++)
-        display.setCell(col + i, row, text[i], NO_COLOR, attr);
-}
-
-function clearMenu(left, bottom) {
-    const display = game.nhDisplay;
-    for (let row = 0; row <= bottom; row++)
-        for (let col = row === 0 ? 0 : Math.max(0, left - 1);
-            col < display.cols; col++)
-            display.setCell(col, row, ' ', NO_COLOR, 0);
-}
-
-function spellTurns(spell) {
-    if (!Number.isInteger(spell.know)) return null;
-    return Math.max(0, spell.know - Math.max(0, (game.moves || 1) - 1));
-}
-
-function spellRetention(spell) {
-    const turns = spellTurns(spell);
-    if (turns === null) return `${spell.retention ?? 100}%-100%`;
-    if (turns >= 20000) return '100%';
-    if (turns < 1) return '(gone)';
-    const accuracy = spell.skill === 'expert' ? 2
-        : spell.skill === 'skilled' ? 5
-        : spell.skill === 'basic' ? 10 : 25;
-    const percent = Math.ceil(turns / 200);
-    const high = accuracy * Math.ceil(percent / accuracy);
-    return `${high - accuracy + 1}%-${high}%`;
-}
-
-function spellLine(letter, spell, casting) {
-    const name = spell.name.padEnd(23);
-    const level = String(spell.level).padEnd(4);
-    const category = spell.category.padEnd(13);
-    const fail = `${100 - percentSuccess(spell)}%`.padStart(4);
-    // spell.c uses "%9s" for retention, preceded by the format's one
-    // separator space.  The padding matters for short "100%" values.
-    const retention = ` ${spellRetention(spell).padStart(9)}`;
-    const turns = game.flags?.debug && spellTurns(spell) !== null
-        ? ` ${String(spellTurns(spell)).padStart(6)}` : '';
-    return `${letter} - ${name}${level}${category}${fail}${retention}${turns}`;
-}
-
-async function spellMenu(casting) {
-    const spells = game.spells || [];
-    const sortable = !casting && game.urole?.key !== 'monk';
-    const endRow = spells.length + (sortable ? 4 : 3);
-    const menuLines = spells.map((spell, index) =>
-        spellLine(String.fromCharCode(97 + index), spell, casting));
-    const heading = `    Name                 Level Category     Fail Retention${
-        game.flags?.debug ? '  turns' : ''}`;
-    // tty menus reserve two columns after a non-selectable heading, while a
-    // selectable row already owns one column of that gutter via its selector.
-    // A three-digit failure rate can therefore grow a row by one without
-    // shifting the whole window left.
-    const windowWidth = Math.max(
-        heading.length + 2,
-        ...menuLines.map(line => line.length + 1),
-    );
-    const left = Math.max(0, game.nhDisplay.cols - windowWidth);
-    clearMenu(left, endRow);
-    putLine(left, 0, casting ? 'Choose which spell to cast' : 'Currently known spells', ATR_INVERSE);
-    putLine(left, 2, heading);
-    putLine(left, 2, '    Name', ATR_INVERSE);
-    putLine(left + 25, 2, 'Level Category', ATR_INVERSE);
-    putLine(left + 44, 2,
-        `Fail Retention${game.flags?.debug ? '  turns' : ''}`, ATR_INVERSE);
-    menuLines.forEach((line, index) => putLine(left, index + 3, line));
-    if (sortable) putLine(left, spells.length + 3, '+ - [sort spells]');
-    putLine(left, endRow, '(end)');
-    game.nhDisplay.setCursor(left + 6, endRow);
-    game._preserveLeadingStyledBlanks = true;
-    try {
-        return await nhgetch();
-    } finally {
-        game._preserveLeadingStyledBlanks = false;
-    }
-}
-
-export async function castKnownSpell(spell, { gotoLevel = null } = {}) {
+export async function docast() {
+    const spell = await selectSpellToCast(game);
     if (!spell) {
         game.context.move = 0;
         return;
     }
-
-    // spell.c:spelleffects_check().  Failure occurs before Wisdom exercise,
-    // temporary spell-object construction, and direction input, but it still
-    // spends one action and half the spell's normal energy.
-    const energy = Math.max(5, (spell.level || 1) * 5);
-    if (spell.name !== 'detect food') {
-        const hungerCost = Math.min(
-            energy * 2, Math.max(0, (game.u?.uhunger ?? 900) - 3),
-        );
-        game.u.uhunger = Math.max(3,
-            (game.u?.uhunger ?? 900) - hungerCost);
-    }
-    const confused = !!(game.u?.confused
-        || (game.u?.confusionTurns ?? 0) > 0);
-    if (confused || rnd(100) > percentSuccess(spell)) {
-        game.u.uen = Math.max(0,
-            (game.u.uen || 0) - Math.trunc(energy / 2));
-        await pline('You fail to cast the spell correctly.');
-        game.context.move = 1;
-        return;
-    }
-
-    // Successful spelleffects(): full energy, Wisdom exercise, then the
-    // temporary pseudo-object used by directional wand-equivalent effects.
-    game.u.uen = Math.max(0, (game.u.uen || 0) - energy);
-    exerciseWisdom(true);
-    rnd(2);
-
-    if (spell.otyp === SPE_HASTE_SELF || spell.name === 'haste self') {
-        if (!game.u.veryFast) {
-            const much = game.u.fast ? '' : 'much ';
-            await pline(`You are suddenly moving ${much}faster.`);
-        } else {
-            await pline('Your legs get new energy.');
-        }
-        const skill = SPELL_SKILL[spell.skill] ?? SPELL_SKILL.unskilled;
-        const duration = 100 + (skill >= SPELL_SKILL.skilled ? 60 : 0)
-            + rn2(10);
-        game.u.veryFastTurns = Math.min(
-            TIMEOUT,
-            (game.u.veryFastTurns ?? 0) + duration,
-        );
-        game.u.veryFast = true;
-        exerciseAttribute(A_DEX, true);
-        game.context.move = 1;
-        return;
-    }
-
-    if (spell.otyp === SPE_INVISIBILITY || spell.name === 'invisibility') {
-        await applyPotionLikeInvisibility({ spell: true });
-        game.context.move = 1;
-        return;
-    }
-
-    await pline('In what direction? ');
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(19, 0);
-    const direction = await nhgetch();
-    if (direction === 27) {
-        game.context.move = 0;
-        return;
-    }
-
-    if (spell.name === 'healing') {
-        d(6, 4);
-        if (game.urole?.key === 'priest') {
-            for (const known of game.spells) known.retention = 76;
-        } else {
-            spell.retention = 76;
-        }
-        await pline('You feel better.');
-        game.context.move = 1;
-        return;
-    }
-    if (spell.otyp === SPE_FORCE_BOLT || spell.name === 'force bolt') {
-        await forceBoltInDirection(String.fromCharCode(direction), {
-            source: 'spell', gotoLevel,
-        });
-        game.context.move = 1;
-        return;
-    }
-    if (spell.otyp === SPE_SLOW_MONSTER || spell.name === 'slow monster') {
-        await changeMonsterSpeedInDirection(String.fromCharCode(direction), {
-            kind: 'slow', source: 'spell',
-        });
-        game.context.move = 1;
-        return;
-    }
-    if (spell.otyp === SPE_TURN_UNDEAD || spell.name === 'turn undead') {
-        await turnUndeadInDirection(String.fromCharCode(direction), {
-            source: 'spell',
-        });
-        game.context.move = 1;
-        return;
-    }
-    game.context.move = 0;
+    await castSpell(spell.otyp);
 }
-
-export async function docast({ gotoLevel = null } = {}) {
-    if (!(game.spells || []).length) {
-        await pline("You don't know any spells right now.");
-        game.context.move = 0;
-        return;
-    }
-    const selection = await spellMenu(true);
-    const index = String.fromCharCode(selection).toLowerCase().charCodeAt(0) - 97;
-    await castKnownSpell(game.spells[index], { gotoLevel });
-}
-
 export async function dovspell() {
-    if (!(game.spells || []).length) {
-        await pline("You don't know any spells right now.");
-        game.context.move = 0;
-        return;
-    }
-    // C tty select_menu(PICK_NONE) retains ownership after an invalid byte or
-    // numeric prefix.  Re-rendering preserves the same overlay and cursor at
-    // the next input boundary; only an explicit dismissal returns to rhack().
-    let key;
-    do {
-        key = await spellMenu(false);
-    } while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
-    game._pending_message = '';
+    await viewKnownSpells(game);
     game.context.move = 0;
 }
+function spellLevel(type) {
+    const level = OBJECT_SPELL_LEVEL[type];
+    if (level === undefined)
+        throw new RangeError(`Object type ${type} has no spell level.`);
+    return level;
+}
+//# sourceMappingURL=spell.js.map

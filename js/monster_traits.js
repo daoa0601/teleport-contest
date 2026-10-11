@@ -1,57 +1,55 @@
 // Monster state stored in a corpse or statue.
 // C refs: mkobj.c save_mtraits() and zap.c montraits().
-
 import { isReviver } from './corpse_species.js';
-import {
-    MONSTER_ATTACKS, MONSTER_GENO, MONSTER_LEVEL,
-} from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_GENO, MONSTER_LEVEL, } from './monster_data.js';
 import { AD_SEDU, AD_SSEX } from './monster_attack_types.js';
 import { monsterHitPointsPerLevel } from './monster_hit_points.js';
 import { rnd, rn2 } from './rng.js';
-
 const G_UNIQ = 0x1000;
-
 function monsterHasSeductionAttack(mnum) {
-    return (MONSTER_ATTACKS[mnum] || []).some(
-        ([, damageType]) => damageType === AD_SEDU
-            || damageType === AD_SSEX,
-    );
+    return (MONSTER_ATTACKS[mnum] || []).some(([, damageType]) => damageType === AD_SEDU
+        || damageType === AD_SSEX);
 }
-
-function copyRecord(value) {
-    if (!value || typeof value !== 'object') return value;
+function copyPetData(value) {
+    return { ...value, ogoal: { ...value.ogoal } };
+}
+function copyShopkeeperData(value) {
     const copy = { ...value };
-    if (value.ogoal) copy.ogoal = { ...value.ogoal };
-    if (Array.isArray(value.bill)) copy.bill = value.bill.map(item => ({ ...item }));
+    if (value.bill)
+        copy.bill = value.bill.map(item => ({ ...item }));
     return copy;
 }
-
 export function saveMonsterTraits(monster) {
-    if (!monster) return null;
-    const saved = { ...monster, mnum: monster.mnum };
-    delete saved.minvent;
-    delete saved.inventory;
-    delete saved.mw;
-    delete saved.wormSegments;
+    if (!monster)
+        return null;
+    const { minvent, inventory, mw, wormSegments, wormGrowTime, wormHead, ...saved } = monster;
     saved.wormno = 0;
     saved.mhpmax = Math.max(saved.mhpmax ?? 1, (saved.m_lev ?? 0) + 1);
     saved.mhp = Math.max(0, Math.min(saved.mhp ?? 0, saved.mhpmax));
-    saved.edog = copyRecord(monster.edog);
+    if (monster.edog)
+        saved.edog = copyPetData(monster.edog);
     if (monster.mextra) {
         saved.mextra = { ...monster.mextra };
-        for (const key of ['edog', 'emin', 'epri', 'eshk']) {
-            if (monster.mextra[key])
-                saved.mextra[key] = copyRecord(monster.mextra[key]);
-        }
+        if (monster.mextra.edog)
+            saved.mextra.edog = copyPetData(monster.mextra.edog);
+        if (monster.mextra.emin)
+            saved.mextra.emin = { ...monster.mextra.emin };
+        if (monster.mextra.epri)
+            saved.mextra.epri = { ...monster.mextra.epri };
+        if (monster.mextra.eshk)
+            saved.mextra.eshk = copyShopkeeperData(monster.mextra.eshk);
     }
-    if (monster.eshk) saved.eshk = copyRecord(monster.eshk);
-    if (monster.emin) saved.emin = copyRecord(monster.emin);
-    if (monster.epri) saved.epri = copyRecord(monster.epri);
+    if (monster.eshk)
+        saved.eshk = copyShopkeeperData(monster.eshk);
+    if (monster.emin)
+        saved.emin = { ...monster.emin };
+    if (monster.epri)
+        saved.epri = { ...monster.epri };
     return saved;
 }
-
 export function corpseKeepsMonsterTraits(monster, questLeaderId = 0) {
-    if (!monster) return false;
+    if (!monster)
+        return false;
     return !!monster.isshk
         || (monster.mtame ?? 0) > 0
         || !!((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)
@@ -59,12 +57,18 @@ export function corpseKeepsMonsterTraits(monster, questLeaderId = 0) {
         || (!!questLeaderId && monster.m_id === questLeaderId)
         || monsterHasSeductionAttack(monster.mnum);
 }
-
-export function restoreMonsterTraits(monster, saved, {
-    rollOne = rnd,
-    randomBelow = rn2,
-} = {}) {
-    if (!monster || !saved) return monster;
+// Both arguments have the same trait contract; the target's type determines
+// which values the saved record may supply. Inventory/body ownership is restored
+// separately below, and only the saved record's own fields are copied.
+function copyRestoredTraits(monster, saved) {
+    for (const key in saved) {
+        if (Object.hasOwn(saved, key))
+            monster[key] = saved[key];
+    }
+}
+export function restoreMonsterTraits(monster, saved, { rollOne = rnd, randomBelow = rn2, } = {}) {
+    if (!monster || !saved)
+        return monster;
     const created = {
         m_id: monster.m_id,
         mx: monster.mx,
@@ -73,6 +77,9 @@ export function restoreMonsterTraits(monster, saved, {
         muy: monster.muy,
         minvent: monster.minvent || [],
         wormno: monster.wormno,
+        wormSegments: monster.wormSegments,
+        wormHead: monster.wormHead,
+        wormGrowTime: monster.wormGrowTime,
         misc_worn_check: monster.misc_worn_check,
         weaponCheck: monster.weaponCheck,
         mtrapseen: monster.mtrapseen,
@@ -85,7 +92,6 @@ export function restoreMonsterTraits(monster, saved, {
         m_lev: monster.m_lev ?? 0,
         mhpmax: monster.mhpmax ?? 1,
     };
-
     let restoredLevel = saved.m_lev ?? created.m_lev;
     const speciesLevel = MONSTER_LEVEL[saved.mnum] ?? 0;
     if (created.m_lev < speciesLevel) {
@@ -93,26 +99,43 @@ export function restoreMonsterTraits(monster, saved, {
         if (targetLevel > created.m_lev) {
             while (created.m_lev < targetLevel) {
                 created.m_lev++;
-                created.mhpmax += monsterHitPointsPerLevel(
-                    { mnum: saved.mnum, m_lev: created.m_lev },
-                    { rollOne, randomBelow },
-                );
+                created.mhpmax += monsterHitPointsPerLevel({ mnum: saved.mnum, m_lev: created.m_lev }, { rollOne, randomBelow });
             }
             restoredLevel = created.m_lev;
         }
     }
-
-    Object.assign(monster, saved);
-    monster.m_id = saved.m_id || created.m_id;
+    copyRestoredTraits(monster, saved);
+    monster.m_id = created.m_id;
     monster.mx = created.mx;
     monster.my = created.my;
-    monster.mux = created.mux;
-    monster.muy = created.muy;
+    if (created.mux === undefined)
+        delete monster.mux;
+    else
+        monster.mux = created.mux;
+    if (created.muy === undefined)
+        delete monster.muy;
+    else
+        monster.muy = created.muy;
     monster.minvent = created.minvent;
     monster.inventory = monster.minvent;
     monster.hasInventory = monster.minvent.length > 0;
     monster.mw = null;
-    monster.wormno = created.wormno;
+    if (created.wormno === undefined)
+        delete monster.wormno;
+    else
+        monster.wormno = created.wormno;
+    if (created.wormSegments === undefined)
+        delete monster.wormSegments;
+    else
+        monster.wormSegments = created.wormSegments;
+    if (created.wormHead === undefined)
+        delete monster.wormHead;
+    else
+        monster.wormHead = created.wormHead;
+    if (created.wormGrowTime === undefined)
+        delete monster.wormGrowTime;
+    else
+        monster.wormGrowTime = created.wormGrowTime;
     monster.misc_worn_check = created.misc_worn_check ?? 0;
     monster.weaponCheck = created.weaponCheck ?? 0;
     monster.mtrapseen = created.mtrapseen ?? 0;
@@ -125,6 +148,7 @@ export function restoreMonsterTraits(monster, saved, {
     monster.m_lev = restoredLevel;
     monster.mhpmax = Math.max(created.mhpmax, saved.mhpmax ?? 1);
     monster.mhp = monster.mhpmax;
+    monster.dead = false;
     monster.mrevived = 1;
     monster.mavenge = 0;
     monster.meating = 0;
@@ -133,14 +157,16 @@ export function restoreMonsterTraits(monster, saved, {
     monster.msleeping = 0;
     monster.mfrozen = 0;
     monster.mcanmove = 1;
-    if (!monsterHasSeductionAttack(monster.mnum)) monster.mcan = 0;
+    if (!monsterHasSeductionAttack(monster.mnum))
+        monster.mcan = 0;
     monster.mcansee = 1;
     monster.mblinded = 0;
     monster.mstun = 0;
     monster.mconf = 0;
     if (monster.edog) {
-        monster.edog = copyRecord(monster.edog);
+        monster.edog = copyPetData(monster.edog);
         monster.mextra = { ...(monster.mextra || {}), edog: monster.edog };
     }
     return monster;
 }
+//# sourceMappingURL=monster_traits.js.map

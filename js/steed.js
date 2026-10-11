@@ -1,34 +1,29 @@
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
-
-import {
-    ACCESSIBLE, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE,
-    DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN,
-    DOOR, IS_OBSTRUCTED, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT,
-    M_AP_TYPMASK, P_RIDING,
-    TRAP_EXPLANATIONS, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE,
-    W_SADDLE, isok,
-} from './const.js';
-import { game } from './gstate.js';
+import { monsterHasMapPosition, placeMonsterAt } from './monster_location.js';
+import { RLOC_ERR, RLOC_NOMSG, ACCESSIBLE, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, DIRECTION_KEYS, IS_OBSTRUCTED, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, P_RIDING, TRAP_EXPLANATIONS, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, isok, } from './const.js';
+import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { levitationAtWill, refreshMovementProperties } from './properties.js';
+import { floatHeroDown } from './terrain_movement.js';
 import { newsym, pline, plineWithContinuation } from './display.js';
-import { levelHasCeiling, monsterSurvivesPool } from './mon.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { monsterSurvivesPool } from './mon.js';
+import { finishMonsterKilled } from './monster_death.js';
+import { AD_PHYS } from './monster_attack_types.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
-    monsterCanBeSaddled, monsterTypeName,
-} from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterCanBeSaddled, monsterTypeName, } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { releaseMonsterLeash } from './monster_leash.js';
-import { BOULDER } from './object_data.js';
+import { releaseMonsterLeash, releaseMonsterLeashWithFeedback, } from './monster_leash.js';
+import { BOULDER, SADDLE } from './object_data.js';
+import { mksobj } from './mklev.js';
+import { fullyIdentifyObject } from './invent.js';
+import { applyMonsterEquipmentProperties } from './monster_equipment.js';
 import { objectMaterial } from './object_material.js';
 import { makePlural } from './object_grammar.js';
 import { rn1, rn2, rnd, rnl } from './rng.js';
-import { recordWeaponPractice } from './skills.js';
-import { moveHeroByTeleport, randomMonsterRelocation } from './teleport.js';
+import { useHeroSkill } from './skills.js';
+import { moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
-import { promptKey } from './tty_prompts.js';
+import { readDirectionKey } from './tty_prompts.js';
 import { promptYesNo } from './query.js';
 import { vision_recalc } from './vision.js';
 import { heroLegName } from './body_parts.js';
@@ -38,14 +33,13 @@ import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { encumbranceLabel, encumbranceMessage, nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { monsterIsHelpless } from './monster_sleep.js';
-import {
-    blocksDiagonalDoor, heroBadRock, heroTightDiagonalReason,
-} from './hack.js';
+import { blocksDiagonalDoor, heroBadRock, heroTightDiagonalReason, } from './hack.js';
 import { applyHeroLocationEffects, heroCouldMoveOntoBoulder } from './cmd.js';
+import { finishDestinationSpotEffects } from './location_effects.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { isLavaAt, isPoolAt } from './dbridge.js';
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
-
+import { levelHasCeiling, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isPolearm } from './weapon_type.js';
 const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
 const M1_SWIM = 0x00000002;
@@ -53,6 +47,7 @@ const M1_HUMANOID = 0x00020000;
 const M1_SLITHY = 0x00080000;
 const M1_AMORPHOUS = 0x00000004;
 const M1_NOLIMBS = 0x00006000;
+const M2_DOMESTIC = 0x00400000;
 const M2_ROCKTHROW = 0x08000000;
 const MZ_SMALL = 1;
 const MZ_LARGE = 3;
@@ -60,9 +55,6 @@ const IRON = 11;
 const MITHRIL = 17;
 const S_EYE = 5;
 const S_LIGHT = 25;
-const DIRECTION_X = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
-const DIRECTION_Y = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
-
 export function steedIsGrounded(steed, state = game) {
     const flags = MONSTER_FLAGS1[steed?.mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[steed?.mnum];
@@ -70,13 +62,11 @@ export function steedIsGrounded(steed, state = game) {
         return false;
     return !(flags & M1_CLING) || !levelHasCeiling(state);
 }
-
 export function monsterSaddle(monster) {
-    if (monster?.saddle) return monster.saddle;
-    return (monster?.minvent || monster?.inventory || []).find(object =>
-        (object.owornmask ?? 0) & W_SADDLE) ?? null;
+    if (monster?.saddle)
+        return monster.saddle;
+    return (monster?.minvent || monster?.inventory || []).find(object => (object.owornmask ?? 0) & W_SADDLE) ?? null;
 }
-
 export async function doride() {
     const hero = game.u;
     if (hero?.usteed) {
@@ -84,41 +74,41 @@ export async function doride() {
         game.context.move = 1;
         return;
     }
-
-    const direction = String.fromCharCode(
-        await promptKey('In what direction? '),
-    ).toLowerCase();
-    if (!Object.hasOwn(DIRECTION_X, direction)) {
-        game._pending_message = '';
+    const direction = String.fromCharCode(await readDirectionKey()).toLowerCase();
+    const vector = DIRECTION_KEYS[direction];
+    if (!vector) {
         game.context.move = 0;
         return;
     }
-    hero.dx = DIRECTION_X[direction];
-    hero.dy = DIRECTION_Y[direction];
-    const x = hero.ux + hero.dx;
-    const y = hero.uy + hero.dy;
+    const [dx, dy] = vector;
+    hero.dx = dx;
+    hero.dy = dy;
+    const x = hero.ux + dx;
+    const y = hero.uy + dy;
     if (!isok(x, y)) {
         game.context.move = 0;
         return;
     }
     const force = !!game.flags.debug
         && await promptYesNo('Force the mount to succeed? [yn] (n) ') === 'y';
-    const steed = game.level?.monsters?.find(monster =>
+    const steed = game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) &&
         (monster.mx === x && monster.my === y)
         || monster.wormSegments?.some(segment => segment.x === x && segment.y === y));
-    game.context.move = await mountSteed(steed, force) ? 1 : 0;
+    game.context.move = await mountSteed(steed, force, vector) ? 1 : 0;
 }
-
 export function heroCanRideSteed(steed, state = game) {
     const mnum = state.u.umonnum;
-    return !!steed.mtame && !!(MONSTER_FLAGS1[mnum] & M1_HUMANOID)
-        && MONSTER_SIZE[mnum] >= MZ_SMALL && MONSTER_SIZE[mnum] < MZ_LARGE
-        && (!state.u.uinwater || !!(MONSTER_FLAGS1[steed.mnum] & M1_SWIM));
+    if (mnum === undefined)
+        return false;
+    const size = MONSTER_SIZE[mnum];
+    return !!steed.mtame && !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID)
+        && size !== undefined && size >= MZ_SMALL && size < MZ_LARGE
+        && (!state.u.uinwater || !!((MONSTER_FLAGS1[steed.mnum] ?? 0) & M1_SWIM));
 }
-
 export async function handleRidingAfterFormChange() {
     const steed = game.u.usteed;
-    if (!steed) return { died: false };
+    if (!steed)
+        return { died: false };
     if (touchPetrifies(steed.mnum) && !game.u.stoneResistance && rnl(3)) {
         await plineWithContinuation(`No longer petrify-resistant, you touch ${steedName(steed)}.`);
         const species = monsterTypeName(steed.mnum, !!steed.female);
@@ -126,58 +116,51 @@ export async function handleRidingAfterFormChange() {
         const result = await resolveImmediatePetrification({
             killer: `riding ${article} ${species}`,
         });
-        if (result.died) return result;
+        if (result.died)
+            return result;
     }
     if (game.u.usteed && !heroCanRideSteed(game.u.usteed))
         return dismountHero(DISMOUNT_POLY);
     return { died: false };
 }
-
-export async function adjustRiderAfterSteedPolymorph(
-    steed, oldMnum, state = game, publish = plineWithContinuation,
-) {
+export async function adjustRiderAfterSteedPolymorph(steed, oldMnum, state = game, publish = plineWithContinuation) {
     if (!monsterCanBeSaddled(steed) || !heroCanRideSteed(steed, state))
         return dismountHero(DISMOUNT_FELL, { state, announce: publish });
     const givenName = MGIVENNAME(steed);
-    const name = givenName || `your ${oldMnum !== steed.mnum ? 'new ' : ''}${
-        monsterTypeName(steed.mnum, !!steed.female)
-    }`;
+    const name = givenName || `your ${oldMnum !== steed.mnum ? 'new ' : ''}${monsterTypeName(steed.mnum, !!steed.female)}`;
     await publish(`You adjust yourself in the saddle on ${name}.`);
     refreshMovementProperties(state);
     return { dismounted: false };
 }
-
 export async function ridingPreventsMovement() {
     const steed = game.u.usteed;
-    if (!steed || !monsterIsHelpless(steed)) return false;
+    if (!steed || !monsterIsHelpless(steed))
+        return false;
     const name = MGIVENNAME(steed) || `your ${monsterTypeName(steed.mnum, !!steed.female)}`;
-    await plineWithContinuation(`${name[0].toUpperCase()}${name.slice(1)} won't move!`);
+    await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} won't move!`);
     return true;
 }
-
 // C hack.c moves the steed with the hero before resolving displacement.
-export function moveSteedWithHero() {
+export async function moveSteedWithHero() {
     const hero = game.u;
-    if (!hero.usteed) return;
+    if (!hero.usteed)
+        return;
     hero.usteed.mx = hero.ux;
     hero.usteed.my = hero.uy;
     hero.urideturns = (hero.urideturns || 0) + 1;
     if (hero.urideturns >= 100) {
         hero.urideturns = 0;
-        recordWeaponPractice(game, P_RIDING, 1);
+        await useHeroSkill(P_RIDING);
     }
 }
-
 function steedName(steed) {
     const species = monsterTypeName(steed.mnum, !!steed.female);
     return MGIVENNAME(steed) || `the ${monsterSaddle(steed) ? 'saddled ' : ''}${species}`;
 }
-
 function steedSubject(steed) {
     const name = steedName(steed);
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
-
 function ridingStepIsClear(state, x, y) {
     const hero = state.u;
     const location = state.level.at(x, y);
@@ -185,35 +168,38 @@ function ridingStepIsClear(state, x, y) {
         || (location.typ === DOOR && (location.doormask & (D_CLOSED | D_LOCKED))))
         return false;
     if (x !== hero.ux && y !== hero.uy) {
-        if (blocksDiagonalDoor(state.level.at(hero.ux, hero.uy), location)) return false;
+        if (blocksDiagonalDoor(state.level.at(hero.ux, hero.uy), location))
+            return false;
         if (heroBadRock(state, hero.ux, y) && heroBadRock(state, x, hero.uy)
-            && heroTightDiagonalReason(state)) return false;
+            && heroTightDiagonalReason(state))
+            return false;
     }
     return !(state.level.objects[x]?.[y] || []).some(object => object.otyp === BOULDER)
         || heroCouldMoveOntoBoulder(x, y, state);
 }
-
-async function mountSteed(steed, force) {
+async function mountSteed(steed, force, [dx, dy]) {
+    requirePlayingGame(game);
     const hero = game.u;
     if (heroIsHallucinating() && !force) {
         await pline('Maybe you should find a designated driver.');
         return false;
     }
-    if (hero._woundedLegTurns > 0) {
+    if ((hero._woundedLegTurns ?? 0) > 0) {
         const both = hero._woundedLegSide === 'both';
         const leg = both ? makePlural(heroLegName())
             : `${hero._woundedLegSide} ${heroLegName()}`;
         await pline(`Your ${leg} ${both ? 'are' : 'is'} in no shape for riding.`);
         if (force && game.flags.debug
             && await promptYesNo(`Heal your leg${both ? 's' : ''}? [yn] (n) `) === 'y') {
-            for (const message of healHeroLegs().messages)
-                await plineWithContinuation(message);
-        } else return false;
+            await healHeroLegs();
+        }
+        else
+            return false;
     }
-    const bodyFlags = MONSTER_FLAGS1[hero.umonnum];
+    const bodyFlags = MONSTER_FLAGS1[hero.umonnum] ?? 0;
     const bodySize = MONSTER_SIZE[hero.umonnum];
     if (Upolyd(hero) && (!(bodyFlags & M1_HUMANOID)
-        || bodySize < MZ_SMALL || bodySize >= MZ_LARGE || (bodyFlags & M1_SLITHY))) {
+        || bodySize === undefined || bodySize < MZ_SMALL || bodySize >= MZ_LARGE || (bodyFlags & M1_SLITHY))) {
         await pline("You won't fit on a saddle.");
         return false;
     }
@@ -223,12 +209,12 @@ async function mountSteed(steed, force) {
     }
     if (!steed || (!force && ((heroIsBlind() && !hero.telepathy)
         || steed.mundetected
-        || [M_AP_FURNITURE, M_AP_OBJECT].includes(steed.m_ap_type & M_AP_TYPMASK)))) {
+        || [M_AP_FURNITURE, M_AP_OBJECT].includes((steed.m_ap_type ?? 0) & M_AP_TYPMASK)))) {
         await pline('I see nobody there.');
         return false;
     }
     if (MONSTER_NAME[steed.mnum] === 'long worm'
-        && (hero.ux + hero.dx !== steed.mx || hero.uy + hero.dy !== steed.my)) {
+        && (hero.ux + dx !== steed.mx || hero.uy + dy !== steed.my)) {
         await pline("You couldn't ride a long worm, let alone its tail.");
         return false;
     }
@@ -250,16 +236,18 @@ async function mountSteed(steed, force) {
         const result = await resolveImmediatePetrification({
             killer: `attempting to ride a ${monsterTypeName(steed.mnum, !!steed.female)}`,
         });
-        if (result.died) return false;
+        if (result.died)
+            return false;
     }
     if (!steed.mtame || steed.isminion) {
         await pline(`I think ${steedName(steed)} would mind.`);
         return false;
     }
     if (steed.mtrapped) {
-        const trap = game.level.traps.find(trap =>
-            trap.tx === steed.mx && trap.ty === steed.my);
-        const trapName = TRAP_EXPLANATIONS[trap.ttyp];
+        const trap = game.level.traps.find(trap => trap.tx === steed.mx && trap.ty === steed.my);
+        const trapName = trap ? TRAP_EXPLANATIONS[trap.ttyp] : undefined;
+        if (!trapName)
+            throw new Error('A trapped steed has no trap at its position.');
         const article = /^[aeiou]/i.test(trapName) ? 'an' : 'a';
         await pline(`You can't mount ${steedName(steed)} while it's trapped in ${article} ${trapName}.`);
         return false;
@@ -271,11 +259,12 @@ async function mountSteed(steed, force) {
             newsym(steed.mx, steed.my);
             const leash = steed.mleashed ? ' and its leash comes off' : '';
             await pline(`${steedSubject(steed)} resists${leash}!`);
-            if (steed.mleashed) releaseMonsterLeash(steed, game);
+            if (steed.mleashed)
+                releaseMonsterLeash(steed, game);
             return false;
         }
     }
-    if (!force && hero.uinwater && !(MONSTER_FLAGS1[steed.mnum] & M1_SWIM)) {
+    if (!force && hero.uinwater && !((MONSTER_FLAGS1[steed.mnum] ?? 0) & M1_SWIM)) {
         await pline("You can't ride that creature while under water.");
         return false;
     }
@@ -283,8 +272,9 @@ async function mountSteed(steed, force) {
         await pline("You can't ride such a creature.");
         return false;
     }
-    const steedFlags = MONSTER_FLAGS1[steed.mnum];
-    const floats = [S_EYE, S_LIGHT].includes(MONSTER_SYMBOL[steed.mnum]);
+    const steedFlags = MONSTER_FLAGS1[steed.mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[steed.mnum];
+    const floats = symbol === S_EYE || symbol === S_LIGHT;
     const flies = !!(steedFlags & M1_FLY);
     if (!force && !floats && !flies && hero.levitation && !levitationAtWill()) {
         await pline(`You cannot reach ${steedName(steed)}.`);
@@ -292,14 +282,14 @@ async function mountSteed(steed, force) {
     }
     const armor = game.uarm || hero.uarm;
     const material = armor && objectMaterial(armor);
-    if (!force && armor && material >= IRON && material <= MITHRIL
+    if (!force && armor && typeof material === 'number' && material >= IRON && material <= MITHRIL
         && (armor.oeroded || armor.oeroded2)) {
         const damage = armor.oeroded ? 'rusty' : 'corroded';
         await pline(`Your ${damage} armor is too stiff to be able to mount ${steedName(steed)}.`);
         return false;
     }
-    if (!force && (hero.confusionTurns > 0 || hero.fumbling || hero.fumblingTurns > 0
-        || hero.glibTurns > 0
+    if (!force && ((hero.confusionTurns ?? 0) > 0 || hero.fumbling || (hero.fumblingTurns ?? 0) > 0
+        || (hero.glibTurns ?? 0) > 0
         || hero.glib || saddle.cursed || saddle.greased
         || hero.ulevel + steed.mtame < rnd(20))) {
         if (hero.levitation) {
@@ -308,9 +298,11 @@ async function mountSteed(steed, force) {
         }
         await plineWithContinuation(`You slip while trying to get on ${steedName(steed)}.`);
         let damage = rn1(5, 10);
-        if (hero.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
+        if (hero.halfPhysicalDamage)
+            damage = Math.trunc((damage + 1) / 2);
         let name = `a saddled ${monsterTypeName(steed.mnum, !!steed.female)}`;
-        if (MGIVENNAME(steed)) name += ` called ${MGIVENNAME(steed)}`;
+        if (MGIVENNAME(steed))
+            name += ` called ${MGIVENNAME(steed)}`;
         await loseHeroHp(damage, `slipped while mounting ${name}`);
         return false;
     }
@@ -322,20 +314,19 @@ async function mountSteed(steed, force) {
         if (hero.flying)
             await plineWithContinuation(`You and ${steedName(steed)} take flight together.`);
     }
+    if (isPolearm(game.uwep || hero.uwep))
+        game._unweapon = false;
     const wasStealthy = hero.stealth;
     hero.usteed = steed;
     refreshMovementProperties(game);
     if (wasStealthy && !hero.stealth)
         await plineWithContinuation("You aren't stealthy anymore.");
-    game.level.monsters = game.level.monsters.filter(monster => monster !== steed);
-    const movement = moveHeroByTeleport(steed.mx, steed.my, game);
+    const movement = await moveHeroByTeleport(steed.mx, steed.my, game);
     newsym(movement.oldx, movement.oldy);
     vision_recalc(1);
-    newsym(hero.ux, hero.uy);
     await applyHeroLocationEffects();
     return true;
 }
-
 async function wakeSteedForRiding(steed) {
     const wasHelpless = monsterIsHelpless(steed);
     steed.msleeping = 0;
@@ -344,49 +335,63 @@ async function wakeSteedForRiding(steed) {
         if (rn2(remaining) === 0) {
             steed.mfrozen = 0;
             steed.mcanmove = 1;
-        } else steed.mfrozen = remaining;
+        }
+        else
+            steed.mfrozen = remaining;
     }
     if (wasHelpless && !monsterIsHelpless(steed))
         await plineWithContinuation(`${steedSubject(steed)} wakes up.`);
     steed.meating = 0;
-    if ((steed.m_ap_type & M_AP_TYPMASK) && MONSTER_SYMBOL[steed.mnum] !== 13) {
+    if (((steed.m_ap_type ?? 0) & M_AP_TYPMASK) && MONSTER_SYMBOL[steed.mnum] !== 13) {
         steed.m_ap_type = 0;
         steed.mappearance = 0;
         newsym(steed.mx, steed.my);
     }
 }
-
-export function putSaddleOnMonster(saddle, monster) {
-    if (!saddle || !monsterCanBeSaddled(monster) || monsterSaddle(monster))
+export async function putSaddleOnMonster(saddle, monster) {
+    if (!monsterCanBeSaddled(monster) || monsterSaddle(monster))
         return null;
-    const carriedSaddle = addObjectToMonsterInventory(monster, saddle);
+    if (!saddle) {
+        saddle = await mksobj(SADDLE, true, false);
+        fullyIdentifyObject(saddle);
+    }
+    const carriedSaddle = await addObjectToMonsterInventory(monster, saddle);
+    if (!carriedSaddle)
+        throw new Error('The saddle did not enter the monster inventory.');
     carriedSaddle.owornmask = W_SADDLE;
     carriedSaddle.leashmon = monster.m_id;
     monster.misc_worn_check = (monster.misc_worn_check ?? 0) | W_SADDLE;
     monster.saddled = true;
     monster.saddle = carriedSaddle;
+    applyMonsterEquipmentProperties(monster, carriedSaddle, true);
     return carriedSaddle;
 }
-
+// C makemon(): the roll precedes species and equipment eligibility checks.
+export async function maybeGiveDomesticSaddle(monster) {
+    if (!rn2(100) && ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DOMESTIC))
+        return await putSaddleOnMonster(null, monster);
+    return null;
+}
 const DISMOUNT_DIRECTIONS = [
     [-1, 0], [-1, -1], [0, -1], [1, -1],
     [1, 0], [1, 1], [0, 1], [-1, 1],
 ];
-
 function openLandingSquare(state, x, y, steed) {
-    if (!isok(x, y)) return false;
+    if (!isok(x, y))
+        return false;
     const location = state.level?.at?.(x, y);
-    if (!location || !ACCESSIBLE(location.typ)) return false;
-    if (!ridingStepIsClear(state, x, y)) return false;
-    return !(state.level?.monsters || []).some(monster => monster !== steed
+    if (!location || !ACCESSIBLE(location.typ))
+        return false;
+    if (!ridingStepIsClear(state, x, y))
+        return false;
+    return !(state.level?.monsters || []).some(monster => monsterHasMapPosition(monster, state) && monster !== steed
         && !monster.dead && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y);
 }
-
 function landingSpot(state, steed, reason, random, force = false) {
     const avoidHazards = reason === DISMOUNT_BYCHOICE
-        && !(state.u.stunned || state.u.stunnedTurns > 0
-            || state.u.confusionTurns > 0 || state.u.fumbling || state.u.fumblingTurns > 0);
+        && !(state.u.stunned || (state.u.stunnedTurns ?? 0) > 0
+            || (state.u.confusionTurns ?? 0) > 0 || state.u.fumbling || (state.u.fumblingTurns ?? 0) > 0);
     const firstPass = avoidHazards ? 0
         : reason === DISMOUNT_BYCHOICE || reason === DISMOUNT_KNOCKED ? 1 : 2;
     let viable = 0;
@@ -398,20 +403,25 @@ function landingSpot(state, steed, reason, random, force = false) {
         const counterclockwise = (facing + 7) % 8;
         const next = random(2) ? [counterclockwise, clockwise] : [clockwise, counterclockwise];
         const indices = [facing, ...next];
-        directions = [...indices.map(index => DISMOUNT_DIRECTIONS[index]),
+        const preferredDirections = indices.map(index => {
+            const direction = DISMOUNT_DIRECTIONS[index];
+            if (!direction)
+                throw new Error(`Unknown dismount direction ${index}.`);
+            return direction;
+        });
+        directions = [...preferredDirections,
             ...DISMOUNT_DIRECTIONS.filter((_, index) => !indices.includes(index))];
         preferred = true;
     }
-
     for (let pass = firstPass; pass <= 2; pass++) {
         let selected = null;
         let shortest = Infinity;
         for (const [index, [dx, dy]] of directions.entries()) {
             const x = state.u.ux + dx;
             const y = state.u.uy + dy;
-            if (!openLandingSquare(state, x, y, steed)) continue;
+            if (!openLandingSquare(state, x, y, steed))
+                continue;
             viable++;
-
             const distance = dx * dx + dy * dy;
             if (shortest === Infinity || (preferred ? index < 3 : distance < shortest)
                 || (distance === shortest && random(viable) === 0)) {
@@ -419,66 +429,76 @@ function landingSpot(state, steed, reason, random, force = false) {
                     && state.level.traps.some(trap => trap.tseen && trap.ttyp !== VIBRATING_SQUARE
                         && trap.tx === x && trap.ty === y);
                 const boulder = pass <= 1
-                    && !(MONSTER_FLAGS2[state.u.umonnum] & M2_ROCKTHROW)
+                    && !((MONSTER_FLAGS2[state.u.umonnum] ?? 0) & M2_ROCKTHROW)
                     && (state.level.objects[x]?.[y] || []).some(object => object.otyp === BOULDER);
-                if (knownTrap || boulder) continue;
+                if (knownTrap || boulder)
+                    continue;
                 selected = { x, y };
                 shortest = distance;
-                if (preferred && index < 3) break;
+                if (preferred && index < 3)
+                    break;
             }
         }
-        if (selected) return selected;
+        if (selected)
+            return selected;
     }
-    return force ? findNearbyMonsterPosition(
-        state.u.umonnum, state.u.ux, state.u.uy, { state, random },
-    ) : null;
+    return force ? findNearbyMonsterPosition(state.u.umonnum, state.u.ux, state.u.uy, { state, random }) : null;
 }
-
-function moveSteedOffHero(state, steed, random) {
-    const point = findNearbyMonsterPosition(
-        steed.mnum, state.u.ux, state.u.uy, { state, random },
-    );
-    if (!point) return false;
-    steed.mx = point.x;
-    steed.my = point.y;
-    steed.mtrack = [];
+async function moveSteedOffHero(state, steed, random) {
+    const point = findNearbyMonsterPosition(steed.mnum, state.u.ux, state.u.uy, { state, random });
+    if (!point)
+        return false;
+    await relocateMonsterTo(steed, point.x, point.y, { state, random });
     newsym(point.x, point.y);
     return true;
 }
-
+// C YMonnam(steed): the given name when the steed has one, otherwise
+// "your [saddled] <species>".
+function yourSteedSubject(steed) {
+    const name = MGIVENNAME(steed);
+    if (name)
+        return name;
+    const species = monsterTypeName(steed.mnum, !!steed.female);
+    return `Your ${monsterSaddle(steed) ? 'saddled ' : ''}${species}`;
+}
+// C steed.c:875-895 stucksteed().  Decides whether the hero's steed is able
+// to move; holding traps are not checked here (those affect the hero
+// directly).  Announces the reason and returns true, or returns false for a
+// mobile steed; no other state changes.
+export async function stuckSteed(checkFeeding = true, state = game) {
+    const steed = state.u?.usteed;
+    if (!steed)
+        return false;
+    if (monsterIsHelpless(steed)) {
+        await plineWithContinuation(`${yourSteedSubject(steed)} won't move!`);
+        return true;
+    }
+    if (checkFeeding && steed.meating) {
+        await plineWithContinuation(`${yourSteedSubject(steed)} is still eating.`);
+        return true;
+    }
+    return false;
+}
 function unnamedSteedMessage(steed) {
     const name = monsterTypeName(steed.mnum, !!steed.female);
     const article = /^[aeiou]/i.test(name) ? 'an' : 'a';
     return `You've been through the dungeon on ${article} ${name} with no name.`;
 }
-
-async function releaseSteedLeash(steed, state, announce) {
-    if (!steed.mleashed) return;
-    releaseMonsterLeash(steed, state);
-
-    const name = steed.name || `The ${monsterTypeName(
-        steed.mnum, !!steed.female,
-    )}`;
-    const pronoun = steed.female ? 'her' : 'its';
-    await announce(`${name} pulls free of ${pronoun} leash!`);
-}
-
-export async function dismountHero(
-    reason,
-    {
-        state = game,
-        random = rn2,
-        announce = plineWithContinuation,
-        land = () => applyHeroLocationEffects(announce),
-    } = {},
-) {
+export async function dismountHero(reason, { state = game, random = rn2, announce = plineWithContinuation, } = {}) {
+    // Dismounting mutates the world (hero move, spot effects, the descent
+    // itself); it only runs on the live singleton.
+    requireLiveGame(state);
+    const steed = state.u.usteed;
+    if (!steed)
+        return { dismounted: false };
+    requirePlayingGame(state);
     const hero = state.u;
-    const steed = hero?.usteed;
-    if (!steed) return { dismounted: false };
-
+    // Fallback baseline only: the tail encumbrance normally compares
+    // against the level the descent already stored; this covers a
+    // dismount whose float_down returned early without settling.
     const previousCapacity = nearCapacity(state);
     const wasTrapped = !!hero.utrap;
-    let repairLegs = hero._woundedLegTurns > 0;
+    let repairLegs = (hero._woundedLegTurns ?? 0) > 0;
     let landing = landingSpot(state, steed, reason, random);
     hero.usteed = null;
     refreshMovementProperties(state);
@@ -486,36 +506,33 @@ export async function dismountHero(
     const fallingVerb = dismountFallVerb(state);
     hero.usteed = steed;
     refreshMovementProperties(state);
-
     if ([DISMOUNT_THROWN, DISMOUNT_KNOCKED, DISMOUNT_FELL].includes(reason)) {
         const verb = reason === DISMOUNT_THROWN ? 'are thrown' : fallingVerb;
         await announce(`You ${verb} off of ${steedName(steed)}!`);
         landing ||= landingSpot(state, steed, reason, random, true);
         if (!inAir) {
             let damage = rn1(10, 10);
-            if (hero.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
+            if (hero.halfPhysicalDamage)
+                damage = Math.trunc((damage + 1) / 2);
             if (await loseHeroHp(damage, 'riding accident', { state, publish: announce }))
                 return { dismounted: false, died: true };
-            woundHeroLegs('both', (hero._woundedLegTurns || 0) + rn1(5, 5), state);
+            await woundHeroLegs('both', (hero._woundedLegTurns || 0) + rn1(5, 5), state, { publish: announce });
             repairLegs = false;
         }
-    } else if (reason === DISMOUNT_POLY) {
+    }
+    else if (reason === DISMOUNT_POLY) {
         await announce(`You can no longer ride ${steedName(steed)}.`);
         landing ||= landingSpot(state, steed, reason, random, true);
     }
-
     if (reason === DISMOUNT_BYCHOICE) {
         const saddle = monsterSaddle(steed);
         if (saddle?.cursed) {
             const known = saddle.bknown;
             saddle.bknown = true;
-            await announce(`You can't.  The saddle ${
-                known ? 'is' : 'seems to be'
-            } cursed.`);
+            await announce(`You can't.  The saddle ${known ? 'is' : 'seems to be'} cursed.`);
             return { dismounted: false };
         }
     }
-
     if (reason === DISMOUNT_BYCHOICE && !landing) {
         await announce("You can't.  There isn't anywhere for you to stand.");
         return { dismounted: false };
@@ -528,130 +545,204 @@ export async function dismountHero(
         if (!givenName && heroIsHallucinating(state))
             await announce('It felt good to get out of the rain.');
     }
-
-    if (repairLegs) healHeroLegs(state, { dismounting: true });
-
+    if (repairLegs)
+        await healHeroLegs(state, { cause: 'dismounting', publish: announce });
     const oldx = hero.ux;
     const oldy = hero.uy;
     const wasStealthy = hero.stealth;
     hero.usteed = null;
     refreshMovementProperties(state);
-    if (!wasStealthy && hero.stealth) await announce('You seem less noisy now.');
+    if (!wasStealthy && hero.stealth)
+        await announce('You seem less noisy now.');
     hero.ugallop = 0;
-    if ([TT_BEARTRAP, TT_PIT, TT_WEB].includes(hero.utraptype)) steed.mtrapped = 1;
+    if (hero.utraptype !== undefined && [TT_BEARTRAP, TT_PIT, TT_WEB].includes(hero.utraptype))
+        steed.mtrapped = 1;
     let steedPosition = { x: oldx, y: oldy };
-    if (state.level.monsters.some(monster => monster !== steed && !monster.dead
+    if (state.level.monsters.some(monster => monsterHasMapPosition(monster, state) && monster !== steed && !monster.dead
         && monster.mx === oldx && monster.my === oldy)) {
         steedPosition = findNearbyMonsterPosition(steed.mnum, oldx, oldy, { state, random })
             || findNearbyMonsterPosition(MONSTER_NAME.indexOf('bat'), oldx, oldy, { state, random })
             || findNearbyMonsterPosition(MONSTER_NAME.indexOf('ghost'), oldx, oldy, { state, random })
             || steedPosition;
     }
-    steed.mx = steedPosition.x;
-    steed.my = steedPosition.y;
-    if (!state.level.monsters) state.level.monsters = [];
-    if (!steed.dead && steed.mhp > 0 && !state.level.monsters.includes(steed))
-        state.level.monsters.push(steed);
-
-    if (reason === DISMOUNT_BONES) {
-        if (!moveSteedOffHero(state, steed, random)) randomMonsterRelocation(steed, state);
-        return { dismounted: true, steed };
-    }
     let liquid = null;
     let movement = null;
+    let location = null;
     if (!steed.dead && steed.mhp > 0) {
+        placeMonsterAt(steed, steedPosition.x, steedPosition.y);
+        if (reason === DISMOUNT_BONES) {
+            if (!(await moveSteedOffHero(state, steed, random)))
+                await randomMonsterRelocation(steed, {
+                    state, flags: RLOC_ERR | RLOC_NOMSG,
+                });
+            return { dismounted: true, steed };
+        }
         if (!hero.uswallow && !hero.ustuck && landing) {
             if (steedIsGrounded(steed, state)) {
                 liquid = await dropSteedIntoLiquid(steed, state, announce);
             }
             if (!steed.dead && steed.mhp > 0) {
-                movement = moveHeroByTeleport(landing.x, landing.y, state);
-                if (state.level.flags.sokoban_rules
-                    && (state.level.objects[landing.x]?.[landing.y] || [])
-                        .some(object => object.otyp === BOULDER)) {
-                    hero.uconduct.sokocheat = (hero.uconduct.sokocheat || 0) + 1;
-                    hero.uluck = Math.max(-13, (hero.uluck || 0) - 1);
+                // C steed.c:764-772 raises in_steed_dismounting around
+                // teleds(); teleport.c:536-568 renders the moved hero
+                // (newsym/vision/newsym) before spoteffects, whose
+                // liquids/terrain/rooms/sink run while deferring
+                // trap/timeout-1/pickup (hack.c:3355); sokoban_guilt()
+                // follows; the steed's trap fires only after the flag
+                // drops, exactly like C's mintrap (771).  A hero who died
+                // in the spot effects returns from inside the try so the
+                // finally still lowers the flag; guilt, the steed trap,
+                // and the tail display are never reached.
+                state._steedDismounting = true;
+                try {
+                    movement = await moveHeroByTeleport(landing.x, landing.y, state);
+                    newsym(oldx, oldy);
+                    vision_recalc(0);
+                    // C teleport.c:536-568: the moved hero renders, then
+                    // spoteffects runs with the move's real old/new
+                    // coordinates (liquids/terrain/rooms/sink live,
+                    // trap/timeout-1/pickup deferred while dismounting).
+                    location = await finishDestinationSpotEffects({
+                        oldx: movement.oldx, oldy: movement.oldy,
+                        newx: movement.x, newy: movement.y,
+                        explicitAttempt: false, publish: announce,
+                    });
+                    if (location?.died || state.program_state?.gameover)
+                        return {
+                            dismounted: true, steed, movement, liquid,
+                            location, died: true,
+                        };
+                    if (state.level.flags.sokoban_rules
+                        && (state.level.objects[landing.x]?.[landing.y] || [])
+                            .some(object => object.otyp === BOULDER)) {
+                        hero.uconduct ||= {};
+                        hero.uconduct.sokocheat = (hero.uconduct.sokocheat || 0) + 1;
+                        hero.uluck = Math.max(-13, (hero.uluck || 0) - 1);
+                    }
+                }
+                finally {
+                    state._steedDismounting = false;
                 }
                 if (wasTrapped) {
-                    const action = triggerImmediateMonsterTrap(steed, state);
+                    const action = await triggerImmediateMonsterTrap(steed, state);
                     await resumeDeferredMonsterTrap(action, state, {
                         publish: announce, describeMonster: steedSubject,
                     });
                 }
             }
-        } else if (!moveSteedOffHero(state, steed, random)) {
+        }
+        else if (!(await moveSteedOffHero(state, steed, random))) {
             if (reason === DISMOUNT_BYCHOICE) {
                 await finishHeroMonsterKill(steed, steed.mx, steed.my);
                 adjustHeroAlignment(-1, state);
-            } else {
+            }
+            else {
                 steed.mhp = 0;
-                await finishEnvironmentalMonsterDeath(steed, state);
+                await finishMonsterKilled(steed, state, {
+                    damageType: AD_PHYS, publish: announce, random,
+                });
             }
         }
     }
-    let location = null;
-    if (reason !== DISMOUNT_ENGULFED) {
-        newsym(oldx, oldy);
-        vision_recalc(0);
-        newsym(hero.ux, hero.uy);
-        location = await land(movement);
+    if (reason !== DISMOUNT_ENGULFED && reason !== DISMOUNT_BONES) {
+        // No teleds display here: an actually moved hero was rendered
+        // inside the teleds window above (teleport.c:536-568 order), and an
+        // unmoved hero gets no teleds at all in C.
+        //
+        // C steed.c:808-815: usually return the hero to the surface.  When
+        // the hero never moved (the steed died in the drop, or no landing
+        // spot existed), C runs no teleds spot effects (the inner
+        // !DEADMONSTER at 760 skips teleds) and this tail float_down alone
+        // owns the descent: nomul, punished ball, flight, the liquid entry
+        // (trap.c:4104-4110), trap activation, and pickup, in that order,
+        // with the shared production owners.  W_SADDLE suppresses the
+        // landing message because this dismount already announced the fall.
+        // A hero who died in the spot effects above does not descend.
+        if (!location?.died && !state.program_state?.gameover) {
+            state._steedDismounting = true;
+            try {
+                await floatHeroDown(0, W_SADDLE, state);
+            }
+            finally {
+                state._steedDismounting = false;
+            }
+        }
+        // A hero who died in the descent itself gets no further tail work.
+        if (state.program_state?.gameover)
+            return {
+                dismounted: true, steed, movement, liquid, location,
+                died: true,
+            };
+        // C's tail encumber_msg() (steed.c:814) is normally silent because
+        // float_down already settled the stored level; compare against that
+        // stored level so a settled descent reports nothing new.  It still
+        // settles here when float_down returned early (a remaining
+        // levitation source skips its encumbrance work entirely); the entry
+        // baseline is only the fallback when nothing was stored.
+        const baseline = state._encumbranceLevel ?? previousCapacity;
         const capacity = nearCapacity(state);
         state._encumbranceLevel = capacity;
         hero._encumbrance = encumbranceLabel(capacity);
-        const capacityMessage = encumbranceMessage(previousCapacity, capacity);
-        if (capacityMessage) await announce(capacityMessage);
+        const capacityMessage = encumbranceMessage(baseline, capacity);
+        if (capacityMessage)
+            await announce(capacityMessage);
         state.vision_full_recalc = 1;
     }
+    if (isPolearm(state.uwep || hero.uwep))
+        state._unweapon = true;
     return {
         dismounted: true,
         steed,
         movement,
         liquid,
         location,
-        died: !!location?.died,
+        died: !!location?.died || !!state.program_state?.gameover,
     };
 }
-
 function dismountFallVerb(state) {
     const hero = state.u;
-    const flags = MONSTER_FLAGS1[hero.umonnum];
-    if (hero.levitation || [S_EYE, S_LIGHT].includes(MONSTER_SYMBOL[hero.umonnum])) return 'float';
-    if (hero.flying || (flags & M1_FLY)) return 'fly';
-    if (flags & M1_SLITHY) return 'slither';
-    if (flags & M1_AMORPHOUS) return 'ooze';
-    if (!MONSTER_MOVE[hero.umonnum]) return 'wiggle';
-    if ((flags & M1_NOLIMBS) === M1_NOLIMBS) return 'crawl';
+    const flags = MONSTER_FLAGS1[hero.umonnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[hero.umonnum];
+    if (hero.levitation || symbol === S_EYE || symbol === S_LIGHT)
+        return 'float';
+    if (hero.flying || (flags & M1_FLY))
+        return 'fly';
+    if (flags & M1_SLITHY)
+        return 'slither';
+    if (flags & M1_AMORPHOUS)
+        return 'ooze';
+    if (!MONSTER_MOVE[hero.umonnum])
+        return 'wiggle';
+    if ((flags & M1_NOLIMBS) === M1_NOLIMBS)
+        return 'crawl';
     return 'fall';
 }
-
 async function dropSteedIntoLiquid(steed, state, announce) {
     const { ux: x, uy: y } = state.u;
     let fatal = false;
     if (isPoolAt(x, y, state)) {
-        if (!state.u.uinwater) await announce(`${steedSubject(steed)} falls into the water!`);
+        if (!state.u.uinwater)
+            await announce(`${steedSubject(steed)} falls into the water!`);
         fatal = !monsterSurvivesPool(steed);
-    } else if (isLavaAt(x, y, state)) {
+    }
+    else if (isLavaAt(x, y, state)) {
         await announce(`${steedSubject(steed)} is pulled into the lava!`);
-        fatal = !['fire elemental', 'salamander'].includes(MONSTER_NAME[steed.mnum]);
-    } else return null;
-    if (!fatal) return { dead: false };
+        fatal = !['fire elemental', 'salamander'].includes(MONSTER_NAME[steed.mnum] ?? '');
+    }
+    else
+        return null;
+    if (!fatal)
+        return { dead: false };
     await finishHeroMonsterKill(steed, steed.mx, steed.my);
     adjustHeroAlignment(-1, state);
     return { dead: steed.dead || steed.mhp <= 0 };
 }
-
 // Kicks and bullwhips share steed.c:kick_steed().  The caller prints the
 // initial hit; this function owns the steed's response and riding state.
-export async function strikeSteed({
-    state = game,
-    random = rn2,
-    roll = rnd,
-    announce = async () => {},
-} = {}) {
+export async function strikeSteed({ state = game, random = rn2, roll = rnd, announce = async () => { }, } = {}) {
     const hero = state.u;
     const steed = hero?.usteed;
-    if (!steed) return { struck: false };
-
+    if (!steed)
+        return { struck: false };
     const helpless = !!(steed.msleeping || steed.mcanmove === 0
         || (steed.mfrozen ?? 0) > 0);
     if (helpless) {
@@ -661,8 +752,10 @@ export async function strikeSteed({
             await announce('It does not respond.');
             return { struck: true, helpless: true };
         }
-        if (steed.mcanmove !== 0) steed.msleeping = 0;
-        else if (steed.mfrozen > 2) steed.mfrozen -= 2;
+        if (steed.mcanmove !== 0)
+            steed.msleeping = 0;
+        else if (steed.mfrozen !== undefined && steed.mfrozen > 2)
+            steed.mfrozen -= 2;
         else {
             steed.mfrozen = 0;
             steed.mcanmove = 1;
@@ -672,12 +765,14 @@ export async function strikeSteed({
         await announce(remainsHelpless ? 'It stirs.' : 'It rouses itself!');
         return { struck: true, helpless: remainsHelpless };
     }
-
-    if (steed.mtame > 0) steed.mtame--;
-    steed.pet = steed.mtame > 0;
-    if (!steed.mtame) await releaseSteedLeash(steed, state, announce);
-    const resisted = steed.mtame > 0
-        && (hero.ulevel ?? 1) + steed.mtame >= roll(20);
+    if (steed.mtame !== undefined && steed.mtame > 0)
+        steed.mtame--;
+    const tameness = steed.mtame ?? 0;
+    steed.pet = tameness > 0;
+    if (!steed.mtame && steed.mleashed)
+        await releaseMonsterLeashWithFeedback(steed, { state, publish: announce });
+    const resisted = tameness > 0
+        && (hero.ulevel ?? 1) + tameness >= roll(20);
     if (!resisted) {
         newsym(steed.mx, steed.my);
         const dismount = await dismountHero(DISMOUNT_THROWN, {
@@ -687,11 +782,9 @@ export async function strikeSteed({
         });
         return { struck: true, thrown: dismount.dismounted };
     }
-
-    const name = steed.name || `The ${monsterTypeName(
-        steed.mnum, !!steed.female,
-    )}`;
+    const name = steed.name || `The ${monsterTypeName(steed.mnum, !!steed.female)}`;
     await announce(`${name} gallops!`);
     hero.ugallop = (hero.ugallop ?? 0) + random(20) + 30;
     return { struck: true, galloped: true };
 }
+//# sourceMappingURL=steed.js.map

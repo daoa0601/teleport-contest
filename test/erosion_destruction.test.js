@@ -1,0 +1,41 @@
+import { floorObjectsAt } from './support/level-state.js';
+import { requireFixtureGame } from './support/game-state.js';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
+import { NO_MINVENT, PIT, TT_PIT } from '../js/const.js';
+import { canSpotMonster } from '../js/display.js';
+import { requireGameLevel, game } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
+import { CLUB, LEVITATION_BOOTS } from '../js/object_data.js';
+import { erodeObject } from '../js/object_erosion.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+void test('burning away worn levitation boots lands the hero in the pit below', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    game.level.traps.push({ tx: 10, ty: 10, ttyp: PIT, tseen: true, once: false, launch: { x: 0, y: 0 } });
+    const boots = await addInventoryObject(LEVITATION_BOOTS, { oeroded: 3 });
+    pushKeys('                ');
+    wearHeroArmor(boots);
+    await applyArmorOnEffects(boots);
+    assert.equal(game.u.levitating, true);
+    await erodeObject(boots, 'burn', { destroy: true });
+    assert.equal(game.u.levitating, false);
+    assert.equal(game.u.utraptype, TT_PIT);
+    assert.ok((game.u.utrap ?? 0) > 0);
+    assert.equal(game.inventory.includes(boots), false);
+});
+void test('burning away the last floor object reveals the monster hiding beneath it', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const club = await floorObject(CLUB, 11, 10, { oeroded: 3 });
+    const scorpion = await createMonsterAt('scorpion', 11, 10, NO_MINVENT);
+    scorpion.mundetected = 1;
+    assert.equal(canSpotMonster(scorpion), false);
+    await erodeObject(club, 'burn', { destroy: true });
+    assert.equal(floorObjectsAt(requireGameLevel(game), 11, 10).includes(club), false);
+    assert.equal(canSpotMonster(scorpion), true);
+});
+//# sourceMappingURL=erosion_destruction.test.js.map

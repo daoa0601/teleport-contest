@@ -1,50 +1,41 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
-import { game } from '../js/gstate.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
 import { initializeObjectDescriptions } from '../js/o_init.js';
 import { wishedObjectPresentation } from '../js/objnam.js';
+import { mksobj } from '../js/mklev.js';
+import { freshObjectRoom } from './support/object-room.js';
 import { initRng } from '../js/rng.js';
 import { OBJECT_COLOR } from '../js/object_data.js';
 import { objectColor, objectUsesGenericGlyph } from '../js/display.js';
-
-test('unobserved appearance-sensitive objects use their generic class color', () => {
+void test('unobserved appearance-sensitive objects use their generic class color', () => {
     game.objectColors = OBJECT_COLOR.slice();
     const potion = { otyp: 300, oclass: 8, dknown: false };
-
     assert.equal(objectUsesGenericGlyph(potion), true);
     assert.equal(objectColor(potion), OBJECT_COLOR[8]);
     potion.dknown = true;
     assert.equal(objectUsesGenericGlyph(potion), false);
     assert.equal(objectColor(potion), OBJECT_COLOR[300]);
 });
-
-test('object shuffling keeps each unidentified description and color together', () => {
+void test('object shuffling keeps each unidentified description and color together', () => {
     initRng(116);
     initializeObjectDescriptions();
-
-    assert.equal(game.objectColors.length, OBJECT_COLOR.length);
+    assert.ok(game.objectColors);
+    assert.ok(game.objectDescriptionIndex);
     for (let otyp = 0; otyp < OBJECT_COLOR.length; otyp++) {
-        assert.equal(
-            game.objectColors[otyp],
-            OBJECT_COLOR[game.objectDescriptionIndex[otyp]],
-            `object ${otyp} detached its color from its description`,
-        );
+        const description = game.objectDescriptionIndex[otyp];
+        assert.ok(description !== undefined);
+        assert.equal(game.objectColors[otyp], OBJECT_COLOR[description], `object ${otyp} detached its color from its description`);
     }
 });
-
-test('wished unknown armor uses shuffled appearance and slot grammar', () => {
+void test('wished unknown armor uses shuffled appearance and slot grammar', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
     game._knownObjectTypes = new Set();
     game.objectDescriptions = [];
     game.objectDescriptions[161] = 'padded gloves';
     game.objectDescriptions[149] = 'tattered cape';
-
-    assert.equal(
-        wishedObjectPresentation(161).name,
-        'pair of padded gloves',
-    );
-    assert.equal(
-        wishedObjectPresentation(149).name,
-        'tattered cape',
-    );
+    assert.equal(wishedObjectPresentation(await mksobj(161, false, false)).name, 'pair of padded gloves');
+    assert.equal(wishedObjectPresentation(await mksobj(149, false, false)).name, 'tattered cape');
 });
+//# sourceMappingURL=object_metadata.test.js.map

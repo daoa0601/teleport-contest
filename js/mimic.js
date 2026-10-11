@@ -1,17 +1,14 @@
 // Revealing a monster disguised as an object or dungeon feature.
 // C refs: uhitm.c stumble_onto_mimic() and lock.c stumble_on_door_mimic().
-
-import {
-    M_AP_FURNITURE, M_AP_OBJECT, STRAT_WAITMASK,
-} from './const.js';
-import {
-    canSenseMonster, monsterHasWarningProjection, newsym, pline,
-} from './display.js';
+import { M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, } from './const.js';
+import { canSenseMonster, canSpotMonster, glyphAt, map_invisible, plineWithContinuation as pline, } from './display.js';
 import { game } from './gstate.js';
-import { nextIdent } from './ident.js';
-import { MONSTER_NAME } from './monster_data.js';
-import { OBJECT_NAMES } from './object_data.js';
-
+import { objectAtMonsterDescription } from './monster_birth.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
+import { MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { monsterName } from './monster_name.js';
+import { wakeMonster } from './monster_anger.js';
+import { heroIsBlind } from './senses.js';
 const S_VERTICAL_CLOSED_DOOR = 15;
 const S_HORIZONTAL_CLOSED_DOOR = 16;
 const CLOSED_DOOR_APPEARANCES = new Set([
@@ -26,65 +23,77 @@ const STICKY_MIMICS = new Set([
     PM_LARGE_MIMIC,
     PM_GIANT_MIMIC,
 ]);
-
-function indefiniteArticle(noun) {
-    return /^[aeiou]/i.test(noun) ? 'an' : 'a';
-}
-
-function furnitureName(appearance) {
-    if (CLOSED_DOOR_APPEARANCES.has(appearance)) return 'closed door';
-    return 'dungeon feature';
-}
-
-function revealMessage(monster, state) {
-    const species = MONSTER_NAME[monster.mnum] || 'mimic';
-    const describedSpecies = `${indefiniteArticle(species)} ${species}`;
-    if (monster.m_ap_type === M_AP_OBJECT) {
-        // Native object_from_map() allocates a temporary object to name the
-        // disguise, so revealing it advances the shared identity stream.
-        nextIdent(state);
-        const appearance = OBJECT_NAMES[monster.mappearance]
-            || 'strange object';
-        return `That ${appearance} is ${describedSpecies}!`;
+// C that_is_a_mimic(): revelation alone neither wakes nor creates a hold.
+export async function revealMimicIdentity(monster, { state = game, omitWait = false, publish = pline, } = {}) {
+    const appearance = M_AP_TYPE(monster);
+    let prefix = 'Wait!  That\'s ', identity = null;
+    if (heroIsBlind(state)) {
+        if (!state.u.telepathy)
+            identity = 'a monster';
+        else if (appearance === M_AP_MONSTER)
+            identity = monsterName(monster, { state, article: 'a' });
     }
-    return `That ${furnitureName(monster.mappearance)} actually is ${
-        describedSpecies}!`;
+    else {
+        const glyph = glyphAt(monster.mx, monster.my, state);
+        if (glyph?.kind === 'terrain' && (appearance === M_AP_FURNITURE
+            || appearance === M_AP_OBJECT && glyph.terrainName === 'trapped chest')) {
+            prefix = `That ${glyph.terrainName} actually is `;
+        }
+        else if (glyph?.kind === 'object') {
+            const description = await objectAtMonsterDescription(monster, state, { glyph });
+            const singular = /^(?:a|an) /.test(description) || description === 'something';
+            const name = description.replace(/^(?:a|an) /, '');
+            prefix = `${singular ? 'That' : 'Those'} ${name} ${singular ? 'is' : 'are'} `;
+        }
+        else if (glyph?.kind === 'monster') {
+            if (glyph.mnum === undefined)
+                throw new Error('monster display glyph lacks its species');
+            prefix = `Wait!  That ${monsterTypeName(glyph.mnum, monster.female)} is really `;
+        }
+        const seesInvisible = state.u.seeInvisible || (state.u.seeInvisibleTurns ?? 0) > 0;
+        if (monster.minvis && !seesInvisible)
+            identity = 'a monster';
+        else if (appearance === M_AP_MONSTER)
+            identity = monsterName(monster, { state, article: 'a', exact: true });
+        else {
+            const sleeping = MONSTER_SYMBOL[monster.mnum] === 13
+                && [M_AP_OBJECT, M_AP_FURNITURE].includes(appearance)
+                && (monster.msleeping || monster.mfrozen);
+            identity = monsterName(monster, {
+                state, article: 'a', adjective: sleeping ? 'sleeping' : '',
+            });
+        }
+    }
+    if (identity)
+        await publish(`${omitWait ? prefix.replace(/^Wait!  /, '') : prefix}${identity}!`);
+    revealMonsterAppearance(monster);
 }
-
 export function isObjectOrFurnitureMimic(monster, state = game) {
     return !!monster
-        && [M_AP_OBJECT, M_AP_FURNITURE].includes(monster.m_ap_type)
+        && [M_AP_OBJECT, M_AP_FURNITURE].includes(M_AP_TYPE(monster))
         && !(state.u?.protectionFromShapeChangers
-            || state.u?.protection_from_shape_changers
             || state.protectionFromShapeChangers)
         && !canSenseMonster(monster)
-        && !monsterHasWarningProjection(monster);
+        && glyphAt(monster.mx, monster.my, state)?.kind !== 'warning';
 }
-
 export function isDoorMimic(monster, state = game) {
     return isObjectOrFurnitureMimic(monster, state)
-        && monster.m_ap_type === M_AP_FURNITURE
-        && CLOSED_DOOR_APPEARANCES.has(monster.mappearance);
+        && M_AP_TYPE(monster) === M_AP_FURNITURE
+        && monster.mappearance !== undefined && CLOSED_DOOR_APPEARANCES.has(monster.mappearance);
 }
-
-export async function revealMimic(
-    monster,
-    state = game,
-    publish = pline,
-) {
-    if (!isObjectOrFurnitureMimic(monster, state)) return false;
-
-    await publish(revealMessage(monster, state));
-    monster.m_ap_type = 0;
-    monster.mappearance = 0;
-    monster.msleeping = 0;
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
+export async function revealMimic(monster, state = game, publish = pline) {
+    if (!isObjectOrFurnitureMimic(monster, state))
+        return false;
+    await revealMimicIdentity(monster, { state, publish });
     if (!state.u?.ustuck && !monster.mflee
         && STICKY_MIMICS.has(monster.mnum)
         && Math.abs(monster.mx - state.u.ux) <= 1
         && Math.abs(monster.my - state.u.uy) <= 1) {
         state.u.ustuck = monster;
     }
-    newsym(monster.mx, monster.my);
+    await wakeMonster(monster, { attacked: false });
+    if (!canSpotMonster(monster))
+        map_invisible(monster.mx, monster.my);
     return true;
 }
+//# sourceMappingURL=mimic.js.map

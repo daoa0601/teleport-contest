@@ -1,0 +1,111 @@
+--- a/win/tty/termcap.c
++++ b/win/tty/termcap.c
+@@ -709,10 +709,108 @@
+ /* Called at every real input-wait boundary (tty_nhgetch, tty_nh_poskey)
+  * and once at nh_terminate after topten — the points where one
+  * authoritative frame should be captured per step.  Bumps SEQ. */
++/* PROBE: canonical game-state digest at each input boundary.
++ * Diagnostic build only (NETHACK_STATELOG=path).  Reads state; never
++ * calls the RNG or changes game state.  Lists are sorted so the digest
++ * does not depend on chain order.  The TypeScript port emits the same
++ * format from its GameState for comparison. */
++static int
++probe_strcmp(const void *a, const void *b)
++{
++    return strcmp(*(const char *const *) a, *(const char *const *) b);
++}
++
++static void
++probe_sorted_list(FILE *fp, char **items, int n)
++{
++    int i, j;
++
++    /* insertion sort: avoids the patched deterministic qsort */
++    for (i = 1; i < n; i++)
++        for (j = i; j > 0 && probe_strcmp(&items[j - 1], &items[j]) > 0; j--) {
++            char *t = items[j];
++            items[j] = items[j - 1];
++            items[j - 1] = t;
++        }
++    for (i = 0; i < n; i++) {
++        fprintf(fp, "%s%s", i ? ";" : "", items[i]);
++        free(items[i]);
++    }
++}
++
++static void
++probe_state_digest(void)
++{
++    static FILE *fp = 0;
++    static int opened = 0;
++    struct obj *o;
++    struct monst *m;
++    char **items, buf[128];
++    int n, cap, i;
++
++    if (!opened) {
++        const char *path = getenv("NETHACK_STATELOG");
++        opened = 1;
++        fp = path && *path ? fopen(path, "a") : 0;
++    }
++    if (!fp)
++        return;
++    fprintf(fp, "%d\t", nomux_seq);
++    if (!program_state.in_moveloop || program_state.gameover) {
++        fputs("-\n", fp);
++        fflush(fp);
++        return;
++    }
++    fprintf(fp, "T=%ld\tL=%d.%d\tU=%d,%d,%d/%d,%d/%d,%d,%ld,%ld,%d,%d,%d\tA=",
++            svm.moves, u.uz.dnum, u.uz.dlevel, u.ux, u.uy, u.uhp, u.uhpmax,
++            u.uen, u.uenmax, u.ulevel, u.uexp, (long) u.uhunger, u.uac,
++            u.ualign.record, u.uluck);
++    for (i = 0; i < A_MAX; i++)
++        fprintf(fp, "%s%d", i ? "," : "", u.acurr.a[i]);
++
++    cap = 64;
++    items = (char **) malloc(cap * sizeof *items);
++    fputs("\tI=", fp);
++    for (n = 0, o = gi.invent; o; o = o->nobj) {
++        Snprintf(buf, sizeof buf, "%c:%d:%ld:%d:%c", o->invlet ? o->invlet : '?',
++                 o->otyp, o->quan, o->spe,
++                 o->blessed ? 'b' : o->cursed ? 'c' : 'u');
++        if (n == cap) items = (char **) realloc(items, (cap *= 2) * sizeof *items);
++        items[n++] = dupstr(buf);
++    }
++    probe_sorted_list(fp, items, n);
++
++    fputs("\tM=", fp);
++    for (n = 0, m = fmon; m; m = m->nmon) {
++        if (DEADMONSTER(m))
++            continue;
++        Snprintf(buf, sizeof buf, "%02d,%02d:%d:%d/%d:%c%c%c%c", m->mx, m->my,
++                 m->mnum, m->mhp, m->mhpmax, m->mtame ? 'T' : '-',
++                 m->mpeaceful ? 'P' : '-', m->msleeping ? 'S' : '-',
++                 m->mcanmove ? '-' : 'F');
++        if (n == cap) items = (char **) realloc(items, (cap *= 2) * sizeof *items);
++        items[n++] = dupstr(buf);
++    }
++    probe_sorted_list(fp, items, n);
++
++    fputs("\tO=", fp);
++    for (n = 0, o = fobj; o; o = o->nobj) {
++        Snprintf(buf, sizeof buf, "%02d,%02d:%d:%ld", o->ox, o->oy, o->otyp,
++                 o->quan);
++        if (n == cap) items = (char **) realloc(items, (cap *= 2) * sizeof *items);
++        items[n++] = dupstr(buf);
++    }
++    probe_sorted_list(fp, items, n);
++    free(items);
++    fputc('\n', fp);
++    fflush(fp);
++}
++
+ void
+ nomux_capture_write_input_boundary(void)
+ {
+     nomux_seq++;
++    probe_state_digest();
+     nomux_emit_marker("input");
+ }
+ 

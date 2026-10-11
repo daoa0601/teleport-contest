@@ -1,16 +1,14 @@
+import { floorObjectsAt } from './support/level-state.js';
+import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
-import {
-    dippedCoinMessage, resolveDippedCoinFate,
-} from '../js/fountain_effects.js';
-import { game } from '../js/gstate.js';
+import { dippedCoinMessage, resolveDippedCoinFate, } from '../js/fountain_effects.js';
+import { requireGameLevel, game } from '../js/gstate.js';
 import { mkgold } from '../js/mklev.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
-
-test('fate29 amount range shrinks from top to bottom of its dungeon', () => {
+void test('fate29 amount range shrinks from top to bottom of its dungeon', () => {
     const top = resolveDippedCoinFate({
         fate: 29,
         dungeonLevels: 29,
@@ -23,7 +21,6 @@ test('fate29 amount range shrinks from top to bottom of its dungeon', () => {
         dungeonLevel: 29,
         random: range => range,
     });
-
     assert.deepEqual(top, {
         handled: true,
         createsCoins: true,
@@ -37,8 +34,7 @@ test('fate29 amount range shrinks from top to bottom of its dungeon', () => {
         showMessage: true,
     });
 });
-
-test('fate29 blindness changes presentation but not the created amount', () => {
+void test('fate29 blindness changes presentation but not the created amount', () => {
     assert.deepEqual(resolveDippedCoinFate({
         fate: 29,
         blind: true,
@@ -50,8 +46,7 @@ test('fate29 blindness changes presentation but not the created amount', () => {
         showMessage: false,
     });
 });
-
-test('looted and adjacent fountain fates perform no coin work', () => {
+void test('looted and adjacent fountain fates perform no coin work', () => {
     const unavailable = () => {
         throw new Error('ineligible coin fate must not resolve an amount');
     };
@@ -71,26 +66,24 @@ test('looted and adjacent fountain fates perform no coin work', () => {
         quantity: 0,
         showMessage: false,
     });
-    assert.equal(
-        dippedCoinMessage('water'),
-        'Far below you, you see coins glistening in the water.',
-    );
+    assert.equal(dippedCoinMessage('water'), 'Far below you, you see coins glistening in the water.');
 });
-
-test('mkgold allocates once, merges by identity, and repairs coin weight', () => {
+void test('mkgold allocates once, merges by identity, and repairs coin weight', async () => {
     freshGame();
+    requireFixtureGame(game);
     initRng(4500n);
-    const first = mkgold(51, 4, 5);
+    const first = await mkgold(51, 4, 5);
     const firstId = first.o_id;
     assert.equal(first.otyp, GOLD_PIECE);
     assert.equal(first.quan, 51);
     assert.equal(first.quantity, 51);
     assert.equal(first.owt, 1);
-    assert.equal(game.level.objects[4][5][0], first);
-    const merged = mkgold(100, 4, 5);
+    assert.equal(floorObjectsAt(requireGameLevel(game), 4, 5)[0], first);
+    const merged = await mkgold(100, 4, 5);
     assert.equal(merged, first);
     assert.equal(merged.o_id, firstId);
     assert.equal(merged.quan, 151);
     assert.equal(merged.quantity, 151);
     assert.equal(merged.owt, 2);
 });
+//# sourceMappingURL=fountain_coin_effects.test.js.map

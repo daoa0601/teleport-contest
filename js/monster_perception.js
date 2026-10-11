@@ -1,78 +1,110 @@
 // Monster target perception and remembered hero resistances.
 // C refs: monmove.c set_apparxy(), hack.c cant_squeeze_thru(),
 // mondata.c monstseesu() and monstunseesu().
-
 import { heroIsDisplaced } from './armor.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, monsterIsAmorphous, monsterIsVampireShifter, monsterIsVerySmall } from './monster_data.js';
+import { AD_MAGM, AD_ACID } from './monster_attack_types.js';
+import { heroGoldAmount } from './hero_gold.js';
 import { clearPath, couldsee } from './vision.js';
-import {
-    ACCESSIBLE, D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_NOTHING, isok,
-} from './const.js';
-
-const M1_AMORPHOUS = 0x00000004;
+import { ACCESSIBLE, D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_MAGR, M_SEEN_NOTHING, isok, } from './const.js';
+import { isContainer } from './container.js';
+import { ARROW, BAG_OF_HOLDING, BAG_OF_TRICKS, BLINDFOLD, BOOMERANG, CANDY_BAR, CORPSE, CREDIT_CARD, CRYSKNIFE, DAGGER, FEDORA, FORTUNE_COOKIE, LEASH, LEATHER_JACKET, LEMBAS_WAFER, LOCK_PICK, LUMP_OF_ROYAL_JELLY, MAGIC_MARKER, MAGIC_WHISTLE, OBJECT_SUBTYPE, OILSKIN_SACK, PANCAKE, SACK, SKELETON_KEY, SLING, STETHOSCOPE, TALLOW_CANDLE, TIN_OPENER, TIN_WHISTLE, TOWEL, WAX_CANDLE, } from './object_data.js';
 const M1_WALLWALK = 0x00000008;
 const M1_SEE_INVIS = 0x01000000;
 const PM_FOG_CLOUD = 106;
-const PM_VAMPIRE = 226;
-const PM_VAMPIRE_LEADER = 227;
-const PM_VLAD_THE_IMPALER = 228;
-
+const PM_XORN = MONSTER_NAME.indexOf('xorn');
+const ARMOR_CLASS = 3;
+const RING_CLASS = 4;
+const AMULET_CLASS = 5;
+const COIN_CLASS = 12;
+const GEM_CLASS = 13;
+const VENOM_CLASS = 17;
+const ARM_GLOVES = 3;
+const ARM_CLOAK = 5;
+const ARM_SHIRT = 6;
+const SMALL_PASSAGE_OBJECTS = new Set([
+    SLING, FEDORA, LEATHER_JACKET, CREDIT_CARD, FORTUNE_COOKIE, CANDY_BAR,
+    PANCAKE, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, SACK, BAG_OF_HOLDING,
+    BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, OILSKIN_SACK, LEASH,
+    STETHOSCOPE, BLINDFOLD, TOWEL, TIN_WHISTLE, MAGIC_WHISTLE, MAGIC_MARKER,
+    TIN_OPENER, SKELETON_KEY, LOCK_PICK,
+]);
 function recordPerceptionRandom(random, calls, range) {
     const value = random(range);
-    if (calls) calls.push({ range, value });
+    if (calls)
+        calls.push({ range, value });
     return value;
 }
-
-// Empty-handed vampire shifters are the sound subset of can_fog() needed by
-// both apparent-position selection and diagonal squeeze checks.
-export function monsterCanFogWithEmptyInventory(monster, state) {
-    const vampireShifter = [
-        PM_VAMPIRE, PM_VAMPIRE_LEADER, PM_VLAD_THE_IMPALER,
-    ].includes(monster?.cham);
-    return vampireShifter
+// C monmove.c:can_fog()/can_ooze(). Small carried objects fit under a door;
+// bulky inventory disqualifies these predicates. Native mfndpos() separately
+// admits an amorphous body without calling can_ooze(); set_apparxy() calls it.
+export function monsterCanFog(monster, state) {
+    return monsterIsVampireShifter(monster)
         && !((state?.mvitals?.[PM_FOG_CLOUD]?.mvflags ?? 0) & G_GENOD)
-        && !(state?.u?.protectionFromShapeChangers
-            || state?.u?.protection_from_shape_changers)
-        && !(monster?.minvent || monster?.inventory || []).length;
+        && !state.u.protectionFromShapeChangers
+        && !state.protectionFromShapeChangers
+        && !inventoryBlocksDoorPassage(monster);
 }
-
-export function monsterCanOozeWithEmptyInventory(monster) {
-    return !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_AMORPHOUS)
-        && !(monster?.minvent || monster?.inventory || []).length;
+export function monsterCanOoze(monster) {
+    return monsterIsAmorphous(monster) && !inventoryBlocksDoorPassage(monster);
 }
-
+function inventoryBlocksDoorPassage(monster) {
+    for (const object of monster.minvent || []) {
+        const type = object.otyp;
+        // The pinned source compares otyp, not oclass, for this first test.
+        if (type === COIN_CLASS && object.quan > 100)
+            return true;
+        const flexibleArmor = object.oclass === ARMOR_CLASS
+            && [ARM_CLOAK, ARM_GLOVES, ARM_SHIRT].includes(OBJECT_SUBTYPE[type] ?? -1);
+        const tinyCorpse = type === CORPSE && object.corpsenm !== undefined
+            && monsterIsVerySmall(object.corpsenm);
+        if (![RING_CLASS, AMULET_CLASS, GEM_CLASS, VENOM_CLASS].includes(object.oclass)
+            && !(type >= ARROW && type <= BOOMERANG)
+            && !(type >= DAGGER && type <= CRYSKNIFE)
+            && !flexibleArmor && !tinyCorpse && !SMALL_PASSAGE_OBJECTS.has(type))
+            return true;
+        if ((isContainer(object) || type === BAG_OF_TRICKS) && object.contents?.length)
+            return true;
+    }
+    return false;
+}
+// The Native m_canseeu macro deliberately does not test the monster's blindness.
+export function monsterHasLineOfSightToHero(monster, state = game) {
+    return (!heroIsInvisible(state) || !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS))
+        && !state.u.uinwater && couldsee(monster.mx, monster.my);
+}
+// C cvt_adtyp_to_mseenres(): these eight damage types and bits share an order.
+export function seenResistanceForDamage(damageType) {
+    return damageType >= AD_MAGM && damageType <= AD_ACID
+        ? M_SEEN_MAGR << (damageType - AD_MAGM) : M_SEEN_NOTHING;
+}
 function monsterCanSeeHero(monster, state) {
     if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
-        || monster.mcansee === 0) return false;
+        || monster.mcansee === 0)
+        return false;
     if (!Number.isFinite(state.u?.ux) || !Number.isFinite(state.u?.uy))
         return false;
-    if (state.underwater || state.u?.uinwater) return false;
+    if (state.underwater || state.u?.uinwater)
+        return false;
     if (heroIsInvisible(state)
         && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS)) {
         return false;
     }
-    return clearPath(
-        monster.mx, monster.my, state.u?.ux, state.u?.uy,
-    );
+    return clearPath(monster.mx, monster.my, state.u?.ux, state.u?.uy);
 }
-
 function monstersThatCanSeeHero(state, canSeeHero) {
-    if (state.u?.uswallow) return [];
+    if (state.u?.uswallow)
+        return [];
     const seesHero = canSeeHero
-        || (monster => monsterCanSeeHero(monster, state));
-    return (state.level?.monsters || []).filter(monster =>
-        monster && !monster.dead && (monster.mhp ?? 1) > 0
+        || ((monster) => monsterCanSeeHero(monster, state));
+    return (state.level?.monsters || []).filter(monster => monster && !monster.dead && (monster.mhp ?? 1) > 0
         && seesHero(monster));
 }
-
-export function monstersObserveHeroResistance(
-    resistance,
-    state = game,
-    canSeeHero = null,
-) {
-    if (!resistance || resistance === M_SEEN_NOTHING) return 0;
+export function monstersObserveHeroResistance(resistance, state = game, canSeeHero = null) {
+    if (!resistance || resistance === M_SEEN_NOTHING)
+        return 0;
     const observers = monstersThatCanSeeHero(state, canSeeHero);
     for (const monster of observers) {
         monster.seen_resistance = (monster.seen_resistance ?? 0)
@@ -80,13 +112,9 @@ export function monstersObserveHeroResistance(
     }
     return observers.length;
 }
-
-export function monstersForgetHeroResistance(
-    resistance,
-    state = game,
-    canSeeHero = null,
-) {
-    if (!resistance || resistance === M_SEEN_NOTHING) return 0;
+export function monstersForgetHeroResistance(resistance, state = game, canSeeHero = null) {
+    if (!resistance || resistance === M_SEEN_NOTHING)
+        return 0;
     const observers = monstersThatCanSeeHero(state, canSeeHero);
     for (const monster of observers) {
         monster.seen_resistance = (monster.seen_resistance ?? 0)
@@ -94,81 +122,79 @@ export function monstersForgetHeroResistance(
     }
     return observers.length;
 }
-
 // makemon() initializes this state once when its requested coordinate was the
 // hero's square.  dochug() refreshes it before each movement decision.  Keep
 // both owners on this one implementation: displacement makes the RNG and the
 // remembered false position observable at either boundary.
-export function setMonsterApparentHeroPosition(
-    monster, state, random, calls = null,
-) {
+export function setMonsterApparentHeroPosition(monster, state, random, calls = null) {
     const heroX = state?.u?.ux;
     const heroY = state?.u?.uy;
-    if (!Number.isFinite(heroX) || !Number.isFinite(heroY)) return;
-
+    if (!Number.isFinite(heroX) || !Number.isFinite(heroY))
+        return false;
     const rememberedX = monster.mux;
     const rememberedY = monster.muy;
     if (monster.mtame || monster === state?.u?.ustuck
         || (rememberedX === heroX && rememberedY === heroY)) {
         monster.mux = heroX;
         monster.muy = heroY;
-        return;
+        return true;
     }
-
     const flags1 = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const heroInvisible = !!state?.invisible || !!state?.u?.invisible
-        || (state?.u?.invisibleTurns ?? 0) > 0;
-    const notSeen = monster.mcansee === 0
-        || (heroInvisible && !(flags1 & M1_SEE_INVIS));
+    const notSeen = !monster.mcansee
+        || (heroIsInvisible(state) && !(flags1 & M1_SEE_INVIS));
     const notThere = heroIsDisplaced(state) && monster.mnum !== 39;
     let displacement = 0;
-    if (state?.underwater || state?.u?.uinwater) displacement = 1;
-    else if (notSeen) displacement = 1;
+    if (state?.underwater || state?.u?.uinwater)
+        displacement = 1;
+    else if (notSeen)
+        displacement = monster.mnum === PM_XORN && heroGoldAmount(state) ? 0 : 1;
     else if (notThere) {
-        displacement = Number.isFinite(rememberedX)
-            && Number.isFinite(rememberedY)
+        displacement = rememberedX !== undefined && Number.isFinite(rememberedX)
+            && rememberedY !== undefined && Number.isFinite(rememberedY)
             && couldsee(rememberedX, rememberedY) ? 2 : 1;
     }
-
     if (!displacement) {
         monster.mux = heroX;
         monster.muy = heroY;
-        return;
+        return true;
     }
-
     const foundHero = notSeen
         ? recordPerceptionRandom(random, calls, 3) === 0
         : notThere ? recordPerceptionRandom(random, calls, 4) === 0 : false;
     if (foundHero) {
         monster.mux = heroX;
         monster.muy = heroY;
-        return;
+        return true;
     }
-
     const passesWalls = !!(flags1 & M1_WALLWALK);
     for (let attempt = 0; attempt < 200; attempt++) {
         const x = heroX - displacement
             + recordPerceptionRandom(random, calls, 2 * displacement + 1);
         const y = heroY - displacement
             + recordPerceptionRandom(random, calls, 2 * displacement + 1);
-        if (!isok(x, y)) continue;
+        if (!isok(x, y))
+            continue;
         if (displacement !== 2 && x === monster.mx && y === monster.my)
             continue;
         const location = state?.level?.at?.(x, y);
-        const closedDoor = IS_DOOR(location?.typ)
-            && !!(location?.doormask & (D_CLOSED | D_LOCKED));
+        const closedDoor = !!location && IS_DOOR(location.typ)
+            && !!(location.doormask & (D_CLOSED | D_LOCKED));
         const accessible = location && ACCESSIBLE(location.typ)
             && !closedDoor;
         const canUseClosedDoor = closedDoor
-            && (monsterCanOozeWithEmptyInventory(monster)
-                || monsterCanFogWithEmptyInventory(monster, state));
+            && (monsterCanOoze(monster)
+                || monsterCanFog(monster, state));
         if ((x !== heroX || y !== heroY)
-            && !passesWalls && !accessible && !canUseClosedDoor) continue;
-        if (!couldsee(x, y)) continue;
+            && !passesWalls && !accessible && !canUseClosedDoor)
+            continue;
+        if (!couldsee(x, y))
+            continue;
         monster.mux = x;
         monster.muy = y;
-        return;
+        return true;
     }
     monster.mux = heroX;
     monster.muy = heroY;
+    return true;
 }
+//# sourceMappingURL=monster_perception.js.map

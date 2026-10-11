@@ -1,0 +1,485 @@
+import { installPagerInput } from './support/pager-input.js';
+import { planInput } from './support/planned-input.js';
+import { floorObjectsAt } from './support/level-state.js';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { G_GENOD, NO_MINVENT, W_RINGL } from '../js/const.js';
+import { game, requireGameLevel, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
+import { initRng } from '../js/rng.js';
+import {
+    AMULET_OF_CHANGE, AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP,
+    AMULET_OF_UNCHANGING, AMULET_OF_YENDOR,
+    ARROW, CHEST, DAGGER, EGG, FOOD_RATION,
+    GOLD_PIECE, LEASH, LUCKSTONE, MAGIC_LAMP, MEAT_RING, OIL_LAMP,
+    OBJECT_NAMES, POT_OIL, POT_WATER, ROCK, SPE_BLANK_PAPER,
+    SPE_FORCE_BOLT, STATUE, WAN_POLYMORPH,
+} from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import {
+    createPolymorphMonsterFromPile, do_osshock, obj_unpolyable,
+    poly_obj, polymorphFloorObject, stone_to_flesh_obj,
+} from '../js/object_polymorph.js';
+import { hatchableEggSpecies, eggSpeciesIsDead } from '../js/egg_species.js';
+import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { getObjectLocation } from '../js/object_location.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { wearHeroAccessory } from '../js/accessory.js';
+import { beginObjectBurn } from '../js/light.js';
+import { objectTimers } from '../js/object_timers.js';
+import { objectMaterial } from '../js/object_material.js';
+import { objectWeight } from '../js/weight.js';
+import { addShopObjectToBill, carriedShopBill, objectTypeKnown } from '../js/shk.js';
+import { addInventoryObject, corpseObject, floorObject, knownObject } from './support/game-objects.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
+import { createStaffedShop } from './support/shop.js';
+import { createPoisonGasCloud, heroIsInDangerousRegion } from '../js/regions.js';
+import { startHeroSliming, heroIsSliming } from '../js/slime.js';
+import { heroPolyGender, setHeroSpecies } from '../js/hero_species.js';
+
+const AMULET_OF_ESP = OBJECT_NAMES.indexOf('amulet of ESP');
+
+void test('explicit transformation preserves a wielded stack and its inventory letter', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const arrows = await addInventoryObject(ARROW, { quan: 5, spe: 3, cursed: true, opoisoned: true });
+    const letter = arrows.invlet;
+    await setPrimaryWeapon(arrows);
+
+    const daggers = await poly_obj(arrows, DAGGER);
+    assert.ok(daggers);
+
+    assert.equal(game.uwep, daggers);
+    assert.equal(daggers.invlet, letter);
+    assert.equal(daggers.quan, 5);
+    assert.equal(daggers.spe, 3);
+    assert.equal(daggers.cursed, true);
+    assert.equal(arrows.where, 'gone');
+    assert.ok(game.inventory.includes(daggers));
+    assert.ok(!game.inventory.includes(arrows));
+});
+
+void test('replacement keeps its container and does not retain the old object identity', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const chest = await addInventoryObject(CHEST);
+    const ration = await knownObject(FOOD_RATION);
+    await addObjectToContainer(chest, ration);
+
+    const rock = await poly_obj(ration, ROCK);
+    assert.ok(rock);
+
+    assert.equal(chest.contents?.[0], rock);
+    assert.equal(rock.container, chest);
+    assert.equal(rock.where, 'contained');
+    assert.equal(getObjectLocation(rock, game, { contained: true })?.x, game.u.ux);
+    assert.equal(ration.where, 'gone');
+});
+
+void test('replacement remains in its monster carrier inventory', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const monster = await createMonsterAt('giant', 12, 10, NO_MINVENT);
+    const ration = await knownObject(FOOD_RATION);
+    await addObjectToMonsterInventory(monster, ration);
+
+    const rock = await poly_obj(ration, ROCK);
+    assert.ok(rock);
+
+    assert.equal(monster.minvent[0], rock);
+    assert.equal(rock.where, 'minvent');
+    assert.equal(rock.ocarry, monster);
+    assert.deepEqual(getObjectLocation(rock), { x: monster.mx, y: monster.my });
+    assert.equal(ration.where, 'gone');
+});
+
+void test('a transformed chest destroys its real contents and their burn timers', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const chest = await floorObject(CHEST, 12, 10);
+    const lamp = await knownObject(OIL_LAMP, { age: 300 });
+    await addObjectToContainer(chest, lamp);
+    beginObjectBurn(lamp);
+
+    const rock = await poly_obj(chest, ROCK);
+    assert.ok(rock);
+
+    assert.equal(floorObjectsAt(requireGameLevel(game), 12, 10)[0], rock);
+    assert.equal(lamp.where, 'gone');
+    assert.equal(lamp.lamplit, false);
+    assert.equal(objectTimers(lamp).length, 0);
+    assert.equal((rock.contents ?? []).length, 0);
+});
+
+void test('polymorph removes carried luck and consumes the former identity', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const stone = await addInventoryObject(LUCKSTONE, { blessed: true });
+    assert.equal(game.u.moreluck, 3);
+
+    await poly_obj(stone, ROCK);
+
+    assert.equal(game.u.moreluck, 0);
+    assert.equal(stone.where, 'gone');
+});
+
+void test('polymorph releases a real leash when the replacement is not a leash', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
+    pet.mleashed = 1;
+    const leash = await addInventoryObject(LEASH, { leashmon: pet.m_id });
+
+    await poly_obj(leash, ROCK);
+
+    assert.equal(pet.mleashed, 0);
+    assert.equal(leash.leashmon, 0);
+});
+
+void test('crocodile remains become one pair of uncursed proofed low boots', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const corpse = await corpseObject(MONSTER_NAME.indexOf('crocodile'), { cursed: true, quan: 3 });
+
+    const boots = await poly_obj(corpse);
+    assert.ok(boots);
+
+    assert.equal(boots.otyp, OBJECT_NAMES.indexOf('low boots'));
+    assert.equal(boots.quan, 1);
+    assert.equal(boots.cursed, false);
+    assert.equal(boots.oerodeproof, true);
+    assert.equal(boots.spe, 0);
+    assert.equal(corpse.where, 'gone');
+});
+
+void test('magic lamps lose their wish and well studied spellbooks become blank', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const lamp = await knownObject(OIL_LAMP);
+    const oil = await poly_obj(lamp, MAGIC_LAMP);
+    assert.ok(oil);
+    assert.equal(oil.otyp, OIL_LAMP);
+    assert.equal(oil.age, 1500);
+
+    const book = await knownObject(SPE_FORCE_BOLT, { spestudied: 3 });
+    const blank = await poly_obj(book, SPE_FORCE_BOLT);
+    assert.ok(blank);
+    assert.equal(blank.otyp, SPE_BLANK_PAPER);
+});
+
+void test('remaining oil fuel carries over and spent fuel dilutes a new potion', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const oil = await knownObject(POT_OIL, { age: 100 });
+    const replacement = await poly_obj(oil, POT_OIL);
+    assert.ok(replacement);
+    assert.equal(replacement.age, 100);
+
+    const water = await poly_obj(replacement, POT_WATER);
+    assert.ok(water);
+    assert.equal(water.odiluted, true);
+});
+
+void test('shuddering destroys only part of a stack and leaves a usable floor object', async () => {
+    freshObjectRoom({ gameplaySeed: 3n });
+    requirePlayingGame(game);
+    const arrows = await floorObject(ARROW, 12, 10, { quan: 40 });
+
+    await do_osshock(arrows);
+
+    assert.ok(arrows.quan >= 1 && arrows.quan < 40);
+    assert.equal(arrows.owt, objectWeight(arrows));
+    assert.equal(arrows.where, 'floor');
+    assert.equal(floorObjectsAt(requireGameLevel(game), 12, 10).length, 1);
+    assert.equal(game.context.obj_zapped, true);
+});
+
+void test('shuddered shop goods retain their used-up bill', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const { shopkeeper } = await createStaffedShop({ keeperX: 14, keeperY: 10 });
+    const arrows = await floorObject(ARROW, 12, 10, { quan: 12 });
+    installPagerInput(resetInputState(), { expected: /owe|arrows|zorkmids/i, limit: 1 });
+
+    await do_osshock(arrows);
+
+    const bill = carriedShopBill(shopkeeper);
+    assert.equal(bill.length, 1);
+    assert.ok(bill[0]);
+    assert.equal(bill[0].entry.useup, true);
+    assert.equal(bill[0].object.where, 'onbill');
+    assert.equal(bill[0].entry.bquan + arrows.quan, 12);
+});
+
+void test('an unpaid replacement retains the old bill identity and angers its owner', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const { shopkeeper } = await createStaffedShop({ keeperX: 14, keeperY: 10 });
+    const dagger = await addInventoryObject(DAGGER);
+    await addShopObjectToBill(dagger, game, { silent: true });
+
+    const ration = await poly_obj(dagger, FOOD_RATION);
+    assert.ok(ration);
+
+    assert.equal(shopkeeper.mpeaceful, 0);
+    assert.equal(shopkeeper.eshk.following, 1);
+    assert.equal(ration.where, 'inventory');
+    assert.equal(dagger.where, 'onbill');
+    assert.ok(carriedShopBill(shopkeeper).some(item => item.object === dagger && item.entry.useup));
+});
+
+void test('gold material makes a real golem and consumes the pile', async () => {
+    freshObjectRoom({ gameplaySeed: 13n });
+    requirePlayingGame(game);
+    const gold = await floorObject(GOLD_PIECE, 12, 10, { quan: 5000 });
+    game.context.poly_zapped = objectMaterial(gold);
+
+    const monster = await createPolymorphMonsterFromPile(12, 10);
+
+    assert.ok(monster);
+    assert.equal(monster.mnum, MONSTER_NAME.indexOf('gold golem'));
+    assert.ok(game.level.monsters.includes(monster));
+    assert.equal(gold.where, 'gone');
+    assert.equal(floorObjectsAt(requireGameLevel(game), 12, 10).length, 0);
+});
+
+void test('one object cannot make a material golem', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const gold = await floorObject(GOLD_PIECE, 12, 10);
+    game.context.poly_zapped = objectMaterial(gold);
+
+    assert.equal(await createPolymorphMonsterFromPile(12, 10), null);
+    assert.equal(gold.where, 'floor');
+});
+
+void test('the pile is consumed even when no species can be born', async () => {
+    freshObjectRoom({ gameplaySeed: 13n });
+    requirePlayingGame(game);
+    const gold = await floorObject(GOLD_PIECE, 12, 10, { quan: 5000 });
+    game.context.poly_zapped = objectMaterial(gold);
+    for (let species = 0; species < MONSTER_NAME.length; species++)
+        requireMonsterVital(species).mvflags |= G_GENOD;
+
+    assert.equal(await createPolymorphMonsterFromPile(12, 10), null);
+
+    assert.equal(gold.where, 'gone');
+    assert.equal(floorObjectsAt(requireGameLevel(game), 12, 10).length, 0);
+});
+
+void test('protected types never count as polymorphed objects', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    for (const type of [AMULET_OF_YENDOR, AMULET_OF_UNCHANGING, WAN_POLYMORPH]) {
+        const object = await floorObject(type, 12, 10);
+        assert.equal(obj_unpolyable(object), true);
+        assert.equal((await polymorphFloorObject(object)).affected, false);
+        assert.equal(object.where, 'floor');
+    }
+    assert.equal(game.u.uconduct.polypiles || 0, 0);
+});
+
+void test('stone-to-flesh leaves a meat ring on the same finger', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const type = Array.from({ length: 28 }, (_, index) => 173 + index)
+        .find(candidate => objectMaterial(candidate) === 21);
+    assert.ok(type !== undefined);
+    const ring = await addInventoryObject(type);
+    await wearHeroAccessory(ring, 'uleft');
+    initRng(5n);
+
+    assert.equal(await stone_to_flesh_obj(ring), 1);
+
+    assert.ok(game.uleft);
+    assert.equal(game.uleft.otyp, MEAT_RING);
+    assert.ok((game.uleft.owornmask ?? 0) & W_RINGL);
+    assert.ok(game.inventory.includes(game.uleft));
+    assert.equal(ring.where, 'gone');
+});
+
+void test('a carried golem statue animates as flesh and removes the inventory statue', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const statue = await addInventoryObject(STATUE, { corpsenm: MONSTER_NAME.indexOf('iron golem') });
+    const dagger = await knownObject(DAGGER);
+    await addObjectToContainer(statue, dagger);
+    initRng(5n);
+
+    assert.equal(await stone_to_flesh_obj(statue), 1);
+
+    const golem = game.level.monsters.find(monster => monster.mnum === MONSTER_NAME.indexOf('flesh golem'));
+    assert.ok(golem);
+    assert.ok(golem.minvent?.includes(dagger));
+    assert.equal(dagger.where, 'minvent');
+    assert.equal(statue.where, 'gone');
+    assert.ok(!game.inventory.includes(statue));
+});
+
+void test('a transformed worn amulet changes sex, is identified, and disintegrates', async () => {
+    freshObjectRoom({ flags: { female: false } });
+    requirePlayingGame(game);
+    const amulet = await addInventoryObject(AMULET_OF_ESP);
+    await wearHeroAccessory(amulet, 'uamul');
+    installPagerInput(resetInputState(), { expected: /amulet|suddenly very (?:feminine|masculine)/i, limit: 3 });
+
+    const replacement = await poly_obj(amulet, AMULET_OF_CHANGE);
+
+    assert.equal(replacement, null);
+    assert.equal(game.flags.female, true);
+    assert.equal(game.uamul, null);
+    assert.ok(!game.inventory.some(object => object.otyp === AMULET_OF_CHANGE));
+    assert.equal(objectTypeKnown(await knownObject(AMULET_OF_CHANGE)), true);
+    assert.equal(amulet.where, 'gone');
+});
+
+void test('an amulet transformation retains its live object while the wearing message awaits input', async () => {
+    freshObjectRoom({ flags: { female: false } });
+    requirePlayingGame(game);
+    const amulet = await addInventoryObject(AMULET_OF_ESP);
+    await wearHeroAccessory(amulet, 'uamul');
+    const input = resetInputState();
+
+    const transformation = poly_obj(amulet, AMULET_OF_CHANGE);
+    await input.waitUntilBlocked();
+
+    assert.ok(game.uamul);
+    assert.equal(game.uamul.otyp, AMULET_OF_CHANGE);
+    assert.ok(game.inventory.includes(game.uamul));
+    const messageRow = requireGameDisplay().grid[0];
+    assert.ok(messageRow);
+    assert.match(messageRow.map(cell => cell.ch).join(''), /amulet.*--More--/i);
+    installPagerInput(input, { expected: /amulet|suddenly very feminine/i, limit: 2 });
+    input.feed(' ');
+    assert.equal(await transformation, null);
+    assert.equal(game.uamul, null);
+});
+
+void test('a transformed amulet of flying gives its wearer flight and identifies itself', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const amulet = await addInventoryObject(AMULET_OF_ESP);
+    await wearHeroAccessory(amulet, 'uamul');
+    installPagerInput(resetInputState(), { expected: /amulet|now in flight/i, limit: 2 });
+
+    const replacement = await poly_obj(amulet, OBJECT_NAMES.indexOf('amulet of flying'));
+    assert.ok(replacement);
+
+    assert.equal(game.uamul, replacement);
+    assert.equal(game.u.flying, true);
+    assert.equal(objectTypeKnown(replacement), true);
+});
+
+void test('a fixed-sex form retains its visible sex while the amulet changes the saved human sex', async t => {
+    freshObjectRoom({ flags: { female: true }, hero: { mfemale: false, mtimedone: 100, mh: 40, mhmax: 40 } });
+    requirePlayingGame(game);
+    setHeroSpecies(MONSTER_NAME.indexOf('wood nymph'));
+    const before = heroPolyGender();
+    const amulet = await addInventoryObject(AMULET_OF_ESP);
+    await wearHeroAccessory(amulet, 'uamul');
+    const input = resetInputState();
+    planInput(input, t, [
+        { prompt: /amulet.*--More--/s, keys: ' ' },
+        { prompt: /don.t feel like yourself.*--More--/s, keys: ' ' },
+        { prompt: /The amulet disintegrates!.*--More--/s, keys: ' ' },
+        { prompt: /Call .*amulet/, keys: '\n' },
+    ]);
+
+    await poly_obj(amulet, AMULET_OF_CHANGE);
+
+    assert.equal(heroPolyGender(), before);
+    assert.equal(game.u.mfemale, true);
+    assert.equal(game.uamul, null);
+});
+
+void test('a transformed restful-sleep amulet starts its real sleep timeout', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const amulet = await addInventoryObject(AMULET_OF_ESP);
+    await wearHeroAccessory(amulet, 'uamul');
+    installPagerInput(resetInputState(), { expected: /amulet/i, limit: 1 });
+
+    const replacement = await poly_obj(amulet, AMULET_OF_RESTFUL_SLEEP);
+    assert.ok(replacement);
+
+    assert.equal(game.uamul, replacement);
+    assert.ok(game.u._sleepyTimeout !== undefined);
+    assert.ok(game.u._sleepyTimeout >= 3 && game.u._sleepyTimeout <= 100);
+});
+
+void test('a transformed amulet of unchanging cures an active sliming countdown', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const amulet = await addInventoryObject(AMULET_OF_ESP);
+    await wearHeroAccessory(amulet, 'uamul');
+    startHeroSliming();
+    assert.equal(heroIsSliming(), true);
+    installPagerInput(resetInputState(), { expected: /amulet|slime/i, limit: 1 });
+
+    const replacement = await poly_obj(amulet, AMULET_OF_UNCHANGING);
+    assert.ok(replacement);
+
+    assert.equal(game.uamul, replacement);
+    assert.equal(heroIsSliming(), false);
+});
+
+void test('a transformed guarding amulet changes armor class and identifies itself', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const amulet = await addInventoryObject(AMULET_OF_ESP);
+    await wearHeroAccessory(amulet, 'uamul');
+    installPagerInput(resetInputState(), { expected: /amulet/i, limit: 1 });
+
+    const replacement = await poly_obj(amulet, AMULET_OF_GUARDING);
+    assert.ok(replacement);
+
+    assert.equal(game.uamul, replacement);
+    assert.equal(game.u.uac, 8);
+    assert.equal(objectTypeKnown(replacement), true);
+});
+
+void test('a transformed magical-breathing amulet protects its wearer from an existing gas cloud', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const amulet = await addInventoryObject(AMULET_OF_ESP);
+    await wearHeroAccessory(amulet, 'uamul');
+    installPagerInput(resetInputState(), { expected: /amulet/i, limit: 1 });
+    await createPoisonGasCloud(game, game.u.ux, game.u.uy, 1, 4);
+    assert.equal(heroIsInDangerousRegion(), true);
+    installPagerInput(resetInputState(), { expected: /noxious gas|amulet|no longer bothered/i, limit: 2 });
+
+    const replacement = await poly_obj(amulet, OBJECT_NAMES.indexOf('amulet of magical breathing'));
+    assert.ok(replacement);
+
+    assert.equal(game.uamul, replacement);
+    assert.equal(heroIsInDangerousRegion(), false);
+    assert.equal(objectTypeKnown(replacement), true);
+});
+
+void test('hero-laid egg polymorph retains parentage and creates a live hatch timer', async () => {
+    freshObjectRoom({ gameplaySeed: 23n });
+    requirePlayingGame(game);
+    const egg = await knownObject(EGG, { spe: 1, quan: 2 });
+
+    const replacement = await poly_obj(egg, FOOD_RATION);
+    assert.ok(replacement);
+
+    assert.equal(replacement.otyp, EGG);
+    assert.equal(replacement.spe, 1);
+    assert.ok(replacement.corpsenm !== undefined && replacement.corpsenm >= 0);
+    assert.equal(eggSpeciesIsDead(replacement.corpsenm), false);
+    assert.ok(objectTimers(replacement).some(timer => timer.kind === 'hatch-egg'));
+});
+
+void test('Scorpius eggs hatch as ordinary scorpions and genocide of either dragon age kills its eggs', () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    assert.equal(hatchableEggSpecies(MONSTER_NAME.indexOf('Scorpius')), MONSTER_NAME.indexOf('scorpion'));
+    const baby = MONSTER_NAME.indexOf('baby red dragon');
+    const adult = MONSTER_NAME.indexOf('red dragon');
+    assert.equal(hatchableEggSpecies(baby), adult);
+    requireMonsterVital(baby).mvflags |= G_GENOD;
+    assert.equal(eggSpeciesIsDead(adult), true);
+});

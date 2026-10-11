@@ -1,65 +1,41 @@
 // Hero-credited monster death.
 // C refs: mon.c xkilled(), corpse_chance(), and explode.c explode().
-
 import { adjustHeroAlignment } from './alignment.js';
 import { uncreateArtifact } from './artifacts.js';
-import { A_CHAOTIC, A_NONE, G_NOCORPSE, is_pit } from './const.js';
-import {
-    canProjectMonster, docrt, newsym, plineWithContinuation,
-    randomDisplayMonsterName, see_monsters, unmap_invisible,
-} from './display.js';
+import { A_CHAOTIC, A_NONE, G_NOCORPSE, MGIVENNAME, is_pit } from './const.js';
+import { monsterName, possessiveName } from './monster_name.js';
+import { heroIsHallucinating } from './senses.js';
+import { canSpotMonster, newsym, plineWithContinuation, see_monsters, } from './display.js';
 import { recordHeroKillConduct } from './end.js';
 import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
 import { landFloorObject } from './floor_effects.js';
-import { game } from './gstate.js';
+import { game, requirePlayingGame } from './gstate.js';
+import { finishDestinationSpotEffects } from './location_effects.js';
 import { mkobj } from './mklev.js';
 import { angerQuestGuardiansAfterLeaderDeath } from './monster_anger.js';
-import {
-    isQuestLeader, markQuestLeaderDead, markQuestNemesisDead,
-} from './quest.js';
-import { deleteObject } from './object_delete.js';
+import { isQuestLeader, } from './quest.js';
+import { delobj } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
-import {
-    MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME,
-    MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop,
-    monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster,
-    monsterIsQuestGuardian, monsterIsQuestNemesis, monsterIsUnicorn,
-} from './monster_data.js';
-import {
-    monsterDeathCount, recordMonsterDeath,
-} from './monster_vitals.js';
-import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
-import { returnDeadKop } from './monster_return.js';
-import { restoreMonsterTrueSpecies } from './monster_species.js';
-import {
-    createMonsterRemains, levelAllowsMonsterDeathDrops,
-    monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects,
-    monsterLeavesCorpse, monsterPossessiveName,
-} from './monster_death.js';
-import {
-    createPhysicalMonsterExplosion, rollMonsterDeathExplosionDamage,
-} from './monster_explosion.js';
-import {
-    addObjectToMonsterInventory, clearMonsterCarriedObjectState,
-} from './monster_inventory.js';
-import {
-    BOULDER, FIGURINE, OBJECT_BIMANUAL,
-} from './object_data.js';
-import { recordObjectEncounter } from './object_knowledge.js';
+import { prepareMonsterPetrification } from './monster_stoning.js';
+import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop, monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster, monsterIsQuestGuardian, monsterIsQuestNemesis, monsterIsUnicorn, } from './monster_data.js';
+import { monsterDeathCount, } from './monster_vitals.js';
+import { createMonsterRemains, detachDeadMonster, levelAllowsMonsterDeathDrops, monsterBodyCrumbles, monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects, monsterLeavesCorpse, } from './monster_death.js';
+import { resolveMonsterDeathExplosion, monsterDeathSwallower, rollMonsterDeathExplosion, } from './monster_explosion.js';
+import { addObjectToMonsterInventory, } from './monster_inventory.js';
+import { BOULDER, FIGURINE, OBJECT_BIMANUAL, } from './object_data.js';
 import { removeIntrinsicProperty } from './properties.js';
 import { priestIsCoaligned } from './priest.js';
-import { rnd, rn2 } from './rng.js';
-import { cansee, vision_recalc } from './vision.js';
-
+import { rn2 } from './rng.js';
+import { cansee } from './vision.js';
 const M2_ALWAYS_PEACEFUL = 0x00200000;
 const M2_COLLECT = 0x40000000;
 const FOOD_CLASS = 7;
 const MZ_HUMAN = 2;
-
 function monsterDeathMalign(monster) {
-    if (Number.isInteger(monster?.malign)) return monster.malign;
-    if (monster?.mnum === game.urole?.ldrnum) return -20;
-
+    if (typeof monster.malign === 'number' && Number.isInteger(monster.malign))
+        return monster.malign;
+    if (monster?.mnum === game.urole?.ldrnum)
+        return -20;
     const mnum = monster?.mnum ?? -1;
     const speciesAlignment = MONSTER_ALIGNMENT[mnum] ?? 0;
     const flags = MONSTER_FLAGS2[mnum] ?? 0;
@@ -67,8 +43,8 @@ function monsterDeathMalign(monster) {
     const coaligned = Math.sign(speciesAlignment)
         === Math.sign(game.u?.ualign?.type ?? 0);
     const absoluteAlignment = Math.abs(speciesAlignment);
-
-    if (speciesAlignment === A_NONE) return peaceful ? 0 : 20;
+    if (speciesAlignment === A_NONE)
+        return peaceful ? 0 : 20;
     if (flags & M2_ALWAYS_PEACEFUL) {
         return (peaceful ? -3 : 3) * Math.max(5, absoluteAlignment);
     }
@@ -82,7 +58,6 @@ function monsterDeathMalign(monster) {
     }
     return absoluteAlignment;
 }
-
 function killingIsMurder(monster) {
     const mnum = monster?.mnum ?? -1;
     return monsterIsHuman(mnum)
@@ -92,38 +67,31 @@ function killingIsMurder(monster) {
         && !monsterIsPlainHuman(mnum)
         && (game.u?.ualign?.type ?? 0) !== A_CHAOTIC;
 }
-
 async function punishMurder() {
     removeIntrinsicProperty('telepathy', game);
     game.u.uluck = (game.u.uluck || 0) - 2;
     await plineWithContinuation('You murderer!');
-
     const blind = !!game.blind || (game.u?.blindTurns ?? 0) > 0;
     if (blind && !game.u?.blindTelepathy && !game.u?.telepathy)
-        see_monsters();
+        await see_monsters();
 }
-
-async function punishQuestLeaderKill(monster) {
+async function punishQuestLeaderKill() {
     const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
     const alignmentRecord = game.u?.ualign?.record || 0;
-    adjustHeroAlignment(-(
-        alignmentRecord + Math.trunc(alignmentLimit / 2)
-    ));
+    adjustHeroAlignment(-(alignmentRecord + Math.trunc(alignmentLimit / 2)));
     game.u.ugangr = (game.u.ugangr || 0) + 7;
     game.u.uluck = (game.u.uluck || 0) - 20;
-
     const probably = game.u?.uevent?.qcompleted ? 'probably ' : '';
     await plineWithContinuation(`That was ${probably}a bad idea...`);
     if (!game.context?.mon_moving)
         await angerQuestGuardiansAfterLeaderDeath();
 }
-
 function rewardQuestNemesisKill() {
-    if (game.quest_status?.killed_leader) return;
+    if (game.quest_status?.killed_leader)
+        return;
     const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
     adjustHeroAlignment(Math.trunc(alignmentLimit / 4));
 }
-
 async function punishQuestGuardianKill(hallucinating) {
     const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
     adjustHeroAlignment(-Math.trunc(alignmentLimit / 8));
@@ -133,45 +101,29 @@ async function punishQuestGuardianKill(hallucinating) {
         ? 'Whoopsie-daisy!'
         : 'That was probably a bad idea...');
 }
-
 function applyPriestKillConsequences(monster) {
     const coaligned = priestIsCoaligned(monster, game);
     adjustHeroAlignment(coaligned ? -2 : 2);
-    if (coaligned) game.u.ublessed = 0;
-
+    if (coaligned)
+        game.u.ublessed = 0;
     if (MONSTER_ALIGNMENT[monster.mnum] === A_NONE) {
         const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
         adjustHeroAlignment(Math.trunc(alignmentLimit / 4));
     }
 }
-
-function observeMonsterDropName(object, x, y) {
-    if (!object || !cansee(x, y)
-        || game.u?.hallucinating
-        || (game.u?.hallucinationTurns ?? 0) > 0) return;
-    const range = Math.max(game.u?.xray_range ?? -1, 2);
-    const dx = x - (game.u?.ux ?? x);
-    const dy = y - (game.u?.uy ?? y);
-    const closeNameDistance = range * range * 2 - range;
-    if (!object.oartifact && !object.artifact
-        && dx * dx + dy * dy > closeNameDistance) return;
-    object.dknown = true;
-    recordObjectEncounter(object.otyp);
-}
-
 function recordKilledPet(monster) {
-    if (!monster.mtame || monster.isminion) return;
+    if (!monster.mtame || monster.isminion)
+        return;
     const pet = monster.edog || monster.mextra?.edog;
-    if (pet) pet.killed_by_u = 1;
+    if (pet)
+        pet.killed_by_u = 1;
 }
-
 function pitDeathRemains(monster, x, y) {
-    if (!monster.mtrapped) return { buryCorpse: false, suppressRemains: false };
-    const trap = game.level?.traps?.find(candidate =>
-        candidate.tx === x && candidate.ty === y);
+    if (!monster.mtrapped)
+        return { buryCorpse: false, suppressRemains: false };
+    const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
     if (!trap || !is_pit(trap.ttyp))
         return { buryCorpse: false, suppressRemains: false };
-
     const floorObjects = game.level?.objects?.[x]?.[y] || [];
     const carriedObjects = monster.minvent || monster.inventory || [];
     return {
@@ -179,19 +131,13 @@ function pitDeathRemains(monster, x, y) {
         suppressRemains: floorObjects.some(object => object.otyp === BOULDER),
     };
 }
-
-export async function finishHeroMonsterKill(monster, x, y, {
-    hallucinating = !!(game.u?.hallucinating
-        || (game.u?.hallucinationTurns ?? 0) > 0),
-    nameMonster = () => hallucinating
-        ? randomDisplayMonsterName()
-        : MONSTER_NAME[monster?.mnum] || 'monster',
-    showKillMessage = true,
-    deathContext = null,
-    noCorpse = false,
-    recordConduct = true,
-    zombifyCorpse = false,
-} = {}) {
+// The boolean records the monster's fate, not the hero's.
+export async function finishHeroMonsterKill(monster, x, y, options = {}) {
+    const outcome = await finishHeroMonsterKillOutcome(monster, x, y, options);
+    return outcome.killed;
+}
+export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinating = heroIsHallucinating(game), showKillMessage = true, deathContext = null, noCorpse = false, recordConduct = true, zombifyCorpse = false, noRevive = false, petrified = false, publish = plineWithContinuation, } = {}) {
+    requirePlayingGame(game);
     const wasInside = (game.u.uswallow && game.u.ustuck === monster)
         || deathContext?.kind === 'swallowed-projectile'
         || deathContext?.kind === 'swallowed-potion'
@@ -199,115 +145,61 @@ export async function finishHeroMonsterKill(monster, x, y, {
         || deathContext?.kind === 'swallowed-venom'
         || deathContext?.kind === 'swallowed-egg';
     if (deathContext && !wasInside) {
-        throw new Error(
-            `unsupported monster death context ${deathContext.kind}`,
-        );
+        throw new Error(`unsupported monster death context ${deathContext.kind}`);
     }
-    if (wasInside && deathContext && !['swallowed-breath', 'swallowed-venom']
-        .includes(deathContext.kind)
-        && typeof deathContext.finishDestinationEffects !== 'function') {
-        throw new TypeError(
-            'swallowed monster death requires destination effects',
-        );
-    }
-
     monster.mhp = 0;
     const deathLocationVisible = cansee(x, y);
-    const deathWasSpotted = wasInside || canProjectMonster(
-        monster, monster.mx, monster.my,
-    );
-    const monsterName = nameMonster();
-
-    if (recordConduct) recordHeroKillConduct();
+    const deathWasSpotted = wasInside || canSpotMonster(monster);
+    if (recordConduct)
+        recordHeroKillConduct();
     if (showKillMessage) {
         const deathVerb = monsterIsNonliving(monster.mnum)
             ? 'destroy' : 'kill';
-        const deathTarget = deathWasSpotted
-            ? `the ${monster.mtame ? 'poor ' : ''}${monsterName}`
-            : 'it';
-        await plineWithContinuation(
-            `You ${deathVerb} ${deathTarget}!`,
-        );
+        const namedPet = !!MGIVENNAME(monster) && !heroIsHallucinating(game);
+        const deathTarget = !deathWasSpotted ? 'it'
+            : monster.mtame ? monsterName(monster, {
+                article: namedPet ? 'none' : 'the', adjective: 'poor',
+                suppressSaddle: namedPet,
+            }) : monsterName(monster);
+        await publish(`You ${deathVerb} ${deathTarget}!`);
     }
-
     const pitRemains = pitDeathRemains(monster, x, y);
     const suppressRemains = noCorpse || pitRemains.suppressRemains;
     recordKilledPet(monster);
     if (deathContext?.kind === 'swallowed-projectile') {
-        addObjectToMonsterInventory(
-            monster, deathContext.projectile, game, { atFront: true },
-        );
+        await addObjectToMonsterInventory(monster, deathContext.projectile, game, { atFront: true });
     }
-
-    const recovery = await preventMonsterDeath(monster, {
-        visible: deathLocationVisible,
-        spotted: deathWasSpotted,
-        petSpotted: deathWasSpotted,
+    const stone = petrified
+        ? await prepareMonsterPetrification(monster, { publish }) : null;
+    if (stone?.heroDied)
+        return { killed: false, heroDied: true };
+    const recovery = stone?.survived ? stone : await preventMonsterDeath(monster, {
         disintegrated: suppressRemains,
         state: game,
     });
+    if (recovery.heroDied)
+        return { killed: !recovery.survived, heroDied: true };
     if (recovery.survived) {
         if (!deathLocationVisible && !recovery.messageShown)
             await plineWithContinuation('Maybe not...');
-        return false;
+        return { killed: false, heroDied: false };
     }
-
-    createSteamVortexDeathCloud(monster);
-    restoreMonsterTrueSpecies(monster);
-    recordMonsterDeath(monster);
-    await returnDeadKop(monster);
-
-    if (wasInside) {
-        game.u.ustuck = null;
-        game.u.uswallow = 0;
-        game.u.uswldtim = 0;
-        game.u.ux = x;
-        game.u.uy = y;
-        game.vision_full_recalc = 1;
-        vision_recalc(0);
-        await docrt();
-        if (!(monster.mspec_used ?? 0)) monster.mspec_used = rnd(2);
-    }
-
-    if (monster.iswiz) {
-        game.context.no_of_wizards = (game.context.no_of_wizards || 0) - 1;
-        if (!game.u.uevent) game.u.uevent = {};
-        if (!game.u.uevent.udemigod) {
-            game.u.uevent.udemigod = true;
-            game.u.udg_cnt = 50 + rn2(250);
-        }
-    }
-
-    const carried = monster.minvent || monster.inventory || [];
-    for (const object of carried) {
-        observeMonsterDropName(object, x, y);
-        clearMonsterCarriedObjectState(object);
-        object.where = 'free';
-        await landFloorObject(object, x, y, {
-            state: game,
-            publish: plineWithContinuation,
-        });
-    }
-    monster.minvent = [];
-    monster.inventory = monster.minvent;
-    monster.hasInventory = false;
-    monster.mw = null;
-
-    const levelAllowsDeathDrops = !suppressRemains
+    const completedDeath = 'completedDeath' in recovery ? recovery.completedDeath : null;
+    if (!completedDeath && await detachDeadMonster(monster, game, rn2, publish))
+        return { killed: true, heroDied: true };
+    const levelAllowsDeathDrops = !petrified && !suppressRemains
         && levelAllowsMonsterDeathDrops(monster, game, rn2);
-    const squareAllowsDeathObjects = monsterDeathSquareAllowsObjects(
-        x, y, game,
-    );
+    const squareAllowsDeathObjects = monsterDeathSquareAllowsObjects(x, y, game);
     const canCreateDeathObjects = levelAllowsDeathDrops
         && squareAllowsDeathObjects;
     if (canCreateDeathObjects) {
         const extraObjectRoll = rn2(6);
         if (extraObjectRoll === 0
-            && !((MONSTER_GENO[monster.mnum] ?? 0) & G_NOCORPSE)
+            && !((game.mvitals?.[monster.mnum]?.mvflags ?? 0) & G_NOCORPSE)
             && (x !== game.u?.ux || y !== game.u?.uy)
             && !monsterIsKop(monster.mnum)
             && !monster.mcloned) {
-            const extra = mkobj(0, true);
+            const extra = await mkobj(0, true);
             const collectsFood = !!((MONSTER_FLAGS2[monster.mnum] ?? 0)
                 & M2_COLLECT);
             const tooLarge = (MONSTER_SIZE[monster.mnum] ?? MZ_HUMAN)
@@ -316,12 +208,16 @@ export async function finishHeroMonsterKill(monster, x, y, {
                 && ((extra.owt ?? 1) > 30
                     || OBJECT_BIMANUAL[extra.otyp]);
             const disposableFood = extra.oclass === FOOD_CLASS && !collectsFood
-                && !extra.artifact;
-            if (tooLarge || disposableFood) {
-                if (tooLarge && extra.artifact)
+                && !extra.oartifact;
+            if (disposableFood) {
+                await delobj(extra, game);
+            }
+            else if (tooLarge) {
+                if (extra.oartifact)
                     uncreateArtifact(extra, game);
-                deleteObject(extra, game);
-            } else {
+                await delobj(extra, game);
+            }
+            else {
                 await landFloorObject(extra, x, y, {
                     state: game,
                     publish: plineWithContinuation,
@@ -329,56 +225,62 @@ export async function finishHeroMonsterKill(monster, x, y, {
             }
         }
     }
-
-    const explosionDamage = canCreateDeathObjects
-        ? rollMonsterDeathExplosionDamage(monster)
+    if (game.program_state.gameover)
+        return { killed: true, heroDied: true };
+    const deathExplosion = !wasInside && canCreateDeathObjects
+        ? rollMonsterDeathExplosion(monster)
         : null;
     let leavesCorpse = false;
-    if (explosionDamage === null) {
-        const crumbleMessage = canCreateDeathObjects
-            ? monsterBodyCrumblesMessage(monster) : null;
-        if (crumbleMessage && deathLocationVisible && !wasInside)
-            await plineWithContinuation(crumbleMessage);
+    if (deathExplosion === null) {
+        if (canCreateDeathObjects && monsterBodyCrumbles(monster)
+            && deathLocationVisible && !wasInside && !monsterDeathSwallower(game))
+            await plineWithContinuation(monsterBodyCrumblesMessage(monster));
         leavesCorpse = !wasInside && canCreateDeathObjects
             && monsterLeavesCorpse(monster, rn2);
     }
-    unmap_invisible(x, y, false);
-    monster.dead = true;
-    markQuestLeaderDead(monster, game);
-    markQuestNemesisDead(monster, game);
-    game.level.monsters = game.level.monsters.filter(
-        candidate => candidate !== monster,
-    );
+    if (deathExplosion !== null) {
+        newsym(x, y);
+        const explosion = await resolveMonsterDeathExplosion(monster, x, y, deathExplosion, {
+            state: game,
+            heroCaused: true,
+        });
+        if (explosion.heroDied)
+            return { killed: true, heroDied: true };
+    }
     let corpse = null;
     if (leavesCorpse) {
         corpse = await createMonsterRemains(monster, game, {
             buried: pitRemains.buryCorpse,
             zombify: zombifyCorpse,
+            noRevive,
             seen: deathWasSpotted,
             publish: plineWithContinuation,
         });
+        if (game.program_state.gameover)
+            return { killed: true, heroDied: true };
     }
     if (pitRemains.buryCorpse && corpse?.where === 'buried'
-        && deathLocationVisible && !monster.minvis && showKillMessage) {
-        const possessive = monsterPossessiveName(monster, monsterName);
-        await plineWithContinuation(
-            `${possessive} corpse ends up buried.`,
-        );
+        && cansee(x, y) && !monster.minvis && showKillMessage) {
+        const possessive = possessiveName(monsterName(monster, { capitalized: true }));
+        await plineWithContinuation(`${possessive} corpse ends up buried.`);
     }
-
-    if (typeof deathContext?.finishDestinationEffects === 'function') {
-        await deathContext.finishDestinationEffects({
+    if (wasInside && levelAllowsDeathDrops) {
+        const destination = await finishDestinationSpotEffects({
             oldx: game.u.ux0 ?? x,
             oldy: game.u.uy0 ?? y,
             newx: x,
             newy: y,
-            loc: game.level?.at?.(x, y),
             explicitAttempt: false,
         });
-        newsym(x, y);
+        if (destination.died)
+            return { killed: true, heroDied: true };
     }
-
-    if (killingIsMurder(monster)) await punishMurder();
+    // Native xkilled jumps over this landing/redraw block when remains are
+    // suppressed. Otherwise the map is current before kill-credit messages.
+    if (levelAllowsDeathDrops)
+        newsym(x, y);
+    if (killingIsMurder(monster))
+        await punishMurder();
     if ((monster.mpeaceful && rn2(2) === 0) || monster.mtame)
         game.u.uluck = (game.u.uluck || 0) - 1;
     if (monsterIsUnicorn(monster.mnum)
@@ -393,54 +295,37 @@ export async function finishHeroMonsterKill(monster, x, y, {
         amphibious: !!game.u?.amphibious,
     });
     await checkExperienceLevel();
-    if (!wasInside) newsym(x, y);
-    if (!wasInside && explosionDamage !== null) {
-        await createPhysicalMonsterExplosion(
-            monster, x, y, explosionDamage, {
-                state: game,
-                heroCaused: true,
-                finishMonsterDeath: target => finishHeroMonsterKill(
-                    target, target.mx, target.my,
-                ),
-            },
-        );
-    }
-    if (!wasInside) newsym(x, y);
-
     if (isQuestLeader(monster, game)) {
-        await punishQuestLeaderKill(monster);
-    } else if (monsterIsQuestNemesis(monster.mnum)) {
+        await punishQuestLeaderKill();
+    }
+    else if (monsterIsQuestNemesis(monster.mnum)) {
         rewardQuestNemesisKill();
-    } else if (monsterIsQuestGuardian(monster.mnum)) {
+    }
+    else if (monsterIsQuestGuardian(monster.mnum)) {
         await punishQuestGuardianKill(hallucinating);
-    } else if (monster.ispriest) {
+    }
+    else if (monster.ispriest) {
         applyPriestKillConsequences(monster);
-    } else if (monster.mtame) {
+    }
+    else if (monster.mtame) {
         adjustHeroAlignment(-15);
         await plineWithContinuation(hallucinating
             ? 'You hear the studio audience applaud!'
             : 'You hear the rumble of distant thunder...');
-    } else if (monster.mpeaceful) {
+    }
+    else if (monster.mpeaceful) {
         adjustHeroAlignment(-5);
     }
     adjustHeroAlignment(monsterDeathMalign(monster));
-    return true;
+    return { killed: true, heroDied: false };
 }
-
 // When the hero creates water under a monster, minliquid() calls xkilled()
 // without printing a second kill line.
-export async function finishHeroLiquidMonsterDeath(
-    monster, {
-        leaveCorpse = false,
-        hallucinating,
-        nameMonster,
-    } = {},
-) {
+export async function finishHeroLiquidMonsterDeath(monster, { leaveCorpse = false, hallucinating = heroIsHallucinating(game), } = {}) {
     const x = monster.mx;
     const y = monster.my;
-    const killed = await finishHeroMonsterKill(monster, x, y, {
+    const { killed, heroDied } = await finishHeroMonsterKillOutcome(monster, x, y, {
         hallucinating,
-        nameMonster,
         showKillMessage: false,
         noCorpse: !leaveCorpse,
     });
@@ -452,5 +337,7 @@ export async function finishHeroLiquidMonsterDeath(
         moved: false,
         dead: killed,
         actionCompleted: killed,
+        heroDied,
     };
 }
+//# sourceMappingURL=hero_monster_death.js.map

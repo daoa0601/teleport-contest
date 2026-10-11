@@ -246,7 +246,7 @@ every step's entry is empty and your official score is unaffected.
 
 ## What's frozen
 
-Two files in your fork are overlaid from the canonical copy before
+Three files in your fork are overlaid from the canonical copy before
 every scoring run:
 
 | File | Why frozen |

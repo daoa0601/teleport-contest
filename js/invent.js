@@ -1,338 +1,334 @@
 // invent.js — Inventory display and look-here commands.
 // C ref: invent.c — ddoinv(), display_inventory(), dolook().
-
-import { game } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { objectBlessingDescription, objectDescription } from './object_description.js';
+import { primaryHandDescriptionDetail } from './object_equipment_description.js';
 import { ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
-import {
-    bot, consumeHallucinatedMenuObjectGlyph, docrtRecalc, flush_screen,
-    formatStrength, pline,
-} from './display.js';
-import {
-    showChoiceWindow, showInventoryWindow, showMultiSelectWindow,
-} from './windows.js';
+import { bot, clearMessageWindow, consumeHallucinatedMenuObjectGlyph, docrt, flushPendingTopline, flush_screen, formatStrength, pline, plineWithContinuation, showMessageMenu, } from './display.js';
+import { restoreMenuUnderlay, snapshotMenuUnderlay, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, } from './windows.js';
 import { nhgetch } from './input.js';
-import {
-    DOOR, D_BROKEN, D_ISOPEN, D_NODOOR,
-    FOUNTAIN, GRAVE, ICE, IRONBARS, LAVAPOOL, LAVAWALL,
-    MOAT, POOL, SINK, THRONE, TREE,
-} from './const.js';
-import {
-    AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, GOLD_PIECE, OBJECT_CHARGED,
-    OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_NUTRITION,
-    OBJECT_SUBTYPE,
-} from './object_data.js';
-import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
-import { unseenObjectNoun } from './objnam.js';
-import { armorPresentationName } from './object_grammar.js';
-import { objectTypeCallNoun } from './object_call.js';
-import { heroGoldAmount } from './hero_gold.js';
-import { recordObjectKnowledge } from './object_knowledge.js';
-import { objectUsesCharges } from './object_properties.js';
-import { deleteObject } from './object_delete.js';
+import { reassignInventoryLetters } from './inventory_prompt.js';
+import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
+import { MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, is_pit, } from './const.js';
+import { ARROW as FIRST_OBJECT, EGG, CHEST, LARGE_BOX, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, STATUE, TIN, } from './object_data.js';
+import { MONSTER_GROWTH_TARGET } from './monster_data.js';
+import { objectName, observeObjectForNaming } from './objnam.js';
+import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
+import { getLine, promptYesNoAllQuit } from './query.js';
+import { isWeaponTool, objectUsesCharges } from './object_properties.js';
+import { objectIsVulnerableToErosion } from './object_erosion.js';
+import { discoverArtifact } from './artifacts.js';
+import { isContainer } from './container.js';
+import { eggHasMonsterSpecies } from './egg_impact.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { useUpInventoryStack } from './hero_inventory.js';
 import { objectWeight } from './weight.js';
-import { moveUsedObjectToBill } from './shk.js';
-
+import { readFloorEngraving, showFloorPile } from './floor_object_display.js';
+import { heroCanReachFloor } from './floor_reach.js';
+import { surfaceName } from './terrain_name.js';
+import { dungeonFeatureSentenceAt } from './dungeon_feature.js';
 const COIN_CLASS = 12;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
-
-const CLASS_ORDER = [
-    'Coins', 'Amulets', 'Weapons', 'Armor', 'Comestibles', 'Scrolls',
-    'Spellbooks', 'Potions', 'Rings', 'Wands', 'Tools', 'Gems/Stones',
-    'Boulders',
-];
-
 function objectNeedsFullIdentification(object) {
-    if (!object || object.oclass === COIN_CLASS) return false;
-    return !object.known || !object.bknown || !object.rknown
-        || !object.dknown
-        || (!object.typeKnown
-            && !game._knownObjectTypes?.has(object.otyp));
+    if (!object || object.oclass === COIN_CLASS)
+        return false;
+    const typeKnown = OBJECT_INITIAL_KNOWN[object.otyp] || object.typeKnown
+        || game._knownObjectTypes?.has(object.otyp);
+    if (!object.known || !object.bknown || !object.dknown || !typeKnown)
+        return true;
+    if ((!object.cknown && (isContainer(object) || object.otyp === STATUE))
+        || (!object.lknown && [CHEST, LARGE_BOX].includes(object.otyp)))
+        return true;
+    if (object.oartifact && !game._artifactDiscoveries?.includes(object.oartifact))
+        return true;
+    if (object.rknown || !([2, 3, 15].includes(object.oclass) || isWeaponTool(object)))
+        return false;
+    return ['rust', 'burn', 'rot', 'corrosion', 'crack'].some(kind => objectIsVulnerableToErosion(object, kind));
 }
-
-function fullyIdentifyObject(object) {
-    recordObjectKnowledge(object.otyp);
-    object.typeKnown = true;
+function learnEggType(mnum, state) {
+    const adult = MONSTER_GROWTH_TARGET[mnum] ?? mnum;
+    if (!Array.isArray(state.mvitals))
+        state.mvitals = [];
+    const vital = state.mvitals[adult]
+        || (state.mvitals[adult] = { mvflags: 0, born: 0, died: 0 });
+    vital.mvflags = (vital.mvflags ?? 0) | MV_KNOWS_EGG;
+}
+export function fullyIdentifyObject(object, state = game) {
+    const realObjectType = object.otyp >= FIRST_OBJECT;
+    if (realObjectType)
+        learnObjectType(object.otyp, state);
+    if (object.oartifact)
+        discoverArtifact(object.oartifact, state);
+    if (realObjectType)
+        object.typeKnown = true;
     object.known = true;
     object.bknown = true;
     object.rknown = true;
-    object.dknown = true;
+    if (realObjectType && !heroIsHallucinating(state))
+        object.dknown = true;
     object.buc = object.blessed ? 'blessed'
         : object.cursed ? 'cursed' : 'uncursed';
     const canonical = OBJECT_NAMES[object.otyp];
     if (canonical && object.oclass === SCROLL_CLASS) {
         object.name = `scroll of ${canonical}`;
         object.plural = `scrolls of ${canonical}`;
-    } else if (canonical && object.oclass === SPBOOK_CLASS) {
+    }
+    else if (canonical && object.oclass === SPBOOK_CLASS) {
         object.name = `spellbook of ${canonical}`;
         object.plural = `spellbooks of ${canonical}`;
     }
-    if (Array.isArray(object.contents)) {
+    if (isContainer(object) || object.otyp === STATUE) {
         object.cknown = true;
         object.lknown = true;
     }
+    else if (object.otyp === TIN) {
+        object.cknown = true;
+    }
+    if (object.otyp === EGG && object.corpsenm !== undefined && eggHasMonsterSpecies(object))
+        learnEggType(object.corpsenm, state);
 }
-
-function identificationMenu(candidates, first) {
-    return showMultiSelectWindow({
-        title: `What would you like to identify ${first ? 'first' : 'next'}?`,
-        sections: [{
-            heading: 'Inventory',
-            items: candidates.map(object => ({
-                key: object.invlet,
-                text: inventoryItemDescription(object),
-                value: object,
-            })),
-        }],
-    });
+function identificationBuc(object) {
+    if (object.oclass === COIN_CLASS)
+        return game.flags.goldX ? 'X' : 'U';
+    if (!object.bknown)
+        return 'X';
+    return object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
-
-// C invent.c:identify_pack().  A zero limit identifies everything.  A
-// smaller limit asks the player which still-unknown objects to identify.
+function hasUnpaidContents(object) {
+    return !!object.unpaid || (object.contents || []).some(hasUnpaidContents);
+}
+function traditionalIdentifyChoices(candidates) {
+    const classes = [...new Set(candidates.map(object => OBJECT_CLASS_SYMBOLS[object.oclass]))];
+    const inventory = game.inventory;
+    // Native count_buc() lets a priest recognize even objects which are
+    // omitted by this identification's eligibility filter.
+    if (game.urole?.key === 'priest') {
+        for (const object of inventory)
+            object.bknown = object.oclass !== COIN_CLASS;
+    }
+    const eligible = inventory.filter(objectNeedsFullIdentification);
+    let choices = classes.join('') + ' ';
+    if (inventory.some(hasUnpaidContents))
+        choices += 'u';
+    for (const category of 'BUCX') {
+        if (eligible.some(object => identificationBuc(object) === category))
+            choices += category;
+    }
+    if (inventory.some(object => object.pickup_prev))
+        choices += 'P';
+    return choices + 'aim';
+}
+async function parseIdentificationCategories(answer) {
+    const classes = [];
+    const beatitudes = new Set();
+    let unpaid = false, picked = false, all = false, menu = false;
+    for (const symbol of answer) {
+        if (symbol === ' ' || symbol === 'A')
+            continue;
+        if (symbol === 'a')
+            all = true;
+        else if (symbol === 'm')
+            menu = true;
+        else if (symbol === 'u')
+            unpaid = true;
+        else if (symbol === 'P')
+            picked = true;
+        else if (symbol === 'B' || symbol === 'U' || symbol === 'C' || symbol === 'X')
+            beatitudes.add(symbol);
+        else {
+            const objectClass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);
+            if (objectClass <= 0)
+                await plineWithContinuation(`You don't have any ${symbol}'s.`);
+            else if (!classes.includes(objectClass))
+                classes.push(objectClass);
+        }
+    }
+    return { classes, beatitudes, unpaid, picked, all, menu };
+}
+function matchesIdentificationCategories(object, categories) {
+    if (categories.unpaid && !hasUnpaidContents(object))
+        return false;
+    if (categories.beatitudes.size && !categories.beatitudes.has(identificationBuc(object)))
+        return false;
+    return !categories.picked || !!object.pickup_prev;
+}
+// C ggetobj()/askchain(), restricted to identify. Category order controls
+// which class is questioned first; identifying never splits a stack.
+async function identifyTraditionally(limit) {
+    const identified = [];
+    while (limit > 0) {
+        const candidates = game.inventory.filter(objectNeedsFullIdentification);
+        if (!candidates.length)
+            return { identified, remaining: 0 };
+        const choices = traditionalIdentifyChoices(candidates);
+        await flushPendingTopline();
+        clearMessageWindow();
+        const answer = await getLine(`What kinds of thing do you want to identify? [${choices}]`, (_character, key) => key >= 32 && key < 127);
+        // Native ggetobj returns zero here; identify_pack asks again while
+        // identification allowance remains. The per-item q choice quits.
+        if (answer === null)
+            continue;
+        if (answer.includes('i')) {
+            await showInventoryWindow(inventorySections(candidates, false), { pickMode: PICK_ONE });
+            continue;
+        }
+        const categories = await parseIdentificationCategories(answer);
+        if (categories.menu)
+            return { identified, remaining: limit };
+        let all = categories.all;
+        let questioned = 0;
+        const letterOrder = '$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#';
+        const inventory = [...game.inventory].sort((a, b) => (a.invlet == null ? -1 : letterOrder.indexOf(a.invlet))
+            - (b.invlet == null ? -1 : letterOrder.indexOf(b.invlet)));
+        const classes = categories.classes.length ? categories.classes : [null];
+        for (const objectClass of classes) {
+            for (const [index, object] of inventory.entries()) {
+                if ((objectClass !== null && object.oclass !== objectClass)
+                    || !objectNeedsFullIdentification(object)
+                    || !matchesIdentificationCategories(object, categories))
+                    continue;
+                let response = 'y';
+                if (!all) {
+                    observeObjectForNaming(object);
+                    const letter = game.flags.fixinv === false
+                        ? letterOrder.charAt(Math.min(index + (inventory[0]?.oclass === COIN_CLASS ? 0 : 1), 53))
+                        : object.invlet;
+                    const description = inventoryItemDescription(object, {
+                        primaryHandDetail: inventoryPrimaryHandDetail(object),
+                    });
+                    await flushPendingTopline();
+                    response = await promptYesNoAllQuit(`${letter} - ${description}? [ynaq] (n) `, 'n');
+                }
+                if (response === 'q')
+                    return { identified, remaining: 0 };
+                questioned++;
+                if (response === 'n')
+                    continue;
+                if (response === 'a')
+                    all = true;
+                await identifyAndDescribe(object);
+                identified.push(object);
+                if (!--limit)
+                    return { identified, remaining: 0 };
+            }
+        }
+        await plineWithContinuation(questioned ? 'That was all.' : 'No applicable objects.');
+    }
+    return { identified, remaining: 0 };
+}
+async function identificationMenu(candidates, first) {
+    await flushPendingTopline();
+    clearMessageWindow();
+    const sections = inventorySections(candidates, false).map(section => ({
+        ...section,
+        items: section.items.map(item => {
+            if (item.key === undefined)
+                throw new Error('Identification item has no inventory letter');
+            const object = candidates.find(candidate => candidate.invlet === item.key);
+            if (!object)
+                throw new Error(`No inventory object for identification letter ${item.key}`);
+            return { ...item, key: item.key, text: item.text.slice(4), value: object };
+        }),
+    }));
+    const rowCount = 2 + sections.reduce((total, section) => total + section.items.length + 1, 0);
+    const fullPage = rowCount + 1 > 23;
+    const underlay = fullPage ? null : snapshotMenuUnderlay();
+    try {
+        return await showMultiSelectWindow({
+            title: `What would you like to identify ${first ? 'first' : 'next'}?`,
+            sections, signalEscape: true,
+        });
+    }
+    finally {
+        if (fullPage) {
+            await docrt();
+            await flush_screen(1);
+        }
+        else {
+            restoreMenuUnderlay(underlay);
+        }
+    }
+}
+async function identifyAndDescribe(object) {
+    fullyIdentifyObject(object);
+    observeObjectForNaming(object);
+    await plineWithContinuation(`${object.invlet} - ${inventoryItemDescription(object, {
+        primaryHandDetail: inventoryPrimaryHandDetail(object),
+    })}.`);
+}
+// C invent.c:identify_pack()/menu_identify(). Each selection is identified
+// and described before another menu opens, so resumed input sees the result.
 export async function identifyPack(idLimit, learningIdentify = false) {
-    let candidates = (game.inventory || [])
-        .filter(objectNeedsFullIdentification);
+    let candidates = (game.inventory || []).filter(objectNeedsFullIdentification);
     if (!candidates.length) {
-        await pline(`You have already identified ${
-            learningIdentify ? 'the rest' : 'all'
-        } of your possessions.`);
+        await plineWithContinuation(`You have already identified ${learningIdentify ? 'the rest' : 'all'} of your possessions.`);
         return [];
     }
-
     if (!idLimit || idLimit >= candidates.length) {
-        for (const object of candidates) fullyIdentifyObject(object);
-        return candidates;
+        const identified = [];
+        for (const object of candidates) {
+            if (!objectNeedsFullIdentification(object))
+                continue;
+            await identifyAndDescribe(object);
+            identified.push(object);
+        }
+        return identified;
     }
-
-    const identified = [];
-    let remaining = idLimit;
+    const traditional = game.flags.menu_style === MENU_TRADITIONAL
+        ? await identifyTraditionally(idLimit) : { identified: [], remaining: idLimit };
+    const identified = traditional.identified;
+    let remaining = traditional.remaining;
+    candidates = (game.inventory || []).filter(objectNeedsFullIdentification);
     let first = true;
+    let tries = 5;
     while (remaining > 0 && candidates.length) {
         const selected = await identificationMenu(candidates, first);
-        if (!selected.length) break;
+        if (selected === null)
+            break;
+        if (!selected.length) {
+            if (!--tries) {
+                await plineWithContinuation("That's enough tries!");
+                break;
+            }
+            await plineWithContinuation('Choose an item; use ESC to decline.');
+            continue;
+        }
         const accepted = selected.slice(0, remaining);
-        for (const object of accepted) fullyIdentifyObject(object);
+        for (const object of accepted)
+            await identifyAndDescribe(object);
         identified.push(...accepted);
         remaining -= accepted.length;
-        candidates = candidates.filter(object => !accepted.includes(object));
+        candidates = (game.inventory || []).filter(objectNeedsFullIdentification);
+        if (remaining > 0 && !candidates.length)
+            await plineWithContinuation('That was all.');
         first = false;
     }
     return identified;
 }
-
-function indefiniteArticle(text) {
-    return /^[aeiou]/i.test(text) ? 'an' : 'a';
+export function bucAdjectiveForName(item) {
+    return objectBlessingDescription(item);
 }
-
-function knownObjectName(item) {
-    const name = OBJECT_NAMES[item.otyp];
-    if (!name) return item.name;
-    return item.oclass === 4 ? `ring of ${name}`
-        : item.oclass === 5 ? name
-        : item.oclass === 3 ? armorPresentationName(name)
-        : item.oclass === 8 ? `potion of ${name}`
-        : item.oclass === 9 ? `scroll of ${name}`
-        // Fixed role spellbooks carry the contest build's authoritative
-        // compound noun already; do not re-index them through a different
-        // generated enum layout merely because their type is known.
-        : item.oclass === 10 ? item._startingInventory
-            ? item.name : `spellbook of ${name}`
-        : item.oclass === 11 ? `wand of ${name}`
-        : item.oclass === 13 ? name : item.name;
+// Materialize only at a menu/prinv boundary. Hallucinated colors use display RNG.
+export function inventoryPrimaryHandDetail(item) {
+    return primaryHandDescriptionDetail(item);
 }
-
-const TIN_PREPARATIONS = [
-    'rotten', 'homemade', 'soup made from', 'french fried', 'pickled',
-    'boiled', 'smoked', 'dried', 'deep fried', 'szechuan', 'broiled',
-    'stir fried', 'sauteed', 'candied', 'pureed',
-];
-
-function vegetarianCorpseName(mnum) {
-    const symbol = MONSTER_SYMBOL[mnum];
-    const name = MONSTER_NAME[mnum];
-    return [2, 10, 22, 25, 32].includes(symbol)
-        || (symbol === 31 && name !== 'stalker')
-        || (symbol === 42 && name !== 'black pudding')
-        || (symbol === 55
-            && name !== 'flesh golem' && name !== 'leather golem');
+export function inventoryItemDescription(item, options = {}) {
+    return objectDescription(item, options);
 }
-
-// C eat.c:tin_details().  Generation retains both the corpse identity and
-// the signed preparation index even while ordinary play is only allowed to
-// call the object a "tin".
-function identifiedTinName(item) {
-    if (item.corpsenm == null || item.corpsenm < 0)
-        return item.spe === 1 ? 'tin of spinach' : 'empty tin';
-    const monster = MONSTER_NAME[item.corpsenm];
-    if (!monster) return 'tin';
-    const contents = vegetarianCorpseName(item.corpsenm)
-        ? monster : `${monster} meat`;
-    const revealPreparation = item.cknown || item.overrideIdentified;
-    const variety = item.cursed ? 0
-        : revealPreparation && item.spe < 0 ? -item.spe - 1 : null;
-    if (variety === 0 || variety === 1)
-        return `${TIN_PREPARATIONS[variety]} tin of ${contents}`;
-    if (variety != null && TIN_PREPARATIONS[variety])
-        return `tin of ${TIN_PREPARATIONS[variety]} ${contents}`;
-    return `tin of ${contents}`;
-}
-
-function erosionPrefix(level, adjective) {
-    if (!level) return '';
-    const degree = level === 2 ? 'very '
-        : level >= 3 ? 'thoroughly ' : '';
-    return `${degree}${adjective}`;
-}
-
-function itemErosionWords(item) {
-    const material = OBJECT_MATERIAL[item.otyp];
-    const words = [];
-    if (item.oeroded) {
-        const adjective = material === 11 ? 'rusty'
-            : material === 19 && item.oclass === 3 ? 'cracked' : 'burnt';
-        words.push(erosionPrefix(item.oeroded, adjective));
-    }
-    if (item.oeroded2) {
-        words.push(erosionPrefix(
-            item.oeroded2, material === 13 ? 'corroded' : 'rotted',
-        ));
-    }
-    return words;
-}
-
-export function observeBucForNaming(item) {
-    // objnam.c:xname_flags() owns this observation for every naming context,
-    // including floor piles and container contents, not just inventory menus.
-    if (game.urole?.key !== 'priest') return;
-    item.bknown = true;
-    item.buc = item.blessed ? 'blessed'
-        : item.cursed ? 'cursed' : undefined;
-}
-
-export function bucAdjectiveForName(item, holyWater = false) {
-    if (holyWater) return null;
-    const buc = item.bknown
-        ? item.blessed ? 'blessed' : item.cursed ? 'cursed' : 'uncursed'
-        : item.buc;
-    if (buc !== 'uncursed') return buc;
-
-    // objnam.c:xname_flags(): with implicit_uncursed, most unknown-charge
-    // items retain "uncursed", as do armor and rings.  The entire exception
-    // is disabled for Clerics because naming already guarantees their BUC
-    // knowledge; the real and fake Amulets are also always implicit.
-    const retainsUncursed = (!item.known || !OBJECT_CHARGED[item.otyp]
-            || item.oclass === 3 || item.oclass === 4)
-        && item.otyp !== FAKE_AMULET_OF_YENDOR
-        && item.otyp !== AMULET_OF_YENDOR
-        && game.urole?.key !== 'priest';
-    const suppressImplicitUncursed = game.flags?.implicit_uncursed !== false
-        && !retainsUncursed;
-    return suppressImplicitUncursed ? null : buc;
-}
-
-export function inventoryItemDescription(item) {
-    // objnam.c:xname_flags() observes beatitude whenever a Cleric names an
-    // object.  Keep that knowledge transition at the shared inventory naming
-    // boundary so prinv-style command feedback and inventory menus agree.
-    // With the default implicit-uncursed policy, neutral Cleric items omit the
-    // redundant adjective while blessed and cursed state remains visible.
-    observeBucForNaming(item);
-    const quantity = item.quantity ?? 1;
-    // objnam.c names both non-neutral forms intrinsically; "blessed potion
-    // of holy water" and "cursed potion of unholy water" would duplicate
-    // the same beatitude state.
-    const holyWater = item.otyp === 322 && (item.blessed || item.cursed);
-    const waterName = item.blessed
-        ? 'potion of holy water' : 'potion of unholy water';
-    const parts = [];
-    if (item.empty) parts.push('empty');
-    const buc = bucAdjectiveForName(item, holyWater);
-    if (buc) parts.push(buc);
-    const fullNutrition = OBJECT_NUTRITION[item.otyp] || 0;
-    if (Number.isInteger(item.oeaten) && item.oeaten > 0
-        && fullNutrition > 0 && item.oeaten < fullNutrition)
-        parts.push('partly eaten');
-    if (item.poisoned || item.opoisoned) parts.push('poisoned');
-    parts.push(...itemErosionWords(item));
-    if (item.rustproof) parts.push('rustproof');
-    const weaponTool = item.oclass === 6
-        && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0;
-    const visibleEnchantment = item.known && OBJECT_CHARGED[item.otyp]
-        && ([2, 3, 4].includes(item.oclass) || weaponTool)
-        ? item.spe : null;
-    if (Number.isInteger(visibleEnchantment)) {
-        parts.push(`${visibleEnchantment >= 0 ? '+' : ''}${visibleEnchantment}`);
-    }
-
-    const callName = game._objectCallNames?.[item.otyp];
-    const typeKnown = item.typeKnown
-        || game._knownObjectTypes?.has(item.otyp);
-    const baseName = item.dknown === false ? unseenObjectNoun(item)
-        : holyWater ? waterName
-        : typeKnown && item.otyp === 296 ? identifiedTinName(item)
-        : typeKnown ? knownObjectName(item)
-        : callName ? `${objectTypeCallNoun(item)} called ${callName}`
-        : item.name === 'object' && item.otyp === 314
-            ? 'white potion' : item.name;
-    let noun = quantity === 1 ? baseName
-        : holyWater ? waterName.replace('potion ', 'potions ')
-            : (item.plural || `${baseName}s`);
-    let description = [...parts, noun].join(' ');
-    if (quantity > 1) description = `${quantity} ${description}`;
-    else if (item.otyp === AMULET_OF_YENDOR)
-        description = `the ${description}`;
-    else description = `${indefiniteArticle(description)} ${description}`;
-
-    if (objectUsesCharges(item) && item.known)
-        description += ` (${item.recharged ?? 0}:${item.spe})`;
-    if (item.cknown && Array.isArray(item.contents) && item.contents.length) {
-        const count = item.contents.length;
-        description += ` containing ${count} item${count === 1 ? '' : 's'}`;
-    }
-    const individualName = item.oextra?.oname || item.oname;
-    if (individualName) description += ` named ${individualName}`;
-    if (game.u?.twoweap && item === game.uwep) description += ' (wielded in right hand)';
-    else if (game.u?.twoweap && item === game.uswapwep) description += ' (wielded in left hand)';
-    else if (item === game.uwep) {
-        const weaponLike = item.class === 'Weapons' || item.oclass === 2;
-        description += !weaponLike ? ' (wielded)'
-            : OBJECT_BIMANUAL[item.otyp] ? ' (weapon in hands)'
-            : ` (weapon in ${
-                game.u?.rightHanded === false ? 'left' : 'right'
-            } hand)`;
-    }
-    else if (item === game.uswapwep)
-        description += quantity > 1
-            ? ' (alternate weapons; not wielded)'
-            : ' (alternate weapon; not wielded)';
-    if (item.ready) description += game.urole?.key === 'rogue'
-        ? ' (alternate weapons; not wielded)'
-        : game.urole?.key === 'samurai'
-        ? ' (in quiver)' : game.urole?.key === 'caveman'
-            ? ' (in quiver pouch)' : ' (at the ready)';
-    if (item === game.uright || item === game.u?.uright)
-        description += ' (on right hand)';
-    else if (item === game.uleft || item === game.u?.uleft)
-        description += ' (on left hand)';
-    else if (item.worn) description += ' (being worn)';
-    return description;
-}
-
-export function consumeInventoryItem(item, state = game) {
+export async function consumeInventoryItem(item, state = game) {
+    requireLiveGame(state);
     const quantity = item?.quantity ?? item?.quan ?? 1;
     if (quantity > 1) {
         item.in_use = false;
         item.quantity = quantity - 1;
         item.quan = quantity - 1;
         item.owt = objectWeight(item);
+        state._capacityDirty = true;
         return;
     }
-    const index = state.inventory?.indexOf(item) ?? -1;
-    if (index >= 0) state.inventory.splice(index, 1);
-    deleteObject(item, state);
-    moveUsedObjectToBill(item, state);
+    await useUpInventoryStack(item, state);
 }
-
 function rerollItemDescription(item) {
     // invent.c:reroll_menu() brackets distant_name(doname) with
     // override_ID.  Identify a temporary view rather than mutating the live
@@ -347,17 +343,13 @@ function rerollItemDescription(item) {
         overrideIdentified: true,
     });
 }
-
 function rerollAttributeLine() {
     const values = game.u?.acurr?.a || [];
-    const displayed = ATTRIBUTE_DISPLAY_ORDER.map(
-        attribute => values[attribute] ?? '?',
-    );
-    return `St:${formatStrength(displayed[0])} Dx:${displayed[1]} `
-        + `Co:${displayed[2]} In:${displayed[3]} Wi:${displayed[4]} `
-        + `Ch:${displayed[5]}`;
+    const displayed = ATTRIBUTE_DISPLAY_ORDER.map(attribute => values[attribute]);
+    return `St:${formatStrength(displayed[0])} Dx:${displayed[1] ?? '?'} `
+        + `Co:${displayed[2] ?? '?'} In:${displayed[3] ?? '?'} Wi:${displayed[4] ?? '?'} `
+        + `Ch:${displayed[5] ?? '?'}`;
 }
-
 async function rerollFallbackPrompt() {
     const message = 'Reroll this character? [yn] (n) ';
     await pline(message);
@@ -366,11 +358,12 @@ async function rerollFallbackPrompt() {
     for (;;) {
         const key = await nhgetch();
         const answer = String.fromCharCode(key).toLowerCase();
-        if (answer === 'y' || answer === 'n') return answer === 'y';
-        if ([27, 32, 10, 13].includes(key)) return false;
+        if (answer === 'y' || answer === 'n')
+            return answer === 'y';
+        if ([27, 32, 10, 13].includes(key))
+            return false;
     }
 }
-
 // C ref: invent.c:reroll_menu().  This menu is a startup transaction, not a
 // command: accepting another roll changes no turn state and keeps consuming
 // the live RNG stream from its current position.
@@ -378,10 +371,13 @@ export async function rerollMenu() {
     const acceptKey = game.flags?.lootabc ? 'a' : 'p';
     const rerollKey = game.flags?.lootabc ? 'b' : 'r';
     const entries = [
-        `${acceptKey} - start the game with this character`,
-        `${rerollKey} - reroll another character`,
+        { key: acceptKey, text: 'start the game with this character' },
+        { key: rerollKey, text: 'reroll another character' },
         '',
-        ...(game.inventory || []).map(rerollItemDescription),
+        ...(game.inventory || []).map(item => {
+            observeObjectForNaming(item, { distant: true });
+            return rerollItemDescription(item);
+        }),
         '',
         rerollAttributeLine(),
     ];
@@ -398,94 +394,89 @@ export async function rerollMenu() {
     const reroll = choice === rerollKey ? true
         : choice === acceptKey ? false : await rerollFallbackPrompt();
     if (reroll) {
-        game.u.uroleplay.numrerolls =
-            (game.u.uroleplay.numrerolls || 0) + 1;
+        const roleplay = game.u.uroleplay;
+        if (!roleplay)
+            throw new Error('Reroll requires initialized roleplay options');
+        roleplay.numrerolls = (roleplay.numrerolls || 0) + 1;
     }
     return reroll;
 }
-
 function inventorySections(items = game.inventory || [], includeGold = true) {
     const grouped = new Map();
-    const gold = heroGoldAmount(game);
-    if (includeGold && gold > 0) {
-        grouped.set('Coins', [`$ - ${gold} gold pieces`]);
-    }
-    for (const item of items) {
-        if (item.otyp === GOLD_PIECE || item.oclass === 12) continue;
+    const sorted = sortObjects(items, { mode: inventorySortMode() });
+    for (const item of sorted) {
+        if (!includeGold && item.oclass === COIN_CLASS)
+            continue;
+        observeObjectForNaming(item);
         consumeHallucinatedMenuObjectGlyph(item);
-        const fallbackClass = {
-            2: 'Weapons', 3: 'Armor', 4: 'Rings', 6: 'Tools',
-            7: 'Comestibles', 8: 'Potions', 9: 'Scrolls',
-            10: 'Spellbooks', 11: 'Wands',
-            13: 'Gems/Stones',
-        }[item.oclass];
-        const heading = item.class === 'Gems' ? 'Gems/Stones'
-            : item.class || fallbackClass || 'Other';
-        if (!grouped.has(heading)) grouped.set(heading, []);
-        grouped.get(heading).push(
-            `${item.invlet} - ${inventoryItemDescription(item)}`,
-        );
+        const heading = game.flags.sortpack === false ? null : objectClassHeading(item.oclass);
+        let section = grouped.get(heading);
+        if (!section) {
+            section = [];
+            grouped.set(heading, section);
+        }
+        section.push({
+            ...(item.invlet == null ? {} : { key: item.invlet }),
+            text: item.oclass === COIN_CLASS
+                ? `$ - ${item.quan} gold piece${item.quan === 1 ? '' : 's'}`
+                : `${item.invlet} - ${inventoryItemDescription(item, {
+                    primaryHandDetail: inventoryPrimaryHandDetail(item),
+                })}`,
+        });
     }
-    const ordered = [];
-    for (const heading of CLASS_ORDER) {
-        if (grouped.has(heading)) ordered.push({ heading, items: grouped.get(heading) });
-    }
-    for (const [heading, items] of grouped) {
-        if (!CLASS_ORDER.includes(heading)) ordered.push({ heading, items });
-    }
-    return ordered;
+    return [...grouped].map(([heading, items]) => ({ heading, items }));
 }
-
-async function restoreInventoryMap() {
-    game._pending_message = '';
-    game.nhDisplay?.clearScreen();
-    await docrtRecalc();
-    await bot();
-    await flush_screen(1);
-}
-
 async function showItemActionMenu(item) {
-    const itemName = item.name || knownObjectName(item) || 'item';
+    const itemName = objectName(item);
     const entries = [
-        `c - Name this specific ${itemName}`,
+        { key: 'c', text: `Name this specific ${itemName}` },
     ];
-    if (!item.worn) entries.push('d - Drop this item');
+    if (!item.worn)
+        entries.push({ key: 'd', text: 'Drop this item' });
     if ([2, 4, 11, 13].includes(item.oclass)
         || [239, 245].includes(item.otyp)) {
-        entries.push('E - Write on the floor with this item');
+        entries.push({ key: 'E', text: 'Write on the floor with this item' });
     }
-    entries.push('i - Adjust inventory by assigning new letter');
-    if (item.oclass === 4) entries.push('P - Put this ring on');
+    entries.push({ key: 'i', text: 'Adjust inventory by assigning new letter' });
+    if (item.oclass === 4)
+        entries.push({ key: 'P', text: 'Put this ring on' });
     if (item.oclass === 10)
-        entries.push('r - Study this spellbook');
-    entries.push('t - Throw this item');
-    entries.push(`w - Wield this item${item.oclass !== 2 ? ' in your hands' : ''}`);
-    entries.push('/ - Look up information about this');
-    const validKeys = [27, 32, 10, 13,
-        ...entries.map(entry => entry.charCodeAt(0))];
+        entries.push({ key: 'r', text: 'Study this spellbook' });
+    entries.push({ key: 't', text: 'Throw this item' });
+    entries.push({ key: 'w', text: `Wield this item${item.oclass !== 2 ? ' in your hands' : ''}` });
+    entries.push({ key: '/', text: 'Look up information about this' });
     return showChoiceWindow({
-        title: `Do what with the ${itemName}?`, entries, validKeys,
+        title: `Do what with the ${itemName}?`, entries,
+        validKeys: [27, 32, 10, 13], restoreUnderlay: true,
     });
 }
-
+function inventoryActionKey(code) {
+    const key = String.fromCharCode(code);
+    switch (key) {
+        case 'c':
+        case 'd':
+        case 'E':
+        case 'i':
+        case 'P':
+        case 'r':
+        case 't':
+        case 'w':
+        case '/':
+        case '\x1b':
+        case ' ':
+        case '\n':
+        case '\r':
+            return key;
+        default:
+            throw new RangeError(`Unexpected inventory action key ${code}`);
+    }
+}
 export async function ddoinv() {
-    game._pending_message = '';
-    game.nhDisplay?.clearRow(0);
     const inventory = game.inventory || [];
-    const selectableKeys = inventory.map(item => item.invlet).join('');
-    const key = await showInventoryWindow(inventorySections(), {
-        selectableKeys,
-        // invent.c:display_inventory() uses a selecting menu for the modern
-        // item-action path. Ordinary letters which are not inventory
-        // selectors ring the tty bell and leave the window open; only a
-        // valid item or a menu dismissal byte returns to command dispatch.
-        loopUntilValid: true,
-    });
-    const selected = inventory.find(item =>
-        item.invlet === String.fromCharCode(key));
+    const { key } = await selectInventoryObject();
+    const selected = inventory.find(item => item.invlet === String.fromCharCode(key));
     let action = null;
     if (selected) {
-        await restoreInventoryMap();
         // C destroys the full-height inventory and redraws the map before
         // opening its nested item-action menu, but does not run bot() until
         // that nested window closes.  Keep both status rows blank for the
@@ -494,14 +485,14 @@ export async function ddoinv() {
         game.nhDisplay?.clearRow(23);
         const actionKey = await showItemActionMenu(selected);
         action = {
-            key: String.fromCharCode(actionKey), item: selected,
+            key: inventoryActionKey(actionKey), item: selected,
         };
     }
-    await restoreInventoryMap();
+    await bot();
+    await flush_screen(1);
     game.context.move = 0;
     return action;
 }
-
 // C end.c:really_done() discovers every carried type and marks all of the
 // object's knowledge bits before disclose() calls display_inventory().
 // Keep that state transition separate from the ordinary `i` command, whose
@@ -520,133 +511,85 @@ export async function showIdentifiedInventory() {
             : !redundantNeutral
                 && [3, 4, 5, 6, 7, 8, 9, 10, 13].includes(item.oclass)
                 ? 'uncursed' : '';
-        if (item.oclass === 13 && OBJECT_NAMES[item.otyp])
-            item.name = OBJECT_NAMES[item.otyp];
+        const canonicalName = OBJECT_NAMES[item.otyp];
+        if (item.oclass === 13 && canonicalName)
+            item.name = canonicalName;
     }
-    game._pending_message = '';
-    game.nhDisplay?.clearRow(0);
-    return showInventoryWindow(inventorySections(), { headingAttr: 0 });
+    return selectInventoryObject({ headingAttr: 0, pickMode: PICK_NONE });
 }
-
-export async function selectInventoryObject({
-    items = game.inventory || [], includeGold = true, loopUntilValid = false,
-} = {}) {
-    game._pending_message = '';
-    game.nhDisplay?.clearRow(0);
-    const keys = `${includeGold && heroGoldAmount(game) > 0 ? '$' : ''}`
-        + items.filter(item => item.otyp !== GOLD_PIECE && item.oclass !== 12)
-            .map(item => item.invlet).join('');
-    const key = await showInventoryWindow(inventorySections(items, includeGold), {
-        selectableKeys: keys, loopUntilValid,
+export async function selectInventoryObject({ items, includeGold = true, title = null, extraChoice = null, pickMode = PICK_ONE, headingAttr, menuOptions = [], } = {}) {
+    const filtered = !!items?.length;
+    const candidates = filtered && items ? items : game.inventory;
+    const visible = includeGold ? candidates : candidates.filter(item => item.oclass !== COIN_CLASS);
+    if (!visible.length && !extraChoice) {
+        await pline('Not carrying anything.');
+        return { key: 0, count: null };
+    }
+    if (game.flags.fixinv === false)
+        reassignInventoryLetters();
+    const wizardIdentification = game.flags.debug && game.iflags.override_ID;
+    const singleton = !menuOptions.length && !game.flags.force_invmenu
+        && !game.iflags.menu_requested && !wizardIdentification
+        && (filtered && visible.length === 1 && !extraChoice
+            || visible.length === 0 && !!extraChoice);
+    if (singleton) {
+        const item = visible[0];
+        if (item)
+            observeObjectForNaming(item);
+        const letter = item ? item.invlet : '-';
+        if (!letter)
+            throw new Error('A carried inventory choice has no letter');
+        const description = item ? inventoryItemDescription(item, {
+            primaryHandDetail: inventoryPrimaryHandDetail(item),
+        }) : extraChoice;
+        const key = await showMessageMenu(letter, item ? pickMode : PICK_ONE, `${letter} - ${description}.`);
+        return { key, count: null };
+    }
+    const sections = inventorySections(visible, true);
+    if (extraChoice && !wizardIdentification)
+        sections.unshift({
+            heading: game.flags.sortpack === false ? null : 'Miscellaneous',
+            items: [{ text: `- - ${extraChoice}`, key: '-' }],
+        });
+    if (menuOptions.length)
+        sections.push({
+            heading: 'Special', items: menuOptions.map(option => ({
+                text: `${option.key} - ${option.text}`, key: option.key,
+            })),
+        });
+    return showInventoryWindow(sections, {
+        pickMode, title, ...(headingAttr === undefined ? {} : { headingAttr }),
     });
-    await flush_screen(1);
-    return key;
 }
-
-function stairwayAt(x, y) {
-    for (let stairway = game.stairs; stairway; stairway = stairway.next)
-        if (stairway.sx === x && stairway.sy === y) return stairway;
-    return null;
-}
-
-// C ref: stairs.c stairs_description().  Unknown branch stairs deliberately
-// look ordinary; destination identity is only disclosed after traversal.
-function stairwayDescription(stairway) {
-    const noun = stairway.isladder ? 'ladder' : 'staircase';
-    const direction = stairway.up ? 'up' : 'down';
-    const here = game.u?.uz || { dnum: 0, dlevel: 1 };
-    const destination = stairway.tolev || {};
-    const crossesDungeon = destination.dnum !== here.dnum;
-    if (crossesDungeon && stairway.u_traversed) {
-        const dungeonName = game.dungeons?.[destination.dnum]?.dname;
-        if (dungeonName)
-            return `branch ${noun} ${direction} to ${dungeonName}`;
+export async function dolook() {
+    const x = game.u.ux, y = game.u.uy;
+    const level = requireGameLevel();
+    const objects = level.objects[x]?.[y] || [];
+    const blind = heroIsBlind();
+    const feature = dungeonFeatureSentenceAt(x, y);
+    if (blind) {
+        const where = heroCanReachFloor(game, { checkPit: true })
+            ? `lying here on the ${surfaceName(x, y)}` : 'lying beneath you';
+        await plineWithContinuation(`You try to feel what is ${where}.`);
+        const trap = level.traps.find(trap => trap.tx === x && trap.ty === y);
+        if (!heroCanReachFloor(game, { checkPit: !!trap && is_pit(trap.ttyp) })) {
+            await plineWithContinuation("But you can't reach it!");
+            game.context.move = 0;
+            return;
+        }
     }
-    const levelSuffix = stairway.u_traversed
-        ? ` to level ${destination.dlevel}` : '';
-    return `${noun} ${direction}${levelSuffix}`;
-}
-
-// C ref: invent.c:dfeature_at() stairway branch.  Keep the source's terrain
-// noun construction with look_here() rather than reconstructing it in each
-// movement, teleport, or explicit-look caller.
-export function stairwayFeatureSentenceAt(x, y) {
-    const stairway = stairwayAt(x, y);
-    return stairway ? `There is a ${stairwayDescription(stairway)} here.` : '';
-}
-
-// C ref: invent.c:dfeature_at()/look_here().
-export function dungeonFeatureSentenceAt(x, y) {
-    const loc = game.level?.at?.(x, y);
-    if (loc?.typ === DOOR) {
-        const feature = loc.doormask === D_NODOOR ? 'doorway'
-            : loc.doormask === D_ISOPEN ? 'open door'
-                : loc.doormask === D_BROKEN ? 'broken door'
-                    : 'closed door';
-        return `There is a ${feature} here.`;
+    if (objects.length) {
+        const result = await showFloorPile(objects, false, feature);
+        if (result.died)
+            return;
     }
-    const feature = new Map([
-        [FOUNTAIN, 'a fountain'],
-        [THRONE, 'an opulent throne'],
-        [LAVAPOOL, 'molten lava'],
-        [LAVAWALL, 'molten lava'],
-        [ICE, 'ice'],
-        [POOL, 'a pool of water'],
-        [MOAT, 'a pool of water'],
-        [SINK, 'a sink'],
-        [GRAVE, 'a grave'],
-        [TREE, 'a tree'],
-        [IRONBARS, 'a set of iron bars'],
-    ]).get(loc?.typ);
-    if (feature) return `There is ${feature} here.`;
-    return stairwayFeatureSentenceAt(x, y);
-}
-
-export async function dolook({
-    showPile = null,
-    describeObject = null,
-} = {}) {
-    const objects = game.level?.objects?.[game.u?.ux]?.[game.u?.uy] || [];
-    const onUpstairs = game.level?.upstair?.x === game.u?.ux
-        && game.level?.upstair?.y === game.u?.uy;
-    const stairway = stairwayAt(game.u?.ux, game.u?.uy);
-    const loc = game.level?.at(game.u?.ux, game.u?.uy);
-    const dungeonFeature = dungeonFeatureSentenceAt(
-        game.u?.ux, game.u?.uy,
-    );
-    if (objects.length > 1 && showPile) {
-        // invent.c:look_here() owns which floor chain is inspected; the
-        // command layer currently owns the shared doname-with-price window
-        // used by arrival, autopickup, and explicit look.  Pass that
-        // presenter across the boundary rather than creating a second pile
-        // formatter whose knowledge and attachment rules can drift.
-        await showPile(objects);
-    } else if (loc?.typ === DOOR) {
-        const sword = objects.find(object => object.name === 'short sword');
-        await pline(sword
-            ? `There is a doorway here.  You see here a ${sword.enchantment >= 0 ? '+' : ''}${sword.enchantment} short sword.`
-            : 'There is a doorway here.');
-    } else if (onUpstairs && game.u?.uz?.dnum === 0
-        && game.u?.uz?.dlevel === 1) {
-        // invent.c:look_here() emits the dungeon feature as an ordinary
-        // pline and returns ECMD_OK.  It does not add a role/session pager;
-        // any real tty continuation is owned by surrounding pending output.
-        await pline('There is a staircase up out of the dungeon here.');
-    } else if (stairway) {
-        await pline(stairwayFeatureSentenceAt(game.u?.ux, game.u?.uy));
-    } else if (objects.length === 1 && describeObject) {
-        const objectLine = `You ${game.blind ? 'feel' : 'see'} here ${
-            describeObject(objects[0])
-        }.`;
-        await pline(dungeonFeature
-            ? `${dungeonFeature}  ${objectLine}` : objectLine);
-    } else if (dungeonFeature) {
-        // invent.c:dfeature_at()/look_here(): terrain is reported before the
-        // empty-object fallback, using the feature's live singular/plural
-        // article policy.
-        await pline(dungeonFeature);
-    } else if (!objects.length) {
-        await pline('You see no objects here.');
+    else {
+        if (feature)
+            await plineWithContinuation(feature);
+        await readFloorEngraving(x, y);
+        if (blind || !feature)
+            await plineWithContinuation(`You ${blind ? 'feel' : 'see'} no objects here.`);
     }
-    game.context.move = 0;
+    game.context.move = blind ? 1 : 0;
 }
+//# sourceMappingURL=invent.js.map

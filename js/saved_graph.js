@@ -1,16 +1,26 @@
 const TYPE = '__teleportType';
 const ENTITY_KIND = '__teleportEntityKind';
 const ENTITY_ID = '__teleportEntityId';
-
+// Records at the serialized-data boundary have not acquired domain types.
+export function isSavedRecord(value) {
+    return value !== null && typeof value === 'object'
+        && !Array.isArray(value) && !(value instanceof Map) && !(value instanceof Set);
+}
 function entityIdentity(value) {
-    if (!value || typeof value !== 'object') return null;
-    if (Number.isInteger(value.m_id) && value.m_id > 0)
+    if (!isSavedRecord(value))
+        return null;
+    if (isEntityId(value.m_id))
         return { kind: 'monster', id: value.m_id };
-    if (Number.isInteger(value.o_id) && value.o_id > 0)
+    // Occupation contexts also carry o_id to identify their food or tool.
+    // Only objects have a type; those references are ordinary state records.
+    if (typeof value.otyp === 'number' && Number.isInteger(value.otyp)
+        && isEntityId(value.o_id))
         return { kind: 'object', id: value.o_id };
     return null;
 }
-
+function isEntityId(value) {
+    return typeof value === 'number' && Number.isInteger(value) && value > 0;
+}
 function graphReplacer() {
     const entities = new Map();
     return (_key, value) => {
@@ -22,19 +32,22 @@ function graphReplacer() {
             return { [TYPE]: 'Map', entries: [...value.entries()] };
         if (value instanceof Set)
             return { [TYPE]: 'Set', values: [...value.values()] };
-        if (ArrayBuffer.isView(value))
-            return { [TYPE]: 'TypedArray', values: Array.from(value) };
-
+        if (ArrayBuffer.isView(value)) {
+            const length = 'length' in value && typeof value.length === 'number'
+                ? value.length : 0;
+            const values = Array.from({ length }, (_, index) => Reflect.get(value, index));
+            return { [TYPE]: 'TypedArray', values };
+        }
+        if (!isSavedRecord(value))
+            return value;
         const identity = entityIdentity(value);
-        if (!identity) return value;
-
+        if (!identity)
+            return value;
         const key = `${identity.kind}:${identity.id}`;
         const existing = entities.get(key);
         if (existing) {
             if (existing !== value) {
-                throw new Error(
-                    `Duplicate ${identity.kind} id ${identity.id} in saved state`,
-                );
+                throw new Error(`Duplicate ${identity.kind} id ${identity.id} in saved state`);
             }
             return {
                 [TYPE]: 'EntityRef',
@@ -51,29 +64,46 @@ function graphReplacer() {
         };
     };
 }
-
 export function encodeSavedGraph(value) {
-    return JSON.stringify(value, graphReplacer());
+    const encoded = JSON.stringify(value, graphReplacer());
+    if (encoded === undefined)
+        throw new TypeError('Saved graph has no root value');
+    return encoded;
 }
-
 export function decodeSavedGraph(encoded) {
     const entities = new Map();
-
+    const parsed = JSON.parse(encoded);
+    return resolveReferences(materialize(parsed), new WeakSet());
     function materialize(value) {
-        if (!value || typeof value !== 'object') return value;
-        if (Array.isArray(value)) return value.map(materialize);
-        if (value[TYPE] === 'BigInt') return BigInt(value.value);
+        if (!value || typeof value !== 'object')
+            return value;
+        if (Array.isArray(value))
+            return savedArray(value).map(materialize);
+        if (!isSavedRecord(value))
+            throw new TypeError('Invalid saved graph record');
+        if (value[TYPE] === 'BigInt') {
+            if (typeof value.value !== 'string')
+                throw new TypeError('Invalid saved BigInt');
+            return BigInt(value.value);
+        }
         if (value[TYPE] === 'Map') {
-            return new Map(value.entries.map(([key, entry]) =>
-                [materialize(key), materialize(entry)]));
+            return new Map(savedArray(value.entries).map(entry => {
+                const pair = savedArray(entry);
+                if (pair.length !== 2)
+                    throw new TypeError('Invalid saved Map entry');
+                return [materialize(pair[0]), materialize(pair[1])];
+            }));
         }
         if (value[TYPE] === 'Set')
-            return new Set(value.values.map(materialize));
-        if (value[TYPE] === 'TypedArray') return [...value.values];
-        if (value[TYPE] === 'EntityRef') return value;
+            return new Set(savedArray(value.values).map(materialize));
+        if (value[TYPE] === 'TypedArray')
+            return [...savedArray(value.values)];
+        if (value[TYPE] === 'EntityRef') {
+            savedEntityIdentity(value);
+            return value;
+        }
         if (value[TYPE] === 'Entity') {
-            const kind = value[ENTITY_KIND];
-            const id = value[ENTITY_ID];
+            const { kind, id } = savedEntityIdentity(value);
             const key = `${kind}:${id}`;
             if (entities.has(key))
                 throw new Error(`Duplicate ${kind} id ${id} in save`);
@@ -81,54 +111,76 @@ export function decodeSavedGraph(encoded) {
             entities.set(key, entity);
             for (const [name, entry] of Object.entries(value)) {
                 if (name === TYPE || name === ENTITY_KIND
-                    || name === ENTITY_ID) continue;
-                entity[name] = materialize(entry);
+                    || name === ENTITY_ID)
+                    continue;
+                Object.defineProperty(entity, name, {
+                    value: materialize(entry),
+                    enumerable: true, configurable: true, writable: true,
+                });
             }
             return entity;
         }
-
-        return Object.fromEntries(Object.entries(value).map(([key, entry]) =>
-            [key, materialize(entry)]));
+        return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, materialize(entry)]));
     }
-
-    function resolveReferences(value, visited = new WeakSet()) {
-        if (!value || typeof value !== 'object') return value;
-        if (value[TYPE] === 'EntityRef') {
-            const kind = value[ENTITY_KIND];
-            const id = value[ENTITY_ID];
+    function resolveReferences(value, visited) {
+        if (!value || typeof value !== 'object')
+            return value;
+        if (isSavedRecord(value) && value[TYPE] === 'EntityRef') {
+            const { kind, id } = savedEntityIdentity(value);
             const entity = entities.get(`${kind}:${id}`);
             if (!entity)
                 throw new Error(`Missing ${kind} id ${id} in save`);
             return entity;
         }
-        if (visited.has(value)) return value;
-        visited.add(value);
-
-        if (Array.isArray(value)) {
-            for (let index = 0; index < value.length; index++)
-                value[index] = resolveReferences(value[index], visited);
+        if (visited.has(value))
             return value;
+        visited.add(value);
+        if (Array.isArray(value)) {
+            const values = savedArray(value);
+            for (let index = 0; index < values.length; index++)
+                values[index] = resolveReferences(values[index], visited);
+            return values;
         }
         if (value instanceof Map) {
-            const entries = [...value.entries()].map(([key, entry]) => [
+            const map = value;
+            const entries = [...map.entries()].map(([key, entry]) => [
                 resolveReferences(key, visited),
                 resolveReferences(entry, visited),
             ]);
-            value.clear();
-            for (const [key, entry] of entries) value.set(key, entry);
-            return value;
+            map.clear();
+            for (const [key, entry] of entries)
+                map.set(key, entry);
+            return map;
         }
         if (value instanceof Set) {
-            const entries = [...value].map(entry =>
-                resolveReferences(entry, visited));
-            value.clear();
-            for (const entry of entries) value.add(entry);
-            return value;
+            const set = value;
+            const entries = [...set].map(entry => resolveReferences(entry, visited));
+            set.clear();
+            for (const entry of entries)
+                set.add(entry);
+            return set;
         }
-        for (const [key, entry] of Object.entries(value))
-            value[key] = resolveReferences(entry, visited);
+        if (!isSavedRecord(value))
+            throw new TypeError('Invalid saved graph record');
+        for (const [key, entry] of Object.entries(value)) {
+            Object.defineProperty(value, key, {
+                value: resolveReferences(entry, visited),
+                enumerable: true, configurable: true, writable: true,
+            });
+        }
         return value;
     }
-
-    return resolveReferences(materialize(JSON.parse(encoded)));
 }
+function savedArray(value) {
+    if (!Array.isArray(value))
+        throw new TypeError('Invalid saved graph array');
+    return value;
+}
+function savedEntityIdentity(value) {
+    const kind = value[ENTITY_KIND];
+    const id = value[ENTITY_ID];
+    if ((kind !== 'monster' && kind !== 'object') || !isEntityId(id))
+        throw new TypeError('Invalid saved entity identity');
+    return { kind, id };
+}
+//# sourceMappingURL=saved_graph.js.map

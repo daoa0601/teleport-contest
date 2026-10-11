@@ -1,0 +1,67 @@
+import { requirePlayingGame } from '../js/gstate.js';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { addBuriedObject } from '../js/buried_object.js';
+import { game } from '../js/gstate.js';
+import { beginObjectBurn } from '../js/light.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { addObjectToContainer } from '../js/object_container.js';
+import { CORPSE, HEAVY_IRON_BALL, LARGE_BOX, POT_WATER, TALLOW_CANDLE } from '../js/object_data.js';
+import { OBJECT_TIMER_KIND, scheduleObjectTimer } from '../js/object_timers.js';
+import { initRng } from '../js/rng.js';
+import { runDueTimers } from '../js/timer_effects.js';
+import { throwInventoryObject } from './support/commands.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { floorObjects } from './support/level-state.js';
+import { freshObjectRoom } from './support/object-room.js';
+
+void test('a thrown candle goes out while the rest of its carried stack stays lit', async () => {
+    const level = freshObjectRoom({ right: 20 });
+    requirePlayingGame(game);
+    const candles = await addInventoryObject(TALLOW_CANDLE, { quan: 3, age: 60, invlet: 'a' });
+    beginObjectBurn(candles);
+
+    await throwInventoryObject(candles, 'l', Array(8).fill(' '));
+
+    assert.equal(candles.quan, 2);
+    assert.equal(candles.lamplit, true);
+    const fallen = floorObjects(level).filter(object => object.otyp === TALLOW_CANDLE);
+    assert.equal(fallen.length, 1);
+    assert.ok(fallen[0] != null);
+    assert.equal(fallen[0].quan, 1);
+    assert.equal(fallen[0].lamplit, false);
+    assert.match(game._lastPlineMessage, /The candle's flame is extinguished/);
+});
+
+void test('a hard landing can break fragile contents of a thrown box', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const box = await addInventoryObject(LARGE_BOX, { initialize: false, contents: [], invlet: 'a' });
+    const bottles = await knownObject(POT_WATER, { quan: 3 });
+    await addObjectToContainer(box, bottles);
+    initRng(1n);
+
+    await throwInventoryObject(box, 'l', Array(8).fill(' '));
+
+    assert.equal(box.where, 'floor');
+    assert.equal(bottles.quan, 2);
+    assert.equal(box.cknown, false);
+});
+
+void test('a heavy thrown object hastens a buried zombie revival', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('human') });
+    addBuriedObject(corpse, 11, 10, game);
+    scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON, game.moves + 30, game);
+    const ball = await addInventoryObject(HEAVY_IRON_BALL, { invlet: 'a' });
+
+    await throwInventoryObject(ball, 'l', Array(8).fill(' '));
+    game.moves += 20;
+    await runDueTimers();
+
+    assert.ok(game.level.buriedObjects != null, 'Expected game.level.buriedObjects to be initialized');
+    assert.equal(game.level.buriedObjects.includes(corpse), false);
+    assert.ok(game.level.monsters.some(monster =>
+        !monster.dead && monster.mnum === MONSTER_NAME.indexOf('human zombie')));
+});

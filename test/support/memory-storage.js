@@ -1,8 +1,5 @@
+import { InMemoryStorage } from '../../js/storage.js';
 export function memoryStorage() {
-    const values = new Map();
-    return {
-        getItem: key => values.get(key) ?? null,
-        setItem: (key, value) => values.set(key, value),
-        removeItem: key => values.delete(key),
-    };
+    return new InMemoryStorage();
 }
+//# sourceMappingURL=memory-storage.js.map

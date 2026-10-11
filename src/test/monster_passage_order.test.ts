@@ -1,0 +1,125 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { moveMonsterForHeroAttack, performMonsterHeroAttack } from '../js/allmain.js';
+import { DOOR, D_ISOPEN, D_LOCKED, IRONBARS, MMOVE_DONE, MM_NOGRP, NO_MINVENT, W_NONDIGGABLE } from '../js/const.js';
+import { flush_screen } from '../js/display.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { setMonsterApparentHeroPosition } from '../js/monster_perception.js';
+import { DAGGER, SKELETON_KEY } from '../js/object_data.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
+import { initRng, rn2 } from '../js/rng.js';
+import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
+import { runExtendedCommand } from './support/commands.js';
+import { floorObject, knownObject } from './support/game-objects.js';
+import { floorObjectsAt } from './support/level-state.js';
+import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+
+void test('a mounted pony can finish a partial pickup without throwing its rider on resumed input', async () => {
+    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 }, flags: { verbose: false } });
+    requirePlayingGame(game);
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    assert.equal(game.u.usteed, pony);
+    assert.ok(pony.edog);
+    pony.edog.apport = 10;
+    // Native can_carry admits one object from a handless collector's stack
+    // before its general steed restriction. A single dagger is not eligible.
+    const daggers = await floorObject(DAGGER, pony.mx, pony.my, { quan: 2 });
+    grantIntrinsicProperty('conflict', 'outside');
+    initRng(366n);
+    pushKeys(' '.repeat(20));
+
+    await moveMonsterForHeroAttack(pony);
+
+    assert.equal(game.u.usteed, pony);
+    assert.equal(daggers.quan, 1);
+    assert.ok(floorObjectsAt(level, pony.mx, pony.my).includes(daggers));
+    const carried = pony.minvent?.find(object => object.otyp === DAGGER);
+    assert.ok(carried);
+    assert.equal(carried.quan, 1);
+    assert.equal(carried.where, 'minvent');
+});
+
+void test('eating destination bars ends movement before a rock mole eats the floor metal', async () => {
+    const level = freshObjectRoom({ left: 10, right: 13, top: 10, bottom: 10, flags: { verbose: false } });
+    const mole = await createMonsterAt('rock mole', 11, 10, MM_NOGRP | NO_MINVENT);
+    mole.mpeaceful = 0;
+    mole.mflee = 1;
+    mole.mfleetim = 20;
+    for (let x = 10; x <= 12; x++) {
+        for (const y of [9, 11]) level.requireAt(x, y).wall_info |= W_NONDIGGABLE;
+    }
+    level.requireAt(12, 10).typ = IRONBARS;
+    const dagger = await floorObject(DAGGER, 12, 10);
+    pushKeys(' '.repeat(10));
+    initRng(1n);
+
+    const result = await moveMonsterForHeroAttack(mole);
+
+    assert.equal(result.status, MMOVE_DONE);
+    assert.equal(mole.mx, 12);
+    assert.notEqual(level.requireAt(12, 10).typ, IRONBARS);
+    assert.equal(dagger.where, 'floor');
+    assert.ok(floorObjectsAt(level, 12, 10).includes(dagger));
+    assert.equal(mole.minvent?.includes(dagger) ?? false, false);
+});
+
+void test('unlocking a destination door continues into ordinary floor pickup', async () => {
+    const level = freshObjectRoom({ left: 10, right: 13, top: 10, bottom: 10, flags: { verbose: false } });
+    requirePlayingGame(game);
+    const orc = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
+    orc.mpeaceful = 0;
+    orc.mflee = 1;
+    orc.mfleetim = 20;
+    await addObjectToMonsterInventory(orc, await knownObject(SKELETON_KEY));
+    const door = level.requireAt(12, 10);
+    door.typ = DOOR;
+    door.doormask = D_LOCKED;
+    vision_note_blocker_change(12, 10);
+    vision_recalc(0);
+    const dagger = await floorObject(DAGGER, 12, 10);
+    initRng(1n);
+
+    const result = await moveMonsterForHeroAttack(orc);
+
+    assert.equal(orc.mx, 12);
+    assert.equal(door.doormask, D_ISOPEN);
+    assert.equal(result.status, MMOVE_DONE);
+    assert.equal(dagger.where, 'minvent');
+    assert.ok(orc.minvent?.includes(dagger));
+    assert.equal(floorObjectsAt(level, 12, 10).includes(dagger), false);
+});
+
+void test('a moving engulfer carries the swallowed hero and redraws the stomach at the new position', async () => {
+    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10 } });
+    requirePlayingGame(game);
+    const worm = await createMonsterAt('purple worm', 11, 10, MM_NOGRP | NO_MINVENT);
+    worm.mpeaceful = 0;
+    worm.m_lev = 30;
+    pushKeys(' '.repeat(30));
+    initRng(1n);
+    setMonsterApparentHeroPosition(worm, game, rn2);
+    await performMonsterHeroAttack(worm, game);
+    assert.equal(game.u.uswallow, 1);
+    assert.equal(game.u.ustuck, worm);
+    const oldPosition = { x: game.u.ux, y: game.u.uy };
+    worm.mflee = 1;
+    worm.mfleetim = 20;
+    initRng(2n);
+
+    await moveMonsterForHeroAttack(worm);
+    await flush_screen(1);
+
+    assert.ok(worm.mx !== oldPosition.x || worm.my !== oldPosition.y);
+    assert.equal(game.u.ux, worm.mx);
+    assert.equal(game.u.uy, worm.my);
+    assert.equal(game.u.ux0, oldPosition.x);
+    assert.equal(game.u.uy0, oldPosition.y);
+    assert.equal(game.u.uswallow, 1);
+    const grid = requireGameDisplay().grid;
+    assert.equal(grid[worm.my + 1]?.[worm.mx - 1]?.ch, '@');
+    assert.equal(grid[worm.my]?.[worm.mx - 2]?.ch, '/');
+});

@@ -1,73 +1,45 @@
 // gold_throw.js — Hero-gold flight and direct/quivered contact ownership.
 // C refs: dothrow.c:throw_gold()/throwit()/thitmonst(), zap.c:bhit(),
 // dokick.c:ghitm().
-
-import {
-    A_CHA, IS_SOFT, Is_airlevel, Is_waterlevel, LOST_THROWN,
-} from './const.js';
+import { A_CHA, IS_SOFT, Is_airlevel, Is_waterlevel, LOST_THROWN, Upolyd, } from './const.js';
+import { objectIsHardHelmet } from './armor.js';
+import { loseHeroHp } from './hero_damage.js';
+import { monsterName, shopkeeperName } from './monster_name.js';
 import { currentAttribute } from './attrib.js';
-import { newsym, pline } from './display.js';
-import { place_object, stack_object } from './floor_object.js';
+import { newsym, pline, plineWithContinuation } from './display.js';
+import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { hiddenGold } from './gold.js';
-import {
-    detachHeroGold, heroGoldAmount, heroGoldObject,
-} from './hero_gold.js';
-import {
-    addObjectToMonsterInventory, linkObjectToMonsterInventory,
-} from './monster_inventory.js';
-import {
-    MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
-} from './monster_data.js';
+import { requirePlayingGame } from './gstate.js';
+import { detachHeroGold, heroGoldAmount, heroGoldObject, } from './hero_gold.js';
+import { addObjectToMonsterInventory, linkObjectToMonsterInventory, } from './monster_inventory.js';
+import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
 import { OBJECT_COST } from './object_data.js';
-import { visiblePriestName } from './priest.js';
 import { rn2, rnd } from './rng.js';
-import { shopkeeperName } from './shk.js';
-import {
-    flyHeroThrownObject, heroThrowRange, prepareHeroThrownTarget,
-} from './thrown_object.js';
+import { flyHeroThrownObject, heroThrowRange, prepareHeroThrownTarget, } from './thrown_object.js';
 import { cansee } from './vision.js';
-
 const M2_MERC = 0x00000200;
 const M2_GREEDY = 0x10000000;
 const PM_SOLDIER = 277;
 const PM_SERGEANT = 278;
 const PM_LIEUTENANT = 280;
 const PM_CAPTAIN = 281;
-
 const MERCENARY_BASE_BRIBE = new Map([
     [PM_SOLDIER, 100],
     [PM_SERGEANT, 250],
     [PM_LIEUTENANT, 500],
     [PM_CAPTAIN, 750],
 ]);
-
 function quantity(object) {
-    return Math.max(0, Math.trunc(
-        object?.quan ?? object?.quantity ?? 0,
-    ));
+    return Math.max(0, Math.trunc(object?.quan ?? object?.quantity ?? 0));
 }
-
-function capitalize(value) {
-    return value ? `${value[0].toUpperCase()}${value.slice(1)}` : value;
-}
-
-function monsterSubject(monster, state) {
-    if (monster.isshk) return capitalize(shopkeeperName(monster));
-    if (monster.ispriest) return visiblePriestName(monster, state);
-    if (monster.name) return capitalize(monster.name);
-    return `The ${MONSTER_NAME[monster.mnum] || 'monster'}`;
-}
-
 function goldNoun(gold) {
     return quantity(gold) === 1 ? 'gold piece' : 'gold pieces';
 }
-
 async function missGold(monster, gold, state) {
     const target = state.flags?.verbose === false
         ? 'it' : (MONSTER_NAME[monster.mnum] || 'monster');
     await pline(`The ${goldNoun(gold)} miss the ${target}.`);
 }
-
 function finishMonsterMeal(monster) {
     monster.meating = 0;
     if (monster.m_ap_type && MONSTER_SYMBOL[monster.mnum] !== 13) {
@@ -76,8 +48,9 @@ function finishMonsterMeal(monster) {
         newsym(monster.mx, monster.my);
     }
 }
-
 function makeShopkeeperHappy(monster, state, adjustAlignment) {
+    if (!monster.eshk)
+        throw new Error('Shopkeeper gold payment requires shopkeeper data.');
     const wasAngry = !monster.mpeaceful;
     monster.mpeaceful = 1;
     monster.eshk.following = 0;
@@ -87,37 +60,29 @@ function makeShopkeeperHappy(monster, state, adjustAlignment) {
     }
     return wasAngry;
 }
-
-async function finishShopkeeperCatch(
-    monster, gold, value, state, adjustAlignment,
-) {
-    monster.eshk ||= {};
+async function finishShopkeeperCatch(monster, gold, value, state, adjustAlignment) {
+    if (!monster.eshk)
+        throw new Error('Shopkeeper gold payment requires shopkeeper data.');
     const robbedBefore = Math.max(0, Math.trunc(monster.eshk.robbed ?? 0));
     if (robbedBefore) {
         const robbedAfter = Math.max(0, robbedBefore - value);
-        await pline(`The amount ${robbedAfter ? 'partially ' : ''}covers ${
-            monster.female ? 'her' : 'his'} recent losses.`);
+        await pline(`The amount ${robbedAfter ? 'partially ' : ''}covers ${monster.female ? 'her' : 'his'} recent losses.`);
         monster.eshk.robbed = robbedAfter;
         if (!robbedAfter) {
-            const calmed = makeShopkeeperHappy(
-                monster, state, adjustAlignment,
-            );
+            const calmed = makeShopkeeperHappy(monster, state, adjustAlignment);
             if (calmed)
-                await pline(`${capitalize(shopkeeperName(monster))} calms down.`);
+                await pline(`${shopkeeperName(monster, { state, capitalized: true })} calms down.`);
         }
         return;
     }
     if (monster.mpeaceful) {
-        monster.eshk.credit = Math.max(
-            0, Math.trunc(monster.eshk.credit ?? 0),
-        ) + value;
-        await pline(`You have ${monster.eshk.credit} zorkmid${
-            monster.eshk.credit === 1 ? '' : 's'} in credit.`);
-    } else {
+        monster.eshk.credit = Math.max(0, Math.trunc(monster.eshk.credit ?? 0)) + value;
+        await pline(`You have ${monster.eshk.credit} zorkmid${monster.eshk.credit === 1 ? '' : 's'} in credit.`);
+    }
+    else {
         await pline('"Thanks, scum!"');
     }
 }
-
 async function finishGuardCatch(monster, state) {
     const visible = heroGoldAmount(state);
     const hidden = hiddenGold(state, true);
@@ -128,7 +93,6 @@ async function finishGuardCatch(monster, state) {
                 : "I'll take that; now get moving.";
     await pline(`"${speech}"`);
 }
-
 async function finishMercenaryCatch(monster, value, state) {
     const wasAngry = !monster.mpeaceful;
     let required = MERCENARY_BASE_BRIBE.get(monster.mnum) ?? 0;
@@ -136,30 +100,27 @@ async function finishMercenaryCatch(monster, value, state) {
         const charisma = Math.max(3, currentAttribute(A_CHA, state));
         required += Math.trunc((heroGoldAmount(state)
             + (state.u?.ulevel ?? 1) * rn2(5)) / charisma);
-        if (value > required) monster.mpeaceful = 1;
+        if (value > required)
+            monster.mpeaceful = 1;
     }
-
     if (!monster.mpeaceful) {
         await pline(required
             ? '"That\'s not enough, coward!"'
             : '"I don\'t take bribes from scum like you!"');
-    } else if (wasAngry) {
+    }
+    else if (wasAngry) {
         await pline('"That should do.  Now beat it!"');
-    } else {
-        await pline(`"Thanks for the tip, ${
-            state.flags?.female ? 'lady' : 'buddy'}."`);
+    }
+    else {
+        await pline(`"Thanks for the tip, ${state.flags?.female ? 'lady' : 'buddy'}."`);
     }
 }
-
-export async function resolveGoldMonsterContact({
-    state, monster, gold, wakeMonster, angerMonster, adjustAlignment,
-}) {
+export async function resolveGoldMonsterContact({ state, monster, gold, wakeMonster, angerMonster, adjustAlignment, }) {
     const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
     const greedy = !!(flags & M2_GREEDY);
     const mercenary = !!(flags & M2_MERC);
     const eligible = greedy || monster?.isshk || monster?.ispriest
         || monster?.isgd || mercenary;
-
     if (!eligible) {
         await wakeMonster?.(monster);
         await missGold(monster, gold, state);
@@ -167,95 +128,80 @@ export async function resolveGoldMonsterContact({
     }
     if (monster.mcanmove === 0 || monster.mcanmove === false) {
         if (cansee(monster.mx, monster.my)) {
-            await pline(`The ${goldNoun(gold)} harmlessly hit ${
-                (MONSTER_NAME[monster.mnum] || 'monster')}.`);
+            await pline(`The ${goldNoun(gold)} harmlessly hit ${(MONSTER_NAME[monster.mnum] || 'monster')}.`);
         }
         await missGold(monster, gold, state);
         return false;
     }
-
     const wasSleeping = !!monster.msleeping;
     const value = quantity(gold) * (OBJECT_COST[gold.otyp] ?? 1);
     monster.msleeping = 0;
     finishMonsterMeal(monster);
     if (!monster.isgd && rn2(4) === 0)
         await angerMonster?.(monster);
-
     if (cansee(monster.mx, monster.my)) {
-        await pline(`${monsterSubject(monster, state)} ${
-            wasSleeping ? 'awakens and ' : ''}catches the gold.`);
+        await pline(`${monsterName(monster, { state, capitalized: true })} ${wasSleeping ? 'awakens and ' : ''}catches the gold.`);
     }
-    addObjectToMonsterInventory(monster, gold, state);
-
+    await addObjectToMonsterInventory(monster, gold, state);
     if (monster.isshk) {
-        await finishShopkeeperCatch(
-            monster, gold, value, state, adjustAlignment,
-        );
-    } else if (monster.ispriest) {
+        await finishShopkeeperCatch(monster, gold, value, state, adjustAlignment);
+    }
+    else if (monster.ispriest) {
         await pline(monster.mpeaceful
             ? '"Thank you for your contribution."' : '"Thanks, scum!"');
-    } else if (monster.isgd) {
+    }
+    else if (monster.isgd) {
         await finishGuardCatch(monster, state);
-    } else if (mercenary) {
+    }
+    else if (mercenary) {
         await finishMercenaryCatch(monster, value, state);
     }
     return true;
 }
-
-function settleGoldOnFloor(state, gold, x, y) {
-    place_object(gold, x, y);
-    const survivor = stack_object(gold, state) || gold;
+async function settleGoldOnFloor(state, gold, x, y) {
+    placeObjectSynchronously(gold, x, y);
+    const survivor = await stack_object(gold, state) || gold;
     newsym(x, y);
     return survivor;
 }
-
-async function resolveQuiveredGoldMonsterContact({
-    state, monster, gold, swallowed = false, wakeMonster = null,
-}) {
+async function resolveQuiveredGoldMonsterContact({ state, monster, gold, swallowed = false, wakeMonster = null, }) {
     // dothrow.c:omon_adj() can thaw a mobile species before thitmonst()
     // consumes its ordinary d20 targeting roll.  Coins do not enter any of
     // thitmonst()'s damaging classes, so a non-swallowed coin always reaches
     // tmiss() regardless of that targeting result or the monster's greed.
     prepareHeroThrownTarget(monster);
     rnd(20);
-
     if (swallowed) {
         await wakeMonster?.(monster);
-        await pline(`The gold piece vanishes into ${
-            monsterSubject(monster, state).toLowerCase()}.`);
-        addObjectToMonsterInventory(monster, gold, state);
+        await pline(`The gold piece vanishes into ${monsterName(monster, { state, capitalized: true }).toLowerCase()}.`);
+        await addObjectToMonsterInventory(monster, gold, state);
         return true;
     }
-
     await missGold(monster, gold, state);
-    if (rn2(3) === 0) await wakeMonster?.(monster);
+    if (rn2(3) === 0)
+        await wakeMonster?.(monster);
     return false;
 }
-
-export async function resolveDirectGoldThrow({
-    state, gold, dx = 0, dy = 0, dz = 0,
-    captureFlight = null, wakeMonster = null, angerMonster = null,
-    adjustAlignment = null,
-}) {
-    if (!gold || gold !== heroGoldObject(state)) return false;
+export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz = 0, captureFlight = null, wakeMonster = null, angerMonster = null, adjustAlignment = null, }) {
+    if (!gold || gold !== heroGoldObject(state))
+        return false;
     gold = detachHeroGold(state);
-    if (!gold) return false;
+    if (!gold)
+        return false;
     gold.how_lost = LOST_THROWN;
-
     if (state.u?.uswallow && state.u?.ustuck) {
         await pline('The gold disappears into the engulfing monster.');
-        linkObjectToMonsterInventory(state.u.ustuck, gold, { state });
+        await linkObjectToMonsterInventory(state.u.ustuck, gold, { state });
         return true;
     }
-
     const heroX = state.u?.ux ?? 0;
     const heroY = state.u?.uy ?? 0;
     if (dz) {
-        if (dz > 0) await pline('The gold hits the floor.');
-        settleGoldOnFloor(state, gold, heroX, heroY);
+        if (dz > 0)
+            await pline('The gold hits the floor.');
+        await settleGoldOnFloor(state, gold, heroX, heroY);
         return true;
     }
-
     const range = heroThrowRange(gold, state);
     const { x, y, contact } = await flyHeroThrownObject({
         state, object: gold, dx, dy, range, captureFlight,
@@ -265,22 +211,19 @@ export async function resolveDirectGoldThrow({
             state, monster: contact, gold,
             wakeMonster, angerMonster, adjustAlignment,
         });
-        if (caught) return true;
+        if (caught)
+            return true;
     }
-    settleGoldOnFloor(state, gold, x, y);
+    await settleGoldOnFloor(state, gold, x, y);
     return true;
 }
-
-export async function resolveQuiveredGoldThrow({
-    state, gold, dx = 0, dy = 0, dz = 0,
-    captureFlight = null, wakeMonster = null,
-}) {
+export async function resolveQuiveredGoldThrow({ state, gold, dx = 0, dy = 0, dz = 0, captureFlight = null, wakeMonster = null, }) {
     if (!gold || gold !== heroGoldObject(state) || gold !== state.uquiver)
         return false;
     gold = detachHeroGold(state, 1);
-    if (!gold) return false;
+    if (!gold)
+        return false;
     gold.how_lost = LOST_THROWN;
-
     // throwit() probes every cursed or greased horizontal object, but a coin
     // is not a throwing weapon so only grease can turn that probe into a
     // slip.  The two direction draws may convert the throw into a drop.
@@ -288,16 +231,15 @@ export async function resolveQuiveredGoldThrow({
         && gold.greased) {
         dx = rn2(3) - 1;
         dy = rn2(3) - 1;
-        if (!dx && !dy) dz = 1;
+        if (!dx && !dy)
+            dz = 1;
     }
-
     if (state.u?.uswallow && state.u?.ustuck) {
         return resolveQuiveredGoldMonsterContact({
             state, monster: state.u.ustuck, gold,
             swallowed: true, wakeMonster,
         });
     }
-
     const heroX = state.u?.ux ?? 0;
     const heroY = state.u?.uy ?? 0;
     if (dz) {
@@ -313,27 +255,47 @@ export async function resolveQuiveredGoldThrow({
             // Coins cannot break, but each breaktest() still consumes its
             // obj_resists() percentage draw: once at the roof when struck,
             // once on the hero, and once more on a hard floor via hitfloor().
-            if (hitsRoof) rn2(100);
+            if (hitsRoof)
+                rn2(100);
             const upwardAction = !hasCeiling
                 ? 'flies up into the sky above'
                 : hitsRoof ? 'hits the ceiling' : 'almost hits the ceiling';
             await pline(`The gold piece ${upwardAction}, then falls back on top of your head.`);
             rn2(100);
+            // A coin is a non-weapon too light for weight-based damage, so
+            // toss_up() starts from one point before the hero's modifiers.
+            let damage = Math.max(0, 1 + (state.u.udaminc ?? 0));
+            if (state.u.halfPhysicalDamage)
+                damage = Math.trunc((damage + 1) / 2);
+            const helmet = state.uarmh || state.u.uarmh;
+            if (helmet) {
+                requirePlayingGame(state);
+                const hardHelmet = objectIsHardHelmet(helmet);
+                const hp = Upolyd(state.u) ? state.u.mh : state.u.uhp;
+                if (hardHelmet && damage < hp) {
+                    await plineWithContinuation('Fortunately, you are wearing a hard helmet.');
+                }
+                else if (state.flags.verbose !== false) {
+                    await plineWithContinuation(`Your ${hardHelmet ? 'helm' : 'hat'} does not protect you.`);
+                }
+            }
             const floor = state.level?.at?.(heroX, heroY);
             if (!(state.underwater || state.u?.uinwater)
-                && floor && !IS_SOFT(floor.typ)) rn2(100);
-            settleGoldOnFloor(state, gold, heroX, heroY);
-            state.u.uhp = Math.max(0, (state.u.uhp ?? 1) - 1);
-        } else {
+                && floor && !IS_SOFT(floor.typ))
+                rn2(100);
+            await settleGoldOnFloor(state, gold, heroX, heroY);
+            await loseHeroHp(damage, 'falling object', { state });
+        }
+        else {
             await pline('The gold piece hits the floor.');
             const floor = state.level?.at?.(heroX, heroY);
             if (!(state.underwater || state.u?.uinwater)
-                && floor && !IS_SOFT(floor.typ)) rn2(100);
-            settleGoldOnFloor(state, gold, heroX, heroY);
+                && floor && !IS_SOFT(floor.typ))
+                rn2(100);
+            await settleGoldOnFloor(state, gold, heroX, heroY);
         }
         return true;
     }
-
     const underwater = !!(state.underwater || state.u?.uinwater);
     const range = underwater ? 1 : heroThrowRange(gold, state);
     const { x, y, contact } = await flyHeroThrownObject({
@@ -345,7 +307,9 @@ export async function resolveQuiveredGoldThrow({
         });
     }
     const endpoint = state.level?.at?.(x, y);
-    if (endpoint && !IS_SOFT(endpoint.typ)) rn2(100);
-    settleGoldOnFloor(state, gold, x, y);
+    if (endpoint && !IS_SOFT(endpoint.typ))
+        rn2(100);
+    await settleGoldOnFloor(state, gold, x, y);
     return true;
 }
+//# sourceMappingURL=gold_throw.js.map

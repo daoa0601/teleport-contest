@@ -1,65 +1,59 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { ALTAR, FOUNTAIN, SINK } from '../js/const.js';
-import { game } from '../js/gstate.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
 import { generateMinetown } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import {
-    CORPSE, TALLOW_CANDLE, WAX_CANDLE,
-} from '../js/object_data.js';
-import {
-    countTerrain, floorObjects, levelStairs,
-} from './support/level-state.js';
+import { CORPSE, TALLOW_CANDLE, WAX_CANDLE, } from '../js/object_data.js';
+import { roles } from '../js/roles.js';
+import { countTerrain, floorObjects, levelStairs, } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
-
 async function buildMinetown(variant) {
     const active = freshSpecialLevel({
         prototype: 'minetn', variant, seed: variant * 131, depth: 6,
     });
-    game.urole = { key: 'wizard' };
+    requirePlayingGame(game);
+    const role = roles.find(entry => entry.key === 'wizard');
+    assert.ok(role);
+    game.urole = role;
     await generateMinetown(active);
 }
-
 function liveMonsterCount(name) {
+    requirePlayingGame(game);
     const type = MONSTER_NAME.indexOf(name);
-    return game.level.monsters.filter(monster =>
-        monster.mnum === type && (monster.mhp ?? 1) > 0 && !monster.dead)
+    return game.level.monsters.filter(monster => monster.mnum === type && (monster.mhp ?? 1) > 0 && !monster.dead)
         .length;
 }
-
-test('all seven Minetown layouts build a populated town', async () => {
+void test('all seven Minetown layouts build a populated town', async () => {
     for (let variant = 1; variant <= 7; variant++) {
         await buildMinetown(variant);
+        requirePlayingGame(game);
         assert.equal(game.level.flags.is_special, true, `variant ${variant}`);
         assert.equal(game.level.flags.has_town, true, `variant ${variant}`);
         assert.equal(levelStairs(game).length, 2, `variant ${variant} stairs`);
-        assert.ok(countTerrain(game.level, FOUNTAIN) >= 2,
-            `variant ${variant} fountains`);
-        assert.equal(countTerrain(game.level, ALTAR), 1,
-            `variant ${variant} altar`);
-        assert.ok(game.level.monsters.length >= 15,
-            `variant ${variant} population`);
+        assert.ok(countTerrain(game.level, FOUNTAIN) >= 2, `variant ${variant} fountains`);
+        assert.equal(countTerrain(game.level, ALTAR), 1, `variant ${variant} altar`);
+        assert.ok(game.level.monsters.length >= 15, `variant ${variant} population`);
     }
 });
-
-test('Orcish Town contains the dead residents and replacement candles',
-    async () => {
-        await buildMinetown(1);
-        const objects = floorObjects(game.level);
-        const candleQuantity = objects
-            .filter(object => [WAX_CANDLE, TALLOW_CANDLE].includes(object.otyp))
-            .reduce((total, candle) => total + (candle.quan ?? 1), 0);
-        assert.equal(objects.filter(object => object.otyp === CORPSE).length, 11);
-        assert.ok(candleQuantity >= 7);
-        assert.ok(liveMonsterCount('orc-captain')
-            + liveMonsterCount('Uruk-hai')
-            + liveMonsterCount('Mordor orc') > 0);
-        assert.ok(liveMonsterCount('orc shaman') >= 1);
-    });
-
-test('Bazaar Town can include its furnished sink room', async () => {
-    await buildMinetown(7);
-    assert.equal(countTerrain(game.level, SINK), 1);
-    assert.ok(game.level.nsubroom > 10);
+void test('Orcish Town contains the dead residents and replacement candles', async () => {
+    await buildMinetown(1);
+    requirePlayingGame(game);
+    const objects = floorObjects(game.level);
+    const candleQuantity = objects
+        .filter(object => [WAX_CANDLE, TALLOW_CANDLE].includes(object.otyp))
+        .reduce((total, candle) => total + (candle.quan ?? 1), 0);
+    assert.equal(objects.filter(object => object.otyp === CORPSE).length, 11);
+    assert.ok(candleQuantity >= 7);
+    assert.ok(liveMonsterCount('orc-captain')
+        + liveMonsterCount('Uruk-hai')
+        + liveMonsterCount('Mordor orc') > 0);
+    assert.ok(liveMonsterCount('orc shaman') >= 1);
 });
+void test('Bazaar Town can include its furnished sink room', async () => {
+    await buildMinetown(7);
+    requirePlayingGame(game);
+    assert.equal(countTerrain(game.level, SINK), 1);
+    assert.ok((game.level.nsubroom ?? 0) > 10);
+});
+//# sourceMappingURL=minetown_levels.test.js.map

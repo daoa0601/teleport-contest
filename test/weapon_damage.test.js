@@ -1,103 +1,104 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
-import {
-    ACID_VENOM, AXE, BOW, BULLWHIP, DAGGER, HEAVY_IRON_BALL, OBJECT_WEIGHT,
-} from '../js/object_data.js';
-import {
-    rollHeroMeleeWeaponDamage, rollPhysicalWeaponDamage,
-} from '../js/weapon_damage.js';
+import { ACID_VENOM, AXE, BULLWHIP, CREAM_PIE, DAGGER, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_WEIGHT, WAN_LIGHT, WAN_LIGHTNING, } from '../js/object_data.js';
+import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, } from '../js/weapon_damage.js';
 import { nameToMonster } from '../js/mondata.js';
 import { initRng } from '../js/rng.js';
 import { artifactObject, uninitializedObject } from './support/game-objects.js';
-
-const maximumRoll = range => range;
+import { freshObjectRoom } from './support/object-room.js';
+import { game } from '../js/gstate.js';
+import { artifactDamageBonus } from '../js/artifacts.js';
+import { heroSpecies } from '../js/hero_species.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
+import { installPolymorphedHero } from './support/hero-state.js';
+const maximumRoll = (range) => range;
 const maximumDice = (count, sides) => count * sides;
-
 test.beforeEach(() => initRng(1n));
-
 function maximumDamage(object, species) {
-    return rollPhysicalWeaponDamage(
-        object,
-        { mnum: nameToMonster(species) },
-        { rollOne: maximumRoll, rollDice: maximumDice },
-    );
+    return rollPhysicalWeaponDamage(object, { mnum: nameToMonster(species) }, { rollOne: maximumRoll, rollDice: maximumDice });
 }
-
-test('acid venom rolls both of its damage dice', () => {
-    const venom = uninitializedObject(ACID_VENOM);
-
+void test('acid venom rolls both of its damage dice', async () => {
+    const venom = await uninitializedObject(ACID_VENOM);
     const damage = maximumDamage(venom, 'jackal');
-
     assert.equal(damage, 12);
 });
-
-test('a leather whip cannot hurt a thick-skinned monster', () => {
-    const whip = uninitializedObject(BULLWHIP);
-
+void test('a leather whip cannot hurt a thick-skinned monster', async () => {
+    const whip = await uninitializedObject(BULLWHIP);
     const damage = maximumDamage(whip, 'mastodon');
-
     assert.equal(damage, 0);
 });
-
-test('a bow swung in melee uses improvised damage without weapon skill', () => {
-    const bow = uninitializedObject(BOW);
-    const monster = { mnum: nameToMonster('jackal') };
-
-    const hit = rollHeroMeleeWeaponDamage(
-        bow, monster, { rollOne: maximumRoll },
-    );
-
-    assert.deepEqual(hit, {
-        damage: 2,
-        usesArtifact: false,
-        usesSkill: false,
-    });
-});
-
-test('a dagger blessing still hurts a shade when its blade passes through', () => {
-    const dagger = uninitializedObject(DAGGER);
-    const blessedDagger = uninitializedObject(DAGGER, { blessed: true });
-
+void test('a dagger blessing still hurts a shade when its blade passes through', async () => {
+    const dagger = await uninitializedObject(DAGGER);
+    const blessedDagger = await uninitializedObject(DAGGER, { blessed: true });
     const ordinaryDamage = maximumDamage(dagger, 'shade');
     const blessedDamage = maximumDamage(blessedDagger, 'shade');
-
     assert.equal(ordinaryDamage, 0);
     assert.equal(blessedDamage, 4);
 });
-
-test('an axe gets its extra die against a wood golem', () => {
-    const axe = uninitializedObject(AXE);
-
+void test('an axe gets its extra die against a wood golem', async () => {
+    const axe = await uninitializedObject(AXE);
     const damage = maximumDamage(axe, 'wood golem');
-
     assert.equal(damage, 8);
 });
-
-test('an overweight iron ball gains damage up to the source cap', () => {
-    const ball = uninitializedObject(HEAVY_IRON_BALL, {
-        owt: OBJECT_WEIGHT[HEAVY_IRON_BALL] + 320,
+void test('an overweight iron ball gains damage up to the source cap', async () => {
+    const weight = OBJECT_WEIGHT[HEAVY_IRON_BALL];
+    assert.ok(weight !== undefined);
+    const ball = await uninitializedObject(HEAVY_IRON_BALL, {
+        owt: weight + 320,
     });
-
     const damage = maximumDamage(ball, 'jackal');
-
     assert.equal(damage, 25);
 });
-
-test('a lit Sunsword gets its light damage against a gremlin', () => {
-    const sunsword = artifactObject('Sunsword', {
+void test('a lit Sunsword gets its light damage against a gremlin', async () => {
+    const sunsword = await artifactObject('Sunsword', {
         lamplit: true,
     });
-
     const damage = maximumDamage(sunsword, 'gremlin');
-
     assert.equal(damage, 16);
 });
-
-test('Grayswandir halves its silver bonus before doubling weapon damage', () => {
-    const grayswandir = artifactObject('Grayswandir');
-
+void test('Grayswandir halves its silver bonus before doubling weapon damage', async () => {
+    const grayswandir = await artifactObject('Grayswandir');
     const damage = maximumDamage(grayswandir, 'vampire');
-
     assert.equal(damage, 18);
 });
+void test('shade contact recognizes a silver wand after its material has been shuffled', async () => {
+    freshObjectRoom();
+    assert.ok(game.objectMaterials);
+    const type = game.objectMaterials.findIndex((material, otyp) => otyp >= WAN_LIGHT && otyp <= WAN_LIGHTNING
+        && material === 14 && OBJECT_MATERIAL[otyp] !== 14);
+    assert.ok(type >= WAN_LIGHT, 'The shuffled wand class needs a silver wand whose original material differed');
+    const wand = await uninitializedObject(type);
+    assert.equal(shadeBlocksWeaponBaseDamage(wand, { mnum: nameToMonster('shade') }), false);
+});
+void test('a wand which lost its silver material passes through a shade', async () => {
+    freshObjectRoom();
+    assert.ok(game.objectMaterials);
+    const type = game.objectMaterials.findIndex((material, otyp) => otyp >= WAN_LIGHT && otyp <= WAN_LIGHTNING
+        && material !== 14 && OBJECT_MATERIAL[otyp] === 14);
+    assert.ok(type >= WAN_LIGHT, 'The shuffled wand class needs a former silver type with a different material');
+    const wand = await uninitializedObject(type);
+    assert.equal(shadeBlocksWeaponBaseDamage(wand, { mnum: nameToMonster('shade') }), true);
+});
+void test('a cream pie has no physical weapon damage', async () => {
+    const pie = await uninitializedObject(CREAM_PIE);
+    assert.equal(maximumDamage(pie, 'jackal'), 0);
+});
+void test('the hero cold resistance stops Frost Brand doubling without reducing blessed contact damage', async () => {
+    freshObjectRoom();
+    installPolymorphedHero('vampire');
+    const frostBrand = await artifactObject('Frost Brand', { blessed: true });
+    const defender = { mnum: heroSpecies(game) };
+    const unresistedPhysical = rollPhysicalWeaponDamageAgainstHero(frostBrand, game, {
+        rollOne: maximumRoll, rollDice: maximumDice,
+    });
+    const unresistedBonus = artifactDamageBonus(frostBrand, defender, unresistedPhysical, maximumRoll, { hero: true, state: game });
+    grantIntrinsicProperty('coldResistance', 'outside');
+    const resistedPhysical = rollPhysicalWeaponDamageAgainstHero(frostBrand, game, {
+        rollOne: maximumRoll, rollDice: maximumDice,
+    });
+    const resistedBonus = artifactDamageBonus(frostBrand, defender, resistedPhysical, maximumRoll, { hero: true, state: game });
+    assert.equal(unresistedPhysical + unresistedBonus, 20);
+    assert.equal(resistedPhysical, 12, 'the sword and its blessing still damage an undead hero');
+    assert.equal(resistedBonus, 0);
+});
+//# sourceMappingURL=weapon_damage.test.js.map

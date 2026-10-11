@@ -3,105 +3,68 @@
 // shop_keeper(), and u_entered_shop().  Lua/mklev owns room construction and
 // initial stock; this module owns the live relationship among room, resident,
 // customer, and hero.
-
-import { game } from './gstate.js';
-import { pline, plineWithContinuation } from './display.js';
+import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
+import { SHOP_TYPES } from './shop_data.js';
+import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsHuman, monsterIsVampire } from './monster_data.js';
+import { heroSpecies } from './hero_species.js';
+import { monsterName, possessiveName, shopkeeperName } from './monster_name.js';
+import { containedGold } from './gold.js';
+import { containedBuyCost, objectIsCandle, objectPricingUnits, pickedContainer, shopClaimsObject, shopGetPrice, shopkeeperIsMuted, stolenValue, } from './shop_loss.js';
+import { costlyGold, donateGold, sellHeroDroppedObject, shopOfferForObject, shopStocksObject, } from './shop_sell.js';
+import { canSeeMonster, canSenseMonster, pline, plineWithContinuation } from './display.js';
 import { rn2 } from './rng.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { heroIsDeaf } from './senses.js';
-import { A_CHA, A_WIS, MORGUE, OROOM, ROOMOFFSET, SHOPBASE } from './const.js';
-import { roomForRoomno } from './room.js';
-import { intemple, templeRoomAt } from './priest.js';
-import {
-    BRASS_LANTERN, MAGIC_LAMP, OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES,
-    OIL_LAMP,
-} from './object_data.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { propertyIsActive } from './properties.js';
+import { A_CHA, A_WIS, In_mines, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM, ROOMOFFSET, SHOPBASE, TEMPLE, Upolyd, MGIVENNAME, } from './const.js';
+import { inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
+import { intemple } from './priest.js';
+import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
 import { recordObjectPriceQuote } from './object_knowledge.js';
-import { ACH_TOWN, recordAchievement } from './achievements.js';
-import { nextIdent } from './ident.js';
-
+import { ACH_SHOP, ACH_TOWN, recordAchievement } from './achievements.js';
+import { nextIdent, nextObjectId } from './ident.js';
+import { pacifyShopkeeper, rileShopkeeper, shopkeeperCustomerInsult, } from './shop_damage.js';
+import { deallocateObject, stopObjectTimers } from './object_delete.js';
+import { getObjectLocation, unlinkObject } from './object_location.js';
+import { leaveHeroShop } from './shop_departure.js';
 const COIN_CLASS = 12;
-
-export const SHOP_TYPE_NAMES = [
-    'general store',
-    'used armor dealership',
-    'second-hand bookstore',
-    'liquor emporium',
-    'antique weapons outlet',
-    'delicatessen',
-    'jewelers',
-    'quality apparel and accessories',
-    'hardware store',
-    'rare books',
-    'health food store',
-    'lighting store',
-];
-
+const GEM_CLASS = 13;
+const GLASS = 19;
+const BILLSZ = 200; // C include/mextra.h
 function sameLevel(a, b) {
     return (a?.dnum ?? 0) === (b?.dnum ?? 0)
         && (a?.dlevel ?? 1) === (b?.dlevel ?? 1);
 }
-
-function shopRoomAt(state, x, y, includeBoundary = false) {
-    const level = state?.level;
-    const location = level?.at?.(x, y);
+// C inside_shop(): a room boundary is not merchandise floor space.
+export function insideShopRoomAt(state, x, y) {
+    const location = state.level?.at?.(x, y);
     const roomno = location?.roomno ?? 0;
-    if (roomno < ROOMOFFSET || (!includeBoundary && location?.edge))
+    if (roomno < ROOMOFFSET || location?.edge)
         return null;
-    const room = roomForRoomno(level, roomno);
-    if (!room || (room.rtype ?? 0) < SHOPBASE) return null;
-    return { room, roomno };
+    const room = roomForRoomno(state.level, roomno);
+    return room && room.rtype >= SHOPBASE ? { room, roomno } : null;
 }
-
-// C hack.c:in_rooms()/check_special_room().  Shops and temples keep their
-// type because their residents own repeatable behavior.  Other special rooms
-// deliver one entry event and are converted to OROOM.  Keep this lookup
-// independent from shopRoomAt(): a level-arrival square can enter a generic
-// room even when no shop boundary exists.
-function oneShotSpecialRoomAt(state, x, y) {
-    const level = state?.level;
-    const location = level?.at?.(x, y);
-    const roomno = location?.roomno ?? 0;
-    // in_rooms(..., 0) includes the room's boundary code.  In Pri-loca the
-    // random arrival is one row below the interior, on the lower Morgue edge,
-    // and C still records that room as newly entered.
-    if (roomno < ROOMOFFSET) return null;
-    const room = roomForRoomno(level, roomno);
-    if (!room || room.rtype !== MORGUE) return null;
-    return { room, roomno };
-}
-
-async function enterOneShotSpecialRoom({ room }) {
-    switch (room.rtype) {
-    case MORGUE:
-        // C chooses the morgue message from the game's recorded hour.
-        if (Number(String(game.datetime || '').slice(8, 10)) === 0)
-            await plineWithContinuation('Run away!  Run away!');
-        else
-            await plineWithContinuation('You have an uncanny feeling...');
-        break;
-    default:
+// C callers using *in_rooms() select the first matching shop. Membership
+// checks must use the full roomsAt() list instead.
+function firstShopRoomAt(state, x, y) {
+    const roomno = roomsAt(state.level, x, y, SHOPBASE)[0];
+    if (roomno === undefined)
         return null;
-    }
-    room.rtype = OROOM;
-    return room;
+    const room = roomForRoomno(state.level, roomno);
+    return room ? { room, roomno } : null;
 }
-
 // C inhishop() includes the room boundary, unlike inside_shop().  Monster
 // pickup and shop-resident validity need this broader predicate.
 export function shopkeeperInOwnShop(monster, state = game) {
-    if (!monster?.isshk || !monster?.eshk) return false;
-    if (!sameLevel(monster.eshk.shoplevel, state?.u?.uz)) return false;
-    const current = shopRoomAt(state, monster.mx, monster.my, true);
-    return current?.roomno === monster.eshk.shoproom;
+    if (!monster?.isshk || !monster?.eshk)
+        return false;
+    if (!sameLevel(monster.eshk.shoplevel, state?.u?.uz))
+        return false;
+    return roomsAt(state.level, monster.mx, monster.my, SHOPBASE)
+        .includes(monster.eshk.shoproom);
 }
-
-export function shopkeeperName(monster) {
-    const raw = monster?.eshk?.shknam || monster?.name || 'shopkeeper';
-    return /^[+_|=-]/.test(raw) ? raw.slice(1) : raw;
-}
-
 // C end.c:done_in_by().  General shopkeeper names carry a gendered
 // honorific in killer identity; prefix-coded personal names (-, +, =) do
 // not.  formatkiller() later changes the descriptive comma to a semicolon,
@@ -113,363 +76,355 @@ export function shopkeeperKillerName(monster) {
     const honorific = personal ? '' : monster?.female ? 'Ms. ' : 'Mr. ';
     return `${honorific}${shopkeeperName(monster)}; the shopkeeper`;
 }
-
-function clearShopDebtOnDeath(resident, state) {
-    const eshk = resident?.eshk;
-    if (!eshk) return;
-    const billedIds = new Set(
-        (eshk.bill || []).map(entry => entry.bo_id),
-    );
-    for (const object of state?.inventory || []) {
-        if (billedIds.has(object.o_id)) object.unpaid = false;
-    }
-    eshk.bill = [];
-    eshk.billObjects = [];
-    eshk.billct = 0;
-    eshk.credit = 0;
-    eshk.debit = 0;
-    eshk.loan = 0;
-}
-
-function shopDeathRepositoryLocation(resident, state) {
-    const eshk = resident?.eshk || {};
-    const heroX = state?.u?.ux ?? 0;
-    const heroY = state?.u?.uy ?? 0;
-    const home = eshk.shk;
-    const door = eshk.shd;
-    const atEntry = home && door
-        && (heroX === home.x && heroY === home.y
-            || heroX === door.x && heroY === door.y
-            || state?.level?.at?.(heroX, heroY)?.edge);
-    if (!atEntry) return { x: heroX, y: heroY };
-    return {
-        x: home.x + Math.sign(home.x - door.x),
-        y: home.y + Math.sign(home.y - door.y),
-    };
-}
-
-// C end.c:really_done() -> shk.c:paybill()/inherits().  This first live
-// death slice chooses the resident of the shop containing the hero, clears
-// its settled debt state, and records where finish_paybill() would later
-// deposit inventory after disclosure.  Inventory deliberately remains in
-// hero ownership until that later boundary.
-export function settleShopkeepersAfterDeath(state = game) {
-    if (state._deathShopSettlement) return state._deathShopSettlement;
-
-    const shopkeepers = (state?.level?.monsters || []).filter(monster =>
-        monster?.isshk && !monster.dead && (monster.mhp ?? 1) > 0);
-    const heroShop = shopRoomAt(
-        state, state?.u?.ux, state?.u?.uy, true,
-    );
-    const resident = heroShop
-        ? shopkeepers.find(monster =>
-            monster.eshk?.shoproom === heroShop.roomno)
-        : null;
-    const creditor = shopkeepers.find(monster => {
-        const eshk = monster.eshk || {};
-        return (eshk.bill?.length || eshk.billct || eshk.debit
-            || eshk.robbed);
-    });
-    const hostile = shopkeepers.find(monster =>
-        monster.eshk?.following || !monster.mpeaceful);
-    const local = shopkeepers.find(monster =>
-        sameLevel(monster.eshk?.shoplevel, state?.u?.uz));
-    const shopkeeper = resident || creditor || hostile || local;
-    if (!shopkeeper) {
-        state._deathShopSettlement = {
-            taken: false, shopkeeper: null, message: null,
-        };
-        return state._deathShopSettlement;
-    }
-
-    const eshk = shopkeeper.eshk || {};
-    const inventoryPresent = (state?.inventory || []).length > 0;
-    const heroInShop = heroShop?.roomno === eshk.shoproom;
-    const inOwnShop = shopkeeperInOwnShop(shopkeeper, state);
-    const owes = !!(eshk.bill?.length || eshk.billct
-        || eshk.debit || eshk.robbed);
-    const peacefulInheritance = heroInShop && inOwnShop
-        && !owes && shopkeeper.mpeaceful && !eshk.following;
-    const takes = inventoryPresent && (peacefulInheritance
-        || owes || eshk.following || !shopkeeper.mpeaceful);
-
-    let message = null;
-    if (takes) {
-        const name = shopkeeperName(shopkeeper);
-        if (peacefulInheritance) {
-            message = `${name} gratefully inherits all your possessions.`;
-        } else {
-            const helpless = shopkeeper.msleeping
-                || shopkeeper.mcanmove === 0
-                || (shopkeeper.mfrozen ?? 0) > 0;
-            const adjacent = Math.max(
-                Math.abs(shopkeeper.mx - (state?.u?.ux ?? shopkeeper.mx)),
-                Math.abs(shopkeeper.my - (state?.u?.uy ?? shopkeeper.my)),
-            ) <= 1;
-            const prefix = `${helpless ? 'wakes up and ' : ''}${
-                adjacent ? '' : 'comes and '
-            }takes`;
-            message = `${name} ${prefix} all your possessions.`;
-        }
-    }
-
-    clearShopDebtOnDeath(shopkeeper, state);
-    shopkeeper.msleeping = 0;
-    shopkeeper.mcanmove = 1;
-    shopkeeper.mfrozen = 0;
-    state._deathShopSettlement = {
-        taken: takes,
-        shopkeeper,
-        message,
-        repository: takes
-            ? shopDeathRepositoryLocation(shopkeeper, state) : null,
-        inventoryRetainedForDisclosure: takes,
-    };
-    return state._deathShopSettlement;
-}
-
 export function objectTypeKnown(object, state = game) {
-    const trueName = OBJECT_NAMES[object?.otyp];
-    const discoveryName = object?.oclass === 11 ? `wand of ${trueName}`
-        : object?.oclass === 10 ? `spellbook of ${trueName}`
-            : object?.oclass === 9 ? `scroll of ${trueName}`
-                : object?.oclass === 8 ? `potion of ${trueName}`
-                    : trueName;
-    return !!object?.typeKnown
+    return !!OBJECT_INITIAL_KNOWN[object.otyp]
+        || !!object?.typeKnown
         || !!state?._knownObjectTypes?.has(object?.otyp)
-        || (state?.inventory || []).some(item =>
-            item.otyp === object?.otyp && item.typeKnown)
-        || (state?.discoveries || []).some(discovery =>
-            discovery.otyp === object?.otyp
-            || discovery.name === discoveryName);
+        || (state?.inventory || []).some(item => item.otyp === object?.otyp && item.typeKnown);
 }
-
 function shopkeeperForRoom(roomno, state = game) {
-    if (!roomno) return null;
-    const room = roomForRoomno(state?.level, roomno);
-    const resident = room?.resident;
-    return shopkeeperInOwnShop(resident, state) ? resident : null;
+    if (!roomno)
+        return null;
+    const resident = shopResident(roomno, state);
+    return resident && shopkeeperInOwnShop(resident, state) ? resident : null;
 }
-
+// C shop_keeper(): the assigned resident may be outside the shop.
+// Looking up an angry keeper also applies the bill surcharge.
+export function shopResident(roomno, state = game) {
+    if (roomno === undefined)
+        return null;
+    const keeper = roomForRoomno(state.level, roomno)?.resident;
+    if (!hasShopkeeperData(keeper))
+        return null;
+    if (!keeper.mpeaceful && !keeper.eshk.surcharge)
+        rileShopkeeper(keeper);
+    return keeper;
+}
+export function currentShopResident(state = game) {
+    requireLiveGame(state);
+    return shopResident(state.u.ushops?.[0], state);
+}
 export function shopkeeperForHero(state = game) {
-    const current = shopRoomAt(
-        state, state?.u?.ux, state?.u?.uy, true,
-    );
-    return shopkeeperForRoom(current?.roomno, state);
+    return shopkeeperForRoom(state.u.ushops?.[0], state);
 }
-
 export function carriedShopBill(resident, state = game) {
-    if (!resident?.eshk) return [];
+    if (!resident?.eshk)
+        return [];
     const inventory = state?.inventory || [];
-    const usedObjects = resident.eshk.billObjects || [];
+    const usedObjects = state.billObjects || [];
     return (resident.eshk.bill || []).map(entry => ({
         entry,
         object: inventory.find(object => object.o_id === entry.bo_id)
             || usedObjects.find(object => object.o_id === entry.bo_id),
         price: entry.price * (entry.bquan ?? 1),
-    })).filter(item => item.object);
+    })).filter((item) => item.object !== undefined);
 }
-
 // C refs: shk.c:pay(), sub_one_frombill(), and update_bill().  Gold is a
 // real object stack in C; paying less than the whole purse splits it and the
 // new stack identity consumes next_ident() before either stack is transferred.
 export function settleCarriedShopBillItem(resident, item, state = game) {
-    const { entry, object, price } = item || {};
-    if (!resident?.eshk || !entry || !object || price <= 0
-        || heroGoldAmount(state) < price) return false;
+    const { entry, object, price } = item;
+    if (!hasShopBill(resident) || price <= 0
+        || heroGoldAmount(state) < price)
+        return false;
     const paid = detachHeroGold(state, price);
-    if (paid) paid.where = 'gone';
+    if (paid)
+        paid.where = 'gone';
     resident.gold = (resident.gold || 0) + price;
     object.unpaid = false;
-    resident.eshk.bill = (resident.eshk.bill || [])
-        .filter(candidate => candidate !== entry);
-    resident.eshk.billObjects = (resident.eshk.billObjects || [])
-        .filter(candidate => candidate !== object);
+    if (object.where === 'onbill') {
+        unlinkObject(object, state);
+        deallocateObject(object, state);
+    }
+    const last = resident.eshk.bill.pop();
+    if (last && entry !== last)
+        copyBillEntry(entry, last);
     resident.eshk.billct = resident.eshk.bill.length;
     return true;
 }
-
+// Native bill compaction overwrites a slot; other references keep that slot's identity.
+function copyBillEntry(target, source) {
+    target.bo_id = source.bo_id;
+    target.bquan = source.bquan;
+    target.price = source.price;
+    target.useup = source.useup;
+}
 export function shopThankYouMessage(resident) {
     const name = shopkeeperName(resident);
-    const typeName = SHOP_TYPE_NAMES[
-        (resident?.eshk?.shoptype ?? SHOPBASE) - SHOPBASE
-    ] || 'shop';
+    const typeName = SHOP_TYPES[(resident?.eshk?.shoptype ?? SHOPBASE) - SHOPBASE]?.name || 'shop';
     return `"Thank you for shopping in ${possessive(name)} ${typeName}!"`;
 }
-
 export function costlySpot(x, y, state = game) {
-    const spot = shopRoomAt(state, x, y, false);
-    const resident = shopkeeperForRoom(spot?.roomno, state);
-    if (!resident) return null;
+    const spot = insideShopRoomAt(state, x, y);
+    if (!spot)
+        return null;
+    const resident = shopkeeperForRoom(spot.roomno, state);
+    if (!resident)
+        return null;
     const home = resident.eshk?.shk;
-    if (home && x === home.x && y === home.y) return null;
+    if (home && x === home.x && y === home.y)
+        return null;
     return { ...spot, resident };
 }
-
-// C dothrow.c:check_shop_obj().  Returning an unpaid object to its costly
-// shop square removes it from the bill.  Throwing it elsewhere turns its bill
-// price into debt.  A paid object with no sale value remains the hero's.
-export async function settleThrownShopObject(
-    object, x, y, state = game, publish = plineWithContinuation,
-) {
-    const heroShop = shopRoomAt(
-        state, state?.u?.ux, state?.u?.uy, true,
-    );
+// C dothrow.c:check_shop_obj(). Broken objects settle through the hero's
+// current shop. Intact returns remove bills or offer a sale before stacking.
+export function objectIsUnpaid(object) {
+    return Boolean(object.unpaid)
+        || (object.contents || []).some(objectIsUnpaid);
+}
+export async function settleThrownShopObject(object, x, y, state = game, publish = plineWithContinuation, { broken = false } = {}) {
+    requireLiveGame(state);
+    requireShopGame(state);
+    const heroShop = state.u.ushops[0];
+    const resident = shopResident(heroShop, state);
+    if (!resident)
+        return false;
     const spot = costlySpot(x, y, state);
-    if (object?.unpaid) {
-        const returnedToShop = heroShop && spot
-            && heroShop.roomno === spot.roomno;
-        if (returnedToShop) removeObjectAndContentsFromBill(object, state);
-        else await chargeUnpaidObjectAsDebt(object, state, publish);
+    const objectRoom = roomsAt(state.level, x, y, SHOPBASE)[0];
+    if (broken || !spot || objectRoom !== heroShop) {
+        if (objectIsUnpaid(object))
+            await stolenValue(object, state.u.ux, state.u.uy, resident.mpeaceful, {
+                state, publish, silent: false,
+            });
+        if (broken)
+            object.no_charge = true;
         return true;
     }
-    if (!heroShop || !spot || heroShop.roomno !== spot.roomno
-        || !spot.resident?.mpeaceful
-        || x === spot.resident.mx && y === spot.resident.my
-        || (OBJECT_COST[object?.otyp] ?? 0) !== 0) return false;
-
-    object.no_charge = true;
-    await plineWithContinuation(
-        `${shopkeeperName(spot.resident)} seems uninterested.`,
-    );
+    const previousRoom = state.u.ushops0[0];
+    if (objectRoom === heroShop || objectRoom === previousRoom) {
+        if (objectIsUnpaid(object)) {
+            const gold = containedGold(object, true);
+            removeObjectAndContentsFromBill(object, state, { resident });
+            if (gold > 0)
+                await donateGold(gold, resident, { selling: true, publish });
+        }
+        else if (x !== resident.mx || y !== resident.my) {
+            await sellHeroDroppedObject(object, x, y, state, { publish });
+        }
+    }
     return true;
 }
-
-function objectBaseShopCost(object) {
-    let cost = OBJECT_COST[object?.otyp] ?? 0;
-    if (!cost) cost = 5;
-    if ((object?.oclass === 2 || object?.oclass === 3)
-        && (object.spe ?? 0) > 0) cost += 10 * object.spe;
-    return cost;
-}
-
+const glassGemImitations = [
+    ['diamond', 'opal'], ['sapphire', 'aquamarine'], ['ruby', 'jasper'],
+    ['amber', 'topaz'], ['jacinth', 'agate'], ['citrine', 'chrysoberyl'],
+    ['black opal', 'jet'], ['emerald', 'jade'], ['amethyst', 'fluorite'],
+].map(pair => pair.map(name => OBJECT_NAMES.indexOf(name)));
 // C ref: shk.c:get_cost().  Keep every adjustment as an integer rational and
 // apply C's decimal roundoff tweak once after all multipliers are combined.
+// C shk.c:2864 oid_price_adjustment(): +1 when an unknown, non-glass-gem
+// object carries the shopkeeper's arbitrary surcharge under this oid,
+// else 0.  Pure; obfree's merge o_id handover consumes it alongside buy
+// pricing.
+export function objectPriceAdjustment(object, oid, state = game) {
+    const known = !!object?.dknown && objectTypeKnown(object, state);
+    const glassGem = object?.oclass === GEM_CLASS
+        && OBJECT_MATERIAL[object.otyp] === GLASS;
+    if (!known && !glassGem)
+        return ((oid % 4) === 0) ? 1 : 0;
+    return 0;
+}
 export function shopObjectUnitCost(object, resident = null, state = game) {
-    let cost = objectBaseShopCost(object);
+    let cost = shopGetPrice(object, false, state) || 5;
     let multiplier = 1;
     let divisor = 1;
     const unknown = !object?.dknown || !objectTypeKnown(object, state);
-    const glassGem = object?.oclass === 13
-        && OBJECT_MATERIAL[object.otyp] === 20;
-    if (unknown && !glassGem && Number.isInteger(object?.o_id)
-        && object.o_id % 4 === 0) {
+    const glassGem = object?.oclass === GEM_CLASS
+        && OBJECT_MATERIAL[object.otyp] === GLASS;
+    if (unknown) {
+        if (glassGem) {
+            const pseudorand = (((state.ubirthday ?? 0) | 0) % object.otyp)
+                >= Math.trunc(object.otyp / 2);
+            const imitations = glassGemImitations[object.otyp - WORTHLESS_PIECE_OF_WHITE_GLASS];
+            const imitation = imitations?.[pseudorand ? 0 : 1];
+            const imitationCost = imitation === undefined ? undefined : OBJECT_COST[imitation];
+            if (imitationCost === undefined)
+                throw new Error(`Glass gem ${object.otyp} has no shop imitation price`);
+            cost = imitationCost;
+        }
+        else if (objectPriceAdjustment(object, object.o_id, state) > 0) {
+            multiplier *= 4;
+            divisor *= 3;
+        }
+    }
+    if (state?.uarmh?.otyp === DUNCE_CAP) {
         multiplier *= 4;
         divisor *= 3;
     }
-
-    // DUNCE_CAP is object 94 in the configured NetHack 5.0 object table.
-    if (state?.uarmh?.otyp === 94) {
-        multiplier *= 4;
-        divisor *= 3;
-    } else if ((state?.urole?.key === 'tourist'
-            && (state?.u?.ulevel ?? 1) < 15)
+    else if ((state?.urole?.key === 'tourist'
+        && (state?.u?.ulevel ?? 1) < 15)
         || (state?.uarmu && !state?.uarm && !state?.uarmc)) {
         multiplier *= 4;
         divisor *= 3;
     }
-
     const charisma = currentAttribute(A_CHA, state);
-    if (charisma > 18) divisor *= 2;
-    else if (charisma === 18) multiplier *= 2, divisor *= 3;
-    else if (charisma >= 16) multiplier *= 3, divisor *= 4;
-    else if (charisma <= 5) multiplier *= 2;
-    else if (charisma <= 7) multiplier *= 3, divisor *= 2;
-    else if (charisma <= 10) multiplier *= 4, divisor *= 3;
-
+    if (charisma > 18)
+        divisor *= 2;
+    else if (charisma === 18)
+        multiplier *= 2, divisor *= 3;
+    else if (charisma >= 16)
+        multiplier *= 3, divisor *= 4;
+    else if (charisma <= 5)
+        multiplier *= 2;
+    else if (charisma <= 7)
+        multiplier *= 3, divisor *= 2;
+    else if (charisma <= 10)
+        multiplier *= 4, divisor *= 3;
     cost *= multiplier;
-    if (divisor > 1) cost = Math.trunc(
-        (Math.trunc((cost * 10) / divisor) + 5) / 10,
-    );
+    if (divisor > 1)
+        cost = Math.trunc((Math.trunc((cost * 10) / divisor) + 5) / 10);
     cost = Math.max(1, cost);
+    if (object.oartifact)
+        cost *= 4;
     if (resident?.eshk?.surcharge)
         cost += Math.trunc((cost + 2) / 3);
     return cost;
 }
-
-// C refs: shk.c:check_unpaid()/check_unpaid_usage()/cost_per_charge().
-// Lamps pay a usage fee only when switched on while their resident shopkeeper
-// is still operating the current shop.  Magic-lamp lighting uses an ordinary
-// oil-lamp fee so its inexhaustible light does not identify it for free.
-// Prefix RNG is consumed before deaf/mute presentation, exactly as in C.
-export async function chargeUnpaidLampUse(object, state = game) {
-    if (!object?.unpaid
-        || ![OIL_LAMP, BRASS_LANTERN, MAGIC_LAMP].includes(object.otyp)) {
-        return null;
+// C shk.c:cost_per_charge(). Fractions use C integer division.
+function shopUsageCost(object, resident, alternate, state) {
+    let cost = shopObjectUnitCost(object, resident, state);
+    const type = object.otyp;
+    if (type === MAGIC_LAMP) {
+        const oilLampCost = OBJECT_COST[OIL_LAMP];
+        if (oilLampCost === undefined)
+            throw new Error('Oil lamp shop price is missing');
+        return alternate ? cost + Math.trunc(cost / 3) : oilLampCost;
     }
+    if (type === MAGIC_MARKER)
+        return Math.trunc(cost / 2);
+    if (type === BAG_OF_TRICKS || type === HORN_OF_PLENTY)
+        return alternate ? cost : Math.trunc(cost / 5);
+    if ([CRYSTAL_BALL, OIL_LAMP, BRASS_LANTERN].includes(type)
+        || type >= MAGIC_FLUTE && type <= DRUM_OF_EARTHQUAKE
+        || object.oclass === 11)
+        return object.spe > 1 ? Math.trunc(cost / 4) : cost;
+    if (object.oclass === 10)
+        return cost - Math.trunc(cost / 5);
+    if ([CAN_OF_GREASE, TINNING_KIT, EXPENSIVE_CAMERA].includes(type))
+        return Math.trunc(cost / 10);
+    if (type === POT_OIL)
+        return Math.trunc(cost / 5);
+    return cost;
+}
+// Partial use adds debt without consuming or settling the billed object.
+// C shk.c:check_unpaid_usage(). Prefix rolls precede the hearing check.
+export async function chargeUnpaidUsage(object, { state = game, alternate = false, } = {}) {
+    if (!object.unpaid || !state.u.ushops?.length
+        || object.spe <= 0 && OBJECT_CHARGED[object.otyp])
+        return null;
     const resident = shopkeeperForHero(state);
-    if (!resident) return null;
-
-    let amount = object.otyp === MAGIC_LAMP
-        ? OBJECT_COST[OIL_LAMP]
-        : shopObjectUnitCost(object, resident, state);
-    if (object.otyp !== MAGIC_LAMP && (object.spe ?? 0) > 1)
-        amount = Math.trunc(amount / 4);
-    if (amount <= 0) return null;
-
-    const first = rn2(3) === 0 ? 'Hey!  ' : '';
-    const second = rn2(3) === 0 ? 'Ahem.  ' : '';
-    const audible = !heroIsDeaf(state) && !resident.mute;
-    const message = audible
-        ? `"${first}${second}Usage fee, ${amount} zorkmid${
-            amount === 1 ? '' : 's'}."`
-        : null;
+    if (!resident)
+        return null;
+    const amount = shopUsageCost(object, resident, alternate, state);
+    if (!amount)
+        return null;
+    const money = `${amount} zorkmid${amount === 1 ? '' : 's'}`;
+    let text;
+    if (object.oclass === 10) {
+        const insult = shopkeeperCustomerInsult(state);
+        const prefix = rn2(2) ? `This is no free library, ${insult}!  ` : '';
+        const extra = (resident.eshk.debit ?? 0) > 0 ? ' an additional' : '';
+        text = `${prefix}You owe${extra} ${money}.`;
+    }
+    else if (object.otyp === POT_OIL) {
+        text = `That will cost you ${money} (Yendorian Fuel Tax).`;
+    }
+    else if (alternate
+        && [BAG_OF_TRICKS, HORN_OF_PLENTY].includes(object.otyp)) {
+        let prefix = rn2(3) === 0 ? 'Whoa!  ' : '';
+        if (rn2(3) === 0)
+            prefix = 'Watch it!  ';
+        text = `${prefix}Emptying that will cost you ${money}.`;
+    }
+    else {
+        const first = rn2(3) === 0 ? 'Hey!  ' : '';
+        const second = rn2(3) === 0 ? 'Ahem.  ' : '';
+        text = `${first}${second}Usage fee, ${money}.`;
+    }
+    const audible = !heroIsDeaf(state) && !shopkeeperIsMuted(resident);
+    const message = audible ? `"${text}"` : null;
     if (message) {
-        await pline(message);
-        exerciseAttribute(A_WIS, true, state);
+        await plineWithContinuation(message);
+        await exerciseAttribute(A_WIS, true, state);
     }
     resident.eshk.debit = (resident.eshk.debit ?? 0) + amount;
     return { resident, amount, message };
 }
-
 export function getCostOfShopItem(object, state = game) {
-    if (!object || object.oclass === COIN_CLASS)
-        return { price: 0, noCharge: -1 };
-    const heroShop = shopRoomAt(
-        state, state?.u?.ux, state?.u?.uy, true,
-    );
-    const objectShop = costlySpot(object.ox, object.oy, state);
-    if (!heroShop || !objectShop
-        || heroShop.roomno !== objectShop.roomno) {
+    if (!object || object.oclass === COIN_CLASS
+        || object === state.uball || object === state.uchain
+        || object === state.u?.uball || object === state.u?.uchain) {
         return { price: 0, noCharge: -1 };
     }
-    if (object.no_charge) {
-        return {
-            price: 0, noCharge: 1, resident: objectShop.resident,
-            roomno: objectShop.roomno,
-        };
+    const heroShop = state.u.ushops?.[0];
+    const location = getObjectLocation(object, state, { contained: true });
+    if (!heroShop || !location
+        || heroShop !== roomsAt(state.level, location.x, location.y, SHOPBASE)[0]) {
+        return { price: 0, noCharge: -1 };
     }
-    const quantity = object.quan ?? object.quantity ?? 1;
-    const unitPrice = shopObjectUnitCost(object, objectShop.resident, state);
-    recordObjectPriceQuote(object.otyp, unitPrice);
+    const shop = insideShopRoomAt(state, location.x, location.y);
+    if (!shop)
+        return { price: 0, noCharge: -1 };
+    const resident = shopResident(shop.roomno, state);
+    if (!resident || !shopkeeperInOwnShop(resident, state))
+        return { price: 0, noCharge: -1 };
+    let top = object;
+    while (top.where === 'contained') {
+        if (!top.container)
+            throw new Error(`Contained object ${top.o_id} has no container`);
+        top = top.container;
+    }
+    const home = resident.eshk.shk;
+    const freeSpot = top.where === 'floor'
+        && location.x === home.x && location.y === home.y;
+    const noCharge = top.where === 'floor' && (object.no_charge || freeSpot) ? 1 : 0;
+    let price = 0;
+    if (top.where === 'inventory' ? object.unpaid : !noCharge)
+        price = objectPricingUnits(object) * shopObjectUnitCost(object, resident, state);
+    if (object.contents?.length && !freeSpot)
+        price += containedBuyCost(object, resident, { unpaidOnly: true, state });
     return {
-        price: quantity * unitPrice,
-        noCharge: 0,
-        resident: objectShop.resident,
-        roomno: objectShop.roomno,
+        price,
+        noCharge,
+        resident,
+        roomno: shop.roomno,
     };
 }
-
-function billForObject(object, state = game) {
-    for (const room of state?.level?.rooms || []) {
-        const resident = room?.resident;
-        const bill = resident?.eshk?.bill || [];
+// Iteration matches next_shkp(fmon, TRUE), including the anger surcharge
+// applied before each keeper's bill is inspected.
+export function* visitBilledShopkeepers(state = game) {
+    requireLiveGame(state);
+    for (const keeper of requireGameLevel(state).monsters) {
+        if (keeper.mhp <= 0 || !keeper.isshk || !hasShopBill(keeper) || !keeper.eshk.bill.length)
+            continue;
+        if (!keeper.mpeaceful && !keeper.eshk.surcharge)
+            rileShopkeeper(keeper);
+        yield keeper;
+    }
+}
+export function billForObject(object, state = game, resident = null) {
+    // C onbill(): with a keeper given, only that keeper's bill answers;
+    // other shops' bills stay untouched.
+    const keepers = resident ? [resident]
+        : (state.level?.rooms ?? []).flatMap(room => 'resident' in room && room.resident ? [room.resident] : []);
+    for (const keeper of keepers) {
+        if (!hasShopBill(keeper))
+            continue;
+        const bill = keeper.eshk.bill;
         const entry = bill.find(candidate => candidate.bo_id === object?.o_id);
-        if (entry) return { resident, entry };
+        if (entry)
+            return { resident: keeper, entry };
     }
     return null;
 }
-
-function removeOneObjectFromBill(object, state = game) {
-    const billed = billForObject(object, state);
+export function removeOneObjectFromBill(object, state = game, resident = null) {
+    const billed = billForObject(object, state, resident);
     if (!billed) {
-        if (object?.unpaid) object.unpaid = false;
+        if (object?.unpaid)
+            object.unpaid = false;
         return null;
     }
     const eshk = billed.resident.eshk;
-    const objectQuantity = Math.max(
-        1, object.quan ?? object.quantity ?? 1,
-    );
+    const objectQuantity = Math.max(1, object.quan ?? object.quantity ?? 1);
     const billedQuantity = Math.max(1, billed.entry.bquan ?? 1);
     const removedQuantity = Math.min(objectQuantity, billedQuantity);
     if (billedQuantity > objectQuantity) {
@@ -478,50 +433,48 @@ function removeOneObjectFromBill(object, state = game) {
         const usedObject = {
             ...object,
             o_id: nextIdent(state),
+            oextra: null,
+            owt: 0,
             quan: usedQuantity,
             quantity: usedQuantity,
-            where: 'onbill',
+            where: 'free',
             unpaid: false,
             contents: [],
+            objectTimers: [],
             owornmask: 0,
             worn: false,
         };
         billed.entry.bo_id = usedObject.o_id;
         billed.entry.bquan = usedQuantity;
         billed.entry.useup = true;
-        eshk.billObjects ||= [];
-        eshk.billObjects.push(usedObject);
-    } else {
-        eshk.bill = (eshk.bill || []).filter(candidate =>
-            candidate !== billed.entry);
+        retainBillObject(usedObject, state);
+    }
+    else {
+        eshk.bill = (eshk.bill || []).filter(candidate => candidate !== billed.entry);
     }
     eshk.billct = eshk.bill.length;
     object.unpaid = false;
     return { ...billed, removedQuantity };
 }
-
-export function removeObjectAndContentsFromBill(object, state = game) {
-    const billed = removeOneObjectFromBill(object, state);
+export function removeObjectAndContentsFromBill(object, state = game, { resident = null } = {}) {
+    // C subfrombill(): recursion over non-coin contents, keeper-scoped.
+    const billed = removeOneObjectFromBill(object, state, resident);
     for (const content of object?.contents || []) {
-        if (content.oclass !== COIN_CLASS)
-            removeObjectAndContentsFromBill(content, state);
+        if (content.oclass !== COIN_CLASS) {
+            removeObjectAndContentsFromBill(content, state, { resident });
+        }
     }
     return billed;
 }
-
-export async function chargeUnpaidObjectAsDebt(
-    object,
-    state = game,
-    publish = plineWithContinuation,
-) {
-    if (!object?.unpaid) return null;
+export async function chargeUnpaidObjectAsDebt(object, state = game, publish = plineWithContinuation) {
+    if (!object?.unpaid)
+        return null;
     const billed = removeOneObjectFromBill(object, state);
-    if (!billed) return null;
-
+    if (!billed)
+        return null;
     const { resident, entry } = billed;
     const eshk = resident.eshk;
     const value = Math.max(0, entry.price ?? 0) * billed.removedQuantity;
-
     let message = null;
     if (resident.mpeaceful) {
         const creditUsed = Math.min(eshk.credit ?? 0, value);
@@ -529,38 +482,39 @@ export async function chargeUnpaidObjectAsDebt(
         const debt = value - creditUsed;
         eshk.debit = (eshk.debit ?? 0) + debt;
         if (debt) {
-            message = `You owe ${shopkeeperName(resident)} ${debt} zorkmid${
-                debt === 1 ? '' : 's'
-            } for it!`;
-        } else {
+            message = `You owe ${shopkeeperName(resident)} ${debt} zorkmid${debt === 1 ? '' : 's'} for it!`;
+        }
+        else {
             message = eshk.credit
                 ? `You have ${eshk.credit} zorkmids credit remaining.`
                 : 'You have no credit remaining.';
         }
-    } else {
+    }
+    else {
         eshk.robbed = (eshk.robbed ?? 0) + value;
         eshk.following = 1;
         message = `${shopkeeperName(resident)} calls you a thief!`;
     }
-    if (message) await publish(message);
+    if (message)
+        await publish(message);
     return { resident, value, message };
 }
-
 export function payShopDebt(resident, state = game) {
     const eshk = resident?.eshk;
     const debt = Math.max(0, eshk?.debit ?? 0);
-    if (!eshk || !debt) return { paid: false, debt: 0 };
-
+    if (!resident || !eshk || !debt)
+        return { paid: false, debt: 0 };
     const credit = Math.max(0, eshk.credit ?? 0);
     const gold = heroGoldAmount(state);
-    if (credit + gold < debt) return { paid: false, debt };
-
+    if (credit + gold < debt)
+        return { paid: false, debt };
     const creditUsed = Math.min(credit, debt);
     const goldPaid = debt - creditUsed;
     eshk.credit = credit - creditUsed;
     if (goldPaid) {
         const payment = detachHeroGold(state, goldPaid);
-        if (payment) payment.where = 'gone';
+        if (payment)
+            payment.where = 'gone';
         resident.gold = (resident.gold ?? 0) + goldPaid;
         state._capacityDirty = true;
     }
@@ -568,144 +522,518 @@ export function payShopDebt(resident, state = game) {
     eshk.loan = 0;
     return { paid: true, debt, creditUsed, goldPaid };
 }
-
-export function splitShopBill(object, split, state = game) {
-    if (!object?.unpaid || !split) return null;
-    const billed = billForObject(object, state);
-    if (!billed) return null;
-    const quantity = split.quan ?? split.quantity ?? 1;
-    billed.entry.bquan = Math.max(
-        0, (billed.entry.bquan ?? 1) - quantity,
-    );
-    const entry = {
+// C shk.c splitbill(): otmp has been split off from obj.  The keeper is
+// the CURRENT first hero-shop resident (inhishop-validated), not any
+// owner; the original entry's quantity shrinks and the split either
+// clones the recorded price into a fresh entry or, on a full bill, simply
+// stops being unpaid.
+export function splitObjectBill(original, split, state = game) {
+    requireShopGame(state);
+    const resident = shopResident(state.u.ushops[0], state);
+    const keeper = shopkeeperInOwnShop(resident, state) && hasShopBill(resident) ? resident : null;
+    if (!keeper)
+        return;
+    const entry = (keeper.eshk.bill || [])
+        .find(candidate => candidate.bo_id === original?.o_id);
+    if (!entry)
+        return;
+    const splitQuan = split?.quan ?? split?.quantity ?? 1;
+    // C guards against negative and zero residual quantities.
+    if ((entry.bquan ?? 1) < splitQuan)
+        return;
+    if ((entry.bquan ?? 1) === splitQuan)
+        return;
+    entry.bquan -= splitQuan;
+    if ((keeper.eshk.bill || []).length === BILLSZ) {
+        split.unpaid = false;
+        return;
+    }
+    keeper.eshk.bill.push({
         bo_id: split.o_id,
-        bquan: quantity,
+        bquan: splitQuan,
         useup: false,
-        price: billed.entry.price,
-    };
-    billed.resident.eshk.bill.push(entry);
-    billed.resident.eshk.billct = billed.resident.eshk.bill.length;
-    split.unpaid = true;
-    return {
-        resident: billed.resident,
-        parentEntry: billed.entry,
-        entry,
-        object: split,
-    };
+        price: entry.price,
+    });
+    keeper.eshk.billct = keeper.eshk.bill.length;
 }
-
-export function rejoinShopBill(billSplit) {
-    if (!billSplit?.resident?.eshk
-        || !billSplit.parentEntry || !billSplit.entry)
-        return false;
-    const bill = billSplit.resident.eshk.bill || [];
-    if (!bill.includes(billSplit.parentEntry)
-        || !bill.includes(billSplit.entry))
-        return false;
-    billSplit.parentEntry.bquan = (billSplit.parentEntry.bquan ?? 0)
-        + (billSplit.entry.bquan ?? 0);
-    billSplit.resident.eshk.bill = bill.filter(entry =>
-        entry !== billSplit.entry);
-    billSplit.resident.eshk.billct = billSplit.resident.eshk.bill.length;
-    if (billSplit.object) billSplit.object.unpaid = false;
-    return true;
-}
-
-export function moveUsedObjectToBill(object, state = game) {
-    if (!object?.unpaid) return null;
-    const billed = billForObject(object, state);
-    if (!billed) return null;
-    billed.entry.useup = true;
-    billed.resident.eshk.billObjects ||= [];
-    billed.resident.eshk.billObjects.push(object);
+// C add_to_billobjs(): only bookkeeping survives; active use, bypass,
+// and live timers cannot follow an object onto the used-up bill chain.
+function retainBillObject(object, state) {
+    if (object.where !== 'free')
+        throw new Error('add_to_billobjs requires a free object');
+    if (object.timed)
+        stopObjectTimers(object, state);
+    state.billObjects ||= [];
+    state.billObjects.unshift(object);
     object.where = 'onbill';
+    object.in_use = false;
+    object.bypass = false;
+}
+export function moveUsedObjectToBill(object, state = game, resident = null) {
+    if (!object)
+        return null;
+    const billed = billForObject(object, state, resident);
+    if (!billed)
+        return null;
+    billed.entry.useup = true;
+    if (object.globby && !object.owt && object.oextra?.omid)
+        object.owt = object.oextra.omid;
     object.unpaid = false;
+    retainBillObject(object, state);
     return { ...billed, object };
 }
-
-export async function chargeAlteredUnpaidObject(
-    object, verb, state = game,
-) {
-    if (!object?.unpaid) return null;
-    const billed = billForObject(object, state);
-    if (!billed) return null;
-    const quantity = object.quan ?? object.quantity ?? 1;
+// The billing branch of C obfree(). Keep retained or inconsistent billed
+// identities out of raw deallocation; ordinary merges add quantity, not price.
+export function reconcileObjectDeletionBill(object, mergeInto, state = game) {
+    let keeper = null;
+    if (object.unpaid) {
+        for (const candidate of visitBilledShopkeepers(state)) {
+            if (billForObject(object, state, candidate)) {
+                keeper = candidate;
+                break;
+            }
+        }
+    }
+    keeper ||= currentShopResident(state);
+    const entry = keeper && billForObject(object, state, keeper)?.entry;
+    if (!entry || !hasShopBill(keeper))
+        return 'unbilled';
+    if (!mergeInto) {
+        moveUsedObjectToBill(object, state, keeper);
+        return 'retained';
+    }
+    const target = billForObject(mergeInto, state, keeper)?.entry;
+    if (!target)
+        return 'blocked'; // C impossible(): do not deallocate.
+    target.bquan += entry.bquan;
+    const last = keeper.eshk.bill.pop();
+    if (last && entry !== last)
+        copyBillEntry(entry, last);
+    keeper.eshk.billct = keeper.eshk.bill.length;
+    return 'merged';
+}
+// C mkobj.c:744 alteration_verbs, index-matched to hack.h COST_*.
+const ALTERATION_VERBS = [
+    'cancel', 'drain', 'uncharge', 'unbless', 'uncurse', 'disenchant',
+    'degrade', 'dilute', 'erase', 'burn', 'neutralize', 'destroy',
+    'splatter', 'bite', 'open', 'break the lock on', 'rust', 'rot',
+    'tarnish', 'crack',
+];
+// C mkobj.c bill_dummy_object(): move the altered object onto the bill as
+// a used-up dummy entry, retaining the charge for the remaining quantity.
+export async function billDummyObject(object, state = game) {
+    requireLiveGame(state);
+    requireShopGame(state);
+    let cost = 0;
+    if (object.unpaid) {
+        // C unpaid_cost(COST_SINGLEOBJ): scan current shop rooms for the
+        // per-unit charge, then remove from the first room's keeper below.
+        for (const roomno of state.u.ushops) {
+            const keeper = shopResident(roomno, state);
+            const billed = keeper && billForObject(object, state, keeper);
+            if (!billed)
+                continue;
+            cost = billed.entry.price;
+            break;
+        }
+        removeObjectAndContentsFromBill(object, state, { resident: currentShopResident(state) });
+    }
+    const dummy = {
+        ...object,
+        contents: [],
+        oextra: object.oextra ? structuredClone(object.oextra) : null,
+        where: 'free',
+        unpaid: false,
+        owornmask: 0,
+        worn: false,
+        in_use: false,
+        objectTimers: [],
+        timed: 0,
+    };
+    if (dummy.oextra)
+        delete dummy.oextra.omid;
+    dummy.o_id = nextObjectId(object, dummy, state);
+    if (objectIsCandle(dummy))
+        dummy.lamplit = 0;
+    const transaction = await addShopObjectToBill(dummy, state, { ininv: false, silent: true });
+    if (transaction) {
+        if (!transaction.entry)
+            throw new Error('A billed dummy object has no bill entry');
+        // C add_one_tobill(dummy=TRUE): used-up entries live on the bill.
+        transaction.entry.useup = true;
+        retainBillObject(dummy, state);
+        if (cost) {
+            // C alter_cost(dummy, -cost): visit keepers in monster order,
+            // including their riling, then replace the unit price.
+            for (const owner of visitBilledShopkeepers(state)) {
+                const billed = billForObject(dummy, state, owner);
+                if (!billed)
+                    continue;
+                billed.entry.price = cost;
+                break;
+            }
+        }
+    }
+    object.no_charge = object.where === 'floor' || object.where === 'contained';
+    object.unpaid = false;
+    return transaction;
+}
+// C shk.c:globby_bill_fixup(). Globs transfer prices and ownership before
+// absorption; ordinary stack quantity consolidation is not applicable.
+export async function settleGlobAbsorptionBilling(absorber, absorbed, state = game, { publish = plineWithContinuation } = {}) {
+    requireLiveGame(state);
+    const floorAbsorber = absorber.where === 'floor';
+    let keeper = null;
+    if (absorber.unpaid) {
+        for (const candidate of visitBilledShopkeepers(state)) {
+            if (billForObject(absorber, state, candidate)) {
+                keeper = candidate;
+                break;
+            }
+        }
+    }
+    else if (absorbed.unpaid && absorbed.where === 'free' && floorAbsorber) {
+        keeper = costlySpot(absorber.ox, absorber.oy, state)?.resident ?? null;
+    }
+    keeper ||= currentShopResident(state);
+    if (!keeper)
+        return;
+    const absorberEntry = billForObject(absorber, state, keeper)?.entry;
+    const absorbedEntry = billForObject(absorbed, state, keeper)?.entry;
+    const shop = keeper.eshk;
+    const offer = shopOfferForObject(absorbed, keeper, state);
+    const name = OBJECT_NAMES[absorbed.otyp];
+    const money = (amount) => `${amount} zorkmid${amount === 1 ? '' : 's'}`;
+    if (absorbedEntry && (!absorber.no_charge
+        || shopClaimsObject(absorber, keeper, false, state))) {
+        const amount = absorbedEntry.price;
+        // C copies the last bill slot into the removed slot. Saved bill
+        // pointers still refer to their original slots, even the old last one.
+        const bill = shop.bill;
+        if (!bill)
+            throw new Error('A billed glob has no shop bill');
+        const last = bill.pop();
+        if (last && absorbedEntry !== last)
+            copyBillEntry(absorbedEntry, last);
+        shop.billct = bill.length;
+        if (absorberEntry)
+            absorberEntry.price += amount;
+        return;
+    }
+    if (!absorberEntry && !absorbedEntry && !absorber.no_charge) {
+        const amount = objectPricingUnits(absorbed) * offer;
+        if (!shopStocksObject(shop.shoptype, absorbed))
+            return;
+        if ((shop.debit ?? 0) >= amount) {
+            if (shop.loan)
+                shop.loan = Math.max(0, shop.loan - amount);
+            shop.debit = (shop.debit ?? 0) - amount;
+            await publish(`The donated ${name} ${shop.debit ? 'partially ' : ''}pays off your debt.`);
+        }
+        else {
+            const delta = amount - (shop.debit ?? 0);
+            shop.credit = (shop.credit ?? 0) + delta;
+            if (shop.debit) {
+                shop.debit = 0;
+                shop.loan = 0;
+                await publish('Your debt is paid off.');
+            }
+            if (shop.credit === delta) {
+                await publish(`The ${name} established ${money(delta)} credit.`);
+            }
+            else {
+                await publish(`The ${name} added ${money(delta)} to your credit; total is now ${money(shop.credit)}.`);
+            }
+        }
+        return;
+    }
+    else if (absorberEntry) {
+        absorberEntry.price += objectPricingUnits(absorbed) * offer;
+        return;
+    }
+    if (absorbedEntry && (absorber.no_charge
+        || (floorAbsorber && !costlySpot(absorber.ox, absorber.oy, state)))) {
+        const amount = absorbedEntry.price;
+        await billDummyObject(absorbed, state);
+        if (!heroIsDeaf(state) && !shopkeeperIsMuted(keeper)) {
+            const action = keeper.mpeaceful ? 'just mixed' : 'had the audacity to mix';
+            const ending = keeper.mpeaceful ? 's.' : ' stinking batch!';
+            await publish(`"You owe me ${money(amount)} for my ${name} that you ${action} with your${ending}"`);
+        }
+    }
+}
+// C mkobj.c:752 costly_alteration(): possibly bill an object the hero just
+// modified.  Carried or free objects need only their unpaid flag; placed
+// objects must sit on a costly spot and be claimable by that shop.
+export async function chargeAlteredUnpaidObject(object, verb, state = game) {
+    requireLiveGame(state);
+    requireShopGame(state);
+    const alterType = ALTERATION_VERBS.indexOf(verb);
+    const alteration = ALTERATION_VERBS[alterType < 0 ? 0 : alterType];
+    const learnBknown = alteration === 'uncurse' || alteration === 'unbless';
+    const quantity = object?.quan ?? object?.quantity ?? 1;
     const pronoun = quantity === 1 ? 'it' : 'them';
     const demonstrative = quantity === 1 ? 'that' : 'those';
     const name = quantity === 1
         ? OBJECT_NAMES[object.otyp] || object.name || 'object'
         : object.plural || `${OBJECT_NAMES[object.otyp] || 'object'}s`;
-    if (!heroIsDeaf(state) && !billed.resident.mute) {
-        await plineWithContinuation(
-            `"You ${verb} ${demonstrative} ${name}, you pay for ${pronoun}!"`,
-        );
+    let ox = 0;
+    let oy = 0;
+    let roomno = 0;
+    let keeper = null;
+    if (object.where === 'inventory' || object.where === 'free') {
+        // C: OBJ_FREE catches obj_no_longer_held()'s crysknife revert.
+        if (!object.unpaid)
+            return null;
     }
-
-    const dummy = {
-        ...object,
-        o_id: nextIdent(state),
-        where: 'onbill',
-        unpaid: false,
-        owornmask: 0,
-        worn: false,
-    };
-    billed.entry.bo_id = dummy.o_id;
-    billed.entry.bquan = quantity;
-    billed.entry.useup = true;
-    billed.resident.eshk.billObjects ||= [];
-    billed.resident.eshk.billObjects.push(dummy);
-    object.unpaid = false;
-    return { ...billed, object: dummy };
+    else {
+        // C get_obj_location(..., CONTAINED_TOO) over the root: floor
+        // yields its own coordinates, a monster-carried root its carrier's
+        // (a migrating carrier with mx 0 fails the lookup), inventory
+        // resolves to the hero, and free/buried roots fail outright -
+        // the caller then falls back to the hero (mkobj.c:776-785).
+        let top = object;
+        while (top.container)
+            top = top.container;
+        let located = false;
+        if (top.where === 'floor') {
+            ox = top.ox;
+            oy = top.oy;
+            located = true;
+        }
+        else if (top.where === 'minvent') {
+            const carrier = top.ocarry
+                || (state.level?.monsters || []).find(monster => (monster.minvent || monster.inventory || [])
+                    .includes(top));
+            if (carrier?.mx) {
+                ox = carrier.mx;
+                oy = carrier.my;
+                located = true;
+            }
+        }
+        else if (top.where === 'inventory') {
+            located = true;
+        }
+        if (!located) {
+            ox = state.u.ux;
+            oy = state.u.uy;
+        }
+        if (!costlySpot(ox, oy, state))
+            return null;
+        roomno = roomsAt(state.level, ox, oy, SHOPBASE)[0] ?? 0;
+        const resident = roomForRoomno(state.level, roomno)?.resident ?? null;
+        keeper = resident && hasShopkeeperData(resident)
+            && shopkeeperInOwnShop(resident, state) ? resident : null;
+        if (!keeper || !shopClaimsObject(object, keeper, false, state))
+            return null;
+    }
+    if (object.where === 'inventory' || object.where === 'free') {
+        if (learnBknown)
+            object.bknown = true;
+        // C verbalizes unconditionally here; only the voice is optional.
+        await plineWithContinuation(`"You ${alteration} ${demonstrative} ${name}, you pay for ${pronoun}!"`);
+        return billDummyObject(object, state);
+    }
+    // C's switch has no OBJ_CONTAINED case: a contained member passes the
+    // billable gate silently and nothing is charged.
+    if (object.where !== 'floor')
+        return null;
+    if (learnBknown)
+        object.bknown = true;
+    const heroShop = state.u.ushops[0];
+    if (costlySpot(state.u.ux, state.u.uy, state) && roomno === heroShop) {
+        await plineWithContinuation(`"You ${alteration} ${demonstrative}, you pay for ${pronoun}!"`);
+        return billDummyObject(object, state);
+    }
+    // C stolen_value(obj, ox, oy, FALSE, FALSE): angry settlement, spoken.
+    return stolenValue(object, ox, oy, false, { silent: false, state, publish: plineWithContinuation });
 }
-
-export function unpaidObjectCost(object, state = game) {
-    const billed = billForObject(object, state);
-    if (!billed) return 0;
-    return billed.entry.price * (object?.quan ?? object?.quantity ?? 1);
+// C shk.c:unpaid_cost(). The root keeps its agreed bill price; contents
+// use the current shop valuation, and a partially used stack uses its live count.
+export function unpaidObjectCost(object, state = game, costType = 'object') {
+    let price = 0;
+    for (const roomno of state.u.ushops ?? []) {
+        const resident = shopResident(roomno, state);
+        if (!resident)
+            continue;
+        const billed = billForObject(object, state, resident);
+        if (billed)
+            price = billed.entry.price * (costType === 'single' ? 1 : object.quan);
+        if (costType === 'contents' && object.contents?.length)
+            price += containedBuyCost(object, resident, { unpaidOnly: true, state });
+        if (billed || (!object.unpaid && price))
+            break;
+    }
+    return price;
 }
-
 // C shk.c:alter_cost(). An improvement can raise a bill, never lower it.
 export function updateUnpaidObjectPrice(object, state = game) {
     const billed = billForObject(object, state);
-    if (!billed) return;
-    billed.entry.price = Math.max(
-        billed.entry.price, shopObjectUnitCost(object, billed.resident, state),
-    );
+    if (!billed)
+        return;
+    billed.entry.price = Math.max(billed.entry.price, shopObjectUnitCost(object, billed.resident, state));
 }
-
-// C shk.c:shk_your(), for an item carried by the hero.
+// C shk.c:shk_your(), shk_owns(), and mon_owns(). Shop ownership takes
+// precedence over the carrier, using the object's location rather than ours.
 export function carriedObjectOwner(object, state = game) {
-    if (!object.unpaid) return 'Your';
-    const shop = shopRoomAt(state, state.u.ux, state.u.uy, true);
-    const keeper = shop && shopkeeperForRoom(shop.roomno, state);
-    if (!keeper) return 'The';
-    const name = shopkeeperName(keeper);
-    return name.endsWith('s') ? `${name}'` : `${name}'s`;
+    const location = getObjectLocation(object, state);
+    if (location && (object.unpaid || (object.where === 'floor' && !object.no_charge
+        && costlySpot(location.x, location.y, state)))) {
+        const shop = insideShopRoomAt(state, location.x, location.y);
+        const keeper = shop && shopResident(shop.roomno, state);
+        return keeper ? possessiveName(shopkeeperName(keeper, { state })) : 'The';
+    }
+    if (object.where === 'minvent') {
+        const carrier = object.ocarry;
+        if (!carrier)
+            throw new Error(`Monster-carried object ${object.o_id} has no owner.`);
+        return possessiveName(monsterName(carrier, {
+            state, article: carrier.mtame ? 'your' : 'the',
+            suppressSaddle: !!MGIVENNAME(carrier) || state.u.usteed === carrier,
+        }));
+    }
+    return object.where === 'inventory' ? 'Your' : 'The';
 }
-
-export function addShopObjectToBill(object, state = game) {
-    const spot = costlySpot(object?.ox, object?.oy, state);
-    const heroShop = shopRoomAt(
-        state, state?.u?.ux, state?.u?.uy, true,
-    );
-    if (!spot || !heroShop || heroShop.roomno !== spot.roomno
-        || object?.oclass === COIN_CLASS || object?.no_charge) return null;
-    const eshk = spot.resident.eshk;
-    if (!Array.isArray(eshk.bill)) eshk.bill = [];
-    const existing = eshk.bill.find(entry => entry.bo_id === object.o_id);
-    if (existing) return { resident: spot.resident, entry: existing, object };
+// C shk.c:3309 add_one_tobill(): one billed entry; unbilled freebies
+// (unclaimed or full bill) print and stop here.
+function addOneToBill(object, resident, state) {
+    const eshk = resident.eshk;
+    if (!shopClaimsObject(object, resident, true, state)
+        || eshk.bill.length === BILLSZ) {
+        return null;
+    }
     const entry = {
         bo_id: object.o_id,
         bquan: object.quan ?? object.quantity ?? 1,
         useup: false,
-        price: shopObjectUnitCost(object, spot.resident, state),
+        price: shopObjectUnitCost(object, resident, state),
     };
+    if (object.globby)
+        entry.price *= objectPricingUnits(object);
     eshk.bill.push(entry);
     eshk.billct = eshk.bill.length;
     object.unpaid = true;
-    return { resident: spot.resident, entry, object };
+    recordObjectPriceQuote(object.otyp, entry.price);
+    return entry;
 }
-
+// C shk.c:3387 bill_box_content(): recursive content billing; a sealed
+// Schroedinger box keeps its mystery and its contents unbilled.
+function billBoxContent(container, resident, state) {
+    if (isSchroedingersBox(container))
+        return;
+    for (const content of container.contents || []) {
+        if (content.oclass === COIN_CLASS)
+            continue;
+        if (!content.no_charge)
+            addOneToBill(content, resident, state);
+        if (content.contents?.length) {
+            billBoxContent(content, resident, state);
+        }
+    }
+}
+function isSchroedingersBox(object) {
+    return (object.otyp === LARGE_BOX || object.otyp === CHEST
+        || object.otyp === ICE_BOX) && object.spe === 1;
+}
+// C shk.c:566 costly_adjacent(): a shop wall spot (edge flag, door
+// included) or the keeper's free-spot home square.  Not a distance test.
+export function costlyAdjacent(resident, x, y, state = game) {
+    if (!hasShopkeeperData(resident) || !shopkeeperInOwnShop(resident, state))
+        return false;
+    if (!Number.isInteger(x) || !Number.isInteger(y))
+        return false;
+    const home = resident.eshk.shk;
+    return !!(state.level?.at(x, y)?.edge
+        || (x === home.x && y === home.y));
+}
+// C shk.c:3492 addtobill(): bills the picked object and its eligible
+// contents for the hero's current shop; gold routes through costly_gold.
+export async function addShopObjectToBill(object, state = game, { ininv = true, silent = false, publish = plineWithContinuation } = {}) {
+    requireLiveGame(state);
+    // C billable(&shkp, obj, *u.ushops, TRUE): the hero's first shop room
+    // validates the keeper, then the claim is decided by the object flags.
+    const resident = currentShopResident(state);
+    const keeper = shopkeeperInOwnShop(resident, state) ? resident : null;
+    if (!keeper || !object || !shopClaimsObject(object, keeper, true, state))
+        return null;
+    const eshk = keeper.eshk;
+    if (!Array.isArray(eshk.bill))
+        eshk.bill = [];
+    if (!hasShopBill(keeper))
+        throw new Error('Shop bill initialization failed');
+    if (object.oclass === COIN_CLASS) {
+        await costlyGold(object.ox, object.oy, object.quan ?? object.quantity ?? 1, { silent, publish, state });
+        return null;
+    }
+    if (eshk.bill.length === BILLSZ) {
+        if (!silent)
+            await publish('You got that for free!');
+        return null;
+    }
+    const container = !!(object.contents?.length);
+    let ltmp = 0;
+    if (!object.no_charge) {
+        ltmp = shopObjectUnitCost(object, keeper, state);
+        if (object.globby)
+            ltmp *= objectPricingUnits(object);
+    }
+    if (object.no_charge && !container) {
+        object.no_charge = false;
+        return null;
+    }
+    let entry = null;
+    let contentscount = 0;
+    if (container) {
+        const cltmp = containedBuyCost(object, keeper, { unpaidOnly: false, state });
+        const gltmp = containedGold(object, true);
+        if (ltmp)
+            entry = addOneToBill(object, keeper, state);
+        if (cltmp)
+            billBoxContent(object, keeper, state);
+        pickedContainer(object); /* reset contained no_charge */
+        ltmp += cltmp;
+        if (gltmp) {
+            await costlyGold(object.ox, object.oy, gltmp, { silent, publish, state });
+            if (!ltmp)
+                return null;
+        }
+        if (object.no_charge)
+            object.no_charge = false;
+        contentscount = countUnpaidContents(object);
+    }
+    else {
+        entry = addOneToBill(object, keeper, state);
+        if (!entry) {
+            if (!silent)
+                await publish('You got that for free!');
+            return null;
+        }
+    }
+    if (!heroIsDeaf(state) && !shopkeeperIsMuted(keeper) && !silent) {
+        if (!ltmp) {
+            const name = OBJECT_NAMES[object.otyp] || object.name || 'thing';
+            await publish(`${shopkeeperName(keeper)} has no interest in the ${name}.`);
+            return null;
+        }
+        if (!ininv) {
+            const name = OBJECT_NAMES[object.otyp] || object.name || 'thing';
+            const each = (object.quan ?? object.quantity ?? 1) > 1
+                ? ' each' : '';
+            await publish(`The ${name} will cost you ${ltmp} zorkmid${ltmp === 1 ? '' : 's'}${each}.`);
+        }
+    }
+    return { resident: keeper, entry, object, offer: ltmp, contentscount };
+}
+function countUnpaidContents(container) {
+    let count = 0;
+    for (const content of container.contents || []) {
+        if (content.contents?.length)
+            count += countUnpaidContents(content);
+        if (content.unpaid)
+            count += content.quan ?? content.quantity ?? 1;
+    }
+    return count;
+}
 function heroHonorific(state = game) {
     const titles = [
         'good', 'honored', 'most gracious', 'esteemed',
@@ -713,46 +1041,106 @@ function heroHonorific(state = game) {
     ];
     const demigod = state?.u?.uevent?.udemigod ? 1 : 0;
     const title = titles[rn2(4) + demigod];
-    const race = state?.urace?.key || state?.race;
+    if (!title)
+        throw new Error('Shop honorific roll is out of range');
+    const species = heroSpecies(state);
+    const elven = Upolyd(state.u)
+        ? !!((MONSTER_FLAGS2[species] ?? 0) & 0x10) // M2_ELF
+        : state.urace?.name === 'elf';
     const female = !!state?.flags?.female;
-    const suffix = race === 'vampire' ? (female ? 'dark lady' : 'dark lord')
-        : race === 'elf' ? (female ? 'hiril' : 'hir')
-            : race && race !== 'human' ? 'creature'
+    const suffix = monsterIsVampire(species) ? (female ? 'dark lady' : 'dark lord')
+        : elven ? (female ? 'hiril' : 'hir')
+            : !monsterIsHuman(species) ? 'creature'
                 : female ? 'lady' : 'sir';
     return `${title} ${suffix}`;
 }
-
 export function billedPickupQuote(transaction, noun, state = game) {
-    if (!transaction) return null;
-    const { resident, entry, object } = transaction;
-    if (state?.u?.deaf || resident?.mute) return null;
-    if (object) recordObjectPriceQuote(object.otyp, entry.price);
+    if (!transaction)
+        return null;
+    const { resident } = transaction;
+    if (heroIsDeaf(state) || shopkeeperIsMuted(resident))
+        return null;
+    const price = transaction.offer;
+    const contentscount = transaction.contentscount ?? 0;
+    const suffix = contentscount > 1 ? ' for all of them' : '';
     if (!resident.mpeaceful)
-        return `"For you, scum; ${entry.price} zorkmids for this ${noun}."`;
+        return `"For you, scum; ${price} zorkmid${price === 1 ? '' : 's'} for this ${noun}.${suffix}"`;
     if (resident.eshk?.surcharge)
-        return `"For you, ${entry.price} zorkmids for this ${noun}."`;
-    return `"For you, ${heroHonorific(state)}; only ${entry.price} zorkmids for this ${noun}."`;
+        return `"For you, ${price} zorkmid${price === 1 ? '' : 's'} for this ${noun}.${suffix}"`;
+    return `"For you, ${heroHonorific(state)}; only ${price} zorkmid${price === 1 ? '' : 's'} for this ${noun}.${suffix}"`;
 }
-
 function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
 }
-
-function shopGreeting() {
-    switch (game.urole?.key) {
-    case 'knight': return 'Salutations';
-    case 'samurai': return 'Irasshaimase';
-    case 'tourist': return 'Aloha';
-    case 'valkyrie': return 'Velkommen';
-    default: return 'Hello';
+export function shopGreeting(monster, state = game) {
+    switch (state.urole?.key) {
+        case 'knight': return 'Salutations';
+        case 'samurai': return MONSTER_NAME[monster?.mnum] === 'shopkeeper'
+            ? 'Irasshaimase' : 'Konnichi wa';
+        case 'tourist': return 'Aloha';
+        case 'valkyrie': return 'Velkommen';
+        case 'archeologist':
+        case 'barbarian':
+        case 'caveman':
+        case 'healer':
+        case 'monk':
+        case 'priest':
+        case 'ranger':
+        case 'rogue':
+        case 'wizard':
+        case undefined: return 'Hello';
     }
 }
-
+// C shk.c:deserted_shop(). Disguised or unseen occupants leave uncertainty.
+async function describeUntendedShop(room) {
+    requireShopGame(game);
+    let occupants = 0, noticed = 0;
+    for (const monster of game.level.monsters) {
+        const { mx, my } = monster;
+        if (monster.dead || monster.mhp <= 0
+            || mx < room.lx || mx > room.hx || my < room.ly || my > room.hy
+            || (mx === game.u.ux && my === game.u.uy))
+            continue;
+        occupants++;
+        const appearance = M_AP_TYPE(monster);
+        if (canSenseMonster(monster)
+            || ([M_AP_NOTHING, M_AP_MONSTER].includes(appearance)
+                && canSeeMonster(monster)))
+            noticed++;
+    }
+    if (heroIsBlind() && !propertyIsActive('telepathy')
+        && !game.u.detectMonsters && !game.detectMonsters)
+        occupants++;
+    await plineWithContinuation(`This shop ${noticed < occupants ? 'seems to be' : 'is'} ${occupants ? 'untended' : 'deserted'}.`);
+}
+// C shk.c:after_shk_move(). The suspended bill survives save/restore.
+export async function afterShopkeeperMove(keeper, state = game) {
+    requireLiveGame(state);
+    if (!keeper.eshk.billUnavailable || !shopkeeperInOwnShop(keeper, state))
+        return;
+    keeper.eshk.billUnavailable = false;
+    if (!state.program_state?.gameover)
+        await checkSpecialRoom();
+}
 async function enterShop({ room, roomno }) {
-    const shopkeeper = room.resident;
-    if (!shopkeeper || !shopkeeperInOwnShop(shopkeeper, game)) return null;
-
+    requireShopGame(game);
+    const shopkeeper = shopResident(roomno, game);
+    if (!shopkeeper || !shopkeeperInOwnShop(shopkeeper, game)) {
+        if (shopkeeper)
+            shopkeeper.eshk.billUnavailable = true;
+        // in_rooms() returns offsets into one static C buffer. Pointer
+        // inequality here compares membership counts, not room identities.
+        const changedCount = roomsAt(game.level, game.u.ux, game.u.uy, SHOPBASE).length
+            !== roomsAt(game.level, game.u.ux0, game.u.uy0, SHOPBASE).length;
+        if (!game._emptyShops?.includes(roomno) && (shopkeeper || changedCount))
+            await describeUntendedShop(room);
+        game._emptyShops = [...game.u.ushops];
+        game.u.ushops = [];
+        return null;
+    }
+    recordAchievement(game, ACH_SHOP);
     const eshk = shopkeeper.eshk;
+    eshk.billUnavailable = false;
     const playerName = game.plname || 'player';
     if ((!eshk.visitct || eshk.customer)
         && String(eshk.customer || '').toLowerCase()
@@ -760,21 +1148,19 @@ async function enterShop({ room, roomno }) {
         eshk.visitct = 0;
         eshk.following = 0;
         eshk.customer = playerName;
-        shopkeeper.mpeaceful = 1;
+        pacifyShopkeeper(shopkeeper, true);
     }
-    if (shopkeeper.mute || eshk.following) return null;
-
-    const name = shopkeeperName(shopkeeper);
-    const typeName = SHOP_TYPE_NAMES[(room.rtype ?? roomno) - SHOPBASE]
+    if (shopkeeperIsMuted(shopkeeper) || eshk.following)
+        return null;
+    const typeName = SHOP_TYPES[(room.rtype ?? roomno) - SHOPBASE]?.name
         || 'shop';
     if (game.u?.invisible || game.u?.invis) {
-        const message = `${name} senses your presence.`;
+        const message = `${shopkeeperName(shopkeeper, { capitalized: true })} senses your presence.`;
         await pline(message);
         return message;
     }
-
     if (!shopkeeper.mpeaceful) {
-        const message = `"So, ${playerName}, you dare return to ${possessive(name)} ${typeName}?!"`;
+        const message = `"So, ${playerName}, you dare return to ${possessive(shopkeeperName(shopkeeper))} ${typeName}?!"`;
         await pline(message);
         return message;
     }
@@ -784,75 +1170,51 @@ async function enterShop({ room, roomno }) {
         return message;
     }
     if (eshk.robbed) {
-        const message = `${name} mutters imprecations against shoplifters.`;
+        const message = `${shopkeeperName(shopkeeper, { capitalized: true })} mutters imprecations against shoplifters.`;
         await pline(message);
         return message;
     }
-
-    const again = eshk.visitct++ ? ' again' : '';
-    const message = `"${shopGreeting()}, ${playerName}!  Welcome${again} to ${possessive(name)} ${typeName}!"`;
+    const again = eshk.visitct ? ' again' : '';
+    eshk.visitct = (eshk.visitct ?? 0) + 1;
+    const message = `"${shopGreeting(shopkeeper)}, ${playerName}!  Welcome${again} to ${possessive(shopkeeperName(shopkeeper))} ${typeName}!"`;
     await pline(message);
     return message;
 }
-
-// C spoteffects() calls this before destination pickup and traps.  Room-entry
-// accounting uses in_rooms(), which includes the shop boundary; inside_shop()
-// is the later, stricter predicate used for merchandise and door blocking.
+// C hack.c:check_special_room(). newLevel is the old-level exit, not arrival.
 export async function checkSpecialRoom({ newLevel = false } = {}) {
-    // hack.c:check_special_room() records Minetown when the hero first
-    // reaches the town's outer room (including its boundary and subrooms).
-    // Lua's selected town room is retained as the active special context.
-    const town = game._activeSpecialLevel?.context;
-    if (game.level?.flags?.has_town && town) {
-        const x = game.u?.ux, y = game.u?.uy;
-        const inTown = x >= town.xstart - 1
-            && x <= town.xstart + town.width
-            && y >= town.ystart - 1
-            && y <= town.ystart + town.height;
-        if (inTown) recordAchievement(game, ACH_TOWN);
-    }
-    const previous = newLevel
-        ? null : shopRoomAt(game, game.u?.ux0, game.u?.uy0, true);
-    const current = shopRoomAt(game, game.u?.ux, game.u?.uy, true);
-    const previousRoomno = previous?.roomno ?? null;
-    const currentRoomno = current?.roomno ?? null;
-    game._shopRooms = {
-        previous: previousRoomno,
-        current: currentRoomno,
-        entered: currentRoomno !== null && currentRoomno !== previousRoomno
-            ? currentRoomno : null,
-        left: previousRoomno !== null && previousRoomno !== currentRoomno
-            ? previousRoomno : null,
-    };
+    updateHeroRoomMembership(game, newLevel);
+    requireShopGame(game);
+    if (game.u.ushops0.length)
+        await leaveHeroShop(game.u.ushops_left, { newLevel });
+    if (game.level.flags.has_town && In_mines(game.u.uz)
+        && inTown(game.level, game.u.ux, game.u.uy))
+        recordAchievement(game, ACH_TOWN);
+    if (!game.u.uentered.length && !game.u.ushops_entered.length)
+        return null;
     let result = null;
-    if (game._shopRooms.entered) result = await enterShop(current);
-
-    const previousOneShot = newLevel
-        ? null : oneShotSpecialRoomAt(game, game.u?.ux0, game.u?.uy0);
-    const currentOneShot = oneShotSpecialRoomAt(
-        game, game.u?.ux, game.u?.uy,
-    );
-    game._specialRooms = {
-        previous: previousOneShot?.roomno ?? null,
-        current: currentOneShot?.roomno ?? null,
-        entered: currentOneShot
-            && currentOneShot.roomno !== previousOneShot?.roomno
-            ? currentOneShot.roomno : null,
-    };
-    if (game._specialRooms.entered)
-        result = await enterOneShotSpecialRoom(currentOneShot);
-
-    const previousTemple = newLevel
-        ? null : templeRoomAt(game, game.u?.ux0, game.u?.uy0);
-    const currentTemple = templeRoomAt(game, game.u?.ux, game.u?.uy);
-    game._templeRooms = {
-        previous: previousTemple?.roomno ?? null,
-        current: currentTemple?.roomno ?? null,
-        entered: currentTemple
-            && currentTemple.roomno !== previousTemple?.roomno
-            ? currentTemple.roomno : null,
-    };
-    if (game._templeRooms.entered)
-        result = await intemple(game._templeRooms.entered);
+    if (game.u.ushops_entered.length) {
+        const roomno = game.u.ushops_entered[0];
+        if (roomno === undefined)
+            throw new Error('Entered shop has no room number');
+        const room = roomForRoomno(game.level, roomno);
+        if (!room)
+            throw new Error(`Entered shop ${roomno} has no room`);
+        result = await enterShop({ room, roomno });
+    }
+    for (const roomno of game.u.uentered) {
+        const room = roomForRoomno(game.level, roomno);
+        if (!room)
+            throw new Error(`Entered room ${roomno} does not exist`);
+        if (room.rtype === MORGUE) {
+            await plineWithContinuation(Number(String(game.datetime || '').slice(8, 10)) === 0
+                ? 'Run away!  Run away!' : 'You have an uncanny feeling...');
+            room.rtype = OROOM;
+            result = room;
+        }
+        else if (room.rtype === TEMPLE) {
+            result = await intemple(roomno);
+        }
+    }
     return result;
 }
+//# sourceMappingURL=shk.js.map

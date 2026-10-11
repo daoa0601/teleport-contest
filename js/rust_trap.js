@@ -1,6 +1,7 @@
 // Rust traps triggered by monsters.
 // C ref: trap.c:trapeffect_rust_trap().
-
+import { finishMonsterKilled } from './monster_death.js';
+import { AD_RUST } from './monster_attack_types.js';
 import { monsterArmName } from './body_parts.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
@@ -9,23 +10,18 @@ import { monsterTypeName } from './monster_data.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { rn2 } from './rng.js';
 import { applyMonsterRustTrap, monsterTrapVisibility } from './trap.js';
-
 function ordinaryMonsterSubject(monster) {
-    return monster?.name
-        || `The ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
+    return monster?.name || `The ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
 }
-
 function lowerFirst(text) {
-    return text[0].toLowerCase() + text.slice(1);
+    return text.charAt(0).toLowerCase() + text.slice(1);
 }
-
 function possessive(text) {
     return /s$/i.test(text) ? `${text}'` : `${text}'s`;
 }
-
 async function presentRustTrap(monster, event, describeMonster, publish) {
-    if (!event.inSight) return;
-
+    if (!event.inSight)
+        return;
     const name = describeMonster(monster);
     const lowerName = lowerFirst(name);
     const owner = possessive(name);
@@ -39,76 +35,59 @@ async function presentRustTrap(monster, event, describeMonster, publish) {
                 ? `A gush of water hits ${lowerOwner} right ${arm}!`
                 : `A gush of water hits ${lowerName}!`;
     await publish(hit);
-
     for (const effect of event.effects) {
-        const objectName = effect.description
-            || OBJECT_NAMES[effect.object?.otyp]
-            || effect.object?.name || 'object';
+        const objectName = effect.description ||
+            OBJECT_NAMES[effect.object?.otyp] ||
+            effect.object?.name ||
+            'object';
         if (effect.kind === 'grease-protected') {
-            await publish(
-                `${owner} ${objectName} is protected by the layer of grease!`,
-            );
-        } else if (effect.kind === 'rustproof') {
-            await publish(
-                `Somehow, ${lowerOwner} ${objectName} is not affected by the oxidation.`,
-            );
-        } else if (effect.kind === 'rusted') {
-            const adverb = effect.erosion === 3
-                ? ' completely' : effect.erosion > 1 ? ' further' : '';
+            await publish(`${owner} ${objectName} is protected by the layer of grease!`);
+        }
+        else if (effect.kind === 'rustproof') {
+            await publish(`Somehow, ${lowerOwner} ${objectName} is not affected by the oxidation.`);
+        }
+        else if (effect.kind === 'rusted') {
+            const adverb = effect.erosion === 3 ? ' completely' : effect.erosion > 1 ? ' further' : '';
             await publish(`${owner} ${objectName} rusts${adverb}!`);
-        } else if (effect.kind === 'lantern-flickers') {
+        }
+        else if (effect.kind === 'lantern-flickers') {
             await publish(`${owner} ${objectName} crackles and flickers.`);
-        } else if (effect.kind === 'extinguished') {
+        }
+        else if (effect.kind === 'extinguished') {
             await publish(`${owner} ${objectName} goes out!`);
         }
     }
     if (event.completelyRusted) {
         const action = event.startsToFall ? 'starts to fall' : 'falls';
         await publish(`${name} ${action} to pieces!`);
-    } else if (event.clone) {
+    }
+    else if (event.clone) {
         await publish(`${name} multiplies!`);
     }
 }
-
-export function beginMonsterRustTrap(
-    monster,
-    trap,
-    state = game,
-    { random = rn2 } = {},
-) {
-    const event = applyMonsterRustTrap(monster, state, { roll: random });
-    Object.assign(event, monsterTrapVisibility(monster, state), {
+export async function beginMonsterRustTrap(monster, trap, state = game, { random = rn2 } = {}) {
+    const event = {
+        ...await applyMonsterRustTrap(monster, state, { roll: random }),
+        ...monsterTrapVisibility(monster, state),
         trap,
         finished: false,
-    });
-    if (event.inSight) trap.tseen = true;
+    };
+    if (event.inSight)
+        trap.tseen = true;
     if (event.completelyRusted) {
         event.startsToFall = !!wornMonsterLifeSaver(monster);
         monster.mhp = 0;
     }
     return event;
 }
-
-export async function finishMonsterRustTrap(
-    monster,
-    event,
-    {
-        finishDeath,
-        publish = plineWithContinuation,
-        random = rn2,
-        describeMonster = ordinaryMonsterSubject,
-    } = {},
-) {
-    if (!event || event.finished) return event;
-    if (event.completelyRusted && typeof finishDeath !== 'function') {
-        throw new TypeError('rust trap requires the monster death handler');
-    }
-
+export async function finishMonsterRustTrap(monster, event, state = game, { publish = plineWithContinuation, random = rn2, describeMonster = ordinaryMonsterSubject, } = {}) {
+    if (!event || event.finished)
+        return event;
     await presentRustTrap(monster, event, describeMonster, publish);
     if (event.completelyRusted) {
-        const death = await finishDeath(monster, {
-            visible: event.seeSquare,
-            spotted: event.inSight,
+        const death = await finishMonsterKilled(monster, state, {
+            damageType: AD_RUST,
+            cause: null,
             random,
             publish,
         });
@@ -118,3 +97,4 @@ export async function finishMonsterRustTrap(
     event.finished = true;
     return event;
 }
+//# sourceMappingURL=rust_trap.js.map

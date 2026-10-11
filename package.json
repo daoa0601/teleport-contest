@@ -1,18 +1,53 @@
 {
   "name": "teleport-contest",
   "version": "1.0.0",
-  "description": "The Teleport Coding Challenge — Port NetHack C to JavaScript",
+  "description": "The Teleport Coding Challenge — source-faithful NetHack TypeScript port",
   "type": "module",
   "scripts": {
-    "test": "node --test --test-concurrency=1 --test-reporter=dot $(find test -maxdepth 1 -type f -name '*.test.js' -print | sort)",
+    "test": "node --test --test-concurrency=1 --test-reporter=spec $(find test -maxdepth 1 -type f -name '*.test.js' -print | sort)",
     "score": "bash frozen/score.sh",
     "score:engine": "node frozen/ps_test_runner.mjs sessions",
     "generate:monster-attacks": "node scripts/generate-monster-attack-types.mjs",
     "generate:monster-growth": "node scripts/generate-monster-growth-data.mjs",
     "generate:lua-assets": "node scripts/generate-lua-assets.mjs",
-    "play": "echo 'Open index.html in a browser to play'"
+    "play": "npm run dev --",
+    "dev": "node scripts/watch.mjs dev",
+    "build": "vp build",
+    "preview": "vp preview",
+    "check": "npm run typecheck && npm run lint:types",
+    "typecheck": "tsgo --noEmit",
+    "typecheck:watch": "tsgo --noEmit --watch",
+    "test:watch": "node scripts/watch.mjs test",
+    "test:browser": "npm run build && playwright test",
+    "compile": "npm run typecheck && npm run lint:types && tsgo -p tsconfig.build.json",
+    "lint:types": "node src/scripts/check-lint-comments.mts && node src/scripts/check-measurement-guard.mts seeds && oxlint --config .oxlintrc.json --disable-nested-config --no-ignore --type-aware src vite.config.ts playwright.config.ts test/browser",
+    "pretest": "npm run compile",
+    "prescore": "npm run compile",
+    "prescore:engine": "npm run compile",
+    "prebuild": "npm run compile",
+    "predev": "npm run compile",
+    "pretest:watch": "npm run compile",
+    "pregenerate:monster-attacks": "npm run compile",
+    "postgenerate:monster-attacks": "npm run compile",
+    "pregenerate:monster-growth": "npm run compile",
+    "postgenerate:monster-growth": "npm run compile",
+    "pregenerate:lua-assets": "npm run compile",
+    "postgenerate:lua-assets": "npm run compile"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": "^22.18.0 || ^24.11.0 || >=26.0.0"
+  },
+  "devDependencies": {
+    "@babel/parser": "7.29.9",
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.4",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "@vue/compiler-sfc": "3.5.43",
+    "@vue/language-core": "3.2.6",
+    "vite-plus": "1.0.0"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.0.0",
+    "vitest": "5.0.1"
   }
 }

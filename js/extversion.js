@@ -3,12 +3,10 @@
 //
 // Keep this separate from version.js: const.js imports that build-metadata
 // leaf, while this interactive command depends on display and window layers.
-
 import { game } from './gstate.js';
-import { bot, docrtRecalc, flush_screen } from './display.js';
+import { bot, docrt, flush_screen } from './display.js';
 import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
-
 const VERSION_PAGE_1 = [
     'MacOS NetHack Version 5.0.0 - last build May  2 2026 12:00:00.',
     '',
@@ -35,7 +33,6 @@ const VERSION_PAGE_1 = [
     '    Lua 5.4.8  Copyright (C) 1994-2025 Lua.org, PUC-Rio',
     '--More--',
 ];
-
 const VERSION_PAGE_2 = [
     '    "Permission is hereby granted, free of charge, to any person obtaining',
     '     a copy of this software and associated documentation files (the',
@@ -49,7 +46,6 @@ const VERSION_PAGE_2 = [
     '', '', '', '', '', '', '', '', '', '', '', '', '', '',
     '--More--',
 ];
-
 export async function doextversion() {
     // version.c substitutes :LUAVERSION:/:LUACOPYRIGHT: lazily. The first
     // get_lua_version() opens a Lua state and loads nhlib; later calls reuse
@@ -59,18 +55,17 @@ export async function doextversion() {
         rn2(2);
         game._runtimeVersionInfoInitialized = true;
     }
-
     await showTextPages([
         { lines: VERSION_PAGE_1, cursor: [8, 23] },
         { lines: VERSION_PAGE_2, cursor: [8, 23] },
     ], { validKeys: [27, 32, 10, 13] });
-
     // Destroying NHW_TEXT restores the live map rather than leaving the
     // editor or either text page in the tty backing buffer.
     game._pending_message = '';
     game._retained_message = '';
-    await docrtRecalc();
+    await docrt();
     await bot();
     await flush_screen(1);
     game.context.move = 0;
 }
+//# sourceMappingURL=extversion.js.map

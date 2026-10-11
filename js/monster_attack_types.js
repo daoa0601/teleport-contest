@@ -1,6 +1,5 @@
 // Generated from nethack-c/upstream/include/monattk.h.
 // Run npm run generate:monster-attacks after updating the pinned C source.
-
 export const AT_ANY = -1;
 export const AT_NONE = 0;
 export const AT_CLAW = 1;
@@ -19,7 +18,6 @@ export const AT_GAZE = 15;
 export const AT_TENT = 16;
 export const AT_WEAP = 254;
 export const AT_MAGC = 255;
-
 export const AD_ANY = -1;
 export const AD_PHYS = 0;
 export const AD_MAGM = 1;
@@ -70,3 +68,4 @@ export const AD_SPEL = 241;
 export const AD_RBRE = 242;
 export const AD_SAMU = 252;
 export const AD_CURS = 253;
+//# sourceMappingURL=monster_attack_types.js.map

@@ -1,26 +1,48 @@
 #!/usr/bin/env node
-
 // Generate the static permonst inputs used by exper.c:experience().  The C
 // projection keeps monsters.h's conditional rows and attack constants as the
 // authority, while JS retains the dynamic monster level, armor, and repeated-
 // kill parts of the calculation at runtime.
-
 import { execFileSync } from 'node:child_process';
-import {
-    mkdtempSync, readFileSync, rmSync, writeFileSync,
-} from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
-
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const includeDir = join(root, 'nethack-c/upstream/include');
-const target = join(root, 'js/monster_data.js');
+const target = join(root, 'src/js/monster_data.ts');
 const begin = '// BEGIN GENERATED MONSTER EXPERIENCE DATA';
 const end = '// END GENERATED MONSTER EXPERIENCE DATA';
 const compiler = process.env.CC || 'cc';
-
-const source = String.raw`
+function integers(value, count, label) {
+    if (!Array.isArray(value) || value.length !== count)
+        throw new Error(`expected ${count} ${label} values`);
+    return value.map((entry, index) => {
+        if (typeof entry !== 'number' || !Number.isInteger(entry))
+            throw new Error(`invalid integer in ${label} at index ${index}`);
+        return entry;
+    });
+}
+function rows(value, width, label) {
+    if (!Array.isArray(value) || value.length !== 383)
+        throw new Error(`expected 383 configured monster ${label} rows`);
+    return value.map((row, index) => integers(row, width, `${label}[${index}]`));
+}
+function attackRows(value) {
+    if (!Array.isArray(value) || value.length !== 383)
+        throw new Error('expected 383 configured monster attack rows');
+    return value.map((row, index) => {
+        if (!Array.isArray(row) || row.length !== 6)
+            throw new Error(`expected six attacks for monster ${index}`);
+        return row.map((attack, attackIndex) => integers(attack, 4, `monster ${index}, attack ${attackIndex}`));
+    });
+}
+function jsonLine(line, label) {
+    if (line === undefined)
+        throw new Error(`missing ${label} in C projection`);
+    return JSON.parse(line);
+}
+const source = String.raw `
 #include <stdio.h>
 #include "config.h"
 #include "weight.h"
@@ -118,56 +140,30 @@ int main(void) {
     return 0;
 }
 `;
-
 const temporary = mkdtempSync(join(tmpdir(), 'teleport-monster-xp-'));
 try {
     const binary = join(temporary, 'project-monster-xp');
     execFileSync(compiler, [
         '-x', 'c', '-', '-o', binary, `-I${includeDir}`,
     ], { input: source, encoding: 'utf8' });
-    const [
-        rowsLine, resistanceLine, bodyLine, soundLine, attacksLine,
-        mailDaemonLine,
-    ]
-        = execFileSync(binary, [], {
+    const [rowsLine, resistanceLine, bodyLine, soundLine, attacksLine, mailDaemonLine,] = execFileSync(binary, [], {
         encoding: 'utf8',
     }).trim().split('\n');
-    const rows = JSON.parse(rowsLine);
-    const magicResistance = JSON.parse(resistanceLine);
-    const body = JSON.parse(bodyLine);
-    const sound = JSON.parse(soundLine);
-    const attacks = JSON.parse(attacksLine);
+    const experience = rows(jsonLine(rowsLine, 'XP'), 5, 'XP');
+    const magicResistance = integers(jsonLine(resistanceLine, 'MR'), 383, 'MR');
+    const body = rows(jsonLine(bodyLine, 'body'), 2, 'body');
+    const sound = integers(jsonLine(soundLine, 'sound'), 383, 'sound');
+    const attacks = attackRows(jsonLine(attacksLine, 'attacks'));
     const mailDaemon = Number(mailDaemonLine);
-    if (rows.length !== 383 || rows.some(row => row.length !== 5
-        || row.some(value => !Number.isInteger(value)))) {
-        throw new Error(`expected 383 configured monster XP rows, found ${rows.length}`);
-    }
-    if (magicResistance.length !== 383
-        || magicResistance.some(value => !Number.isInteger(value))) {
-        throw new Error(`expected 383 monster MR values, found ${magicResistance.length}`);
-    }
-    if (body.length !== 383 || body.some(row => row.length !== 2
-        || row.some(value => !Number.isInteger(value)))) {
-        throw new Error(`expected 383 configured monster body rows, found ${body.length}`);
-    }
-    if (sound.length !== 383
-        || sound.some(value => !Number.isInteger(value))) {
-        throw new Error(`expected 383 configured monster sound values, found ${sound.length}`);
-    }
-    if (attacks.length !== 383 || attacks.some(row => row.length !== 6
-        || row.some(attack => attack.length !== 4
-            || attack.some(value => !Number.isInteger(value))))) {
-        throw new Error(`expected 383 configured monster attack rows, found ${attacks.length}`);
-    }
-    if (!Number.isInteger(mailDaemon)) throw new Error('invalid mail daemon index');
-
+    if (!Number.isInteger(mailDaemon))
+        throw new Error('invalid mail daemon index');
     const generated = [
         begin,
-        `export const MONSTER_EXPERIENCE_META = ${JSON.stringify(rows)};`,
-        `export const MONSTER_MAGIC_RESISTANCE = ${JSON.stringify(magicResistance)};`,
-        `export const MONSTER_BODY_META = ${JSON.stringify(body)};`,
-        `export const MONSTER_SOUND = ${JSON.stringify(sound)};`,
-        `export const MONSTER_ATTACKS = ${JSON.stringify(attacks)};`,
+        `export const MONSTER_EXPERIENCE_META: readonly MonsterExperience[] = ${JSON.stringify(experience)};`,
+        `export const MONSTER_MAGIC_RESISTANCE: readonly number[] = ${JSON.stringify(magicResistance)};`,
+        `export const MONSTER_BODY_META: readonly MonsterBody[] = ${JSON.stringify(body)};`,
+        `export const MONSTER_SOUND: readonly number[] = ${JSON.stringify(sound)};`,
+        `export const MONSTER_ATTACKS: readonly MonsterAttacks[] = ${JSON.stringify(attacks)};`,
         `export const PM_MAIL_DAEMON = ${mailDaemon};`,
         end,
     ].join('\n');
@@ -179,6 +175,8 @@ try {
         : previous.slice(0, start) + generated
             + previous.slice(finish + end.length);
     writeFileSync(target, updated);
-} finally {
+}
+finally {
     rmSync(temporary, { recursive: true, force: true });
 }
+//# sourceMappingURL=generate-monster-experience-data.mjs.map

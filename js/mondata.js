@@ -1,16 +1,11 @@
 // Monster-name and monster-class lookup.
 // C ref: mondata.c name_to_mon() and name_to_monclass().
-
-import {
-    MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName,
-} from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
 import { roles } from './roles.js';
-
 export const MONSTER_CLASS_SYMBOLS = [
     '', ...'abcdefghijklmnopqrstuvwxyz', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
     '@', ' ', "'", '&', ';', ':', '~', ']',
 ];
-
 const MONSTER_CLASS_NAMES = [
     '',
     'ant or other insect', 'blob', 'cockatrice', 'dog or other canine',
@@ -29,12 +24,9 @@ const MONSTER_CLASS_NAMES = [
     'human or elf', 'ghost', 'golem', 'major demon', 'sea monster',
     'lizard', 'long worm tail', 'mimic',
 ];
-
 function canonicalMonsterNumber(name) {
-    return MONSTER_NAME.findIndex(candidate =>
-        candidate?.toLowerCase() === name.toLowerCase());
+    return MONSTER_NAME.findIndex(candidate => candidate?.toLowerCase() === name.toLowerCase());
 }
-
 const MONSTER_NAME_ALIASES = new Map([
     ['grey dragon', 'gray dragon'],
     ['baby grey dragon', 'baby gray dragon'],
@@ -89,9 +81,8 @@ const MONSTER_NAME_ALIASES = new Map([
     ['erinyes', 'erinys'],
 ].map(([alias, target]) => [
     alias,
-    Number.isInteger(target) ? target : canonicalMonsterNumber(target),
+    typeof target === 'number' ? target : canonicalMonsterNumber(target),
 ]));
-
 function normalizeMonsterName(value) {
     let name = String(value || '').trim().toLowerCase()
         .replace(/\s+/g, ' ')
@@ -99,23 +90,21 @@ function normalizeMonsterName(value) {
     name = name.replace(/vortices/g, 'vortex');
     if (name.endsWith('ies') && !name.endsWith('zombies'))
         name = `${name.slice(0, -3)}y`;
-    else if (name.endsWith('ves')) name = `${name.slice(0, -3)}f`;
+    else if (name.endsWith('ves'))
+        name = `${name.slice(0, -3)}f`;
     return name;
 }
-
 function acceptedNameRemainder(remainder) {
     return !remainder || remainder.startsWith(' ')
         || /^(?:s|es|'|'s)(?: |$)/.test(remainder);
 }
-
 function monsterNames(mnum) {
     return new Set([
         MONSTER_NAME[mnum],
         monsterTypeName(mnum, false),
         monsterTypeName(mnum, true),
-    ].filter(Boolean).map(name => name.toLowerCase()));
+    ].filter((name) => typeof name === 'string' && name.length > 0).map(name => name.toLowerCase()));
 }
-
 function roleTitleMonster(name) {
     let best = null;
     for (const role of roles) {
@@ -137,17 +126,16 @@ function roleTitleMonster(name) {
     }
     return best?.mnum ?? -1;
 }
-
 export function nameToMonster(value) {
     const requested = normalizeMonsterName(value);
-    if (!requested) return -1;
+    if (!requested)
+        return -1;
     for (const [alias, mnum] of MONSTER_NAME_ALIASES) {
         if (requested.startsWith(alias)
             && acceptedNameRemainder(requested.slice(alias.length))) {
             return mnum;
         }
     }
-
     let best = null;
     for (let mnum = 0; mnum < MONSTER_NAME.length; mnum++) {
         for (const name of monsterNames(mnum)) {
@@ -161,19 +149,21 @@ export function nameToMonster(value) {
     }
     return best?.mnum ?? roleTitleMonster(requested);
 }
-
 function singularClassName(value) {
     const name = normalizeMonsterName(value);
     const irregular = new Map([
         ['fungi', 'fungus'], ['mice', 'mouse'],
     ]).get(name);
-    if (irregular) return irregular;
-    if (name.endsWith('ies')) return `${name.slice(0, -3)}y`;
-    if (name.endsWith('es')) return name.slice(0, -2);
-    if (name.endsWith('s')) return name.slice(0, -1);
+    if (irregular)
+        return irregular;
+    if (name.endsWith('ies'))
+        return `${name.slice(0, -3)}y`;
+    if (name.endsWith('es'))
+        return name.slice(0, -2);
+    if (name.endsWith('s'))
+        return name.slice(0, -1);
     return name;
 }
-
 function classDescriptionMatches(description, wanted) {
     const start = description.toLowerCase().indexOf(wanted);
     if (start < 0 || (start > 0 && description[start - 1] !== ' '))
@@ -181,32 +171,34 @@ function classDescriptionMatches(description, wanted) {
     const end = start + wanted.length;
     return end === description.length || description[end] === ' ';
 }
-
 export function nameToMonsterClass(value) {
     const raw = String(value || '').trim();
-    if (!raw) return 0;
+    if (!raw)
+        return 0;
     if (raw.length === 1) {
         const found = MONSTER_CLASS_SYMBOLS.indexOf(raw);
-        if (found === 60) return 13;
-        if (found === 59) return 23;
+        if (found === 60)
+            return 13;
+        if (found === 59)
+            return 23;
         return found < 0 ? 0 : found;
     }
-
     const wanted = singularClassName(raw);
-    if (wanted === 'long') return 0;
-    if (['an', 'the', 'or', 'other', 'or other'].includes(wanted)) return 0;
+    if (wanted === 'long')
+        return 0;
+    if (['an', 'the', 'or', 'other', 'or other'].includes(wanted))
+        return 0;
     const special = new Map([
         ['long worm', 23], ['demon', 56], ['devil', 56],
         ['bug', 24], ['fish', 57],
     ]).get(wanted);
-    if (special) return special;
-    for (let monsterClass = 1;
-        monsterClass < MONSTER_CLASS_NAMES.length;
-        monsterClass++) {
-        if (classDescriptionMatches(
-            MONSTER_CLASS_NAMES[monsterClass], wanted,
-        )) return monsterClass;
+    if (special)
+        return special;
+    for (let monsterClass = 1; monsterClass < MONSTER_CLASS_NAMES.length; monsterClass++) {
+        if (classDescriptionMatches(MONSTER_CLASS_NAMES[monsterClass] ?? '', wanted))
+            return monsterClass;
     }
     const mnum = nameToMonster(wanted);
     return mnum < 0 ? 0 : (MONSTER_SYMBOL[mnum] ?? 0);
 }
+//# sourceMappingURL=mondata.js.map

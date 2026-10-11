@@ -1,147 +1,109 @@
 // Finding and removing floor, container, and door traps.
 // C ref: trap.c dountrap(), could_untrap(), and untrap().
-
+import { monsterHasMapPosition } from './monster_location.js';
+import { deleteTrap } from './trap_lifecycle.js';
+import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { artifactById } from './artifacts.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
-import {
-    A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
-    DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, LANDMINE,
-    MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD, TRAP_EXPLANATIONS,
-    Upolyd, WEB, isok,
-} from './const.js';
+import { A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, LANDMINE, MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD, TRAP_EXPLANATIONS, WEB, isok, } from './const.js';
 import { newsym, pline, plineWithContinuation } from './display.js';
 import { level_difficulty } from './dungeon.js';
-import {
-    adjustLevelAbilities, gainExperienceLevel, newExperienceThreshold,
-} from './exper.js';
+import { addExperience, checkExperienceLevel, } from './exper.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game } from './gstate.js';
+import { convertTrapToObject } from './trap_object.js';
 import { heroBadRock, heroTightDiagonalReason } from './hack.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './mimic.js';
-import { place_object, stack_object } from './floor_object.js';
 import { buryFloorObjectsAt } from './buried_object.js';
-import { mksobj } from './mklev.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import {
-    MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE,
-    MONSTER_SYMBOL, monsterIsMindless, monsterTypeName,
-} from './monster_data.js';
-import {
-    ARROW, BEARTRAP, BOULDER, CAN_OF_GREASE, DART, LAND_MINE,
-    LARGE_BOX, CHEST, OBJECT_BIMANUAL, OBJECT_NAMES, POT_OIL,
-} from './object_data.js';
+import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SYMBOL, monsterIsMindless, monsterTypeName, } from './monster_data.js';
+import { ARROW, BEARTRAP, BOULDER, CAN_OF_GREASE, DART, LAND_MINE, LARGE_BOX, CHEST, OBJECT_BIMANUAL, OBJECT_NAMES, POT_OIL, } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
-import {
-    heroFormSticks, heroHasNoHands, returnHeroToHumanForm,
-} from './polyself.js';
+import { heroHasNoHands, } from './polyself.js';
+import { heroFormSticks } from './hero_species.js';
 import { promptYesNoQuit } from './query.js';
 import { d, rnd, rn2, rnl } from './rng.js';
-import { heroIsBlind, heroIsDeaf } from './senses.js';
-import {
-    resolveImmediatePetrification, touchPetrifies,
-} from './stoning.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { resolveImmediatePetrification, touchPetrifies, } from './stoning.js';
 import { promptDirection } from './tty_prompts.js';
-import {
-    EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, nearCapacity, objectWeight,
-} from './weight.js';
+import { EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, nearCapacity, objectWeight, } from './weight.js';
 import { isBlade } from './weapon_type.js';
 import { cansee } from './vision.js';
-
 const POTION_CLASS = 8;
 const M1_WALLWALK = 0x00000008;
 const G_UNIQ = 0x1000;
 const S_HUMAN = 53;
-
 function heroIsImpaired(state) {
-    const hero = state.u || {};
-    return hero.confused || (hero.confusionTurns ?? 0) > 0
-        || hero.hallucinating || (hero.hallucinationTurns ?? 0) > 0;
+    const hero = state.u;
+    return !!hero.confused || (hero.confusionTurns ?? 0) > 0
+        || heroIsHallucinating(state);
 }
-
 function heroIsStunned(state) {
     return !!(state.u?.stunned || (state.u?.stunnedTurns ?? 0) > 0);
 }
-
 function heroIsFumbling(state) {
     return !!(state.u?.fumbling || (state.u?.fumblingTurns ?? 0) > 0);
 }
-
 function heroPassesWalls(state) {
-    if (state.u?.passesWalls || state.u?.passes_walls) return true;
-    const form = state.u?.mtimedone > 0 ? state.u.umonnum : null;
-    return Number.isInteger(form)
+    if (state.u.passesWalls)
+        return true;
+    const form = (state.u.mtimedone ?? 0) > 0 ? state.u.umonnum : null;
+    return form !== null && form !== undefined && Number.isInteger(form)
         && !!((MONSTER_FLAGS1[form] ?? 0) & M1_WALLWALK);
 }
-
 function monsterAt(state, x, y) {
-    return state.level?.monsters?.find(monster =>
+    return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
         !monster.dead && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y) || null;
 }
-
 function trapAt(state, x, y) {
-    return state.level?.traps?.find(trap =>
-        trap.tx === x && trap.ty === y) || null;
+    return state.level?.traps?.find(trap => trap.tx === x && trap.ty === y) || null;
 }
-
 function boxesAt(state, x, y) {
-    return (state.level?.objects?.[x]?.[y] || []).filter(object =>
-        object.otyp === LARGE_BOX || object.otyp === CHEST);
+    return (state.level?.objects?.[x]?.[y] || []).filter(object => object.otyp === LARGE_BOX || object.otyp === CHEST);
 }
-
 function monsterName(monster) {
     return monster?.name
         || `the ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
 }
-
 function capitalizedMonsterName(monster) {
     const name = monsterName(monster);
-    return name[0].toUpperCase() + name.slice(1);
+    return name.charAt(0).toUpperCase() + name.slice(1);
 }
-
 function trapName(trap) {
     return TRAP_EXPLANATIONS[trap?.ttyp] || 'trap';
 }
-
 function article(noun) {
     return /^[aeiou]/i.test(noun) ? 'an' : 'a';
 }
-
 function possessiveTrap(trap) {
     return trap?.madeby_u ? 'your' : 'the';
 }
-
 function hasMagicKey(state) {
-    return (state.inventory || []).some(object =>
-        artifactById(object.oartifact, state)?.name
-            === 'The Master Key of Thievery');
+    return (state.inventory || []).some(object => artifactById(object.oartifact, state)?.name
+        === 'The Master Key of Thievery');
 }
-
 function weldedTwoHandedWeapon(state) {
     const weapon = state.uwep || state.u?.uwep;
-    return !!(weapon?.cursed && (weapon.bimanual
-        || OBJECT_BIMANUAL[weapon.otyp]));
+    return !!(weapon?.cursed && (OBJECT_BIMANUAL[weapon.otyp]));
 }
-
 export function untrapAbilityProblem(state = game, { checkFloor = false } = {}) {
     if (nearCapacity(state) >= HVY_ENCUMBER)
         return "You're too strained to do that.";
-
-    const form = state.u?.mtimedone > 0 ? state.u.umonnum : null;
+    const form = (state.u.mtimedone ?? 0) > 0 ? state.u.umonnum : null;
     if ((heroHasNoHands(state) && !heroCanSpinWeb(state))
-        || (Number.isInteger(form) && (MONSTER_MOVE[form] ?? 0) === 0)) {
+        || (form !== null && form !== undefined && Number.isInteger(form) && (MONSTER_MOVE[form] ?? 0) === 0)) {
         return 'And just how do you expect to do that?';
     }
-
     if (state.u?.ustuck && heroFormSticks(state)) {
         return `You'll have to let go of ${monsterName(state.u.ustuck)} first.`;
     }
@@ -151,84 +113,64 @@ export function untrapAbilityProblem(state = game, { checkFloor = false } = {}) 
         return "You can't reach the floor.";
     return null;
 }
-
-export async function doUntrap({
-    state = game,
-    enterTrap = null,
-} = {}) {
+export async function doUntrap({ state = game, enterTrap = null, } = {}) {
     const problem = untrapAbilityProblem(state);
     if (problem) {
         await pline(problem);
         state.context.move = 0;
         return false;
     }
-
     const spentTime = await untrap({ state, enterTrap });
+    if (state.program_state.gameover)
+        return spentTime;
     state.context.move = spentTime ? 1 : 0;
     return spentTime;
 }
-
-export async function untrap({
-    state = game,
-    force = false,
-    enterTrap = null,
-    chooseDirection = promptDirection,
-    ask = promptYesNoQuit,
-    chooseObject = promptInventoryObject,
-    publish = pline,
-    random = rn2,
-    rollOne = rnd,
-    rollDice = d,
-    luckRandom = rnl,
-} = {}) {
-    if (!force && hasMagicKey(state)) force = true;
-
+export async function untrap({ state = game, force = false, enterTrap = null, chooseDirection = promptDirection, ask = promptYesNoQuit, chooseObject = promptInventoryObject, publish = pline, random = rn2, rollOne = rnd, rollDice = d, luckRandom = rnl, } = {}) {
+    if (!force && hasMagicKey(state))
+        force = true;
     const direction = await chooseDirection();
     if (!direction) {
         state._pending_message = '';
         state._retained_message = '';
         return false;
     }
-    Object.assign(state.u, {
-        dx: direction.dx,
-        dy: direction.dy,
-        dz: direction.dz,
-    });
-
+    const hero = state.u;
+    hero.dx = direction.dx;
+    hero.dy = direction.dy;
+    hero.dz = direction.dz;
     const x = state.u.ux + direction.dx;
     const y = state.u.uy + direction.dy;
     if (!isok(x, y)) {
         await publish('The perils lurking there are beyond your grasp.');
         return false;
     }
-
     const here = x === state.u.ux && y === state.u.uy;
     let trap = trapAt(state, x, y);
-    if (trap && !trap.tseen) trap = null;
+    if (trap && !trap.tseen)
+        trap = null;
     const boxes = here ? boxesAt(state, x, y) : [];
     const canReachFloor = heroCanReachFloor(state);
     let handleTrap = canReachFloor;
     let trapSkipped = false;
-
     if (!canReachFloor && (trap || boxes.length)) {
         await publish(unreachableTrapMessage(trap, boxes.length, here, state));
         trapSkipped = !!trap;
-    } else if (canReachFloor && trap) {
+    }
+    else if (canReachFloor && trap) {
         if (boxes.length) {
             if (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) {
                 const position = state.u?.utrap
                     ? " that you're stuck in"
                     : ' while standing on the edge of it';
-                await publish(
-                    `You can't do much about the ${trapName(trap)}${position}.`,
-                );
+                await publish(`You can't do much about the ${trapName(trap)}${position}.`);
                 handleTrap = false;
                 trapSkipped = true;
-            } else {
-                const choice = await chooseFloorTrapOrBox(
-                    trap, boxes.length, ask,
-                );
-                if (choice === 'q') return false;
+            }
+            else {
+                const choice = await chooseFloorTrapOrBox(trap, boxes.length, ask);
+                if (choice === 'q')
+                    return false;
                 if (choice === 'n') {
                     handleTrap = false;
                     trapSkipped = true;
@@ -248,20 +190,18 @@ export async function untrap({
             });
         }
     }
-
     if (canReachFloor && boxes.length) {
         const used = await handleBoxes(boxes, {
             state, force, ask, publish, random, rollOne, rollDice,
         });
-        if (used !== null) return used;
+        if (used !== null)
+            return used;
     }
-
     const doorMimic = monsterAt(state, x, y);
     if (isDoorMimic(doorMimic, state)) {
         await revealMimic(doorMimic, state, publish);
         return true;
     }
-
     return handleDoor(x, y, {
         state,
         force,
@@ -272,11 +212,12 @@ export async function untrap({
         rollOne,
     });
 }
-
 function unreachableTrapMessage(trap, boxCount, here, state) {
     const things = [];
-    if (trap) things.push(`${article(trapName(trap))} ${trapName(trap)}`);
-    if (boxCount) things.push(boxCount === 1 ? 'a container' : 'containers');
+    if (trap)
+        things.push(`${article(trapName(trap))} ${trapName(trap)}`);
+    if (boxCount)
+        things.push(boxCount === 1 ? 'a container' : 'containers');
     const subject = things.join(' and ');
     const plural = things.length > 1 || boxCount > 1;
     const mounted = state.u?.usteed ? ' while mounted' : '';
@@ -285,7 +226,6 @@ function unreachableTrapMessage(trap, boxCount, here, state) {
     return `There ${plural ? 'are' : 'is'} ${subject} ${location} `
         + `but you can't reach ${object}${mounted}.`;
 }
-
 async function chooseFloorTrapOrBox(trap, boxCount, ask) {
     const containers = boxCount === 1 ? 'a container' : 'containers';
     const noun = trapName(trap);
@@ -294,95 +234,89 @@ async function chooseFloorTrapOrBox(trap, boxCount, ask) {
         + `and ${article(noun)} ${noun} here.`;
     return ask(`${subject}  ${verb} the ${noun}? [ynq] (q) `);
 }
-
 async function handleFloorTrap(trap, options) {
     const { state, publish } = options;
     const here = trap.tx === state.u.ux && trap.ty === state.u.uy;
     if (state.u?.utrap) {
-        await publish(
-            `You cannot deal with the ${trapName(trap)} while trapped${here ? ' in it' : ''}!`,
-        );
+        await publish(`You cannot deal with the ${trapName(trap)} while trapped${here ? ' in it' : ''}!`);
         return true;
     }
-
     const mimic = monsterAt(state, trap.tx, trap.ty);
     if (isObjectOrFurnitureMimic(mimic, state)) {
         await revealMimic(mimic, state, publish);
         return true;
     }
-
     switch (trap.ttyp) {
-    case BEAR_TRAP:
-    case WEB:
-        return disarmHoldingTrap(trap, options);
-    case LANDMINE:
-        return disarmLandmine(trap, options);
-    case SQKY_BOARD:
-        return disarmSqueakyBoard(trap, options);
-    case DART_TRAP:
-        return disarmShootingTrap(trap, DART, options);
-    case ARROW_TRAP:
-        return disarmShootingTrap(trap, ARROW, options);
-    case PIT:
-    case SPIKED_PIT:
-        return handlePit(trap, options);
-    default:
-        await publish(`You cannot disable ${here ? 'this' : 'that'} trap.`);
-        return false;
+        case BEAR_TRAP:
+        case WEB:
+            return disarmHoldingTrap(trap, options);
+        case LANDMINE:
+            return disarmLandmine(trap, options);
+        case SQKY_BOARD:
+            return disarmSqueakyBoard(trap, options);
+        case DART_TRAP:
+            return disarmShootingTrap(trap, DART, options);
+        case ARROW_TRAP:
+            return disarmShootingTrap(trap, ARROW, options);
+        case PIT:
+        case SPIKED_PIT:
+            return handlePit(trap, options);
+        default:
+            await publish(`You cannot disable ${here ? 'this' : 'that'} trap.`);
+            return false;
     }
 }
-
 function webCuttingWeapon(trap, state) {
-    if (monsterAt(state, trap.tx, trap.ty)) return null;
+    if (monsterAt(state, trap.tx, trap.ty))
+        return null;
     const primary = state.uwep || state.u?.uwep;
-    if (isBlade(primary)) return primary;
+    if (primary && isBlade(primary))
+        return primary;
     const secondary = state.uswapwep || state.u?.uswapwep;
-    return state.u?.twoweap && isBlade(secondary) ? secondary : null;
+    return state.u.twoweap && secondary && isBlade(secondary) ? secondary : null;
 }
-
 function untrapFailureRoll(trap, state, random) {
     let chance = 3;
     if (trap.ttyp === WEB) {
         const blade = webCuttingWeapon(trap, state);
         const artifact = artifactById(blade?.oartifact, state);
         if (blade && (artifact?.name === 'Sting'
-            || artifact?.attack?.damageType === 'fire')) chance = 1;
-        else if (!blade && !heroCanSpinWeb(state)) chance = 7;
+            || artifact?.attack?.damageType === 'fire'))
+            chance = 1;
+        else if (!blade && !heroCanSpinWeb(state))
+            chance = 7;
     }
-    if (heroIsImpaired(state)) chance++;
-    if (heroIsBlind(state)) chance++;
-    if (heroIsStunned(state)) chance += 2;
-    if (heroIsFumbling(state)) chance *= 2;
-    if (trap.madeby_u) chance--;
-
+    if (heroIsImpaired(state))
+        chance++;
+    if (heroIsBlind(state))
+        chance++;
+    if (heroIsStunned(state))
+        chance += 2;
+    if (heroIsFumbling(state))
+        chance *= 2;
+    if (trap.madeby_u)
+        chance--;
     const role = state.urole?.key;
     if (role === 'ranger' && trap.ttyp === BEAR_TRAP && chance <= 3)
         return 0;
     if (role === 'rogue') {
-        if (random(2 * MAXULEV) < (state.u?.ulevel ?? 1)) chance--;
-        if (state.u?.uhave?.questart && chance > 1) chance--;
-    } else if (role === 'ranger' && chance > 1) {
+        if (random(2 * MAXULEV) < (state.u?.ulevel ?? 1))
+            chance--;
+        if (state.u?.uhave?.questart && chance > 1)
+            chance--;
+    }
+    else if (role === 'ranger' && chance > 1) {
         chance--;
     }
     return random(Math.max(1, chance));
 }
-
-async function tryDisarm(trap, {
-    state,
-    publish,
-    random,
-    rollOne,
-    luckRandom,
-    enterTrap,
-    forceFailure = false,
-}) {
+async function tryDisarm(trap, { state, publish, random, rollOne, luckRandom, enterTrap, forceFailure = false, }) {
     const monster = monsterAt(state, trap.tx, trap.ty);
     const holdingTrap = trap.ttyp === BEAR_TRAP || trap.ttyp === WEB;
     if (monster && (!monster.mtrapped || !holdingTrap)) {
         await publish(`${capitalizedMonsterName(monster)} is in the way.`);
         return 0;
     }
-
     const here = trap.tx === state.u.ux && trap.ty === state.u.uy;
     const boulder = (state.level?.objects?.[trap.tx]?.[trap.ty] || [])
         .some(object => object.otyp === BOULDER);
@@ -404,35 +338,42 @@ async function tryDisarm(trap, {
         await publish(`You are unable to reach the ${trapName(trap)}!`);
         return 0;
     }
-
     if (!forceFailure && untrapFailureRoll(trap, state, random) === 0)
         return 2;
-
     if (luckRandom(5)) {
         await publish('Whoops...');
         if (monster) {
             await failMonsterRescue(monster, trap, {
                 state, publish, random, rollOne,
             });
-        } else if (here) {
-            await triggerHeroTrap(trap, { failedUntrap: true });
-        } else if (!enterTrap || !await enterTrap(trap)) {
-            const preposition = [BEAR_TRAP, PIT, SPIKED_PIT, WEB]
-                .includes(trap.ttyp) ? 'into' : 'onto';
-            await publish(`Fortunately, you don't move ${preposition} it.`);
         }
-        exerciseAttribute(A_DEX, false, state);
-    } else {
+        else if (here) {
+            const result = await triggerHeroTrap(trap, { failedUntrap: true });
+            if (result.died)
+                return 1;
+        }
+        else {
+            const entered = enterTrap ? await enterTrap(trap) : null;
+            if (entered?.died)
+                return 1;
+            if (!entered?.entered) {
+                const preposition = [BEAR_TRAP, PIT, SPIKED_PIT, WEB]
+                    .includes(trap.ttyp) ? 'into' : 'onto';
+                await publish(`Fortunately, you don't move ${preposition} it.`);
+            }
+        }
+        if (state.program_state.gameover)
+            return 1;
+        await exerciseAttribute(A_DEX, false, state);
+    }
+    else {
         const owner = trap.madeby_u ? 'Your' : here ? 'This' : 'That';
         const action = trap.ttyp === WEB ? 'remove' : 'disarm';
         await publish(`${owner} ${trapName(trap)} is difficult to ${action}.`);
     }
     return 1;
 }
-
-async function failMonsterRescue(monster, trap, {
-    state, publish, random, rollOne,
-}) {
+async function failMonsterRescue(monster, trap, { state, publish, random, rollOne, }) {
     if (trap.ttyp === BEAR_TRAP) {
         if (monster.mtame) {
             monster.mtame = heroHasConflict(state)
@@ -443,34 +384,34 @@ async function failMonsterRescue(monster, trap, {
         monster.mhp = (monster.mhp ?? 1) - rollOne(4);
         if (monster.mhp <= 0) {
             await finishEnvironmentalMonsterDeath(monster, state, {
-                visible: true, random, publish,
+                random, publish,
             });
         }
-    } else if (trap.ttyp === WEB && monster.mtrapped) {
+    }
+    else if (trap.ttyp === WEB && monster.mtrapped) {
         await publish(`${capitalizedMonsterName(monster)} remains entangled.`);
     }
 }
-
 async function disarmHoldingTrap(trap, options) {
     const result = await tryDisarm(trap, options);
-    if (result < 2) return result !== 0;
-
+    if (result < 2)
+        return result !== 0;
     const { state, publish, random, luckRandom } = options;
     const monster = monsterAt(state, trap.tx, trap.ty);
     if (monster) {
         monster.mtrapped = 0;
         const noun = trap.ttyp === BEAR_TRAP ? 'bear trap' : 'web';
-        await publish(
-            `You extract ${monsterName(monster)} from ${possessiveTrap(trap)} ${noun}.`,
-        );
+        await publish(`You extract ${monsterName(monster)} from ${possessiveTrap(trap)} ${noun}.`);
         await rewardMonsterRescue(trap, monster, {
             state, publish, random, luckRandom,
         });
-    } else if (trap.ttyp === BEAR_TRAP) {
+    }
+    else if (trap.ttyp === BEAR_TRAP) {
         await publish(`You disarm ${possessiveTrap(trap)} bear trap.`);
-        convertTrapToObject(trap, BEARTRAP, 1, state);
+        await convertTrapToObject(trap, BEARTRAP, 1, state);
         return true;
-    } else {
+    }
+    else {
         const blade = webCuttingWeapon(trap, state);
         const artifact = artifactById(blade?.oartifact, state);
         if (artifact?.name === 'Sting')
@@ -479,45 +420,47 @@ async function disarmHoldingTrap(trap, options) {
             await publish(`${artifact.name} burns through ${possessiveTrap(trap)} web!`);
         else if (blade)
             await publish(`You cut through ${possessiveTrap(trap)} web.`);
-        else await publish(`You succeed in removing ${possessiveTrap(trap)} web.`);
+        else
+            await publish(`You succeed in removing ${possessiveTrap(trap)} web.`);
         removeTrap(trap, state);
     }
     newsym(trap.tx, trap.ty);
     return true;
 }
-
 async function disarmLandmine(trap, options) {
     const result = await tryDisarm(trap, options);
-    if (result < 2) return result !== 0;
+    if (result < 2)
+        return result !== 0;
     await options.publish(`You disarm ${possessiveTrap(trap)} land mine.`);
-    convertTrapToObject(trap, LAND_MINE, 1, options.state);
+    await convertTrapToObject(trap, LAND_MINE, 1, options.state);
     return true;
 }
-
 async function disarmShootingTrap(trap, objectType, options) {
     const result = await tryDisarm(trap, options);
-    if (result < 2) return result !== 0;
+    if (result < 2)
+        return result !== 0;
     await options.publish(`You disarm ${possessiveTrap(trap)} trap.`);
     const count = 50 - options.luckRandom(50);
-    convertTrapToObject(trap, objectType, count, options.state);
+    await convertTrapToObject(trap, objectType, count, options.state);
     return true;
 }
-
 async function disarmSqueakyBoard(trap, options) {
     const tool = await chooseSqueakyBoardTool(options);
-    if (!tool) return false;
+    if (!tool)
+        return false;
     const badTool = tool.cursed
         || ((tool.otyp !== POT_OIL || tool.lamplit)
             && (tool.otyp !== CAN_OF_GREASE || !(tool.spe ?? 0)));
     const result = await tryDisarm(trap, {
-        ...options, forceFailure: badTool,
+        ...options, forceFailure: !!badTool,
     });
-    if (result < 2) return result !== 0;
-
+    if (result < 2)
+        return result !== 0;
     if (tool.otyp === CAN_OF_GREASE) {
         tool.spe = Math.max(0, (tool.spe ?? 0) - 1);
-    } else {
-        consumeOne(tool, options.state);
+    }
+    else {
+        await consumeOne(tool, options.state);
         recordObjectKnowledge(POT_OIL, options.state);
     }
     await options.publish('You repair the squeaky board.');
@@ -526,60 +469,40 @@ async function disarmSqueakyBoard(trap, options) {
     await awardExperience(1, 5, options.state, options.publish);
     return true;
 }
-
 async function chooseSqueakyBoardTool({ state, chooseObject, publish }) {
-    const eligible = (state.inventory || []).filter(object =>
-        object.otyp === CAN_OF_GREASE || object.oclass === POTION_CLASS);
+    const eligible = (state.inventory || []).filter(object => object.otyp === CAN_OF_GREASE || object.oclass === POTION_CLASS);
     if (!eligible.length) {
         await publish("You don't have anything to untrap with.");
         return null;
     }
-    const recommended = eligible.filter(object =>
-        object.otyp === CAN_OF_GREASE
+    const recommended = eligible.filter(object => object.otyp === CAN_OF_GREASE
         || (object.otyp === POT_OIL && object.dknown
             && state._knownObjectTypes?.has(POT_OIL)));
-    const letters = compactInventoryLetters(
-        recommended.map(object => object.invlet).join(''),
-    );
+    const letters = compactInventoryLetters(recommended.map(object => object.invlet).join(''));
     const choices = letters ? `${letters} or ?*` : '?*';
     const prompt = `What do you want to untrap with? [${choices}] `;
     const selection = await chooseObject(prompt, eligible, { allowMenu: true });
     return selection.cancelled ? null : selection.object;
 }
-
-function consumeOne(object, state) {
+async function consumeOne(object, state) {
     const quantity = object.quan ?? object.quantity ?? 1;
     if (quantity <= 1) {
-        deleteObject(object, state);
+        await deleteObject(object, state);
         return;
     }
     object.quan = object.quantity = quantity - 1;
     object.owt = objectWeight(object);
 }
-
-function convertTrapToObject(trap, objectType, count, state) {
-    const object = mksobj(objectType, true, false);
-    object.quan = object.quantity = count;
-    object.owt = objectWeight(object);
-    if (objectType !== DART) object.opoisoned = 0;
-    place_object(object, trap.tx, trap.ty);
-    stack_object(object, state);
-    removeTrap(trap, state);
-    newsym(trap.tx, trap.ty);
-    return object;
-}
-
 function removeTrap(trap, state) {
-    const index = state.level?.traps?.indexOf(trap) ?? -1;
-    if (index >= 0) state.level.traps.splice(index, 1);
+    deleteTrap(trap, state);
     if (state.u?.utrap && state.u.ux === trap.tx && state.u.uy === trap.ty) {
         state.u.utrap = 0;
         state.u.utraptype = 0;
     }
     const monster = monsterAt(state, trap.tx, trap.ty);
-    if (monster?.mtrapped) monster.mtrapped = 0;
+    if (monster?.mtrapped)
+        monster.mtrapped = 0;
 }
-
 async function handlePit(trap, options) {
     const { state, publish } = options;
     const here = trap.tx === state.u.ux && trap.ty === state.u.uy;
@@ -594,12 +517,10 @@ async function handlePit(trap, options) {
     }
     return helpMonsterOut(monster, trap, options);
 }
-
 function monsterIsHelpless(monster) {
     return !!(monster.msleeping || monster.mfrozen
-        || monster.mcanmove === 0 || monster.paralyzed);
+        || monster.mcanmove === 0);
 }
-
 async function helpMonsterOut(monster, trap, options) {
     const { state, publish, random, luckRandom } = options;
     if (!monster.mtrapped) {
@@ -610,18 +531,14 @@ async function helpMonsterOut(monster, trap, options) {
         await publish("You can't do that while carrying so much stuff.");
         return true;
     }
-
     const failed = untrapFailureRoll(trap, state, random);
     if (failed && !monsterIsHelpless(monster)) {
-        await publish(
-            `You try to reach out your arms, but ${monsterName(monster)} backs away skeptically.`,
-        );
+        await publish(`You try to reach out your arms, but ${monsterName(monster)} backs away skeptically.`);
         return true;
     }
-
     if (touchPetrifies(monster.mnum)
         && !(state.uarmg || state.u?.uarmg)
-        && !(state.u?.stoneResistance || state.u?.stone_resistance)) {
+        && !(state.u.stoneResistance)) {
         const species = monsterTypeName(monster.mnum, !!monster.female);
         await publish(`You grab the trapped ${species} using your bare hands.`);
         await resolveImmediatePetrification({
@@ -631,38 +548,32 @@ async function helpMonsterOut(monster, trap, options) {
         });
         return true;
     }
-
     if (failed) {
-        await publish(
-            `You try to grab ${monsterName(monster)}, but cannot get a firm grasp.`,
-        );
+        await publish(`You try to grab ${monsterName(monster)}, but cannot get a firm grasp.`);
         if (monster.msleeping) {
             monster.msleeping = 0;
             await publish(`${capitalizedMonsterName(monster)} awakens.`);
         }
         return true;
     }
-
     await publish(`You reach out your arms and grab ${monsterName(monster)}.`);
     if (monster.msleeping) {
         monster.msleeping = 0;
         await publish(`${capitalizedMonsterName(monster)} awakens.`);
-    } else if (monster.mfrozen && random(monster.mfrozen) === 0) {
+    }
+    else if (monster.mfrozen && random(monster.mfrozen) === 0) {
         monster.mcanmove = 1;
         monster.mfrozen = 0;
         await publish(`${capitalizedMonsterName(monster)} stirs.`);
     }
-
     const bodyWeight = MONSTER_BODY_META[monster.mnum]?.[0] ?? 0;
     if (!await canLiftMonster(monster, trap, bodyWeight, false, options))
         return true;
     const carriedWeight = (monster.minvent || monster.inventory || [])
         .reduce((total, object) => total + objectWeight(object), 0);
     if (carriedWeight
-        && !await canLiftMonster(
-            monster, trap, bodyWeight + carriedWeight, true, options,
-        )) return true;
-
+        && !await canLiftMonster(monster, trap, bodyWeight + carriedWeight, true, options))
+        return true;
     await publish(`You pull ${monsterName(monster)} out of the pit.`);
     monster.mtrapped = 0;
     await rewardMonsterRescue(trap, monster, {
@@ -671,51 +582,44 @@ async function helpMonsterOut(monster, trap, options) {
     await fillPitWithBoulder(trap.tx, trap.ty, state, publish);
     return true;
 }
-
 async function fillPitWithBoulder(x, y, state, publish) {
     const trap = trapAt(state, x, y);
-    if (!trap || (trap.ttyp !== PIT && trap.ttyp !== SPIKED_PIT)) return false;
+    if (!trap || (trap.ttyp !== PIT && trap.ttyp !== SPIKED_PIT))
+        return false;
     const boulder = (state.level?.objects?.[x]?.[y] || [])
         .find(object => object.otyp === BOULDER);
-    if (!boulder) return false;
-
-    deleteObject(boulder, state);
+    if (!boulder)
+        return false;
+    await deleteObject(boulder, state);
     removeTrap(trap, state);
-    buryFloorObjectsAt(x, y, state);
+    await buryFloorObjectsAt(x, y, state, { publish });
     if (!heroIsBlind(state) && cansee(x, y)) {
         await publish('The boulder fills a pit.');
-    } else if (!heroIsDeaf(state)) {
+    }
+    else if (!heroIsDeaf(state)) {
         await publish('You hear a boulder settle.');
     }
     newsym(x, y);
     return true;
 }
-
 async function canLiftMonster(monster, trap, weight, carrying, options) {
     const { state, publish, luckRandom } = options;
-    if (calcCapacity(state, weight) < HVY_ENCUMBER) return true;
-    await publish(
-        `${capitalizedMonsterName(monster)} is ${
-            carrying ? 'carrying too much' : 'too heavy'
-        } for you to lift.`,
-    );
+    if (calcCapacity(state, weight) < HVY_ENCUMBER)
+        return true;
+    await publish(`${capitalizedMonsterName(monster)} is ${carrying ? 'carrying too much' : 'too heavy'} for you to lift.`);
     if (!trap.madeby_u && !monster.mpeaceful && monster.mcanmove !== 0
         && !monsterIsMindless(monster.mnum)
         && MONSTER_SYMBOL[monster.mnum] !== S_HUMAN
         && luckRandom(10) < 3) {
         monster.mpeaceful = 1;
         setMonsterMalign(monster, state);
-        await publish(
-            `${capitalizedMonsterName(monster)} thinks it was nice of you to try.`,
-        );
+        await publish(`${capitalizedMonsterName(monster)} thinks it was nice of you to try.`);
     }
     return false;
 }
-
-async function rewardMonsterRescue(trap, monster, {
-    state, publish, random, luckRandom,
-}) {
-    if (trap.madeby_u) return;
+export async function rewardMonsterRescue(trap, monster, { state = game, publish = plineWithContinuation, random = rn2, luckRandom = rnl, } = {}) {
+    if (trap.madeby_u)
+        return;
     const unique = !!((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ);
     if (luckRandom(10) < 8 && !monster.mpeaceful
         && !monsterIsHelpless(monster) && !monsterIsMindless(monster.mnum)
@@ -730,23 +634,23 @@ async function rewardMonsterRescue(trap, monster, {
         await publish('You feel that you did the right thing.');
     }
 }
-
-async function handleBoxes(boxes, {
-    state, force, ask, publish, random, rollOne, rollDice,
-}) {
+async function handleBoxes(boxes, { state, force, ask, publish, random, rollOne, rollDice, }) {
     for (const box of boxes) {
         const known = box.tknown && box.dknown;
         const name = OBJECT_NAMES[box.otyp] || box.name || 'box';
         const answer = await ask(known
             ? `Disarm this ${name}? [ynq] (q) `
             : `There is ${article(name)} ${name} here.  Check it for traps? [ynq] (q) `);
-        if (answer === 'q') return false;
-        if (answer === 'n') continue;
+        if (answer === 'q')
+            return false;
+        if (answer === 'n')
+            continue;
         if (known) {
             await disarmBox(box, {
                 state, force, publish, random, rollOne, rollDice,
             });
-        } else {
+        }
+        else {
             await inspectBox(box, {
                 state, force, ask, publish, random, rollOne, rollDice,
             });
@@ -756,7 +660,6 @@ async function handleBoxes(boxes, {
     await publish('There are no other chests or boxes here.');
     return null;
 }
-
 async function inspectBox(box, options) {
     const { state, force, ask, publish, random } = options;
     const impaired = heroIsImpaired(state);
@@ -770,49 +673,47 @@ async function inspectBox(box, options) {
         await publish(`You find no traps on the ${name}.`);
         return;
     }
-
     await publish(box.tknown && box.dknown
         ? `There's a trap on the ${name}.`
         : `You find a trap on the ${name}!`);
     box.tknown = true;
     box.dknown = true;
-    if (!impaired) exerciseAttribute(A_WIS, true, state);
+    if (!impaired)
+        await exerciseAttribute(A_WIS, true, state);
     if (await ask('Disarm it? [ynq] (q) ') === 'y')
         await disarmBox(box, options);
 }
-
-async function disarmBox(box, {
-    state, force, publish, random, rollOne, rollDice,
-}) {
+async function disarmBox(box, { state, force, publish, random, rollOne, rollDice, }) {
     const name = OBJECT_NAMES[box.otyp] || box.name || 'box';
     if (!box.otrapped) {
         await publish(`That ${name} was not trapped.`);
         box.tknown = false;
         return;
     }
-
     let chance = currentAttribute(A_DEX, state) + (state.u?.ulevel ?? 1);
-    if (state.urole?.key === 'rogue') chance *= 2;
+    if (state.urole?.key === 'rogue')
+        chance *= 2;
     if (!force && (heroIsImpaired(state) || heroIsFumbling(state)
         || rollOne(75 + Math.trunc(level_difficulty() / 2)) > chance)) {
-        await triggerChestTrap(box, {
+        const trap = await triggerChestTrap(box, {
             state, disarm: true, publish, random, rollDice,
         });
-    } else {
+        if (trap?.died)
+            return;
+    }
+    else {
         await publish('You disarm it!');
         box.otrapped = false;
         box.tknown = true;
         await awardExperience(8, 0, state, publish);
     }
-    exerciseAttribute(A_DEX, true, state);
+    await exerciseAttribute(A_DEX, true, state);
 }
-
-async function handleDoor(x, y, {
-    state, force, trapSkipped, ask, publish, random, rollOne,
-}) {
+async function handleDoor(x, y, { state, force, trapSkipped, ask, publish, random, rollOne, }) {
     const door = state.level?.at?.(x, y);
     if (door?.typ !== DOOR) {
-        if (!trapSkipped) await publish('You know of no traps there.');
+        if (!trapSkipped)
+            await publish('You know of no traps there.');
         return false;
     }
     if (door.doormask === D_NODOOR) {
@@ -827,7 +728,6 @@ async function handleDoor(x, y, {
         await publish('This door is broken.');
         return false;
     }
-
     const impaired = heroIsImpaired(state);
     const found = ((door.doormask & D_TRAPPED)
         && (force || (!impaired
@@ -837,63 +737,37 @@ async function handleDoor(x, y, {
         await publish('You find no traps on the door.');
         return true;
     }
-
     await publish('You find a trap on the door!');
-    exerciseAttribute(A_WIS, true, state);
-    if (await ask('Disarm it? [ynq] (q) ') !== 'y') return true;
+    await exerciseAttribute(A_WIS, true, state);
+    if (await ask('Disarm it? [ynq] (q) ') !== 'y')
+        return true;
     if (!(door.doormask & D_TRAPPED)) {
         await publish('This door was not trapped.');
         return true;
     }
-
     const level = state.u?.ulevel ?? 1;
     const chance = 15 + (state.urole?.key === 'rogue' ? level * 3 : level);
-    exerciseAttribute(A_DEX, true, state);
+    await exerciseAttribute(A_DEX, true, state);
     if (!force && (impaired || heroIsFumbling(state)
         || rollOne(75 + Math.trunc(level_difficulty() / 2)) > chance)) {
         await publish('You set it off!');
         await triggerDoorTrap(door, x, y, { state, publish, rollOne });
-    } else {
+    }
+    else {
         await publish('You disarm it!');
         door.doormask &= ~D_TRAPPED;
         await awardExperience(8, 0, state, publish);
     }
     return true;
 }
-
 async function triggerDoorTrap(door, x, y, { state, publish, rollOne }) {
-    const difficulty = level_difficulty();
-    const range = 5 + (difficulty < 5
-        ? difficulty : 2 + Math.trunc(difficulty / 2));
-    let damage = rollOne(range);
-    if (state.u?.halfPhysicalDamage || state.u?.half_physical_damage)
-        damage = Math.trunc((damage + 1) / 2);
-    await publish('KABOOM!!  The door was booby-trapped!');
-    wakeMonstersNear(state.u.ux, state.u.uy, 40, state);
-    const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';
-    state.u[hitPoints] = (state.u[hitPoints] ?? 1) - damage;
-    exerciseAttribute(A_STR, false, state);
-    exerciseAttribute(A_CON, false, state);
-    state.u.stunnedTurns = (state.u.stunnedTurns ?? 0) + damage;
-    state.u.stunned = state.u.stunnedTurns > 0;
+    await triggerBoobyTrap('door', { bodypart: true, state, publish, rollOne });
     door.doormask = D_NODOOR;
     newsym(x, y);
-
-    if (state.u[hitPoints] > 0) return;
-    if (Upolyd(state.u) && !(state.u?.unchanging || state.unchanging)) {
-        await returnHeroToHumanForm(state, { publish });
-        return;
-    }
-    await finishHeroDeath({ killer: 'explosion' });
 }
-
-async function awardExperience(experience, score, state, publish) {
-    state.u.uexp = (state.u.uexp ?? 0) + experience;
-    state.u.urexp = (state.u.urexp ?? 0) + score;
-    const level = state.u.ulevel ?? 1;
-    if (state !== game || level >= MAXULEV
-        || state.u.uexp < newExperienceThreshold(level)) return;
-    gainExperienceLevel({ incremental: true });
-    await publish(`Welcome to experience level ${state.u.ulevel}.`);
-    await adjustLevelAbilities(level, state.u.ulevel);
+async function awardExperience(experience, scoreBonus, state, publish) {
+    addExperience(experience, scoreBonus, state);
+    if (state === game)
+        await checkExperienceLevel({ publish });
 }
+//# sourceMappingURL=untrap.js.map

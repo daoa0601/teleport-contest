@@ -1,70 +1,54 @@
 // Applying a grappling hook.
 // C ref: apply.c use_grapple().
-
-import {
-    IS_AIR, IS_POOL, P_BASIC, P_SKILLED, isok,
-} from './const.js';
+import { monsterHasMapPosition } from './monster_location.js';
+import { IS_AIR, IS_POOL, P_BASIC, P_SKILLED, isok, } from './const.js';
 import { docrt, newsym, pline } from './display.js';
-import { wipeEngravingAt } from './engrave.js';
-import {
-    detachFloorObjectUnit, place_object, stack_object,
-} from './floor_object.js';
+import { wipeHeroEngraving } from './engrave.js';
+import { detachFloorObjectUnit, placeObject, stack_object, } from './floor_object.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
-import {
-    shouldShowGetposTip, showGetposTip, selectMapPosition,
-} from './getpos.js';
+import { shouldShowGetposTip, showGetposTip, selectMapPosition, } from './getpos.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { findMonsterNearPosition } from './mklev.js';
-import {
-    MONSTER_FLAGS2, MONSTER_SIZE, monsterTypeName,
-} from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_SIZE, monsterTypeName, } from './monster_data.js';
 import { OBJECT_SUBTYPE } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { ensureHeroSkills } from './skills.js';
 import { surfaceName } from './terrain_name.js';
 import { cansee, couldsee } from './vision.js';
 import { showPagedPickOneMenu } from './windows.js';
-
 const M2_STRONG = 0x04000000;
-
 function hookSkill(hook, state) {
     const skillType = Math.abs(OBJECT_SUBTYPE[hook.otyp] ?? 0);
     return ensureHeroSkills(state)?.[skillType]?.skill ?? 0;
 }
-
 function hookRange(skill) {
-    if (skill <= P_BASIC) return 4;
-    if (skill === P_SKILLED) return 5;
+    if (skill <= P_BASIC)
+        return 4;
+    if (skill === P_SKILLED)
+        return 5;
     return 8;
 }
-
 function squaredDistanceFromHero(x, y, state) {
     const dx = x - state.u.ux;
     const dy = y - state.u.uy;
     return dx * dx + dy * dy;
 }
-
 function monsterAt(x, y, state) {
-    return state.level?.monsters?.find(monster =>
+    return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
         !monster.dead && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y) || null;
 }
-
 function monsterObject(monster) {
-    return monster.name || `the ${monsterTypeName(
-        monster.mnum, !!monster.female,
-    )}`;
+    return monster.name || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
 }
-
 async function chooseTarget(describeTarget, state) {
     const firstUse = shouldShowGetposTip(state);
     if (firstUse) {
         await pline('Where do you want to hit?');
         await showGetposTip(state);
     }
-
     return selectMapPosition({
         start: { x: state.u.ux, y: state.u.uy },
         prompt: firstUse
@@ -76,7 +60,6 @@ async function chooseTarget(describeTarget, state) {
         describe: describeTarget,
     });
 }
-
 async function chooseAim(x, y, state) {
     const surface = surfaceName(x, y, state);
     const rows = [
@@ -93,21 +76,21 @@ async function chooseAim(x, y, state) {
     await docrt();
     return selection;
 }
-
 async function snagObject(x, y, holdObject, state) {
     const object = state.level?.objects?.[x]?.[y]?.[0];
-    if (!object) return false;
-
+    if (!object)
+        return false;
     await pline(`You snag an object from the ${surfaceName(x, y, state)}!`);
     const unit = detachFloorObjectUnit(object, state);
+    if (!unit)
+        throw new Error('A hooked floor stack could not provide an object.');
     if (!await holdObject(unit)) {
-        place_object(unit, x, y);
-        stack_object(unit, state);
+        await placeObject(unit, x, y);
+        await stack_object(unit, state);
     }
     newsym(x, y);
     return true;
 }
-
 async function pullTinyMonster(monster, destination, state) {
     await applyCaitiffPenalty(monster, state);
     await pline(`You pull in ${monsterObject(monster)}!`);
@@ -120,37 +103,26 @@ async function pullTinyMonster(monster, destination, state) {
     newsym(oldx, oldy);
     newsym(monster.mx, monster.my);
 }
-
 async function damageHero(state) {
     await pline('You hook yourself!');
     let damage = 10 + rn2(10);
-    if (state.u?.halfPhysicalDamage || state.u?.half_physical_damage)
+    if (state.u.halfPhysicalDamage)
         damage = Math.trunc((damage + 1) / 2);
-
     return loseHeroHp(damage, 'a grappling hook', { state, publish: pline });
 }
-
-export async function useGrapplingHook(hook, {
-    state = game,
-    ensureWielded,
-    describeTarget,
-    holdObject,
-    attackMonster = hitMonsterWithAppliedWeapon,
-    hurtle,
-}) {
+export async function useGrapplingHook(hook, { state = game, ensureWielded, describeTarget, holdObject, attackMonster = hitMonsterWithAppliedWeapon, hurtle, }) {
     if (state.u?.uswallow) {
         await pline("There's not enough room here to use that.");
         return { spentTime: false };
     }
-
     const wielded = await ensureWielded();
-    if (!wielded?.ready) return { spentTime: false };
+    if (!wielded?.ready)
+        return { spentTime: false };
     if (wielded.newlyWielded)
         return { spentTime: true, resume: true };
-
     const target = await chooseTarget(describeTarget, state);
-    if (!target) return { spentTime: false };
-
+    if (!target)
+        return { spentTime: false };
     const range = hookRange(hookSkill(hook, state));
     if (squaredDistanceFromHero(target.x, target.y, state) > range) {
         await pline('Too far!');
@@ -164,7 +136,6 @@ export async function useGrapplingHook(hook, {
         await pline("You can't reach that spot from here.");
         return { spentTime: false };
     }
-
     const skill = hookSkill(hook, state);
     let toHit = rn2(5);
     if (skill >= P_SKILLED) {
@@ -173,31 +144,26 @@ export async function useGrapplingHook(hook, {
         if (choice !== null && rn2(skill > P_SKILLED ? 20 : 2) !== 0)
             toHit = choice;
     }
-
+    // C use_grapple() evaluates rnd(2) before checking floor reach.
     if (toHit === 2 || rn2(2) === 0) {
-        wipeEngravingAt(state.u.ux, state.u.uy, rnd(2), false, state.level);
+        wipeHeroEngraving(rnd(2), state);
     }
-
     if (toHit === 1
         && await snagObject(target.x, target.y, holdObject, state)) {
         return { spentTime: true };
     }
-
     let hitSurface = toHit === 3;
     if (toHit === 2) {
         const monster = monsterAt(target.x, target.y, state);
         if (monster) {
             const tiny = (MONSTER_SIZE[monster.mnum] ?? 2) === 0;
             if (tiny && rn2(4) === 0) {
-                const destination = findMonsterNearPosition(
-                    null, state.u.ux, state.u.uy, { state },
-                );
+                const destination = findMonsterNearPosition(null, state.u.ux, state.u.uy, { state });
                 if (destination) {
                     await pullTinyMonster(monster, destination, state);
                     return { spentTime: true };
                 }
             }
-
             const large = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3;
             const strong = !!((MONSTER_FLAGS2[monster.mnum] ?? 0)
                 & M2_STRONG);
@@ -208,27 +174,26 @@ export async function useGrapplingHook(hook, {
             hitSurface = true;
         }
     }
-
     if (hitSurface) {
-        const terrain = state.level?.at?.(target.x, target.y)?.typ;
+        const location = state.level?.at(target.x, target.y);
+        if (!location)
+            throw new Error('The hook target is outside the dungeon map.');
+        const terrain = location.typ;
         const surface = surfaceName(target.x, target.y, state);
         if (IS_AIR(terrain) || IS_POOL(terrain)) {
             await pline(`The hook slices through the ${surface}.`);
-        } else {
+        }
+        else {
             await pline(`You are yanked toward the ${surface}!`);
-            await hurtle(
-                Math.sign(target.x - state.u.ux),
-                Math.sign(target.y - state.u.uy),
-            );
+            await hurtle(Math.sign(target.x - state.u.ux), Math.sign(target.y - state.u.uy));
         }
         return { spentTime: true };
     }
-
     if (toHit > 3 && skill <= P_BASIC) {
         await damageHero(state);
         return { spentTime: true };
     }
-
     await pline('Nothing happens.');
     return { spentTime: true };
 }
+//# sourceMappingURL=grappling_hook.js.map

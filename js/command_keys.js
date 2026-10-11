@@ -1,11 +1,11 @@
 // command_keys.js — Default and configured keys for named commands.
 // C ref: cmd.c cmd_from_ecname(), cmd_from_func().
-
+import { NATIVE_COMMANDS } from './command_data.js';
 const DEFAULT_COMMAND_KEYS = new Map([
     ['#', '#'],
     ['apply', 'a'], ['attributes', String.fromCharCode(24)],
     ['autopickup', '@'],
-    ['cast', 'Z'], ['close', 'c'], ['discoveries', '\\'], ['down', '>'],
+    ['cast', 'Z'], ['close', 'c'], ['known', '\\'], ['down', '>'],
     ['drop', 'd'], ['eat', 'e'], ['fire', 'f'], ['fight', 'F'],
     ['glance', ';'], ['help', '?'], ['inventory', 'i'],
     ['kick', String.fromCharCode(4)], ['look', ':'],
@@ -19,63 +19,65 @@ const DEFAULT_COMMAND_KEYS = new Map([
     ['seeamulet', '"'], ['seearmor', '['], ['seerings', '='], ['seeweapon', ')'],
     ['showgold', '$'], ['showspells', '+'], ['terrain', String.fromCharCode(127)],
     ['takeoff', 'T'], ['throw', 't'], ['travel', '_'],
-    ['twoweapon', 'X'], ['up', '<'], ['wait', '.'], ['wear', 'W'],
+    ['up', '<'], ['wait', '.'], ['wear', 'W'],
     ['wield', 'w'], ['zap', 'z'],
     ['teleport', String.fromCharCode(20)], ['wizgenesis', String.fromCharCode(7)],
     ['wizlevelport', String.fromCharCode(22)], ['wizmap', String.fromCharCode(6)],
     ['wizwish', String.fromCharCode(23)],
 ]);
-
 // C reset_commands() gives Ctrl-direction keys their rush bindings.
-// tty normalizes carriage return to Ctrl-J/rush south.
 const CONTROL_RUSH_DIRECTION = new Map([
     [2, 'b'], [8, 'h'], [10, 'j'], [11, 'k'],
     [12, 'l'], [14, 'n'], [21, 'u'], [25, 'y'],
 ]);
-
 export function controlRushDirection(key) {
-    return CONTROL_RUSH_DIRECTION.get(key === 13 ? 10 : key) || null;
+    return CONTROL_RUSH_DIRECTION.get(key) || null;
 }
-
-export function defaultCommandKey(command) {
-    return DEFAULT_COMMAND_KEYS.get(String(command)) ?? null;
-}
-
-export function defaultCommandName(key) {
-    const direction = 'hykulnjb'.indexOf(key.toLowerCase());
-    if (direction >= 0 && key !== key.toLowerCase()) {
-        return `run${defaultCommandName(key.toLowerCase()).slice(4)}`;
-    }
-    const controlDirection = controlRushDirection(key.charCodeAt(0));
-    if (controlDirection)
-        return `rush${defaultCommandName(controlDirection).slice(4)}`;
-    for (const [name, binding] of DEFAULT_COMMAND_KEYS) {
-        if (binding === key) return name;
-    }
-    return null;
-}
-
-function configuredCommandKey(command, bindings) {
-    for (const [key, boundCommand] of Object.entries(bindings || {})) {
-        if (boundCommand !== command) continue;
-        const code = Number(key);
-        if (Number.isInteger(code) && code > 0 && code < 256)
-            return String.fromCharCode(code);
+// These keys select existing JS handlers; they are not the live key map.
+export function commandExecutionKey(command) {
+    if (!command)
+        return null;
+    const direct = DEFAULT_COMMAND_KEYS.get(command);
+    if (direct)
+        return direct;
+    for (const mode of ['run', 'rush']) {
+        if (!command?.startsWith(mode))
+            continue;
+        const direction = DEFAULT_COMMAND_KEYS.get(`move${command.slice(mode.length)}`);
+        if (direction)
+            return mode === 'run' ? direction.toUpperCase()
+                : String.fromCharCode(direction.charCodeAt(0) & 31);
     }
     return null;
 }
-
-function visibleKey(key) {
-    const code = key.charCodeAt(0);
-    if (code < 32) return `^${String.fromCharCode(code + 64)}`;
-    if (code === 127) return '^?';
-    if (code >= 128) return `M-${String.fromCharCode(code & 0x7f)}`;
-    return key;
+// movecmd() recognizes a bound handler, including run/rush and vertical
+// movement. This projection keeps the existing direction consumers on one
+// coordinate alphabet without treating that alphabet as the live bindings.
+export function movementDirectionKey(key, bindings) {
+    const movement = bindings.movementForKey(key);
+    return movement ? 'hykulnjb><'.charAt(movement.direction) : '';
 }
-
-export function commandKeyDescription(command, bindings = null) {
+export function promptedDirectionKey(key, bindings) {
+    if (key === bindings.specialKey('getdir.self')
+        || key === bindings.specialKey('getdir.self2'))
+        return '.';
+    return movementDirectionKey(key, bindings);
+}
+export function visibleCommandKey(code) {
+    code &= 255;
+    if (code >= 128)
+        return `M-${visibleCommandKey(code & 127)}`;
+    if (code < 32)
+        return `^${String.fromCharCode(code + 64)}`;
+    if (code === 127)
+        return '^?';
+    return String.fromCharCode(code);
+}
+export function commandKeyDescription(command, bindings) {
     const name = String(command);
-    const key = configuredCommandKey(name, bindings)
-        ?? defaultCommandKey(name);
-    return key ? visibleKey(key) : `#${name}`;
+    if (!NATIVE_COMMANDS.some(entry => entry.name === name))
+        return '';
+    const key = bindings.keyForCommand(name);
+    return key ? visibleCommandKey(key) : `#${name}`;
 }
+//# sourceMappingURL=command_keys.js.map

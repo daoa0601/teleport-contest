@@ -1,26 +1,20 @@
 #!/usr/bin/env node
-
 // Generate each configured permonst neutral name from monsters.h.  NAM uses
 // its only spelling; NAMS selects the neutral spelling exactly as C's
 // pmnames[NEUTRAL] path does.  Compiling the projection preserves all source
 // conditionals without duplicating monster-table parsing in JavaScript.
-
 import { execFileSync } from 'node:child_process';
-import {
-    mkdtempSync, readFileSync, rmSync, writeFileSync,
-} from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
-
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const includeDir = join(root, 'nethack-c/upstream/include');
-const target = join(root, 'js/monster_data.js');
+const target = join(root, 'src/js/monster_data.ts');
 const begin = '// BEGIN GENERATED MONSTER NAME DATA';
 const end = '// END GENERATED MONSTER NAME DATA';
 const compiler = process.env.CC || 'cc';
-
-const source = String.raw`
+const source = String.raw `
 #include <stdio.h>
 #include "config.h"
 
@@ -72,22 +66,23 @@ main(void)
     return 0;
 }
 `;
-
 const temporary = mkdtempSync(join(tmpdir(), 'teleport-monster-name-'));
 try {
     const binary = join(temporary, 'project-monster-names');
     execFileSync(compiler, [
         '-x', 'c', '-', '-o', binary, `-I${includeDir}`,
     ], { input: source, encoding: 'utf8' });
-    const names = JSON.parse(execFileSync(binary, [], { encoding: 'utf8' }));
-    if (names.length !== 383
-        || names.some(name => typeof name !== 'string' || !name.length)) {
-        throw new Error(`expected 383 configured monster names, found ${names.length}`);
-    }
-
+    const parsed = JSON.parse(execFileSync(binary, [], { encoding: 'utf8' }));
+    if (!Array.isArray(parsed) || parsed.length !== 383)
+        throw new Error('expected 383 configured monster names');
+    const names = parsed.map((name, index) => {
+        if (typeof name !== 'string' || !name.length)
+            throw new Error(`invalid monster name at index ${index}`);
+        return name;
+    });
     const generated = [
         begin,
-        `export const MONSTER_NAME = ${JSON.stringify(names)};`,
+        `export const MONSTER_NAME: readonly string[] = ${JSON.stringify(names)};`,
         end,
     ].join('\n');
     const previous = readFileSync(target, 'utf8');
@@ -98,6 +93,8 @@ try {
         : previous.slice(0, start) + generated
             + previous.slice(finish + end.length);
     writeFileSync(target, updated);
-} finally {
+}
+finally {
     rmSync(temporary, { recursive: true, force: true });
 }
+//# sourceMappingURL=generate-monster-name-data.mjs.map

@@ -1,262 +1,80 @@
-// Venom created and thrown by a monster's natural spit attack.
-// C refs: mthrowu.c spitmm() and m_throw().
-
-import { BOLT_LIM } from './const.js';
-import {
-    blindHeroWithThrownObject, blindMonsterWithThrownObject,
-} from './blinding_attack.js';
-import { canProjectMonster } from './display.js';
-import { distmin } from './hacklib.js';
+// Natural venom uses the same awaited projectile flight as thrown weapons.
+// C mthrowu.c:spitmm() and spitmu().
+import { BOLT_LIM, M_ATTK_HIT, M_ATTK_MISS } from './const.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
+import { impossible } from './diagnostics.js';
+import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
+import { requireLiveGame } from './gstate.js';
+import { dist2, distmin } from './hacklib.js';
+import { formatHeardMessage } from './hero_speech.js';
 import { mksobj } from './mklev.js';
-import { findMonsterArmorClass } from './monworn.js';
-import {
-    AD_ACID, AD_BLND, AD_DRST, AT_SPIT,
-} from './monster_attack_types.js';
-import { MONSTER_ATTACKS } from './monster_data.js';
-import {
-    ACID_VENOM, BLINDING_VENOM, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
-} from './object_data.js';
+import { AD_ACID, AD_BLND, AD_DRST } from './monster_attack_types.js';
+import { monsterName, possessiveName } from './monster_name.js';
+import { monsterLinedUpWithHero, monsterLinedUpWithMonster } from './monster_ranged_alignment.js';
+import { throwMonsterProjectile } from './monster_throw.js';
+import { ACID_VENOM, BLINDING_VENOM } from './object_data.js';
+import { deleteObject } from './object_delete.js';
 import { rn2, rnd } from './rng.js';
-import { heroIsBlind } from './senses.js';
-import { monsterSentenceSubject } from './monster_sound.js';
-import { monsterHasAcidResistance } from './monster_resistance.js';
-import { finishHeroDeath } from './end.js';
-import {
-    rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
-} from './weapon_damage.js';
-
-export function monsterSpitAttack(monster) {
-    return (MONSTER_ATTACKS[monster?.mnum] || []).find(
-        ([attackType]) => attackType === AT_SPIT,
-    ) || null;
+import { heroIsDeaf } from './senses.js';
+export function resolveMonsterCombatSpit(source, target, attack, options) {
+    return spitAtTarget(source, target, attack, options);
 }
-
-export function monsterDryRattleMessage(monster, state) {
-    if (!monster || state.deaf || state.u?.deaf) return null;
-    if (!canProjectMonster(monster, monster.mx, monster.my))
-        return 'You hear a dry rattle nearby.';
-    const subject = monsterSentenceSubject(monster);
-    const middleOfSentence = subject.startsWith('The ')
-        ? `the ${subject.slice(4)}` : subject;
-    return `A dry rattle comes from ${middleOfSentence}'s throat.`;
+export function resolveMonsterSpitAtHero(source, attack, options) {
+    return spitAtTarget(source, null, attack, options);
 }
-
-function venomTypeFor(damageType) {
-    if (damageType === AD_ACID) return ACID_VENOM;
-    if (damageType === AD_BLND || damageType === AD_DRST)
-        return BLINDING_VENOM;
-    return ACID_VENOM;
-}
-
-export function beginMonsterSpitAttack(
-    monster, targetX, targetY, {
-        attack = monsterSpitAttack(monster),
-        random = rn2,
-    } = {},
-) {
-    if (!attack) return null;
-    if (monster.mcan)
-        return { attempted: true, launched: false, dryRattle: true };
-
-    const venomType = venomTypeFor(attack[1]);
-    const venom = mksobj(venomType, true, false);
-    const distance = distmin(monster.mx, monster.my, targetX, targetY);
-    const launchRange = BOLT_LIM - distance;
-    const launchRoll = random(launchRange);
-    if (launchRoll !== 0) {
-        venom.destroyed = true;
-        return {
-            attempted: true,
-            launched: false,
-            launchRoll,
-            launchRange,
-            venom,
-            targetX,
-            targetY,
-            distance,
-        };
+async function spitAtTarget(source, target, attack, { state, random = rn2, rollOne = rnd, publish = plineWithContinuation, }) {
+    requireLiveGame(state);
+    if (source.mcan) {
+        await reportDryThroat(source, state, publish);
+        return { nativeResult: M_ATTK_MISS, heroDied: false };
     }
-    return {
-        attempted: true,
-        launched: true,
-        launchRoll,
-        launchRange,
-        venom,
-        appearance: OBJECT_DESCRIPTIONS[venomType] || 'splash of venom',
-        targetX,
-        targetY,
-        distance,
-        deferredFlight: true,
-    };
-}
-
-function destroyVenom(venom, random) {
-    // Venom always breaks when its flight ends. delobj() still performs the
-    // ordinary object-resistance roll before removing it.
-    random(100);
-    venom.destroyed = true;
-}
-
-function livingMonsterAt(state, source, x, y) {
-    return state.level?.monsters?.find(monster =>
-        monster !== source && !monster.dead && (monster.mhp ?? 1) > 0
-        && monster.mx === x && monster.my === y) || null;
-}
-
-function hitMonster(monster, spit, state, random, rollOne) {
-    const hitRoll = rollOne(20);
-    const hitThreshold = 5 + findMonsterArmorClass(monster);
-    const hit = hitThreshold >= hitRoll;
-    Object.assign(spit, {
-        target: monster, hitRoll, hitThreshold, hit,
+    const aligned = target
+        ? monsterLinedUpWithMonster(source, target, state)
+        : monsterLinedUpWithHero(source, state, random);
+    if (!aligned)
+        return { nativeResult: M_ATTK_MISS, heroDied: false };
+    const targetX = target ? target.mx : source.mux ?? 0;
+    const targetY = target ? target.my : source.muy ?? 0;
+    const blinding = attack[1] === AD_BLND || attack[1] === AD_DRST;
+    if (!blinding && attack[1] !== AD_ACID)
+        await impossible('bad attack type in spitmm');
+    const venomType = blinding ? BLINDING_VENOM : ACID_VENOM;
+    const venom = await mksobj(venomType, true, false);
+    const distance = distmin(source.mx, source.my, targetX, targetY);
+    if (random(BOLT_LIM - distance)) {
+        await deleteObject(venom, state);
+        return { nativeResult: M_ATTK_MISS, heroDied: false };
+    }
+    if (canSeeMonster(source))
+        await publish(`${monsterName(source, { state, capitalized: true })} spits venom!`);
+    const flight = await throwMonsterProjectile(source, venom, {
+        state, dx: Math.sign(targetX - source.mx), dy: Math.sign(targetY - source.my),
+        range: distance, target, random, rollOne, publish,
     });
-    if (!hit) return;
-
-    if (spit.venom.otyp === ACID_VENOM) {
-        spit.damage = rollPhysicalWeaponDamage(
-            spit.venom, monster, { rollOne },
-        );
-        if (monsterHasAcidResistance(monster)) {
-            spit.damage = 0;
-            spit.resisted = true;
-        }
-        monster.mhp = Math.max(0, (monster.mhp ?? 1) - spit.damage);
-    } else {
-        const blindness = blindMonsterWithThrownObject(
-            monster, spit.venom.otyp, { state, rollOne },
-        );
-        if (blindness) {
-            spit.newlyBlinded = blindness.wasSeeing;
-            spit.blindIncrement = blindness.blindIncrement;
-        }
+    if (flight.heroDied)
+        return { nativeResult: M_ATTK_HIT, heroDied: true };
+    endVoluntaryMultiTurn(state);
+    if (source.mtame && !source.isminion) {
+        const pet = source.edog ?? source.mextra?.edog;
+        if (!pet)
+            throw new Error(`Spitting pet ${source.m_id} has no pet state.`);
+        if (pet.hungrytime > 1)
+            pet.hungrytime -= 5;
     }
-    spit.targetDied = (monster.mhp ?? 0) <= 0;
-    destroyVenom(spit.venom, random);
+    return { nativeResult: M_ATTK_HIT, heroDied: false };
 }
-
-function hitHero(source, spit, state, random, rollOne) {
-    let damage = 0;
-    let hitLevel = 8;
-    spit.heroWasBlind = heroIsBlind(state);
-    if (spit.venom.otyp === ACID_VENOM) {
-        damage = rollPhysicalWeaponDamageAgainstHero(
-            spit.venom, state, { rollOne },
-        );
-        const distance = distmin(
-            state.u.ux, state.u.uy, source.mx, source.my,
-        );
-        hitLevel = Math.max(-4, 3 - distance)
-            + 8 + (spit.venom.spe ?? 0);
+async function reportDryThroat(source, state, publish) {
+    if (heroIsDeaf(state)
+        || dist2(source.mx, source.my, state.u.ux, state.u.uy) >= BOLT_LIM * BOLT_LIM)
+        return;
+    if (canSpotMonster(source)) {
+        const owner = possessiveName(monsterName(source, { state }));
+        await publish(`A dry rattle comes from ${owner} throat.`);
     }
-
-    const hitRoll = rollOne(20);
-    const hitThreshold = (state.u?.uac ?? 10) + hitLevel;
-    const hit = hitThreshold > hitRoll;
-    Object.assign(spit, {
-        heroTarget: true,
-        hitRoll,
-        hitThreshold,
-        hit,
-        damage: hit ? damage : 0,
-    });
-    if (!hit) return;
-
-    if (spit.venom.otyp === ACID_VENOM) {
-        if (state.u.acidResistance || state.u.acid_resistance) {
-            spit.damage = 0;
-            spit.resisted = true;
-        } else {
-            state.u.uhp = Math.max(0, (state.u.uhp ?? 1) - damage);
-        }
-    } else {
-        const blindness = blindHeroWithThrownObject(
-            spit.venom.otyp, state, rollOne,
-        );
-        if (blindness) {
-            spit.blindMessage = blindness.message;
-            spit.blindIncrement = blindness.blindIncrement;
-        }
+    else {
+        const message = formatHeardMessage('a dry rattle nearby.', state);
+        if (message)
+            await publish(message);
     }
-    destroyVenom(spit.venom, random);
 }
-
-function flyMonsterVenom(
-    source, spit, state, {
-        random = rn2,
-        rollOne = rnd,
-    } = {},
-) {
-    if (!spit?.deferredFlight) return spit || null;
-    delete spit.deferredFlight;
-
-    const dx = Math.sign(spit.targetX - source.mx);
-    const dy = Math.sign(spit.targetY - source.my);
-    const flightPath = [];
-    let x = source.mx;
-    let y = source.my;
-
-    for (let step = 1; step <= spit.distance; step++) {
-        x += dx;
-        y += dy;
-        const remaining = spit.distance - step;
-        const target = livingMonsterAt(state, source, x, y);
-
-        if (target) {
-            hitMonster(target, spit, state, random, rollOne);
-            if (spit.hit || remaining === 0) {
-                if (!spit.venom.destroyed)
-                    destroyVenom(spit.venom, random);
-                spit.flightPath = flightPath;
-                return spit;
-            }
-        } else if (x === state.u?.ux && y === state.u?.uy) {
-            hitHero(source, spit, state, random, rollOne);
-            if (spit.hit) {
-                spit.flightPath = flightPath;
-                return spit;
-            }
-        }
-
-        // m_throw() probes whether an object survives impact after each
-        // non-stopping square, including the hero's square after a miss.
-        random(5);
-        if (remaining === 0) {
-            destroyVenom(spit.venom, random);
-            spit.flightPath = flightPath;
-            return spit;
-        }
-        flightPath.push({ x, y });
-    }
-    spit.flightPath = flightPath;
-    return spit;
-}
-
-export function resolveMonsterSpitFlight(
-    source, spit, state, options = {},
-) {
-    if (!spit?.deferredFlight) return spit || null;
-    const result = flyMonsterVenom(source, spit, state, options);
-    if (source.mtame && !source.isminion
-        && (source.edog?.hungrytime ?? 0) > 1) {
-        source.edog.hungrytime -= 5;
-    }
-    return result;
-}
-
-export async function finishHeroSpitHit(
-    spit, state, {
-        beforeFinalDeath,
-        finishDeath = finishHeroDeath,
-    } = {},
-) {
-    if (!spit?.heroTarget || !spit.hit
-        || spit.venom?.otyp !== ACID_VENOM
-        || (state.u?.uhp ?? 1) > 0) {
-        return false;
-    }
-    return finishDeath({
-        killer: OBJECT_NAMES[spit.venom?.otyp]
-            || spit.appearance || 'splash of venom',
-        beforeFinalDeath,
-    });
-}
+//# sourceMappingURL=monster_spit.js.map

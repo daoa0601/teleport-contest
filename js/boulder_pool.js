@@ -1,106 +1,109 @@
-// A loose boulder settling into water or lava.
-// C ref: do.c boulder_hits_pool().
-
-import {
-    Is_waterlevel, LAVAPOOL, MOAT, POOL, ROOM, WATER,
-} from './const.js';
-import {
-    canProjectMonster, newsym, plineWithContinuation,
-} from './display.js';
-import { finishHeroDeath } from './end.js';
-import { remove_object } from './floor_object.js';
+// A free boulder settling into water or lava. This does not push a boulder.
+// C do.c:boulder_hits_pool(..., FALSE).
+import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { buryFloorObjectsAt } from './buried_object.js';
-import { monsterInAir } from './mon.js';
+import { DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, Is_waterlevel, ROOM, WATER } from './const.js';
+import { impossible } from './diagnostics.js';
+import { displayLiquidName, docrt, newsym, plineWithContinuation } from './display.js';
+import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { burnAwayHeroSlime } from './hack.js';
+import { loseHeroHp } from './hero_damage.js';
+import { deleteFloorTrap } from './mklev.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
-import { wakeMonstersNear } from './monster_wake.js';
-import { stopAllObjectTimers } from './object_timers.js';
+import { monsterAtPosition } from './monster_location.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { BOULDER } from './object_data.js';
+import { deleteObject } from './object_delete.js';
+import { objectName } from './objnam.js';
 import { d, rn2 } from './rng.js';
+import { heroIsDeaf } from './senses.js';
+import { switchHeroTerrain } from './terrain_movement.js';
+import { waterbodyName } from './terrain_name.js';
+import { isLavaAt, isPoolAt, monsterInAir } from './terrain_properties.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
-
-function monsterAt(x, y, state) {
-    return state.level?.monsters?.find(monster =>
-        (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y,
-    ) || null;
-}
-
-function heroBeside(x, y, state) {
-    return Math.abs((state.u?.ux ?? 0) - x) <= 1
-        && Math.abs((state.u?.uy ?? 0) - y) <= 1;
-}
-
-function finishBoulder(boulder) {
-    stopAllObjectTimers(boulder);
-    boulder.where = 'gone';
-    boulder.ox = 0;
-    boulder.oy = 0;
-}
-
-export async function dropBoulderIntoLiquid(boulder, x, y, state) {
-    const location = state.level?.at(x, y);
-    if (!location || ![POOL, MOAT, WATER, LAVAPOOL].includes(location.typ))
+export async function dropBoulderIntoLiquid(boulder, x, y, state = game, { publish = plineWithContinuation, random = rn2, } = {}) {
+    requireLiveGame(state);
+    if (!boulder || boulder.otyp !== BOULDER) {
+        await impossible('Not a boulder?', { state });
         return false;
-    const lava = location.typ === LAVAPOOL;
-    const liquid = lava ? 'lava' : location.typ === MOAT ? 'moat' : 'pool';
-    const chance = rn2(10);
-    const fills = !Is_waterlevel(state.u?.uz)
-        && (lava ? chance === 0 : chance !== 0);
-
-    remove_object(boulder, state);
+    }
+    if (boulder.where !== 'free')
+        throw new Error('boulder liquid effects require a free object');
+    if (!isPoolAt(x, y, state) && !isLavaAt(x, y, state))
+        return false;
+    const lava = isLavaAt(x, y, state);
+    const liquid = waterbodyName(x, y, state);
+    const level = requireGameLevel(state);
+    const location = level.at(x, y);
+    if (!location)
+        throw new RangeError(`Boulder landing square ${x},${y} is outside the map`);
+    const type = location.typ;
+    const chance = random(10);
+    const fills = !Is_waterlevel(state.u.uz)
+        && (type === WATER ? chance < 5 : lava ? chance === 0 : chance !== 0);
     if (fills) {
-        location.typ = ROOM;
-        location.flags = 0;
-        location.icedpool = 0;
-        vision_note_blocker_change(x, y);
-        const monster = monsterAt(x, y, state);
-        if (monster && !monsterInAir(monster, state)) {
-            await finishEnvironmentalMonsterDeath(monster, state, {
-                visible: cansee(x, y),
-                spotted: canProjectMonster(monster, x, y),
-            });
+        const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+        if (type === DRAWBRIDGE_UP) {
+            location.drawbridgemask = ((location.drawbridgemask ?? 0) & ~DB_UNDER) | DB_FLOOR;
         }
-        state.level.traps = (state.level.traps || []).filter(
-            trap => trap.tx !== x || trap.ty !== y,
-        );
-        buryFloorObjectsAt(x, y, state);
+        else {
+            location.typ = ROOM;
+            location.flags = 0;
+            location.icedpool = 0;
+            vision_note_blocker_change(x, y);
+        }
+        const monster = monsterAtPosition(level, x, y);
+        if (monster && monster.mhp > 0 && !monsterInAir(monster, state)) {
+            await finishEnvironmentalMonsterDeath(monster, state, { publish, random });
+            if (state.program_state.gameover)
+                return true;
+        }
+        if (trap) {
+            await deleteFloorTrap(trap, state);
+            if (state.program_state.gameover)
+                return true;
+        }
+        await buryFloorObjectsAt(x, y, state, { publish });
         newsym(x, y);
     }
-
-    if (!state.u?.uinwater && !state.underwater) {
+    if (!state.u.uinwater) {
         if (cansee(x, y)) {
-            await plineWithContinuation(
-                `There is a large splash as the boulder ${
-                    fills ? 'fills' : 'falls into'
-                } the ${liquid}.`,
-            );
-        } else if (!state.u?.deaf && !state.deaf) {
-            await plineWithContinuation(
-                `You hear a${lava ? ' sizzling' : ''} splash.`,
-            );
+            await publish(`There is a large splash as the ${objectName(boulder, state)} ${fills ? 'fills' : 'falls into'} the ${liquid}.`);
         }
-        wakeMonstersNear(x, y, 40, state);
+        else if (!heroIsDeaf(state)) {
+            await publish(`You hear a${lava ? ' sizzling' : ''} splash.`);
+        }
+        await wakeMonstersNearWithMessages(x, y, 40, state, publish);
+        if (state.program_state.gameover)
+            return true;
     }
-
-    if (fills && (state.u?.uinwater || state.underwater)
-        && state.u?.ux === x && state.u?.uy === y) {
+    if (fills && state.u.uinwater && state.u.ux === x && state.u.uy === y) {
         state.u.uinwater = 0;
         state.underwater = false;
-        await plineWithContinuation('You find yourself on dry land again!');
-    } else if (lava && heroBeside(x, y, state)) {
-        await plineWithContinuation(
-            `You are hit by molten lava${
-                state.u?.fireResistance ? '.' : '!'
-            }`,
-        );
-        let damage = d(state.u?.fireResistance ? 1 : 3, 6);
-        if (state.u?.halfPhysicalDamage || state.u?.half_physical_damage)
-            damage = Math.ceil(damage / 2);
-        state.u.uhp = Math.max(0, (state.u.uhp ?? 1) - damage);
-        if (state.u.uhp <= 0)
-            await finishHeroDeath({ killer: 'molten lava' });
-    } else if (!fills && cansee(x, y) && state.flags?.verbose !== false) {
-        await plineWithContinuation('It sinks without a trace!');
+        await switchHeroTerrain(state);
+        if (state.program_state.gameover)
+            return true;
+        await docrt();
+        state.vision_full_recalc = 1;
+        await publish('You find yourself on dry land again!');
     }
-
-    finishBoulder(boulder);
+    else if (lava && Math.abs(state.u.ux - x) <= 1 && Math.abs(state.u.uy - y) <= 1) {
+        const fireResistant = state.u.fireResistance
+            || heroHasArtifactDefense('fire', state);
+        await publish(`You are hit by molten ${displayLiquidName('lava', state)}${fireResistant ? '.' : '!'}`);
+        await burnAwayHeroSlime(state, publish);
+        let damage = d(fireResistant ? 1 : 3, 6);
+        if (state.u.halfPhysicalDamage
+            || heroHasCarriedArtifactFlag('SPFX_HPHDAM', state))
+            damage = Math.trunc((damage + 1) / 2);
+        await loseHeroHp(damage, 'molten lava', { state, publish });
+        if (state.program_state.gameover)
+            return true;
+    }
+    else if (!fills && state.flags.verbose !== false && cansee(x, y)) {
+        await publish('It sinks without a trace!');
+    }
+    await deleteObject(boulder, state);
     return true;
 }
+//# sourceMappingURL=boulder_pool.js.map

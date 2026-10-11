@@ -1,25 +1,21 @@
 // jsmain.js — Per-game engine and contest adapter.
 // C ref: unixmain.c — nethack_main() initialization and game setup.
-
 import { game, resetGame } from './gstate.js';
+import { createGameState } from './game_state.js';
+import { createHeroState } from './hero_types.js';
 import { initRng, enableRngLog, getRngLog, rn2 } from './rng.js';
 import { bindInputGate, InputGate, nhgetch } from './input.js';
 import { bindLuaLifecycle, LuaLifecycle } from './lua/lifecycle.js';
 import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
 import { parseNethackrc } from './options.js';
-import {
-    findRole, findRace, findAlignment, findGender,
-    roles, races, aligns, genders,
-} from './roles.js';
+import { findRole, findRace, findAlignment, findGender, roles, races, aligns, genders, } from './roles.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
-import { restoreGame } from './save.js';
+import { askAboutPanicSave, hasErrorSave, restoreGame } from './save.js';
+import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
-
-const UNICODE_TO_DEC = new Map(
-    Object.entries(DEC_TO_UNICODE).map(([dec, unicode]) => [unicode, dec]),
-);
-
+import { initializeFruitRegistry } from './fruit.js';
+const UNICODE_TO_DEC = new Map(Object.entries(DEC_TO_UNICODE).map(([dec, unicode]) => [unicode, dec]));
 // C ref: role.c roles[].allow and races[].allow.  The JS role table keeps
 // Ranger before Rogue for historical callers, while the C selection table
 // deliberately keeps Rogue before Ranger; random character selection must
@@ -28,7 +24,6 @@ const CHARACTER_ROLE_ORDER = [
     'archeologist', 'barbarian', 'caveman', 'healer', 'knight', 'monk',
     'priest', 'rogue', 'ranger', 'samurai', 'tourist', 'valkyrie', 'wizard',
 ];
-
 const ROLE_SELECTION_RULES = {
     archeologist: { races: ['human', 'dwarf', 'gnome'], aligns: ['lawful', 'neutral'] },
     barbarian: { races: ['human', 'orc'], aligns: ['neutral', 'chaotic'] },
@@ -44,7 +39,6 @@ const ROLE_SELECTION_RULES = {
     valkyrie: { races: ['human', 'dwarf'], aligns: ['lawful', 'neutral'], genders: ['female'] },
     wizard: { races: ['human', 'elf', 'gnome', 'orc'], aligns: ['neutral', 'chaotic'] },
 };
-
 const RACE_SELECTION_RULES = {
     human: { aligns: ['lawful', 'neutral', 'chaotic'] },
     elf: { aligns: ['chaotic'] },
@@ -52,7 +46,6 @@ const RACE_SELECTION_RULES = {
     gnome: { aligns: ['neutral'] },
     orc: { aligns: ['chaotic'] },
 };
-
 const CHARACTER_ROLE_MENU = [
     ['a', 'archeologist', 'an Archeologist'],
     ['b', 'barbarian', 'a Barbarian'],
@@ -68,114 +61,125 @@ const CHARACTER_ROLE_MENU = [
     ['v', 'valkyrie', 'a Valkyrie'],
     ['w', 'wizard', 'a Wizard'],
 ];
-
 const CHARACTER_RACE_MENU = [
     ['h', 'H', 'human'], ['e', 'E', 'elf'], ['d', 'D', 'dwarf'],
     ['g', 'G', 'gnome'], ['o', 'O', 'orc'],
 ];
-
 function validCharacterChoice(role, race, gender, alignment) {
     const rules = role && ROLE_SELECTION_RULES[role.key];
-    if (!rules) return false;
-    if (race && !rules.races.includes(race.name)) return false;
-    if (gender && rules.genders && !rules.genders.includes(gender.name)) return false;
-    if (alignment && !rules.aligns.includes(alignment.name)) return false;
+    if (!rules)
+        return false;
+    if (race && !rules.races.includes(race.name))
+        return false;
+    if (gender && rules.genders && !rules.genders.includes(gender.name))
+        return false;
+    if (alignment && !rules.aligns.includes(alignment.name))
+        return false;
     if (race && alignment
-        && !RACE_SELECTION_RULES[race.name]?.aligns.includes(alignment.name)) return false;
+        && !RACE_SELECTION_RULES[race.name]?.aligns.includes(alignment.name))
+        return false;
     return true;
 }
-
 function hasCharacterCompletion(role, race, gender, alignment) {
     return races.some(candidateRace => (race ? candidateRace === race : true)
         && genders.some(candidateGender => (gender ? candidateGender === gender : true)
             && aligns.some(candidateAlignment => (alignment ? candidateAlignment === alignment : true)
-                && validCharacterChoice(
-                    role, candidateRace, candidateGender, candidateAlignment,
-                ))));
+                && validCharacterChoice(role, candidateRace, candidateGender, candidateAlignment))));
 }
-
 // Serialize semantic terminal cells back into the tty wire form recorded by
 // the C harness. The frozen grid intentionally stores rendered Unicode and
 // literal blank cells; C emits DEC shift sequences and cursor-forward skips.
 function serializeCapture(term) {
-    if (!Array.isArray(term?.grid)) return term?.serialize?.() || '';
-
-    const colorToFg = color => color === 16 || color === 0 ? 90
-        : color === 7 || color === 8
-            || color < 0 || color > 15
-            ? 39 : color < 8 ? 30 + color : 90 + color - 8;
+    if (!term)
+        return '';
+    const colorToFg = (color) => {
+        if (typeof color !== 'number')
+            return 39;
+        return color === 16 || color === 0 ? 90
+            : color === 7 || color === 8 || color < 0 || color > 15
+                ? 39 : color < 8 ? 30 + color : 90 + color - 8;
+    };
     const transition = (fg, attr, nextFg, nextAttr) => {
-        if (fg === nextFg && attr === nextAttr) return '';
+        if (fg === nextFg && attr === nextAttr)
+            return '';
         const codes = [];
         if (attr) {
             codes.push(0);
-            if (nextAttr & 2) codes.push(1);
-            if (nextAttr & 4) codes.push(4);
-            if (nextAttr & 1) codes.push(7);
-            if (nextFg !== 39) codes.push(nextFg);
-        } else {
-            if (nextAttr & 2) codes.push(1);
-            if (nextAttr & 4) codes.push(4);
-            if (nextAttr & 1) codes.push(7);
-            if (nextFg !== fg) codes.push(nextFg);
+            if (nextAttr & 2)
+                codes.push(1);
+            if (nextAttr & 4)
+                codes.push(4);
+            if (nextAttr & 1)
+                codes.push(7);
+            if (nextFg !== 39)
+                codes.push(nextFg);
+        }
+        else {
+            if (nextAttr & 2)
+                codes.push(1);
+            if (nextAttr & 4)
+                codes.push(4);
+            if (nextAttr & 1)
+                codes.push(7);
+            if (nextFg !== fg)
+                codes.push(nextFg);
         }
         return codes.length ? `\x1b[${codes.join(';')}m` : '';
     };
-
     let lastRow = 0;
-    for (let row = 0; row < term.grid.length; row++) {
-        if (term.grid[row].some(cell => cell.ch !== ' ')) lastRow = row;
+    for (const [row, cells] of term.grid.entries()) {
+        if (cells.some(cell => cell.ch !== ' '))
+            lastRow = row;
     }
-
     const lines = [];
     const decGraphics = /^DECgraphics$/i.test(game.symset || '');
-    for (let row = 0; row <= lastRow; row++) {
-        const cells = term.grid[row];
+    for (const cells of term.grid.slice(0, lastRow + 1)) {
         const firstGlyph = cells.findIndex(cell => cell.ch !== ' ');
         if (firstGlyph < 0) {
             lines.push('');
             continue;
         }
-
         let firstCol = firstGlyph;
         // Inverse-video and underlined blanks occupy terminal cells just like
         // visible glyphs, so leading styled blanks affect the row bounds.
         const leadingStyleMask = game._preserveLeadingStyledBlanks ? 7 : 5;
-        const styled = cells.findIndex((cell, col) =>
-            col < firstGlyph && cell.ch === ' '
+        const styled = cells.findIndex((cell, col) => col < firstGlyph && cell.ch === ' '
             && (cell.attr & leadingStyleMask));
-        if (styled >= 0) firstCol = styled;
+        if (styled >= 0)
+            firstCol = styled;
         let lastCol = -1;
-        for (let col = cells.length - 1; col >= 0; col--) {
-            if (cells[col].ch !== ' ') {
+        for (const [col, cell] of cells.entries()) {
+            if (cell.ch !== ' ')
                 lastCol = col;
-                break;
-            }
         }
-
         let line = firstCol > 4
             ? `\x1b[${firstCol}C` : ' '.repeat(firstCol);
         let fg = 39, attr = 0;
         let dec = false;
         for (let col = firstCol; col <= lastCol;) {
             const cell = cells[col];
-            const visibleBlank = cell.ch === ' ' && !!(cell.attr & 5);
-            if (cell.ch === ' ' && !visibleBlank) {
+            if (!cell)
+                throw new Error(`Missing terminal cell at column ${col}`);
+            if (cell.ch === ' ') {
                 const blankFg = colorToFg(cell.color);
                 const blankAttr = cell.attr | 0;
                 let end = col + 1;
-                while (end <= lastCol && cells[end].ch === ' '
-                    && !(cells[end].attr & 5)
-                    && colorToFg(cells[end].color) === blankFg
-                    && (cells[end].attr | 0) === blankAttr) end++;
+                while (end <= lastCol) {
+                    const nextCell = cells[end];
+                    if (!nextCell || nextCell.ch !== ' '
+                        || colorToFg(nextCell.color) !== blankFg
+                        || (nextCell.attr | 0) !== blankAttr)
+                        break;
+                    end++;
+                }
                 if (dec) {
                     line += '\x0f';
                     dec = false;
                 }
-                // The tty changes foreground before advancing over a blank
-                // run.  Runs of at most four are emitted literally (so their
-                // color survives screen decoding); longer runs use CSI C
-                // and therefore leave untouched/default cells behind.
+                // The recorder replaces runs of at least five spaces with
+                // CSI C even when they were highlighted. This is a lossy
+                // recording convention: skipped cells decode as unpainted,
+                // while the live display retains their native attributes.
                 line += transition(fg, attr, blankFg, blankAttr);
                 fg = blankFg;
                 attr = blankAttr;
@@ -184,7 +188,6 @@ function serializeCapture(term) {
                 col = end;
                 continue;
             }
-
             const nextFg = colorToFg(cell.color);
             const nextAttr = cell.attr | 0;
             line += transition(fg, attr, nextFg, nextAttr);
@@ -199,14 +202,21 @@ function serializeCapture(term) {
             line += decChar ?? cell.ch;
             col++;
         }
-        if (dec) line += '\x0f';
+        if (dec)
+            line += '\x0f';
         line += transition(fg, attr, 39, 0);
         lines.push(line);
     }
     return lines.join('\n');
 }
-
 class SegmentCapture {
+    engine;
+    screens;
+    cursors;
+    rngSlices;
+    animationFramesByStep;
+    pendingAnimationFrames;
+    lastRngIndex;
     constructor(engine) {
         this.engine = engine;
         this.screens = [];
@@ -216,15 +226,14 @@ class SegmentCapture {
         this.pendingAnimationFrames = [];
         this.lastRngIndex = 0;
     }
-
-    async beforeInput() {
+    async captureOutput() {
+        this.engine.observeInput?.(game);
         const fullLog = getRngLog() || [];
         this.engine.rngLog = fullLog.slice();
         this.rngSlices.push(fullLog.slice(this.lastRngIndex));
         this.lastRngIndex = fullLog.length;
-
         const display = this.engine.display;
-        const terminal = display?.terminal || display;
+        const terminal = display?.terminal;
         this.screens.push(serializeCapture(terminal));
         this.cursors.push(display
             ? [display.cursorCol ?? 0, display.cursorRow ?? 0, 1]
@@ -232,10 +241,9 @@ class SegmentCapture {
         this.animationFramesByStep.push(this.pendingAnimationFrames);
         this.pendingAnimationFrames = [];
     }
-
     async animationFrame() {
         const display = this.engine.display;
-        const terminal = display?.terminal || display;
+        const terminal = display?.terminal;
         this.pendingAnimationFrames.push({
             screen: serializeCapture(terminal),
             cursor: display
@@ -244,13 +252,28 @@ class SegmentCapture {
         });
         if (typeof requestAnimationFrame === 'function') {
             await new Promise(resolve => requestAnimationFrame(resolve));
-        } else {
+        }
+        else {
             await null;
         }
     }
 }
-
 export class Engine {
+    _seed;
+    _datetime;
+    _nethackrc;
+    storage;
+    display;
+    state;
+    capture;
+    inputGate;
+    lua;
+    observeInput;
+    coreRng;
+    displayRng;
+    rngLog;
+    runningTask;
+    lastRunResult;
     constructor(opts = {}) {
         this._seed = opts.seed || 0;
         this._datetime = opts.datetime || null;
@@ -259,10 +282,11 @@ export class Engine {
         // both the browser and headless engine.
         this.storage = opts.storage || null;
         this.display = opts.display || null;
-        this.state = {};
+        this.observeInput = opts.observeInput ?? null;
+        this.state = createGameState();
         this.capture = new SegmentCapture(this);
         this.inputGate = new InputGate({
-            beforeRead: () => this.capture.beforeInput(),
+            beforeRead: () => this.capture.captureOutput(),
             display: opts.interactive ? this.display : null,
         });
         this.lua = new LuaLifecycle();
@@ -272,16 +296,16 @@ export class Engine {
         this.runningTask = null;
         this.lastRunResult = null;
     }
-
     // Yield after painting a transient frame. The browser waits for its next
     // paint; headless callers can continue immediately.
     async animationFrame() {
         await this.capture.animationFrame();
     }
-
     async start() {
-        if (!this.display) throw new Error('Engine requires a display');
+        if (!this.display)
+            throw new Error('Engine requires a display');
         const g = resetGame(this.state);
+        g.program_state = {};
         bindInputGate(this.inputGate);
         bindLuaLifecycle(this.lua);
         g.datetime = this._datetime;
@@ -289,10 +313,8 @@ export class Engine {
         g.storage = this.storage;
         // Gameplay code paints a transient frame, then yields here.
         g.animationFrame = () => this.animationFrame();
-
         // Parse nethackrc
         const opts = parseNethackrc(this._nethackrc);
-
         // Install the terminal before character creation because an unset
         // OPTIONS=name opens the editable "Who are you?" prompt.
         g.nhDisplay = this.display;
@@ -300,7 +322,6 @@ export class Engine {
         this.coreRng = g.coreCtx;
         this.displayRng = g.displayCtx;
         enableRngLog();
-
         const configuredName = opts.name || await this._readPlayerName();
         // The `-D`/playmode:debug startup path uses the traditional fixed
         // player name "wizard", regardless of OPTIONS=name.
@@ -311,6 +332,7 @@ export class Engine {
         g.displayName = playerName.charAt(0).toUpperCase() + playerName.slice(1);
         g.flags = {
             verbose: true,
+            menu_style: 2, // MENU_FULL in native initoptions().
             // NetHack 5.0 starts this tty profile with autopickup off unless
             // the rc file or an in-game toggle explicitly enables it.
             pickup: false,
@@ -319,22 +341,22 @@ export class Engine {
             ...opts.flags,
         };
         g.iflags = { ...opts.iflags };
-        g.commandBindings = { ...opts.bindings };
+        g._monTelecontrol = !!opts.monTelecontrol;
+        g.commandBindings = opts.commandBindings;
         g.symset = opts.symset || null;
-        if (opts.preferred_pet) g.preferred_pet = opts.preferred_pet;
-        if (opts.tutorial_set) g.tutorial_set_in_config = true;
-
+        if (opts.preferred_pet)
+            g.preferred_pet = opts.preferred_pet;
+        if (opts.tutorial_set)
+            g.tutorial_set_in_config = true;
         // Initialize hero struct
-        g.u = { ux: 0, uy: 0, ux0: 0, uy0: 0 };
+        g.u = createHeroState();
         g.context = { move: 0 };
-        g.program_state = {};
         g.moves = 0;
-
-        if (restoreGame(configuredName, this.storage)) {
+        initializeFruitRegistry(opts.fruit, g);
+        if (restoreGame(playerName, this.storage)) {
             await restoregamePreamble();
-            return;
+            return true;
         }
-
         // C ref: role_init().  Contest sessions specify these options, so
         // invalid/missing values use stable NetHack-style defaults here and
         // can later be extended with the interactive role-selection prompt.
@@ -361,27 +383,38 @@ export class Engine {
             }
             g._characterPickerUsed = true;
         }
-
-        g.urole = selectedRole || roles[0];
+        const role = selectedRole || roles[0];
+        const race = selectedRace || races[0];
+        if (!role || !race)
+            throw new Error('Character tables contain no default role or race');
+        g.urole = role;
         if (g.urole?.key === 'samurai'
             && !Object.prototype.hasOwnProperty.call(opts.flags, 'pickup')) {
             g.flags.pickup = false;
         }
-        g.urace = selectedRace || races[0];
+        g.urace = race;
         const gender = selectedGender || { name: 'male', value: 0 };
         const alignment = selectedAlignment || { name: 'neutral', value: 0 };
         g.flags.female = gender.value === 1;
         g.flags.initgend = gender.value;
         g.flags.initalign = alignment.value;
         g.initAlignment = alignment;
-
+        if (hasErrorSave(g.plname, this.storage) && !await askAboutPanicSave()) {
+            this.display.clearScreen();
+            return false;
+        }
         // Run game startup
         await newgame();
+        return true;
     }
-
-    _drawCharacterMenu(lines, left, cursorRow, cursorOffset = 6,
-        preserveBackground = false) {
+    requireDisplay() {
         const display = game.nhDisplay;
+        if (!display)
+            throw new Error('Character selection requires an initialized display');
+        return display;
+    }
+    _drawCharacterMenu(lines, left, cursorRow, cursorOffset = 6, preserveBackground = false) {
+        const display = this.requireDisplay();
         if (preserveBackground) {
             for (let row = 0; row < lines.length; row++) {
                 // tty_display_nhwindow() clears WIN_MESSAGE before a corner
@@ -393,12 +426,14 @@ export class Engine {
                 for (let col = firstCol; col < display.cols; col++)
                     display.setCell(col, row, ' ', NO_COLOR, 0);
             }
-        } else {
+        }
+        else {
             display.clearScreen();
         }
         for (let row = 0; row < lines.length; row++) {
             const line = lines[row];
-            if (!line) continue;
+            if (!line)
+                continue;
             const text = typeof line === 'string' ? line : line.text;
             const attr = typeof line === 'string' ? 0 : line.attr;
             // tty character-selection headings indent with an ordinary blank
@@ -408,15 +443,15 @@ export class Engine {
             if (attr && text.startsWith(' ')) {
                 display.putstr(left, row, ' ', NO_COLOR, 0);
                 display.putstr(left + 1, row, text.slice(1), NO_COLOR, attr);
-            } else {
+            }
+            else {
                 display.putstr(left, row, text, NO_COLOR, attr);
             }
         }
         display.setCursor(left + cursorOffset, cursorRow);
     }
-
     async _selectCharacter(initial) {
-        const display = game.nhDisplay;
+        const display = this.requireDisplay();
         let selectedName = game.plname;
         let manualInitial = initial;
         const question = "Shall I pick character's race, role, gender and alignment for you? [ynaq]";
@@ -424,40 +459,31 @@ export class Engine {
         display.putstr(0, 0, question, NO_COLOR);
         display.setCursor(question.length + 1, 0);
         const auto = String.fromCharCode(await nhgetch()).toLowerCase();
-
         if (auto !== 'n') {
             let role = initial.role;
             let race = initial.race;
             let gender = initial.gender;
             let alignment = initial.alignment;
-
             if (!role) {
                 const candidates = CHARACTER_ROLE_ORDER
                     .map(key => roles.find(candidate => candidate.key === key))
-                    .filter(candidate => hasCharacterCompletion(
-                        candidate, race, gender, alignment,
-                    ));
+                    .filter((candidate) => !!candidate && hasCharacterCompletion(candidate, race, gender, alignment));
                 role = candidates[rn2(candidates.length)];
             }
             if (!race || !validCharacterChoice(role, race, gender, alignment)) {
-                const candidates = races.filter(candidate => hasCharacterCompletion(
-                    role, candidate, gender, alignment,
-                ));
+                const candidates = races.filter(candidate => hasCharacterCompletion(role, candidate, gender, alignment));
                 race = candidates[rn2(candidates.length)];
             }
             if (!gender || !validCharacterChoice(role, race, gender, alignment)) {
-                const candidates = genders.filter(candidate => hasCharacterCompletion(
-                    role, race, candidate, alignment,
-                ));
+                const candidates = genders.filter(candidate => hasCharacterCompletion(role, race, candidate, alignment));
                 gender = candidates[rn2(candidates.length)];
             }
             if (!alignment || !validCharacterChoice(role, race, gender, alignment)) {
-                const candidates = aligns.filter(candidate => validCharacterChoice(
-                    role, race, gender, candidate,
-                ));
+                const candidates = aligns.filter(candidate => validCharacterChoice(role, race, gender, candidate));
                 alignment = candidates[rn2(candidates.length)];
             }
-
+            if (!role || !race || !gender || !alignment)
+                throw new Error('Character selection has no valid completion');
             // 'a' means randomize and start immediately.  'y' uses the same
             // choices but enters the shared confirmation transition.  A
             // rejected automatic tuple returns to a completely unresolved
@@ -476,9 +502,7 @@ export class Engine {
                     confirmLines[7] = 'q - Quit';
                     confirmLines[8] = '(end)';
                     const left = 80 - Math.max(39, identity.length + 2);
-                    this._drawCharacterMenu(
-                        confirmLines, left, 8, 6, true,
-                    );
+                    this._drawCharacterMenu(confirmLines, left, 8, 6, true);
                     const code = await nhgetch();
                     const key = String.fromCharCode(code).toLowerCase();
                     if (key === 'a') {
@@ -498,45 +522,39 @@ export class Engine {
                     if (key === 'y' || code === 10 || code === 13 || code === 32)
                         return { role, race, gender, alignment, name: selectedName };
                 }
-            } else {
+            }
+            else {
                 return { role, race, gender, alignment, name: selectedName };
             }
         }
-
         const filteredRoles = new Set();
         const filteredRaces = new Set();
-        const roleByKey = key => {
+        const roleByKey = (key) => {
             const entry = CHARACTER_ROLE_MENU.find(candidate => candidate[0] === key);
             return entry && roles.find(candidate => candidate.key === entry[1]);
         };
         const allSelectableRoles = () => CHARACTER_ROLE_MENU
             .map(([, key]) => roles.find(candidate => candidate.key === key))
-            .filter(candidate => candidate && !filteredRoles.has(candidate.key));
+            .filter((candidate) => !!candidate && !filteredRoles.has(candidate.key));
         const hasCompletion = (role, race, gender, alignment) => {
             const candidates = role ? [role] : allSelectableRoles();
             const candidateRaces = race ? [race]
                 : races.filter(candidate => !filteredRaces.has(candidate.name));
-            return candidates.some(candidateRole => candidateRaces.some(candidateRace =>
-                genders.some(candidateGender => (gender ? candidateGender === gender : true)
-                    && aligns.some(candidateAlignment =>
-                        (alignment ? candidateAlignment === alignment : true)
-                        && validCharacterChoice(
-                            candidateRole, candidateRace,
-                            candidateGender, candidateAlignment,
-                        )))));
+            return candidates.some(candidateRole => candidateRaces.some(candidateRace => genders.some(candidateGender => (gender ? candidateGender === gender : true)
+                && aligns.some(candidateAlignment => (alignment ? candidateAlignment === alignment : true)
+                    && validCharacterChoice(candidateRole, candidateRace, candidateGender, candidateAlignment)))));
         };
-        const availableRaces = (role, gender, alignment) => races.filter(race =>
-            !filteredRaces.has(race.name)
+        const availableRaces = (role, gender, alignment) => races.filter(race => !filteredRaces.has(race.name)
             && hasCompletion(role, race, gender, alignment));
-        const availableGenders = (role, race, alignment) => genders.filter(gender =>
-            hasCompletion(role, race, gender, alignment));
-        const availableAlignments = (role, race, gender) => aligns.filter(alignment =>
-            hasCompletion(role, race, gender, alignment));
-        const availableRoles = (race, gender, alignment) => CHARACTER_ROLE_MENU
-            .filter(([, key]) => !filteredRoles.has(key))
-            .map(entry => [entry, roleByKey(entry[0])])
-            .filter(([, role]) => hasCompletion(role, race, gender, alignment));
-
+        const availableGenders = (role, race, alignment) => genders.filter(gender => hasCompletion(role, race, gender, alignment));
+        const availableAlignments = (role, race, gender) => aligns.filter(alignment => hasCompletion(role, race, gender, alignment));
+        const availableRoles = (race, gender, alignment) => CHARACTER_ROLE_MENU.flatMap(entry => {
+            if (filteredRoles.has(entry[1]))
+                return [];
+            const role = roleByKey(entry[0]);
+            return role && hasCompletion(role, race, gender, alignment)
+                ? [[entry, role]] : [];
+        });
         const facetSummary = (role, race, gender, alignment) => [
             role ? role.name.m : '<role>',
             race ? race.name : '<race>',
@@ -544,47 +562,42 @@ export class Engine {
             alignment ? alignment.name : '<alignment>',
         ].join(' ');
         const roleDescription = (entry, gender) => {
-            if (!gender) return entry[2];
+            if (!gender)
+                return entry[2];
             if (entry[1] === 'caveman')
                 return gender.name === 'female' ? 'a Cavewoman' : 'a Caveman';
             if (entry[1] === 'priest')
                 return gender.name === 'female' ? 'a Priestess' : 'a Priest';
             return entry[2];
         };
-        const routeLabel = (selected, facet) =>
-            `Pick ${selected ? 'another ' : ''}${facet} first`;
-
-        const forcedGenderOwner = role => {
+        const routeLabel = (selected, facet) => `Pick ${selected ? 'another ' : ''}${facet} first`;
+        const forcedGenderOwner = (role) => {
             const roleGenders = role && ROLE_SELECTION_RULES[role.key]?.genders;
-            return roleGenders?.length === 1
+            return roleGenders?.length === 1 && roleGenders[0]
                 ? { owner: 'role', name: roleGenders[0] }
                 : null;
         };
-
         const forcedGenderRow = (role, gender) => {
             const forced = forcedGenderOwner(role);
             return forced && gender?.name === forced.name
                 ? `    ${forced.owner} forces ${forced.name}`
                 : `" - ${routeLabel(gender, 'gender')}`;
         };
-
         const forcedAlignmentOwner = (role, race) => {
             const roleAlignments = role && ROLE_SELECTION_RULES[role.key]?.aligns;
-            if (roleAlignments?.length === 1)
+            if (roleAlignments?.length === 1 && roleAlignments[0])
                 return { owner: 'role', name: roleAlignments[0] };
             const raceAlignments = race && RACE_SELECTION_RULES[race.name]?.aligns;
-            if (raceAlignments?.length === 1)
+            if (raceAlignments?.length === 1 && raceAlignments[0])
                 return { owner: 'race', name: raceAlignments[0] };
             return null;
         };
-
         const forcedAlignmentRow = (role, race, alignment) => {
             const forced = forcedAlignmentOwner(role, race);
             return forced && alignment?.name === forced.name
                 ? `    ${forced.owner} forces ${forced.name}`
                 : `[ - ${routeLabel(alignment, 'alignment')}`;
         };
-
         const drawRoleMenu = (candidates, race, gender, alignment) => {
             const compact = filteredRoles.size > 0 || filteredRaces.size > 0
                 || !!race || !!gender || !!alignment;
@@ -597,7 +610,8 @@ export class Engine {
             for (const [entry] of candidates)
                 lines[row++] = `${prefix}${entry[0]} - ${roleDescription(entry, gender)}`;
             lines[row++] = `${prefix}* * Random`;
-            if (compact) row++;
+            if (compact)
+                row++;
             lines[row++] = `${prefix}/ - ${routeLabel(race, 'race')}`;
             lines[row++] = `${prefix}" - ${routeLabel(gender, 'gender')}`;
             const forced = forcedAlignmentOwner(null, race);
@@ -610,7 +624,6 @@ export class Engine {
             lines[row] = `${prefix}(end)`;
             this._drawCharacterMenu(lines, left, row, 6 + Number(!compact));
         };
-
         const editFilters = async () => {
             for (;;) {
                 const lines = Array(24).fill('');
@@ -628,21 +641,25 @@ export class Engine {
                 lines[23] = ' (1 of 2)';
                 this._drawCharacterMenu(lines, 0, 23, 9);
                 const key = String.fromCharCode(await nhgetch());
-                if (key === '\r' || key === '\n' || key === ' ') return;
+                if (key === '\r' || key === '\n' || key === ' ')
+                    return;
                 const roleEntry = CHARACTER_ROLE_MENU.find(entry => entry[0] === key);
                 if (roleEntry) {
-                    if (filteredRoles.has(roleEntry[1])) filteredRoles.delete(roleEntry[1]);
-                    else filteredRoles.add(roleEntry[1]);
+                    if (filteredRoles.has(roleEntry[1]))
+                        filteredRoles.delete(roleEntry[1]);
+                    else
+                        filteredRoles.add(roleEntry[1]);
                     continue;
                 }
                 const raceEntry = CHARACTER_RACE_MENU.find(entry => entry[1] === key);
                 if (raceEntry) {
-                    if (filteredRaces.has(raceEntry[2])) filteredRaces.delete(raceEntry[2]);
-                    else filteredRaces.add(raceEntry[2]);
+                    if (filteredRaces.has(raceEntry[2]))
+                        filteredRaces.delete(raceEntry[2]);
+                    else
+                        filteredRaces.add(raceEntry[2]);
                 }
             }
         };
-
         const drawRaceMenu = (role, candidates, gender, alignment) => {
             const lines = Array(candidates.length + 12).fill('');
             lines[0] = { text: 'Pick a race or species', attr: 1 };
@@ -662,7 +679,6 @@ export class Engine {
             lines[row] = '(end)';
             this._drawCharacterMenu(lines, 41, row);
         };
-
         const drawGenderMenu = (role, race, alignment) => {
             const lines = Array(14).fill('');
             lines[0] = { text: 'Pick a gender or sex', attr: 1 };
@@ -680,7 +696,6 @@ export class Engine {
             lines[13] = '(end)';
             this._drawCharacterMenu(lines, 41, 13);
         };
-
         const drawAlignmentMenu = (role, race, gender, candidates) => {
             const lines = Array(candidates.length + 12).fill('');
             lines[0] = { text: 'Pick an alignment or creed', attr: 1 };
@@ -699,20 +714,19 @@ export class Engine {
             lines[row] = '(end)';
             this._drawCharacterMenu(lines, 41, row);
         };
-
         selection: for (;;) {
             let role = manualInitial.role;
             let race = manualInitial.race;
             let gender = manualInitial.gender;
             let alignment = manualInitial.alignment;
             let nextFacet = 'role';
-
             // role.c:plsel_startmenu() calls rigid_role_checks() immediately
             // before constructing every facet menu.  A rigid picker still
             // consumes rn2(1) for its sole candidate; facets skipped without
             // constructing a menu do not cross this boundary.
             const applyPreMenuRigidChecks = () => {
-                if (!role) return;
+                if (!role)
+                    return;
                 if (!race) {
                     const candidates = availableRaces(role, gender, alignment);
                     if (candidates.length === 1)
@@ -729,7 +743,6 @@ export class Engine {
                         gender = candidates[rn2(candidates.length)];
                 }
             };
-
             facetSelection: for (;;) {
                 if (nextFacet === 'role') {
                     if (role) {
@@ -744,7 +757,9 @@ export class Engine {
                         if (filteredRoles.size || filteredRaces.size) {
                             filteredRoles.clear();
                             filteredRaces.clear();
-                        } else await editFilters();
+                        }
+                        else
+                            await editFilters();
                         continue;
                     }
                     if (key === '/') {
@@ -774,7 +789,6 @@ export class Engine {
                     nextFacet = 'race';
                     continue;
                 }
-
                 if (nextFacet === 'race') {
                     if (race && hasCompletion(role, race, gender, alignment)) {
                         nextFacet = role ? 'gender' : 'role';
@@ -782,7 +796,8 @@ export class Engine {
                     }
                     race = null;
                     let candidates = availableRaces(role, gender, alignment);
-                    if (!candidates.length) candidates = availableRaces(role, null, null);
+                    if (!candidates.length)
+                        candidates = availableRaces(role, null, null);
                     if (candidates.length === 1) {
                         race = candidates[0];
                         nextFacet = role ? 'gender' : 'role';
@@ -813,20 +828,22 @@ export class Engine {
                         if (filteredRoles.size || filteredRaces.size) {
                             filteredRoles.clear();
                             filteredRaces.clear();
-                        } else await editFilters();
+                        }
+                        else
+                            await editFilters();
                         continue;
                     }
-                    if (key === '*') race = candidates[rn2(candidates.length)];
+                    if (key === '*')
+                        race = candidates[rn2(candidates.length)];
                     else {
-                        const entry = CHARACTER_RACE_MENU.find(candidate =>
-                            candidate[0] === key.toLowerCase());
+                        const entry = CHARACTER_RACE_MENU.find(candidate => candidate[0] === key.toLowerCase());
                         race = candidates.find(candidate => candidate.name === entry?.[2]);
                     }
-                    if (!race) continue;
+                    if (!race)
+                        continue;
                     nextFacet = role ? 'gender' : 'role';
                     continue;
                 }
-
                 if (nextFacet === 'gender') {
                     if (gender && hasCompletion(role, race, gender, alignment)) {
                         nextFacet = role ? (race ? 'alignment' : 'race') : 'role';
@@ -834,7 +851,8 @@ export class Engine {
                     }
                     gender = null;
                     let candidates = availableGenders(role, race, alignment);
-                    if (!candidates.length) candidates = availableGenders(role, race, null);
+                    if (!candidates.length)
+                        candidates = availableGenders(role, race, null);
                     if (candidates.length === 1) {
                         gender = candidates[0];
                         nextFacet = role ? (race ? 'alignment' : 'race') : 'role';
@@ -861,25 +879,30 @@ export class Engine {
                         nextFacet = 'alignment';
                         continue;
                     }
-                    if (key === '*') gender = candidates[rn2(candidates.length)];
-                    else gender = candidates.find(candidate => candidate.name[0] === key);
-                    if (!gender) continue;
+                    if (key === '*')
+                        gender = candidates[rn2(candidates.length)];
+                    else
+                        gender = candidates.find(candidate => candidate.name[0] === key);
+                    if (!gender)
+                        continue;
                     nextFacet = role ? (race ? 'alignment' : 'race') : 'role';
                     continue;
                 }
-
                 if (alignment && hasCompletion(role, race, gender, alignment)) {
                     nextFacet = role ? (race ? (gender ? null : 'gender') : 'race') : 'role';
-                    if (!nextFacet) break facetSelection;
+                    if (!nextFacet)
+                        break facetSelection;
                     continue;
                 }
                 alignment = null;
                 let candidates = availableAlignments(role, race, gender);
-                if (!candidates.length) candidates = availableAlignments(role, race, null);
+                if (!candidates.length)
+                    candidates = availableAlignments(role, race, null);
                 if (candidates.length === 1) {
                     alignment = candidates[0];
                     nextFacet = role ? (race ? (gender ? null : 'gender') : 'race') : 'role';
-                    if (!nextFacet) break facetSelection;
+                    if (!nextFacet)
+                        break facetSelection;
                     continue;
                 }
                 applyPreMenuRigidChecks();
@@ -903,13 +926,18 @@ export class Engine {
                     nextFacet = 'gender';
                     continue;
                 }
-                if (key === '*') alignment = candidates[rn2(candidates.length)];
-                else alignment = candidates.find(candidate => candidate.name[0] === key);
-                if (!alignment) continue;
+                if (key === '*')
+                    alignment = candidates[rn2(candidates.length)];
+                else
+                    alignment = candidates.find(candidate => candidate.name[0] === key);
+                if (!alignment)
+                    continue;
                 nextFacet = role ? (race ? (gender ? null : 'gender') : 'race') : 'role';
-                if (!nextFacet) break facetSelection;
+                if (!nextFacet)
+                    break facetSelection;
             }
-
+            if (!role || !race || !gender || !alignment)
+                throw new Error('Character selection did not resolve all choices');
             let preserveConfirmationBackground = false;
             for (;;) {
                 const roleName = gender.value === 1 && role.name.f
@@ -924,9 +952,7 @@ export class Engine {
                 lines[7] = 'q - Quit';
                 lines[8] = '(end)';
                 const left = 80 - Math.max(39, identity.length + 2);
-                this._drawCharacterMenu(
-                    lines, left, 8, 6, preserveConfirmationBackground,
-                );
+                this._drawCharacterMenu(lines, left, 8, 6, preserveConfirmationBackground);
                 const code = await nhgetch();
                 const key = String.fromCharCode(code).toLowerCase();
                 if (key === 'a') {
@@ -935,64 +961,74 @@ export class Engine {
                     preserveConfirmationBackground = true;
                     continue;
                 }
-                if (key === 'n') continue selection;
+                if (key === 'n')
+                    continue selection;
                 if (key === 'y' || code === 10 || code === 13 || code === 32)
                     return { role, race, gender, alignment, name: selectedName };
             }
         }
     }
-
     async _readPlayerName(row = 12, showCopyright = true) {
-        const display = game.nhDisplay;
+        const display = this.requireDisplay();
         display.clearScreen();
         if (showCopyright) {
             display.putstr(0, 4, 'NetHack, Copyright 1985-2026', NO_COLOR);
-            display.putstr(9, 5,
-                'By Stichting Mathematisch Centrum and M. Stephenson.', NO_COLOR);
-            display.putstr(9, 6,
-                'Version 5.0.0 MacOS, built May  2 2026 12:00:00.', NO_COLOR);
+            display.putstr(9, 5, 'By Stichting Mathematisch Centrum and M. Stephenson.', NO_COLOR);
+            display.putstr(9, 6, 'Version 5.0.0 MacOS, built May  2 2026 12:00:00.', NO_COLOR);
             display.putstr(9, 7, 'See license for details.', NO_COLOR);
         }
         const prompt = 'Who are you? ';
         display.putstr(0, row, prompt, NO_COLOR);
-
         let name = '';
         for (;;) {
             display.setCursor(prompt.length + name.length, row);
             const key = await nhgetch();
-            if (key === 10 || key === 13) break;
+            if (key === 10 || key === 13)
+                break;
             if (key === 8 || key === 127) {
                 if (name) {
                     name = name.slice(0, -1);
                     display.putstr(prompt.length + name.length, row, ' ', NO_COLOR);
                 }
-            } else if (key >= 32 && key <= 126 && name.length < 31) {
+            }
+            else if (key >= 32 && key <= 126 && name.length < 31) {
                 name += String.fromCharCode(key);
-                display.putstr(prompt.length + name.length - 1, row,
-                    String.fromCharCode(key), NO_COLOR);
+                display.putstr(prompt.length + name.length - 1, row, String.fromCharCode(key), NO_COLOR);
             }
         }
         return name || 'player';
     }
-
     run() {
-        if (!this.runningTask) this.runningTask = this.runGame();
+        if (!this.runningTask)
+            this.runningTask = this.runGame();
         return this.runningTask;
     }
-
     async runGame() {
+        let started = false;
         try {
-            await this.start();
-            while (!this.state.program_state?.gameover) await moveloop_core();
-        } finally {
+            started = await this.start();
+            if (!started)
+                return;
+            while (!this.state.program_state?.gameover)
+                await moveloop_core();
+        }
+        catch (error) {
+            if (error instanceof PanicTermination)
+                this.lastRunResult = { kind: 'panicked', reason: error.message, stack: error.stack };
+            throw error;
+        }
+        finally {
+            // Native nh_terminate emits the completed terminal once after
+            // raw topten output, which has no subsequent input boundary.
+            if (this.state.program_state?.gameover)
+                await this.capture.captureOutput();
             this.rngLog = [...getRngLog()];
-            if (this.state.program_state?.gameover) {
-                discardTutorialState(this.state);
-                this.lua.destroy();
+            if (!started || this.state.program_state?.gameover || this.state.program_state?.panicking) {
+                await discardTutorialState(this.state);
+                await this.lua.destroy();
             }
         }
     }
-
     async runUntilInputNeeded() {
         const stopped = this.run().then(() => ({ kind: 'stopped' }));
         const inputNeeded = this.inputGate.waitUntilBlocked()
@@ -1000,7 +1036,6 @@ export class Engine {
         this.lastRunResult = await Promise.race([stopped, inputNeeded]);
         return this.lastRunResult;
     }
-
     getScreens() { return this.capture.screens; }
     getCursors() { return this.capture.cursors; }
     getRngLog() { return this.rngLog; }
@@ -1020,7 +1055,6 @@ export class Engine {
         return this.capture.animationFramesByStep;
     }
 }
-
 // ── Per-segment runner — the contest contract ──
 //
 // The judge calls this once per segment with five input fields:
@@ -1044,12 +1078,11 @@ export async function runSegment(input) {
     const { seed, datetime, nethackrc, storage } = input;
     const moves = input.moves || '';
     const display = new GameDisplay(null);
-
     const engine = new Engine({
-        seed, datetime, nethackrc, storage, display,
+        seed, datetime, nethackrc, storage, display, observeInput: input.observeInput ?? null,
     });
     engine.inputGate.feed(moves);
     await engine.runUntilInputNeeded();
-
     return engine;
 }
+//# sourceMappingURL=jsmain.js.map

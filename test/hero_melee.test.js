@@ -1,10 +1,7 @@
+import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
-import {
-    A_DEX, A_STR, P_LONG_SWORD, P_SHORT_SWORD, P_TWO_WEAPON_COMBAT,
-    P_UNSKILLED, ROOM,
-} from '../js/const.js';
+import { A_DEX, A_STR, P_LONG_SWORD, P_SHORT_SWORD, P_TWO_WEAPON_COMBAT, P_UNSKILLED, ROOM, } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKey, pushKeys } from '../js/input.js';
@@ -16,40 +13,34 @@ import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
-
-async function installMeleeArena(role, species = 'lichen', overrides = {}) {
+async function installMeleeArena(role, species = 'lichen', { heroHitBonus = 0, mhp = 100, mhpmax = 100, msleeping } = {}) {
     const level = freshPlayableRoom({
         left: 10, right: 11, top: 10, bottom: 10, role,
     });
+    game.u.uhitinc = heroHitBonus;
     const monster = await createMonsterAt(species, 11, 10);
-    Object.assign(monster, {
-        mhp: 100,
-        mhpmax: 100,
-        m_lev: 0,
-        mac: 10,
-        minvis: 0,
-        mundetected: 0,
-        ...overrides,
-    });
+    monster.mhp = mhp;
+    monster.mhpmax = mhpmax;
+    monster.m_lev = 0;
+    monster.minvis = 0;
+    monster.mundetected = 0;
+    if (msleeping !== undefined)
+        monster.msleeping = msleeping;
     return { level, monster };
 }
-
-function equipWeapon(name, overrides = {}) {
-    const weapon = addInventoryObject(
-        OBJECT_NAMES.indexOf(name), {
-            invlet: 'a',
-            spe: 0, enchantment: 0, worn: true, owornmask: 1,
-            ...overrides,
-        },
-    );
+async function equipWeapon(name, overrides = {}) {
+    const weapon = await addInventoryObject(OBJECT_NAMES.indexOf(name), {
+        invlet: 'a',
+        spe: 0, enchantment: 0, worn: true, owornmask: 1,
+        ...overrides,
+    });
     game.uwep = weapon;
     return weapon;
 }
-
 async function lichenMeleeOutcome(role) {
     const { level, monster: lichen } = await installMeleeArena(role);
-    equipWeapon('katana');
-
+    requireFixtureGame(game);
+    await equipWeapon('katana');
     initRng(901n);
     await rhack('l'.charCodeAt(0));
     return {
@@ -59,19 +50,17 @@ async function lichenMeleeOutcome(role) {
         message: game._pending_message,
     };
 }
-
 async function twoWeaponLichenOutcome(role) {
-    const { level, monster: lichen } = await installMeleeArena(role);
-    equipWeapon('katana');
-    const wakizashi = addInventoryObject(
-        OBJECT_NAMES.indexOf('short sword'), {
-            invlet: 'b',
-            // NetHack represents the Samurai's wakizashi as a short sword
-            // with a role-specific display name.
-            name: 'wakizashi',
-            spe: 0, enchantment: 0, worn: true, owornmask: 2,
-        },
-    );
+    const { level, monster: lichen } = await installMeleeArena(role, 'lichen', { heroHitBonus: 1 });
+    requireFixtureGame(game);
+    await equipWeapon('katana');
+    const wakizashi = await addInventoryObject(OBJECT_NAMES.indexOf('short sword'), {
+        invlet: 'b',
+        // NetHack represents the Samurai's wakizashi as a short sword
+        // with a role-specific display name.
+        name: 'wakizashi',
+        spe: 0, enchantment: 0, worn: true, owornmask: 2,
+    });
     game.u.acurr.a[A_STR] = 18;
     game.u.acurr.a[A_DEX] = 14;
     installHeroWeaponSkills({
@@ -81,7 +70,6 @@ async function twoWeaponLichenOutcome(role) {
     });
     game.uswapwep = wakizashi;
     game.u.twoweap = true;
-
     // This seed makes the primary d20 miss and the off-hand d20 hit.  The
     // assertions below describe the source outcome, not the RNG transcript.
     initRng(2n);
@@ -92,40 +80,35 @@ async function twoWeaponLichenOutcome(role) {
         message: game._pending_message,
     };
 }
-
-test('equipped lichen melee is role-independent shared combat', async () => {
+void test('equipped lichen melee is role-independent shared combat', async () => {
     const ordinary = await lichenMeleeOutcome('tourist');
     const samurai = await lichenMeleeOutcome('samurai');
-
     assert.deepEqual(samurai, ordinary);
     assert.equal(samurai.retained, true);
     assert.equal(samurai.hp, 100);
     assert.equal(samurai.experience, 0);
     assert.equal(samurai.message, 'You miss the lichen.');
 });
-
-test('two-weapon combat attempts an off-hand strike for every role',
-    async () => {
-        const ordinary = await twoWeaponLichenOutcome('tourist');
-        const samurai = await twoWeaponLichenOutcome('samurai');
-
-        assert.deepEqual(samurai, ordinary);
-        assert.equal(samurai.retained, true);
-        assert.ok(samurai.hp < 100);
-        assert.match(samurai.message, /You miss the lichen\./);
-        assert.match(samurai.message, /You hit the lichen\./);
-    });
-
-test('a powerful unarmed strike can shove a small monster', async () => {
+void test('two-weapon combat attempts an off-hand strike for every role', async () => {
+    const ordinary = await twoWeaponLichenOutcome('tourist');
+    const samurai = await twoWeaponLichenOutcome('samurai');
+    assert.deepEqual(samurai, ordinary);
+    assert.equal(samurai.retained, true);
+    assert.ok(samurai.hp < 100);
+    assert.match(samurai.message, /You miss the lichen\./);
+    assert.match(samurai.message, /You hit the lichen\./);
+});
+void test('a powerful unarmed strike can shove a small monster', async () => {
     const { monster: lichen } = await installMeleeArena('samurai');
-    Object.assign(game.level.at(12, 10), {
-        typ: ROOM, lit: true, waslit: true, seenv: 255,
-    });
+    requireFixtureGame(game);
+    const destination = game.level.requireAt(12, 10);
+    destination.typ = ROOM;
+    destination.lit = true;
+    destination.waslit = true;
+    destination.seenv = 255;
     game.u.acurr.a[A_STR] = 18;
-
     initRng(105n);
     await rhack('l'.charCodeAt(0));
-
     assert.equal(lichen.mx, 12);
     assert.equal(lichen.my, 10);
     assert.equal(lichen.mstun, 1);
@@ -133,302 +116,223 @@ test('a powerful unarmed strike can shove a small monster', async () => {
     assert.ok(lichen.mhp < 100);
     assert.match(game._pending_message, /powerful strike/);
 });
-
-test('a heavy melee hit can knock a tiny monster backward', async () => {
+void test('a heavy melee hit can knock a tiny monster backward', async () => {
     const { monster: newt } = await installMeleeArena('caveman', 'newt');
+    requireFixtureGame(game);
     for (const x of [12, 13]) {
-        Object.assign(game.level.at(x, 10), {
-            typ: ROOM, lit: true, waslit: true, seenv: 255,
-        });
+        const destination = game.level.requireAt(x, 10);
+        destination.typ = ROOM;
+        destination.lit = true;
+        destination.waslit = true;
+        destination.seenv = 255;
     }
-    equipWeapon('mace');
+    await equipWeapon('mace');
     game.u.ulevel = 20;
     game.u.acurr.a[A_STR] = 18;
     game.u.acurr.a[A_DEX] = 18;
-
     initRng(2n);
     pushKey(' ');
     await rhack('l'.charCodeAt(0));
-
     assert.ok(newt.mx > 11);
     assert.equal(newt.my, 10);
     assert.ok(newt.mhp < 100);
 });
-
-test('striking an acid blob can splash and hurt the hero', async () => {
+void test('striking an acid blob can splash and hurt the hero', async () => {
     await installMeleeArena('caveman', 'acid blob');
+    requireFixtureGame(game);
     game.u.ulevel = 20;
     game.u.uhp = game.u.uhpmax = 40;
     game.u.acurr.a[A_DEX] = 18;
-
     initRng(1n);
     pushKey(' ');
     await rhack('l'.charCodeAt(0));
-
     assert.ok(game.u.uhp < 40);
 });
-
-test('an ordinary dagger passes through a shade without breaking conduct',
-    async () => {
-        const { monster: shade } = await installMeleeArena(
-            'tourist', 'shade', { mac: 100 },
-        );
-        equipWeapon('dagger');
-
-        initRng(902n);
-        await rhack('l'.charCodeAt(0));
-
-        assert.equal(shade.mhp, 100);
-        assert.equal(game.u.uconduct.weaphit ?? 0, 0);
-        assert.match(
-            game._pending_message,
-            /Your dagger passes harmlessly through the shade\./,
-        );
-    });
-
-test('wielded garlic hurts and frightens an undead monster', async () => {
-    const { monster: shade } = await installMeleeArena(
-        'tourist', 'shade', { mac: 100 },
-    );
-    equipWeapon('clove of garlic');
-
+void test('an ordinary dagger passes through a shade without breaking conduct', async () => {
+    const { monster: shade } = await installMeleeArena('tourist', 'shade', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    await equipWeapon('dagger');
+    initRng(902n);
+    await rhack('l'.charCodeAt(0));
+    assert.equal(shade.mhp, 100);
+    assert.equal(game.u.uconduct.weaphit ?? 0, 0);
+    assert.match(game._pending_message, /Your dagger passes harmlessly through the shade\./);
+});
+void test('wielded garlic hurts and frightens an undead monster', async () => {
+    const { monster: shade } = await installMeleeArena('tourist', 'shade', { heroHitBonus: 100 });
+    await equipWeapon('clove of garlic');
     initRng(903n);
     await rhack('l'.charCodeAt(0));
-
     assert.equal(shade.mhp, 99);
     assert.equal(shade.mflee, 1);
-    assert.ok(shade.mfleetim >= 2 && shade.mfleetim <= 8);
+    assert.ok((shade.mfleetim ?? 0) >= 2 && (shade.mfleetim ?? 0) <= 8);
 });
-
-test('a wielded cream pie blinds without damaging and consumes one pie',
-    async () => {
-        const { monster: jackal } = await installMeleeArena('tourist', 'jackal');
-        const pies = equipWeapon('cream pie', { quan: 2, quantity: 2 });
-
-        initRng(904n);
-        await rhack('l'.charCodeAt(0));
-
-        assert.equal(jackal.mhp, 100);
-        assert.equal(jackal.mcansee, 0);
-        assert.equal(pies.quan, 1);
-        assert.strictEqual(game.uwep, pies);
-    });
-
-test('wielded acid venom burns a monster and consumes one splash', async () => {
-    const { monster: jackal } = await installMeleeArena(
-        'tourist', 'jackal', { mac: 100 },
-    );
-    const venom = equipWeapon(
-        'splash of acid venom', { quan: 2, quantity: 2 },
-    );
-
+void test('a wielded cream pie blinds without damaging and consumes one pie', async () => {
+    const { monster: jackal } = await installMeleeArena('tourist', 'jackal', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    const pies = await equipWeapon('cream pie', { quan: 2, quantity: 2 });
+    initRng(904n);
+    await rhack('l'.charCodeAt(0));
+    assert.equal(jackal.mhp, 100);
+    assert.equal(jackal.mcansee, 0);
+    assert.equal(pies.quan, 1);
+    assert.strictEqual(game.uwep, pies);
+});
+void test('wielded acid venom burns a monster and consumes one splash', async () => {
+    const { monster: jackal } = await installMeleeArena('tourist', 'jackal', { heroHitBonus: 100 });
+    const venom = await equipWeapon('splash of acid venom', { quan: 2, quantity: 2 });
     initRng(905n);
     await rhack('l'.charCodeAt(0));
-
     assert.ok(jackal.mhp < 100);
     assert.equal(venom.quan, 1);
 });
-
-test('bashing with a mirror can break it and reduce luck', async () => {
-    const { monster: jackal } = await installMeleeArena(
-        'tourist', 'jackal', { mac: 100 },
-    );
-    const mirror = equipWeapon('mirror');
+void test('bashing with a mirror can break it and reduce luck', async () => {
+    const { monster: jackal } = await installMeleeArena('tourist', 'jackal', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    const mirror = await equipWeapon('mirror');
     game.u.acurr.a[A_STR] = 18;
     game.u.udaminc = 5;
-
     initRng(906n);
     await rhack('l'.charCodeAt(0));
-
     assert.equal(jackal.mhp, 99);
     assert.equal(game.u.uluck, -2);
     assert.equal(mirror.where, 'gone');
     assert.equal(game.uwep, null);
 });
-
-test('bashing with a camera can release a demon without hurting the monster',
-    async () => {
-        const { level, monster: jackal } = await installMeleeArena(
-            'tourist', 'jackal', { mac: 100, msleeping: 1 },
-        );
-        const camera = equipWeapon('expensive camera');
-        game.u.acurr.a[A_STR] = 18;
-        game.u.udaminc = 5;
-
-        initRng(2n);
-        pushKeys(' '.repeat(4));
-        await rhack('l'.charCodeAt(0));
-
-        assert.equal(camera.where, 'gone');
-        assert.equal(jackal.mhp, 100);
-        assert.equal(jackal.msleeping, 1);
-        assert.ok(level.monsters.some(monster =>
-            monster !== jackal && monster.mpeaceful === 1));
-    });
-
-test('a camera passes through a shade without being destroyed', async () => {
-    const { monster: shade } = await installMeleeArena(
-        'tourist', 'shade', { mac: 100 },
-    );
-    const camera = equipWeapon('expensive camera');
-
+void test('bashing with a camera can release a demon without hurting the monster', async () => {
+    const { level, monster: jackal } = await installMeleeArena('tourist', 'jackal', { heroHitBonus: 100, msleeping: 1 });
+    requireFixtureGame(game);
+    const camera = await equipWeapon('expensive camera');
+    game.u.acurr.a[A_STR] = 18;
+    game.u.udaminc = 5;
+    initRng(2n);
+    pushKeys(' '.repeat(4));
+    await rhack('l'.charCodeAt(0));
+    assert.equal(camera.where, 'gone');
+    assert.equal(jackal.mhp, 100);
+    assert.equal(jackal.msleeping, 1);
+    assert.ok(level.monsters.some(monster => monster !== jackal && monster.mpeaceful === 1));
+});
+void test('a camera passes through a shade without being destroyed', async () => {
+    const { monster: shade } = await installMeleeArena('tourist', 'shade', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    const camera = await equipWeapon('expensive camera');
     initRng(915n);
     await rhack('l'.charCodeAt(0));
-
     assert.equal(shade.mhp, 100);
     assert.equal(camera.where, 'inventory');
     assert.strictEqual(game.uwep, camera);
 });
-
-test('bashing with one healing potion leaves the rest wielded', async () => {
-    const { monster: jackal } = await installMeleeArena(
-        'tourist', 'jackal', {
-            mac: 100,
-            hitPoints: 10,
-            maxHitPoints: 100,
-        },
-    );
-    const potions = equipWeapon('healing', { quan: 2, quantity: 2 });
+void test('bashing with one healing potion leaves the rest wielded', async () => {
+    const { monster: jackal } = await installMeleeArena('tourist', 'jackal', {
+        heroHitBonus: 100,
+        mhp: 10,
+        mhpmax: 100,
+    });
+    requireFixtureGame(game);
+    const potions = await equipWeapon('healing', { quan: 2, quantity: 2 });
     game.u.acurr.a[A_STR] = 10;
-
     initRng(920n);
     pushKeys(' '.repeat(8));
     await rhack('l'.charCodeAt(0));
-
     assert.equal(jackal.mhp, 99);
     assert.equal(potions.quan, 1);
     assert.equal(potions.where, 'inventory');
     assert.deepEqual(game.inventory, [potions]);
     assert.strictEqual(game.uwep, potions);
 });
-
-test('soft food and paper do not hurt a monster', async () => {
+void test('soft food and paper do not hurt a monster', async () => {
     for (const objectName of ['carrot', 'blank paper']) {
-        const { monster: jackal } = await installMeleeArena(
-            'tourist', 'jackal', { mac: 100 },
-        );
-        equipWeapon(objectName);
+        const { monster: jackal } = await installMeleeArena('tourist', 'jackal', { heroHitBonus: 100 });
+        requireFixtureGame(game);
+        await equipWeapon(objectName);
         game.u.acurr.a[A_STR] = 18;
         game.u.udaminc = 5;
-
         initRng(907n);
         await rhack('l'.charCodeAt(0));
-
         assert.equal(jackal.mhp, 100, objectName);
     }
 });
-
-test('a heavy non-weapon uses its weight for melee damage', async () => {
-    const { monster: jackal } = await installMeleeArena(
-        'tourist', 'jackal', { mac: 100 },
-    );
-    equipWeapon('chest');
+void test('a heavy non-weapon uses its weight for melee damage', async () => {
+    const { monster: jackal } = await installMeleeArena('tourist', 'jackal', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    await equipWeapon('chest');
     game.u.acurr.a[A_STR] = 18;
     game.u.udaminc = -2;
-
     initRng(3n);
     await rhack('l'.charCodeAt(0));
-
     assert.equal(jackal.mhp, 94);
 });
-
-test('a wet towel can dry after lashing a monster', async () => {
-    const { monster: jackal } = await installMeleeArena(
-        'tourist', 'jackal', { mac: 100 },
-    );
-    const towel = equipWeapon('towel', { spe: 3 });
+void test('a wet towel can dry after lashing a monster', async () => {
+    const { monster: jackal } = await installMeleeArena('tourist', 'jackal', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    const towel = await equipWeapon('towel', { spe: 3 });
     game.u.acurr.a[A_STR] = 10;
-
     initRng(1n);
     pushKeys(' '.repeat(4));
     await rhack('l'.charCodeAt(0));
-
     assert.ok(jackal.mhp < 100);
     assert.equal(towel.spe, 2);
 });
-
-test('a silver shield sears a shade', async () => {
-    const { monster: shade } = await installMeleeArena(
-        'tourist', 'shade', { mac: 100 },
-    );
-    equipWeapon('shield of reflection');
+void test('a silver shield sears a shade', async () => {
+    const { monster: shade } = await installMeleeArena('tourist', 'shade', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    await equipWeapon('shield of reflection');
     game.u.acurr.a[A_STR] = 10;
-
     initRng(918n);
     pushKeys(' '.repeat(4));
     await rhack('l'.charCodeAt(0));
-
     assert.ok(shade.mhp < 99);
     assert.match(game._pending_message, /silver shield.*sears the shade/i);
 });
-
-test('a blessed object hurts an undead monster more than its weight alone',
-    async () => {
-        const { monster: zombie } = await installMeleeArena(
-            'tourist', 'human zombie', { mac: 100 },
-        );
-        equipWeapon('meat stick', { blessed: true });
-        game.u.acurr.a[A_STR] = 10;
-
-        initRng(919n);
-        await rhack('l'.charCodeAt(0));
-
-        assert.ok(zombie.mhp <= 98);
-    });
-
-test('corpse melee damage comes from the corpse species size', async () => {
-    const { monster: jackal } = await installMeleeArena(
-        'tourist', 'jackal', { mac: 100 },
-    );
-    equipWeapon('corpse', {
+void test('a blessed object hurts an undead monster more than its weight alone', async () => {
+    const { monster: zombie } = await installMeleeArena('tourist', 'human zombie', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    await equipWeapon('meat stick', { blessed: true });
+    game.u.acurr.a[A_STR] = 10;
+    initRng(919n);
+    await rhack('l'.charCodeAt(0));
+    assert.ok(zombie.mhp <= 98);
+});
+void test('corpse melee damage comes from the corpse species size', async () => {
+    const { monster: jackal } = await installMeleeArena('tourist', 'jackal', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    await equipWeapon('corpse', {
         corpsenm: MONSTER_NAME.indexOf('dog'),
     });
     game.u.acurr.a[A_STR] = 10;
-
     initRng(908n);
     await rhack('l'.charCodeAt(0));
-
     assert.equal(jackal.mhp, 97);
 });
-
-test('hitting with a cockatrice corpse turns a monster to stone', async () => {
-    const { level, monster: jackal } = await installMeleeArena(
-        'tourist', 'jackal', { mac: 100 },
-    );
-    const corpse = equipWeapon('corpse', {
+void test('hitting with a cockatrice corpse turns a monster to stone', async () => {
+    const { level, monster: jackal } = await installMeleeArena('tourist', 'jackal', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    const corpse = await equipWeapon('corpse', {
         corpsenm: MONSTER_NAME.indexOf('cockatrice'),
     });
-
     initRng(909n);
     pushKeys(' '.repeat(8));
     await rhack('l'.charCodeAt(0));
-
     assert.equal(level.monsters.includes(jackal), false);
-    assert.ok(floorObjectsAt(level, 11, 10).some(object =>
-        object.otyp === STATUE && object.corpsenm === jackal.mnum));
+    assert.ok(floorObjectsAt(level, 11, 10).some(object => object.otyp === STATUE && object.corpsenm === jackal.mnum));
     assert.strictEqual(game.uwep, corpse);
 });
-
-test('a petrifying corpse still hurts a stone-resistant monster', async () => {
-    const { monster: stoneGolem } = await installMeleeArena(
-        'tourist', 'stone golem', { mac: 100 },
-    );
-    equipWeapon('corpse', {
+void test('a petrifying corpse still hurts a stone-resistant monster', async () => {
+    const { monster: stoneGolem } = await installMeleeArena('tourist', 'stone golem', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    await equipWeapon('corpse', {
         corpsenm: MONSTER_NAME.indexOf('cockatrice'),
     });
     game.u.acurr.a[A_STR] = 10;
-
     initRng(910n);
     await rhack('l'.charCodeAt(0));
-
     assert.equal(stoneGolem.mhp, 99);
 });
-
-test('bashing with eggs splats the whole wielded stack', async () => {
-    const { monster: jackal } = await installMeleeArena(
-        'tourist', 'jackal', { mac: 100 },
-    );
-    const eggs = equipWeapon('egg', {
+void test('bashing with eggs splats the whole wielded stack', async () => {
+    const { monster: jackal } = await installMeleeArena('tourist', 'jackal', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    const eggs = await equipWeapon('egg', {
         corpsenm: -1,
         age: game.moves,
         quan: 3,
@@ -436,50 +340,41 @@ test('bashing with eggs splats the whole wielded stack', async () => {
     });
     game.u.acurr.a[A_STR] = 18;
     game.u.udaminc = 5;
-
     initRng(911n);
     pushKeys(' '.repeat(4));
     await rhack('l'.charCodeAt(0));
-
     assert.equal(jackal.mhp, 99);
     assert.equal(eggs.where, 'gone');
     assert.equal(game.uwep, null);
 });
-
-test('a fresh wielded egg becomes a rock against a cockatrice', async () => {
-    const { monster: cockatrice } = await installMeleeArena(
-        'tourist', 'cockatrice', { mac: 100 },
-    );
-    const egg = equipWeapon('egg', {
+void test('a fresh wielded egg becomes a rock against a cockatrice', async () => {
+    const { monster: cockatrice } = await installMeleeArena('tourist', 'cockatrice', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    const egg = await equipWeapon('egg', {
         corpsenm: -1,
         age: game.moves,
     });
     game.u.acurr.a[A_STR] = 10;
-
     initRng(912n);
     pushKeys(' '.repeat(4));
     await rhack('l'.charCodeAt(0));
-
     assert.equal(cockatrice.mhp, 99);
     assert.equal(egg.otyp, ROCK);
     assert.strictEqual(game.uwep, egg);
 });
-
-test('bashing with a pyrolisk egg explodes beside the hero', async () => {
-    const { monster: jackal } = await installMeleeArena(
-        'tourist', 'jackal', { mac: 100 },
-    );
-    const egg = equipWeapon('egg', {
+void test('bashing with a pyrolisk egg explodes beside the hero', async () => {
+    const { monster: jackal } = await installMeleeArena('tourist', 'jackal', { heroHitBonus: 100 });
+    requireFixtureGame(game);
+    const egg = await equipWeapon('egg', {
         corpsenm: MONSTER_NAME.indexOf('pyrolisk'),
         age: game.moves,
     });
     game.u.uhp = game.u.uhpmax = 100;
-
     initRng(913n);
     pushKeys(' '.repeat(20));
     await rhack('l'.charCodeAt(0));
-
     assert.ok(jackal.mhp < 100);
     assert.ok(game.u.uhp < 100);
     assert.equal(egg.where, 'gone');
 });
+//# sourceMappingURL=hero_melee.test.js.map

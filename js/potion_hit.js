@@ -1,84 +1,46 @@
 // potion_hit.js — Shared potion impact, direct effect, and vapor ownership.
 // C refs: potion.c bottlename(), potionhit(), potionbreathe().
-
+import { requirePlayingGame } from './gstate.js';
+import { heroIsHallucinating } from './senses.js';
+import { heroIsUnaware } from './hero_sleep.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
-import {
-    A_CON, A_DEX, A_WIS, M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd,
-} from './const.js';
-import {
-    canSeeMonster, canSpotMonster, map_invisible, newsym,
-    plineWithContinuation, shieldeff,
-} from './display.js';
+import { A_CON, A_DEX, A_WIS, M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd, } from './const.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation, shieldeff, } from './display.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { splitMonster as splitMonsterActor } from './monster_clone.js';
 import { tryCallObjectType } from './object_call.js';
-import {
-    recordObjectEncounter, recordObjectKnowledge,
-} from './object_knowledge.js';
-import {
-    OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_ACID, POT_BLINDNESS, POT_BOOZE,
-    POT_CONFUSION,
-    POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
-    POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY,
-    POT_HALLUCINATION, POT_LEVITATION, POT_MONSTER_DETECTION,
-    POT_OBJECT_DETECTION, POT_POLYMORPH,
-    POT_OIL, POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING,
-    POT_SPEED,
-    POT_WATER, TOWEL,
-} from './object_data.js';
-import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
-    MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND,
-    monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster,
-    monsterTypeName,
-} from './monster_data.js';
-import { polymorphMonsterFromPotion } from './monster_polymorph_attack.js';
-import {
-    AD_DISE, AD_PEST,
-} from './monster_attack_types.js';
-import {
-    monsterHasAcidResistance, monsterHasPoisonResistance,
-} from './monster_resistance.js';
-import {
-    adjustMonsterSpeed, monsterSpeedMessage,
-} from './monster_speed.js';
-import {
-    setMonsterPermanentInvisibility,
-} from './monster_invisibility.js';
+import { recordObjectEncounter, recordObjectKnowledge, } from './object_knowledge.js';
+import { OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_HALLUCINATION, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_POLYMORPH, POT_OIL, POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER, TOWEL, } from './object_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, } from './monster_data.js';
+import { polymorphMonsterFromMagic } from './monster_polymorph_attack.js';
+import { AD_DISE, AD_PEST, } from './monster_attack_types.js';
+import { monsterHasAcidResistance, monsterHasPoisonResistance, } from './monster_resistance.js';
+import { adjustMonsterSpeed, monsterSpeedMessage, } from './monster_speed.js';
+import { setMonsterPermanentInvisibility, } from './monster_invisibility.js';
 import { monstersObserveHeroResistance } from './monster_perception.js';
-import {
-    blessObjectState, curseObjectState, unblessObjectState,
-    uncurseObjectState,
-} from './object_state.js';
+import { blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, } from './object_state.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { d, rnd, rn2, rnl } from './rng.js';
-import {
-    heroIsBlind, syncBlindness, syncDeafness,
-} from './senses.js';
-import {
-    chargeUnpaidObjectAsDebt, objectTypeKnown,
-} from './shk.js';
+import { heroIsBlind, syncBlindness, syncDeafness, } from './senses.js';
+import { chargeUnpaidObjectAsDebt, objectTypeKnown, } from './shk.js';
 import { monsterSaddle } from './steed.js';
+import { monsterName } from './monster_name.js';
+import { deleteObject } from './object_delete.js';
 import { cansee, vision_recalc } from './vision.js';
-import {
-    applyHeroWaterVaporChange, transformWereMonster,
-} from './were.js';
-import {
-    heroFormSticks, heroHasProtectionFromShapeChangers,
-} from './polyself.js';
-
+import { applyHeroWaterVaporChange, transformWereMonster, } from './were.js';
+import { heroHasProtectionFromShapeChangers, } from './polyself.js';
+import { heroFormSticks } from './hero_species.js';
 const PM_PESTILENCE = 312;
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
 const M1_BREATHLESS = 0x00000400;
 const M1_NOEYES = 0x00001000;
 const M1_NOHEAD = 0x00008000;
-const M2_PNAME = 0x00080000;
 const M2_WERE = 0x00000004;
 const MR_SLEEP = 0x04;
-
 export const INERT_MONSTER_POTION_TYPES = new Set([
     POT_GAIN_LEVEL,
     POT_GAIN_ENERGY,
@@ -88,7 +50,6 @@ export const INERT_MONSTER_POTION_TYPES = new Set([
     POT_MONSTER_DETECTION,
     POT_OBJECT_DETECTION,
 ]);
-
 export const HEALING_MONSTER_POTION_TYPES = new Set([
     POT_GAIN_ABILITY,
     POT_RESTORE_ABILITY,
@@ -96,7 +57,6 @@ export const HEALING_MONSTER_POTION_TYPES = new Set([
     POT_EXTRA_HEALING,
     POT_FULL_HEALING,
 ]);
-
 export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
     ...INERT_MONSTER_POTION_TYPES,
     ...HEALING_MONSTER_POTION_TYPES,
@@ -113,7 +73,6 @@ export const SUPPORTED_MONSTER_POTION_TYPES = new Set([
     POT_OIL,
     POT_POLYMORPH,
 ]);
-
 const ABILITY_POTION_TYPES = new Set([
     POT_GAIN_ABILITY, POT_RESTORE_ABILITY,
 ]);
@@ -122,186 +81,165 @@ const HEALING_POTION_TYPES = new Set([
 ]);
 const CONFUSION_POTION_TYPES = new Set([POT_CONFUSION, POT_BOOZE]);
 const HELPLESS_POTION_TYPES = new Set([POT_PARALYSIS, POT_SLEEPING]);
-
 const ORDINARY_BOTTLE_NAMES = [
     'bottle', 'phial', 'flagon', 'carafe', 'flask', 'jar', 'vial',
 ];
-
 const HALLUCINATED_BOTTLE_NAMES = [
     'jug', 'pitcher', 'barrel', 'tin', 'bag', 'box', 'glass', 'beaker',
     'tumbler', 'vase', 'flowerpot', 'pan', 'thingy', 'mug', 'teacup',
     'teapot', 'keg', 'bucket', 'thermos', 'amphora', 'wineskin', 'parcel',
     'bowl', 'ampoule',
 ];
-
-function heroHallucinates(state) {
-    return !!(state?.u?.hallucinating
-        || (state?.u?.hallucinationTurns ?? 0) > 0);
-}
-
 // potion.c:bottlename() is shared by hero- and monster-thrown impacts.  The
 // selector callback lets source-turn planners retain their own RNG ledger.
-export function randomBottleName(
-    state = game, select = range => rn2(range),
-) {
-    const names = heroHallucinates(state)
+export function randomBottleName(state = game, select = rn2) {
+    const names = heroIsHallucinating(state)
         ? HALLUCINATED_BOTTLE_NAMES : ORDINARY_BOTTLE_NAMES;
-    return names[select(names.length)];
+    const name = names[select(names.length)];
+    if (name === undefined)
+        throw new Error('Bottle name selection was outside its range.');
+    return name;
 }
-
 export function potionImpactObjectName(potion, state = game) {
     const trueName = OBJECT_NAMES[potion?.otyp] || potion?.name || 'potion';
     const appearance = state?.objectDescriptions?.[potion?.otyp]
         ?? OBJECT_DESCRIPTIONS[potion?.otyp];
     let noun;
-    if (objectTypeKnown(potion, state)) noun = `potion of ${trueName}`;
-    else if (potion?.dknown === false) noun = 'potion';
+    if (objectTypeKnown(potion, state))
+        noun = `potion of ${trueName}`;
+    else if (potion?.dknown === false)
+        noun = 'potion';
     else {
         noun = `${appearance || 'unknown'} potion`;
         const callName = state._objectCallNames?.[potion?.otyp];
-        if (callName) noun += ` called ${callName}`;
+        if (callName)
+            noun += ` called ${callName}`;
     }
     const individualName = potion?.oextra?.oname || potion?.oname;
     return individualName ? `${noun} named ${individualName}` : noun;
 }
-
-function monsterImpactName(monster) {
-    if (monster?.name) return monster.name;
-    const typeName = monsterTypeName(monster?.mnum, !!monster?.female);
-    return ((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_PNAME)
-        ? typeName : `the ${typeName}`;
-}
-
 function sentenceSubject(monster) {
-    const subject = monsterImpactName(monster);
+    const subject = monsterName(monster);
     return `${subject.charAt(0).toUpperCase()}${subject.slice(1)}`;
 }
-
 function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
 }
-
 function potionHitsSaddle(monster, potion) {
     const saddle = monsterSaddle(monster);
-    if (!saddle) return null;
-    if (rn2(10) === 0) return saddle;
-    if (potion.otyp !== POT_WATER) return null;
+    if (!saddle)
+        return null;
+    if (rn2(10) === 0)
+        return saddle;
+    if (potion.otyp !== POT_WATER)
+        return null;
     // Keep potion.c's short-circuit order. Neutral water still consumes both
     // luck rolls before it reaches the final one-in-three chance.
-    if (rnl(10) > 7 && potion.cursed) return saddle;
-    if (rnl(10) < 4 && potion.blessed) return saddle;
+    if (rnl(10) > 7 && potion.cursed)
+        return saddle;
+    if (rnl(10) < 4 && potion.blessed)
+        return saddle;
     return rn2(3) === 0 ? saddle : null;
 }
-
 function saddleOwnerPhrase(monster) {
-    const phrase = possessive(monsterImpactName(monster));
+    const phrase = possessive(monsterName(monster, { suppressIt: true, suppressSaddle: true }));
     return `${phrase.charAt(0).toUpperCase()}${phrase.slice(1)}`;
 }
-
 function saddleName(saddle) {
     const base = saddle.name || OBJECT_NAMES[saddle.otyp] || 'saddle';
     const given = saddle.oextra?.oname || saddle.oname;
     return given ? `${base} named ${given}` : base;
 }
-
-async function applyPotionToSaddle({
-    state, monster, saddle, potion, targetVisible, targetSpotted, publish,
-}) {
+async function applyPotionToSaddle({ state, monster, saddle, potion, targetVisible, targetSpotted, publish, }) {
     const seen = !heroIsBlind(state) && targetVisible && targetSpotted;
     const owner = saddleOwnerPhrase(monster);
     const objectName = saddleName(saddle);
     let change = null;
-    let message = null;
-
+    let message = '';
     if (potion.otyp === POT_WATER && potion.blessed) {
         if (saddle.cursed) {
             change = () => uncurseObjectState(saddle);
             message = `${owner} ${objectName} glows amber.`;
-        } else if (!saddle.blessed) {
+        }
+        else if (!saddle.blessed) {
             change = () => blessObjectState(saddle);
             message = `${owner} ${objectName} glows with a light blue aura.`;
         }
-    } else if (potion.otyp === POT_WATER && potion.cursed) {
+    }
+    else if (potion.otyp === POT_WATER && potion.cursed) {
         if (saddle.blessed) {
             change = () => unblessObjectState(saddle);
             message = `${owner} ${objectName} glows brown.`;
-        } else if (!saddle.cursed) {
+        }
+        else if (!saddle.cursed) {
             change = () => curseObjectState(saddle);
             message = `${owner} ${objectName} glows with a black aura.`;
         }
     }
-
     if (!change) {
-        if (seen) await publish(`${owner} ${objectName} gets wet.`);
+        if (seen)
+            await publish(`${owner} ${objectName} gets wet.`);
         return;
     }
-
     if (seen) {
         await publish(message);
-        saddle.bknown = !heroHallucinates(state);
-    } else if (!potion.bknown || !potion.dknown) {
+        saddle.bknown = !heroIsHallucinating(state);
+    }
+    else if (!potion.bknown || !potion.dknown) {
         saddle.bknown = false;
     }
     change();
 }
-
-export function destroyPotionIdentity(potion) {
-    potion.where = 'gone';
-    potion.ox = potion.oy = 0;
-    potion.ocarry = null;
-    potion.timed = 0;
-    potion.objectTimers = [];
-    delete potion.carrierMid;
-}
-
 function healingCuresBlindness(potion) {
-    if (potion.otyp === POT_FULL_HEALING) return true;
-    if (potion.otyp === POT_EXTRA_HEALING) return !potion.cursed;
+    if (potion.otyp === POT_FULL_HEALING)
+        return true;
+    if (potion.otyp === POT_EXTRA_HEALING)
+        return !potion.cursed;
     return potion.otyp === POT_HEALING && !!potion.blessed;
 }
-
 function healHeroOnePoint(state) {
-    const hero = state.u || (state.u = {});
-    if (Upolyd(hero) && (hero.mh ?? 0) < (hero.mhmax ?? 0)) hero.mh++;
-    if ((hero.uhp ?? 0) < (hero.uhpmax ?? 0)) hero.uhp++;
+    const hero = state.u;
+    if (Upolyd(hero) && (hero.mh ?? 0) < (hero.mhmax ?? 0))
+        hero.mh++;
+    if ((hero.uhp ?? 0) < (hero.uhpmax ?? 0))
+        hero.uhp++;
 }
-
 function restoreBaseAttributes(state, potion) {
     const base = state.u?.acurr?.a;
     const maximum = state.u?.amax?.a;
     const start = rn2(6);
-    if (!Array.isArray(base) || !Array.isArray(maximum)) return start;
+    if (!Array.isArray(base) || !Array.isArray(maximum))
+        return start;
     for (let offset = 0; offset < 6; offset++) {
         const index = (start + offset) % 6;
         if ((base[index] ?? 0) < (maximum[index] ?? 0)) {
-            base[index]++;
-            if (!potion.blessed) break;
+            const current = base[index];
+            if (current === undefined)
+                throw new Error(`Missing hero attribute ${index}`);
+            base[index] = current + 1;
+            if (!potion.blessed)
+                break;
         }
     }
     return start;
 }
-
 export function heroPotionVaporProfile(state) {
     const mnum = Number.isInteger(state.u?.umonnum)
         ? state.u.umonnum
         : Number.isInteger(state.u?.umonster) ? state.u.umonster : null;
-    const flags = Number.isInteger(mnum) ? MONSTER_FLAGS1[mnum] ?? 0 : 0;
+    const flags = typeof mnum === 'number' && Number.isInteger(mnum) ? MONSTER_FLAGS1[mnum] ?? 0 : 0;
     const breathless = !!(flags & M1_BREATHLESS);
     const hasEyes = !(flags & M1_NOEYES);
     return { breathless, hasEyes, canReceive: !breathless || hasEyes };
 }
-
 function heroHasVaporShield(state) {
     const eyewear = state.ublindf || state.u?.ublindf;
     return eyewear?.otyp === TOWEL && (eyewear.spe ?? 0) > 0;
 }
-
 function sicknessCannotHarmMonster(monster) {
     return monsterHasPoisonResistance(monster)
-        || MONSTER_ATTACKS[monster?.mnum]?.some(attack =>
-            attack[1] === AD_DISE || attack[1] === AD_PEST);
+        || MONSTER_ATTACKS[monster?.mnum]?.some(attack => attack[1] === AD_DISE || attack[1] === AD_PEST);
 }
-
 // zap.c:resist() uses potion attack level 6 and the target's runtime level.
 // NOTELL suppresses shield presentation but the resistance draw still occurs.
 function monsterResistsPotion(monster, state = game) {
@@ -316,88 +254,66 @@ function monsterResistsPotion(monster, state = game) {
     return rn2(resistanceRange)
         < (MONSTER_MAGIC_RESISTANCE[mnum] ?? 0);
 }
-
 function monsterHasSleepDefense(monster) {
     const resistanceBits = (MONSTER_RESISTS[monster?.mnum] ?? 0)
         | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
     return !!(resistanceBits & MR_SLEEP)
-        || !!monster?.sleepResistance
-        || !!monster?.sleep_resistance
         || !!monster?.defendedSleep;
 }
-
-function installPotionHelplessness(state, duration, reason) {
+async function installPotionHelplessness(state, duration, reason) {
+    endVoluntaryMultiTurn(state);
     state._helplessTurns = duration;
     state._helplessReason = reason;
     state._helplessDoneMessage = 'You can move again.';
-    exerciseAttribute(A_DEX, false, state);
+    await exerciseAttribute(A_DEX, false, state);
 }
-
 function heroIsFast(state) {
     return !!(state.u?.fast || state.u?.veryFast
         || state.u?.veryFastFromArmor
         || (state.u?.veryFastTurns ?? 0) > 0);
 }
-
-function heroIsUnaware(state) {
-    return !!(state.unaware || state.u?.unaware
-        || state._helplessReason === 'unconscious from rotten food'
-        || state._helplessReason === 'sleeping off a magical draught');
-}
-
 function heroSeesInvisible(state) {
-    const hero = state.u || {};
-    return !!(hero.seeInvisible || hero.see_invisible
+    const hero = state.u;
+    return !!(hero.seeInvisible
         || (hero.seeInvisibleTurns ?? 0) > 0);
 }
-
 function monsterIsWere(monster) {
     return !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_WERE);
 }
-
 function waterEffectSubject(monster, targetSpotted) {
     return targetSpotted ? sentenceSubject(monster) : 'It';
 }
-
 // potion.c:potionhit() shares this exact pain/wake transaction between holy
 // water and acid.  Silence selects writhing and suppresses wake_nearto(); an
 // audible species wakes the level-scaled radius before any damage die.
-async function publishPotionPainAndWakeRadius({
-    monster, targetSpotted, wakeNearby, effectName,
-    publish = plineWithContinuation,
-}) {
+async function publishPotionPainAndWakeRadius({ monster, targetSpotted, wakeNearby, effectName, publish = plineWithContinuation, }) {
     const silent = (MONSTER_SOUND[monster.mnum] ?? 0) === 0;
-    await publish(`${waterEffectSubject(
-        monster, targetSpotted,
-    )} ${silent ? 'writhes' : 'shrieks'} in pain!`);
+    await publish(`${waterEffectSubject(monster, targetSpotted)} ${silent ? 'writhes' : 'shrieks'} in pain!`);
     if (!silent) {
         if (!wakeNearby)
             throw new Error(`${effectName} wake-radius owner unavailable`);
-        await wakeNearby(
-            monster.mx,
-            monster.my,
-            (MONSTER_LEVEL[monster.mnum] ?? 0) * 10,
-        );
+        await wakeNearby(monster.mx, monster.my, (MONSTER_LEVEL[monster.mnum] ?? 0) * 10);
     }
 }
-
 function wereTransformationNoun(monster) {
-    if (!monsterIsHuman(monster?.mnum)) return 'human';
-    if (monster.mnum === 261) return 'rat';
-    if (monster.mnum === 262) return 'jackal';
+    if (!monsterIsHuman(monster?.mnum))
+        return 'human';
+    if (monster.mnum === 261)
+        return 'rat';
+    if (monster.mnum === 262)
+        return 'jackal';
     return 'wolf';
 }
-
 function monsterSurvivedPotion(monster) {
     return !monster.dead && (monster.mhp ?? 0) > 0;
 }
-
 async function finishPotionVaporKnowledge(state, potion, identifiesType) {
-    if (potion.dknown === false) return null;
+    if (potion.dknown === false)
+        return null;
     if (identifiesType) {
         if (!objectTypeKnown(potion, state)) {
             // makeknown()->discover_object(..., credit_hero=TRUE)
-            exerciseAttribute(A_WIS, true, state);
+            await exerciseAttribute(A_WIS, true, state);
             recordObjectKnowledge(potion.otyp, state);
             recordObjectEncounter(potion.otyp, state);
         }
@@ -405,29 +321,21 @@ async function finishPotionVaporKnowledge(state, potion, identifiesType) {
     }
     return await tryCallObjectType(potion, state);
 }
-
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Its final knowledge transaction either identifies an unambiguous effect or
 // asks for a type-wide call name before the caller frees the potion identity.
-export async function applySupportedPotionVapor({
-    state = game,
-    potion,
-    publish = plineWithContinuation,
-    monsterCanSeeHero,
-    recalculateVision,
-}) {
-    if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion?.otyp)) return null;
-
+export async function applySupportedPotionVapor({ state = game, potion, publish = plineWithContinuation, monsterCanSeeHero = null, recalculateVision, }) {
+    if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp))
+        return null;
+    requirePlayingGame(state);
     const profile = heroPotionVaporProfile(state);
-    if (!profile.canReceive) return { received: false };
+    if (!profile.canReceive)
+        return { received: false };
     if (heroHasVaporShield(state)) {
         await publish('Some vapor passes harmlessly around you.');
-        const typeCall = await finishPotionVaporKnowledge(
-            state, potion, false,
-        );
+        const typeCall = await finishPotionVaporKnowledge(state, potion, false);
         return { received: true, shielded: true, typeCall };
     }
-
     let abilityStart = null;
     let confusionDuration = null;
     let helplessDuration = null;
@@ -443,42 +351,47 @@ export async function applySupportedPotionVapor({
             await publish(profile.breathless
                 ? 'Your eyes sting!'
                 : 'Ulch!  That potion smells terrible!');
-        } else {
+        }
+        else {
             abilityStart = restoreBaseAttributes(state, potion);
         }
-    } else if (HEALING_POTION_TYPES.has(potion.otyp)) {
+    }
+    else if (HEALING_POTION_TYPES.has(potion.otyp)) {
         const points = potion.otyp === POT_FULL_HEALING ? 3
             : potion.otyp === POT_EXTRA_HEALING ? 2 : 1;
-        for (let point = 0; point < points; point++) healHeroOnePoint(state);
+        for (let point = 0; point < points; point++)
+            healHeroOnePoint(state);
         if (healingCuresBlindness(potion)) {
             state.u.blindTurns = 0;
             state.u.deafTurns = 0;
             syncBlindness(state);
             syncDeafness(state);
         }
-        exerciseAttribute(A_CON, true, state);
-    } else if (potion.otyp === POT_SICKNESS
+        await exerciseAttribute(A_CON, true, state);
+    }
+    else if (potion.otyp === POT_SICKNESS
         && state.urole?.key !== 'healer') {
-        const hero = state.u || (state.u = {});
-        if (Upolyd(hero)) hero.mh = (hero.mh ?? 0) <= 5 ? 1 : hero.mh - 5;
-        else hero.uhp = (hero.uhp ?? 0) <= 5 ? 1 : hero.uhp - 5;
-        exerciseAttribute(A_CON, false, state);
-    } else if (potion.otyp === POT_HALLUCINATION) {
+        const hero = state.u;
+        if (Upolyd(hero))
+            hero.mh = (hero.mh ?? 0) <= 5 ? 1 : hero.mh - 5;
+        else
+            hero.uhp = (hero.uhp ?? 0) <= 5 ? 1 : hero.uhp - 5;
+        await exerciseAttribute(A_CON, false, state);
+    }
+    else if (potion.otyp === POT_HALLUCINATION) {
         await publish('You have a momentary vision.');
-    } else if (CONFUSION_POTION_TYPES.has(potion.otyp)) {
-        const hero = state.u || (state.u = {});
+    }
+    else if (CONFUSION_POTION_TYPES.has(potion.otyp)) {
+        const hero = state.u;
         if ((hero.confusionTurns ?? 0) <= 0)
             await publish('You feel somewhat dizzy.');
         confusionDuration = rnd(5);
-        hero.confusionTurns = Math.min(
-            TIMEOUT,
-            Math.max(0, hero.confusionTurns ?? 0) + confusionDuration,
-        );
-    } else if (HELPLESS_POTION_TYPES.has(potion.otyp)) {
+        hero.confusionTurns = Math.min(TIMEOUT, Math.max(0, hero.confusionTurns ?? 0) + confusionDuration);
+    }
+    else if (HELPLESS_POTION_TYPES.has(potion.otyp)) {
         identifiesType = true;
         const freeAction = heroHasFreeAction(state);
-        const sleepResistance = !!(state.u?.sleepResistance
-            || state.u?.sleep_resistance);
+        const sleepResistance = !!state.u.sleepResistance;
         const protectedFromEffect = freeAction
             || (potion.otyp === POT_SLEEPING && sleepResistance);
         if (protectedFromEffect) {
@@ -486,56 +399,50 @@ export async function applySupportedPotionVapor({
             await publish(potion.otyp === POT_PARALYSIS
                 ? 'You stiffen momentarily.' : 'You yawn.');
             if (potion.otyp === POT_SLEEPING) {
-                monstersObserveHeroResistance(
-                    M_SEEN_SLEEP, state, monsterCanSeeHero,
-                );
+                monstersObserveHeroResistance(M_SEEN_SLEEP, state, monsterCanSeeHero);
             }
-        } else {
+        }
+        else {
             await publish(potion.otyp === POT_PARALYSIS
                 ? 'Something seems to be holding you.'
                 : 'You feel rather tired.');
             helplessDuration = rnd(5);
-            installPotionHelplessness(
-                state,
-                helplessDuration,
-                potion.otyp === POT_PARALYSIS
-                    ? 'frozen by a potion'
-                    : 'sleeping off a magical draught',
-            );
+            await installPotionHelplessness(state, helplessDuration, potion.otyp === POT_PARALYSIS
+                ? 'frozen by a potion'
+                : 'sleeping off a magical draught');
         }
-    } else if (potion.otyp === POT_SPEED) {
-        const hero = state.u || (state.u = {});
+    }
+    else if (potion.otyp === POT_SPEED) {
+        const hero = state.u;
         if (!heroIsFast(state))
             await publish('Your knees seem more flexible now.');
         speedDuration = rnd(5);
-        hero.veryFastTurns = Math.min(
-            TIMEOUT,
-            Math.max(0, hero.veryFastTurns ?? 0) + speedDuration,
-        );
+        hero.veryFastTurns = Math.min(TIMEOUT, Math.max(0, hero.veryFastTurns ?? 0) + speedDuration);
         hero.veryFast = true;
-        exerciseAttribute(A_DEX, true, state);
-    } else if (potion.otyp === POT_BLINDNESS) {
-        const hero = state.u || (state.u = {});
+        await exerciseAttribute(A_DEX, true, state);
+    }
+    else if (potion.otyp === POT_BLINDNESS) {
+        const hero = state.u;
         const wasBlind = heroIsBlind(state);
         const unaware = heroIsUnaware(state);
         identifiesType = !wasBlind && !unaware;
         if (!wasBlind && !unaware)
             await publish('It suddenly gets dark.');
         blindnessDuration = rnd(5);
-        hero.blindTurns = Math.min(
-            TIMEOUT,
-            Math.max(0, hero.blindTurns ?? 0) + blindnessDuration,
-        );
+        hero.blindTurns = Math.min(TIMEOUT, Math.max(0, hero.blindTurns ?? 0) + blindnessDuration);
         const blindNow = syncBlindness(state);
         sightToggled = wasBlind !== blindNow;
         if (sightToggled) {
             state.vision_full_recalc = 1;
-            if (recalculateVision) recalculateVision();
-            else if (state === game && state.level?.at) vision_recalc(0);
+            if (recalculateVision)
+                recalculateVision();
+            else if (state === game)
+                vision_recalc(0);
         }
         if (!blindNow && !unaware)
             await publish('Your vision clears.');
-    } else if (potion.otyp === POT_INVISIBILITY) {
+    }
+    else if (potion.otyp === POT_INVISIBILITY) {
         if (!heroIsBlind(state) && !heroIsInvisible(state)) {
             identifiesType = true;
             invisibilityGlimpse = heroSeesInvisible(state)
@@ -544,18 +451,19 @@ export async function applySupportedPotionVapor({
                 ? 'For an instant you could see right through yourself!'
                 : "For an instant you couldn't see yourself!");
         }
-    } else if (potion.otyp === POT_WATER) {
+    }
+    else if (potion.otyp === POT_WATER) {
         waterEffect = await applyHeroWaterVaporChange({
             state, potion, publish,
         });
-    } else if ([POT_ACID, POT_POLYMORPH].includes(potion.otyp)) {
-        exerciseAttribute(A_CON, false, state);
-    } else if (potion.otyp === POT_OIL) {
+    }
+    else if ([POT_ACID, POT_POLYMORPH].includes(potion.otyp)) {
+        await exerciseAttribute(A_CON, false, state);
+    }
+    else if (potion.otyp === POT_OIL) {
         // potionbreathe() has no oil case.
     }
-    const typeCall = await finishPotionVaporKnowledge(
-        state, potion, identifiesType,
-    );
+    const typeCall = await finishPotionVaporKnowledge(state, potion, identifiesType);
     return {
         received: true,
         abilityStart,
@@ -571,14 +479,9 @@ export async function applySupportedPotionVapor({
         typeCall,
     };
 }
-
-async function applySupportedDirectEffect({
-    state, monster, potion, targetVisible, targetSpotted, wakeMonster,
-    publish, showShield, spotMonster, repaintMonster, rememberInvisible,
-    wakeNearby, splitMonster, transformWere, finishKill, heroCaused,
-}) {
+async function applySupportedDirectEffect({ state, monster, potion, targetVisible, targetSpotted, wakeMonster, publish, showShield, spotMonster, repaintMonster, rememberInvisible, wakeNearby, splitMonster, transformWere, finishKill, heroCaused, }) {
     if (potion.otyp === POT_POLYMORPH) {
-        const result = await polymorphMonsterFromPotion(monster, {
+        const result = await polymorphMonsterFromMagic(monster, {
             state,
             targetSpotted,
             wakeMonster,
@@ -593,28 +496,21 @@ async function applySupportedDirectEffect({
             ...result,
         };
     }
-
     if (potion.otyp === POT_OIL) {
         let explosionDamage = 0;
         if (potion.lamplit) {
-            explosionDamage = await explodeLitOilPotion(
-                potion, monster.mx, monster.my, {
-                    state,
-                    heroCaused,
-                    publish,
-                    finishMonsterKill: async (target, _x, _y, death) => {
-                        if (!finishKill) {
-                            throw new Error(
-                                'oil explosion cannot finish a monster death',
-                            );
-                        }
-                        return finishKill(target, death);
-                    },
-                },
-            );
+            const explosion = await explodeLitOilPotion(potion, monster.mx, monster.my, {
+                state,
+                heroCaused,
+                publish,
+            });
+            if (explosion.heroDied)
+                return { heroDied: true };
+            explosionDamage = explosion.damage;
         }
         const killed = !monsterSurvivedPotion(monster);
-        if (!killed) await wakeMonster?.(monster);
+        if (!killed && (await wakeMonster?.(monster))?.heroDied)
+            return { heroDied: true };
         return {
             angered: true,
             healed: 0,
@@ -623,7 +519,6 @@ async function applySupportedDirectEffect({
             killed,
         };
     }
-
     if (potion.otyp === POT_ACID) {
         const acidResistant = monsterHasAcidResistance(monster);
         const resisted = !acidResistant
@@ -644,11 +539,14 @@ async function applySupportedDirectEffect({
             if (killed) {
                 if (!finishKill)
                     throw new Error('acid fatality owner unavailable');
-                await finishKill(monster);
-                killed = !monsterSurvivedPotion(monster);
+                const death = await finishKill(monster);
+                if (death.heroDied)
+                    return { heroDied: true };
+                killed = death.killed;
             }
         }
-        if (!killed) await wakeMonster?.(monster);
+        if (!killed && (await wakeMonster?.(monster))?.heroDied)
+            return { heroDied: true };
         return {
             angered: true,
             healed: 0,
@@ -659,7 +557,6 @@ async function applySupportedDirectEffect({
             killed,
         };
     }
-
     if (potion.otyp === POT_WATER) {
         const affectedByHoliness = monsterHatesBlessings(monster)
             || monsterIsWere(monster);
@@ -669,7 +566,6 @@ async function applySupportedDirectEffect({
         let transformedWere = false;
         let splitClone = null;
         let killed = false;
-
         if (affectedByHoliness) {
             if (potion.blessed) {
                 await publishPotionPainAndWakeRadius({
@@ -685,48 +581,47 @@ async function applySupportedDirectEffect({
                 if (killed) {
                     if (!finishKill)
                         throw new Error('water fatality owner unavailable');
-                    await finishKill(monster);
-                    killed = !monsterSurvivedPotion(monster);
-                } else if (monsterIsWere(monster)
+                    const death = await finishKill(monster);
+                    if (death.heroDied)
+                        return { heroDied: true };
+                    killed = death.killed;
+                }
+                else if (monsterIsWere(monster)
                     && !monsterIsHuman(monster?.mnum)) {
                     if (!transformWere)
                         throw new Error('water were-transform owner unavailable');
-                    if (targetSpotted && !heroHallucinates(state)) {
-                        await publish(`${sentenceSubject(monster)} changes into a ${
-                            wereTransformationNoun(monster)
-                        }.`);
-                    }
-                    transformedWere = !!(await transformWere(monster, state));
-                }
-            } else if (potion.cursed) {
-                angered = false;
-                if (targetSpotted)
-                    await publish(`${sentenceSubject(monster)} looks healthier.`);
-                waterHealing = d(2, 6);
-                monster.mhp = Math.min(
-                    monster.mhpmax ?? monster.mhp,
-                    monster.mhp + waterHealing,
-                );
-                if (monsterIsWere(monster) && monsterIsHuman(monster?.mnum)
-                    && !heroHasProtectionFromShapeChangers(state)) {
-                    if (!transformWere)
-                        throw new Error('water were-transform owner unavailable');
-                    if (targetSpotted && !heroHallucinates(state)) {
-                        await publish(`${sentenceSubject(monster)} changes into a ${
-                            wereTransformationNoun(monster)
-                        }.`);
+                    if (targetSpotted && !heroIsHallucinating(state)) {
+                        await publish(`${sentenceSubject(monster)} changes into a ${wereTransformationNoun(monster)}.`);
                     }
                     transformedWere = !!(await transformWere(monster, state));
                 }
             }
-        } else if (monster.mnum === PM_GREMLIN) {
+            else if (potion.cursed) {
+                angered = false;
+                if (targetSpotted)
+                    await publish(`${sentenceSubject(monster)} looks healthier.`);
+                waterHealing = d(2, 6);
+                monster.mhp = Math.min(monster.mhpmax ?? monster.mhp, monster.mhp + waterHealing);
+                if (monsterIsWere(monster) && monsterIsHuman(monster?.mnum)
+                    && !heroHasProtectionFromShapeChangers(state)) {
+                    if (!transformWere)
+                        throw new Error('water were-transform owner unavailable');
+                    if (targetSpotted && !heroIsHallucinating(state)) {
+                        await publish(`${sentenceSubject(monster)} changes into a ${wereTransformationNoun(monster)}.`);
+                    }
+                    transformedWere = !!(await transformWere(monster, state));
+                }
+            }
+        }
+        else if (monster.mnum === PM_GREMLIN) {
             angered = false;
             if (!splitMonster)
                 throw new Error('water gremlin-split owner unavailable');
             splitClone = await splitMonster(monster, state);
             if (splitClone && targetSpotted)
                 await publish(`${sentenceSubject(monster)} multiplies!`);
-        } else if (monster.mnum === PM_IRON_GOLEM) {
+        }
+        else if (monster.mnum === PM_IRON_GOLEM) {
             if (targetSpotted)
                 await publish(`${sentenceSubject(monster)} rusts.`);
             waterDamage = d(1, 6);
@@ -735,14 +630,19 @@ async function applySupportedDirectEffect({
             if (killed) {
                 if (!finishKill)
                     throw new Error('water fatality owner unavailable');
-                await finishKill(monster);
-                killed = !monsterSurvivedPotion(monster);
+                const death = await finishKill(monster);
+                if (death.heroDied)
+                    return { heroDied: true };
+                killed = death.killed;
             }
         }
-
         if (!killed) {
-            if (angered) await wakeMonster?.(monster);
-            else monster.msleeping = 0;
+            if (angered) {
+                if ((await wakeMonster?.(monster))?.heroDied)
+                    return { heroDied: true };
+            }
+            else
+                monster.msleeping = 0;
         }
         return {
             angered,
@@ -755,19 +655,14 @@ async function applySupportedDirectEffect({
             killed,
         };
     }
-
     if (potion.otyp === POT_INVISIBILITY) {
         const sawIt = !!spotMonster(monster);
         const cursedPotion = !!potion.cursed;
         const angered = !!monster.minvis && cursedPotion;
-
-        const invisibility = setMonsterPermanentInvisibility(
-            monster, !cursedPotion,
-        );
+        const invisibility = setMonsterPermanentInvisibility(monster, !cursedPotion);
         if (!monster.invis_blkd && invisibility.changed) {
             await repaintMonster(monster);
         }
-
         const spottedAfter = !!spotMonster(monster);
         let invisibilityMessage = null;
         let rememberedInvisible = false;
@@ -776,17 +671,22 @@ async function applySupportedDirectEffect({
                 await rememberInvisible(monster);
                 rememberedInvisible = true;
             }
-        } else if (sawIt && cursedPotion) {
+        }
+        else if (sawIt && cursedPotion) {
             invisibilityMessage = `${sentenceSubject(monster)} briefly seems `
                 + 'to be transparent.';
             await publish(invisibilityMessage);
-        } else if (!sawIt && spottedAfter) {
+        }
+        else if (!sawIt && spottedAfter) {
             invisibilityMessage = `${sentenceSubject(monster)} appears!`;
             await publish(invisibilityMessage);
         }
-
-        if (angered) await wakeMonster?.(monster);
-        else monster.msleeping = 0;
+        if (angered) {
+            if ((await wakeMonster?.(monster))?.heroDied)
+                return { heroDied: true };
+        }
+        else
+            monster.msleeping = 0;
         return {
             angered,
             healed: 0,
@@ -797,7 +697,6 @@ async function applySupportedDirectEffect({
             invisibilityMessage,
         };
     }
-
     if (potion.otyp === POT_PARALYSIS) {
         let paralyzed = false;
         let duration = 0;
@@ -809,7 +708,8 @@ async function applySupportedDirectEffect({
             monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
             paralyzed = true;
         }
-        await wakeMonster?.(monster);
+        if ((await wakeMonster?.(monster))?.heroDied)
+            return { heroDied: true };
         return {
             angered: true,
             healed: 0,
@@ -818,7 +718,6 @@ async function applySupportedDirectEffect({
             duration,
         };
     }
-
     if (potion.otyp === POT_SLEEPING) {
         const duration = rnd(12);
         const inherentOrDefended = monsterHasSleepDefense(monster);
@@ -827,11 +726,10 @@ async function applySupportedDirectEffect({
         let slept = false;
         if (resisted) {
             await showShield?.(monster);
-        } else if (monster.mcanmove !== 0) {
+        }
+        else if (monster.mcanmove !== 0) {
             monster.mcanmove = 0;
-            monster.mfrozen = Math.min(
-                duration + (monster.mfrozen ?? 0), 127,
-            );
+            monster.mfrozen = Math.min(duration + (monster.mfrozen ?? 0), 127);
             monster.meating = 0;
             slept = true;
             await publish(targetVisible
@@ -843,7 +741,8 @@ async function applySupportedDirectEffect({
                 state.u.ustuck = null;
             }
         }
-        await wakeMonster?.(monster);
+        if ((await wakeMonster?.(monster))?.heroDied)
+            return { heroDied: true };
         return {
             angered: true,
             healed: 0,
@@ -853,13 +752,13 @@ async function applySupportedDirectEffect({
             duration,
         };
     }
-
     if (potion.otyp === POT_SPEED) {
         const speed = adjustMonsterSpeed(monster, 1);
         const speedMessage = targetSpotted
             ? monsterSpeedMessage(speed, sentenceSubject(monster))
             : null;
-        if (speedMessage) await publish(speedMessage);
+        if (speedMessage)
+            await publish(speedMessage);
         monster.msleeping = 0;
         return {
             angered: false,
@@ -871,7 +770,6 @@ async function applySupportedDirectEffect({
             speedMessage,
         };
     }
-
     if (potion.otyp === POT_BLINDNESS) {
         const hasEyes = !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES);
         const permanentlyBlind = (monster.mcansee === 0
@@ -886,13 +784,12 @@ async function applySupportedDirectEffect({
             resisted = monsterResistsPotion(monster, state);
             blindnessDuration = 64 + firstDuration
                 + (resisted ? 0 : secondDuration);
-            monster.mblinded = Math.min(
-                127, before + blindnessDuration,
-            );
+            monster.mblinded = Math.min(127, before + blindnessDuration);
             monster.mcansee = 0;
             blinded = true;
         }
-        await wakeMonster?.(monster);
+        if ((await wakeMonster?.(monster))?.heroDied)
+            return { heroDied: true };
         return {
             angered: true,
             healed: 0,
@@ -903,11 +800,12 @@ async function applySupportedDirectEffect({
             blindnessAdded: (monster.mblinded ?? before) - before,
         };
     }
-
     if (CONFUSION_POTION_TYPES.has(potion.otyp)) {
         const resisted = monsterResistsPotion(monster, state);
-        if (!resisted) monster.mconf = 1;
-        await wakeMonster?.(monster);
+        if (!resisted)
+            monster.mconf = 1;
+        if ((await wakeMonster?.(monster))?.heroDied)
+            return { heroDied: true };
         return {
             angered: true,
             healed: 0,
@@ -916,33 +814,33 @@ async function applySupportedDirectEffect({
             confused: !resisted,
         };
     }
-
     if (potion.otyp === POT_SICKNESS && monster.mnum !== PM_PESTILENCE) {
         const oldHp = monster.mhp;
         if (sicknessCannotHarmMonster(monster)) {
             if (targetVisible)
                 await publish(`${sentenceSubject(monster)} looks unharmed.`);
-        } else if (monster.mhp > 2) {
+        }
+        else if (monster.mhp > 2) {
             monster.mhp = Math.trunc(monster.mhp / 2);
             if (targetVisible)
                 await publish(`${sentenceSubject(monster)} looks rather ill.`);
         }
-        await wakeMonster?.(monster);
+        if ((await wakeMonster?.(monster))?.heroDied)
+            return { heroDied: true };
         return {
             angered: true,
             healed: monster.mhp - oldHp,
             curedBlindness: false,
         };
     }
-
     const healsMonster = HEALING_MONSTER_POTION_TYPES.has(potion.otyp)
         || (potion.otyp === POT_SICKNESS
             && monster.mnum === PM_PESTILENCE);
     if (!healsMonster) {
-        await wakeMonster?.(monster);
+        if ((await wakeMonster?.(monster))?.heroDied)
+            return { heroDied: true };
         return { angered: true, healed: 0, curedBlindness: false };
     }
-
     // Healing potions invert against Pestilence; gain/restore ability do not.
     if (monster.mnum === PM_PESTILENCE
         && HEALING_POTION_TYPES.has(potion.otyp)) {
@@ -952,21 +850,20 @@ async function applySupportedDirectEffect({
             if (targetVisible)
                 await publish(`${sentenceSubject(monster)} looks rather ill.`);
         }
-        await wakeMonster?.(monster);
+        if ((await wakeMonster?.(monster))?.heroDied)
+            return { heroDied: true };
         return {
             angered: true,
             healed: monster.mhp - oldHp,
             curedBlindness: false,
         };
     }
-
     const oldHp = monster.mhp;
     if (monster.mhp < monster.mhpmax) {
         monster.mhp = monster.mhpmax;
         if (targetVisible)
             await publish(`${sentenceSubject(monster)} looks sound and hale again.`);
     }
-
     let curedBlindness = false;
     if (healingCuresBlindness(potion) && !monster.mcansee) {
         monster.mcansee = 1;
@@ -984,55 +881,33 @@ async function applySupportedDirectEffect({
         curedBlindness,
     };
 }
-
-export async function hitMonsterWithSupportedPotion({
-    state = game,
-    monster,
-    potion,
-    wakeMonster,
-    publish = plineWithContinuation,
-    targetVisible = cansee(monster?.mx, monster?.my),
-    targetSpotted = canSeeMonster(monster, monster?.mx, monster?.my),
-    spotMonster = target => canSpotMonster(target, target?.mx, target?.my),
-    repaintMonster = target => newsym(target.mx, target.my),
-    rememberInvisible = target => map_invisible(target.mx, target.my),
-    wakeNearby,
-    splitMonster = target => splitMonsterActor(target, state),
-    transformWere = target => transformWereMonster(target, state),
-    finishKill,
-    showShield = target => shieldeff(target.mx, target.my, state),
-    heroCaused = true,
-    resolveVapor = false,
-    distance = 0,
-}) {
+export async function hitMonsterWithSupportedPotion({ state = game, monster, potion, wakeMonster = null, publish = plineWithContinuation, targetVisible = cansee(monster?.mx, monster?.my), targetSpotted = canSeeMonster(monster), spotMonster = target => canSpotMonster(target), repaintMonster = target => newsym(target.mx, target.my), rememberInvisible = target => map_invisible(target.mx, target.my), wakeNearby = null, splitMonster = target => splitMonsterActor(target, state), transformWere = target => transformWereMonster(target, state), finishKill = null, showShield = target => shieldeff(target.mx, target.my, state), heroCaused = true, resolveVapor = false, distance = 0, target = { x: monster.mx, y: monster.my }, }) {
     if (!monster || !potion
-        || !SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp)) return null;
-
+        || !SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp))
+        return null;
     const bottleName = randomBottleName(state);
-    const monsterName = monsterImpactName(monster);
     const saddle = potionHitsSaddle(monster, potion);
     const hasHead = !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOHEAD);
-    const impactTarget = saddle
-        ? `${possessive(monsterName)} saddle`
-        : hasHead ? `${possessive(monsterName)} head` : monsterName;
-    const crashMessage = targetVisible
-        ? `The ${bottleName} crashes on ${impactTarget} and breaks into shards.`
-        : 'Crash!';
+    let crashMessage = 'Crash!';
+    if (targetVisible) {
+        const name = monsterName(monster, { state });
+        const onHead = target.x === monster.mx && target.y === monster.my;
+        const impactTarget = saddle
+            ? `${possessive(monsterName(monster, { state, suppressIt: true, suppressSaddle: true }))} saddle`
+            : hasHead ? `${possessive(name)} ${onHead ? 'head' : 'body'}` : name;
+        crashMessage = `The ${bottleName} crashes on ${impactTarget} and breaks into shards.`;
+    }
     await publish(crashMessage);
-
     const impactRoll = rn2(5);
     const impactDamage = !saddle && impactRoll !== 0 && monster.mhp > 1
         ? 1 : 0;
-    if (impactDamage) monster.mhp--;
-
+    if (impactDamage)
+        monster.mhp--;
     let evaporationMessage = null;
     if (targetVisible && potion.otyp !== POT_OIL && !saddle) {
-        evaporationMessage = `The ${potionImpactObjectName(
-            potion, state,
-        )} evaporates.`;
+        evaporationMessage = `The ${potionImpactObjectName(potion, state)} evaporates.`;
         await publish(evaporationMessage);
     }
-
     if (saddle) {
         await applyPotionToSaddle({
             state, monster, saddle, potion,
@@ -1052,14 +927,17 @@ export async function hitMonsterWithSupportedPotion({
         finishKill,
         heroCaused,
     });
+    if (directEffect?.heroDied)
+        return {
+            heroDied: true, bottleName, crashMessage, evaporationMessage,
+            impactDamage, directEffect,
+        };
     let breathedVapor = false;
     let vaporEffect = null;
     if (resolveVapor) {
         breathedVapor = distance === 0;
         if (!breathedVapor && distance > 0 && distance < 3) {
-            breathedVapor = rn2(
-                Math.trunc((1 + currentAttribute(A_DEX, state)) / 2),
-            ) === 0;
+            breathedVapor = rn2(Math.trunc((1 + currentAttribute(A_DEX, state)) / 2)) === 0;
         }
         if (breathedVapor) {
             vaporEffect = await applySupportedPotionVapor({
@@ -1072,7 +950,7 @@ export async function hitMonsterWithSupportedPotion({
     if (!breathedVapor && targetVisible)
         typeCall = await tryCallObjectType(potion, state);
     await chargeUnpaidObjectAsDebt(potion, state, publish);
-    destroyPotionIdentity(potion);
+    await deleteObject(potion, state);
     return {
         bottleName,
         crashMessage,
@@ -1084,3 +962,4 @@ export async function hitMonsterWithSupportedPotion({
         typeCall,
     };
 }
+//# sourceMappingURL=potion_hit.js.map

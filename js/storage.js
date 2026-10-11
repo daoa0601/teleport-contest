@@ -3,65 +3,83 @@ import { game } from './gstate.js';
 //
 // Each VFS file is stored as a separate localStorage key with a 'vfs:' prefix.
 // Example: localStorage['vfs:/home/rodney/notes'] = 'Remember to buy scrolls'
-
 const VFS_PREFIX = 'vfs:';
-
 // Safe localStorage access -- returns null when unavailable (e.g. Node.js tests).
-
-export function setStorageForTesting(mock) { if (game) game.mockStorage = mock; }
+export function setStorageForTesting(mock) { game.mockStorage = mock; }
 function storage() {
-    if (game?.mockStorage) return game.mockStorage;
+    if (game?.mockStorage)
+        return game.mockStorage;
     try {
-        if (typeof localStorage === 'undefined') return null;
+        if (typeof localStorage === 'undefined')
+            return null;
         return localStorage;
-    } catch (e) { return null; }
+    }
+    catch (e) {
+        return null;
+    }
 }
-
 export function vfsReadFile(path) {
     const s = storage();
-    if (!s) return null;
+    if (!s)
+        return null;
     try {
         const v = s.getItem(VFS_PREFIX + path);
         return v !== null ? v : null;
-    } catch (e) { return null; }
+    }
+    catch (e) {
+        return null;
+    }
 }
-
 export function vfsWriteFile(path, content) {
     const s = storage();
-    if (!s) return false;
-    try { s.setItem(VFS_PREFIX + path, content); return true; }
-    catch (e) { return false; }
+    if (!s)
+        return false;
+    try {
+        s.setItem(VFS_PREFIX + path, content);
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
 }
-
 export function vfsDeleteFile(path) {
     const s = storage();
-    if (!s) return false;
+    if (!s)
+        return false;
     try {
-        if (s.getItem(VFS_PREFIX + path) === null) return false;
+        if (s.getItem(VFS_PREFIX + path) === null)
+            return false;
         s.removeItem(VFS_PREFIX + path);
         return true;
-    } catch (e) { return false; }
+    }
+    catch (e) {
+        return false;
+    }
 }
-
 export function vfsListFiles(prefix) {
     const s = storage();
-    if (!s) return [];
+    if (!s)
+        return [];
     try {
         const result = [];
         for (let i = 0; i < s.length; i++) {
             const key = s.key(i);
-            if (!key || !key.startsWith(VFS_PREFIX)) continue;
+            if (!key || !key.startsWith(VFS_PREFIX))
+                continue;
             const path = key.slice(VFS_PREFIX.length);
-            if (!prefix || path.startsWith(prefix)) result.push(path);
+            if (!prefix || path.startsWith(prefix))
+                result.push(path);
         }
         return result;
-    } catch (e) { return []; }
+    }
+    catch (e) {
+        return [];
+    }
 }
-
 export function init_storage_globals() {
-    if (game) game.mockStorage = null;
+    if (game)
+        game.mockStorage = null;
 }
-
 // Minimal Storage-API-compatible in-memory backing for tests and multi-segment
 // a game. The contest runner creates one of these
 // at construction time and re-link it onto game.mockStorage after every
@@ -69,17 +87,19 @@ export function init_storage_globals() {
 // so vfsWriteFile in seg 1 is readable by vfsReadFile in seg 2 — same role
 // localStorage plays in the browser.
 export class InMemoryStorage {
-    constructor() { this._data = new Map(); }
-    getItem(key) { return this._data.has(key) ? this._data.get(key) : null; }
+    _data = new Map();
+    getItem(key) { return this._data.get(key) ?? null; }
     setItem(key, value) { this._data.set(key, String(value)); }
     removeItem(key) { this._data.delete(key); }
     get length() { return this._data.size; }
     key(i) {
         let n = 0;
         for (const k of this._data.keys()) {
-            if (n === i) return k;
+            if (n === i)
+                return k;
             n++;
         }
         return null;
     }
 }
+//# sourceMappingURL=storage.js.map

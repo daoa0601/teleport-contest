@@ -1,0 +1,176 @@
+// Effects of a monster consuming an object. C refs: mon.c m_consume_obj()
+// and meatbox(), monmove.c bee_eat_jelly().
+import type { GameState } from './game_state.js';
+import type { Monster } from './monster_types.js';
+import type { GameObject } from './object_types.js';
+import type { MessagePublisher } from './display.js';
+import { isok } from './const.js';
+import { thawObject } from './container.js';
+import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { applyFloorEffects } from './floor_effects.js';
+import { placeObject } from './floor_object.js';
+import { game } from './gstate.js';
+import { healMonster, killGenocidedMonster } from './mon.js';
+import { AD_POLY } from './monster_attack_types.js';
+import { grantMonsterCorpseIntrinsic } from './monster_corpse_intrinsic.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME } from './monster_data.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { finishMonsterGrowth, growMonster } from './monster_growth.js';
+import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { beginMonsterMealMimicry } from './monster_meal_mimicry.js';
+import { monsterName, possessiveName } from './monster_name.js';
+import { changeMonsterForm } from './monster_polymorph.js';
+import { monsterHasStoneResistance } from './monster_resistance.js';
+import { prepareMonsterPetrification, turnGolemToStone } from './monster_stoning.js';
+import { CARROT, CORPSE, EGG, GLOB_OF_GREEN_SLIME, ICE_BOX, OBJECT_WEIGHT, TIN } from './object_data.js';
+import { delobj } from './object_delete.js';
+import { unlinkObject } from './object_location.js';
+import { objectName, observeDistantObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
+import { unpunishHero } from './punishment.js';
+import { capitalizedDefiniteName } from './ray_hit_message.js';
+import { d, rn2, rnd } from './rng.js';
+import { fleshPetrifies } from './stoning.js';
+import { surfaceName } from './terrain_name.js';
+import { cansee } from './vision.js';
+
+const PM_GELATINOUS_CUBE = MONSTER_NAME.indexOf('gelatinous cube');
+const PM_QUEEN_BEE = MONSTER_NAME.indexOf('queen bee');
+const PM_GREEN_SLIME = MONSTER_NAME.indexOf('green slime');
+const PM_NURSE = MONSTER_NAME.indexOf('nurse');
+const PM_WRAITH = MONSTER_NAME.indexOf('wraith');
+const M1_NOEYES = 0x00001000;
+const M2_SHAPESHIFTER = 0x00004000;
+const MIMIC_SPECIES = new Set(['small mimic', 'large mimic', 'giant mimic'].map(name => MONSTER_NAME.indexOf(name)));
+
+export interface MonsterConsumptionOptions {
+    publish?: MessagePublisher;
+    random?: typeof rn2;
+    rollOne?: typeof rnd;
+    rollDice?: typeof d;
+}
+
+function polymorphFood(object: GameObject): boolean {
+    if (![CORPSE, EGG, TIN].includes(object.otyp)
+        || object.corpsenm === undefined || object.corpsenm < 0) return false;
+    return !!((MONSTER_FLAGS2[object.corpsenm] ?? 0) & M2_SHAPESHIFTER)
+        || !!MONSTER_ATTACKS[object.corpsenm]?.some(([, damage]) => damage === AD_POLY);
+}
+
+async function emptyEatenContainer(
+    monster: Monster, object: GameObject, state: GameState, publish: MessagePublisher, random: typeof rn2,
+): Promise<void> {
+    const x = monster.mx, y = monster.my;
+    if (!object.contents?.length || !isok(x, y)) return;
+    const cube = monster.mnum === PM_GELATINOUS_CUBE;
+    if (!cube && cansee(x, y)) {
+        observeDistantObjectForNaming(object, state);
+        const container = possessiveName(capitalizedDefiniteName(objectName(object, state), state));
+        await publish(`${container} contents spill out onto the ${surfaceName(x, y, state)}.`);
+    }
+    for (const content of [...object.contents]) {
+        unlinkObject(content, state);
+        if (object.otyp === ICE_BOX) thawObject(content, state);
+        if (cube) await addObjectToMonsterInventory(monster, content, state);
+        else {
+            const landing = await applyFloorEffects(content, x, y, { state, publish, random });
+            if (landing.heroDied) return;
+            if (!landing.finished) await placeObject(content, x, y, state);
+        }
+        if (state.program_state.gameover) return;
+    }
+}
+
+async function growAfterFood(
+    monster: Monster, state: GameState, {
+        publish = plineWithContinuation, random = rn2, rollOne = rnd,
+    }: MonsterConsumptionOptions = {},
+): Promise<void> {
+    const growth = growMonster(monster, { state, random, rollOne });
+    if (!growth.changedSpecies) return;
+    if (canSpotMonster(monster)) await publish(growth.message);
+    finishMonsterGrowth(monster, growth);
+    newsym(monster.mx, monster.my);
+    if (growth.genocided) await killGenocidedMonster(monster, state);
+}
+
+function foodSpecies(object: GameObject): number | null {
+    return [CORPSE, EGG, TIN].includes(object.otyp)
+        && object.corpsenm !== undefined && object.corpsenm >= 0
+        ? object.corpsenm : null;
+}
+
+export async function consumeMonsterObject(
+    monster: Monster, object: GameObject, state: GameState = game,
+    { publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d }: MonsterConsumptionOptions = {},
+): Promise<void> {
+    const level = state.level;
+    const isPet = !!monster.mtame;
+    if (!isPet && monster.mhp < monster.mhpmax)
+        healMonster(monster, OBJECT_WEIGHT[object.otyp] ?? 0, 0);
+    await emptyEatenContainer(monster, object, state, publish, random);
+    if (state.program_state.gameover || monster.migrating || state.level !== level) return;
+    if (object === (state.uball || state.u.uball)) {
+        await unpunishHero(state);
+        await delobj(object, state);
+        return;
+    }
+    if (object === (state.uchain || state.u.uchain)) {
+        await unpunishHero(state);
+        return;
+    }
+
+    const species = foodSpecies(object);
+    const corpse = object.otyp === CORPSE ? species : null;
+    const slime = object.otyp === GLOB_OF_GREEN_SLIME;
+    const poly = polymorphFood(object);
+    const grows = species === PM_WRAITH;
+    const heals = species === PM_NURSE;
+    const curesEyes = object.otyp === CARROT;
+    const petrifies = species !== null && fleshPetrifies(species);
+    const mimic = corpse !== null && MIMIC_SPECIES.has(corpse);
+    const visible = canSeeMonster(monster);
+    await delobj(object, state);
+    if (state.program_state.gameover) return;
+
+    if (poly || slime) {
+        const change = await changeMonsterForm(monster, slime ? PM_GREEN_SLIME : null, state, { showMessage: visible, publish });
+        if (change?.heroDied || state.program_state.gameover || monster.migrating || state.level !== level) return;
+    }
+    if (grows && (!isPet || (monster.m_lev ?? 0) < (MONSTER_LEVEL[monster.mnum] ?? 0) + 15))
+        await growAfterFood(monster, state, { publish, random, rollOne });
+    if (state.program_state.gameover || monster.migrating || state.level !== level) return;
+    if (petrifies) {
+        const stoneForm = await turnGolemToStone(monster, publish);
+        if (stoneForm?.heroDied) return;
+        if (!stoneForm && !monsterHasStoneResistance(monster)) {
+            if (visible) await publish(`${monsterName(monster, { state, capitalized: true })} turns to stone!`);
+            const stoning = await prepareMonsterPetrification(monster, { publish });
+            if (stoning.heroDied) return;
+            if (!stoning.survived)
+                await finishEnvironmentalMonsterDeath(monster, state, { noCorpse: true, publish, random, rollDice });
+        }
+    }
+    if (state.program_state.gameover || monster.migrating || state.level !== level) return;
+    if (heals) healMonster(monster, monster.mhpmax, 0);
+    if ((curesEyes || heals) && !monster.mcansee) {
+        monster.mcansee = 1;
+        monster.mblinded = 0;
+        if (canSeeMonster(monster) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES))
+            await publish(`${monsterName(monster, { state, capitalized: true })} can see again.`);
+    }
+    if (isPet && mimic) await beginMonsterMealMimicry(monster, state);
+    if (corpse !== null) await grantMonsterCorpseIntrinsic(monster, corpse, state);
+}
+
+export async function feedBeeRoyalJelly(monster: Monster, object: GameObject, state: GameState): Promise<void> {
+    const delay = object.blessed ? 3 : object.cursed ? 7 : 5;
+    if (canSeeMonster(monster))
+        await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} eats ${simpleObjectNameWithArticle(object, state)}.`);
+    await delobj(object, state);
+    monster.m_lev = Math.max(monster.m_lev ?? 0, (MONSTER_LEVEL[PM_QUEEN_BEE] ?? 0) - 1);
+    await growAfterFood(monster, state);
+    if (!monster.dead && monster.mhp > 0) {
+        monster.mfrozen = delay;
+        monster.mcanmove = 0;
+    }
+}

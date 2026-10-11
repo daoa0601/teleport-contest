@@ -1,16 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { HOLE, NO_MINVENT, ROOM, STONE } from '../js/const.js';
-import { tameMonster } from '../js/dog.js';
+import { initializePet } from '../js/dog.js';
 import { level_difficulty } from '../js/dungeon.js';
-import { place_object, remove_object } from '../js/floor_object.js';
-import { game } from '../js/gstate.js';
+import { placeCreatedObject, remove_object } from '../js/floor_object.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { putHeroToSleep } from '../js/hero_sleep.js';
 import { gotoLevel } from '../js/level_change.js';
-import { pushKeys } from '../js/input.js';
+import { resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, FOOD_RATION, LEASH, LEATHER_GLOVES, OIL_LAMP } from '../js/object_data.js';
@@ -20,205 +20,226 @@ import { restoreGame, saveGame } from '../js/save.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { addTrap } from './support/level-state.js';
+import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject, floorObject, knownObject, untimedCorpse } from './support/game-objects.js';
 import { installPolymorphedHero, installPunishedHero } from './support/hero-state.js';
-
-test('quest stairs require permission from the leader', async () => {
+import { installPagerInput } from './support/pager-input.js';
+void test('quest stairs require permission from the leader', async () => {
     const { source } = freshConnectedLevels({ dungeonName: 'The Quest' });
-    game._activeSpecialLevel = { prototype: 'Cav-strt' };
-    pushKeys(' '.repeat(8));
-
+    requirePlayingGame(game);
+    game._activeSpecialLevel = { prototype: 'Cav-strt', file: 'Cav-strt.lua' };
+    installPagerInput(resetInputState(), {
+        expected: /mysterious force prevents you from descending/,
+        limit: 1,
+    });
     await rhack('>'.charCodeAt(0));
-
     assert.ok(game.level === source, 'the hero left the quest entrance without permission');
     assert.equal(game.u.uz.dlevel, 1);
     assert.match(game._pending_message, /mysterious force prevents you from descending/);
 });
-
-test('falling down stairs hurts the polymorphed body, not saved human health', async () => {
+void test('falling down stairs hurts the polymorphed body, not saved human health', async () => {
     const { destination } = freshConnectedLevels();
+    requirePlayingGame(game);
     installPolymorphedHero('stone golem');
     game.u.fumbling = true;
     const humanHealth = game.u.uhp;
     const bodyHealth = game.u.mh;
-    pushKeys(' '.repeat(8));
-
+    installPagerInput(resetInputState(), { expected: /You fall down the stairs/, limit: 2 });
     await rhack('>'.charCodeAt(0));
-
     assert.ok(game.level === destination, 'the hero did not reach the lower level');
     assert.equal(game.u.uhp, humanHealth);
     assert.ok(game.u.mh < bodyHealth);
 });
-
-test('stair arrivals deliver the destination level message', async () => {
+void test('stair arrivals deliver the destination level message', async () => {
     freshConnectedLevels();
-    game._levelCache.get('0:2').activeSpecialLevel = {
+    requirePlayingGame(game);
+    const cached = game._levelCache?.get('0:2');
+    assert.ok(cached);
+    cached.activeSpecialLevel = {
+        prototype: 'oracle', file: 'oracle.lua',
         specialMessages: ['A cold wind blows from below.'],
     };
-    pushKeys(' '.repeat(8));
-
+    installPagerInput(resetInputState(), {
+        expected: /You descend the stairs|A cold wind blows from below/,
+        limit: 2,
+    });
     await rhack('>'.charCodeAt(0));
-
     assert.match(game._last_message, /cold wind blows/);
 });
-
-test('returning upstairs restores the original level and the linked stair', async () => {
+void test('returning upstairs restores the original level and the linked stair', async () => {
     const { source } = freshConnectedLevels({ ladder: true });
+    requirePlayingGame(game);
     const departure = game.stairs;
-    pushKeys(' '.repeat(8));
-
+    assert.ok(departure);
+    installPagerInput(resetInputState(), { expected: /You climb (?:down|up) the ladder/, limit: 2 });
     await rhack('>'.charCodeAt(0));
     assert.match(game._last_message, /climb down the ladder/);
     await rhack('<'.charCodeAt(0));
-
     assert.ok(game.level === source, 'returning upstairs rebuilt the original level');
     assert.equal(game.u.ux, departure.sx);
     assert.equal(game.u.uy, departure.sy);
     assert.equal(departure.u_traversed, true);
 });
-
-test('a carried punishment ball is dropped on the destination after a stair tumble', async () => {
+void test('a carried punishment ball is dropped on the destination after a stair tumble', async () => {
     freshConnectedLevels();
+    requirePlayingGame(game);
     game.u.uhp = game.u.uhpmax = 100;
-    const { ball, chain } = installPunishedHero();
+    const { ball, chain } = await installPunishedHero();
     remove_object(ball);
-    addInventoryItem(ball);
-    pushKeys(' '.repeat(16));
-
+    await addInventoryItem(ball);
+    installPagerInput(resetInputState(), {
+        expected: /You fall down the stairs|iron ball|You lose your grip|There is a staircase up to level 1 here/,
+        limit: 4,
+    });
     await rhack('>'.charCodeAt(0));
-
     assert.equal(game.inventory.includes(ball), false);
-    const pile = game.level.objects[game.u.ux][game.u.uy];
+    const pile = floorObjectsAt(game.level, game.u.ux, game.u.uy);
     assert.ok(pile.includes(ball));
     assert.ok(pile.includes(chain));
     assert.equal(game.uball, ball);
 });
-
-test('Amulet difficulty remembers the deepest visit after returning upstairs and restoring', async () => {
+void test('Amulet difficulty remembers the deepest visit after returning upstairs and restoring', async () => {
     freshConnectedLevels({ destinationDepth: 4 });
+    requirePlayingGame(game);
     game.plname = 'Climber';
     const storage = memoryStorage();
-
+    installPagerInput(resetInputState(), {
+        expected: /You descend the stairs|You climb up the stairs/,
+        limit: 2,
+    });
     await gotoLevel({ dnum: 0, dlevel: 4 }, { arrival: 'stairs' });
     await gotoLevel({ dnum: 0, dlevel: 1 }, { arrival: 'stairs' });
-    assert.equal(saveGame(storage), true);
+    assert.equal(await saveGame(storage), true);
     assert.equal(restoreGame('Climber', storage), true);
-    addInventoryObject(AMULET_OF_YENDOR);
-
+    await addInventoryObject(AMULET_OF_YENDOR);
     assert.equal(level_difficulty(), 4);
 });
-
-test('falling can force contact with a wielded cockatrice corpse through gloves', async () => {
+void test('falling can force contact with a wielded cockatrice corpse through gloves', async () => {
     freshConnectedLevels();
+    requirePlayingGame(game);
     game.u.fumbling = true;
-    wearHeroArmor(addInventoryObject(LEATHER_GLOVES));
-    const amulet = addInventoryObject(AMULET_OF_LIFE_SAVING);
-    wearHeroAccessory(amulet, 'uamul');
-    const corpse = addInventoryItem(untimedCorpse(MONSTER_NAME.indexOf('cockatrice')));
-    setPrimaryWeapon(corpse);
-    pushKeys(' '.repeat(16));
-
+    wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
+    const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
+    await wearHeroAccessory(amulet, 'uamul');
+    const corpse = await addInventoryItem(await untimedCorpse(MONSTER_NAME.indexOf('cockatrice')));
+    await setPrimaryWeapon(corpse);
+    installPagerInput(resetInputState(), {
+        expected: /You fall down the stairs|cockatrice corpse|turn to stone|But wait|medallion|feel much better/,
+        limit: 8,
+    });
     await rhack('>'.charCodeAt(0));
-
     assert.equal(game.inventory.includes(amulet), false, 'the tumble did not trigger life saving');
     assert.ok(game.u.uhp > 0);
     assert.equal(game.uwep, corpse);
 });
-
-test('returning to a level burns out expired lamps and removes decayed corpses before the next command', async () => {
+void test('returning to a level burns out expired lamps and removes decayed corpses before the next command', async () => {
     freshConnectedLevels();
-    pushKeys(' '.repeat(20));
+    requirePlayingGame(game);
+    installPagerInput(resetInputState(), {
+        expected: /You descend the stairs|You climb up the stairs|lamp/,
+        limit: 4,
+    });
     await rhack('>'.charCodeAt(0));
-    const lamp = floorObject(OIL_LAMP, 14, 10, { age: 10 });
+    const lamp = await floorObject(OIL_LAMP, 14, 10, { age: 10 });
     beginObjectBurn(lamp);
-    const corpse = place_object(untimedCorpse(MONSTER_NAME.indexOf('lichen')), 15, 10);
+    const corpse = placeCreatedObject(await untimedCorpse(MONSTER_NAME.indexOf('lichen')), 15, 10);
     scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ROT_CORPSE, game.moves + 5);
     await rhack('<'.charCodeAt(0));
     game.moves += 20;
-
     await rhack('>'.charCodeAt(0));
-
     assert.equal(lamp.lamplit, false, 'the lamp still burns after its fuel ran out');
     assert.equal(corpse.where, 'gone');
-    assert.equal(game.level.objects[15][10].includes(corpse), false);
+    assert.equal(floorObjectsAt(game.level, 15, 10).includes(corpse), false);
 });
-
-test('arriving downstairs picks up objects when autopickup is enabled', async () => {
+void test('arriving downstairs picks up objects when autopickup is enabled', async () => {
     const { destination } = freshConnectedLevels();
+    requirePlayingGame(game);
     game.flags.pickup = true;
-    const ration = place_object(knownObject(FOOD_RATION), 12, 10, {
+    const ration = placeCreatedObject(await knownObject(FOOD_RATION), 12, 10, {
         ...game, level: destination,
     });
-    pushKeys(' '.repeat(8));
-
+    installPagerInput(resetInputState(), { expected: /You descend the stairs|food ration/, limit: 2 });
     await rhack('>'.charCodeAt(0));
-
     assert.equal(game.inventory.includes(ration), true);
-    assert.equal(destination.objects[12][10].includes(ration), false);
+    assert.equal(floorObjectsAt(destination, 12, 10).includes(ration), false);
 });
-
-test('a sleeping hero does not pick up objects on level arrival', async () => {
+void test('a sleeping hero does not pick up objects on level arrival', async () => {
     const { destination } = freshConnectedLevels();
+    requirePlayingGame(game);
     game.flags.pickup = true;
-    game._helplessTurns = 3;
-    game._helplessReason = 'sleeping off a magical draught';
-    const ration = place_object(knownObject(FOOD_RATION), 12, 10, {
+    putHeroToSleep(3);
+    const ration = placeCreatedObject(await knownObject(FOOD_RATION), 12, 10, {
         ...game, level: destination,
     });
-
+    installPagerInput(resetInputState(), { expected: /You descend the stairs|food ration/, limit: 2 });
     await gotoLevel({ dnum: 0, dlevel: 2 }, { arrival: 'stairs' });
-
     assert.equal(game.inventory.includes(ration), false);
-    assert.equal(destination.objects[12][10].includes(ration), true);
+    assert.equal(floorObjectsAt(destination, 12, 10).includes(ration), true);
 });
-
-test('falling through a shaft hurts the hero for each level fallen', async () => {
+void test('falling through a shaft hurts the hero for each level fallen', async () => {
     const { source, destination } = freshConnectedLevels({ destinationDepth: 4 });
+    requirePlayingGame(game);
     game.u.uhp = game.u.uhpmax = 100;
     addTrap(source, HOLE, 11, 10, { dst: { dnum: 0, dlevel: 4 }, tseen: true });
-    pushKeys(' '.repeat(16));
-
+    installPagerInput(resetInputState(), { expected: /fall through|plunge down|hole|shaft/, limit: 2 });
     await rhack('l'.charCodeAt(0));
-
     assert.ok(game.level === destination, 'the fall did not reach the shaft destination');
     const damage = 100 - game.u.uhp;
     assert.ok(damage >= 3 && damage <= 18, `a three-level fall dealt ${damage} damage`);
 });
-
-test('a flying hero can deliberately descend through a known hole without fall damage', async () => {
+void test('a flying hero can deliberately descend through a known hole without fall damage', async () => {
     const { source, destination } = freshConnectedLevels({ destinationDepth: 4 });
+    requirePlayingGame(game);
     game.stairs = null;
-    source.at(10, 10).typ = ROOM;
+    source.requireAt(10, 10).typ = ROOM;
     installPolymorphedHero('vampire bat');
     const health = game.u.mh;
     addTrap(source, HOLE, 10, 10, { dst: { dnum: 0, dlevel: 4 }, tseen: true });
-    pushKeys(' '.repeat(16));
-
+    installPagerInput(resetInputState(), { expected: /fly down|hole|shaft/, limit: 2 });
     await rhack('>'.charCodeAt(0));
-
     assert.ok(game.level === destination, 'the flying hero could not descend through the hole');
     assert.equal(game.u.mh, health);
 });
-
-test('a cursed leash holds the hero back when the pet cannot get beside the stairs', async () => {
+void test('a cursed leash holds the hero back when the pet cannot get beside the stairs', async () => {
     const { source } = freshConnectedLevels();
+    requirePlayingGame(game);
     const pet = await createMonsterAt('housecat', 14, 10, NO_MINVENT);
-    tameMonster(pet, game);
-    const leash = addInventoryObject(LEASH, { cursed: true, leashmon: pet.m_id });
+    initializePet(pet, { state: game });
+    const leash = await addInventoryObject(LEASH, { cursed: true, leashmon: pet.m_id });
     pet.mleashed = 1;
     for (let x = 9; x <= 11; x++) {
         for (let y = 9; y <= 11; y++) {
-            if (x !== 10 || y !== 10) source.at(x, y).typ = STONE;
+            if (x !== 10 || y !== 10)
+                source.requireAt(x, y).typ = STONE;
         }
     }
-    pushKeys(' '.repeat(8));
-
+    installPagerInput(resetInputState(), { expected: /held back by your pet/, limit: 1 });
     await rhack('>'.charCodeAt(0));
-
     assert.ok(game.level === source, 'the hero left a pet held by a cursed leash');
     assert.equal(leash.leashmon, pet.m_id);
     assert.equal(pet.mleashed, 1);
     assert.match(game._pending_message, /held back by your pet/);
 });
+void test('a Tourist earns a threshold level on first arrival but not on a return visit', async () => {
+    const { source } = freshConnectedLevels({ role: 'tourist', generateDestination: true });
+    requirePlayingGame(game);
+    game.u.uexp = 19;
+    game.u.urexp = 1996;
+    game.flags.beginner = true;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /Welcome to experience level 2/, limit: 2 });
+    await gotoLevel({ dnum: 0, dlevel: 2 });
+    assert.equal(game.u.ulevel, 2);
+    assert.equal(game.u.uexp, 21);
+    assert.equal(game.u.urexp, 2004);
+    assert.equal(game.flags.beginner, false);
+    const destination = game.level;
+    await gotoLevel({ dnum: 0, dlevel: 1 });
+    assert.equal(game.level, source);
+    await gotoLevel({ dnum: 0, dlevel: 2 });
+    assert.equal(game.level, destination);
+    assert.equal(game.u.uexp, 21);
+    assert.equal(game.u.urexp, 2004);
+});
+//# sourceMappingURL=level_change.test.js.map

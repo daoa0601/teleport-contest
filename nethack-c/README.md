@@ -5,7 +5,7 @@ The C side of the contest. Three things live here:
 ```
 nethack-c/
 ├── upstream/        ← submodule: github.com/NetHack/NetHack @ NetHack-5.0.0_Release
-├── patches/         ← 6 patches: pinned datetime+seed, RNG logging, deterministic capture
+├── patches/         ← 8 patches: pinned datetime+seed, RNG logging, deterministic capture
 ├── build-recorder.sh   ← clones submodule, applies patches, builds the recorder binary
 └── recorder/        ← (gitignored) built source tree
     recorder-install/   ← (gitignored) installed binary + data

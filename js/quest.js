@@ -1,17 +1,13 @@
 // quest.js — Quest scorecard, role text, and quest-character conversation.
 // C refs: quest.c, questpgr.c, sounds.c; Lua ref: dat/quest.lua.
-
 import { game } from './gstate.js';
 import { gotoLevel } from './level_change.js';
 import { nhgetch } from './input.js';
 import { flushPendingTopline, flush_screen, pline } from './display.js';
 import { showTextPages } from './windows.js';
 import { rn2 } from './rng.js';
-import {
-    MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_CLOSE,
-} from './const.js';
+import { MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_CLOSE, } from './const.js';
 import { monsterIsQuestNemesis } from './monster_data.js';
-
 // C struct q_score is global game state, not a property inferred from the
 // current special level.  Keeping the complete shape here makes the state
 // survive level cache changes and ordinary game serialization as later quest
@@ -45,13 +41,13 @@ export function ensureQuestStatus(g = game) {
     }
     return g.quest_status;
 }
-
 // role_init() marks the selected role's leader species peaceful and M3_CLOSE;
 // makemon() then records the particular live identity in q_score.  Register
 // after ordinary construction so the constructor's existing RNG remains in
 // source order even while role metadata overrides the final attitude.
 export function registerQuestLeader(monster, g = game) {
-    if (!monster || monster.mnum !== g.urole?.ldrnum) return false;
+    if (!monster || monster.mnum !== g.urole?.ldrnum)
+        return false;
     const status = ensureQuestStatus(g);
     status.leader_m_id = monster.m_id;
     status.ldrgend = monster.female ? 1 : 0;
@@ -60,52 +56,49 @@ export function registerQuestLeader(monster, g = game) {
     monster.mstrategy = (monster.mstrategy || 0) | STRAT_CLOSE;
     return true;
 }
-
 export function isQuestLeader(monster, g = game) {
-    if (!monster) return false;
+    if (!monster)
+        return false;
     const status = ensureQuestStatus(g);
     return !!status.leader_m_id
         && monster.m_id === status.leader_m_id;
 }
-
 export function markQuestLeaderDead(monster, g = game) {
-    if (!isQuestLeader(monster, g)) return false;
+    if (!isQuestLeader(monster, g))
+        return false;
     const status = ensureQuestStatus(g);
     status.leader_is_dead = true;
     status.killed_leader = true;
     return true;
 }
-
 export function markQuestLeaderAlive(monster, g = game) {
-    if (!isQuestLeader(monster, g)) return false;
+    if (!isQuestLeader(monster, g))
+        return false;
     ensureQuestStatus(g).leader_is_dead = false;
     return true;
 }
-
 export function markQuestNemesisDead(monster, g = game) {
-    if (!monsterIsQuestNemesis(monster?.mnum)) return false;
+    if (!monster || !monsterIsQuestNemesis(monster.mnum))
+        return false;
     ensureQuestStatus(g).killed_nemesis = true;
     return true;
 }
-
 function questPage(lines) {
     const page = lines.slice(0, 23);
-    while (page.length < 23) page.push('');
+    while (page.length < 23)
+        page.push('');
     page.push('--More--');
     return { lines: page, cursor: [8, 23] };
 }
-
 function heroName(g = game) {
     return g.plname || g.displayName?.toLowerCase() || 'adventurer';
 }
-
 function roleDeity(g = game) {
-    const role = g.urole || {};
+    const role = g.urole;
     const align = (g.u?.ualign?.type ?? 0) > 0 ? 'lawful'
         : (g.u?.ualign?.type ?? 0) < 0 ? 'chaotic' : 'neutral';
-    return role.gods?.[align] || 'your god';
+    return role?.gods?.[align] || 'your god';
 }
-
 function archeologistFirstTime(g = game) {
     const homebase = g.urole?.homebase || 'the College of Archeology';
     return [
@@ -120,12 +113,11 @@ function archeologistFirstTime(g = game) {
         'Strange forbidding shapes seem to be moving in the distance.',
     ];
 }
-
 function barbarianFirstTime(g = game) {
-    const role = g.urole || {};
+    const role = g.urole;
     const perceive = g.blind ? 'sense' : 'see';
-    const homebase = role.homebase || 'the Camp of the Duali Tribe';
-    const leader = role.leaderName || 'Pelias';
+    const homebase = role?.homebase || 'the Camp of the Duali Tribe';
+    const leader = role?.leaderName || 'Pelias';
     return [
         'Warily you scan your surroundings, all of your senses alert for signs',
         `of possible danger.  Off in the distance, you can ${perceive} the familiar shapes`,
@@ -141,7 +133,6 @@ function barbarianFirstTime(g = game) {
         `    "By ${roleDeity(g)}, there will be blood spilt today."`,
     ];
 }
-
 function barbarianLocateFirst(g = game) {
     const intermediate = g.urole?.intermediate || 'the Duali Oasis';
     return [
@@ -149,12 +140,10 @@ function barbarianLocateFirst(g = game) {
         `you have located ${intermediate}.`,
     ];
 }
-
 function barbarianLocateNext(g = game) {
     const intermediate = g.urole?.intermediate || 'the Duali Oasis';
     return `Yet again you have a chance to infiltrate ${intermediate}.`;
 }
-
 function archeologistLeaderFirst(g = game) {
     const name = heroName(g);
     return [
@@ -163,12 +152,11 @@ function archeologistLeaderFirst(g = game) {
         'most difficult task of your career."',
     ];
 }
-
 function archeologistAssignQuest(g = game) {
-    const role = g.urole || {};
-    const nemesis = role.nemesisName || 'the Minion of Huhetotl';
-    const artifact = role.artifactName || 'the Orb of Detection';
-    const intermediate = role.intermediate || 'the Tomb of the Toltec Kings';
+    const role = g.urole;
+    const nemesis = role?.nemesisName || 'the Minion of Huhetotl';
+    const artifact = role?.artifactName || 'the Orb of Detection';
+    const intermediate = role?.intermediate || 'the Tomb of the Toltec Kings';
     return [
         `Grave times have befallen the college, for ${nemesis} has`,
         `stolen ${artifact}.  Without it, the board of directors of`,
@@ -186,11 +174,10 @@ function archeologistAssignQuest(g = game) {
         `"May the wisdom of ${roleDeity(g)} be your guide."`,
     ];
 }
-
 function archeologistBadAlign(g = game) {
     const name = heroName(g);
     const properName = name
-        ? `${name[0].toUpperCase()}${name.slice(1)}` : 'Adventurer';
+        ? `${name.charAt(0).toUpperCase()}${name.slice(1)}` : 'Adventurer';
     const rank = g.urole?.rank;
     const rankName = (g.flags?.female ? rank?.f : rank?.m)
         || rank?.m || 'Spelunker';
@@ -204,7 +191,6 @@ function archeologistBadAlign(g = game) {
         'back only when you have purified yourself."',
     ];
 }
-
 function archeologistLocateFirst(g = game) {
     const intermediate = g.urole?.intermediate
         || 'the Tomb of the Toltec Kings';
@@ -215,7 +201,6 @@ function archeologistLocateFirst(g = game) {
         `${intermediate}.`,
     ];
 }
-
 function priestLeaderFirst(g = game) {
     const name = heroName(g);
     const child = g.flags?.female ? 'daughter' : 'son';
@@ -226,18 +211,17 @@ function priestLeaderFirst(g = game) {
         'great challenge."',
     ];
 }
-
 function priestAssignQuest(g = game) {
-    const role = g.urole || {};
+    const role = g.urole;
     const name = heroName(g);
-    const nemesis = role.nemesisName || 'Nalzok';
-    const homebase = role.homebase || 'the Great Temple';
-    const guardians = role.guardianPlural || 'Acolytes';
-    const artifact = role.artifactName || 'the Mitre of Holiness';
-    const intermediate = role.intermediate || 'the Temple of Nalzok';
+    const nemesis = role?.nemesisName || 'Nalzok';
+    const homebase = role?.homebase || 'the Great Temple';
+    const guardians = role?.guardianPlural || 'Acolytes';
+    const artifact = role?.artifactName || 'the Mitre of Holiness';
+    const intermediate = role?.intermediate || 'the Temple of Nalzok';
     const align = (g.u?.ualign?.type ?? 0) > 0 ? 'lawful'
         : (g.u?.ualign?.type ?? 0) < 0 ? 'chaotic' : 'neutral';
-    const deity = role.gods?.[align] || 'your god';
+    const deity = role?.gods?.[align] || 'your god';
     return [
         `"Yes, ${name}.  You are truly ready now.  Attend to me and I shall`,
         'tell you of what has transpired:',
@@ -258,11 +242,10 @@ function priestAssignQuest(g = game) {
         `"Go with ${deity} as your guide, ${name}."`,
     ];
 }
-
 function priestFirstTime(g = game) {
-    const role = g.urole || {};
-    const homebase = role.homebase || 'the Great Temple';
-    const leader = role.leaderName || 'the Arch Priest';
+    const role = g.urole;
+    const homebase = role?.homebase || 'the Great Temple';
+    const leader = role?.leaderName || 'the Arch Priest';
     return [
         `You find yourself standing in sight of ${homebase}.  Something`,
         `is obviously wrong here.  The doors to ${homebase}, which usually`,
@@ -272,12 +255,11 @@ function priestFirstTime(g = game) {
         `You realize that ${leader} needs your assistance!`,
     ];
 }
-
 function priestLocateFirst(g = game) {
-    const role = g.urole || {};
-    const intermediate = role.intermediate || 'the Temple of Nalzok';
-    const leader = role.leaderName || 'the Arch Priest';
-    const nemesis = role.nemesisName || 'Nalzok';
+    const role = g.urole;
+    const intermediate = role?.intermediate || 'the Temple of Nalzok';
+    const leader = role?.leaderName || 'the Arch Priest';
+    const nemesis = role?.nemesisName || 'Nalzok';
     return [
         'You stand facing a large graveyard.  The sky above is filled with clouds',
         'that seem to get thicker closer to the center.  You sense the presence of',
@@ -287,7 +269,6 @@ function priestLocateFirst(g = game) {
         `${leader}.  It is ahead that you will find ${nemesis}'s trail.`,
     ];
 }
-
 function priestGoalFirst() {
     return [
         'The stench of brimstone is all about you, and the shrieks and moans',
@@ -296,7 +277,6 @@ function priestGoalFirst() {
         'Ahead, there is a small clearing amidst the bubbling pits of lava...',
     ];
 }
-
 function archeologistGoalFirst(g = game) {
     const leader = g.urole?.leaderName || 'Lord Carnarvon';
     const artifact = g.urole?.artifactName || 'the Orb of Detection';
@@ -307,7 +287,6 @@ function archeologistGoalFirst(g = game) {
         `You realize the feeling must be the presence of ${artifact}.`,
     ];
 }
-
 function knightGoalFirst(g = game) {
     const perceive = g.blind ? 'sense' : 'see';
     return [
@@ -318,39 +297,32 @@ function knightGoalFirst(g = game) {
         'pieces of rusted metal and broken weapons show above the surface.',
     ];
 }
-
 function priestNextTime(g = game) {
     const homebase = g.urole?.homebase || 'the Great Temple';
     return `Once again, you stand before ${homebase}.`;
 }
-
 function archeologistNextTime(g = game) {
     const homebase = g.urole?.homebase || 'the College of Archeology';
     return `Once again, you are back at ${homebase}.`;
 }
-
 function archeologistLocateNext(g = game) {
     const intermediate = g.urole?.intermediate
         || 'the Tomb of the Toltec Kings';
     return `Once again, you are near the entrance to ${intermediate}.`;
 }
-
 function archeologistGoalNext(g = game) {
     const artifact = g.urole?.artifactName || 'the Orb of Detection';
     return `The familiar presence of ${artifact} is in the ether.`;
 }
-
 function archeologistGoalAlt(g = game) {
     const nemesis = (g.urole?.nemesisName || 'the Minion of Huhetotl')
         .replace(/^the /, '');
     return `You have returned to ${nemesis}'s lair.`;
 }
-
 function priestLocateNext(g = game) {
     const intermediate = g.urole?.intermediate || 'the Temple of Nalzok';
     return `Again, you stand before ${intermediate}.`;
 }
-
 function wizardFirstTime(g = game) {
     const leader = g.urole?.leaderName || 'Neferet the Green';
     return [
@@ -366,7 +338,6 @@ function wizardFirstTime(g = game) {
         'tower...  unless something were dreadfully wrong!',
     ];
 }
-
 function wizardLocateFirst(g = game) {
     const nemesis = g.urole?.nemesisName || 'the Dark One';
     const possessive = nemesis.endsWith('s')
@@ -375,7 +346,6 @@ function wizardLocateFirst(g = game) {
     return 'Wisps of fog swirl nearby.  '
         + `You feel that ${possessive} lair is close.`;
 }
-
 const QUEST_TEXT = {
     Arc: {
         firsttime: archeologistFirstTime,
@@ -403,7 +373,6 @@ const QUEST_TEXT = {
         firsttime: wizardFirstTime,
     },
 };
-
 const QUEST_LINE = {
     Bar: {
         locate_next: barbarianLocateNext,
@@ -422,46 +391,49 @@ const QUEST_LINE = {
         locate_first: wizardLocateFirst,
     },
 };
-
+function isQuestTextRole(role) {
+    return role !== undefined && Object.hasOwn(QUEST_TEXT, role);
+}
 // questpgr.c loads quest.lua afresh for each qt_pager() lookup.  Its nhlib
 // dependency shuffles the three alignment names before the requested message
 // is resolved, even though these two Priest texts do not reference that list.
 function prepareQtDelivery(messageId, g = game) {
     rn2(3);
     rn2(2);
-    const pageText = QUEST_TEXT[g.urole?.filecode]?.[messageId];
-    if (pageText) return { page: questPage(pageText(g)) };
-    const lineText = QUEST_LINE[g.urole?.filecode]?.[messageId];
+    const role = g.urole?.filecode;
+    if (!isQuestTextRole(role))
+        return {};
+    const pageText = QUEST_TEXT[role][messageId];
+    if (pageText)
+        return { page: questPage(pageText(g)) };
+    const lineText = QUEST_LINE[role]?.[messageId];
     return lineText ? { line: lineText(g) } : {};
 }
-
 function prepareQtPager(messageId, g = game) {
     return prepareQtDelivery(messageId, g).page || null;
 }
-
 function prepareQtLine(messageId, g = game) {
     return prepareQtDelivery(messageId, g).line || null;
 }
-
 function objectContainsQuestArtifact(object) {
-    if (!object) return false;
-    if (object.questArtifact || object.isQuestArtifact) return true;
+    if (!object)
+        return false;
+    if (object.questArtifact)
+        return true;
     return (object.contents || []).some(objectContainsQuestArtifact);
 }
-
 function levelContainsQuestArtifact(g = game) {
     const level = g.level;
     if ((level?.objects || []).flat(2).some(objectContainsQuestArtifact))
         return true;
     if ((level?.buriedObjects || []).some(objectContainsQuestArtifact))
         return true;
-    return (level?.monsters || []).some(monster =>
-        (monster.minvent || monster.inventory || [])
-            .some(objectContainsQuestArtifact));
+    return (level?.monsters || []).some(monster => (monster.minvent || [])
+        .some(objectContainsQuestArtifact));
 }
-
 async function displayPreparedQtPager(page, g = game) {
-    if (!page) return false;
+    if (!page)
+        return false;
     // goto_level's arrival owner has already displayed and acknowledged its
     // explicit `--More--` line.  Direct quest_talk() enters with an ordinary
     // pending pline, which opening the text window must flush here.
@@ -475,22 +447,23 @@ async function displayPreparedQtPager(page, g = game) {
     g._retained_message = '';
     return true;
 }
-
 async function qtPager(messageId, g = game) {
     return displayPreparedQtPager(prepareQtPager(messageId, g), g);
 }
-
 // C do.c:goto_level() leaves its level-teleport pline pending and then calls
 // quest.c:onquest().  qt_pager() has already loaded quest.lua and substituted
 // the role text when opening its text window forces the older pline's More
 // acknowledgement.  Keep lookup and display separate so the Lua RNG remains
 // on the command which entered the level while the next key still belongs to
 // the pending materialization line.
-export function prepareQuestArrival({ fromDepth, firstVisit = true } = {},
-    g = game) {
-    if (g.u?.uevent?.qcompleted) return null;
-    if (g.dungeons?.[g.u?.uz?.dnum ?? 0]?.dname !== 'The Quest') return null;
-
+export function prepareQuestArrival({ fromDepth, firstVisit = true } = {}, g = game) {
+    const currentDepth = g.u.uz;
+    if (!currentDepth)
+        return null;
+    if (g.u?.uevent?.qcompleted)
+        return null;
+    if (g.dungeons?.[g.u?.uz?.dnum ?? 0]?.dname !== 'The Quest')
+        return null;
     const prototype = g._activeSpecialLevel?.prototype || '';
     const status = ensureQuestStatus(g);
     if (prototype.endsWith('-strt')) {
@@ -502,7 +475,7 @@ export function prepareQuestArrival({ fromDepth, firstVisit = true } = {},
         }
         const fromOtherDungeon = fromDepth?.dnum !== g.u?.uz?.dnum;
         const fromAbove = fromDepth?.dnum === g.u?.uz?.dnum
-            && (fromDepth?.dlevel ?? g.u.uz.dlevel)
+            && (fromDepth?.dlevel ?? currentDepth.dlevel)
                 < (g.u?.uz?.dlevel ?? 0);
         if (fromOtherDungeon || fromAbove) {
             // quest.c:on_start() uses nexttime for the first three rejected
@@ -519,8 +492,9 @@ export function prepareQuestArrival({ fromDepth, firstVisit = true } = {},
         return null;
     }
     if (prototype.endsWith('-loca')) {
-        if (status.killed_nemesis) return null;
-        const fromAbove = (fromDepth?.dlevel ?? g.u.uz.dlevel)
+        if (status.killed_nemesis)
+            return null;
+        const fromAbove = (fromDepth?.dlevel ?? currentDepth.dlevel)
             < (g.u?.uz?.dlevel ?? 0);
         if (!status.first_locate) {
             const delivery = fromAbove
@@ -535,7 +509,8 @@ export function prepareQuestArrival({ fromDepth, firstVisit = true } = {},
             return { line: prepareQtLine('locate_next', g) };
     }
     if (prototype.endsWith('-goal')) {
-        if (status.killed_nemesis) return null;
+        if (status.killed_nemesis)
+            return null;
         if (!status.made_goal) {
             return {
                 page: prepareQtPager('goal_first', g),
@@ -547,29 +522,27 @@ export function prepareQuestArrival({ fromDepth, firstVisit = true } = {},
         return {
             line: prepareQtLine(messageId, g),
             commit() {
-                if (status.made_goal < 7) status.made_goal++;
+                if (status.made_goal < 7)
+                    status.made_goal++;
             },
         };
     }
     return null;
 }
-
 // C do.c main-dungeon arrival branch: reaching the Quest entrance for the
 // first time invokes com_pager("quest_portal").  Loading quest.lua consumes
 // nhlib's alignment shuffle before its four plines collide with any pending
 // level-teleport message.
-export function prepareMainQuestPortalCall({ firstVisit = true } = {},
-    g = game) {
-    if (!firstVisit) return null;
+export function prepareMainQuestPortalCall({ firstVisit = true } = {}, g = game) {
+    if (!firstVisit)
+        return null;
     const event = g.u?.uevent || (g.u.uevent = {});
     const status = ensureQuestStatus(g);
     if (event.qcompleted || event.qexpelled || status.leader_is_dead)
         return null;
-
     const currentDnum = g.u?.uz?.dnum ?? 0;
     const currentDlevel = g.u?.uz?.dlevel ?? 1;
-    const questDnum = g.dungeons?.findIndex(dungeon =>
-        dungeon?.dname === 'The Quest') ?? -1;
+    const questDnum = g.dungeons?.findIndex(dungeon => dungeon?.dname === 'The Quest') ?? -1;
     const entrance = (g.branches || []).find(branch => {
         const hereIsEnd1 = branch?.end1?.dnum === currentDnum
             && branch.end1?.dlevel === currentDlevel;
@@ -578,16 +551,15 @@ export function prepareMainQuestPortalCall({ firstVisit = true } = {},
         return (hereIsEnd1 && branch.end2?.dnum === questDnum)
             || (hereIsEnd2 && branch.end1?.dnum === questDnum);
     });
-    if (!entrance || currentDnum === questDnum) return null;
-
+    if (!entrance || currentDnum === questDnum)
+        return null;
     rn2(3);
     rn2(2);
     if (event.qcalled) {
         return [g.urole?.key === 'rogue'
-            ? `You again sense ${g.urole?.leaderName || 'your leader'} demanding your attendance.`
-            : `You again sense ${g.urole?.leaderName || 'your leader'} pleading for help.`];
+                ? `You again sense ${g.urole?.leaderName || 'your leader'} demanding your attendance.`
+                : `You again sense ${g.urole?.leaderName || 'your leader'} pleading for help.`];
     }
-
     event.qcalled = true;
     const leader = g.urole?.leaderName || 'your leader';
     const homebase = g.urole?.homebase || 'your quest home';
@@ -598,27 +570,28 @@ export function prepareMainQuestPortalCall({ firstVisit = true } = {},
         "You couldn't quite make out that last message.",
     ];
 }
-
 export async function displayPreparedQuestArrival(arrival, g = game) {
-    if (!arrival) return false;
-    if (arrival.page) await displayPreparedQtPager(arrival.page, g);
-    else if (arrival.line) await pline(arrival.line);
+    if (!arrival)
+        return false;
+    if (arrival.page)
+        await displayPreparedQtPager(arrival.page, g);
+    else if (arrival.line)
+        await pline(arrival.line);
     arrival.commit?.();
     return !!(arrival.page || arrival.line);
 }
-
 async function questMore(message, g = game) {
     await pline(message);
     await flush_screen(1);
     g.nhDisplay?.setCursor(message.length, 0);
     let key;
-    do key = await nhgetch();
+    do
+        key = await nhgetch();
     while (![27, 32, 10, 13].includes(key));
     g._pending_message = '';
     g._retained_message = '';
     return key;
 }
-
 async function wizardAdjustAlignment(g = game) {
     await pline('adjust?');
     await flush_screen(1);
@@ -631,39 +604,35 @@ async function wizardAdjustAlignment(g = game) {
     g._retained_message = '';
     return String.fromCharCode(key).toLowerCase();
 }
-
 function originalAlignment(g = game) {
     return g.u?.ualignbase?.[1] ?? g.u?.ualign?.type ?? 0;
 }
-
 function currentBaseAlignment(g = game) {
     return g.u?.ualignbase?.[0] ?? g.u?.ualign?.type ?? 0;
 }
-
 async function questPurity(talk, g = game) {
     const original = originalAlignment(g);
+    const alignment = g.u.ualign;
+    if (!alignment)
+        throw new Error('Quest purity requires initialized hero alignment.');
     if (g.flags?.debug && talk
         && (g.u?.ualign?.type ?? 0) === original
         && currentBaseAlignment(g) === original
         && (g.u?.ualign?.record ?? 0) < MIN_QUEST_ALIGN) {
-        await questMore(
-            `You are currently ${g.u.ualign.record} and require ${MIN_QUEST_ALIGN}.--More--`,
-            g,
-        );
+        await questMore(`You are currently ${alignment.record} and require ${MIN_QUEST_ALIGN}.--More--`, g);
         if (await wizardAdjustAlignment(g) === 'y')
-            g.u.ualign.record = MIN_QUEST_ALIGN;
+            alignment.record = MIN_QUEST_ALIGN;
     }
     if ((g.u?.ualign?.record ?? 0) >= MIN_QUEST_ALIGN
         && (g.u?.ualign?.type ?? 0) === original
-        && currentBaseAlignment(g) === original) return 1;
+        && currentBaseAlignment(g) === original)
+        return 1;
     return currentBaseAlignment(g) !== original ? -1 : 0;
 }
-
 export function onQuestStart(g = game) {
     return g.dungeons?.[g.u?.uz?.dnum ?? 0]?.dname === 'The Quest'
         && g._activeSpecialLevel?.prototype?.endsWith('-strt');
 }
-
 // C quest.c:ok_to_quest() asks the non-interactive purity predicate.  Keep
 // that scorecard decision shared with pager and level-transition callers so
 // a mapped quest stair is described as blocked until the same gate opens.
@@ -676,40 +645,38 @@ export function okToQuest(g = game) {
     return !!(((status.got_quest || status.got_thanks) && pure)
         || status.killed_leader);
 }
-
 // Ported source block: chat_with_leader()'s first-contact, capable, pure
 // assignment path.  The durable state and dispatch seams are shared with the
 // remaining rejection/completion branches, which stay explicit future work.
-export async function chatWithQuestLeader(monster, {
-    exerciseWisdom = null,
-} = {}, g = game) {
-    if (!isQuestLeader(monster, g)) return false;
+export async function chatWithQuestLeader(monster, { exerciseWisdom = null, } = {}, g = game) {
+    if (!monster || !isQuestLeader(monster, g))
+        return false;
     const status = ensureQuestStatus(g);
-    if (!monster.mpeaceful || status.pissed_off) return true;
-
+    if (!monster.mpeaceful || status.pissed_off)
+        return true;
     // The current completed block is initial assignment.  Preserve command
     // ownership for later leader states without fabricating their dialogue.
     if (status.met_leader || status.got_quest || status.got_thanks)
         return true;
-
-    if (!await qtPager('leader_first', g)) return true;
+    if (!await qtPager('leader_first', g))
+        return true;
     status.met_leader = true;
     status.not_ready = 0;
-
     // A leader carried through the portal may be chatted with elsewhere, but
     // capability and quest assignment are meaningful only on qstart_level.
-    if (!onQuestStart(g)) return true;
+    if (!onQuestStart(g))
+        return true;
     if ((g.u?.ulevel ?? 1) < MIN_QUEST_LEVEL) {
         // badlevel text plus expulsion is the next alternative readiness
         // block; do not silently grant the quest when it is not yet ported.
         status.not_ready = 1;
         return true;
     }
-
     const purity = await questPurity(true, g);
     if (purity === 0) {
         await qtPager('badalign', g);
-        if (exerciseWisdom) exerciseWisdom();
+        if (exerciseWisdom)
+            exerciseWisdom();
         status.not_ready = 1;
         g._questExpulsionPending = { seal: false };
         return true;
@@ -718,31 +685,35 @@ export async function chatWithQuestLeader(monster, {
         status.not_ready = 1;
         return true;
     }
-
-    if (!await qtPager('assignquest', g)) return true;
-    if (exerciseWisdom) exerciseWisdom();
+    if (!await qtPager('assignquest', g))
+        return true;
+    if (exerciseWisdom)
+        exerciseWisdom();
     status.got_quest = true;
     return true;
 }
-
 // quest.c:expulsion(FALSE) schedules a portal arrival on the parent side of
 // the Quest branch.  The deferred transition is executed by moveloop after
 // the leader's modal dialogue returns, while the original hero action still
 // owns the surrounding monster/global-turn transaction.
 export async function performQuestExpulsion(g = game) {
-    const current = g.u?.uz || {};
-    const branch = g.branches?.find(candidate =>
-        (candidate.end1?.dnum === current.dnum
-            && candidate.end1?.dlevel === current.dlevel)
+    const current = g.u.uz;
+    if (!current)
+        return false;
+    const branch = g.branches?.find(candidate => (candidate.end1?.dnum === current.dnum
+        && candidate.end1?.dlevel === current.dlevel)
         || (candidate.end2?.dnum === current.dnum
             && candidate.end2?.dlevel === current.dlevel));
-    if (!branch) return false;
+    if (!branch)
+        return false;
     const destination = branch.end1?.dnum === current.dnum
         && branch.end1?.dlevel === current.dlevel
         ? branch.end2 : branch.end1;
-    if (!destination) return false;
+    if (!destination)
+        return false;
     await gotoLevel({ ...destination }, { arrival: 'portal' });
     g._questExpulsionPending = null;
     g.context.move = 1;
     return true;
 }
+//# sourceMappingURL=quest.js.map

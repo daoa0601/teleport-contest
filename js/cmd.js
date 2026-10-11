@@ -1,441 +1,277 @@
+import { wizIntrinsic } from './wizard_intrinsics.js';
+import { isRoom } from './map_types.js';
+import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
+import { grantMonsterWish } from './potion_occupants.js';
+import { quaff } from './quaff.js';
+import { tameMonster } from './monster_taming.js';
+import { jumpHero } from './jumping.js';
 // cmd.js — Command dispatch and movement.
 // C ref: cmd.c rhack(), hack.c domove().
-
-import { game } from './gstate.js';
-import {
-    addPickedInventoryObject, autopickupAtHero, pickupAtHero,
-} from './pickup.js';
+import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
+import { requireInitializedHero } from './hero_types.js';
+import { fruitName } from './fruit.js';
+import { waterbodyName } from './terrain_name.js';
+import { isGrayStone, isWeaponTool } from './object_properties.js';
+import { applySuggestion } from './apply_selection.js';
+import { flipThroughBook } from './book_flip.js';
+import { flipCoin } from './coin_flip.js';
+import { useGrayStone } from './gray_stone.js';
+import { useMirror } from './mirror.js';
+import { useCamera } from './camera.js';
+import { useTowel } from './towel.js';
+import { useBell } from './apply_bell.js';
+import { breakWand } from './wand_break.js';
+import { heroStatusLine } from './hero_status.js';
+import { speakArtifact } from './artifact_speech.js';
+import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light.js';
+import { useWhistle } from './whistle.js';
+import { retouchHeroObject } from './hero_retouch.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
+import { senseBuriedObjects } from './buried_object.js';
+import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
+import { attackHostileMonster } from './hero_melee.js';
+import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
+import { SHOP_TYPES } from './shop_data.js';
+import { observeBucForNaming } from './object_knowledge.js';
+import { observeDistantObjectForNaming, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
+import { woundHeroLegs } from './hero_legs.js';
+import { makeMonsterFlee } from './monster_flee.js';
+import { descendFromLevitation } from './levitation_commands.js';
+import { endVoluntaryMultiTurn, resetCommandVariables } from './command_state.js';
+import { propertyIsActive } from './properties.js';
+import { addPickedInventoryObject, pickupAtHero, pickupObjectClass, pickupClassOrder, } from './pickup.js';
 import { gotoLevel } from './level_change.js';
-import {
-    floorObjectDescription, pricedFloorObjectDescription, showFloorPile,
-} from './floor_object_display.js';
+import { levelTeleport } from './level_teleport.js';
+import { floorObjectDescription, } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
+import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { doOptions } from './options.js';
-import {
-    blocksDiagonalDoor, blocksMove, heroBadRock, heroLiquidEffects,
-    heroShouldAvoidLiquid,
-    heroTightDiagonalReason,
-} from './hack.js';
-import { controlRushDirection, defaultCommandKey, defaultCommandName } from './command_keys.js';
+import { blocksDiagonalDoor, blocksMove, heroBadRock, heroCanPassWallAt, heroLiquidEffects, heroShouldAvoidLiquid, heroTightDiagonalReason, } from './hack.js';
+import { commandExecutionKey, controlRushDirection, promptedDirectionKey, visibleCommandKey } from './command_keys.js';
+import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
+import { stopHeroOccupation } from './occupation.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { nextIdent } from './ident.js';
+import { nextObjectId } from './ident.js';
 import { nhgetch } from './input.js';
-import {
-    compactInventoryLetters, promptInventoryObject,
-} from './inventory_prompt.js';
-import { AD_PHYS, AT_KICK, AT_WEAP } from './monster_attack_types.js';
-import { moreUntilDismissed, promptKey } from './tty_prompts.js';
-import {
-    getLine, paranoidQuery, promptYesNo, promptYesNoQuit,
-} from './query.js';
+import { readCommandInput } from './command_input.js';
+import { chooseInventoryObject, compactInventoryLetters, promptInventoryObject, } from './inventory_prompt.js';
+import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
+import { directionAssistPage, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
+import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
-import {
-    objectTypeCallNoun, tryCallObjectType,
-} from './object_call.js';
-import {
-    newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt,
-    docrtRecalc, bot, terrain_glyph, canSeeMonster, canProjectMonster, canSpotMonster,
-    monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed,
-    randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
-    see_traps, transientObjectGlyph, map_invisible, unmap_invisible,
-} from './display.js';
-import { cansee, clearAreaCells, couldsee, vision_recalc, vision_reset } from './vision.js';
-import {
-    beginObjectBurn, endObjectBurn, equipmentLightMessage, igniteItems, lightWieldedArtifact,
-    transformMagicLampToOilLamp,
-} from './light.js';
-import {
-    destroyFireInventory, dozap,
-} from './zap.js';
-import {
-    bucAdjectiveForName, consumeInventoryItem, ddoinv, dolook,
-    inventoryItemDescription, observeBucForNaming, selectInventoryObject,
-} from './invent.js';
-import {
-    castKnownSpell, continueSpellbookStudy, docast, dovspell,
-} from './spell.js';
-import { applyPotionLikeInvisibility } from './hero_invisibility.js';
-import {
-    cureHeroIllness, startHeroSickness, startHeroVomiting, vomitHero,
-} from './hero_illness.js';
+import { objectTypeCallNoun, } from './object_call.js';
+import { displayLiquidName, newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
+import { cansee, couldsee, vision_recalc, vision_reset } from './vision.js';
+import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
+import { dozap, } from './zap.js';
+import { bucAdjectiveForName, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, } from './invent.js';
+import { castSpell, docast, dovspell, } from './spell.js';
+import { vomitHero, } from './hero_illness.js';
 import { heroBreathAttack } from './hero_breath.js';
+import { resolveHeroCombatExplosion } from './hero_combat_explosion.js';
 import { useHeroBreath } from './hero_breath_command.js';
-import {
-    beginPetRangedTurn, monsterBreathAttack, monsterBreathMessage,
-    monsterCoughMessage, resolveMonsterBreathAttack,
-} from './dogmove.js';
+import { monsterBreathAttack } from './dogmove.js';
 import { heroSpitAttack, useHeroSpit } from './hero_spit.js';
 import { heroGazeAttack, useHeroGaze } from './hero_gaze.js';
-import {
-    heroCanSplitLikeGremlin, useHeroGremlinSplit,
-} from './hero_gremlin.js';
+import { heroCanSplitLikeGremlin, useHeroGremlinSplit, } from './hero_gremlin.js';
 import { heroCanShriek, useHeroShriek } from './hero_shriek.js';
-import {
-    heroCanSummonWerePack, useHeroWereSummon,
-} from './were.js';
+import { heroCanSummonWerePack, useHeroWereSummon, } from './were.js';
 import { heroHasHidingAbility, useHeroHide } from './hero_hide.js';
-import {
-    chooseSpiderAbility, heroCanSpinWeb, useHeroWeb,
-} from './hero_web.js';
-import {
-    heroCanMindBlast, useHeroMindBlast,
-} from './hero_mind_blast.js';
-import {
-    heroCanRemovePunishment, useHeroNymphAbility,
-} from './hero_nymph_ability.js';
-import {
-    heroCanUseUnicornHorn, useUnicornHorn,
-} from './unicorn_horn.js';
+import { chooseSpiderAbility, heroCanSpinWeb, useHeroWeb, } from './hero_web.js';
+import { heroCanMindBlast, useHeroMindBlast, } from './hero_mind_blast.js';
+import { heroCanRemovePunishment, useHeroNymphAbility, } from './hero_nymph_ability.js';
+import { heroCanUseUnicornHorn, useUnicornHorn, } from './unicorn_horn.js';
 import { useHeroVampireShift } from './vampire_shift.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { doread } from './read.js';
 import { continueFoodMeal, doeat } from './eat.js';
+import { continueTinOpening, useTinOpener } from './tin.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
 import { doextversion } from './extversion.js';
 import { dosearch, mapLevel } from './detect.js';
-import { tameMonster } from './dog.js';
-import {
-    continueWipingFace, donull, dowipe, threateningMonsterNearby,
-} from './do.js';
-import {
-    ATR_INVERSE, ATR_NONE, showChoiceWindow, showMultiSelectWindow,
-    showDisclosureOverlay, showPagedPickOneMenu,
-    showTextMenuOverlay, showTextPages,
-    restoreMenuUnderlay, snapshotMenuUnderlay,
-} from './windows.js';
-import {
-    d, rnd, rn2, rn2Display, rnl,
-} from './rng.js';
+import { detectMonsters } from './magic_detection.js';
+import { abusePetAfterHeroHit } from './dog.js';
+import { continueWipingFace, donull, dowipe, threateningMonsterNearby, } from './do.js';
+import { ATR_INVERSE, ATR_NONE, showChoiceWindow, showMultiSelectWindow, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay, showTextPages, restoreMenuUnderlay, snapshotMenuUnderlay, } from './windows.js';
+import { d, rnd, rn2, rn2Display, rnl, } from './rng.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { landFloorObject } from './floor_effects.js';
 import { shipObject } from './object_migration.js';
-import {
-    place_object,
-} from './floor_object.js';
+import { moveObject, placeCreatedObject, } from './floor_object.js';
 import { makemonNear, mkgold, mksobj, rndClass } from './mklev.js';
-import {
-    level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt,
-} from './dungeon.js';
+import { level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt, } from './dungeon.js';
 import { addInventoryItem, assignInventoryLetter } from './u_init.js';
-import { objectQuantity } from './object_stack.js';
+import { objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
+import { dropHeroObject } from './hero_drop.js';
+import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shop_sell.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import {
-    resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow,
-    resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow,
-} from './swallowed_throw.js';
-import {
-    autoquiverCandidate, readySuggestion,
-} from './quiver.js';
-import {
-    isWeldedPrimary, releaseWeaponSlots, setPrimaryWeapon, setQuiverObject,
-    setSecondaryWeapon,
-} from './weapon_slots.js';
+import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow, } from './swallowed_throw.js';
+import { autoquiverCandidate, readySuggestion, } from './quiver.js';
+import { isWeldedPrimary, releaseWeaponSlots, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, } from './weapon_slots.js';
 import { launcherMatchesAmmo } from './object_properties.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
+import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { chooseHeroVolleyCount } from './hero_multishot.js';
-import {
-    captureThrownObjectFlight, finishHeroThrownObjectLanding,
-} from './thrown_object.js';
-import { destroyMulchedProjectile, shouldMulchMissile } from './projectile.js';
-import {
-    unseenObjectNoun,
-} from './objnam.js';
-import {
-    artifactById, artifactEmitsLight, artifactToHitBonus,
-} from './artifacts.js';
-import { applyArtifactHitToMonster } from './artifact_hit.js';
-import {
-    deactivateArtifactProperty, invokeArtifactPower,
-} from './artifact_invoke.js';
+import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, } from './thrown_object.js';
+import { objectName, unseenObjectNoun, } from './objnam.js';
+import { artifactById, } from './artifacts.js';
+import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import {
-    SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK,
-    CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL,
-    LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
-    BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION,
-    RIN_CONFLICT, POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_HEALING,
-    POT_EXTRA_HEALING, POT_PARALYSIS, POT_SICKNESS, POT_INVISIBILITY, POT_GAIN_ENERGY,
-    LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN,
-    SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, AMULET_OF_YENDOR,
-    AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, NOVEL, OBJECT_DELAY,
-    OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE,
-    OBJECT_SMALL_DAMAGE, OBJECT_LARGE_DAMAGE,
-} from './object_data.js';
-import {
-    CLR_WHITE, NO_COLOR,
-} from './terminal.js';
-import {
-    MONSTER_COLOR, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2,
-    MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT,
-    monsterIsShade, monsterTypeName,
-} from './monster_data.js';
+import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
+import { CLR_WHITE, NO_COLOR, } from './terminal.js';
+import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
 import { revealMimic } from './mimic.js';
 import { nameToMonster } from './mondata.js';
-import {
-    adjustLevelAbilities, gainExperienceLevel,
-} from './exper.js';
-import {
-    removeHeroAccessory, wearHeroAccessory,
-} from './accessory.js';
+import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
+import { removeHeroAccessory, wearHeroAccessory, } from './accessory.js';
 import { heroIsStrangled } from './hero_strangulation.js';
-import { heroIsBreathless } from './hero_species.js';
+import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { isPoolAt } from './terrain_properties.js';
+import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
-import {
-    applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
-    findArmorClass, heroIsDisplaced,
-    objectErosionKind, objectErosionMessage, removeHeroArmor, wearHeroArmor,
-} from './armor.js';
-import {
-    findMonsterArmorClass,
-    nameMonsterForCreationArmorChecks,
-} from './monworn.js';
-import {
-    finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
-} from './hero_monster_death.js';
-import { applyCaitiffPenalty } from './hero_attack_conduct.js';
-import {
-    finishHeroMeleeObjectHit, resolveHeroMeleeObjectContact,
-} from './hero_melee_object.js';
-import { isZombieMaker } from './corpse_species.js';
+import { applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor, armorSimpleName, armorOffMessage, findArmorClass, heroIsDisplaced, objectErosionKind, objectErosionMessage, removeHeroArmor, wearHeroArmor, } from './armor.js';
+import { findMonsterArmorClass, nameMonsterForCreationArmorChecks, } from './monworn.js';
+import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { wakeMonstersNear } from './monster_wake.js';
-import {
-    aggravateMonsters, angerAttackedMonster, publishKickedPetYelp,
-    publishMonsterGrowl, wakeAttackedMonster, wakeAttackedShopkeeper,
-} from './monster_anger.js';
-import { monsterNoiseMessage } from './monster_sound.js';
-import { doride, moveSteedWithHero, ridingPreventsMovement } from './steed.js';
-import { currentAttribute, exerciseAttribute } from './attrib.js';
-import {
-    heroStrengthDamageBonus, rollHeroMeleeWeaponDamage,
-} from './weapon_damage.js';
-import { rangedTargetHitBonus, weaponHitBonus } from './weapon_accuracy.js';
+import { aggravateMonsters, angerAttackedMonster, wakeAttackedMonster, } from './monster_anger.js';
+import { publishMonsterNoise } from './monster_sound.js';
+import { doride, moveSteedWithHero, ridingPreventsMovement, stuckSteed } from './steed.js';
+import { currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom } from './attrib.js';
+import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
 import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { heroCanMoveFromTrap, triggerHeroTrapAt } from './hero_traps.js';
 import { activateStatueTrapAt } from './statue_trap.js';
-import {
-    applyDippedCoinFate, applyFountainDemonActor,
-    applyFountainGemDiscovery, applyFountainNymphActor,
-    applyFountainSnakeActors,
-    resolveDippedBucFate, resolveDippedSensationFate,
-} from './fountain_effects.js';
-import { reportFountainWarning } from './fountain.js';
-import { dryFountainAt } from './fountain_terrain.js';
-import { heroArmName, heroNeckName } from './body_parts.js';
-import { indefiniteArticle, makePlural } from './object_grammar.js';
+import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedBucFate, resolveDippedSensationFate, } from './fountain_effects.js';
+import { dryFountainAt, gushForthFromFountain } from './fountain.js';
+import { heroArmName, heroHandName, heroNeckName } from './body_parts.js';
+import { withIndefiniteArticle, makePlural } from './object_grammar.js';
+import { objectWearMessage } from './object_wear_message.js';
+import { isWetTowel, willWeld } from './weapon_type.js';
+import { announceWeaponWeld, explainTwoWeaponEnd, refuseWeldedPrimary } from './weapon_feedback.js';
+import { dropCursedSecondaryWeapon, toggleTwoWeaponCombat } from './two_weapon.js';
 import { dist2, distmin, dungeonDepth } from './hacklib.js';
 import { roomForRoomno } from './room.js';
-import {
-    learnObjectType, objectClassForType, recordObjectCall, recordObjectEncounter,
-    recordObjectKnowledge,
-} from './object_knowledge.js';
-import {
-    encumbranceLabel, encumbranceMessage, exceedsActionCapacity, nearCapacity,
-    invWeight, OVERLOADED, SLT_ENCUMBER,
-} from './weight.js';
+import { learnObjectType, objectClassForType, recordObjectCall, recordObjectEncounter, recordObjectKnowledge, } from './object_knowledge.js';
+import { encumbranceLabel, encumbranceMessage, exceedsActionCapacity, nearCapacity, invWeight, OVERLOADED, SLT_ENCUMBER, } from './weight.js';
 import { hiddenGold } from './gold.js';
 import { makeWish } from './wish.js';
 import { dopray } from './pray.js';
+import { finishDestinationSpotEffects, finishTeleportArrival } from './location_effects.js';
 import { dosacrifice } from './sacrifice.js';
-import { detachHeroGold, heroGoldAmount, setHeroGoldAmount } from './hero_gold.js';
-import {
-    resolveDirectGoldThrow, resolveQuiveredGoldThrow,
-} from './gold_throw.js';
-import {
-    heroIsBlind, syncBlindness, syncDeafness,
-} from './senses.js';
+import { detachHeroGold, heroGoldAmount, heroGoldObject, setHeroGoldAmount } from './hero_gold.js';
+import { resolveDirectGoldThrow, resolveQuiveredGoldThrow, } from './gold_throw.js';
+import { heroIsBlind, heroIsHallucinating, } from './senses.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
-import {
-    doquit,
-    finishHeroDeath,
-    vanquishedLines,
-} from './end.js';
+import { doquit, finishHeroDeath, vanquishedLines, } from './end.js';
 import { hasRecordedMonsterDeaths } from './monster_vitals.js';
-import { getHungry } from './hunger.js';
-import {
-    applyHeroContactPassive, applyMonsterPassiveToObject,
-} from './monster_passive.js';
-import {
-    heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, heroIsVerySmall,
-    heroCanChangeVampireShape, polymorphHero,
-} from './polyself.js';
-import {
-    applyEyewear, isEyewear, removeEyewear, wearEyewear,
-} from './eyewear.js';
+import { applyHeroContactPassive, } from './monster_passive.js';
+import { heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, heroIsVerySmall, heroCanChangeVampireShape, polymorphHero, returnHeroToHumanForm, } from './polyself.js';
+import { applyEyewear, isEyewear, removeEyewear, wearEyewear, } from './eyewear.js';
 import { useCreamPie } from './cream_pie.js';
-import {
-    isRoyalJelly, useRoyalJelly,
-} from './royal_jelly.js';
+import { isRoyalJelly, useRoyalJelly, } from './royal_jelly.js';
 import { useBullwhip } from './bullwhip.js';
 import { useGrapplingHook } from './grappling_hook.js';
+import { couldPoleMonster, usePolearm } from './polearm.js';
+import { isAmmunition, isAxe, isPick, isPolearm } from './weapon_type.js';
+import { applyPickAxeDirection, usePickAxe } from './pick_axe.js';
+import { continueHeroDigging, diggingTarget } from './hero_digging.js';
+import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { wieldTool } from './wield_tool.js';
-import {
-    doenhance, recordWeaponPractice,
-    weaponSkillDamageBonus, weaponSkillHitBonus,
-} from './skills.js';
-import {
-    chargeUnpaidLampUse, checkSpecialRoom, carriedShopBill, objectTypeKnown,
-    payShopDebt, SHOP_TYPE_NAMES, settleCarriedShopBillItem, shopkeeperForHero,
-    shopkeeperName, shopThankYouMessage,
-} from './shk.js';
-import {
-    visiblePriestName,
-} from './priest.js';
-import { gameLogEvents, recordGameLogEvent } from './gamelog.js';
-import { maybeSmudgeEngravings, wipeEngravingAt } from './engrave.js';
-import {
-    shouldShowGetposTip, showGetposTip, moveGetposCursor, selectMapPosition,
-} from './getpos.js';
+import { doenhance, useHeroSkill, } from './skills.js';
+import { chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, } from './shk.js';
+import { visiblePriestName, } from './priest.js';
+import { gameLogEvents } from './gamelog.js';
+import { maybeSmudgeEngravings, wipeHeroEngraving } from './engrave.js';
+import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
+import { removeHeroEquipment } from './hero_equipment.js';
+import { shouldShowGetposTip, showGetposTip, moveGetposCursor, selectMapPosition, } from './getpos.js';
 import { chatWithQuestLeader, onQuestStart, okToQuest } from './quest.js';
-import { triggerImmediateMonsterTrap } from './monmove.js';
-import { finishMonsterRayDeath } from './monster_death.js';
+import { performPetRangedAttack, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from './monmove.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
-import { tryUnarmedStagger } from './monster_hurtle.js';
-import { tryKnockback } from './knockback.js';
 import { announceInvocationSquare } from './invocation.js';
-import {
-    abuseKickedPet, kickConductViolation, levitatingKickMisses,
-    prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion,
-    tryKickReel,
-} from './monster_kick.js';
+import { abuseKickedPet, kickConductViolation, levitatingKickMisses, prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion, tryKickReel, } from './monster_kick.js';
 import { kickFloorObject } from './object_kick.js';
-import { waterDamageChain } from './trap.js';
-import {
-    bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport,
-    randomMonsterRelocation, safeTeleportDestination,
-} from './teleport.js';
+import { kickWithMonsterForm } from './hero_form_kick.js';
+import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, safeTeleportDestination, } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
-import { presentMonsterWebTrap } from './monster_trap_events.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
-import {
-    A_CON, A_DEX, A_STR, A_WIS, SICK_NONVOMITABLE, SICK_VOMITABLE, Upolyd, BOLT_LIM,
-    COLNO, ROWNO, STONE, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN,
-    SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED,
-    D_LOCKED, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL,
-    IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT,
-    SPIKED_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP,
-    STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, ER_DESTROYED,
-    M_AP_MONSTER, M_AP_OBJECT, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE,
-    ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, W_ARMOR, W_ACCESSORY, W_SADDLE,
-    LOST_THROWN, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT,
-    POLY_CONTROLLED,
-} from './const.js';
-
-// Direction deltas: y u k
-//                   h . l
-//                   b j n
+import { RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
-
 // object.h enum value; object_data currently exposes the two other tools.
 const SKELETON_KEY = 221;
 const PM_DJINNI = 315;
-const PM_GHOST = 287;
 const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
-const M1_WALLWALK = 0x00000008;
 const M2_ROCKTHROW = 0x08000000;
 const MAT_GEMSTONE = 20;
 const MAT_MINERAL = 21;
-
-function possessiveMonsterName(name) {
-    return /s$/i.test(name) ? `${name}'` : `${name}'s`;
-}
-
-// C do_name.c:x_monnam()/distant_monnam().  Species identity comes from
-// mnum; `monster.name` is the optional C given-name extension.
-function monsterInstanceDisplayName(monster) {
-    if (monster?.name && monster.mnum === PM_GHOST)
-        return `${possessiveMonsterName(monster.name)} ghost`;
-    if (monster?.name) return monster.name;
-    return monsterTypeName(monster?.mnum, !!monster?.female);
-}
-
 function isMovementKey(ch) {
-    return 'hjklyubn'.includes(ch);
+    return ch.length === 1 && 'hjklyubn'.includes(ch);
 }
-
-function remapConfiguredCommand(key) {
-    const command = game.commandBindings?.[key];
-    if (!command) return { key, disabled: false };
-    if (command === 'nothing') return { key, disabled: true };
-    const mapped = defaultCommandKey(command);
+function configuredCommand(key) {
+    key &= 255;
+    if (key === 27)
+        return { key, command: null, parameter: null };
+    const binding = game.commandBindings.lookup(key);
+    const executionKey = commandExecutionKey(binding?.command?.name);
     return {
-        key: mapped ? mapped.charCodeAt(0) : key,
-        disabled: false,
+        key: executionKey?.charCodeAt(0) ?? null,
+        command: binding?.command ?? null,
+        parameter: binding?.parameter ?? null,
     };
 }
-
-const HALLUCINATED_LIQUIDS = [
-    'yoghurt', 'oobleck', 'clotted blood', 'diluted water',
-    'purified water', 'instant coffee', 'tea', 'herbal infusion',
-    'liquid rainbow', 'creamy foam', 'mulled wine', 'bouillon', 'nectar',
-    'grog', 'flubber', 'ketchup', 'slow light', 'oil', 'vinaigrette',
-    'liquid crystal', 'honey', 'caramel sauce', 'ink', 'aqueous humour',
-    'milk substitute', 'fruit juice', 'glowing lava', 'gastric acid',
-    'mineral water', 'cough syrup', 'quicksilver', 'sweet vitriol',
-    'grey goo', 'pink slime', 'cosmic latte', 'bone oil', 'custard', 'lard',
-    'vinegar', 'creosote',
-];
-
-function displayLiquidName(fallback) {
-    if (!(game.u?.hallucinating
-        || (game.u?.hallucinationTurns ?? 0) > 0)) return fallback;
-    // do_name.c:hliquid() includes the real fallback as one additional slot.
-    const index = rn2Display(HALLUCINATED_LIQUIDS.length + 1);
-    return HALLUCINATED_LIQUIDS[index] ?? fallback;
-}
-
-
 // C ref: hack.c:could_move_onto_boulder().  Travel planning is allowed to
 // route through an ordinary boulder, then actual run-mode movement consults
 // this capability before deciding whether to stop or enter/push the square.
 export function heroCouldMoveOntoBoulder(sx, sy, g = game) {
-    const mnum = Number.isInteger(g.u?.umonnum)
-        ? g.u.umonnum : null;
-    const flags1 = mnum === null ? 0 : MONSTER_FLAGS1[mnum] ?? 0;
-    if (flags1 & M1_WALLWALK) return true;
-    if (g.u?.usteed) return false;
-
-    const flags2 = mnum === null ? 0 : MONSTER_FLAGS2[mnum] ?? 0;
+    const mnum = g.u.umonnum;
+    if (heroPassesWalls(g))
+        return true;
+    if (g.u?.usteed)
+        return false;
+    const flags2 = mnum === undefined ? 0 : MONSTER_FLAGS2[mnum] ?? 0;
     if (flags2 & M2_ROCKTHROW) {
         return !g.u?.dx || !g.u?.dy
-            || !(IS_OBSTRUCTED(g.level?.at(g.u.ux, sy)?.typ)
-                && IS_OBSTRUCTED(g.level?.at(sx, g.u.uy)?.typ));
+            || !(IS_OBSTRUCTED(requireGameLevel(g).at(g.u.ux, sy)?.typ ?? STONE)
+                && IS_OBSTRUCTED(requireGameLevel(g).at(sx, g.u.uy)?.typ ?? STONE));
     }
-    if (heroIsVerySmall(g)) return true;
+    if (heroIsVerySmall(g))
+        return true;
     return invWeight(g) <= -WT_SQUEEZABLE_INV;
 }
-
 async function rejectTightHeroDiagonal(dx, dy) {
     if (!dx || !dy
         || !heroBadRock(game, game.u.ux, game.u.uy + dy)
-        || !heroBadRock(game, game.u.ux + dx, game.u.uy)) return false;
+        || !heroBadRock(game, game.u.ux + dx, game.u.uy))
+        return false;
     const reason = heroTightDiagonalReason(game);
-    if (!reason) return false;
-    if (reason === 1) await pline('Your body is too large to fit through.');
+    if (!reason)
+        return false;
+    if (reason === 1)
+        await pline('Your body is too large to fit through.');
     else if (reason === 2)
         await pline('You are carrying too much to get through.');
-    else await pline('You cannot pass that way.');
+    else
+        await pline('You cannot pass that way.');
     game.context.move = 0;
     return true;
 }
-
 function runDist2(x1, y1, x2, y2) {
     const dx = x1 - x2;
     const dy = y1 - y2;
     return dx * dx + dy * dy;
 }
-
 // C refs: hack.c findtravelpath(TRAVP_TRAVEL), test_move(TEST_TRAV).
 // NetHack searches backwards from the destination, cardinal directions
 // first, and uses the predecessor of the hero as the next travel step.  A
@@ -445,33 +281,34 @@ const TRAVEL_DIRECTIONS = [
     [-1, 0], [0, -1], [1, 0], [0, 1],
     [-1, -1], [1, -1], [1, 1], [-1, 1],
 ];
-
 function travelCellKnown(x, y, g = game) {
     const loc = g.level?.at(x, y);
     return !!loc && (!!loc.seenv || !!loc.remembered_glyph || couldsee(x, y));
 }
-
 function travelStepAllowed(fromX, fromY, toX, toY, g = game) {
-    if (toX < 1 || toX >= COLNO || toY < 0 || toY >= ROWNO) return false;
-    if (!travelCellKnown(toX, toY, g) || blocksMove(toX, toY)) return false;
-
+    if (toX < 1 || toX >= COLNO || toY < 0 || toY >= ROWNO)
+        return false;
+    if (!travelCellKnown(toX, toY, g)
+        || blocksMove(toX, toY) && !heroCanPassWallAt(g, toX, toY))
+        return false;
     const dx = toX - fromX;
     const dy = toY - fromY;
-    if (dx && dy && blocksDiagonalDoor(
-        g.level?.at(fromX, fromY), g.level?.at(toX, toY),
-    )) return false;
-
+    if (dx && dy && blocksDiagonalDoor(g.level?.at(fromX, fromY), g.level?.at(toX, toY)))
+        return false;
     if (g.level?.flags?.sokoban_rules
         && (g.level?.objects?.[toX]?.[toY] || [])
-            .some(object => object.otyp === BOULDER)) return false;
-    const trap = g.level?.traps?.find(candidate =>
-        candidate.tx === toX && candidate.ty === toY && candidate.tseen);
-    if (trap) return false;
+            .some(object => object.otyp === BOULDER))
+        return false;
+    const trap = g.level?.traps?.find(candidate => candidate.tx === toX && candidate.ty === toY && candidate.tseen);
+    if (trap)
+        return false;
     const typ = g.level?.at(toX, toY)?.typ;
-    if (IS_POOL(typ) || IS_LAVA(typ)) return false;
+    if (typ === undefined)
+        return false;
+    if (IS_POOL(typ) || IS_LAVA(typ))
+        return false;
     return true;
 }
-
 function findDirectTravelDirection(targetX, targetY, g = game) {
     let frontier = [[targetX, targetY]];
     const discoveredRadius = new Map([[`${targetX},${targetY}`, 0]]);
@@ -485,8 +322,11 @@ function findDirectTravelDirection(targetX, targetY, g = game) {
             // findtravelpath() leaves an ordinary boulder node on the
             // frontier for two extra radii.  The graph still contains it,
             // but an equally short clean route wins.
+            const discoveredAt = discoveredRadius.get(key);
+            if (discoveredAt === undefined)
+                throw new Error(`Travel frontier has no radius for ${x},${y}`);
             if (hasBoulder && !heroCouldMoveOntoBoulder(x, y, g)
-                && discoveredRadius.get(key) > radius - 3) {
+                && discoveredAt > radius - 3) {
                 next.push([x, y]);
                 continue;
             }
@@ -506,7 +346,8 @@ function findDirectTravelDirection(targetX, targetY, g = game) {
                 }
                 const nextKey = `${nx},${ny}`;
                 if (discoveredRadius.has(nextKey)
-                    || !travelStepAllowed(x, y, nx, ny, g)) continue;
+                    || !travelStepAllowed(x, y, nx, ny, g))
+                    continue;
                 discoveredRadius.set(nextKey, radius);
                 next.push([nx, ny]);
             }
@@ -516,46 +357,44 @@ function findDirectTravelDirection(targetX, targetY, g = game) {
     }
     return null;
 }
-
 // C hack.c:is_valid_travelpt() calls findtravelpath(TRAVP_VALID), which
 // accepts only a complete known path to the selected square.  The separate
 // TRAVP_GUESS fallback belongs to live travel after a valid destination has
 // been chosen; using it for getpos descriptions falsely labels solid or
 // unreachable targets as travelable.
 function isValidTravelTarget(targetX, targetY, g = game) {
-    if (g.u?.ux === targetX && g.u?.uy === targetY) return true;
+    if (g.u?.ux === targetX && g.u?.uy === targetY)
+        return true;
     // TRAVP_VALID expands from the hero toward the requested destination.
     // The ordinary travel search expands backwards so it can recover the
     // hero's next step; reusing that orientation here would let the search
     // escape *from* a solid target without ever validating entry into it.
     const queue = [[g.u.ux, g.u.uy]];
     const visited = new Set([`${g.u.ux},${g.u.uy}`]);
-    for (let head = 0; head < queue.length; head++) {
-        const [x, y] = queue[head];
+    for (const [x, y] of queue) {
         for (const [dx, dy] of TRAVEL_DIRECTIONS) {
             const nx = x + dx;
             const ny = y + dy;
             const key = `${nx},${ny}`;
             if (visited.has(key)
-                || !travelStepAllowed(x, y, nx, ny, g)) continue;
-            if (nx === targetX && ny === targetY) return true;
+                || !travelStepAllowed(x, y, nx, ny, g))
+                continue;
+            if (nx === targetX && ny === targetY)
+                return true;
             visited.add(key);
             queue.push([nx, ny]);
         }
     }
     return false;
 }
-
 function travelDistance(x1, y1, x2, y2) {
     return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
 }
-
 function travelDistanceSquared(x1, y1, x2, y2) {
     const dx = x1 - x2;
     const dy = y1 - y2;
     return dx * dx + dy * dy;
 }
-
 // C hack.c:findtravelpath(TRAVP_GUESS).  When the selected destination is
 // not connected through remembered terrain, search the hero-visible region,
 // choose its point closest to the real target using C's scan/tie order, and
@@ -566,35 +405,34 @@ function findGuessedTravelDirection(targetX, targetY, g = game) {
     const originY = g.u.uy;
     const queue = [[originX, originY]];
     const distance = new Map([[`${originX},${originY}`, 0]]);
-    for (let head = 0; head < queue.length; head++) {
-        const [x, y] = queue[head];
+    for (const [x, y] of queue) {
         for (const [dx, dy] of TRAVEL_DIRECTIONS) {
             const nx = x + dx;
             const ny = y + dy;
             const key = `${nx},${ny}`;
             if (distance.has(key) || !couldsee(nx, ny)
-                || !travelStepAllowed(x, y, nx, ny, g)) continue;
-            distance.set(key, distance.get(`${x},${y}`) + 1);
+                || !travelStepAllowed(x, y, nx, ny, g))
+                continue;
+            const previousDistance = distance.get(`${x},${y}`);
+            if (previousDistance === undefined)
+                throw new Error(`Missing travel distance for ${x},${y}`);
+            distance.set(key, previousDistance + 1);
             queue.push([nx, ny]);
         }
     }
-
     let pickX = originX;
     let pickY = originY;
     let bestDistance = travelDistance(targetX, targetY, originX, originY);
-    let bestSquared = travelDistanceSquared(
-        targetX, targetY, originX, originY,
-    );
+    let bestSquared = travelDistanceSquared(targetX, targetY, originX, originY);
     let bestPath = COLNO * ROWNO;
     // The C implementation scans the travel matrix x-major, then y-major.
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
             const path = distance.get(`${x},${y}`);
-            if (!path || !couldsee(x, y)) continue;
+            if (!path || !couldsee(x, y))
+                continue;
             const candidateDistance = travelDistance(targetX, targetY, x, y);
-            const candidateSquared = travelDistanceSquared(
-                targetX, targetY, x, y,
-            );
+            const candidateSquared = travelDistanceSquared(targetX, targetY, x, y);
             if (candidateDistance < bestDistance
                 || (candidateDistance === bestDistance
                     && path < bestPath && candidateSquared < bestSquared)) {
@@ -606,50 +444,47 @@ function findGuessedTravelDirection(targetX, targetY, g = game) {
             }
         }
     }
-
     if (pickX !== originX || pickY !== originY)
         return findDirectTravelDirection(pickX, pickY, g);
-
     const dx = Math.sign(targetX - originX);
     const dy = Math.sign(targetY - originY);
     return travelStepAllowed(originX, originY, originX + dx, originY + dy, g)
         ? { dx, dy } : null;
 }
-
 export function findTravelDirection(state = game._runState, g = game) {
-    if (!state || state.mode !== 8 || !g.u || !g.level) return null;
+    if (!state || state.mode !== 8 || !g.u || !g.level)
+        return null;
     const { targetX, targetY } = state;
-    if (g.u.ux === targetX && g.u.uy === targetY) return null;
+    if (g.u.ux === targetX && g.u.uy === targetY)
+        return null;
     return findDirectTravelDirection(targetX, targetY, g)
         || findGuessedTravelDirection(targetX, targetY, g);
 }
-
 function canSeeRunMonster(monster, x, y, g = game) {
-    if (g === game) return canSeeMonster(monster, x, y);
+    if (g === game)
+        return canSeeMonster(monster);
     const visibleSquare = !g.viz_array
-        || !!(g.viz_array?.[y]?.[x] & 0x2);
-    return !g.blind && !(g.u?.blindTurns > 0) && visibleSquare
-        && (!monster.minvis || g.u?.seeInvisible || g.u?.see_invisible)
+        || !!((g.viz_array?.[y]?.[x] ?? 0) & 0x2);
+    return !g.blind && !((g.u.blindTurns ?? 0) > 0) && visibleSquare
+        && (!monster.minvis || !!g.u.seeInvisible)
         && !monster.mundetected;
 }
-
 function travelInterruptedByMonster(g = game) {
-    return !!g.level?.monsters?.some(monster =>
-        Math.abs(monster.mx - g.u.ux) <= 1
+    return !!g.level?.monsters?.some(monster => Math.abs(monster.mx - g.u.ux) <= 1
         && Math.abs(monster.my - g.u.uy) <= 1
         && (monster.mx !== g.u.ux || monster.my !== g.u.uy)
         && !monster.pet && !monster.mpeaceful && cansee(monster.mx, monster.my));
 }
-
 function startTravel(targetX, targetY, g = game) {
     g._runState = {
         mode: 8,
         targetX,
         targetY,
-        multi: Math.max(COLNO, ROWNO),
         lastStrTurn: 0,
     };
     g._travelTarget = { x: targetX, y: targetY };
+    if (!g.multi)
+        g.multi = Math.max(COLNO, ROWNO);
     g.context.run = 8;
     g.context.mv = true;
     g.context.travel = true;
@@ -657,14 +492,15 @@ function startTravel(targetX, targetY, g = game) {
     g.context.nopick = true;
     return g._runState;
 }
-
 // Source-order subset of lookaround() for run mode 1.  It ignores rooms and
 // rock, follows an unambiguous corridor bend, and lets domove() encounter an
 // obstacle when the path does not turn.  Front monsters stop the run before
 // an automatic attack, matching the C in-front check for every run mode.
 export function lookaroundRun(state = game._runState, g = game) {
-    if (!state || !g.u || !g.level) return false;
-
+    if (!state || state.mode === 8 || !g.u || !g.level)
+        return false;
+    if (state.mode === 0)
+        return true;
     const u = g.u;
     let corrct = 0;
     let noturn = false;
@@ -672,14 +508,13 @@ export function lookaroundRun(state = game._runState, g = game) {
     const targetX = u.ux + state.dx;
     const targetY = u.uy + state.dy;
     const currentTyp = g.level.at(u.ux, u.uy)?.typ;
-
     for (let x = u.ux - 1; x <= u.ux + 1; x++) {
         for (let y = u.uy - 1; y <= u.uy + 1; y++) {
             if (x < 1 || x >= COLNO || y < 0 || y >= ROWNO
-                || (x === u.ux && y === u.uy)) continue;
-
+                || (x === u.ux && y === u.uy))
+                continue;
             const infront = x === targetX && y === targetY;
-            const monster = g.level.monsters?.find(mon =>
+            const monster = g.level.monsters?.find(mon => monsterHasMapPosition(mon, g) &&
                 mon.mx === x && mon.my === y);
             // hack.c:lookaround() considers an actor interesting only inside
             // its mon_visible() branch.  An invisible monster directly in
@@ -690,64 +525,79 @@ export function lookaroundRun(state = game._runState, g = game) {
             const visibleHostile = visibleMonster && !monster.pet
                 && !monster.mpeaceful;
             if (visibleMonster && (infront
-                || (state.mode !== 1 && visibleHostile))) return false;
-
+                || (state.mode !== 1 && visibleHostile)))
+                return false;
             const loc = g.level.at(x, y);
-            const typ = loc?.typ ?? STONE;
-            if (typ === STONE) continue;
-            if (x === u.ux - state.dx && y === u.uy - state.dy) continue;
-
+            if (!loc)
+                continue;
+            const typ = loc.typ;
+            if (typ === STONE)
+                continue;
+            if (x === u.ux - state.dx && y === u.uy - state.dy)
+                continue;
             if (IS_OBSTRUCTED(typ) || typ === ROOM || IS_AIR(typ)
-                || typ === ICE) continue;
-
+                || typ === ICE)
+                continue;
             let corridorLike = false;
             if (typ === DOOR) {
                 const closed = !!(loc.doormask & (D_CLOSED | D_LOCKED));
                 if (closed) {
-                    if (x !== u.ux && y !== u.uy) continue;
-                    if (state.mode !== 1) return false;
+                    if (x !== u.ux && y !== u.uy)
+                        continue;
+                    if (state.mode !== 1)
+                        return false;
                     corridorLike = true;
-                } else if (state.mode === 1) {
+                }
+                else if (state.mode === 1) {
                     corridorLike = true;
-                } else if (state.mode === 8 || monster) {
+                }
+                else if (monster) {
                     continue;
-                } else if ((x === u.ux - state.dx
+                }
+                else if ((x === u.ux - state.dx
                     && y !== u.uy + state.dy)
                     || (y === u.uy - state.dy
                         && x !== u.ux + state.dx)) {
                     continue;
-                } else {
+                }
+                else {
                     // hack.c:lookaround() treats an open/doorless doorway as
                     // interesting to run/rush modes 2 and 3.  Mode 1 alone
                     // folds it into corridor turning.
                     return false;
                 }
-            } else if (typ === CORR) {
+            }
+            else if (typ === CORR) {
                 corridorLike = true;
-            } else if (IS_POOL(typ) || IS_LAVA(typ)) {
+            }
+            else if (IS_POOL(typ) || IS_LAVA(typ)) {
                 continue;
-            } else {
+            }
+            else {
                 if (state.mode === 1) {
                     // For run mode 1, stairs, furniture, and other non-room
                     // locations participate in corridor routing (the C
                     // bcorr branch) instead of being interesting stop points.
                     corridorLike = true;
-                } else if (state.mode === 8 || monster) {
+                }
+                else if (monster) {
                     continue;
-                } else if ((x === u.ux - state.dx
+                }
+                else if ((x === u.ux - state.dx
                     && y !== u.uy + state.dy)
                     || (y === u.uy - state.dy
                         && x !== u.ux + state.dx)) {
                     continue;
-                } else {
+                }
+                else {
                     return false;
                 }
             }
-
-            if (!corridorLike || currentTyp === ROOM) continue;
-
+            if (!corridorLike || currentTyp === ROOM)
+                continue;
             const distance = runDist2(x, y, targetX, targetY);
-            if (distance > 2) continue;
+            if (distance > 2)
+                continue;
             if (corrct === 1 && runDist2(x, y, x0, y0) !== 1)
                 noturn = true;
             if (distance < i0) {
@@ -759,17 +609,18 @@ export function lookaroundRun(state = game._runState, g = game) {
             corrct++;
         }
     }
-
     if (!noturn && !m0 && i0
         && (corrct === 1 || (corrct === 2 && i0 === 1))) {
         let turn;
         if (i0 === 2) {
             turn = state.dx === y0 - u.uy && state.dy === u.ux - x0
                 ? 2 : -2;
-        } else if (state.dx && state.dy) {
+        }
+        else if (state.dx && state.dy) {
             turn = ((state.dx === state.dy && y0 === u.uy)
                 || (state.dx !== state.dy && y0 !== u.uy)) ? -1 : 1;
-        } else {
+        }
+        else {
             turn = ((x0 - u.ux === y0 - u.uy && !state.dy)
                 || (x0 - u.ux !== y0 - u.uy && state.dy)) ? 1 : -1;
         }
@@ -782,7 +633,6 @@ export function lookaroundRun(state = game._runState, g = game) {
     }
     return true;
 }
-
 export async function continueRun(g = game) {
     const state = g._runState;
     if (state?.mode === 8) {
@@ -811,10 +661,16 @@ export async function continueRun(g = game) {
         // hack.c:findtravelpath(TRAVP_TRAVEL) clears iflags.travelcc when it
         // chooses the destination as the next step, before domove() discovers
         // whether that final square is physically enterable.
-        if (finalStep) g._travelTarget = null;
-        await captureRunmodeDelay(g, !!g._runState);
+        if (finalStep)
+            g._travelTarget = null;
+        await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
+        if (g.multi < COLNO && --g.multi === 0)
+            stopRun(g);
         const moved = await domove(direction.dx, direction.dy, false);
-        if (moved) await captureRunmodeDelay(g, !!g._runState);
+        if (g.program_state.gameover)
+            return false;
+        if (moved)
+            await captureRunmodeDelay(g, !!g._runState);
         g.context.travel1 = false;
         g.context.move = moved ? 1 : 0;
         if (g.u.ux === state.targetX && g.u.uy === state.targetY)
@@ -828,34 +684,74 @@ export async function continueRun(g = game) {
         g.context.move = 0;
         return false;
     }
-
-    await captureRunmodeDelay(g, !!g._runState);
+    await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
+    if (g.multi < COLNO && --g.multi === 0)
+        stopRun(g);
     const moved = await domove(state.dx, state.dy, false);
-    if (moved) await captureRunmodeDelay(g, !!g._runState);
+    if (g.program_state.gameover)
+        return false;
+    if (moved)
+        await captureRunmodeDelay(g, !!g._runState);
     g.context.move = moved ? 1 : 0;
-    if (!moved) stopRun(g);
+    if (!moved)
+        stopRun(g);
     return moved;
 }
-
 // C refs: cmd.c set_occupation()/timed_occupation() and
 // allmain.c:moveloop_core().  A count-prefixed search executes once in
 // rhack(), then repeats without reading another input key; each repetition is
 // separated by the complete monster/global turn scheduler.
 export async function continueCountedCommand(g = game) {
+    if (!g._occupation)
+        return false;
+    g.context.move = 1;
+    await continueOccupation(g);
+    if (g.program_state.gameover)
+        return false;
+    g.context.move = 1;
+    if (threateningMonsterNearby())
+        await stopHeroOccupation(g);
+    return !g.program_state.gameover;
+}
+async function continueOccupation(g) {
     const occupation = g._occupation;
     if (!occupation) {
         g._occupation = null;
         return false;
     }
+    if (occupation.key === 'command') {
+        g.context.move = 1;
+        await runCommandHandler(occupation.binding);
+        if (g.program_state.gameover)
+            return false;
+        g.context.move = 1;
+        if (g.multi > 0)
+            --g.multi;
+        if (!(g.multi > 0))
+            g._occupation = null;
+        return true;
+    }
+    if (occupation.key === 'dig') {
+        const continuing = await continueHeroDigging(g);
+        if (g.program_state.gameover)
+            return false;
+        if (!continuing)
+            g._occupation = null;
+        g.context.move = 1;
+        return true;
+    }
     if (occupation.key === 'study-book') {
-        const continuing = await continueSpellbookStudy(occupation, g);
-        if (!continuing) g._occupation = null;
+        const continuing = await continueSpellbookStudy({ state: g });
+        if (g.program_state.gameover)
+            return false;
+        if (!continuing)
+            g._occupation = null;
         return true;
     }
     if (occupation.key === 'force-lock') {
         return continueForceLock(occupation, g);
     }
-    if (occupation.remaining <= 0) {
+    if ('remaining' in occupation && occupation.remaining <= 0) {
         g._occupation = null;
         return false;
     }
@@ -863,21 +759,24 @@ export async function continueCountedCommand(g = game) {
         occupation.usedtime = (occupation.usedtime ?? 0) + 1;
         if (occupation.usedtime > 50) {
             await pline('You give up your attempt at picking the lock.');
-            exerciseAttribute(A_DEX, true);
+            await exerciseAttribute(A_DEX, true);
             g._occupation = null;
-        } else if (rn2(100) < occupation.chance) {
+        }
+        else if (rn2(100) < occupation.chance) {
             await pline('You succeed in picking the lock.');
             if (occupation.container) {
                 occupation.container.olocked = !occupation.container.olocked;
                 occupation.container.lknown = true;
-            } else if (occupation.door?.doormask & D_LOCKED) {
+            }
+            else if (occupation.door && (occupation.door.doormask & D_LOCKED)) {
                 occupation.door.doormask &= ~D_LOCKED;
                 occupation.door.doormask |= D_CLOSED;
-            } else if (occupation.door) {
+            }
+            else if (occupation.door) {
                 occupation.door.doormask &= ~D_CLOSED;
                 occupation.door.doormask |= D_LOCKED;
             }
-            exerciseAttribute(A_DEX, true);
+            await exerciseAttribute(A_DEX, true);
             newsym(occupation.x, occupation.y);
             g._occupation = null;
         }
@@ -887,117 +786,128 @@ export async function continueCountedCommand(g = game) {
     if (occupation.key === 'eat-food') {
         return continueFoodMeal(occupation, g);
     }
+    if (occupation.key === 'open-tin') {
+        return continueTinOpening(occupation, g);
+    }
     if (occupation.key === 'wipe-face') {
         return continueWipingFace(occupation, g);
     }
-    if (occupation.key === '.') {
-        occupation.remaining--;
-        if (occupation.remaining <= 0) g._occupation = null;
-        g.context.move = 1;
-        return true;
-    }
-    if (occupation.key !== 's') {
-        g._occupation = null;
-        return false;
-    }
-
-    const found = await dosearch();
-    occupation.remaining--;
-    if (found || occupation.remaining <= 0) {
-        g._occupation = null;
-    } else if (threateningMonsterNearby()) {
-        g._occupation = null;
-        await pline('You stop searching.');
-    }
-    return true;
+    g._occupation = null;
+    return false;
 }
-
-
-async function performSearchCommand(force = false) {
-    const count = Math.max(1, game._commandCount || 0);
-    const found = await dosearch(force);
-    if (!found && game.context.move && count > 1) {
-        game._occupation = {
-            key: 's', text: 'searching', remaining: count - 1,
-        };
+function prepareTimedCommand(binding) {
+    const text = binding.command?.occupation;
+    if (text && !game._occupation && game.multi) {
+        game._occupation = { key: 'command', text, binding };
     }
-    game._commandCount = 0;
 }
-
-async function performWaitCommand(force = false) {
-    const count = Math.max(1, game._commandCount || 0);
-    const consumesTime = await donull(force, count > 1 || !!game._occupation);
-    if (!consumesTime) {
-        game._commandCount = 0;
+async function performWaitCommand(force = game.iflags.menu_requested) {
+    if (!await donull(force, !!game.multi))
         return;
-    }
-    if (count > 1) {
-        game._occupation = {
-            key: '.', text: 'waiting', remaining: count - 1,
-        };
-    }
-    game._commandCount = 0;
     game._pending_message = '';
     game.context.move = 1;
 }
-
-async function commandAllowed(name) {
-    if (!name || await currentLuaLifecycle().runCallbacks(game, 'cmd_before', name))
+// C cmd.c:can_do_extcmd(). Admission precedes prefixes and handler setup.
+async function commandAllowed(command) {
+    if (!command)
         return true;
-    game.context.move = 0;
-    return false;
+    if (!await currentLuaLifecycle().runCallbacks(game, 'cmd_before', command.name))
+        return false;
+    if (!game.flags.debug && (command.flags & NATIVE_COMMAND_FLAGS.WIZMODECMD)) {
+        await pline(`Unavailable command '${command.name}'.`);
+        return false;
+    }
+    if (game.u.uburied && !(command.flags & NATIVE_COMMAND_FLAGS.IFBURIED)) {
+        await pline("You can't do that while you are buried!");
+        return false;
+    }
+    return !(game.iflags.debug_fuzzer
+        && (command.flags & NATIVE_COMMAND_FLAGS.NOFUZZERCMD));
 }
-
 // C ref: cmd.c rhack — main command dispatcher
 export async function rhack(key) {
+    requirePlayingGame(game);
     // C cmd.c:rhack() resets the request-menu/movement-prefix bit for each
     // top-level command.  An `m` prefix below sets it only while dispatching
     // the following movement key.
     game.context.nopick = false;
-    if (key !== 0) delete game._cursorOverride;
+    game.iflags.menu_requested = false;
+    if (key !== 0)
+        delete game._cursorOverride;
     game._heroMeleeThisCommand = false;
     // A prior silent-prefix marker belongs to the monster phase following
     // that command.  Reaching a new top-level dispatch acknowledges it.
     game._silentPrefixRetainedTopline = false;
-    const cannedCommand = key === 0
-        ? game._cannedCommands?.shift() : null;
+    const cannedCommand = game._cannedCommands?.shift() ?? null;
+    const previousMessage = game._pending_message;
     if (key === 0 && !cannedCommand) {
-        // Read key from input
-        await flush_screen(1);
-        if ((game._commandCount || 0) >= 10)
-            game.nhDisplay?.setCursor(`Count: ${game._commandCount}`.length, 0);
-        key = await nhgetch();
+        const input = await readCommandInput();
+        key = input.key;
         delete game._cursorOverride;
     }
-    const configured = remapConfiguredCommand(key);
-    key = configured.key;
     // Status rows beneath a tty pager remain physically unchanged even when
     // the suspended command has already mutated the wallet.  The next real
     // top-level command read makes that state eligible for a fresh botl.
     delete game._statusGoldOverride;
-
-    // C clears gk.kickedloc after domove() and before every elapsed non-kick
-    // command.  A kick's direction byte is read by the suspended dokick()
-    // call, not by a new rhack(), so a new top-level dispatch can safely
-    // invalidate the prior turn's cooperative-monster avoidance state.
-    game._kickedLoc = null;
-    const ch = String.fromCharCode(key);
-    const previousMessage = game._pending_message;
-
+    if (!cannedCommand && (key === 0 || key === -1 || key === 255 || key === 27)) {
+        resetCommandVariables(true);
+        return;
+    }
+    const inputKey = key;
+    const configured = configuredCommand(key);
     // The input boundary displayed the previous command's message.  Clear it
     // now; any message produced below remains visible at the next boundary.
     game._pending_message = '';
     game._retained_message = '';
-
-    if (configured.disabled) {
+    if (!cannedCommand && !configured.command) {
+        game.multi = 0;
+        game._cannedCommands = [];
+        game.context.move = 0;
+        await pline(`Unknown command '${visibleCommandKey(inputKey)}'.`);
+        return;
+    }
+    const cannedName = cannedCommand?.kind === 'swap-weapon'
+        ? 'swap' : cannedCommand?.kind;
+    const command = cannedCommand
+        ? NATIVE_COMMANDS.find(entry => entry.name === cannedName) ?? null
+        : configured.command;
+    if (!await commandAllowed(command)) {
+        resetCommandVariables(true);
+        return;
+    }
+    const binding = { ...configured, command };
+    prepareTimedCommand(binding);
+    await executeCommandAction(binding, { cannedCommand, previousMessage });
+}
+// C cmd.c:rhack() clears kickedloc after an elapsed non-kick action.
+// doextcmd's selected action, not the outer # editor, owns that result.
+async function executeCommandAction(binding, options = {}) {
+    await runCommandHandler(binding, options);
+    if (game.program_state.gameover)
+        return;
+    if (!game.context.move)
+        resetCommandVariables(game.multi < 0);
+    if (game.context.move
+        && binding.command?.handler !== 'dokick'
+        && binding.command?.handler !== 'doextcmd') {
+        game._kickedLoc = null;
+    }
+}
+// Admission belongs to the caller. Keep the selected binding, including its
+// parameter, rather than looking up a possibly rebound key inside the action.
+async function runCommandHandler(binding, { cannedCommand = null, previousMessage = game._pending_message, } = {}) {
+    const { key, command } = binding;
+    const ch = key === null ? '' : String.fromCharCode(key);
+    if (!cannedCommand && key === null && command) {
+        const handler = command.name === null ? undefined : EXTENDED_COMMAND_HANDLERS.get(command.name);
+        if (handler) {
+            await handler();
+            return;
+        }
+        await pline(`#${command.name}: unknown extended command.`);
         game.context.move = 0;
         return;
     }
-
-    const commandName = cannedCommand?.kind === 'swap-weapon'
-        ? 'swap' : cannedCommand?.kind || defaultCommandName(ch);
-    if (!await commandAllowed(commandName)) return;
-
     // C cmd.c:rhack() pops CQ_CANNED before parse() asks tty for another
     // byte.  Tool commands use this to resume the original operation after
     // wield_tool() has spent one action installing the selected object.
@@ -1026,7 +936,6 @@ export async function rhack(key) {
         await dofire(cannedCommand.shotLimit ?? 0);
         return;
     }
-
     if (key === 22 && game.flags?.debug) { // Ctrl-V: wiz_level_tele()
         await wizLevelTeleport();
         return;
@@ -1047,24 +956,29 @@ export async function rhack(key) {
         await wizMap();
         return;
     }
-
     if (ch === 'F') {
         await doforcefight();
-    } else if (isMovementKey(ch) || (/[HJKLYUBN]/.test(ch))
-        || controlRushDirection(key)) {
-        const rushDirection = controlRushDirection(key);
+    }
+    else if (isMovementKey(ch) || (/[HJKLYUBN]/.test(ch))
+        || controlRushDirection(key ?? 0)) {
+        const rushDirection = controlRushDirection(key ?? 0);
         const direction = rushDirection || ch.toLowerCase();
+        if (!isMovementKey(direction))
+            return;
         const running = /[HJKLYUBN]/.test(ch) || !!rushDirection;
-        if (running) startRun(
-            DIR_DX[direction], DIR_DY[direction], game,
-            rushDirection ? 3 : 1,
-        );
+        if (running || game.multi > 0)
+            startRun(DIR_DX[direction], DIR_DY[direction], game, running ? (rushDirection ? 3 : 1) : 0);
         const moved = await domove(DIR_DX[direction], DIR_DY[direction]);
+        if (game.program_state.gameover)
+            return;
         if (running && moved)
             await captureRunmodeDelay(game, !!game._runState);
         game.context.move = moved ? 1 : 0;
-        if (running && !moved) stopRun();
-    } else if (ch === 'm') {
+        if (!moved)
+            stopRun();
+    }
+    else if (ch === 'm') {
+        game.iflags.menu_requested = true;
         // `m` is both request-menu and move-without-pickup.  Movement is the
         // live owner here: parse the next key inside the same command, so tty
         // exposes the unchanged map at the intermediate input boundary.
@@ -1073,79 +987,104 @@ export async function rhack(key) {
         // action later dies during its monster phase, the first fatal pager
         // can therefore project the status row from before contact.
         game._silentPrefixRetainedTopline = !!previousMessage;
-        await flush_screen(1);
-        const nextKey = await nhgetch();
-        const direction = String.fromCharCode(nextKey).toLowerCase();
+        const input = await readCommandInput();
+        const nextCommand = configuredCommand(input.key);
+        const nextKey = nextCommand.key;
+        const direction = nextKey === null ? '' : String.fromCharCode(nextKey).toLowerCase();
         game._pending_message = '';
-        if (!await commandAllowed(defaultCommandName(String.fromCharCode(nextKey)))) return;
+        if (!await commandAllowed(nextCommand.command)) {
+            resetCommandVariables(true);
+            return;
+        }
         if (isMovementKey(direction)) {
             game.context.nopick = true;
-            const moved = await domove(
-                DIR_DX[direction], DIR_DY[direction], true,
-            );
+            if (game.multi > 0)
+                startRun(DIR_DX[direction], DIR_DY[direction], game, 0);
+            const moved = await domove(DIR_DX[direction], DIR_DY[direction], true);
+            if (game.program_state.gameover)
+                return;
             game.context.move = moved ? 1 : 0;
-            game.context.nopick = false;
-        } else if (String.fromCharCode(nextKey) === 'O') {
+            if (!moved)
+                stopRun();
+        }
+        else if (nextKey === 79) {
             await doOptions(true);
-        } else if (nextKey === 22 && game.flags?.debug) {
+        }
+        else if (nextKey === 22 && game.flags?.debug) {
             // cmd.c marks wiz_level_tele CMD_M_PREFIX. do_reqmenu() sets
             // iflags.menu_requested, so level_tele() skips its numeric
             // get-line editor and opens print_dungeon(TRUE) immediately.
             await wizLevelTeleport({ menuRequested: true });
-        } else if (direction === 's') {
+        }
+        else if (direction === 's') {
             // cmd.c marks search CMD_M_PREFIX: request-menu/move-no-pickup
             // does not alter its behavior, but the prefixed command still
             // consumes a normal search turn.
-            await performSearchCommand(true);
-        } else if (direction === '.') {
+            prepareTimedCommand(nextCommand);
+            await dosearch(true);
+        }
+        else if (direction === '.') {
             // do_reqmenu() is the source-level override advertised by
             // cmd_safety_prevention(); `m.` deliberately spends the turn.
+            prepareTimedCommand(nextCommand);
             await performWaitCommand(true);
-        } else {
+        }
+        else {
             await pline("The 'm' prefix should be followed by a movement command.");
             game.context.move = 0;
         }
-    } else if (ch === 'i') {
+    }
+    else if (ch === 'i') {
         const action = await ddoinv();
-        if (action?.key === 't') await dothrow(action.item);
-    } else if (ch === 'O') {
+        if (action?.key === 't')
+            await dothrow(action.item);
+    }
+    else if (ch === 'O') {
         await doOptions();
-    } else if (ch === 'Z') {
-        await docast({ gotoLevel });
-    } else if (ch === '+') {
+    }
+    else if (ch === 'Z') {
+        await docast();
+    }
+    else if (ch === '+') {
         await dovspell();
-    } else if (ch === '\\') {
+    }
+    else if (ch === '\\') {
         await dodiscovered();
-    } else if (key === 24) { // Ctrl-X
+    }
+    else if (key === 24) { // Ctrl-X
         await doattributes();
-    } else if (ch === 's') {
-        await performSearchCommand();
-    } else if (key === 4) { // Ctrl-D
+    }
+    else if (ch === 's') {
+        await dosearch(game.iflags.menu_requested);
+    }
+    else if (key === 4) { // Ctrl-D
         await dokick();
-    } else if (ch === 'f') {
+    }
+    else if (ch === 'f') {
         await dofire();
-    } else if (/^[0-9]$/.test(ch)) {
-        game._commandCount = Math.min(9999,
-            (game._commandCount || 0) * 10 + Number(ch));
-        if (game._commandCount >= 10)
-            await pline(`Count: ${game._commandCount}`);
-        else if (previousMessage) game._pending_message = previousMessage;
-        game.context.move = 0;
-    } else if (ch === '.') {
+    }
+    else if (ch === '.') {
         await performWaitCommand();
-    } else if (ch === 'e') {
+    }
+    else if (ch === 'e') {
         await doeat();
-    } else if (ch === 'q') {
+    }
+    else if (ch === 'q') {
         await doquaff();
-    } else if (ch === 'p') {
+    }
+    else if (ch === 'p') {
         await dopay();
-    } else if (ch === 'd') {
+    }
+    else if (ch === 'd') {
         await dodrop();
-    } else if (ch === 'c') {
+    }
+    else if (ch === 'c') {
         await doclose();
-    } else if (ch === 'o') {
+    }
+    else if (ch === 'o') {
         await doopen();
-    } else if (ch === '@') {
+    }
+    else if (ch === '@') {
         // C options.c:dotogglepickup().  This is an immediate option command,
         // not a turn, and its class list is the live pickup_types setting.
         game.flags.pickup = !game.flags.pickup;
@@ -1154,456 +1093,99 @@ export async function rhack(key) {
             ? `Autopickup: ON, for ${classes || 'all'} objects.`
             : 'Autopickup: OFF.');
         game.context.move = 0;
-    } else if (ch === ',') {
+    }
+    else if (ch === ',') {
         await pickupAtHero();
-    } else if (ch === '>') {
+    }
+    else if (ch === '>') {
         await travelStairs(false);
-    } else if (ch === '<') {
+    }
+    else if (ch === '<') {
         await travelStairs(true);
-    } else if (ch === 'z') {
-        await dozap({
-            finishMonsterKill: finishHeroMonsterKill,
-            wakeMonster: wakeAttackedMonster,
-            gotoLevel,
-        });
-    } else if (ch === 'r') {
-        await doread({
-            gotoLevel,
-            finishHeroDeath,
-            finishMonsterKill: finishHeroMonsterKill,
-        });
-    } else if (ch === 'T' || ch === 'R') {
+    }
+    else if (ch === 'z') {
+        await dozap();
+    }
+    else if (ch === 'r') {
+        await doread({ gotoLevel });
+    }
+    else if (ch === 'T' || ch === 'R') {
         await removeWornItem(ch === 'R' ? 'remove' : 'take off');
-    } else if (ch === 'P') {
+    }
+    else if (ch === 'P') {
         await doputon();
-    } else if (ch === 'W') {
+    }
+    else if (ch === 'W') {
         await dowear();
-    } else if (ch === 'w') {
+    }
+    else if (ch === 'w') {
         await dowield();
-    } else if (ch === 'x') {
+    }
+    else if (ch === 'x') {
         await doswapweapon();
-    } else if (ch === 'a') {
+    }
+    else if (ch === 'a') {
         await doapply();
-    } else if (ch === ':') {
-        await dolook({
-            showPile: showFloorPile,
-            describeObject: pricedFloorObjectDescription,
-        });
-    } else if (ch === '?') {
+    }
+    else if (ch === ':') {
+        await dolook();
+    }
+    else if (ch === '?') {
         await dohelp();
-    } else if (ch === '#') {
+    }
+    else if (ch === '#') {
         await doextcmd();
-    } else if (ch === 'Q') {
+    }
+    else if (ch === 'Q') {
         await doready();
-    } else if (ch === 't') {
+    }
+    else if (ch === 't') {
         await dothrow();
-    } else if (ch === '_') {
+    }
+    else if (ch === '_') {
         await dotravel();
-    } else if (ch === ';') {
+    }
+    else if (ch === ';') {
         await doFarlook();
-    } else if (ch === 'S') {
+    }
+    else if (ch === 'S') {
         await dosave();
-    } else if (ch === '$') {
+    }
+    else if (ch === '$') {
         await doWalletQuery();
-    } else if (ch === ')') {
+    }
+    else if (ch === ')') {
         await doWeaponQuery();
-    } else if (ch === '[') {
+    }
+    else if (ch === '[') {
         await doArmorQuery();
-    } else if (ch === '=') {
+    }
+    else if (ch === '=') {
         await doRingQuery();
-    } else if (ch === '"') {
+    }
+    else if (ch === '"') {
         await doAmuletQuery();
-    } else if (key === 127) { // Delete: overview of known terrain.
+    }
+    else if (key === 127) { // Delete: overview of known terrain.
         await doTerrainOverview();
-    } else if (key === 27) { // Escape cancels without producing a message.
+    }
+    else if (key === 27) { // Escape cancels without producing a message.
         game.context.move = 0;
-    } else {
+    }
+    else {
         // Unknown command
         game.context.move = 0;
         await pline(`Unknown command '${ch}'.`);
     }
 }
-
-// C refs: potion.c dodrink()/dopotion() and fountain.c drinkfountain().
-// Inventory and terrain sources converge only after their distinct selector
-// and effect transactions have committed.
-async function selectPotionToDrink(potions) {
-    const letters = potions.map(object => object.invlet).join('');
-    let key = await promptKey(
-        `What do you want to drink? [${compactInventoryLetters(letters)} or ?*] `,
-    );
-    if (key === '?'.charCodeAt(0) || key === '*'.charCodeAt(0)) {
-        key = await selectInventoryObject({
-            items: potions,
-            includeGold: false,
-            loopUntilValid: true,
-        });
-    }
-    // invent.c:getobj() treats every quitchar, including Return, as an
-    // explicit cancellation with prose.  The prompt buffer itself is not the
-    // resulting topline; "Never mind." replaces it before rhack resumes.
-    if ([27, 32, 10, 13].includes(key)) {
-        await pline('Never mind.');
-        return null;
-    }
-    game._pending_message = '';
-    return potions.find(object => object.invlet === String.fromCharCode(key));
-}
-
 async function doquaff() {
-    const loc = game.level?.at(game.u?.ux, game.u?.uy);
-    if (loc?.typ === FOUNTAIN) {
-        const answer = await promptYesNo(
-            'Drink from the fountain? [yn] (n)', 'n', 1,
-        );
-        if (answer === 'y') {
-            await drinkFountain(loc);
-            game.context.move = 1;
-            return;
-        }
-    }
-    if (loc?.typ === SINK) {
-        const answer = await promptYesNo(
-            'Drink from the sink? [yn] (n)', 'n', 1,
-        );
-        if (answer === 'y') {
-            await drinkSink(loc);
-            game.context.move = 1;
-            return;
-        }
-    }
-
-    const potions = (game.inventory || []).filter(object =>
-        object.class === 'Potions' || object.oclass === 8);
-    if (!potions.length) {
-        await pline("You don't have anything to drink.");
-        game.context.move = 0;
-        return;
-    }
-    const potion = await selectPotionToDrink(potions);
-    if (!potion) {
-        game.context.move = 0;
-        return;
-    }
-
-    if (potion.otyp === POT_FRUIT_JUICE) {
-            const fruit = game.fruitName || 'slime mold';
-            const prefix = potion.cursed ? 'Yecch!  This tastes rotten.'
-                : `This tastes like ${potion.diluted || potion.odiluted
-                    ? 'reconstituted ' : ''}${fruit} juice.`;
-            await moreUntilDismissed(`${prefix}--More--`);
-            const blessing = potion.blessed ? 1 : potion.cursed ? -1 : 0;
-            game.u.uhunger = (game.u.uhunger ?? 900)
-                + (potion.diluted || potion.odiluted ? 5 : 10)
-                * (2 + blessing);
-
-            await tryCallObjectType(potion);
-    } else if (potion.otyp === POT_SICKNESS && potion.blessed) {
-            // C potion.c:peffect_sickness().  The first pline fills tty's
-            // topline and suspends before the blessed qualification.  The
-            // dismissal resumes the same command, applies its fixed damage,
-            // then dopotion() identifies and consumes the potion.
-            await moreUntilDismissed(
-                'Yecch!  This stuff tastes like poison.--More--',
-            );
-            await pline(
-                `(But in fact it was mildly stale ${
-                    game.fruitName || 'slime mold'
-                } juice.)`,
-            );
-            if (game.urole?.key !== 'healer') {
-                game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - 1);
-            }
-            if (potion.dknown !== false
-                && !game._knownObjectTypes?.has(potion.otyp)) {
-                exerciseAttribute(A_WIS, true);
-                recordObjectKnowledge(potion.otyp);
-                game.u.urexp = (game.u.urexp || 0) + 10;
-            }
-    } else if (potion.otyp === POT_GAIN_ENERGY) {
-            await pline('Magical energies course through your body.');
-            let amount = d(potion.blessed ? 3 : potion.cursed ? 1 : 2, 6);
-            if (potion.cursed) amount = -amount;
-            game.u.uenmax = (game.u.uenmax ?? 0) + amount;
-            if (game.u.uenmax > (game.u.uenpeak ?? 0))
-                game.u.uenpeak = game.u.uenmax;
-            else if (game.u.uenmax <= 0) game.u.uenmax = 0;
-            game.u.uen = (game.u.uen ?? 0) + 3 * amount;
-            if (game.u.uen > game.u.uenmax) game.u.uen = game.u.uenmax;
-            else if (game.u.uen <= 0) game.u.uen = 0;
-            exerciseAttribute(A_WIS, true);
-            if (potion.dknown !== false
-                && !game._knownObjectTypes?.has(potion.otyp)) {
-                exerciseAttribute(A_WIS, true);
-                recordObjectKnowledge(potion.otyp);
-                game.u.urexp = (game.u.urexp || 0) + 10;
-            }
-            recordObjectEncounter(potion.otyp);
-    } else if (potion.otyp === POT_INVISIBILITY) {
-            const effect = await applyPotionLikeInvisibility({
-                blessed: !!potion.blessed,
-                cursed: !!potion.cursed,
-            });
-            if (effect.aggravates) aggravateMonsters(game);
-            if (!effect.showedInvisibility) {
-                const feeling = game.u?.hallucinating
-                    || (game.u?.hallucinationTurns ?? 0) > 0
-                    ? 'normal' : 'peculiar';
-                await pline(
-                    `You have a ${feeling} feeling for a moment, then it passes.`,
-                );
-                await tryCallObjectType(potion);
-            } else if (potion.dknown !== false
-                && !game._knownObjectTypes?.has(potion.otyp)) {
-                exerciseAttribute(A_WIS, true);
-                recordObjectKnowledge(potion.otyp);
-                game.u.urexp = (game.u.urexp || 0) + 10;
-            }
-    } else if (potion.otyp === POT_HEALING) {
-            await pline('You feel better.');
-            const bucSign = potion.blessed ? 1 : potion.cursed ? -1 : 0;
-            const healed = 8 + d(4 + 2 * bucSign, 4);
-            game.u.uhp = (game.u.uhp ?? 0) + healed;
-            if (game.u.uhp > (game.u.uhpmax ?? 0)) {
-                if (!potion.cursed) game.u.uhpmax = (game.u.uhpmax ?? 0) + 1;
-                game.u.uhp = game.u.uhpmax;
-                game.u.uhppeak = Math.max(
-                    game.u.uhppeak ?? 0, game.u.uhpmax ?? 0,
-                );
-            }
-            if (!potion.cursed) {
-                game.u.blindTurns = 0;
-                syncBlindness(game);
-                game.u.deafTurns = 0;
-                syncDeafness(game);
-            }
-            if (potion.blessed) {
-                cureHeroIllness(game);
-            }
-            exerciseAttribute(A_CON, true);
-    } else if (potion.otyp === POT_EXTRA_HEALING) {
-            await pline('You feel much better.');
-            const bucSign = potion.blessed ? 1 : potion.cursed ? -1 : 0;
-            const healed = 16 + d(4 + 2 * bucSign, 8);
-            game.u.uhp = (game.u.uhp ?? 0) + healed;
-            if (game.u.uhp > (game.u.uhpmax ?? 0)) {
-                const extraMaximum = potion.blessed ? 5
-                    : potion.cursed ? 0 : 2;
-                game.u.uhpmax = (game.u.uhpmax ?? 0) + extraMaximum;
-                game.u.uhp = game.u.uhpmax;
-                game.u.uhppeak = Math.max(
-                    game.u.uhppeak ?? 0, game.u.uhpmax ?? 0,
-                );
-            }
-            const wasBlind = !!game.blind
-                || (game.u.blindTurns ?? 0) > 0;
-            game.u.blindTurns = 0;
-            syncBlindness(game);
-            game.u.deafTurns = 0;
-            syncDeafness(game);
-            if (!potion.cursed) {
-                cureHeroIllness(game);
-            }
-            if (wasBlind && !game.blind) {
-                game.vision_full_recalc = 1;
-                await plineWithContinuation('You can see again.');
-            }
-            if (game.u.hallucinating
-                || (game.u.hallucinationTurns ?? 0) > 0) {
-                game.u.hallucinating = false;
-                game.u.hallucinationTurns = 0;
-                game.vision_full_recalc = 1;
-            }
-            exerciseAttribute(A_CON, true);
-            exerciseAttribute(A_STR, true);
-            if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-            if (!game._knownObjectTypes.has(potion.otyp)) {
-                exerciseAttribute(A_WIS, true);
-                recordObjectKnowledge(potion.otyp);
-                game.u.urexp = (game.u.urexp || 0) + 10;
-            }
-            recordObjectEncounter(potion.otyp);
-    } else if (potion.otyp === POT_PARALYSIS) {
-            await pline('Your feet are frozen to the floor!');
-            game._helplessTurns = 25 + rn2(10);
-            game._helplessReason = 'frozen by a potion';
-            game._helplessDoneMessage = 'You can move again.';
-            exerciseAttribute(A_DEX, false);
-            if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-            if (!game._knownObjectTypes.has(potion.otyp)) {
-                // makeknown() -> discover_object(..., credit_hero=TRUE)
-                // exercises Wisdom before the elapsed turn starts.
-                exerciseAttribute(A_WIS, true);
-                game._knownObjectTypes.add(potion.otyp);
-                game.u.urexp = (game.u.urexp || 0) + 10;
-            }
-    } else if (potion.otyp === POT_CONFUSION) {
-            const base = potion.cursed ? 24 : potion.blessed ? 8 : 16;
-            game.u.confusionTurns = (game.u.confusionTurns || 0)
-                + base + rn2(7);
-            await pline('Huh, What?  Where am I?');
-            if (!game._knownObjectTypes) game._knownObjectTypes = new Set();
-            if (!game._knownObjectTypes.has(potion.otyp)) {
-                rn2(19); // discover_object(..., credit_hero): exercise Wisdom
-                game._knownObjectTypes.add(potion.otyp);
-                game.u.urexp = (game.u.urexp || 0) + 10;
-            }
-    } else if (potion.otyp === POT_BOOZE) {
-            const hungerState = (game.u?.uhunger ?? 900) > 1000 ? 0
-                : (game.u?.uhunger ?? 900) > 150 ? 1
-                    : (game.u?.uhunger ?? 900) > 50 ? 2
-                        : (game.u?.uhunger ?? 900) > 0 ? 3 : 4;
-            if (!potion.blessed) {
-                game.u.confusionTurns = (game.u.confusionTurns || 0)
-                    + d(2 + hungerState, 8);
-            }
-            if (!(potion.diluted || potion.odiluted))
-                game.u.uhp = Math.min(game.u.uhpmax, (game.u.uhp || 0) + 1);
-            game.u.uhunger = (game.u.uhunger ?? 900)
-                + 10 * (2 + (potion.blessed ? 1 : potion.cursed ? -1 : 0));
-            exerciseAttribute(A_WIS, false);
-            if (potion.cursed) {
-                game._helplessTurns = rnd(15);
-                game._helplessReason = 'unconscious from drinking';
-                game._helplessDoneMessage = 'You awake with a headache.';
-            }
-            // The effect finishes before docall() tries to replace its
-            // topline.  That replacement is what creates the --More-- pause,
-            // so all effect RNG belongs to the selection key's slice.
-            await moreUntilDismissed(
-                `Ooph!  This tastes like ${potion.diluted || potion.odiluted
-                    ? 'watered down ' : ''}liquid fire!--More--`,
-            );
-            await tryCallObjectType(potion);
-    }
-    consumeInventoryItem(potion);
-    game._capacityDirty = true;
-    game.context.move = 1;
+    const result = await quaff();
+    game.context.move = result.spentTime && !result.heroDied ? 1 : 0;
 }
-
-async function drinkSink(loc) {
-    const result = rn2(20);
-    if (result === 0) {
-        await pline('You take a sip of very cold water.');
-    } else if (result === 1) {
-        await pline('You take a sip of very warm water.');
-    } else if (result === 2) {
-        await pline('You take a sip of scalding hot water.');
-        if (game.u?.fireResistance) await pline('It seems quite tasty.');
-        else game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - rnd(6));
-    } else if (result === 6) {
-        await pline('The pipes break!  Water spurts out!');
-        loc.typ = FOUNTAIN;
-        loc.looted = 1;
-        loc.blessedftn = 0;
-        newsym(game.u.ux, game.u.uy);
-    } else if (result === 8) {
-        await pline('Yuk, this water tastes awful.');
-        game.u.uexp = (game.u.uexp || 0) + 1;
-    } else if (result === 9) {
-        await pline('Gaggg... this tastes like sewage!  You vomit.');
-        const constitution = game.u?.acurr?.a?.[A_CON] ?? 10;
-        game.u.uhunger = (game.u.uhunger ?? 900)
-            - (11 + rn2(Math.max(1, 30 - constitution)));
-        await vomitHero({ state: game });
-    } else if (result === 11) {
-        await pline('You hear clanking from the pipes...');
-    } else if (result === 12) {
-        await pline('You hear snatches of song from among the sewers...');
-    } else if (result === 13) {
-        await pline('Ew, what a stench!');
-    } else if (result >= 14 || result === 19) {
-        const temperature = rn2(3) ? (rn2(2) ? 'cold' : 'warm') : 'hot';
-        await pline(`You take a sip of ${temperature} water.`);
-    } else {
-        // Monster, generated-potion, ring, elemental, and polymorph sink
-        // branches require their complete source constructors.  Preserve the
-        // selected branch without stealing the later scheduler's RNG.
-        await pline('The sink seems quite dirty.');
-    }
-}
-
-const GUSH_REMOVABLE_TRAPS = new Set([
-    SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT,
-    HOLE, TRAPDOOR, TELEP_TRAP, LEVEL_TELEP, WEB, MAGIC_TRAP,
-    ANTI_MAGIC,
-]);
-
-function nextToDoor(x, y) {
-    for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-            const typ = game.level?.at?.(x + dx, y + dy)?.typ;
-            if (typ === DOOR || typ === SDOOR) return true;
-        }
-    }
-    return false;
-}
-
-// C ref: trap.c delfloortrap().  Gush rejects portal-like and special traps,
-// but removes ordinary floor mechanisms before replacing their terrain.
-function deleteGushFloorTrap(trap) {
-    if (!trap || !GUSH_REMOVABLE_TRAPS.has(trap.ttyp)) return false;
-    const index = game.level?.traps?.indexOf(trap) ?? -1;
-    if (index >= 0) game.level.traps.splice(index, 1);
-    const monster = game.level?.monsters?.find(candidate =>
-        !candidate.dead && candidate.mx === trap.tx && candidate.my === trap.ty);
-    if (monster) monster.mtrapped = false;
-    return true;
-}
-
-// C refs: fountain.c dogushforth()/gush(), vision.c do_clear_area().
-// The checkerboard and hero-position checks precede rn2(distance). Terrain,
-// boulders, adjacent doors, and traps are checked after that draw.
-async function dogushforth(drinking) {
-    const messages = [];
-    let madePool = 0;
-    const ux = game.u.ux;
-    const uy = game.u.uy;
-    for (const { x, y } of clearAreaCells(ux, uy, 7)) {
-        if ((x + y) % 2 || (x === ux && y === uy)) continue;
-        if (rn2(1 + distmin(ux, uy, x, y))) continue;
-
-        const loc = game.level?.at?.(x, y);
-        const objects = game.level?.objects?.[x]?.[y] || [];
-        if (loc?.typ !== ROOM
-            || objects.some(object => object.otyp === BOULDER)
-            || nextToDoor(x, y)) {
-            continue;
-        }
-
-        const trap = game.level?.traps?.find(candidate =>
-            candidate.tx === x && candidate.ty === y);
-        if (trap && !deleteGushFloorTrap(trap)) continue;
-
-        if (madePool++ === 0)
-            messages.push('Water gushes forth from the overflowing fountain!');
-        loc.typ = POOL;
-        loc.flags = 0;
-        if (game.level.engravings) {
-            game.level.engravings = game.level.engravings.filter(engraving =>
-                engraving.x !== x || engraving.y !== y);
-        }
-        await waterDamageChain(objects, messages, game);
-
-        // minliquid() is a separate monster/liquid owner.  Repaint here so
-        // airborne or water-compatible occupants expose the new background;
-        // drowning and gremlin/golem branches remain in that owner.
-        newsym(x, y);
-    }
-    if (!madePool) {
-        messages.push(drinking
-            ? 'Your thirst is quenched.'
-            : 'Water sprays all over you.');
-    }
-    return messages;
-}
-
 function someGold(amount) {
-    const gold = Math.min(
-        0x7fffffff,
-        Math.max(0, Math.trunc(amount ?? 0)),
-    );
-    if (gold < 50) return gold;
+    const gold = Math.min(0x7fffffff, Math.max(0, Math.trunc(amount ?? 0)));
+    if (gold < 50)
+        return gold;
     const floor = gold < 100 ? 25
         : gold < 500 ? 50
             : gold < 1000 ? 100
@@ -1611,71 +1193,55 @@ function someGold(amount) {
                     : gold < 10000 ? 1000 : 5000;
     return floor + rn2(gold - floor + 1);
 }
-
 async function discoverFountainGem(loc) {
     return applyFountainGemDiscovery({
         loc,
         blind: !!game.blind,
-        announce: message => pline(message),
+        announce: (message) => pline(message),
         chooseGem: () => rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1),
-        createGem: gemType => mksobj(gemType, false, false),
-        placeGem: gem => place_object(gem, game.u.ux, game.u.uy),
+        createGem: (gemType) => mksobj(gemType, false, false),
+        placeGem: (gem) => placeCreatedObject(gem, game.u.ux, game.u.uy),
         repaint: () => newsym(game.u.ux, game.u.uy),
-        exerciseWisdom: () => exerciseAttribute(A_WIS, true),
+        exerciseWisdom,
     });
 }
-
 function fountainActorGone(mnum) {
     return !!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE);
 }
-
-function heroHallucinating() {
-    return !!(game.u?.hallucinating
-        || (game.u?.hallucinationTurns ?? 0) > 0);
-}
-
 function fountainActorIndefiniteName(monster) {
-    const name = heroHallucinating()
+    const name = heroIsHallucinating()
         ? randomDisplayMonsterName() : monsterInstanceDisplayName(monster);
-    return `${indefiniteArticle(name)} ${name}`;
+    return withIndefiniteArticle(name);
 }
-
 function fountainActorVisibleSubject(monster) {
-    return heroHallucinating()
+    return heroIsHallucinating()
         ? randomDisplayMonsterSubject()
         : `The ${monsterInstanceDisplayName(monster)}`;
 }
-
 // Fountain-spawned monsters can enter webs immediately. Other trap types
 // still wait for their normal turn because their messages are not handled
 // here yet.
 function supportedImmediateFountainTrap(monster) {
-    return game.level?.traps?.some(trap =>
-        trap.tx === monster.mx && trap.ty === monster.my
-        && trap.ttyp === WEB);
+    return game.level?.traps?.some(trap => trap.tx === monster.mx && trap.ty === monster.my
+        && trap.ttyp === WEB) ?? false;
 }
-
 async function triggerSupportedImmediateFountainTrap(monster) {
-    const action = triggerImmediateMonsterTrap(monster, game);
-    await presentMonsterWebTrap({
-        event: action.event,
-        monster,
-        visible: canProjectMonster(monster, monster.mx, monster.my),
-        subject: fountainActorVisibleSubject,
-        announce: plineWithContinuation,
+    const state = requireInitializedGame();
+    const action = await triggerImmediateMonsterTrap(monster, state);
+    await resumeDeferredMonsterTrap(action, state, {
+        describeMonster: fountainActorVisibleSubject,
+        publish: plineWithContinuation,
     });
     return action;
 }
-
 async function summonFountainNymph() {
     return applyFountainNymphActor({
         gone: fountainActorGone(PM_WATER_NYMPH),
         blind: !!game.blind,
         createMonster: async () => {
-            const nymph = await makemonNear(
-                PM_WATER_NYMPH, game.u.ux, game.u.uy, MM_NOMSG,
-            );
-            if (nymph) newsym(nymph.mx, nymph.my);
+            const nymph = await makemonNear(PM_WATER_NYMPH, game.u.ux, game.u.uy, MM_NOMSG);
+            if (nymph)
+                newsym(nymph.mx, nymph.my);
             return nymph;
         },
         announce: plineWithContinuation,
@@ -1684,240 +1250,153 @@ async function summonFountainNymph() {
         triggerTrap: triggerSupportedImmediateFountainTrap,
     });
 }
-
 async function summonFountainDemon() {
     return applyFountainDemonActor({
         gone: fountainActorGone(PM_WATER_DEMON),
         blind: !!game.blind,
         difficulty: level_difficulty(),
         createMonster: async () => {
-            const demon = await makemonNear(
-                PM_WATER_DEMON, game.u.ux, game.u.uy, MM_NOMSG,
-            );
-            if (demon) newsym(demon.mx, demon.my);
+            const demon = await makemonNear(PM_WATER_DEMON, game.u.ux, game.u.uy, MM_NOMSG);
+            if (demon)
+                newsym(demon.mx, demon.my);
             return demon;
         },
         announce: plineWithContinuation,
         demonIndefiniteName: fountainActorIndefiniteName,
-        grantWish: async demon => {
-            const { mx, my } = demon;
-            const fountainMove = game.context.move;
-            removeWishGrantingMonster(demon, { preserveGlyph: true });
-            await makeWish();
-            // makeWish() is also used by the zero-time wizard command and
-            // clears context.move there.  Embedded in dowaterdemon(), the
-            // enclosing fountain command still consumes its ordinary turn.
-            game.context.move = fountainMove || 1;
-            newsym(mx, my);
-        },
+        grantWish: (demon) => grantMonsterWish(demon),
         trapAt: supportedImmediateFountainTrap,
         triggerTrap: triggerSupportedImmediateFountainTrap,
     });
 }
-
 async function summonFountainSnakes() {
     return applyFountainSnakeActors({
         gone: fountainActorGone(PM_WATER_MOCCASIN),
         blind: !!game.blind,
-        hallucinating: heroHallucinating(),
+        hallucinating: heroIsHallucinating(),
         random: rn2,
         hallucinatedPlural: () => makePlural(randomDisplayMonsterName()),
         // dowatersnakes() owns the first ordinary pline; only a later dryup
         // line enters the branch-scoped continuation path below.
         announce: pline,
         createMonster: async () => {
-            const snake = await makemonNear(
-                PM_WATER_MOCCASIN, game.u.ux, game.u.uy, MM_NOMSG,
-            );
-            if (snake) newsym(snake.mx, snake.my);
+            const snake = await makemonNear(PM_WATER_MOCCASIN, game.u.ux, game.u.uy, MM_NOMSG);
+            if (snake)
+                newsym(snake.mx, snake.my);
             return snake;
         },
         trapAt: supportedImmediateFountainTrap,
         triggerTrap: triggerSupportedImmediateFountainTrap,
     });
 }
-
-async function drinkFountain(loc) {
+export async function drinkFountain(loc) {
     let fountainMessage = '';
-    let continueFountainMessage = false;
-    let vomitAfterMessage = false;
     const fate = rnd(30);
     if (fate < 10) {
         // fountain.c:drinkfountain() handles the ordinary low-fate draught
         // before its numbered switch.  Nutrition is credited before dryup()
         // and the elapsed-turn scheduler applies its normal hunger cost.
-        fountainMessage = 'The cool draught refreshes you.';
+        await plineWithContinuation('The cool draught refreshes you.');
         game.u.uhunger = (game.u.uhunger ?? 900) + rnd(10);
-    } else if (fate === 20) {
-        fountainMessage = 'The water is foul!  You gag and vomit.';
+        await updateHeroHunger(false);
+        if (game.program_state.gameover)
+            return true;
+    }
+    else if (fate === 20) {
+        await plineWithContinuation('The water is foul!  You gag and vomit.');
         // C refs: fountain.c:drinkfountain(), eat.c:vomit(), and
         // allmain.c:moveloop_core().  Foul water first removes 11..30 points
         // of nutrition, then nomul(-2) makes the next two global turns happen
         // without accepting a hero command.
-        game.u.uhunger = (game.u.uhunger ?? 900) - (11 + rn2(20));
-        vomitAfterMessage = true;
-    } else if (fate === 21) {
-        fountainMessage = 'The water is contaminated!';
-        if (game.u?.poisonResistance) {
-            fountainMessage += `  Perhaps it is runoff from the nearby ${game.fruitName || 'slime mold'} farm.`;
-            game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - rnd(4));
-        } else {
-            // fountain.c case 21 delegates to
-            // attrib.c:poison_strdmg(rn1(4,3), rnd(10), ...).  losestr()
-            // spends any loss below the natural minimum as extra HP/max-HP
-            // damage before committing the remaining attribute reduction.
-            let strengthLoss = 3 + rn2(4);
-            const attributes = game.u?.acurr?.a;
-            const currentStrength = attributes?.[A_STR] ?? 3;
-            let reducedStrength = currentStrength - strengthLoss;
-            let frailtyDamage = 0;
-            while (reducedStrength < 3) {
-                reducedStrength++;
-                strengthLoss--;
-                frailtyDamage += 3 + rn2(4);
-            }
-            if (frailtyDamage) {
-                game.u.uhp = Math.max(
-                    0, (game.u.uhp ?? 1) - frailtyDamage,
-                );
-                game.u.uhpmax = Math.max(
-                    1, (game.u.uhpmax ?? 1) - frailtyDamage,
-                );
-            }
-            if (attributes && strengthLoss > 0) {
-                attributes[A_STR] = reducedStrength;
-                if (!Array.isArray(game.u._exercise))
-                    game.u._exercise = Array(6).fill(0);
-                game.u._exercise[A_STR] = 0;
-            }
-            game.u.uhp = Math.max(0, (game.u.uhp ?? 1) - rnd(10));
-            exerciseAttribute(A_CON, false);
+        await spendHeroNutrition(11 + rn2(20));
+        if (game.program_state.gameover)
+            return true;
+        await vomitHero({ state: game });
+        if (game.program_state.gameover)
+            return true;
+    }
+    else if (fate === 21) {
+        await plineWithContinuation('The water is contaminated!');
+        if (game.u.poisonResistance) {
+            await plineWithContinuation(`Perhaps it is runoff from the nearby ${fruitName(false)} farm.`);
+            if (await loseHeroHp(rnd(4), 'unrefrigerated sip of juice'))
+                return true;
         }
-    } else if (fate === 22) {
-        continueFountainMessage = !!(await summonFountainSnakes()).message;
-    } else if (fate === 23) {
-        continueFountainMessage = !!(await summonFountainDemon()).message;
-    } else if (fate === 26) {
-        await fountainMonsterDetection();
-        exerciseAttribute(A_WIS, true);
-    } else if (fate === 27 && !((loc.looted ?? 0) & 1)) {
-        continueFountainMessage = (await discoverFountainGem(loc)).discovered;
-    } else if (fate === 27 || fate === 28) {
-        continueFountainMessage = !!(await summonFountainNymph()).message;
-    } else if (fate === 30) {
-        fountainMessage = (await dogushforth(true)).join('  ');
-    } else if (fate >= 10) {
+        else {
+            if (await poisonHeroStrengthAndHp(3 + rn2(4), rnd(10), 'contaminated water', { deathCause: 'killed by contaminated water' }))
+                return true;
+            await exerciseAttribute(A_CON, false);
+        }
+    }
+    else if (fate === 22) {
+        await summonFountainSnakes();
+    }
+    else if (fate === 23) {
+        await summonFountainDemon();
+    }
+    else if (fate === 26) {
+        await detectMonsters(null);
+        await exerciseAttribute(A_WIS, true);
+    }
+    else if (fate === 27 && !((loc.looted ?? 0) & 1)) {
+        await discoverFountainGem(loc);
+    }
+    else if (fate === 27 || fate === 28) {
+        await summonFountainNymph();
+    }
+    else if (fate === 30) {
+        fountainMessage = (await gushForthFromFountain({ drinking: true })).join('  ');
+    }
+    else if (fate >= 10) {
         fountainMessage =
             `This tepid ${displayLiquidName('water')} is tasteless.`;
     }
-    if (fountainMessage) {
-        if (continueFountainMessage)
-            await plineWithContinuation(fountainMessage);
-        else await pline(fountainMessage);
-    }
-    if (vomitAfterMessage) await vomitHero({ state: game });
-
-    // dryup(): the first use dries this ordinary dungeon fountain on a
-    // one-in-three roll and turns it back into ordinary room floor.
-    const dryup = dryFountainAt(game.u.ux, game.u.uy);
-    if (dryup.dried) await pline('The fountain dries up!');
-    await reportFountainWarning(dryup.warning);
+    if (fountainMessage)
+        await plineWithContinuation(fountainMessage);
+    await dryFountainAt(game.u.ux, game.u.uy);
+    return false;
 }
-
-function clearDetectionMap() {
-    for (let x = 1; x < COLNO; x++) {
-        for (let y = 0; y < ROWNO; y++) {
-            const loc = game.level?.at(x, y);
-            if (!loc) continue;
-            loc.disp_ch = ' ';
-            loc.disp_color = NO_COLOR;
-            loc.disp_decgfx = false;
-            loc.disp_attr = 0;
-        }
-    }
-}
-
-function showDetectedMonsters() {
-    clearDetectionMap();
-    for (const monster of game.level?.monsters || []) {
-        if ((monster.mhp ?? 1) <= 0 || !monster.mx) continue;
-        show_glyph_cell(
-            monster.mx, monster.my, monster.symbol || '?',
-            MONSTER_COLOR[monster.mnum] ?? monster.color ?? NO_COLOR,
-            false, monster.pet && game.flags?.hilite_pet ? 1 : 0,
-        );
-    }
-    show_glyph_cell(game.u.ux, game.u.uy, '@', CLR_WHITE, false);
-}
-
-function detectedMonsterDescription(x, y) {
-    const monster = game.level?.monsters?.find(candidate =>
-        (candidate.mhp ?? 1) > 0 && candidate.mx === x && candidate.my === y);
-    if (!monster) return 'unexplored area';
-    const name = MONSTER_NAME[monster.mnum] || 'monster';
-    if (monster.m_ap_type) return `${name}, mimicking something`;
-    if (monster.isshk) {
-        const shopName = monster.eshk?.shknam || monster.name || name;
-        return `${monster.mpeaceful ? 'peaceful ' : ''}${shopName}`;
-    }
-    return `${monster.mpeaceful ? 'peaceful ' : ''}${name}`;
-}
-
 function farlookDelta(key) {
-    const lower = key.toLowerCase();
-    if (!isMovementKey(lower)) return null;
-    const distance = key === lower ? 1 : 8;
-    return { dx: DIR_DX[lower] * distance, dy: DIR_DY[lower] * distance };
+    const movement = game.commandBindings.movementForKey(key);
+    if (!movement || movement.dz)
+        return null;
+    const distance = movement.mode === 0 ? 1 : 8;
+    return { dx: movement.dx * distance, dy: movement.dy * distance };
 }
-
-// C refs: detect.c:monster_detect() and getpos.c:browse_map().  Detection is
-// modal: its two pagers and cursor loop consume input before control returns
-// to drinkfountain(), so exercise() and dryup() belong to the final dismissal
-// boundary rather than to the initial `y` response.
-async function fountainMonsterDetection() {
-    const displaySnapshot = captureMapDisplay();
-    showDetectedMonsters();
-    await pline('You sense the presence of monsters.');
-    await flushPendingTopline();
-    await showGetposTip();
-
-    let cursorX = game.u.ux;
-    let cursorY = game.u.uy;
-    game._pending_message = "(For instructions type a '?')  Move cursor to monster of interest:";
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(cursorX - 1, cursorY + 1);
-
-    for (;;) {
-        const keyCode = await nhgetch();
-        if ([27, 32, 10, 13].includes(keyCode)) break;
-        const key = String.fromCharCode(keyCode);
-        const delta = farlookDelta(key);
-        if (!delta) continue;
-        cursorX = Math.max(1, Math.min(COLNO - 1, cursorX + delta.dx));
-        cursorY = Math.max(0, Math.min(ROWNO - 1, cursorY + delta.dy));
-        game._pending_message = detectedMonsterDescription(cursorX, cursorY);
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(cursorX - 1, cursorY + 1);
-    }
-
-    await moreUntilDismissed('Done.--More--');
-    restoreMapDisplay(displaySnapshot);
-    game._pending_message = '';
-    await flush_screen(1);
-}
-
-async function travelStairs(up) {
+export async function travelStairs(up) {
+    const level = requireGameLevel();
+    requireInitializedHero(game.u);
     game.u.dx = game.u.dy = 0;
     game.u.dz = up ? -1 : 1;
+    if (MONSTER_MOVE[game.u.umonnum] === 0) {
+        const where = propertyIsActive('levitation', game) || Is_airlevel(game.u.uz)
+            || Is_waterlevel(game.u.uz) ? 'in place' : 'to the ground';
+        await plineWithContinuation(`You are rooted ${where}.`);
+        endVoluntaryMultiTurn(game);
+        game.context.move = 1;
+        return false;
+    }
+    if (await stuckSteed(true, game)) {
+        game.context.move = 0;
+        return false;
+    }
+    if (!up) {
+        const descent = await descendFromLevitation(game);
+        if (descent.handled) {
+            game.context.move = descent.spentTurn ? 1 : 0;
+            return descent.spentTurn;
+        }
+    }
     let stairs = game.stairs;
     while (stairs && (stairs.sx !== game.u.ux || stairs.sy !== game.u.uy
-        || !!stairs.up !== up)) stairs = stairs.next;
+        || !!stairs.up !== up))
+        stairs = stairs.next;
     if (!stairs) {
-        const hole = !up && game.level.traps.find(trap =>
-            trap.tx === game.u.ux && trap.ty === game.u.uy
+        const hole = !up && level.traps.find(trap => trap.tx === game.u.ux && trap.ty === game.u.uy
             && (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) && trap.tseen);
         if (hole) {
-            await triggerHeroTrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
+            const result = await triggerHeroTrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
+            if (result.died)
+                return false;
             game.context.move = 1;
             return true;
         }
@@ -1935,14 +1414,10 @@ async function travelStairs(up) {
         arrival: up ? 'downstairs' : 'stairs',
         ladder: !!stairs.isladder,
     });
-    if (changed !== false) game.context.move = 1;
+    if (changed !== false)
+        game.context.move = 1;
     return changed !== false;
 }
-
-
-
-
-
 async function doWalletQuery() {
     const purse = heroGoldAmount(game);
     const stashed = hiddenGold(game, false);
@@ -1951,36 +1426,34 @@ async function doWalletQuery() {
             ? `Your wallet contains ${purse} zorkmid${purse === 1 ? '' : 's'}`
             : 'Your wallet is empty';
         if (stashed) {
-            message += `, ${purse ? 'and' : 'but'} you have ${stashed} ${
-                purse ? 'more' : `zorkmid${stashed === 1 ? '' : 's'}`
-            } stashed away in your pack`;
+            message += `, ${purse ? 'and' : 'but'} you have ${stashed} ${purse ? 'more' : `zorkmid${stashed === 1 ? '' : 's'}`} stashed away in your pack`;
         }
         await pline(`${message}.`);
-    } else {
+    }
+    else {
         const total = purse + stashed;
         await pline(total
-            ? `You are carrying a total of ${total} zorkmid${
-                total === 1 ? '' : 's'}.`
+            ? `You are carrying a total of ${total} zorkmid${total === 1 ? '' : 's'}.`
             : 'You have no money.');
     }
     game.context.move = 0;
 }
-
 async function doWeaponQuery() {
     await pline(game.uwep
         ? `${game.uwep.invlet} - ${game.uwep.name}.`
         : 'You are bare handed.');
     game.context.move = 0;
 }
-
 async function doArmorQuery() {
     const armor = game.uarm;
     if (!armor) {
         await pline('You are not wearing any armor.');
-    } else {
+    }
+    else {
         const parts = [];
-        if (armor.buc) parts.push(armor.buc);
-        if (Number.isInteger(armor.enchantment))
+        if (armor.buc)
+            parts.push(armor.buc);
+        if (armor.enchantment !== undefined && Number.isInteger(armor.enchantment))
             parts.push(`${armor.enchantment >= 0 ? '+' : ''}${armor.enchantment}`);
         parts.push(armor.name);
         const description = parts.join(' ');
@@ -1989,34 +1462,31 @@ async function doArmorQuery() {
     }
     game.context.move = 0;
 }
-
 async function doRingQuery() {
     await pline(game.uleft || game.uright
         ? 'You are wearing a ring.'
         : 'You are not wearing any rings.');
     game.context.move = 0;
 }
-
 async function doAmuletQuery() {
     await pline(game.uamul
         ? 'You are wearing an amulet.'
         : 'You are not wearing an amulet.');
     game.context.move = 0;
 }
-
 function captureMapDisplay() {
     const snapshot = [];
     for (let y = 0; y < ROWNO; y++) {
         for (let x = 1; x < COLNO; x++) {
             const loc = game.level?.at(x, y);
-            if (!loc) continue;
+            if (!loc)
+                continue;
             snapshot.push([loc, loc.disp_ch, loc.disp_color,
                 loc.disp_decgfx, loc.disp_attr]);
         }
     }
     return snapshot;
 }
-
 function restoreMapDisplay(snapshot) {
     for (const [loc, ch, color, decgfx, attr] of snapshot) {
         loc.disp_ch = ch;
@@ -2025,13 +1495,13 @@ function restoreMapDisplay(snapshot) {
         loc.disp_attr = attr;
     }
 }
-
 function showKnownTerrain() {
     for (let y = 0; y < ROWNO; y++) {
         for (let x = 1; x < COLNO; x++) {
             const loc = game.level?.at(x, y);
             if (!loc || (!loc.remembered_glyph
-                && (!loc.disp_ch || loc.disp_ch === ' '))) continue;
+                && (!loc.disp_ch || loc.disp_ch === ' ')))
+                continue;
             const glyph = terrain_glyph(loc, x, y);
             loc.disp_ch = glyph.ch;
             loc.disp_color = glyph.color;
@@ -2040,9 +1510,10 @@ function showKnownTerrain() {
         }
     }
 }
-
 async function doTerrainOverview() {
     const display = game.nhDisplay;
+    if (!display)
+        throw new Error('This command requires an initialized display.');
     game._pending_message = '';
     const left = 28;
     // Short tty menus overlay only their right-side rectangle.  The message
@@ -2064,7 +1535,6 @@ async function doTerrainOverview() {
         game.context.move = 0;
         return;
     }
-
     const displaySnapshot = captureMapDisplay();
     showKnownTerrain();
     const firstUse = shouldShowGetposTip();
@@ -2081,81 +1551,70 @@ async function doTerrainOverview() {
         await flush_screen(1);
         display.setCursor(cursor.x - 1, cursor.y + 1);
         const browseKey = await nhgetch();
-        const browseChar = String.fromCharCode(browseKey);
-        if (browseKey === 27) break;
-        if (isMovementKey(browseChar)) {
-            moveGetposCursor(
-                cursor, DIR_DX[browseChar], DIR_DY[browseChar],
-            );
+        if (browseKey === 27)
+            break;
+        const delta = farlookDelta(browseKey);
+        if (delta) {
+            moveGetposCursor(cursor, delta.dx, delta.dy);
             browseMessage = farlookLocationDescription(cursor.x, cursor.y);
             continue;
         }
-        await moreUntilDismissed('Done.--More--');
+        await moreUntilDismissed('Done.');
         break;
     }
-
     restoreMapDisplay(displaySnapshot);
     game._pending_message = '';
     await flush_screen(1);
     game.context.move = 0;
 }
-
 async function kickOuch(x, y) {
     await pline('Ouch!  That hurts!');
-    exerciseAttribute(A_DEX, false);
-    exerciseAttribute(A_STR, false);
+    await exerciseAttribute(A_DEX, false);
+    await exerciseAttribute(A_STR, false);
     wakeMonstersNear(x, y, 25);
     if (rn2(3) === 0) {
-        const duration = 5 + rnd(5);
-        if (!(game.u?._woundedLegTurns > 0)) {
-            game.u._woundedLegSide = 'right';
-            game.u._woundedLegTurns = duration;
-            if (game.u.acurr?.a) game.u.acurr.a[A_DEX]--;
-        } else {
-            game.u._woundedLegTurns = Math.max(
-                game.u._woundedLegTurns, duration,
-            );
-        }
+        await woundHeroLegs('right', 5 + rnd(5));
     }
     let damage = rnd(currentAttribute(A_CON) > 15 ? 3 : 5);
-    if (game.u?.halfPhysicalDamage || game.u?.half_physical_damage)
+    if (game.u?.halfPhysicalDamage)
         damage = Math.trunc((damage + 1) / 2);
     const died = await damageHeroFromKick(damage, x, y);
     if (!died && kickCausesRecoil())
         await recoilFromKick(4 + rn2(2));
 }
-
 function kickCausesRecoil() {
     return Is_airlevel(game.u?.uz) || game.u?.levitating
         || game.u?.levitation || game.levitating;
 }
-
 function kickDeathReason(x, y) {
     const location = game.level?.at?.(x, y);
-    if (!location) return 'kicking nothing';
-    if (location.typ === DOOR) return 'kicking a door';
-    if (IS_STWALL(location.typ)) return 'kicking a wall';
-    if (location.typ === TREE) return 'kicking a tree';
-    if (location.typ === IRONBARS) return 'kicking an iron bar';
+    if (!location)
+        return 'kicking nothing';
+    if (location.typ === DOOR)
+        return 'kicking a door';
+    if (IS_STWALL(location.typ))
+        return 'kicking a wall';
+    if (location.typ === TREE)
+        return 'kicking a tree';
+    if (location.typ === IRONBARS)
+        return 'kicking an iron bar';
     return 'kicking something weird';
 }
-
 async function damageHeroFromKick(amount, x, y) {
     return loseHeroHp(amount, kickDeathReason(x, y));
 }
-
 function finishHurtleMonsterDeath(monster, { noCorpse = true } = {}) {
-    return finishHeroMonsterKill(
-        monster, monster.mx, monster.my, {
-            showKillMessage: false,
-            noCorpse,
-            recordConduct: false,
-        },
-    );
+    return finishHeroMonsterKill(monster, monster.mx, monster.my, {
+        showKillMessage: false,
+        noCorpse,
+        recordConduct: false,
+    });
 }
-
 async function recoilFromKick(range) {
-    return hurtleHero(-game.u.dx, -game.u.dy, range, {
+    const { dx, dy } = game.u;
+    if (dx === undefined || dy === undefined)
+        throw new Error('Kick recoil requires an attempted direction.');
+    return hurtleHero(-dx, -dy, range, {
         verbose: true,
         finishTeleport: finishTeleportArrival,
         gotoLevel,
@@ -2163,27 +1622,23 @@ async function recoilFromKick(range) {
         finishMonsterDeath: finishHurtleMonsterDeath,
     });
 }
-
 function kickPromptTargetName(monster) {
-    if (monster.name) return monster.name;
-    const article = monster.mtame > 0 ? 'your' : 'the';
+    if (monster.name)
+        return monster.name;
+    const article = (monster.mtame ?? 0) > 0 ? 'your' : 'the';
     return `${article} ${monsterInstanceDisplayName(monster)}`;
 }
-
 async function confirmKickTarget(monster) {
     const hero = game.u;
     const impaired = hero?.confused || (hero?.confusionTurns ?? 0) > 0
-        || hero?.hallucinating || (hero?.hallucinationTurns ?? 0) > 0
+        || heroIsHallucinating(game)
         || hero?.stunned || (hero?.stunnedTurns ?? 0) > 0;
     if (game.flags?.confirm === false || !monster.mpeaceful || impaired
-        || game.context?.forcefight || !canSpotMonster(monster)) return true;
-
+        || game.context?.forcefight || !canSpotMonster(monster))
+        return true;
     const paranoid = !!((game.flags?.paranoia_bits ?? 0) & PARANOID_HIT);
-    return paranoidQuery(
-        paranoid, `Really attack ${kickPromptTargetName(monster)}?`,
-    );
+    return paranoidQuery(paranoid, `Really attack ${kickPromptTargetName(monster)}?`);
 }
-
 function applyKickPassive(monster, hit) {
     return applyHeroContactPassive(monster, {
         hit,
@@ -2191,9 +1646,8 @@ function applyKickPassive(monster, hit) {
         weapon: game.uarmf || game.u?.uarmf || null,
     });
 }
-
 // C refs: dokick.c:maybe_kick_monster(), kick_monster(), kickdmg().
-// This owns the ordinary humanoid kick path.  Projection affects only the
+// Form-specific attacks share the command admission rules. Projection affects only the
 // target noun: dokick() still targets m_at(x,y) when the actor is invisible.
 async function kickLiveMonster(monster, x, y) {
     const helplessBeforeKick = !!(monster.msleeping
@@ -2204,43 +1658,40 @@ async function kickLiveMonster(monster, x, y) {
         game.context.move = 0;
         return;
     }
-    // maybe_kick_monster() temporarily force-fights hostile or unspotted
-    // actors, then overexertion() charges combat metabolism.
-    getHungry();
-
-    wakeMonstersNear(
-        game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20,
-    );
-    wipeEngravingAt(game.u.ux, game.u.uy, 2, false);
+    if (await checkHeroAttackOverexertion()) {
+        game.context.move = 1;
+        return;
+    }
+    wakeMonstersNear(game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20);
+    wipeHeroEngraving(2);
     await angerAttackedMonster(monster);
-
-    if (levitatingKickMisses(monster)) {
+    if (await levitatingKickMisses(monster)) {
         await pline('Floating in the air, you miss wildly!');
         await applyKickPassive(monster, false);
         game.context.move = 1;
         return;
     }
-
     if (monster.mundetected
-        || (monster.m_ap_type && monster.m_ap_type !== M_AP_MONSTER)) {
+        || (M_AP_TYPE(monster) && M_AP_TYPE(monster) !== M_AP_MONSTER)) {
         monster.mundetected = 0;
         monster.m_ap_type = 0;
         monster.mappearance = 0;
-        if (canSpotMonster(monster, x, y)) {
+        if (canSpotMonster(monster)) {
             newsym(x, y);
             const name = monsterInstanceDisplayName(monster);
-            await plineWithContinuation(
-                `There is ${indefiniteArticle(name)} ${name} here.`,
-            );
-        } else {
+            await plineWithContinuation(`There is ${withIndefiniteArticle(name)} here.`);
+        }
+        else {
             map_invisible(x, y);
             await plineWithContinuation('There is something hidden here.');
         }
     }
-
-    const target = canProjectMonster(monster, x, y)
-        ? monsterInstanceDisplayName(monster) : 'it';
-    const martial = ['monk', 'samurai'].includes(game.urole?.key)
+    if (await kickWithMonsterForm(monster, x, y)) {
+        game.context.move = 1;
+        return;
+    }
+    const target = monsterName(monster);
+    const martial = game.urole?.key === 'monk' || game.urole?.key === 'samurai'
         || game.uarmf?.otyp === KICKING_BOOTS;
     const kick = await prepareKick({
         martial,
@@ -2251,30 +1702,27 @@ async function kickLiveMonster(monster, x, y) {
         game.context.move = 1;
         return;
     }
-
     await plineWithContinuation(`You kick ${target}.`);
     const evaded = await tryKickEvasion(monster, {
         clumsy: kick.clumsy,
         martial,
         announce: plineWithContinuation,
-        nameMonster: actor => canProjectMonster(actor, actor.mx, actor.my)
+        nameMonster: (actor) => canSpotMonster(actor)
             ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
     });
     if (evaded) {
         await applyKickPassive(monster, false);
         if (monster.mx === x && monster.my === y
-            && !canProjectMonster(monster, x, y)) map_invisible(x, y);
+            && !canSpotMonster(monster))
+            map_invisible(x, y);
         game.context.move = 1;
         return;
     }
-
     const preparedDamage = prepareKickDamage(monster, {
         clumsy: kick.clumsy,
     });
     if (preparedDamage.passesThroughShade) {
-        await plineWithContinuation(
-            'The kick passes harmlessly through the shade.',
-        );
+        await plineWithContinuation('The kick passes harmlessly through the shade.');
         game.context.move = 1;
         return;
     }
@@ -2286,67 +1734,53 @@ async function kickLiveMonster(monster, x, y) {
         await plineWithContinuation(conductMessage);
         adjustHeroAlignment(-1);
     }
-    await abuseKickedPet(monster, preparedDamage.potentialDamage, {
-        yelp: publishKickedPetYelp,
-        growl: publishMonsterGrowl,
-    });
-    const damage = rollKickDamage(preparedDamage, { martial });
+    const petReaction = await abuseKickedPet(monster, preparedDamage.potentialDamage);
+    if (petReaction.heroDied)
+        return;
+    const damage = await rollKickDamage(preparedDamage, { martial });
     if (damage.damage > 0)
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage.damage);
-
-    const reel = await tryKickReel(
-        monster,
-        x - (game.u?.ux ?? x),
-        y - (game.u?.uy ?? y),
-        {
-            martial,
-            announce: plineWithContinuation,
-            nameMonster: actor => canProjectMonster(
-                actor, actor.mx, actor.my,
-            ) ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
-        },
-    );
-
+    const reel = await tryKickReel(monster, x - (game.u?.ux ?? x), y - (game.u?.uy ?? y), {
+        martial,
+        announce: plineWithContinuation,
+        nameMonster: (actor) => canSpotMonster(actor) ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
+    });
+    if (reel?.heroDied)
+        return;
     const passive = await applyKickPassive(monster, true);
     if (passive.heroDied) {
         game.context.move = 1;
         return;
     }
-    if ((monster.mhp ?? 1) <= 0) {
+    if ((monster.mhp ?? 1) <= 0 && !reel?.dead) {
         await finishHeroMonsterKill(monster, monster.mx, monster.my, {
-            showKillMessage: !reel?.dead,
-            hallucinating: !!(game.u?.hallucinating
-                || (game.u?.hallucinationTurns ?? 0) > 0),
-            nameMonster: () => monsterInstanceDisplayName(monster),
+            hallucinating: heroIsHallucinating(game),
         });
-    } else if (monster.mx === x && monster.my === y
-        && !canProjectMonster(monster, x, y)) {
+    }
+    else if (monster.mx === x && monster.my === y
+        && !canSpotMonster(monster)) {
         map_invisible(x, y);
     }
-    if (damage.trainSkill) recordWeaponPractice(game, 35, 1);
+    if (damage.trainSkill)
+        await useHeroSkill(35);
     game.context.move = 1;
 }
-
 async function dokick() {
     if ((game.u?._woundedLegTurns ?? 0) > 0) {
         const side = game.u._woundedLegSide;
         const leg = side === 'both' ? 'legs are' : `${side || 'right'} leg is`;
-        await moreUntilDismissed(
-            `Your ${leg} in no shape for kicking.--More--`,
-        );
+        await moreUntilDismissed(`Your ${leg} in no shape for kicking.`);
         game._pending_message = '';
         game._retained_message = '';
         game.context.move = 0;
         return;
     }
-    const key = await promptKey('In what direction? ');
-    const direction = String.fromCharCode(key).toLowerCase();
+    const key = await readDirectionKey();
+    const direction = promptedDirectionKey(key, game.commandBindings);
     if (!isMovementKey(direction)) {
-        game._pending_message = '';
         game.context.move = 0;
         return;
     }
-    game._pending_message = '';
     game.u.dx = DIR_DX[direction];
     game.u.dy = DIR_DY[direction];
     const x = game.u.ux + game.u.dx;
@@ -2355,9 +1789,7 @@ async function dokick() {
     // dispatching the target.  Peaceful monsters and pets consult it during
     // this same elapsed turn so they do not step into the square just kicked.
     game._kickedLoc = { x, y };
-    const monster = game.level?.monsters?.find(candidate =>
-        !candidate.dead && (candidate.mhp ?? 1) > 0
-        && candidate.mx === x && candidate.my === y);
+    const monster = monsterAtPosition(requireGameLevel(), x, y);
     if (monster) {
         const recoilRange = kickRecoilRange(monster.mnum);
         await kickLiveMonster(monster, x, y);
@@ -2369,16 +1801,14 @@ async function dokick() {
     // dokick() wakes the broad hero-level neighborhood before it dispatches
     // the concrete terrain owner.  kick_ouch() then performs the smaller
     // impact-centered wake after its attribute exercise draws.
-    wakeMonstersNear(
-        game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20,
-    );
+    wakeMonstersNear(game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20);
+    wipeHeroEngraving(2);
     const kickedObject = game.level?.objects?.[x]?.[y]?.[0];
     const ball = game.uball || game.u?.uball;
     const chain = game.uchain || game.u?.uchain;
     if (kickedObject && kickedObject.otyp !== BOULDER
         && kickedObject !== ball && kickedObject !== chain) {
-        const trap = game.level?.traps?.find(candidate =>
-            candidate.tx === x && candidate.ty === y);
+        const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
         if (trap?.ttyp === STATUE_TRAP) {
             await activateStatueTrapAt(x, y);
             game.context.move = 1;
@@ -2391,6 +1821,8 @@ async function dokick() {
             publish: plineWithContinuation,
             captureFlight: captureThrownObjectFlight,
         });
+        if (game.program_state.gameover)
+            return;
         game.context.move = 1;
         return;
     }
@@ -2406,35 +1838,32 @@ async function dokick() {
             game.context.move = 1;
             return;
         }
-        exerciseAttribute(A_DEX, true);
-        const attributes = game.u?.acurr?.a || [10, 10, 10];
-        const strength = currentAttribute(A_STR);
-        const average = Math.trunc(
-            (strength + (attributes[A_DEX] ?? 10)
-                + (attributes[A_CON] ?? 10)) / 3,
-        );
+        await exerciseAttribute(A_DEX, true);
+        const strength = currentStrength();
+        const average = Math.trunc((strength + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);
         if (rnl(35) < average) {
             // in_rooms(..., SHOPBASE) includes a shop immediately across a
             // boundary door.  Such doors never take the high-strength
             // shatter branch, though the ordinary crash still succeeds.
             const touchesShop = [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]]
                 .some(([dx, dy]) => {
-                    const roomno = game.level?.at(x + dx, y + dy)?.roomno ?? 0;
-                    return roomno >= ROOMOFFSET
-                        && (roomForRoomno(game.level, roomno)?.rtype
-                            ?? 0) >= SHOPBASE;
-                });
+                const roomno = game.level?.at(x + dx, y + dy)?.roomno ?? 0;
+                return roomno >= ROOMOFFSET
+                    && (roomForRoomno(game.level, roomno)?.rtype
+                        ?? 0) >= SHOPBASE;
+            });
             const shatters = strength > 18 && rn2(5) === 0 && !touchesShop;
             location.doormask = shatters ? D_NODOOR : D_BROKEN;
             await pline(shatters
                 ? 'As you kick the door, it shatters to pieces!'
                 : 'As you kick the door, it crashes open!');
-            exerciseAttribute(A_STR, true);
+            await exerciseAttribute(A_STR, true);
             vision_reset();
             vision_recalc(0);
             newsym(x, y);
-        } else {
-            exerciseAttribute(A_STR, true);
+        }
+        else {
+            await exerciseAttribute(A_STR, true);
             await pline(rn2(3) === 0 ? 'Thwack!!' : 'Whammm!!');
         }
         game.context.move = 1;
@@ -2442,72 +1871,62 @@ async function dokick() {
     }
     // dokick.c:kick_dumb() always abuses Dexterity before deciding whether
     // an unremarkable floor kick is merely empty or strains a muscle.
-    exerciseAttribute(A_DEX, false);
-    const martial = ['monk', 'samurai'].includes(game.urole?.key)
+    await exerciseAttribute(A_DEX, false);
+    const martial = game.urole?.key === 'monk' || game.urole?.key === 'samurai'
         || game.uarmf?.otyp === KICKING_BOOTS;
     if (martial || currentAttribute(A_DEX) >= 16 || rn2(3) !== 0) {
         await pline('You kick at empty space.');
-    } else {
+    }
+    else {
         await pline('Dumb move!  You strain a muscle.');
-        exerciseAttribute(A_STR, false);
-        game.u._woundedLegSide = 'right';
-        game.u._woundedLegTurns = Math.max(
-            game.u._woundedLegTurns ?? 0, 5 + rnd(5),
-        );
+        await exerciseAttribute(A_STR, false);
+        await woundHeroLegs('right', 5 + rnd(5));
     }
     if (kickCausesRecoil() && rn2(2) !== 0)
         await recoilFromKick(1);
     game.context.move = 1;
 }
-
 function putCommandLine(col, row, message, attr = 0) {
     const display = game.nhDisplay;
+    if (!display)
+        throw new Error('This command requires an initialized display.');
     for (let index = 0; index < message.length && col + index < display.cols; index++)
-        display.setCell(col + index, row, message[index], NO_COLOR, attr);
+        display.setCell(col + index, row, message.charAt(index), NO_COLOR, attr);
 }
-
-async function restoreCommandMap() {
-    game.nhDisplay?.clearScreen();
-    await docrt();
-    await bot();
-    await flush_screen(1);
-}
-
 function setCurrentLevelAnnotation(value) {
     // dungeon.c:query_annotation(): empty input and Escape preserve the
     // existing value; space-only input removes it after mungspaces().
-    if (value === null || value === '') return;
+    if (value === null || value === '')
+        return;
     const annotation = value.trim().replace(/\s+/g, ' ');
     const key = `${game.u?.uz?.dnum ?? 0}:${game.u?.uz?.dlevel ?? 1}`;
-    if (!game._levelAnnotations) game._levelAnnotations = new Map();
-    if (annotation) game._levelAnnotations.set(key, annotation);
-    else game._levelAnnotations.delete(key);
+    if (!game._levelAnnotations)
+        game._levelAnnotations = new Map();
+    if (annotation)
+        game._levelAnnotations.set(key, annotation);
+    else
+        game._levelAnnotations.delete(key);
 }
-
 async function queryCurrentLevelAnnotation() {
-    const value = await getLine(
-        'What do you want to call this dungeon level?',
-        (_ch, key) => key >= 32 && key < 127,
-    );
+    const value = await getLine('What do you want to call this dungeon level?', (_ch, key) => key >= 32 && key < 127);
     setCurrentLevelAnnotation(value);
 }
-
 async function doannotate() {
     await queryCurrentLevelAnnotation();
     game.context.move = 0;
 }
-
 async function doherecmdmenu() {
     const x = game.u?.ux, y = game.u?.uy;
     const pile = game.level?.objects?.[x]?.[y] || [];
     const floorObject = pile[0];
     const entries = [];
     let accelerator = 97;
-    const add = text => {
-        entries.push(`${String.fromCharCode(accelerator++)} - ${text}`);
+    const add = (text) => {
+        entries.push({ key: String.fromCharCode(accelerator++), text });
     };
-
     if (floorObject) {
+        if (pile.length === 1 || isContainer(floorObject) || floorObject.oclass === 7)
+            observeObjectForNaming(floorObject);
         const description = floorObjectDescription(floorObject);
         add(`Pick up ${pile.length > 1 ? 'items' : description}`);
         if ([
@@ -2516,7 +1935,8 @@ async function doherecmdmenu() {
             add(`Loot ${description}`);
             add(`Tip ${description}`);
         }
-        if (floorObject.oclass === 7) add(`Eat ${description}`);
+        if (floorObject.oclass === 7)
+            add(`Eat ${description}`);
     }
     if ((game.inventory || []).length) {
         add('Inventory');
@@ -2525,8 +1945,8 @@ async function doherecmdmenu() {
     add('Rest one turn');
     add('Search around you');
     add('Look at what is here');
-    if ((game.spells || []).length) add('Cast a spell');
-
+    if ((game.spells || []).length)
+        add('Cast a spell');
     // create_nhwindow(NHW_MENU) retires the extended-command prompt before
     // tty paints the corner window.  Preserve that already-cleared row as
     // part of the underlay which Escape restores.
@@ -2541,19 +1961,18 @@ async function doherecmdmenu() {
     const key = await showChoiceWindow({
         title: 'What do you want to do?',
         entries,
-        left: 41,
         validKeys,
     });
     restoreMenuUnderlay(underlay);
-    game.nhDisplay?.setCursor((game.u?.ux ?? 1) - 1,
-        (game.u?.uy ?? 0) + 1);
+    game.nhDisplay?.setCursor((game.u?.ux ?? 1) - 1, (game.u?.uy ?? 0) + 1);
     // cmd.c:here_cmd_menu() queues selected actions for a later dispatch.
     // This accepted boundary dismisses with Escape before that action graph.
     game.context.move = key === 27 ? 0 : 1;
 }
-
 async function doname() {
     const display = game.nhDisplay;
+    if (!display)
+        throw new Error('This command requires an initialized display.');
     const left = 32;
     game._pending_message = '';
     display.clearRow(0);
@@ -2573,7 +1992,6 @@ async function doname() {
     const choice = String.fromCharCode(await nhgetch()).toLowerCase();
     game._pending_message = '';
     await restoreCommandMap();
-
     // C refs: do_name.c:docallcmd()/do_oname() and
     // dungeon.c:donamelevel()/query_annotation().  The menu owns only the
     // category choice; level annotations live with mapseen, while an
@@ -2582,32 +2000,23 @@ async function doname() {
         await queryCurrentLevelAnnotation();
         game._pending_message = '';
         await restoreCommandMap();
-    } else if (choice === 'i') {
+    }
+    else if (choice === 'i') {
         const inventory = (game.inventory || [])
-            .filter(object => object.invlet)
+            .filter((object) => typeof object.invlet === 'string' && object.invlet.length > 0)
             .sort((a, b) => a.invlet.localeCompare(b.invlet));
         // C do_name.c:name_ok() marks unseen, artifact and novel objects as
         // GETOBJ_DOWNPLAY.  getobj() omits those letters from the suggested
         // prompt while still accepting a directly typed inventory letter.
-        const suggested = inventory.filter(object =>
-            object.dknown !== false
-                && !object.oartifact
-                && object.otyp !== NOVEL);
-        const letters = compactInventoryLetters(
-            suggested.map(object => object.invlet).join(''),
-        );
-        const selection = await promptInventoryObject(
-            `What do you want to name? [${letters} or ?*] `,
-            inventory,
-            { allowMenu: true },
-        );
-        if (!selection.cancelled) {
+        const suggested = inventory.filter(object => object.dknown !== false
+            && !object.oartifact
+            && object.otyp !== SPE_NOVEL);
+        const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
+        const selection = await promptInventoryObject(`What do you want to name? [${letters} or ?*] `, inventory, { allowMenu: true });
+        if (!selection.cancelled && selection.object) {
             const object = selection.object;
             game._pending_message = '';
-            const value = await getLine(
-                `What do you want to name this ${object.name}?`,
-                (_ch, key) => key >= 32 && key < 127,
-            );
+            const value = await getLine(`What do you want to name this ${object.name}?`, (_ch, key) => key >= 32 && key < 127);
             if (value !== null) {
                 const name = value.trim().replace(/\s+/g, ' ');
                 if (name) {
@@ -2615,53 +2024,49 @@ async function doname() {
                         ...(object.oextra || {}),
                         oname: name,
                     };
-                } else if (object.oextra?.oname) {
+                }
+                else if (object.oextra?.oname) {
                     delete object.oextra.oname;
                 }
             }
             game._pending_message = '';
             await restoreCommandMap();
         }
-    } else if (choice === 'o') {
+    }
+    else if (choice === 'o') {
         const inventory = (game.inventory || [])
-            .filter(object => object.invlet)
+            .filter((object) => typeof object.invlet === 'string' && object.invlet.length > 0)
             .sort((a, b) => a.invlet.localeCompare(b.invlet));
         const callableClasses = new Set([3, 4, 5, 6, 8, 9, 10, 11, 13, 17]);
         const eligible = inventory.filter(object => {
-            if (game._objectCallNames?.[object.otyp]) return true;
+            if (game._objectCallNames?.[object.otyp])
+                return true;
             if (object.otyp === AMULET_OF_YENDOR
-                || object.otyp === FAKE_AMULET_OF_YENDOR) return false;
+                || object.otyp === FAKE_AMULET_OF_YENDOR)
+                return false;
             return callableClasses.has(object.oclass)
                 && !!OBJECT_DESCRIPTIONS[object.otyp];
         });
-        const suggested = eligible.filter(object =>
-            object.dknown !== false
-                && (!objectTypeKnown(object)
-                    || !!game._objectCallNames?.[object.otyp]));
-        const letters = compactInventoryLetters(
-            suggested.map(object => object.invlet).join(''),
-        );
-        const selection = await promptInventoryObject(
-            `What do you want to call? [${letters} or ?*] `,
-            eligible,
-            { allowMenu: true },
-        );
-        if (!selection.cancelled) {
+        const suggested = eligible.filter(object => object.dknown !== false
+            && (!objectTypeKnown(object)
+                || !!game._objectCallNames?.[object.otyp]));
+        const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
+        const selection = await promptInventoryObject(`What do you want to call? [${letters} or ?*] `, eligible, { allowMenu: true });
+        if (!selection.cancelled && selection.object) {
             const object = selection.object;
             game._pending_message = '';
             if (object.dknown === false) {
                 await pline('You would never recognize another one.');
-            } else {
+            }
+            else {
                 const perceivedName = objectTypeKnown(object)
                     ? OBJECT_NAMES[object.otyp] || object.name || 'thing'
                     : objectTypeCallNoun(object);
-                const value = await getLine(
-                    `Call ${indefiniteArticle(perceivedName)} ${perceivedName}:`,
-                    (_ch, key) => key >= 32 && key < 127,
-                );
+                const value = await getLine(`Call ${withIndefiniteArticle(perceivedName)}:`, (_ch, key) => key >= 32 && key < 127);
                 if (value !== null) {
                     const name = value.trim().replace(/\s+/g, ' ');
-                    if (name) recordObjectCall(object.otyp, name);
+                    if (name)
+                        recordObjectCall(object.otyp, name);
                     else if (game._objectCallNames?.[object.otyp])
                         delete game._objectCallNames[object.otyp];
                     recordObjectEncounter(object.otyp);
@@ -2673,57 +2078,36 @@ async function doname() {
     }
     game.context.move = 0;
 }
-
-// C refs: cmd.c:getdir(), help_dir(), and show_direction_keys().  Direction
-// acquisition is shared by commands such as fire, loot, apply, and force;
-// keep the tty help page independent from any one caller.
-function directionAssistPage() {
-    const lines = Array(24).fill('');
-    lines[0] = 'cmdassist: Invalid direction key!';
-    lines[2] = 'Valid direction keys are:';
-    lines[3] = '          y  k  u';
-    lines[4] = '           \\ | /';
-    lines[5] = '          h- . -l';
-    lines[6] = '           / | \\';
-    lines[7] = '          b  j  n';
-    lines[9] = '          <  up';
-    lines[10] = '          >  down';
-    lines[11] = '          .  direct at yourself';
-    lines[13] = '(Suppress this message with !cmdassist in config file.)';
-    lines[23] = '--More--';
-    return { lines, cursor: [8, 23] };
-}
-
 function monsterBeside(x, y) {
     // C pickup.c:mon_beside() deliberately includes the hero's own square so
     // a steed can make directional looting available too.
-    return (game.level?.monsters || []).some(monster =>
-        (monster.mhp ?? 1) > 0
+    return (game.level?.monsters || []).some(monster => (monster.mhp ?? 1) > 0
         && Math.abs(monster.mx - x) <= 1
         && Math.abs(monster.my - y) <= 1);
 }
-
 async function getAdjacentLocation(prompt, errorMessage, x, y) {
     // C cmd.c:get_adjacent_loc() delegates input and command assistance to
     // getdir(), then turns its relative result into a checked map location.
-    const key = await promptKey(`${prompt} `);
-    const ch = String.fromCharCode(key).toLowerCase();
+    const key = await readDirectionKey(`${prompt} `);
+    const ch = promptedDirectionKey(key, game.commandBindings);
     let dx = 0, dy = 0, dz = 0;
     let validDirection = true;
     if (isMovementKey(ch)) {
         dx = DIR_DX[ch];
         dy = DIR_DY[ch];
-    } else if (ch === '.' || ch === 's') {
+    }
+    else if (ch === '.' || ch === 's') {
         // Direct at the hero's square.
-    } else if (ch === '<') {
+    }
+    else if (ch === '<') {
         dz = -1;
-    } else if (ch === '>') {
+    }
+    else if (ch === '>') {
         dz = 1;
-    } else {
+    }
+    else {
         validDirection = false;
     }
-
-    game._pending_message = '';
     if (!validDirection) {
         // Space, Return, and Escape are getdir() quitchars.  Other invalid
         // keys open cmdassist by default; the tty text window accepts only a
@@ -2735,106 +2119,85 @@ async function getAdjacentLocation(prompt, errorMessage, x, y) {
             });
             game._pending_message = '';
             await restoreCommandMap();
-        } else if (!quitDirection) {
+        }
+        else if (!quitDirection) {
             await pline('What a strange direction!');
         }
         await pline('Never mind.');
         game.context.move = 0;
         return null;
     }
-
     game.u.dx = dx;
     game.u.dy = dy;
     game.u.dz = dz;
     const target = { x: x + dx, y: y + dy, dx, dy, dz };
     if (target.x < 1 || target.x >= COLNO
         || target.y < 0 || target.y >= ROWNO) {
-        if (errorMessage) await pline(errorMessage);
+        if (errorMessage)
+            await pline(errorMessage);
         game.context.move = 0;
         return null;
     }
     return target;
 }
-
 async function dotwoweapon() {
-    if (game.u.twoweap) {
-        game.u.twoweap = false;
-        await pline('You switch to your primary weapon.');
-        game.context.move = 0;
-        return;
-    }
-
-    // wield.c:can_twoweapon() rejects armor conflicts before changing state
-    // or making the Dexterity timing draw.
-    if (game.uarms || game.u?.uarms) {
-        await pline("You can't use two weapons while wearing a shield.");
-        game.context.move = 0;
-        return;
-    }
-
-    game.u.twoweap = true;
-    await pline('You begin two-weapon combat.');
-    // wield.c: a clumsy toggle only takes time when rnd(20) exceeds Dex.
-    game.context.move = rnd(20) > (game.u?.acurr?.a?.[A_DEX] || 0) ? 1 : 0;
+    const spentTime = await toggleTwoWeaponCombat();
+    if (!game.program_state.gameover)
+        game.context.move = spentTime ? 1 : 0;
 }
-
 // C ref: wield.c:doswapweapon()/ready_weapon().  Clearing the old secondary
 // slot through setworn() also ends two-weapon mode before either new
 // inventory description is projected.
 async function doswapweapon() {
+    game.multi = 0;
+    if (heroHasNoHands(game) || heroIsVerySmall(game)) {
+        await pline("Don't be ridiculous!");
+        game.context.move = 0;
+        return;
+    }
+    if (await refuseWeldedPrimary()) {
+        game.context.move = 0;
+        return;
+    }
     const oldPrimary = game.uwep || game.u?.uwep || null;
     const oldSecondary = game.uswapwep || game.u?.uswapwep || null;
-    const oldShining = oldPrimary?.lamplit && artifactEmitsLight(oldPrimary);
     if (!oldSecondary) {
-        game.u.twoweap = false;
         if (!oldPrimary) {
             await pline('You are already bare handed.');
             game.context.move = 0;
             return;
         }
-        setSecondaryWeapon(oldPrimary, game);
-        if (oldShining && !game.blind && !game.u.blindTurns)
-            await plineWithContinuation(equipmentLightMessage(oldPrimary, false));
         await plineWithContinuation('You are bare handed.');
-        await plineWithContinuation(
-            `${oldPrimary.invlet} - ${
-                inventoryItemDescription(oldPrimary)}.`,
-        );
+        await setPrimaryWeapon(null, game);
+        await setSecondaryWeapon(oldPrimary, game);
+        observeObjectForNaming(oldPrimary);
+        await plineWithContinuation(`${oldPrimary.invlet} - ${inventoryItemDescription(oldPrimary)}.`);
         game.context.move = 1;
         return;
     }
-
-    game.u.twoweap = false;
-    setSecondaryWeapon(null, game);
-    setPrimaryWeapon(oldSecondary, game);
-    if (oldShining && !game.blind && !game.u.blindTurns)
-        await plineWithContinuation(equipmentLightMessage(oldPrimary, false));
-    await plineWithContinuation(
-        `${oldSecondary.invlet} - ${
-            inventoryItemDescription(oldSecondary)}.`,
-    );
+    await setSecondaryWeapon(null, game);
+    observeObjectForNaming(oldSecondary);
+    if (willWeld(oldSecondary)) {
+        await announceWeaponWeld(oldSecondary);
+    }
+    else {
+        await plineWithContinuation(`${oldSecondary.invlet} - ${inventoryItemDescription(oldSecondary, { projectPrimaryHand: true })}.`);
+    }
+    await setPrimaryWeapon(oldSecondary, game);
     await lightWieldedArtifact(oldSecondary);
-
     if (oldPrimary) {
-        setSecondaryWeapon(oldPrimary, game);
-        await plineWithContinuation(
-            `${oldPrimary.invlet} - ${
-                inventoryItemDescription(oldPrimary)}.`,
-        );
-    } else {
+        await setSecondaryWeapon(oldPrimary, game);
+        observeObjectForNaming(oldPrimary);
+        await plineWithContinuation(`${oldPrimary.invlet} - ${inventoryItemDescription(oldPrimary)}.`);
+    }
+    else {
         await plineWithContinuation('You have no secondary weapon readied.');
     }
     game.context.move = 1;
 }
-
 async function dochat() {
-    const key = await promptKey('Talk to whom? (in what direction) ');
-    // cmd.c:getdir() clears WIN_MESSAGE after accepting the direction.  The
-    // physical prompt belongs to the captured input boundary but must not
-    // force a pager when the selected monster immediately opens quest text.
-    game._pending_message = '';
-    game._retained_message = '';
-    const direction = String.fromCharCode(key).toLowerCase();
+    const key = await readDirectionKey('Talk to whom? (in what direction) ');
+    const direction = promptedDirectionKey(key, game.commandBindings);
     if (direction === '.') {
         await pline('Talking to yourself is a bad habit for a dungeoneer.');
         game.context.move = 0;
@@ -2843,15 +2206,15 @@ async function dochat() {
     if (isMovementKey(direction)) {
         const x = game.u.ux + DIR_DX[direction];
         const y = game.u.uy + DIR_DY[direction];
-        const monster = game.level?.monsters?.find(mon => mon.mx === x && mon.my === y);
-        const noiseMessage = monsterNoiseMessage(monster, game);
+        const monster = game.level?.monsters?.find(mon => monsterHasMapPosition(mon, game) && mon.mx === x && mon.my === y);
         // sounds.c:dochat() prods any responsive target into action before
         // domonnoise()/quest_chat().  This clears both CLOSE and WAITFORU, so
         // the quest leader can take its ordinary scheduler turn immediately
         // after assigning the quest.
-        if (monster) monster.mstrategy &= ~STRAT_WAITMASK;
+        if (monster)
+            monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
         if (monster && await chatWithQuestLeader(monster, {
-            exerciseWisdom: () => exerciseAttribute(A_WIS, true),
+            exerciseWisdom,
         })) {
             game.context.move = 1;
             return;
@@ -2866,26 +2229,29 @@ async function dochat() {
         if (monster?.pet && monster.meating) {
             await pline(`${monster.name
                 ? monster.name.charAt(0).toUpperCase() + monster.name.slice(1)
-                : `The ${monsterInstanceDisplayName(monster)}`
-            } is eating noisily.`);
-        } else if (noiseMessage) {
-            await pline(noiseMessage);
+                : `The ${monsterInstanceDisplayName(monster)}`} is eating noisily.`);
+        }
+        else if (monster && await publishMonsterNoise(monster, game)) {
             game.context.move = 1;
             return;
-        } else if (monster?.name) await pline(`${monster.name} does not seem to notice you.`);
+        }
+        else if (monster?.name)
+            await pline(`${monster.name} does not seem to notice you.`);
         else if (!monster) {
             const statue = (game.level?.objects?.[x]?.[y] || [])
                 .find(object => object.otyp === STATUE);
             const loc = game.level?.at(x, y);
             const deaf = !!(game.deaf || game.u?.deaf);
-            const hallucinating = heroHallucinating();
+            const hallucinating = heroIsHallucinating();
             if (statue && !game.blind) {
                 await pline('The statue seems not to notice you.');
-            } else if (!deaf && (IS_WALL(loc?.typ) || loc?.typ === SDOOR)
+            }
+            else if (!deaf && loc && (IS_WALL(loc.typ) || loc.typ === SDOOR)
                 && (!game.blind || !!loc?.seenv)) {
                 if (!hallucinating) {
                     await pline("It's like talking to a wall.");
-                } else {
+                }
+                else {
                     const wallTalk = [
                         'gripes about its job.',
                         'tells you a funny joke!',
@@ -2896,23 +2262,21 @@ async function dochat() {
                         'suggests a stint of rehab...',
                         "doesn't seem to be interested.",
                     ];
-                    await pline(`The wall ${wallTalk[
-                        Math.min(rn2(10), wallTalk.length - 1)
-                    ]}`);
+                    await pline(`The wall ${wallTalk[Math.min(rn2(10), wallTalk.length - 1)]}`);
                 }
-            } else {
+            }
+            else {
                 game._pending_message = '';
             }
-        } else game._pending_message = '';
+        }
+        else
+            game._pending_message = '';
     }
     game.context.move = 0;
 }
-
-
 async function wizWish() {
     return makeWish({ allowWizardTerrain: true });
 }
-
 // C refs: cmd.c Ctrl-G/wizgenesis, wizcmds.c wiz_genesis(), and read.c
 // create_particular().  The debug command remains zero-time.
 const WIZGENESIS_SUBSTITUTIONS = new Map([
@@ -2923,30 +2287,35 @@ const WIZGENESIS_SUBSTITUTIONS = new Map([
     [276, 'human zombie'], // high cleric
     [285, 'doppelganger'], // Wizard of Yendor
 ]);
-
 // C wiz_polyself(): allow a chosen form without consuming a game turn.
 async function wizPolyself() {
     await polymorphHero(POLY_CONTROLLED);
     game.context.move = 0;
 }
-
 async function wizGenesis() {
-    const value = await getLine(
-        'Create what kind of monster?',
-        (_ch, key) => key >= 32 && key < 127,
-    );
+    const value = await getLine('Create what kind of monster?', (_ch, key) => key >= 32 && key < 127);
     if (value === null) {
         game.context.move = 0;
         return;
     }
-
-    // read.c:create_particular_parse() removes state modifiers and normalizes
-    // spaces before looking up the monster.
+    const description = value.trim().replace(/ +/g, ' ');
+    const explicitQuantity = /^(\d+) */u.exec(description);
+    let quantity = explicitQuantity
+        ? Number.parseInt(explicitQuantity[1] ?? '', 10)
+        : (game.multi > 0 ? 1 + game.multi : 1);
+    const quantityLimit = ROWNO * (COLNO - 1);
+    if (quantity < 1 || quantity > quantityLimit) {
+        const census = requireGameLevel().monsters.filter(monster => monster.mhp > 0 && !(monster.isgd && monster.mx === 0)).length;
+        quantity = quantityLimit - census;
+    }
+    const requestedName = explicitQuantity
+        ? description.slice(explicitQuantity[0].length) : description;
+    // read.c:create_particular_parse() removes state modifiers before lookup.
     const sleepingPattern = /(^|\s)sleeping\s+/iu;
-    const sleeping = sleepingPattern.test(value);
+    const sleeping = sleepingPattern.test(requestedName);
     const stateStrippedName = sleeping
-        ? value.replace(sleepingPattern, '$1')
-        : value;
+        ? requestedName.replace(sleepingPattern, '$1')
+        : requestedName;
     const tamePattern = /^\s*tame\s+/iu;
     const tame = tamePattern.test(stateStrippedName);
     const dispositionStrippedName = tame
@@ -2968,36 +2337,35 @@ async function wizGenesis() {
         game.context.move = 0;
         return;
     }
-
     // read.c:cant_revive() substitutes special-location actors which cannot
     // be created in an ordinary square.  Wizard create_particular() retains
     // both types across a modal prompt and only starts makemon() after the
     // answer.  The affirmative branch forces the requested actor; default/no
     // constructs the disoriented human-zombie substitute.
-    if (WIZGENESIS_SUBSTITUTIONS.has(mnum)) {
+    const substituteName = WIZGENESIS_SUBSTITUTIONS.get(mnum);
+    if (substituteName !== undefined) {
         const requestedName = MONSTER_NAME[mnum];
-        const substituteName = WIZGENESIS_SUBSTITUTIONS.get(mnum);
-        const force = await promptYesNo(
-            `Creating ${substituteName} instead; force ${requestedName}? [yn] (n) `,
-        );
-        if (force !== 'y') mnum = nameToMonster(substituteName);
+        const force = await promptYesNo(`Creating ${substituteName} instead; force ${requestedName}? [yn] (n) `);
+        if (force !== 'y')
+            mnum = nameToMonster(substituteName);
     }
-
-    const monster = await makemonNear(
-        mnum, game.u.ux, game.u.uy, MM_NOEXCLAM,
-    );
-    if (monster) {
+    for (let created = 0; created < quantity; created++) {
+        const monster = await makemonNear(mnum, game.u.ux, game.u.uy, MM_NOEXCLAM);
+        if (!monster)
+            break;
         // create_particular_creation() applies disposition before its later
         // requested state flags.  Deleting a constructor-provided malign lets
         // the shared death-alignment fallback derive it from forced peace.
         if (tame) {
-            tameMonster(monster);
-        } else if (peaceful) {
+            await tameMonster(monster);
+        }
+        else if (peaceful) {
             monster.mtame = 0;
             monster.pet = false;
             monster.mpeaceful = 1;
             delete monster.malign;
-        } else if (hostile) {
+        }
+        else if (hostile) {
             monster.mtame = 0;
             monster.pet = false;
             monster.mpeaceful = 0;
@@ -3005,46 +2373,42 @@ async function wizGenesis() {
         }
         // create_particular_creation() applies requested sleep after makemon
         // announces the actor.
-        if (sleeping) monster.msleeping = 1;
+        if (sleeping)
+            monster.msleeping = 1;
         newsym(monster.mx, monster.my);
-        const hallucinating = heroHallucinating();
+        const hallucinating = heroIsHallucinating();
         if (hallucinating) {
-            nameMonsterForCreationArmorChecks(
-                monster, () => randomDisplayMonsterName(),
-            );
+            nameMonsterForCreationArmorChecks(monster, () => randomDisplayMonsterName());
         }
         newsym(monster.mx, monster.my);
         if (canSpotMonster(monster)) {
             const clericInstance = monster.ispriest || monster.isminion
                 ? visiblePriestName(monster) : null;
             const name = MONSTER_NAME[mnum];
+            if (name === undefined)
+                throw new RangeError(`Unknown created monster species ${mnum}`);
             const subject = clericInstance
                 || (mnum === 285
                     ? (hallucinating
                         ? randomDisplayMonsterSubject(true) : `The ${name}`)
                     : null)
-                || `${indefiniteArticle(name)} ${name}`;
-            await pline(
-                `${subject[0].toUpperCase()}${subject.slice(1)} appears next to you.`,
-            );
+                || withIndefiniteArticle(name);
+            await pline(`${subject.charAt(0).toUpperCase()}${subject.slice(1)} appears next to you.`);
         }
     }
     game.context.move = 0;
 }
-
 async function wizKill() {
     if (!game.flags?.debug) {
         await pline('#wizkill: unknown extended command.');
         game.context.move = 0;
         return;
     }
-
     const firstUse = shouldShowGetposTip();
     if (firstUse) {
         await pline('Pick first monster to slay:');
         await showGetposTip();
     }
-
     const cursor = await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy },
         prompt: firstUse ? 'Move cursor to a monster:'
@@ -3056,10 +2420,9 @@ async function wizKill() {
         game.context.move = 0;
         return;
     }
-
     game._pending_message = '';
     game._retained_message = '';
-    const monster = game.level.monsters.find(candidate =>
+    const monster = requireGameLevel().monsters.find(candidate => monsterHasMapPosition(candidate, game) &&
         candidate.mx === cursor.x && candidate.my === cursor.y
         && !candidate.dead && (candidate.mhp ?? 1) > 0);
     if (!monster) {
@@ -3067,82 +2430,21 @@ async function wizKill() {
         game.context.move = 0;
         return;
     }
-
     monster.mhp = 0;
-    const killed = await finishHeroMonsterKill(
-        monster, monster.mx, monster.my,
-    );
+    const killed = await finishHeroMonsterKill(monster, monster.mx, monster.my);
     if (!killed)
         game._cursorOverride = [monster.mx - 1, monster.my + 1];
     game.context.move = 0;
 }
-
 function menuLetter(index) {
     return index < 26
         ? String.fromCharCode('a'.charCodeAt(0) + index)
         : String.fromCharCode('A'.charCodeAt(0) + index - 26);
 }
-
-
-function numericLevelTeleportDestination(requested) {
-    const current = game.u?.uz || { dnum: 0, dlevel: 1 };
-    const dungeon = game.dungeons?.[current.dnum];
-    // teleport.c:level_tele(): negative input while already in the endgame
-    // addresses the six Elemental Plane slots relative to their bottom.
-    // For example, -2 becomes 6 + -2 == Plane of Air.
-    if (In_endgame(current) && requested < 0) {
-        const levels = dungeon?.num_dunlevs ?? 1;
-        if (requested <= -levels) return null;
-        return { dnum: current.dnum, dlevel: levels + requested };
-    }
-    // teleport.c:level_tele() treats positive input inside Quest as the
-    // `Home N` dialect shown on the status line, then get_level() clips it to
-    // the current branch.  Other dungeon-depth translation remains a
-    // separate general block; this branch prevents an impossible Home 13.
-    if (dungeon?.dname === 'The Quest') {
-        return {
-            dnum: current.dnum,
-            dlevel: Math.max(1, Math.min(dungeon.num_dunlevs, requested)),
-        };
-    }
-
-    // teleport.c:level_tele() has one deliberate exception to get_level()'s
-    // "downward travel stays in the current dungeon" rule.  A request below
-    // the Dungeons of Doom crosses the Castle connection and lands at the
-    // Valley, the Gehennom entrance.
-    const bottomDepth = (dungeon?.depth_start ?? 1)
-        + (dungeon?.num_dunlevs ?? 1) - 1;
-    if (current.dnum === game.medusa_level?.dnum
-        && requested > bottomDepth && game.valley_level) {
-        return { ...game.valley_level };
-    }
-
-    // dungeon.c:get_level(): translate the player-facing absolute depth into
-    // the current dungeon, or trace upward through parent branches when the
-    // requested depth precedes this branch's depth_start.
-    let dnum = current.dnum;
-    let targetDungeon = dungeon;
-    if (requested > bottomDepth) {
-        return {
-            dnum,
-            dlevel: targetDungeon?.num_dunlevs ?? current.dlevel,
-        };
-    }
-    while (targetDungeon && requested < (targetDungeon.depth_start ?? 1)) {
-        const parent = game.branches?.find(branch =>
-            branch.end2?.dnum === dnum);
-        if (!parent) break;
-        dnum = parent.end1.dnum;
-        targetDungeon = game.dungeons?.[dnum];
-    }
-    return {
-        dnum,
-        dlevel: requested - (targetDungeon?.depth_start ?? 1) + 1,
-    };
-}
-
 function dungeonHeading(dnum) {
     const dungeon = game.dungeons[dnum];
+    if (!dungeon)
+        throw new RangeError(`Unknown dungeon ${dnum}`);
     const first = dungeonDepth(dnum, 1);
     const last = dungeonDepth(dnum, dungeon.num_dunlevs);
     const incoming = game.branches?.find(branch => branch.end2.dnum === dnum);
@@ -3160,38 +2462,40 @@ function dungeonHeading(dnum) {
     }
     return text;
 }
-
 function branchKind(branch) {
-    if (branch.type) return branch.type;
-    if (branch.portal) return 'portal';
+    if (branch.type)
+        return branch.type;
+    if (branch.portal)
+        return 'portal';
     const child = game.dungeons?.[branch.end2.dnum];
-    if (child?.dname === 'Gehennom') return 'no_end1';
-    if (child?.dname === 'The Elemental Planes') return 'no_end2';
+    if (child?.dname === 'Gehennom')
+        return 'no_end1';
+    if (child?.dname === 'The Elemental Planes')
+        return 'no_end2';
     return 'stair';
 }
-
 function branchMenuLabel(branch) {
     const child = game.dungeons?.[branch.end2.dnum];
-    if (!child) return null;
+    if (!child)
+        return null;
     const prefix = {
         portal: 'Portal',
         no_end1: 'Connection',
         no_end2: 'One way stair',
         stair: 'Stair',
     }[branchKind(branch)] || 'Stair';
-    return `${prefix} to ${child.dname}: ${dungeonDepth(
-        branch.end1.dnum, branch.end1.dlevel,
-    )}`;
+    return `${prefix} to ${child.dname}: ${dungeonDepth(branch.end1.dnum, branch.end1.dlevel)}`;
 }
-
 function dungeonLayoutEvents(dnum) {
     const events = [];
     for (const [name, level] of game.specialLevels || []) {
-        if (level.dnum !== dnum) continue;
+        if (level.dnum !== dnum)
+            continue;
         events.push({ kind: 'special', name, ...level });
     }
     for (const branch of game.branches || []) {
-        if (branch.end1.dnum !== dnum) continue;
+        if (branch.end1.dnum !== dnum)
+            continue;
         events.push({
             kind: 'branch', dlevel: branch.end1.dlevel,
             dnum, branch,
@@ -3201,45 +2505,41 @@ function dungeonLayoutEvents(dnum) {
         || (a.kind === 'branch' ? -1 : 1));
     return events;
 }
-
 // C ref: dungeon.c unplaced_floater().  Fort Ludios is unavailable only
 // while its incoming branch still uses the synthetic n_dgns source end.
 // Once mk_knox_portal() resolves that end to a real main-dungeon level, the
 // named `knox` special level is selectable like every other wizard target.
 function specialLevelReachable(event) {
-    if (event.name === 'dummy') return false;
-    if (event.name !== 'knox') return true;
-    const incoming = (game.branches || []).find(branch =>
-        branch.end2?.dnum === event.dnum
+    if (event.name === 'dummy')
+        return false;
+    if (event.name !== 'knox')
+        return true;
+    const incoming = (game.branches || []).find(branch => branch.end2?.dnum === event.dnum
         && branch.end2?.dlevel === event.dlevel);
     const sourceDnum = incoming?.end1?.dnum;
-    return Number.isInteger(sourceDnum)
+    return sourceDnum !== undefined && Number.isInteger(sourceDnum)
         && sourceDnum >= 0
         && sourceDnum < (game.dungeons?.length || 0);
 }
-
 // C ref: teleport.c level_tele().  Wizard-menu entry into the Elemental
 // Planes grants the real Amulet before deferred_goto() starts.  Object
 // construction and inventory identity therefore precede getbones()/mklev(),
 // while tty does not expose prinv() until the destination transaction yields
 // at its pre-arrival acknowledgement.
-function endgamePrerequisite(destination) {
+async function endgamePrerequisite(destination) {
     if (!In_endgame(destination) || In_endgame(game.u?.uz)
-        || game.u?.uhave?.amulet) return '';
-    const amulet = addInventoryItem(
-        mksobj(AMULET_OF_YENDOR, true, false),
-    );
+        || game.u?.uhave?.amulet)
+        return '';
+    const amulet = await addInventoryItem(await mksobj(AMULET_OF_YENDOR, true, false));
     // teleport.c prints the grant with prinv(); its doname()->xname() path
     // observes the visible object and appends it to the Amulet disco[] class
     // before the destination transaction begins.
     recordObjectEncounter(amulet.otyp);
-    if (!game.u.uhave) game.u.uhave = {};
+    if (!game.u.uhave)
+        game.u.uhave = {};
     game.u.uhave.amulet = 1;
-    return `Endgame prerequisite: ${
-        amulet.invlet
-    } - the Amulet of Yendor.--More--`;
+    return `Endgame prerequisite: ${amulet.invlet} - the Amulet of Yendor.--More--`;
 }
-
 // C ref: dungeon.c print_dungeon(TRUE). Build one source-ordered menu stream;
 // the tty layer alone owns pagination and nested input capture.
 function wizardLevelMenu() {
@@ -3249,10 +2549,8 @@ function wizardLevelMenu() {
     ];
     const choices = new Map();
     let choiceIndex = 0;
-
     for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
         rows.push({ text: dungeonHeading(dnum), attr: ATR_INVERSE });
-
         for (const event of dungeonLayoutEvents(dnum)) {
             const key = menuLetter(choiceIndex++);
             const current = game.u?.uz?.dnum === event.dnum
@@ -3263,10 +2561,9 @@ function wizardLevelMenu() {
             if (event.kind === 'branch') {
                 label = branchMenuLabel(event.branch);
                 destination = { dnum: event.dnum, dlevel: event.dlevel };
-            } else {
-                label = `${specialDisplayName(event.name)}: ${dungeonDepth(
-                    event.dnum, event.dlevel,
-                )}`;
+            }
+            else {
+                label = `${specialDisplayName(event.name)}: ${dungeonDepth(event.dnum, event.dlevel)}`;
                 if (event.name === 'castle')
                     label += ` (tune ${game.castleTune || ''})`;
                 destination = {
@@ -3281,14 +2578,14 @@ function wizardLevelMenu() {
             if (reachable) {
                 rows.push(`${key} - ${current ? '*' : ' '} ${label}`);
                 choices.set(key, destination);
-            } else {
+            }
+            else {
                 rows.push(`      ${label}`);
             }
         }
     }
     return { rows, choices };
 }
-
 function wizardWherePages() {
     const lines = [];
     for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
@@ -3297,17 +2594,16 @@ function wizardWherePages() {
             let label;
             if (event.kind === 'branch') {
                 label = branchMenuLabel(event.branch);
-            } else {
-                label = `${specialDisplayName(event.name)}: ${dungeonDepth(
-                    event.dnum, event.dlevel,
-                )}`;
+            }
+            else {
+                label = `${specialDisplayName(event.name)}: ${dungeonDepth(event.dnum, event.dlevel)}`;
                 if (event.name === 'castle')
                     label += ` (tune ${game.castleTune || ''})`;
             }
-            if (label) lines.push(`  ${label}`);
+            if (label)
+                lines.push(`  ${label}`);
         }
     }
-
     const pages = [];
     for (let offset = 0; offset < lines.length; offset += 23) {
         const pageLines = lines.slice(offset, offset + 23);
@@ -3319,7 +2615,6 @@ function wizardWherePages() {
     }
     return pages;
 }
-
 // C refs: wizcmds.c:wiz_where() and dungeon.c:print_dungeon(FALSE).
 // This is the complete live graph, unlike #overview's visited-level history
 // and unlike #levelteleport's selectable menu projection.
@@ -3332,98 +2627,62 @@ async function wizWhere() {
     await docrt();
     game.context.move = 0;
 }
-
-// C refs: wizcmds.c wiz_level_tele(), teleport.c level_tele(), and
-// do.c schedule_goto()/deferred_goto().  The C command schedules the level
-// change for the end of the current command loop; completing it here after the
-// line editor preserves the same no-input interval and the same next capture.
+// C dungeon.c:print_dungeon(TRUE), with the endgame entry prerequisite.
+export async function chooseWizardLevelDestination() {
+    const { rows, choices } = wizardLevelMenu();
+    const destination = await showPagedPickOneMenu({ rows, choices });
+    if (!destination)
+        return null;
+    await docrt();
+    const preArrivalPager = await endgamePrerequisite(destination);
+    return { destination, preArrivalPager };
+}
 async function wizLevelTeleport({ menuRequested = false } = {}) {
-    const value = menuRequested ? '?' : await getLine(
-        'To what level do you want to teleport?',
-        ch => /^[0-9+?-]$/.test(ch),
-    );
-    if (value === '?') {
-        const { rows, choices } = wizardLevelMenu();
-        const destination = await showPagedPickOneMenu({ rows, choices });
-        if (!destination) {
+    game.context.move = 0;
+    await levelTeleport({ menuRequested });
+}
+async function wizLevelChange() {
+    const hero = game.u;
+    requireInitializedHero(hero);
+    const value = await getLine('To what experience level do you want to be set?');
+    const input = value?.trim();
+    if (!input || !/^[+-]?\d+$/.test(input)) {
+        await pline('Never mind.');
+        game.context.move = 0;
+        return;
+    }
+    let target = Number(input);
+    game._pending_message = '';
+    game._retained_message = '';
+    if (target === hero.ulevel) {
+        await plineWithContinuation('You are already that experienced.');
+    }
+    else if (target < hero.ulevel) {
+        if (hero.ulevel === 1) {
+            await plineWithContinuation('You are already as inexperienced as you can get.');
             game.context.move = 0;
             return;
         }
-        // Destroying tty's level-choice menu restores the source map through
-        // docrt() before deferred_goto() changes levels.  Hallucinated glyphs
-        // make that otherwise cosmetic old-level redraw RNG-observable.
-        await docrtRecalc();
-        const preArrivalPager = endgamePrerequisite(destination);
-        game._specialLevelPrototype = destination.prototype || null;
-        await gotoLevel(
-            { dnum: destination.dnum, dlevel: destination.dlevel },
-            {
-                arrival: 'random',
-                preArrivalPager,
-                postMessage: game.flags?.verbose
-                    ? 'You materialize on a different level!' : '',
-            },
-        );
-        return;
+        target = Math.max(1, target);
+        while (hero.ulevel > target) {
+            if (await loseHeroExperience('#levelchange'))
+                return;
+        }
     }
-    if (value === null || !/^[+-]?\d+$/.test(value)
-        || Number(value) === 0
-        || (Number(value) < 0 && !In_endgame(game.u?.uz))) {
-        await pline('Never mind.');
-        game.context.move = 0;
-        return;
+    else {
+        if (hero.ulevel >= 30) {
+            await plineWithContinuation('You are already as experienced as you can get.');
+            game.context.move = 0;
+            return;
+        }
+        target = Math.min(30, target);
+        while (hero.ulevel < target) {
+            await gainExperienceLevel();
+        }
     }
-
-    const numeric = Number(value);
-    const target = numeric < 0
-        ? numeric : Math.max(1, Math.min(99, numeric));
-    const destination = numericLevelTeleportDestination(target);
-    if (!destination) {
-        await pline("You can't get there from here.");
-        game.context.move = 0;
-        return;
-    }
-    const dnum = destination.dnum ?? game.u?.uz?.dnum ?? 0;
-    game._specialLevelPrototype = specialPrototypeAt(
-        dnum, destination.dlevel,
-    );
-    await gotoLevel(
-        destination,
-        {
-            arrival: 'random',
-            postMessage: game.flags?.verbose
-                ? 'You materialize on a different level!' : '',
-        },
-    );
-}
-
-async function wizLevelChange() {
-    const value = await getLine('To what experience level do you want to be set?');
-    if (value === null || !/^[+-]?\d+$/.test(value)) {
-        await pline('Never mind.');
-        game.context.move = 0;
-        return;
-    }
-    const target = Math.max(1, Math.min(30, Number(value)));
-    // The committed getlin buffer is no longer a pending topline message.
-    // pluslvl() begins a fresh message stream with You_feel().
-    game._pending_message = '';
-    game._retained_message = '';
-    while (game.u.ulevel < target) {
-        // exper.c pluslvl(FALSE): the experience message precedes HP/Pw RNG;
-        // the welcome and adjabil message follow the level increment.  The
-        // tty continuation owner decides when a third message needs More.
-        await plineWithContinuation('You feel more experienced.');
-        const oldLevel = game.u.ulevel;
-        gainExperienceLevel();
-        const level = game.u.ulevel;
-        await plineWithContinuation(`Welcome to experience level ${level}.`);
-        await adjustLevelAbilities(oldLevel, level);
-    }
-    game.u.ulevelmax = game.u.ulevel;
+    hero.ulevelmax = hero.ulevel;
     game.context.move = 0;
 }
-
 async function doloot() {
     // pickup.c:doloot_core() rejects body forms without hands before it
     // inspects the floor, containers, or adjacent monsters.
@@ -3436,25 +2695,25 @@ async function doloot() {
     const pile = game.level?.objects?.[x]?.[y] || [];
     const container = pile.find(isContainer);
     if (!container && monsterBeside(x, y)) {
-        const target = await getAdjacentLocation(
-            'Loot in what direction?', 'Invalid loot location', x, y,
-        );
-        if (!target) return;
-
+        const target = await getAdjacentLocation('Loot in what direction?', 'Invalid loot location', x, y);
+        if (!target)
+            return;
         const targetPile = game.level?.objects?.[target.x]?.[target.y] || [];
         const targetContainer = targetPile.some(isContainer);
-        const targetMonster = game.level?.monsters?.find(monster =>
+        const targetMonster = game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) &&
             (monster.mhp ?? 1) > 0
             && monster.mx === target.x && monster.my === target.y);
         if (target.dz < 0) {
             await pline("You don't find anything to loot on the ceiling.");
             game.context.move = 1;
-        } else if (targetContainer && (target.x !== x || target.y !== y)) {
+        }
+        else if (targetContainer && (target.x !== x || target.y !== y)) {
             await pline(targetMonster
                 ? "You can't loot anything there with a monster in the way."
                 : 'You have to be at a container to loot it.');
             game.context.move = 0;
-        } else {
+        }
+        else {
             await pline(`You don't find anything ${target.x === x
                 && target.y === y ? 'here' : 'there'} to loot.`);
             game.context.move = 0;
@@ -3466,7 +2725,6 @@ async function doloot() {
         game.context.move = 0;
         return;
     }
-
     const containerName = container.otyp === SACK
         || container.otyp === OILSKIN_SACK
         || container.otyp === BAG_OF_HOLDING
@@ -3482,15 +2740,12 @@ async function doloot() {
             game.context.move = 0;
             return;
         }
-
         // do_loot_cont() emits the lock discovery before pick_lock() asks
         // its ynq question. tty update_topl() pages the former message before
         // it can install the prompt.
         await promptKey(`${lockedMessage}--More--`);
         const toolName = lockToolPresentation(tool);
-        const answer = await promptKey(
-            `Unlock it with your ${toolName}? [ynq] (q) `,
-        );
+        const answer = await promptKey(`Unlock it with your ${toolName}? [ynq] (q) `);
         if (String.fromCharCode(answer).toLowerCase() === 'y') {
             game._occupation = {
                 key: 'pick-lock',
@@ -3508,18 +2763,20 @@ async function doloot() {
             // Initiating container autounlock makes enclosing #loot timed
             // before the first occupation callback.
             game.context.move = 1;
-        } else game.context.move = 0;
+        }
+        else
+            game.context.move = 0;
         return;
     }
-
     game._pending_message = '';
     await flush_screen(1);
     const result = await useContainer(container, {
         underlay: snapshotMenuUnderlay(),
     });
+    if (result.heroDied)
+        return;
     game.context.move = result.spentTime ? 1 : 0;
 }
-
 // C refs: pickup.c:dotip(), safe_qbuf(), and ynq().  Floor containers are
 // considered before carried objects.  Keep this prompt transaction separate
 // from tipcontainer(), whose spill mechanics own the timed yes branch.
@@ -3527,10 +2784,10 @@ async function dotip() {
     const x = game.u?.ux, y = game.u?.uy;
     const pile = game.level?.objects?.[x]?.[y] || [];
     const containers = pile.filter(isContainer);
-
-    if (containers.length === 1 && !heroHasNoLimbs(game)
+    const container = containers[0];
+    if (containers.length === 1 && container && !heroHasNoLimbs(game)
         && !exceedsActionCapacity(game)) {
-        const container = containers[0];
+        observeObjectForNaming(container);
         const prompt = `There is ${floorObjectDescription(container)} here, `
             + 'tip it? [ynq] (q) ';
         const answer = await promptYnq(prompt);
@@ -3545,42 +2802,50 @@ async function dotip() {
         game.context.move = answer === 'y' ? 1 : 0;
         return;
     }
-
     await pline('Nothing happens.');
     game.context.move = 0;
 }
-
-
 function completeExtendedCommand(command) {
     // cast/chat/conduct share `c`; once `co` is typed, conduct is the sole
     // AUTOCOMPLETE entry and tty paints the remainder without moving the
     // insertion point past the physical prefix.
     if (command.length >= 2 && 'conduct'.startsWith(command))
         return 'conduct';
-    if ('enhance'.startsWith(command)) return 'enhance';
-    if ('genocided'.startsWith(command)) return 'genocided';
+    if ('enhance'.startsWith(command))
+        return 'enhance';
+    if ('genocided'.startsWith(command))
+        return 'genocided';
     if (command.length >= 2 && 'vanquished'.startsWith(command))
         return 'vanquished';
     // In normal play, pray is the only AUTOCOMPLETE command beginning with
     // "p".  Wizard mode also exposes panic and polyself, so tty leaves a
     // single "p" literal and completes pray only once "pr" is unique.
     if ('pray'.startsWith(command)
-        && (!game.flags?.debug || command.length >= 2)) return 'pray';
+        && (!game.flags?.debug || command.length >= 2))
+        return 'pray';
     if (game.flags?.debug && command.length >= 2
-        && 'polyself'.startsWith(command)) return 'polyself';
-    if ('name'.startsWith(command)) return 'name';
-    if ('invoke'.startsWith(command)) return 'invoke';
-    if ('force'.startsWith(command)) return 'force';
-    if ('jump'.startsWith(command)) return 'jump';
+        && 'polyself'.startsWith(command))
+        return 'polyself';
+    if ('name'.startsWith(command))
+        return 'name';
+    if ('invoke'.startsWith(command))
+        return 'invoke';
+    if ('force'.startsWith(command))
+        return 'force';
+    if ('jump'.startsWith(command))
+        return 'jump';
     // quaff and quiver are ordinary commands, not AUTOCOMPLETE entries;
     // tty's filtered match set therefore makes #q uniquely identify quit.
-    if ('quit'.startsWith(command)) return 'quit';
+    if ('quit'.startsWith(command))
+        return 'quit';
     // C cmd.c:extcmdlist[] filters completion through both AUTOCOMPLETE and
     // WIZMODECMD.  In ordinary play "l" uniquely selects loot.  Wizard mode
     // also admits levelchange and lightsources, so the same prefix must stay
     // literal until another byte makes the match unique.
-    if (command === 'l' && !game.flags?.debug) return 'loot';
-    if (command.length >= 2 && 'loot'.startsWith(command)) return 'loot';
+    if (command === 'l' && !game.flags?.debug)
+        return 'loot';
+    if (command.length >= 2 && 'loot'.startsWith(command))
+        return 'loot';
     if (command.length >= 2 && 'levelchange'.startsWith(command))
         return 'levelchange';
     if (command.length >= 2 && 'herecmdmenu'.startsWith(command))
@@ -3589,19 +2854,26 @@ function completeExtendedCommand(command) {
     // why typing "wizw" temporarily displays wizwhere yet remains editable
     // into the distinct wizwish command.
     if (game.flags?.debug && command.length >= 4
-        && 'wizwhere'.startsWith(command)) return 'wizwhere';
+        && 'wizwhere'.startsWith(command))
+        return 'wizwhere';
     // wizmakemap and wizmap are non-autocomplete entries.  Once "wizm" is
     // typed, wizmondiff is the sole matching AUTOCOMPLETE command; NEWAUTOCOMP
     // paints that suffix without committing it to the editable buffer.
     if (game.flags?.debug && command.length >= 4
-        && 'wizmondiff'.startsWith(command)) return 'wizmondiff';
+        && 'wizmondiff'.startsWith(command))
+        return 'wizmondiff';
     if (game.flags?.debug && command.length >= 4
-        && 'wizkill'.startsWith(command)) return 'wizkill';
+        && 'wizkill'.startsWith(command))
+        return 'wizkill';
     if (game.flags?.debug && command.length >= 4
-        && 'wizintrinsic'.startsWith(command)) return 'wizintrinsic';
-    if (command.length >= 2 && 'ride'.startsWith(command)) return 'ride';
-    if (command.length >= 2 && 'rub'.startsWith(command)) return 'rub';
-    if (command.length >= 3 && 'chat'.startsWith(command)) return 'chat';
+        && 'wizintrinsic'.startsWith(command))
+        return 'wizintrinsic';
+    if (command.length >= 2 && 'ride'.startsWith(command))
+        return 'ride';
+    if (command.length >= 2 && 'rub'.startsWith(command))
+        return 'rub';
+    if (command.length >= 3 && 'chat'.startsWith(command))
+        return 'chat';
     if (command.length >= 3 && 'chronicle'.startsWith(command))
         return 'chronicle';
     // In wizard mode, version and vision share `v`; the second physical byte
@@ -3612,8 +2884,10 @@ function completeExtendedCommand(command) {
         return 'overview';
     // offer and overview share their first byte; "of" uniquely selects the
     // AUTOCOMPLETE #offer entry.
-    if (command.length >= 2 && 'offer'.startsWith(command)) return 'offer';
-    if ('dip'.startsWith(command)) return 'dip';
+    if (command.length >= 2 && 'offer'.startsWith(command))
+        return 'offer';
+    if ('dip'.startsWith(command))
+        return 'dip';
     if (command.length >= 2 && 'monster'.startsWith(command))
         return 'monster';
     // `a` is shared by the AUTOCOMPLETE commands adjust and annotate.
@@ -3625,14 +2899,17 @@ function completeExtendedCommand(command) {
     // therecmdmenu, timeout, tip, turn); `tu` uniquely identifies turn.
     if (command.length >= 2 && 'terrain'.startsWith(command))
         return 'terrain';
-    if (command.length >= 2 && 'turn'.startsWith(command)) return 'turn';
-    if ('untrap'.startsWith(command)) return 'untrap';
-    if (command.length >= 3 && 'wipe'.startsWith(command)) return 'wipe';
+    if (command.length >= 2 && 'turn'.startsWith(command))
+        return 'turn';
+    if ('untrap'.startsWith(command))
+        return 'untrap';
+    if (command.length >= 3 && 'wipe'.startsWith(command))
+        return 'wipe';
     if ('sit'.startsWith(command)
-        && (!game.flags?.debug || command.length >= 2)) return 'sit';
+        && (!game.flags?.debug || command.length >= 2))
+        return 'sit';
     return null;
 }
-
 const EXTENDED_COMMAND_HANDLERS = new Map([
     ['conduct', doconduct],
     ['chronicle', doChronicle],
@@ -3645,10 +2922,10 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['enhance', doenhance],
     ['chat', dochat],
     ['sit', () => dosit({
-        finishTeleport: finishTeleportArrival,
-        gotoLevel,
-        chooseTeleportDestination: askTeleportDestination,
-    })],
+            finishTeleport: finishTeleportArrival,
+            gotoLevel,
+            chooseTeleportDestination: askTeleportDestination,
+        })],
     ['pray', dopray],
     ['name', doname],
     ['invoke', doinvoke],
@@ -3678,40 +2955,38 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['wizintrinsic', wizIntrinsic],
     ['wizmap', wizMap],
 ]);
-
-async function runExtendedCommand(command) {
-    const handler = EXTENDED_COMMAND_HANDLERS.get(command);
-    if (!handler) {
-        await pline(`#${command}: unknown extended command.`);
+async function runExtendedCommand(name) {
+    const command = NATIVE_COMMANDS.find(entry => entry.name === name);
+    if (!command) {
+        await pline(`#${name}: unknown extended command.`);
         game.context.move = 0;
         return;
     }
-    if (await commandAllowed(command)) return handler();
+    if (!await commandAllowed(command)) {
+        // doextcmd() returns ECMD_OK; rhack clears queues only for a delay.
+        resetCommandVariables(game.multi < 0);
+        return;
+    }
+    const key = commandExecutionKey(command.name)?.charCodeAt(0) ?? null;
+    return executeCommandAction({ key, command, parameter: null });
 }
-
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
 // suggests artifacts and other unique objects; an artifact with inv_prop 0
 // still consumes a turn after retouching, but its only effect is the ordinary
 // "Nothing happens." line.
 async function doinvoke() {
-    const eligible = (game.inventory || []).filter(object =>
-        !!(object.oartifact || object.artifact || object.unique));
+    const eligible = (game.inventory || []).filter(object => !!(object.oartifact || object.artifact));
     if (!eligible.length) {
         await pline("You don't have anything special to invoke.");
         game.context.move = 0;
         return;
     }
     const letters = eligible.map(object => object.invlet).join('');
-    const selection = await promptInventoryObject(
-        `What do you want to invoke? [${
-            compactInventoryLetters(letters)} or ?*] `,
-        eligible, { allowMenu: true },
-    );
-    if (selection.cancelled) {
+    const selection = await promptInventoryObject(`What do you want to invoke? [${compactInventoryLetters(letters)} or ?*] `, eligible, { allowMenu: true });
+    if (selection.cancelled || !selection.object) {
         game.context.move = 0;
         return;
     }
-
     game._pending_message = '';
     const object = selection.object;
     const artifact = object.oartifact
@@ -3728,169 +3003,140 @@ async function doinvoke() {
         game.context.move = 1;
         return;
     }
-
     const invocation = await invokeArtifactPower(object, artifact, {
         enterTrap: moveIntoFailedUntrap,
     });
+    if ('heroDied' in invocation && invocation.heroDied)
+        return;
     if (invocation.used) {
-        game.context.move = invocation.spentTime === false ? 0 : 1;
+        game.context.move = 'spentTime' in invocation && invocation.spentTime === false ? 0 : 1;
         return;
     }
     await pline('Nothing happens.');
     game.context.move = 1;
 }
-
 function rubEligibleObject(object) {
     return object?.otyp === OIL_LAMP || object?.otyp === MAGIC_LAMP
-        || object?.otyp === BRASS_LANTERN || isRoyalJelly(object);
+        || object?.otyp === BRASS_LANTERN || isGrayStone(object) || isRoyalJelly(object);
 }
-
 async function rubRoyalJelly(jelly) {
     const eggs = (game.inventory || []).filter(object => object.otyp === EGG);
     const used = await useRoyalJelly(jelly, async () => {
         if (!eggs.length) {
             game._pending_message = '';
-            await pline(
-                "You don't have anything to rub the royal jelly on.",
-            );
+            await pline("You don't have anything to rub the royal jelly on.");
             return null;
         }
-        const letters = compactInventoryLetters(
-            eggs.map(egg => egg.invlet).join(''),
-        );
-        const selection = await promptInventoryObject(
-            `What do you want to rub the royal jelly on? [${letters} or ?*] `,
-            eggs,
-            { allowMenu: true },
-        );
-        if (!selection.cancelled) game._pending_message = '';
+        const letters = compactInventoryLetters(eggs.map(egg => egg.invlet).join(''));
+        const selection = await promptInventoryObject(`What do you want to rub the royal jelly on? [${letters} or ?*] `, eggs, { allowMenu: true });
+        if (!selection.cancelled)
+            game._pending_message = '';
         return selection.object;
     });
     game.context.move = used ? 1 : 0;
 }
-
 async function djinniFromLamp(object) {
-    const djinni = await makemonNear(
-        PM_DJINNI, game.u.ux, game.u.uy, MM_NOMSG,
-    );
+    const djinni = await makemonNear(PM_DJINNI, game.u.ux, game.u.uy, MM_NOMSG);
     if (!djinni) {
         await plineWithContinuation('It turns out to be empty.');
         return;
     }
     newsym(djinni.mx, djinni.my);
-
     if (!game.blind) {
-        await plineWithContinuation(
-            'In a cloud of smoke, a djinni emerges!',
-        );
+        await plineWithContinuation('In a cloud of smoke, a djinni emerges!');
         await plineWithContinuation('The djinni speaks.');
-    } else {
+    }
+    else {
         await plineWithContinuation('You smell acrid fumes.');
         await plineWithContinuation('Something speaks.');
     }
-
     let chance = rn2(5);
     if (object.blessed)
         chance = chance === 4 ? rnd(4) : 0;
     else if (object.cursed)
         chance = chance === 0 ? rn2(4) : 4;
-
     switch (chance) {
-    case 0: {
-        await plineWithContinuation(
-            '"I am in your debt.  I will grant one wish!"',
-        );
-        const { mx, my } = djinni;
-        removeWishGrantingMonster(djinni, { preserveGlyph: true });
-        await makeWish({ announce: true });
-        newsym(mx, my);
-        break;
-    }
-    case 1:
-        await plineWithContinuation('"Thank you for freeing me!"');
-        tameMonster(djinni);
-        break;
-    case 2:
-        await plineWithContinuation('"You freed me!"');
-        djinni.mpeaceful = 1;
-        break;
-    case 3:
-        await plineWithContinuation('"It is about time!"');
-        if (canSpotMonster(djinni))
-            await plineWithContinuation('The djinni vanishes.');
-        removeWishGrantingMonster(djinni);
-        break;
-    default:
-        await plineWithContinuation('"You disturbed me, fool!"');
-        djinni.mpeaceful = 0;
-        djinni.mtame = 0;
-        djinni.pet = false;
-        break;
+        case 0: {
+            await plineWithContinuation('"I am in your debt.  I will grant one wish!"');
+            await grantMonsterWish(djinni, { announce: true });
+            break;
+        }
+        case 1:
+            await plineWithContinuation('"Thank you for freeing me!"');
+            await tameMonster(djinni);
+            break;
+        case 2:
+            await plineWithContinuation('"You freed me!"');
+            djinni.mpeaceful = 1;
+            break;
+        case 3:
+            await plineWithContinuation('"It is about time!"');
+            if (canSpotMonster(djinni))
+                await plineWithContinuation('The djinni vanishes.');
+            await removeWishGrantingMonster(djinni);
+            break;
+        default:
+            await plineWithContinuation('"You disturbed me, fool!"');
+            djinni.mpeaceful = 0;
+            djinni.mtame = 0;
+            djinni.pet = false;
+            break;
     }
 }
-
 // C refs: apply.c:dorub(), invent.c:getobj(), wield.c:wield_tool(), and
 // cmd.c:CQ_CANNED.  Selecting an unwielded lamp does not rub it immediately:
 // wield_tool() installs it, consumes one action, and queues dorub plus the
 // inventory letter for the next hero command boundary.
 async function dorub(cannedInvlet = null) {
-    const eligible = (game.inventory || []).filter(rubEligibleObject);
-    let object;
-    if (cannedInvlet !== null) {
-        object = eligible.find(candidate => candidate.invlet === cannedInvlet);
-        if (!object) {
-            game.context.move = 0;
-            return;
-        }
-    } else {
-        const letters = eligible.map(candidate => candidate.invlet).join('');
-        const selection = await promptInventoryObject(
-            `What do you want to rub? [${
-                compactInventoryLetters(letters)} or ?*] `,
-            eligible, { allowMenu: true },
-        );
-        if (selection.cancelled) {
-            game.context.move = 0;
-            return;
-        }
-        object = selection.object;
+    if (heroHasNoHands(game)) {
+        await pline("You aren't able to rub anything without hands.");
+        game.context.move = 0;
+        return;
     }
-
+    const object = cannedInvlet === null
+        ? await chooseInventoryObject('rub', candidate => rubEligibleObject(candidate) ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE)
+        : game.inventory.find(candidate => candidate.invlet === cannedInvlet
+            && rubEligibleObject(candidate));
+    if (!object) {
+        game.context.move = 0;
+        return;
+    }
     // Interactive entry owns a getobj prompt which selection replaces.
     // Canned re-entry happens before the next physical key and inherits the
     // wield/scheduler topline, so its result must append to that message.
-    if (cannedInvlet === null) game._pending_message = '';
+    if (cannedInvlet === null)
+        game._pending_message = '';
+    if (isGrayStone(object)) {
+        const result = await useGrayStone(object);
+        game.context.move = result.spentTime ? 1 : 0;
+        return;
+    }
     if (isRoyalJelly(object)) {
         await rubRoyalJelly(object);
         return;
     }
-    const wielded = await wieldTool(
-        object,
-        'rub',
-        { swapWeapons: doswapweapon },
-        game,
-    );
+    const wielded = await wieldTool(object, 'rub', { swapWeapons: doswapweapon }, game);
     if (!wielded.ready) {
         game.context.move = 0;
         return;
     }
     if (wielded.newlyWielded) {
+        if (!object.invlet)
+            throw new Error('A wielded inventory object must have an inventory letter.');
         game._cannedCommands ||= [];
         game._cannedCommands.push({ kind: 'rub', invlet: object.invlet });
         game.context.move = 1;
         return;
     }
-
     if (object.otyp === MAGIC_LAMP) {
         if ((object.spe || 0) > 0 && rn2(3) === 0) {
+            await chargeUnpaidUsage(object, { alternate: true });
             // C performs the bones-safe lamp transformation before the
             // released monster can grant a fatal artifact wish.
-            transformMagicLampToOilLamp(
-                object, 1000 + rn2(500), game, game.moves ?? 0,
-            );
+            transformMagicLampToOilLamp(object, 1000 + rn2(500), game, game.moves ?? 0);
             await djinniFromLamp(object);
             if (!game._knownObjectTypes?.has(MAGIC_LAMP)) {
-                exerciseAttribute(A_WIS, true);
+                await exerciseAttribute(A_WIS, true);
                 recordObjectKnowledge(MAGIC_LAMP);
             }
             game.context.move = 1;
@@ -3899,17 +3145,16 @@ async function dorub(cannedInvlet = null) {
         await plineWithContinuation(rn2(2)
             ? 'You see a puff of smoke.'
             : 'Nothing happens.');
-    } else if (object.otyp === BRASS_LANTERN) {
-        await plineWithContinuation(
-            'Rubbing the electric lamp is not particularly rewarding.',
-        );
+    }
+    else if (object.otyp === BRASS_LANTERN) {
+        await plineWithContinuation('Rubbing the electric lamp is not particularly rewarding.');
         await plineWithContinuation('Anyway, nothing exciting happens.');
-    } else {
+    }
+    else {
         await plineWithContinuation('Nothing happens.');
     }
     game.context.move = 1;
 }
-
 async function moveIntoFailedUntrap(trap) {
     const u = game.u;
     const newx = trap.tx;
@@ -3918,13 +3163,11 @@ async function moveIntoFailedUntrap(trap) {
     const dy = newy - u.uy;
     const loc = game.level?.at?.(newx, newy);
     if (!loc || blocksMove(newx, newy)
-        || (dx && dy && blocksDiagonalDoor(
-            game.level?.at?.(u.ux, u.uy), loc,
-        ))) return false;
-
-    const ballChainMove = beginBallAndChainMove(newx, newy);
-    if (ballChainMove?.blocked) return false;
-
+        || (dx && dy && blocksDiagonalDoor(game.level?.at?.(u.ux, u.uy), loc)))
+        return { entered: false, died: false };
+    const ballChainMove = await beginBallAndChainMove(newx, newy);
+    if (ballChainMove?.blocked)
+        return { entered: false, died: !!game.program_state.gameover };
     const oldx = u.ux;
     const oldy = u.uy;
     u.ux0 = oldx;
@@ -3946,13 +3189,14 @@ async function moveIntoFailedUntrap(trap) {
         ballChainMove,
         trapOptions: { failedUntrap: true },
     });
-    const remainingTrap = game.level?.traps?.find(candidate =>
-        candidate.tx === u.ux && candidate.ty === u.uy);
-    if (remainingTrap) remainingTrap.tseen = true;
-    exerciseAttribute(A_WIS, false);
-    return true;
+    if (game.program_state.gameover)
+        return { entered: true, died: true };
+    const remainingTrap = game.level?.traps?.find(candidate => candidate.tx === u.ux && candidate.ty === u.uy);
+    if (remainingTrap)
+        remainingTrap.tseen = true;
+    await exerciseAttribute(A_WIS, false);
+    return { entered: true, died: false };
 }
-
 // C refs: wizcmds.c:wiz_map() and detect.c:do_mapping().  This is a
 // zero-time debug reveal: it maps traps and engravings first, then maps every
 // background square from all directions while preserving secret doors and
@@ -3963,14 +3207,12 @@ async function wizMap() {
         game.context.move = 0;
         return;
     }
-
     const savedConfusion = game.u?.confusionTurns ?? 0;
     const savedHallucination = game.u?.hallucinationTurns ?? 0;
     if (game.u) {
         game.u.confusionTurns = 0;
         game.u.hallucinationTurns = 0;
     }
-
     mapLevel({ confused: false, revealAllTraps: true });
     if (game.u) {
         game.u.confusionTurns = savedConfusion;
@@ -3983,32 +3225,14 @@ async function wizMap() {
     game.context.move = 0;
     await bot();
 }
-
 // C ref: cmd.c:domonability().
 async function useSteedBreathAbility(steed) {
-    const turn = await beginPetRangedTurn(steed, game, { forced: true });
-    const breath = turn.current?.kind === 'breath'
-        ? turn.current.attack : null;
-    if (turn.makeNoise) {
-        const noise = monsterNoiseMessage(steed, game);
-        if (noise) await pline(noise);
-    } else if (breath?.cough) {
-        const message = monsterCoughMessage(steed, game);
-        if (message) await pline(message);
-    } else if (breath?.launched) {
-        const message = monsterBreathMessage(steed, breath);
-        if (message) await plineWithContinuation(message);
-        await resolveMonsterBreathAttack(steed, breath, game, {
-            publish: plineWithContinuation,
-            finishMonsterKill: (target, death) =>
-                finishMonsterRayDeath(
-                    target, death, game, plineWithContinuation,
-                ),
-        });
-    }
+    requirePlayingGame(game);
+    const result = await performPetRangedAttack(steed, game, { forced: true });
+    if (result.heroDied || game.program_state.gameover)
+        return;
     game.context.move = 1;
 }
-
 async function domonability() {
     const canHide = heroHasHidingAbility(game);
     const canSpinWeb = heroCanSpinWeb(game);
@@ -4025,12 +3249,16 @@ async function domonability() {
             attack: breath,
             finishMonsterKill: finishHeroMonsterKill,
         });
+        if ('heroDied' in result && result.heroDied)
+            return;
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }
     const spit = heroSpitAttack(game);
     if (spit) {
         const result = await useHeroSpit({ state: game, attack: spit });
+        if ('heroDied' in result && result.heroDied)
+            return;
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }
@@ -4095,44 +3323,32 @@ async function domonability() {
         : "You don't have a special ability in your normal form!");
     game.context.move = 0;
 }
-
 // C ref: invent.c:doorganize()/doorganize_core().
 // TODO: add splitting, collecting, merging, swapping, gold repair, and the
 // used-letter menu.
 async function doadjust() {
     const inventory = (game.inventory || [])
-        .filter(object => object.invlet)
+        .filter((object) => typeof object.invlet === 'string' && object.invlet.length > 0)
         .sort((a, b) => a.invlet.localeCompare(b.invlet));
     if (!inventory.length) {
         await pline("You aren't carrying anything to adjust.");
         game.context.move = 0;
         return;
     }
-
-    const sourceLetters = compactInventoryLetters(
-        inventory.map(object => object.invlet).join(''),
-    );
-    const selection = await promptInventoryObject(
-        `What do you want to adjust? [${sourceLetters} or ?*] `,
-        inventory,
-        { allowMenu: true },
-    );
-    if (selection.cancelled) {
+    const sourceLetters = compactInventoryLetters(inventory.map(object => object.invlet).join(''));
+    const selection = await promptInventoryObject(`What do you want to adjust? [${sourceLetters} or ?*] `, inventory, { allowMenu: true });
+    if (selection.cancelled || !selection.object) {
         game.context.move = 0;
         return;
     }
-
     const object = selection.object;
-    const occupied = new Set(
-        inventory.filter(candidate => candidate !== object)
-            .map(candidate => candidate.invlet),
-    );
+    const occupied = new Set(inventory.filter(candidate => candidate !== object)
+        .map(candidate => candidate.invlet));
     const recommended = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
         .split('')
         .filter(letter => letter === object.invlet || !occupied.has(letter))
         .join('');
-    const destinationPrompt = `Adjust letter to what [${
-        compactInventoryLetters(recommended)}] (? see used letters)?`;
+    const destinationPrompt = `Adjust letter to what [${compactInventoryLetters(recommended)}] (? see used letters)?`;
     game._pending_message = '';
     const key = await promptKey(destinationPrompt, 1);
     const destination = String.fromCharCode(key);
@@ -4142,7 +3358,6 @@ async function doadjust() {
         game.context.move = 0;
         return;
     }
-
     if (!/^[a-zA-Z]$/.test(destination)) {
         // The source retries invalid destinations up to five times.  Keep
         // this unclaimed branch zero-time without mutating the object.
@@ -4151,85 +3366,86 @@ async function doadjust() {
         game.context.move = 0;
         return;
     }
-
-    const displaced = inventory.find(candidate =>
-        candidate !== object && candidate.invlet === destination);
+    const displaced = inventory.find(candidate => candidate !== object && candidate.invlet === destination);
     const source = object.invlet;
-    if (displaced) displaced.invlet = source;
+    if (!source)
+        throw new Error('Adjusting inventory requires a lettered object.');
+    if (displaced)
+        displaced.invlet = source;
     object.invlet = destination;
-    game.inventory.sort((a, b) =>
-        String(a.invlet).localeCompare(String(b.invlet)));
+    game.inventory.sort((a, b) => String(a.invlet).localeCompare(String(b.invlet)));
     game._pending_message = '';
-    await pline(
-        `${displaced ? 'Swapping:' : destination === source
-            ? 'Collecting:' : 'Moving:'} ${destination} - ${
-            inventoryItemDescription(object)}.`,
-    );
+    observeObjectForNaming(object);
+    await pline(`${displaced ? 'Swapping:' : destination === source
+        ? 'Collecting:' : 'Moving:'} ${destination} - ${inventoryItemDescription(object, {
+        primaryHandDetail: inventoryPrimaryHandDetail(object),
+    })}.`);
     game.context.move = 0;
 }
-
 // C ref: pray.c:doturn().
 async function doturn() {
     const role = game.urole?.key;
     if (role !== 'priest' && role !== 'knight') {
-        const spell = (game.spells || []).find(known =>
-            known.name === 'turn undead');
+        const spell = (game.spells || []).find(known => known.name === 'turn undead');
         if (!spell) {
             await pline("You don't know how to turn undead!");
             game.context.move = 0;
             return;
         }
-        await castKnownSpell(spell);
+        await castSpell(spell.otyp);
         return;
     }
-
     await turnUndeadByCallingOnDeity(game);
 }
-
 // C refs: trap.c water_damage()/erode_obj().  Fountain dipping forces the
 // water check, so the ordinary luck-based shield is bypassed; the erosion
 // result then controls dipfountain()'s separate one-in-two early-return gate.
 async function waterDamageCarriedObject(object) {
     const kind = objectErosionKind(object);
-    if (!kind || kind.action !== 'rust') return ER_NOTHING;
-
-    const proof = !!(object.oerodeproof || object.rustproof);
+    if (!kind || kind.action !== 'rust')
+        return ER_NOTHING;
+    const proof = !!object.oerodeproof;
     if (proof) {
         object.rknown = true;
         return ER_NOTHING;
     }
-    if (object.blessed && rnl(4) === 0) return ER_NOTHING;
-    if ((object[kind.field] || 0) >= 3) return ER_NOTHING;
-
+    if (object.blessed && rnl(4) === 0)
+        return ER_NOTHING;
+    if ((object.oeroded || 0) >= 3)
+        return ER_NOTHING;
     const message = objectErosionMessage(object, kind);
     await pline(message);
-    object[kind.field] = (object[kind.field] || 0) + 1;
-    if (object.worn) findArmorClass(game);
+    object.oeroded = (object.oeroded || 0) + 1;
+    if (object.worn)
+        findArmorClass(game);
     return ER_DAMAGED;
 }
-
 async function dipFountain(object, loc) {
     const result = await waterDamageCarriedObject(object);
-    if (result === ER_DESTROYED
-        || (result !== ER_NOTHING && rn2(2) === 0)) {
+    if (result !== ER_NOTHING && rn2(2) === 0) {
         return;
     }
-
     const fate = rnd(30);
     let eventMessage = '';
-    let continueFountainMessage = false;
+    const wasCursed = object.cursed;
     const bucEffect = resolveDippedBucFate({
         fate,
         object,
         blind: !!game.blind,
         liquidName: () => displayLiquidName('water'),
     });
+    if (!wasCursed && object.cursed) {
+        await dropCursedSecondaryWeapon(object);
+        if (game.program_state.gameover)
+            return;
+        await bookCursed(object);
+    }
     const sensationEffect = resolveDippedSensationFate({
         fate,
         armName: () => heroArmName(game),
     });
     const currentDungeon = game.dungeons?.[game.u?.uz?.dnum ?? 0];
-    const coinEffect = applyDippedCoinFate({
+    const coinEffect = await applyDippedCoinFate({
         fate,
         loc,
         dungeonLevels: currentDungeon?.num_dunlevs
@@ -4237,38 +3453,43 @@ async function dipFountain(object, loc) {
         dungeonLevel: game.u?.uz?.dlevel ?? 1,
         blind: !!game.blind,
         random: rnd,
-        createGold: quantity => {
-            mkgold(quantity, game.u.ux, game.u.uy);
+        createGold: async (quantity) => {
+            await mkgold(quantity, game.u.ux, game.u.uy);
         },
         liquidName: () => displayLiquidName('water'),
-        exerciseWisdom: () => exerciseAttribute(A_WIS, true),
+        exerciseWisdom,
         repaint: () => newsym(game.u.ux, game.u.uy),
     });
     if (bucEffect.handled) {
         eventMessage = bucEffect.message;
-    } else if (sensationEffect.handled) {
+    }
+    else if (sensationEffect.handled) {
         eventMessage = sensationEffect.message;
-    } else if (coinEffect.handled) {
+    }
+    else if (coinEffect.handled) {
         eventMessage = coinEffect.message;
-    } else if (fate === 21) {
-        continueFountainMessage = !!(await summonFountainDemon()).message;
-    } else if (fate === 22) {
-        continueFountainMessage = !!(await summonFountainNymph()).message;
-    } else if (fate === 23) {
-        continueFountainMessage = !!(await summonFountainSnakes()).message;
-    } else if (fate === 24) {
+    }
+    else if (fate === 21) {
+        await summonFountainDemon();
+    }
+    else if (fate === 22) {
+        await summonFountainNymph();
+    }
+    else if (fate === 23) {
+        await summonFountainSnakes();
+    }
+    else if (fate === 24) {
         if ((loc.looted ?? 0) & F_LOOTED)
-            eventMessage = (await dogushforth(false)).join('  ');
+            eventMessage = (await gushForthFromFountain()).join('  ');
         else
-            continueFountainMessage = (await discoverFountainGem(loc)).discovered;
-    } else if (fate === 25) {
-        eventMessage = (await dogushforth(false)).join('  ');
-    } else if (fate === 28) {
-        await moreUntilDismissed(
-            'An urge to take a bath overwhelms you.--More--',
-        );
+            await discoverFountainGem(loc);
+    }
+    else if (fate === 25) {
+        eventMessage = (await gushForthFromFountain()).join('  ');
+    }
+    else if (fate === 28) {
+        await moreUntilDismissed('An urge to take a bath overwhelms you.');
         game._pending_message = '';
-
         const wallet = heroGoldAmount(game);
         if (wallet > 10) {
             const loss = Math.trunc(someGold(wallet) / 10);
@@ -4276,76 +3497,53 @@ async function dipFountain(object, loc) {
             setHeroGoldAmount(game, wallet - loss);
             await pline('You lost some of your gold in the fountain!');
             loc.looted = (loc.looted ?? 0) & ~F_LOOTED;
-            exerciseAttribute(A_WIS, false);
+            await exerciseAttribute(A_WIS, false);
         }
-
-        const dryup = dryFountainAt(game.u.ux, game.u.uy);
-        if (dryup.dried)
-            await plineWithContinuation('The fountain dries up!');
-        await reportFountainWarning(dryup.warning);
+        await dryFountainAt(game.u.ux, game.u.uy);
         return;
-    } else if ((fate < 16 || fate === 30) && result === ER_NOTHING) {
+    }
+    else if ((fate < 16 || fate === 30) && result === ER_NOTHING) {
         eventMessage = 'Nothing seems to happen.';
     }
-    // The selected random effect precedes dryup() even when it is a no-op.
-    // Numbered effect cases remain independent owners.
-    const dryup = dryFountainAt(game.u.ux, game.u.uy);
-    if (dryup.dried) {
-        eventMessage += `${
-            eventMessage ? '  ' : ''
-        }The fountain dries up!`;
-    }
-    if (eventMessage) {
-        if (continueFountainMessage)
-            await plineWithContinuation(eventMessage);
-        else await pline(eventMessage);
-    }
-    await reportFountainWarning(dryup.warning);
+    if (eventMessage)
+        await plineWithContinuation(eventMessage);
+    await dryFountainAt(game.u.ux, game.u.uy);
 }
-
 function dipTargetDescription(object) {
+    observeObjectForNaming(object);
     const full = inventoryItemDescription(object);
-    if (full.length <= 49) return full;
-
+    if (full.length <= 49)
+        return full;
     // objnam.c:short_oname() strips these lengthening properties on a
     // temporary copy before falling back to its minimal formatter.
-    return inventoryItemDescription({
+    const shortened = {
         ...object,
         bknown: false,
         rknown: false,
-        buc: undefined,
         greased: false,
         oeroded: 0,
         oeroded2: 0,
-    });
+    };
+    delete shortened.buc;
+    return inventoryItemDescription(shortened);
 }
-
 // C ref: potion.c dodip()/invent.c getobj().  Object selection, terrain
 // confirmation, and the committed dip are one nested command transaction.
 async function dodip() {
-    const items = (game.inventory || []).filter(item => item.invlet)
+    const items = (game.inventory || []).filter((item) => typeof item.invlet === 'string' && item.invlet.length > 0)
         .sort((a, b) => a.invlet.localeCompare(b.invlet));
-    const letters = compactInventoryLetters(
-        items.map(item => item.invlet).join(''),
-    );
-    const selection = await promptInventoryObject(
-        `What do you want to dip? [${letters} or ?*] `,
-        items,
-        { allowMenu: true, retainPromptOnCancel: true },
-    );
-    if (selection.cancelled) {
+    const letters = compactInventoryLetters(items.map(item => item.invlet).join(''));
+    const selection = await promptInventoryObject(`What do you want to dip? [${letters} or ?*] `, items, { allowMenu: true, retainPromptOnCancel: true });
+    if (selection.cancelled || !selection.object) {
         game.context.move = 0;
         return;
     }
-
     const object = selection.object;
     const loc = game.level?.at(game.u?.ux, game.u?.uy);
     if (loc?.typ === FOUNTAIN) {
         const description = dipTargetDescription(object);
         const prompt = `Dip ${description} into the fountain? [yn] (n)`;
-        const answer = await promptYesNo(
-            prompt, 'n', 1,
-        );
+        const answer = await promptYesNo(prompt, 'n', 1);
         if (answer === 'y') {
             await dipFountain(object, loc);
             // tty removes the answered query from continuation ownership but
@@ -4357,18 +3555,19 @@ async function dodip() {
             return;
         }
     }
-
     // Potion, sink, pool, and declined-fountain second selectors remain
     // distinct source transactions.
     game.context.move = 0;
 }
-
 function visitedDungeonLevels() {
     const byDungeon = new Map();
     const remember = (dnum, dlevel) => {
-        if (!Number.isInteger(dnum) || !Number.isInteger(dlevel)) return;
-        if (!byDungeon.has(dnum)) byDungeon.set(dnum, new Set());
-        byDungeon.get(dnum).add(dlevel);
+        if (dnum === undefined || dlevel === undefined
+            || !Number.isInteger(dnum) || !Number.isInteger(dlevel))
+            return;
+        const levels = byDungeon.get(dnum) ?? new Set();
+        levels.add(dlevel);
+        byDungeon.set(dnum, levels);
     };
     remember(game.u?.uz?.dnum ?? 0, game.u?.uz?.dlevel ?? 1);
     for (const key of game._levelCache?.keys?.() || []) {
@@ -4377,7 +3576,6 @@ function visitedDungeonLevels() {
     }
     return byDungeon;
 }
-
 function dungeonOverviewHeading(dnum, levels) {
     const dungeon = game.dungeons?.[dnum];
     const reached = dungeon?.entry_lev === dungeon?.num_dunlevs
@@ -4391,34 +3589,33 @@ function dungeonOverviewHeading(dnum, levels) {
         : `levels ${depths[0]} to ${depths.at(-1)}`;
     return `${dungeon?.dname || 'Dungeon'}: ${range}`;
 }
-
 function overviewLevelIsInteresting(dnum, dlevel, deepest) {
-    if (dlevel === deepest) return true;
+    if (dlevel === deepest)
+        return true;
     if ((game.u?.uz?.dnum ?? 0) === dnum
-        && (game.u?.uz?.dlevel ?? 1) === dlevel) return true;
+        && (game.u?.uz?.dlevel ?? 1) === dlevel)
+        return true;
     const annotation = game._levelAnnotations?.get?.(`${dnum}:${dlevel}`);
     const record = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
     const features = record?.features || {};
     return !!annotation || !!record?.branch || Object.values(features)
-        .some(value => Number.isInteger(value) && value > 0);
+        .some(value => typeof value === 'number' && Number.isInteger(value) && value > 0);
 }
-
 function overviewCountPhrase(count, noun) {
     if (count === 1)
         return `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
-    if (count === 2) return `some ${noun}s`;
+    if (count === 2)
+        return `some ${noun}s`;
     return `many ${noun}s`;
 }
-
 function overviewFeatureLine(features) {
     const phrases = [];
     if (features?.nshop) {
         if (features.nshop === 1) {
-            const type = SHOP_TYPE_NAMES[
-                (features.shoptype ?? SHOPBASE) - SHOPBASE
-            ] || 'shop';
+            const type = SHOP_TYPES[(features.shoptype ?? SHOPBASE) - SHOPBASE]?.name || 'shop';
             phrases.push(`a ${type}`);
-        } else {
+        }
+        else {
             phrases.push(overviewCountPhrase(features.nshop, 'shop'));
         }
     }
@@ -4428,13 +3625,14 @@ function overviewFeatureLine(features) {
         ['ngrave', 'grave'], ['ntree', 'tree'],
     ]) {
         const count = features?.[countKey] ?? 0;
-        if (count) phrases.push(overviewCountPhrase(count, noun));
+        if (count)
+            phrases.push(overviewCountPhrase(count, noun));
     }
-    if (!phrases.length) return null;
+    if (!phrases.length)
+        return null;
     const text = phrases.join(', ');
-    return `      ${text[0].toUpperCase()}${text.slice(1)}.`;
+    return `      ${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
 }
-
 // C ref: dungeon.c dooverview()/show_overview().  This is dungeon-history
 // projection over mapseen/cache state; it is distinct from Delete's
 // known-terrain browser, which enters a getpos-style cursor transaction.
@@ -4448,14 +3646,16 @@ async function doDungeonOverview() {
         .sort(([left], [right]) => left - right);
     for (const [dnum, levelSet] of visited) {
         const levels = [...levelSet].sort((a, b) => a - b);
-        if (!levels.length || !game.dungeons?.[dnum]) continue;
+        if (!levels.length || !game.dungeons?.[dnum])
+            continue;
         lines.push({
             text: dungeonOverviewHeading(dnum, levels),
             attr: ATR_INVERSE,
         });
         const deepest = levels.at(-1);
         for (const dlevel of levels) {
-            if (!overviewLevelIsInteresting(dnum, dlevel, deepest)) continue;
+            if (!overviewLevelIsInteresting(dnum, dlevel, deepest))
+                continue;
             const depth = dungeonDepth(dnum, dlevel);
             const annotation = game._levelAnnotations?.get?.(`${dnum}:${dlevel}`);
             const record = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
@@ -4465,18 +3665,14 @@ async function doDungeonOverview() {
                 ? specialPrototypeAt(dnum, dlevel) : null;
             const special = prototype ? ` [${prototype}]` : '';
             const suffix = annotation ? ` "${annotation}"` : '';
-            lines.push(`   Level ${depth}:${special}${suffix}${
-                current ? ' <- You are here.' : ''
-            }`);
+            lines.push(`   Level ${depth}:${special}${suffix}${current ? ' <- You are here.' : ''}`);
             const featureLine = overviewFeatureLine(record?.features);
-            if (featureLine) lines.push(featureLine);
+            if (featureLine)
+                lines.push(featureLine);
             if (record?.branch) {
                 const target = game.dungeons?.[record.branch.dnum]?.dname
                     || 'another dungeon';
-                lines.push(
-                    `      Stairs ${record.branch.up ? 'up' : 'down'} to ${
-                        target}.`,
-                );
+                lines.push(`      Stairs ${record.branch.up ? 'up' : 'down'} to ${target}.`);
             }
         }
     }
@@ -4484,7 +3680,6 @@ async function doDungeonOverview() {
     game._pending_message = '';
     game.context.move = 0;
 }
-
 // C ref: insight.c:do_gamelog()/show_gamelog(ENL_GAMEINPROGRESS).  Chronicle
 // is a projection of events recorded by their owning mechanics; it does not
 // infer history from the command transcript or current aggregate counters.
@@ -4505,7 +3700,8 @@ async function doChronicle() {
     for (let offset = 0; offset < stream.length; offset += pageSize) {
         const lines = Array(24).fill('');
         const chunk = stream.slice(offset, offset + pageSize);
-        for (let row = 0; row < chunk.length; row++) lines[row] = chunk[row];
+        for (const [row, line] of chunk.entries())
+            lines[row] = line;
         lines[23] = '--More--';
         pages.push({ lines, cursor: [8, 23] });
     }
@@ -4513,11 +3709,11 @@ async function doChronicle() {
     game._pending_message = '';
     game.context.move = 0;
 }
-
 async function doVanquished() {
     if (!hasRecordedMonsterDeaths()) {
         await pline('No creatures have been vanquished.');
-    } else {
+    }
+    else {
         await showDisclosureOverlay(vanquishedLines(), {
             restoreUnderlay: true,
         });
@@ -4525,63 +3721,44 @@ async function doVanquished() {
     game._pending_message = '';
     game.context.move = 0;
 }
-
 async function doGenocided() {
     const genocided = [...(game._genocidedMonsters || [])];
     if (!genocided.length) {
         await pline('No creatures have been genocided.');
-    } else {
+    }
+    else {
         const lines = ['Genocided species:', '', ...genocided];
         await showDisclosureOverlay(lines, { restoreUnderlay: true });
     }
     game.context.move = 0;
 }
-
+function inventoryCommandLetter(item) {
+    if (item.invlet === null || item.invlet === undefined)
+        throw new TypeError(`Carried object ${item.o_id} has no inventory letter`);
+    return item.invlet;
+}
 function permanentlyIdentified(item) {
     return !!(item?.typeKnown && item?.known && item?.dknown
         && item?.bknown && item?.rknown);
 }
-
-function wizardIdentifyDescription(item) {
-    const identified = {
-        ...item,
-        typeKnown: true,
-        known: true,
-        dknown: true,
-        bknown: true,
-        rknown: true,
-        buc: item.blessed ? 'blessed'
-            : item.cursed ? 'cursed' : 'uncursed',
-    };
-    const artifact = item.oartifact ? artifactById(item.oartifact) : null;
-    if (!artifact) return inventoryItemDescription(identified);
-
-    // objnam.c:doname() renders a known artifact as its unique identity,
-    // rather than as a base object followed by an individual `named` suffix.
-    let suffix = '';
-    if (game.u?.twoweap && item === game.uwep)
-        suffix = ' (wielded in right hand)';
-    else if (game.u?.twoweap && item === game.uswapwep)
-        suffix = ' (wielded in left hand)';
-    else if (item === game.uwep) {
-        const hand = game.u?.rightHanded === false ? 'left' : 'right';
-        suffix = ` (weapon in ${hand} hand)`;
-    } else if (item.worn) suffix = ' (being worn)';
-    const enchantment = Number.isInteger(item.enchantment)
-        ? item.enchantment : Number.isInteger(item.spe) ? item.spe : null;
-    const bonus = Number.isInteger(enchantment)
-        ? `${enchantment >= 0 ? '+' : ''}${enchantment}` : '';
-    const artifactName = artifact.name.replace(/^The /, '');
-    return ['the', identified.buc, bonus, artifactName]
-        .filter(Boolean).join(' ') + suffix;
+function wizardIdentifyDescription(item, primaryHandDetail) {
+    const override = game.iflags.override_ID;
+    game.iflags.override_ID = true;
+    try {
+        return inventoryItemDescription(item, { primaryHandDetail });
+    }
+    finally {
+        if (override === undefined)
+            delete game.iflags.override_ID;
+        else
+            game.iflags.override_ID = override;
+    }
 }
-
 // C wizcmds.c:wiz_identify() delegates to display_inventory() with
 // iflags.override_ID set.  Fully identified inventories still open a short
 // PICK_NONE menu; the command does not collapse into a topline message.
 async function wizIdentify() {
-    const unidentified = (game.inventory || []).filter(item =>
-        !permanentlyIdentified(item));
+    const unidentified = (game.inventory || []).filter(item => !permanentlyIdentified(item));
     if (!unidentified.length) {
         await showTextMenuOverlay([
             'Debug Identify',
@@ -4591,31 +3768,29 @@ async function wizIdentify() {
         game.context.move = 0;
         return;
     }
-
-    const sections = PICKUP_CLASS_ORDER.map(heading => ({
+    const sections = pickupClassOrder().map(heading => ({
         heading,
         items: unidentified
             .filter(item => pickupObjectClass(item) === heading)
-            .sort((a, b) => a.invlet.localeCompare(b.invlet))
-            .map(item => ({
-                key: item.invlet,
-                text: wizardIdentifyDescription(item),
+            .sort((a, b) => inventoryCommandLetter(a).localeCompare(inventoryCommandLetter(b)))
+            .map(item => {
+            observeObjectForNaming(item);
+            return {
+                key: inventoryCommandLetter(item),
+                text: wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item)),
                 value: item,
-            })),
+            };
+        }),
     })).filter(section => section.items.length);
     game._pending_message = '';
     game.nhDisplay?.clearRow(0);
     const selected = await showMultiSelectWindow({
-        title: `Debug Identify -- unidentified or partially identified item${
-            unidentified.length === 1 ? '' : 's'
-        }`,
+        title: `Debug Identify -- unidentified or partially identified item${unidentified.length === 1 ? '' : 's'}`,
         introLines: [
             `_ - select ${unidentified.length === 1
-                ? 'it' : 'any or all of them'} to permanently identify${
-                unidentified.length === 1 ? '' : ' (^I for all)'}`,
+                ? 'it' : 'any or all of them'} to permanently identify${unidentified.length === 1 ? '' : ' (^I for all)'}`,
         ],
         sections,
-        left: 12,
         blankAfterTitle: false,
         titleAttr: ATR_NONE,
     });
@@ -4624,282 +3799,15 @@ async function wizIdentify() {
     for (const item of selected) {
         const learnedType = !objectTypeKnown(item);
         fullyIdentifyObject(item);
-        if (learnedType) exerciseAttribute(A_WIS, true);
-        await plineWithContinuation(
-            `${item.invlet} - ${inventoryItemDescription(item)}.`,
-        );
+        if (learnedType)
+            await exerciseAttribute(A_WIS, true);
+        observeObjectForNaming(item);
+        await plineWithContinuation(`${item.invlet} - ${inventoryItemDescription(item, {
+            primaryHandDetail: inventoryPrimaryHandDetail(item),
+        })}.`);
     }
     game.context.move = 0;
 }
-
-const WIZARD_INTRINSIC_PROPERTIES = [
-    'invulnerable', 'petrifying', 'becoming slime', 'strangling',
-    'fatally sick', 'stunned', 'confused', 'hallucinating', 'blinded',
-    'deafness', 'vomiting', 'slippery fingers', 'wounded legs', 'sleepy',
-    'teleporting', 'polymorphing', 'levitating', 'very fast',
-    'clairvoyant', 'monster detection', 'see invisible', 'invisible',
-    'acid resistance', 'stoning resistance', 'displaced',
-    'pass thru walls', 'magical breathing', 'water walking',
-    'fire resistance', 'cold resistance', 'sleep resistance',
-    'disintegration resistance', 'shock resistance', 'poison resistance',
-    'drain resistance', 'sickness resistance', 'magic resistance',
-    // HALLUC_RES is intentionally absent, matching wiz_intrinsic().
-    'light-induced blindness resistance', 'fumbling', 'voracious hunger',
-    'telepathic', 'warning', 'warn: monster type or class', 'warn: undead',
-    'searching', 'infravision', 'adorned (+/- Cha)', 'stealthy',
-    'monster aggravation', 'conflict', 'jumping', 'teleport control',
-    'flying', 'swimming', 'slow digestion', 'half spell damage',
-    'half physical damage', 'HP regeneration', 'energy regeneration',
-    'extra protection', 'protection from shape changers',
-    'polymorph control', 'unchanging', 'reflecting', 'free action',
-    'fixed abilities', 'life will be saved',
-];
-
-function wizardIntrinsicAccelerator(index) {
-    if (index < 26) return String.fromCharCode(97 + index);
-    if (index < 52) return String.fromCharCode(65 + index - 26);
-    return String(index - 51);
-}
-
-function wizardIntrinsicTimeout(name) {
-    const field = {
-        invulnerable: 'invulnerableTurns',
-        petrifying: 'stonedTurns',
-        'becoming slime': 'slimedTurns',
-        strangling: 'strangledTurns',
-        'fatally sick': 'sickTurns',
-        stunned: 'stunnedTurns',
-        confused: 'confusionTurns',
-        hallucinating: 'hallucinationTurns',
-        blinded: 'blindTurns',
-        deafness: 'deafTurns',
-        vomiting: 'vomitingTurns',
-        'slippery fingers': 'glibTurns',
-        'wounded legs': '_woundedLegTurns',
-        sleepy: 'sleepyTurns',
-        teleporting: 'teleportingTurns',
-        polymorphing: 'polymorphingTurns',
-        levitating: 'levitationTurns',
-        'very fast': 'veryFastTurns',
-        clairvoyant: 'clairvoyanceTurns',
-        'monster detection': 'monsterDetectionTurns',
-        'see invisible': 'seeInvisibleTurns',
-        invisible: 'invisibleTurns',
-        'magic resistance': 'magicResistanceTurns',
-        'shock resistance': 'shockResistanceTurns',
-        fumbling: 'fumblingTurns',
-        'half spell damage': 'halfSpellDamageTurns',
-        'half physical damage': 'halfPhysicalDamageTurns',
-    }[name];
-    return field ? Math.max(0, game.u?.[field] ?? 0) : 0;
-}
-
-async function wizIntrinsic() {
-    const items = WIZARD_INTRINSIC_PROPERTIES.map((name, index) => {
-        const timeout = wizardIntrinsicTimeout(name);
-        return {
-            key: wizardIntrinsicAccelerator(index),
-            // C uses "%-27s [timeout]" so every page shares one aligned
-            // timeout column without changing the item's accelerator.
-            text: timeout ? `${name.padEnd(27)} [${timeout}]` : name,
-            value: name,
-            separatorBefore: name === 'fire resistance',
-        };
-    });
-    const selections = await showMultiSelectWindow({
-        title: 'Which intrinsics?',
-        introLines: game.flags?.cmdassist !== false ? [
-            '[Precede any selection with a count to increment by other than 30.]',
-        ] : [],
-        sections: [{ heading: '', items }],
-        omitHeadings: true,
-        left: 1,
-        // tty assigns automatic selectors afresh on each physical menu page;
-        // page two consequently begins with a=see invisible, b=invisible.
-        pageLocalKeys: true,
-    });
-
-    game.context.move = 0;
-    if (!selections.length) {
-        game._pending_message = '';
-        game._retained_message = '';
-        await docrt();
-        return;
-    }
-    // select_menu() returns only after destroy_nhwindow() has removed both
-    // the intrinsic window and its extended-command editor.  Timeout plines
-    // therefore begin from an empty topline, not "# wizintrinsic".
-    game._pending_message = '';
-    game._retained_message = '';
-    const propertyMessages = [];
-    const queuePropertyMessage = (property, message) => {
-        propertyMessages.push({ property, message });
-    };
-    if (selections.includes('invulnerable')) {
-        const oldTimeout = game.u.invulnerableTurns ?? 0;
-        game.u.invulnerableTurns = oldTimeout + 30;
-        queuePropertyMessage('invulnerable',
-            `Timeout for invulnerable ${
-                oldTimeout ? 'increased by' : 'set to'
-            } 30.`,
-        );
-    }
-    if (selections.includes('very fast')) {
-        const oldTimeout = game.u.veryFastTurns ?? 0;
-        game.u.veryFastTurns = oldTimeout + 30;
-        game.u.veryFast = true;
-        queuePropertyMessage('very fast',
-            `Timeout for very fast ${
-                oldTimeout ? 'increased by' : 'set to'
-            } 30.`,
-        );
-    }
-    if (selections.includes('half spell damage')) {
-        const oldTimeout = game.u.halfSpellDamageTurns ?? 0;
-        game.u.halfSpellDamageTurns = oldTimeout + 30;
-        game.u.halfSpellDamage = true;
-        queuePropertyMessage('half spell damage',
-            `Timeout for half spell damage ${
-                oldTimeout ? 'increased by' : 'set to'
-            } 30.`,
-        );
-    }
-    if (selections.includes('half physical damage')) {
-        const oldTimeout = game.u.halfPhysicalDamageTurns ?? 0;
-        game.u.halfPhysicalDamageTurns = oldTimeout + 30;
-        game.u.halfPhysicalDamage = true;
-        queuePropertyMessage('half physical damage',
-            `Timeout for half physical damage ${
-                oldTimeout ? 'increased by' : 'set to'
-            } 30.`,
-        );
-    }
-    if (selections.includes('shock resistance')) {
-        const oldTimeout = game.u.shockResistanceTurns ?? 0;
-        game.u.shockResistanceTurns = oldTimeout + 30;
-        game.u.shockResistance = true;
-        queuePropertyMessage('shock resistance',
-            `Timeout for shock resistance ${
-                oldTimeout ? 'increased by' : 'set to'
-            } 30.`,
-        );
-    }
-    if (selections.includes('magic resistance')) {
-        const oldTimeout = game.u.magicResistanceTurns ?? 0;
-        game.u.magicResistanceTurns = oldTimeout + 30;
-        game.u.antimagic = true;
-        queuePropertyMessage('magic resistance',
-            `Timeout for magic resistance ${
-                oldTimeout ? 'increased by' : 'set to'
-            } 30.`,
-        );
-    }
-    if (selections.includes('invisible')) {
-        const oldTimeout = game.u.invisibleTurns ?? 0;
-        game.u.invisibleTurns = oldTimeout + 30;
-        game.u.invisible = true;
-        game.u.invis = true;
-        queuePropertyMessage('invisible',
-            `Timeout for invisible ${
-                oldTimeout ? 'increased by' : 'set to'
-            } 30.`,
-        );
-    }
-    if (selections.includes('fatally sick')) {
-        const oldTimeout = game.u.sickTurns ?? 0;
-        const sickness = startHeroSickness({
-            state: game,
-            turns: oldTimeout || 30,
-            cause: '#wizintrinsic',
-            type: rn2(2) === 0 ? SICK_VOMITABLE : SICK_NONVOMITABLE,
-        });
-        if (sickness.message)
-            queuePropertyMessage('fatally sick', sickness.message);
-    }
-    if (selections.includes('vomiting')) {
-        const oldTimeout = game.u.vomitingTurns ?? 0;
-        startHeroVomiting({ state: game, turns: oldTimeout + 30 });
-        queuePropertyMessage('vomiting',
-            `You are${oldTimeout ? ' still' : ''} vomiting.`);
-    }
-    if (selections.includes('blinded')) {
-        const oldTimeout = game.u.blindTurns ?? 0;
-        const couldSee = !game.blind;
-        // wizcmds.c:wiz_intrinsic() dispatches BLINDED through
-        // make_blinded(newtimeout, TRUE).  Extending an active timeout does
-        // not print generic "Timeout for ..." feedback, but first sight loss
-        // announces itself before blindness state and vision are committed.
-        if (couldSee) {
-            const hallucinating = !!(game.u?.hallucinating
-                || (game.u?.hallucinationTurns ?? 0) > 0);
-            await moreUntilDismissed(hallucinating
-                ? 'Oh, bummer!  Everything is dark!  Help!--More--'
-                : 'A cloud of darkness falls upon you.--More--');
-        }
-        game.u.blindTurns = oldTimeout + 30;
-        syncBlindness(game);
-        if (!oldTimeout) game.vision_full_recalc = 1;
-    }
-    if (selections.includes('deafness')) {
-        const oldTimeout = game.u.deafTurns ?? 0;
-        // wizcmds.c:wiz_intrinsic() dispatches DEAF through
-        // potion.c:make_deaf(newtimeout, TRUE).  Unlike make_blinded(),
-        // make_deaf() commits its timed property before publishing the first
-        // transition line, so the suspended pager already renders `Deaf` in
-        // the status row.  Extending an active timed timeout is silent.
-        game.u.deafTurns = oldTimeout + 30;
-        syncDeafness(game);
-        if (!oldTimeout) {
-            await moreUntilDismissed(
-                'You are unable to hear anything.--More--',
-            );
-        }
-    }
-    if (selections.includes('hallucinating')) {
-        game.u.hallucinationTurns = (game.u.hallucinationTurns || 0) + 30;
-        game.u.hallucinating = true;
-        game.vision_full_recalc = 1;
-        vision_recalc(0);
-        // potion.c:make_hallucinated() consumes the first presentation-RNG
-        // projections before it publishes the state-change line.  Deferring
-        // these until the pager acknowledgement shifts every later
-        // Hallucinated glyph and name by a complete display pass.
-        if (game.u?.uswallow) {
-            swallowed(false);
-        } else {
-            see_monsters();
-            see_objects();
-            see_traps();
-        }
-        await moreUntilDismissed(
-            'Oh wow!  Everything looks so cosmic!--More--',
-        );
-        game._pending_message = '';
-        game._retained_message = '';
-        await docrtRecalc();
-        return;
-    }
-    if (propertyMessages.length) {
-        // wiz_intrinsic() walks select_menu() results in global property
-        // order and calls pline() once per selection.  Short lines compose on
-        // tty's topline; an overflowing later line pages the earlier one.
-        // The final docrt() then forces whichever line remains.
-        propertyMessages.sort((left, right) =>
-            WIZARD_INTRINSIC_PROPERTIES.indexOf(left.property)
-            - WIZARD_INTRINSIC_PROPERTIES.indexOf(right.property));
-        for (const { message } of propertyMessages)
-            await plineWithContinuation(message);
-        await flushPendingTopline();
-    }
-    // destroy_nhwindow() removes both the intrinsic menu and the extended
-    // command editor which launched it.  Properties such as BLINDED dispatch
-    // through make_blinded() without generic timeout prose when already
-    // active, so they still need the same command-line teardown.
-    game._pending_message = '';
-    game._retained_message = '';
-    await docrt();
-}
-
 // TTY's extended-command line editor redraws the prompt at every input
 // boundary.  #enhance has AUTOCOMPLETE, so its unique initial "e" expands
 // visually while subsequent characters advance through that completed word.
@@ -4908,7 +3816,6 @@ async function doextcmd() {
     game._pending_message = '#';
     await flush_screen(1);
     game.nhDisplay?.setCursor(2, 0);
-
     const redrawCommand = async () => {
         const completion = completeExtendedCommand(command.toLowerCase());
         const displayedCommand = completion || command;
@@ -4924,7 +3831,7 @@ async function doextcmd() {
             display.clearRow(1);
             const continuation = game._pending_message.slice(columns);
             for (let index = 0; index < continuation.length; index++)
-                display.setCell(1 + index, 1, continuation[index], NO_COLOR, 0);
+                display.setCell(1 + index, 1, continuation.charAt(index), NO_COLOR, 0);
         }
         // NEWAUTOCOMP leaves the insertion pointer immediately after the
         // physically typed prefix, not after its displayed suffix.
@@ -4934,7 +3841,6 @@ async function doextcmd() {
         else
             display?.setCursor(insertion, 0);
     };
-
     for (;;) {
         const key = await nhgetch();
         if (key === 27) {
@@ -4949,7 +3855,8 @@ async function doextcmd() {
             game.context.move = 0;
             return;
         }
-        if (key === 10 || key === 13) break;
+        if (key === 10 || key === 13)
+            break;
         if (key === 8) {
             if (command) {
                 command = command.slice(0, -1);
@@ -4967,11 +3874,16 @@ async function doextcmd() {
             continue;
         }
         const ch = String.fromCharCode(key);
-        if (key < 32 || key === 127 || command.length >= COLNO) continue;
+        if (key < 32 || key === 127 || command.length >= COLNO)
+            continue;
         command += ch;
         await redrawCommand();
     }
-
+    // tty_getlin() clears its message window on return. The completed
+    // editor is not an unread message for a later cls() to acknowledge.
+    game._pending_message = '';
+    game._retained_message = '';
+    game.nhDisplay?.clearRow(0);
     const normalizedCommand = command
         .trim()
         .replace(/\s+/g, ' ')
@@ -4983,15 +3895,13 @@ async function doextcmd() {
         game.context.move = 0;
         return;
     }
-    await runExtendedCommand(
-        completeExtendedCommand(normalizedCommand) || normalizedCommand,
-    );
+    await runExtendedCommand(completeExtendedCommand(normalizedCommand) || normalizedCommand);
 }
-
 function wizardPositionDescription(x, y) {
     if (x === game.u?.ux && y === game.u?.uy) {
-        const polymorphName = heroIsPolymorphed(game)
-            ? MONSTER_NAME[game.u?.umonnum] : '';
+        const species = game.u.umonnum;
+        const polymorphName = heroIsPolymorphed(game) && species !== undefined
+            ? MONSTER_NAME[species] : '';
         const race = game.urace?.noun || game.urace?.name || 'human';
         const role = game.urole?.name;
         const roleName = typeof role === 'string' ? role
@@ -5003,78 +3913,97 @@ function wizardPositionDescription(x, y) {
         return `${form} called ${game.plname || 'player'}${punishment}`;
     }
     const loc = game.level?.at(x, y);
-    if (!loc) return 'unexplored area';
-    if (loc.typ === TREE && loc.remembered_glyph) return 'tree';
-    if (!loc.remembered_glyph && !cansee(x, y)) return 'unexplored area';
+    if (!loc)
+        return 'unexplored area';
+    if (loc.typ === TREE && loc.remembered_glyph)
+        return 'tree';
+    if (!loc.remembered_glyph && !cansee(x, y))
+        return 'unexplored area';
     // C pager.c:do_screen_description() describes the displayed glyph, not
     // the terrain below it.  A visible (or still remembered) pile therefore
     // owns farlook before the room/corridor fallback.
     const object = game.level?.objects?.[x]?.[y]?.[0];
     if (object && (cansee(x, y)
-        || loc.remembered_glyph?.kind === 'object'))
+        || loc.remembered_glyph?.kind === 'object')) {
+        observeDistantObjectForNaming(object);
         return floorObjectDescription(object);
+    }
     return farlookLocationDescription(x, y) || 'unexplored area';
 }
-
 function roomAtPosition(x, y) {
     const roomno = game.level?.at(x, y)?.roomno ?? 0;
     if (roomno >= ROOMOFFSET)
         return roomForRoomno(game.level, roomno);
     // Special-level flips move the room rectangle with its entities; older
     // map cells may not yet carry the derived roomno projection.
-    return game.level?.rooms?.find(room => room
+    return game.level?.rooms?.find((room) => isRoom(room)
         && x >= room.lx && x <= room.hx
         && y >= room.ly && y <= room.hy) || null;
 }
-
-export async function askTeleportDestination() {
+// C teleport.c:control_mon_tele() and the shared getpos() input prelude.
+export async function askMonsterTeleportDestination(monster, start) {
+    await plineWithContinuation(`Teleport ${monsterName(monster, {
+        article: 'your', suppressIt: true,
+    })} @ <${monster.mx},${monster.my}> where?`);
+    const goal = `where to teleport ${monsterName(monster, {
+        article: 'your', suppressIt: true,
+    })}`;
     const firstUse = shouldShowGetposTip();
-    if (firstUse) {
-        await pline('Where do you want to be teleported?');
+    if (firstUse)
         await showGetposTip();
-    }
-
-    game._travelTarget = null;
+    if (game.flags.verbose)
+        await plineWithContinuation("(For instructions type a '?')");
+    if (firstUse)
+        await plineWithContinuation(`Move cursor to ${goal}:`);
     const destination = await selectMapPosition({
-        start: { x: game.u.ux, y: game.u.uy },
-        prompt: firstUse
-            ? (game.flags?.verbose
-                ? "(For instructions type a '?')  Move cursor to the desired position:"
-                : 'Move cursor to the desired position:')
-            : (game.flags?.verbose
-                ? "Where do you want to be teleported?  (For instructions type a '?')"
-                : 'Where do you want to be teleported?'),
+        start, prompt: game._pending_message, goal,
+        describe: wizardPositionDescription,
+    });
+    game._retained_message = game._pending_message;
+    game._pending_message = '';
+    return destination;
+}
+export async function askTeleportDestination({ onPrompt = null } = {}) {
+    const subject = game.u.usteed
+        ? `you and ${monsterName(game.u.usteed)}` : 'you';
+    await plineWithContinuation(`Where do ${subject} want to be teleported?`);
+    await onPrompt?.();
+    const firstUse = shouldShowGetposTip();
+    if (firstUse)
+        await showGetposTip();
+    if (game.flags.verbose)
+        await plineWithContinuation("(For instructions type a '?')");
+    if (firstUse)
+        await plineWithContinuation('Move cursor to the desired position:');
+    const target = game._travelTarget;
+    const destination = await selectMapPosition({
+        start: target && isok(target.x, target.y)
+            ? { ...target } : { x: game.u.ux, y: game.u.uy },
+        prompt: game._pending_message,
         goal: 'the desired position',
         describe: wizardPositionDescription,
     });
-    return { destination, editorOpened: true };
+    game._retained_message = game._pending_message;
+    game._pending_message = '';
+    return destination;
 }
-
 // C refs: cmd.c dotelecmd(), teleport.c dotele()/teleds(), getpos.c getpos(),
 // and priest.c intemple().  A successful Wizard position teleport returns
 // ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
 // the destination room separately owns entry effects after relocation.
 async function wizTeleportPosition() {
-    const choice = await askTeleportDestination();
-    if (!choice.destination) {
-        if (!choice.editorOpened) {
-            game.context.move = 0;
-            return;
-        }
+    let destination = await askTeleportDestination();
+    if (!destination) {
         // dotele(TRUE) still reaches morehungry(100) and returns a timed
         // command when scrolltele()'s controlled getpos was cancelled.
-        game.u.uhunger = (game.u.uhunger ?? 900) - 100;
+        await spendHeroNutrition(100);
+        if (game.program_state.gameover)
+            return;
         game.context.move = 1;
         return;
     }
-
-    // getpos removes its auto-description from the logical topline while
-    // leaving the painted text on tty.  Destination decor can consequently
-    // append beside it before the floor-pile window opens.
-    game._retained_message = game._pending_message;
-    game._pending_message = '';
-    let destination = { ...choice.destination };
-    if (!heroTeleportDestinationOk(destination.x, destination.y)) {
+    const acceptedChoice = heroTeleportDestinationOk(destination.x, destination.y);
+    if (!acceptedChoice) {
         // teleport.c:scrolltele() rejects the controlled location before
         // entering safe_teleds().  Keep "Sorry..." pending while the random
         // selector and teleds() update the map; a destination floor pager can
@@ -5082,63 +4011,26 @@ async function wizTeleportPosition() {
         await pline('Sorry...');
         destination = safeTeleportDestination();
         if (!destination) {
-            game.u.uhunger = (game.u.uhunger ?? 900) - 100;
+            await spendHeroNutrition(100);
+            if (game.program_state.gameover)
+                return;
             game.context.move = 1;
             return;
         }
     }
-
-    const movement = moveHeroByTeleport(destination.x, destination.y);
-    newsym(movement.oldx, movement.oldy);
-    vision_reset();
-    vision_recalc(0);
-    newsym(destination.x, destination.y);
-    // teleport.c:dotele(): successful controlled position teleportation,
-    // including Wizard ^T, costs 100 nutrition after relocation.
-    game.u.uhunger = (game.u.uhunger ?? 900) - 100;
-    await docrt();
-    await bot();
-
-    if (game.flags?.verbose) {
-        // teleds() emits this before spoteffects()->check_special_room().
-        // A room-entry message can therefore suspend on this pending line.
-        await plineWithContinuation(
-            'You materialize in a different location!',
-        );
-    }
-    await checkSpecialRoom();
-    let destinationFeature = '';
-    if (destination.x === game.level?.upstair?.x
-        && destination.y === game.level?.upstair?.y)
-        destinationFeature = 'There is a staircase up here.';
-    else if (destination.x === game.level?.dnstair?.x
-        && destination.y === game.level?.dnstair?.y)
-        destinationFeature = 'There is a staircase down here.';
-    else if (game.level?.at?.(destination.x, destination.y)?.typ === FOUNTAIN)
-        destinationFeature = 'There is a fountain here.';
-    const destinationPile = game.level?.objects?.[destination.x]?.[
-        destination.y
-    ] || [];
-    if (destinationPile.length) {
-        // safe_teleds()->spoteffects()->pickup(1) shares the same blind
-        // look_here transaction as level arrival: tactile topline, temporary
-        // pile window, then notake() rejects forms which cannot carry objects.
-        if (game.blind) {
-            await plineWithContinuation(
-                'You try to feel what is lying here on the floor.',
-            );
-        }
-        await showFloorPile(destinationPile, false, destinationFeature);
-        if (heroCannotTake(game)) {
-            await pline(
-                'You are physically incapable of picking anything up.',
-            );
-        }
-    } else if (destinationFeature)
-        await pline(destinationFeature);
+    const movement = await moveHeroByTeleport(destination.x, destination.y);
+    await finishTeleportArrival(movement);
+    if (game.program_state.gameover)
+        return;
+    if (acceptedChoice && game.u.ux === game._travelTarget?.x
+        && game.u.uy === game._travelTarget?.y)
+        game._travelTarget = null;
+    // C dotele() spends nutrition only after teleds() finishes its effects.
+    await spendHeroNutrition(100);
+    if (game.program_state.gameover)
+        return;
     game.context.move = 1;
 }
-
 function travelLocationDescription(x, y) {
     if (x === game.level?.dnstair?.x && y === game.level?.dnstair?.y) {
         return onQuestStart(game) && !okToQuest(game)
@@ -5148,10 +4040,10 @@ function travelLocationDescription(x, y) {
         return 'staircase up';
     return '';
 }
-
 function travelPositionDescription(x, y) {
     const description = wizardPositionDescription(x, y);
-    if (x === game.u?.ux && y === game.u?.uy) return description;
+    if (x === game.u?.ux && y === game.u?.uy)
+        return description;
     const loc = game.level?.at?.(x, y);
     // hack.c:is_valid_travelpt() rejects unexplored stone before searching.
     const unexploredProjection = description === 'unexplored area'
@@ -5159,14 +4051,10 @@ function travelPositionDescription(x, y) {
     const valid = !unexploredProjection && isValidTravelTarget(x, y);
     return valid ? description : `${description} (no travel path)`;
 }
-
-function farlookLocationDescription(x, y) {
-    const monster = game.level?.monsters?.find(candidate =>
-        candidate.mx === x && candidate.my === y
-        && (candidate.mhp ?? 1) > 0);
-    if (monster && canProjectMonster(monster, x, y)) {
-        const hallucinating = !!(game.u?.hallucinating
-            || (game.u?.hallucinationTurns ?? 0) > 0);
+export function farlookLocationDescription(x, y) {
+    const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
+    if (monster && glyphAt(x, y)?.kind === 'monster') {
+        const hallucinating = heroIsHallucinating(game);
         const prefix = hallucinating ? ''
             : monster.mtame ? 'tame '
                 : monster.mpeaceful ? 'peaceful ' : '';
@@ -5181,15 +4069,19 @@ function farlookLocationDescription(x, y) {
             else if ((monster.mstrategy ?? 0) & STRAT_WAITMASK)
                 condition = ', meditating';
         }
-        return `${prefix}${name}${condition}`;
+        const tail = monster.mx !== x || monster.my !== y;
+        return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}`;
     }
-
-    const trap = game.level?.traps?.find(candidate =>
-        candidate.tx === x && candidate.ty === y && candidate.tseen);
-    if (trap?.ttyp === DART_TRAP) return 'dart trap';
-    if (trap?.ttyp === BEAR_TRAP) return 'bear trap';
+    const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y && candidate.tseen);
+    if (trap?.ttyp === DART_TRAP)
+        return 'dart trap';
+    if (trap?.ttyp === BEAR_TRAP)
+        return 'bear trap';
     const loc = game.level?.at(x, y);
-    if (!loc) return '';
+    if (!loc)
+        return '';
+    if (loc.disp_glyph?.kind === 'nothing')
+        return 'dark part of a room';
     // pager.c:do_screen_description() recognizes the concrete S_cloud glyph
     // before the generic '#' ambiguity list.  Moving elemental bubbles can
     // therefore be "fog/vapor cloud" even though their tty character is the
@@ -5207,190 +4099,46 @@ function farlookLocationDescription(x, y) {
     // first leaks topology and produces the wrong automatic getpos label.
     if (!cansee(x, y) && loc.remembered_glyph?.kind === 'terrain') {
         const remembered = loc.remembered_glyph.ch;
-        if (remembered === ' ') return 'stone';
-        if (remembered === '#') return 'corridor';
-        if (remembered === '.') return 'floor of a room';
-        if (remembered === '<') return 'staircase up';
+        if (remembered === ' ')
+            return 'stone';
+        if (remembered === '#')
+            return 'corridor';
+        if (remembered === '.')
+            return 'floor of a room';
+        if (remembered === '<')
+            return 'staircase up';
         if (remembered === '>')
             return travelLocationDescription(x, y) || 'staircase down';
-        if (remembered === '{') return 'fountain';
+        if (remembered === '{')
+            return 'fountain';
         if (remembered === '+') {
             return loc.typ === DOOR && loc.doormask === D_ISOPEN
                 ? 'open door' : 'closed door';
         }
     }
-    if (loc.typ === FOUNTAIN) return 'fountain';
-    if (loc.typ === SINK) return 'sink';
-    if (loc.typ === MOAT) return 'moat';
-    if (loc.typ === STONE) return 'stone';
-    if (IS_WALL(loc.typ)) return 'wall';
+    if (loc.typ === FOUNTAIN)
+        return 'fountain';
+    if (loc.typ === SINK)
+        return 'sink';
+    if (loc.typ === MOAT)
+        return 'moat';
+    if (loc.typ === STONE)
+        return 'stone';
+    if (IS_WALL(loc.typ))
+        return 'wall';
     if (loc.typ === DOOR)
         return loc.doormask === D_ISOPEN ? 'open door' : 'closed door';
-    if (loc.typ === ROOM) return 'floor of a room';
-    if (loc.typ === CORR) return 'corridor';
+    if (loc.typ === ROOM)
+        return 'floor of a room';
+    if (loc.typ === CORR)
+        return 'corridor';
     return travelLocationDescription(x, y);
 }
-
-function jumpPathCells(fromX, fromY, toX, toY) {
-    const dx = toX - fromX;
-    const dy = toY - fromY;
-    let cx = fromX;
-    let cy = fromY;
-    const ax = Math.abs(dx);
-    const ay = Math.abs(dy);
-    let error = 0;
-    const sx = dx < 0 ? -1 : 1;
-    const sy = dy < 0 ? -1 : 1;
-    const cells = [];
-    const steps = Math.max(ax, ay);
-    for (let index = 0; index < steps; index++) {
-        if (ax < ay) {
-            cy += sy;
-            error += ax << 1;
-            if (error > ay) {
-                cx += sx;
-                error -= ay << 1;
-            }
-        } else {
-            cx += sx;
-            error += ay << 1;
-            if (error > ax) {
-                cy += sy;
-                error -= ax << 1;
-            }
-        }
-        cells.push({ x: cx, y: cy });
-    }
-    return cells;
-}
-
-function physicalJumpTargetValid(x, y) {
-    const loc = game.level?.at(x, y);
-    if (!loc || (!IS_ROOM(loc.typ) && loc.typ !== CORR)) return false;
-    const dx = x - game.u.ux;
-    const dy = y - game.u.uy;
-    // C apply.c:is_valid_jump_pos().  The Knight's intrinsic jump follows
-    // the chess-knight geometry unless an extrinsic source overrides it.
-    if (game.urole?.key === 'knight'
-        && !game.u?.extrinsicJumping && dx * dx + dy * dy !== 5) return false;
-    if (dx * dx + dy * dy > 9 || !cansee(x, y)) return false;
-
-    // dothrow.c:walk_path() uses this strict-inequality Bresenham walk for
-    // every intermediate square.  apply.c:check_jump() rejects solid rock,
-    // walls, closed doors, and ordinary boulders even when the landing cell
-    // itself is an accessible floor square.
-    for (const { x: cx, y: cy } of jumpPathCells(
-        game.u.ux, game.u.uy, x, y,
-    )) {
-        const pathLoc = game.level?.at(cx, cy);
-        if (!pathLoc || pathLoc.typ === STONE || IS_WALL(pathLoc.typ)
-            || (pathLoc.typ === DOOR
-                && (pathLoc.doormask & (D_CLOSED | D_LOCKED)))
-            || (game.level?.objects?.[cx]?.[cy] || [])
-                .some(object => object.otyp === BOULDER)) return false;
-    }
-    return true;
-}
-
-function lastJumpHighlight() {
-    let last = null;
-    // The tty's selection repaint is observed row-first at the input
-    // boundary even though apply.c probes candidates in dx/dy order.  The
-    // captured cursor is left just after the lowest-row valid glyph.
-    for (let dy = -4; dy <= 4; dy++) {
-        for (let dx = -4; dx <= 4; dx++) {
-            const x = game.u.ux + dx, y = game.u.uy + dy;
-            if ((dx || dy) && physicalJumpTargetValid(x, y)) last = { x, y };
-        }
-    }
-    return last;
-}
-
-function jumpLocationDescription(x, y) {
-    // The shared getpos auto-description must apply visibility/memory before
-    // consulting raw terrain; otherwise it leaks an unseen wall and labels
-    // the hero's own square as ordinary floor.
-    const description = wizardPositionDescription(x, y);
-    return physicalJumpTargetValid(x, y)
-        ? description : `${description} (invalid target)`;
-}
-
-// C refs: apply.c:dojump()/jump(), getpos.c:getpos(), and
-// dat/nhcore.lua:show_getpos_tip().  Jump shares getpos's one-time tutorial
-// with travel and controlled teleport, but owns its own validity predicate.
+// C apply.c:dojump(): the physical command shares the spell's jump owner.
 async function dojump() {
-    const firstUse = shouldShowGetposTip();
-    if (firstUse) {
-        await pline('Where do you want to jump?');
-        await showGetposTip();
-    }
-
-    const initialHighlight = lastJumpHighlight();
-    const cursor = await selectMapPosition({
-        start: { x: game.u.ux, y: game.u.uy },
-        prompt: firstUse
-            ? 'Move cursor to the desired position:'
-            : (game.flags?.verbose
-                ? "Where do you want to jump?  (For instructions type a '?')"
-                : 'Where do you want to jump?'),
-        goal: 'the desired position',
-        describe: jumpLocationDescription,
-        afterPaint: (_cursor, firstPaint) => {
-            if (firstUse || !firstPaint || !initialHighlight) return;
-            // tmp_at() paints each highlighted destination in dx/dy order;
-            // tty's cursor remains just after the final glyph until the first
-            // getpos input causes curs() to restore the selection cursor.
-            game.nhDisplay?.setCursor(
-                initialHighlight.x, initialHighlight.y + 1,
-            );
-        },
-    });
-    if (!cursor) {
-        game.context.move = 0;
-        return;
-    }
-
-    if (!physicalJumpTargetValid(cursor.x, cursor.y)) {
-        const dx = cursor.x - game.u.ux;
-        const dy = cursor.y - game.u.uy;
-        await pline(dx * dx + dy * dy === 5
-            ? 'There is an obstacle preventing that jump.'
-            : 'Illegal move!');
-        game.context.move = 0;
-        return;
-    }
-
-    const oldx = game.u.ux, oldy = game.u.uy;
-    game.u.ux0 = oldx;
-    game.u.uy0 = oldy;
-    const jumpPath = jumpPathCells(oldx, oldy, cursor.x, cursor.y);
-    let previousX = oldx;
-    let previousY = oldy;
-    for (let index = 0; index < jumpPath.length; index++) {
-        const cell = jumpPath[index];
-        game.u.ux = cell.x;
-        game.u.uy = cell.y;
-        newsym(previousX, previousY);
-        vision_recalc(1);
-        newsym(cell.x, cell.y);
-        if (index < jumpPath.length - 1) {
-            await flush_screen(1);
-            await game.animationFrame?.();
-        }
-        previousX = cell.x;
-        previousY = cell.y;
-    }
-    // apply.c:jump() installs nomul(-1) before paying the hunger cost.  If
-    // this action also creates a new global turn, that turn advances multi to
-    // zero immediately; if intrinsic speed leaves another hero ration, the
-    // landing state consumes it before another command can be read.
-    game._helplessTurns = 1;
-    game._helplessReason = 'jumping around';
-    game._helplessDoneMessage = '';
-    game.u.uhunger = (game.u.uhunger ?? 900) - rnd(25);
-    game.context.move = 1;
+    const result = await jumpHero(0);
+    game.context.move = result.spentTime ? 1 : 0;
 }
-
 function verboseFarlookDescription(x, y) {
     const loc = game.level?.at(x, y);
     if (loc?.typ === CORR)
@@ -5411,7 +4159,6 @@ function verboseFarlookDescription(x, y) {
     }
     return farlookLocationDescription(x, y);
 }
-
 // C refs: cmd.c dotravel(), getpos.c getpos(), hack.c handle_tip(), and
 // dat/nhcore.lua show_getpos_tip().  The tty message window and the Lua text
 // window own distinct input boundaries; after the tutorial, getpos retains
@@ -5422,7 +4169,6 @@ async function dotravel() {
         await pline('Where do you want to travel to?');
         await showGetposTip();
     }
-
     const cursor = await selectMapPosition({
         start: game._travelTarget
             ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
@@ -5438,7 +4184,6 @@ async function dotravel() {
         game.context.move = 0;
         return;
     }
-
     // getpos() leaves its painted location description on the physical tty
     // after the pick key, but removes it from the logical topline transaction.
     // Silent travel can retain that row; a new attack must replace rather than
@@ -5462,9 +4207,13 @@ async function dotravel() {
     }
     const finalStep = game.u.ux + direction.dx === state.targetX
         && game.u.uy + direction.dy === state.targetY;
-    if (finalStep) game._travelTarget = null;
+    if (finalStep)
+        game._travelTarget = null;
     const moved = await domove(direction.dx, direction.dy);
-    if (moved) await captureRunmodeDelay(game, !!game._runState);
+    if (game.program_state.gameover)
+        return;
+    if (moved)
+        await captureRunmodeDelay(game, !!game._runState);
     game.context.travel1 = false;
     // The target-selection command itself is time-consuming.  A blocked
     // first step stops travel but still reaches the monster/global turn.
@@ -5474,7 +4223,6 @@ async function dotravel() {
     if (!moved || (game.u.ux === state.targetX && game.u.uy === state.targetY))
         stopRun();
 }
-
 // C refs: pager.c:dowhatis(), getpos.c:getpos(), pager.c:do_screen_description().
 // Quick far-look is a zero-time modal command.  It shares getpos's cached
 // cursor with travel, paints a short automatic description after movement,
@@ -5485,7 +4233,6 @@ async function doFarlook() {
         await pline('Pick a monster, object or location.');
         await showGetposTip();
     }
-
     const cursor = await selectMapPosition({
         start: game._travelTarget
             ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
@@ -5507,33 +4254,31 @@ async function doFarlook() {
     await plineWithContinuation(verboseFarlookDescription(cursor.x, cursor.y));
     game.context.move = 0;
 }
-
 async function restoreHelpMap() {
     game._pending_message = '';
     game._retained_message = '';
     game.nhDisplay?.clearScreen();
-    await docrtRecalc();
+    await docrt();
     await bot();
     await flush_screen(1);
 }
-
 // C pager.c:do_look(0).  The initial menu is a true PICK_ONE overlay; choosing
 // the map entry destroys it, restores the map, then hands input ownership to
 // the shared getpos/farlook transaction above.
 async function dowhatis() {
     const entries = [
-        '/ - something on the map',
-        "i - something you're carrying",
-        '? - something else (by symbol or name)',
+        { key: '/', text: 'something on the map' },
+        { key: 'i', text: "something you're carrying" },
+        { key: '?', text: 'something else (by symbol or name)' },
         '',
-        'm - nearby monsters',
-        'M - all monsters shown on map',
-        'o - nearby objects',
-        'O - all objects shown on map',
-        't - nearby traps',
-        'T - all seen or remembered traps',
-        'e - nearby engravings',
-        'E - all seen or remembered engravings',
+        { key: 'm', text: 'nearby monsters' },
+        { key: 'M', text: 'all monsters shown on map' },
+        { key: 'o', text: 'nearby objects' },
+        { key: 'O', text: 'all objects shown on map' },
+        { key: 't', text: 'nearby traps' },
+        { key: 'T', text: 'all seen or remembered traps' },
+        { key: 'e', text: 'nearby engravings' },
+        { key: 'E', text: 'all seen or remembered engravings' },
     ];
     const validKeys = [
         27, 32, 10, 13,
@@ -5551,26 +4296,25 @@ async function dowhatis() {
     }
     game.context.move = 0;
 }
-
 // C pager.c:dohelp().
 async function dohelp() {
     const entries = [
-        'a - About NetHack (version information).',
-        'b - Long description of the game and commands.',
-        'c - List of game commands.',
-        'd - Concise history of NetHack.',
-        'e - Info on a character in the game display.',
-        'f - Info on what a given key does.',
-        'g - List of game options.',
-        'h - Longer explanation of game options.',
-        "i - Using the '#optionsfull' or 'm O' command to set options.",
-        'j - Full list of keyboard commands.',
-        'k - List of extended commands.',
-        'l - List menu control keys.',
-        "m - Description of NetHack's command line.",
-        'n - The NetHack license.',
-        'o - Support information.',
-        'p - List of wizard-mode commands.',
+        { key: 'a', text: 'About NetHack (version information).' },
+        { key: 'b', text: 'Long description of the game and commands.' },
+        { key: 'c', text: 'List of game commands.' },
+        { key: 'd', text: 'Concise history of NetHack.' },
+        { key: 'e', text: 'Info on a character in the game display.' },
+        { key: 'f', text: 'Info on what a given key does.' },
+        { key: 'g', text: 'List of game options.' },
+        { key: 'h', text: 'Longer explanation of game options.' },
+        { key: 'i', text: "Using the '#optionsfull' or 'm O' command to set options." },
+        { key: 'j', text: 'Full list of keyboard commands.' },
+        { key: 'k', text: 'List of extended commands.' },
+        { key: 'l', text: 'List menu control keys.' },
+        { key: 'm', text: "Description of NetHack's command line." },
+        { key: 'n', text: 'The NetHack license.' },
+        { key: 'o', text: 'Support information.' },
+        { key: 'p', text: 'List of wizard-mode commands.' },
     ];
     const validKeys = [
         27, 32, 10, 13,
@@ -5588,7 +4332,6 @@ async function dohelp() {
     }
     game.context.move = 0;
 }
-
 async function promptYnq(message, defaultAnswer = 'q') {
     game._suppressMessagesUntilInput = false;
     await pline(message);
@@ -5598,20 +4341,20 @@ async function promptYnq(message, defaultAnswer = 'q') {
         const key = await nhgetch();
         const answer = String.fromCharCode(key).toLowerCase();
         if (!['y', 'n', 'q'].includes(answer)
-            && ![27, 32, 10, 13].includes(key)) continue;
+            && ![27, 32, 10, 13].includes(key))
+            continue;
         game._pending_message = '';
         game._retained_message = '';
-        return ['y', 'n', 'q'].includes(answer) ? answer : defaultAnswer;
+        return answer === 'y' || answer === 'n' || answer === 'q'
+            ? answer : defaultAnswer;
     }
 }
-
 async function doputon() {
-    const accessories = (game.inventory || []).filter(object =>
-        (object.class === 'Rings' || object.oclass === 4
-            || object.class === 'Amulets' || object.oclass === 5
-            || object.otyp === RIN_CONFLICT
-            || object.otyp === LENSES
-            || object.otyp === BLINDFOLD || object.otyp === TOWEL)
+    const accessories = (game.inventory || []).filter(object => (object.class === 'Rings' || object.oclass === 4
+        || object.class === 'Amulets' || object.oclass === 5
+        || object.otyp === RIN_CONFLICT
+        || object.otyp === LENSES
+        || object.otyp === BLINDFOLD || object.otyp === TOWEL)
         && object !== game.uright && object !== game.uleft
         && object !== game.uamul);
     if (!accessories.length) {
@@ -5619,14 +4362,10 @@ async function doputon() {
         game.context.move = 0;
         return;
     }
-
     const letters = accessories.map(object => object.invlet).join('');
-    const selection = String.fromCharCode(await promptKey(
-        `What do you want to put on? [${letters} or ?*] `,
-    ));
+    const selection = String.fromCharCode(await promptKey(`What do you want to put on? [${letters} or ?*] `));
     game._pending_message = '';
-    const inventoryObject = (game.inventory || []).find(candidate =>
-        candidate.invlet === selection);
+    const inventoryObject = (game.inventory || []).find(candidate => candidate.invlet === selection);
     const object = accessories.find(candidate => candidate === inventoryObject);
     // do_wear.c:equip_ok() returns GETOBJ_DOWNPLAY for armor selected by P:
     // it is omitted from the suggested-letter prompt but a direct inventory
@@ -5641,10 +4380,8 @@ async function doputon() {
         game.context.move = 0;
         return;
     }
-
     await putOnAccessoryObject(object);
 }
-
 // do_wear.c:accessory_or_armor_on() is shared by both W and P.  getobj()
 // downplays the other command's class in its compact prompt but still accepts
 // a directly typed inventory letter and routes it through this same owner.
@@ -5654,142 +4391,59 @@ async function putOnAccessoryObject(object) {
         game.context.move = 0;
         return;
     }
-
     if (isEyewear(object)) {
         const worn = await wearEyewear(object);
         game.context.move = worn ? 1 : 0;
         return;
     }
-
     if (object.oclass === 5 || object.class === 'Amulets') {
         if (game.uamul) {
             await pline('You are already wearing an amulet.');
             game.context.move = 0;
             return;
         }
-        const wasStrangled = heroIsStrangled(game);
-        wearHeroAccessory(object, 'uamul', game);
-        // do_wear.c:Amulet_on(AMULET_OF_RESTFUL_SLEEP).
-        if (object.otyp === 204) {
-            const timeout = rnd(98) + 2;
-            const oldTimeout = game.u?._sleepyTimeout || 0;
-            if (!oldTimeout || timeout < oldTimeout)
-                game.u._sleepyTimeout = timeout;
-        }
-        // do_wear.c:Amulet_on() -> on_msg() -> prinv().  Let the shared
-        // inventory formatter own BUC observation and the worn suffix.
-        await pline(`${object.invlet} - ${inventoryItemDescription(object)}.`);
-        if (object.otyp === AMULET_OF_STRANGULATION
-            && !wasStrangled && heroIsStrangled(game))
-            await plineWithContinuation('It constricts your throat!');
+        await wearHeroAccessory(object, 'uamul', game);
         game.context.move = 1;
         return;
     }
-
     if ((object.oclass === 4 || object.class === 'Rings')
         && heroHasNoLimbs(game)) {
         await pline('You cannot make the ring stick to your body.');
         game.context.move = 0;
         return;
     }
-
     let hand;
     if (!game.uleft && !game.uright) {
-        const finger = String.fromCharCode(await promptKey(
-            'Which ring-finger, Right or Left? [rl] ',
-        )).toLowerCase();
+        const finger = String.fromCharCode(await promptKey('Which ring-finger, Right or Left? [rl] ')).toLowerCase();
         if (finger !== 'r' && finger !== 'l') {
             game.context.move = 0;
             return;
         }
         hand = finger === 'r' ? 'right' : 'left';
-    } else {
+    }
+    else {
         hand = game.uright ? 'left' : 'right';
     }
-
     const ringSlot = hand === 'right' ? 'uright' : 'uleft';
-    wearHeroAccessory(object, ringSlot, game);
-    // Ring_on() uses the same prinv path as amulets after setworn().
-    await pline(`${object.invlet} - ${inventoryItemDescription(object)}.`);
+    await wearHeroAccessory(object, ringSlot, game);
+    // Sink effects can remove the ring inside Ring_on().
+    if (game.uleft === object || game.uright === object) {
+        observeObjectForNaming(object);
+        await pline(`${object.invlet} - ${inventoryItemDescription(object)}.`);
+    }
     game.context.move = 1;
 }
-
-function armorRemovalDescription(object) {
-    const buc = object.buc || (object.blessed ? 'blessed'
-        : object.cursed ? 'cursed' : 'uncursed');
-    const enchantment = Number.isInteger(object.enchantment)
-        ? object.enchantment : Number.isInteger(object.spe) ? object.spe : null;
-    const bonus = enchantment === null ? ''
-        : `${enchantment >= 0 ? '+' : ''}${enchantment} `;
-    // objnam.c xname_flags(): implicit_uncursed normally retains the word for
-    // armor/rings, but Clerics intentionally omit it even when bknown.
-    const bucPrefix = buc === 'uncursed' && game.urole?.key === 'priest'
-        ? '' : `${buc} `;
-    return `${bucPrefix}${bonus}${object.name}`;
-}
-
 // C ref: objnam.c armor_simple_name() and category helpers.  Delayed armor
 // nomovemsg deliberately uses a short category noun, not xname()/doname().
-function delayedArmorRemovalSimpleName(object) {
-    const slot = armorSlotFor(object?.otyp);
-    const actualName = OBJECT_NAMES[object?.otyp] || object?.name || 'armor';
-    const description = OBJECT_DESCRIPTIONS[object?.otyp] || '';
-    const dknown = object?.dknown !== false;
-    const typeKnown = game._knownObjectTypes?.has(object?.otyp);
-
-    if (slot === 'uarm') {
-        if (/ dragon scale mail$/i.test(actualName)) return 'dragon mail';
-        if (/ dragon scales$/i.test(actualName)) return 'dragon scales';
-        if (/ mail$/i.test(actualName)) return 'mail';
-        if (/ jacket$/i.test(actualName)) return 'jacket';
-        return 'suit';
-    }
-    if (slot === 'uarmc') {
-        if (actualName === 'robe') return 'robe';
-        if (actualName === 'mummy wrapping') return 'wrapping';
-        if (actualName === 'alchemy smock')
-            return typeKnown && dknown ? 'smock' : 'apron';
-        return 'cloak';
-    }
-    if (slot === 'uarmh') {
-        const softHeadgear = new Set([
-            'elven leather helm', 'fedora', 'cornuthaum', 'dunce cap',
-        ]);
-        return softHeadgear.has(actualName) ? 'hat' : 'helm';
-    }
-    if (slot === 'uarmg') {
-        const perceivedName = typeKnown ? actualName : description;
-        return dknown && /gauntlets/i.test(perceivedName)
-            ? 'gauntlets' : 'gloves';
-    }
-    if (slot === 'uarmf') {
-        return dknown
-            && (/shoes/i.test(description)
-                || (typeKnown && /shoes/i.test(actualName)))
-            ? 'shoes' : 'boots';
-    }
-    if (slot === 'uarms') {
-        if (object?.otyp === SHIELD_OF_REFLECTION)
-            return dknown ? 'silver shield' : 'smooth shield';
-        return 'shield';
-    }
-    if (slot === 'uarmu') return 'shirt';
-    return actualName;
-}
-
 // C ref: do_wear.c Armor_off()/off_msg().  Delayed removal calls this from
 // allmain only after negative multi has reached zero; zero-delay armor can use
 // the same state owner immediately.
 export async function finishArmorRemoval(object, { silent = false } = {}) {
-    const wasShining = object.lamplit && artifactEmitsLight(object);
-    removeHeroArmor(object, game);
-    if (wasShining && !object.lamplit && !game.blind && !game.u.blindTurns)
-        await plineWithContinuation(equipmentLightMessage(object, false));
-    if (silent || game.flags?.verbose === false) return '';
-    const description = armorRemovalDescription(object);
-    return `You were wearing ${indefiniteArticle(description)} ${description}.`;
+    await removeHeroArmor(object, game);
+    if (silent || game.flags?.verbose === false)
+        return '';
+    return armorOffMessage(object, game);
 }
-
 // C do_wear.c:dotakeoff()/doremring() share armor_or_accessory_off().
 // T suggests armor and R suggests accessories; either accepts the other kind.
 async function removeWornItem(action) {
@@ -5801,7 +4455,6 @@ async function removeWornItem(action) {
         game.context.move = 0;
         return;
     }
-
     let object;
     let inventoryPrompt = null;
     const preferred = worn.filter(candidate => action === 'remove'
@@ -5809,7 +4462,8 @@ async function removeWornItem(action) {
         : candidate.class === 'Armor' || candidate.oclass === 3);
     if (preferred.length === 1) {
         [object] = preferred;
-    } else {
+    }
+    else {
         const letters = preferred.map(candidate => candidate.invlet).join('');
         const prompt = `What do you want to ${action}? [${letters} or ?*] `;
         inventoryPrompt = prompt;
@@ -5824,7 +4478,6 @@ async function removeWornItem(action) {
         game.context.move = 0;
         return;
     }
-
     if (object.cursed) {
         object.bknown = true;
         const plural = /gloves|boots|shoes|lenses/.test(object.name || '')
@@ -5834,26 +4487,22 @@ async function removeWornItem(action) {
         game.context.move = 0;
         return;
     }
-
     if (object === game.ublindf) {
         game._pending_message = '';
         const removed = await removeEyewear(object);
+        if (game.program_state.gameover)
+            return;
         game.context.move = removed ? 1 : 0;
         return;
     }
-
     if (object === game.uamul || object === game.uleft
         || object === game.uright) {
         const wasStrangled = object.otyp === AMULET_OF_STRANGULATION
             && heroIsStrangled(game);
-        removeHeroAccessory(object, game);
+        await removeHeroAccessory(object, game);
         findArmorClass(game);
         if (game.flags?.verbose !== false) {
-            const description = armorRemovalDescription(object);
-            await plineWithContinuation(
-                `You were wearing ${indefiniteArticle(description)} ${
-                    description}.`,
-            );
+            await plineWithContinuation(armorOffMessage(object, game));
         }
         if (wasStrangled) {
             await plineWithContinuation(heroIsBreathless(game)
@@ -5864,10 +4513,10 @@ async function removeWornItem(action) {
         game.context.move = 1;
         return;
     }
-
     const delay = OBJECT_DELAY[object.otyp] ?? 0;
     const isArmor = object.class === 'Armor' || object.oclass === 3;
     if (isArmor && delay > 0) {
+        endVoluntaryMultiTurn(game);
         game._delayedAction = {
             kind: 'remove',
             object,
@@ -5875,25 +4524,21 @@ async function removeWornItem(action) {
             ready: false,
             // C do_wear.c installs this as nomovemsg.  allmain.c:unmul()
             // prints it before invoking Armor_off() through afternmv.
-            finishMessage: `You finish taking off your ${
-                delayedArmorRemovalSimpleName(object)
-            }.`,
+            finishMessage: `You finish taking off your ${armorSimpleName(object)}.`,
         };
         game.context.move = 1;
         return;
     }
-
     const previousArmorClass = game.u?.uac ?? 10;
-    const hero = game.u || {};
-    const otherDisplacementSource = (game.inventory || []).some(candidate =>
-        candidate !== object && candidate.worn
+    const hero = game.u;
+    const otherDisplacementSource = (game.inventory || []).some(candidate => candidate !== object && candidate.worn
         && candidate.otyp === CLOAK_OF_DISPLACEMENT)
         || (hero.displacedTurns ?? 0) > 0
         || !!hero.displacedIntrinsic
         || !!hero.intrinsicDisplacement;
     const canNoticeDisplacementChange = (!game.blind
-            && !hero.uswallow
-            && !(game.invisible || hero.invisible || hero.invis))
+        && !hero.uswallow
+        && !(game.invisible || hero.invisible || hero.invis))
         || !!(hero.unblindTelepathy || hero.blindTelepathy
             || hero.telepathy || hero.detectMonsters
             || game.detectMonsters);
@@ -5918,50 +4563,27 @@ async function removeWornItem(action) {
         await plineWithContinuation(removalMessage);
     game.context.move = 1;
 }
-
 async function putOnArmorObject(object) {
     if (object.worn) {
         await pline('You are already wearing that!');
         game.context.move = 0;
         return;
     }
-
-    const displacementWasActive = heroIsDisplaced(game);
-    const hero = game.u || (game.u = {});
-    const speedHadOtherExtrinsic = !!hero.veryFastFromArmor;
-    const speedHadTimedVeryFast = (hero.veryFastTurns ?? 0) > 0;
-    const speedHadIntrinsicFast = !!hero.fast;
-    const fumbleHadOtherSource = !!hero.fumbling
-        && (hero.fumblingTurns ?? 0) <= 0;
+    const hero = game.u;
+    // C accessory_or_armor_on(): armor leaves any held slot before setworn.
+    // Cursed armor does not weld to the hand.
+    await releaseWeaponSlots(object, game);
     wearHeroArmor(object, game);
-    if (object.otyp === CLOAK_OF_DISPLACEMENT)
-        object._displacementWasActive = displacementWasActive;
-    if (object.otyp === 166) { // SPEED_BOOTS
-        object._speedBootsHadOtherExtrinsic = speedHadOtherExtrinsic;
-        object._speedBootsHadTimedVeryFast = speedHadTimedVeryFast;
-        object._speedBootsHadIntrinsicFast = speedHadIntrinsicFast;
-        object._grantsVeryFastFromArmor = true;
-        // setworn() installs the oc_oprop immediately.  Boots_on() later
-        // identifies the boots and emits feedback; movement uses Very_fast
-        // during the intervening negative-multi turns.
-        hero.veryFastFromArmor = true;
-        hero.veryFast = true;
-    }
-    if (object.otyp === FUMBLE_BOOTS) {
-        object._fumbleBootsHadOtherSource = fumbleHadOtherSource;
-        // setworn() installs the boots' extrinsic property before the
-        // delayed Boots_on() callback adds its initial timeout.
-        hero.fumblingFromArmor = true;
-        hero.fumbling = true;
-    }
     // C do_wear.c installs the slot with setworn() now, but allmain.c does
     // not run find_ac() until the command's monster/global time has passed.
     // Mark that once-per-input boundary; identification and Armor_on()
     // extrinsics remain later afternmv effects.
     const delay = OBJECT_DELAY[object.otyp] ?? 0;
     game._armorClassDirty = true;
-    if (delay > 0) game._armorClassDirtyAfterDelayedFrame = true;
+    if (delay > 0)
+        game._armorClassDirtyAfterDelayedFrame = true;
     if (delay > 0) {
+        endVoluntaryMultiTurn(game);
         game._delayedAction = {
             kind: 'wear', object,
             // objects[].oc_delay advances through negative multi during
@@ -5970,83 +4592,90 @@ async function putOnArmorObject(object) {
             ready: false,
             finishMessage: 'You finish your dressing maneuver.',
         };
-    } else {
-        const effectMessages = applyArmorOnEffects(object, game);
+    }
+    else {
+        game.multi = 0;
+        hero.usleep = 0;
+        const effectMessages = await applyArmorOnEffects(object, game);
         const identifiesType = armorOnIdentifiesType(object, effectMessages)
             && !game._knownObjectTypes?.has(object.otyp);
         if (identifiesType) {
             recordObjectKnowledge(object.otyp);
-            exerciseAttribute(A_WIS, true);
+            await exerciseAttribute(A_WIS, true);
         }
         object.known = true;
         object._armorApplied = true;
-        const onMessage = `You are now wearing ${
-            floorObjectDescription(object)
-        }.`;
+        const onMessage = objectWearMessage(object);
         for (const message of effectMessages)
             await plineWithContinuation(message);
-        if (effectMessages.length)
-            await plineWithContinuation(onMessage);
-        else await pline(onMessage);
+        if (onMessage) {
+            if (effectMessages.length)
+                await plineWithContinuation(onMessage);
+            else
+                await pline(onMessage);
+        }
     }
     game.context.move = 1;
 }
-
 // C refs: wield.c:dowield(), ready_weapon(), invent.c:getobj().  The prompt
 // advertises weapons and weapon-tools but still permits the full inventory
 // through ?/*; '-' represents the synthetic empty-hands object.
 async function dowield(cannedInvlet = null) {
-    const weapons = (game.inventory || []).filter(object =>
-        object.class === 'Weapons' || object.oclass === 2
+    game.multi = 0;
+    if (heroHasNoHands(game) || heroIsVerySmall(game)) {
+        await pline("Don't be ridiculous!");
+        game.context.move = 0;
+        return;
+    }
+    const weapons = (game.inventory || []).filter(object => object.class === 'Weapons' || object.oclass === 2
         || (object.oclass === 6 && OBJECT_SUBTYPE[object.otyp] !== 0))
-        .sort((left, right) =>
-            String(left.invlet || '').localeCompare(
-                String(right.invlet || ''),
-            ));
+        .sort((left, right) => String(left.invlet || '').localeCompare(String(right.invlet || '')));
     const letters = weapons.map(object => object.invlet).join('');
-    const prompt = `What do you want to wield? [- ${
-        compactInventoryLetters(letters)} or ?*] `;
+    const prompt = `What do you want to wield? [- ${compactInventoryLetters(letters)} or ?*] `;
     const selection = cannedInvlet === null
-        ? await promptInventoryObject(
-            prompt, game.inventory || [], {
-                allowNone: true, allowMenu: true,
-            },
-        )
+        ? await promptInventoryObject(prompt, game.inventory || [], {
+            allowNone: true, allowMenu: true,
+            menuItems: weapons.length ? weapons : game.inventory.filter(item => item.oclass !== 12),
+            noneDescription: `your ${game.uarmg ? 'gloved' : 'bare'} ${makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
+        })
         : {
             cancelled: false,
             none: false,
-            object: (game.inventory || []).find(candidate =>
-                candidate.invlet === cannedInvlet),
+            object: (game.inventory || []).find(candidate => candidate.invlet === cannedInvlet),
         };
     if (selection.cancelled) {
         game.context.move = 0;
         return;
     }
-
     game._pending_message = '';
+    const object = selection.object;
+    if (!selection.none && !object) {
+        game.context.move = 0;
+        return;
+    }
+    if (object && object === game.uwep) {
+        await pline('You are already wielding that!');
+        if (isWeaponTool(object) || isWetTowel(object))
+            game._unweapon = false;
+        game.context.move = 0;
+        return;
+    }
+    if (await refuseWeldedPrimary()) {
+        game.context.move = 0;
+        return;
+    }
     if (selection.none) {
         if (!game.uwep) {
             await pline('You are already bare handed.');
             game.context.move = 0;
             return;
         }
-        const oldWeapon = game.uwep;
-        const wasShining = oldWeapon.lamplit && artifactEmitsLight(oldWeapon);
-        setPrimaryWeapon(null, game);
-        if (wasShining && !game.blind && !game.u.blindTurns)
-            await plineWithContinuation(equipmentLightMessage(oldWeapon, false));
         await plineWithContinuation('You are bare handed.');
+        await setPrimaryWeapon(null, game);
         game.context.move = 1;
         return;
     }
-
-    const object = selection.object;
     if (!object) {
-        game.context.move = 0;
-        return;
-    }
-    if (object === game.uwep) {
-        await pline('You are already wielding that!');
         game.context.move = 0;
         return;
     }
@@ -6071,30 +4700,28 @@ async function dowield(cannedInvlet = null) {
             return;
         }
     }
-
-    const description = inventoryItemDescription(object);
+    observeObjectForNaming(object);
     const oldPrimary = game.uwep || game.u?.uwep || null;
-    const oldShining = oldPrimary?.lamplit && artifactEmitsLight(oldPrimary);
-    setPrimaryWeapon(object, game);
-    if (oldShining && !game.blind && !game.u.blindTurns)
-        await plineWithContinuation(equipmentLightMessage(oldPrimary, false));
-    const hand = game.u?.rightHanded ? 'right' : 'left';
-    const suffix = object.class === 'Weapons' || object.oclass === 2
-        ? object.name === 'quarterstaff'
-            ? 'weapon in hands' : `weapon in ${hand} hand`
-        : 'wielded';
-    await plineWithContinuation(`${object.invlet} - ${description} (${suffix}).`);
+    const wasTwoWeapon = game.u.twoweap;
+    if (willWeld(object)) {
+        await announceWeaponWeld(object);
+    }
+    else {
+        const description = inventoryItemDescription(object, { projectPrimaryHand: true });
+        await plineWithContinuation(`${object.invlet} - ${description}.`);
+    }
+    await setPrimaryWeapon(object, game);
+    await explainTwoWeaponEnd(wasTwoWeapon);
     await lightWieldedArtifact(object);
     // C dowield() applies pushweapon only after ready_weapon() has installed
     // the new primary.  The displaced primary becomes the authoritative
     // secondary object; preserving that identity is what makes a later
     // selection of it enter doswapweapon() and its two-prinv continuation.
     if (game.flags?.pushweapon && oldPrimary && oldPrimary !== object) {
-        setSecondaryWeapon(oldPrimary, game);
+        await setSecondaryWeapon(oldPrimary, game);
     }
     game.context.move = 1;
 }
-
 // C refs: do_wear.c dowear(), accessory_or_armor_on(), and the negative
 // `multi`/afternmv completion in allmain.c.  Armor is installed in its worn
 // slot immediately, but its known state and completion message are delayed
@@ -6108,24 +4735,18 @@ async function dowear() {
         game.context.move = 0;
         return;
     }
-
-    const armor = (game.inventory || []).filter(object =>
-        object.class === 'Armor' || object.oclass === 3);
+    const armor = (game.inventory || []).filter(object => object.class === 'Armor' || object.oclass === 3);
     if (!armor.length) {
         await pline("You don't have anything appropriate to wear.");
         game.context.move = 0;
         return;
     }
-
     const letters = armor.filter(object => !object.worn)
         .map(object => object.invlet).join('');
     const choices = letters ? `${letters} or ?*` : '*';
-    const selection = String.fromCharCode(await promptKey(
-        `What do you want to wear? [${choices}] `,
-    ));
+    const selection = String.fromCharCode(await promptKey(`What do you want to wear? [${choices}] `));
     game._pending_message = '';
-    const inventoryObject = (game.inventory || []).find(candidate =>
-        candidate.invlet === selection);
+    const inventoryObject = (game.inventory || []).find(candidate => candidate.invlet === selection);
     const object = armor.find(candidate => candidate === inventoryObject);
     if (object) {
         await putOnArmorObject(object);
@@ -6145,15 +4766,14 @@ async function dowear() {
     }
     await putOnAccessoryObject(accessory);
 }
-
 // C refs: shk.c:dopay(), menu_pick_pay_items(), pay(), and update_bill().
 // The menu is a zero-time nested input transaction until at least one billed
 // object is actually purchased; payment then owns one elapsed hero action.
 async function dopay() {
+    game.multi = 0;
     const shopkeepers = (game.level?.monsters || [])
         .filter(monster => monster?.isshk && (monster.mhp ?? 1) > 0);
-    const adjacent = shopkeepers.filter(monster =>
-        distmin(monster.mx, monster.my, game.u?.ux, game.u?.uy) <= 1);
+    const adjacent = shopkeepers.filter(monster => distmin(monster.mx, monster.my, game.u?.ux, game.u?.uy) <= 1);
     const resident = adjacent.length === 1
         ? adjacent[0] : shopkeeperForHero();
     const blind = !!game.blind || (game.u?.blindTurns ?? 0) > 0;
@@ -6172,15 +4792,10 @@ async function dopay() {
         game.context.move = 0;
         return;
     }
-
     let paid = false;
     const debt = Math.max(0, resident.eshk?.debit ?? 0);
     if (debt) {
-        await pline(
-            `You owe ${shopkeeperName(resident)} ${debt} zorkmid${
-                debt === 1 ? '' : 's'
-            } for the use of merchandise.`,
-        );
+        await pline(`You owe ${shopkeeperName(resident)} ${debt} zorkmid${debt === 1 ? '' : 's'} for the use of merchandise.`);
         const payment = payShopDebt(resident, game);
         if (!payment.paid) {
             await pline("But you don't have enough gold or credit.");
@@ -6189,15 +4804,16 @@ async function dopay() {
         }
         if (payment.creditUsed === payment.debt) {
             await pline('Your debt is covered by your credit.');
-        } else if (payment.creditUsed) {
+        }
+        else if (payment.creditUsed) {
             await pline('That debt is partially offset by your credit.');
             await pline('You pay the remainder.');
-        } else {
+        }
+        else {
             await pline('You pay that debt.');
         }
         paid = true;
     }
-
     const billed = carriedShopBill(resident);
     if (!billed.length) {
         if (!paid) {
@@ -6209,30 +4825,32 @@ async function dopay() {
         game.context.move = 1;
         return;
     }
-
+    for (const item of billed)
+        observeObjectForNaming(item.object);
     const sections = [{
-        heading: '',
-        items: billed.map((item, index) => ({
-            key: String.fromCharCode(97 + index),
-            text: `${item.price} Zm, ${floorObjectDescription(item.object)}`,
-            value: item,
-        })),
-    }];
+            heading: '',
+            items: billed.map((item, index) => ({
+                key: String.fromCharCode(97 + index),
+                text: `${item.price} Zm, ${floorObjectDescription(item.object)}`,
+                value: item,
+            })),
+        }];
     game._pending_message = '';
     await flush_screen(1);
     const selected = await showMultiSelectWindow({
-        title: 'Pay for which items?', sections, left: 41,
+        title: 'Pay for which items?', sections,
         omitHeadings: true,
     });
     if (!selected.length) {
         game.context.move = paid ? 1 : 0;
         return;
     }
-
     let paidForItem = false;
     for (const item of selected) {
-        if (!settleCarriedShopBillItem(resident, item)) continue;
+        if (!settleCarriedShopBillItem(resident, item))
+            continue;
         paidForItem = true;
+        observeObjectForNaming(item.object);
         await pline(`You bought ${floorObjectDescription(item.object)} for ${item.price} gold piece${item.price === 1 ? '' : 's'}.`);
     }
     if (!paid && !paidForItem) {
@@ -6242,7 +4860,6 @@ async function dopay() {
     await plineWithContinuation(shopThankYouMessage(resident));
     game.context.move = 1;
 }
-
 // C ref: cmd.c do_fight()/rhack().  F is a movement prefix whose next
 // direction key is collected without painting a separate tty prompt.  The
 // direction still enters domove(); context.forcefight changes how that shared
@@ -6252,27 +4869,33 @@ async function doforcefight() {
     // The direction read is its own tty input boundary.  C clears the old
     // message window before collecting that key, so make the cleared row
     // visible before nhgetch() captures the nested prompt screen.
-    await flush_screen(1);
-    const direction = String.fromCharCode(await nhgetch()).toLowerCase();
+    const input = await readCommandInput();
+    const nextCommand = configuredCommand(input.key);
+    if (!await commandAllowed(nextCommand.command)) {
+        resetCommandVariables(true);
+        return;
+    }
+    const direction = nextCommand.key === null ? ''
+        : String.fromCharCode(nextCommand.key).toLowerCase();
     if (!isMovementKey(direction)) {
-        await pline(
-            "The 'F' prefix should be followed by a movement command.",
-        );
+        await pline("The 'F' prefix should be followed by a movement command.");
         game.context.move = 0;
         return;
     }
-    if (!await commandAllowed(defaultCommandName(direction))) return;
     game.context.forcefight = true;
+    if (game.multi > 0)
+        startRun(DIR_DX[direction], DIR_DY[direction], game, 0);
     try {
-        const moved = await domove(
-            DIR_DX[direction], DIR_DY[direction], true,
-        );
+        const moved = await domove(DIR_DX[direction], DIR_DY[direction], true);
+        if (game.program_state.gameover)
+            return;
         game.context.move = moved ? 1 : 0;
-    } finally {
-        game.context.forcefight = false;
+    }
+    finally {
+        if (!game.program_state.gameover)
+            game.context.forcefight = false;
     }
 }
-
 function droppedObjectDescription(object) {
     const quantity = objectQuantity(object);
     // C do.c:drop() delegates to objnam.c:doname(), which keeps beatitude
@@ -6282,7 +4905,7 @@ function droppedObjectDescription(object) {
     observeBucForNaming(object);
     const buc = bucAdjectiveForName(object) || '';
     const enchantment = object.known && [2, 3].includes(object.oclass)
-        ? (Number.isInteger(object.enchantment)
+        ? (typeof object.enchantment === 'number' && Number.isInteger(object.enchantment)
             ? object.enchantment
             : Number.isInteger(object.spe) ? object.spe : null)
         : null;
@@ -6291,203 +4914,96 @@ function droppedObjectDescription(object) {
     const name = quantity > 1 ? object.plural || `${object.name}s` : object.name;
     const core = [buc, bonus, name].filter(Boolean).join(' ');
     return quantity > 1 ? `${quantity} ${core}`
-        : `${indefiniteArticle(core)} ${core}`;
+        : withIndefiniteArticle(core);
 }
-
 async function dodrop() {
-    const inventory = game.inventory || [];
-    const walletGold = heroGoldAmount(game);
-    if (!inventory.length && !walletGold) {
-        await pline("You don't have anything to drop.");
-        game.context.move = 0;
-        return;
-    }
-    const letters = inventory
-        .filter(object => object.otyp !== GOLD_PIECE && object.oclass !== 12)
-        .map(object => object.invlet).join('');
-    const prompt = `What do you want to drop? [${walletGold ? '$' : ''}${compactInventoryLetters(letters)} or ?*] `;
-    const selection = await promptInventoryObject(prompt, inventory, {
-        allowGold: true,
-    });
-    if (selection.cancelled) {
-        game.context.move = 0;
-        return;
-    }
-    game._pending_message = '';
-    const selectedGold = selection.gold
-        || selection.object?.otyp === GOLD_PIECE
-        || selection.object?.oclass === 12;
-    if (selectedGold && walletGold) {
-        const gold = detachHeroGold(game);
-        const x = game.u.ux;
-        const y = game.u.uy;
-        const onAltar = !game.u?.uswallow
-            && game.level?.at?.(x, y)?.typ === ALTAR;
-        if (!onAltar && game.flags?.verbose !== false)
-            await pline(`You drop ${walletGold} gold pieces.`);
-        gold.where = 'free';
-        if (!game.u?.uswallow && await shipObject(gold, x, y, {
-            state: game,
-            publish: plineWithContinuation,
-        })) {
-            newsym(x, y);
-            game.context.move = 1;
+    const inShop = !!game.u?.ushops?.[0];
+    if (inShop)
+        setSellDisposition(SELL_DELIBERATE);
+    try {
+        const inventory = game.inventory || [];
+        const gold = heroGoldObject(game);
+        if (!inventory.length) {
+            await pline("You don't have anything to drop.");
+            game.context.move = 0;
             return;
         }
-        if (onAltar) {
-            await landObjectOnAltar(gold, {
-                state: game,
-                monsterMoving: false,
-                publish: plineWithContinuation,
-            });
+        const letters = inventory.filter(object => object !== gold)
+            .map(object => object.invlet).join('');
+        const prompt = `What do you want to drop? [${gold ? '$' : ''}${compactInventoryLetters(letters)} or ?*] `;
+        const selection = await promptInventoryObject(prompt, inventory, {
+            allowGold: true, allowMenu: true, allowCount: true,
+        });
+        if (selection.cancelled) {
+            game.context.move = 0;
+            return;
         }
-        await landFloorObject(gold, x, y, {
-            state: game,
-            publish: plineWithContinuation,
+        let object = selection.gold ? gold : selection.object;
+        if (!object) {
+            game.context.move = 0;
+            return;
+        }
+        if (selection.count !== null
+            && selection.count < objectQuantity(object)) {
+            if (object.otyp === LOADSTONE && object.cursed) {
+                // C getobj() preserves the requested count for canletgo's
+                // "any of" refusal; this stack must not be split.
+                object.corpsenm = selection.count;
+            }
+            else if (!isWeldedPrimary(object)) {
+                object = splitCarriedStack(object, selection.count);
+            }
+        }
+        game._pending_message = '';
+        const spentTime = await dropHeroObject(object, {
+            state: game, publish: plineWithContinuation,
         });
-        newsym(x, y);
-        game.context.move = 1;
-        return;
+        game.context.move = spentTime ? 1 : 0;
+        // Lock-picking's resumable record lives in the occupation itself.
+        if (spentTime && game._occupation?.key === 'pick-lock')
+            game._occupation = null;
     }
-    const { object } = selection;
-    const x = game.u.ux;
-    const y = game.u.uy;
-    const onAltar = !game.u?.uswallow
-        && game.level?.at?.(x, y)?.typ === ALTAR;
-    if (!onAltar && game.flags?.verbose !== false)
-        await pline(`You drop ${droppedObjectDescription(object)}.`);
-
-    game.inventory = inventory.filter(candidate => candidate !== object);
-    if (object.oartifact) {
-        await deactivateArtifactProperty(
-            object, artifactById(object.oartifact), { state: game },
-        );
+    finally {
+        if (inShop)
+            setSellDisposition(SELL_NORMAL);
     }
-    for (const slot of [
-        'uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmu', 'uarmc', 'uarmh',
-        'uarmg', 'uarmf', 'uarms', 'uleft', 'uright', 'uamul', 'ublindf',
-    ]) {
-        if (game[slot] === object) game[slot] = null;
-        if (game.u?.[slot] === object) game.u[slot] = null;
-    }
-    object.worn = false;
-    object.wornSlot = null;
-    object.where = 'free';
-    if (!game.u?.uswallow && await shipObject(object, x, y, {
-        state: game,
-        publish: plineWithContinuation,
-    })) {
-        newsym(x, y);
-        game.context.move = 1;
-        return;
-    }
-    if (onAltar) {
-        await landObjectOnAltar(object, {
-            state: game,
-            monsterMoving: false,
-            publish: plineWithContinuation,
-        });
-    }
-    await landFloorObject(object, x, y, {
-        state: game,
-        publish: plineWithContinuation,
-    });
-    newsym(x, y);
-    game.context.move = 1;
 }
-
-
-async function finishTeleportArrival(movement) {
-    newsym(movement.oldx, movement.oldy);
-    vision_reset();
-    vision_recalc(0);
-    newsym(movement.x, movement.y);
-    await docrt();
-    await bot();
-    if (game.flags?.verbose !== false) {
-        const place = movement.oldx === movement.x
-            && movement.oldy === movement.y ? 'the same' : 'a different';
-        await plineWithContinuation(`You materialize in ${place} location!`);
-    }
-    await finishDestinationSpotEffects({
-        ...movement,
-        newx: movement.x,
-        newy: movement.y,
-        loc: game.level?.at?.(movement.x, movement.y),
-        explicitAttempt: false,
-    });
-}
-
-
-// C refs: apply.c use_stethoscope(); insight.c piousness().  hero_seq is
-// distinct after every time-taking hero action, including actions which do
-// not advance the global `moves` counter because the hero has movement left.
-function stethoscopePiousness() {
-    const record = game.u?.ualign?.record ?? 0;
-    if (record >= 20) return 'piously';
-    if (record > 13) return 'devoutly';
-    if (record > 8) return 'fervently';
-    if (record > 3) return 'stridently';
-    if (record === 3) return '';
-    if (record > 0) return 'haltingly';
-    if (record === 0) return 'nominally';
-    if (record >= -3) return 'strayed';
-    if (record >= -8) return 'sinned';
-    return 'transgressed';
-}
-
-function stethoscopeAlignment() {
-    const alignment = game.u?.ualign?.type ?? 0;
-    return alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
-}
-
 async function useStethoscope(item) {
-    const direction = String.fromCharCode(
-        await promptKey('In what direction? '),
-    ).toLowerCase();
-    // getdir() clears its direction query before use_stethoscope() publishes
-    // either an empty-square response or the potentially wrapping status.
-    game._pending_message = '';
+    const direction = promptedDirectionKey(await readDirectionKey(), game.commandBindings);
     if (!isMovementKey(direction) && direction !== '.') {
         game.context.move = 0;
         return;
     }
-
     const heroActionSeq = game._heroActionSeq ?? 0;
     const usedTime = game._stethoscopeSeq === heroActionSeq;
     game._stethoscopeSeq = heroActionSeq;
-
     if (direction === '.') {
-        const piousness = stethoscopePiousness();
-        const alignment = stethoscopeAlignment();
-        const devotion = `${piousness}${piousness ? ' ' : ''}${alignment}`;
-        await pline(`Status of ${game.plname || 'you'} (${devotion}):  Level ${game.u?.ulevel || 1}  HP ${game.u?.uhp}(${game.u?.uhpmax})  AC ${game.u?.uac}.`);
+        await plineWithContinuation(heroStatusLine(game));
         game.context.move = usedTime ? 1 : 0;
         return;
     }
-
     const x = game.u.ux + DIR_DX[direction];
     const y = game.u.uy + DIR_DY[direction];
-    const monster = game.level?.monsters?.find(candidate =>
+    const monster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
         (candidate.mhp ?? 1) > 0 && candidate.mx === x && candidate.my === y);
-    if (monster?.m_ap_type) {
-        const appearance = monster.m_ap_type === M_AP_OBJECT
+    if (monster?.mappearance) {
+        const appearance = M_AP_TYPE(monster) === M_AP_OBJECT
             ? (OBJECT_NAMES[monster.mappearance] || 'thing') : 'thing';
         const monsterName = MONSTER_NAME[monster.mnum] || 'monster';
         monster.m_ap_type = 0;
         monster.mappearance = 0;
         newsym(x, y);
-        await pline(`That ${appearance} is really ${indefiniteArticle(monsterName)} ${monsterName}.`);
-        await plineWithContinuation(monsterStatusLine(monster));
-    } else if (!monster) {
-        await pline('You hear nothing special.');
-    } else {
-        await plineWithContinuation(monsterStatusLine(monster));
+        await pline(`That ${appearance} is really ${withIndefiniteArticle(monsterName)}.`);
+        await plineWithContinuation(await monsterStatusLine(monster));
     }
-
+    else if (!monster) {
+        await pline('You hear nothing special.');
+    }
+    else {
+        await plineWithContinuation(await monsterStatusLine(monster));
+    }
     game.context.move = usedTime ? 1 : 0;
 }
-
 // C refs: lock.c doclose(); cmd.c getdir()/help_dir().  Invalid direction
 // help is a modal text window: bytes typed before a real More dismissal must
 // not leak back into the top-level command dispatcher.
@@ -6497,9 +5013,8 @@ async function doclose() {
         game.context.move = 0;
         return;
     }
-    const key = await promptKey('In what direction? ');
-    const direction = String.fromCharCode(key).toLowerCase();
-    game._pending_message = '';
+    const key = await readDirectionKey();
+    const direction = promptedDirectionKey(key, game.commandBindings);
     if (!isMovementKey(direction)) {
         const quitDirection = [27, 32, 10, 13].includes(key);
         if (!quitDirection && game.flags?.cmdassist !== false) {
@@ -6508,17 +5023,18 @@ async function doclose() {
             });
             game._pending_message = '';
             await restoreCommandMap();
-        } else if (!quitDirection) {
+        }
+        else if (!quitDirection) {
             await pline('What a strange direction!');
         }
         game.context.move = 0;
         return;
     }
-
     const x = game.u.ux + DIR_DX[direction];
     const y = game.u.uy + DIR_DY[direction];
     const loc = game.level?.at(x, y);
-    if (loc?.typ !== DOOR) await pline('You see no door there.');
+    if (loc?.typ !== DOOR)
+        await pline('You see no door there.');
     else if (loc.doormask === D_NODOOR)
         await pline('This doorway has no door.');
     else if (loc.doormask === D_BROKEN)
@@ -6534,7 +5050,6 @@ async function doclose() {
     }
     game.context.move = 0;
 }
-
 // C refs: lock.c doopen(); cmd.c get_adjacent_loc()/getdir().  Direction
 // validation is owned by the same modal assistance transaction as close;
 // the door mutation happens only after that transaction returns a direction.
@@ -6544,9 +5059,8 @@ async function doopen() {
         game.context.move = 0;
         return;
     }
-    const key = await promptKey('In what direction? ');
-    const direction = String.fromCharCode(key).toLowerCase();
-    game._pending_message = '';
+    const key = await readDirectionKey();
+    const direction = promptedDirectionKey(key, game.commandBindings);
     if (!isMovementKey(direction)) {
         const quitDirection = [27, 32, 10, 13].includes(key);
         if (!quitDirection && game.flags?.cmdassist !== false) {
@@ -6555,7 +5069,8 @@ async function doopen() {
             });
             game._pending_message = '';
             await restoreCommandMap();
-        } else if (!quitDirection) {
+        }
+        else if (!quitDirection) {
             await pline('What a strange direction!');
         }
         // lock.c:doopen_indir() uses cmd.c:get_adjacent_loc(), whose caller
@@ -6564,7 +5079,6 @@ async function doopen() {
         game.context.move = 0;
         return;
     }
-
     const x = game.u.ux + DIR_DX[direction];
     const y = game.u.uy + DIR_DY[direction];
     const loc = game.level?.at(x, y);
@@ -6593,21 +5107,21 @@ async function doopen() {
         game.context.move = 0;
         return;
     }
-
-    if (rnl(20) < Math.trunc((currentAttribute(A_STR)
-        + (game.u?.acurr?.a?.[A_DEX] ?? 10)
-        + (game.u?.acurr?.a?.[A_CON] ?? 10)) / 3)) {
+    if (rnl(20) < Math.trunc((currentStrength()
+        + currentAttribute(A_DEX)
+        + currentAttribute(A_CON)) / 3)) {
         loc.doormask = D_ISOPEN;
         newsym(x, y);
         vision_reset();
         vision_recalc(0);
         await pline('The door opens.');
-    } else {
+    }
+    else {
+        await exerciseAttribute(A_STR, true);
         await pline('The door resists!');
     }
     game.context.move = 1;
 }
-
 // C refs: write.c dowrite()/write_ok(); invent.c getobj().  The object picker
 // retains ownership after an absent inventory letter and reopens the same
 // prompt once its More boundary is dismissed.
@@ -6631,12 +5145,12 @@ async function useMagicMarker() {
             game.context.move = 1;
             return;
         }
-
         const invalid = "You don't have that object.--More--";
         await pline(invalid);
         await flush_screen(1);
         game.nhDisplay?.setCursor(invalid.length, 0);
-        do key = await nhgetch();
+        do
+            key = await nhgetch();
         while (![27, 32, 10, 13].includes(key));
         if (key === 27) {
             game.context.move = 0;
@@ -6648,81 +5162,71 @@ async function useMagicMarker() {
         key = await nhgetch();
     }
 }
-
-function lampXname(object) {
-    if (object?.otyp === BRASS_LANTERN) return 'brass lantern';
-    const typeKnown = object?.typeKnown
-        || game._knownObjectTypes?.has(object?.otyp);
-    if (!typeKnown) return 'lamp';
-    return object?.otyp === MAGIC_LAMP ? 'magic lamp' : 'oil lamp';
-}
-
-// C ref: apply.c:use_lamp().  Lamps share command presentation, but magic
-// lamps keep permanent untimed light while their djinni charge remains.
-// Candles and their non-equivalent quantity/flame lifecycle remain separate.
-async function useLamp(object) {
-    const lamp = object.otyp === BRASS_LANTERN ? 'lantern' : 'lamp';
-    if (object.lamplit) {
-        await pline(`Your ${lamp} is now off.`);
-        endObjectBurn(object, game, game.moves ?? 0);
-        game.context.move = 1;
-        return;
-    }
-
-    if (game.underwater || game.u?.uinwater) {
-        await pline('This is not a diving lamp.');
-        game.context.move = 1;
-        return;
-    }
-
-    if ((object.age ?? 0) === 0
-        || (object.otyp === MAGIC_LAMP && (object.spe ?? 0) === 0)) {
-        if (object.otyp === BRASS_LANTERN) {
-            await pline(heroIsBlind(game)
-                ? 'Nothing seems to happen.'
-                : 'Your lantern is out of power.');
-        } else {
-            await pline(`This ${lampXname(object)} has no oil.`);
+async function pickAxeDirection(prompt) {
+    for (;;) {
+        const rawKey = await readDirectionKey(`${prompt} `);
+        const key = rawKey;
+        const ch = promptedDirectionKey(key, game.commandBindings);
+        if (isMovementKey(ch))
+            return { dx: DIR_DX[ch], dy: DIR_DY[ch], dz: 0 };
+        if (ch === '.' || ch === 's')
+            return { dx: 0, dy: 0, dz: 0 };
+        if (ch === '<' || ch === '>')
+            return { dx: 0, dy: 0, dz: ch === '<' ? -1 : 1 };
+        if ([27, 32, 10, 13].includes(key))
+            return null;
+        if (key === 18) {
+            await restoreCommandMap();
+            continue;
         }
-        game.context.move = 1;
-        return;
-    }
-
-    if (object.cursed && rn2(2) === 0) {
-        if ([OIL_LAMP, MAGIC_LAMP].includes(object.otyp)
-            && rn2(3) === 0) {
-            const fingers = (game.uarmg || game.u?.uarmg)
-                ? 'gloves' : 'fingers';
-            await pline(
-                `The lamp spills and covers your ${fingers} with oil.`,
-            );
-            game.u.glibTurns = (game.u.glibTurns ?? 0) + d(2, 10);
-        } else if (!heroIsBlind(game)) {
-            await pline(
-                `The ${lampXname(object)} flickers for a moment, then dies.`,
-            );
-        } else {
-            await pline('Nothing seems to happen.');
+        if (key === game.commandBindings.specialKey('getdir.help') || game.flags?.cmdassist !== false) {
+            await showTextPages([directionAssistPage()], {
+                validKeys: [27, 32, 10, 13],
+            });
+            await restoreCommandMap();
         }
-        game.context.move = 1;
-        return;
+        else
+            await pline('What a strange direction!');
+        if (key !== game.commandBindings.specialKey('getdir.help'))
+            return null;
     }
-
-    const usageFee = await chargeUnpaidLampUse(object, game);
-    if (usageFee?.message)
-        await plineWithContinuation(`Your ${lamp} is now on.`);
-    else await pline(`Your ${lamp} is now on.`);
-    beginObjectBurn(object, game, game.moves ?? 0);
-    game.context.move = 1;
 }
-
+async function applyPickAxe(item) {
+    const result = await usePickAxe(item, {
+        state: game,
+        ensureWielded: () => wieldTool(item, 'swing', { swapWeapons: doswapweapon }, game),
+        readDirection: pickAxeDirection,
+        payShopkeeper: dopay,
+        attackMonster: (monster) => attackHostileMonster(monster, monster.mx, monster.my),
+    });
+    if ('died' in result && result.died)
+        return;
+    if ('resume' in result && result.resume) {
+        game._cannedCommands ||= [];
+        game._cannedCommands.push({ kind: 'apply', invlet: inventoryCommandLetter(item) });
+    }
+    game.context.move = 'spentTime' in result && result.spentTime ? 1 : 0;
+}
+async function applyPolearm(item, autohit = false) {
+    const result = await usePolearm(item, {
+        state: game,
+        autohit,
+        ensureWielded: () => wieldTool(item, 'swing', { swapWeapons: doswapweapon }, game),
+        describeTarget: wizardPositionDescription,
+    });
+    if ('heroDied' in result && result.heroDied)
+        return;
+    if ('resume' in result && result.resume) {
+        game._cannedCommands ||= [];
+        game._cannedCommands.push({ kind: 'apply', invlet: inventoryCommandLetter(item) });
+    }
+    game.context.move = 'spentTime' in result && result.spentTime ? 1 : 0;
+}
 async function doapply(cannedInvlet = null) {
     // apply.c:doapply() rejects the current body and excessive load before
-    // building the applicable-object set or exposing getobj().
+    // choosing an object through getobj().
     if (heroHasNoHands(game)) {
-        await pline(
-            "You aren't able to use or apply tools in your current form.",
-        );
+        await pline("You aren't able to use or apply tools in your current form.");
         game.context.move = 0;
         return;
     }
@@ -6731,281 +5235,278 @@ async function doapply(cannedInvlet = null) {
         game.context.move = 0;
         return;
     }
-
-    const applicable = (game.inventory || []).filter(item => item.oclass === 6
-        || item.oclass === 10 || item.oclass === 11
-        || item.otyp === 72 || item.otyp === BULLWHIP
-        || [CREAM_PIE, LUMP_OF_ROYAL_JELLY].includes(item.otyp)
-        || game.urole?.key === 'healer' && [10, 11].includes(item.oclass));
-    if (!applicable.length) {
-        await pline("You don't have anything to use or apply.");
+    const underlay = snapshotMenuUnderlay();
+    const item = cannedInvlet === null
+        ? await chooseInventoryObject('use or apply', applySuggestion)
+        : game.inventory.find(object => object.invlet === cannedInvlet
+            && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(applySuggestion(object)));
+    if (!item) {
         game.context.move = 0;
         return;
     }
-    const letters = compactInventoryLetters(
-        applicable.map(item => item.invlet).join(''),
-    );
-    const prompt = `What do you want to use or apply? [${letters} or ?*] `;
-    const underlay = snapshotMenuUnderlay();
-    let key = cannedInvlet === null
-        ? await promptKey(prompt) : cannedInvlet.charCodeAt(0);
-
-    for (;;) {
-        if ([27, 32, 10, 13].includes(key)) {
-            await pline('Never mind.');
-            game.context.move = 0;
-            return;
-        }
-        if (key === 63 || key === 42) {
-            key = await selectInventoryObject({
-                items: applicable, includeGold: false, loopUntilValid: true,
-            });
-            continue;
-        }
-        const item = applicable.find(candidate => candidate.invlet
-            === String.fromCharCode(key));
-        if (item) {
-            if (cannedInvlet === null) game._pending_message = '';
-            if (item.otyp === BULLWHIP) {
-                const wielded = await wieldTool(
-                    item,
-                    'lash',
-                    { swapWeapons: doswapweapon },
-                    game,
-                );
-                if (!wielded.ready) {
-                    game.context.move = 0;
-                    return;
-                }
-                if (wielded.newlyWielded) {
-                    game._cannedCommands ||= [];
-                    game._cannedCommands.push({
-                        kind: 'apply', invlet: item.invlet,
-                    });
-                    game.context.move = 1;
-                    return;
-                }
-                const direction = await getAdjacentLocation(
-                    'In what direction?', null, game.u.ux, game.u.uy,
-                );
-                if (!direction) return;
-                game._pending_message = '';
-                const result = await useBullwhip(item, direction, {
-                    state: game,
-                    attackMonster: monster => attackHostileMonster(
-                        monster, monster.mx, monster.my,
-                    ),
-                    holdObject: object => {
-                        addPickedInventoryObject(object);
-                        return true;
-                    },
-                });
-                game.context.move = result.spentTime ? 1 : 0;
-                return;
-            }
-            if (item.otyp === GRAPPLING_HOOK) {
-                const result = await useGrapplingHook(item, {
-                    state: game,
-                    ensureWielded: () => wieldTool(
-                        item,
-                        'cast',
-                        { swapWeapons: doswapweapon },
-                        game,
-                    ),
-                    describeTarget: wizardPositionDescription,
-                    holdObject: async object => {
-                        const prepared = addPickedInventoryObject(object);
-                        await plineWithContinuation(prepared.message);
-                        return true;
-                    },
-                    hurtle: (dx, dy) => hurtleHero(dx, dy, 1, {
-                        finishTeleport: finishTeleportArrival,
-                        gotoLevel,
-                        chooseTeleportDestination: askTeleportDestination,
-                        finishMonsterDeath: finishHurtleMonsterDeath,
-                    }),
-                });
-                if (result.resume) {
-                    game._cannedCommands ||= [];
-                    game._cannedCommands.push({
-                        kind: 'apply', invlet: item.invlet,
-                    });
-                }
-                game.context.move = result.spentTime ? 1 : 0;
-                return;
-            }
-            if ([BLINDFOLD, LENSES].includes(item.otyp)) {
-                game._pending_message = '';
-                await applyEyewear(item);
-                game.context.move = 1;
-                return;
-            }
-            if ([OIL_LAMP, BRASS_LANTERN, MAGIC_LAMP].includes(item.otyp)) {
-                await useLamp(item);
-                return;
-            }
-            if (isContainer(item)) {
-                const result = await useContainer(item, {
-                    held: true,
-                    underlay,
-                });
-                game.context.move = result.spentTime ? 1 : 0;
-                return;
-            }
-            if (item.otyp === STETHOSCOPE) {
-                await useStethoscope(item);
-                return;
-            }
-            if (item.otyp === MAGIC_MARKER) {
-                await useMagicMarker();
-                return;
-            }
-            if (item.otyp === UNICORN_HORN) {
-                const result = await useUnicornHorn({
-                    object: item,
-                    state: game,
-                });
-                game.context.move = result.spentTime ? 1 : 0;
-                return;
-            }
-            if (PLAYABLE_INSTRUMENTS.has(item.otyp)) {
-                game._pending_message = '';
-                game._retained_message = '';
-                await playInstrument(item, {
-                    finishMonsterKill: finishHeroMonsterKill,
-                });
-                return;
-            }
-            if (item.otyp === CREAM_PIE) {
-                game._pending_message = '';
-                await useCreamPie(item);
-                game.context.move = 0;
-                return;
-            }
-            if (isRoyalJelly(item)) {
-                await rubRoyalJelly(item);
-                return;
-            }
-            if ([SKELETON_KEY, LOCK_PICK, CREDIT_CARD].includes(item.otyp)) {
-                const direction = await promptKey('In what direction? ');
-                const directionKey = String.fromCharCode(direction).toLowerCase();
-                if (isMovementKey(directionKey)) {
-                    const x = game.u.ux + DIR_DX[directionKey];
-                    const y = game.u.uy + DIR_DY[directionKey];
-                    const loc = game.level?.at(x, y);
-                    await pline(loc?.typ === DOOR
-                        && !(loc.doormask & (D_CLOSED | D_LOCKED))
-                        ? 'You cannot lock an open door.'
-                        : 'You see no door there.');
-                }
-                game.context.move = 1;
-                return;
-            }
-            await pline("Sorry, I don't know how to use that.");
-            game.context.move = 0;
-            return;
-        }
-
-        if (cannedInvlet !== null) {
-            game.context.move = 0;
-            return;
-        }
-
-        if ((game.inventory || []).some(candidate => candidate.invlet
-            === String.fromCharCode(key))) {
-            await pline("Sorry, I don't know how to use that.");
-            game.context.move = 0;
-            return;
-        }
-
-        const invalid = "You don't have that object.--More--";
-        await pline(invalid);
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(invalid.length, 0);
-        do {
-            key = await nhgetch();
-        } while (key !== 27 && key !== 32);
-
-        await pline(prompt);
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(prompt.length, 0);
-        key = await nhgetch();
+    const touch = await retouchHeroObject(item);
+    if (touch.rejected || touch.died) {
+        game.context.move = 1;
+        return;
     }
+    if (item.oclass === 11) {
+        const result = await breakWand(item);
+        game.context.move = result.spentTime ? 1 : 0;
+        return;
+    }
+    if (item.oclass === 10 || item.oclass === 12) {
+        const result = item.oclass === 10
+            ? await flipThroughBook(item) : await flipCoin(item);
+        game.context.move = result.spentTime ? 1 : 0;
+        return;
+    }
+    game.context.move = 0;
+    const appliedObject = await applyTool(item, underlay);
+    if (!game.program_state.gameover && appliedObject
+        && await speakArtifact(appliedObject))
+        game.context.move = 1;
 }
-
+// Return the surviving object for the native talking-artifact tail. Applied
+// stacks can split or disappear, so each destructive owner returns its object.
+async function applyTool(item, underlay) {
+    if (item.otyp === EXPENSIVE_CAMERA || item.otyp === TOWEL
+        || item.otyp === BELL || item.otyp === BELL_OF_OPENING) {
+        const result = item.otyp === EXPENSIVE_CAMERA ? await useCamera(item)
+            : item.otyp === TOWEL ? await useTowel(item) : await useBell(item);
+        game.context.move = result.spentTime ? 1 : 0;
+        return result.object;
+    }
+    if (item.otyp === MIRROR) {
+        const result = await useMirror(item);
+        game.context.move = result.spentTime ? 1 : 0;
+        return result.object;
+    }
+    if ([TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF].includes(item.otyp)) {
+        const result = await useWhistle(item);
+        game.context.move = result.spentTime ? 1 : 0;
+        return item;
+    }
+    if ([TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL,
+        OIL_LAMP, BRASS_LANTERN, MAGIC_LAMP].includes(item.otyp)) {
+        let result;
+        if (item.otyp === CANDELABRUM_OF_INVOCATION)
+            result = await useCandelabrum(item);
+        else if (item.otyp === POT_OIL)
+            result = await lightCocktail(item);
+        else if ([TALLOW_CANDLE, WAX_CANDLE].includes(item.otyp))
+            result = await useCandle(item);
+        else
+            result = await useLamp(item);
+        game.context.move = result.spentTime ? 1 : 0;
+        return result.object;
+    }
+    if (isGrayStone(item)) {
+        const result = await useGrayStone(item);
+        game.context.move = result.spentTime ? 1 : 0;
+        return item;
+    }
+    if (item.otyp === BULLWHIP) {
+        const wielded = await wieldTool(item, 'lash', { swapWeapons: doswapweapon }, game);
+        if (!wielded.ready) {
+            game.context.move = 0;
+            return item;
+        }
+        if (wielded.newlyWielded) {
+            game._cannedCommands ||= [];
+            game._cannedCommands.push({
+                kind: 'apply', invlet: inventoryCommandLetter(item),
+            });
+            game.context.move = 1;
+            return item;
+        }
+        const direction = await getAdjacentLocation('In what direction?', null, game.u.ux, game.u.uy);
+        if (!direction)
+            return item;
+        game._pending_message = '';
+        const result = await useBullwhip(item, direction, {
+            state: game,
+            attackMonster: (monster) => attackHostileMonster(monster, monster.mx, monster.my),
+            holdObject: async (object) => {
+                await addPickedInventoryObject(object);
+                return true;
+            },
+        });
+        game.context.move = result.spentTime ? 1 : 0;
+        return item;
+    }
+    if (isPick(item) || isAxe(item)) {
+        await applyPickAxe(item);
+        return item;
+    }
+    if (isPolearm(item)) {
+        await applyPolearm(item);
+        return item;
+    }
+    if (item.otyp === GRAPPLING_HOOK) {
+        const result = await useGrapplingHook(item, {
+            state: game,
+            ensureWielded: () => wieldTool(item, 'cast', { swapWeapons: doswapweapon }, game),
+            describeTarget: wizardPositionDescription,
+            holdObject: async (object) => {
+                const prepared = await addPickedInventoryObject(object);
+                await plineWithContinuation(prepared.message);
+                return true;
+            },
+            hurtle: (dx, dy) => hurtleHero(dx, dy, 1, {
+                finishTeleport: finishTeleportArrival,
+                gotoLevel,
+                chooseTeleportDestination: askTeleportDestination,
+                finishMonsterDeath: finishHurtleMonsterDeath,
+            }),
+        });
+        if (result.resume) {
+            game._cannedCommands ||= [];
+            game._cannedCommands.push({
+                kind: 'apply', invlet: inventoryCommandLetter(item),
+            });
+        }
+        game.context.move = result.spentTime ? 1 : 0;
+        return item;
+    }
+    if ([BLINDFOLD, LENSES].includes(item.otyp)) {
+        game._pending_message = '';
+        await applyEyewear(item);
+        if (game.program_state.gameover)
+            return item;
+        game.context.move = 1;
+        return item;
+    }
+    if (isContainer(item)) {
+        const result = await useContainer(item, {
+            held: true,
+            underlay,
+        });
+        if (result.heroDied)
+            return item;
+        game.context.move = result.spentTime ? 1 : 0;
+        return result.container;
+    }
+    if (item.otyp === STETHOSCOPE) {
+        await useStethoscope(item);
+        return item;
+    }
+    if (item.otyp === TIN_OPENER) {
+        const result = await useTinOpener(item, { state: game, swapWeapons: doswapweapon });
+        if (!result.heroDied)
+            game.context.move = Number(result.usedTime);
+        return item;
+    }
+    if (item.otyp === MAGIC_MARKER) {
+        await useMagicMarker();
+        return item;
+    }
+    if (item.otyp === UNICORN_HORN) {
+        const result = await useUnicornHorn({
+            object: item,
+            state: game,
+        });
+        game.context.move = result.spentTime ? 1 : 0;
+        return item;
+    }
+    if (PLAYABLE_INSTRUMENTS.has(item.otyp)) {
+        game._pending_message = '';
+        game._retained_message = '';
+        await playInstrument(item, {
+            finishMonsterKill: finishHeroMonsterKill,
+        });
+        return item;
+    }
+    if (item.otyp === CREAM_PIE) {
+        game._pending_message = '';
+        await useCreamPie(item);
+        game.context.move = 0;
+        return null;
+    }
+    if (isRoyalJelly(item)) {
+        await rubRoyalJelly(item);
+        return game.inventory.includes(item) ? item : null;
+    }
+    if ([SKELETON_KEY, LOCK_PICK, CREDIT_CARD].includes(item.otyp)) {
+        const direction = await readDirectionKey();
+        const directionKey = promptedDirectionKey(direction, game.commandBindings);
+        if (isMovementKey(directionKey)) {
+            const x = game.u.ux + DIR_DX[directionKey];
+            const y = game.u.uy + DIR_DY[directionKey];
+            const loc = game.level?.at(x, y);
+            await pline(loc?.typ === DOOR
+                && !(loc.doormask & (D_CLOSED | D_LOCKED))
+                ? 'You cannot lock an open door.'
+                : 'You see no door there.');
+        }
+        game.context.move = 1;
+        return item;
+    }
+    if (item.otyp === BANANA && heroIsHallucinating(game)) {
+        await pline("It rings! ... But no-one answers.");
+        game.context.move = 1;
+        return item;
+    }
+    await pline("Sorry, I don't know how to use that.");
+    game.context.move = 0;
+    return null;
+}
 // C refs: dowieldquiver(), doquiver_core().  Q and empty-quiver fire share
 // one live inventory transaction; neither role nor recorded input selects a
 // different readiness implementation.
 async function doready() {
     await doquiverCore('ready');
 }
-
+function splitCarriedStack(item, count) {
+    const split = splitObjectStack(item, count, game);
+    if (!split)
+        throw new Error('cannot split selected inventory stack');
+    return split;
+}
 function splitStackForQuiver(item, count) {
-    const quantity = item.quantity ?? item.quan ?? 1;
-    const selected = Math.max(1, Math.min(count, quantity - 1));
-    const unitWeight = OBJECT_WEIGHT[item.otyp]
-        ?? Math.max(1, Math.trunc((item.owt ?? 1) / quantity));
-    item.quantity = item.quan = quantity - selected;
-    item.owt = unitWeight * item.quantity;
-    const child = {
-        ...item,
-        o_id: nextIdent(),
-        invlet: null,
-        quantity: selected,
-        quan: selected,
-        owt: unitWeight * selected,
-        owornmask: 0,
-        worn: false,
-        wielded: false,
-        alternate: false,
-        ready: false,
-        where: 'inventory',
-    };
+    const child = splitCarriedStack(item, count);
+    child.invlet = null;
     assignInventoryLetter(child);
-    if (!child.invlet) child.invlet = '#';
-    game.inventory.push(child);
+    if (!child.invlet)
+        child.invlet = '#';
     return child;
 }
-
 async function reportWeldedPrimary(item) {
     const newlyKnown = !item.bknown;
     item.bknown = true;
+    observeObjectForNaming(item);
     const hand = item.bimanual ? 'hands' : 'hand';
-    await pline(
-        `${inventoryItemDescription(item)} is welded to your ${hand}!`,
-    );
+    await pline(`${inventoryItemDescription(item)} is welded to your ${hand}!`);
     return newlyKnown;
 }
-
 function splittableForQuiver(item) {
     return !(item?.otyp === LOADSTONE && item.cursed)
         && !isWeldedPrimary(item);
 }
-
 function hasFreeBasicInventoryLetter() {
     const basicLetters = new Set((game.inventory || [])
         .map(item => item.invlet)
         .filter(letter => /^[a-zA-Z]$/.test(letter || '')));
     return basicLetters.size < 52;
 }
-
 async function doquiverCore(verb) {
+    game.multi = 0;
     if (!(game.inventory || []).length) {
         await pline('You have nothing to ready for firing.');
         game.context.move = 0;
         return { item: null, spentTime: false, cancelled: false };
     }
-    const letters = (game.inventory || [])
-        .filter(item => readySuggestion(item, game))
-        .map(item => item.invlet)
-        .join('');
-    const prompt = `What do you want to ${verb}? [- ${
-        compactInventoryLetters(letters)} or ?*] `;
-    const selection = await promptInventoryObject(
-        prompt, game.inventory || [], {
-            allowNone: true, allowMenu: true, allowCount: true,
-        },
-    );
+    const suggestions = game.inventory.filter(item => readySuggestion(item, game));
+    const letters = suggestions.map(item => item.invlet).join('');
+    const noneSuggested = !!game.uquiver;
+    const choices = `${noneSuggested ? '- ' : ''}${compactInventoryLetters(letters)}`.trim();
+    const prompt = `What do you want to ${verb}? [${choices ? `${choices} or ?*` : '*'}] `;
+    const selection = await promptInventoryObject(prompt, game.inventory || [], {
+        allowNone: true, allowMenu: true, allowCount: true,
+        menuItems: suggestions, noneSuggested,
+        noneDescription: verb === 'ready'
+            ? `empty quiver${game.uquiver ? '' : ' (nothing readied)'}`
+            : `your ${makePlural(heroHandName(game))}`,
+    });
     if (selection.cancelled) {
         game.context.move = 0;
         return { item: null, spentTime: false, cancelled: true };
@@ -7013,8 +5514,9 @@ async function doquiverCore(verb) {
     if (selection.none) {
         if (game.uquiver) {
             await pline('You now have no ammunition readied.');
-            setQuiverObject(null, game);
-        } else {
+            await setQuiverObject(null, game);
+        }
+        else {
             await pline('You already have no ammunition readied!');
         }
         game.context.move = 0;
@@ -7025,7 +5527,6 @@ async function doquiverCore(verb) {
         game.context.move = 0;
         return { item: null, spentTime: false, cancelled: true };
     }
-
     if (isWeldedPrimary(item)) {
         const spentTime = await reportWeldedPrimary(item);
         game.context.move = spentTime ? 1 : 0;
@@ -7033,25 +5534,25 @@ async function doquiverCore(verb) {
             item: null, spentTime, cancelled: false,
         };
     }
-
     const requestedCount = selection.count;
     const initialQuantity = item.quantity ?? item.quan ?? 1;
     const partialCount = requestedCount !== null
         && requestedCount < initialQuantity;
     if (item === game.uquiver) {
-        // getobj() performs the requested split before doquiver_core notices
-        // that its parent is already quivered; unsplitobj() restores the
-        // stack, but the child identity draw remains observable.
-        if (partialCount && splittableForQuiver(item)) nextIdent();
+        // C getobj() splits before doquiver_core() notices the readied parent.
+        if (partialCount && splittableForQuiver(item)) {
+            const split = splitCarriedStack(item, requestedCount);
+            await rejoinObjectStack(item, split, game);
+        }
         await pline('That ammunition is already readied!');
         game.context.move = 0;
         return { item, spentTime: false, cancelled: false };
     }
     const selectedClass = item.oclass || objectClassForType(item.otyp);
     if (partialCount && selectedClass === 12) {
-        // Gold is split by getobj(), then immediately unsplit because the
-        // quiver may not hold only part of the purse.
-        nextIdent();
+        // C getobj()/unsplitobj(): partial purses are not valid ammunition.
+        const split = splitCarriedStack(item, requestedCount);
+        await rejoinObjectStack(item, split, game);
         await pline("You can't ready only part of your gold.");
         game.context.move = 0;
         return { item: null, spentTime: false, cancelled: false };
@@ -7060,7 +5561,6 @@ async function doquiverCore(verb) {
         && splittableForQuiver(item)) {
         item = splitStackForQuiver(item, requestedCount);
     }
-
     const incompatibleMask = W_ARMOR | W_ACCESSORY | W_SADDLE;
     if (((item.owornmask ?? 0) & incompatibleMask)
         || (item.worn && item !== game.uwep && item !== game.uswapwep)) {
@@ -7068,7 +5568,6 @@ async function doquiverCore(verb) {
         game.context.move = 0;
         return { item: null, spentTime: false, cancelled: false };
     }
-
     const primary = item === game.uwep;
     const alternate = item === game.uswapwep;
     const wasTwoweap = !!game.u?.twoweap;
@@ -7083,9 +5582,7 @@ async function doquiverCore(verb) {
                 ? `You are wielding ${quantity} ${plural}.`
                 : `${wasTwoweap ? 'You are dual wielding'
                     : 'Your alternate weapon is'} ${quantity} ${plural}.`;
-            const partial = await promptYesNoQuit(
-                `${slotDescription}  Ready ${quantity - 1} of them? [ynq] (q) `,
-            );
+            const partial = await promptYesNoQuit(`${slotDescription}  Ready ${quantity - 1} of them? [ynq] (q) `);
             if (partial === 'q') {
                 game.context.move = 0;
                 return { item: null, spentTime: false, cancelled: false };
@@ -7096,35 +5593,33 @@ async function doquiverCore(verb) {
             }
         }
         if (readyAll) {
-            const answer = await promptYesNoQuit(
-                `Ready ${quantity > 1 ? 'all of them' : 'it'} instead? [ynq] (q) `,
-            );
+            const answer = await promptYesNoQuit(`Ready ${quantity > 1 ? 'all of them' : 'it'} instead? [ynq] (q) `);
             if (answer !== 'y') {
                 game.context.move = 0;
                 return { item: null, spentTime: false, cancelled: false };
             }
             if (primary) {
-                setPrimaryWeapon(null, game);
+                await setPrimaryWeapon(null, game);
                 spentTime = true;
-            } else {
-                setSecondaryWeapon(null, game);
+            }
+            else {
+                await setSecondaryWeapon(null, game);
                 spentTime = wasTwoweap;
             }
-            if (game.u) game.u.twoweap = false;
         }
     }
-    const wasReady = item.ready;
-    item.ready = false;
+    if (verb !== 'fire')
+        await setQuiverObject(item, game);
+    observeObjectForNaming(item);
     const description = inventoryItemDescription(item);
     await pline(verb === 'fire'
         ? `You ready: ${item.invlet} - ${description}.`
-        : `${item.invlet} - ${description} (at the ready).`);
-    item.ready = wasReady;
-    setQuiverObject(item, game);
+        : `${item.invlet} - ${description}.`);
+    if (verb === 'fire')
+        await setQuiverObject(item, game);
     game.context.move = spentTime ? 1 : 0;
     return { item, spentTime, cancelled: false };
 }
-
 // C refs: dothrow(), throw_obj().  Splitting the selected arrow stack makes
 // a new object id, then obj_resists() is consulted when it lands.
 async function okToThrow() {
@@ -7133,9 +5628,7 @@ async function okToThrow() {
     // object. M1_NOTAKE deliberately precedes M1_NOHANDS because forms such
     // as brown molds satisfy both and own the stronger message.
     if (heroCannotTake(game)) {
-        await pline(
-            'You are physically incapable of throwing or shooting anything.',
-        );
+        await pline('You are physically incapable of throwing or shooting anything.');
         game.context.move = 0;
         return false;
     }
@@ -7151,14 +5644,13 @@ async function okToThrow() {
     }
     return true;
 }
-
 async function dofire(cannedShotLimit = null) {
     const shotLimit = cannedShotLimit === null
         ? Math.max(0, game._commandCount || 0)
         : Math.max(0, cannedShotLimit || 0);
-    game._commandCount = 0;
-    if (!await okToThrow()) return;
-
+    game.multi = 0;
+    if (!await okToThrow())
+        return;
     let fireObject = game.uquiver;
     let quiverSelectionSpentTime = false;
     if (!fireObject) {
@@ -7167,16 +5659,30 @@ async function dofire(cannedShotLimit = null) {
             if (fireObject) {
                 const wasReady = fireObject.ready;
                 fireObject.ready = false;
-                await pline(
-                    `You ready: ${fireObject.invlet} - ${
-                        inventoryItemDescription(fireObject)}.`,
-                );
-                fireObject.ready = wasReady;
-                setQuiverObject(fireObject, game);
-            } else {
+                observeObjectForNaming(fireObject);
+                await pline(`You ready: ${fireObject.invlet} - ${inventoryItemDescription(fireObject)}.`);
+                if (wasReady === undefined)
+                    delete fireObject.ready;
+                else
+                    fireObject.ready = wasReady;
+                await setQuiverObject(fireObject, game);
+            }
+            else {
                 await pline('You have nothing appropriate for your quiver.');
             }
-        } else {
+        }
+        else {
+            if (game.uwep && isPolearm(game.uwep))
+                return applyPolearm(game.uwep, true);
+            const alternate = game.uswapwep || game.u?.uswapwep;
+            if (game.flags?.fireassist !== false && alternate && isPolearm(alternate)
+                && !(alternate.cursed && alternate.bknown)) {
+                game._cannedCommands ||= [];
+                game._cannedCommands.push({ kind: 'swap-weapon' });
+                game._cannedCommands.push({ kind: 'fire', shotLimit });
+                game.context.move = 0;
+                return;
+            }
             await pline('You have no ammunition readied.');
         }
         if (!fireObject) {
@@ -7184,19 +5690,22 @@ async function dofire(cannedShotLimit = null) {
             fireObject = selection?.item || null;
             quiverSelectionSpentTime = !!selection?.spentTime;
         }
-        if (!fireObject) return;
+        if (!fireObject)
+            return;
     }
-
     // dothrow.c:dofire() routes launcher assistance through CQ_CANNED: a
     // matching alternate weapon is swapped in as one timed action, then fire
     // resumes after the complete monster/global turn without consuming a new
     // physical key.  This applies to every matching ammo/launcher pair; role
     // names and recorded command streams do not participate in selection.
     if (fireObject) {
-        const matchingLauncher = launcher =>
-            launcherMatchesAmmo(fireObject, launcher);
+        const matchingLauncher = (launcher) => launcherMatchesAmmo(fireObject, launcher);
         const alternate = game.uswapwep || game.u?.uswapwep || null;
         const fireassist = game.flags?.fireassist !== false;
+        if (fireassist && isAmmunition(fireObject) && game.uwep && isPolearm(game.uwep)
+            && couldPoleMonster(game.uwep, { state: game })) {
+            return applyPolearm(game.uwep, true);
+        }
         if (fireassist && !matchingLauncher(game.uwep)
             && matchingLauncher(alternate)) {
             game._cannedCommands ||= [];
@@ -7213,16 +5722,21 @@ async function dofire(cannedShotLimit = null) {
             let unknownLauncher = null;
             let inventoryLauncher = null;
             for (const candidate of game.inventory || []) {
-                if (candidate.cursed && candidate.bknown) continue;
-                if (!matchingLauncher(candidate)) continue;
+                if (candidate.cursed && candidate.bknown)
+                    continue;
+                if (!matchingLauncher(candidate))
+                    continue;
                 if (candidate.bknown) {
                     inventoryLauncher = candidate;
                     break;
                 }
-                if (!unknownLauncher) unknownLauncher = candidate;
+                if (!unknownLauncher)
+                    unknownLauncher = candidate;
             }
             inventoryLauncher ||= unknownLauncher;
             if (inventoryLauncher) {
+                if (!inventoryLauncher.invlet)
+                    throw new Error('Cannot queue a wield command for an object without an inventory letter.');
                 game._cannedCommands ||= [];
                 if (game.uwep && !game.flags?.pushweapon) {
                     game._cannedCommands.push({ kind: 'swap-weapon' });
@@ -7241,51 +5755,43 @@ async function dofire(cannedShotLimit = null) {
         return;
     }
 }
-
-async function finishOrdinarySwallowedThrowKill(monster, projectile) {
-    return finishHeroMonsterKill(monster, monster.mx, monster.my, {
+async function finishOrdinarySwallowedThrowKill(monster, projectile, options = {}) {
+    return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, {
+        ...options,
         deathContext: {
             kind: 'swallowed-projectile',
             projectile,
-            finishDestinationEffects: finishDestinationSpotEffects,
         },
     });
 }
-
-async function finishOrdinarySwallowedConsumedKill(
-    monster, kind, death = {},
-) {
-    return finishHeroMonsterKill(monster, monster.mx, monster.my, {
+async function finishOrdinarySwallowedConsumedKill(monster, kind, death = {}) {
+    return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, {
         ...death,
         deathContext: {
             kind,
-            finishDestinationEffects: finishDestinationSpotEffects,
         },
     });
 }
-
 async function finishOrdinaryMapPotionKill(monster, death = {}) {
-    return finishHeroMonsterKill(monster, monster.mx, monster.my, death);
+    return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, death);
 }
-
-async function dothrow(
-    selectedItem = null, capabilityChecked = false, suppliedShotLimit = null,
-) {
+async function dothrow(selectedItem = null, capabilityChecked = false, suppliedShotLimit = null) {
     const shotLimit = suppliedShotLimit === null
         ? Math.max(0, game._commandCount || 0)
         : Math.max(0, suppliedShotLimit || 0);
-    game._commandCount = 0;
-    if (!capabilityChecked && !await okToThrow()) return;
-
+    requireInitializedHero(game.u);
+    game.multi = 0;
+    if (!capabilityChecked && !await okToThrow())
+        return;
     // getobj("throw") changes its suggested class when the primary weapon is
     // a sling: ordinary weapons become downplayed and GEM_CLASS sling ammo is
     // suggested instead.  Every directly selected inventory letter remains
     // valid even when downplayed.
-    const wieldingSling = !!game.uwep
-        && OBJECT_SUBTYPE[game.uwep.otyp] === OBJECT_SUBTYPE[SLING];
-    const throwables = (game.inventory || []).filter(item =>
-        (item.oclass || objectClassForType(item.otyp))
-            === (wieldingSling ? 13 : 2)
+    const launcher = game.uwep;
+    const wieldingSling = !!launcher
+        && OBJECT_SUBTYPE[launcher.otyp] === OBJECT_SUBTYPE[SLING];
+    const throwables = (game.inventory || []).filter(item => (item.oclass || objectClassForType(item.otyp))
+        === (wieldingSling ? 13 : 2)
         && !(item === game.uwep && (item.quantity ?? item.quan ?? 1) === 1));
     const inventoryLetters = throwables.map(item => item.invlet).join('');
     const letters = `${heroGoldAmount(game) > 0 ? '$' : ''}${inventoryLetters}`;
@@ -7301,30 +5807,31 @@ async function dothrow(
                 return;
             }
             if (key === 63) {
-                key = await selectInventoryObject({
+                ({ key } = await selectInventoryObject({
                     // invent.c:getobj(): `?` normally lists suggestions.  If
                     // lets is empty but altlets forced the prompt, it lists
                     // those downplayed objects instead.
                     items: throwables.length
                         ? throwables : (game.inventory || []),
                     includeGold: true,
-                    loopUntilValid: true,
-                });
-                if (key === 32) key = await promptKey(prompt);
+                }));
+                if (!key)
+                    key = await promptKey(prompt);
                 continue;
             }
             if (key === 42) {
-                key = await selectInventoryObject();
+                ({ key } = await selectInventoryObject());
+                if (!key)
+                    key = await promptKey(prompt);
                 continue;
             }
-            selectedItem = game.inventory?.find(candidate =>
-                candidate.invlet === String.fromCharCode(key));
-            if (selectedItem) break;
-
+            selectedItem = game.inventory?.find(candidate => candidate.invlet === String.fromCharCode(key)) ?? null;
+            if (selectedItem)
+                break;
             // invent.c:getobj() retains the picker after an absent letter.
             // Reissuing its prompt forces tty to acknowledge the intervening
             // error line, so the recorded boundary exposes --More-- first.
-            await moreUntilDismissed("You don't have that object.--More--");
+            await moreUntilDismissed("You don't have that object.");
             game._pending_message = '';
             key = await promptKey(prompt);
         }
@@ -7338,45 +5845,39 @@ async function dothrow(
     const selectedObjectClass = item.oclass || objectClassForType(item.otyp);
     const selectedIsGold = selectedObjectClass === 12;
     const directGoldThrow = selectedIsGold && item !== game.uquiver;
-    const directionKey = await promptKey('In what direction? ');
-    const direction = String.fromCharCode(directionKey);
-    if (direction === '.') {
-        await pline(directGoldThrow
-            ? 'You cannot throw gold at yourself.'
-            : 'You cannot throw an object at yourself.');
-        game.context.move = 0;
-        return;
-    }
+    const directionKey = await readDirectionKey();
+    const direction = promptedDirectionKey(directionKey, game.commandBindings);
+    const selfThrow = direction === '.';
     const verticalThrow = direction === '<' || direction === '>';
-    if (!isMovementKey(direction) && !verticalThrow) {
+    if (!isMovementKey(direction) && !verticalThrow && !selfThrow) {
         const quitDirection = [27, 32, 10, 13].includes(directionKey);
         if (!quitDirection && game.flags?.cmdassist !== false) {
             await showTextPages([directionAssistPage()], {
                 validKeys: [27, 32, 10, 13],
             });
             await restoreCommandMap();
-        } else if (!quitDirection) {
+        }
+        else if (!quitDirection) {
             await pline('What a strange direction!');
         }
         game.context.move = 0;
         game._pending_message = '';
         return;
     }
-    // tty getdir() removes its editable prompt once a valid direction has
-    // been accepted.  Hand-thrown ammo happened to overwrite this with its
-    // launcher warning; launched projectiles need the boundary explicitly.
-    game._pending_message = '';
-
     // getdir() commits the source direction before throw_obj() detaches an
     // identity.  throwit() may later rewrite it for slip or low stamina.
-    const dx = DIR_DX[direction] ?? 0;
-    const dy = DIR_DY[direction] ?? 0;
+    const dx = isMovementKey(direction) ? DIR_DX[direction] : 0;
+    const dy = isMovementKey(direction) ? DIR_DY[direction] : 0;
     const dz = direction === '<' ? -1 : direction === '>' ? 1 : 0;
     game.u.dx = dx;
     game.u.dy = dy;
     game.u.dz = dz;
-
     if (directGoldThrow) {
+        if (selfThrow) {
+            await pline('You cannot throw gold at yourself.');
+            game.context.move = 0;
+            return;
+        }
         await resolveDirectGoldThrow({
             state: game,
             gold: item,
@@ -7389,7 +5890,29 @@ async function dothrow(
         game.context.move = 1;
         return;
     }
-
+    if (!await canLetGo(item, 'throw')) {
+        game.context.move = 0;
+        return;
+    }
+    const mjollnir = artifactById(item.oartifact, game)?.name === 'Mjollnir';
+    if (mjollnir && item !== game.uwep) {
+        await pline(`The ${objectName(item)} must be wielded before it can be thrown.`);
+        game.context.move = 0;
+        return;
+    }
+    if (mjollnir && currentAttribute(A_STR) < STR19(25)
+        || item.otyp === BOULDER
+            && !((MONSTER_FLAGS2[game.u.umonnum] ?? 0) & M2_ROCKTHROW)) {
+        await pline("It's too heavy.");
+        game.context.move = 1;
+        return;
+    }
+    if (selfThrow) {
+        await pline('You cannot throw an object at yourself.');
+        game.context.move = 0;
+        return;
+    }
+    wipeHeroEngraving(2);
     if (selectedIsGold && item === game.uquiver) {
         const previousCapacity = game._encumbranceLevel
             ?? nearCapacity(game);
@@ -7400,23 +5923,17 @@ async function dothrow(
             captureFlight: captureThrownObjectFlight,
             wakeMonster: wakeAttackedMonster,
         });
+        if (game.program_state.gameover)
+            return;
         const currentCapacity = nearCapacity(game);
-        const capacityMessage = encumbranceMessage(
-            previousCapacity, currentCapacity,
-        );
-        if (capacityMessage) await plineWithContinuation(capacityMessage);
+        const capacityMessage = encumbranceMessage(previousCapacity, currentCapacity);
+        if (capacityMessage)
+            await plineWithContinuation(capacityMessage);
         game._encumbranceLevel = currentCapacity;
         game.u._encumbrance = encumbranceLabel(currentCapacity);
         game.context.move = 1;
         return;
     }
-
-    if (isWeldedPrimary(item)) {
-        await reportWeldedPrimary(item);
-        game.context.move = 1;
-        return;
-    }
-
     const selectedQuantity = item.quantity ?? item.quan ?? 1;
     const thrownObjectClass = selectedObjectClass;
     // obj.h:is_ammo()+matching_launcher(): the arrow flight owner is selected
@@ -7425,7 +5942,7 @@ async function dothrow(
     // bow while keeping crossbow and sling ammunition in their own owners.
     const bowAmmo = OBJECT_SUBTYPE[item.otyp] === -P_BOW;
     const handThrownArrow = bowAmmo
-        && OBJECT_SUBTYPE[game.uwep?.otyp] !== P_BOW;
+        && (!game.uwep || OBJECT_SUBTYPE[game.uwep.otyp] !== P_BOW);
     const matchingSlingGem = !game.u?.uswallow
         && wieldingSling && thrownObjectClass === 13
         && OBJECT_SUBTYPE[item.otyp] === -P_SLING;
@@ -7437,20 +5954,17 @@ async function dothrow(
         const name = OBJECT_NAMES[item.otyp] || item.name || 'object';
         const noun = volleyCount === 1
             ? name : item.plural || makePlural(name);
-        await plineWithContinuation(
-            `You ${launcherMatchesAmmo(item, game.uwep) ? 'shoot' : 'throw'} ${
-                volleyCount} ${noun}.`,
-        );
+        await plineWithContinuation(`You ${launcherMatchesAmmo(item, game.uwep) ? 'shoot' : 'throw'} ${volleyCount} ${noun}.`);
     }
     let splitObjectId = null;
     if (!game.u?.uswallow && thrownObjectClass === 13
         && !matchingSlingGem
         && selectedQuantity > 1) {
-        splitObjectId = nextIdent(); // splitobj()
-        item.quantity = selectedQuantity - 1;
-        item.quan = item.quantity;
+        // The dispatchers below share the same copied type/knowledge fields.
+        // Allocate at C's split point; detachThrownUnit owns the actual split.
+        splitObjectId = nextObjectId(item, item, game);
     }
-    const adjacentMonster = game.level?.monsters?.find(candidate =>
+    const adjacentMonster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
         !candidate.dead && (candidate.mhp ?? 1) > 0
         && candidate.mx === game.u.ux + dx
         && candidate.my === game.u.uy + dy);
@@ -7459,10 +5973,9 @@ async function dothrow(
         item,
         selectedQuantity,
         splitObjectId,
-        finishKill: monster => finishOrdinarySwallowedConsumedKill(
-            monster, item.otyp === EGG ? 'swallowed-egg' : 'swallowed-venom',
-        ),
-    })) return;
+        finishKill: (monster) => finishOrdinarySwallowedConsumedKill(monster, item.otyp === EGG ? 'swallowed-egg' : 'swallowed-venom'),
+    }))
+        return;
     if (await resolveSwallowedWeaponThrow({
         state: game,
         item,
@@ -7470,7 +5983,8 @@ async function dothrow(
         selectedQuantity,
         splitObjectId,
         finishKill: finishOrdinarySwallowedThrowKill,
-    })) return;
+    }))
+        return;
     if (game.u?.uswallow
         && (thrownObjectClass === 2
             || (thrownObjectClass === 6
@@ -7479,7 +5993,6 @@ async function dothrow(
         // thitmonst()->hmon() while engulfed, so do not pretend it can.
         throw new Error('swallowed weapon throwing is not implemented');
     }
-
     if (await resolveSwallowedPotionThrow({
         state: game,
         item,
@@ -7488,13 +6001,20 @@ async function dothrow(
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
         wakeNearby: wakeMonstersNear,
-        finishKill: (monster, death) => finishOrdinarySwallowedConsumedKill(
-            monster, 'swallowed-potion', death,
-        ),
-    })) return;
+        finishKill: (monster, death) => finishOrdinarySwallowedConsumedKill(monster, 'swallowed-potion', death),
+    }))
+        return;
     if (game.u?.uswallow && thrownObjectClass === 8)
         throw new Error('swallowed potion throwing is not implemented');
-
+    if (await resolveSwallowedFoodThrow({
+        state: game,
+        item,
+        objectClass: thrownObjectClass,
+        selectedQuantity,
+        splitObjectId,
+        wakeMonster: wakeAttackedMonster,
+    }))
+        return;
     if (await resolveGenericSwallowedThrow({
         state: game,
         item,
@@ -7502,13 +6022,13 @@ async function dothrow(
         selectedQuantity,
         splitObjectId,
         wakeMonster: wakeAttackedMonster,
-    })) return;
+    }))
+        return;
     if (game.u?.uswallow && thrownObjectClass !== 8) {
         // An unresolved swallowed object cannot use the ordinary floor path;
         // that path targets map coordinates rather than the engulfing monster.
         throw new Error('swallowed special-object throwing is not implemented');
     }
-
     if (!game.u?.uswallow && await resolveMapPotionThrow({
         state: game,
         item,
@@ -7521,21 +6041,16 @@ async function dothrow(
         wakeMonster: wakeAttackedMonster,
         wakeNearby: wakeMonstersNear,
         finishKill: finishOrdinaryMapPotionKill,
-    })) return;
+    }))
+        return;
     if (!game.u?.uswallow && thrownObjectClass === 8)
         throw new Error('map potion impact is not implemented');
-
     // is_ammo() halves hand-thrown arrow range and announces the missing
     // launcher before bhit() resolves the landing.  Keep the line alive
     // across contact and the terminal projectile transaction below.
     if (handThrownArrow) {
-        await pline(
-            `You aren't wielding a bow, so you throw your ${
-                OBJECT_NAMES[item.otyp] || 'arrow'
-            } by hand.`,
-        );
+        await pline(`You aren't wielding a bow, so you throw your ${OBJECT_NAMES[item.otyp] || 'arrow'} by hand.`);
     }
-
     // C refs: dothrow.c:throwit(), zap.c:bhit()/skiprange(), and
     // dothrow.c:drop_throw().  This bounded slice owns GEM_CLASS flight for a
     // mineral ROCK/TOUCHSTONE, the established unicorn gift matrix, and a gem
@@ -7546,9 +6061,7 @@ async function dothrow(
     const adjacentUnicornNonMineralGem = thrownObjectClass === 13
         && OBJECT_MATERIAL[item.otyp] !== MAT_MINERAL
         && adjacentMonster
-        && ['white unicorn', 'gray unicorn', 'black unicorn'].includes(
-            MONSTER_NAME[adjacentMonster.mnum],
-        );
+        && ['white unicorn', 'gray unicorn', 'black unicorn'].includes(MONSTER_NAME[adjacentMonster.mnum] ?? '');
     const adjacentGiftEligibleGem = adjacentUnicornNonMineralGem
         && !wieldingSling;
     const adjacentHelplessRealGemMiss = adjacentGiftEligibleGem
@@ -7569,546 +6082,314 @@ async function dothrow(
         && (mineralFirstTyp === POOL || mineralFirstTyp === ROOM
             || mineralFirstTyp === CORR || mineralFirstTyp === DOOR
             || mineralFirstTyp === ALTAR || mineralFirstTyp === IRONBARS
-            || IS_WALL(mineralFirstTyp))) {
-        const resolveGemShot = async () => {
-        const unitWeight = OBJECT_WEIGHT[item.otyp] ?? item.owt ?? 1;
-        let range = Math.max(
-            1,
-            Math.trunc(currentAttribute(A_STR) / 2)
-                - Math.trunc(unitWeight / 40),
-        );
-        if (matchingSlingGem) range++;
-        let skipRangeStart = 0;
-        let skipRangeEnd = 0;
-        let allowSkip = false;
-        if (item.otyp === ROCK) {
-            const rangeQuarter = Math.trunc(range / 4);
-            skipRangeStart = range
-                - (rangeQuarter > 0 ? rnd(rangeQuarter) : 0);
-            skipRangeEnd = skipRangeStart
-                - Math.trunc(skipRangeStart / 4) * rnd(3);
-            if (skipRangeEnd >= skipRangeStart)
-                skipRangeEnd = skipRangeStart - 1;
-            allowSkip = rn2(3) === 0;
-        }
-
-        let thrownMineral = item;
-        if (matchingSlingGem) {
-            const liveQuantity = item.quantity ?? item.quan ?? 1;
-            if (liveQuantity > 1) {
-                const objectId = nextIdent(); // splitobj() for this shot
-                item.quantity = liveQuantity - 1;
-                item.quan = item.quantity;
-                item.owt = unitWeight * item.quantity;
-                thrownMineral = {
-                    ...item,
-                    o_id: objectId,
-                    quantity: 1,
-                    quan: 1,
-                    owt: unitWeight,
-                    owornmask: 0,
-                    ready: false,
-                    timed: false,
-                    lamplit: false,
-                    where: 'free',
-                    how_lost: LOST_THROWN,
+            || (mineralFirstTyp !== undefined && IS_WALL(mineralFirstTyp)))) {
+        const resolveGemShot = async (shotNumber) => {
+            const thrownMineral = await detachThrownUnit(game, item, objectQuantity(item), matchingSlingGem ? null : splitObjectId, plineWithContinuation);
+            try {
+                if (game.program_state?.gameover)
+                    return { heroDied: true };
+                const unitWeight = OBJECT_WEIGHT[item.otyp] ?? item.owt ?? 1;
+                let range = Math.max(1, Math.trunc(currentAttribute(A_STR) / 2)
+                    - Math.trunc(unitWeight / 40));
+                if (matchingSlingGem)
+                    range++;
+                let skipRangeStart = 0;
+                let skipRangeEnd = 0;
+                let allowSkip = false;
+                if (item.otyp === ROCK) {
+                    const rangeQuarter = Math.trunc(range / 4);
+                    skipRangeStart = range
+                        - (rangeQuarter > 0 ? rnd(rangeQuarter) : 0);
+                    skipRangeEnd = skipRangeStart
+                        - Math.trunc(skipRangeStart / 4) * rnd(3);
+                    if (skipRangeEnd >= skipRangeStart)
+                        skipRangeEnd = skipRangeStart - 1;
+                    allowSkip = rn2(3) === 0;
+                }
+                const landThrownMineral = (landingX, landingY) => finishHeroThrownObjectLanding({
+                    state: game,
+                    object: thrownMineral,
+                    x: landingX,
+                    y: landingY,
+                    contactedMonster: contact,
+                    publish: plineWithContinuation,
+                });
+                const thrownGemDisplayName = () => {
+                    const callName = game._objectCallNames?.[thrownMineral.otyp];
+                    const perceivedName = callName
+                        && !objectTypeKnown(thrownMineral)
+                        && thrownMineral.oclass === 13
+                        ? `gem called ${callName}`
+                        : thrownMineral.dknown === false
+                            ? unseenObjectNoun(thrownMineral)
+                            : objectTypeKnown(thrownMineral)
+                                ? OBJECT_NAMES[thrownMineral.otyp] || 'gem'
+                                : thrownMineral.name
+                                    || OBJECT_NAMES[thrownMineral.otyp] || 'gem';
+                    const individualName = thrownMineral.oextra?.oname
+                        || thrownMineral.oname;
+                    return individualName
+                        ? `${perceivedName} named ${individualName}`
+                        : perceivedName;
                 };
-            } else {
-                const itemIndex = game.inventory.indexOf(item);
-                if (itemIndex >= 0) game.inventory.splice(itemIndex, 1);
-                releaseWeaponSlots(item, game);
-                item.where = 'free';
-                item.how_lost = LOST_THROWN;
-            }
-        } else if (selectedQuantity > 1) {
-            item.owt = unitWeight * (item.quantity ?? item.quan ?? 1);
-            thrownMineral = {
-                ...item,
-                o_id: splitObjectId,
-                quantity: 1,
-                quan: 1,
-                owt: unitWeight,
-                owornmask: 0,
-                ready: false,
-                timed: false,
-                lamplit: false,
-                where: 'free',
-                how_lost: LOST_THROWN,
-            };
-        } else {
-            const itemIndex = game.inventory.indexOf(item);
-            if (itemIndex >= 0) game.inventory.splice(itemIndex, 1);
-            releaseWeaponSlots(item, game);
-            item.where = 'free';
-            item.how_lost = LOST_THROWN;
-        }
-
-        const landThrownMineral = (landingX, landingY) =>
-            finishHeroThrownObjectLanding({
-                state: game,
-                object: thrownMineral,
-                x: landingX,
-                y: landingY,
-                publish: plineWithContinuation,
-            });
-
-        const thrownGemDisplayName = () => {
-            const callName = game._objectCallNames?.[thrownMineral.otyp];
-            const perceivedName = callName
-                && !objectTypeKnown(thrownMineral)
-                && thrownMineral.oclass === 13
-                ? `gem called ${callName}`
-                : thrownMineral.dknown === false
-                ? unseenObjectNoun(thrownMineral)
-                : objectTypeKnown(thrownMineral)
-                    ? OBJECT_NAMES[thrownMineral.otyp] || 'gem'
-                    : thrownMineral.name
-                    || OBJECT_NAMES[thrownMineral.otyp] || 'gem';
-            const individualName = thrownMineral.oextra?.oname
-                || thrownMineral.oname;
-            return individualName
-                ? `${perceivedName} named ${individualName}`
-                : perceivedName;
-        };
-
-        // C zap.c:bhit() initializes tmp_at() from obj_to_glyph() once
-        // before traversing the path.  Hallucination makes that temporary
-        // glyph consume one display-stream draw even when animation is not
-        // exposed by this terminal adapter.
-        transientObjectGlyph(thrownMineral);
-
-        let x = game.u.ux;
-        let y = game.u.uy;
-        let remaining = range;
-        let skipping = false;
-        let contact = null;
-        while (remaining-- > 0) {
-            x += dx;
-            y += dy;
-            const loc = game.level?.at?.(x, y);
-            const monster = game.level?.monsters?.find(candidate =>
-                !candidate.dead && (candidate.mhp ?? 1) > 0
-                && candidate.mx === x && candidate.my === y);
-
-            if (loc?.typ === WATER || loc?.typ === LAVAWALL) break;
-            const pointBlankPassingBars = loc?.typ === IRONBARS
-                && remaining === range - 1;
-            let passingBars = pointBlankPassingBars;
-            if (loc?.typ === IRONBARS && !pointBlankPassingBars) {
-                const forcedBarsHit = rn2(5) === 0;
-                if (forcedBarsHit) {
-                    rn2(100); // hit_bars()->hero_breaks()->breaktest()
-                    await plineWithContinuation('Clonk!');
-                    wakeMonstersNear(x, y, 16);
-                    x -= dx;
-                    y -= dy;
-                    break;
-                }
-                passingBars = true;
-            }
-
-            if (remaining === skipRangeStart && allowSkip) {
-                if (loc?.typ === POOL && !monster) {
-                    skipping = true;
-                    await plineWithContinuation('The rock skips.');
-                } else if (skipRangeStart > skipRangeEnd + 1) {
-                    skipRangeStart--;
-                }
-            }
-            if (skipping && remaining <= skipRangeEnd) skipping = false;
-
-            if ((!ZAP_POS(loc?.typ) || blocksMove(x, y))
-                && !passingBars) {
-                x -= dx;
-                y -= dy;
-                break;
-            }
-            if (monster) {
-                contact = monster;
-                break;
-            }
-        }
-
-        if (contact) {
-            if (adjacentHelplessRealGemMiss
-                && contact === adjacentMonster) {
-                const monsterBaseName = MONSTER_NAME[contact.mnum]
-                    || 'unicorn';
-                const targetName = contact.name
-                    ? contact.name : `the ${monsterBaseName}`;
-                const gemName = thrownGemDisplayName();
-
-                // C dothrow.c:thitmonst()->tmiss(obj, mon, FALSE).  Sleeping
-                // or immobile unicorns receive an ordinary visible miss but
-                // no wake probe; returning zero leaves landing to throwit().
-                await plineWithContinuation(
-                    `The ${gemName} misses ${targetName}.`,
-                );
-                await landThrownMineral(x, y);
-                game.context.move = 1;
-                return;
-            }
-
-            if (adjacentTameRealGemCatch && contact === adjacentMonster) {
-                const monsterBaseName = MONSTER_NAME[contact.mnum]
-                    || 'unicorn';
-                const subject = contact.name
-                    ? contact.name : `The ${monsterBaseName}`;
-                const gemName = thrownGemDisplayName();
-
-                // C dothrow.c:thitmonst().  A mobile tame unicorn catches a
-                // real gem but declines gem_accept(): no Luck, inventory
-                // transfer, or relocation.  Returning zero lets throwit()
-                // continue through ordinary breaktest and floor settlement.
-                await plineWithContinuation(
-                    `${subject} catches and drops the ${gemName}.`,
-                );
-                await landThrownMineral(x, y);
-                game.context.move = 1;
-                return;
-            }
-
-            if (adjacentRealGemGift && contact === adjacentMonster) {
-                const monsterBaseName = MONSTER_NAME[contact.mnum]
-                    || 'unicorn';
-                const subject = contact.name
-                    ? contact.name : `The ${monsterBaseName}`;
-                const gemName = thrownGemDisplayName();
-
-                // C dothrow.c:thitmonst()->gem_accept().  The first pline is
-                // still pending while value/alignment policy commits, so the
-                // second pline is what exposes the catch pager.
-                await plineWithContinuation(
-                    `${subject} catches the ${gemName}.`,
-                );
-                contact.mpeaceful = 1;
-                contact.mavenge = 0;
-                const isBuddy = Math.sign(
-                    MONSTER_ALIGNMENT[contact.mnum] ?? 0,
-                ) === Math.sign(game.u?.ualign?.type ?? 0);
-                const isGemstone = OBJECT_MATERIAL[thrownMineral.otyp]
-                    === MAT_GEMSTONE;
-                const properlyIdentified = thrownMineral.dknown !== false
-                    && objectTypeKnown(thrownMineral);
-                const guessedValue = !!(thrownMineral.oextra?.oname
-                    || thrownMineral.oname
-                    || game._objectCallNames?.[thrownMineral.otyp]);
-                let accepted = true;
-                let policy = '';
-                let luckDelta = null;
-                if (properlyIdentified) {
-                    if (isGemstone) {
-                        policy = isBuddy ? ' gratefully' : ' hesitatingly';
-                        luckDelta = isBuddy ? 5 : rn2(7) - 3;
-                    } else {
-                        accepted = false;
-                        policy = ' is not interested in your junk.';
+                // C zap.c:bhit() initializes tmp_at() from obj_to_glyph() once
+                // before traversing the path.  Hallucination makes that temporary
+                // glyph consume one display-stream draw even when animation is not
+                // exposed by this terminal adapter.
+                transientObjectGlyph(thrownMineral);
+                let x = game.u.ux;
+                let y = game.u.uy;
+                let remaining = range;
+                let skipping = false;
+                let contact = null;
+                while (remaining-- > 0) {
+                    x += dx;
+                    y += dy;
+                    const loc = game.level?.at?.(x, y);
+                    const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
+                    if (loc?.typ === WATER || loc?.typ === LAVAWALL)
+                        break;
+                    const pointBlankPassingBars = loc?.typ === IRONBARS
+                        && remaining === range - 1;
+                    let passingBars = pointBlankPassingBars;
+                    if (loc?.typ === IRONBARS && !pointBlankPassingBars) {
+                        const forcedBarsHit = rn2(5) === 0;
+                        if (forcedBarsHit) {
+                            rn2(100); // hit_bars()->hero_breaks()->breaktest()
+                            await plineWithContinuation('Clonk!');
+                            wakeMonstersNear(x, y, 16);
+                            x -= dx;
+                            y -= dy;
+                            break;
+                        }
+                        passingBars = true;
                     }
-                } else if (guessedValue) {
-                    if (isGemstone) {
-                        policy = isBuddy ? ' gratefully' : ' hesitatingly';
-                        luckDelta = isBuddy ? 2 : rn2(3) - 1;
-                    } else {
-                        accepted = false;
-                        policy = ' is not interested in your junk.';
-                    }
-                } else if (isGemstone) {
-                    policy = isBuddy ? ' gratefully' : ' hesitatingly';
-                    luckDelta = isBuddy ? 1 : rn2(3) - 1;
-                } else {
-                    policy = ' graciously';
-                }
-                if (luckDelta !== null) {
-                    game.u.uluck = Math.max(
-                        -13,
-                        Math.min(13, (game.u.uluck || 0) + luckDelta),
-                    );
-                }
-                if (accepted) {
-                    // dothrow.c:gem_accept()->mpickobj() gives the gem to the
-                    // unicorn before printing the result and relocating it.
-                    addObjectToMonsterInventory(
-                        contact, thrownMineral, game,
-                    );
-                }
-                await plineWithContinuation(accepted
-                    ? `${subject}${policy} accepts your gift.`
-                    : `${subject}${policy}`);
-
-                // teleport.c:rloc() runs after the acceptance message. A
-                // later vanish message waits for that first message.
-                const actorWasSeen = canProjectMonster(
-                    contact, contact.mx, contact.my,
-                );
-                const teleportRestricted = monsterTeleportRestricted(
-                    contact, game,
-                );
-                if (teleportRestricted && canSeeMonster(
-                    contact, contact.mx, contact.my,
-                )) {
-                    const restrictedName = contact.name
-                        ? contact.name : `the ${monsterBaseName}`;
-                    await plineWithContinuation(
-                        `A mysterious force prevents ${restrictedName} from teleporting!`,
-                    );
-                }
-                const relocation = teleportRestricted
-                    ? null : randomMonsterRelocation(
-                        contact, game, [], rn2, rnd,
-                    );
-                if (relocation) {
-                    // teleport.c:rloc_to_core() refreshes both cells after
-                    // placement and before its potentially suspending pline.
-                    // A visible destination is therefore already projected
-                    // beneath the prior gift-policy pager.
-                    newsym(relocation.oldx, relocation.oldy);
-                    newsym(relocation.x, relocation.y);
-                    if (actorWasSeen) {
-                        const actorNowSeen = canProjectMonster(
-                            contact, contact.mx, contact.my,
-                        );
-                        if (actorNowSeen) {
-                            const newDistance = dist2(
-                                contact.mx, contact.my,
-                                game.u.ux, game.u.uy,
-                            );
-                            const oldDistance = dist2(
-                                relocation.oldx, relocation.oldy,
-                                game.u.ux, game.u.uy,
-                            );
-                            const distanceSuffix = newDistance <= 2
-                                ? ' next to you'
-                                : newDistance <= BOLT_LIM * BOLT_LIM
-                                    ? ' close by'
-                                    : oldDistance === newDistance
-                                        ? ''
-                                        : newDistance < oldDistance
-                                            ? ' closer to you'
-                                            : ' farther away';
-                            await plineWithContinuation(
-                                `${subject} vanishes and reappears${
-                                    distanceSuffix
-                                }.`,
-                            );
-                        } else {
-                            await plineWithContinuation(
-                                `${subject} vanishes!`,
-                            );
+                    if (remaining === skipRangeStart && allowSkip) {
+                        if (loc?.typ === POOL && !monster) {
+                            skipping = true;
+                            await plineWithContinuation('The rock skips.');
+                        }
+                        else if (skipRangeStart > skipRangeEnd + 1) {
+                            skipRangeStart--;
                         }
                     }
+                    if (skipping && remaining <= skipRangeEnd)
+                        skipping = false;
+                    if (((!loc || !ZAP_POS(loc.typ)) || blocksMove(x, y))
+                        && !passingBars) {
+                        x -= dx;
+                        y -= dy;
+                        break;
+                    }
+                    if (monster) {
+                        contact = monster;
+                        break;
+                    }
                 }
-                if (!accepted) {
+                if (contact) {
+                    if (adjacentHelplessRealGemMiss
+                        && contact === adjacentMonster) {
+                        const monsterBaseName = MONSTER_NAME[contact.mnum]
+                            || 'unicorn';
+                        const targetName = contact.name
+                            ? contact.name : `the ${monsterBaseName}`;
+                        const gemName = thrownGemDisplayName();
+                        // C dothrow.c:thitmonst()->tmiss(obj, mon, FALSE).  Sleeping
+                        // or immobile unicorns receive an ordinary visible miss but
+                        // no wake probe; returning zero leaves landing to throwit().
+                        await plineWithContinuation(`The ${gemName} misses ${targetName}.`);
+                        await landThrownMineral(x, y);
+                        game.context.move = 1;
+                        return;
+                    }
+                    if (adjacentTameRealGemCatch && contact === adjacentMonster) {
+                        const monsterBaseName = MONSTER_NAME[contact.mnum]
+                            || 'unicorn';
+                        const subject = contact.name
+                            ? contact.name : `The ${monsterBaseName}`;
+                        const gemName = thrownGemDisplayName();
+                        // C dothrow.c:thitmonst().  A mobile tame unicorn catches a
+                        // real gem but declines gem_accept(): no Luck, inventory
+                        // transfer, or relocation.  Returning zero lets throwit()
+                        // continue through ordinary breaktest and floor settlement.
+                        await plineWithContinuation(`${subject} catches and drops the ${gemName}.`);
+                        await landThrownMineral(x, y);
+                        game.context.move = 1;
+                        return;
+                    }
+                    if (adjacentRealGemGift && contact === adjacentMonster) {
+                        const monsterBaseName = MONSTER_NAME[contact.mnum]
+                            || 'unicorn';
+                        const subject = contact.name
+                            ? contact.name : `The ${monsterBaseName}`;
+                        const gemName = thrownGemDisplayName();
+                        // C dothrow.c:thitmonst()->gem_accept().  The first pline is
+                        // still pending while value/alignment policy commits, so the
+                        // second pline is what exposes the catch pager.
+                        await plineWithContinuation(`${subject} catches the ${gemName}.`);
+                        contact.mpeaceful = 1;
+                        contact.mavenge = 0;
+                        const isBuddy = Math.sign(MONSTER_ALIGNMENT[contact.mnum] ?? 0) === Math.sign(game.u?.ualign?.type ?? 0);
+                        const isGemstone = OBJECT_MATERIAL[thrownMineral.otyp]
+                            === MAT_GEMSTONE;
+                        const properlyIdentified = thrownMineral.dknown !== false
+                            && objectTypeKnown(thrownMineral);
+                        const guessedValue = !!(thrownMineral.oextra?.oname
+                            || thrownMineral.oname
+                            || game._objectCallNames?.[thrownMineral.otyp]);
+                        let accepted = true;
+                        let policy = '';
+                        let luckDelta = null;
+                        if (properlyIdentified) {
+                            if (isGemstone) {
+                                policy = isBuddy ? ' gratefully' : ' hesitatingly';
+                                luckDelta = isBuddy ? 5 : rn2(7) - 3;
+                            }
+                            else {
+                                accepted = false;
+                                policy = ' is not interested in your junk.';
+                            }
+                        }
+                        else if (guessedValue) {
+                            if (isGemstone) {
+                                policy = isBuddy ? ' gratefully' : ' hesitatingly';
+                                luckDelta = isBuddy ? 2 : rn2(3) - 1;
+                            }
+                            else {
+                                accepted = false;
+                                policy = ' is not interested in your junk.';
+                            }
+                        }
+                        else if (isGemstone) {
+                            policy = isBuddy ? ' gratefully' : ' hesitatingly';
+                            luckDelta = isBuddy ? 1 : rn2(3) - 1;
+                        }
+                        else {
+                            policy = ' graciously';
+                        }
+                        if (luckDelta !== null) {
+                            game.u.uluck = Math.max(-13, Math.min(13, (game.u.uluck || 0) + luckDelta));
+                        }
+                        if (accepted) {
+                            // dothrow.c:gem_accept()->mpickobj() gives the gem to the
+                            // unicorn before printing the result and relocating it.
+                            await addObjectToMonsterInventory(contact, thrownMineral, game);
+                        }
+                        await plineWithContinuation(accepted
+                            ? `${subject}${policy} accepts your gift.`
+                            : `${subject}${policy}`);
+                        // teleport.c:rloc() runs after the acceptance message. A
+                        // later vanish message waits for that first message.
+                        const teleportRestricted = monsterTeleportRestricted(contact, game);
+                        if (teleportRestricted && canSeeMonster(contact)) {
+                            const restrictedName = contact.name
+                                ? contact.name : `the ${monsterBaseName}`;
+                            await plineWithContinuation(`A mysterious force prevents ${restrictedName} from teleporting!`);
+                        }
+                        if (!teleportRestricted) {
+                            const relocation = await randomMonsterRelocation(contact, { flags: RLOC_MSG });
+                            if (relocation && 'died' in relocation && relocation.died)
+                                return;
+                        }
+                        if (!accepted) {
+                            await landThrownMineral(x, y);
+                        }
+                        game.context.move = 1;
+                        return;
+                    }
+                    const hit = await hitMonsterWithThrownObject(contact, thrownMineral, {
+                        state: game, target: { x, y },
+                        volley: { count: volleyCount, index: shotNumber, objectType: item.otyp },
+                    });
+                    if (hit.heroDied)
+                        return hit;
+                    if (hit.consumed) {
+                        game.context.move = 1;
+                        return;
+                    }
                     await landThrownMineral(x, y);
+                    game.context.move = 1;
+                    return;
                 }
-                game.context.move = 1;
-                return;
-            }
-
-            // dothrow.c:thitmonst()->tmiss(). ROCK is sling ammunition, but
-            // throwing it without a sling applies the unlaunched-ammo penalty.
-            const luck = game.u?.uluck ?? game.u?.luck ?? game.Luck ?? 0;
-            const dexterity = currentAttribute(A_DEX);
-            let threshold = -1 + luck + findMonsterArmorClass(contact)
-                + (game.u?.uhitinc ?? 0) + (game.u?.ulevel ?? 1);
-            if (dexterity < 4) threshold -= 3;
-            else if (dexterity < 6) threshold -= 2;
-            else if (dexterity < 8) threshold -= 1;
-            else if (dexterity >= 14) threshold += dexterity - 14;
-            const distance = Math.max(
-                Math.abs(contact.mx - game.u.ux),
-                Math.abs(contact.my - game.u.uy),
-            );
-            threshold += Math.max(-4, 3 - distance);
-            threshold += rangedTargetHitBonus(thrownMineral, contact, {
-                defenderNotices: true,
-            });
-            const dieroll = rnd(20);
-            if (matchingSlingGem) {
-                const slingSkill = Math.abs(
-                    OBJECT_SUBTYPE[game.uwep.otyp] || 0,
-                );
-                threshold += (game.uwep.spe ?? game.uwep.enchantment ?? 0)
-                    - Math.max(
-                        game.uwep.oeroded ?? 0,
-                        game.uwep.oeroded2 ?? 0,
-                    )
-                    + weaponSkillHitBonus(game, slingSkill)
-                    + artifactToHitBonus(game.uwep, contact);
-            } else {
-                threshold -= 4;
-            }
-
-            const monsterBaseName = MONSTER_NAME[contact.mnum] || 'monster';
-            const hallucinating = !!(game.u?.hallucinating
-                || (game.u?.hallucinationTurns ?? 0) > 0);
-            const projectileName = matchingSlingGem
-                ? thrownGemDisplayName()
-                : thrownMineral.dknown === false
-                ? unseenObjectNoun(thrownMineral)
-                : OBJECT_NAMES[thrownMineral.otyp] || 'stone';
-            const displayedTargetName = () => {
-                if (hallucinating) {
-                    const subject = randomDisplayMonsterSubject();
-                    return subject.charAt(0).toLowerCase() + subject.slice(1);
+                const endpoint = game.level?.at?.(x, y);
+                if (endpoint?.typ === POOL) {
+                    await plineWithContinuation(unitWeight > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!');
                 }
-                return contact.isshk
-                    ? shopkeeperName(contact)
-                    : contact.name || `the ${monsterBaseName}`;
-            };
-            if (threshold < dieroll) {
-                const targetSuffix = canSeeMonster(
-                    contact, contact.mx, contact.my,
-                ) ? ` ${displayedTargetName()}` : '';
-                await plineWithContinuation(
-                    `The ${projectileName} misses${targetSuffix}.`,
-                );
-                if (rn2(3) === 0) await wakeAttackedMonster(contact);
                 await landThrownMineral(x, y);
                 game.context.move = 1;
                 return;
             }
-
-            // Launched sling ammunition uses its object damage and launcher
-            // skill. A stone thrown by hand uses the ordinary 1d2 damage.
-            const slingSkill = matchingSlingGem
-                ? Math.abs(OBJECT_SUBTYPE[game.uwep.otyp] || 0) : 0;
-            const targetIsLarge = (MONSTER_SIZE[contact.mnum] ?? 2) >= 3;
-            const launchedDamageRange = targetIsLarge
-                ? OBJECT_LARGE_DAMAGE[thrownMineral.otyp]
-                : OBJECT_SMALL_DAMAGE[thrownMineral.otyp];
-            const rawDamage = rnd(matchingSlingGem
-                ? Math.max(1, launchedDamageRange || 1) : 2);
-            if (matchingSlingGem)
-                recordWeaponPractice(game, slingSkill, 1);
-            const damage = Math.max(1, rawDamage
-                + (matchingSlingGem
-                    ? weaponSkillDamageBonus(game, slingSkill) : 0));
-            contact.mhp = (contact.mhp ?? 1) - damage;
-            contact.msleeping = 0;
-            if ((contact.mtame ?? 0) > 0 && damage > 0) {
-                contact.mtame = Math.max(0, contact.mtame - 1);
-                contact.pet = contact.mtame > 0;
-                if (contact.mtame > 0) {
-                    if (!contact.edog) contact.edog = {};
-                    contact.edog.abuse = (contact.edog.abuse ?? 0) + 1;
-                    const yelps = rn2(contact.mtame) !== 0;
-                    await plineWithContinuation(
-                        `${contact.name || `The ${monsterBaseName}`} ${
-                            yelps ? 'yelps' : 'growls'
-                        }!`,
-                    );
-                    if (contact.mhp > 0) {
-                        const fleeTime = 10 * rnd(damage);
-                        contact.mflee = 1;
-                        contact.mfleetim = Math.min(
-                            127,
-                            (contact.mfleetim ?? 0) + fleeTime,
-                        );
-                    }
-                }
+            finally {
+                if (game._thrownObject === thrownMineral)
+                    game._thrownObject = null;
             }
-            if (contact.mhp <= 0) {
-                await finishHeroMonsterKill(contact, x, y);
-            } else {
-                await plineWithContinuation(
-                    `The ${projectileName} hits ${
-                        displayedTargetName()
-                    }${damage > 4 ? '!' : '.'}`,
-                );
-                // uhitm.c:hmon_hitmon() wakes every surviving defender after
-                // publishing its hit message.  For peaceful non-pets this is
-                // also the setmangry()/growl transaction; keep it ahead of
-                // thitmonst()'s Dexterity exercise and mulch probe.
-                await wakeAttackedMonster(contact);
-            }
-            exerciseAttribute(A_DEX, true);
-            const mulched = shouldMulchMissile(thrownMineral);
-            if (mulched) {
-                destroyMulchedProjectile(thrownMineral);
-                game.context.move = 1;
-                return;
-            }
-            await applyMonsterPassiveToObject(
-                contact, thrownMineral,
-            );
-            await landThrownMineral(x, y);
-            game.context.move = 1;
-            return;
-        }
-
-        const endpoint = game.level?.at?.(x, y);
-        if (endpoint?.typ === POOL) {
-            await plineWithContinuation(
-                unitWeight > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!',
-            );
-        }
-        await landThrownMineral(x, y);
-        game.context.move = 1;
-        return;
         };
-
         for (let shot = 0; shot < volleyCount; shot++) {
             const previousCapacity = game._encumbranceLevel
                 ?? nearCapacity(game);
-            await resolveGemShot();
+            const shotResult = await resolveGemShot(shot + 1);
+            if (shotResult?.heroDied)
+                return;
             const currentCapacity = nearCapacity(game);
-            const capacityMessage = encumbranceMessage(
-                previousCapacity, currentCapacity,
-            );
+            const capacityMessage = encumbranceMessage(previousCapacity, currentCapacity);
             if (capacityMessage)
                 await plineWithContinuation(capacityMessage);
             game._encumbranceLevel = currentCapacity;
             game.u._encumbrance = encumbranceLabel(currentCapacity);
-            if (game.program_state?.gameover) break;
+            if (game.program_state?.gameover)
+                break;
         }
         game.context.move = 1;
         return;
     }
-
     for (let shot = 0; shot < volleyCount; shot++) {
         const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
-        await throwOrdinaryObject({
+        const shotResult = await throwOrdinaryObject({
             state: game,
             item,
             quantity: item.quantity ?? item.quan ?? 1,
             splitObjectId,
             dx,
             dy,
+            volley: { count: volleyCount, index: shot + 1, objectType: item.otyp },
         });
+        if ('heroDied' in shotResult && shotResult.heroDied)
+            return;
         const currentCapacity = nearCapacity(game);
-        const capacityMessage = encumbranceMessage(
-            previousCapacity, currentCapacity,
-        );
-        if (capacityMessage) await plineWithContinuation(capacityMessage);
+        const capacityMessage = encumbranceMessage(previousCapacity, currentCapacity);
+        if (capacityMessage)
+            await plineWithContinuation(capacityMessage);
         game._encumbranceLevel = currentCapacity;
         game.u._encumbrance = encumbranceLabel(currentCapacity);
-        if (game.program_state?.gameover) break;
+        if (game.program_state?.gameover)
+            break;
     }
     game.context.move = 1;
 }
-
 // C refs: lock.c autokey(TRUE), pick_lock().  Default autounlock includes
 // apply-key; an explicit false/none setting is the only state that disables
 // this branch in the currently ported option model.
 function autoUnlockTool(g = game) {
     const setting = g.flags?.autounlock;
-    if (setting === false || setting === 0 || setting === 'none') return null;
+    if (setting === false || setting === 0 || setting === 'none')
+        return null;
     const inventory = g.inventory || [];
     for (const otyp of [SKELETON_KEY, LOCK_PICK, CREDIT_CARD]) {
         const tool = inventory.find(object => object.otyp === otyp);
-        if (tool) return tool;
+        if (tool)
+            return tool;
     }
     return null;
 }
-
 function lockToolPresentation(tool) {
-    if (tool.otyp === SKELETON_KEY) return 'skeleton key';
-    if (tool.otyp === CREDIT_CARD) return 'credit card';
+    if (tool.otyp === SKELETON_KEY)
+        return 'skeleton key';
+    if (tool.otyp === CREDIT_CARD)
+        return 'credit card';
     return 'lock pick';
 }
-
 function lockPickChance(tool, g = game, container = null) {
-    const dexterity = g.u?.acurr?.a?.[A_DEX] ?? 10;
+    const dexterity = currentAttribute(A_DEX, g);
     const rogueBonus = g.urole?.key === 'rogue';
     let chance;
     if (container) {
@@ -8116,23 +6397,28 @@ function lockPickChance(tool, g = game, container = null) {
             chance = dexterity + (rogueBonus ? 20 : 0);
         else if (tool.otyp === LOCK_PICK)
             chance = 4 * dexterity + (rogueBonus ? 25 : 0);
-        else chance = 75 + dexterity;
-        if (container.cursed) chance = Math.trunc(chance / 2);
-    } else if (tool.otyp === CREDIT_CARD) {
+        else
+            chance = 75 + dexterity;
+        if (container.cursed)
+            chance = Math.trunc(chance / 2);
+    }
+    else if (tool.otyp === CREDIT_CARD) {
         chance = 2 * dexterity + (rogueBonus ? 20 : 0);
-    } else if (tool.otyp === LOCK_PICK) {
+    }
+    else if (tool.otyp === LOCK_PICK) {
         chance = 3 * dexterity + (rogueBonus ? 30 : 0);
-    } else chance = 70 + dexterity;
+    }
+    else
+        chance = 70 + dexterity;
     return chance;
 }
-
 // C ref: hack.c:dopush().  Move a floor boulder before committing the hero
 // into its old square; the first push owns Strength exercise and its message.
 async function pushBoulder(boulder, x, y, dx, dy) {
     const targetX = x + dx;
     const targetY = y + dy;
     const targetObjects = game.level?.objects?.[targetX]?.[targetY] || [];
-    const targetMonster = game.level?.monsters?.find(monster =>
+    const targetMonster = game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) &&
         monster.mx === targetX && monster.my === targetY
         && (monster.mhp ?? 1) > 0);
     const physicalMonster = targetMonster
@@ -8140,19 +6426,14 @@ async function pushBoulder(boulder, x, y, dx, dy) {
     if (physicalMonster) {
         if (canSpotMonster(targetMonster)) {
             const name = MONSTER_NAME[targetMonster.mnum] || 'monster';
-            await plineWithContinuation(
-                `There's ${indefiniteArticle(name)} ${name} on the other side.`,
-            );
-        } else {
-            await plineWithContinuation(
-                'You hear a monster behind the boulder.',
-            );
+            await plineWithContinuation(`There's ${withIndefiniteArticle(name)} on the other side.`);
+        }
+        else {
+            await plineWithContinuation('You hear a monster behind the boulder.');
             map_invisible(targetX, targetY);
         }
         if (game.flags?.verbose !== false) {
-            await plineWithContinuation(
-                "Perhaps that's why you cannot move it.",
-            );
+            await plineWithContinuation("Perhaps that's why you cannot move it.");
         }
         return false;
     }
@@ -8161,510 +6442,24 @@ async function pushBoulder(boulder, x, y, dx, dy) {
         await pline('You try to move the boulder, but in vain.');
         return false;
     }
-
     const sourceMove = game.moves ?? 0;
     const lastPushMove = game._lastBoulderPushMove;
     const giveMessage = game._lastPushedBoulder !== boulder
-        || !Number.isInteger(lastPushMove)
+        || lastPushMove === undefined || !Number.isInteger(lastPushMove)
         || sourceMove > lastPushMove + 2
         || sourceMove < lastPushMove;
     game._lastPushedBoulder = boulder;
     game._lastBoulderPushMove = sourceMove;
-    if (giveMessage) await pline('With great effort you move the boulder.');
-
-    exerciseAttribute(A_STR, true);
+    if (giveMessage)
+        await pline('With great effort you move the boulder.');
+    await exerciseAttribute(A_STR, true);
     // C dopush() invalidates an invisible-monster memory glyph at the
     // destination before movobj().  Otherwise newsym() must continue to
     // honor `I` and cannot reveal the boulder which now occupies the square.
     unmap_invisible(targetX, targetY, false);
-    const source = game.level.objects[x][y];
-    const index = source.indexOf(boulder);
-    if (index >= 0) source.splice(index, 1);
-    if (!game.level.objects[targetX]) game.level.objects[targetX] = [];
-    if (!game.level.objects[targetX][targetY])
-        game.level.objects[targetX][targetY] = [];
-    game.level.objects[targetX][targetY].unshift(boulder);
-    boulder.ox = targetX;
-    boulder.oy = targetY;
-    // movobj() removes and places the same object, which re-links it at the
-    // head of C's global fobj chain.  Pet goal scans observe this independently
-    // of the square-local pile order.
-    game._fobjSerial = (game._fobjSerial || 0) + 1;
-    boulder._fobjOrder = game._fobjSerial;
-    // remove_object()/place_object() update C's vision block points on both
-    // squares.  Rebuild the JS projection before the hero steps into the
-    // vacated square so the new boulder, rather than its old location,
-    // controls the following vision_recalc().
-    vision_reset();
-    newsym(x, y);
-    newsym(targetX, targetY);
+    await moveObject(boulder, targetX, targetY, game);
     return true;
 }
-
-function meleeAttributeBonus() {
-    const strength = currentAttribute(A_STR);
-    const dexterity = game.u?.acurr?.a?.[A_DEX] ?? 10;
-    let bonus = strength < 6 ? -2
-        : strength < 8 ? -1
-            : strength < 17 ? 0
-                : strength < 1850 ? 1
-                    : strength < 1900 ? 2 : 3;
-    if ((game.u?.ulevel ?? 1) < 3) bonus++;
-    return bonus + (dexterity < 4 ? -3
-        : dexterity < 6 ? -2
-            : dexterity < 8 ? -1
-                : dexterity < 14 ? 0 : dexterity - 14);
-}
-
-function meleeEncumbrancePenalty() {
-    const level = new Map([
-        ['Burdened', 1], ['Stressed', 2], ['Strained', 3],
-        ['Overtaxed', 4], ['Overloaded', 5],
-    ]).get(game.u?._encumbrance) || 0;
-    return level ? level * 2 - 1 : 0;
-}
-
-// C refs: hack.c:overexertion(), uhitm.c:do_attack()/hitum(),
-// weapon.c:dmgval(), mon.c:xkilled()/corpse_chance().  This is the first
-// ordinary hero-melee transaction.  Its hit threshold is shared hero/monster
-// state, not a species-index lookup.
-async function attackHostileMonster(monster, x, y, {
-    secondaryStrike = false,
-} = {}) {
-    game._heroMeleeThisCommand = true;
-    const primaryStrike = !secondaryStrike;
-    const attackWeapon = secondaryStrike
-        ? (game.uswapwep || game.u?.uswapwep || null)
-        : (game.uwep || game.u?.uwep || null);
-    const applyPassive = hit => applyHeroContactPassive(monster, {
-        hit,
-        attackType: AT_WEAP,
-        weapon: attackWeapon,
-    });
-    const twoWeaponActive = !!(game.u?.twoweap || game.twoweap)
-        && !!(game.uwep || game.u?.uwep)
-        && !!(game.uswapwep || game.u?.uswapwep);
-    const mortalityBeforeStrike = game.u?.umortality ?? 0;
-    const targetStillAvailableForOffhand = () => primaryStrike
-        && twoWeaponActive
-        && (game.multi ?? game._multi ?? 0) >= 0
-        && !(game._helplessTurns > 0)
-        && (game.u?.umortality ?? 0) === mortalityBeforeStrike
-        && (monster.mhp ?? 0) > 0
-        && monster.mx === x && monster.my === y
-        && (game.level?.monsters || []).includes(monster);
-    const finishStrike = () => targetStillAvailableForOffhand()
-        ? attackHostileMonster(monster, x, y, { secondaryStrike: true })
-        : true;
-    const hallucinating = !!(game.u?.hallucinating
-        || (game.u?.hallucinationTurns ?? 0) > 0);
-    const displayedMonsterName = () => hallucinating
-        ? randomDisplayMonsterName()
-        : monsterInstanceDisplayName(monster);
-    // C uhitm.c:missum()/hmon_hitmon_msg_hit() suppress the target name
-    // completely when verbose is disabled.  mon_nam() independently falls
-    // back to "it" when the target cannot currently be spotted.  Keep those
-    // gates ahead of Hallucination naming so a pronoun does not consume a
-    // display-RNG monster name which tty never requested.
-    const displayedMonsterObject = () => {
-        if (game.flags?.verbose === false
-            || !canProjectMonster(monster, monster.mx, monster.my)) return 'it';
-        if (!hallucinating && monster.isshk)
-            return shopkeeperName(monster);
-        if (!hallucinating && monster.name) return displayedMonsterName();
-        return `the ${displayedMonsterName()}`;
-    };
-    // hack.c:do_attack() charges metabolism once for the complete attack;
-    // hitum() then owns both primary and off-hand attempts.
-    if (primaryStrike) getHungry();
-
-    const bareHanded = !attackWeapon;
-    const martialArtist = bareHanded
-        && ['monk', 'samurai'].includes(game.urole?.key);
-    // weapon.c:skill_init() starts roles whose bare-handed maximum exceeds
-    // Expert at Basic.  Preserve an explicit override for later #enhance.
-    const bareHandedSkill = game.u?._bareHandedSkill
-        ?? (['barbarian', 'caveman', 'monk', 'samurai']
-            .includes(game.urole?.key) ? 2 : 1);
-
-    // uhitm.c:do_attack() consumes gu.unweapon once, after overexertion and
-    // before Strength exercise.  The message is an ordinary topline owner:
-    // it composes with the hit/miss line and only a later message may force
-    // that pair through --More--.
-    if (primaryStrike && game._unweapon) {
-        game._unweapon = false;
-        if (game.flags?.verbose !== false) {
-            if (attackWeapon) {
-                await pline(
-                    `You begin bashing monsters with ${
-                        inventoryItemDescription(attackWeapon)
-                    }.`,
-                );
-            } else {
-                const action = game.urole?.key === 'monk'
-                    ? 'striking' : 'bashing';
-                await pline(
-                    `You begin ${action} monsters with your ${
-                        game.uarmg ? 'gloved' : 'bare'
-                    } hands.`,
-                );
-            }
-        }
-    }
-
-    if (primaryStrike) exerciseAttribute(A_STR, true);
-    // uhitm.c find_roll_to_hit() checks role conduct before rolling the
-    // attack die.  A lawful Knight striking a helpless, non-undead target
-    // gets the caitiff message even when the subsequent attack misses.
-    const helpless = !!(monster.msleeping || monster.mcanmove === 0
-        || (monster.mfrozen ?? 0) > 0);
-    const caitiffMessage = primaryStrike
-        ? await applyCaitiffPenalty(monster, game) : false;
-    // Artifact accuracy can roll dice, so hitval must precede the hit roll.
-    const weaponAccuracy = attackWeapon
-        ? weaponHitBonus(attackWeapon, monster)
-        : 0;
-    const dieroll = rnd(20);
-    // uhitm.c:find_roll_to_hit() begins with abon(), target AC, intrinsic
-    // accuracy, compressed Luck, and experience level, then applies role,
-    // burden, and weapon adjustments.
-    const monsterAc = Number.isFinite(monster.mac) ? monster.mac
-        : Number.isFinite(monster.ac) ? monster.ac
-            : MONSTER_EXPERIENCE_META[monster.mnum]?.[0] ?? 10;
-    const luck = game.u?.uluck ?? game.u?.luck ?? game.Luck ?? 0;
-    const luckBonus = Math.sign(luck)
-        * Math.trunc((Math.abs(luck) + 2) / 3);
-    const level = game.u?.ulevel ?? 1;
-    let threshold = 1 + meleeAttributeBonus() + monsterAc
-        + (game.u?.uhitinc ?? 0) + luckBonus + level;
-    if (monster.mstun) threshold += 2;
-    if (monster.mflee) threshold += 2;
-    if (monster.msleeping) threshold += 2;
-    if (monster.mcanmove === 0) threshold += 4;
-    if (bareHanded && game.urole?.key === 'monk') {
-        const skillSteps = Math.max(bareHandedSkill, 1) - 1;
-        const skillHitBonus = Math.trunc(((skillSteps + 2) * 2) / 2);
-        const monkBonus = !game.uarm && !game.uarms
-            ? Math.trunc(level / 3) + 2 : 0;
-        threshold += monkBonus + skillHitBonus;
-    } else if (bareHanded) {
-        const skillSteps = Math.max(bareHandedSkill, 1) - 1;
-        threshold += Math.trunc((skillSteps + 2) / 2);
-    } else if (attackWeapon) {
-        // hitval() adds weapon enchantment and oc_hitbon, then
-        // weapon_hit_bonus() projects the current skill.  A weapon acquired
-        // after skill_init() does not become Basic merely by being wielded.
-        const weaponSkill = Math.abs(
-            OBJECT_SUBTYPE[attackWeapon.otyp] || 0,
-        );
-        threshold += weaponAccuracy + weaponSkillHitBonus(game, weaponSkill);
-    }
-    threshold -= meleeEncumbrancePenalty();
-    if (game.u?.utrap) threshold -= 3;
-    if (threshold <= dieroll && !game.u?.uswallow) {
-        await plineWithContinuation(
-            `You miss ${displayedMonsterObject()}.`,
-        );
-        // missum() wakes and angers an awake peaceful shopkeeper before
-        // the monster's passive response.
-        if (!helpless) await wakeAttackedShopkeeper(monster);
-        // hitum() invokes passive() after every primary attempt, including a
-        // miss.  The second attempt invokes it only when that strike hits.
-        if (primaryStrike) {
-            const passive = await applyPassive(false);
-            if (passive.heroDied) return true;
-        }
-        return finishStrike();
-    }
-
-    if (primaryStrike) exerciseAttribute(A_DEX, true);
-    const attackObjectClass = attackWeapon
-        ? attackWeapon.oclass || objectClassForType(attackWeapon.otyp) : 0;
-    const weaponDamage = bareHanded ? null : rollHeroMeleeWeaponDamage(
-        attackWeapon, monster, { mounted: !!game.u?.usteed },
-    );
-    const hitPointsBeforeObjectContact = monster.mhp;
-    const objectContact = bareHanded || weaponDamage ? null
-        : await resolveHeroMeleeObjectContact(monster, attackWeapon, {
-            describeTarget: displayedMonsterObject,
-            finishMonsterDeath: (target, death) => finishHeroMonsterKill(
-                target, target.mx, target.my, death,
-            ),
-            wakeMonster: wakeAttackedMonster,
-            wakeNearby: wakeMonstersNear,
-            publish: plineWithContinuation,
-        });
-    if (objectContact?.attackComplete) {
-        const hit = monster.mhp !== hitPointsBeforeObjectContact;
-        const passive = await applyPassive(hit);
-        if (passive.heroDied) return true;
-        return objectContact.monsterSurvived ? finishStrike() : true;
-    }
-    let damage;
-    if (bareHanded) {
-        damage = rnd(martialArtist ? 4 : 2);
-    } else if (weaponDamage) {
-        damage = weaponDamage.damage;
-    } else if (objectContact) {
-        damage = objectContact.damage;
-    } else {
-        const targetIsLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3;
-        const damageRange = (targetIsLarge
-            ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE)[attackWeapon.otyp];
-        damage = Math.max(
-            0, rnd(damageRange || 4) + (attackWeapon?.spe ?? 0),
-        );
-    }
-    const trainsWeapon = weaponDamage?.usesSkill && damage > 1;
-    const artifactHit = weaponDamage?.usesArtifact
-        ? await applyArtifactHitToMonster(attackWeapon, monster, damage, {
-            state: game,
-            visible: cansee(monster.mx, monster.my),
-            describeTarget: displayedMonsterObject,
-            describeCarrier: displayedMonsterName,
-            publish: plineWithContinuation,
-            dieRoll: dieroll,
-            hitOnHead: monster.mx === x && monster.my === y,
-        })
-        : { damage, specialMessage: false };
-    damage = artifactHit.damage;
-    if (artifactHit.attackStopped) {
-        const passive = await applyPassive(true);
-        if (passive.heroDied) return true;
-        return finishStrike();
-    }
-    const addHeroDamageBonuses = objectContact?.addHeroDamageBonuses !== false;
-    const damageCanUseBonuses = damage > 0 && addHeroDamageBonuses;
-    if (trainsWeapon) {
-        recordWeaponPractice(
-            game, twoWeaponActive ? 36
-                : Math.abs(OBJECT_SUBTYPE[attackWeapon?.otyp] || 0), 1,
-        );
-    }
-    if (bareHanded) {
-        // weapon.c:weapon_dam_bonus(NULL): Basic martial arts contributes
-        // +3.  Non-martial bare-handed combat uses the same skill projection
-        // with the smaller multiplier.
-        const trained = Math.max(bareHandedSkill, 1) - 1;
-        damage += Math.trunc(
-            ((trained + 1) * (martialArtist ? 3 : 1)) / 2,
-        );
-    }
-    // uhitm.c:hmon_hitmon_dmg_recalc() applies intrinsic/ring damage and
-    // Strength and weapon skill after the weapon die and enchantment.
-    // Polymorphed heroes do not receive dbon(); the current role-shaped state
-    // uses the ordinary hero path.
-    const polymorphed = Upolyd(game.u);
-    const weaponSkillDamage = weaponDamage?.usesSkill
-        ? weaponSkillDamageBonus(
-            game, Math.abs(OBJECT_SUBTYPE[attackWeapon?.otyp] || 0),
-        ) : 0;
-    const ordinaryStrengthDamage = heroStrengthDamageBonus(game);
-    const strengthDamage = twoWeaponActive
-        ? Math.sign(ordinaryStrengthDamage) * Math.trunc(
-            (3 * Math.abs(ordinaryStrengthDamage) + 2) / 4,
-        )
-        : ordinaryStrengthDamage;
-    if (damageCanUseBonuses) {
-        damage += (game.u?.udaminc ?? game.udaminc ?? 0)
-            + strengthDamage
-            + weaponSkillDamage;
-        damage = Math.max(1, damage);
-    } else if (addHeroDamageBonuses && !monsterIsShade(monster)) {
-        damage = 1;
-    }
-    const weaponConduct = attackObjectClass === 2
-        || (attackObjectClass === 6
-            && (OBJECT_SUBTYPE[attackWeapon.otyp] ?? 0) !== 0);
-    if (weaponConduct && damage > 0) {
-        if (!game.u.uconduct) game.u.uconduct = {};
-        const firstWeaponHit = !(game.u.uconduct.weaphit || 0);
-        game.u.uconduct.weaphit = (game.u.uconduct.weaphit || 0) + 1;
-        if (firstWeaponHit) {
-            const weaponName = attackWeapon.name
-                || OBJECT_NAMES[attackWeapon.otyp] || 'weapon';
-            recordGameLogEvent(
-                `hit with a wielded weapon (${weaponName}) for the first time`,
-            );
-        }
-    }
-    const wakeMonsterAfterHit = async () => {
-        if (!monster.msleeping) return;
-        const wakeMessage = canProjectMonster(
-            monster, monster.mx, monster.my,
-        ) ? `The ${displayedMonsterName()} wakes up!` : '';
-        if (wakeMessage) await plineWithContinuation(wakeMessage);
-        if (canProjectMonster(monster, monster.mx, monster.my)
-            && caitiffMessage) {
-            await promptKey(`${game._pending_message}--More--`);
-            game._pending_message = '';
-        }
-        monster.msleeping = 0;
-
-        await plineWithContinuation(
-            `The ${displayedMonsterName()} screams!`,
-        );
-        const wakeDistance = (monster.m_lev
-            ?? MONSTER_LEVEL[monster.mnum] ?? 0) * 18;
-        for (const nearby of [...(game.level?.monsters || [])].reverse()) {
-            if (!nearby.msleeping || (nearby.mhp ?? 1) <= 0) continue;
-            const nearbyDx = nearby.mx - monster.mx;
-            const nearbyDy = nearby.my - monster.my;
-            if (nearbyDx * nearbyDx + nearbyDy * nearbyDy >= wakeDistance)
-                continue;
-            if (canProjectMonster(nearby, nearby.mx, nearby.my)) {
-                await plineWithContinuation(
-                    `The ${MONSTER_NAME[nearby.mnum] || 'monster'} wakes up.`,
-                );
-            }
-            nearby.msleeping = 0;
-            nearby.mstrategy = (nearby.mstrategy ?? 0) & ~STRAT_WAITMASK;
-        }
-    };
-    if (damage === 0 && monsterIsShade(monster)) {
-        const weaponName = attackWeapon?.name
-            || OBJECT_NAMES[attackWeapon?.otyp] || 'attack';
-        if (!artifactHit.specialMessage) {
-            await plineWithContinuation(
-                `Your ${weaponName} passes harmlessly through ${
-                    displayedMonsterObject()
-                }.`,
-            );
-        }
-        await wakeMonsterAfterHit();
-        const passive = await applyPassive(true);
-        if (passive.heroDied) return true;
-        return finishStrike();
-    }
-    let stagger = { staggered: false };
-    if (bareHanded && !game.uarm && !game.uarms && damage > 1
-        && !polymorphed) {
-        stagger = await tryUnarmedStagger(monster, {
-            skill: bareHandedSkill,
-            damage,
-            dx: x - (game.u?.ux ?? x),
-            dy: y - (game.u?.uy ?? y),
-            announce: plineWithContinuation,
-            nameMonster: target => target === monster
-                ? `The ${displayedMonsterName()}`
-                : monsterInstanceDisplayName(target),
-            wakeMonster: wakeMonsterAfterHit,
-            finishLiquidDeath: (victim, death) =>
-                finishHeroLiquidMonsterDeath(victim, {
-                    ...death,
-                    hallucinating,
-                    nameMonster: displayedMonsterName,
-                }),
-        });
-    }
-    if (!stagger.dead)
-        monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
-    if (stagger.dead) {
-        await applyPassive(true);
-        return true;
-    }
-    if (monster.mhp > 0) {
-        // C uhitm.c:hmon_hitmon_msg_hit() uses canseemon(), not canspotmon():
-        // telepathy can supply the target noun without exposing damage
-        // magnitude.  Only an optically seen hit receives exclam(damage).
-        const hitPunctuation = game.flags?.verbose !== false
-            && canSeeMonster(monster, monster.mx, monster.my)
-            && damage > 4 ? '!' : '.';
-        if (!stagger.staggered && !artifactHit.specialMessage
-            && !objectContact?.specialMessage) {
-            await plineWithContinuation(
-                `You hit ${displayedMonsterObject()}${hitPunctuation}`,
-            );
-        }
-        await finishHeroMeleeObjectHit(attackWeapon, objectContact, {
-            publish: plineWithContinuation,
-        });
-        await wakeMonsterAfterHit();
-        if (!bareHanded && damage > 1 && !polymorphed
-            && !twoWeaponActive) {
-            const knockback = await tryKnockback(
-                game.u, monster, { attackType: AT_WEAP, damageType: AD_PHYS }, {
-                    weaponUsed: true,
-                    publish: plineWithContinuation,
-                    nameMonster: target => target === monster
-                        ? displayedMonsterObject()
-                        : monsterInstanceDisplayName(target),
-                    wakeDefender: wakeMonsterAfterHit,
-                    finishLiquidDeath: (victim, death) =>
-                        finishHeroLiquidMonsterDeath(victim, {
-                            ...death,
-                            hallucinating,
-                            nameMonster: displayedMonsterName,
-                        }),
-                },
-            );
-            if (knockback.defenderDied) {
-                await applyPassive(true);
-                return true;
-            }
-        }
-        const fleeRoll = rn2(25);
-        if (fleeRoll === 0
-            && monster.mhp < Math.trunc((monster.mhpmax ?? monster.mhp) / 2)) {
-            if (rn2(3) === 0) rnd(100);
-            monster.mflee = 1;
-        }
-        const passive = await applyPassive(true);
-        if (passive.heroDied) return true;
-        return finishStrike();
-    }
-
-    await finishHeroMeleeObjectHit(attackWeapon, objectContact, {
-        publish: plineWithContinuation,
-    });
-
-    // C hmon_hitmon_pet()->abuse_dog() runs even when this blow kills the
-    // pet.  Hallucination disables is_safemon(), so an ordinary direction can
-    // reach this path: tameness drops first, then the surviving tame status
-    // owns rn2(mtame) and yelp()/growl() owns a random Hallucinated verb.
-    const wasTame = (monster.mtame ?? (monster.pet ? 1 : 0)) > 0;
-    if (wasTame && damage > 0) {
-        monster.mtame = Math.max(0,
-            (monster.mtame ?? (monster.pet ? 1 : 0)) - 1);
-        monster.pet = monster.mtame > 0;
-        if (monster.mtame > 0) {
-            const yelps = rn2(monster.mtame) !== 0;
-            if (hallucinating) {
-                const hallucinatedPetSounds = [
-                    'beep', 'boing', 'sing', 'belche', 'creak', 'cough',
-                    'rattle', 'ululate', 'pop', 'jingle', 'sniffle', 'tinkle',
-                    'eep', 'clatter', 'hum', 'sizzle', 'twitter', 'wheeze',
-                    'rustle', 'honk', 'lisp', 'yodel', 'coo', 'burp', 'moo',
-                    'boom', 'murmur', 'oink', 'quack', 'rumble', 'twang',
-                    'toot', 'gargle', 'hoot', 'warble',
-                ];
-                // Both yelp() and growl() use this table while Hallucinating;
-                // retain the branch owner even though their visible result is
-                // the same for this state.
-                const sound = hallucinatedPetSounds[rn2(
-                    hallucinatedPetSounds.length,
-                )];
-                void yelps;
-                await plineWithContinuation(
-                    `The ${randomDisplayMonsterName()} ${sound}s!`,
-                );
-            }
-        }
-    }
-
-    const killed = await finishHeroMonsterKill(monster, x, y, {
-        hallucinating,
-        zombifyCorpse: bareHanded && isZombieMaker(
-            game.u?.umonnum, game.u?.mcan,
-        ),
-        // xkilled() renders the victim after abuse_dog(), so preserve this
-        // lazy Hallucination-name boundary rather than precomputing it.
-        nameMonster: displayedMonsterName,
-    });
-    await applyPassive(true);
-    return killed;
-}
-
 // C uhitm.c:attack_checks().  An ordinary direction into an actor which the
 // hero cannot spot is not yet a melee attack unless warning or a remembered
 // invisible-monster glyph has already identified the occupied square.
@@ -8672,123 +6467,121 @@ async function attackHostileMonster(monster, x, y, {
 async function markUnseenMonsterBeforeAttack(monster, x, y) {
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
     if (game.context?.forcefight
-        || canProjectMonster(monster, x, y)
+        || canSpotMonster(monster)
         || monsterHasWarningProjection(monster)
         || game.level?.at(x, y)?.remembered_glyph?.kind === 'invisible') {
         return false;
     }
-
-    await plineWithContinuation(
-        "Wait!  There's something there you can't see!",
-    );
+    await plineWithContinuation("Wait!  There's something there you can't see!");
     map_invisible(x, y);
-
     // mon.c:wakeup() clears sleep here.
     // TODO: add mimic reveal, peaceful response, and the sleeping growl.
     monster.msleeping = 0;
     return true;
 }
-
-// C ref: hack.c:domove_fight_empty().  A forced attack and an ordinary move
-// into remembered invisible-monster knowledge converge here after actor
-// lookup.  Both spend the action without entering terrain movement; only the
+// C ref: hack.c:domove_fight_empty(). Forced attacks at the map edge and
+// ordinary moves into remembered invisible-monster knowledge converge here.
+// Both spend the action without entering terrain movement; only the
 // remembered-invisible path is excluded by nopick.
 async function fightEmptyDestination(x, y) {
-    const loc = game.level?.at(x, y);
-    const forcefight = !!game.context?.forcefight;
-    const rememberedInvisible
-        = loc?.remembered_glyph?.kind === 'invisible';
+    requirePlayingGame(game);
+    const offEdge = !isok(x, y);
+    const loc = offEdge ? null : game.level.requireAt(x, y);
+    const glyph = offEdge ? null : glyphAt(x, y);
+    const forcefight = !!game.context.forcefight;
+    const rememberedInvisible = glyph?.kind === 'invisible';
     if (!forcefight
-        && (!rememberedInvisible || game.context?.nopick)) return false;
-
+        && (!rememberedInvisible || monsterAtPosition(game.level, x, y)
+            || game.context.nopick))
+        return false;
     // domove_fight_empty() is still the hero's attack attempt even when no
     // live monster occupies the destination.  The following monster phase
     // observes that command ownership at fatal tty/status boundaries.
     game._heroMeleeThisCommand = true;
-    if (rememberedInvisible) unmap_invisible(x, y);
-    stopRun(game);
-
-    const boulder = (game.level?.objects?.[x]?.[y] || [])
-        .find(object => object.otyp === BOULDER);
-    const solid = !loc || blocksMove(x, y)
-        || IS_FURNITURE(loc.typ);
-    if (boulder) {
-        await pline('You harmlessly attack a boulder.');
-    } else if (solid) {
-        const obstacle = !loc ? 'an unknown obstacle'
-            : loc.typ === TREE ? 'the tree'
-                : loc.typ === DOOR ? 'the door'
-                    : loc.typ === STONE ? 'the solid rock'
-                        : 'the wall';
-        await pline(`You harmlessly attack ${obstacle}.`);
-    } else {
-        await pline('You attack thin air.');
+    const explosion = heroIsPolymorphed(game)
+        ? requireMonsterData(MONSTER_ATTACKS, heroSpecies(game)).find(([type]) => type === AT_EXPL)
+        : undefined;
+    const surface = loc?.typ === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(loc.drawbridgemask ?? 0) : loc?.typ;
+    const closedDoor = loc?.typ === DOOR && !!(loc.doormask & (D_CLOSED | D_LOCKED));
+    const solid = !loc || surface === undefined || !ACCESSIBLE(surface)
+        || closedDoor || IS_FURNITURE(loc.typ);
+    const underwater = !!(game.underwater || game.u.uinwater);
+    let obstacle;
+    let target = 'an unknown obstacle';
+    if (loc) {
+        if (!underwater) {
+            const objects = game.level.objects[x]?.[y] ?? [];
+            obstacle = objects.find(object => object.otyp === BOULDER);
+            if ((glyph?.kind === 'object' && glyph.statueGlyph)
+                || (heroIsHallucinating(game) && glyph?.kind === 'monster'))
+                obstacle = objects.find(object => object.otyp === STATUE);
+            const weapon = game.uwep || game.u.uwep;
+            if (forcefight && weapon && diggingTarget(weapon, x, y, game) !== DIGTYP_UNDIGGABLE
+                && !rememberedInvisible && glyph?.kind !== 'monster') {
+                game.u.dz = 0;
+                await applyPickAxeDirection(weapon, {
+                    state: game,
+                    attackMonster: monster => attackHostileMonster(monster, monster.mx, monster.my),
+                    payShopkeeper: dopay,
+                });
+                return true;
+            }
+        }
+        unmapObject(x, y);
+        if (obstacle)
+            map_object(obstacle, true);
+        newsym(x, y);
+        if (obstacle) {
+            target = simpleObjectNameWithArticle(obstacle, game);
+        }
+        else if (underwater && !isPoolAt(x, y, game)) {
+            target = Is_waterlevel(game.u.uz) && loc.typ === AIR ? 'an air bubble' : 'nothing';
+        }
+        else if (solid) {
+            if (loc.seenv || IS_STWALL(loc.typ) || loc.typ === SDOOR || loc.typ === SCORR)
+                target = `the ${terrain_glyph(loc, x, y).terrainName}`;
+        }
+        else {
+            target = 'thin air';
+        }
+    }
+    const manner = obstacle || solid ? explosion ? 'futilely ' : 'harmlessly ' : '';
+    await pline(`You ${manner}${explosion ? 'explode at' : 'attack'} ${target}.`);
+    endVoluntaryMultiTurn(game);
+    if (explosion) {
+        wakeMonstersNear(game.u.ux, game.u.uy, 49, game);
+        if ((await resolveHeroCombatExplosion(null, explosion, { state: game })).heroDied)
+            return true;
+        game.u.mh = -1;
+        await returnHeroToHumanForm(game);
     }
     return true;
 }
-
-// C ref: hack.c domove — execute a movement
-// C hack.c:domove_core() converges ordinary movement and a successful
-// domove_swap_with_pet() at spoteffects(TRUE).  Keep destination pickup,
-// look_here(), engraving, and trap handling behind that shared boundary;
-// returning directly from a special movement helper would silently skip the
-// floor transaction even though the hero has changed squares.
-export async function finishDestinationSpotEffects({
-    oldx, oldy, newx, newy, loc, explicitAttempt, trapOptions = {},
-}) {
-    // C spoteffects() updates special-room/shop membership after liquid entry
-    // effects and before destination pickup or traps.
-    await checkSpecialRoom();
-    await autopickupAtHero();
-    if (game.program_state?.gameover) return true;
-    if (await triggerHeroTrapAt(newx, newy, {
-        finishTeleport: finishTeleportArrival,
-        gotoLevel,
-        ...trapOptions,
-    })) return true;
-    if (explicitAttempt)
-        maybeSmudgeEngravings(oldx, oldy, newx, newy);
-    return true;
-}
-
-export function applyHeroLiquidEffects(publish = plineWithContinuation) {
+export function applyHeroLiquidEffects(publish = plineWithContinuation, { entry = 'spot-effects' } = {}) {
     return heroLiquidEffects({
-        publish,
-        chooseTeleportDestination: async () => {
-            const choice = await askTeleportDestination();
-            return choice.destination;
-        },
-        applyLandingEffects: ({ from, to }) => finishDestinationSpotEffects({
+        publish, entry,
+        chooseTeleportDestination: askTeleportDestination,
+        applyLandingEffects: ({ from, to, pick = true }) => finishDestinationSpotEffects({
             oldx: from.x, oldy: from.y,
             newx: to.x, newy: to.y,
-            loc: game.level.at(to.x, to.y),
-            explicitAttempt: false,
+            explicitAttempt: false, publish, pick,
         }),
-        burnInventory: damage => destroyFireInventory(damage, { state: game, publish }),
-        igniteInventory: () => igniteItems(game.inventory, { state: game, publish }),
     });
 }
-
 // C spoteffects(TRUE) also applies when expulsion or a body change leaves
 // the hero on the same square. It does not count as a movement attempt.
-export async function applyHeroLocationEffects(publish = plineWithContinuation) {
-    const liquid = await applyHeroLiquidEffects(publish);
-    if (liquid?.moved || liquid?.died || liquid?.dismounted) return liquid;
+export async function applyHeroLocationEffects(publish = plineWithContinuation, { pick = true } = {}) {
     const { ux: x, uy: y } = game.u;
-    await finishDestinationSpotEffects({
+    return finishDestinationSpotEffects({
         oldx: x, oldy: y, newx: x, newy: y,
-        loc: game.level.at(x, y), explicitAttempt: false,
+        explicitAttempt: false, publish, pick,
     });
-    return { died: !!game.program_state?.gameover };
 }
-
 // C hack.c:domove_core() common tail after the hero's coordinates have been
 // committed.  Ordinary moves and pet displacement both pass through run
 // termination, u_on_newpos/vision work, and spoteffects in this order.
-async function finishMovedHero({
-    oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove = null,
-    trapOptions = {},
-}) {
+async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove = null, trapOptions = {}, }) {
     const u = game.u;
     // C hack.c:domove_core() sets this only in the common tail after map
     // coordinates changed.  The turn loop retains it through every global
@@ -8796,41 +6589,74 @@ async function finishMovedHero({
     // hero action begins.
     u.umoved = true;
     see_nearby_objects();
-
+    await senseBuriedObjects();
     // An active non-travel run ends upon entering a doorway, obstruction, or
     // furniture square even when actor displacement, rather than the plain
     // terrain branch, performed the coordinate move.
     if (game._runState && game._runState.mode !== 8 && (loc?.typ === DOOR
         || IS_OBSTRUCTED(loc?.typ ?? STONE)
-        || IS_FURNITURE(loc?.typ ?? STONE))) stopRun();
-
+        || IS_FURNITURE(loc?.typ ?? STONE)))
+        stopRun();
     newsym(oldx, oldy);
     vision_recalc(1);
-    newsym(newx, newy);
     await announceInvocationSquare();
-    if (ballChainMove) finishBallAndChainMove(ballChainMove);
-
-    const liquid = await applyHeroLiquidEffects();
-    if (liquid?.moved && explicitAttempt)
-        maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
-    if (liquid?.moved || liquid?.died || liquid?.dismounted) return true;
-
+    if (ballChainMove)
+        await finishBallAndChainMove(ballChainMove);
     const finished = await finishDestinationSpotEffects({
-        oldx, oldy, newx, newy, loc, explicitAttempt, trapOptions,
+        oldx, oldy, newx, newy, explicitAttempt, trapOptions,
     });
-    // Native domove() installs nomul(-2) for a costly ball drag after
-    // spoteffects, then reaches its runmode-delay tail before any monster or
-    // global maintenance advances that helpless counter.
+    if (finished.died)
+        return true;
+    if (finished.moved && explicitAttempt)
+        maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
+    // C domove_core(): landing and pickup finish before nomul(-2).
+    // A longer trap-induced delay survives, but its completion prose changes.
     if (ballChainMove?.causeDelay) {
-        await captureRunmodeDelay(
-            game, true, game.moves || 0,
-            { preservePhysicalTopline: true },
-        );
+        if ((game._helplessTurns ?? 0) <= 2) {
+            u.invulnerable = false;
+            u.usleep = 0;
+            game.multi = 0;
+            stopRun();
+            game._cannedCommands = [];
+            game._helplessTurns = 2;
+        }
+        game._helplessReason = 'dragging an iron ball';
+        game._helplessDoneMessage = '';
+        await captureRunmodeDelay(game, true, game.moves || 0, { preservePhysicalTopline: true });
     }
-    return finished;
+    return true;
 }
-
+// C hack.c:domove() clears kickedloc after even an unsuccessful attempt.
 async function domove(dx, dy, explicitAttempt = true) {
+    const moved = await domoveCore(dx, dy, explicitAttempt);
+    if (!game.program_state.gameover)
+        game._kickedLoc = null;
+    return moved;
+}
+// C hack.c:move_out_of_bounds(). A failed step takes no time; a forced
+// attack still spends the action against an unknown obstacle.
+async function moveOutOfBounds(x, y) {
+    if (game.context.forcefight)
+        return fightEmptyDestination(x, y);
+    if (game.flags.mention_walls) {
+        let { dx = 0, dy = 0 } = game.u;
+        if (dx && dy) {
+            // Keep both directions only when both coordinates hit a limit.
+            if (isok(x, game.u.uy))
+                dx = 0;
+            else if (isok(game.u.ux, y))
+                dy = 0;
+        }
+        const horizontal = dx < 0 ? 'west' : dx > 0 ? 'east' : '';
+        const vertical = dy < 0 ? 'north' : dy > 0 ? 'south' : '';
+        await pline(`You have already gone as far ${vertical}${horizontal} as possible.`);
+    }
+    stopRun(game);
+    game.context.move = 0;
+    return false;
+}
+async function domoveCore(dx, dy, explicitAttempt) {
+    requirePlayingGame(game);
     const u = game.u;
     // C cmd.c:set_move_cmd() persists the requested command vector before
     // domove_core() can return early.  Death cleanup and several combat paths
@@ -8850,10 +6676,12 @@ async function domove(dx, dy, explicitAttempt = true) {
         && (capacity >= OVERLOADED || lacksStamina)) {
         if (capacity >= OVERLOADED) {
             await pline('You collapse under your load.');
-        } else {
+        }
+        else {
             await pline("You don't have enough stamina to move.");
             // exercise() suppresses physical attributes while polymorphed.
-            if (!polymorphed) exerciseAttribute(A_CON, false);
+            if (!polymorphed)
+                await exerciseAttribute(A_CON, false);
         }
         stopRun(game);
         // carrying_too_much() returns from domove_core() without clearing
@@ -8886,14 +6714,17 @@ async function domove(dx, dy, explicitAttempt = true) {
             [-1, -1], [1, -1], [1, 1], [-1, 1],
         ];
         for (let tries = 0; tries <= 50; tries++) {
-            const [candidateDx, candidateDy]
-                = impairedDirections[rn2(impairedDirections.length)];
+            const candidateDirection = impairedDirections[rn2(impairedDirections.length)];
+            if (!candidateDirection)
+                throw new Error('Movement RNG produced an invalid direction.');
+            const [candidateDx, candidateDy] = candidateDirection;
             const candidateX = u.ux + candidateDx;
             const candidateY = u.uy + candidateDy;
             const candidate = game.level?.at(candidateX, candidateY);
             if (candidateX < 1 || candidateX >= COLNO
                 || candidateY < 0 || candidateY >= ROWNO
-                || !candidate || IS_OBSTRUCTED(candidate.typ)) continue;
+                || !candidate || IS_OBSTRUCTED(candidate.typ))
+                continue;
             dx = candidateDx;
             dy = candidateDy;
             break;
@@ -8912,16 +6743,14 @@ async function domove(dx, dy, explicitAttempt = true) {
     }
     const newx = u.ux + dx;
     const newy = u.uy + dy;
-
+    if (!isok(newx, newy))
+        return moveOutOfBounds(newx, newy);
     const loc = game.level?.at(newx, newy);
-
     // C domove_core() resolves a destination monster before test_move()
     // applies terrain restrictions.  In particular, the hero can attack
     // diagonally across an intact doorway even though moving through that
     // same doorway would be rejected.
-    const monster = game.level?.monsters?.find(mon =>
-        !mon.dead && (mon.mhp ?? 1) > 0
-        && mon.mx === newx && mon.my === newy);
+    const monster = game.level ? monsterAtPosition(game.level, newx, newy) : null;
     if (monster) {
         // C display.h:_is_safemon() deliberately stops treating even a
         // peaceful/tame monster as safe while the hero is confused,
@@ -8933,7 +6762,7 @@ async function domove(dx, dy, explicitAttempt = true) {
             || monster.mpeaceful)
             && !game.context?.forcefight
             && !confused
-            && !u?.hallucinating && !(u?.hallucinationTurns > 0)
+            && !heroIsHallucinating(game)
             && !stunned;
         // hack.c stops a run only for a visible or sensed actor.  Seeing the
         // destination terrain is insufficient when minvis hides its occupant;
@@ -8954,50 +6783,51 @@ async function domove(dx, dy, explicitAttempt = true) {
         // do_attack().  An unseen hostile therefore spends this attempted
         // step in attack_checks() while preventing another automatic run
         // step after the intervening monster phase.
-        if (!safeMonster && game._runState) stopRun(game);
+        if (!safeMonster && game._runState)
+            stopRun(game);
         if (safeMonster) {
             // C ref: hack.c do_attack()/domove(): a tame monster normally
             // yields to the hero, and ordinary peacefuls share the same
             // displacement path.  Only tame actors flee after refusal.
             const tame = !!(monster.pet || monster.mtame);
+            const yields = rn2(7) !== 0;
+            if (!yields && tame) {
+                const flight = await makeMonsterFlee(monster, {
+                    turns: rnd(6), announce: false,
+                });
+                if (flight.heroDied)
+                    return true;
+            }
             const tameName = monster.name || (monster.mnum === 16
                 ? 'your little dog' : monster.mnum === 32 ? 'your kitten'
-                    : monster.mnum === 100 ? 'your saddled pony' : 'your pet');
+                : monster.mnum === 100 ? 'your saddled pony' : 'your pet');
             const speciesName = monsterInstanceDisplayName(monster);
             const subject = tame ? tameName
                 : monster.name ? speciesName : `the ${speciesName}`;
-            const yields = rn2(7) !== 0;
             if (!yields) {
-                if (tame) {
-                    let fleeTime = rnd(6);
-                    // monflee() promotes a one-turn request to two so the
-                    // monster remains visibly fleeing through at least one
-                    // movement action; mcalcdistress() decrements it first.
-                    if (fleeTime === 1) fleeTime++;
-                    if (monster.mflee && (monster.mfleetim || 0) > 0)
-                        fleeTime += monster.mfleetim;
-                    monster.mflee = 1;
-                    monster.mfleetim = Math.min(fleeTime, 127);
-                    monster.mtrack = [];
-                }
-                const displayName = subject[0].toUpperCase()
+                const displayName = subject.charAt(0).toUpperCase()
                     + subject.slice(1);
                 await pline(`You stop.  ${displayName} is in the way!`);
                 return true;
             }
             if (u.utrap
-                && !await heroCanMoveFromTrap(newx, newy)) return true;
-            const ballChainMove = beginBallAndChainMove(newx, newy);
+                && !await heroCanMoveFromTrap(newx, newy))
+                return true;
+            const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
-                await pline(ballChainMove.blockedMessage);
-                game.context.move = 0;
-                return false;
+                if (ballChainMove.blockedMessage)
+                    await pline(ballChainMove.blockedMessage);
+                game.context.move = Number(ballChainMove.consumedTurn);
+                return ballChainMove.consumedTurn;
             }
             const oldx = u.ux, oldy = u.uy;
-            u.ux0 = oldx; u.uy0 = oldy;
-            u.ux = newx; u.uy = newy;
-            moveSteedWithHero();
-            monster.mx = oldx; monster.my = oldy;
+            u.ux0 = oldx;
+            u.uy0 = oldy;
+            u.ux = newx;
+            u.uy = newy;
+            await moveSteedWithHero();
+            monster.mx = oldx;
+            monster.my = oldy;
             const swapName = tame ? tameName
                 : monster.name ? `peaceful ${speciesName}`
                     : `the peaceful ${speciesName}`;
@@ -9011,29 +6841,27 @@ async function domove(dx, dy, explicitAttempt = true) {
             return true;
         if (await markUnseenMonsterBeforeAttack(monster, newx, newy))
             return true;
-        return attackHostileMonster(monster, newx, newy);
+        if (await attackHostileMonster(monster, newx, newy))
+            return true;
     }
-
     // domove_core() snapshots the origin before test_move().  This includes
     // the terminal blocked step of a Shift-run, which is why later monster
     // missile logic can observe the hero as stationary rather than retreating.
     u.ux0 = u.ux;
     u.uy0 = u.uy;
-
     if (await fightEmptyDestination(newx, newy))
         return true;
-
     if (await ridingPreventsMovement()) {
         stopRun(game);
         return true;
     }
-
-    if (!await heroCanMoveFromTrap(newx, newy)) return true;
-
-    if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))) {
+    if (!await heroCanMoveFromTrap(newx, newy))
+        return true;
+    if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))
+        && !heroCanPassWallAt(game, newx, newy)) {
         const fumbling = !!(u?.fumbling || (u?.fumblingTurns || 0) > 0);
         const blind = !!(u?.blind || (u?.blindTurns || 0) > 0);
-        const dexterity = u?.acurr?.a?.[A_DEX] ?? 10;
+        const dexterity = currentAttribute(A_DEX);
         const autoopenEligible = (game.flags?.autoopen ?? true)
             && !game._runState
             && !confused
@@ -9051,7 +6879,7 @@ async function domove(dx, dy, explicitAttempt = true) {
             if (!dx || !dy) {
                 if (blind || stunned || dexterity < 10 || fumbling) {
                     await pline('Ouch!  You bump into a door.');
-                    exerciseAttribute(A_DEX, false);
+                    await exerciseAttribute(A_DEX, false);
                     // C sets context.move despite returning false from
                     // test_move(), then nomul(0).  `true` is this port's
                     // scheduler-facing "time elapsed" result; the hero's
@@ -9076,9 +6904,7 @@ async function domove(dx, dy, explicitAttempt = true) {
             }
             await promptKey('This door is locked.--More--');
             const toolName = lockToolPresentation(tool);
-            const answer = await promptKey(
-                `Unlock it with your ${toolName}? [ynq] (q) `,
-            );
+            const answer = await promptKey(`Unlock it with your ${toolName}? [ynq] (q) `);
             if (String.fromCharCode(answer).toLowerCase() === 'y') {
                 game._occupation = {
                     key: 'pick-lock',
@@ -9097,13 +6923,10 @@ async function domove(dx, dy, explicitAttempt = true) {
             return false;
         }
         const openRoll = rnl(20);
-        const attributes = game.u?.acurr?.a || [10, 10, 10];
-        const openThreshold = Math.trunc(
-            ((attributes[A_STR] ?? 10) + (attributes[A_DEX] ?? 10)
-                + (attributes[A_CON] ?? 10)) / 3,
-        );
+        const openThreshold = Math.trunc((currentStrength() + currentAttribute(A_DEX)
+            + currentAttribute(A_CON)) / 3);
         if (openRoll >= openThreshold) {
-            exerciseAttribute(A_STR, true);
+            await exerciseAttribute(A_STR, true);
             await pline('The door resists!');
             return false;
         }
@@ -9115,41 +6938,51 @@ async function domove(dx, dy, explicitAttempt = true) {
         newsym(newx, newy);
         return false;
     }
-
     // C test_move() rejects an obstructed destination before it evaluates
     // tight-diagonal shoulders.  A boulder on ordinary floor is not terrain
     // obstruction, so that case still reaches cant_squeeze_thru() below
     // before moverock().
-    if (blocksMove(newx, newy)) {
+    if (blocksMove(newx, newy) && !heroCanPassWallAt(game, newx, newy)) {
+        const weapon = game.uwep || game.u.uwep;
+        if (loc && IS_OBSTRUCTED(loc.typ) && game.flags?.autodig
+            && !game._runState && !game.context.nopick && weapon && isPick(weapon)
+            && !(game.underwater || u.uinwater)) {
+            u.dz = 0;
+            const result = await applyPickAxeDirection(weapon, {
+                state: game,
+                attackMonster: (target) => attackHostileMonster(target, target.mx, target.my),
+                payShopkeeper: dopay,
+            });
+            if (result.died)
+                return false;
+            game.context.move = 0;
+            return false;
+        }
         if (game.flags?.mention_walls) {
             const obstruction = loc?.typ === STONE
                 ? 'solid stone'
                 : loc?.typ === TREE ? 'a tree'
-                    : IS_WALL(loc?.typ) ? 'a wall' : '';
+                    : loc && IS_WALL(loc.typ) ? 'a wall' : '';
             const message = obstruction ? `It's ${obstruction}.` : '';
-            if (message) await pline(message);
+            if (message)
+                await pline(message);
         }
         game.context.move = 0;
         return false;
     }
-
     // C ref: hack.c test_move().  Once the closed-door/autoopen path has had
     // its opportunity, intact open and doorless doorways only allow
     // orthogonal entry/exit.
-    if (dx && dy && blocksDiagonalDoor(
-        game.level?.at(u.ux, u.uy), loc,
-    )) {
+    if (dx && dy && !heroPassesWalls(game) && blocksDiagonalDoor(game.level?.at(u.ux, u.uy), loc)) {
         game.context.move = 0;
         return false;
     }
-
-    if (await rejectTightHeroDiagonal(dx, dy)) return false;
-
-    const boulder = (game.level?.objects?.[newx]?.[newy] || [])
-        .find(object => object.otyp === BOULDER);
-    const hallucinating = !!(u?.hallucinating
-        || (u?.hallucinationTurns ?? 0) > 0);
-    if (boulder && game._runState?.mode >= 2
+    if (await rejectTightHeroDiagonal(dx, dy))
+        return false;
+    const boulder = heroPassesWalls(game) && !game.level.flags.sokoban_rules ? null
+        : (game.level.objects[newx]?.[newy] || []).find(object => object.otyp === BOULDER);
+    const hallucinating = heroIsHallucinating(game);
+    if (boulder && (game._runState?.mode ?? 0) >= 2
         && !game.blind && !hallucinating
         && !heroCouldMoveOntoBoulder(newx, newy)) {
         if (game.flags?.mention_walls)
@@ -9168,53 +7001,39 @@ async function domove(dx, dy, explicitAttempt = true) {
         // running must not auto-push the same boulder down the whole corridor.
         stopRun(game);
     }
-
     // C hack.c:swim_move_danger().  Known walking equipment and the swim
     // confirmation option decide whether a visible liquid edge stops us.
     // The request-menu (`m`) prefix deliberately accepts that step.
     if (heroShouldAvoidLiquid(newx, newy)) {
-        const sameLevelAs = level => level
-            && level.dnum === game.u?.uz?.dnum
-            && level.dlevel === game.u?.uz?.dlevel;
-        const liquid = loc.typ === WATER
-            ? `wall of ${displayLiquidName('water')}`
-            : loc.typ === LAVAWALL
-                ? `wall of ${displayLiquidName('lava')}`
-                : IS_LAVA(loc.typ)
-                    ? `molten ${displayLiquidName('lava')}`
-                    : loc.typ === MOAT && sameLevelAs(game.medusa_level)
-                        ? 'shallow sea'
-                        : loc.typ === MOAT && sameLevelAs(game.juiblex_level)
-                            ? 'swamp'
-                            : loc.typ === MOAT
-                                ? 'moat'
-                                : `pool of ${displayLiquidName('water')}`;
+        const liquid = waterbodyName(newx, newy);
         const warning = `You avoid stepping into the ${liquid}.`;
         if (game.flags?.tips !== false && !game._tipSwimShown) {
             await promptKey(`${warning}--More--`);
             game._tipSwimShown = true;
             await pline("(Tip: use 'm' prefix to step in if you really want to.)");
-        } else {
+        }
+        else {
             await pline(warning);
         }
         game.context.move = 0;
         return false;
     }
-
     // Move the hero
-    const ballChainMove = beginBallAndChainMove(newx, newy);
+    const ballChainMove = await beginBallAndChainMove(newx, newy);
     if (ballChainMove?.blocked) {
-        await pline(ballChainMove.blockedMessage);
-        game.context.move = 0;
-        return false;
+        if (ballChainMove.blockedMessage)
+            await pline(ballChainMove.blockedMessage);
+        game.context.move = Number(ballChainMove.consumedTurn);
+        return ballChainMove.consumedTurn;
     }
     const oldx = u.ux, oldy = u.uy;
     u.ux0 = oldx;
     u.uy0 = oldy;
     u.ux = newx;
     u.uy = newy;
-    moveSteedWithHero();
+    await moveSteedWithHero();
     return finishMovedHero({
         oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove,
     });
 }
+//# sourceMappingURL=cmd.js.map

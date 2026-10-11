@@ -1,60 +1,49 @@
+import { createStaffedShop } from './support/shop.js';
+import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { rhack } from '../js/cmd.js';
 import { W_QUIVER } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import {
-    heroGoldAmount, heroGoldObject,
-} from '../js/hero_gold.js';
+import { heroGoldAmount, heroGoldObject, } from '../js/hero_gold.js';
 import { pushKey } from '../js/input.js';
 import { mkgold } from '../js/mklev.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
-import { settleCarriedShopBillItem } from '../js/shk.js';
+import { addShopObjectToBill, billForObject, settleCarriedShopBillItem } from '../js/shk.js';
 import { carriedGold } from './support/gold-arena.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
-import {
-    freshGameplayRoom, freshPlayableRoom,
-} from './support/playable-room.js';
-
-test('picking up floor gold moves that identity into the dollar inventory slot',
-    async () => {
-        freshGameplayRoom();
-        const floorGold = mkgold(37, game.u.ux, game.u.uy);
-
-        await rhack(','.charCodeAt(0));
-
-        assert.equal(heroGoldObject(game), floorGold);
-        assert.equal(heroGoldAmount(game), 37);
-        assert.equal(floorGold.invlet, '$');
-        assert.equal(floorGold.where, 'inventory');
-        assert.equal(floorGold.pickup_prev, true);
-    });
-
-test('picking up more gold merges to one live purse identity', async () => {
+import { freshGameplayRoom, freshPlayableRoom, } from './support/playable-room.js';
+void test('picking up floor gold moves that identity into the dollar inventory slot', async () => {
     freshGameplayRoom();
-    const purse = carriedGold(11, 28300);
-    const floorGold = mkgold(7, game.u.ux, game.u.uy);
-
+    requireFixtureGame(game);
+    const floorGold = await mkgold(37, game.u.ux, game.u.uy);
     await rhack(','.charCodeAt(0));
-
+    assert.equal(heroGoldObject(game), floorGold);
+    assert.equal(heroGoldAmount(game), 37);
+    assert.equal(floorGold.invlet, '$');
+    assert.equal(floorGold.where, 'inventory');
+    assert.equal(floorGold.pickup_prev, true);
+});
+void test('picking up more gold merges to one live purse identity', async () => {
+    freshGameplayRoom();
+    requireFixtureGame(game);
+    const purse = await carriedGold(11, 28300);
+    const floorGold = await mkgold(7, game.u.ux, game.u.uy);
+    await rhack(','.charCodeAt(0));
     assert.equal(heroGoldObject(game), purse);
     assert.equal(heroGoldAmount(game), 18);
-    assert.equal(game.inventory.filter(object =>
-        object.otyp === GOLD_PIECE).length, 1);
+    assert.equal(game.inventory.filter(object => object.otyp === GOLD_PIECE).length, 1);
     assert.equal(floorGold.where, 'gone');
     assert.equal(purse.pickup_prev, true);
     assert.equal(game.context.move, 1);
 });
-
-test('dropping the purse moves the same identity to the floor', async () => {
+void test('dropping the purse moves the same identity to the floor', async () => {
     const level = freshGameplayRoom();
-    const purse = carriedGold(19, 28301);
-
+    requireFixtureGame(game);
+    const purse = await carriedGold(19, 28301);
     pushKey('$');
     await rhack('d'.charCodeAt(0));
-
     assert.equal(heroGoldObject(game), null);
     assert.equal(heroGoldAmount(game), 0);
     assert.ok(floorObjects(level).includes(purse));
@@ -62,15 +51,13 @@ test('dropping the purse moves the same identity to the floor', async () => {
     assert.equal(purse.quantity, 19);
     assert.equal(game.context.move, 1);
 });
-
-test('a counted quiver request cannot split the purse', async () => {
+void test('a counted quiver request cannot split the purse', async () => {
     freshGameplayRoom();
-    const purse = carriedGold(5, 28302);
-
+    requireFixtureGame(game);
+    const purse = await carriedGold(5, 28302);
     pushKey('2');
     pushKey('$');
     await rhack('Q'.charCodeAt(0));
-
     assert.equal(heroGoldObject(game), purse);
     assert.equal(heroGoldAmount(game), 5);
     assert.equal(game.uquiver, null);
@@ -78,88 +65,79 @@ test('a counted quiver request cannot split the purse', async () => {
     assert.equal(game.inventory.length, 1);
     assert.equal(game.context.move, 0);
 });
-
-test('quivered gold detaches one coin while preserving the purse identity',
-    async () => {
-        const level = freshGameplayRoom();
-        const purse = carriedGold(5, 28303);
-
-        pushKey('$');
-        await rhack('Q'.charCodeAt(0));
-        assert.equal(game.uquiver, purse);
-        assert.equal((purse.owornmask & W_QUIVER) !== 0, true);
-
-        pushKey('l');
-        await rhack('f'.charCodeAt(0));
-
-        const landed = floorObjects(level).filter(object =>
-            object.otyp === GOLD_PIECE);
-        assert.equal(heroGoldObject(game), purse);
-        assert.equal(heroGoldAmount(game), 4);
-        assert.equal(game.uquiver, purse);
-        assert.equal(purse.quantity, 4);
-        assert.equal(landed.length, 1);
-        assert.notEqual(landed[0], purse);
-        assert.notEqual(landed[0].o_id, purse.o_id);
-        assert.equal(landed[0].quantity, 1);
-        assert.equal(game.context.move, 1);
+void test('quivered gold detaches one coin while preserving the purse identity', async () => {
+    const level = freshGameplayRoom();
+    requireFixtureGame(game);
+    const purse = await carriedGold(5, 28303);
+    pushKey('$');
+    await rhack('Q'.charCodeAt(0));
+    assert.equal(game.uquiver, purse);
+    assert.equal(((purse.owornmask ?? 0) & W_QUIVER) !== 0, true);
+    pushKey('l');
+    await rhack('f'.charCodeAt(0));
+    const landed = floorObjects(level).filter(object => object.otyp === GOLD_PIECE);
+    assert.equal(heroGoldObject(game), purse);
+    assert.equal(heroGoldAmount(game), 4);
+    assert.equal(game.uquiver, purse);
+    assert.equal(purse.quantity, 4);
+    assert.equal(landed.length, 1);
+    assert.notEqual(landed[0], purse);
+    const coin = landed[0];
+    assert.ok(coin);
+    assert.notEqual(coin.o_id, purse.o_id);
+    assert.equal(coin.quantity, 1);
+    assert.equal(game.context.move, 1);
+});
+void test('putting gold into a bag and taking it out moves the same identity', async () => {
+    freshPlayableRoom();
+    requireFixtureGame(game);
+    const purse = await carriedGold(23, 28304);
+    const bag = await addInventoryObject(SACK, {
+        invlet: 'a', cknown: false,
     });
-
-test('putting gold into a bag and taking it out moves the same identity',
-    async () => {
-        freshPlayableRoom();
-        const purse = carriedGold(23, 28304);
-        const bag = addInventoryObject(SACK, {
-            invlet: 'a', cknown: false,
-        });
-
-        pushKey('a');
-        pushKey('i');
-        pushKey('$');
-        pushKey(13);
-        await rhack('a'.charCodeAt(0));
-
-        assert.equal(heroGoldObject(game), null);
-        assert.equal(heroGoldAmount(game), 0);
-        assert.equal(bag.contents.includes(purse), true);
-        assert.equal(purse.where, 'contained');
-        assert.equal(purse.container, bag);
-
-        pushKey('a');
-        pushKey('o');
-        pushKey('$');
-        pushKey(13);
-        await rhack('a'.charCodeAt(0));
-
-        assert.equal(heroGoldObject(game), purse);
-        assert.equal(heroGoldAmount(game), 23);
-        assert.equal(bag.contents.includes(purse), false);
-        assert.equal(purse.where, 'inventory');
-        assert.equal(purse.container, null);
-    });
-
-test('partial shop payment preserves the purse identity and exact remainder',
-    () => {
-        freshGameplayRoom();
-        const purse = carriedGold(20, 28305);
-        const merchandise = {
-            o_id: 28306, otyp: SACK, quan: 1, quantity: 1, unpaid: true,
-        };
-        game.inventory.push(merchandise);
-        const entry = { bo_id: merchandise.o_id, price: 7, bquan: 1 };
-        const resident = {
-            gold: 0,
-            eshk: { bill: [entry], billct: 1 },
-        };
-
-        assert.equal(settleCarriedShopBillItem(resident, {
-            entry, object: merchandise, price: 7,
-        }, game), true);
-
-        assert.equal(heroGoldObject(game), purse);
-        assert.equal(heroGoldAmount(game), 13);
-        assert.equal(purse.quantity, 13);
-        assert.equal(resident.gold, 7);
-        assert.equal(merchandise.unpaid, false);
-        assert.equal(resident.eshk.bill.length, 0);
-    });
+    pushKey('a');
+    pushKey('i');
+    pushKey('$');
+    pushKey(13);
+    await rhack('a'.charCodeAt(0));
+    assert.equal(heroGoldObject(game), null);
+    assert.equal(heroGoldAmount(game), 0);
+    assert.ok(bag.contents != null);
+    assert.equal(bag.contents.includes(purse), true);
+    assert.equal(purse.where, 'contained');
+    assert.equal(purse.container, bag);
+    pushKey('a');
+    pushKey('o');
+    pushKey('$');
+    pushKey(13);
+    await rhack('a'.charCodeAt(0));
+    assert.equal(heroGoldObject(game), purse);
+    assert.equal(heroGoldAmount(game), 23);
+    assert.ok(bag.contents != null);
+    assert.equal(bag.contents.includes(purse), false);
+    assert.equal(purse.where, 'inventory');
+    assert.equal(purse.container, null);
+});
+void test('partial shop payment preserves the purse identity and exact remainder', async () => {
+    freshGameplayRoom();
+    requireFixtureGame(game);
+    const purse = await carriedGold(20, 28305);
+    const { shopkeeper: resident } = await createStaffedShop();
+    resident.gold = 0;
+    const merchandise = await addInventoryObject(SACK, { o_id: 28306 });
+    await addShopObjectToBill(merchandise, game, { ininv: true, silent: true });
+    const bill = billForObject(merchandise);
+    assert.ok(bill);
+    const entry = bill.entry;
+    entry.price = 7;
+    assert.equal(settleCarriedShopBillItem(resident, {
+        entry, object: merchandise, price: 7,
+    }, game), true);
+    assert.equal(heroGoldObject(game), purse);
+    assert.equal(heroGoldAmount(game), 13);
+    assert.equal(purse.quantity, 13);
+    assert.equal(resident.gold, 7);
+    assert.equal(merchandise.unpaid, false);
+    assert.equal(resident.eshk.bill.length, 0);
+});
+//# sourceMappingURL=hero_gold.test.js.map

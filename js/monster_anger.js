@@ -1,35 +1,31 @@
 // Monster anger, alarm sounds, and peaceful bystander reactions.
 // C refs: mon.c setmangry(), wakeup(), peacefuls_respond(), angry_guards(),
 // and wizard.c aggravate().
-
 import { adjustHeroAlignment } from './alignment.js';
-import {
-    M_AP_MONSTER, STRAT_APPEARMSG, STRAT_WAITFORU, STRAT_WAITMASK,
-} from './const.js';
-import {
-    canSpotMonster, plineWithContinuation, randomDisplayMonsterSubject,
-} from './display.js';
+import { M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, PLNMSG_GROWL, STRAT_APPEARMSG, STRAT_WAITFORU, STRAT_WAITMASK, } from './const.js';
+import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation, } from './display.js';
 import { insideWizardTower } from './dungeon.js';
-import { game } from './gstate.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
+import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { formatHeardMessage } from './hero_speech.js';
+import { heroIsInvisible } from './hero_invisibility.js';
+import { makeMonsterFlee } from './monster_flee.js';
+import { publishMonsterWake, wakeMonstersNearWithMessages } from './monster_wake.js';
+import { monsterName } from './monster_name.js';
+import { stopRun } from './runmode.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { nameToMonster } from './mondata.js';
-import {
-    MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND,
-    MONSTER_SYMBOL, monsterGrowthFamilyMatch, monsterTypeName,
-} from './monster_data.js';
+import { finishMonsterEating } from './monster_eating.js';
+import { MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterGrowthFamilyMatch, monsterTypeName, } from './monster_data.js';
 import { makePlural } from './object_grammar.js';
-import { priestIsCoaligned, visiblePriestName } from './priest.js';
-import { rn2 } from './rng.js';
-import { shopkeeperName } from './shk.js';
+import { ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
+import { rn2, rnd } from './rng.js';
+import { hotPursuitShopkeeper } from './shop_damage.js';
 import { couldsee } from './vision.js';
-
+import { monsterIsScaredAt } from './monster_fear.js';
 const M1_MINDLESS = 0x00010000;
 const M1_HUMANOID = 0x00020000;
 const M1_SEE_INVIS = 0x01000000;
-const PM_FLESH_GOLEM = 255;
-const PM_GHOST = 287;
-
 const MS_BARK = 1;
 const MS_MEW = 2;
 const MS_ROAR = 3;
@@ -37,7 +33,10 @@ const MS_GROWL = 5;
 const MS_SQEEK = 6;
 const MS_SQAWK = 7;
 const MS_WAIL = 14;
-
+const MS_HUMANOID = 25;
+const MS_CUSS = 34;
+const MS_GUARDIAN = 38;
+const MS_PRIEST = 41;
 const HALLUCINATED_GROWL_VERBS = [
     'beep', 'boing', 'sing', 'belche', 'creak', 'cough',
     'rattle', 'ululate', 'pop', 'jingle', 'sniffle', 'tinkle',
@@ -46,14 +45,12 @@ const HALLUCINATED_GROWL_VERBS = [
     'boom', 'murmur', 'oink', 'quack', 'rumble', 'twang',
     'toot', 'gargle', 'hoot', 'warble',
 ];
-
 const MONSTER_GROWL_VERBS = new Map([
     [1, 'growl'], [2, 'hiss'], [3, 'roar'], [4, 'bellow'],
     [5, 'growl'], [6, 'squeal'], [7, 'screech'], [9, 'hiss'],
     [10, 'buzz'], [12, 'neigh'], [13, 'low'], [14, 'wail'],
     [44, 'groan'],
 ]);
-
 const HUMANOID_GASP_SOUNDS = new Set([
     22, // MS_IMITATE
     25, // MS_HUMANOID
@@ -69,10 +66,9 @@ const HUMANOID_GASP_SOUNDS = new Set([
     41, // MS_PRIEST
     43, // MS_BOAST
 ]);
-
 const CONDITIONAL_GASP_SOUNDS = new Set([
-    3,  // MS_ROAR
-    4,  // MS_BELLOW
+    3, // MS_ROAR
+    4, // MS_BELLOW
     11, // MS_GRUNT
     20, // MS_LAUGH
     23, // MS_WERE
@@ -81,24 +77,19 @@ const CONDITIONAL_GASP_SOUNDS = new Set([
     32, // MS_VAMPIRE
     42, // MS_SPELL
 ]);
-
 const HUMANOID_GASP_EXCLAMATIONS = [
     'Gasp!', 'Uh-oh.', 'Oh my!', 'What?', 'Why?',
 ];
-
 const WATCH_NAMES = new Set(['watchman', 'watch captain']);
-
 export function aggravateMonsters(state = game, random = rn2) {
-    const heroInsideTower = insideWizardTower(
-        state.u?.ux, state.u?.uy, state,
-    );
+    const heroInsideTower = insideWizardTower(state.u?.ux, state.u?.uy, state);
     const awakened = [];
-
     for (const monster of state.level?.monsters || []) {
-        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0) continue;
+        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0)
+            continue;
         if (insideWizardTower(monster.mx, monster.my, state)
-            !== heroInsideTower) continue;
-
+            !== heroInsideTower)
+            continue;
         const wasSleeping = !!monster.msleeping;
         const wasWaiting = !!((monster.mstrategy ?? 0)
             & (STRAT_WAITFORU | STRAT_APPEARMSG));
@@ -111,44 +102,22 @@ export function aggravateMonsters(state = game, random = rn2) {
             monster.mcanmove = 1;
             unfroze = true;
         }
-        if (wasSleeping || wasWaiting || unfroze) awakened.push(monster);
+        if (wasSleeping || wasWaiting || unfroze)
+            awakened.push(monster);
     }
     return awakened;
 }
-
-function monsterDisplayName(monster) {
-    if (monster?.name && monster.mnum === PM_GHOST) {
-        const possessiveName = /s$/i.test(monster.name)
-            ? `${monster.name}'`
-            : `${monster.name}'s`;
-        return `${possessiveName} ghost`;
-    }
-    return monster?.name
-        || monsterTypeName(monster?.mnum, !!monster?.female);
-}
-
-function isWatch(monster) {
+export function isWatch(monster) {
     return WATCH_NAMES.has(MONSTER_NAME[monster?.mnum] || '');
 }
-
 function thirdPersonSoundVerb(verb) {
     return /(?:s|sh|ch|x|z)$/.test(verb) ? `${verb}es` : `${verb}s`;
 }
-
-function monsterMessageSubject(monster) {
-    if (monster.name) return monster.name;
-    const article = monster.mtame > 0 ? 'Your' : 'The';
-    return `${article} ${monsterDisplayName(monster)}`;
-}
-
-export async function publishKickedPetYelp(monster, sound) {
-    const helpless = monster.msleeping || monster.mcanmove === 0
-        || (monster.mfrozen ?? 0) > 0;
-    if (helpless || !sound) return;
-
-    const hallucinating = !!(game.u?.hallucinating
-        || (game.u?.hallucinationTurns ?? 0) > 0);
-    const deaf = !!(game.deaf || game.u?.deaf);
+export async function publishMonsterYelp(monster) {
+    const sound = MONSTER_SOUND[monster.mnum];
+    if (monster.msleeping || !monster.mcanmove || !sound)
+        return;
+    const deaf = heroIsDeaf();
     const ordinaryVerb = new Map([
         [MS_BARK, deaf ? 'recoil' : 'yelp'],
         [MS_MEW, deaf ? 'arch' : 'yowl'],
@@ -158,97 +127,70 @@ export async function publishKickedPetYelp(monster, sound) {
         [MS_SQAWK, deaf ? 'thrash' : 'screak'],
         [MS_WAIL, deaf ? 'cringe' : 'wail'],
     ]).get(sound);
-    const verb = hallucinating
+    const verb = heroIsHallucinating()
         ? HALLUCINATED_GROWL_VERBS[rn2(HALLUCINATED_GROWL_VERBS.length)]
         : ordinaryVerb;
-    if (!verb) return;
-
-    const subject = !canSpotMonster(monster)
-        ? 'It'
-        : hallucinating
-            ? randomDisplayMonsterSubject()
-            : monsterMessageSubject(monster);
-    await plineWithContinuation(
-        `${subject} ${thirdPersonSoundVerb(verb)}!`,
-    );
-    await wakeMonstersNearWithMessages(
-        monster.mx, monster.my,
-        (monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0) * 12,
-    );
+    if (!verb)
+        return;
+    await plineWithContinuation(`${monsterName(monster, { capitalized: true })} ${thirdPersonSoundVerb(verb)}!`);
+    if (game.context.run)
+        stopRun();
+    await wakeMonstersNearWithMessages(monster.mx, monster.my, (MONSTER_LEVEL[monster.mnum] ?? 0) * 12);
 }
-
 export async function publishMonsterGrowl(monster) {
-    const helpless = monster.msleeping || monster.mcanmove === 0
-        || (monster.mfrozen ?? 0) > 0;
-    const sound = MONSTER_SOUND[monster.mnum] ?? 0;
-    if (helpless || !sound) return false;
-
-    const hallucinating = !!(game.u?.hallucinating
-        || (game.u?.hallucinationTurns ?? 0) > 0);
-    const verb = hallucinating
+    const sound = MONSTER_SOUND[monster.mnum];
+    if (monster.msleeping || !monster.mcanmove || !sound)
+        return game._lastPlineKind === PLNMSG_GROWL;
+    const verb = heroIsHallucinating()
         ? HALLUCINATED_GROWL_VERBS[rn2(HALLUCINATED_GROWL_VERBS.length)]
         : MONSTER_GROWL_VERBS.get(sound) || 'scream';
-    const spotted = canSpotMonster(monster);
-    const subject = !spotted
-        ? 'It'
-        : hallucinating
-            ? randomDisplayMonsterSubject()
-            : monsterMessageSubject(monster);
-    const noticed = spotted || !(game.deaf || game.u?.deaf);
+    if (!verb)
+        throw new Error('Missing hallucinated growl verb.');
+    const noticed = canSeeMonster(monster) || !heroIsDeaf();
     if (noticed) {
-        await plineWithContinuation(
-            `${subject} ${thirdPersonSoundVerb(verb)}!`,
-        );
+        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} ${thirdPersonSoundVerb(verb)}!`);
+        game._lastPlineKind = PLNMSG_GROWL;
+        if (game.context.run)
+            stopRun();
     }
-    await wakeMonstersNearWithMessages(
-        monster.mx, monster.my,
-        (monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0) * 18,
-    );
-    return noticed;
+    await wakeMonstersNearWithMessages(monster.mx, monster.my, (MONSTER_LEVEL[monster.mnum] ?? 0) * 18);
+    return game._lastPlineKind === PLNMSG_GROWL;
 }
-
-function observerDisplayName(observer) {
-    if (observer.isshk && observer.eshk) return shopkeeperName(observer);
-    if (observer.ispriest) return visiblePriestName(observer, game);
-    return observer.name || `The ${monsterDisplayName(observer)}`;
-}
-
-function canUseGenericHumanoidReaction(observer) {
-    if (isWatch(observer) || observer.isshk || observer.ispriest
-        || observer.mnum === game.urole?.ldrnum
-        || observer.mnum === game.urole?.guardnum) return false;
-    return !!((MONSTER_FLAGS1[observer.mnum] ?? 0) & M1_HUMANOID);
-}
-
 function maybeHumanoidGasp(observer) {
-    const sound = MONSTER_SOUND[observer.mnum] ?? 0;
+    requirePlayingGame(game);
+    let sound = MONSTER_SOUND[observer.mnum] ?? 0;
+    if ((sound === MS_GUARDIAN && observer.mnum !== game.urole.guardnum)
+        || (sound === MS_PRIEST && !priestIsCoaligned(observer)))
+        return null;
+    const minion = observer.emin || observer.mextra?.emin;
+    if (sound === MS_CUSS && minion
+        && (priestIsCoaligned(observer) ? !minion.renegade : minion.renegade)) {
+        sound = MS_HUMANOID;
+    }
     if (CONDITIONAL_GASP_SOUNDS.has(sound)) {
-        const currentForm = (game.u?.mtimedone ?? 0) > 0
-            && Number.isInteger(game.u?.umonnum)
-            ? game.u.umonnum
-            : nameToMonster(game.urace?.name || 'human');
-        if (MONSTER_SYMBOL[observer.mnum] !== MONSTER_SYMBOL[currentForm])
+        if (MONSTER_SYMBOL[observer.mnum] !== MONSTER_SYMBOL[game.u.umonnum])
             return null;
-    } else if (!HUMANOID_GASP_SOUNDS.has(sound)) {
+    }
+    else if (!HUMANOID_GASP_SOUNDS.has(sound)) {
         return null;
     }
-
-    const exclamation = HUMANOID_GASP_EXCLAMATIONS[rn2(
-        HUMANOID_GASP_EXCLAMATIONS.length,
-    )];
-    const name = observerDisplayName(observer);
+    const exclamation = HUMANOID_GASP_EXCLAMATIONS[rn2(HUMANOID_GASP_EXCLAMATIONS.length)];
+    const name = monsterName(observer, { capitalized: true });
     return exclamation === 'Gasp!'
         ? { text: `${name} gasps`, needsPeriod: true }
         : { text: `${name} exclaims "${exclamation}"`, needsPeriod: false };
 }
-
-async function reactGenericHumanoid(observer) {
-    if (!canUseGenericHumanoidReaction(observer)) return false;
-
+async function reactHumanoidBystander(observer, attackedSpecies) {
+    requirePlayingGame(game);
+    if (isWatch(observer)) {
+        await plineWithContinuation('"Halt!  You\'re under arrest!"');
+        await angerWatchGuards(heroIsDeaf(game));
+        return;
+    }
     let exclaimed = false;
     let message = '';
     let needsPeriod = false;
-    if (!game.deaf && !game.u?.deaf && rn2(5) === 0) {
+    if (!heroIsDeaf(game) && rn2(5) === 0) {
         const gasp = maybeHumanoidGasp(observer);
         if (gasp) {
             message = gasp.text;
@@ -256,65 +198,57 @@ async function reactGenericHumanoid(observer) {
             exclaimed = true;
         }
     }
-
-    const monsterLevel = observer.m_lev ?? MONSTER_LEVEL[observer.mnum] ?? 0;
-    if (monsterLevel < rn2(10)) {
+    if (observer.isshk || observer.ispriest
+        || (observer.mnum === game.urole.ldrnum
+            && attackedSpecies !== game.urole.guardnum)) {
+        if (exclaimed)
+            await plineWithContinuation(`${message} then shrugs.`);
+        return;
+    }
+    if ((MONSTER_LEVEL[observer.mnum] ?? 0) < rn2(10)
+        && observer.mnum !== game.urole.guardnum) {
         const alreadyFleeing = !!(observer.mflee || observer.mfleetim);
-        const fleeTime = rn2(50) + 25;
-        if (!observer.mflee) {
-            observer.mfleetim = Math.min(
-                127, fleeTime + (observer.mfleetim ?? 0),
-            );
-            observer.mflee = 1;
-            if (!exclaimed) {
-                await plineWithContinuation(
-                    `${observerDisplayName(observer)} turns to flee.`,
-                );
-            }
-        }
-        observer._track = [];
+        await makeMonsterFlee(observer, {
+            turns: rn2(50) + 25, first: true, announce: !exclaimed,
+        });
         if (exclaimed && game.flags?.verbose !== false && !alreadyFleeing) {
             message += ' and then turns to flee.';
             needsPeriod = false;
-        } else if (!exclaimed) {
+        }
+        else if (!exclaimed) {
             exclaimed = true;
         }
     }
-
     if (message) {
-        await plineWithContinuation(
-            `${message}${needsPeriod ? '.' : ''}`,
-        );
+        await plineWithContinuation(`${message}${needsPeriod ? '.' : ''}`);
     }
-    if ((observer.mtame ?? 0) > 0) return true;
-
+    if ((observer.mtame ?? 0) > 0)
+        return;
     observer.mpeaceful = 0;
     observer.mstrategy = (observer.mstrategy ?? 0) & ~STRAT_WAITMASK;
     adjustHeroAlignment(-1);
     if (!exclaimed) {
-        await plineWithContinuation(
-            `${observerDisplayName(observer)} gets angry!`,
-        );
+        await plineWithContinuation(`${monsterName(observer, { capitalized: true })} gets angry!`);
     }
-    return true;
 }
-
-async function angerWatchGuards(silent) {
+export async function angerWatchGuards(silent, { state = game, publish = plineWithContinuation, } = {}) {
+    requireLiveGame(state);
     let count = 0;
     let adjacentCount = 0;
     let seenCount = 0;
     let sleepingCount = 0;
-
-    for (const guard of Array.from(game.level?.monsters || []).reverse()) {
+    for (const guard of Array.from(state.level?.monsters || []).reverse()) {
         if (!guard || guard.dead || (guard.mhp ?? 1) <= 0
-            || !guard.mpeaceful || !isWatch(guard)) continue;
+            || !guard.mpeaceful || !isWatch(guard))
+            continue;
         count++;
         if (canSpotMonster(guard) && guard.mcanmove !== 0) {
-            const dx = Math.abs((guard.mx ?? 0) - (game.u?.ux ?? 0));
-            const dy = Math.abs((guard.my ?? 0) - (game.u?.uy ?? 0));
+            const dx = Math.abs((guard.mx ?? 0) - (state.u?.ux ?? 0));
+            const dy = Math.abs((guard.my ?? 0) - (state.u?.uy ?? 0));
             if (dx <= 1 && dy <= 1 && (dx !== 0 || dy !== 0))
                 adjacentCount++;
-            else seenCount++;
+            else
+                seenCount++;
         }
         if (guard.msleeping || (guard.mfrozen ?? 0) > 0) {
             sleepingCount++;
@@ -323,57 +257,36 @@ async function angerWatchGuards(silent) {
         }
         guard.mpeaceful = 0;
     }
-
-    if (!count || silent) return count > 0;
+    if (!count || silent)
+        return count > 0;
     if (sleepingCount) {
-        await plineWithContinuation(sleepingCount === 1
+        await publish(sleepingCount === 1
             ? 'The guard wakes up.' : 'The guards wake up.');
     }
     if (adjacentCount) {
-        await plineWithContinuation(adjacentCount === 1
+        await publish(adjacentCount === 1
             ? 'The guard gets angry!' : 'The guards get angry!');
-    } else if (seenCount) {
-        await plineWithContinuation(seenCount === 1
+    }
+    else if (seenCount) {
+        await publish(seenCount === 1
             ? 'An angry guard is approaching!'
             : 'Angry guards are approaching!');
-    } else {
-        await plineWithContinuation(count === 1
-            ? "You hear the shrill sound of a guard's whistle."
-            : "You hear the shrill sound of guards' whistles.");
+    }
+    else {
+        const message = formatHeardMessage(count === 1
+            ? "the shrill sound of a guard's whistle."
+            : "the shrill sound of guards' whistles.", state);
+        if (message)
+            await publish(message);
     }
     return true;
 }
-
-async function reactWatch(observer) {
-    if (!isWatch(observer)) return false;
-    await plineWithContinuation('"Halt!  You\'re under arrest!"');
-    await angerWatchGuards(!!(game.deaf || game.u?.deaf));
-    return true;
-}
-
-async function reactShopkeeper(observer) {
-    if (!observer.isshk) return false;
-    if (game.deaf || game.u?.deaf || rn2(5) !== 0) return true;
-    const gasp = maybeHumanoidGasp(observer);
-    if (gasp) await plineWithContinuation(`${gasp.text} then shrugs.`);
-    return true;
-}
-
-async function reactPriest(observer) {
-    if (!observer.ispriest) return false;
-    if (game.deaf || game.u?.deaf || rn2(5) !== 0) return true;
-    if (!priestIsCoaligned(observer, game)) return true;
-    const gasp = maybeHumanoidGasp(observer);
-    if (gasp) await plineWithContinuation(`${gasp.text} then shrugs.`);
-    return true;
-}
-
 async function reactPeacefulBystanders(attackedMonster) {
     if (!attackedMonster || game.context?.mon_moving
-        || game.underwater || game.u?.uinwater) return;
-    const heroInvisible = !!(game.u?.invisible || game.u?.invis
-        || (game.u?.invisibleTurns ?? 0) > 0);
-
+        || game.underwater || game.u?.uinwater)
+        return;
+    const heroInvisible = heroIsInvisible(game);
+    const attackedSpecies = attackedMonster.mnum;
     const monsters = Array.from(game.level?.monsters || []).reverse();
     for (const observer of monsters) {
         const flags = MONSTER_FLAGS1[observer?.mnum] ?? 0;
@@ -382,69 +295,49 @@ async function reactPeacefulBystanders(attackedMonster) {
             || observer.msleeping
             || observer.mcansee === 0 || observer.mcansee === false
             || (flags & M1_MINDLESS)
-            || !couldsee(observer.mx, observer.my)) continue;
-        if (heroInvisible && !(flags & M1_SEE_INVIS)) continue;
-
+            || !couldsee(observer.mx, observer.my))
+            continue;
+        if (heroInvisible && !(flags & M1_SEE_INVIS))
+            continue;
         if ((flags & M1_HUMANOID) || observer.isshk || observer.ispriest) {
-            if (await reactWatch(observer)) continue;
-            if (await reactShopkeeper(observer)) continue;
-            if (await reactPriest(observer)) continue;
-            await reactGenericHumanoid(observer);
+            await reactHumanoidBystander(observer, attackedSpecies);
             continue;
         }
-        if (!monsterGrowthFamilyMatch(
-            attackedMonster.mnum, observer.mnum,
-        )) continue;
-        if (rn2(3) !== 0) continue;
-
+        if (!monsterGrowthFamilyMatch(attackedMonster.mnum, observer.mnum))
+            continue;
+        if (rn2(3) !== 0)
+            continue;
         let exclaimed = false;
         if (rn2(4) === 0)
             exclaimed = await publishMonsterGrowl(observer);
-        if (rn2(6) === 0) continue;
-
+        if (rn2(6) === 0)
+            continue;
         const alreadyFleeing = !!(observer.mflee || observer.mfleetim);
-        const fleeTime = rn2(25) + 15;
-        if (!observer.mflee) {
-            observer.mfleetim = Math.min(
-                127, fleeTime + (observer.mfleetim ?? 0),
-            );
-            observer.mflee = 1;
-            if (!exclaimed) {
-                await plineWithContinuation(
-                    `${observerDisplayName(observer)} turns to flee.`,
-                );
-            }
-        }
-        observer._track = [];
+        await makeMonsterFlee(observer, {
+            turns: rn2(25) + 15, first: true, announce: !exclaimed,
+        });
         if (exclaimed && !alreadyFleeing)
             await plineWithContinuation('And then starts to flee.');
     }
 }
-
-function heroIsHallucinating() {
-    return !!(game.u?.hallucinating
-        || (game.u?.hallucinationTurns ?? 0) > 0);
-}
-
 async function angerQuestGuardiansAfterAttack(monster) {
-    if (monster.mnum !== game.urole?.ldrnum) return;
-    const guardians = (game.level?.monsters || []).filter(candidate =>
-        !candidate.dead && (candidate.mhp ?? 1) > 0
+    requirePlayingGame(game);
+    if (monster.mnum !== game.urole?.ldrnum)
+        return;
+    const guardians = (game.level?.monsters || []).filter(candidate => !candidate.dead && (candidate.mhp ?? 1) > 0
         && candidate.mnum === game.urole?.guardnum
         && candidate.mpeaceful);
-    for (const guardian of guardians) guardian.mpeaceful = 0;
-
-    const visibleCount = guardians.filter(guardian =>
-        canSpotMonster(guardian)).length;
-    if (!visibleCount || heroIsHallucinating()) return;
+    for (const guardian of guardians)
+        guardian.mpeaceful = 0;
+    const visibleCount = guardians.filter(guardian => canSpotMonster(guardian)).length;
+    if (!visibleCount || heroIsHallucinating())
+        return;
     let name = monsterTypeName(game.urole.guardnum);
-    if (visibleCount > 1) name = makePlural(name);
+    if (visibleCount > 1)
+        name = makePlural(name);
     const verb = visibleCount > 1 ? 'appear' : 'appears';
-    await plineWithContinuation(
-        `The ${name} ${verb} to be angry too...`,
-    );
+    await plineWithContinuation(`The ${name} ${verb} to be angry too...`);
 }
-
 export async function angerQuestGuardiansAfterLeaderDeath() {
     for (const guardian of Array.from(game.level?.monsters || []).reverse()) {
         if (!guardian.dead && (guardian.mhp ?? 1) > 0
@@ -454,83 +347,77 @@ export async function angerQuestGuardiansAfterLeaderDeath() {
         }
     }
 }
-
-export async function wakeAttackedShopkeeper(monster) {
-    if (!monster?.isshk || !monster.mpeaceful || monster.mtame) return;
-
-    monster.msleeping = 0;
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    monster.mpeaceful = 0;
-    adjustHeroAlignment(-1);
-    if (couldsee(monster.mx, monster.my)) {
-        await plineWithContinuation(
-            `${shopkeeperName(monster)} gets angry!`,
-        );
-    }
-
-    if (!game._shopRooms?.current) {
-        monster.eshk.following = 1;
-        monster.eshk.customer = game.plname || monster.eshk.customer;
-        monster.eshk.surcharge = true;
-    }
-}
-
 export async function angerMonster(monster, { attacked = false } = {}) {
-    if (!monster) return;
-    if (attacked && monster.isshk) {
-        await wakeAttackedShopkeeper(monster);
+    if (!monster)
         return;
+    requirePlayingGame(game);
+    const { ux, uy } = game.u;
+    if (attacked && hasCompletedEngraving('Elbereth', ux, uy)
+        && (monsterIsScaredAt(monster, game, ux, uy) || monster.mpeaceful)) {
+        await plineWithContinuation('You feel like a hypocrite.');
+        adjustHeroAlignment(game.u.ualign.record > 5 ? -5 : -rnd(5));
+        if (!heroIsBlind())
+            await plineWithContinuation('The engraving beneath you fades.');
+        deleteEngravingAt(ux, uy);
     }
-
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    if (!monster.mpeaceful || (monster.mtame ?? 0) > 0) return;
-
+    if (!monster.mpeaceful || (monster.mtame ?? 0) > 0)
+        return;
     monster.mpeaceful = 0;
     adjustHeroAlignment(monster.ispriest
         ? (priestIsCoaligned(monster, game) ? -5 : 2)
         : -1);
-    const ordinarySubject = monster.name
-        ? monster.name : `The ${monsterDisplayName(monster)}`;
     const humanoid = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_HUMANOID)
         || monster.isshk || monster.isgd;
     if (humanoid) {
-        const subject = heroIsHallucinating()
-            ? randomDisplayMonsterSubject() : ordinarySubject;
-        if (couldsee(monster.mx, monster.my))
-            await plineWithContinuation(`${subject} gets angry!`);
-    } else {
+        if (couldsee(monster.mx, monster.my)) {
+            await plineWithContinuation(`${monsterName(monster, { capitalized: true })} gets angry!`);
+        }
+    }
+    else {
         await publishMonsterGrowl(monster);
     }
-
     await angerQuestGuardiansAfterAttack(monster);
     await reactPeacefulBystanders(monster);
 }
-
 export function angerAttackedMonster(monster) {
     return angerMonster(monster, { attacked: true });
 }
-
 export async function wakeMonster(monster, { attacked = false } = {}) {
-    if (!monster) return;
+    if (!monster)
+        return { heroDied: false };
     const wasSleeping = !!monster.msleeping;
-    if (wasSleeping && canSpotMonster(monster)) {
-        const punctuation = attacked ? '!' : '.';
-        const alive = monster.mnum === PM_FLESH_GOLEM
-            ? " It's alive!" : '';
-        await plineWithContinuation(
-            `${monsterMessageSubject(monster)} wakes up${punctuation}${alive}`,
-        );
-    }
+    await publishMonsterWake(monster, attacked);
     monster.msleeping = 0;
-    if (monster.m_ap_type && monster.m_ap_type !== M_AP_MONSTER) {
-        revealMonsterAppearance(monster);
+    const appearance = M_AP_TYPE(monster);
+    if (appearance !== M_AP_NOTHING) {
+        if (appearance !== M_AP_MONSTER)
+            revealMonsterAppearance(monster);
     }
-    monster.meating = 0;
-    if (!attacked) return;
-    if (wasSleeping) await publishMonsterGrowl(monster);
+    else if (game.context.forcefight && !game.context.mon_moving
+        && monster.mundetected) {
+        monster.mundetected = 0;
+        newsym(monster.mx, monster.my);
+    }
+    finishMonsterEating(monster);
+    if (!attacked)
+        return { heroDied: false };
+    requirePlayingGame(game);
+    const wasPeaceful = !!monster.mpeaceful;
+    if (wasSleeping)
+        await publishMonsterGrowl(monster);
     await angerMonster(monster, { attacked: true });
+    if (wasPeaceful && monster.ispriest
+        && templeRoomAt(game, monster.mx, monster.my)) {
+        const retaliation = await ghodHitsu(monster);
+        if (retaliation.heroDied)
+            return retaliation;
+    }
+    if (wasPeaceful && monster.isshk && !game.u.ushops.length)
+        hotPursuitShopkeeper(monster);
+    return { heroDied: false };
 }
-
 export function wakeAttackedMonster(monster) {
     return wakeMonster(monster, { attacked: true });
 }
+//# sourceMappingURL=monster_anger.js.map

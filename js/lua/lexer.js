@@ -3,65 +3,63 @@ const keywords = new Set([
     'function', 'goto', 'if', 'in', 'local', 'nil', 'not', 'or',
     'repeat', 'return', 'then', 'true', 'until', 'while',
 ]);
-
 const doubleSymbols = new Set([
     '==', '~=', '<=', '>=', '//', '<<', '>>', '..', '::',
 ]);
-
 function isNameStart(char) {
     return /[A-Za-z_]/u.test(char || '');
 }
-
 function isNamePart(char) {
     return /[A-Za-z0-9_]/u.test(char || '');
 }
-
 function longBracketLevel(source, offset) {
-    if (source[offset] !== '[') return -1;
+    if (source[offset] !== '[')
+        return -1;
     let cursor = offset + 1;
-    while (source[cursor] === '=') cursor++;
+    while (source[cursor] === '=')
+        cursor++;
     return source[cursor] === '[' ? cursor - offset - 1 : -1;
 }
-
 export function lexLua(source, filename = '<lua>') {
     const tokens = [];
     let offset = 0;
     let line = 1;
     let column = 1;
-
     function fail(message) {
         throw new SyntaxError(`${filename}:${line}:${column}: ${message}`);
     }
-
     function advance() {
-        const char = source[offset++];
+        const char = source.charAt(offset++);
         if (char === '\n') {
             line++;
             column = 1;
-        } else {
+        }
+        else {
             column++;
         }
         return char;
     }
-
-    function add(type, value, tokenLine = line, tokenColumn = column) {
-        tokens.push({ type, value, line: tokenLine, column: tokenColumn });
+    function add(token, tokenLine = line, tokenColumn = column) {
+        tokens.push({ ...token, line: tokenLine, column: tokenColumn });
     }
-
     function readLongString(level) {
         const openingLength = level + 2;
-        for (let index = 0; index < openingLength; index++) advance();
-        if (source[offset] === '\n') advance();
+        for (let index = 0; index < openingLength; index++)
+            advance();
+        if (source[offset] === '\n')
+            advance();
         const start = offset;
         const closing = `]${'='.repeat(level)}]`;
         const end = source.indexOf(closing, offset);
-        if (end < 0) fail('unterminated long string');
-        while (offset < end) advance();
+        if (end < 0)
+            fail('unterminated long string');
+        while (offset < end)
+            advance();
         const value = source.slice(start, end);
-        for (let index = 0; index < closing.length; index++) advance();
+        for (let index = 0; index < closing.length; index++)
+            advance();
         return value;
     }
-
     function skipComment() {
         advance();
         advance();
@@ -70,15 +68,16 @@ export function lexLua(source, filename = '<lua>') {
             readLongString(level);
             return;
         }
-        while (offset < source.length && source[offset] !== '\n') advance();
+        while (offset < source.length && source[offset] !== '\n')
+            advance();
     }
-
     function readQuotedString(quote) {
         advance();
         let value = '';
         while (offset < source.length) {
             const char = advance();
-            if (char === quote) return value;
+            if (char === quote)
+                return value;
             if (char !== '\\') {
                 value += char;
                 continue;
@@ -88,51 +87,63 @@ export function lexLua(source, filename = '<lua>') {
                 a: '\x07', b: '\b', f: '\f', n: '\n', r: '\r',
                 t: '\t', v: '\v', '\\': '\\', '"': '"', "'": "'",
             };
-            if (escaped in simple) {
-                value += simple[escaped];
-            } else if (escaped === 'z') {
-                while (/\s/u.test(source[offset] || '')) advance();
-            } else if (escaped === '\n') {
+            const replacement = simple[escaped];
+            if (replacement !== undefined) {
+                value += replacement;
+            }
+            else if (escaped === 'z') {
+                while (/\s/u.test(source[offset] || ''))
+                    advance();
+            }
+            else if (escaped === '\n') {
                 value += '\n';
-            } else {
+            }
+            else {
                 value += escaped;
             }
         }
         fail('unterminated string');
     }
-
     function readNumber() {
         const start = offset;
         if (source.startsWith('0x', offset)
             || source.startsWith('0X', offset)) {
             advance();
             advance();
-            while (/[0-9A-Fa-f.]/u.test(source[offset] || '')) advance();
+            while (/[0-9A-Fa-f.]/u.test(source[offset] || ''))
+                advance();
             if (/[pP]/u.test(source[offset] || '')) {
                 advance();
-                if (/[+-]/u.test(source[offset] || '')) advance();
-                while (/\d/u.test(source[offset] || '')) advance();
+                if (/[+-]/u.test(source[offset] || ''))
+                    advance();
+                while (/\d/u.test(source[offset] || ''))
+                    advance();
             }
-        } else {
-            while (/\d/u.test(source[offset] || '')) advance();
+        }
+        else {
+            while (/\d/u.test(source[offset] || ''))
+                advance();
             if (source[offset] === '.' && source[offset + 1] !== '.') {
                 advance();
-                while (/\d/u.test(source[offset] || '')) advance();
+                while (/\d/u.test(source[offset] || ''))
+                    advance();
             }
             if (/[eE]/u.test(source[offset] || '')) {
                 advance();
-                if (/[+-]/u.test(source[offset] || '')) advance();
-                while (/\d/u.test(source[offset] || '')) advance();
+                if (/[+-]/u.test(source[offset] || ''))
+                    advance();
+                while (/\d/u.test(source[offset] || ''))
+                    advance();
             }
         }
         const raw = source.slice(start, offset);
         const value = /^0x/iu.test(raw) ? Number.parseInt(raw, 16) : Number(raw);
-        if (!Number.isFinite(value)) fail(`invalid number ${raw}`);
+        if (!Number.isFinite(value))
+            fail(`invalid number ${raw}`);
         return value;
     }
-
     while (offset < source.length) {
-        const char = source[offset];
+        const char = source.charAt(offset);
         if (/\s/u.test(char)) {
             advance();
             continue;
@@ -141,50 +152,52 @@ export function lexLua(source, filename = '<lua>') {
             skipComment();
             continue;
         }
-
         const tokenLine = line;
         const tokenColumn = column;
         const level = longBracketLevel(source, offset);
         if (level >= 0) {
-            add('string', readLongString(level), tokenLine, tokenColumn);
+            add({ type: 'string', value: readLongString(level) }, tokenLine, tokenColumn);
             continue;
         }
         if (char === '"' || char === "'") {
-            add('string', readQuotedString(char), tokenLine, tokenColumn);
+            add({ type: 'string', value: readQuotedString(char) }, tokenLine, tokenColumn);
             continue;
         }
         if (/\d/u.test(char)
             || (char === '.' && /\d/u.test(source[offset + 1] || ''))) {
-            add('number', readNumber(), tokenLine, tokenColumn);
+            add({ type: 'number', value: readNumber() }, tokenLine, tokenColumn);
             continue;
         }
         if (isNameStart(char)) {
             const start = offset;
-            while (isNamePart(source[offset])) advance();
+            while (isNamePart(source[offset]))
+                advance();
             const value = source.slice(start, offset);
-            add(keywords.has(value) ? 'keyword' : 'name', value,
-                tokenLine, tokenColumn);
+            add({ type: keywords.has(value) ? 'keyword' : 'name', value }, tokenLine, tokenColumn);
             continue;
         }
         if (source.startsWith('...', offset)) {
-            advance(); advance(); advance();
-            add('symbol', '...', tokenLine, tokenColumn);
+            advance();
+            advance();
+            advance();
+            add({ type: 'symbol', value: '...' }, tokenLine, tokenColumn);
             continue;
         }
         const pair = source.slice(offset, offset + 2);
         if (doubleSymbols.has(pair)) {
-            advance(); advance();
-            add('symbol', pair, tokenLine, tokenColumn);
+            advance();
+            advance();
+            add({ type: 'symbol', value: pair }, tokenLine, tokenColumn);
             continue;
         }
         if ('+-*/%^#&~|<>=(){}[];:,.'.includes(char)) {
             advance();
-            add('symbol', char, tokenLine, tokenColumn);
+            add({ type: 'symbol', value: char }, tokenLine, tokenColumn);
             continue;
         }
         fail(`unexpected character ${JSON.stringify(char)}`);
     }
-
     tokens.push({ type: 'eof', value: '<eof>', line, column });
     return tokens;
 }
+//# sourceMappingURL=lexer.js.map

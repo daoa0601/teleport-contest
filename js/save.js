@@ -1,57 +1,61 @@
 // save.js — Web-Storage-backed save and restore.
 // C refs: save.c and restore.c.
-
 import { game } from './gstate.js';
-import { docrt, pline } from './display.js';
-import { GameMap } from './game.js';
+import { PanicTermination } from './panic_termination.js';
+import { clearMessageWindow, docrt, pline, plineWithContinuation } from './display.js';
+import { doneObjectCleanup } from './object_cleanup.js';
+import { promptYesNo, promptYesNoQuit } from './query.js';
+import { requireInitializedHero } from './hero_types.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { decodeSavedGraph, encodeSavedGraph } from './saved_graph.js';
-import { promptKey } from './tty_prompts.js';
-import { copyPersistentState, SAVE_VERSION } from './state_schema.js';
-
+import { encodeSavedGraph } from './saved_graph.js';
+import { decodeSavedGame } from './persistent_state_validation.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
+import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './state_schema.js';
+import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.js';
+import { resolveDungeonIdentities } from './dungeon.js';
+import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
 const SAVE_PREFIX = 'teleport-save:';
-
-function saveKey(name) {
-    return `${SAVE_PREFIX}${String(name || 'player').toLowerCase()}`;
+const ERROR_SAVE_PREFIX = 'teleport-error-save:';
+function saveKey(name, prefix = SAVE_PREFIX) {
+    return `${prefix}${String(name || 'player').toLowerCase()}`;
 }
-
 function snapshotState() {
     return {
         version: SAVE_VERSION,
         state: copyPersistentState(game),
     };
 }
-
-function rehydrateLevel(level) {
-    if (!level?.locations) return;
-    Object.setPrototypeOf(level, GameMap.prototype);
+function restoreLevelMonsters(level) {
+    if (!validMonsterWormBodies(level))
+        throw new Error('Invalid saved worm bodies');
+    restoreMonsterWormHeads(level);
+    for (const monster of level.monsters)
+        restoreMonsterInventoryOwnership(monster);
 }
-
-function rehydrateLevels(state) {
-    rehydrateLevel(state.level);
-    const cached = state._levelCache;
-    const entries = cached instanceof Map
-        ? cached.values() : Object.values(cached || {});
-    for (const entry of entries) rehydrateLevel(entry?.level || entry);
+function restoreSavedMonsters(state) {
+    if (state.level)
+        restoreLevelMonsters(state.level);
+    for (const cached of state._levelCache?.values() ?? [])
+        restoreLevelMonsters(cached.level);
+    for (const monster of state._migratingMonsters || [])
+        restoreMonsterInventoryOwnership(monster);
+    if (state.u.usteed)
+        restoreMonsterInventoryOwnership(state.u.usteed);
 }
-
 export async function dosave() {
-    let key;
-    let answer;
-    do {
-        key = await promptKey('Really save? [yn] (n) ');
-        answer = String.fromCharCode(key).toLowerCase();
-    } while (!['y', 'n'].includes(answer)
-        && ![27, 32, 10, 13].includes(key));
+    // C save.c:dosave() clears WIN_MESSAGE before asking and after either
+    // answer. Acknowledgment alone leaves the seen question on tty.
+    clearMessageWindow();
+    const answer = await promptYesNo('Really save? [yn] (n) ');
+    clearMessageWindow();
     if (answer !== 'y') {
-        game._pending_message = '';
+        if (game.multi > 0)
+            endVoluntaryMultiTurn(game);
         game.context.move = 0;
         return;
     }
-
-    game._pending_message = '';
     await pline('Saving...');
-    if (!saveGame()) {
+    if (!await saveGame()) {
         await docrt();
         game.context.move = 0;
         return;
@@ -63,38 +67,103 @@ export async function dosave() {
     game.program_state.gameover = true;
     game.context.move = 0;
 }
-
-export function saveGame(storage = game.storage) {
-    if (!storage?.setItem) return false;
+export async function saveGame(storage = game.storage) {
+    return await writeSave(storage, saveKey(game.plname), true);
+}
+export async function saveErrorGame(storage = game.storage) {
+    return await writeSave(storage, saveKey(game.plname, ERROR_SAVE_PREFIX), false);
+}
+export function hasErrorSave(name, storage = game.storage) {
     try {
-        currentLuaLifecycle().syncVariables(game);
-        const encoded = encodeSavedGraph(snapshotState());
-        storage.setItem(saveKey(game.plname), encoded);
-        return true;
-    } catch (error) {
-        console.error(`Unable to save game: ${error.message}`);
+        return !!storage?.getItem
+            && storage.getItem(saveKey(name, ERROR_SAVE_PREFIX)) !== null;
+    }
+    catch (error) {
+        if (error instanceof PanicTermination)
+            throw error;
         return false;
     }
 }
-
+// C unixunix.c:ask_about_panic_save(). The error snapshot is kept either way.
+export async function askAboutPanicSave() {
+    await plineWithContinuation('There is no regular save file but there is a panic one.');
+    await plineWithContinuation('It might be recoverable with demi-divine intervention.');
+    const question = 'Start a new game instead? [yn] (n) ';
+    return await promptYesNoQuit(question, 'n') === 'y';
+}
+async function prepareGameForSave() {
+    game.u.invulnerable = false;
+    await doneObjectCleanup();
+}
+async function writeSave(storage, key, reportFailure) {
+    game.program_state.saving = (game.program_state.saving || 0) + 1;
+    let saved = false;
+    try {
+        await prepareGameForSave();
+        if (storage?.setItem) {
+            currentLuaLifecycle().syncVariables(game);
+            const encoded = encodeSavedGraph(snapshotState());
+            storage.setItem(key, encoded);
+            game.program_state.something_worth_saving = false;
+            saved = true;
+        }
+    }
+    catch (error) {
+        if (error instanceof PanicTermination)
+            throw error;
+        if (reportFailure) {
+            const message = error instanceof Error ? error.message : String(error);
+            console.error(`Unable to save game: ${message}`);
+        }
+    }
+    game.program_state.saving--;
+    return saved;
+}
 export function restoreGame(name, storage = game.storage) {
-    if (!storage?.getItem) return false;
+    if (!storage?.getItem)
+        return false;
     const key = saveKey(name);
     try {
         const encoded = storage.getItem(key);
-        if (!encoded) return false;
-        const snapshot = decodeSavedGraph(encoded);
-        if (snapshot?.version !== SAVE_VERSION || !snapshot.state?.level)
+        if (!encoded)
             return false;
-
-        Object.assign(game, snapshot.state);
-        rehydrateLevels(game);
-        game.program_state = {};
-        game.fmon = game.level.monsters?.[0] || null;
+        const snapshot = decodeSavedGame(encoded);
+        if (!snapshot.state.level || !snapshot.state.urole || !snapshot.state.urace)
+            return false;
+        requireInitializedHero(snapshot.state.u);
+        restoreSavedMonsters(snapshot.state);
+        restorePersistentState(game, snapshot.state);
+        resolveDungeonIdentities(game);
+        game.multi = 0;
+        game.warn_obj_cnt = 0;
+        game._monsterSwallower = null;
+        game._monsterEngulf = null;
+        game._commandCount = 0;
+        game._commandKey = 0;
+        game._occupation = null;
+        game._runState = null;
+        game._heroTimePending = false;
+        game._kickedLoc = null;
+        game._cannedCommands = [];
+        game._delayedAction = null;
+        delete game._helplessRunmodeDelayPending;
+        game.context.move = 0;
+        // Saved flags govern future resets; the current Space binding still
+        // belongs to this process until an option change reconciles it.
+        game.commandBindings.setRestOnSpace(!!game.flags?.rest_on_space, { initial: true });
+        game._emptyShops = [];
+        game._shopFollowMessageTurn = 0;
+        game.program_state = { something_worth_saving: true };
+        game.fmon = game.level?.monsters[0] ?? null;
         storage.removeItem?.(key);
         return true;
-    } catch (error) {
-        console.error(`Unable to restore game: ${error.message}`);
+    }
+    catch (error) {
+        if (error instanceof PanicTermination)
+            throw error;
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`Unable to restore game: ${message}`);
         return false;
     }
 }
+//# sourceMappingURL=save.js.map

@@ -1,21 +1,23 @@
 // options.js — Parse .nethackrc options.
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
-
 import { game } from './gstate.js';
-import { bot, cls, docrt, flush_screen } from './display.js';
+import { CommandBindings } from './command_bindings.js';
+import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
+import { bot, cls, docrt, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
+import { vision_recalc } from './vision.js';
 import { nhgetch } from './input.js';
 import { getLine } from './query.js';
+import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
 import { NO_COLOR } from './terminal.js';
-import { promptKey } from './tty_prompts.js';
-import { ATR_INVERSE } from './windows.js';
-import {
-    PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
-    PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
-    PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
-    PARANOID_WERECHANGE,
-} from './const.js';
-
+import { ATR_INVERSE, restoreMenuUnderlay, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
+import { MENU_FULL, PICK_ONE, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
 const DEFAULT_PARANOIA_BITS = PARANOID_PRAY | PARANOID_SWIM | PARANOID_TRAP;
+const MENU_STYLES = [
+    ['traditional', '[prompt for object class(es), then', ' ask y/n for each item in those classes]'],
+    ['combination', '[prompt for object class(es), then', ' use menu for items in those classes]'],
+    ['full', '[use menu to choose class(es), then', ' use another menu for items in those]'],
+    ['partial', '[skip class filtering; always', ' use menu of all available items]'],
+];
 const PARANOIA_OPTION_BITS = new Map([
     ['confirm', PARANOID_CONFIRM], ['paranoia', PARANOID_CONFIRM],
     ['quit', PARANOID_QUIT], ['explore', PARANOID_QUIT],
@@ -32,7 +34,6 @@ const PARANOIA_OPTION_BITS = new Map([
     ['swim', PARANOID_SWIM], ['trap', PARANOID_TRAP],
     ['autoall', PARANOID_AUTOALL],
 ]);
-
 function updateParanoiaBits(current, rawValue) {
     const value = rawValue.trim();
     let bits = current;
@@ -41,19 +42,23 @@ function updateParanoiaBits(current, rawValue) {
     if (fields.startsWith('+') || fields.startsWith('-')) {
         mode = fields[0] === '+' ? 'add' : 'remove';
         fields = fields.slice(1).trim();
-    } else {
+    }
+    else {
         bits = 0;
     }
     for (let field of fields.split(/\s+/)) {
-        if (!field) continue;
+        if (!field)
+            continue;
         let remove = mode === 'remove';
         if (field.startsWith('!')) {
             field = field.slice(1);
-            if (mode !== 'remove') remove = true;
+            if (mode !== 'remove')
+                remove = true;
         }
         const name = field.toLowerCase();
         if (name === 'none') {
-            if (mode === 'replace') bits = 0;
+            if (mode === 'replace')
+                bits = 0;
             continue;
         }
         if (name === 'all') {
@@ -68,242 +73,480 @@ function updateParanoiaBits(current, rawValue) {
     }
     return bits;
 }
-
-function splitBindingList(value) {
+// C options.c:parsebindings() treats a leading comma as the key, and
+// processes the remaining comma-separated bindings before the first one.
+function bindingFields(value) {
     const fields = [];
-    let current = '';
-    let quote = null;
-    let escaped = false;
-    for (const ch of value) {
-        if (escaped) {
-            current += ch;
-            escaped = false;
-        } else if (ch === '\\') {
-            current += ch;
-            escaped = true;
-        } else if (quote) {
-            current += ch;
-            if (ch === quote) quote = null;
-        } else if (ch === '"' || ch === "'") {
-            current += ch;
-            quote = ch;
-        } else if (ch === ',') {
-            fields.push(current);
-            current = '';
-        } else {
-            current += ch;
+    while (value) {
+        let separator = value.indexOf(',');
+        if (separator === 0)
+            separator = value.indexOf(',', 1);
+        else if (separator > 0 && (value[separator - 1] === '\\'
+            || (value[separator - 1] === "'" && value[separator + 1] === "'")))
+            separator = value.indexOf(',', separator + 2);
+        if (separator < 0) {
+            fields.push(value);
+            break;
         }
+        fields.push(value.slice(0, separator));
+        value = value.slice(separator + 1);
     }
-    fields.push(current);
-    return fields;
+    return fields.reverse();
 }
-
+// txt2key() consumes bytes, not Unicode code points. Only the first decoded
+// escape is needed: Native returns the first byte of escapes()' output.
 function bindingKeyCode(value) {
-    let key = value.trim();
-    if ((key.startsWith("'") && key.endsWith("'"))
-        || (key.startsWith('"') && key.endsWith('"'))) {
-        key = key.slice(1, -1);
+    let key = String.fromCharCode(...new TextEncoder().encode(value.trim()));
+    if (!key.length)
+        return 0;
+    if (key.length === 1)
+        return key.charCodeAt(0);
+    if (key === '<enter>')
+        return 10;
+    if (key === '<space>')
+        return 32;
+    if (key === '<esc>')
+        return 27;
+    if (key[0] === '\\') {
+        let meta = 0;
+        if (/^\\[mM]./.test(key)) {
+            meta = 128;
+            key = key.slice(2);
+        }
+        let code = key.charCodeAt(0);
+        if (key.length > 1) {
+            if (key[0] === '^')
+                code = key.charCodeAt(1) & 31;
+            else if (key[0] === '\\') {
+                const numeric = key.match(/^\\(?:(\d{1,3})|[oO]([0-7]{1,3})|[xX]([0-9a-fA-F]{1,2}))/);
+                if (numeric?.[1])
+                    code = parseInt(numeric[1], 10);
+                else if (numeric?.[2])
+                    code = parseInt(numeric[2], 8);
+                else if (numeric?.[3])
+                    code = parseInt(numeric[3], 16);
+                else
+                    code = escapeKeyCode(key.charAt(1));
+            }
+        }
+        return (code | meta) & 255;
     }
-    if (/^\\.$/.test(key)) key = key.slice(1);
-    if (key.length === 1) return key.charCodeAt(0);
-    if (/^\^.$/.test(key))
-        return key[1].toUpperCase().charCodeAt(0) & 0x1f;
-    const control = key.match(/^(?:C|CTRL)-(.)$/i);
-    if (control)
-        return control[1].toUpperCase().charCodeAt(0) & 0x1f;
-    const meta = key.match(/^(?:M|META)-(.)$/i);
-    if (meta) return meta[1].charCodeAt(0) | 0x80;
-    const named = {
-        space: 32, esc: 27, escape: 27, enter: 13, return: 13,
-        tab: 9, backspace: 8, delete: 127,
-    }[key.toLowerCase()];
-    return named ?? null;
+    let meta = 0;
+    if (key.charAt(0).toUpperCase() === 'M') {
+        key = key.slice(1);
+        if (key[0] === '-' && key.length > 1)
+            key = key.slice(1);
+        if (key.length === 1)
+            return key.charCodeAt(0) | 128;
+        meta = 128;
+    }
+    if (key[0] === '^' || key.charAt(0).toUpperCase() === 'C') {
+        if (key.length === 1)
+            return key.charCodeAt(0) | meta;
+        key = key.slice(1);
+        if (key[0] === '-' && key.length > 1)
+            key = key.slice(1);
+        return (key[0] === '?' ? 127 : key.charCodeAt(0) & 31) | meta;
+    }
+    if (meta)
+        return key.charCodeAt(0) | meta;
+    const decimal = key.match(/^\d{3}/);
+    return decimal ? Number(decimal[0]) & 255 : 0;
 }
-
+function escapeKeyCode(character) {
+    switch (character) {
+        case 'n': return 10;
+        case 't': return 9;
+        case 'b': return 8;
+        case 'r': return 13;
+        default: return character.charCodeAt(0);
+    }
+}
+function booleanOption(value, negated) {
+    if (!value)
+        return !negated;
+    if (negated)
+        return null;
+    const text = value.toLowerCase();
+    if ('true'.startsWith(text) || 'yes'.startsWith(text) || text === 'on'
+        || (/^\d/.test(text) && parseInt(text, 10) === 1))
+        return true;
+    if ('false'.startsWith(text) || 'no'.startsWith(text) || text === 'off'
+        || (/^\d/.test(text) && parseInt(text, 10) === 0))
+        return false;
+    return null;
+}
+function setNumberPadOption(value, settings) {
+    if (!settings.commandBindings.setNumberPad(value))
+        return;
+    settings.iflags.num_pad = value > 0;
+    settings.iflags.num_pad_mode = value === -1 ? 1 : value > 0 ? value - 1 : 0;
+}
+// C optfn_scores(): an explicit value replaces all three display choices.
+function parseScoreOption(value, negated) {
+    if (!value)
+        return null;
+    const choices = { end_top: 0, end_around: 0, end_own: false };
+    let rest = negated ? '' : value.toLowerCase();
+    while (rest) {
+        const disabled = rest.startsWith('!') || rest.startsWith('no');
+        if (disabled)
+            rest = rest.startsWith('!') ? rest.slice(1)
+                : rest.slice(rest[2] === '-' ? 3 : 2);
+        const digits = rest.match(/^\d+/)?.[0];
+        const count = digits ? Number(digits) : 1;
+        if (digits)
+            rest = rest.slice(digits.length);
+        rest = rest.replace(/^ +/, '');
+        if (rest[0] === 't')
+            choices.end_top = disabled ? 0 : count;
+        else if (rest[0] === 'a')
+            choices.end_around = disabled ? 0 : count;
+        else if (rest[0] === 'o')
+            choices.end_own = !disabled && count !== 0;
+        else if (rest[0] === 'n') {
+            choices.end_top = choices.end_around = 0;
+            choices.end_own = false;
+        }
+        else
+            break;
+        rest = rest.replace(/^[a-z]+ */, '');
+        if (rest.startsWith('/'))
+            rest = rest.slice(1).replace(/^ +/, '');
+    }
+    return choices;
+}
 export function parseNethackrc(rc) {
     const result = {
         name: '', role: null, race: null, gender: null, align: null,
-        flags: {}, iflags: {}, bindings: {},
+        flags: {}, iflags: {}, commandBindings: new CommandBindings(),
     };
-    let paranoiaBits = DEFAULT_PARANOIA_BITS;
+    parseConfiguration(rc, result);
+    result.commandBindings.finishConfiguration();
+    return result;
+}
+export function applyNethackrc(rc, state = game) {
+    const result = {
+        flags: state.flags, iflags: state.iflags,
+        commandBindings: state.commandBindings,
+    };
+    parseConfiguration(rc, result);
+    if (result.monTelecontrol !== undefined)
+        state._monTelecontrol = result.monTelecontrol;
+    if (result.fruit !== undefined)
+        state.fruitName = result.fruit;
+    return result;
+}
+// parse_config_line() always parses OPTIONS in initial/config-file mode,
+// including Lua fragments. Only full startup performs final reconciliation.
+function parseConfiguration(rc, result) {
+    let paranoiaBits = result.flags.paranoia_bits ?? DEFAULT_PARANOIA_BITS;
     let paranoiaSeen = false;
-    if (!rc) return result;
-
+    if (!rc)
+        return result;
     for (const rawLine of rc.split('\n')) {
         const line = rawLine.trim();
-        if (!line || line.startsWith('#')) continue;
-
+        if (!line || line.startsWith('#'))
+            continue;
         const bindMatch = line.match(/^(?:BIND|BINDINGS)=(.+)$/i);
-        if (bindMatch) {
-            for (const field of splitBindingList(bindMatch[1])) {
+        if (bindMatch?.[1]) {
+            for (const field of bindingFields(bindMatch[1])) {
                 const separator = field.indexOf(':');
-                if (separator < 0) continue;
+                if (separator < 0)
+                    continue;
                 const code = bindingKeyCode(field.slice(0, separator));
-                const command = field.slice(separator + 1).trim().toLowerCase();
-                if (code !== null && command)
-                    result.bindings[code] = command;
+                const command = field.slice(separator + 1).trim();
+                if (code && command && !result.commandBindings.bindSpecialKey(code, command))
+                    result.commandBindings.bindKey(code, command);
             }
             continue;
         }
-
         const optMatch = line.match(/^OPTIONS=(.+)/i);
-        if (!optMatch) continue;
-
-        for (const opt of optMatch[1].split(',')) {
+        if (!optMatch?.[1])
+            continue;
+        for (const opt of optMatch[1].split(',').reverse()) {
             const trimmed = opt.trim();
-            if (!trimmed) continue;
-
+            if (!trimmed)
+                continue;
             const negated = trimmed.startsWith('!');
             const stripped = negated ? trimmed.slice(1) : trimmed;
-
             const colonIdx = stripped.indexOf(':');
+            const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trim().toLowerCase();
+            const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
+            if (bindingOption === 'number_pad') {
+                if (optionValue && negated)
+                    continue;
+                const value = optionValue ? parseInt(optionValue, 10) || 0 : negated ? 0 : 1;
+                if (optionValue && value === 0 && optionValue[0] !== '0')
+                    continue;
+                setNumberPadOption(value, result);
+                continue;
+            }
+            if (bindingOption === 'menustyle') {
+                const initial = optionValue?.[0]?.toLowerCase() ?? (negated ? 'n' : null);
+                const style = menuStyleForInitial(initial);
+                if (style !== undefined)
+                    result.flags.menu_style = style;
+                continue;
+            }
+            if (bindingOption === 'packorder') {
+                if (optionValue !== null)
+                    changeInventoryOrder(optionValue, result);
+                continue;
+            }
+            if (bindingOption === 'sortloot') {
+                const mode = optionValue?.[0]?.toLowerCase();
+                if (isLootSortMode(mode))
+                    result.flags.sortloot = mode;
+                continue;
+            }
+            if (bindingOption === 'altmeta' || bindingOption === 'toptenwin' || bindingOption === 'menu_tab_sep') {
+                const value = booleanOption(optionValue, negated);
+                if (value !== null)
+                    result.iflags[bindingOption] = value;
+                continue;
+            }
+            if (bindingOption === 'scores') {
+                const choices = parseScoreOption(optionValue, negated);
+                if (choices) {
+                    result.flags.end_top = choices.end_top;
+                    result.flags.end_around = choices.end_around;
+                    result.flags.end_own = choices.end_own;
+                }
+                continue;
+            }
+            if (bindingOption === 'fruit') {
+                if (negated && optionValue !== null)
+                    continue;
+                if (negated || optionValue)
+                    result.fruit = normalizePreferredFruitName(negated ? '' : optionValue ?? '', result);
+                continue;
+            }
+            if (bindingOption === 'rest_on_space') {
+                const value = booleanOption(optionValue, negated);
+                if (value !== null) {
+                    result.flags.rest_on_space = value;
+                    result.commandBindings.setRestOnSpace(value, { initial: true });
+                }
+                continue;
+            }
             if (colonIdx >= 0) {
                 const key = stripped.slice(0, colonIdx).trim().toLowerCase();
                 const val = stripped.slice(colonIdx + 1).trim();
-
-                if (key === 'name') result.name = val;
-                else if (key === 'role') result.role = val;
-                else if (key === 'race') result.race = val;
-                else if (key === 'gender') result.gender = val;
-                else if (key === 'align') result.align = val;
-                else if (key === 'playmode' && val === 'debug') result.flags.debug = true;
-                else if (key === 'playmode' && val === 'explore') result.flags.explore = true;
+                if (key === 'name')
+                    result.name = val;
+                else if (key === 'role')
+                    result.role = val;
+                else if (key === 'race')
+                    result.race = val;
+                else if (key === 'gender')
+                    result.gender = val;
+                else if (key === 'align')
+                    result.align = val;
+                else if (key === 'playmode' && val === 'debug')
+                    result.flags.debug = true;
+                else if (key === 'playmode' && val === 'explore')
+                    result.flags.explore = true;
                 else if (key === 'pettype' || key === 'pet') {
                     result.flags.pettype = val;
-                    if (val === 'none' || val === 'n') result.preferred_pet = 'n';
-                    else if (val === 'dog' || val === 'd') result.preferred_pet = 'd';
-                    else if (val === 'cat' || val === 'c') result.preferred_pet = 'c';
+                    if (val === 'none' || val === 'n')
+                        result.preferred_pet = 'n';
+                    else if (val === 'dog' || val === 'd')
+                        result.preferred_pet = 'd';
+                    else if (val === 'cat' || val === 'c')
+                        result.preferred_pet = 'c';
                 }
-                else if (key === 'symset') result.symset = val;
-                else if (key === 'suppress_alert') result.flags.suppress_alert = val;
-                else if (key === 'msg_window') result.iflags.prevmsg_window = val;
+                else if (key === 'symset')
+                    result.symset = val;
+                else if (key === 'suppress_alert')
+                    result.flags.suppress_alert = val;
+                else if (key === 'msg_window')
+                    result.iflags.prevmsg_window = val;
                 else if (key === 'paranoid_confirmation'
                     || key === 'paranoid_confirm') {
                     paranoiaBits = updateParanoiaBits(paranoiaBits, val);
                     paranoiaSeen = true;
                     result.flags.paranoia_bits = paranoiaBits;
                 }
-                else result.flags[key] = val;
-            } else {
+                else if (key === 'autounlock')
+                    result.flags.autounlock = val;
+                else if (key === 'disclose')
+                    result.flags.disclose = val;
+                else if (key === 'pickup_burden')
+                    result.flags.pickup_burden = val;
+                else if (key === 'pickup_types')
+                    result.flags.pickup_types = val;
+                else if (key === 'pile_limit')
+                    result.flags.pile_limit = val;
+                else if (key === 'runmode')
+                    result.flags.runmode = val;
+                else {
+                    const option = requestBooleanByName.get(key);
+                    const value = booleanOption(val, negated);
+                    if (option && value !== null)
+                        setConfigurationBoolean(result, option, value);
+                }
+            }
+            else {
                 const lname = stripped.toLowerCase();
                 const value = !negated;
-
-                if (lname === 'autopickup') result.flags.pickup = value;
-                else if (lname === 'color') result.flags.color = value;
-                else if (lname === 'legacy') result.flags.legacy = value;
+                if (lname === 'autopickup' || lname === 'pickup')
+                    result.flags.pickup = value;
+                else if (lname === 'color')
+                    result.flags.color = value;
+                else if (lname === 'legacy')
+                    result.flags.legacy = value;
                 else if (lname === 'pauper') {
                     result.flags.pauper = value;
                     // options.c applies this implication immediately, so a
                     // later explicit !nudist may still override it.
-                    if (value) result.flags.nudist = true;
+                    if (value)
+                        result.flags.nudist = true;
                 }
-                else if (lname === 'nudist') result.flags.nudist = value;
+                else if (lname === 'nudist')
+                    result.flags.nudist = value;
                 else if (lname === 'blind' || lname === 'permablind')
                     result.flags.blind = value;
                 else if (lname === 'deaf' || lname === 'permadeaf')
                     result.flags.deaf = value;
-                else if (lname === 'tutorial') { result.flags.tutorial = value; result.tutorial_set = true; }
-                else if (lname === 'splash_screen') result.iflags.wc_splash_screen = value;
-                else if (lname === 'pushweapon') result.flags.pushweapon = value;
-                else if (lname === 'showexp') result.flags.showexp = value;
-                else if (lname === 'time') result.flags.time = value;
-                else if (lname === 'verbose') result.flags.verbose = value;
+                else if (lname === 'tutorial') {
+                    result.flags.tutorial = value;
+                    result.tutorial_set = true;
+                }
+                else if (lname === 'splash_screen')
+                    result.iflags.wc_splash_screen = value;
+                else if (lname === 'wizmgender' || lname === 'wizweight')
+                    result.iflags[lname] = value;
+                else if (lname === 'montelecontrol')
+                    result.monTelecontrol = value;
+                else if (lname === 'pushweapon')
+                    result.flags.pushweapon = value;
+                else if (lname === 'showexp')
+                    result.flags.showexp = value;
+                else if (lname === 'time')
+                    result.flags.time = value;
+                else if (lname === 'verbose')
+                    result.flags.verbose = value;
                 else if ((lname === 'paranoid_confirmation'
                     || lname === 'paranoid_confirm') && negated) {
                     paranoiaBits = 0;
                     paranoiaSeen = true;
                     result.flags.paranoia_bits = paranoiaBits;
                 }
-                else result.flags[lname] = value;
+                else {
+                    const option = requestBooleanByName.get(lname);
+                    if (option)
+                        setConfigurationBoolean(result, option, value);
+                    else if (lname === 'bones')
+                        result.flags.bones = value;
+                    else if (lname === 'reroll')
+                        result.flags.reroll = value;
+                    else if (lname === 'female')
+                        result.flags.female = value;
+                    else if (lname === 'safe_dog')
+                        result.flags.safe_dog = value;
+                    else if (lname === 'male')
+                        result.flags.female = !value;
+                    else if (lname === 'autounlock')
+                        result.flags.autounlock = value;
+                }
             }
         }
     }
-    if (paranoiaSeen) result.flags.paranoia_bits = paranoiaBits;
+    if (paranoiaSeen)
+        result.flags.paranoia_bits = paranoiaBits;
     return result;
 }
-
+const NUMBER_PAD_CHOICES = [
+    ' 0 (off)', ' 1 (on)', ' 2 (on, MSDOS compatible)',
+    ' 3 (on, phone-style digit layout)',
+    ' 4 (on, phone-style layout, MSDOS compatible)',
+    "-1 (off, 'z' to move upper-left, 'y' to zap wands)",
+];
+function numberPadDescription() {
+    const bindings = game.commandBindings;
+    if (!bindings.numberPad)
+        return bindings.swapYZ ? '-1=off, y & z swapped' : '0=off';
+    if (bindings.phoneLayout)
+        return bindings.pcHack
+            ? '4=on, phone layout, MSDOS compatible' : '3=on, phone-style layout';
+    return bindings.pcHack ? '2=on, MSDOS compatible' : '1=on';
+}
+async function editNumberPad() {
+    await flushPendingTopline();
+    const key = await showChoiceWindow({
+        title: 'Select number_pad mode:',
+        entries: NUMBER_PAD_CHOICES.map((text, index) => ({
+            key: String.fromCharCode(97 + index), text,
+        })),
+        validKeys: [...'abcdef012345'].map(key => key.charCodeAt(0)).concat([27, 32, 10, 13]),
+        restoreUnderlay: true,
+    });
+    const index = key >= 97 && key <= 102 ? key - 97 : key >= 48 && key <= 53 ? key - 48 : -1;
+    if (index >= 0)
+        setNumberPadOption(index === 5 ? -1 : index, game);
+}
 function putOptionsLine(col, row, text, attr = 0) {
     const display = game.nhDisplay;
-    if (!display) return;
-    for (let index = 0; index < text.length && col + index < display.cols;
-        index++) {
-        display.setCell(col + index, row, text[index], NO_COLOR, attr);
+    if (!display)
+        return;
+    for (let index = 0; index < text.length && col + index < display.cols; index++) {
+        display.setCell(col + index, row, text.charAt(index), NO_COLOR, attr);
     }
 }
-
 function renderOptionsPage(page) {
     const display = game.nhDisplay;
-    if (!display) return;
+    if (!display)
+        return;
     display.clearScreen();
-    const flags = game.flags || (game.flags = {});
-    const mark = value => value ? 'X' : ' ';
+    const flags = game.flags;
+    const mark = (value) => value ? 'X' : ' ';
     if (page === 1) {
         putOptionsLine(1, 0, 'Options', ATR_INVERSE);
         putOptionsLine(1, 2, '? - show help');
         putOptionsLine(1, 4, ' General', ATR_INVERSE);
-        putOptionsLine(1, 5,
-            `a - fruit                   [${game.fruitName || 'slime mold'}]`);
-        putOptionsLine(1, 6, 'b - number_pad              [0=off]');
+        putOptionsLine(1, 5, `a - fruit                   [${game.fruitName}]`);
+        putOptionsLine(1, 6, `b - number_pad              [${numberPadDescription()}]`);
         putOptionsLine(1, 7, 'c - price_quotes            [ ]');
         putOptionsLine(1, 9, ' Behavior', ATR_INVERSE);
-        putOptionsLine(1, 10,
-            `d - autodig                 [${mark(flags.autodig)}]`);
-        putOptionsLine(1, 11,
-            `e - autoopen                [${mark(flags.autoopen)}]`);
-        putOptionsLine(1, 12,
-            `f - autopickup              [${mark(flags.pickup)}]`);
-        putOptionsLine(1, 13,
-            'g - autopickup exceptions   [(0 currently set)]');
+        putOptionsLine(1, 10, `d - autodig                 [${mark(flags.autodig)}]`);
+        putOptionsLine(1, 11, `e - autoopen                [${mark(flags.autoopen)}]`);
+        putOptionsLine(1, 12, `f - autopickup              [${mark(flags.pickup)}]`);
+        putOptionsLine(1, 13, 'g - autopickup exceptions   [(0 currently set)]');
         putOptionsLine(1, 14, 'h - autoquiver              [ ]');
         putOptionsLine(1, 15, 'i - autounlock              [apply-key]');
-        putOptionsLine(1, 16,
-            `j - cmdassist               [${mark(flags.cmdassist ?? true)}]`);
-        putOptionsLine(1, 17,
-            'k - dropped_nopick          [X]  (for autopickup)');
+        putOptionsLine(1, 16, `j - cmdassist               [${mark(flags.cmdassist ?? true)}]`);
+        putOptionsLine(1, 17, 'k - dropped_nopick          [X]  (for autopickup)');
         putOptionsLine(1, 18, 'l - fireassist              [X]');
-        putOptionsLine(1, 19,
-            'm - pickup_stolen           [X]  (for autopickup)');
-        putOptionsLine(1, 20,
-            'n - pickup_thrown           [X]  (for autopickup)');
-        putOptionsLine(1, 21,
-            `o - pickup_types            [${flags.pickup_types || 'all'}]  (for autopickup)`);
-        putOptionsLine(1, 22,
-            `p - pushweapon              [${mark(flags.pushweapon)}]`);
+        putOptionsLine(1, 19, 'm - pickup_stolen           [X]  (for autopickup)');
+        putOptionsLine(1, 20, 'n - pickup_thrown           [X]  (for autopickup)');
+        putOptionsLine(1, 21, `o - pickup_types            [${flags.pickup_types || 'all'}]  (for autopickup)`);
+        putOptionsLine(1, 22, `p - pushweapon              [${mark(flags.pushweapon)}]`);
         putOptionsLine(1, 23, '(1 of 2)');
         display.setCursor(9, 23);
         return;
     }
-
     putOptionsLine(1, 1, ' Map', ATR_INVERSE);
     putOptionsLine(1, 2, 'a - bgcolors                [X]');
     putOptionsLine(1, 3, 'b - color                   [X]');
     putOptionsLine(1, 4, 'c - customcolors            [X]');
     putOptionsLine(1, 5, 'd - customsymbols           [X]');
-    putOptionsLine(1, 6,
-        `e - hilite_pet              [${mark(flags.hilite_pet)}]`);
-    putOptionsLine(1, 7,
-        `f - hilite_pile             [${mark(flags.hilite_pile)}]`);
+    putOptionsLine(1, 6, `e - hilite_pet              [${mark(flags.hilite_pet)}]`);
+    putOptionsLine(1, 7, `f - hilite_pile             [${mark(flags.hilite_pile)}]`);
     putOptionsLine(1, 8, 'g - showrace                [ ]');
     putOptionsLine(1, 9, 'h - sparkle                 [X]');
-    putOptionsLine(1, 10,
-        'i - symset                  [DECgraphics, active, handler=DEC]');
+    putOptionsLine(1, 10, 'i - symset                  [DECgraphics, active, handler=DEC]');
     putOptionsLine(1, 12, ' Status', ATR_INVERSE);
     putOptionsLine(1, 13, 'j - hitpointbar             [ ]');
-    putOptionsLine(1, 14,
-        'k - menu colors             [(0 currently set)]');
-    putOptionsLine(1, 15,
-        `l - showexp                 [${mark(flags.showexp)}]`);
-    putOptionsLine(1, 16,
-        'm - status condition fields [(16 currently set)]');
-    putOptionsLine(1, 17,
-        'n - status highlight rules  [(0 currently set)]');
+    putOptionsLine(1, 14, 'k - menu colors             [(0 currently set)]');
+    putOptionsLine(1, 15, `l - showexp                 [${mark(flags.showexp)}]`);
+    putOptionsLine(1, 16, 'm - status condition fields [(16 currently set)]');
+    putOptionsLine(1, 17, 'n - status highlight rules  [(0 currently set)]');
     putOptionsLine(1, 18, 'o - statuslines             [2]');
-    putOptionsLine(1, 19,
-        `p - time                    [${mark(flags.time)}]`);
+    putOptionsLine(1, 19, `p - time                    [${mark(flags.time)}]`);
     putOptionsLine(1, 20, '(2 of 2)');
     display.setCursor(9, 20);
 }
-
 const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['accessiblemsg', 'accessiblemsg', false],
     ['acoustics', 'acoustics', true],
@@ -342,8 +585,10 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['mention_map', 'mention_map', false],
     ['mention_walls', 'mention_walls', false],
     ['menu_overlay', 'menu_overlay', true],
+    ['menu_tab_sep', 'menu_tab_sep', false],
     ['menucolors', 'menucolors', false],
     ['mon_movement', 'mon_movement', false],
+    ['montelecontrol', '_monTelecontrol', false],
     ['null', 'null', true],
     ['pickup_stolen', 'pickup_stolen', true],
     ['pickup_thrown', 'pickup_thrown', true],
@@ -375,28 +620,36 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['whatis_menu', 'whatis_menu', false],
     ['whatis_moveskip', 'whatis_moveskip', false],
 ];
-
-const requestBooleanByName = new Map(
-    REQUEST_MENU_BOOLEAN_OPTIONS.map(option => [option[0], option]),
-);
-
+const requestBooleanByName = new Map(REQUEST_MENU_BOOLEAN_OPTIONS.map(option => [option[0].toLowerCase(), option]));
 function requestBooleanValue(name) {
-    const [, property, fallback] = requestBooleanByName.get(name) || [];
-    if (!property) return false;
-    return game.flags?.[property] ?? fallback;
+    const option = requestBooleanByName.get(name.toLowerCase());
+    if (!option)
+        return false;
+    const [, property, fallback] = option;
+    if (property === '_monTelecontrol')
+        return game._monTelecontrol ?? fallback;
+    if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep')
+        return game.iflags[property] ?? fallback;
+    return game.flags[property] ?? fallback;
 }
-
-function requestMenuChoice(selected, key, name, value) {
-    return ` ${key} ${selected.has(name) ? '+' : '-'} ${name.padEnd(24)}[${value}]`;
+function setConfigurationBoolean(settings, option, value) {
+    const [, property] = option;
+    if (property === '_monTelecontrol')
+        settings.monTelecontrol = value;
+    else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep')
+        settings.iflags[property] = value;
+    else
+        settings.flags[property] = value;
 }
-
-function requestBooleanLine(selected, key, name, displayName = name) {
-    return requestMenuChoice(
-        selected, key, name,
-        requestBooleanValue(name) ? 'true' : 'false',
-    ).replace(name.padEnd(24), displayName.padEnd(24));
+function setRequestBoolean(option, value) {
+    const [, property] = option;
+    if (property === '_monTelecontrol')
+        game._monTelecontrol = value;
+    else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep')
+        game.iflags[property] = value;
+    else
+        game.flags[property] = value;
 }
-
 function requestMenuIdentity() {
     const role = game.urole?.name?.m || game.urole?.key || 'Rogue';
     const race = game.urace?.name || 'human';
@@ -404,199 +657,177 @@ function requestMenuIdentity() {
     const alignment = game.initAlignment?.name || 'neutral';
     return { role, race, gender, alignment };
 }
-
-function renderRequestMenuOptionsPage(page, selected) {
-    const display = game.nhDisplay;
-    if (!display) return;
-    display.clearScreen();
-    const lines = Array(24).fill('');
-    const choice = (key, name, text) =>
-        ` ${key} ${selected.has(name) ? '+' : '-'} ${text}`;
-    const boolean = (key, name, displayName = name) =>
-        requestBooleanLine(selected, key, name, displayName);
-
-    if (page === 1) {
-        lines[0] = ' Set what options?';
-        lines[2] = "     For a brief explanation of how this works, type '?' to select";
-        lines[3] = '     the next menu choice, then press <enter> or <return>.';
-        lines[4] = ' ? - view help for options menu';
-        lines[5] = "     [To suppress this menu help, toggle off the 'cmdassist' option.]";
-        lines[7] = ' Booleans (selecting will toggle value):';
-        lines[8] = '     blind                   ['
-            + String(!!game.u?.uroleplay?.blind) + ']';
-        lines[9] = '     bones                   [true]';
-        lines[10] = '     deaf                    ['
-            + String(!!game.u?.uroleplay?.deaf) + ']';
-        lines[11] = `     legacy                  [${game.flags?.legacy !== false}]`;
-        lines[12] = '     news                    [false]';
-        lines[13] = `     nudist                  [${
-            !!game.u?.uroleplay?.nudist}]`;
-        lines[14] = `     pauper                  [${
-            !!game.u?.uroleplay?.pauper}]`;
-        lines[15] = `     reroll                  [${
-            !!game.u?.uroleplay?.reroll}]`;
-        lines[16] = '     selectsaved             [true]';
-        lines[17] = '     status_updates          [true]';
-        lines[18] = `     tutorial                [${game.flags?.tutorial !== false}]`;
-        lines[19] = '     use_darkgray            [true]';
-        lines[20] = '     use_truecolor           [false]';
-        lines[21] = '     voices                  [excluded from build]';
-        lines[22] = boolean('a', 'accessiblemsg');
-    } else if (page === 2) {
-        lines.splice(0, 23,
-            boolean('a', 'acoustics'),
-            boolean('b', 'altmeta'),
-            boolean('c', 'armorstatus'),
-            boolean('d', 'autodescribe'),
-            boolean('e', 'autodig'),
-            boolean('f', 'autoopen'),
-            boolean('g', 'autopickup'),
-            boolean('h', 'autoquiver'),
-            choice('i', 'bgcolors', 'bgcolors                [on]'),
-            boolean('j', 'checkpoint'),
-            boolean('k', 'cmdassist'),
-            boolean('l', 'color'),
-            boolean('m', 'confirm'),
-            boolean('n', 'customcolors'),
-            boolean('o', 'customsymbols'),
-            boolean('p', 'dark_room'),
-            boolean('q', 'dropped_nopick'),
-            boolean('r', 'eight_bit_tty'),
-            boolean('s', 'extmenu'),
-            boolean('t', 'fireassist'),
-            boolean('u', 'fixinv'),
-            boolean('v', 'force_invmenu'),
-            boolean('w', 'goldX'));
-    } else if (page === 3) {
-        lines.splice(0, 23,
-            boolean('a', 'help'),
-            boolean('b', 'herecmd_menu'),
-            boolean('c', 'hilite_pet'),
-            boolean('d', 'hilite_pile'),
-            boolean('e', 'hitpointbar'),
-            choice('f', 'idlecheckpoint', 'idlecheckpoint          [off]'),
-            boolean('g', 'ignintr'),
-            boolean('h', 'implicit_uncursed'),
-            boolean('i', 'lit_corridor'),
-            boolean('j', 'lootabc'),
-            boolean('k', 'mail'),
-            boolean('l', 'mention_decor'),
-            boolean('m', 'mention_map'),
-            boolean('n', 'mention_walls'),
-            boolean('o', 'menu_overlay'),
-            boolean('p', 'menucolors'),
-            boolean('q', 'mon_movement'),
-            boolean('r', 'null'),
-            boolean('s', 'pickup_stolen'),
-            boolean('t', 'pickup_thrown'),
-            boolean('u', 'price_quotes'),
-            boolean('v', 'pushweapon'),
-            boolean('w', 'query_menu'));
-    } else if (page === 4) {
-        lines.splice(0, 23,
-            boolean('a', 'quick_farsight'),
-            boolean('b', 'rest_on_space'),
-            boolean('c', 'safe_pet'),
-            boolean('d', 'safe_wait'),
-            boolean('e', 'showdamage'),
-            boolean('f', 'showexp'),
-            boolean('g', 'showrace'),
-            boolean('h', 'showvers'),
-            boolean('i', 'silent'),
-            boolean('j', 'sortpack'),
-            choice('k', 'sounds', 'sounds                  [off]'),
-            boolean('l', 'sparkle'),
-            boolean('m', 'spot_monsters'),
-            boolean('n', 'standout'),
-            boolean('o', 'terrainstatus'),
-            boolean('p', 'time'),
-            boolean('q', 'tips'),
-            boolean('r', 'tombstone'),
-            boolean('s', 'toptenwin'),
-            boolean('t', 'travel'),
-            boolean('u', 'use_inverse'),
-            boolean('v', 'verbose'),
-            boolean('w', 'weaponstatus'));
-    } else if (page === 5) {
-        const { role, race, gender, alignment } = requestMenuIdentity();
-        lines[0] = boolean('a', 'whatis_menu');
-        lines[1] = boolean('b', 'whatis_moveskip');
-        lines[3] = ' Compounds (selecting will prompt for new value):';
-        lines[4] = '     windowtype              [tty]';
-        lines[5] = '     playmode                [normal]';
-        lines[6] = `     name                    [${game.plname}]`;
-        lines[7] = `     role                    [${role}]`;
-        lines[8] = `     race                    [${race}]`;
-        lines[9] = `     gender                  [${gender}]`;
-        lines[10] = `     alignment               [${alignment}]`;
-        lines[11] = '     catname                 [(none)]';
-        lines[12] = '     dogname                 [(none)]';
-        lines[13] = '     horsename               [(none)]';
-        lines[14] = '     msghistory              [20]';
-        lines[15] = '     pettype                 [random]';
-        lines[16] = '     soundlib                [nosound]';
-        lines[17] = choice('c', 'autounlock', 'autounlock              [apply-key]');
-        lines[18] = choice('d', 'boulder', 'boulder                 [`]');
-        lines[19] = choice('e', 'crash_email', 'crash_email             [unknown]');
-        lines[20] = choice('f', 'crash_name', 'crash_name              [unknown]');
-        lines[21] = choice('g', 'crash_urlmax', 'crash_urlmax            [-1]');
-        lines[22] = choice('h', 'disclose', 'disclose                [ni na nv ng nc no]');
-    } else if (page === 6) {
-        lines.splice(0, 23,
-            choice('a', 'fruit', 'fruit                   [slime mold]'),
-            choice('b', 'glyph', 'glyph                   [(to be done)]'),
-            choice('c', 'hilite_status', 'hilite_status           [(none)]'),
-            choice('d', 'menu_headings', 'menu_headings           [no-color&inverse]'),
-            choice('e', 'menu_objsyms', 'menu_objsyms            [conditional]'),
-            choice('f', 'menuinvertmode', 'menuinvertmode          [1]'),
-            choice('g', 'menustyle', 'menustyle               [full]'),
-            choice('h', 'msg_window', 'msg_window              [single]'),
-            choice('i', 'number_pad', 'number_pad              [0=off]'),
-            choice('j', 'packorder', 'packorder               [$")[%?+!=/(*`0_]'),
-            choice('k', 'paranoid_confirmation', 'paranoid_confirmation   [pray trap swim]'),
-            choice('l', 'petattr', 'petattr                 [inverse]'),
-            choice('m', 'pickup_burden', 'pickup_burden           [stressed]'),
-            choice('n', 'pickup_types', `pickup_types            [${game.flags?.pickup_types || 'all'}]`),
-            choice('o', 'pile_limit', 'pile_limit              [5]'),
-            choice('p', 'roguesymset', 'roguesymset             [default]'),
-            choice('q', 'runmode', 'runmode                 [run]'),
-            choice('r', 'scores', 'scores                  [3 top/2 around]'),
-            choice('s', 'sortdiscoveries', 'sortdiscoveries         [by order of discovery within each class]'),
-            choice('t', 'sortloot', 'sortloot                [loot]'),
-            choice('u', 'sortvanquished', 'sortvanquished          [t: traditional: by monster level]'),
-            choice('v', 'statushilites', "statushilites           [0 (off: don't highlight status fields)]"),
-            choice('w', 'statuslines', 'statuslines             [2]'));
-    } else {
-        lines[0] = choice('a', 'suppress_alert', 'suppress_alert          [(none)]');
-        lines[1] = choice('b', 'symset', `symset                  [${game.symset || 'default'}, active, handler=DEC]`);
-        lines[2] = choice('c', 'versinfo', 'versinfo                [1: number (5.0.0)]');
-        lines[3] = choice('d', 'whatis_coord', 'whatis_coord            [none]');
-        lines[4] = choice('e', 'whatis_filter', 'whatis_filter           [none]');
-        lines[6] = ' Other settings:';
-        lines[7] = choice('f', 'autocompletions', 'autocompletions         [(0 currently set)]');
-        lines[8] = choice('g', 'autopickup_exceptions', 'autopickup exceptions   [(0 currently set)]');
-        lines[9] = choice('h', 'bind_keys', 'bind keys               [(0 currently set)]');
-        lines[10] = choice('i', 'menu_colors', 'menu colors             [(0 currently set)]');
-        lines[11] = choice('j', 'message_types', 'message types           [(0 currently set)]');
-        lines[12] = choice('k', 'status_conditions', 'status condition fields [(16 currently set)]');
-        lines[13] = choice('l', 'status_highlights', 'status highlight rules  [(0 currently set)]');
-    }
-
-    lines[page === 7 ? 14 : 23] = ` (${page} of 7)`;
-    for (let row = 0; row < lines.length; row++) {
-        if (!lines[row]) continue;
-        if ((page === 1 && (row === 0 || row === 7))
-            || (page === 5 && row === 3)
-            || (page === 7 && row === 6)) {
-            putOptionsLine(0, row, ' ');
-            putOptionsLine(1, row, lines[row].slice(1), ATR_INVERSE);
-        } else {
-            putOptionsLine(0, row, lines[row]);
-        }
-    }
-    display.setCursor(9, page === 7 ? 14 : 23);
+function scoreDisplayDescription() {
+    const top = game.flags.end_top ?? 3;
+    const around = game.flags.end_around ?? 2;
+    const parts = [];
+    if (top > 0)
+        parts.push(`${top} top`);
+    if (around > 0)
+        parts.push(`${around} around`);
+    if (game.flags.end_own)
+        parts.push('own');
+    return parts.join('/') || 'none';
 }
-
+function requestMenuSections() {
+    const { role, race, gender, alignment } = requestMenuIdentity();
+    const choice = (name, text) => ({ value: name, text });
+    const label = (text) => ({ selectable: false, text });
+    const readonly = (name, value) => label(`    ${name.padEnd(24)}[${value}]`);
+    const boolean = (name) => choice(name, `${name.padEnd(24)}[${requestBooleanValue(name) ? 'true' : 'false'}]`);
+    return [
+        { heading: 'Booleans (selecting will toggle value):', items: [
+                readonly('blind', !!game.u?.uroleplay?.blind),
+                readonly('bones', true),
+                readonly('deaf', !!game.u?.uroleplay?.deaf),
+                readonly('legacy', game.flags?.legacy !== false),
+                readonly('news', false),
+                readonly('nudist', !!game.u?.uroleplay?.nudist),
+                readonly('pauper', !!game.u?.uroleplay?.pauper),
+                readonly('reroll', !!game.u?.uroleplay?.reroll),
+                readonly('selectsaved', true),
+                readonly('status_updates', true),
+                readonly('tutorial', game.flags?.tutorial !== false),
+                readonly('use_darkgray', true),
+                readonly('use_truecolor', false),
+                readonly('voices', 'excluded from build'),
+                boolean('accessiblemsg'),
+                boolean('acoustics'),
+                boolean('altmeta'),
+                boolean('armorstatus'),
+                boolean('autodescribe'),
+                boolean('autodig'),
+                boolean('autoopen'),
+                boolean('autopickup'),
+                boolean('autoquiver'),
+                choice('bgcolors', 'bgcolors                [on]'),
+                boolean('checkpoint'),
+                boolean('cmdassist'),
+                boolean('color'),
+                boolean('confirm'),
+                boolean('customcolors'),
+                boolean('customsymbols'),
+                boolean('dark_room'),
+                boolean('dropped_nopick'),
+                boolean('eight_bit_tty'),
+                boolean('extmenu'),
+                boolean('fireassist'),
+                boolean('fixinv'),
+                boolean('force_invmenu'),
+                boolean('goldX'),
+                boolean('help'),
+                boolean('herecmd_menu'),
+                boolean('hilite_pet'),
+                boolean('hilite_pile'),
+                boolean('hitpointbar'),
+                choice('idlecheckpoint', 'idlecheckpoint          [off]'),
+                boolean('ignintr'),
+                boolean('implicit_uncursed'),
+                boolean('lit_corridor'),
+                boolean('lootabc'),
+                boolean('mail'),
+                boolean('mention_decor'),
+                boolean('mention_map'),
+                boolean('mention_walls'),
+                boolean('menu_overlay'),
+                ...(game.flags.debug ? [boolean('menu_tab_sep')] : []),
+                boolean('menucolors'),
+                boolean('mon_movement'),
+                ...(game.flags.debug ? [boolean('montelecontrol')] : []),
+                boolean('null'),
+                boolean('pickup_stolen'),
+                boolean('pickup_thrown'),
+                boolean('price_quotes'),
+                boolean('pushweapon'),
+                boolean('query_menu'),
+                boolean('quick_farsight'),
+                boolean('rest_on_space'),
+                boolean('safe_pet'),
+                boolean('safe_wait'),
+                boolean('showdamage'),
+                boolean('showexp'),
+                boolean('showrace'),
+                boolean('showvers'),
+                boolean('silent'),
+                boolean('sortpack'),
+                choice('sounds', 'sounds                  [off]'),
+                boolean('sparkle'),
+                boolean('spot_monsters'),
+                boolean('standout'),
+                boolean('terrainstatus'),
+                boolean('time'),
+                boolean('tips'),
+                boolean('tombstone'),
+                boolean('toptenwin'),
+                boolean('travel'),
+                boolean('use_inverse'),
+                boolean('verbose'),
+                boolean('weaponstatus'),
+                boolean('whatis_menu'),
+                boolean('whatis_moveskip'),
+                label(''),
+            ] },
+        { heading: 'Compounds (selecting will prompt for new value):', items: [
+                readonly('windowtype', 'tty'),
+                readonly('playmode', 'normal'),
+                readonly('name', game.plname),
+                readonly('role', role),
+                readonly('race', race),
+                readonly('gender', gender),
+                readonly('alignment', alignment),
+                readonly('catname', '(none)'),
+                readonly('dogname', '(none)'),
+                readonly('horsename', '(none)'),
+                readonly('msghistory', '20'),
+                readonly('pettype', 'random'),
+                readonly('soundlib', 'nosound'),
+                choice('autounlock', 'autounlock              [apply-key]'),
+                choice('boulder', 'boulder                 [`]'),
+                choice('crash_email', 'crash_email             [unknown]'),
+                choice('crash_name', 'crash_name              [unknown]'),
+                choice('crash_urlmax', 'crash_urlmax            [-1]'),
+                choice('disclose', 'disclose                [ni na nv ng nc no]'),
+                choice('fruit', `fruit                   [${game.fruitName}]`),
+                choice('glyph', 'glyph                   [(to be done)]'),
+                choice('hilite_status', 'hilite_status           [(none)]'),
+                choice('menu_headings', 'menu_headings           [no-color&inverse]'),
+                choice('menu_objsyms', 'menu_objsyms            [conditional]'),
+                choice('menuinvertmode', 'menuinvertmode          [1]'),
+                choice('menustyle', `menustyle               [${MENU_STYLES[game.flags.menu_style ?? MENU_FULL][0]}]`),
+                choice('msg_window', 'msg_window              [single]'),
+                choice('number_pad', `number_pad              [${numberPadDescription()}]`),
+                choice('packorder', `packorder               [${inventoryOrderSymbols()}]`),
+                choice('paranoid_confirmation', 'paranoid_confirmation   [pray trap swim]'),
+                choice('petattr', 'petattr                 [inverse]'),
+                choice('pickup_burden', 'pickup_burden           [stressed]'),
+                choice('pickup_types', `pickup_types            [${game.flags?.pickup_types || 'all'}]`),
+                choice('pile_limit', 'pile_limit              [5]'),
+                choice('roguesymset', 'roguesymset             [default]'),
+                choice('runmode', 'runmode                 [run]'),
+                choice('scores', `scores                  [${scoreDisplayDescription()}]`),
+                choice('sortdiscoveries', 'sortdiscoveries         [by order of discovery within each class]'),
+                choice('sortloot', `sortloot                [${SORT_LOOT_NAMES[game.flags.sortloot ?? 'l']}]`),
+                choice('sortvanquished', 'sortvanquished          [t: traditional: by monster level]'),
+                choice('statushilites', "statushilites           [0 (off: don't highlight status fields)]"),
+                choice('statuslines', 'statuslines             [2]'),
+                choice('suppress_alert', 'suppress_alert          [(none)]'),
+                choice('symset', `symset                  [${game.symset || 'default'}, active, handler=DEC]`),
+                choice('versinfo', 'versinfo                [1: number (5.0.0)]'),
+                choice('whatis_coord', 'whatis_coord            [none]'),
+                choice('whatis_filter', 'whatis_filter           [none]'),
+                label(''),
+            ] },
+        { heading: 'Other settings:', items: [
+                choice('autocompletions', 'autocompletions         [(0 currently set)]'),
+                choice('autopickup_exceptions', 'autopickup exceptions   [(0 currently set)]'),
+                choice('bind_keys', 'bind keys               [(0 currently set)]'),
+                choice('menu_colors', 'menu colors             [(0 currently set)]'),
+                choice('message_types', 'message types           [(0 currently set)]'),
+                choice('status_conditions', 'status condition fields [(16 currently set)]'),
+                choice('status_highlights', 'status highlight rules  [(0 currently set)]'),
+            ] }
+    ];
+}
 const PICKUP_TYPE_ROWS = [
     ['a', '$', 'pile of coins'],
     ['b', '"', 'amulet'],
@@ -614,17 +845,16 @@ const PICKUP_TYPE_ROWS = [
     ['n', '0', 'iron ball'],
     ['o', '_', 'iron chain'],
 ];
-
 function renderPickupTypes(selected) {
     const display = game.nhDisplay;
-    if (!display) return;
+    if (!display)
+        return;
     const help = game.flags?.pickup
         ? "Toggle off 'autopickup' to not pick up anything."
         : "Toggle on 'autopickup' to automatically pick these things up.";
     const content = [
         'Autopickup what?',
-        ...PICKUP_TYPE_ROWS.map(([letter, symbol, description]) =>
-            `${letter} ${selected.has(symbol) ? '+' : '-'} ${symbol}  ${description}`),
+        ...PICKUP_TYPE_ROWS.map(([letter, symbol, description]) => `${letter} ${selected.has(symbol) ? '+' : '-'} ${symbol}  ${description}`),
         'A -    All classes of objects',
         'Note: when no choices are selected, "all" is implied.',
         help,
@@ -637,24 +867,21 @@ function renderPickupTypes(selected) {
             display.setCell(col, row, ' ', NO_COLOR, 0);
     }
     putOptionsLine(left, 0, 'Autopickup what?', ATR_INVERSE);
-    for (let index = 0; index < PICKUP_TYPE_ROWS.length; index++) {
-        const [letter, symbol, description] = PICKUP_TYPE_ROWS[index];
-        putOptionsLine(left, index + 2,
-            `${letter} ${selected.has(symbol) ? '+' : '-'} ${symbol}  ${description}`);
+    for (const [index, [letter, symbol, description]] of PICKUP_TYPE_ROWS.entries()) {
+        putOptionsLine(left, index + 2, `${letter} ${selected.has(symbol) ? '+' : '-'} ${symbol}  ${description}`);
     }
     putOptionsLine(left, 18, 'A -    All classes of objects');
-    putOptionsLine(left, 19,
-        'Note: when no choices are selected, "all" is implied.');
+    putOptionsLine(left, 19, 'Note: when no choices are selected, "all" is implied.');
     putOptionsLine(left, 20, help);
     putOptionsLine(left, 21, '(end)');
     display.setCursor(left + 6, 21);
 }
-
 async function editPickupTypes(preserveStatus = false) {
     const selected = new Set(game.flags?.pickup_types || '');
-    await cls();
-    await docrt();
+    // tty displays an unread message before its next compound-option menu.
+    await flushPendingTopline();
     await flush_screen(1);
+    const underlay = snapshotMenuUnderlay();
     if (!preserveStatus) {
         game.nhDisplay?.clearRow(22);
         game.nhDisplay?.clearRow(23);
@@ -662,121 +889,150 @@ async function editPickupTypes(preserveStatus = false) {
     for (;;) {
         renderPickupTypes(selected);
         const key = await nhgetch();
-        if (key === 27 || key === 10 || key === 13) break;
+        if (key === 27 || key === 10 || key === 13)
+            break;
         const input = String.fromCharCode(key);
         if (input === 'A') {
-            if (selected.size === PICKUP_TYPE_ROWS.length) selected.clear();
-            else for (const [, symbol] of PICKUP_TYPE_ROWS) selected.add(symbol);
+            if (selected.size === PICKUP_TYPE_ROWS.length)
+                selected.clear();
+            else
+                for (const [, symbol] of PICKUP_TYPE_ROWS)
+                    selected.add(symbol);
             continue;
         }
-        const row = PICKUP_TYPE_ROWS.find(([letter, symbol]) =>
-            input === letter || input === symbol);
-        if (!row) continue;
-        if (selected.has(row[1])) selected.delete(row[1]);
-        else selected.add(row[1]);
+        const row = PICKUP_TYPE_ROWS.find(([letter, symbol]) => input === letter || input === symbol);
+        if (!row)
+            continue;
+        if (selected.has(row[1]))
+            selected.delete(row[1]);
+        else
+            selected.add(row[1]);
     }
     game.flags.pickup_types = PICKUP_TYPE_ROWS
         .map(([, symbol]) => symbol)
         .filter(symbol => selected.has(symbol))
         .join('');
+    restoreMenuUnderlay(underlay);
 }
-
-const REQUEST_MENU_PAGE_KEYS = [
-    null,
-    { a: 'accessiblemsg' },
-    {
-        a: 'acoustics', b: 'altmeta', c: 'armorstatus', d: 'autodescribe',
-        e: 'autodig', f: 'autoopen', g: 'autopickup', h: 'autoquiver',
-        i: 'bgcolors', j: 'checkpoint', k: 'cmdassist', l: 'color',
-        m: 'confirm', n: 'customcolors', o: 'customsymbols', p: 'dark_room',
-        q: 'dropped_nopick', r: 'eight_bit_tty', s: 'extmenu',
-        t: 'fireassist', u: 'fixinv', v: 'force_invmenu', w: 'goldX',
-    },
-    {
-        a: 'help', b: 'herecmd_menu', c: 'hilite_pet', d: 'hilite_pile',
-        e: 'hitpointbar', f: 'idlecheckpoint', g: 'ignintr',
-        h: 'implicit_uncursed', i: 'lit_corridor', j: 'lootabc', k: 'mail',
-        l: 'mention_decor', m: 'mention_map', n: 'mention_walls',
-        o: 'menu_overlay', p: 'menucolors', q: 'mon_movement', r: 'null',
-        s: 'pickup_stolen', t: 'pickup_thrown', u: 'price_quotes',
-        v: 'pushweapon', w: 'query_menu',
-    },
-    {
-        a: 'quick_farsight', b: 'rest_on_space', c: 'safe_pet', d: 'safe_wait',
-        e: 'showdamage', f: 'showexp', g: 'showrace', h: 'showvers',
-        i: 'silent', j: 'sortpack', k: 'sounds', l: 'sparkle',
-        m: 'spot_monsters', n: 'standout', o: 'terrainstatus', p: 'time',
-        q: 'tips', r: 'tombstone', s: 'toptenwin', t: 'travel',
-        u: 'use_inverse', v: 'verbose', w: 'weaponstatus',
-    },
-    {
-        a: 'whatis_menu', b: 'whatis_moveskip', c: 'autounlock', d: 'boulder',
-        e: 'crash_email', f: 'crash_name', g: 'crash_urlmax', h: 'disclose',
-    },
-    {
-        a: 'fruit', b: 'glyph', c: 'hilite_status', d: 'menu_headings',
-        e: 'menu_objsyms', f: 'menuinvertmode', g: 'menustyle', h: 'msg_window',
-        i: 'number_pad', j: 'packorder', k: 'paranoid_confirmation',
-        l: 'petattr', m: 'pickup_burden', n: 'pickup_types', o: 'pile_limit',
-        p: 'roguesymset', q: 'runmode', r: 'scores', s: 'sortdiscoveries',
-        t: 'sortloot', u: 'sortvanquished', v: 'statushilites', w: 'statuslines',
-    },
-    {
-        a: 'suppress_alert', b: 'symset', c: 'versinfo', d: 'whatis_coord',
-        e: 'whatis_filter', f: 'autocompletions', g: 'autopickup_exceptions',
-        h: 'bind_keys', i: 'menu_colors', j: 'message_types',
-        k: 'status_conditions', l: 'status_highlights',
-    },
-];
-
+// C options.c:optfn_bool(), followed by reset_needed_visuals(). Status-only
+// changes need bot(); map-affecting changes defer the full docrt until all
+// selected options and their compound handlers have finished.
+function applyBooleanVisualChange(name) {
+    if (name === 'dark_room' || name === 'lit_corridor') {
+        vision_recalc(2);
+        game.vision_full_recalc = 1;
+        return requestBooleanValue('color');
+    }
+    return ['color', 'customcolors', 'hilite_pet', 'hilite_pile',
+        'hitpointbar', 'showrace', 'use_inverse'].includes(name);
+}
 async function doRequestMenuOptions() {
-    const selected = new Set();
-    let page = 1;
-    for (;;) {
-        renderRequestMenuOptionsPage(page, selected);
-        const code = await nhgetch();
-        if (code === 27) break;
-        const input = String.fromCharCode(code);
-        if (input === ' ') {
-            if (page < 7) {
-                page++;
-                continue;
-            }
-            break;
-        }
-        const option = REQUEST_MENU_PAGE_KEYS[page]?.[input];
-        if (!option) continue;
-        if (selected.has(option)) selected.delete(option);
-        else selected.add(option);
+    await flushPendingTopline();
+    const underlay = snapshotMenuUnderlay();
+    const selected = new Set(await showMultiSelectWindow({
+        title: 'Set what options?',
+        pageLocalKeys: true,
+        introLines: [
+            "    For a brief explanation of how this works, type '?' to select",
+            '    the next menu choice, then press <enter> or <return>.',
+            '? - view help for options menu',
+            "    [To suppress this menu help, toggle off the 'cmdassist' option.]",
+            '',
+        ],
+        sections: requestMenuSections(),
+    }));
+    restoreMenuUnderlay(underlay);
+    let needsRedraw = false;
+    for (const option of REQUEST_MENU_BOOLEAN_OPTIONS) {
+        const [name] = option;
+        if (!selected.has(name))
+            continue;
+        const value = !requestBooleanValue(name);
+        setRequestBoolean(option, value);
+        if (name === 'rest_on_space')
+            game.commandBindings.setRestOnSpace(value);
+        needsRedraw = applyBooleanVisualChange(name) || needsRedraw;
+        // optfn_bool() commits the value before its ordinary pline. The
+        // shared tty owner handles overflow and any later menu acknowledgment.
+        await plineWithContinuation(`'${name}' option toggled ${value ? 'on' : 'off'}.`);
     }
-
-    await docrt();
-    await bot();
-    let pendingToggleMessage = '';
-    for (const [name, property, fallback] of REQUEST_MENU_BOOLEAN_OPTIONS) {
-        if (!selected.has(name)) continue;
-        const value = !(game.flags?.[property] ?? fallback);
-        game.flags[property] = value;
-        const message = `'${name}' option toggled ${value ? 'on' : 'off'}.`;
-        // Apply the change before a long message pauses, so the status line
-        // already shows the new value during that pause.
-        if (pendingToggleMessage
-            && pendingToggleMessage.length + 2 + message.length + 8 > 80) {
-            await promptKey(`${pendingToggleMessage}--More--`);
-            pendingToggleMessage = message;
-        } else {
-            pendingToggleMessage += `${pendingToggleMessage ? '  ' : ''}${message}`;
-        }
+    if (selected.has('number_pad'))
+        await editNumberPad();
+    if (selected.has('menustyle'))
+        await editMenuStyle();
+    if (selected.has('fruit'))
+        await editFruitOption();
+    if (selected.has('packorder')) {
+        const order = await getLine('Set packorder to what?', (_character, key) => key >= 32 && key < 127);
+        if (order !== null && order.length)
+            changeInventoryOrder(order);
     }
-    if (pendingToggleMessage)
-        await promptKey(`${pendingToggleMessage}--More--`);
-    if (selected.has('pickup_types')) await editPickupTypes(true);
-    game._pending_message = '';
-    await docrt();
+    if (selected.has('pickup_types'))
+        await editPickupTypes(true);
+    if (selected.has('sortloot'))
+        await editSortLoot();
+    if (needsRedraw)
+        await docrt();
     await bot();
     game.context.move = 0;
 }
-
+// Native options.c:handler_menustyle(). PICK_ONE retains the old selection
+// until a different entry is chosen or the user explicitly deselects it.
+async function editMenuStyle() {
+    const previous = game.flags.menu_style ?? MENU_FULL;
+    const separator = game.iflags.menu_tab_sep ? '\t' : ' ';
+    const items = MENU_STYLES.flatMap(([name, first, second]) => [
+        { key: name.charAt(0), text: `${name.charAt(0)} - ${name.padEnd(12)}${separator}${first}` },
+        { text: `${' '.repeat(16)}${separator}${second}` },
+    ]);
+    const selection = await showInventoryWindow([{ items }], {
+        title: 'Select menustyle:', pickMode: PICK_ONE,
+        preselectedKey: MENU_STYLES[previous][0].charAt(0),
+    });
+    const chosen = menuStyleForInitial(String.fromCharCode(selection.key));
+    game.flags.menu_style = chosen ?? previous;
+    const changed = game.flags.menu_style !== previous;
+    if (changed || game.flags.verbose) {
+        const name = MENU_STYLES[game.flags.menu_style][0];
+        await plineWithContinuation(`'menustyle' ${changed ? 'changed to' : 'is still'} "${name}".`);
+    }
+}
+function menuStyleForInitial(initial) {
+    if (initial === null)
+        return undefined;
+    switch (initial) {
+        case 'n':
+        case 't': return 0;
+        case 'c': return 1;
+        case 'f': return 2;
+        case 'p': return 3;
+        default: return undefined;
+    }
+}
+function isLootSortMode(mode) {
+    return mode === 'n' || mode === 'l' || mode === 'f';
+}
+const SORT_LOOT_NAMES = { n: 'none', l: 'loot', f: 'full' };
+async function editSortLoot() {
+    const previous = game.flags.sortloot ?? 'l';
+    const selection = await showInventoryWindow([{ items: Object.entries(SORT_LOOT_NAMES).map(([key, name]) => ({ key, text: `${key} - ${name}` })),
+        }], { title: 'Select loot sorting type:', pickMode: PICK_ONE, preselectedKey: previous });
+    const mode = String.fromCharCode(selection.key);
+    if (isLootSortMode(mode))
+        game.flags.sortloot = mode;
+}
+async function editFruitOption() {
+    await cls();
+    const name = await getLine('Set fruit to what?', (_ch, code) => code >= 32 && code < 127, { suppressStatus: true });
+    if (!name)
+        return;
+    const result = changePreferredFruit(name);
+    // Native suppresses ordinary option-confirmation prose inside doset.
+    if (!result.changed) {
+        await plineWithContinuation(result.message);
+        await flushPendingTopline();
+    }
+}
 // C refs: options.c doset()/special_handling() and tty's PICK_ANY menu.
 // Option keys redraw page one. Space advances to page two, then closes it.
 // The pickup-types editor reads its own keys before returning here.
@@ -785,7 +1041,7 @@ export async function doOptions(menuRequested = false) {
         await doRequestMenuOptions();
         return;
     }
-    const flags = game.flags || (game.flags = {});
+    const flags = game.flags;
     if (!game._optionsInitialized) {
         // Set missing defaults once. Opening the menu must not reset a value
         // the player already changed.
@@ -799,7 +1055,8 @@ export async function doOptions(menuRequested = false) {
     for (;;) {
         renderOptionsPage(page);
         const key = await nhgetch();
-        if (key === 27 || key === 10 || key === 13) break;
+        if (key === 27 || key === 10 || key === 13)
+            break;
         const input = String.fromCharCode(key);
         if (input === ' ') {
             if (page === 1) {
@@ -817,36 +1074,42 @@ export async function doOptions(menuRequested = false) {
             continue;
         }
         if (page === 1 && input === 'a') {
-            // The fruit prompt replaces the options screen and has no status
-            // rows below it.
-            await cls();
-            const fruit = await getLine(
-                'Set fruit to what?',
-                (_ch, code) => code >= 32 && code < 127,
-                { suppressStatus: true },
-            );
-            if (fruit?.trim()) game.fruitName = fruit.trim();
-        } else if (page === 1 && input === 'd') {
+            await editFruitOption();
+        }
+        else if (page === 1 && input === 'b') {
+            await editNumberPad();
+        }
+        else if (page === 1 && input === 'd') {
             flags.autodig = !flags.autodig;
-        } else if (page === 1 && input === 'o') {
+        }
+        else if (page === 1 && input === 'o') {
             await editPickupTypes();
-        } else if (page === 1 && input === 'e') {
+        }
+        else if (page === 1 && input === 'e') {
             flags.autoopen = !flags.autoopen;
-        } else if (page === 1 && input === 'f') {
+        }
+        else if (page === 1 && input === 'f') {
             flags.pickup = !flags.pickup;
-        } else if (page === 1 && input === 'j') {
+        }
+        else if (page === 1 && input === 'j') {
             flags.cmdassist = !(flags.cmdassist ?? true);
-        } else if (page === 1 && input === 'p') {
+        }
+        else if (page === 1 && input === 'p') {
             flags.pushweapon = !flags.pushweapon;
-        } else if (page === 2 && input === 'e') {
+        }
+        else if (page === 2 && input === 'e') {
             flags.hilite_pet = !flags.hilite_pet;
-        } else if (page === 2 && input === 'f') {
+        }
+        else if (page === 2 && input === 'f') {
             flags.hilite_pile = !flags.hilite_pile;
-        } else if (page === 2 && input === 'l') {
+        }
+        else if (page === 2 && input === 'l') {
             flags.showexp = !flags.showexp;
-        } else if (page === 2 && input === 'p') {
+        }
+        else if (page === 2 && input === 'p') {
             flags.time = !flags.time;
-        } else {
+        }
+        else {
             continue;
         }
         page = 1;
@@ -856,3 +1119,4 @@ export async function doOptions(menuRequested = false) {
     await bot();
     game.context.move = 0;
 }
+//# sourceMappingURL=options.js.map

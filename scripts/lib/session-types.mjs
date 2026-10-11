@@ -1,0 +1,129 @@
+function isObject(value) {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+export function objectValue(value, label) {
+    if (!isObject(value))
+        throw new Error(`${label} must be an object`);
+    return value;
+}
+export function stringValue(value, label) {
+    if (typeof value !== 'string')
+        throw new Error(`${label} must be a string`);
+    return value;
+}
+export function numberValue(value, label) {
+    if (typeof value !== 'number' || !Number.isFinite(value))
+        throw new Error(`${label} must be a finite number`);
+    return value;
+}
+export function booleanValue(value, label) {
+    if (typeof value !== 'boolean')
+        throw new Error(`${label} must be a boolean`);
+    return value;
+}
+export function arrayValue(value, label) {
+    if (!Array.isArray(value))
+        throw new Error(`${label} must be an array`);
+    return value;
+}
+export function errorMessage(error) { return error instanceof Error ? error.message : String(error); }
+export function hasErrorCode(error, code) {
+    return error instanceof Error && 'code' in error && error.code === code;
+}
+export function itemAt(items, index) {
+    const item = items[index];
+    if (item === undefined)
+        throw new Error(`missing item at index ${index} (length ${items.length})`);
+    return item;
+}
+function nullableNumber(value, label) {
+    return value === null ? null : numberValue(value, label);
+}
+function nullableString(value, label) {
+    return value === null ? null : stringValue(value, label);
+}
+export function decodeCursor(value) {
+    const parts = arrayValue(value, 'cursor');
+    if (parts.length !== 3)
+        throw new Error('cursor must have three coordinates');
+    return [numberValue(parts[0], 'cursor x'), numberValue(parts[1], 'cursor y'), numberValue(parts[2], 'cursor visibility')];
+}
+function decodeFrame(value) {
+    const frame = objectValue(value, 'animation frame');
+    return { screen: stringValue(frame.screen, 'animation screen'), ...(frame.cursor === undefined ? {} : { cursor: frame.cursor === null ? null : decodeCursor(frame.cursor) }) };
+}
+function decodeStep(value) {
+    const step = objectValue(value, 'step');
+    return { key: step.key == null ? null : stringValue(step.key, 'step key'),
+        rng: arrayValue(step.rng ?? [], 'rng').map(call => stringValue(call, 'rng entry')),
+        screen: stringValue(step.screen ?? '', 'step screen'),
+        ...(step.cursor === undefined ? {} : { cursor: step.cursor === null ? null : decodeCursor(step.cursor) }),
+        ...(step.animation_frames === undefined ? {} : { animation_frames: arrayValue(step.animation_frames, 'animation frames').map(decodeFrame) }) };
+}
+export function decodeActions(value) {
+    return arrayValue(value, 'driver actions').map(value => {
+        const action = objectValue(value, 'driver action');
+        const flags = {
+            ...(action.dismissMore === undefined ? {} : { dismissMore: booleanValue(action.dismissMore, 'dismissMore') }),
+            ...(action.expectExit === undefined ? {} : { expectExit: booleanValue(action.expectExit, 'expectExit') }),
+        };
+        if (action.type === 'keys')
+            return { type: 'keys', value: stringValue(action.value, 'keys value'), ...flags };
+        if (action.type === 'select-menu-entry')
+            return { type: 'select-menu-entry', target: stringValue(action.target, 'menu target'),
+                ...(action.openKeys === undefined ? {} : { openKeys: stringValue(action.openKeys, 'menu openKeys') }), ...flags };
+        throw new Error(`unsupported driver action: ${String(action.type)}`);
+    });
+}
+export function decodeDriver(value) {
+    return Array.isArray(value) ? decodeActions(value) : decodePolicyConfig(value);
+}
+export function decodePolicyConfig(value) {
+    const driver = objectValue(value, 'driver');
+    if (driver.kind !== 'fuzz' && driver.kind !== 'explore')
+        throw new Error('driver kind must be fuzz or explore');
+    return { kind: driver.kind, seed: numberValue(driver.seed, 'driver seed'), maxSteps: numberValue(driver.maxSteps, 'driver maxSteps'),
+        ...(driver.name === undefined ? {} : { name: stringValue(driver.name, 'driver name') }),
+        ...(driver.setup === undefined ? {} : { setup: decodeActions(driver.setup) }) };
+}
+function decodeSummary(value) {
+    const data = objectValue(value, 'driver summary');
+    if (data.kind !== 'fuzz' && data.kind !== 'explore')
+        throw new Error('invalid driver summary kind');
+    const promptKeys = {};
+    for (const [key, count] of Object.entries(objectValue(data.promptKeys, 'prompt counts')))
+        promptKeys[key] = numberValue(count, key);
+    return { kind: data.kind, seed: numberValue(data.seed, 'seed'), maxSteps: numberValue(data.maxSteps, 'maxSteps'),
+        keysSent: numberValue(data.keysSent, 'keysSent'), calls: numberValue(data.calls, 'calls'), stopReason: nullableString(data.stopReason, 'stopReason'),
+        dead: booleanValue(data.dead, 'dead'), dlvl: nullableNumber(data.dlvl, 'dlvl'), turns: nullableNumber(data.turns, 'turns'), maxTurns: nullableNumber(data.maxTurns, 'maxTurns'),
+        hp: nullableNumber(data.hp, 'hp'), hpMax: nullableNumber(data.hpMax, 'hpMax'), hunger: nullableString(data.hunger, 'hunger'),
+        exploredCells: numberValue(data.exploredCells, 'exploredCells'), descends: numberValue(data.descends, 'descends'), attacks: numberValue(data.attacks, 'attacks'),
+        doorsOpened: numberValue(data.doorsOpened, 'doorsOpened'), promptKeys,
+        ...(data.blockedCells === undefined ? {} : { blockedCells: numberValue(data.blockedCells, 'blockedCells') }),
+        lastClass: nullableString(data.lastClass, 'lastClass'), ...(data.setupComplete === undefined ? {} : { setupComplete: booleanValue(data.setupComplete, 'setupComplete') }) };
+}
+function decodeRecording(value) {
+    const data = objectValue(value, 'recording metadata');
+    const recording = { termination: stringValue(data.termination, 'termination'), exitCode: nullableNumber(data.exitCode, 'exitCode'),
+        suppliedKeys: numberValue(data.suppliedKeys, 'suppliedKeys'), driver: data.driver == null ? null : decodeSummary(data.driver) };
+    if (data.state !== undefined) {
+        const state = objectValue(data.state, 'recording state');
+        recording.state = { saves: numberValue(state.saves, 'saves'), bones: numberValue(state.bones, 'bones') };
+    }
+    return recording;
+}
+export function decodeSession(value) {
+    const data = objectValue(value, 'session');
+    if (data.version !== 5)
+        throw new Error('session must have version 5');
+    const segments = arrayValue(data.segments, 'segments').map(value => {
+        const segment = objectValue(value, 'segment');
+        return { ...segment, seed: numberValue(segment.seed, 'seed'), datetime: stringValue(segment.datetime, 'datetime'), nethackrc: stringValue(segment.nethackrc, 'nethackrc'),
+            ...(segment.moves === undefined ? {} : { moves: stringValue(segment.moves, 'moves') }),
+            ...(segment.steps === undefined ? {} : { steps: arrayValue(segment.steps, 'steps').map(decodeStep) }),
+            ...(segment.driver === undefined ? {} : { driver: decodeDriver(segment.driver) }),
+            ...(segment.recording === undefined ? {} : { recording: decodeRecording(segment.recording) }) };
+    });
+    return { ...data, version: 5, segments };
+}
+//# sourceMappingURL=session-types.mjs.map

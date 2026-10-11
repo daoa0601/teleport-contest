@@ -1,0 +1,4368 @@
+import { finishMonsterHideUnder } from './monster_hiding.js';
+// allmain.js — Main game loop.
+// C ref: allmain.c — newgame, moveloop, moveloop_core.
+import { heroIsHallucinating } from './senses.js';
+import { makeHallucinated } from './hero_mental_status.js';
+import { heroHasHalfSpellDamage } from './spell_damage.js';
+import { advanceSpellProtection } from './spell_misc_effects.js';
+import { advanceDisplacementTimeout } from './hero_displacement.js';
+import { finishMealMimicry } from './meal_mimic.js';
+import { finishHeroDigestion } from './hero_combat_engulf.js';
+import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
+import { game, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
+import type { GameState, PlayingGameState, MonsterMessageContext } from './game_state.js';
+import type { PropertyName } from './property_types.js';
+import type { GameObject } from './object_types.js';
+import type { Monster } from './monster_types.js';
+import { isRoom } from './map_types.js';
+import type { LevelFlags, Position, Room, Trap } from './map_types.js';
+import type {
+    HeroAttack, HeroAttackSequence, HeroContactAttack, HeroSpellAttack,
+    MonsterAction, MonsterMovement, MonsterMovementAction, MonsterCallLog,
+    RandomBelow, RollDice, RollOne,
+} from './monster_action_types.js';
+import { clearImmediateZapBypasses } from './immediate_zap.js';
+import { MON_FLOOR } from './const.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
+import { randomMonsterRelocation } from './teleport.js';
+import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
+import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
+import { monsterMissMessage } from './monster_miss.js';
+import type { MonsterAttackDeathOptions } from './monster_attack_death.js';
+import { AD_DGST, AD_DRST, AD_STCK } from './monster_attack_types.js';
+import { findArtifact } from './artifacts.js';
+import { observeBucForNaming } from './object_knowledge.js';
+import { loseHeroExperience } from './exper.js';
+import { makeMonsterFlee } from './monster_flee.js';
+import { stopHeroOccupation } from './occupation.js';
+import { fixShopDamage } from './shop_damage.js';
+import { removeWornHeroItem } from './hero_equipment.js';
+import { unlinkObject } from './object_location.js';
+import { finishInventoryRemoval } from './hero_inventory.js';
+import { RLOC_MSG, LOST_STOLEN } from './const.js';
+import {
+    advanceFlyingTimeout, advanceLevitationTimeout, levitationDialogue,
+} from './levitation_timeout.js';
+import { MMOVE_DIED, NORMAL_SPEED } from './const.js';
+import { runObjectTimer } from './timer_effects.js';
+import { tryKnockback } from './knockback.js';
+import { finishMonsterGrowth } from './monster_growth.js';
+import type { MonsterGrowth } from './monster_growth.js';
+import { reassessMonsterArmor } from './monworn.js';
+import { currentLuaLifecycle } from './lua/lifecycle.js';
+import { readEngravingAt, wipeHeroEngraving } from './engrave.js';
+import { d, rn2, rnd } from './rng.js';
+import {
+    mklev, l_nhcore_init, makemonAt, recorderLocalEpochSeconds,
+    summonInsectsForMonster, summonNastyMonsters,
+    u_on_upstairs,
+} from './mklev.js';
+import {
+    applyHeroLiquidEffects, continueCountedCommand, continueRun,
+    finishArmorRemoval, getLine, promptYesNo, rhack,
+} from './cmd.js';
+import { finishDestinationSpotEffects } from './location_effects.js';
+import { performQuestExpulsion } from './quest.js';
+import { resurrectWizard } from './wizard.js';
+import {
+    finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
+} from './hero_monster_death.js';
+import { aggravateMonsters, angerMonster } from './monster_anger.js';
+import { animateRollingBoulderCell } from './hero_traps.js';
+import { grantAmuletWish } from './wish.js';
+import { checkAttributeExercise, reportHeroEncumbrance, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength } from './attrib.js';
+import { rndcurse } from './throne.js';
+import { stopRun } from './runmode.js';
+import { resolveMonsterGaze } from './monster_gaze.js';
+import { resolveMonsterMagicRay } from './monster_magic_ray.js';
+import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
+import {
+    canSpotMonster, docrt, redrawMap,
+    bot,
+    flush_screen, flushPendingTopline,
+    pline,
+    plineWithContinuation,
+    newsym,
+    map_invisible,
+    randomDisplayMonsterName,
+    see_monsters,
+    see_objects,
+    see_traps,
+    show_glyph_cell,
+    swallowed,
+    transientObjectGlyph,
+    _statusLine1,
+    _statusLine2,
+    canSeeMonster, monsterVisible,
+    shieldeff,
+} from './display.js';
+import {
+    cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset,
+    init_vision_globals,
+} from './vision.js';
+import { nhgetch } from './input.js';
+import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
+import {
+    ACID_VENOM, CORPSE,
+    GOLD_PIECE,
+    OBJECT_BIMANUAL, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
+    OBJECT_MATERIAL,
+    POT_HEALING,
+    SHIELD_OF_REFLECTION,
+} from './object_data.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import {
+    objectHasPersonalName, objectName, observeObjectForNaming,
+} from './objnam.js';
+import {
+    A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
+    BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE,
+    STONE, ZAP_POS,
+    COURT, VAULT, SHOPBASE, ROOMOFFSET,
+    STRAT_CLOSE, STRAT_WAITFORU, STRAT_WAITMASK,
+    MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS,
+    ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX,
+    TT_LAVA,
+} from './const.js';
+import { uInitMisc, makedog, uInitInventoryAttrs,
+    finishStartingDiscoveries,
+} from './u_init.js';
+import { makeDeaf } from './hero_hearing.js';
+import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
+import { syncHeroInvisibility } from './hero_invisibility.js';
+import { refreshHeroSeeing } from './hero_seeing.js';
+import { igniteItems } from './light.js';
+import {
+    destroyColdInventory, destroyElectricInventory, destroyFireInventory,
+} from './zap.js';
+import { discoverReflectingShield } from './ray.js';
+import {
+    addObjectToMonsterInventory,
+} from './monster_inventory.js';
+import {
+    claimNextDueObjectTimer,
+    peekNextDueObjectTimer,
+} from './object_timers.js';
+import { roles } from './roles.js';
+import { initializeSourceStartup } from './startup.js';
+import {
+    initialDungeonEntryText, recordGameLogEvent,
+} from './gamelog.js';
+import {
+    allocateMonsterMovement, applyHeroSpellDamage, beginDeferredHeroCloneWizard,
+    completeHeroAttackSlot,
+    resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
+    resumeDeferredHeroFireSpecial,
+    resumeDeferredHeroElectricSpecial,
+    resumeDeferredHeroLifeDrain, resumeDeferredHeroStun,
+    resumeDeferredHeroSticking,
+    resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
+    resumeDeferredHeroLegs,
+    resumeDeferredHeroReveal,
+    rollDeferredHeroSpellDamage,
+    resumeDeferredHeroSpell,
+    resolveDeferredHeroSummonMonsters,
+    resolveDeferredHeroHasteSelf,
+    resolveDeferredHeroAggravation,
+    finishDeferredMonsterMiscItem,
+    finishDeferredHeroCloneWizard,
+    resumeDeferredCovetousRelocation,
+    resumeDeferredRestrictedTenguTeleport,
+    resumeDeferredMovementSpell, resumeDeferredSpecialAttack,
+    resumeDeferredMonsterTrap,
+    resumeDeferredMonsterHideUnder,
+    finishDeferredMonsterRollingBoulderPlacement,
+    resumeDeferredMonsterRollingBoulderDeath,
+    completeMonsterOffensiveAction,
+    resumeDeferredPetAttack,
+    resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance,
+    resolveDeferredMonsterBreath,
+    fumaroles,
+    heroEveryturnEffect, runMonsterEveryturnEffects,
+    beginMonsterMove, beginMonsterHeroAttack, runMonsterAction,
+    monstersInFmonOrder,
+    monsterDistressEvents,
+    commitPetPickup,
+} from './monmove.js';
+import {
+    finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath,
+} from './monster_death.js';
+import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
+import { monsterWieldedWeapon } from './monster_weapon.js';
+import {
+    killGenocidedMonster, resolveMonsterLiquid,
+} from './mon.js';
+import {
+    wakeMonstersNear, wakeMonstersNearWithMessages,
+} from './monster_wake.js';
+import { presentWereChange } from './were.js';
+import { burnHeroArmorByFire } from './trap.js';
+import { sinkHeroIntoLava } from './hack.js';
+import { monsterTeleportRestricted,
+} from './teleport_rules.js';
+import { polymonHero, returnHeroToHumanForm } from './polyself.js';
+import { healHeroLegs } from './hero_legs.js';
+import {
+    advanceHeroSickness, advanceHeroVomiting, heroIsSick,
+    heroIsVomiting,
+} from './hero_illness.js';
+import {
+    advanceHeroSliming, clearHeroSliming,
+    finishDeferredHeroSlime, heroIsSliming, resumeDeferredHeroSlime,
+} from './slime.js';
+import {
+    advanceHeroPetrification, heroIsPetrifying,
+} from './stoning.js';
+import { advanceHeroStrangulation } from './hero_strangulation.js';
+import { initTrack, setTrack } from './track.js';
+import { autopickupAtHero } from './pickup.js';
+import { clearJustPicked } from './just_picked.js';
+import {
+    applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass,
+    destroyWornArmor, objectErosionKind,
+    objectErosionMessage, projectedArmorClass, wornArmorInDestroyOrder,
+} from './armor.js';
+import {
+    nearCapacity,
+} from './weight.js';
+import { dist2, dungeonDepth } from './hacklib.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
+    MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving,
+    monsterIsVampireShifter, monsterTypeName,
+} from './monster_data.js';
+import {
+    finishHeroDeath,
+} from './end.js';
+import type { FinishHeroDeathOptions } from './end.js';
+import { runLevelRegions } from './regions.js';
+import {
+    maintainVaultResidence, continueVaultGuardArrival,
+} from './vault.js';
+import {
+    objectClassForType, observeObject, recordObjectCall, recordObjectEncounter,
+    recordObjectKnowledge, learnObjectType,
+} from './object_knowledge.js';
+import { automaticSearch } from './detect.js';
+import { activateStatueTrapAt } from './statue_trap.js';
+import { finishPrayerOccupation } from './pray.js';
+import {
+    getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness,
+} from './hunger.js';
+import { chatWithQuestLeader, isQuestLeader } from './quest.js';
+import { moveElementalBubbles } from './elemental.js';
+import {
+    removeObjectAndContentsFromBill, checkSpecialRoom,
+    currentShopResident,
+} from './shk.js';
+import {
+    bucAdjectiveForName, inventoryItemDescription, rerollMenu,
+} from './invent.js';
+import {
+    hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive,
+    propertyTimeout, refreshProperty, setPropertyTimeout,
+} from './properties.js';
+import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
+import { setSlipperyHands } from './towel.js';
+import { restartMonsterShapechanging } from './monster_polymorph.js';
+import { msummon } from './minion.js';
+import { captureRunmodeDelay } from './runmode.js';
+
+type StatusSnapshot = readonly [string, string];
+
+interface TurnMaintenance {
+    sourceTurn: number;
+    moveAmount: number;
+    deferAmbientMessage: boolean;
+    polymorphed: boolean;
+}
+
+interface TimeoutMaintenance extends TurnMaintenance {
+    prayerTimeoutFreeze: boolean;
+}
+
+type CompletedMaintenance = { kind: 'complete'; moveAmount: number };
+type MaintenancePhase =
+    | CompletedMaintenance
+    | (TurnMaintenance & { kind: 'object-timers' })
+    | (TimeoutMaintenance & {
+        kind: 'timeout-message';
+        timeoutKind: 'stun' | 'confusion' | 'fumbling';
+        message: string;
+    })
+    | (TurnMaintenance & { kind: 'regions' })
+    | (TurnMaintenance & Position & { kind: 'statue-trap' })
+    | {
+        kind: 'ambient-message';
+        message: string;
+        sourceTurn: number;
+        moveAmount: number;
+    };
+
+const M1_ANIMAL = 0x00040000;
+const M2_LORD = 0x00000400;
+const M2_PRINCE = 0x00000800;
+const COIN_CLASS = 12;
+
+// C distant_name() runs before floor extraction. Deferred pickup messages
+// retain that floor location even though the object is now in minvent.
+function observeMonsterPickup(
+    object: GameObject | null | undefined, x: number, y: number,
+): void {
+    const game = requireInitializedGame();
+    if (!object) return;
+    observeBucForNaming(object);
+    if (!cansee(x, y)) return;
+    const range = Math.max(game.u.xray_range ?? -1, 2);
+    const nearDistance = range * range * 2 - range;
+    if (object.oartifact || dist2(x, y, game.u.ux, game.u.uy) <= nearDistance)
+        observeObject(object);
+    findArtifact(object, { source: { where: 'floor', ox: x, oy: y } });
+}
+
+function observeMonsterUsedObject(object: GameObject | null | undefined): void {
+    if (!object) return;
+    observeBucForNaming(object);
+    observeObject(object);
+    findArtifact(object);
+}
+
+// C muse.c:mquaffmsg(). Sensing the drinker does not reveal the potion.
+async function presentMonsterQuaff(
+    monster: Monster, object: GameObject,
+): Promise<boolean> {
+    const seen = canSeeMonster(monster);
+    if (seen) {
+        observeMonsterUsedObject(object);
+        await plineWithContinuation(
+            `${visibleMonsterSubject(monster)} drinks ${petCarriedObjectName(object, 1)}!`,
+        );
+    } else if (!heroIsDeaf()) {
+        await plineWithContinuation('You hear a chugging sound.');
+    }
+    return seen;
+}
+
+function putLine(col: number, row: number, text: string, attr = 0): void {
+    const game = requireInitializedGame();
+    const display = requireGameDisplay(game);
+    for (let i = 0; i < text.length && col + i < display.cols; i++)
+        display.setCell(col + i, row, text.charAt(i), NO_COLOR, attr);
+}
+
+function putStatusLines(snapshot: StatusSnapshot | null = null): void {
+    const line1 = snapshot?.[0] || _statusLine1();
+    const line2 = snapshot?.[1] || _statusLine2();
+    putLine(0, 22, line1.replace(/\x1b\[(\d+)C/g,
+        (_match, count) => ' '.repeat(Number(count))));
+    putLine(0, 23, line2);
+}
+
+// C ref: com_pager("legacy") and dat/quest.lua.  The role-independent
+// creation story is laid out by the tty pager; role, rank, and god are live.
+async function showLegacy(statusSnapshot: StatusSnapshot | null = null): Promise<void> {
+    const game = requireInitializedGame();
+    // com_pager() creates a fresh Lua state, which loads nhlib.lua before
+    // quest.lua and consumes the alignment shuffle from CORE.
+    const questState = currentLuaLifecycle().createSpecialState(game);
+    await questState.destroy();
+
+    const d = requireGameDisplay(game);
+    const alignment = game.initAlignment?.name;
+    const god = (alignment ? game.urole.gods?.[alignment] : null) || 'your god';
+    const rank = game.urole?.rank?.m || game.urole?.title?.[0]?.m || 'adventurer';
+    const deityNoun = (alignment && game.urole.goddessAlignments?.includes(alignment))
+        || god === 'The Lady'
+        ? 'goddess' : 'god';
+    const pauper = !!game.u?.uroleplay?.pauper;
+    const closingLines: readonly [string, string, string, string, string] = pauper ? [
+        `You, an untrained ${rank}, have been unable to adequately`,
+        `prepare to be the instrument of ${god}.  Nevertheless, you`,
+        'are destined to recover the Amulet for your deity, or die',
+        'in the attempt.  Your hour of destiny has come.  For the',
+        `sake of us all:  Go bravely with ${god}!`,
+    ] : [
+        `You, a newly trained ${rank}, have been heralded`,
+        `from birth as the instrument of ${god}.  You are destined`,
+        'to recover the Amulet for your deity, or die in the',
+        'attempt.  Your hour of destiny has come.  For the sake',
+        `of us all:  Go bravely with ${god}!`,
+    ];
+    const outerLines = [
+        `It is written in the Book of ${god}:`,
+        `Your ${deityNoun} ${god} seeks to possess the Amulet, and with it`,
+        'to gain deserved ascendance over the other gods.',
+        ...closingLines,
+        '--More--',
+    ] as const;
+    const innerLines = [
+        'After the Creation, the cruel god Moloch rebelled',
+        'against the authority of Marduk the Creator.',
+        'Moloch stole from Marduk the most powerful of all',
+        'the artifacts of the gods, the Amulet of Yendor,',
+        'and he hid it in the dark cavities of Gehennom, the',
+        'Under World, where he now lurks, and bides his time.',
+    ];
+    const width = Math.max(...outerLines.map(line => line.length),
+        ...innerLines.map(line => line.length + 4));
+    const left = Math.max(0, 79 - width);
+    const windowLeft = Math.max(0, left - 1);
+    for (let row = 0; row <= 17; row++)
+        putLine(windowLeft, row, ' '.repeat(80 - windowLeft));
+    putLine(left, 0, outerLines[0]);
+    innerLines.forEach((line, index) => putLine(left + 4, index + 2, line));
+    putLine(left, 9, outerLines[1]);
+    putLine(left, 10, outerLines[2]);
+    putLine(left, 12, outerLines[3]);
+    putLine(left, 13, outerLines[4]);
+    putLine(left, 14, outerLines[5]);
+    putLine(left, 15, outerLines[6]);
+    putLine(left, 16, outerLines[7]);
+    putLine(left, 17, outerLines[8]);
+    putStatusLines(statusSnapshot);
+    d.setCursor(left + 8, 17);
+    await nhgetch();
+}
+
+function welcomeText(): string {
+    const g = requireInitializedGame();
+    const align = g.initAlignment?.name || 'neutral';
+    const gender = g.flags?.female ? 'female' : 'male';
+    const race = g.urace?.adj || 'human';
+    const role = g.flags?.female && g.urole?.name?.f
+        ? g.urole.name.f : g.urole?.name?.m || 'Adventurer';
+    const identity = ['caveman', 'priest', 'valkyrie'].includes(g.urole?.key)
+        ? `${align} ${race} ${role}` : `${align} ${gender} ${race} ${role}`;
+    return `${g.urole?.greeting || 'Hello'} ${g.plname}, welcome to NetHack!  You are a ${identity}.`;
+}
+
+async function showInlineMore(message: string): Promise<void> {
+    await plineWithContinuation(message);
+    await flushPendingTopline();
+}
+
+// C ref: calendar.c phase_of_the_moon(), friday_13th().  Session datetimes
+// are deliberately fixed, so calculate from that value rather than the host
+// clock.  UTC arithmetic keeps the result independent of the judge's locale.
+export function fixedCalendar(datetime?: string | null) {
+    if (!datetime || !/^\d{14}$/.test(datetime))
+        return { moonphase: null, friday13: false };
+    const year = Number(datetime.slice(0, 4));
+    const month = Number(datetime.slice(4, 6));
+    const day = Number(datetime.slice(6, 8));
+    const start = Date.UTC(year, 0, 1);
+    const current = Date.UTC(year, month - 1, day);
+    const diy = Math.floor((current - start) / 86400000);
+    const goldn = ((year - 1900) % 19) + 1;
+    let epact = (11 * goldn + 18) % 30;
+    if ((epact === 25 && goldn > 11) || epact === 24) epact++;
+    const moonphase = (Math.floor(((((diy + epact) * 6) + 11) % 177) / 22)) & 7;
+    return {
+        moonphase,
+        friday13: new Date(current).getUTCDay() === 5 && day === 13,
+    };
+}
+
+async function applyCalendarMessages() {
+    const game = requireInitializedGame();
+    const calendar = fixedCalendar(game.datetime);
+    game.flags.moonphase = calendar.moonphase;
+    game.flags.friday13 = calendar.friday13;
+    // Native luck changes follow the message, including any input it needs.
+    if (calendar.moonphase === 4) {
+        await plineWithContinuation('You are lucky!  Full moon tonight.');
+        game.u.uluck = Math.min(LUCKMAX, (game.u.uluck || 0) + 1);
+    } else if (calendar.moonphase === 0) {
+        await plineWithContinuation('Be careful!  New moon tonight.');
+    }
+    if (calendar.friday13) {
+        await plineWithContinuation('Watch out!  Bad things can happen on Friday the 13th.');
+        game.u.uluck = Math.max(LUCKMIN, (game.u.uluck || 0) - 1);
+    }
+}
+
+// C refs: restore.c dorecover(), allmain.c moveloop_preamble(resuming=TRUE).
+// Restoring skips new-game RNG setup but reinitializes the Lua alignment
+// shuffle, presents the saved map, and applies real-world calendar effects.
+export async function restoregamePreamble() {
+    const game = requireInitializedGame();
+    await l_nhcore_init();
+    game._moveloopStarted = false;
+    // pickup.c's oldcap is process-local (decl.c), not restored save state.
+    game._encumbranceLevel = 0;
+
+    const race = game.urace?.adj || game.urace?.noun || 'human';
+    const role = game.flags?.female && game.urole?.name?.f
+        ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
+    const greeting = `Hello ${game.displayName || game.plname}, the ${race} ${role}, welcome back to NetHack!`;
+    // The first flush paints the display state restored with the level.
+    await bot();
+    await plineWithContinuation(greeting);
+    await checkSpecialRoom();
+    if (game.flags?.explore)
+        await plineWithContinuation('You are in non-scoring explore/discovery mode.');
+    await applyCalendarMessages();
+    await readEngravingAt(game.u.ux, game.u.uy, {
+        showMore: showInlineMore,
+        showLine: plineWithContinuation,
+    });
+    await fixShopDamage(game);
+    await finishMoveloopPreamble();
+}
+
+async function askTutorial() {
+    const game = requireInitializedGame();
+    const d = requireGameDisplay(game);
+    // tty_end_menu() derives a 59-column tutorial window (content plus menu
+    // margins) from its longest row.  tty_display_nhwindow() therefore puts
+    // the recorded .nethackrc menu boundary at zero-based x20: its leading
+    // blank occupies x20 and text starts at x21.  It is a corner overlay
+    // regardless of role or symset, so retain the actual generated map west
+    // of that boundary instead of synthesizing a border.
+    game._pending_message = '';
+    d.clearRow(0);
+    d.clearRow(1);
+    for (let row = 2; row <= 6; row++)
+        putLine(20, row, ' '.repeat(60));
+    putLine(21, 0, 'Do you want a tutorial?', 1);
+    putLine(21, 2, 'y - Yes, do a tutorial');
+    putLine(21, 3, 'n - No, just start play');
+    putLine(21, 5, 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
+    putLine(21, 6, '(end)');
+    putStatusLines();
+    d.setCursor(27, 6);
+    let key = await nhgetch();
+    while (key !== 121 && key !== 110 && key !== 27) {
+        // select_menu() handles ordinary invalid accelerators in place.  Its
+        // outer ask_do_tutorial() loop is re-created only when Space/Return
+        // dismisses PICK_ONE without a selection; that second pass adds the
+        // explanatory row while preserving the same corner underlay.
+        if (key === 32 || key === 10 || key === 13) {
+            putLine(20, 6, ' '.repeat(60));
+            putLine(20, 7, ' '.repeat(60));
+            putLine(21, 6, "(Please choose 'y' or 'n'.)");
+            putLine(21, 7, '(end)');
+            d.setCursor(27, 7);
+        }
+        key = await nhgetch();
+    }
+    return key === 121;
+}
+
+// C/Lua refs: allmain.c maybe_do_tutorial(), do.c goto_level(),
+// nhcore.lua tutorial_enter(), and nhlua.c nhl_gamestate().  Destination
+// construction and arrival precede the entry pager, but that pager still
+// projects the source graph.  Tutorial inventory is deliberately sequestered
+// until a later portal restores the saved game state.
+async function enterTutorial() {
+    const game = requireInitializedGame();
+    const target = game.specialLevels?.get('tut-1');
+    if (!target) return false;
+
+    const oldLevel = game.level;
+    const oldStairs = game.stairs;
+    const oldDepth = { ...(game.u?.uz || {}) };
+    const oldPosition = {
+        x: game.u.ux, y: game.u.uy,
+        x0: game.u.ux0, y0: game.u.uy0,
+    };
+    if (!game._levelCache) game._levelCache = new Map();
+    game._levelCache.set(`${oldDepth.dnum ?? 0}:${oldDepth.dlevel ?? 1}`, {
+        level: oldLevel, stairs: oldStairs, savedAt: game.moves,
+    });
+
+    game.u.ucamefrom = { ...oldDepth };
+    await currentLuaLifecycle().changeTutorialMode(game, true);
+    game.u.uz = { ...target };
+    game._specialLevelPrototype = 'tut-1';
+    await mklev();
+    const tutorialLevel = game.level;
+    const tutorialStairs = game.stairs;
+    const tutorialPosition = {
+        x: game.u.ux, y: game.u.uy,
+        x0: game.u.ux0, y0: game.u.uy0,
+    };
+
+    game.level = oldLevel;
+    game.stairs = oldStairs;
+    game.u.uz = oldDepth;
+    const oldHero = game.u;
+    oldHero.ux = oldPosition.x;
+    oldHero.uy = oldPosition.y;
+    oldHero.ux0 = oldPosition.x0;
+    oldHero.uy0 = oldPosition.y0;
+    await showInlineMore('Entering the tutorial.');
+    await checkSpecialRoom({ newLevel: true });
+
+    game.level = tutorialLevel;
+    game.stairs = tutorialStairs;
+    game.u.uz = { ...target };
+    const tutorialHero = game.u;
+    tutorialHero.ux = tutorialPosition.x;
+    tutorialHero.uy = tutorialPosition.y;
+    tutorialHero.ux0 = tutorialPosition.x0;
+    tutorialHero.uy0 = tutorialPosition.y0;
+    game._tutorialActive = true;
+    game._pending_message = '';
+    vision_reset();
+    await docrt();
+    await checkSpecialRoom();
+    await readEngravingAt(game.u.ux, game.u.uy, {
+        showMore: showInlineMore,
+        showLine: plineWithContinuation,
+    });
+    findArmorClass(game);
+    await redrawMap();
+    await flush_screen(1);
+    return true;
+}
+
+async function moveloopPreamble() {
+    const game = requireInitializedGame();
+    if (game._moveloopStarted) return;
+    await applyCalendarMessages();
+
+    game.program_state.beyond_savefile_load = 1;
+    game.rndencode = rnd(9000);
+    await applyStartingArmorEffects();
+    if (game.program_state.gameover) return;
+    clearJustPicked(game);
+    await autopickupAtHero();
+    if (game.program_state.gameover) return;
+    game.seer_turn = rnd(30);
+    game.u.umovement = NORMAL_SPEED;
+    initTrack();
+    game._nextAttribCheck = 600;
+    await finishMoveloopPreamble();
+
+    if (!game.tutorial_set_in_config) {
+        // Menu creation flushes only a message still awaiting dismissal.
+        // A wrapped welcome has already completed its own pager.
+        await flushPendingTopline();
+        await flush_screen(1);
+        const doTutorial = await askTutorial();
+        game._tutorialDeclined = !doTutorial;
+        game._pending_message = '';
+        if (doTutorial) await enterTutorial();
+        else {
+            await redrawMap();
+            await flush_screen(1);
+        }
+    }
+}
+
+// C allmain.c:moveloop_preamble(), shared new/restore tail. Equipment and
+// pickup messages may suspend before this boundary makes command input live.
+async function finishMoveloopPreamble() {
+    const game = requireInitializedGame();
+    await reportHeroEncumbrance();
+    game.u.uz0 ||= { ...game.u.uz };
+    game.u.uz0.dlevel = game.u.uz.dlevel;
+    game.context.move = 0;
+    game._moveloopStarted = true;
+}
+
+function appendTurnMessage(message: string): void {
+    const game = requireInitializedGame();
+    if (game._suppressMessagesUntilInput) return;
+    game._pending_message = game._pending_message
+        ? `${game._pending_message}  ${message}` : message;
+    game._last_message = game._pending_message;
+}
+
+// C ref: timeout.c:slip_or_trip(), empty-square/on-foot branch.  The object,
+// ice, and mounted branches have distinct naming, direction, and dismount
+// owners; keep this helper bounded to the branch exercised by ordinary
+// fumble boots on clear floor.
+function slipOrTripOnClearFloor({ deferMessage = false } = {}) {
+    const game = requireInitializedGame();
+    const hallucinating = heroIsHallucinating(game);
+    let message;
+    switch (rn2(4)) {
+    case 1:
+        message = `You trip over your own ${
+            hallucinating ? 'elbows' : 'feet'
+        }.`;
+        break;
+    case 2:
+        message = `You slip ${
+            hallucinating ? 'on a banana peel' : 'and nearly fall'
+        }.`;
+        break;
+    case 3:
+        message = 'You flounder.';
+        break;
+    default:
+        message = 'You stumble.';
+        break;
+    }
+    if (!deferMessage) appendTurnMessage(message);
+    return message;
+}
+
+// C ref: allmain.c:interrupt_multi().  Count-prefixed ordinary commands use
+// positive `multi`; full HP or power recovery cancels that voluntary repeat,
+// but must not stop independent occupations such as eating, lock-picking, or
+// spellbook study.  This port represents both kinds in `_occupation`, so keep
+// the distinction at the interruption boundary.
+function interruptCountedActivity(message: string): void {
+    const game = requireInitializedGame();
+    if (!(game.multi > 0) || game.context.travel || game.context.run) return;
+    endVoluntaryMultiTurn(game);
+    if (game.flags?.verbose !== false
+        && game._pending_message !== message
+        && game._last_message !== message) {
+        appendTurnMessage(message);
+    }
+}
+
+function monsterInRoom(monster: Monster, roomType: number): boolean {
+    const game = requireInitializedGame();
+    const roomNumber = game.level?.at(monster.mx, monster.my)?.roomno;
+    if (typeof roomNumber !== 'number' || !Number.isInteger(roomNumber) || roomNumber < ROOMOFFSET)
+        return false;
+    const room = game.level.rooms[roomNumber - ROOMOFFSET];
+    return isRoom(room) && room.rtype === roomType;
+}
+
+function courtResident(): Monster | undefined {
+    const game = requireInitializedGame();
+    return (game.level?.monsters || []).find(monster => {
+        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0)
+            return false;
+        const flags1 = MONSTER_FLAGS1[monster.mnum] ?? 0;
+        const flags2 = MONSTER_FLAGS2[monster.mnum] ?? 0;
+        return !!(monster.msleeping || (flags2 & (M2_LORD | M2_PRINCE)))
+            && !(flags1 & M1_ANIMAL)
+            && monsterInRoom(monster, COURT);
+    });
+}
+
+// C ref: sounds.c:dosounds().  Feature checks are ordered and several
+// successful branches return from dosounds(), so later feature flags must not
+// be sampled after an audible vault/shop/swamp event.
+function ambientFeatureSounds(flags: LevelFlags): void {
+    const game = requireInitializedGame();
+    // sounds.c:dosounds() returns before sampling any feature trigger while
+    // the hero is unable to hear.  This guard owns RNG as well as prose.
+    if (game.deaf || game.flags?.acoustics === false
+        || game.u?.uswallow || game.u?.underwater || game.underwater) return;
+    if (flags.nfountains && rn2(400) === 0) {
+        const messages = [
+            'You hear bubbling water.',
+            'You hear water falling on coins.',
+            'You hear the splashing of a naiad.',
+        ];
+        appendAmbientSound(messages, rn2(3));
+    }
+    if (flags.nsinks && rn2(300) === 0) {
+        const messages = [
+            'You hear a slow drip.',
+            'You hear a gurgling noise.',
+        ];
+        appendAmbientSound(messages, rn2(2));
+    }
+    if (flags.has_court && rn2(200) === 0) {
+        if (courtResident()) {
+            const hallucinating = heroIsHallucinating(game);
+            const sound = rn2(3) + Number(hallucinating);
+            const messages = [
+                'You hear the tones of courtly conversation.',
+                'You hear a sceptre pounded in judgment.',
+                'Someone shouts "Off with your head!"',
+                "You hear Queen Beruthiel's cats!",
+            ];
+            appendAmbientSound(messages, sound);
+            return;
+        }
+    }
+    if (flags.has_swamp && rn2(200) === 0) {
+        const messages = ['You hear mosquitoes!', 'You smell marsh gas!'];
+        appendAmbientSound(messages, rn2(2));
+        return;
+    }
+    if (flags.has_vault && rn2(200) === 0) {
+        const vault = game.level.rooms.find((room): room is Room =>
+            isRoom(room) && room.rtype === VAULT);
+        if (!vault) {
+            flags.has_vault = false;
+            return;
+        }
+        const guard = game.level?.monsters?.find(monster => monster.isgd);
+        const heroInVault = game.level?.at(game.u.ux, game.u.uy)?.roomno
+            === (game.level.rooms.indexOf(vault) + 3);
+        if (!guard && !heroInVault) {
+            const sound = rn2(2);
+            if (sound === 0) {
+                appendTurnMessage(
+                    'You hear the footsteps of a guard on patrol.',
+                );
+            } else {
+                let hasGold = false;
+                for (let x = vault.lx; x <= vault.hx && !hasGold; x++) {
+                    for (let y = vault.ly; y <= vault.hy; y++) {
+                        if ((game.level?.objects?.[x]?.[y] || [])
+                            .some(object => object.otyp === GOLD_PIECE)) {
+                            hasGold = true;
+                            break;
+                        }
+                    }
+                }
+                appendTurnMessage(hasGold
+                    ? 'You hear someone counting gold coins.'
+                    : 'You hear someone searching.');
+            }
+        }
+        return;
+    }
+    for (const feature of [
+        'has_beehive', 'has_morgue', 'has_barracks', 'has_zoo',
+    ] as const) {
+        if (flags[feature]) rn2(200);
+    }
+    if (flags.has_shop && rn2(200) === 0) {
+        const rooms = game.level?.rooms || [];
+        const shop = rooms.find((room): room is Room =>
+            isRoom(room) && room.rtype >= SHOPBASE);
+        if (!shop) {
+            flags.has_shop = false;
+            return;
+        }
+        const resident = shop.resident;
+        const shopRoom = resident?.eshk?.shoproom
+            ?? (rooms.indexOf(shop) + ROOMOFFSET);
+        const residentRoom = resident
+            ? game.level?.at(resident.mx, resident.my)?.roomno : null;
+        const heroRoom = game.level?.at(game.u.ux, game.u.uy)?.roomno;
+        if (resident && residentRoom === shopRoom && heroRoom !== shopRoom) {
+            const messages = [
+                'You hear someone cursing shoplifters.',
+                'You hear the chime of a cash register.',
+            ];
+            appendAmbientSound(messages, rn2(2));
+            for (const monster of game.level?.monsters || []) {
+                if (dist2(monster.mx, monster.my,
+                    resident.mx, resident.my) < 11 * 11) {
+                    monster.msleeping = 0;
+                    if (typeof monster.mstrategy === 'number' && Number.isInteger(monster.mstrategy))
+                        monster.mstrategy &= ~STRAT_WAITMASK;
+                }
+            }
+        }
+        return;
+    }
+    if (flags.has_temple) rn2(200);
+    const onOracleLevel = game._activeSpecialLevel?.prototype === 'oracle'
+        || (game.oracle_level
+            && game.u?.uz?.dnum === game.oracle_level.dnum
+            && game.u?.uz?.dlevel === game.oracle_level.dlevel);
+    if (onOracleLevel && rn2(400) === 0) {
+        const oracle = game.level?.monsters?.find(monster =>
+            !monster.dead && monster.mnum === 274);
+        if (oracle) {
+            const hallucinating = heroIsHallucinating(game);
+            if (hallucinating || !cansee(oracle.mx, oracle.my)) {
+                const messages = [
+                    'a strange wind.',
+                    'convulsive ravings.',
+                    'snoring snakes.',
+                    'someone say "No more woodchucks!"',
+                    'a loud ZOT!',
+                ];
+                appendTurnMessage(`You hear ${messages[
+                    rn2(3) + (hallucinating ? 2 : 0)
+                ]}`);
+            }
+        }
+    }
+}
+
+function appendAmbientSound(messages: readonly string[], index: number): void {
+    const message = messages[index];
+    if (message === undefined)
+        throw new RangeError(`Ambient sound ${index} is outside its ${messages.length} choices.`);
+    appendTurnMessage(message);
+}
+
+// C ref: allmain.c's `once-per-hero-took-time` tail, after the movement-ration
+// loop has allocated as many global turns as the hero needs.  Burden can make
+// one action span two allocations; seer_turn is checked only after the last
+// one, against the final `moves` value.
+function finishHeroTookTimeRng(sourceTurn: number): void {
+    const game = requireInitializedGame();
+    if (sourceTurn >= (game.seer_turn ?? Infinity)) {
+        game.seer_turn = sourceTurn + 15 + rn2(31);
+    }
+}
+
+function finishOrDeferHeroTookTimeRng(sourceTurn: number): void {
+    const game = requireInitializedGame();
+    if (game._vaultMaintenanceContinuation) {
+        game._vaultHeroTookTimePending = sourceTurn;
+        return;
+    }
+    if (game._deathSurvivedMessagePending) {
+        game._deathSurvivalHeroTookTimePending = sourceTurn;
+        return;
+    }
+    // The final negative-multi prayer action invokes prayer_done() before
+    // moveloop reaches this once-per-hero-took-time tail.  prayer_done's
+    // completion pline can suspend at tty, so the Seer reschedule belongs to
+    // the acknowledgement input after that callback has fully returned.
+    if (game._prayerTurnsRemaining === 1) {
+        game._prayerHeroTookTimePending = sourceTurn;
+        return;
+    }
+    finishHeroTookTimeRng(sourceTurn);
+}
+
+async function finishInitialTurnMaintenanceAfterIntervention(
+    sourceTurn: number,
+): Promise<void> {
+    const game = requireInitializedGame();
+    // allmain.c's environmental owner runs after engraving wear. Air and
+    // Water share the moving bubble list created by fixup_special(); Fire
+    // reuses the same fumarole sampler as initial arrival.
+    if (Is_airlevel(game.u?.uz) || Is_waterlevel(game.u?.uz))
+        await moveElementalBubbles();
+    else if (game.level?.flags?.fumaroles) fumaroles(game);
+    const delayedAction = game._delayedAction;
+    if (delayedAction && delayedAction.remainingGlobalTurns > 0) {
+        delayedAction.remainingGlobalTurns--;
+        if (delayedAction.remainingGlobalTurns === 0)
+            delayedAction.ready = true;
+    }
+    // C allmain.c increments negative `multi` only after the complete global
+    // turn (monster allocation, timeouts, sounds, hunger, and engraving wear).
+    // Keep the counter here rather than in the command which caused the
+    // helplessness so fast heroes and multi-round movement rations retain the
+    // same boundary.
+    if (game._helplessTurns !== undefined && game._helplessTurns > 0) {
+        if (!game._deathSurvivedMessagePending)
+            game._helplessRunmodeDelayPending = sourceTurn;
+        game._helplessTurns--;
+        if (game._helplessTurns === 0) {
+            const doneMessage = game._helplessDoneMessage
+                ?? 'You can move again.';
+            // Live actor schedulers finish this synchronous phase inside an
+            // async moveloop owner.  Queue recovery there so an occupied
+            // topline can page before unmul's message replaces it, as tty
+            // pline() does in C.
+            game._queuedHelplessRecoveryMessage = doneMessage;
+        }
+    }
+}
+
+// State-derived subset of the once-per-turn maintenance in allmain.c.
+// This covers the first quiet turn: monster movement allotments, random
+// monster generation, ambient feature sounds, hunger, and engraving wear.
+async function finishInitialTurnMaintenanceRng(sourceTurn: number): Promise<void> {
+    const game = requireInitializedGame();
+    if (!rn2(40 + currentAttribute(A_DEX) * 3)) wipeHeroEngraving(rnd(3));
+    // allmain.c's demigod intervention clock advances after engraving wear
+    // and before environmental level motion.  Nervous outcomes 0/1 are
+    // synchronous; outcome2's black-glow pline can suspend before rndcurse,
+    // reset, environment, and once-per-action scheduling.
+    if (game.u?.uevent?.udemigod && !game.u?.invulnerable) {
+        if (game.u.udg_cnt !== undefined && game.u.udg_cnt > 0) game.u.udg_cnt--;
+        if ((game.u.udg_cnt ?? 0) === 0) {
+            const intervention = rn2(6);
+            if (intervention <= 1) {
+                appendTurnMessage('You feel vaguely nervous.');
+                delete game._unresolvedDemigodIntervention;
+            } else if (intervention === 2) {
+                appendTurnMessage('You notice a black glow surrounding you.');
+                game._pendingDemigodIntervention = {
+                    kind: intervention, sourceTurn,
+                };
+                return;
+            } else if (intervention === 5) {
+                game._pendingDemigodIntervention = {
+                    kind: intervention, sourceTurn,
+                };
+                return;
+            } else if (intervention === 4) {
+                game._pendingDemigodIntervention = {
+                    kind: intervention, sourceTurn,
+                };
+                return;
+            } else if (intervention === 3) {
+                const affected = aggravateMonsters(game, rn2);
+                game._lastDemigodAggravation = affected.map(monster =>
+                    monster.m_id);
+                delete game._unresolvedDemigodIntervention;
+            } else {
+                game._unresolvedDemigodIntervention = intervention;
+            }
+            game.u.udg_cnt = 50 + rn2(200);
+        }
+    }
+    await finishInitialTurnMaintenanceAfterIntervention(sourceTurn);
+}
+
+// C ref: attrib.c:exerper().  Hunger is read after gethungry() has applied
+// this turn's decrement, so a completed meal can change the periodic RNG
+// branch even when no other status or monster state changed.
+async function periodicTurnExercise(sourceTurn: number): Promise<void> {
+    const game = requireInitializedGame();
+    if (!(sourceTurn % 10)) {
+        const hunger = game.u?.uhunger ?? 900;
+        if (hunger > 1000) {
+            await exerciseAttribute(A_DEX, false); // Satiated: abuse Dexterity
+            if (game.urole?.key === 'monk')
+                await exerciseAttribute(A_WIS, false);
+        } else if (hunger > 150) {
+            await exerciseAttribute(A_CON, true); // Not Hungry: exercise Constitution
+        } else if (hunger > 50) {
+            // Hungry has no hunger-driven exercise.
+        } else if (hunger > 0) {
+            await exerciseAttribute(A_STR, false); // Weak: abuse Strength
+            if (game.urole?.key === 'monk')
+                await exerciseAttribute(A_WIS, true);
+        } else {
+            await exerciseAttribute(A_CON, false); // Fainting/Fainted
+        }
+
+        switch (nearCapacity(game)) {
+        case MOD_ENCUMBER:
+            await exerciseAttribute(A_STR, true);
+            break;
+        case HVY_ENCUMBER:
+            await exerciseAttribute(A_STR, true);
+            await exerciseAttribute(A_DEX, false);
+            break;
+        case EXT_ENCUMBER:
+            await exerciseAttribute(A_DEX, false);
+            await exerciseAttribute(A_CON, false);
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (!(sourceTurn % 5)) {
+        const u = game.u || {};
+        // C attrib.c:exerper() checks status in this order.  These are
+        // independent conditions: a confused hero with wounded legs abuses
+        // both Wisdom and Dexterity, consuming one exercise draw for each.
+        if (((u.clairvoyanceTurns ?? 0) > 0
+            || hasPermanentIntrinsicProperty('clairvoyant', game))
+            && !u.clairvoyanceBlocked)
+            await exerciseAttribute(A_WIS, true);
+        // attrib.c checks HRegeneration here, not the combined Regeneration
+        // property.  A worn ring supplies ERegeneration: it heals and raises
+        // metabolism, but it does not exercise Strength every fifth turn.
+        if (u.regenerationIntrinsic || (u.regenerationTurns ?? 0) > 0
+            || hasIntrinsicProperty('regeneration', null, game))
+            await exerciseAttribute(A_STR, true);
+        if (u.sick || (u.sickTurns ?? 0) > 0
+            || u.vomiting || (u.vomitingTurns ?? 0) > 0)
+            await exerciseAttribute(A_CON, false);
+        if ((u.confusionTurns ?? 0) > 0
+            || heroIsHallucinating(game))
+            await exerciseAttribute(A_WIS, false);
+        if (((u._woundedLegTurns ?? 0) > 0 && !u.usteed)
+            || u.fumbling || propertyIsActive('fumbling', game)
+            || u.stunned || (u.stunnedTurns ?? 0) > 0)
+            await exerciseAttribute(A_DEX, false);
+    }
+}
+
+async function finishInitialTurnMaintenanceAfterAmbient({
+    sourceTurn, moveAmount,
+}: Pick<TurnMaintenance, 'sourceTurn' | 'moveAmount'>): Promise<CompletedMaintenance> {
+    const game = requireInitializedGame();
+    await getHungry({ invulnerable: game.u.invulnerable });
+    if (game.program_state.gameover) return { kind: 'complete', moveAmount };
+    // JS has already advanced `game.moves` for the hero action which caused
+    // this maintenance pass.  C increments svm.moves inside this pass, so
+    // the resulting C turn number is the existing JS value, not value + 1.
+    await periodicTurnExercise(sourceTurn);
+    await checkAttributeExercise(sourceTurn);
+    if (maintainVaultResidence(game)) {
+        // invault() owns an interactive getlin()/pager transaction.  Preserve
+        // the remaining same-turn maintenance so it resumes only after that
+        // transaction completes, just as the synchronous C stack does.
+        game._vaultMaintenanceContinuation = { sourceTurn };
+        return { kind: 'complete', moveAmount };
+    }
+    await finishInitialTurnMaintenanceRng(sourceTurn);
+    return { kind: 'complete', moveAmount };
+}
+
+function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
+    const game = requireInitializedGame();
+    if (fumbled) {
+        // timeout.c reaches this through nomul(-2), which always calls
+        // end_running(TRUE) before the helpless interval.
+        stopRun(game);
+        endVoluntaryMultiTurn(game);
+        game._helplessTurns = 2;
+        game._helplessDoneMessage = '';
+    }
+    if (game.u?.fumblingFromArmor || game.u?.fumblingIntrinsic)
+        game.u.fumblingTurns = (game.u.fumblingTurns ?? 0) + rnd(20);
+    game.u.fumbling = !!(game.u?.fumblingFromArmor
+        || game.u?.fumblingIntrinsic
+        || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
+}
+
+async function finishInitialTurnMaintenanceAfterAutomaticSearch({
+    sourceTurn, moveAmount, deferAmbientMessage,
+}: Pick<TurnMaintenance, 'sourceTurn' | 'moveAmount' | 'deferAmbientMessage'>): Promise<MaintenancePhase> {
+    const game = requireInitializedGame();
+    const flags = game.level?.flags || {};
+    const pendingBeforeAmbient = game._pending_message || '';
+    const lastBeforeAmbient = game._last_message || '';
+    ambientFeatureSounds(flags);
+    if (deferAmbientMessage
+        && (game._pending_message || '') !== pendingBeforeAmbient) {
+        const combined = game._pending_message || '';
+        const prefix = pendingBeforeAmbient
+            ? `${pendingBeforeAmbient}  ` : '';
+        const message = prefix && combined.startsWith(prefix)
+            ? combined.slice(prefix.length) : combined;
+        game._pending_message = pendingBeforeAmbient;
+        game._last_message = lastBeforeAmbient;
+        return {
+            kind: 'ambient-message',
+            message, sourceTurn, moveAmount,
+        };
+    }
+    return await finishInitialTurnMaintenanceAfterAmbient({
+        sourceTurn, moveAmount,
+    });
+}
+
+async function finishInitialTurnMaintenanceAfterRegions({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+}: TurnMaintenance): Promise<MaintenancePhase> {
+    const game = requireInitializedGame();
+    if (game.u.ublesscnt > 0) game.u.ublesscnt--;
+    // allmain.c:regen_hp() runs after nh_timeout().  If a timeout pline
+    // suspended at tty, no regeneration or later maintenance may run until
+    // that exact source stack resumes.
+    const activeHp = polymorphed ? 'mh' : 'uhp';
+    const activeHpMax = polymorphed ? 'mhmax' : 'uhpmax';
+    if (!game.u?.invulnerable
+        && (game.u?.[activeHp] ?? 0) < (game.u?.[activeHpMax] ?? 0)) {
+        let shouldHeal;
+        if (polymorphed) {
+            // allmain.c:regen_hp() does not use the human level/Constitution
+            // rn2(100) check for monster-form HP.  Ordinary forms recover one
+            // point only from Regeneration or on the deterministic 20-turn
+            // cadence while movement encumbrance permits it.  The dry-eel
+            // damage branch remains separate from this non-eel carrier.
+            const nonEel = MONSTER_SYMBOL[game.u.umonnum] !== 57;
+            const encumbranceOk = nearCapacity(game) < MOD_ENCUMBER
+                || !game.u?.umoved;
+            shouldHeal = nonEel && (game.u.regeneration
+                || (encumbranceOk && sourceTurn % 20 === 0));
+        } else {
+            const constitution = game.u?.acurr?.a?.[A_CON] || 0;
+            shouldHeal = (game.u.ulevel + constitution) > rn2(100)
+                || game.u.regeneration;
+        }
+        if (shouldHeal) {
+            game.u[activeHp] = Math.min(
+                game.u[activeHpMax], game.u[activeHp] + 1,
+            );
+            if (game.u[activeHp] === game.u[activeHpMax])
+                interruptCountedActivity('You are in full health.');
+        }
+    }
+
+    if ((game.u?.uen ?? 0) < (game.u?.uenmax ?? 0)) {
+        const capacity = nearCapacity(game);
+        const level = game.u?.ulevel ?? 1;
+        const roleFactor = game.urole?.key === 'wizard' ? 3 : 4;
+        const interval = Math.max(1, Math.trunc(
+            ((30 + 8 - level) * roleFactor) / 6,
+        ));
+        const energyRegeneration = !!(
+            game.u?.energyRegeneration
+            || game.u?.energyRegenerationIntrinsic
+            || game.u?.energyRegenerationExtrinsic
+        );
+        if ((capacity < MOD_ENCUMBER
+                && sourceTurn % interval === 0)
+            || energyRegeneration) {
+            const attributes = game.u?.acurr?.a || [];
+            let upper = Math.trunc(
+                ((attributes[A_WIS] ?? 0) + (attributes[A_INT] ?? 0)) / 15,
+            ) + 1;
+            if (game.u?.magicalBreathingExtrinsic) upper += 2;
+            game.u.uen = Math.min(
+                game.u.uenmax,
+                game.u.uen + 1 + rn2(upper),
+            );
+            if (game.u.uen === game.u.uenmax)
+                interruptCountedActivity('You feel full of energy.');
+        }
+    }
+
+    if (game.u?.searching && !game.level?.flags?.noautosearch
+        && !game._delayedAction) {
+        const search = automaticSearch();
+        if (typeof search === 'object' && search.statueTrap) {
+            const { x, y } = search.statueTrap;
+            return {
+                kind: 'statue-trap',
+                x, y, sourceTurn, moveAmount,
+                deferAmbientMessage, polymorphed,
+            };
+        }
+    }
+
+    return await finishInitialTurnMaintenanceAfterAutomaticSearch({
+        sourceTurn, moveAmount, deferAmbientMessage,
+    });
+}
+
+function finishInitialTurnMaintenanceAfterTimeout({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+}: TurnMaintenance): MaintenancePhase {
+    return {
+        kind: 'regions',
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    };
+}
+
+async function runLevelRegionTurn() {
+    const game = requireInitializedGame();
+    return runLevelRegions(game, {
+        wake: wakeMonstersNearWithMessages,
+        onHeroDeath: () => finishHeroDeath({ killer: 'gas cloud' }),
+        onAnger: (monster: Monster) => angerMonster(monster, { attacked: true }),
+        onMonsterDeath: async (monster: Monster, event: { heroFault: boolean; visible: boolean }) => {
+            if (event.heroFault) {
+                const killed = await finishHeroMonsterKill(
+                    monster, monster.mx, monster.my,
+                );
+                return { monster, survived: !killed };
+            }
+            return finishMonsterKilled(monster, game, {
+                cause: 'gas cloud', damageType: AD_DRST,
+            });
+        },
+    });
+}
+
+async function beginInitialTurnMaintenance(): Promise<MaintenancePhase | { kind: 'hero-died' }> {
+    const game = requireInitializedGame();
+    // allmain.c runs mcalcdistress() before allocating the next movement
+    // ration. Regeneration, were-change checks, and temporary maladies count
+    // down once per global turn, independent of the monster's own speed.
+    game.were_changes = 0;
+    for await (const event of monsterDistressEvents(
+        game.level?.monsters || [], game, rn2, game.moves, plineWithContinuation,
+    )) {
+        if (event.kind === 'stationary-liquid') {
+            if (game.vision_full_recalc) vision_recalc(0);
+            await resolveMonsterLiquid(event.monster, game, {
+                announce: plineWithContinuation,
+                monsterMoving: false,
+                finishDeath: finishHeroLiquidMonsterDeath,
+            });
+            continue;
+        }
+        if (event.kind === 'shape-change') {
+            if (event.change.heroDied) return { kind: 'hero-died' };
+            continue;
+        }
+        await presentWereChange(event.change, {
+            publish: plineWithContinuation,
+            wakeNearby: (x: number, y: number, distance: number) =>
+                wakeMonstersNear(x, y, distance, game),
+        });
+    }
+    return finishInitialTurnMaintenanceAfterMonsterDistress(true);
+}
+
+async function finishInitialTurnMaintenanceAfterMonsterDistress(
+    deferAmbientMessage: boolean,
+): Promise<MaintenancePhase> {
+    const game = requireInitializedGame();
+    allocateMonsterMovement(game.level?.monsters || [], rn2, game);
+    // allmain.c:maybe_generate_rnd_mon().  Monster pressure increases below
+    // the Castle and again after demigodhood; the denominator is topology
+    // state, not a fixed scheduler constant.
+    const currentDepth = dungeonDepth(
+        game.u?.uz?.dnum ?? 0, game.u?.uz?.dlevel ?? 1,
+    );
+    const strongholdDepth = dungeonDepth(
+        game.stronghold_level?.dnum ?? 0,
+        game.stronghold_level?.dlevel ?? Number.MAX_SAFE_INTEGER,
+    );
+    const generationRate = game.u?.uevent?.udemigod ? 25
+        : currentDepth > strongholdDepth ? 50 : 70;
+    if (rn2(generationRate) === 0) await makemonAt(null, 0, 0);
+    const polymorphed = (game.u.mtimedone !== undefined && game.u.mtimedone > 0)
+        && Number.isInteger(game.u?.umonnum);
+    let moveAmount = polymorphed
+        ? (MONSTER_MOVE[game.u.umonnum] ?? 0)
+        : 12;
+    if (game.u?.veryFast) {
+        if (rn2(3) !== 0) moveAmount += 12;
+    } else if (game.u?.fast && rn2(3) === 0) {
+        moveAmount += 12;
+    }
+    // allmain.c:u_calc_moveamt() applies current carrying capacity after the
+    // current form's natural speed and Fast/Very_fast bonus.  OVERLOADED is
+    // deliberately the default case: a zero-speed mold receives no movement
+    // until intrinsic Fast grants a complete 12-point action.
+    const movementCapacity = nearCapacity(game);
+    if (movementCapacity === 1) {
+        moveAmount -= Math.trunc(moveAmount / 4);
+    } else if (movementCapacity === 2) {
+        moveAmount -= Math.trunc(moveAmount / 2);
+    } else if (movementCapacity === 3) {
+        moveAmount -= Math.trunc(moveAmount * 3 / 4);
+    } else if (movementCapacity === 4) {
+        moveAmount -= Math.trunc(moveAmount * 7 / 8);
+    }
+    // C records the hero's current square after monster movement/allocation
+    // and before the new global turn's callbacks.  Pets which lose sight of
+    // the hero consult this ring on their next action.
+    addHeroMovementRation(game, moveAmount);
+    setTrack(game);
+    game.moves = (game.moves || 1) + 1;
+    game._heroActionSeq = game.moves * 8;
+    await currentLuaLifecycle().callCore(game, 'moveloop_turn');
+
+    // nh_timeout() precedes regeneration and exerchk() in the C loop.  Keep
+    // the first timed impairment live rather than treating its setup rolls as
+    // disposable: bear-trap leg damage lowers Dexterity until this countdown
+    // expires.
+    const sourceTurn = game.moves;
+    if (game.u.mtimedone !== undefined && game.u.mtimedone > 0) game.u.mtimedone--;
+    if (peekNextDueObjectTimer(game, sourceTurn)) {
+        if (!deferAmbientMessage) {
+            throw new Error(
+                'due object timer requires source-ordered async maintenance',
+            );
+        }
+        return {
+            kind: 'object-timers',
+            sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        };
+    }
+    return finishInitialTurnMaintenanceAfterObjectTimers({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    });
+}
+
+async function finishInitialTurnMaintenanceAfterObjectTimers({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+}: TurnMaintenance): Promise<MaintenancePhase> {
+    const game = requireInitializedGame();
+    // C timeout.c:nh_timeout() expires temporary confusion before regen,
+    // sounds, hunger, and exerchk().  The final tick is observable twice:
+    // it queues the recovery message and prevents this same turn's periodic
+    // Wisdom abuse from seeing Confusion as active.
+    // Prayer's u.uinvulnerable is not the timed Invulnerable property.
+    // timeout.c:nh_timeout() returns before decrementing any property while
+    // that prayer-only flag is active.
+    const prayerTimeoutFreeze = !!game.u?.invulnerable;
+    if (!prayerTimeoutFreeze && heroIsPetrifying(game)) {
+        await advanceHeroPetrification({
+            state: game,
+            publish: plineWithContinuation,
+            die: finishHeroDeath,
+        });
+        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
+    }
+    if (!prayerTimeoutFreeze && heroIsSliming(game)) {
+        await advanceHeroSliming({
+            state: game,
+            publish: plineWithContinuation,
+            repaint: newsym,
+            randomMonsterName: randomDisplayMonsterName,
+            transform: polymonHero,
+            die: finishHeroDeath,
+        });
+        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
+    }
+    if (!prayerTimeoutFreeze && heroIsVomiting(game)) {
+        await advanceHeroVomiting({
+            state: game,
+            publish: plineWithContinuation,
+        });
+    }
+    if (!prayerTimeoutFreeze
+        && game.u.strangledTurns !== undefined && game.u.strangledTurns > 0) {
+        await advanceHeroStrangulation({
+            state: game,
+            publish: plineWithContinuation,
+            die: finishHeroDeath,
+        });
+        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
+    }
+    if (!prayerTimeoutFreeze && heroIsSick(game)) {
+        await advanceHeroSickness({
+            state: game,
+            publish: plineWithContinuation,
+            die: finishHeroDeath,
+        });
+        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
+    }
+    if (!prayerTimeoutFreeze) await levitationDialogue(game);
+    if (!prayerTimeoutFreeze) await advanceSpellProtection(game);
+    if (!prayerTimeoutFreeze) {
+        if (advancePropertyTimeout('fireResistance', game)
+            && !propertyIsActive('fireResistance', game))
+            await plineWithContinuation('Your temporary ability to survive burning has ended.');
+        advanceSimplePropertyTimeouts([
+            'coldResistance', 'sleepResistance', 'disintegrationResistance',
+        ], game);
+    }
+    if (!prayerTimeoutFreeze
+        && game.u.shockResistanceTurns !== undefined && game.u.shockResistanceTurns > 0
+        && --game.u.shockResistanceTurns === 0)
+        refreshProperty('shockResistance', game);
+    if (!prayerTimeoutFreeze) {
+        advancePropertyTimeout('poisonResistance', game);
+        await advanceCorpseResistanceTimeouts(game);
+        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
+        advanceSimplePropertyTimeouts(['drainResistance', 'sicknessResistance'], game);
+    }
+    if (!prayerTimeoutFreeze
+        && game.u.invulnerableTurns !== undefined && game.u.invulnerableTurns > 0) {
+        game.u.invulnerableTurns--;
+    }
+    if (!prayerTimeoutFreeze
+        && game.u.magicResistanceTurns !== undefined && game.u.magicResistanceTurns > 0
+        && --game.u.magicResistanceTurns === 0)
+        refreshProperty('antimagic', game);
+    if (!prayerTimeoutFreeze
+        && game.u.stunnedTurns !== undefined && game.u.stunnedTurns > 0) {
+        const remaining = game.u.stunnedTurns - 1;
+        if (remaining === 0) {
+            if (deferAmbientMessage) {
+                return {
+                    kind: 'timeout-message',
+                    timeoutKind: 'stun',
+                    message: 'You feel a bit steadier now.',
+                    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+                    prayerTimeoutFreeze,
+                };
+            }
+            game.u.stunnedTurns = 0;
+            refreshProperty('stunned', game);
+            appendTurnMessage('You feel a bit steadier now.');
+        } else game.u.stunnedTurns = remaining;
+    }
+
+    return finishInitialTurnMaintenanceAfterStun({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        prayerTimeoutFreeze,
+    });
+}
+
+function finishInitialTurnMaintenanceAfterStun({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    prayerTimeoutFreeze,
+}: TimeoutMaintenance): MaintenancePhase | Promise<MaintenancePhase> {
+    const game = requireInitializedGame();
+    if (!prayerTimeoutFreeze
+        && game.u.confusionTurns !== undefined && game.u.confusionTurns > 0) {
+        const remaining = game.u.confusionTurns - 1;
+        if (remaining === 0) {
+            if (deferAmbientMessage) {
+                return {
+                    kind: 'timeout-message',
+                    timeoutKind: 'confusion',
+                    message: 'You feel less confused now.',
+                    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+                    prayerTimeoutFreeze,
+                };
+            }
+            game.u.confusionTurns = 0;
+            refreshProperty('confusion', game);
+            appendTurnMessage('You feel less confused now.');
+        } else game.u.confusionTurns = remaining;
+    }
+
+    return finishInitialTurnMaintenanceAfterConfusion({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        prayerTimeoutFreeze,
+    });
+}
+
+async function finishInitialTurnMaintenanceAfterConfusion({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    prayerTimeoutFreeze,
+}: TimeoutMaintenance): Promise<MaintenancePhase> {
+    const game = requireInitializedGame();
+    if (!prayerTimeoutFreeze
+        && game.u.blindTurns !== undefined && game.u.blindTurns > 0) {
+        const wasBlind = !!game.blind;
+        game.u.blindTurns--;
+        if (game.u.blindTurns === 0) {
+            syncBlindness(game);
+            if (wasBlind && !game.blind) {
+                appendTurnMessage('You can see again.');
+                game.vision_full_recalc = 1;
+                if (game._occupation) game._occupation = null;
+            }
+        }
+    }
+
+    if (!prayerTimeoutFreeze
+        && game.u.deafTurns !== undefined && game.u.deafTurns > 0) {
+        if (game.u.deafTurns === 1) {
+            await makeDeaf(0);
+            if (!heroIsDeaf(game)) await stopHeroOccupation(game);
+        } else game.u.deafTurns--;
+    }
+
+    if (!prayerTimeoutFreeze && advancePropertyTimeout('glib', game))
+        setSlipperyHands(0, game);
+
+    if (!prayerTimeoutFreeze
+        && game.u.hallucinationTurns !== undefined && game.u.hallucinationTurns > 0) {
+        if (game.u.hallucinationTurns === 1) {
+            await makeHallucinated(0);
+            if (!heroIsHallucinating(game)) await stopHeroOccupation(game);
+        } else game.u.hallucinationTurns--;
+    }
+
+    if (!prayerTimeoutFreeze) advancePropertyTimeout('hallucinationResistance', game);
+
+    if (!prayerTimeoutFreeze
+        && game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0) {
+        game.u.fumblingTurns--;
+        if (game.u.fumblingTurns === 0) {
+            const levitating = !!(game.u?.levitating
+                || game.u?.levitation || game.levitating);
+            const flying = !!(game.u?.flying || game.flying);
+            if (game.u?.umoved && !levitating && !flying) {
+                const message = slipOrTripOnClearFloor({
+                    deferMessage: deferAmbientMessage,
+                });
+                // `You(...)` can suspend inside tty before nomul(), renewal,
+                // regeneration, or any later global-turn work.
+                if (deferAmbientMessage) {
+                    return {
+                        kind: 'timeout-message',
+                        timeoutKind: 'fumbling',
+                        message, sourceTurn, moveAmount,
+                        deferAmbientMessage, polymorphed,
+                        prayerTimeoutFreeze,
+                    };
+                }
+                finishFumblingExpiryAfterMessage({ fumbled: true });
+            } else {
+                finishFumblingExpiryAfterMessage();
+            }
+        }
+    }
+
+    return finishInitialTurnMaintenanceAfterFumbling({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        prayerTimeoutFreeze,
+    });
+}
+
+async function finishInitialTurnMaintenanceAfterFumbling({
+    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    prayerTimeoutFreeze,
+}: TimeoutMaintenance): Promise<MaintenancePhase> {
+    const game = requireInitializedGame();
+    if (!prayerTimeoutFreeze
+        && game.u._woundedLegTurns !== undefined && game.u._woundedLegTurns > 0) {
+        game.u._woundedLegTurns--;
+        if (game.u._woundedLegTurns === 0) {
+            await healHeroLegs(game);
+            refreshProperty('woundedLegs', game);
+            await stopHeroOccupation(game);
+        }
+    }
+
+    if (!prayerTimeoutFreeze) {
+        await advanceSleepinessTimeout(game);
+        advancePropertyTimeout('hunger', game);
+    }
+
+    if (!prayerTimeoutFreeze
+        && game.u.seeInvisibleTurns !== undefined && game.u.seeInvisibleTurns > 0) {
+        game.u.seeInvisibleTurns--;
+        if (game.u.seeInvisibleTurns === 0) {
+            refreshProperty('seeInvisible', game);
+            await refreshHeroSeeing();
+            await stopHeroOccupation(game);
+        }
+    }
+
+    if (!prayerTimeoutFreeze) {
+        advanceSimplePropertyTimeouts(['telepathy', 'warning'], game);
+        if (advancePropertyTimeout('warnOfMonster', game)
+            && !propertyIsActive('warnOfMonster', game)) {
+            const species = game.context.warntype?.speciesidx;
+            if (game.context.warntype) game.context.warntype.speciesidx = -1;
+            if (species !== undefined && species >= 0) {
+                const name = MONSTER_NAME[species];
+                if (name) await plineWithContinuation(`You are no longer warned about ${makePlural(name)}.`);
+            }
+        }
+        advanceSimplePropertyTimeouts([
+            'warnUndead', 'searching', 'clairvoyant', 'infravision',
+        ], game);
+    }
+
+    if (!prayerTimeoutFreeze
+        && game.u.monsterDetectionTurns !== undefined && game.u.monsterDetectionTurns > 0) {
+        game.u.monsterDetectionTurns--;
+        if (!game.u.monsterDetectionTurns) {
+            refreshProperty('detectMonsters', game);
+            await see_monsters();
+        }
+    }
+
+    if (!prayerTimeoutFreeze)
+        advanceSimplePropertyTimeouts(['blindResistance', 'adorned'], game);
+
+    if (!prayerTimeoutFreeze
+        && game.u.invisibleTurns !== undefined && game.u.invisibleTurns > 0) {
+        game.u.invisibleTurns--;
+        if (game.u.invisibleTurns === 0) {
+            const stillInvisible = syncHeroInvisibility(game);
+            newsym(game.u.ux, game.u.uy);
+            if (!stillInvisible && !game.blind) {
+                appendTurnMessage(game.u.seeInvisible
+                    ? 'You can no longer see through yourself.'
+                    : 'You are no longer invisible.');
+                if (game._occupation) game._occupation = null;
+            }
+        }
+    }
+
+    if (!prayerTimeoutFreeze) await advanceDisplacementTimeout(game);
+
+    if (!prayerTimeoutFreeze) {
+        advanceSimplePropertyTimeouts([
+            'stealth', 'aggravateMonster', 'conflict', 'jumping',
+            'teleportation', 'teleportControl',
+        ], game);
+        await advanceLevitationTimeout(game);
+        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
+        await advanceFlyingTimeout(game);
+        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
+    }
+
+    if (!prayerTimeoutFreeze) {
+        if (advancePropertyTimeout('waterWalking', game)
+            && !propertyIsActive('waterWalking', game))
+            await plineWithContinuation('Your temporary ability to walk on liquid has ended.');
+        advancePropertyTimeout('swimming', game);
+        for (const [property, timeout] of [
+            ['magicalBreathing', 'magicalBreathingTurns'],
+            ['passesWalls', 'passesWallsTurns'],
+        ] as const) {
+            const remaining = game.u[timeout];
+            if (remaining !== undefined && remaining > 0) {
+                game.u[timeout] = remaining - 1;
+                if (game.u[timeout] === 0) refreshProperty(property, game);
+            }
+        }
+        advancePropertyTimeout('slowDigestion', game);
+    }
+
+    if (!prayerTimeoutFreeze)
+        advanceSimplePropertyTimeouts(['halfSpellDamage', 'halfPhysicalDamage'], game);
+
+    if (!prayerTimeoutFreeze) {
+        advanceSimplePropertyTimeouts([
+            'regeneration', 'energyRegeneration', 'protection',
+        ], game);
+        if (advancePropertyTimeout('protectionFromShapeChangers', game)
+            && !propertyIsActive('protectionFromShapeChangers', game))
+            await restartMonsterShapechanging(game);
+        advanceSimplePropertyTimeouts([
+            'polymorph', 'polymorphControl', 'unchanging',
+        ], game);
+    }
+
+    if (!prayerTimeoutFreeze
+        && game.u.veryFastTurns !== undefined && game.u.veryFastTurns > 0) {
+        setPropertyTimeout('fast', game.u.veryFastTurns - 1, game);
+        if (game.u.veryFastTurns === 0) {
+            if (!game.u.veryFast)
+                appendTurnMessage(game.u.fast
+                    ? 'You feel yourself slow down a bit.'
+                    : 'You feel yourself slow down.');
+        }
+    }
+
+    if (!prayerTimeoutFreeze)
+        advanceSimplePropertyTimeouts([
+            'reflection', 'freeAction', 'sustainAbility', 'lifeSaving',
+        ], game);
+
+    return finishInitialTurnMaintenanceAfterTimeout({
+        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+    });
+}
+
+// C timeout.c decrements every intrinsic timeout in prop.h order. These
+// properties have no dedicated recovery action; their source projection still
+// needs refreshing when the timed source ends.
+function advanceSimplePropertyTimeouts(properties: readonly PropertyName[], state: GameState): void {
+    for (const property of properties) advancePropertyTimeout(property, state);
+}
+
+function advancePropertyTimeout(property: PropertyName, state: GameState): boolean {
+    const remaining = propertyTimeout(property, state);
+    if (remaining <= 0) return false;
+    setPropertyTimeout(property, remaining - 1, state);
+    return remaining === 1;
+}
+
+async function advanceSleepinessTimeout(state: GameState): Promise<void> {
+    if (!advancePropertyTimeout('sleepy', state)) return;
+    if (heroIsUnconscious(state) || state.u.sleepResistance) {
+        setPropertyTimeout('sleepy', rnd(100), state);
+    } else if (propertyIsActive('sleepy', state)) {
+        await plineWithContinuation('You fall asleep.');
+        const duration = rnd(20);
+        putHeroToSleep(duration, { state });
+        setPropertyTimeout('sleepy', duration + rnd(100), state);
+    }
+}
+
+
+async function advanceWorldTurn(): Promise<void> {
+    const game = requireInitializedGame();
+    const initialPhase = await beginInitialTurnMaintenance();
+    if (initialPhase.kind === 'hero-died') return;
+    let phase: MaintenancePhase = initialPhase;
+    const completedTurn = game.moves;
+    while (phase.kind === 'object-timers') {
+        const claimed = claimNextDueObjectTimer(
+            game, phase.sourceTurn,
+        );
+        if (claimed) await runObjectTimer(claimed, phase.sourceTurn);
+        if (peekNextDueObjectTimer(game, phase.sourceTurn)) continue;
+        phase = await finishInitialTurnMaintenanceAfterObjectTimers(phase);
+    }
+    if (game.program_state?.gameover) return;
+    while (phase.kind === 'timeout-message') {
+        await plineWithContinuation(phase.message);
+        if (phase.timeoutKind === 'stun') {
+            game.u.stunnedTurns = 0;
+            refreshProperty('stunned', game);
+            phase = await finishInitialTurnMaintenanceAfterStun(phase);
+        } else if (phase.timeoutKind === 'confusion') {
+            game.u.confusionTurns = 0;
+            refreshProperty('confusion', game);
+            phase = await finishInitialTurnMaintenanceAfterConfusion(phase);
+        } else {
+            finishFumblingExpiryAfterMessage({ fumbled: true });
+            phase = await finishInitialTurnMaintenanceAfterFumbling(phase);
+        }
+    }
+    if (game.program_state?.gameover) return;
+    while (phase.kind === 'regions') {
+        await runLevelRegionTurn();
+        if (game.program_state?.gameover) return;
+        phase = await finishInitialTurnMaintenanceAfterRegions(phase);
+    }
+    while (phase.kind === 'statue-trap') {
+        const monster = await activateStatueTrapAt(phase.x, phase.y);
+        if (monster) await exerciseAttribute(A_WIS, true);
+        phase = await finishInitialTurnMaintenanceAfterAutomaticSearch(phase);
+    }
+    if (phase.kind === 'ambient-message') {
+        await plineWithContinuation(phase.message);
+        await finishInitialTurnMaintenanceAfterAmbient(phase);
+    }
+    if (game._pendingDemigodIntervention) {
+        const intervention = game._pendingDemigodIntervention;
+        game._pendingDemigodIntervention = null;
+        if (intervention.kind === 2) {
+            await waitForCurrentMonsterMore();
+            const heroAttack = { deferredCurseItems: true };
+            await resolveDeferredHeroCurseItems(heroAttack);
+            delete game._unresolvedDemigodIntervention;
+        } else if (intervention.kind === 5) {
+            await resurrectWizard();
+            delete game._unresolvedDemigodIntervention;
+        } else if (intervention.kind === 4) {
+            let effect = await summonNastyMonsters(null, {
+                onCreate: async (monster: Monster) => {
+                    newsym(monster.mx, monster.my);
+                    const name = quietMonsterName(monster);
+                    const article = /^[aeiou]/i.test(name) ? 'An' : 'A';
+                    const adjacent = Math.max(
+                        Math.abs(monster.mx - (game.u?.ux ?? monster.mx)),
+                        Math.abs(monster.my - (game.u?.uy ?? monster.my)),
+                    ) <= 1;
+                    const message = `${article} ${name} suddenly appears ${
+                        adjacent ? 'next to you' : 'close by'
+                    }!`;
+                    if (game._pending_message !== message)
+                        await plineWithContinuation(message);
+                },
+            });
+            if (effect.deferredDemonSummon) effect = await msummon();
+            game._lastDemigodNasty = (effect.created || []).map(monster =>
+                monster.m_id);
+            delete game._unresolvedDemigodIntervention;
+        }
+        game.u.udg_cnt = 50 + rn2(200);
+        await finishInitialTurnMaintenanceAfterIntervention(
+            intervention.sourceTurn,
+        );
+    }
+    const helplessDelayTurn = game._helplessRunmodeDelayPending;
+    delete game._helplessRunmodeDelayPending;
+    await captureRunmodeDelay(
+        game, Number.isInteger(helplessDelayTurn),
+        helplessDelayTurn ?? completedTurn,
+        { preservePhysicalTopline: true },
+    );
+    await drainQueuedHelplessRecoveryMessage();
+    const delayedAction = game._delayedAction;
+    if (delayedAction) {
+        if (game._pending_message) {
+            delete delayedAction._runmodeRetainedTopline;
+        } else if (!delayedAction._runmodeRetainedTopline) {
+            delayedAction._runmodeRetainedTopline
+                = game.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }));
+        }
+    }
+    await captureRunmodeDelay(
+        game, !!delayedAction, completedTurn,
+        {
+            preservePhysicalTopline: true,
+            retainedTopline: delayedAction?._runmodeRetainedTopline ?? null,
+        },
+    );
+    // Native find_ac() follows the elapsed-turn loop.  setworn() is already
+    // live for effects, but the first donning cadence frame still shows the
+    // prior AC; the next automatic core observes the recomputed value.
+    if (game._armorClassDirtyAfterDelayedFrame) {
+        findArmorClass(game);
+        game._armorClassDirty = false;
+        delete game._armorClassDirtyAfterDelayedFrame;
+        delete game._statusProjectedAc;
+    }
+}
+
+async function settleHeroLiquidAfterAction() {
+    const game = requireInitializedGame();
+    const finishLanding = ({ from, to }: { from: Position; to: Position }) => finishDestinationSpotEffects({
+        oldx: from.x,
+        oldy: from.y,
+        newx: to.x,
+        newy: to.y,
+        explicitAttempt: false,
+    });
+
+    if (game.u?.utrap && game.u.utraptype === TT_LAVA) {
+        return sinkHeroIntoLava({
+            state: game,
+            publish: plineWithContinuation,
+            applyLandingEffects: finishLanding,
+        });
+    }
+    if (game.u?.umoved) return null;
+
+    return applyHeroLiquidEffects(plineWithContinuation);
+}
+
+async function drainQueuedHelplessRecoveryMessage() {
+    const game = requireInitializedGame();
+    if (game._queuedHelplessRecoveryMessage == null) return;
+    const message = game._queuedHelplessRecoveryMessage;
+    await finishHeroHelplessness(message);
+}
+
+// Native hack.c:unmul(). The after-handler is cleared before invocation so
+// recovery can start another delay without inheriting the old completion.
+export async function finishHeroHelplessness(
+    messageOverride?: string, state: GameState = game,
+): Promise<void> {
+    state.context.botl = true;
+    state.multi = 0;
+    state._helplessTurns = 0;
+    state._queuedHelplessRecoveryMessage = null;
+    const message = messageOverride ?? state._helplessDoneMessage ?? 'You can move again.';
+    if (message) await plineWithContinuation(message);
+    state.u.usleep = 0;
+    state._helplessReason = null;
+    state._helplessDoneMessage = null;
+    const after = state._helplessAfter;
+    state._helplessAfter = null;
+    // C eat.c:Hear_again() runs after unmul() has delivered nomovemsg.
+    // Keep it after the awaited tty continuation: if the rotten-food
+    // message fills the topline, the acknowledgement resumes here before
+    // the recovery message becomes the next input boundary.
+    switch (after) {
+    case 'hear-again':
+        await regainHearingAfterHelplessness({ state });
+        break;
+    case 'unfaint':
+        await recoverHeroFromFainting({ state });
+        break;
+    case 'end-mimic-meal':
+        finishMealMimicry(state);
+        break;
+    case 'finish-digestion':
+        await finishHeroDigestion(state);
+        break;
+    case null:
+    case undefined:
+        break;
+    }
+}
+
+
+// allmain.c:u_calc_moveamt() clamps a negative movement balance after every
+// global allocation.  Without this, a slow polymorph can carry the action
+// debit across zero-speed turns and require an extra monster/global round.
+function addHeroMovementRation(state: GameState, amount: number): void {
+    state.u.umovement = Math.max(
+        0, (state.u.umovement ?? 0) + amount,
+    );
+}
+
+function reluctantPetMessage(monster: Monster, movement: MonsterMovement): string {
+    const game = requireInitializedGame();
+    const pile = game.level?.objects?.[movement.x]?.[movement.y] || [];
+    const top = pile[0];
+    const objectName = top ? distantMonsterObjectName(top) : 'something';
+    const airborne = !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & 0x1);
+    return `Your ${quietMonsterName(monster)} ${
+        airborne ? 'flies reluctantly over' : 'steps reluctantly onto'
+    } ${objectName}.`;
+}
+
+async function monsterAttackMessage(
+    monster: Monster, attack: HeroContactAttack,
+    previousAttack: HeroAttack | null = null,
+    random: RandomBelow = rn2,
+): Promise<string | null> {
+    const game = requireInitializedGame();
+    if (attack.effect === 'petrifying-corpse') return null;
+    if (attack.effect === 'engulf' || attack.effect === 'engulf-tick'
+        || attack.effect === 'engulf-refused' || attack.effect === 'item-theft') return null;
+    if (attack.effect === 'blind-natural' && !attack.blindMessage) return null;
+    if (attack.effect === 'failed-grab') {
+        const subject = monsterName(monster, { capitalized: true });
+        const verb = attack.damageType === AD_DGST ? 'gulp'
+            : attack.damageType === AD_STCK ? 'adhere' : 'grab';
+        return `${possessiveName(subject).slice(0, 99)} ${verb} attempt passes right through you!`;
+    }
+    if (!attack.hit) return monsterMissMessage(monster, attack, game, random);
+    const subject = monsterName(monster, { capitalized: true });
+    if (monster?.mnum === 116) {
+        if (attack.effect === 'electric-natural')
+            return `${subject} bites!`;
+        return attack.effect === 'electric-avoided'
+            ? `${subject} bites!  You avoid harm.`
+            : `${subject} bites!  You get zapped!`;
+    }
+    if (attack.effect === 'blind-natural')
+        return attack.blindMessage ? `${subject} blinds you!` : null;
+    if (attack.effect === 'leg-natural') {
+        const side = attack.legSide || 'left';
+        const contact = attack.legContact === 'reach'
+            ? `tries to reach your ${side} leg`
+            : attack.legContact === 'nuzzle'
+                ? `nuzzles against your ${side} leg`
+                : attack.legContact === 'exposed-prick'
+                    ? `pricks the exposed part of your ${side} leg`
+                    : attack.legContact === 'boot-prick'
+                        ? `pricks through your ${side} boot`
+                        : attack.legContact === 'boot-scratch'
+                            ? `scratches your ${side} boot`
+                            : `pricks your ${side} leg`;
+        return `${subject} ${contact}!`;
+    }
+    const verb = attack.attackType === 2 ? 'bites'
+        : attack.attackType === 3 ? 'kicks'
+            : attack.attackType === 4 ? 'butts'
+                : attack.attackType === 5 ? 'touches you'
+                    : attack.attackType === 6 ? 'stings' : 'hits';
+    // mhitu.c:hitmsg() calls adjacent attacks of the same method "again".
+    // Besides prose, those six cells can decide whether the following pline
+    // crosses tty's reserved --More-- budget and suspends the hit transaction.
+    const again = previousAttack?.hit
+        && previousAttack.attackType === attack.attackType ? ' again' : '';
+    return `${subject} ${verb}${again}!`;
+}
+
+
+function wornTheftObjectDescription(object: GameObject): string {
+    // C steal.c:worn_item_removal() starts from doname(), then massages only
+    // the ownership and equipment-location suffix for its pre-removal line.
+    let description = inventoryItemDescription(object)
+        .replace(/^(?:the|an|a) /, 'your ')
+        .replace(' (being worn)', '')
+        .replace(' (alternate weapon; not wielded)', '');
+    description = description.replace(
+        / \(on (left|right) hand\)$/,
+        ' (from $1 hand)',
+    );
+    return description;
+}
+
+function heroEquipmentSlots() {
+    return [
+        'uwep', 'uswapwep', 'uquiver',
+        'uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu',
+        'uleft', 'uright', 'uamul', 'ublindf',
+    ] as const;
+}
+
+// C refs: steal.c:steal()/worn_item_removal(), uhitm.c:mhitm_ad_sedu().
+// The selection draw happened synchronously inside basicMonsterAttack().
+// Removal prose is split here because urgent_pline() can suspend before the
+// no-teleport check, fleeing state, and the rest of movemon().
+async function resolveDeferredHeroItemTheft(
+    action: MonsterAction, monster: Monster, attack: HeroContactAttack,
+): Promise<boolean> {
+    const game = requireInitializedGame();
+    if (!attack?.deferredItemTheft) return false;
+    attack.deferredItemTheft = false;
+    const object = attack.stolenObject;
+    if (!object || !(game.inventory || []).includes(object)) return false;
+
+    const equipmentSlots = heroEquipmentSlots();
+    const occupiedSlots = equipmentSlots.filter(slot => game[slot] === object);
+    const weaponMask = object?.owornmask ?? 0;
+    const wasWeapon = occupiedSlots.some(slot =>
+        ['uwep', 'uswapwep', 'uquiver'].includes(slot))
+        || !!(weaponMask & W_WEAPONS)
+        || object.wielded || object.alternate || object.ready;
+    const wasAccessory = occupiedSlots.some(slot =>
+        ['uleft', 'uright', 'uamul', 'ublindf'].includes(slot))
+        || !!(weaponMask & W_ACCESSORY);
+    const wasWorn = occupiedSlots.length > 0
+        || object.worn || weaponMask !== 0;
+    const subject = game.blind
+        ? 'Someone' : `The ${quietMonsterName(monster)}`;
+
+    let removalMessage = null;
+    if (wasWeapon || wasWorn) {
+        observeObjectForNaming(object);
+        const description = wornTheftObjectDescription(object);
+        const verb = wasWeapon ? 'disarms' : wasAccessory ? 'removes' : 'takes off';
+        removalMessage = `${subject} ${verb} ${description}.`;
+    }
+    if (removalMessage) await plineWithContinuation(removalMessage);
+
+    await removeWornHeroItem(object, game);
+    if (game.program_state?.gameover || !game.inventory.includes(object)) {
+        attack.theftResolved = true;
+        return true;
+    }
+    if (object.unpaid)
+        removeObjectAndContentsFromBill(object, game, { resident: currentShopResident(game) });
+    unlinkObject(object, game);
+    await finishInventoryRemoval(object, game);
+    if (game.program_state?.gameover) {
+        attack.theftResolved = true;
+        return true;
+    }
+    monster.mavenge = 1;
+    findArmorClass(game);
+
+    observeObjectForNaming(object);
+    const stolenObjectDescription = inventoryItemDescription(object);
+    const thief = removalMessage && /nymph$/.test(quietMonsterName(monster))
+        ? 'She' : subject;
+    // urgent_pline() does not force a pager for its newly installed line.
+    // It can first suspend while clearing the older worn-removal line; after
+    // that acknowledgement, rloc() may append its own message to this one.
+    await plineWithContinuation(`${thief} stole ${stolenObjectDescription}.`);
+    object.how_lost = LOST_STOLEN;
+    await addObjectToMonsterInventory(monster, object, game);
+
+    if (monsterTeleportRestricted(monster, game)) {
+        await plineWithContinuation(
+            `A mysterious force prevents the ${quietMonsterName(monster)} from teleporting!`,
+        );
+    } else {
+        const relocation = await randomMonsterRelocation(monster, {
+            calls: action.calls, flags: RLOC_MSG,
+        });
+        if (relocation && 'died' in relocation && relocation.died) return true;
+    }
+    const flight = await makeMonsterFlee(monster, { announce: false });
+    if (flight.heroDied) return true;
+    // hitmu() enters this shared tail even when mhitm_ad_sedu() marked the
+    // aggressor done.  A zero-damage claw still probes both knockback gates
+    // after steal() has finished its messages and fleeing transition.
+    await tryKnockback(monster, game.u, attack, {
+        hit: attack.hit,
+        weaponUsed: !!monsterWieldedWeapon(monster),
+        publish: plineWithContinuation,
+    });
+    attack.theftResolved = true;
+    attack.attackerDone = true;
+    return true;
+}
+
+function visibleMonsterSubject(monster: Monster): string {
+    return monsterName(monster, { capitalized: true });
+}
+
+function monsterYelpVerb(monster: Monster): string | null {
+    const game = requireInitializedGame();
+    if (monster?.mcanmove === 0 || monster?.msleeping
+        || (monster?.mfrozen ?? 0) > 0) return null;
+    const sound = MONSTER_SOUND[monster?.mnum] ?? 0;
+    const verbs: Readonly<Partial<Record<number, string>>> = game.deaf
+        ? {
+            1: 'recoils', 2: 'arches', 3: 'bluffs',
+            6: 'quivers', 8: 'thrashes', 14: 'cringes',
+        }
+        : {
+            1: 'yelps', 2: 'yowls', 3: 'snarls', 5: 'yelps',
+            6: 'squeals', 8: 'screaks', 14: 'wails',
+        };
+    return verbs[sound] || null;
+}
+
+function covetousRelocationMessage(
+    monster: Monster, movement: MonsterMovement, actorWasSpotted: boolean,
+): string | null {
+    const game = requireInitializedGame();
+    const relocation = movement?.covetousRelocation;
+    if (!relocation) return null;
+    const nowSeen = canSpotMonster(monster);
+    const distance = dist2(
+        monster.mx, monster.my,
+        game.u?.ux ?? monster.mx, game.u?.uy ?? monster.my,
+    );
+    const suffix = distance <= 2 ? ' next to you'
+        : distance <= BOLT_LIM * BOLT_LIM ? ' close by' : '';
+    const blind = !!game.blind || (game.u.blindTurns !== undefined && game.u.blindTurns > 0);
+    // teleport.c:rloc_to_core() gives a visible old location precedence over
+    // STRAT_APPEARMSG.  Seeing the actor vanish clears that one-shot bit, so
+    // an already-visible Wizard reports a relocation rather than a fresh
+    // arrival even when genesis left STRAT_APPEARMSG set.
+    if (actorWasSpotted && nowSeen) {
+        return `${visibleMonsterSubject(monster)} vanishes and reappears${
+            suffix
+        }.`;
+    }
+    if (actorWasSpotted)
+        return `${visibleMonsterSubject(monster)} vanishes!`;
+    if (relocation.appearMessage) {
+        const subject = blind ? 'It' : `A ${quietMonsterName(monster)}`;
+        return `${subject} suddenly ${blind ? 'arrives' : 'appears'}${
+            suffix
+        }!`;
+    }
+    if (nowSeen) {
+        return `${visibleMonsterSubject(monster)} ${
+            blind ? 'arrives' : 'appears'
+        }${suffix}!`;
+    }
+    return null;
+}
+
+const WIZARD_CUSS_INSULTS = [
+    'antic', 'blackguard', 'caitiff', 'chucklehead', 'coistrel', 'craven',
+    'cretin', 'cur', 'dastard', 'demon fodder', 'dimwit', 'dolt', 'fool',
+    'footpad', 'imbecile', 'knave', 'maledict', 'miscreant', 'niddering',
+    'poltroon', 'rattlepate', 'reprobate', 'scapegrace', 'varlet', 'villein',
+    'wittol', 'worm', 'wretch',
+];
+const WIZARD_CUSS_MALEDICTIONS = [
+    'Hell shall soon claim thy remains,',
+    'I chortle at thee, thou pathetic',
+    'Prepare to die, thou',
+    'Resistance is useless,',
+    'Surrender or die, thou',
+    'There shall be no mercy, thou',
+    'Thou shalt repent of thy cunning,',
+    'Thou art as a flea to me,',
+    'Thou art doomed,',
+    'Thy fate is sealed,',
+    'Verily, thou shalt be one dead',
+];
+
+function selectWizardCussMessage(action: MonsterAction, monster: Monster): string {
+    const game = requireInitializedGame();
+    const roll = (sides: number): number => {
+        const value = rn2(sides);
+        action.calls.push('rn2(' + sides + ')');
+        return value;
+    };
+    if (roll(5) === 0)
+        return visibleMonsterSubject(monster) + ' laughs fiendishly.';
+    if (game.u?.uhave?.amulet
+        && roll(WIZARD_CUSS_INSULTS.length) === 0) {
+        return '"Relinquish the amulet, '
+            + WIZARD_CUSS_INSULTS[roll(WIZARD_CUSS_INSULTS.length)] + '!"';
+    }
+    if ((game.u?.uhp ?? 1) < 5 && roll(2) === 0) {
+        const line = roll(2)
+            ? 'Even now thy life force ebbs, '
+            : 'Savor thy breath, ';
+        const suffix = line.startsWith('Savor')
+            ? ', it be thy last!' : '!';
+        return '"' + line
+            + WIZARD_CUSS_INSULTS[roll(WIZARD_CUSS_INSULTS.length)]
+            + suffix + '"';
+    }
+    if ((monster.mhp ?? 1) < 5 && roll(2) === 0)
+        return roll(2) ? '"I shall return."' : '"I\'ll be back."';
+    return '"' + WIZARD_CUSS_MALEDICTIONS[
+        roll(WIZARD_CUSS_MALEDICTIONS.length)
+    ] + ' ' + WIZARD_CUSS_INSULTS[
+        roll(WIZARD_CUSS_INSULTS.length)
+    ] + '!"';
+}
+
+function petCarriedObjectName(
+    object: GameObject, quantity = object.quan ?? object.quantity ?? 1,
+) {
+    const game = requireInitializedGame();
+    const objectClass = object?.oclass || objectClassForType(object?.otyp);
+    const descriptionHiddenClass = [4, 5, 8, 9, 10, 11, 13]
+        .includes(objectClass);
+    if (object?.dknown === false && descriptionHiddenClass) {
+        // C distant_name(..., doname) cannot expose a shuffled description
+        // which the hero has never seen.  The glyph class remains visible,
+        // so use its generic noun until dknown is established.
+        const genericNames: Readonly<Partial<Record<number, string>>> = {
+            2: 'weapon', 4: 'ring', 5: 'amulet',
+            6: OBJECT_DESCRIPTIONS[object?.otyp] || 'tool',
+            // FOOD_CLASS always uses its actual type name in xname(); dknown
+            // hides shuffled descriptions, but foods have no such naming
+            // branch.  An unseen orange is still an orange.
+            7: OBJECT_NAMES[object?.otyp] || 'food',
+            8: 'potion', 9: 'scroll',
+            10: 'spellbook', 11: 'wand', 12: 'gold piece', 13: 'gem',
+            14: 'large rock', 15: 'iron ball', 16: 'chain', 17: 'venom',
+        };
+        const generic = genericNames[objectClass] || 'object';
+        return `${/^[aeiou]/i.test(generic) ? 'an' : 'a'} ${generic}`;
+    }
+    // C xname()/doname() keep four knowledge axes independent. dknown reveals
+    // the shuffled description; it does not reveal the true type, BUC, or
+    // enchantment.  Monster inventory objects often retain a placeholder
+    // `name`, so derive their visible noun from the live object tables.
+    const typeKnown = !!object?.typeKnown
+        || game._knownObjectTypes?.has(object?.otyp);
+    const appearance = game.objectDescriptions?.[object?.otyp]
+        ?? OBJECT_DESCRIPTIONS[object?.otyp];
+    const trueName = object?.otyp === CORPSE
+        && typeof object.corpsenm === 'number' && Number.isInteger(object.corpsenm)
+        ? `${MONSTER_NAME[object.corpsenm] || 'monster'} corpse`
+        : OBJECT_NAMES[object?.otyp] || object?.name || 'object';
+    const personalName = objectHasPersonalName(object);
+    let noun = personalName || objectClass === 3 ? objectName(object)
+        : typeKnown ? trueName : appearance || trueName;
+    if (!personalName && typeKnown) {
+        if (objectClass === 4) noun = `ring of ${noun}`;
+        else if (objectClass === 8) noun = `potion of ${noun}`;
+        else if (objectClass === 9) noun = `scroll of ${noun}`;
+        else if (objectClass === 10) noun = `spellbook of ${noun}`;
+        else if (objectClass === 11) noun = `wand of ${noun}`;
+    } else if (!personalName && appearance) {
+        if (objectClass === 4) noun = `${appearance} ring`;
+        else if (objectClass === 5) noun = `${appearance} amulet`;
+        else if (objectClass === 8) noun = `${appearance} potion`;
+        else if (objectClass === 9)
+            noun = appearance === 'unlabeled' ? 'unlabeled scroll'
+                : `scroll labeled ${appearance}`;
+        else if (objectClass === 10) noun = `${appearance} spellbook`;
+        else if (objectClass === 11) noun = `${appearance} wand`;
+        else if (objectClass === 13)
+            noun = `${appearance} ${
+                OBJECT_MATERIAL[object?.otyp] === 21 ? 'stone' : 'gem'
+            }`;
+    }
+    // Native doname() never prefixes coins with blessed/uncursed/cursed.
+    const buc = objectClass === COIN_CLASS ? '' : bucAdjectiveForName(object);
+    const enchantment = object?.known && [2, 3].includes(objectClass)
+        ? (typeof object.enchantment === 'number' && Number.isInteger(object.enchantment)
+            ? object.enchantment
+            : Number.isInteger(object.spe) ? object.spe : null)
+        : null;
+    const bonus = enchantment === null ? ''
+        : `${enchantment >= 0 ? '+' : ''}${enchantment}`;
+    const poisoned = object?.opoisoned || object?.poisoned
+        ? 'poisoned' : '';
+    const pluralNoun = makePlural(noun);
+    const description = [buc, bonus, poisoned,
+        quantity > 1 ? pluralNoun : noun].filter(Boolean).join(' ');
+    if (quantity > 1) return `${quantity} ${description}`;
+    const article = personalName ? 'the'
+        : /^[aeiou]/i.test(description) ? 'an' : 'a';
+    return `${article} ${description}`;
+}
+
+function distantMonsterObjectName(object: GameObject): string {
+    return petCarriedObjectName(object);
+}
+
+
+async function presentMonsterGrowth(
+    monster: Monster, growth: MonsterGrowth | null | undefined,
+): Promise<void> {
+    const game = requireInitializedGame();
+    if (!growth?.changedSpecies || growth.applied) return;
+    if (canSpotMonster(monster))
+        await plineWithContinuation(growth.message);
+    finishMonsterGrowth(monster, growth);
+    newsym(monster.mx, monster.my);
+    if (growth.genocided)
+        await killGenocidedMonster(monster, game);
+}
+
+async function resolveErosionFormRehumanization(
+    heroAttack: HeroContactAttack, effectMessage: string,
+) {
+    const game = requireInitializedGame();
+    let pagerOwned = false;
+    const effectDismissal = await plineWithContinuation(effectMessage);
+    if (effectDismissal !== null && effectDismissal !== undefined)
+        pagerOwned = true;
+
+    const restored = await returnHeroToHumanForm(game, {
+        publish: async (message: string) => {
+            const dismissal = await plineWithContinuation(message);
+            if (dismissal !== null && dismissal !== undefined) pagerOwned = true;
+        },
+    });
+    heroAttack.heroDied = restored.died;
+
+    heroAttack.deferredPostHit = !restored.died;
+    return pagerOwned;
+}
+
+async function resolveDeferredHeroFirePillar(
+    action: MonsterAction, heroAttack: HeroSpellAttack,
+    publish: typeof plineWithContinuation,
+): Promise<void> {
+    const game = requireInitializedGame();
+    if (!heroAttack?.deferredFirePillar) return;
+    const originalDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const fireResistant = !!(game.u.fireResistance);
+    let appliedDamage = fireResistant ? 0 : originalDamage;
+    if (heroHasHalfSpellDamage(game))
+        appliedDamage = Math.trunc((appliedDamage + 1) / 2);
+
+    if (clearHeroSliming(game)) {
+        await publish(
+            'The slime that covers you is burned away!',
+        );
+    }
+    await burnHeroArmorByFire(game, publish, action.calls, rn2);
+    const items = await destroyFireInventory(originalDamage, {
+        state: game,
+        publish,
+        die: finishHeroDeathAfterMonsterMessage,
+    });
+    if (items.heroDied) return;
+    await igniteItems(game.inventory, {
+        state: game,
+        publish,
+    });
+
+    applyHeroSpellDamage(heroAttack, appliedDamage, game);
+    heroAttack.deferredFirePillar = false;
+}
+
+async function resolveDeferredHeroLightningSpell(
+    action: MonsterAction, heroAttack: HeroSpellAttack,
+    publish: typeof plineWithContinuation,
+): Promise<void> {
+    const game = requireInitializedGame();
+    if (!heroAttack?.deferredLightningSpell) return;
+    const reflectedByShield = game.uarms?.otyp === SHIELD_OF_REFLECTION;
+    if (reflectedByShield) {
+        await publish('It bounces off your shield.');
+        discoverReflectingShield();
+        d(8, 6);
+        action.calls.push('d(8,6)');
+        heroAttack.appliedDamage = 0;
+        heroAttack.reflectedLightning = true;
+        heroAttack.deferredLightningSpell = false;
+        return;
+    }
+    const originalDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const shockResistant = !!(game.u.shockResistance);
+    let appliedDamage = shockResistant ? 0 : originalDamage;
+    if (heroHasHalfSpellDamage(game))
+        appliedDamage = Math.trunc((appliedDamage + 1) / 2);
+
+    const items = await destroyElectricInventory(originalDamage, {
+        state: game,
+        publish,
+        die: finishHeroDeathAfterMonsterMessage,
+    });
+    if (items.heroDied) return;
+
+    const flashDuration = rnd(100);
+    action.calls.push('rnd(100)');
+    await publish('You are blinded by the flash!');
+    game.u.blindTurns = (game.u.blindTurns ?? 0) + flashDuration;
+    syncBlindness(game);
+    game.vision_full_recalc = 1;
+    vision_recalc(0);
+
+    applyHeroSpellDamage(heroAttack, appliedDamage, game);
+    heroAttack.deferredLightningSpell = false;
+}
+
+async function resolveDeferredHeroInsectSpell(
+    action: MonsterAction, heroAttack: HeroSpellAttack,
+): Promise<void> {
+    const game = requireInitializedGame();
+    if (!heroAttack?.deferredInsectSpell) return;
+    const result = await summonInsectsForMonster(action.monster);
+    for (const monster of result.created || []) newsym(monster.mx, monster.my);
+    const snakes = result.monsterClass === 45;
+    const what = snakes ? 'snakes' : 'insects';
+    let message;
+    if (game.blind) {
+        message = `You hear someone summoning ${what}.`;
+    } else if (!(result.created || []).length) {
+        message = `${visibleMonsterSubject(action.monster)} casts at a clump of sticks, but nothing happens.`;
+    } else if (snakes) {
+        message = `${visibleMonsterSubject(action.monster)} transforms a clump of sticks into snakes!`;
+    } else {
+        message = `${visibleMonsterSubject(action.monster)} summons insects!`;
+    }
+    await plineWithContinuation(message);
+    heroAttack.summonedInsects = result.created || [];
+    heroAttack.deferredInsectSpell = false;
+}
+
+async function resolveDeferredHeroDeathTouch(
+    action: MonsterAction, heroAttack: HeroSpellAttack,
+    publish: typeof plineWithContinuation,
+): Promise<void> {
+    const game = requireInitializedGame();
+    if (!heroAttack?.deferredDeathTouch) return;
+    const u = game.u || {};
+    const monsterLevel = action.monster?.m_lev
+        ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
+    const polymorphed = Upolyd(u);
+    const form = polymorphed ? u.umonnum : null;
+    const nonliving = form !== null && Number.isInteger(form)
+        && monsterIsNonliving(form);
+    const demon = form !== null && Number.isInteger(form)
+        && !!((MONSTER_FLAGS2[form] ?? 0) & 0x00000100);
+    if (nonliving || demon) {
+        await publish('You seem no deader than before.');
+        heroAttack.deferredDeathTouch = false;
+        return;
+    }
+
+    const antimagic = !!u.antimagic;
+    let succeeds = false;
+    if (!antimagic) {
+        const sides = Math.max(1, monsterLevel);
+        const successRoll = rn2(sides);
+        action.calls.push('rn2(' + sides + ')');
+        succeeds = successRoll > 12;
+    }
+    if (!succeeds) {
+        await publish("Lucky for you, it didn't work!");
+        heroAttack.deferredDeathTouch = false;
+        return;
+    }
+    if (heroIsHallucinating(game)) {
+        await publish('You have an out of body experience.');
+        heroAttack.deferredDeathTouch = false;
+        return;
+    }
+
+    const rolledDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const damage = 50 + rolledDamage;
+    const drain = Math.trunc(damage / 2);
+    await publish('You feel drained...');
+    heroAttack.fatalAttribution = {
+        kind: 'death-inflicted-by',
+        killer: monsterSpellDeathReason(action.monster, 'the touch of death'),
+        announcesDeath: drain < (u.uhpmax ?? 1),
+    };
+    if (polymorphed) {
+        u.mh = 0;
+        heroAttack.rehumanize = true;
+        heroAttack.appliedDamage = damage;
+    } else if (drain >= (u.uhpmax ?? 1)) {
+        u.uhp = 0;
+        heroAttack.appliedDamage = damage;
+        heroAttack.heroDied = true;
+    } else {
+        const oldHp = u.uhp ?? 1;
+        const minimumHp = Math.max(u.ulevel ?? 1, 3);
+        u.uhpmax = Math.max(minimumHp, (u.uhpmax ?? 1) - drain);
+        u.uhp = Math.min(u.uhp ?? 1, u.uhpmax);
+        const adjustedDamage = Math.max(
+            1, damage - (oldHp - u.uhp),
+        );
+        applyHeroSpellDamage(heroAttack, adjustedDamage, game);
+    }
+    heroAttack.deathTouchDamage = damage;
+    heroAttack.deathTouchDrain = drain;
+    heroAttack.deferredDeathTouch = false;
+}
+
+async function resolveDeferredHeroDestroyArmor(
+    action: MonsterAction, heroAttack: HeroSpellAttack,
+): Promise<void> {
+    const game = requireInitializedGame();
+    if (!heroAttack?.deferredDestroyArmor) return;
+    const antimagic = !!game.u?.antimagic;
+    if (antimagic) {
+        await plineWithContinuation('A field of force surrounds you!');
+        heroAttack.deferredDestroyArmor = false;
+        return;
+    }
+
+    const armors = wornArmorInDestroyOrder();
+    const hitRoll = rn2(4);
+    action.calls.push('rn2(4)');
+    const hits = hitRoll + 1;
+    const changed = [];
+    for (let hit = 0; hit < hits && armors.length; hit++) {
+        const index = rn2(armors.length);
+        action.calls.push('rn2(' + armors.length + ')');
+        const armor = armors[index];
+        if (!armor)
+            throw new RangeError(`Armor selection ${index} is outside the ${armors.length} worn pieces.`);
+        const kind = objectErosionKind(armor);
+        if (!kind || armor.oerodeproof) continue;
+        const message = objectErosionMessage(armor, kind);
+        await plineWithContinuation(message);
+        if ((armor[kind.field] || 0) >= 3) {
+            await destroyWornArmor(armor);
+            changed.push({ armor, destroyed: true });
+            break;
+        }
+        armor[kind.field] = (armor[kind.field] || 0) + 1;
+        changed.push({ armor, destroyed: false });
+    }
+    if (!changed.length)
+        await plineWithContinuation('Your skin itches.');
+    findArmorClass(game);
+    heroAttack.destroyedArmor = changed;
+    heroAttack.deferredDestroyArmor = false;
+}
+
+async function resolveDeferredHeroCurseItems(heroAttack: {
+    deferredCurseItems?: boolean;
+    cursedInventory?: Awaited<ReturnType<typeof rndcurse>>;
+}): Promise<void> {
+    if (!heroAttack?.deferredCurseItems) return;
+    heroAttack.cursedInventory = await rndcurse({
+        publish: plineWithContinuation,
+    });
+    heroAttack.deferredCurseItems = false;
+}
+
+// C mcastu.c:mcast_geyser() discards castmu()'s level-scaled spell pre-roll
+// and rolls a fresh physical 8d6.  Half physical damage applies; half spell
+// damage and elemental resistances do not.
+function resolveDeferredHeroGeyser(
+    action: MonsterAction, heroAttack: HeroSpellAttack,
+): void {
+    const game = requireInitializedGame();
+    if (!heroAttack?.deferredGeyserSpell) return;
+    const originalDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const appliedDamage = game.u.halfPhysicalDamage
+        ? Math.trunc((originalDamage + 1) / 2) : originalDamage;
+    applyHeroSpellDamage(heroAttack, appliedDamage, game);
+    heroAttack.deferredGeyserSpell = false;
+}
+
+async function finishDeathSurvivalMessage(g: GameState = game): Promise<void> {
+    if (!g._deathSurvivedMessagePending
+        || g._heroTimePending
+        || g.program_state?.gameover) return;
+    const runmodeDelayPending = !!g._deathSurvivalRunmodeDelayPending;
+    delete g._deathSurvivalRunmodeDelayPending;
+    await captureRunmodeDelay(g, runmodeDelayPending);
+    g._deathSurvivedMessagePending = false;
+    await plineWithContinuation('You survived that attempt on your life.');
+    if (g._deathSurvivalHeroTookTimePending != null) {
+        finishHeroTookTimeRng(g._deathSurvivalHeroTookTimePending);
+        g._deathSurvivalHeroTookTimePending = null;
+    }
+}
+
+async function finishHeroDeathAfterMonsterMessage(options: FinishHeroDeathOptions) {
+    await waitForCurrentMonsterMore();
+    return finishHeroDeath(options);
+}
+
+async function resumeTrappedMonster(action: MonsterAction): Promise<void> {
+    const game = requireInitializedGame();
+    if (!action.movement?.escapingTrap) return;
+    game._deferVisibleMonsterContact = true;
+    try {
+        await resumeDeferredMonsterTrap(action, game, {
+            publish: plineWithContinuation,
+            describeMonster: visibleMonsterSubject,
+        });
+    } finally {
+        game._deferVisibleMonsterContact = false;
+    }
+}
+
+async function presentMonsterHiding(action: MonsterMovementAction): Promise<void> {
+    const game = requireInitializedGame();
+    const { monster, movement } = action;
+    const concealment = movement.hideUnder;
+    if (!concealment) return;
+    await finishMonsterHideUnder(monster, concealment, game);
+    await resumeDeferredMonsterHideUnder(action, game);
+    delete movement.hideUnder;
+}
+
+async function presentMonsterAttackEffects(
+    action: MonsterMovementAction,
+    game: PlayingGameState,
+    earlierActorPagerInScan = false,
+    { random = rn2, rollDice = d, rollOne = rnd }: { random?: RandomBelow; rollDice?: RollDice; rollOne?: RollOne } = {},
+): Promise<{ heroDied: boolean; earlierActorPager: boolean }> {
+    const monster = action.monster;
+    let movement = action.movement;
+    // A special mover can attack before postmov(), then dochug() can
+    // admit a fresh attack. Movement and its feedback must not replay.
+    do {
+        await completeMonsterOffensiveAction(action, game, random, rollDice, rollOne);
+        const offensiveSequence = movement.heroAttackSequence;
+        if (movement.heroDied || game.program_state.gameover)
+            return { heroDied: true,
+                earlierActorPager: earlierActorPagerInScan || !!offensiveSequence?.paging.pagerOwned };
+        if (movement?.heroAttackSequence?.current) {
+            let heroDied = false;
+            let heroAttack: HeroAttackSequence['current'] = movement.heroAttackSequence.current;
+                let previousHeroAttack: HeroAttack | null = null;
+                const paging = movement.heroAttackSequence.paging;
+                while (heroAttack) {
+                    const publishSlotMessage: typeof plineWithContinuation = async (message, options) => {
+                        const dismissal = await plineWithContinuation(message, options);
+                        if (dismissal != null) paging.pagerOwned = true;
+                        else if (paging.pagerOwned) paging.messageAfterPager = true;
+                        return dismissal;
+                    };
+                    if (heroAttack.kind === 'hero-magic-ray') {
+                        const result = await resolveMonsterMagicRay(monster, heroAttack.effectiveAttack, {
+                            state: game, publish: publishSlotMessage, calls: action.calls,
+                            die: (options: FinishHeroDeathOptions) => options.damage
+                                ? finishMonsterAttackDeath(monster, {
+                                    damage: options.damage,
+                                    attribution: {
+                                        kind: 'death-inflicted-by', killer: options.killer,
+                                        deathCause: options.deathCause
+                                            || `killed by ${withIndefiniteArticle(options.killer)}`,
+                                        announcesDeath: true,
+                                    },
+                                    pagerOwned: paging.pagerOwned,
+                                    messageAfterPager: paging.messageAfterPager,
+                                    earlierActorPager: earlierActorPagerInScan,
+                                }) : finishHeroDeath(options),
+                        });
+                        heroAttack.nativeResult = result.mask;
+                        if (result.heroDied) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        previousHeroAttack = heroAttack;
+                        heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
+                        continue;
+                    }
+                    if (heroAttack.kind === 'hero-explosion') {
+                        const result = await resolveMonsterSelfExplosion(monster, heroAttack.effectiveAttack, {
+                            foundHero: heroAttack.foundHero, state: game, publish: publishSlotMessage,
+                            die: (options: FinishHeroDeathOptions) => options.damage ? finishMonsterAttackDeath(monster, {
+                                damage: options.damage, deathType: options.deathType ?? null,
+                                attribution: {
+                                    kind: 'death-inflicted-by', killer: options.killer,
+                                    deathCause: options.deathCause
+                                        || `killed by ${withIndefiniteArticle(options.killer)}`,
+                                    announcesDeath: !options.deathLineShown,
+                                },
+                                pagerOwned: paging.pagerOwned,
+                                messageAfterPager: paging.messageAfterPager,
+                                earlierActorPager: earlierActorPagerInScan,
+                            }) : finishHeroDeath(options),
+                        });
+                        heroAttack.nativeResult = result.mask;
+                        if (result.heroDied) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        previousHeroAttack = heroAttack;
+                        heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
+                        continue;
+                    }
+                    if (heroAttack.kind === 'hero-gaze') {
+                        const result = await resolveMonsterGaze(monster, heroAttack.effectiveAttack, {
+                            state: game, publish: publishSlotMessage, calls: action.calls,
+                            die: (actor: Monster, damage: MonsterAttackDeathOptions = {}) => finishMonsterAttackDeath(actor, {
+                                ...damage, pagerOwned: paging.pagerOwned,
+                                messageAfterPager: paging.messageAfterPager,
+                                earlierActorPager: earlierActorPagerInScan,
+                            }),
+                        });
+                        heroAttack.nativeResult = result.mask;
+                        if (result.heroDied) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        previousHeroAttack = heroAttack;
+                        heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
+                        continue;
+                    }
+                    if (heroAttack.kind === 'hero-projectile' || heroAttack.kind === 'hero-spit') {
+                        const heroDied = heroAttack.kind === 'hero-projectile'
+                            ? heroAttack.projectile.heroDied : heroAttack.spit.heroDied;
+                        if (heroDied) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        previousHeroAttack = heroAttack;
+                        heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
+                        continue;
+                    }
+                    if (heroAttack.kind === 'hero-breath') {
+                        const breath = heroAttack.breath;
+                        if (breath.cough && !game.deaf) {
+                            await publishSlotMessage(canSeeMonster(monster)
+                                ? `The ${quietMonsterName(monster)} coughs.` : 'You hear a cough.');
+                        }
+                        if (breath.launched) {
+                            await resolveDeferredMonsterBreath(action, breath, game, publishSlotMessage);
+                            if (game.program_state?.gameover) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                            if (game._occupation) game._interruptedMultiActionDebt = true;
+                            game._occupation = null;
+                            if (game._runState) stopRun(game);
+                        }
+                        previousHeroAttack = heroAttack;
+                        heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
+                        continue;
+                    }
+                    if (heroAttack.kind === 'hero-spell') {
+                        const publishSpellMessage: typeof plineWithContinuation = async message => {
+                            const dismissal = await plineWithContinuation(message);
+                            if (dismissal != null) paging.pagerOwned = true;
+                            else if (paging.pagerOwned)
+                                paging.messageAfterPager = true;
+                            return dismissal;
+                        };
+                        if (!heroAttack.cast) {
+                            let curseMessage = null;
+                            if (heroAttack.fumbled && !game.deaf
+                                && canSeeMonster(monster)) {
+                                curseMessage = `The air crackles around the ${
+                                    quietMonsterName(monster)
+                                }.`;
+                            } else if (heroAttack.curseKind === 'audible') {
+                                curseMessage = 'You hear a mumbled curse.';
+                            } else if (heroAttack.curseKind) {
+                                const caster = visibleMonsterSubject(monster);
+                                curseMessage = heroAttack.curseKind
+                                    === 'visible-undirected'
+                                    ? `${caster} points all around, then curses.`
+                                    : `${caster} points at you, then curses.`;
+                            }
+                            const repeatedAudibleCurse
+                                = heroAttack.curseKind === 'audible'
+                                && curseMessage !== null
+                                && (game._pending_message || '')
+                                    .endsWith(curseMessage);
+                            if (curseMessage && !repeatedAudibleCurse)
+                                await publishSpellMessage(curseMessage);
+                            previousHeroAttack = heroAttack;
+                            heroAttack = await completeHeroAttackSlot(
+                                action, game,
+                            );
+                            continue;
+                        }
+                        const caster = canSpotMonster(monster) ? visibleMonsterSubject(monster) : 'Something';
+                        const casterVisible = canSpotMonster(monster);
+                        if (casterVisible || heroAttack.directed) {
+                            await publishSpellMessage(
+                                `${caster} casts a spell${
+                                    heroAttack.directed ? ' at you' : ''
+                                }!`,
+                            );
+                        }
+                        if (heroAttack.deferredSpellDamage)
+                            rollDeferredHeroSpellDamage(action, game);
+                        let effectMessage = heroAttack.spellEffectMessage;
+                        if (heroAttack.spell === 'cure-self'
+                            && canSeeMonster(monster)) {
+                            effectMessage = `${
+                                visibleMonsterSubject(monster)
+                            } looks better.`;
+                        }
+                        if (heroAttack.spell === 'death-touch') {
+                            let pronoun;
+                            if (heroIsHallucinating(game)) {
+                                const gender = rn2(4);
+                                action.calls.push('rn2(4)');
+                                pronoun = ['he', 'she', 'it', 'they'][gender];
+                            } else {
+                                pronoun = monster.female ? 'she' : 'he';
+                            }
+                            effectMessage = 'Oh no, ' + pronoun
+                                + "'s using the touch of death!";
+                        }
+                        if (heroAttack.spell === 'disappear'
+                            && canSeeMonster(monster)) {
+                            const seesInvisible = !!(game.u?.seeInvisible
+                                || (game.u.seeInvisibleTurns !== undefined && game.u.seeInvisibleTurns > 0));
+                            effectMessage = `${
+                                visibleMonsterSubject(monster)
+                            } suddenly ${
+                                seesInvisible
+                                    ? 'becomes transparent' : 'disappears'
+                            }!`;
+                        }
+                        // mcast_confuse_you() commits make_confused() before
+                        // its explicit feedback pline.  If that line forces
+                        // the older cast line through tty, the pager already
+                        // paints Conf; other selected spell effects retain
+                        // their post-message state ordering.
+                        if (heroAttack.spell === 'confuse-you')
+                            resumeDeferredHeroSpell(action, game);
+                        const effectDismissal = effectMessage
+                            ? await publishSpellMessage(effectMessage)
+                            : null;
+                        if (heroAttack.deferredSpellEffect)
+                            resumeDeferredHeroSpell(action, game);
+                        if (heroAttack.deferredStrengthLoss) {
+                            const { amount, killer } = heroAttack.deferredStrengthLoss;
+                            delete heroAttack.deferredStrengthLoss;
+                            const hpBefore = game.u.uhp;
+                            const died = await loseHeroStrength(amount, killer, {
+                                state: game,
+                                publish: publishSpellMessage,
+                                deathCause: `killed by ${killer}`,
+                                random: range => {
+                                    action.calls.push(`rn2(${range})`);
+                                    return rn2(range);
+                                },
+                                die: (options: FinishHeroDeathOptions) => options.killer !== killer
+                                    ? finishHeroDeathAfterMonsterMessage(options)
+                                    : finishMonsterAttackDeath(monster, {
+                                        damage: {
+                                            hpKey: 'uhp', hpBefore,
+                                            damage: hpBefore - game.u.uhp,
+                                        },
+                                        attribution: {
+                                            kind: 'death-inflicted-by', killer,
+                                            announcesDeath: true,
+                                        },
+                                        pagerOwned: paging.pagerOwned,
+                                        messageAfterPager: paging.messageAfterPager,
+                                        earlierActorPager: earlierActorPagerInScan,
+                                    }),
+                            });
+                            if (died) {
+                                heroDied = true;
+                                break;
+                            }
+                        }
+                        if (heroAttack.deferredFirePillar)
+                            await resolveDeferredHeroFirePillar(
+                                action, heroAttack, publishSpellMessage,
+                            );
+                        if (game.program_state.gameover) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        if (heroAttack.deferredLightningSpell)
+                            await resolveDeferredHeroLightningSpell(
+                                action, heroAttack, publishSpellMessage,
+                            );
+                        if (game.program_state.gameover) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        if (heroAttack.deferredInsectSpell)
+                            await resolveDeferredHeroInsectSpell(
+                                action, heroAttack,
+                            );
+                        if (heroAttack.deferredCurseItems)
+                            await resolveDeferredHeroCurseItems(heroAttack);
+                        if (heroAttack.deferredSummonMonsters) {
+                            const summoned
+                                = await resolveDeferredHeroSummonMonsters(
+                                    action, game,
+                                );
+                            if (summoned?.message)
+                                await publishSpellMessage(summoned.message);
+                        }
+                        if (heroAttack.deferredCloneWizard) {
+                            await publishSpellMessage('Double Trouble...');
+                            const clone
+                                = await beginDeferredHeroCloneWizard(
+                                    action, game,
+                                );
+                            if (clone?.message)
+                                await publishSpellMessage(clone.message);
+                            await finishDeferredHeroCloneWizard(action, game);
+                        }
+                        if (heroAttack.deferredHasteSelf) {
+                            const haste = resolveDeferredHeroHasteSelf(
+                                action, game,
+                            );
+                            if (haste?.message)
+                                await publishSpellMessage(haste.message);
+                        }
+                        if (heroAttack.deferredAggravation)
+                            resolveDeferredHeroAggravation(action, game);
+                        if (heroAttack.deferredDeathTouch)
+                            await resolveDeferredHeroDeathTouch(
+                                action, heroAttack, publishSpellMessage,
+                            );
+                        if (heroAttack.deferredDestroyArmor)
+                            await resolveDeferredHeroDestroyArmor(
+                                action, heroAttack,
+                            );
+                        if (heroAttack.deferredGeyserSpell)
+                            resolveDeferredHeroGeyser(action, heroAttack);
+                        if (heroAttack.paralyzed) stopRun(game);
+                        if (heroAttack.toggledBlindness)
+                            vision_recalc(0);
+                        if (heroAttack.monsterDisappeared) {
+                            newsym(monster.mx, monster.my);
+                            if (cansee(monster.mx, monster.my)
+                                && !canSpotMonster(monster)) {
+                                map_invisible(monster.mx, monster.my);
+                            }
+                        }
+                        if (heroAttack.rehumanize) {
+                            // tty urgent_pline() replaces the effect line
+                            // which forced a pager when that pager was
+                            // escaped, but the spell's state effect proceeds.
+                            if (effectDismissal === 27) {
+                                game._pending_message = '';
+                                game._retained_message = '';
+                            }
+                            const restored = await returnHeroToHumanForm(game);
+                            if (restored.died) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                            heroAttack.rehumanize = false;
+                        }
+                        if (heroAttack.heroDied) {
+                            if (await finishMonsterAttackDeath(monster, {
+                                ...(heroAttack.fatalDamage ? { damage: heroAttack.fatalDamage } : {}),
+                                ...(heroAttack.fatalAttribution ? { attribution: heroAttack.fatalAttribution } : {}),
+                                pagerOwned: paging.pagerOwned,
+                                messageAfterPager: paging.messageAfterPager,
+                                earlierActorPager: earlierActorPagerInScan,
+                            })) {
+                                heroDied = true;
+                                break;
+                            }
+                            heroAttack.heroDied = false;
+                        }
+                        delete heroAttack.fatalDamage;
+                        delete heroAttack.fatalAttribution;
+                        previousHeroAttack = heroAttack;
+                        heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
+                        continue;
+                    }
+                if (heroAttack.deferredRevealUnder) {
+                    const revealDismissal = await plineWithContinuation(
+                        heroAttack.revealUnderMessage ?? '',
+                    );
+                    newsym(monster.mx, monster.my);
+                    if (revealDismissal !== null
+                        && revealDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                    heroAttack = await resumeDeferredHeroReveal(action, game);
+                    if (!heroAttack) break;
+                }
+                // Hero-command and actor-prose history do not themselves
+                // decide whether tty has repainted status.  The fatal path
+                // below follows C bot()'s raw-HP sentinel and concrete pager
+                // boundaries instead.
+                // C hitmu()/missmu() records an unseen attacker's square
+                // before projecting its contact line.  Persist that marker
+                // in hero memory so a pager or later blind docrt() cannot
+                // erase the source of the attack.
+                if (!heroAttack.deferredEngulf
+                    && heroAttack.effect !== 'wild-miss'
+                    && heroAttack.effect !== 'engulf-unfound'
+                    && heroAttack.effect !== 'engulf-refused'
+                    && heroAttack.effect !== 'failed-grab'
+                    && !canSpotMonster(monster))
+                    map_invisible(monster.mx, monster.my);
+                const message = await monsterAttackMessage(
+                    monster, heroAttack, previousHeroAttack, random,
+                );
+                const contactDismissal = message
+                    ? await plineWithContinuation(message) : undefined;
+                if (contactDismissal !== null
+                    && contactDismissal !== undefined) {
+                    paging.pagerOwned = true;
+                }
+                const activeHpKey = Upolyd(game.u) ? 'mh' : 'uhp';
+                const hpBeforeDeferredHit = game.u?.[activeHpKey] ?? 1;
+                const publishEquipmentMessage: typeof plineWithContinuation = async (line, options) => {
+                    const dismissal = await plineWithContinuation(line, options);
+                    if (dismissal != null) paging.pagerOwned = true;
+                    if (paging.pagerOwned)
+                        paging.messageAfterPager = !!game._pending_message;
+                    return dismissal;
+                };
+                if (heroAttack.hit && heroAttack.effect === 'physical-weapon') {
+                    await erodeAttackingWeapon(game.u, monsterWieldedWeapon(monster), {
+                        publish: publishEquipmentMessage,
+                    });
+                }
+                if (heroAttack.deferredStickingAfterHit)
+                    resumeDeferredHeroSticking(action, game);
+                if (heroAttack.stickingMessage) {
+                    const stickingDismissal = await plineWithContinuation(
+                        heroAttack.stickingMessage,
+                    );
+                    heroAttack.stickingMessage = null;
+                    if (stickingDismissal !== null
+                        && stickingDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                }
+                if (heroAttack.deferredItemTheft) {
+                    const theftPager = await resolveDeferredHeroItemTheft(
+                        action, monster, heroAttack,
+                    );
+                    if (game.program_state.gameover) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                    paging.pagerOwned ||= theftPager;
+                }
+                if (heroAttack.deferredEngulf) {
+                    const engulf = await resumeDeferredHeroEngulf(action, game, {
+                        publish: publishEquipmentMessage,
+                        die: (attacker: Monster, options: MonsterAttackDeathOptions = {}) => finishMonsterAttackDeath(attacker, {
+                            ...options,
+                            pagerOwned: paging.pagerOwned,
+                            messageAfterPager: paging.messageAfterPager,
+                            earlierActorPager: earlierActorPagerInScan,
+                        }),
+                        flushMessages: async () => {
+                            const dismissal = await flushPendingTopline();
+                            if (dismissal != null) paging.pagerOwned = true;
+                            paging.messageAfterPager = !!game._pending_message;
+                        },
+                    });
+                    if (engulf?.died || game.program_state.gameover) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                }
+                if (heroAttack.deferredSlimeEffect)
+                    resumeDeferredHeroSlime(action, game);
+                if (heroAttack.slimeEffectMessage) {
+                    const slimeDismissal = await plineWithContinuation(
+                        heroAttack.slimeEffectMessage,
+                    );
+                    heroAttack.slimeEffectMessage = null;
+                    if (slimeDismissal !== null
+                        && slimeDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                }
+                if (heroAttack.slimeStartPending)
+                    finishDeferredHeroSlime(action, game);
+                if (heroAttack.deferredColdNegation)
+                    resumeDeferredHeroColdSpecial(action, game);
+                if (heroAttack.coldEffectMessage) {
+                    const coldDismissal = await plineWithContinuation(
+                        heroAttack.coldEffectMessage,
+                    );
+                    heroAttack.coldEffectMessage = null;
+                    if (coldDismissal !== null
+                        && coldDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                }
+                if (heroAttack.coldResistanceMessage) {
+                    const coldResistanceDismissal = await plineWithContinuation(
+                        heroAttack.coldResistanceMessage,
+                    );
+                    heroAttack.coldResistanceMessage = null;
+                    if (coldResistanceDismissal !== null
+                        && coldResistanceDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                }
+                if (heroAttack.deferredFireNegation)
+                    resumeDeferredHeroFireSpecial(action, game);
+                if (heroAttack.fireEffectMessage) {
+                    const fireDismissal = await plineWithContinuation(
+                        heroAttack.fireEffectMessage,
+                    );
+                    heroAttack.fireEffectMessage = null;
+                    if (fireDismissal !== null
+                        && fireDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                }
+                if (heroAttack.fireResistanceMessage) {
+                    const resistanceDismissal = await plineWithContinuation(
+                        heroAttack.fireResistanceMessage,
+                    );
+                    heroAttack.fireResistanceMessage = null;
+                    if (resistanceDismissal !== null
+                        && resistanceDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                }
+                if (heroAttack.slimeBurnedMessage) {
+                    const slimeDismissal = await plineWithContinuation(
+                        heroAttack.slimeBurnedMessage,
+                    );
+                    heroAttack.slimeBurnedMessage = null;
+                    if (slimeDismissal !== null
+                        && slimeDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                }
+                if (heroAttack.deferredElectricNegation)
+                    resumeDeferredHeroElectricSpecial(action, game);
+                if (heroAttack.electricEffectMessage) {
+                    const electricDismissal = await plineWithContinuation(
+                        heroAttack.electricEffectMessage,
+                    );
+                    heroAttack.electricEffectMessage = null;
+                    if (electricDismissal !== null
+                        && electricDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                }
+                if (heroAttack.electricResistanceMessage) {
+                    const electricResistanceDismissal = await plineWithContinuation(
+                        heroAttack.electricResistanceMessage,
+                    );
+                    heroAttack.electricResistanceMessage = null;
+                    if (electricResistanceDismissal !== null
+                        && electricResistanceDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                }
+                if (heroAttack.deferredLifeDrainGate)
+                    resumeDeferredHeroLifeDrain(action, game);
+                if (heroAttack.deferredLifeDrain) {
+                    heroAttack.deferredLifeDrain = false;
+                    const died = await loseHeroExperience('life drainage', {
+                        die: finishHeroDeathAfterMonsterMessage,
+                        publish: async (message: string) => {
+                            const dismissal = await plineWithContinuation(message);
+                            if (dismissal !== null && dismissal !== undefined)
+                                paging.pagerOwned = true;
+                        },
+                    });
+                    if (died) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                }
+                if (heroAttack.deferredStunGate)
+                    resumeDeferredHeroStun(action, game);
+                if (heroAttack.stunMessage) {
+                    const stunDismissal = await plineWithContinuation(
+                        heroAttack.stunMessage,
+                    );
+                    heroAttack.stunMessage = null;
+                    if (stunDismissal !== null
+                        && stunDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                }
+                if (heroAttack.deferredRustRehumanize) {
+                    const rustFormPagerOwned
+                        = await resolveErosionFormRehumanization(
+                            heroAttack, 'You rust!',
+                        );
+                    paging.pagerOwned ||= rustFormPagerOwned;
+                    heroAttack.deferredRustRehumanize = false;
+                }
+                if (heroAttack.deferredDecayRehumanize) {
+                    const decayPagerOwned = await resolveErosionFormRehumanization(
+                        heroAttack, 'You rot!',
+                    );
+                    paging.pagerOwned ||= decayPagerOwned;
+                    heroAttack.deferredDecayRehumanize = false;
+                }
+                const armorErosion = heroAttack.deferredRustArmor ? 'rust'
+                    : heroAttack.deferredCorrosionArmor ? 'corrosion'
+                        : heroAttack.deferredDecayArmor ? 'rot' : null;
+                if (armorErosion) {
+                    await erodeArmor(game.u, armorErosion, { publish: publishEquipmentMessage });
+                    heroAttack.deferredRustArmor = false;
+                    heroAttack.deferredCorrosionArmor = false;
+                    heroAttack.deferredDecayArmor = false;
+                    heroAttack.deferredPostHit = true;
+                }
+                if (heroAttack.drainMessage) {
+                    const drainDismissal = await plineWithContinuation(
+                        heroAttack.drainMessage,
+                    );
+                    heroAttack.drainMessage = null;
+                    if (drainDismissal !== null
+                        && drainDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                    findArmorClass(game);
+                }
+                if (heroAttack.deferredLegEffect)
+                    await resumeDeferredHeroLegs(action, game, { publish: publishEquipmentMessage });
+                if (heroAttack.deferredPostHit) {
+                    const publishContactMessage = async (message: string): Promise<void> => {
+                        const dismissal = await plineWithContinuation(message);
+                        if (dismissal !== null && dismissal !== undefined)
+                            paging.pagerOwned = true;
+                    };
+                    const contactOptions = {
+                        publish: publishContactMessage,
+                        die: finishHeroDeathAfterMonsterMessage,
+                    };
+                    await resumeDeferredHeroContact(
+                        action, game, contactOptions,
+                    );
+                    if (game.program_state?.gameover) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                    if (heroAttack.deferredElementalInventory) {
+                        const inventoryDamage
+                            = heroAttack.deferredElementalInventory;
+                        const destroyInventory = {
+                            cold: destroyColdInventory,
+                            fire: destroyFireInventory,
+                            electric: destroyElectricInventory,
+                        }[inventoryDamage.damageType];
+                        const items = await destroyInventory(
+                            inventoryDamage.sourceDamage,
+                            { state: game, ...contactOptions },
+                        );
+                        if (items.heroDied) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        if (inventoryDamage.damageType === 'fire') {
+                            await igniteItems(game.inventory, {
+                                state: game,
+                                publish: plineWithContinuation,
+                            });
+                        }
+                        heroAttack.deferredElementalInventory = null;
+                        delete heroAttack.coldOriginalDamage;
+                        delete heroAttack.fireOriginalDamage;
+                        delete heroAttack.electricOriginalDamage;
+                        const hitPoints = Upolyd(game.u) ? 'mh' : 'uhp';
+                        if ((game.u?.[hitPoints] ?? 1) > 0) {
+                            await resumeDeferredHeroContact(
+                                action, game, contactOptions,
+                            );
+                        } else {
+                            heroAttack.heroDied = true;
+                            heroAttack.deferredPostHit = false;
+                        }
+                    }
+                    if (game.program_state?.gameover) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                }
+                if (heroAttack.deferredBlindEffect) {
+                    const toggledBlindness = resumeDeferredHeroBlindness(
+                        action, game,
+                    );
+                    if (toggledBlindness) vision_recalc(0);
+                }
+                if (heroAttack.effectMessage) {
+                    const effectDismissal = await plineWithContinuation(
+                        heroAttack.effectMessage,
+                    );
+                    if (effectDismissal !== null
+                        && effectDismissal !== undefined) {
+                        paging.pagerOwned = true;
+                    }
+                }
+                // C hitmu()/missmu() calls stop_occupation() after the whole
+                // contact transaction, including passiveum().  In
+                // particular, an overflowing cold-passive line must suspend
+                // before its rn2(2), assess_dmg(), death line, and the
+                // occupation-stop prose.  Keep this before later attack
+                // slots, but after every deferred tail owned by this slot.
+                const engulfAttack = heroAttack.effect === 'engulf'
+                    || heroAttack.effect === 'engulf-tick'
+                    || heroAttack.effect === 'engulf-refused';
+                const missedContact = heroAttack.effect === 'failed-grab'
+                    || heroAttack.effect === 'engulf-unfound'
+                    || heroAttack.effect === 'wild-miss';
+                if (!engulfAttack && !missedContact) {
+                    await stopHeroOccupation(game);
+                }
+                if ((game.u?.[Upolyd(game.u) ? 'mh' : 'uhp'] ?? 1) > 0) {
+                    previousHeroAttack = heroAttack;
+                    heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
+                    continue;
+                }
+                if (await finishMonsterAttackDeath(monster, {
+                    damage: {
+                        hpKey: activeHpKey, hpBefore: hpBeforeDeferredHit,
+                        damage: heroAttack.appliedDamage ?? heroAttack.damage ?? 0,
+                    },
+                    pagerOwned: paging.pagerOwned,
+                    messageAfterPager: paging.messageAfterPager,
+                    earlierActorPager: earlierActorPagerInScan,
+                })) {
+                    heroDied = true;
+                    break;
+                }
+                heroAttack.heroDied = false;
+                previousHeroAttack = heroAttack;
+                heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
+            }
+            earlierActorPagerInScan ||= paging.pagerOwned;
+            if (heroDied) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+        }
+        if (offensiveSequence) earlierActorPagerInScan ||= offensiveSequence.paging.pagerOwned;
+        if (!movement?.deferredAfterSpecialAttack || game.program_state?.gameover)
+            break;
+        await resumeDeferredSpecialAttack(action, game, random, rollDice, rollOne);
+        movement = action.movement;
+        if (await presentMonsterPostMove(action, game))
+            return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+        await presentMonsterPickups(action, game);
+        movement = action.movement;
+    } while (!game.program_state?.gameover);
+    if (game.program_state?.gameover) return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+    return { heroDied: false, earlierActorPager: earlierActorPagerInScan };
+}
+
+// Trap, door, tunneling, and hiding feedback belongs to postmov(), before
+// returning to either dochug() or the hero's out-of-sequence movement caller.
+async function presentMonsterPostMove(
+    action: MonsterMovementAction, game: PlayingGameState,
+): Promise<boolean> {
+    const monster = action.monster;
+    let movement = action.movement;
+    // C postmov() repaints the old square before mintrap(), but delays
+    // the destination newsym() until the trap's message has returned.
+    // A pager on the prior topline must still show the floor object.
+    const deferredTrapDestination = !!(movement?.moved && movement?.trap);
+    const deferredHideUnderDestination = !!(movement?.moved
+        && movement?.hideUnder?.message);
+    if (movement?.moved || movement?.postMoveOldSquarePainted) {
+        if (!movement.postMoveOldSquarePainted)
+            newsym(movement.oldx, movement.oldy);
+        if (!movement.postMoveDestinationPainted
+            && !deferredTrapDestination && !deferredHideUnderDestination)
+            newsym(movement.x, movement.y);
+    }
+    if (movement.deferredAfterMonsterTrap) {
+        const event = movement.trap;
+        if (!event) throw new Error('Deferred monster trap requires its event.');
+        await resumeDeferredMonsterTrap(action, game, {
+            publish: plineWithContinuation,
+            monsterName: quietMonsterName,
+            describeMonster: visibleMonsterSubject,
+            revealTrap: (trap: Trap) => newsym(trap.tx, trap.ty),
+        });
+        if ('heroDied' in event && event.heroDied) return true;
+        movement = action.movement;
+        if ('seeSquare' in event && event.seeSquare && event.kind !== 'vibrating-square')
+            newsym(event.trap.tx, event.trap.ty);
+    }
+    if (movement?.trap?.kind === 'teleport-trap') {
+        const event = movement.trap;
+        if (event.leashReleased)
+            await plineWithContinuation('Your leash goes slack.');
+        if (event.cursedLeash && (event.visible || !game.deaf)) {
+            const verb = monsterYelpVerb(monster);
+            if (verb) {
+                await plineWithContinuation(
+                    `${visibleMonsterSubject(monster)} ${verb}!`,
+                );
+            }
+        }
+        if (event.teleportAttempted && event.visible) {
+            event.trap.tseen = true;
+            const outcome = canSeeMonster(monster) ? 'seems disoriented.' : 'suddenly disappears!';
+            await plineWithContinuation(
+                `${visibleMonsterSubject(monster)} ${outcome}`,
+            );
+        }
+    }
+    if (movement?.trap?.kind === 'rolling-boulder') {
+        const event = movement.trap;
+        // postmov() has already installed the moving actor on the trap
+        // square when mintrap() begins. Fatal damage changes live HP
+        // before its plines, but tty retains the pre-death glyph while
+        // an older trigger line owns --More--.
+        const liveHp = monster.mhp;
+        if (event.released && event.killed) monster.mhp = event.monsterHpBefore;
+        newsym(movement.x, movement.y);
+        monster.mhp = liveHp;
+        if (event.released && event.inSight) {
+            const trigger = game.deaf
+                ? `${visibleMonsterSubject(monster)} triggers ${
+                    event.wasSeen ? 'a rolling boulder trap' : 'something'
+                }.`
+                : `Click!  ${visibleMonsterSubject(monster)} triggers ${
+                    event.wasSeen ? 'a rolling boulder trap' : 'something'
+                }.`;
+            await plineWithContinuation(trigger);
+        }
+        if (event.released) {
+            vision_note_blocker_change(event.launch.x, event.launch.y);
+            newsym(event.launch.x, event.launch.y);
+            const dx = Math.sign(event.endpoint.x - event.launch.x);
+            const dy = Math.sign(event.endpoint.y - event.launch.y);
+            const glyph = transientObjectGlyph(event.boulder);
+            let flightX = event.launch.x;
+            let flightY = event.launch.y;
+            const preTargetSteps = Math.max(
+                Math.abs(movement.x - flightX),
+                Math.abs(movement.y - flightY),
+            );
+            let transient: Position | null = null;
+            for (let step = 0; step < preTargetSteps; step++) {
+                transient = await animateRollingBoulderCell(
+                    event.boulder, glyph, flightX, flightY, transient,
+                );
+                flightX += dx;
+                flightY += dy;
+            }
+            if (event.hit && event.seeSquare) {
+                const target = event.inSight
+                    ? `the ${quietMonsterName(monster)}` : 'it';
+                await plineWithContinuation(`The boulder hits ${target}!`);
+                if (event.killed) {
+                    const subject = event.inSight
+                        ? `The ${quietMonsterName(monster)}` : 'It';
+                    const destroyed = monsterIsNonliving(monster.mnum)
+                        || monsterIsVampireShifter(monster)
+                        || !event.inSight;
+                    await plineWithContinuation(
+                        `${subject} is ${destroyed ? 'destroyed' : 'killed'}!`,
+                    );
+                }
+            } else if (event.seeSquare) {
+                const target = event.inSight
+                    ? `the ${quietMonsterName(monster)}` : 'it';
+                await plineWithContinuation(`The boulder misses ${target}.`);
+            }
+            // Death/corpse work precedes the remaining flight cells.
+            await resumeDeferredMonsterRollingBoulderDeath(action, game, {
+                publish: plineWithContinuation,
+            });
+            movement = action.movement;
+            const postTargetSteps = Math.max(
+                Math.abs(event.endpoint.x - flightX),
+                Math.abs(event.endpoint.y - flightY),
+            );
+            for (let step = 0; step < postTargetSteps; step++) {
+                transient = await animateRollingBoulderCell(
+                    event.boulder, glyph, flightX, flightY, transient,
+                );
+                flightX += dx;
+                flightY += dy;
+            }
+            await finishDeferredMonsterRollingBoulderPlacement(action, game);
+            movement = action.movement;
+            if (transient) newsym(transient.x, transient.y);
+            newsym(event.endpoint.x, event.endpoint.y);
+        }
+    }
+    if (movement?.trap?.kind === 'magic-portal-migration'
+        && movement.trap.visible) {
+        movement.trap.trap.tseen = true;
+        await plineWithContinuation(
+            `Suddenly, the ${quietMonsterName(
+                monster,
+            )} disappears out of sight.`,
+        );
+    }
+    if (movement?.trap?.kind === 'level-fall-migration'
+        && movement.trap.visible) {
+        movement.trap.trap.tseen = true;
+        const fall = movement.trap.trap.ttyp === HOLE
+            ? 'falls into a hole' : 'falls through a trap door';
+        await plineWithContinuation(
+            `Suddenly, the ${quietMonsterName(monster)} ${fall}.`,
+        );
+    }
+    if (deferredTrapDestination && !movement.postMoveDestinationPainted)
+        newsym(movement.x, movement.y);
+    await presentMonsterHiding(action);
+    return !!game.program_state.gameover || !!movement.heroDied;
+}
+
+async function presentMonsterPickups(action: MonsterMovementAction, game: PlayingGameState): Promise<void> {
+    const monster = action.monster;
+    let movement = action.movement;
+    if (movement?.pickedUp
+        && cansee(movement.oldx, movement.oldy)) {
+        observeMonsterPickup(
+            movement.pickedUp, movement.oldx, movement.oldy,
+        );
+        if (game.flags.verbose !== false) {
+            await plineWithContinuation(
+                `${visibleMonsterSubject(monster)} picks up ${
+                    petCarriedObjectName(movement.pickedUp)}.`,
+            );
+        }
+    }
+    if (movement) await commitPetPickup(monster, movement, game);
+}
+
+async function presentPetMovementPrelude(
+    action: MonsterMovementAction, game: PlayingGameState, actorWasOpticallySeen: boolean,
+): Promise<void> {
+    const monster = action.monster;
+    let movement = action.movement;
+    if (movement?.deferredPetMove) {
+        if (movement.pickedUp && cansee(movement.oldx, movement.oldy)) {
+            observeMonsterPickup(
+                movement.pickedUp, movement.oldx, movement.oldy,
+            );
+            if (game.flags.verbose !== false) {
+                await plineWithContinuation(
+                    `${visibleMonsterSubject(monster)} picks up ${
+                        petCarriedObjectName(movement.pickedUp)}.`,
+                );
+            }
+        }
+        await commitPetPickup(monster, movement, game);
+        // dog_invent() returns to the same dog_move() transaction after
+        // its pickup/drop pline.  A following visible mattackm() must
+        // remain deferred too: its hit line can fill tty's topline before
+        // damage, death prose, and growth RNG are committed.
+        game._deferVisibleMonsterContact = true;
+        try {
+            await resumeDeferredPetMove(action, game);
+        } finally {
+            game._deferVisibleMonsterContact = false;
+        }
+        movement = action.movement;
+    }
+    if (movement?.deferredPetEating) {
+        await resumeDeferredPetEating(action, game);
+        movement = action.movement;
+    }
+    if (movement.deferredPetReluctance) {
+        if (actorWasOpticallySeen || canSeeMonster(monster))
+            await plineWithContinuation(reluctantPetMessage(monster, movement));
+        await resumeDeferredPetReluctance(action, game);
+    }
+}
+
+async function presentMovementDefensiveItem(action: MonsterMovementAction): Promise<void> {
+    const { monster, movement } = action;
+    if (movement?.usedDefensive?.kind === 'potion-healing') {
+        const defensive = movement.usedDefensive;
+        const sawDrinking = await presentMonsterQuaff(monster, defensive.object);
+        if (sawDrinking && !defensive.deferredOccupant) {
+            await plineWithContinuation(
+                `${visibleMonsterSubject(monster)} looks better.`,
+            );
+            learnObjectType(POT_HEALING);
+        }
+    }
+}
+
+async function presentMonsterMoveMessage(action: MonsterMovementAction, game: PlayingGameState): Promise<void> {
+    const movement = action.movement;
+    if (movement?.guardFinished && !game._suppressMessagesUntilInput) {
+        const message = 'Suddenly, the guard disappears.--More--';
+        await pline(message);
+        await flush_screen(1);
+        game.nhDisplay?.setCursor(message.length, 0);
+        let key;
+        do key = await nhgetch();
+        while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
+        game._pending_message = '';
+    }
+    if (movement?.message) await plineWithContinuation(movement.message);
+}
+
+async function presentRestrictedMonsterTeleport(
+    action: MonsterMovementAction, game: PlayingGameState, actorWasOpticallySeen: boolean,
+): Promise<void> {
+    const monster = action.monster;
+    let movement = action.movement;
+    // C monmove.c:m_move() calls tele_restrict() immediately after a
+    // tengu's one-in-five innate teleport probe.  The rejected probe is
+    // an ordinary pline producer; retaining it here lets a later actor's
+    // prose force the same tty continuation boundary.
+    if (movement?.deferredAfterRestrictedTenguTeleport) {
+        if (actorWasOpticallySeen) {
+            await plineWithContinuation(
+                `A mysterious force prevents the ${quietMonsterName(
+                    monster,
+                )} from teleporting!`,
+            );
+        }
+        await resumeDeferredRestrictedTenguTeleport(action, game);
+        movement = action.movement;
+    }
+}
+
+// A direct mattacku call has no movement ration, dochug prelude, or postmov
+// tail. Pets targeting the hero and forced abilities share this complete path.
+export async function performMonsterHeroAttack(
+    monster: Monster, state: PlayingGameState, {
+        random = rn2, rollDice = d, rollOne = rnd, calls = [],
+    }: { random?: RandomBelow; rollDice?: RollDice; rollOne?: RollOne; calls?: MonsterCallLog } = {},
+): Promise<{ nativeResult: 0 | 1; heroDied: boolean }> {
+    requireLiveGame(state);
+    const previousDeferral = state._deferVisibleMonsterContact;
+    state._deferVisibleMonsterContact = true;
+    let action: MonsterMovementAction;
+    try {
+        action = {
+            monster, calls, movement: {
+                oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my, moved: false,
+                ...await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls),
+            },
+        };
+    } finally {
+        state._deferVisibleMonsterContact = previousDeferral;
+    }
+    const messageContext = state._monsterMessageContext;
+    const effects = await presentMonsterAttackEffects(action, state, messageContext?.earlierActorPager ?? false,
+        { random, rollDice, rollOne });
+    if (messageContext) messageContext.earlierActorPager = effects.earlierActorPager;
+    const offensive = action.movement.heroAttackSequence?.offensive;
+    const returnedDeath = offensive?.status === 'completed' && offensive.result.nativeResult === 1;
+    return {
+        nativeResult: returnedDeath || monster.dead || monster.mhp <= 0 ? 1 : 0,
+        heroDied: effects.heroDied || !!state.program_state.gameover,
+    };
+}
+
+// C uhitm.c:do_attack() calls m_move(monster, 0) for a leprechaun dodge.
+// Resolve that movement transaction before the hero tests its new position;
+// no movement ration, dochug prelude, or dochug attack tail belongs here.
+export async function moveMonsterForHeroAttack(
+    monster: Monster, state: PlayingGameState = requireInitializedGame(),
+): Promise<{ status: number; heroDied: boolean }> {
+    requireLiveGame(state);
+    const wasSeen = canSeeMonster(monster);
+    const previousDeferral = state._deferVisibleMonsterContact;
+    state._deferVisibleMonsterContact = true;
+    let action: MonsterMovementAction;
+    try {
+        action = await beginMonsterMove(monster, state);
+    } finally {
+        state._deferVisibleMonsterContact = previousDeferral;
+    }
+    await resumeTrappedMonster(action);
+    await presentRestrictedMonsterTeleport(action, state, wasSeen);
+    await presentPetMovementPrelude(action, state, wasSeen);
+    let heroDied = await presentMonsterPostMove(action, state);
+    if (!heroDied) heroDied = (await presentMonsterAttackEffects(action, state)).heroDied;
+    if (!heroDied && action.movement.deferredAfterPetAttack) {
+        await resumeDeferredPetAttack(action, state);
+        heroDied = await presentMonsterPostMove(action, state);
+    }
+    if (!heroDied) {
+        await presentMonsterPickups(action, state);
+        await presentMovementDefensiveItem(action);
+        await presentMonsterMoveMessage(action, state);
+    }
+    const status = action.movement.postMoveStatus;
+    if (status === undefined)
+        throw new Error('Monster movement completed without its native movement result.');
+    return { status, heroDied: heroDied || !!state.program_state.gameover };
+}
+
+async function executeMonsterTurns(messageContext: MonsterMessageContext): Promise<boolean | undefined> {
+    const game = requireInitializedGame();
+    const level = game.level;
+    let somebodyCanMove = false;
+    // C iter_mons_safe() snapshots identities, not their remaining movement.
+    monsterTurns: for (const actor of monstersInFmonOrder(level.monsters)) {
+        if (game.level !== level || game.u.utotype || game.program_state?.gameover)
+            return false;
+        if (!level.monsters.includes(actor) || (actor.mhp ?? 1) <= 0 || actor.mx === 0
+            || (actor.mstate ?? MON_FLOOR) !== MON_FLOOR)
+            continue;
+        runMonsterEveryturnEffects([actor], game, rn2, { fmonOrdered: true });
+        if (actor.movement === undefined)
+            throw new Error(`Monster ${actor.m_id} entered a turn before movement initialization.`);
+        if (actor.movement < NORMAL_SPEED) continue;
+        actor.movement -= NORMAL_SPEED;
+        if (actor.movement >= NORMAL_SPEED) somebodyCanMove = true;
+        const actorWasOpticallySeen = canSeeMonster(actor);
+        const actorWasSpotted = canSpotMonster(actor);
+        const actorWasCouldSee = couldsee(actor.mx, actor.my);
+        const actorOldDistance = dist2(
+            actor.mx, actor.my,
+            game.u?.ux ?? actor.mx, game.u?.uy ?? actor.my,
+        );
+        const liquid = await resolveMonsterLiquid(actor, game, {
+            announce: plineWithContinuation,
+            finishDeath: finishMonsterLiquidDeath,
+        });
+        if (liquid?.dead) continue;
+        // C monmove.c:dochug() clears STRAT_WAITFORU when the quest leader
+        // can see the adjacent hero, but STRAT_CLOSE remains a wait-mask bit.
+        // That sends the actor through quest_talk() without ordinary movement
+        // or spellcasting.  The pager can suspend this actor after all earlier
+        // fmon identities have already consumed their movement RNG.
+        if (isQuestLeader(actor, game)) {
+            const adjacent = Math.abs(actor.mx - (game.u?.ux ?? actor.mx)) <= 1
+                && Math.abs(actor.my - (game.u?.uy ?? actor.my)) <= 1;
+            if (adjacent
+                && ((actor.mstrategy ?? 0) & STRAT_WAITFORU))
+                actor.mstrategy = (actor.mstrategy ?? 0) & ~STRAT_WAITFORU;
+            if (actor.mcanmove !== 0 && !actor.msleeping && adjacent
+                && ((actor.mstrategy ?? 0) & STRAT_CLOSE)) {
+                await chatWithQuestLeader(actor, {
+                    exerciseWisdom,
+                });
+                if (game._questExpulsionPending) {
+                    await performQuestExpulsion(game);
+                    break;
+                }
+                continue;
+            }
+        }
+        const equipment = await reassessMonsterArmor(actor, game, { publish: plineWithContinuation });
+        game._deferVisibleMonsterContact = true;
+        let action: MonsterAction;
+        try {
+            action = equipment?.consumed ? {
+                monster: actor, calls: [],
+                movement: {
+                    oldx: actor.mx, oldy: actor.my, x: actor.mx, y: actor.my,
+                    moved: false, equipment,
+                },
+            } : await runMonsterAction(actor, game);
+        } finally {
+            game._deferVisibleMonsterContact = false;
+        }
+        if (game.program_state?.gameover) return false;
+        if (action.conflictFight) continue;
+        await resumeTrappedMonster(action);
+        let { monster, movement } = action;
+        if (movement?.spellCast?.cast) {
+            // monmove.c's undirected cast bypasses m_move().  The casting
+            // line is a tty boundary; only after it resumes may the spell
+            // create monsters and dochug() finish this actor.
+            if (canSpotMonster(monster)) {
+                await plineWithContinuation(
+                    `${visibleMonsterSubject(monster)} casts a spell!`,
+                );
+            }
+            const spellEffect = await resumeDeferredMovementSpell(
+                action, game,
+            );
+            if (spellEffect?.message)
+                await plineWithContinuation(spellEffect.message);
+            movement = action.movement;
+        }
+        // A fleeing teleport spends this actor's turn, even if no destination was found.
+        if (movement?.fleeingRelocation || movement?.fleeingTeleportFailed) continue;
+        await presentRestrictedMonsterTeleport(action, game, actorWasOpticallySeen);
+        movement = action.movement;
+        if (movement?.deferredCovetousRelocation) {
+            // rloc_to_core() repaints both endpoints before it emits the
+            // arrival line.  That pline may first have to page an older hero
+            // message; only after it resumes does dochug() run distfleeck and
+            // the monster's contact attack.
+            newsym(movement.oldx, movement.oldy);
+            newsym(movement.x, movement.y);
+            const relocationMessage = covetousRelocationMessage(
+                monster, movement, actorWasSpotted,
+            );
+            if (relocationMessage)
+                await plineWithContinuation(relocationMessage);
+            game._deferVisibleMonsterContact = true;
+            try {
+                await resumeDeferredCovetousRelocation(action, game);
+            } finally {
+                game._deferVisibleMonsterContact = false;
+            }
+            await resumeTrappedMonster(action);
+            movement = action.movement;
+        }
+        await presentPetMovementPrelude(action, game, actorWasOpticallySeen);
+        movement = action.movement;
+        if (await presentMonsterPostMove(action, game)) return false;
+        movement = action.movement;
+        const attackEffects = await presentMonsterAttackEffects(action, game, messageContext.earlierActorPager);
+        messageContext.earlierActorPager = attackEffects.earlierActorPager;
+        if (attackEffects.heroDied) return false;
+        movement = action.movement;
+        // monmove.c:dochug() performs the vile-monster emotional attack only
+        // after the complete standard attack set.  Even a nonzero result is
+        // RNG-visible before ambient/global maintenance.
+        const offensive = movement.heroAttackSequence?.offensive;
+        const attackReturnedDeath = offensive?.status === 'completed' && offensive.result.nativeResult === 1;
+        if (!attackReturnedDeath && action.dochugContext?.range?.inRange
+            && !monster.dead && monster.mhp > 0 && monster.mx !== 0
+            && MONSTER_SOUND[monster.mnum] === 34 && !monster.mpeaceful
+            && couldsee(monster.mx, monster.my) && !monster.minvis) {
+            const cussGate = rn2(5);
+            action.calls.push('rn2(5)');
+            if (cussGate === 0)
+                movement.deferredCuss = true;
+        }
+        if (movement?.deferredCuss && monster.iswiz) {
+            movement.deferredCuss = false;
+            if (!game.deaf && !game.u?.deaf) {
+                const cussMessage = selectWizardCussMessage(action, monster);
+                await plineWithContinuation(cussMessage);
+                wakeMonstersNear(monster.mx, monster.my, 25);
+            }
+        }
+        if (movement?.deferredAfterPetAttack) {
+            if (game.program_state?.gameover) return false;
+            await resumeDeferredPetAttack(action, game);
+            await presentMonsterHiding(action);
+        }
+        await presentMonsterPickups(action, game);
+        movement = action.movement;
+        await presentMovementDefensiveItem(action);
+        if (movement?.usedMisc?.kind === 'potion-gain-level') {
+            const misc = movement.usedMisc;
+            const sawDrinking = await presentMonsterQuaff(monster, misc.object);
+            if (sawDrinking) {
+                if (misc.object.cursed) {
+                    await plineWithContinuation(
+                        `${visibleMonsterSubject(monster)} looks uneasy.`,
+                    );
+                    if (!game._knownObjectTypes?.has(misc.object.otyp)
+                        && !game._objectCallNames?.[misc.object.otyp]) {
+                        await waitForCurrentMonsterMore();
+                        const appearance = game.objectDescriptions?.[
+                            misc.object.otyp
+                        ] || 'strange';
+                        const description = appearance + ' potion';
+                        const article = /^[aeiou]/i.test(description)
+                            ? 'an' : 'a';
+                        const callName = await getLine(
+                            'Call ' + article + ' ' + description + ':',
+                            (_ch: string, key: number) => key >= 32 && key < 127,
+                        );
+                        if (callName?.trim())
+                            recordObjectCall(
+                                misc.object.otyp, callName.trim(),
+                            );
+                    }
+                } else {
+                    await plineWithContinuation(
+                        `${visibleMonsterSubject(monster)} seems more experienced.`,
+                    );
+                    learnObjectType(misc.object.otyp);
+                }
+            }
+            await finishDeferredMonsterMiscItem(action, game);
+            await presentMonsterGrowth(monster, misc.growth);
+            movement = action.movement;
+        }
+        if (movement?.usedMisc?.kind === 'potion-invisibility') {
+            const misc = movement.usedMisc;
+            const monsterName = quietMonsterName(monster);
+            const sawDrinking = await presentMonsterQuaff(monster, misc.object);
+            await finishDeferredMonsterMiscItem(action, game);
+            newsym(monster.mx, monster.my);
+            const stillSeen = canSpotMonster(monster);
+            if (sawDrinking && monster.minvis) {
+                if (stillSeen) {
+                    await plineWithContinuation(
+                        `The ${monsterName}'s body takes on a strange transparency.`,
+                    );
+                } else {
+                    await plineWithContinuation(
+                        `Suddenly you cannot see the ${monsterName}.`,
+                    );
+                    if (cansee(monster.mx, monster.my))
+                        map_invisible(monster.mx, monster.my);
+                }
+                learnObjectType(misc.object.otyp);
+            } else if (sawDrinking && !monster.minvis) {
+                await plineWithContinuation(
+                    `${visibleMonsterSubject(monster)} briefly seems to be transparent.`,
+                );
+            }
+        }
+        if (movement?.usedMisc?.kind === 'bullwhip-disarm') {
+            const misc = movement.usedMisc;
+            const targetType = misc.target?.otyp;
+            const targetName = (targetType !== undefined ? OBJECT_NAMES[targetType] : null)
+                || misc.target?.name || 'weapon';
+            const targetWithArticle = `the ${targetName}`;
+            const hand = targetType !== undefined && OBJECT_BIMANUAL[targetType]
+                ? 'hands' : 'hand';
+            if (actorWasOpticallySeen) {
+                await plineWithContinuation(
+                    `${visibleMonsterSubject(monster)} flicks a bullwhip towards your ${hand}!`,
+                );
+            }
+            const whip = actorWasOpticallySeen ? 'The bullwhip' : 'A whip';
+            await plineWithContinuation(
+                `${whip} wraps around ${targetWithArticle} you're wielding!`,
+            );
+            await finishDeferredMonsterMiscItem(action, game);
+            newsym(monster.mx, monster.my);
+            newsym(game.u.ux, game.u.uy);
+            if (misc.whereTo === 0) {
+                await plineWithContinuation('The whip slips free.');
+            } else {
+                const subject = canSpotMonster(monster) ? visibleMonsterSubject(monster) : 'It';
+                if (misc.whereTo === 1) {
+                    await plineWithContinuation(
+                        `${subject} yanks ${targetWithArticle} from your ${hand}!`,
+                    );
+                } else if (misc.whereTo === 2) {
+                    await plineWithContinuation(
+                        `${subject} yanks ${targetWithArticle} to the floor!`,
+                    );
+                } else {
+                    await plineWithContinuation(
+                        `${subject} snatches ${targetWithArticle}!`,
+                    );
+                }
+            }
+        }
+        if (movement?.usedMisc?.kind === 'potion-speed') {
+            const misc = movement.usedMisc;
+            const sawDrinking = await presentMonsterQuaff(monster, misc.object);
+            await finishDeferredMonsterMiscItem(action, game);
+            if (sawDrinking && misc.speedChanged) {
+                await plineWithContinuation(
+                    `${visibleMonsterSubject(monster)} is suddenly moving ${
+                        misc.speedMuch ? 'much ' : ''
+                    }faster.`,
+                );
+                if (misc.object.dknown) learnObjectType(misc.object.otyp);
+            }
+        }
+        if (movement?.usedMisc?.kind === 'wand-speed-monster') {
+            const misc = movement.usedMisc;
+            if (actorWasOpticallySeen) {
+                observeMonsterUsedObject(misc.object);
+                const reflexive = monster.female ? 'herself' : 'himself';
+                await plineWithContinuation(
+                    `${visibleMonsterSubject(monster)} zaps ${reflexive} with ${
+                        petCarriedObjectName(misc.object)
+                    }!`,
+                );
+            } else if (!game.deaf) {
+                const range = couldsee(monster.mx, monster.my)
+                    ? BOLT_LIM + 1 : BOLT_LIM - 3;
+                const proximity = dist2(
+                    monster.mx, monster.my,
+                    game.u?.ux ?? monster.mx,
+                    game.u?.uy ?? monster.my,
+                ) <= range * range ? 'nearby' : 'distant';
+                await plineWithContinuation(`You hear a ${proximity} zap.`);
+                misc.object.dknown = false;
+            }
+            await finishDeferredMonsterMiscItem(action, game);
+            if (actorWasOpticallySeen && misc.speedChanged) {
+                await plineWithContinuation(
+                    `${visibleMonsterSubject(monster)} is suddenly moving ${
+                        misc.speedMuch ? 'much ' : ''
+                    }faster.`,
+                );
+                if (misc.object.dknown) {
+                    await exerciseAttribute(A_WIS, true);
+                    recordObjectKnowledge(misc.object.otyp);
+                }
+            }
+        }
+        await presentMonsterMoveMessage(action, game);
+        // C monmove.c:dochugw() interrupts an occupation when one actor has
+        // newly become a visible threat within bolt range.  This happens
+        // after dochug() has completed the actor action, before the ordinary
+        // adjacent monster_nearby() check at the occupation boundary.
+        const threatDistance = (BOLT_LIM + 1) * (BOLT_LIM + 1);
+        if (game._occupation && !attackReturnedDeath
+            && (monster.mhp ?? 1) > 0
+            && !monster.mpeaceful
+            && monster.mcanmove !== 0
+            && !(monster.msleeping || (monster.mfrozen ?? 0) > 0
+                )
+            && dist2(monster.mx, monster.my,
+                game.u?.ux ?? monster.mx,
+                game.u?.uy ?? monster.my) <= threatDistance
+            && (!actorWasSpotted || !actorWasCouldSee
+                || actorOldDistance > threatDistance)
+            && canSpotMonster(monster)
+            && couldsee(monster.mx, monster.my)) {
+            await stopHeroOccupation(game);
+        }
+        if (!movement?.moved) continue;
+    }
+    delete game._statusAcOverride;
+    // Erosion mutates worn armor during movemon(), but C does not run
+    // find_ac() until the actor scan has finished.  Only after that boundary
+    // may the next ordinary input project the new AC; intervening combat and
+    // death pagers retain the pre-scan status value.
+    if (game._armorClassDirty
+        && !game._armorClassDirtyAfterDelayedFrame)
+        game._statusProjectedAc = projectedArmorClass(game);
+    return game.level === level && somebodyCanMove;
+}
+
+async function moveMonsters() {
+    const game = requireInitializedGame();
+    const previousMonsterMoving = game.context.mon_moving;
+    const previousMessages = game._monsterMessageContext;
+    const messageContext = { earlierActorPager: false };
+    game.context.mon_moving = true;
+    game._monsterMessageContext = messageContext;
+    try {
+        return await executeMonsterTurns(messageContext);
+    } finally {
+        game.context.mon_moving = previousMonsterMoving;
+        if (previousMessages) game._monsterMessageContext = previousMessages;
+        else delete game._monsterMessageContext;
+    }
+}
+
+// C ref: allmain.c newgame()
+export async function newgame() {
+    const g = game;
+    const handednessRoll = await initializeSourceStartup();
+
+    if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
+        const pantheon = roles.find(role => role.mnum === g._priestPantheonIndex);
+        if (pantheon?.gods) {
+            g.urole = {
+                ...g.urole,
+                gods: { ...pantheon.gods },
+                goddessAlignments: [
+                    ...(pantheon.goddessAlignments || []),
+                ],
+            };
+        }
+    }
+
+    uInitMisc(handednessRoll);
+
+    // C ref: u_init.c:1009-1012 — the recorder build routes ubirthday
+    // through getnow() so a fixed session datetime controls it; upstream
+    // uses plain time().  Captured once per new game, before mklev.
+    g.ubirthday = /^\d{14}$/.test(g.datetime || '')
+        ? recorderLocalEpochSeconds(g.datetime)
+        : Math.floor(Date.now() / 1000);
+
+    // C allmain.c:newgame() loads the core Lua state after hero setup.
+    await l_nhcore_init();
+
+    // Real mklev generates the level with correct room positions
+    // Structural phase consumes RNG for rooms/corridors/doors/stairs
+    await mklev();
+
+    // C does this before makedog() so that the starting pet is placed next
+    // to the hero rather than next to the level-generation origin.
+    u_on_upstairs();
+    init_vision_globals();
+    vision_reset();
+    await checkSpecialRoom();
+
+    await makedog();
+    await uInitInventoryAttrs();
+    // Initial display
+    await docrt();
+    await flush_screen(1);
+    await bot();
+
+    while (g.u?.uroleplay?.reroll && await rerollMenu()) {
+        await uInitInventoryAttrs();
+        await bot();
+    }
+    const preSkillsStatus: StatusSnapshot = [_statusLine1(), _statusLine2()];
+
+    // C applies equipment, spells, discoveries, skills, spell-power minimum,
+    // and AC only after the final candidate has been accepted.  It does not
+    // redraw bot() here, so the legacy overlay still retains the pre-skill
+    // status row underneath it.
+    await finishStartingDiscoveries();
+
+    if (g.flags?.legacy) await showLegacy(preSkillsStatus);
+    g.program_state.something_worth_saving
+        = Number(g.program_state.something_worth_saving || 0) + 1;
+
+    // A new game begins with one complete hero movement ration.  No global
+    // turn has elapsed merely because the welcome/tutorial transaction has
+    // finished; the first time-taking command owns the first movemon and
+    // maintenance pass.  Compatibility paths historically hid this by
+    // skipping the generic maintenance block altogether.
+
+    // welcome() can wrap and wait before moveloop_preamble(). unixmain's
+    // discovery-mode notice follows it, also before calendar effects.
+    await plineWithContinuation(welcomeText());
+    // welcome(TRUE) records entry after its greeting has finished.
+    recordGameLogEvent(initialDungeonEntryText(g), { state: g, turn: 1 });
+    if (g.flags?.explore)
+        await plineWithContinuation('You are in non-scoring explore/discovery mode.');
+}
+
+// C ref: allmain.c moveloop_core()
+export async function moveloop_core() {
+    const g = requireInitializedGame();
+
+    if (g._saveExitPending) {
+        const display = g.nhDisplay;
+        display?.clearScreen();
+        putLine(0, 0, 'Be seeing you...');
+        display?.setCursor(0, 1);
+        await nhgetch();
+        return;
+    }
+
+    if (g.program_state?.gameover) {
+        await nhgetch();
+        return;
+    }
+
+    await moveloopPreamble();
+    if (g.program_state.gameover) return;
+    if (g.context.bypasses) clearImmediateZapBypasses(g);
+    const movementRationActionPending = !!g._heroTimePending;
+
+    // C allmain.c calls encumber_msg() immediately after a time-consuming
+    // command and before monster movement.  If its new message cannot share
+    // the pickup top line, tty suspends here; the acknowledgement resumes this
+    // same scheduler slice without consuming another hero action.
+    if (g.context?.move && g._capacityDirty) {
+        await reportHeroEncumbrance(g);
+    }
+
+    if (g._heroTimePending) {
+        for (;;) {
+            const somebodyCanMove = await moveMonsters();
+            if (g.program_state?.gameover) return;
+            if (!somebodyCanMove && g.u.umovement < NORMAL_SPEED) {
+                await advanceWorldTurn();
+                if (g.program_state?.gameover) return;
+            }
+            if (g.u.umovement < NORMAL_SPEED) continue;
+            if (!g._interruptedMultiActionDebt) break;
+            g._interruptedMultiActionDebt = false;
+            g.u.umovement -= NORMAL_SPEED;
+        }
+        g._heroTimePending = false;
+        g._heroActionSeq = (g._heroActionSeq ?? 0) + 1;
+        if (!g.program_state?.gameover)
+            finishOrDeferHeroTookTimeRng(g.moves || 1);
+    }
+
+    if (movementRationActionPending && !g.program_state?.gameover) {
+        await settleHeroLiquidAfterAction();
+        if (g.program_state?.gameover) return;
+    }
+
+    // C end.c installs the declined-debug-death recovery text as nomovemsg.
+    // The interrupted monster finishes every remaining attack slot, then
+    // moveloop completes the actor scan and any required global allocation
+    // before unmul() tries to append that text.  Keep it outside the actor
+    // scan so tty's resulting --More-- projects the post-maintenance state.
+    await finishDeathSurvivalMessage(g);
+
+    // allmain.c's once-per-player-input Amulet check follows all elapsed
+    // monster/global work and precedes find_ac()/vision/input.  A level
+    // teleport can finish several arrival pagers before returning here; the
+    // wish then begins without consuming a new hero action.
+    await grantAmuletWish();
+
+    // C allmain.c:find_ac() is a once-per-player-input operation after all
+    // monster/global time caused by the command.  Armor is already present
+    // in the worn slot, but attacks during that just-started donning turn
+    // still observe the previous u.uac; later negative-multi turns see the
+    // recomputed value.
+    if (g._armorClassDirty && !g._heroTimePending
+        && !g._armorClassDirtyAfterDelayedFrame) {
+        findArmorClass(g);
+        g._armorClassDirty = false;
+        delete g._statusProjectedAc;
+    }
+
+    if (g._prayerTurnsRemaining !== undefined && g._prayerTurnsRemaining > 0) {
+        const prayerTurn = g.moves || 1;
+        // C advances negative multi only in the newly allocated global-turn
+        // block.  A Fast hero can retain another full action in that same
+        // turn; prayer consumes that ration but must not shorten its nominal
+        // three-turn duration a second time.
+        if (g._prayerLastTickMove !== prayerTurn) {
+            await captureRunmodeDelay(
+                g, true, prayerTurn,
+                { preservePhysicalTopline: true },
+            );
+            g._prayerLastTickMove = prayerTurn;
+            g._prayerTurnsRemaining--;
+        }
+        g.context.move = 0;
+        if (g._prayerTurnsRemaining > 0) {
+            g.u.umoved = false;
+            g.u.umovement = (g.u.umovement ?? 12) - 12;
+            g._heroTimePending = true;
+            await currentLuaLifecycle().runCallbacks(g, 'end_turn');
+            return;
+        }
+        await finishPrayerOccupation(g);
+        if (g._prayerHeroTookTimePending != null) {
+            finishHeroTookTimeRng(g._prayerHeroTookTimePending);
+            g._prayerHeroTookTimePending = null;
+        }
+    }
+
+    // C allmain.c increments negative `multi` after the complete monster and
+    // global maintenance round, then invokes do_wear.c's afternmv callback.
+    // Keep this separate from counted occupations: no extra hero action is
+    // taken when the delayed armor effect and nomovemsg are committed.
+    if (g._delayedAction?.ready) {
+        const delayed = g._delayedAction;
+        g._delayedAction = null;
+        if (delayed.kind === 'wear') {
+            if (!delayed.object._armorApplied) {
+                findArmorClass(g);
+                delayed.object._armorApplied = true;
+            }
+            if (delayed.finishMessage)
+                await plineWithContinuation(delayed.finishMessage);
+            const effectMessages = await applyArmorOnEffects(delayed.object, g);
+            delayed.object.known = true;
+            const discoverArmorType = armorOnIdentifiesType(
+                delayed.object, effectMessages,
+            )
+                && !g._knownObjectTypes?.has(delayed.object.otyp);
+            const deferDiscoveryUntilAfterMessage
+                = delayed.object.otyp === 166;
+            if (discoverArmorType && !deferDiscoveryUntilAfterMessage) {
+                recordObjectKnowledge(delayed.object.otyp);
+                await exerciseAttribute(A_WIS, true);
+            }
+            const completionMessage = effectMessages.filter(Boolean).join('  ');
+            if (completionMessage)
+                await plineWithContinuation(completionMessage);
+            // If an actor line already owns tty, afternmv itself is resumed
+            // only after that pager is dismissed.  Attribute the makeknown()
+            // Wisdom credit to the resumed input boundary, not the capture
+            // which displayed the actor pager.
+            if (discoverArmorType && deferDiscoveryUntilAfterMessage) {
+                recordObjectKnowledge(delayed.object.otyp);
+                await exerciseAttribute(A_WIS, true);
+            }
+        } else if (delayed.kind === 'remove') {
+            // C allmain.c:unmul() emits nomovemsg before calling afternmv.
+            // If an earlier monster-combat line already owns tty, this await
+            // suspends at --More-- with the armor still worn; Armor_off()
+            // commits only after the continuation is acknowledged.
+            if (delayed.finishMessage)
+                await plineWithContinuation(delayed.finishMessage);
+            await finishArmorRemoval(delayed.object, { silent: true });
+        }
+        g._delayedAction = null;
+    } else if (g._delayedAction) {
+        // A delayed action spends movement without reading another command.
+        g.u.umoved = false;
+        g.context.move = 1;
+        g.u.umovement = (g.u.umovement ?? 12) - 12;
+        g._heroTimePending = true;
+        return;
+    }
+
+    if (g._vaultGuardArrivalPending) {
+        await continueVaultGuardArrival(g);
+        const continuation = g._vaultMaintenanceContinuation;
+        if (continuation) {
+            await finishInitialTurnMaintenanceRng(continuation.sourceTurn);
+            g._vaultMaintenanceContinuation = null;
+            if (g._vaultHeroTookTimePending != null) {
+                finishHeroTookTimeRng(g._vaultHeroTookTimePending);
+                g._vaultHeroTookTimePending = null;
+            }
+        }
+    }
+
+    // Vision + display
+    // C allmain.c refreshes the stationary input overlays before committing
+    // a delayed vision transaction.  Hero movement can both move actors
+    // across warning boundaries and leave vision_full_recalc set, so this
+    // source order is display-RNG-visible under Hallucination.
+    const hallucinatingNow = heroIsHallucinating(g);
+    if (!g.context?.mv) {
+        // The see_* calls remain in place while swallowed (newsym suppresses
+        // them), then swallowed(0) refreshes the eight-cell stomach projection
+        // from the same display RNG stream.
+        if (hallucinatingNow) {
+            await see_monsters();
+            see_objects();
+            see_traps();
+            if (g.u?.uswallow) swallowed(false);
+        } else if (g.u?.warning
+            || (g.u?.unblind_telepat_range ?? -1) >= 0
+            || g.level?.regions?.some(region => region.visible
+                && region.ttl !== -2)) {
+            await see_monsters();
+        }
+    }
+    if (g.vision_full_recalc) {
+        vision_recalc(0);
+        g.vision_full_recalc = 0;
+    }
+    // A removal message can leave the old AC on screen. Clear that temporary
+    // value before the ordinary status repaint.
+    delete g._statusAcOverride;
+    await bot();
+    await flush_screen(1);
+    heroEveryturnEffect(g);
+
+    // A negative C `multi` suppresses rhack() but still leaves context.move
+    // set, so the next moveloop invocation spends another hero action.  Once
+    // the once-per-turn owner above reaches zero, execution falls through and
+    // the recovery message is visible at the next real input boundary.
+    if ((g._helplessTurns || 0) > 0) {
+        g.u.umoved = false;
+        g.context.move = 1;
+        g.u.umovement = (g.u.umovement ?? 12) - 12;
+        g._heroTimePending = true;
+        await currentLuaLifecycle().runCallbacks(g, 'end_turn');
+        return;
+    }
+
+    // Count-prefixed occupations resume after the elapsed turn has settled
+    // and before tty asks for another key.  Search is the first live owner:
+    // `9s` is one explicit search plus eight scheduler-separated repeats.
+    if ((g.multi ?? 0) >= 0 && g._occupation) {
+        g.u.umoved = false;
+        const acted = await continueCountedCommand(g);
+        if (g.program_state.gameover) return;
+        if (acted && g.context?.move) {
+            g.u.umovement = (g.u.umovement ?? 12) - 12;
+            g._heroTimePending = true;
+        }
+        const countedMultiActive = g.multi > 0;
+        await captureRunmodeDelay(g, countedMultiActive);
+        return;
+    }
+
+    // C resumes a Shift-direction run here, after the elapsed action's
+    // monster/global maintenance and before asking for another key.  A
+    // successful automatic square is another timed hero action; an obstacle
+    // cancels the run and the following core invocation returns to input.
+    if (g.multi > 0 && g._runState) {
+        g.u.umoved = false;
+        const moved = await continueRun(g);
+        if (g.program_state.gameover) return;
+        if (moved) {
+            g.u.umovement = (g.u.umovement ?? 12) - 12;
+            g._heroTimePending = true;
+        }
+        if (moved) await currentLuaLifecycle().runCallbacks(g, 'end_turn');
+        return;
+    }
+
+    // tty ESC at --More-- suppresses later plines until the next real
+    // command read.  Preserve the overflow message already installed while
+    // reopening output for the command rhack() is about to request.
+    g._suppressMessagesUntilInput = false;
+
+    // Read and execute one command
+    g.u.umoved = false;
+    if (g.multi > 0) {
+        --g.multi;
+        await rhack(g._commandKey ?? 0);
+    } else {
+        await rhack(0);
+    }
+    if (g.program_state.gameover) return;
+
+    // Advance turn
+    if (g.context?.move) {
+        g.u.umovement = (g.u.umovement ?? 12) - 12;
+        g._heroTimePending = true;
+    }
+    await currentLuaLifecycle().runCallbacks(g, 'end_turn');
+}
+
+// C ref: allmain.c moveloop()
+export async function moveloop(resuming?: boolean): Promise<void> {
+    const game = requireInitializedGame();
+    await docrt();
+    await flush_screen(1);
+
+    for (;;) {
+        await moveloop_core();
+        if (game.program_state?.gameover) break;
+    }
+}

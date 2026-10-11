@@ -1,13 +1,13 @@
 import { game } from '../../js/gstate.js';
 import { bindLuaLifecycle, currentLuaLifecycle, LuaLifecycle } from '../../js/lua/lifecycle.js';
-
-export function startLuaCore(t, state = game) {
+export async function startLuaCore(t, state = game) {
     const previous = currentLuaLifecycle();
     const lifecycle = new LuaLifecycle();
     bindLuaLifecycle(lifecycle);
-    t.after(() => {
+    t.after(async () => {
         bindLuaLifecycle(previous);
-        lifecycle.destroy();
+        await lifecycle.destroy();
     });
-    return lifecycle.startCore(state);
+    return await lifecycle.startCore(state);
 }
+//# sourceMappingURL=lua-game.js.map

@@ -1,13 +1,14 @@
 // skills.js - Hero weapon/fighting/spell skill state and commands.
 // C refs: skills.h, u_init.c:skill_init(), weapon.c:doenhance().
-
-import { OBJECT_SUBTYPE } from './object_data.js';
-import { game } from './gstate.js';
-import { docrt } from './display.js';
-import { moreUntilDismissed, promptKey } from './tty_prompts.js';
-import { showPagedPickOneMenu, showTextPages } from './windows.js';
+import { OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE } from './object_data.js';
+import { MAXULEV, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, TIP_ENHANCE, } from './const.js';
+import { game, requireLiveGame } from './gstate.js';
+import { flushPendingTopline, plineWithContinuation } from './display.js';
+import { recordObjectKnowledge } from './object_knowledge.js';
+import { promptYesNo } from './query.js';
+import { showInventoryWindow } from './windows.js';
 import { ATR_INVERSE } from './terminal.js';
-
+import { rn2 } from './rng.js';
 export const SKILL_NAMES = [
     'no skill',
     'dagger', 'knife', 'axe', 'pick-axe', 'short sword', 'broadsword',
@@ -20,18 +21,15 @@ export const SKILL_NAMES = [
     'matter spells',
     'bare handed combat', 'two weapon combat', 'riding',
 ];
-
 export const SKILL_GROUPS = [
     { heading: 'Fighting Skills', first: 35, last: 37 },
     { heading: 'Weapon Skills', first: 1, last: 27 },
     { heading: 'Spellcasting Skills', first: 28, last: 34 },
 ];
-
 export const SKILL_LEVEL_NAMES = [
     'Restricted', 'Unskilled', 'Basic', 'Skilled',
     'Expert', 'Master', 'Grand Master',
 ];
-
 // u_init.c Skill_A and Skill_K.  Role maximums are distinct from the startup
 // inventory snapshot which promotes only weapons already carried to Basic.
 const ARCHEOLOGIST_MAXIMUMS = new Map([
@@ -111,12 +109,13 @@ const ROLE_STARTING_MAGIC_SKILLS = {
     priest: [32],
     wizard: [28, 31],
 };
-
 export function practiceNeededToAdvance(level) {
     return level * level * 20;
 }
-
 function roleMaximums(game) {
+    const key = game.urole?.key;
+    if (!key)
+        return null;
     return {
         archeologist: ARCHEOLOGIST_MAXIMUMS,
         barbarian: BARBARIAN_MAXIMUMS,
@@ -131,104 +130,154 @@ function roleMaximums(game) {
         tourist: TOURIST_MAXIMUMS,
         valkyrie: VALKYRIE_MAXIMUMS,
         wizard: WIZARD_MAXIMUMS,
-    }[game.urole?.key] || null;
+    }[key];
 }
-
+// Startup precedes skill_init(); admission uses the role's skill list.
+export function roleAllowsSpellbook(otyp, state) {
+    const skill = OBJECT_SUBTYPE[otyp];
+    return skill !== undefined && skill >= P_FIRST_SPELL
+        && skill <= P_LAST_SPELL && !!roleMaximums(state)?.has(skill);
+}
 function currentWeaponSkill(game, skill) {
-    if (!Number.isInteger(skill) || skill <= 0) return null;
+    if (!Number.isInteger(skill) || skill <= 0)
+        return null;
     const state = ensureHeroSkills(game)?.[skill];
     return state?.skill ?? null;
 }
-
 function effectiveWeaponSkill(game, skill) {
     const weaponSkill = currentWeaponSkill(game, skill);
-    if (weaponSkill === null) return null;
-    if (!game.u?.twoweap && !game.twoweap) return weaponSkill;
+    if (weaponSkill === null)
+        return null;
+    if (!game.u?.twoweap)
+        return weaponSkill;
     const twoWeaponSkill = currentWeaponSkill(game, 36);
     return Math.min(weaponSkill, twoWeaponSkill ?? 0);
 }
-
-// weapon.c:weapon_hit_bonus().  Returning zero for roles whose complete skill
-// table has not been ported keeps the owner explicit instead of treating an
-// unknown role as source-confirmed Basic.
+// Native weapon.c:weapon_hit_bonus().
 export function weaponSkillHitBonus(game, skill) {
     const level = effectiveWeaponSkill(game, skill);
-    if (level === null) return 0;
-    if (game.u?.twoweap || game.twoweap) {
-        if (level <= 1) return -9;
-        if (level === 2) return -7;
-        if (level === 3) return -5;
+    if (level === null)
+        return 0;
+    if (game.u?.twoweap) {
+        if (level <= 1)
+            return -9;
+        if (level === 2)
+            return -7;
+        if (level === 3)
+            return -5;
         return -3;
     }
-    if (level <= 1) return -4;
-    if (level === 2) return 0;
-    if (level === 3) return 2;
+    if (level <= 1)
+        return -4;
+    if (level === 2)
+        return 0;
+    if (level === 3)
+        return 2;
     return 3;
 }
-
 // weapon.c:weapon_dam_bonus().
 export function weaponSkillDamageBonus(game, skill) {
     const level = effectiveWeaponSkill(game, skill);
-    if (level === null) return 0;
-    if (game.u?.twoweap || game.twoweap) {
-        if (level <= 1) return -3;
-        if (level === 2) return -1;
-        if (level === 3) return 0;
+    if (level === null)
+        return 0;
+    if (game.u?.twoweap) {
+        if (level <= 1)
+            return -3;
+        if (level === 2)
+            return -1;
+        if (level === 3)
+            return 0;
         return 1;
     }
-    if (level <= 1) return -2;
-    if (level === 2) return 0;
-    if (level === 3) return 1;
+    if (level <= 1)
+        return -2;
+    if (level === 2)
+        return 0;
+    if (level === 3)
+        return 1;
     return 2;
 }
-
-export function recordWeaponPractice(game, skill, degree = 1) {
-    if (!Number.isInteger(skill) || skill <= 0) return;
-    if (!game.u._weaponPracticeBySkill)
-        game.u._weaponPracticeBySkill = Object.create(null);
-    game.u._weaponPracticeBySkill[skill] =
-        (game.u._weaponPracticeBySkill[skill] || 0) + degree;
-    const state = game.u.weaponSkills?.[skill];
-    if (state && state.skill > 0) state.advance += degree;
+// Native weapon.c:use_skill(). Practice can accumulate at a role's ceiling;
+// only the transition into eligibility produces advancement feedback.
+export async function useHeroSkill(skill, degree = 1, { state = game } = {}) {
+    requireLiveGame(state);
+    const proficiency = ensureHeroSkills(state)?.[skill];
+    if (skill === P_NONE || !proficiency || proficiency.skill === P_ISRESTRICTED)
+        return;
+    const wasEligible = canAdvanceHeroSkill(skill, { state });
+    // Native P_ADVANCE is an unsigned short, including on very long games.
+    proficiency.advance = (proficiency.advance + degree) & 0xffff;
+    if (!wasEligible && canAdvanceHeroSkill(skill, { state }))
+        await giveMayAdvanceMessage(skill, state);
 }
-
+export function canAdvanceHeroSkill(skill, { state = game, speedy = false } = {}) {
+    const proficiency = ensureHeroSkills(state)?.[skill];
+    if (!proficiency || proficiency.skill === P_ISRESTRICTED
+        || proficiency.skill >= proficiency.maxSkill
+        || (state.u.skillRecord?.length || 0) >= P_SKILL_LIMIT)
+        return false;
+    if (state.flags.debug && speedy)
+        return true;
+    return proficiency.advance >= practiceNeededToAdvance(proficiency.skill)
+        && (state.u.weapon_slots || 0) >= slotsRequiredToAdvance(skill, proficiency.skill);
+}
+async function giveMayAdvanceMessage(skill, state) {
+    const kind = skill === P_NONE ? '' : skill <= P_LAST_WEAPON ? 'weapon '
+        : skill <= P_LAST_SPELL ? 'spell casting ' : 'fighting ';
+    await plineWithContinuation(`You feel more confident in your ${kind}skills.`);
+    const tip = 1 << TIP_ENHANCE;
+    if (state.flags.tips !== false && !((state.context.tips ?? 0) & tip)) {
+        state.context.tips = (state.context.tips || 0) | tip;
+        await plineWithContinuation('(Tip: use the #enhance command to advance them.)');
+    }
+}
 export function ensureHeroSkills(game) {
-    if (game.u.weaponSkills) return game.u.weaponSkills;
+    if (game.u.weaponSkills)
+        return game.u.weaponSkills;
     const maximums = roleMaximums(game);
-    if (!maximums) return null;
-
+    if (!maximums)
+        return null;
     const skills = Array.from({ length: SKILL_NAMES.length }, () => ({
         skill: 0, maxSkill: 0, advance: 0,
     }));
     for (const [skill, maxSkill] of maximums) {
-        skills[skill].skill = 1;
-        skills[skill].maxSkill = maxSkill;
+        const proficiency = requiredSkill(skills, skill);
+        proficiency.skill = 1;
+        proficiency.maxSkill = maxSkill;
     }
-
-    for (const skill of ROLE_STARTING_MAGIC_SKILLS[game.urole?.key] || [])
-        skills[skill].skill = Math.max(skills[skill].skill, 2);
-
+    const startingMagic = game.urole ? ROLE_STARTING_MAGIC_SKILLS[game.urole.key] ?? [] : [];
+    for (const skill of startingMagic) {
+        const proficiency = requiredSkill(skills, skill);
+        proficiency.skill = Math.max(proficiency.skill, 2);
+    }
     // skill_init() observes the startup inventory once.  weapon_type()
     // accepts weapons, weapon-tools, and gems, then normalizes negative
     // missile skills; is_ammo() excludes only launcher ammunition
     // (bow/sling/crossbow), not darts, shuriken, or boomerangs.
     for (const item of game.inventory || []) {
-        if (!item._startingInventory) continue;
-        if (![2, 6, 13].includes(item.oclass)) continue;
+        if (!item._startingInventory)
+            continue;
+        if (![2, 6, 13].includes(item.oclass))
+            continue;
         const subtype = OBJECT_SUBTYPE[item.otyp];
-        if (!Number.isInteger(subtype) || subtype === 0) continue;
+        if (subtype === undefined || !Number.isInteger(subtype) || subtype === 0)
+            continue;
         const skill = Math.abs(subtype);
-        if (subtype < 0 && skill >= 20 && skill <= 22) continue;
-        if (!skills[skill]?.maxSkill) continue;
-        skills[skill].skill = Math.max(skills[skill].skill, 2);
+        if (subtype < 0 && skill >= 20 && skill <= 22)
+            continue;
+        const proficiency = skills[skill];
+        if (!proficiency?.maxSkill)
+            continue;
+        proficiency.skill = Math.max(proficiency.skill, 2);
     }
     // High-potential fighters begin Basic in unarmed/martial combat.
-    if (skills[35].maxSkill > 4)
-        skills[35].skill = 2;
+    const unarmed = requiredSkill(skills, 35);
+    if (unarmed.maxSkill > 4)
+        unarmed.skill = 2;
     // Knight's starting pony grants Basic riding.
-    if (game.urole?.key === 'knight' && skills[37].maxSkill)
-        skills[37].skill = 2;
-
+    const riding = requiredSkill(skills, 37);
+    if (game.urole?.key === 'knight' && riding.maxSkill)
+        riding.skill = 2;
     // u_init.c:pauper_reinit() removes every initially Basic-or-better
     // proficiency while retaining the role's advancement ceiling.
     if (game.u?.uroleplay?.pauper) {
@@ -240,33 +289,49 @@ export function ensureHeroSkills(game) {
         }
         game.u.weapon_slots = 2;
     }
-
-    for (let skill = 1; skill < skills.length; skill++) {
-        const state = skills[skill];
-        if (!state.skill) continue;
-        state.advance = practiceNeededToAdvance(state.skill - 1)
-            + (game.u._weaponPracticeBySkill?.[skill] || 0);
+    for (const state of skills.slice(1)) {
+        if (!state.skill)
+            continue;
+        state.advance = practiceNeededToAdvance(state.skill - 1);
     }
     game.u.weaponSkills = skills;
     game.u.skillRecord = [];
+    if (!game.u.uroleplay?.pauper)
+        identifySpellbooksForSkills(game);
     return skills;
 }
-
+function requiredSkill(skills, skill) {
+    const proficiency = skills[skill];
+    if (!proficiency)
+        throw new RangeError(`Hero skill ${skill} is missing`);
+    return proficiency;
+}
+function initializedSkills(state) {
+    const skills = ensureHeroSkills(state);
+    if (!skills)
+        throw new Error('Hero skills require an initialized role');
+    return skills;
+}
 function slotsRequiredToAdvance(skill, level) {
-    if (skill <= 27 || skill === 36) return level;
+    if (skill <= 27 || skill === 36)
+        return level;
     return Math.trunc((level + 1) / 2);
 }
-
-export function adjustWeaponSkillSlots(change, state = game) {
+export async function adjustWeaponSkillSlots(change, state = game) {
     const hero = state.u;
-    if (!hero || !Number.isInteger(change) || change === 0) return;
-    if (!Number.isInteger(hero.weapon_slots)) hero.weapon_slots = 0;
-
+    if (!hero || !Number.isInteger(change) || change === 0)
+        return;
+    if (hero.weapon_slots === undefined || !Number.isInteger(hero.weapon_slots))
+        hero.weapon_slots = 0;
     if (change > 0) {
+        const skills = initializedSkills(state);
+        const available = () => skills.filter((_proficiency, skill) => canAdvanceHeroSkill(skill, { state })).length;
+        const before = available();
         hero.weapon_slots += change;
+        if (available() > before)
+            await giveMayAdvanceMessage(P_NONE, state);
         return;
     }
-
     const skills = ensureHeroSkills(state);
     const record = hero.skillRecord || (hero.skillRecord = []);
     for (let remaining = -change; remaining > 0; remaining--) {
@@ -275,140 +340,183 @@ export function adjustWeaponSkillSlots(change, state = game) {
             continue;
         }
         const skill = record.pop();
+        if (skill === undefined)
+            continue;
         const skillState = skills?.[skill];
-        if (!skillState || skillState.skill <= 1) continue;
+        if (!skillState || skillState.skill <= 1)
+            continue;
         skillState.skill--;
-        hero.weapon_slots = slotsRequiredToAdvance(
-            skill, skillState.skill,
-        ) - 1;
+        hero.weapon_slots = slotsRequiredToAdvance(skill, skillState.skill) - 1;
     }
 }
-
-export function advanceHeroSkill(game, skill) {
-    const state = ensureHeroSkills(game)?.[skill];
-    if (!state || state.skill <= 0 || state.skill >= state.maxSkill)
-        return null;
-    state.skill++;
-    game.u.skillRecord.push(skill);
-    return state;
+// C weapon.c:drain_weapon_skill(). Refunded slots can train another skill.
+export async function drainHeroWeaponSkills(count, state = game) {
+    const skills = initializedSkills(state);
+    const record = state.u.skillRecord ||= [];
+    const forgotten = new Set();
+    for (let remaining = count; remaining > 0 && record.length; remaining--) {
+        const [skill] = record.splice(rn2(record.length), 1);
+        if (skill === undefined)
+            throw new Error('The drained skill record is missing');
+        const proficiency = requiredSkill(skills, skill);
+        if (proficiency.skill <= 1)
+            throw new Error(`Cannot drain unadvanced skill ${skill}`);
+        proficiency.skill--;
+        state.u.weapon_slots = (state.u.weapon_slots || 0)
+            + slotsRequiredToAdvance(skill, proficiency.skill);
+        const current = practiceNeededToAdvance(proficiency.skill);
+        const previous = practiceNeededToAdvance(proficiency.skill - 1);
+        if (proficiency.advance >= current)
+            proficiency.advance = previous + rn2(current - previous);
+        forgotten.add(skill);
+    }
+    for (const skill of [...forgotten].sort((left, right) => left - right)) {
+        const amount = requiredSkill(skills, skill).skill >= P_BASIC ? 'some of ' : '';
+        await plineWithContinuation(`You forget ${amount}your training in ${skillName(skill, state)}.`);
+    }
 }
-
+export function unrestrictHeroSkill(type, state = game) {
+    const skill = ensureHeroSkills(state)?.[type];
+    if (skill && skill.skill === 0) {
+        skill.skill = 1;
+        skill.maxSkill = 2;
+        skill.advance = 0;
+    }
+}
+// Native skill_advance(), reached only through a selectable #enhance entry.
+export async function advanceHeroSkill(state, skill, { speedy = false } = {}) {
+    requireLiveGame(state);
+    if (!canAdvanceHeroSkill(skill, { state, speedy }))
+        return null;
+    const proficiency = requiredSkill(initializedSkills(state), skill);
+    state.u.weapon_slots = (state.u.weapon_slots || 0)
+        - slotsRequiredToAdvance(skill, proficiency.skill);
+    proficiency.skill++;
+    (state.u.skillRecord ||= []).push(skill);
+    const degree = proficiency.skill >= proficiency.maxSkill ? 'most' : 'more';
+    await plineWithContinuation(`You are now ${degree} skilled in ${skillName(skill, state)}.`);
+    if (skill >= P_FIRST_SPELL && skill <= P_LAST_SPELL)
+        identifySpellbooksForSkills(state);
+    return proficiency;
+}
 function skillName(skill, state = game) {
     if (skill === 35
         && (state.urole?.key === 'monk' || state.urole?.key === 'samurai')) {
         return 'martial arts';
     }
-    return SKILL_NAMES[skill];
+    const name = SKILL_NAMES[skill];
+    if (name === undefined)
+        throw new RangeError(`Hero skill ${skill} has no name`);
+    return name;
 }
-
-function currentSkillPages() {
-    const skills = ensureHeroSkills(game);
-    if (!skills) return [];
-
-    const availableSkills = skills
-        .map((state, skill) => ({ state, skill }))
-        .filter(({ state, skill }) => skill > 0 && state.skill > 0);
-    const longest = Math.max(0, ...availableSkills.map(({ skill }) =>
-        skillName(skill).length));
-    const body = [];
-    for (const group of SKILL_GROUPS) {
-        body.push({ text: group.heading, attr: ATR_INVERSE, col: 1 });
-        for (let skill = group.first; skill <= group.last; skill++) {
-            const state = skills[skill];
-            if (!state?.skill) continue;
-            body.push(`   ${skillName(skill).padEnd(longest)} `
-                + `[${SKILL_LEVEL_NAMES[state.skill]}]`);
-        }
-    }
-
-    const pageSize = 21;
-    const pageCount = Math.max(1, Math.ceil(body.length / pageSize));
-    return Array.from({ length: pageCount }, (_, page) => {
-        const lines = Array(24).fill('');
-        lines[0] = { text: 'Current skills:', attr: ATR_INVERSE, col: 1 };
-        const entries = body.slice(page * pageSize, (page + 1) * pageSize);
-        for (let row = 0; row < entries.length; row++)
-            lines[row + 2] = entries[row];
-        const marker = pageCount > 1
-            ? `(${page + 1} of ${pageCount})` : '(end)';
-        lines[23] = ` ${marker}`;
-        return { lines, cursor: [marker.length + 1, 23] };
-    });
-}
-
-function menuLetter(index) {
-    if (index < 26) return String.fromCharCode(97 + index);
-    if (index < 52) return String.fromCharCode(65 + index - 26);
-    return String.fromCharCode(48 + ((index - 52) % 10));
-}
-
-function wizardEnhanceMenu() {
-    const skills = ensureHeroSkills(game);
-    if (!skills) return null;
-    const availableSkills = skills
-        .map((state, skill) => ({ state, skill }))
-        .filter(({ state, skill }) => skill > 0 && state.skill > 0);
-    const longest = Math.max(...availableSkills.map(({ skill }) =>
-        skillName(skill).length));
-    const rows = [
-        { text: 'Pick a skill to advance:', attr: ATR_INVERSE },
-        '',
-    ];
-    const choices = new Map();
-    let choiceIndex = 0;
-    for (const group of SKILL_GROUPS) {
-        rows.push({ text: group.heading, attr: ATR_INVERSE });
-        for (let skill = group.first; skill <= group.last; skill++) {
-            const state = skills[skill];
-            if (!state?.skill) continue;
-            const key = menuLetter(choiceIndex++);
-            const name = skillName(skill).padEnd(longest);
-            const level = SKILL_LEVEL_NAMES[state.skill].padEnd(12);
-            const practice = String(state.advance).padStart(5);
-            const needed = String(
-                practiceNeededToAdvance(state.skill),
-            ).padStart(4);
-            rows.push(`${key} -  ${name} ${level} ${practice}(${needed})`);
-            choices.set(key, skill);
-        }
-    }
-    return { rows, choices };
-}
-
 export async function doenhance() {
-    if (game.flags?.debug && game.urole?.key === 'knight') {
-        const answer = String.fromCharCode(await promptKey(
-            'Advance skills without practice? [yn] (n) ',
-        )).toLowerCase();
-        if (answer === 'y') {
-            for (;;) {
-                const menu = wizardEnhanceMenu();
-                if (!menu) break;
-                const skill = await showPagedPickOneMenu({
-                    ...menu, returnCancels: true,
-                });
-                if (skill === null) break;
-                const state = advanceHeroSkill(game, skill);
-                if (!state) break;
-                game._pending_message = '';
-                await docrt();
-                const degree = state.skill >= state.maxSkill
-                    ? 'most' : 'more';
-                await moreUntilDismissed(
-                    `You are now ${degree} skilled in ${
-                        skillName(skill)
-                    }.--More--`,
-                );
-            }
-            game._pending_message = '';
-            await docrt();
-            game.context.move = 0;
+    game.context.tips = (game.context.tips || 0) | (1 << TIP_ENHANCE);
+    let speedy = false;
+    if (game.flags.debug) {
+        await flushPendingTopline();
+        speedy = await promptYesNo('Advance skills without practice? [yn] (n) ') === 'y';
+    }
+    game.context.move = 0;
+    for (;;) {
+        const { items, available } = enhancementMenu(speedy, game);
+        let title = available ? 'Pick a skill to advance:' : 'Current skills:';
+        if (game.flags.debug && !speedy) {
+            const slots = game.u.weapon_slots || 0;
+            title += `  (${slots} slot${slots === 1 ? '' : 's'} available)`;
+        }
+        const selection = await showInventoryWindow([{ items }], {
+            title, pickMode: available ? PICK_ONE : PICK_NONE,
+        });
+        if (selection.value === undefined)
+            return;
+        await advanceHeroSkill(game, selection.value, { speedy });
+        const more = initializedSkills(game).some((_proficiency, skill) => canAdvanceHeroSkill(skill, { speedy }));
+        if (!more)
+            return;
+        if (!speedy) {
+            await plineWithContinuation('You feel you could be more dangerous!');
             return;
         }
     }
-    await showTextPages(currentSkillPages(), {
-        validKeys: [27, 32, 10, 13],
-    });
-    game._pending_message = '';
-    game.context.move = 0;
 }
+function enhancementMenu(speedy, state) {
+    const skills = initializedSkills(state);
+    const available = skills.filter((_proficiency, skill) => canAdvanceHeroSkill(skill, { state, speedy })).length;
+    const waiting = skills.filter((_proficiency, skill) => !canAdvanceHeroSkill(skill, { state, speedy }) && couldAdvanceSkill(skill, state)).length;
+    const peaked = skills.filter((_proficiency, skill) => !canAdvanceHeroSkill(skill, { state, speedy }) && !couldAdvanceSkill(skill, state)
+        && skillHasPeaked(skill, state)).length;
+    const marked = available + waiting + peaked > 0;
+    const items = [];
+    if (waiting) {
+        const heroLevel = state.u.ulevel;
+        if (heroLevel === undefined)
+            throw new Error('Skill advancement requires the hero experience level');
+        const when = heroLevel < MAXULEV ? "when you're more experienced"
+            : 'if skill slots become available';
+        items.push({ text: `(Skill${waiting === 1 ? '' : 's'} flagged by "*" may be enhanced ${when}.)` });
+    }
+    if (peaked)
+        items.push({ text: `(Skill${peaked === 1 ? '' : 's'} flagged by "#" cannot be enhanced any further.)` });
+    if (waiting || peaked)
+        items.push({ text: '' });
+    const longest = Math.max(...skills.map((proficiency, skill) => proficiency.skill ? skillName(skill, state).length : 0));
+    for (const group of SKILL_GROUPS) {
+        items.push({ text: group.heading, attr: ATR_INVERSE });
+        for (let skill = group.first; skill <= group.last; skill++) {
+            const proficiency = requiredSkill(skills, skill);
+            if (proficiency.skill === P_ISRESTRICTED)
+                continue;
+            const selectable = canAdvanceHeroSkill(skill, { state, speedy });
+            const prefix = !marked || selectable ? '' : couldAdvanceSkill(skill, state) ? '  * '
+                : skillHasPeaked(skill, state) ? '  # ' : '    ';
+            const name = skillName(skill, state);
+            const level = SKILL_LEVEL_NAMES[proficiency.skill];
+            if (level === undefined)
+                throw new RangeError(`Unknown proficiency level ${proficiency.skill}`);
+            let text;
+            if (state.flags.debug) {
+                const practice = `${String(proficiency.advance).padStart(5)}(${String(practiceNeededToAdvance(proficiency.skill)).padStart(4)})`;
+                text = state.iflags.menu_tab_sep ? ` ${prefix}${name}\t${level}\t${practice}`
+                    : ` ${prefix}${name.padEnd(longest)} ${level.padEnd(12)} ${practice}`;
+            }
+            else {
+                text = state.iflags.menu_tab_sep ? ` ${prefix}${name}\t[${level}]`
+                    : ` ${prefix} ${name.padEnd(longest)} [${level}]`;
+            }
+            items.push(selectable ? { text, value: skill } : { text });
+        }
+    }
+    return { items, available };
+}
+function couldAdvanceSkill(skill, state) {
+    const proficiency = state.u.weaponSkills?.[skill];
+    return !!proficiency && proficiency.skill !== P_ISRESTRICTED && proficiency.skill < proficiency.maxSkill
+        && (state.u.skillRecord?.length || 0) < P_SKILL_LIMIT
+        && proficiency.advance >= practiceNeededToAdvance(proficiency.skill);
+}
+function skillHasPeaked(skill, state) {
+    const proficiency = state.u.weaponSkills?.[skill];
+    return !!proficiency && proficiency.skill !== P_ISRESTRICTED && proficiency.skill >= proficiency.maxSkill
+        && proficiency.advance >= practiceNeededToAdvance(proficiency.skill);
+}
+// Native spell.c:skill_based_spellbook_id() grants knowledge without an
+// encounter or Wisdom exercise, and reevaluates every school after a gain.
+function identifySpellbooksForSkills(state) {
+    if (state.urole?.key !== 'wizard')
+        return;
+    const skills = initializedSkills(state);
+    for (let type = 0; type < OBJECT_SPELL_CATEGORY.length; type++) {
+        if (!OBJECT_SPELL_CATEGORY[type])
+            continue;
+        const category = OBJECT_SUBTYPE[type];
+        const spellLevel = OBJECT_SPELL_LEVEL[type];
+        if (category === undefined || spellLevel === undefined)
+            throw new Error(`Spellbook ${type} has incomplete skill data`);
+        const skill = requiredSkill(skills, category).skill;
+        const level = skill >= P_EXPERT ? 7 : skill === P_SKILLED ? 5
+            : skill === P_BASIC ? 3 : state.u.uroleplay?.pauper ? 0 : 1;
+        if (spellLevel <= level)
+            recordObjectKnowledge(type, state);
+    }
+}
+//# sourceMappingURL=skills.js.map

@@ -1,17 +1,26 @@
-// Intelligence and experience adjust direct spell damage.
-// C ref: zap.c spell_damage_bonus().
-
+// Spell damage bonuses and the hero's half-spell-damage protection.
+// C refs: zap.c spell_damage_bonus() and youprop.h Half_spell_damage.
 import { currentAttribute } from './attrib.js';
 import { A_INT } from './const.js';
 import { game } from './gstate.js';
-
+import { heroHasCarriedArtifactFlag } from './artifacts.js';
+// C youprop.h:Half_spell_damage, including carried artifact extrinsics.
+export function heroHasHalfSpellDamage(state = game) {
+    return !!(state.u?.halfSpellDamage
+        || (state.u?.halfSpellDamageTurns ?? 0) > 0
+        || heroHasCarriedArtifactFlag('SPFX_HSPDAM', state));
+}
 export function adjustSpellDamage(damage, state = game) {
     const intelligence = currentAttribute(A_INT, state) ?? 10;
     const level = state.u?.ulevel ?? 1;
     if (intelligence <= 9)
         return damage > 1 ? Math.max(1, damage - 3) : damage;
-    if (intelligence <= 13 || level < 5) return damage;
-    if (intelligence <= 18) return damage + 1;
-    if (intelligence <= 24 || level < 14) return damage + 2;
+    if (intelligence <= 13 || level < 5)
+        return damage;
+    if (intelligence <= 18)
+        return damage + 1;
+    if (intelligence <= 24 || level < 14)
+        return damage + 2;
     return damage + 3;
 }
+//# sourceMappingURL=spell_damage.js.map

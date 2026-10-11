@@ -5,7 +5,7 @@
 // patched NetHack 5.0 "recorder" binary with NOMUX_MARKERS=1, drives
 // it one key at a time using in-band stdout sync markers (OSC 7777),
 // reads PRNG calls from the rng-log file, and writes a fresh
-// session.json that is byte-equal to the canonical recordings.
+// session.json with the native input observations.
 //
 // Usage:
 //   node scripts/record-session.mjs <input.session.json> [output.session.json]
@@ -18,52 +18,49 @@
 //
 // The recorder binary must be built from the patched submodule.
 // See nethack-c/build-recorder.sh.
-
 import { spawn } from 'node:child_process';
 import { promises as fs, constants as fsConstants } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import os from 'node:os';
 import path from 'node:path';
 import { createSessionDriver } from './lib/session-driver.mjs';
-
+import { decodeSession, errorMessage, itemAt } from './lib/session-types.mjs';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_ROOT = path.resolve(SCRIPT_DIR, '..');
-const DEFAULT_BINARY = path.join(
-    TEMPLATE_ROOT, 'nethack-c', 'recorder', 'install',
-    'games', 'lib', 'nethackdir', 'nethack');
-const DEFAULT_INSTALL = path.join(
-    TEMPLATE_ROOT, 'nethack-c', 'recorder', 'install',
-    'games', 'lib', 'nethackdir');
-
+const DEFAULT_BINARY = path.join(TEMPLATE_ROOT, 'nethack-c', 'recorder', 'install', 'games', 'lib', 'nethackdir', 'nethack');
+const DEFAULT_INSTALL = path.join(TEMPLATE_ROOT, 'nethack-c', 'recorder', 'install', 'games', 'lib', 'nethackdir');
 // ---------------------------------------------------------------------------
 // Screen encoding — ports run_session.py compress_ansi_line +
-// encode_screen_ansi_rle to produce byte-equal output.
+// encode_screen_ansi_rle capture format.
 // ---------------------------------------------------------------------------
-
 function compressAnsiLine(line) {
-    if (!line) return '';
+    if (!line)
+        return '';
     let out = '';
     let i = 0;
     while (i < line.length) {
         if (line[i] === ' ') {
             const start = i;
-            while (i < line.length && line[i] === ' ') i++;
+            while (i < line.length && line[i] === ' ')
+                i++;
             const run = i - start;
             if (run >= 5) {
                 out += `\x1b[${run}C`;
-            } else {
+            }
+            else {
                 out += ' '.repeat(run);
             }
-        } else {
+        }
+        else {
             out += line[i];
             i += 1;
         }
     }
     return out;
 }
-
 function encodeScreenAnsiRle(lines) {
-    if (!lines || lines.length === 0) return '';
+    if (!lines || lines.length === 0)
+        return '';
     const compressed = lines.map((line) => {
         // Trailing spaces are implicit
         const stripped = line.replace(/ +$/u, '');
@@ -74,11 +71,9 @@ function encodeScreenAnsiRle(lines) {
     }
     return compressed.join('\n');
 }
-
 // ---------------------------------------------------------------------------
 // OSC 7777 marker stream parser
 // ---------------------------------------------------------------------------
-
 // Marker wire format (emitted by patched termcap.c):
 //   ESC ] 7777 ; KIND=input ; SEQ=N ; ANIM=K ; CX=cx ; CY=cy ; LEN=L BEL
 //   <L bytes of screen content>
@@ -87,27 +82,29 @@ function encodeScreenAnsiRle(lines) {
 // rendered screen serialization (escape sequences preserved verbatim).
 // The parser is byte-oriented and handles the payload as raw bytes — a
 // BEL inside the payload must not terminate the next header.
-
 class MarkerParser {
+    onMarker;
+    chunks;
+    head;
+    size;
+    stopped;
     constructor(onMarker) {
         this.onMarker = onMarker;
         // Chunks waiting to be parsed, plus a logical offset into the
         // first chunk.  Avoids O(n^2) Buffer.concat on hot streams.
         this.chunks = [];
-        this.head = 0;        // bytes already consumed in chunks[0]
-        this.size = 0;        // total unconsumed bytes
+        this.head = 0; // bytes already consumed in chunks[0]
+        this.size = 0; // total unconsumed bytes
         this.stopped = false;
     }
-
     stop() { this.stopped = true; this.chunks = []; this.size = 0; this.head = 0; }
-
     push(chunk) {
-        if (this.stopped) return;
+        if (this.stopped)
+            return;
         this.chunks.push(chunk);
         this.size += chunk.length;
         this._drain();
     }
-
     _flatten(n) {
         // Materialize the next n bytes into a single Buffer.
         const out = Buffer.allocUnsafe(n);
@@ -115,26 +112,29 @@ class MarkerParser {
         let chunkIdx = 0;
         let chunkOff = this.head;
         while (off < n) {
-            const c = this.chunks[chunkIdx];
+            const c = itemAt(this.chunks, chunkIdx);
             const take = Math.min(n - off, c.length - chunkOff);
             c.copy(out, off, chunkOff, chunkOff + take);
             off += take;
             chunkOff += take;
-            if (chunkOff >= c.length) { chunkIdx += 1; chunkOff = 0; }
+            if (chunkOff >= c.length) {
+                chunkIdx += 1;
+                chunkOff = 0;
+            }
         }
         return out;
     }
-
     _consume(n) {
         // Discard the next n bytes from the queue.
         let remaining = n;
         while (remaining > 0 && this.chunks.length > 0) {
-            const c = this.chunks[0];
+            const c = itemAt(this.chunks, 0);
             const avail = c.length - this.head;
             if (remaining < avail) {
                 this.head += remaining;
                 remaining = 0;
-            } else {
+            }
+            else {
                 remaining -= avail;
                 this.chunks.shift();
                 this.head = 0;
@@ -142,30 +142,36 @@ class MarkerParser {
         }
         this.size -= n;
     }
-
     _findByte(byte, fromOffset) {
         // Locate `byte` starting at `fromOffset` bytes from the logical start.
         let skip = fromOffset;
         let chunkIdx = 0;
         let chunkOff = this.head;
         while (chunkIdx < this.chunks.length && skip > 0) {
-            const c = this.chunks[chunkIdx];
+            const c = itemAt(this.chunks, chunkIdx);
             const avail = c.length - chunkOff;
-            if (skip < avail) { chunkOff += skip; skip = 0; }
-            else { skip -= avail; chunkIdx += 1; chunkOff = 0; }
+            if (skip < avail) {
+                chunkOff += skip;
+                skip = 0;
+            }
+            else {
+                skip -= avail;
+                chunkIdx += 1;
+                chunkOff = 0;
+            }
         }
         let pos = fromOffset;
         while (chunkIdx < this.chunks.length) {
-            const c = this.chunks[chunkIdx];
+            const c = itemAt(this.chunks, chunkIdx);
             const idx = c.indexOf(byte, chunkOff);
-            if (idx >= 0) return pos + (idx - chunkOff);
+            if (idx >= 0)
+                return pos + (idx - chunkOff);
             pos += c.length - chunkOff;
             chunkIdx += 1;
             chunkOff = 0;
         }
         return -1;
     }
-
     _findIntroducer() {
         // Returns the logical offset of "\x1b]7777;" from start, or -1.
         // Must check across chunk boundaries — flatten search by scanning
@@ -176,120 +182,140 @@ class MarkerParser {
         const needle = Buffer.from('\x1b]7777;');
         // Collect a small rolling window across chunks if needed.
         while (chunkIdx < this.chunks.length) {
-            const c = this.chunks[chunkIdx];
+            const c = itemAt(this.chunks, chunkIdx);
             const sub = c.subarray(chunkOff);
             const idx = sub.indexOf(0x1b);
             if (idx < 0) {
                 pos += sub.length;
-                chunkIdx += 1; chunkOff = 0;
+                chunkIdx += 1;
+                chunkOff = 0;
                 continue;
             }
             // Try a 7-byte match starting at this ESC.  May span chunks.
             const startPos = pos + idx;
-            if (this._matchAt(startPos, needle)) return startPos;
+            if (this._matchAt(startPos, needle))
+                return startPos;
             // Skip past this ESC and continue.
             const stepBytes = idx + 1;
             pos += stepBytes;
             chunkOff += stepBytes;
-            if (chunkOff >= c.length) { chunkIdx += 1; chunkOff = 0; }
+            if (chunkOff >= c.length) {
+                chunkIdx += 1;
+                chunkOff = 0;
+            }
         }
         return -1;
     }
-
     _matchAt(startOffset, needle) {
-        if (this.size - startOffset < needle.length) return false;
+        if (this.size - startOffset < needle.length)
+            return false;
         let needleOff = 0;
         let pos = 0;
         let chunkIdx = 0;
         let chunkOff = this.head;
         // Advance to startOffset
         while (pos < startOffset) {
-            const c = this.chunks[chunkIdx];
+            const c = itemAt(this.chunks, chunkIdx);
             const avail = c.length - chunkOff;
             const skip = Math.min(avail, startOffset - pos);
             chunkOff += skip;
             pos += skip;
-            if (chunkOff >= c.length) { chunkIdx += 1; chunkOff = 0; }
+            if (chunkOff >= c.length) {
+                chunkIdx += 1;
+                chunkOff = 0;
+            }
         }
         while (needleOff < needle.length) {
-            const c = this.chunks[chunkIdx];
+            const c = itemAt(this.chunks, chunkIdx);
             const avail = c.length - chunkOff;
             const take = Math.min(avail, needle.length - needleOff);
             for (let i = 0; i < take; i++) {
-                if (c[chunkOff + i] !== needle[needleOff + i]) return false;
+                if (c[chunkOff + i] !== needle[needleOff + i])
+                    return false;
             }
             needleOff += take;
             chunkOff += take;
-            if (chunkOff >= c.length) { chunkIdx += 1; chunkOff = 0; }
+            if (chunkOff >= c.length) {
+                chunkIdx += 1;
+                chunkOff = 0;
+            }
         }
         return true;
     }
-
     _drain() {
         while (!this.stopped) {
             const introStart = this._findIntroducer();
             if (introStart < 0) {
                 // Drop all bytes — no introducer in flight.  Leave at most
                 // 6 trailing bytes in case an ESC starts a partial match.
-                if (this.size > 7) this._consume(this.size - 7);
+                if (this.size > 7)
+                    this._consume(this.size - 7);
                 return;
             }
-            if (introStart > 0) this._consume(introStart);
+            if (introStart > 0)
+                this._consume(introStart);
             // Find BEL after the 7-byte introducer.
             const bel = this._findByte(0x07, 7);
-            if (bel < 0) return;  // wait for more
+            if (bel < 0)
+                return; // wait for more
             const headerBuf = this._flatten(bel);
             const header = headerBuf.subarray(7).toString('ascii');
             const meta = parseMarkerHeader(header);
             const need = bel + 1 + meta.len;
-            if (this.size < need) return;  // wait for full payload
+            if (this.size < need)
+                return; // wait for full payload
             const headerLen = bel + 1;
             this._consume(headerLen);
             const payloadBuf = this._flatten(meta.len);
             this._consume(meta.len);
             const payload = payloadBuf.toString('utf8');
             this.onMarker({ ...meta, payload });
-            if (this.stopped) return;
+            if (this.stopped)
+                return;
         }
     }
 }
-
 function parseMarkerHeader(header) {
     const out = { kind: '', seq: 0, anim: 0, cx: 0, cy: 0, len: 0 };
     for (const part of header.split(';')) {
         const eq = part.indexOf('=');
-        if (eq < 0) continue;
+        if (eq < 0)
+            continue;
         const k = part.slice(0, eq);
         const v = part.slice(eq + 1);
-        if (k === 'KIND') out.kind = v;
-        else if (k === 'SEQ') out.seq = parseInt(v, 10) || 0;
-        else if (k === 'ANIM') out.anim = parseInt(v, 10) || 0;
-        else if (k === 'CX') out.cx = parseInt(v, 10) || 0;
-        else if (k === 'CY') out.cy = parseInt(v, 10) || 0;
-        else if (k === 'LEN') out.len = parseInt(v, 10) || 0;
+        if (k === 'KIND')
+            out.kind = v;
+        else if (k === 'SEQ')
+            out.seq = parseInt(v, 10) || 0;
+        else if (k === 'ANIM')
+            out.anim = parseInt(v, 10) || 0;
+        else if (k === 'CX')
+            out.cx = parseInt(v, 10) || 0;
+        else if (k === 'CY')
+            out.cy = parseInt(v, 10) || 0;
+        else if (k === 'LEN')
+            out.len = parseInt(v, 10) || 0;
     }
     return out;
 }
-
 // ---------------------------------------------------------------------------
 // Screen payload → 24-line array
 // ---------------------------------------------------------------------------
-
 function payloadToLines(payload) {
     const lines = payload.split('\n');
-    while (lines.length < 24) lines.push('');
+    while (lines.length < 24)
+        lines.push('');
     return lines.slice(0, 24);
 }
-
 // ---------------------------------------------------------------------------
 // PRNG log parsing (mirrors run_session.py parse_rng_lines)
 // ---------------------------------------------------------------------------
-
 function parseRngLines(text) {
     const out = [];
     for (const raw of text.split('\n')) {
         const line = raw.trimEnd();
-        if (!line) continue;
+        if (!line)
+            continue;
         const c0 = line[0];
         if (c0 === '>' || c0 === '<' || c0 === '^') {
             out.push(line);
@@ -297,32 +323,33 @@ function parseRngLines(text) {
         }
         // Format: "2808 rn2(12) = 2 @ mon.c:1145"
         const sp = line.indexOf(' ');
-        if (sp < 0) continue;
+        if (sp < 0)
+            continue;
         const rest = line.slice(sp + 1).replace(' = ', '=');
         out.push(rest);
     }
     return out;
 }
-
 // ---------------------------------------------------------------------------
 // Session loading / segment driving
 // ---------------------------------------------------------------------------
-
 async function loadSession(p) {
     const txt = await fs.readFile(p, 'utf8');
-    const data = JSON.parse(txt);
-    if (data.version !== 5 || !Array.isArray(data.segments)) {
-        throw new Error(`unsupported session shape: ${p} (need clean v5)`);
+    try {
+        return decodeSession(JSON.parse(txt));
     }
-    return data;
+    catch (error) {
+        throw new Error(`invalid v5 session ${p}: ${errorMessage(error)}`, { cause: error });
+    }
 }
-
 function parseNethackrcName(rc) {
-    if (!rc) return null;
+    if (!rc)
+        return null;
     for (const rawLine of rc.split('\n')) {
         const line = rawLine.trim();
         const upper = line.toUpperCase();
-        if (!(upper.startsWith('OPTIONS=') || upper.startsWith('OPTIONS ='))) continue;
+        if (!(upper.startsWith('OPTIONS=') || upper.startsWith('OPTIONS =')))
+            continue;
         const opts = line.slice(line.indexOf('=') + 1);
         for (const opt of opts.split(',')) {
             const t = opt.trim();
@@ -333,56 +360,71 @@ function parseNethackrcName(rc) {
     }
     return null;
 }
-
 async function ensureScorefiles(installDir) {
     for (const name of ['record', 'xlogfile', 'logfile']) {
         const p = path.join(installDir, name);
         try {
             const fh = await fs.open(p, 'a');
             await fh.close();
-        } catch {}
+        }
+        catch { }
     }
 }
-
+// NetHack level files are "<lock>.<ledger level>" (files.c
+// set_levelfile_name).  unixunix.c getlock() names <lock> either
+// "[a-y]lock" when sysconf MAXPLAYERS limits concurrent games, or
+// "<uid><plname>" with '.', '/' and ' ' regularized to '_'.  A recorder
+// killed at its input boundary leaves every level file it created.
+function isLevelFile(name) {
+    const match = /^([^./ ]+)\.\d+$/u.exec(name);
+    if (!match)
+        return false;
+    const lock = match[1] ?? '';
+    if (/^[a-y]lock$/u.test(lock))
+        return true;
+    const uid = process.getuid?.();
+    return uid !== undefined && lock.length > String(uid).length && lock.startsWith(String(uid));
+}
 async function clearStaleState(installDir) {
     const saveDir = path.join(installDir, 'save');
     try {
         const entries = await fs.readdir(saveDir);
-        await Promise.all(entries.map((e) => fs.unlink(path.join(saveDir, e)).catch(() => {})));
-    } catch {}
+        await Promise.all(entries.map((e) => fs.unlink(path.join(saveDir, e)).catch(() => { })));
+    }
+    catch { }
     // Strip lock/bones/wizard files that interfere with deterministic replay.
     let entries = [];
-    try { entries = await fs.readdir(installDir); } catch {}
+    try {
+        entries = await fs.readdir(installDir);
+    }
+    catch { }
     const killNames = new Set(['record', 'xlogfile', 'logfile', 'paniclog']);
     for (const name of entries) {
         const lower = name.toLowerCase();
         const full = path.join(installDir, name);
         let st;
-        try { st = await fs.stat(full); } catch { continue; }
-        if (!st.isFile()) continue;
-        if (name.endsWith('.lua')) continue;
+        try {
+            st = await fs.stat(full);
+        }
+        catch {
+            continue;
+        }
+        if (!st.isFile())
+            continue;
+        if (name.endsWith('.lua'))
+            continue;
         if (killNames.has(lower)
             || lower.startsWith('bon')
-            || lower.endsWith('.0')
+            || isLevelFile(name)
             || lower.includes('wizard')
             || lower.includes('recorder')
             || lower.includes('agent')) {
-            await fs.unlink(full).catch(() => {});
+            await fs.unlink(full).catch(() => { });
         }
     }
     await ensureScorefiles(installDir);
 }
-
-async function recordSegment({
-    seg,
-    isFirstSegment,
-    binary,
-    installDir,
-    rngLogPath,
-    homeDir,
-    tz,
-    quiet,
-}) {
+async function recordSegment({ seg, isFirstSegment, binary, installDir, rngLogPath, homeDir, tz, quiet, }) {
     // Write nethackrc into homeDir
     await fs.mkdir(homeDir, { recursive: true });
     await fs.writeFile(path.join(homeDir, '.nethackrc'), seg.nethackrc || '');
@@ -393,11 +435,10 @@ async function recordSegment({
     // restarts NetHack and restores from the save file in
     // <install>/save/.  Clearing between segments would destroy that
     // save file and turn the restore into a fresh game.
-    if (isFirstSegment) await clearStaleState(installDir);
-
+    if (isFirstSegment)
+        await clearStaleState(installDir);
     const playerName = parseNethackrcName(seg.nethackrc) ?? '';
     const args = ['-u', playerName];
-
     const env = {
         ...process.env,
         NETHACKDIR: installDir,
@@ -412,7 +453,6 @@ async function recordSegment({
         NOMUX_MARKERS: '1',
         NETHACK_RAW_KEYS: '1',
     };
-
     // Some legacy sessions have steps[].key populated but moves
     // empty. Fall back to reconstructing moves from step keys
     // (skipping the null initial step) so they replay.
@@ -420,51 +460,65 @@ async function recordSegment({
     if (!moves && Array.isArray(seg.steps)) {
         const reconstructed = [];
         for (const s of seg.steps) {
-            if (s.key != null) reconstructed.push(s.key);
+            if (s.key != null)
+                reconstructed.push(s.key);
         }
         moves = reconstructed.join('');
     }
-    const driver = seg.driver ? createSessionDriver(seg.driver) : null;
-    if (driver && moves) throw new Error('segment cannot provide both moves and driver');
+    const driver = seg.driver ? await createSessionDriver(seg.driver) : null;
+    if (driver && moves)
+        throw new Error('segment cannot provide both moves and driver');
     const expectedSteps = driver ? null : moves.length + 1;
     const steps = [];
     let lastRngBytes = 0;
     let nextKeyIdx = 0;
     let timeoutHandle = null;
-    let resolveDone, rejectDone;
+    const completion = {};
     let settled = false;
+    let termination = 'process-exit';
+    let exitCode = null;
     const done = new Promise((res, rej) => {
-        resolveDone = (v) => { if (!settled) { settled = true; res(v); } };
-        rejectDone = (e) => { if (!settled) { settled = true; rej(e); } };
+        completion.resolve = (v) => { if (!settled) {
+            settled = true;
+            res(v);
+        } };
+        completion.reject = (e) => { if (!settled) {
+            settled = true;
+            rej(e);
+        } };
     });
-
+    const { resolve: resolveDone, reject: rejectDone } = completion;
+    if (!resolveDone || !rejectDone)
+        throw new Error('Recorder completion was not initialized');
     const armTimeout = (ms, why) => {
-        if (timeoutHandle) clearTimeout(timeoutHandle);
+        if (timeoutHandle)
+            clearTimeout(timeoutHandle);
         timeoutHandle = setTimeout(() => {
             rejectDone(new Error(`recorder timeout: ${why} (after ${ms}ms)`));
         }, ms);
     };
-
     const child = spawn(binary, args, {
         env,
         stdio: ['pipe', 'pipe', quiet ? 'pipe' : 'inherit'],
     });
-    let resolveClosed;
-    const childClosed = new Promise(resolve => { resolveClosed = resolve; });
-    child.stdin.on('error', () => {});
+    const input = child.stdin;
+    const output = child.stdout;
+    if (!input || !output)
+        throw new Error('recorder requires stdin and stdout pipes');
+    const childClosed = new Promise(resolve => { child.once('close', () => resolve()); });
+    input.on('error', () => { });
     // A sealed recorder must not forward diagnostics which could contain
     // session identity. Consume a bounded amount so the child cannot block;
     // the sealed wrapper reports only a generic failure.
     let quietStderrBytes = 0;
-    if (quiet) child.stderr.on('data', chunk => {
-        quietStderrBytes += chunk.length;
-        if (quietStderrBytes > 1024 * 1024) {
-            rejectDone(new Error('recorder diagnostic output exceeded sealed limit'));
-        }
-    });
-
+    if (quiet)
+        child.stderr?.on('data', (chunk) => {
+            quietStderrBytes += chunk.length;
+            if (quietStderrBytes > 1024 * 1024) {
+                rejectDone(new Error('recorder diagnostic output exceeded sealed limit'));
+            }
+        });
     armTimeout(20000, 'first marker');
-
     const readRngDelta = async () => {
         let rngText = '';
         try {
@@ -477,22 +531,30 @@ async function recordSegment({
                     rngText = buf.toString('utf8');
                     lastRngBytes = st.size;
                 }
-            } finally {
+            }
+            finally {
                 await fh.close();
             }
-        } catch {}
+        }
+        catch { }
         return parseRngLines(rngText);
     };
-
     const finish = (reason) => {
+        termination = 'input-boundary';
         parser.stop();
-        if (timeoutHandle) clearTimeout(timeoutHandle);
-        try { child.kill('SIGTERM'); } catch {}
+        if (timeoutHandle)
+            clearTimeout(timeoutHandle);
+        try {
+            child.kill('SIGTERM');
+        }
+        catch { }
         // Force close in case it ignores SIGTERM.
-        setTimeout(() => { try { child.kill('SIGKILL'); } catch {} }, 1000).unref();
+        setTimeout(() => { try {
+            child.kill('SIGKILL');
+        }
+        catch { } }, 1000).unref();
         resolveDone(reason);
     };
-
     // Buffer of 'anim' markers received between consecutive 'input'
     // markers.  When the next input marker closes a step, the buffered
     // anim screens are attached to that step as `animation_frames`,
@@ -506,7 +568,8 @@ async function recordSegment({
             });
             return;
         }
-        if (m.kind !== 'input') return;
+        if (m.kind !== 'input')
+            return;
         if (expectedSteps !== null && steps.length >= expectedSteps) {
             // We have everything we need; tear down.
             finish('expected steps reached');
@@ -524,17 +587,21 @@ async function recordSegment({
                 pendingAnimFrames = [];
             }
             steps.push(step);
-
             if (expectedSteps !== null && steps.length >= expectedSteps) {
                 finish('expected steps reached');
                 return;
             }
             let k = null;
             if (driver) {
-                k = driver.nextKey(screenLines);
-                if (k !== null) moves += k;
-            } else if (nextKeyIdx < moves.length) {
-                k = moves[nextKeyIdx];
+                k = driver.nextKey(screenLines, { cursor: [m.cx, m.cy, 1] });
+                if (k !== null && (typeof k !== 'string' || k.length !== 1)) {
+                    throw new Error('session driver must return one key or null');
+                }
+                if (k !== null)
+                    moves += k;
+            }
+            else if (nextKeyIdx < moves.length) {
+                k = moves.charAt(nextKeyIdx);
             }
             if (k !== null) {
                 nextKeyIdx++;
@@ -544,41 +611,61 @@ async function recordSegment({
                 // line discipline, so we replicate that translation on the
                 // way out.  (DEL / 0x7f is fine to send verbatim because the
                 // patched gettty seeds erase_char with '\177'.)
-                if (k === '\r') k = '\n';
-                child.stdin.write(Buffer.from(k, 'utf8'));
+                if (k === '\r')
+                    k = '\n';
+                input.write(Buffer.from(k, 'utf8'));
                 armTimeout(20000, driver
                     ? `after adaptive key ${nextKeyIdx}`
                     : `after key ${nextKeyIdx}/${moves.length}`);
-            } else if (!child.stdin.writableEnded) {
-                if (driver) {
+            }
+            else if (!input.writableEnded) {
+                if (driver?.expectsExit) {
+                    if (exitCode !== 0)
+                        armTimeout(10000, 'awaiting planned native exit');
+                }
+                else if (driver) {
                     finish('adaptive driver complete');
-                } else {
-                    try { child.stdin.end(); } catch {}
+                }
+                else {
+                    try {
+                        input.end();
+                    }
+                    catch { }
                     armTimeout(10000, 'awaiting process exit');
                 }
             }
-        } catch (err) {
+        }
+        catch (err) {
             rejectDone(err);
         }
     };
-
     // Serialize marker handling: parser._drain() calls onMarker
     // synchronously, but onMarker is async (file IO + stdin write).
     // Without a queue, two markers in one chunk would race the
     // shared lastRngBytes pointer.
     let chain = Promise.resolve();
+    let markerError = null;
     const serialMarker = (m) => {
-        chain = chain.then(() => onMarker(m)).catch(rejectDone);
+        chain = chain.then(() => onMarker(m)).catch(error => {
+            markerError = error;
+            rejectDone(error);
+        });
     };
     const parser = new MarkerParser(serialMarker);
-    child.stdout.on('data', (chunk) => {
-        try { parser.push(chunk); } catch (err) { rejectDone(err); }
+    output.on('data', (chunk) => {
+        try {
+            parser.push(chunk);
+        }
+        catch (err) {
+            rejectDone(err);
+        }
     });
-    child.stdout.on('error', (err) => rejectDone(err));
+    output.on('error', (err) => rejectDone(err));
     child.on('error', (err) => rejectDone(err));
     child.on('close', (code, signal) => {
-        resolveClosed();
-        if (timeoutHandle) clearTimeout(timeoutHandle);
+        exitCode = code;
+        if (timeoutHandle)
+            clearTimeout(timeoutHandle);
         parser.stop();
         if (signal === 'SIGTERM' || signal === 'SIGKILL') {
             if ((driver && !driver.exhausted)
@@ -591,12 +678,11 @@ async function recordSegment({
             return;
         }
         if ((code ?? 0) !== 0) {
-            rejectDone(new Error(
-                `recorder exited with code ${code} after `
+            rejectDone(new Error(`recorder exited with code ${code} after `
                 + `${steps.length}/${expectedSteps ?? 'adaptive'} input markers`));
             return;
         }
-        if (driver && !driver.exhausted) {
+        if (driver && !driver.exhausted && !driver.acceptsGameExit) {
             rejectDone(new Error('recorder exited before adaptive driver completed'));
             return;
         }
@@ -606,19 +692,26 @@ async function recordSegment({
         // session, which captures the same truncated trace.
         resolveDone(code ?? 0);
     });
-
     try {
         await done;
-    } catch (error) {
-        if (timeoutHandle) clearTimeout(timeoutHandle);
+    }
+    catch (error) {
+        if (timeoutHandle)
+            clearTimeout(timeoutHandle);
         parser.stop();
-        try { child.kill('SIGTERM'); } catch {}
+        try {
+            child.kill('SIGTERM');
+        }
+        catch { }
         const closedPromptly = await Promise.race([
             childClosed.then(() => true),
             new Promise(resolve => setTimeout(() => resolve(false), 1000)),
         ]);
         if (!closedPromptly) {
-            try { child.kill('SIGKILL'); } catch {}
+            try {
+                child.kill('SIGKILL');
+            }
+            catch { }
             await Promise.race([
                 childClosed,
                 new Promise(resolve => setTimeout(resolve, 1000)),
@@ -631,59 +724,71 @@ async function recordSegment({
         new Promise(resolve => setTimeout(() => resolve(false), 1000)),
     ]);
     if (!closedPromptly) {
-        try { child.kill('SIGKILL'); } catch {}
+        try {
+            child.kill('SIGKILL');
+        }
+        catch { }
         await Promise.race([
             childClosed,
             new Promise(resolve => setTimeout(resolve, 1000)),
         ]);
     }
+    await chain;
+    if (timeoutHandle)
+        clearTimeout(timeoutHandle);
+    if (markerError)
+        throw markerError;
     if (steps.length === 0)
         throw new Error('recorder exited without producing an input marker');
     return {
         steps: expectedSteps === null ? steps : steps.slice(0, expectedSteps),
         moves,
+        recording: {
+            termination: exitCode === 0 ? 'process-exit' : termination,
+            exitCode,
+            suppliedKeys: nextKeyIdx,
+            driver: driver?.summary ?? null,
+        },
     };
 }
-
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
-
 async function exists(p) {
-    try { await fs.access(p, fsConstants.F_OK); return true; }
-    catch { return false; }
+    try {
+        await fs.access(p, fsConstants.F_OK);
+        return true;
+    }
+    catch {
+        return false;
+    }
 }
-
 async function main() {
     const argv = process.argv.slice(2);
     if (argv.length < 1 || argv[0] === '-h' || argv[0] === '--help') {
         console.error('Usage: node scripts/record-session.mjs <input.session.json> [output.session.json]');
         process.exit(2);
     }
-    const inputPath = path.resolve(argv[0]);
+    const inputPath = path.resolve(itemAt(argv, 0));
     const outputPath = argv[1] ? path.resolve(argv[1]) : inputPath;
-
     const binary = process.env.NETHACK_BINARY || DEFAULT_BINARY;
     const installDir = process.env.NETHACK_INSTALL || DEFAULT_INSTALL;
     const tz = process.env.RERECORD_TZ || 'America/New_York';
     const quiet = process.env.RECORD_SESSION_QUIET === '1';
-
     if (!await exists(binary)) {
         throw new Error(`recorder binary not found: ${binary}\n  build it via nethack-c/build-recorder.sh`);
     }
     if (!await exists(installDir)) {
         throw new Error(`install dir not found: ${installDir}`);
     }
-
     const session = await loadSession(inputPath);
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'nh-rec-'));
     const rngLogPath = path.join(tmpDir, 'rng.log');
     const homeDir = path.join(tmpDir, 'home');
-
     try {
         const newSegments = [];
         for (let i = 0; i < session.segments.length; i++) {
-            const seg = session.segments[i];
+            const seg = itemAt(session.segments, i);
             if (!quiet) {
                 console.error(`[seg ${i + 1}/${session.segments.length}] seed=${seg.seed} moves=${(seg.moves || '').length}`);
             }
@@ -697,41 +802,41 @@ async function main() {
                 tz,
                 quiet,
             });
+            const { driver: _driver, ...inputFields } = seg;
             const out = {
+                ...inputFields,
                 seed: seg.seed,
                 datetime: seg.datetime,
                 nethackrc: seg.nethackrc,
                 moves: recorded.moves,
                 steps: recorded.steps,
             };
-            // Preserve any extra per-segment fields (e.g. checkpoints) that
-            // existed in the input — we only overwrite steps.
-            for (const k of Object.keys(seg)) {
-                if (k !== 'driver' && !(k in out)) out[k] = seg[k];
+            if (process.env.RECORD_SESSION_METADATA === '1') {
+                const files = await fs.readdir(installDir);
+                const saves = await fs.readdir(path.join(installDir, 'save')).catch(() => []);
+                out.recording = {
+                    ...recorded.recording,
+                    state: { saves: saves.length, bones: files.filter(name => /^bon[A-Z0-9]/.test(name)).length },
+                };
             }
             newSegments.push(out);
         }
-
-        const outDoc = {
-            version: 5,
-            segments: newSegments,
-        };
-        for (const k of Object.keys(session)) {
-            if (k !== 'version' && k !== 'segments') outDoc[k] = session[k];
-        }
-
+        const outDoc = { ...session, segments: newSegments };
         await fs.writeFile(outputPath, JSON.stringify(outDoc));
-        if (!quiet) console.error(`[ok] wrote ${outputPath}`);
-    } finally {
-        await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+        if (!quiet)
+            console.error(`[ok] wrote ${outputPath}`);
+    }
+    finally {
+        await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => { });
     }
 }
-
 main().catch((err) => {
     if (process.env.RECORD_SESSION_QUIET === '1') {
         console.error('[fail] sealed recorder failed');
-    } else {
-        console.error('[fail]', err.message || err);
+    }
+    else {
+        console.error('[fail]', errorMessage(err));
     }
     process.exit(1);
 });
+//# sourceMappingURL=record-session.mjs.map

@@ -1,0 +1,169 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { wearHeroAccessory } from '../js/accessory.js';
+import { NO_MINVENT, PIT, W_WEP } from '../js/const.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { releaseHold } from '../js/hero_expulsion.js';
+import { resetInputState } from '../js/input.js';
+import { maketrap } from '../js/mklev.js';
+import { AD_PHYS, AT_BITE, AT_CLAW, AT_KICK, AT_TUCH, AT_WEAP } from '../js/monster_attack_types.js';
+import { cancelMonster } from '../js/monster_cancellation.js';
+import { monsterHasColdResistance } from '../js/monster_resistance.js';
+import { resumeDeferredMonsterTrap, runMonsterAction, triggerImmediateMonsterTrap } from '../js/monmove.js';
+import { DAGGER, RIN_CONFLICT } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
+import { vision_recalc } from '../js/vision.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { installSwallowedHero } from './support/hero-state.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
+
+async function conflictRoom(expectedMessages: RegExp) {
+    freshObjectRoom({ hero: { ulevel: 30 } });
+    await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
+    installPagerInput(resetInputState(), { expected: expectedMessages, limit: 12 });
+}
+
+void test('a released purple worm keeps its bite and substitutes a claw while it cannot engulf again', async () => {
+    await conflictRoom(/purple worm|regurgitated/);
+    requirePlayingGame(game);
+    const worm = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
+    installSwallowedHero(worm);
+
+    await releaseHold();
+
+    assert.equal(Boolean(game.u.uswallow), false);
+    assert.ok(worm.mspec_used && worm.mspec_used > 0, 'releasing the hero starts the engulf cooldown');
+    const awayFromHero = Math.sign(worm.mx - game.u.ux) || 1;
+    const giant = await createMonsterAt('hill giant', worm.mx + awayFromHero, worm.my, NO_MINVENT);
+    giant.mhp = giant.mhpmax = 100;
+    giant.msleeping = 1;
+    giant.movement = 0;
+    vision_recalc(0);
+    initRng(1n);
+
+    const action = await runMonsterAction(worm, game);
+
+    const attack = action.conflictFight?.attack;
+    assert.ok(attack?.kind === 'monster-attack', 'the worm should fight its adjacent neighbor under Conflict');
+    const bite = attack.results.find(result => result.attackIndex === 0);
+    const claw = attack.results.find(result => result.attackIndex === 1);
+    assert.equal(bite?.attackType, AT_BITE);
+    assert.equal(claw?.attackType, AT_CLAW, 'the engulf slot must participate as a claw instead of disappearing');
+    assert.equal(claw?.damageType, AD_PHYS);
+    assert.ok(claw && claw.damage >= 1 && claw.damage <= 6,
+        `the substituted claw should deal 1 to 6 damage, got ${claw?.damage}`);
+    assert.ok(bite && bite.damage > 0);
+    assert.equal(100 - giant.mhp, bite.damage + claw.damage);
+    assert.equal(game.level.monsters.includes(giant), true);
+    assert.equal(Boolean(game.u.uswallow), false);
+});
+
+void test('a released lichen uses a harmless touch while its hold is cooling down', async () => {
+    await conflictRoom(/lichen|released|orc/);
+    requirePlayingGame(game);
+    const lichen = await createMonsterAt('lichen', 11, 10, NO_MINVENT);
+    game.u.ustuck = lichen;
+
+    await releaseHold();
+
+    assert.equal(game.u.ustuck, null);
+    assert.ok(lichen.mspec_used && lichen.mspec_used > 0);
+    const orc = await createMonsterAt('orc', 12, 10, NO_MINVENT);
+    orc.msleeping = 1;
+    orc.movement = 0;
+    const health = orc.mhp;
+    initRng(2n);
+
+    const action = await runMonsterAction(lichen, game);
+
+    const attack = action.conflictFight?.attack;
+    assert.ok(attack?.kind === 'monster-attack',
+        `the lichen should touch the adjacent orc; received: ${game._pending_message}`);
+    const touch = attack.results[0];
+    assert.equal(touch?.attackType, AT_TUCH);
+    assert.equal(touch?.damageType, AD_PHYS);
+    assert.equal(touch?.hit, true);
+    assert.equal(touch.damage, 0);
+    assert.equal(orc.mhp, health);
+    assert.equal(game.u.ustuck, null);
+});
+
+void test('a cancelled barrow wight uses physical weapon damage instead of draining its opponent', async () => {
+    await conflictRoom(/barrow wight|hill giant/);
+    requirePlayingGame(game);
+    const wight = await createMonsterAt('barrow wight', 11, 10, NO_MINVENT);
+    await equipMonsterObject(wight, await knownObject(DAGGER, { spe: 7 }), W_WEP);
+    initRng(1n);
+    assert.equal((await cancelMonster(wight, { attackLevel: 30 })).cancelled, true);
+    const giant = await createMonsterAt('hill giant', 12, 10, NO_MINVENT);
+    giant.mhp = giant.mhpmax = 100;
+    giant.msleeping = 1;
+    giant.movement = 0;
+    const level = giant.m_lev;
+    initRng(1n);
+
+    const action = await runMonsterAction(wight, game);
+
+    const attack = action.conflictFight?.attack;
+    assert.ok(attack?.kind === 'monster-attack', 'the cancelled wight should still fight with its dagger');
+    const weapon = attack.results.find(result => result.attackIndex === 0);
+    assert.ok(weapon?.type === 'weapon', 'the adjacent weapon attack must resolve as contact');
+    assert.equal(weapon.attackType, AT_WEAP);
+    assert.equal(weapon?.damageType, AD_PHYS);
+    assert.ok(weapon && weapon.damage > 0, 'the cancelled weapon slot still deals ordinary dagger damage');
+    assert.ok(giant.mhp < 100);
+    assert.equal(giant.mhpmax, 100);
+    assert.equal(giant.m_lev, level);
+});
+
+void test('a lich can hurt a cold-resistant zombie with a reduced physical touch', async () => {
+    await conflictRoom(/lich|human zombie/);
+    requirePlayingGame(game);
+    const lich = await createMonsterAt('lich', 11, 10, NO_MINVENT);
+    const zombie = await createMonsterAt('human zombie', 12, 10, NO_MINVENT);
+    zombie.mhp = zombie.mhpmax = 100;
+    zombie.msleeping = 1;
+    zombie.movement = 0;
+    assert.equal(monsterHasColdResistance(zombie), true);
+    initRng(1n);
+
+    const action = await runMonsterAction(lich, game);
+
+    const attack = action.conflictFight?.attack;
+    assert.ok(attack?.kind === 'monster-attack', 'the lich should use its touch in monster combat');
+    const touch = attack.results[0];
+    assert.equal(touch?.attackType, AT_TUCH);
+    assert.equal(touch?.damageType, AD_PHYS);
+    const damage = 100 - zombie.mhp;
+    assert.ok(damage >= 1 && damage <= 6, `the reduced touch should deal 1 to 6 damage, got ${damage}`);
+    assert.equal(touch.damage, damage);
+});
+
+void test('a horse fighting from a pit can bite but cannot kick', async () => {
+    await conflictRoom(/horse|pit|orc/);
+    requirePlayingGame(game);
+    const horse = await createMonsterAt('horse', 11, 10, NO_MINVENT);
+    await maketrap(horse.mx, horse.my, PIT);
+    const fall = await triggerImmediateMonsterTrap(horse, game);
+    await resumeDeferredMonsterTrap(fall, game);
+    assert.equal(horse.mtrapped, 1, 'the horse must actually fall into its pit');
+    const orc = await createMonsterAt('orc', 12, 10, NO_MINVENT);
+    orc.mhp = orc.mhpmax = 100;
+    orc.msleeping = 1;
+    orc.movement = 0;
+    initRng(1n);
+
+    const action = await runMonsterAction(horse, game);
+
+    const attack = action.conflictFight?.attack;
+    assert.ok(attack?.kind === 'monster-attack', 'Conflict permits the trapped horse to fight without escaping');
+    assert.equal(horse.mtrapped, 1);
+    assert.equal(attack.results.some(result => result.attackType === AT_KICK), false);
+    const bite = attack.results.find(result => result.attackType === AT_BITE);
+    assert.ok(bite?.type === 'bite', 'the pit must not suppress the horse bite');
+    assert.ok(bite.damage >= 1 && bite.damage <= 3, `the bite should deal 1 to 3 damage, got ${bite.damage}`);
+    assert.equal(100 - orc.mhp, bite.damage);
+});

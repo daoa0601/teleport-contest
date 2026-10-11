@@ -1,0 +1,438 @@
+// Monster petrification and the statue left behind.
+// C refs: trap.c minstapetrify(), mon.c mon_to_stone() and monstone().
+
+import {
+    CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE,
+    G_GENOD, W_ARM, W_ARMC, W_ARMG, W_ARMU,
+} from './const.js';
+import {
+    canSeeMonster, newsym, plineWithContinuation, unmap_invisible,
+} from './display.js';
+import { recordHeroKillConduct } from './end.js';
+import { game } from './gstate.js';
+import { endObjectBurn } from './light.js';
+import { addObjectToContainer } from './object_container.js';
+import { placeCreatedObject, stack_object } from './floor_object.js';
+import { landFloorObject } from './floor_effects.js';
+import {
+    lifeSaveMonster, wornMonsterLifeSaver,
+} from './mondeath.js';
+import {
+    clearMonsterCarriedObjectState, removeObjectFromMonsterInventory,
+} from './monster_inventory.js';
+import { applyMonsterEquipmentProperties } from './monster_equipment.js';
+import { monsterName } from './monster_name.js';
+import {
+    monsterWieldedWeapon, unwieldMonsterWeapon,
+} from './monster_weapon.js';
+import { mkcorpstat, mksobj } from './mklev.js';
+import {
+    MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
+} from './monster_data.js';
+import { changeMonsterForm } from './monster_polymorph.js';
+import { BOULDER, CORPSE, ROCK, STATUE } from './object_data.js';
+import { objectResistsDestruction } from './object_state.js';
+import { monsterHasStoneResistance } from './monster_resistance.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
+import { useMonsterStoningCure } from './monster_stoning_cure.js';
+import { rn2, rnd } from './rng.js';
+import { touchPetrifies } from './stoning.js';
+import { cansee } from './vision.js';
+import { objectWeight } from './weight.js';
+import type { MessagePublisher } from './display.js';
+import type { GameState } from './game_state.js';
+import type { MonsterDeathOptions } from './monster_death.js';
+import type { Monster } from './monster_types.js';
+import type { GameObject } from './object_types.js';
+import type { MonsterStoningCureOptions, MonsterStoningCureResult } from './monster_stoning_cure.js';
+
+// Petrification determines survival before dispatching the caller's death
+// bookkeeping. That callback's return value does not decide the stone result.
+export type PetrificationDeathHandler = (
+    monster: Monster, options?: MonsterDeathOptions,
+) => unknown;
+
+interface PetrificationOptions {
+    creditHero?: boolean;
+    finishDeath?: PetrificationDeathHandler | undefined;
+    publish?: MessagePublisher;
+}
+
+export interface MonsterSelfTouchOptions extends PetrificationOptions {
+    prefix?: string;
+    state?: GameState;
+}
+
+interface PetrificationContactOptions extends PetrificationOptions {
+    rollOne?: (sides: number) => number;
+    state?: GameState;
+    visible?: boolean;
+}
+
+export type MonsterPetrificationResult =
+    | {
+        heroDied: true;
+        survived?: never;
+        changed?: never;
+        remains?: never;
+        messageShown?: never;
+    }
+    | {
+        heroDied?: false;
+        survived: boolean;
+        changed?: boolean;
+        remains?: GameObject | null;
+        messageShown?: boolean;
+    };
+
+export type MonsterSelfTouchResult =
+    | { touched: false; survived: true; heroDied?: false }
+    | ({ touched: true; corpse: GameObject } & MonsterPetrificationResult);
+
+type MonsterContactPetrificationResult = MonsterPetrificationResult | {
+    heroDied?: false;
+    changed: true;
+    survived: boolean;
+    cured: boolean;
+    cure: MonsterStoningCureResult;
+};
+
+type MonsterDefenderPetrificationResult =
+    | { heroDied: true; survived?: never; stopped?: boolean; damage?: number; cure?: never }
+    | {
+        heroDied?: false;
+        survived: boolean;
+        stopped: boolean;
+        damage: number;
+        cure?: MonsterStoningCureResult;
+    };
+
+const S_GOLEM = 55;
+const PM_STONE_GOLEM = 257;
+const G_UNIQ = 0x1000;
+const M2_NEUTER = 0x00040000;
+const VAMPIRE_FORMS = new Set([226, 227, 228]);
+const TORSO_ARMOR = W_ARM | W_ARMC | W_ARMU;
+
+function speciesWasGenocided(mnum: number): boolean {
+    return !!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD);
+}
+
+function monsterSubject(monster: Monster): string {
+    return monsterName(monster, { capitalized: true });
+}
+
+export function monsterWearsTorsoArmor(monster: Monster): boolean {
+    return (monster?.minvent || monster?.inventory || []).some(object =>
+        ((object.owornmask ?? 0) & TORSO_ARMOR) !== 0);
+}
+
+function monsterWearsGloves(monster: Monster): boolean {
+    return !!((monster?.misc_worn_check ?? 0) & W_ARMG)
+        || (monster?.minvent || monster?.inventory || []).some(object =>
+            ((object.owornmask ?? 0) & W_ARMG) !== 0);
+}
+
+function selfTouchSubject(monster: Monster, prefix: string): string {
+    const subject = monsterSubject(monster);
+    if (!prefix || monster.name) return subject;
+    return subject.charAt(0).toLowerCase() + subject.slice(1);
+}
+
+// C trap.c:mselftouch(). Falling can force contact even through gloves;
+// newcham() only calls this after the new body has lost its gloves.
+export async function monsterSelfTouch(monster: Monster, {
+    prefix = '',
+    creditHero = false,
+    finishDeath,
+    publish = plineWithContinuation,
+    state = game,
+}: MonsterSelfTouchOptions = {}): Promise<MonsterSelfTouchResult> {
+    const corpse = monsterWieldedWeapon(monster);
+    if (!corpse || corpse.otyp !== CORPSE || corpse.corpsenm === undefined
+        || !touchPetrifies(corpse.corpsenm)
+        || monsterHasStoneResistance(monster)) {
+        return { touched: false, survived: true };
+    }
+
+    if (cansee(monster.mx, monster.my)) {
+        await publish(
+            `${prefix}${selfTouchSubject(monster, prefix)} touches the ${
+                monsterTypeName(corpse.corpsenm)
+            } corpse.`,
+        );
+    }
+    const petrification = await petrifyMonsterImmediately(monster, {
+        creditHero, finishDeath, publish,
+    });
+    if (petrification.survived && !monsterWearsGloves(monster)
+        && !monsterHasStoneResistance(monster)) {
+        await unwieldMonsterWeapon(monster, state, { publish });
+    }
+    return { touched: true, corpse, ...petrification };
+}
+
+export async function monsterSelfTouchAfterPolymorph(
+    monster: Monster, options: MonsterSelfTouchOptions = {},
+): Promise<MonsterSelfTouchResult> {
+    if (monsterWearsGloves(monster))
+        return { touched: false, survived: true };
+    return monsterSelfTouch(monster, {
+        ...options,
+        prefix: 'No longer petrify-resistant, ',
+    });
+}
+
+export async function petrifyMonsterFromContact(monster: Monster, {
+    creditHero = false,
+    finishDeath,
+    publish = plineWithContinuation,
+    rollOne = rnd,
+    state = game,
+}: PetrificationContactOptions = {}): Promise<MonsterContactPetrificationResult> {
+    const cure = await useMonsterStoningCure(monster, {
+        finishDeath, publish, rollOne, state,
+    });
+    if (cure.consumed) {
+        return {
+            changed: true,
+            survived: !cure.died,
+            cured: !cure.died,
+            cure,
+        };
+    }
+    return petrifyMonsterImmediately(monster, {
+        creditHero, finishDeath, publish,
+    });
+}
+
+// C mhitm.c:mdamagem(). Touching the defender leaves no time to eat a cure.
+export async function petrifyMonsterAttacker(monster: Monster, {
+    publish = plineWithContinuation,
+    visible = canSeeMonster(monster),
+    creditHero = false,
+    ...options
+}: PetrificationContactOptions = {}): Promise<MonsterPetrificationResult> {
+    const stoneForm = await turnGolemToStone(monster, publish);
+    if (stoneForm?.heroDied) return { heroDied: true };
+    if (stoneForm) return { survived: true };
+    if (visible) await publish(`${monsterSubject(monster)} turns to stone!`);
+    if (creditHero) recordHeroKillConduct();
+    return finishMonsterPetrification(monster, { ...options, publish });
+}
+
+// C uhitm.c:do_stone_mon(). A cure or life saving ends this hit.
+export async function petrifyMonsterDefender(monster: Monster, {
+    publish = plineWithContinuation,
+    visible = canSeeMonster(monster),
+    ...options
+}: MonsterStoningCureOptions & { visible?: boolean } = {}): Promise<MonsterDefenderPetrificationResult> {
+    const cure = await useMonsterStoningCure(monster, { ...options, publish });
+    if (cure.consumed)
+        return { survived: !cure.died, stopped: true, damage: 0, cure };
+    const stoneForm = await turnGolemToStone(monster, publish);
+    if (stoneForm?.heroDied) return { heroDied: true };
+    if (stoneForm) return { survived: true, stopped: false, damage: 0 };
+    if (monsterHasStoneResistance(monster))
+        return { survived: true, stopped: false, damage: 1 };
+    if (visible) await publish(`${monsterSubject(monster)} turns to stone!`);
+    const result = await finishMonsterPetrification(monster, { ...options, publish });
+    return { ...result, stopped: true, damage: 0 };
+}
+
+// C mondata.c:poly_when_stoned(). Callers use this before fatal prose.
+export function monsterPolymorphsWhenStoned(monster: Pick<Monster, 'mnum'>): boolean {
+    return MONSTER_SYMBOL[monster.mnum] === S_GOLEM
+        && monster.mnum !== PM_STONE_GOLEM
+        && !speciesWasGenocided(PM_STONE_GOLEM);
+}
+
+export async function turnGolemToStone(monster: Monster, publish: MessagePublisher) {
+    if (!monsterPolymorphsWhenStoned(monster)) return null;
+
+    const visible = canSeeMonster(monster);
+    if (visible) {
+        await publish(
+            `${monsterSubject(monster)} solidifies...`,
+        );
+    }
+    const change = await changeMonsterForm(monster, PM_STONE_GOLEM, game, { publish });
+    if (change?.heroDied) return change;
+    const changed = !!change;
+    if (visible) {
+        await publish(changed
+            ? `Now it's a ${monsterTypeName(monster.mnum)}.`
+            : '... and returns to normal.');
+    }
+    if (changed) newsym(monster.mx, monster.my);
+    return { changed, heroDied: false };
+}
+
+async function restoreShapechanger(monster: Monster, publish: MessagePublisher) {
+    const baseForm = monster?.cham;
+    if (baseForm === undefined || !Number.isInteger(baseForm) || baseForm < 0
+        || baseForm === monster.mnum || speciesWasGenocided(baseForm)) {
+        return null;
+    }
+    const vampire = VAMPIRE_FORMS.has(baseForm);
+    const resistantBase = monsterHasStoneResistance({ mnum: baseForm });
+    if (!vampire && !resistantBase) return null;
+
+    const oldName = monsterTypeName(monster.mnum, !!monster.female);
+    monster.mcanmove = 1;
+    monster.mfrozen = 0;
+    monster.mhpmax = Math.max(
+        monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
+    );
+    monster.mhp = monster.mhpmax;
+    const change = await changeMonsterForm(monster, baseForm, game, { publish });
+    if (!change || change.heroDied) return change;
+    monster.cham = -1;
+    if (canSeeMonster(monster)) {
+        const subject = vampire
+            ? `The lapidifying ${oldName}` : `The ${oldName}`;
+        await publish(
+            `${subject} turns into ${monsterTypeName(baseForm)}!`,
+        );
+    }
+    newsym(monster.mx, monster.my);
+    return { changed: true, heroDied: false };
+}
+
+async function putInStatue(statue: GameObject, object: GameObject): Promise<void> {
+    clearMonsterCarriedObjectState(object);
+    endObjectBurn(object);
+    // Arbitrary saved monster inventory: the general container owner
+    // awaits the no-longer-held release (an unpaid nested crysknife can
+    // charge during the transfer into the statue).
+    await addObjectToContainer(statue, object);
+}
+
+async function dropBesideStatue(object: GameObject, x: number, y: number, publish: MessagePublisher) {
+    clearMonsterCarriedObjectState(object);
+    return landFloorObject(object, x, y, { state: game, publish });
+}
+
+function statueFlags(monster: Monster): number {
+    let flags = 0;
+    if (monster.female) flags |= CORPSTAT_FEMALE;
+    else if (!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_NEUTER)) flags |= CORPSTAT_MALE;
+    if ((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ) flags |= CORPSTAT_HISTORIC;
+    return flags;
+}
+
+async function createStoneRemains(monster: Monster, publish: MessagePublisher): Promise<GameObject | null> {
+    const x = monster.mx;
+    const y = monster.my;
+    const frequency = (MONSTER_GENO[monster.mnum] ?? 0) & 0x07;
+    const leavesStatue = (MONSTER_SIZE[monster.mnum] ?? 0) > 0
+        || rn2(2 + Number(frequency > 2)) === 0;
+    if (!leavesStatue) {
+        const rock = await mksobj(ROCK, true, false);
+        placeCreatedObject(rock, x, y, game);
+        return await stack_object(rock, game);
+    }
+
+    const contained: GameObject[] = [];
+    for (const object of [...(monster.minvent || [])]) {
+        const worn = object.owornmask;
+        await removeObjectFromMonsterInventory(monster, object, game, {
+            publish: async () => {},
+        });
+        // monstone saves traits only after removing item-granted properties.
+        if (worn) applyMonsterEquipmentProperties(monster, object, false);
+        if (object.otyp === BOULDER
+            || objectResistsDestruction(object, 0, 0)) {
+            await dropBesideStatue(object, x, y, publish);
+        } else {
+            contained.push(object);
+        }
+    }
+    monster.minvent = [];
+    monster.inventory = monster.minvent;
+    monster.hasInventory = false;
+    monster.mw = null;
+    monster.misc_worn_check = 0;
+
+    const statue = await mkcorpstat(
+        STATUE, monster, monster.mnum, x, y, statueFlags(monster),
+    );
+    if (monster.name) statue.oname = monster.name;
+    for (const object of contained) await putInStatue(statue, object);
+    statue.owt = objectWeight(statue);
+    return await stack_object(statue, game);
+}
+
+export async function petrifyMonsterImmediately(monster: Monster, {
+    creditHero = false,
+    finishDeath,
+    publish = plineWithContinuation,
+}: PetrificationOptions = {}): Promise<MonsterPetrificationResult> {
+    if (!monster || monster.dead || (monster.mhp ?? 1) <= 0)
+        return { changed: false, survived: false };
+    if (monsterHasStoneResistance(monster))
+        return { changed: false, survived: true };
+    const stoneForm = await turnGolemToStone(monster, publish);
+    if (stoneForm?.heroDied) return { heroDied: true };
+    if (stoneForm) return { changed: true, survived: true };
+    const restored = await restoreShapechanger(monster, publish);
+    if (restored?.heroDied) return { heroDied: true };
+    if (restored) return { changed: true, survived: true };
+
+    const speed = adjustMonsterSpeed(monster, -3);
+    // worn.c:mon_adjust_speed() needs sight of the actor. The following
+    // minstapetrify() message only needs sight of its square; that difference
+    // matters when the hero is inside this monster.
+    if (!game.in_mklev && game.flags.verbose !== false
+        && speed.canDescribe && canSeeMonster(monster)) {
+        const speedMessage = monsterSpeedMessage(speed, monsterSubject(monster));
+        if (speedMessage) await publish(speedMessage);
+    }
+    if (cansee(monster.mx, monster.my)) {
+        await publish(
+            `${monsterSubject(monster)} turns to stone.`,
+        );
+    }
+    if (creditHero) recordHeroKillConduct();
+
+    return finishMonsterPetrification(monster, { finishDeath, publish });
+}
+
+// C mon.c:monstone(). Reversion and life saving precede statue creation.
+export async function prepareMonsterPetrification(monster: Monster, {
+    publish = plineWithContinuation,
+}: { publish?: MessagePublisher } = {}): Promise<MonsterPetrificationResult> {
+    const restored = await restoreShapechanger(monster, publish);
+    if (restored?.heroDied) return { heroDied: true };
+    if (restored) return { changed: true, survived: true };
+
+    monster.mhp = 0;
+    const lifeSaver = wornMonsterLifeSaver(monster);
+    if (lifeSaver) {
+        const visible = cansee(monster.mx, monster.my);
+        await lifeSaveMonster(monster, lifeSaver, {
+            genocided: speciesWasGenocided(monster.mnum),
+        });
+        if ((monster.mhp ?? 0) > 0)
+            return { changed: true, survived: true, messageShown: visible };
+    }
+
+    monster.mtrapped = 0;
+    const remains = await createStoneRemains(monster, publish);
+    if (game.program_state.gameover) return { heroDied: true };
+    unmap_invisible(monster.mx, monster.my, false);
+    if (cansee(monster.mx, monster.my)) newsym(monster.mx, monster.my);
+    return { changed: true, survived: false, remains };
+}
+
+async function finishMonsterPetrification(monster: Monster, {
+    finishDeath,
+    publish = plineWithContinuation,
+}: PetrificationOptions = {}): Promise<MonsterPetrificationResult> {
+    const result = await prepareMonsterPetrification(monster, { publish });
+    if (result.heroDied || result.survived) return result;
+    if (!finishDeath) throw new Error('Petrification requires a monster death handler');
+    await finishDeath(monster, { noCorpse: true });
+    if (game.program_state.gameover) return { heroDied: true };
+    return result;
+}

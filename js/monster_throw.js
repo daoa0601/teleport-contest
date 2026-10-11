@@ -1,106 +1,233 @@
-// Weapons thrown or shot by monsters.
-// C refs: weapon.c select_rwep() and mthrowu.c monmulti(), m_throw().
-
-import {
-    A_DEX, A_STR, BOLT_LIM, NEED_RANGED_WEAPON, NEED_WEAPON,
-    P_BOW, P_DAGGER, P_DART, SLT_ENCUMBER,
-    P_SHURIKEN, P_SLING, P_SPEAR,
-} from './const.js';
+// Native mthrowu.c:monshoot(), m_throw(), ohitmon(), and drop_throw().
+// Each projectile completes its visible flight and world effects before the
+// next projectile is detached from the attacker's inventory.
+import { A_DEX, A_STR, BOLT_LIM, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, M_AP_MONSTER, M_AP_TYPE, NEED_RANGED_WEAPON, NEED_WEAPON, P_BOW, P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, isok, } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { artifactToHitBonus } from './artifacts.js';
-import { rangedTargetHitBonus } from './weapon_accuracy.js';
-import {
-    blindHeroWithThrownObject, blindMonsterWithThrownObject,
-} from './blinding_attack.js';
-import {
-    canProjectMonster, flush_screen, newsym, plineWithContinuation, show_glyph_cell,
-} from './display.js';
-import { dist2, distmin } from './hacklib.js';
-import { nextIdent } from './ident.js';
-import { stack_object } from './floor_object.js';
-import { petrifyMonsterFromContact } from './monster_stoning.js';
-import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE,
-    MONSTER_SYMBOL, monsterHatesSilver, monsterIsPlayerMonster,
-    monsterTypeName,
-} from './monster_data.js';
-import { findMonsterArmorClass } from './monworn.js';
-import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon } from './monster_weapon.js';
-import { unlinkMonsterObject } from './monster_inventory.js';
-import { returnMonsterWeapon } from './monster_returning_weapon.js';
-import { game } from './gstate.js';
-import {
-    ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, FLINT, OBJECT_DESCRIPTIONS,
-    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT,
-} from './object_data.js';
-import { ammunitionMatchesLauncher, heroHasFreeHand, isAmmunition, isPolearm, returningWeaponRangeSquared } from './weapon_type.js';
-import { deleteObject } from './object_delete.js';
-import { isPoisonableObject } from './object_properties.js';
-import {
-    monsterHasPoisonResistance, monsterHasStoneResistance,
-} from './monster_resistance.js';
-import { poisonHero } from './poison.js';
-import { d, rn2, rnd } from './rng.js';
-import { cansee } from './vision.js';
-import { heroSpecies } from './hero_species.js';
-import { hitHeroWithObject } from './hero_object_hit.js';
-import { heroHasNoHands } from './polyself.js';
-import { heroIsBlind } from './senses.js';
-import { stopHeroOccupation } from './occupation.js';
-import { addInventoryItem } from './u_init.js';
-import { calcCapacity } from './weight.js';
-import {
-    rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
-} from './weapon_damage.js';
+import { applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness } from './blinding_attack.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
+import { canSeeMonster, canSpotMonster, displayLiquidName, plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
+import { applyFloorEffects } from './floor_effects.js';
+import { placeObject, stack_object } from './floor_object.js';
+import { game, requirePlayingGame } from './gstate.js';
+import { dist2, distmin } from './hacklib.js';
+import { holdAnotherObject } from './hero_hold_object.js';
+import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { hitHeroWithObject } from './hero_object_hit.js';
+import { captureHeroProjectileName } from './hero_physical_messages.js';
+import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
+import { heroSpecies } from './hero_species.js';
+import { angerAttackedMonster } from './monster_anger.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
+import { waitForCurrentMonsterMore } from './monster_attack_death.js';
+import { rejectMonsterShadeContact } from './monster_combat_messages.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter } from './monster_data.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { clearDescriptionKnowledge, unlinkMonsterObject } from './monster_inventory.js';
+import { unlinkObject } from './object_location.js';
+import { monsterAtPosition } from './monster_location.js';
+import { monsterName, monsterObjectPronoun, possessiveName } from './monster_name.js';
+import { applyMonsterPassiveToObject } from './monster_passive.js';
+import { monsterProjectileDisplay } from './monster_projectile_display.js';
+import { monsterLinedUpWithMonster } from './monster_ranged_alignment.js';
+import { returnMonsterWeapon } from './monster_returning_weapon.js';
+import { monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance } from './monster_resistance.js';
+import { petrifyMonsterFromContact } from './monster_stoning.js';
+import { monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon } from './monster_weapon.js';
+import { findMonsterArmorClass } from './monworn.js';
+import { delobj } from './object_delete.js';
+import { ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, OBJECT_SUBTYPE } from './object_data.js';
+import { dropObjectAtHero } from './object_drop.js';
+import { withIndefiniteArticle, verbForSubject } from './object_grammar.js';
+import { learnObjectType, observeObject } from './object_knowledge.js';
+import { objectMaterial } from './object_material.js';
+import { shipObject } from './object_migration.js';
+import { isPoisonableObject } from './object_properties.js';
+import { splitObjectStack } from './object_stack.js';
+import { objectCombatName, objectHasPersonalName, killerObjectName } from './objnam.js';
+import { stopHeroOccupation } from './occupation.js';
+import { heroHasNoHands } from './polyself.js';
+import { poisonHero } from './poison.js';
+import { hitMonsterWithSupportedPotion } from './potion_hit.js';
+import { shouldMulchMissile } from './projectile.js';
+import { projectileHitsIronBars } from './projectile_bars.js';
+import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
+import { d, rn2, rnd } from './rng.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { hitByPetrifyingEgg, touchPetrifies } from './stoning.js';
-
-const WEAPON_CLASS = 2;
-const TOOL_CLASS = 6;
-const GEM_CLASS = 13;
-const VENOM_CLASS = 17;
-const M2_ELF = 0x00000010;
-const M2_GNOME = 0x00000040;
-const M2_ORC = 0x00000080;
-const M2_LORD = 0x00000400;
-const M2_PRINCE = 0x00000800;
-const M1_AMORPHOUS = 0x00000004;
-const S_GHOST = 54;
-const SILVER = 14;
+import { cansee } from './vision.js';
+import { calcCapacity } from './weight.js';
+import { ammunitionMatchesLauncher, heroHasFreeHand, isAmmunition, isPolearm, returningWeaponRangeSquared } from './weapon_type.js';
+import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
+import { rangedTargetHitBonus } from './weapon_accuracy.js';
+const WEAPON_CLASS = 2, GEM_CLASS = 13, VENOM_CLASS = 17, POTION_CLASS = 8;
+const M2_ELF = 0x10, M2_GNOME = 0x40, M2_ORC = 0x80, M2_LORD = 0x400, M2_PRINCE = 0x800;
+const M1_WALLWALK = 0x08, M1_UNSOLID = 0x00100000;
+const SILVER = 14, GEMSTONE = 20, MINERAL = 21;
 const PM_CAVE_DWELLER = MONSTER_NAME.indexOf('cave dweller');
 const PM_MONK = MONSTER_NAME.indexOf('monk');
 const PM_RANGER = MONSTER_NAME.indexOf('ranger');
 const PM_ROGUE = MONSTER_NAME.indexOf('rogue');
 const PM_SAMURAI = MONSTER_NAME.indexOf('samurai');
 const PM_NINJA = MONSTER_NAME.indexOf('ninja');
-const BLINDING_PROJECTILES = new Set([CREAM_PIE, BLINDING_VENOM]);
-const ZERO_DAMAGE_HERO_PROJECTILES = new Set([
-    CREAM_PIE, BLINDING_VENOM, EGG,
-]);
-
-export function objectTypeName(object) {
-    return OBJECT_NAMES[object?.otyp] || '';
+const FIRST_GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of white glass');
+const LAST_GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of violet glass');
+export async function throwMonsterProjectile(source, object, { state = game, dx, dy, range, target = null, archer = null, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, volley, }) {
+    requirePlayingGame(state);
+    const tethered = object === monsterWieldedWeapon(source) && returningWeaponRangeSquared(object) !== null;
+    const launched = ammunitionMatchesLauncher(object, monsterWieldedWeapon(source));
+    const missile = await detachMissile(source, object, state, publish);
+    state._thrownObject = missile;
+    state.bhitpos = { x: source.mx, y: source.my };
+    state.notonhead = false;
+    if (!canSeeMonster(source))
+        clearDescriptionKnowledge(missile);
+    const context = { state, source, target, archer, random, rollOne, rollDice, publish,
+        ...(volley ? { volley } : {}) };
+    const shot = {
+        source, weapon: missile, launched,
+        heroTarget: false, target: null, hit: false, damage: 0, targetDied: false,
+        heroDied: false, caught: false, projectileBroken: false, flightPath: [],
+        impactX: source.mx, impactY: source.my,
+    };
+    let display = null;
+    let blindness = null;
+    let returning = false;
+    try {
+        if ((missile.cursed || missile.greased) && (dx || dy) && random(7) === 0) {
+            if (canSeeMonster(source) && state.flags.verbose) {
+                if (isAmmunition(missile))
+                    await publish(`${monsterName(source, { state, capitalized: true })} misfires!`);
+                else {
+                    const name = objectCombatName(missile, { state });
+                    await publish(`${capitalizedDefiniteName(name, state)} ${verbForSubject(name, 'slip')} as ${monsterName(source, { state })} throws it!`);
+                }
+            }
+            dx = random(3) - 1;
+            dy = random(3) - 1;
+            if (!dx && !dy) {
+                await dropMonsterProjectile(shot, false, state.bhitpos, context);
+                return shot;
+            }
+        }
+        if (await flightBlocked(missile, dx, dy, false, context)) {
+            if (missile.where !== 'gone')
+                await dropMonsterProjectile(shot, false, state.bhitpos, context);
+            return shot;
+        }
+        const flightDisplay = monsterProjectileDisplay(missile, state, { tethered });
+        display = flightDisplay;
+        while (range-- > 0) {
+            const point = { x: state.bhitpos.x + dx, y: state.bhitpos.y + dy };
+            state.bhitpos = point;
+            missile.ox = shot.impactX = point.x;
+            missile.oy = shot.impactY = point.y;
+            shot.flightPath.push(point);
+            if (cansee(point.x, point.y))
+                observeObject(missile, state);
+            const monster = monsterAtPosition(state.level, point.x, point.y);
+            if (monster) {
+                const shadeMiss = await rejectMonsterShadeContact(source, monster, missile, {
+                    state, visible: true, thrown: true, publish, rollOne, rollDice,
+                });
+                if (!shadeMiss && await hitMonsterWithProjectile(monster, shot, range, context))
+                    break;
+            }
+            else if (point.x === state.u.ux && point.y === state.u.uy) {
+                endVoluntaryMultiTurn(state);
+                shot.heroTarget = true;
+                shot.target = null;
+                if (await catchUnicornGift(missile, context)
+                    || !tethered && await catchThrownObject(missile, context)) {
+                    shot.caught = true;
+                    break;
+                }
+                if (missile.oclass === POTION_CLASS) {
+                    const potion = await hitHeroWithThrownPotion(missile, { state, publish, random, rollOne, rollDice });
+                    shot.heroDied = potion.heroDied;
+                    break;
+                }
+                const hit = await hitHeroWithProjectile(shot, context);
+                blindness = hit.blindness;
+                if (shot.heroDied)
+                    break;
+                if (shot.hit) {
+                    if (tethered)
+                        returning = true;
+                    else
+                        await dropMonsterProjectile(shot, true, point, context);
+                    break;
+                }
+            }
+            if (state.program_state.gameover)
+                break;
+            const forceHit = random(5) === 0;
+            if (!range || await flightBlocked(missile, dx, dy, forceHit, context)
+                || state.level.at(point.x, point.y)?.typ === SINK) {
+                if (missile.where !== 'gone') {
+                    if (range && state.level.at(point.x, point.y)?.typ === SINK && cansee(point.x, point.y)) {
+                        const name = captureHeroProjectileName(missile, state, volley);
+                        await publish(`${capitalizedDefiniteName(name, state)} ${verbForSubject(name, heroIsHallucinating(state) ? 'plop' : 'drop')} onto the sink.`);
+                    }
+                    else if (volley && volley.count > 1
+                        && (!shot.heroTarget || point.x !== state.u.ux || point.y !== state.u.uy)
+                        && (cansee(point.x, point.y) || archer && canSeeMonster(archer))) {
+                        await publish(`${capitalizedDefiniteName(captureHeroProjectileName(missile, state, volley), state)} misses.`);
+                    }
+                    if (tethered)
+                        returning = true;
+                    else
+                        await dropMonsterProjectile(shot, false, point, context);
+                }
+                break;
+            }
+            await flightDisplay.show(point);
+        }
+        if (!state.program_state.gameover)
+            await flightDisplay.show(state.bhitpos);
+        if (returning && !state.program_state.gameover) {
+            await returnMonsterWeapon(source, missile, state.bhitpos.x, state.bhitpos.y, {
+                state, publish, random, rollOne,
+                animateReturn: () => flightDisplay.backtrack(),
+            });
+        }
+    }
+    finally {
+        display?.clear();
+        if (state._thrownObject === missile)
+            state._thrownObject = null;
+        shot.heroDied = !!state.program_state.gameover;
+        shot.projectileBroken = missile.where === 'gone';
+    }
+    if (blindness && !state.program_state.gameover)
+        await finishHeroThrownBlindness(blindness, state, publish);
+    shot.heroDied = !!state.program_state.gameover;
+    shot.projectileBroken = missile.where === 'gone';
+    return shot;
 }
-
+export function objectTypeName(object) {
+    return object ? OBJECT_NAMES[object.otyp] || '' : '';
+}
 // Switching to a launcher consumes this action. If no launcher is needed,
 // or the correct launcher is already wielded, the monster may shoot now.
 export async function readyRangedMonsterWeapon(monster, state = game) {
     const current = monsterWieldedWeapon(monster);
-    if (monster?.weaponCheck !== NEED_WEAPON && current) return null;
-
+    if (monster?.weaponCheck !== NEED_WEAPON && current)
+        return null;
     monster.weaponCheck = NEED_RANGED_WEAPON;
     return wieldMonsterWeapon(monster, state);
 }
-
 function monsterClassVolleyBonus(monster, missile, launcher) {
     const skill = OBJECT_SUBTYPE[missile.otyp] ?? 0;
     if (monster.mnum === PM_CAVE_DWELLER)
         return skill === -P_SLING || skill === P_SPEAR ? 1 : 0;
     if (monster.mnum === PM_MONK)
         return skill === -P_SHURIKEN ? 1 : 0;
-    if (monster.mnum === PM_RANGER) return skill !== P_DAGGER ? 1 : 0;
-    if (monster.mnum === PM_ROGUE) return skill === P_DAGGER ? 1 : 0;
-
+    if (monster.mnum === PM_RANGER)
+        return skill !== P_DAGGER ? 1 : 0;
+    if (monster.mnum === PM_ROGUE)
+        return skill === P_DAGGER ? 1 : 0;
     let bonus = 0;
     if (monster.mnum === PM_NINJA
         && (skill === -P_SHURIKEN || skill === -P_DART)) {
@@ -113,35 +240,35 @@ function monsterClassVolleyBonus(monster, missile, launcher) {
     }
     return bonus;
 }
-
-export function monsterVolleyCount(
-    monster, missile, launcher, rollOne = rnd,
-) {
+export function monsterVolleyCount(monster, missile, launcher, rollOne = rnd) {
     const quantity = missile?.quan ?? missile?.quantity ?? 1;
     const missileName = objectTypeName(missile);
     const ammunition = isAmmunition(missile);
     const matchingLauncher = ammunitionMatchesLauncher(missile, launcher);
-    const stackableWeapon = missile?.oclass === WEAPON_CLASS
-        || missile?.class === 'Weapons';
+    const stackableWeapon = missile.oclass === WEAPON_CLASS;
     if (quantity <= 1 || monster?.mconf
-        || (ammunition ? !matchingLauncher : !stackableWeapon)) return 1;
-
+        || (ammunition ? !matchingLauncher : !stackableWeapon))
+        return 1;
     const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
     let maximum = 1;
-    if (flags & M2_PRINCE) maximum += 2;
-    else if (flags & M2_LORD) maximum++;
-    else if (monsterIsPlayerMonster(monster.mnum)) maximum++;
-    if (missileName === 'elven arrow' && !missile.cursed) maximum++;
+    if (flags & M2_PRINCE)
+        maximum += 2;
+    else if (flags & M2_LORD)
+        maximum++;
+    else if (monsterIsPlayerMonster(monster.mnum))
+        maximum++;
+    if (missileName === 'elven arrow' && !missile.cursed)
+        maximum++;
     if (objectTypeName(launcher) === 'elven bow'
-        && matchingLauncher && !launcher?.cursed) maximum++;
+        && matchingLauncher && !launcher?.cursed)
+        maximum++;
     if (matchingLauncher && (launcher?.spe ?? 0) > 1)
-        maximum += Math.trunc(((launcher.spe ?? 0) + 1) / 3);
-
+        maximum += Math.trunc(((launcher?.spe ?? 0) + 1) / 3);
     let volley = rollOne(maximum);
     volley += monsterClassVolleyBonus(monster, missile, launcher);
     if (((flags & M2_ELF)
-            && missileName === 'elven arrow'
-            && objectTypeName(launcher) === 'elven bow')
+        && missileName === 'elven arrow'
+        && objectTypeName(launcher) === 'elven bow')
         || ((flags & M2_ORC)
             && missileName === 'orcish arrow'
             && objectTypeName(launcher) === 'orcish bow')
@@ -152,682 +279,364 @@ export function monsterVolleyCount(
     }
     return Math.max(1, Math.min(quantity, volley));
 }
-
-export function splitMonsterMissile(monster, missile) {
-    const quantity = missile.quan ?? missile.quantity ?? 1;
-    if (quantity > 1) {
-        const single = { ...missile };
-        single.o_id = nextIdent();
-        single.quan = single.quantity = 1;
-        single.owt = OBJECT_WEIGHT[single.otyp] ?? single.owt ?? 1;
-        single.wielded = false;
-        single.worn = false;
-        single.owornmask = 0;
-        delete single.carrierMid;
-        single.where = 'free';
-        missile.quan = missile.quantity = quantity - 1;
-        missile.owt = (OBJECT_WEIGHT[missile.otyp] ?? 1) * (quantity - 1);
-        return single;
+async function detachMissile(source, object, state, publish) {
+    if (object.quan > 1) {
+        const split = splitObjectStack(object, 1, state);
+        if (!split)
+            throw new Error(`Cannot detach projectile from object ${object.o_id}`);
+        return unlinkObject(split, state);
     }
-
-    unlinkMonsterObject(monster, missile);
-    if (monster.mw === missile) monster.mw = null;
-    monster.misc_worn_check &= ~(missile.owornmask || 0);
-    missile.owornmask = 0;
-    missile.wielded = false;
-    missile.worn = false;
-    missile.where = 'free';
-    return missile;
-}
-
-export function placeThrownObject(state, object, x, y) {
-    object.ox = x;
-    object.oy = y;
-    object.where = 'floor';
-    state._fobjSerial = (state._fobjSerial || 0) + 1;
-    object._fobjOrder = state._fobjSerial;
-    if (!state.level.objects[x]) state.level.objects[x] = [];
-    if (!state.level.objects[x][y]) state.level.objects[x][y] = [];
-    state.level.objects[x][y].unshift(object);
-}
-
-export function clearThrownObject(state, object) {
-    if (state?._thrownObject === object) state._thrownObject = null;
-}
-
-export function placeAndStackThrownObject(state, object, x, y) {
-    placeThrownObject(state, object, x, y);
-    stack_object(object, state);
-    clearThrownObject(state, object);
+    if (monsterWieldedWeapon(source) === object)
+        await unwieldMonsterWeapon(source, state, { weapon: object, publish });
+    if (object.where === 'minvent')
+        unlinkMonsterObject(source, object);
+    if (object.where !== 'free')
+        throw new Error('A monster projectile must be free or carried by its source');
+    object.owornmask = 0;
+    object.worn = false;
+    object.wielded = false;
     return object;
 }
-
-export async function finishMonsterProjectile(shot, state, {
-    random = rn2, rollOne = rnd, publish = async () => {},
-} = {}) {
-    if (!shot?.deferredFloorResolution || !shot.weapon) return shot;
-    shot.deferredFloorResolution = false;
-    const object = shot.weapon;
-    if (shot.tetheredTo) {
-        await returnMonsterWeapon(shot.tetheredTo, object, shot.impactX, shot.impactY, {
-            state, publish, random, rollOne,
-        });
-        clearThrownObject(state, object);
-        shot.floorResolved = true;
-        return shot;
-    }
-    const subtype = OBJECT_SUBTYPE[object.otyp] ?? 0;
-    const ammo = (object.oclass === WEAPON_CLASS
-            || object.oclass === GEM_CLASS)
-        && subtype >= -22 && subtype <= -20;
-    const missile = (object.oclass === WEAPON_CLASS
-            || object.oclass === TOOL_CLASS)
-        && subtype >= -24 && subtype <= -23;
-    const magicStone = objectTypeName(object) === 'loadstone'
-        || objectTypeName(object) === 'luckstone';
-    let broken = BLINDING_PROJECTILES.has(object.otyp)
-        || (shot.hit && object.otyp === EGG);
-    if (!broken && shot.hit && (ammo || missile) && !magicStone) {
-        const chance = 3 + Math.max(
-            object.oeroded ?? 0, object.oeroded2 ?? 0,
-        ) - (object.spe ?? 0);
-        broken = chance > 1 ? random(chance) !== 0 : random(4) === 0;
-        if (object.blessed && random(3) === 0) broken = false;
-        if (object.otyp === FLINT && random(2) === 0) broken = false;
-    }
-    if (broken) {
-        random(100);
-        deleteObject(object, state);
-        clearThrownObject(state, object);
-    } else {
-        const x = shot.impactX ?? state.u?.ux ?? 0;
-        const y = shot.impactY ?? state.u?.uy ?? 0;
-        placeAndStackThrownObject(
-            state, object, x, y,
-        );
-    }
-    shot.floorResolved = true;
-    shot.projectileBroken = broken;
-    return shot;
-}
-
-export async function hitHeroWithMonsterProjectile(
-    shot, state, {
-        beforeFinalDeath,
-        finishDeath = finishHeroDeath,
-        publish = plineWithContinuation,
-        random = rn2,
-        rollDice = d,
-        rollOne = rnd,
-    } = {},
-) {
-    const weapon = shot.weapon;
-    const hero = state.u;
-    const source = shot.source;
-    const killer = objectTypeName(weapon);
-    const appearance = missileAppearance(weapon);
-    shot.appearance = appearance;
-    if (!shot.tetheredTo && await catchMonsterProjectile(weapon, state, random, publish)) {
-        shot.caught = true;
-        shot.deferredFloorResolution = false;
-        clearThrownObject(state, weapon);
-        return { died: false };
-    }
-
-    const zeroDamage = ZERO_DAMAGE_HERO_PROJECTILES.has(weapon.otyp);
-    let damage = zeroDamage ? 0 : rollPhysicalWeaponDamageAgainstHero(weapon, state, { rollOne });
-    let accuracy = Math.max(-4, 3 - distmin(hero.ux, hero.uy, source.mx, source.my));
-    if ((MONSTER_FLAGS2[source.mnum] & M2_ELF) && OBJECT_SUBTYPE[weapon.otyp] === -P_BOW) {
-        accuracy++;
-        if (monsterWieldedWeapon(source)?.otyp === ELVEN_BOW) accuracy++;
-        if (weapon.otyp === ELVEN_ARROW) damage++;
-    }
-    if (MONSTER_SIZE[heroSpecies(state)] >= 3) accuracy++;
-    accuracy += 8 + (weapon.spe ?? 0);
-    if (zeroDamage) accuracy = 8;
-    else damage = Math.max(1, damage);
-    if (weapon.otyp !== ACID_VENOM
-        && (hero.halfPhysicalDamage || hero.half_physical_damage))
-        damage = Math.ceil(damage / 2);
-
-    shot.damage = damage;
-    const mortality = hero.umortality || 0;
-    const hit = await hitHeroWithObject(weapon, damage, accuracy, {
-        state, publish, rollOne, name: appearance,
-        die: options => finishDeath({ ...options, beforeFinalDeath }),
+async function flightBlocked(object, dx, dy, forceHit, { state, publish, random, }) {
+    const { x, y } = state.bhitpos;
+    const nextX = x + dx, nextY = y + dy;
+    if (!isok(nextX, nextY))
+        return true;
+    const cell = state.level.at(nextX, nextY);
+    if (!cell || IS_OBSTRUCTED(cell.typ)
+        || IS_DOOR(cell.typ) && !!((cell.doormask ?? 0) & (D_CLOSED | D_LOCKED)))
+        return true;
+    if (cell.typ !== IRONBARS)
+        return false;
+    const bars = await projectileHitsIronBars(object, {
+        state, x, y, barsX: nextX, barsY: nextY, forceHit, heroCaused: false, publish, random,
     });
-    shot.hit = hit.hit;
-    if (hit.died) return { died: true, lifeSaved: false };
-    if (!shot.hit) {
-        await stopHeroOccupation(state, publish);
-        random(5);
-        return { died: false };
-    }
-    let lifeSaved = (hero.umortality || 0) > mortality;
-    const poisoned = weapon.opoisoned && isPoisonableObject(weapon);
-    if (poisoned) {
-        const poison = await poisonHero({
-            reason: shot.appearance,
-            killer: `poisoned ${killer}`,
-            attribute: A_STR,
-            fatal: lifeSaved ? 0 : 10,
-            state,
-            random,
-            rollDice,
-            rollOne,
-            publish,
-            die: options => finishDeath({ ...options, beforeFinalDeath }),
-            thrownWeapon: true,
-        });
-        if (poison.died) return { died: true, lifeSaved: false };
-        lifeSaved ||= (hero.umortality || 0) > mortality;
-    }
-    if (BLINDING_PROJECTILES.has(weapon.otyp)) {
-        const blindness = blindHeroWithThrownObject(
-            weapon.otyp, state, rollOne,
-        );
-        if (blindness) await publish(blindness.message);
-    }
-    if (weapon.otyp === EGG) await hitByPetrifyingEgg(weapon, state);
-    await stopHeroOccupation(state, publish);
-    return { died: false, lifeSaved };
+    return bars.blocked || bars.heroDied;
 }
-
-async function catchMonsterProjectile(object, state, random, publish) {
-    const hero = state.u;
-    if (heroIsBlind(state) || heroHasNoHands(state) || !heroHasFreeHand(state)
-        || hero.confused || hero.confusionTurns > 0
-        || hero.stunned || hero.stunnedTurns > 0 || hero.fumbling
-        || object.oclass === VENOM_CLASS
-        || calcCapacity(state, object.owt) > SLT_ENCUMBER) return false;
-    const chance = 100 - currentAttribute(A_DEX, state)
-        - (['monk', 'rogue'].includes(state.urole.key) ? 20 : 0);
-    if (random(chance) !== 0) return false;
-    addInventoryItem(object, null, false);
-    await publish(`You catch the ${missileAppearance(object)}!`);
+async function dropMonsterProjectile(shot, hit, point, context) {
+    const { state, publish, random } = context;
+    const object = shot.weapon;
+    const broken = object.otyp === CREAM_PIE || object.oclass === VENOM_CLASS
+        || hit && object.otyp === EGG
+        || hit && shouldMulchMissile(object, { monsterMoving: !!state.context.mon_moving });
+    if (broken) {
+        await delobj(object, state);
+    }
+    else if (!await shipObject(object, point.x, point.y, { state, publish, random })) {
+        const actor = monsterAtPosition(state.level, point.x, point.y)
+            || (point.x === state.u.ux && point.y === state.u.uy ? state.u : null);
+        const floor = await applyFloorEffects(object, point.x, point.y, { state, publish, random, verb: 'fall' });
+        if (!floor.finished && !state.program_state.gameover) {
+            await placeObject(object, point.x, point.y, state);
+            if (actor && hit)
+                await applyMonsterPassiveToObject(actor, object, { state, publish, random });
+            if (!state.program_state.gameover)
+                await stack_object(object, state);
+        }
+    }
+    if (state._thrownObject === object)
+        state._thrownObject = null;
+}
+async function hitMonsterWithProjectile(defender, shot, remaining, context) {
+    const { state, archer, target, publish, random, rollOne, rollDice, volley } = context;
+    const object = shot.weapon;
+    const point = { ...state.bhitpos };
+    state.notonhead = point.x !== defender.mx || point.y !== defender.my;
+    const disguised = M_AP_TYPE(defender) !== 0 && M_AP_TYPE(defender) !== M_AP_MONSTER;
+    const visible = cansee(point.x, point.y);
+    let accuracy = 5 + findMonsterArmorClass(defender)
+        + rangedTargetHitBonus(object, defender, { state, random, rollOne });
+    if (archer && defender === target) {
+        if (archer.m_lev > 5)
+            accuracy += archer.m_lev - 5;
+        const launcher = monsterWieldedWeapon(archer);
+        if (launcher?.oartifact)
+            accuracy += artifactToHitBonus(launcher, defender, rollOne, { state, random });
+    }
+    shot.target = defender;
+    shot.heroTarget = false;
+    shot.hit = accuracy >= rollOne(20);
+    const name = captureHeroProjectileName(object, state, volley);
+    if (!shot.hit) {
+        if (!disguised) {
+            if (visible)
+                await publish(rayMissMessage(name, defender, { ...point, state }));
+            else if (!target)
+                await publish('It is missed.');
+        }
+        if (remaining)
+            return false;
+        await dropMonsterProjectile(shot, false, { x: defender.mx, y: defender.my }, context);
+        return true;
+    }
+    if (disguised)
+        revealMonsterAppearance(defender);
+    defender.msleeping = 0;
+    if (object.oclass === POTION_CLASS) {
+        const potion = await hitMonsterWithSupportedPotion({
+            state, monster: defender, potion: object, target: point, publish,
+            resolveVapor: true,
+            // potionhit measures vapor distance from the monster's head.
+            distance: dist2(state.u.ux, state.u.uy, defender.mx, defender.my),
+            heroCaused: !state.context.mon_moving,
+            finishKill: async (victim, options) => {
+                if (!state.context.mon_moving)
+                    return finishHeroMonsterKillOutcome(victim, victim.mx, victim.my, options);
+                const death = await finishEnvironmentalMonsterDeath(victim, state, { ...options, publish });
+                return { killed: !death.survived, heroDied: !!death.heroDied };
+            },
+        });
+        if (!potion)
+            throw new Error(`Unsupported thrown potion ${object.otyp}`);
+        return true;
+    }
+    const material = objectMaterial(object, state);
+    const defenderFlags = MONSTER_FLAGS1[defender.mnum] ?? 0;
+    const harmless = object.oclass !== 4 && (material === GEMSTONE || material === MINERAL)
+        && !!(defenderFlags & M1_WALLWALK) && !(defenderFlags & M1_UNSOLID);
+    let damage = rollPhysicalWeaponDamage(object, defender, { state, rollOne, rollDice });
+    if (object.otyp === ACID_VENOM && monsterHasAcidResistance(defender))
+        damage = 0;
+    if (visible) {
+        if (object.otyp === EGG) {
+            const egg = object.known && object.corpsenm !== undefined
+                ? `${withIndefiniteArticle(MONSTER_NAME[object.corpsenm] ?? 'unknown')} egg` : 'an egg';
+            await publish(`Splat!  ${monsterName(defender, { state, capitalized: true })} is hit with ${egg}!`);
+        }
+        else {
+            await publish(rayHitMessage(name, defender, {
+                ...point, state, damage,
+                ...(harmless ? { ending: ` but passes harmlessly through ${monsterObjectPronoun(defender, { state })}.` } : {}),
+            }));
+        }
+    }
+    else if (!target) {
+        await publish(`${object.otyp === EGG ? 'Splat!  ' : ''}${monsterName(defender, { state, capitalized: true })} is hit${damage > 4 ? '!' : '.'}`);
+    }
+    if (object.opoisoned && isPoisonableObject(object)) {
+        if (monsterHasPoisonResistance(defender)) {
+            if (visible)
+                await publish(`The poison doesn't seem to affect ${monsterName(defender, { state })}.`);
+        }
+        else if (random(30) !== 0)
+            damage += rollOne(6);
+        else {
+            if (visible)
+                await publish('The poison was deadly...');
+            damage = defender.mhp;
+        }
+    }
+    if (material === SILVER && monsterHatesSilver(defender)) {
+        const flesh = !monsterIsNoncorporeal(defender) && !monsterIsAmorphous(defender);
+        if (visible) {
+            const subject = monsterName(defender, { state });
+            await publish(`The silver sears ${flesh ? `${possessiveName(subject)} flesh` : subject}!`);
+        }
+        else if (!target)
+            await publish(`${flesh ? 'Its flesh' : 'It'} is seared!`);
+    }
+    if (object.otyp === ACID_VENOM && cansee(defender.mx, defender.my)) {
+        if (monsterHasAcidResistance(defender)) {
+            if (visible || !target)
+                await publish(`${monsterName(defender, { state, capitalized: true })} is unaffected.`);
+        }
+        else if (visible) {
+            await publish(`The ${displayLiquidName('acid', state)} burns ${monsterName(defender, { state })}!`);
+        }
+        else if (!target)
+            await publish('It is burned!');
+    }
+    if (object.otyp === EGG && touchPetrifies(object.corpsenm)) {
+        const stone = await petrifyMonsterFromContact(defender, {
+            state, publish, rollOne,
+            finishDeath: (victim, options) => finishEnvironmentalMonsterDeath(victim, state, { ...options, publish, random, rollDice }),
+        });
+        if (stone.heroDied)
+            return true;
+        if (monsterHasStoneResistance(defender))
+            damage = 0;
+    }
+    shot.damage = harmless ? 0 : damage;
+    if (!harmless && defender.mhp > 0) {
+        defender.mhp -= damage;
+        if (defender.mhp <= 0) {
+            if (visible || !target) {
+                const destroyed = monsterIsNonliving(defender.mnum) || monsterIsVampireShifter(defender)
+                    || !canSpotMonster(defender);
+                await publish(`${monsterName(defender, { state, capitalized: true })} is ${destroyed ? 'destroyed' : 'killed'}!`);
+            }
+            if (!state.context.mon_moving)
+                await finishHeroMonsterKillOutcome(defender, defender.mx, defender.my, { showKillMessage: false, publish });
+            else
+                await finishEnvironmentalMonsterDeath(defender, state, { publish, random, rollDice });
+            if (state.program_state.gameover)
+                return true;
+        }
+    }
+    shot.targetDied = defender.mhp <= 0;
+    if (!shot.targetDied && monsterCanBeBlindedByObject(defender, object.otyp, { state })) {
+        if (visible && defender.mcansee) {
+            const cause = object.oclass === VENOM_CLASS ? 'venom' : object.otyp === CREAM_PIE ? 'pie' : objectCombatName(object, { state });
+            await publish(`${monsterName(defender, { state, capitalized: true })} is blinded by the ${cause}.`);
+        }
+        applyMonsterBlindness(defender, rollOne);
+    }
+    if (!shot.targetDied && !state.context.mon_moving)
+        await angerAttackedMonster(defender);
+    if (!state.program_state.gameover)
+        await dropMonsterProjectile(shot, true, point, context);
     return true;
 }
-
-export async function finishMonsterProjectileHit(
-    shot, state, {
-        finishMonsterDeath,
-        publish,
-        rollOne = rnd,
-    } = {},
-) {
-    if (!shot?.hit || !shot.petrifyingEgg || !shot.target)
-        return { handled: false, deathFinished: false };
-    if (!state.level?.monsters?.includes(shot.target))
-        return { handled: false, deathFinished: false };
-
-    const petrification = await petrifyMonsterFromContact(shot.target, {
-        finishDeath: finishMonsterDeath,
-        publish, rollOne, state,
-    });
-    const deathFinished = !petrification.survived;
-    let damage = 0;
-    if (petrification.survived
-        && !monsterHasStoneResistance(shot.target)) {
-        damage = shot.eggImpactDamage;
-        shot.target.mhp = Math.max(0, shot.target.mhp - damage);
+async function catchUnicornGift(object, { state, source, publish }) {
+    if (object.oclass !== GEM_CLASS || object.otyp > LAST_GLASS_GEM || !monsterIsUnicorn(heroSpecies(state)))
+        return false;
+    const name = objectCombatName(object, { state });
+    const owner = possessiveName(monsterName(source, { state }));
+    if (object.otyp >= FIRST_GLASS_GEM) {
+        await publish(`You catch the ${name}.`);
+        await publish(`You are not interested in ${owner} junk.`);
+        learnObjectType(object.otyp, state);
+        await dropObjectAtHero(object, { state, publish });
     }
+    else {
+        await publish(`You accept ${owner} gift in the spirit in which it was intended.`);
+        await holdAnotherObject(object, {
+            state, publish, dropMessage: `You catch, but drop, ${name}.`, holdMessage: 'You catch:',
+        });
+    }
+    return true;
+}
+async function catchThrownObject(object, { state, random, publish }) {
+    const hero = state.u;
+    if (heroIsBlind(state) || heroHasNoHands(state) || !heroHasFreeHand(state)
+        || hero.confused || hero.stunned || hero.fumbling || object.oclass === VENOM_CLASS
+        || calcCapacity(state, object.owt) > SLT_ENCUMBER)
+        return false;
+    const chance = 100 - currentAttribute(A_DEX, state)
+        - (state.urole.key === 'monk' || state.urole.key === 'rogue' ? 20 : 0);
+    if (random(chance) !== 0)
+        return false;
+    const name = objectCombatName(object, { state });
+    await holdAnotherObject(object, {
+        state, publish, dropMessage: `You catch, but drop, the ${name}.`,
+        holdMessage: `You catch the ${name}!`,
+    });
+    return true;
+}
+async function hitHeroWithProjectile(shot, context) {
+    const { state, source, random, rollOne, rollDice, publish, volley } = context;
+    const object = shot.weapon;
+    const hero = state.u;
+    const zeroDamage = object.otyp === EGG || object.otyp === CREAM_PIE || object.otyp === BLINDING_VENOM;
+    if (object.otyp === EGG && !touchPetrifies(object.corpsenm)) {
+        await stopHeroOccupation(state, publish);
+        return { blindness: null };
+    }
+    let damage = zeroDamage ? 0 : rollPhysicalWeaponDamageAgainstHero(object, state, { rollOne, rollDice });
+    let accuracy = Math.max(-4, 3 - distmin(hero.ux, hero.uy, source.mx, source.my));
+    if (((MONSTER_FLAGS2[source.mnum] ?? 0) & M2_ELF) && OBJECT_SUBTYPE[object.otyp] === -P_BOW) {
+        accuracy++;
+        if (monsterWieldedWeapon(source)?.otyp === ELVEN_BOW)
+            accuracy++;
+        if (object.otyp === ELVEN_ARROW)
+            damage++;
+    }
+    if ((MONSTER_SIZE[heroSpecies(state)] ?? 0) >= 3)
+        accuracy++;
+    accuracy += 8 + object.spe;
+    if (zeroDamage)
+        accuracy = 8;
+    else
+        damage = Math.max(1, damage);
+    if (object.otyp !== ACID_VENOM && hero.halfPhysicalDamage)
+        damage = Math.ceil(damage / 2);
     shot.damage = damage;
-    shot.targetDied = (shot.target.mhp ?? 0) <= 0;
-    return { handled: true, deathFinished, petrification };
-}
-
-export async function presentMonsterProjectileContact(
-    contact, publish, { showDeath = true } = {},
-) {
-    const x = contact.x ?? contact.impactX ?? contact.target?.mx;
-    const y = contact.y ?? contact.impactY ?? contact.target?.my;
-    if (!cansee(x, y)) return;
-    const spotted = canProjectMonster(
-        contact.target, x, y,
-    );
-    const target = spotted
-        ? `the ${monsterTypeName(
-            contact.target.mnum, !!contact.target.female,
-        )}`
-        : 'it';
-    if (contact.hit && contact.weapon?.otyp === EGG) {
-        const subject = target === 'it' ? 'It' : `The ${target.slice(4)}`;
-        const article = /^[aeiou]/i.test(contact.appearance) ? 'an' : 'a';
-        await publish(
-            `Splat!  ${subject} is hit with ${article} ${contact.appearance}!`,
-        );
-    } else {
-        await publish(contact.hit
-            ? `The ${contact.appearance} hits ${target}.`
-            : `The ${contact.appearance} misses ${target}.`);
-    }
-    if (contact.poisonResisted)
-        await publish(`The poison doesn't seem to affect ${target}.`);
-    else if (contact.poisonDeadly)
-        await publish('The poison was deadly...');
-    if (contact.silverSears) {
-        const flesh = MONSTER_SYMBOL[contact.target?.mnum] !== S_GHOST
-            && !((MONSTER_FLAGS1[contact.target?.mnum] ?? 0) & M1_AMORPHOUS);
-        const object = flesh
-            ? target === 'it' ? 'its flesh' : `${possessive(target)} flesh`
-            : target;
-        await publish(`The silver sears ${object}!`);
-    }
-    if (contact.blinded && spotted) {
-        const cause = contact.weapon?.otyp === CREAM_PIE ? 'pie' : 'venom';
-        await publish(`The ${target.slice(4)} is blinded by the ${cause}.`);
-    }
-    if (contact.targetDied && showDeath) {
-        const subject = target === 'it'
-            ? 'It' : `The ${target.slice(4)}`;
-        await publish(`${subject} is killed!`);
-    }
-}
-
-export async function presentMonsterProjectileShot(
-    shot, projectileGlyph, state, {
-        publish,
-        showMissWithoutTarget = false,
-    },
-) {
-    let transientFlightCell = null;
-    for (const cell of shot.flightPath || []) {
-        if (cell.contact)
-            await presentMonsterProjectileContact(cell.contact, publish);
-        if (transientFlightCell)
-            newsym(transientFlightCell.x, transientFlightCell.y);
-        transientFlightCell = null;
-        const flightVisible = cansee(cell.x, cell.y);
-        if (flightVisible) {
-            show_glyph_cell(
-                cell.x, cell.y, projectileGlyph.ch,
-                projectileGlyph.color, projectileGlyph.decgfx,
-                projectileGlyph.attr,
-            );
-            transientFlightCell = cell;
-        }
-        await flush_screen(1);
-        if (flightVisible)
-            state.nhDisplay?.setCursor(cell.x, cell.y + 1);
-        await state.animationFrame?.();
-    }
-
-    const targetVisible = shot.target
-        ? cansee(shot.target.mx, shot.target.my) : false;
-    try {
-        if (shot.target)
-            await presentMonsterProjectileContact(shot, publish);
-        else if (showMissWithoutTarget)
-            await publish(`The ${shot.appearance} misses.`);
-
-        if (transientFlightCell)
-            newsym(transientFlightCell.x, transientFlightCell.y);
-        transientFlightCell = null;
-        const impactX = shot.impactX ?? shot.target?.mx;
-        const impactY = shot.impactY ?? shot.target?.my;
-        const impactVisible = Number.isFinite(impactX)
-            && Number.isFinite(impactY) && cansee(impactX, impactY);
-        if (impactVisible) {
-            show_glyph_cell(
-                impactX, impactY, projectileGlyph.ch,
-                projectileGlyph.color, projectileGlyph.decgfx,
-                projectileGlyph.attr,
-            );
-            transientFlightCell = { x: impactX, y: impactY };
-        }
-        const impactCursor = impactVisible
-            ? [impactX, impactY + 1]
-            : [state._pending_message?.length || 0, 0];
-        await flush_screen(1);
-        state.nhDisplay?.setCursor(...impactCursor);
-        await state.animationFrame?.();
-    } finally {
-        if (transientFlightCell)
-            newsym(transientFlightCell.x, transientFlightCell.y);
-    }
-
-    return { targetVisible };
-}
-
-function projectileDamageAgainstMonster(object, monster, rollOne) {
-    if (BLINDING_PROJECTILES.has(object.otyp)) return 0;
-    return rollPhysicalWeaponDamage(object, monster, { rollOne });
-}
-
-function missileAppearance(missile) {
-    if (missile.otyp === EGG && missile.known
-        && MONSTER_NAME[missile.corpsenm]) {
-        return `${MONSTER_NAME[missile.corpsenm]} egg`;
-    }
-    const name = missile.dknown
-        ? objectTypeName(missile)
-        : OBJECT_DESCRIPTIONS[missile.otyp]
-            || objectTypeName(missile) || 'weapon';
-    return missile.opoisoned && isPoisonableObject(missile)
-        ? `poisoned ${name}` : name;
-}
-
-function possessive(name) {
-    return /s$/i.test(name) ? `${name}'` : `${name}'s`;
-}
-
-function livingMonsterAt(state, source, x, y) {
-    return state.level?.monsters?.find(monster =>
-        monster !== source && !monster.dead && (monster.mhp ?? 1) > 0
-        && monster.mx === x && monster.my === y) || null;
-}
-
-function positionsAreLinedUp(source, target) {
-    const dx = Math.abs(source.mx - target.mx);
-    const dy = Math.abs(source.my - target.my);
-    return dx === 0 || dy === 0 || dx === dy;
-}
-
-function hitMonsterWithMissile(
-    source, intendedTarget, defender, missile, state, random, rollOne,
-) {
-    let hitThreshold = 5 + findMonsterArmorClass(defender)
-        + rangedTargetHitBonus(missile, defender, { state, random, rollOne });
-    const sourceLevel = source.m_lev ?? MONSTER_LEVEL[source.mnum] ?? 0;
-    if (defender === intendedTarget) {
-        if (sourceLevel > 5) hitThreshold += sourceLevel - 5;
-        const launcher = monsterWieldedWeapon(source);
-        if (launcher?.oartifact) {
-            hitThreshold += artifactToHitBonus(launcher, defender, rollOne, {
-                state, random,
-            });
-        }
-    }
-    const hitRoll = rollOne(20);
-    const hit = hitThreshold >= hitRoll;
-    let damage = hit
-        ? projectileDamageAgainstMonster(missile, defender, rollOne)
-        : 0;
-    const petrifyingEgg = hit && missile.otyp === EGG
-        && touchPetrifies(missile.corpsenm);
-    const silverSears = hit
-        && OBJECT_MATERIAL[missile.otyp] === SILVER
-        && monsterHatesSilver(defender);
-    const eggImpactDamage = petrifyingEgg ? damage : 0;
-    if (petrifyingEgg) damage = 0;
-    let poisonResisted = false;
-    let poisonDeadly = false;
-    if (hit && missile.opoisoned && isPoisonableObject(missile)) {
-        if (monsterHasPoisonResistance(defender)) {
-            poisonResisted = true;
-        } else if (random(30)) {
-            damage += rollOne(6);
-        } else {
-            poisonDeadly = true;
-            damage = defender.mhp ?? 1;
-        }
-    }
-    if (hit) {
-        defender.msleeping = 0;
-        defender.mhp = Math.max(0, (defender.mhp ?? 1) - damage);
-    }
-    const blindness = hit ? blindMonsterWithThrownObject(
-        defender, missile.otyp, { state, rollOne },
-    ) : null;
-    const appearance = missileAppearance(missile);
-    if (petrifyingEgg) missile.known = true;
-    return {
-        weapon: missile,
-        appearance,
-        target: defender,
-        x: defender.mx,
-        y: defender.my,
-        hit,
-        targetDied: hit && (defender.mhp ?? 0) <= 0,
-        hitRoll,
-        hitThreshold,
-        damage,
-        poisonResisted,
-        poisonDeadly,
-        silverSears,
-        petrifyingEgg,
-        eggImpactDamage,
-        blinded: blindness?.wasSeeing ?? false,
-        blindIncrement: blindness?.blindIncrement ?? 0,
+    const mortality = hero.umortality ?? 0;
+    const die = async (options) => {
+        await waitForCurrentMonsterMore();
+        return finishHeroDeath(options);
     };
-}
-
-function throwOneMonsterMissile(
-    source, target, state, weapon, launched, random, rollOne,
-) {
-    const missile = splitMonsterMissile(source, weapon);
-    state._thrownObject = missile;
-    const distance = distmin(source.mx, source.my, target.mx, target.my);
-    const dx = Math.sign(target.mx - source.mx);
-    const dy = Math.sign(target.my - source.my);
-    const flightPath = [];
-    let x = source.mx;
-    let y = source.my;
-
-    for (let remaining = distance; remaining > 0; remaining--) {
-        x += dx;
-        y += dy;
-        const defender = livingMonsterAt(state, source, x, y);
-        if (!defender) {
-            random(5);
-            if (remaining > 1) flightPath.push({ x, y });
-            continue;
-        }
-
-        const contact = hitMonsterWithMissile(
-            source, target, defender, missile, state, random, rollOne,
-        );
-        if (!contact.hit) {
-            random(5);
-            if (remaining > 1) {
-                flightPath.push({ x, y, contact });
-                continue;
-            }
-        }
-        return {
-            weapon: missile,
-            ...contact,
-            launched,
-            flightPath,
-            flightGlyph: ')',
-            impactX: x,
-            impactY: y,
-            deferredFloorResolution: true,
-        };
-    }
-
-    return {
-        weapon: missile,
-        appearance: missileAppearance(missile),
-        target: null,
-        hit: false,
-        damage: 0,
-        launched,
-        flightPath,
-        flightGlyph: ')',
-        impactX: x,
-        impactY: y,
-        deferredFloorResolution: true,
-    };
-}
-
-function throwOneMonsterMissileAtHero(
-    source, state, weapon, launched, random, rollOne,
-) {
-    const tetheredTo = weapon === monsterWieldedWeapon(source)
-        && returningWeaponRangeSquared(weapon) !== null ? source : null;
-    const missile = splitMonsterMissile(source, weapon);
-    state._thrownObject = missile;
-    const heroX = state.u?.ux ?? source.mx;
-    const heroY = state.u?.uy ?? source.my;
-    const distance = distmin(source.mx, source.my, heroX, heroY);
-    const dx = Math.sign(heroX - source.mx);
-    const dy = Math.sign(heroY - source.my);
-    const appearance = missileAppearance(missile);
-    const flightPath = [];
-    let x = source.mx;
-    let y = source.my;
-
-    for (let remaining = distance; remaining > 0; remaining--) {
-        x += dx;
-        y += dy;
-        const defender = livingMonsterAt(state, source, x, y);
-        if (defender) {
-            const contact = hitMonsterWithMissile(
-                source, null, defender, missile, state, random, rollOne,
-            );
-            if (!contact.hit) {
-                random(5);
-                if (remaining > 1) {
-                    flightPath.push({ x, y, contact });
-                    continue;
-                }
-            }
-            return {
-                weapon: missile,
-                ...contact,
-                launched,
-                flightPath,
-                flightGlyph: ')',
-                impactX: x,
-                impactY: y,
-                deferredFloorResolution: true,
-            };
-        }
-
-        if (x === heroX && y === heroY) {
-            return {
-                source,
-                weapon: missile,
-                appearance,
-                heroTarget: true,
-                launched,
-                tetheredTo,
-                flightPath,
-                flightGlyph: ')',
-                impactX: x,
-                impactY: y,
-                deferredFloorResolution: true,
-            };
-        }
-
-        random(5);
-        if (remaining > 1) flightPath.push({ x, y });
-    }
-    return null;
-}
-
-function newMonsterWeaponVolley({
-    source, aimedAt = null, targetKind, weapon, launched, volley, shot,
-}) {
-    return {
-        attempted: true,
-        madeAttack: true,
-        source,
-        aimedAt,
-        targetKind,
-        missileStack: weapon,
-        appearance: shot.appearance,
-        volley,
-        shots: [shot],
-        launched,
-    };
-}
-
-export function throwMonsterWeaponAtHero(
-    source, state, weapon, {
-        random = rn2,
-        rollOne = rnd,
-    } = {},
-) {
-    const launcher = monsterWieldedWeapon(source);
-    const launched = ammunitionMatchesLauncher(weapon, launcher);
-    const volley = monsterVolleyCount(source, weapon, launcher, rollOne);
-    source.weaponCheck = NEED_WEAPON;
-    const shot = throwOneMonsterMissileAtHero(
-        source, state, weapon, launched, random, rollOne,
-    );
-    return shot ? newMonsterWeaponVolley({
-        source,
-        targetKind: 'hero',
-        weapon,
-        volley,
-        launched,
-        shot,
-    }) : null;
-}
-
-export function continueMonsterWeaponVolley(
-    attack, state, {
-        random = rn2,
-        rollOne = rnd,
-    } = {},
-) {
-    const targetAlive = attack?.targetKind === 'hero'
-        ? (state.u?.uhp ?? 1) > 0
-        : state.level?.monsters?.includes(attack?.aimedAt)
-            && (attack.aimedAt?.mhp ?? 0) > 0;
-    if (!attack?.shots
-        || attack.shots.length >= attack.volley
-        || (attack.source?.mhp ?? 1) <= 0
-        || !targetAlive) {
-        return null;
-    }
-    const shot = attack.targetKind === 'hero'
-        ? throwOneMonsterMissileAtHero(
-            attack.source, state, attack.missileStack,
-            attack.launched, random, rollOne,
-        )
-        : throwOneMonsterMissile(
-            attack.source, attack.aimedAt, state, attack.missileStack,
-            attack.launched, random, rollOne,
-        );
-    if (shot) attack.shots.push(shot);
-    return shot;
-}
-
-export async function throwMonsterWeaponAtMonster(
-    source, target, state, {
-        random = rn2,
-        rollOne = rnd,
-    } = {},
-) {
-    const spentWielding = await readyRangedMonsterWeapon(source, state);
-    if (spentWielding) {
-        return {
-            attempted: true,
-            launched: false,
-            spentWielding: true,
-        };
-    }
-
-    const weapon = selectMonsterRangedWeapon(source, state)?.weapon;
-    // C thrwmm() does not apply polearms against other monsters.
-    if (!weapon || isPolearm(weapon) || !positionsAreLinedUp(source, target)) return null;
-
-    const distance = distmin(source.mx, source.my, target.mx, target.my);
-    const hesitationRange = Math.max(BOLT_LIM - distance, 1);
-    if (target.mflee && random(hesitationRange) !== 0) return null;
-
-    const launcher = monsterWieldedWeapon(source);
-    const launched = ammunitionMatchesLauncher(weapon, launcher);
-    if (launched
-        && dist2(source.mx, source.my, target.mx, target.my) > 36) {
-        return null;
-    }
-
-    const volley = monsterVolleyCount(source, weapon, launcher, rollOne);
-    source.weaponCheck = NEED_WEAPON;
-    const shot = throwOneMonsterMissile(
-        source, target, state, weapon, launched, random, rollOne,
-    );
-    return newMonsterWeaponVolley({
-        source,
-        aimedAt: target,
-        targetKind: 'monster',
-        weapon,
-        volley,
-        launched,
-        shot,
+    const hit = await hitHeroWithObject(object, damage, accuracy, {
+        state, publish, rollOne, die,
+        name: captureHeroProjectileName(object, state, volley), killer: killerObjectName(object, state),
     });
+    shot.hit = hit.hit;
+    shot.heroDied = hit.died;
+    if (hit.died)
+        return { blindness: null };
+    if (hit.hit && object.opoisoned && isPoisonableObject(object)) {
+        const poison = await poisonHero({
+            reason: objectCombatName(object, { state }), killer: killerObjectName(object, state),
+            attribute: A_STR, fatal: (hero.umortality ?? 0) > mortality ? 0 : 10,
+            state, random, rollDice, rollOne, publish, die, thrownWeapon: true,
+        });
+        if (poison.died) {
+            shot.heroDied = true;
+            return { blindness: null };
+        }
+    }
+    const blindness = hit.hit ? prepareHeroThrownBlindness(object.otyp, state, rollOne) : null;
+    if (blindness)
+        await publish(blindness.message);
+    if (hit.hit && object.otyp === EGG)
+        await hitByPetrifyingEgg(object, state);
+    await stopHeroOccupation(state, publish);
+    return { blindness };
 }
+async function launchVolley(source, weapon, target, state, { random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }) {
+    const launcher = monsterWieldedWeapon(source);
+    const launched = ammunitionMatchesLauncher(weapon, launcher);
+    const targetX = target?.mx ?? source.mux ?? 0;
+    const targetY = target?.my ?? source.muy ?? 0;
+    const range = distmin(source.mx, source.my, targetX, targetY);
+    const dx = Math.sign(targetX - source.mx), dy = Math.sign(targetY - source.my);
+    const volley = monsterVolleyCount(source, weapon, launcher, rollOne);
+    const visible = canSeeMonster(source);
+    if (visible) {
+        let appearance;
+        if (volley > 1)
+            appearance = `${volley} ${objectCombatName(weapon, { state })}`;
+        else {
+            const single = { ...weapon, quan: 1, quantity: 1 };
+            const name = objectCombatName(single, { state });
+            appearance = objectHasPersonalName(single, state)
+                ? capitalizedDefiniteName(name, state).replace(/^The /u, 'the ') : withIndefiniteArticle(name);
+        }
+        await publish(`${monsterName(source, { state, capitalized: true })} ${launched ? 'shoots' : 'throws'} ${appearance}${target ? ` at ${canSpotMonster(target) ? monsterName(target, { state }) : 'something'}` : ''}!`);
+    }
+    const shots = [];
+    for (let index = 1; index <= volley; index++) {
+        const shot = await throwMonsterProjectile(source, weapon, {
+            state, dx, dy, range, target, archer: target ? source : null,
+            random, rollOne, rollDice, publish,
+            volley: { count: volley, index, objectType: visible ? weapon.otyp : 0 },
+        });
+        shots.push(shot);
+        if (shot.heroDied || source.mhp <= 0 || source.dead)
+            break;
+    }
+    endVoluntaryMultiTurn(state);
+    return { attempted: true, madeAttack: true,
+        source, missileStack: weapon, volley, launched, shots,
+        heroDied: !!state.program_state.gameover };
+}
+export async function throwMonsterWeaponAtHero(source, state, weapon, options = {}) {
+    requirePlayingGame(state);
+    return { ...await launchVolley(source, weapon, null, state, options), targetKind: 'hero', aimedAt: null };
+}
+export async function throwMonsterWeaponAtMonster(source, target, state, options = {}) {
+    requirePlayingGame(state);
+    if (await readyRangedMonsterWeapon(source, state))
+        return { attempted: true, launched: false, spentWielding: true, heroDied: !!state.program_state.gameover };
+    const weapon = selectMonsterRangedWeapon(source, state)?.weapon;
+    if (!weapon || isPolearm(weapon) || !monsterLinedUpWithMonster(source, target, state))
+        return null;
+    const chance = Math.max(BOLT_LIM - distmin(source.mx, source.my, target.mx, target.my), 1);
+    if (target.mflee && (options.random ?? rn2)(chance) !== 0)
+        return null;
+    if (ammunitionMatchesLauncher(weapon, monsterWieldedWeapon(source))
+        && dist2(source.mx, source.my, target.mx, target.my) > 36)
+        return null;
+    return { ...await launchVolley(source, weapon, target, state, options), targetKind: 'monster', aimedAt: target };
+}
+//# sourceMappingURL=monster_throw.js.map

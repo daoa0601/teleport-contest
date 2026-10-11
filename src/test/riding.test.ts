@@ -1,0 +1,324 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { rhack } from '../js/cmd.js';
+import { BEAR_TRAP, P_RIDING, TT_BEARTRAP } from '../js/const.js';
+import { initializePet } from '../js/dog.js';
+import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
+import { AMULET_OF_LIFE_SAVING, SADDLE } from '../js/object_data.js';
+import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { W_AMUL } from '../js/const.js';
+import { pushKeys } from '../js/input.js';
+import { ensureHeroSkills } from '../js/skills.js';
+import { putSaddleOnMonster } from '../js/steed.js';
+import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
+import { runExtendedCommand } from './support/commands.js';
+import { knownObject } from './support/game-objects.js';
+import { installPolymorphedHero } from './support/hero-state.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { addTrap } from './support/level-state.js';
+import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { nameToMonster } from '../js/mondata.js';
+import { removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
+
+void test('an animal body cannot mount a saddled pony', async () => {
+    freshObjectRoom({ role: 'knight' });
+    requirePlayingGame(game);
+    await createSaddledSteed();
+    installPolymorphedHero('bat');
+
+    await runExtendedCommand('ride', 'l');
+
+    assert.ok(!game.u.usteed);
+    assert.equal(game.context.move, 0);
+    assert.match(game._pending_message, /won't fit on a saddle/);
+});
+
+void test('a non-knight loses a barely tame mount before getting on', async () => {
+    freshObjectRoom({ role: 'barbarian', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const pony = await createSaddledSteed();
+    pony.mtame = 1;
+
+    await runExtendedCommand('ride', 'l');
+
+    assert.ok(!game.u.usteed);
+    assert.equal(pony.mtame, 0);
+    assert.equal(game.context.move, 0);
+});
+
+void test('slipping from a cursed saddle damages the active monster body', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    await createSaddledSteed('pony', { saddle: { cursed: true } });
+    installPolymorphedHero('vampire', { hitPoints: 1 });
+    const humanHealth = game.u.uhp;
+
+    await runExtendedCommand('ride', 'l                ');
+
+    assert.ok(!game.u.usteed);
+    assert.equal(game.u.umonnum, game.u.umonster);
+    assert.equal(game.u.uhp, humanHealth);
+    assert.equal(game.context.move, 0);
+});
+
+void test('mount and voluntary dismount preserve the live pony identity', async () => {
+    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const steed = await createSaddledSteed();
+
+    await runExtendedCommand('ride', 'l');
+
+    assert.equal(game.u.usteed, steed);
+    assert.equal(level.monsters.includes(steed), true);
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+    assert.equal(game.context.move, 1);
+    assert.match(game._pending_message, /mount the saddled pony/);
+
+    await runExtendedCommand('ride');
+
+    assert.equal(game.u.usteed, null);
+    assert.equal(level.monsters.filter(monster => monster === steed).length, 1);
+    assert.deepEqual([steed.mx, steed.my], [11, 10]);
+    assert.equal(
+        Math.abs(game.u.ux - steed.mx) + Math.abs(game.u.uy - steed.my),
+        1,
+    );
+    assert.equal(game.context.move, 1);
+    assert.match(game._pending_message, /pony with no name/);
+});
+
+void test('an unsaddled pony rejects riding without time or state mutation',
+    async () => {
+        const level = freshObjectRoom({ role: 'knight' });
+        requirePlayingGame(game);
+        const target = await createMonsterAt('pony', 11, 10);
+        initializePet(target, { state: game });
+        const before = [game.u.ux, game.u.uy, game.u.uhp];
+
+        await runExtendedCommand('ride', 'l');
+
+        assert.equal(game.u.usteed, undefined);
+        assert.deepEqual([game.u.ux, game.u.uy, game.u.uhp], before);
+        assert.deepEqual(level.monsters, [target]);
+        assert.equal(game.context.move, 0);
+        assert.match(game._pending_message, /not saddled/);
+    });
+
+void test('a saddled but untamed pony refuses the mount without injuring the hero',
+    async () => {
+        const level = freshObjectRoom({ role: 'knight' });
+        requirePlayingGame(game);
+        const target = await createMonsterAt('pony', 11, 10);
+        await putSaddleOnMonster(await knownObject(SADDLE), target);
+        const before = [game.u.ux, game.u.uy, game.u.uhp];
+
+        await runExtendedCommand('ride', 'l');
+
+        assert.equal(game.u.usteed, undefined);
+        assert.deepEqual([game.u.ux, game.u.uy, game.u.uhp], before);
+        assert.deepEqual(level.monsters, [target]);
+        assert.equal(game.context.move, 0);
+        assert.match(game._pending_message, /would mind/);
+    });
+
+void test('chat derives a pony response from its current tame and hunger state',
+    async () => {
+        const level = freshObjectRoom({ role: 'knight' });
+        requirePlayingGame(game);
+        const target = await createMonsterAt('pony', 11, 10);
+        initializePet(target, { state: game });
+        const hitPointsBefore = target.mhp;
+
+        await runExtendedCommand('chat', 'l');
+
+        assert.equal(game.context.move, 1);
+        assert.equal(level.monsters[0], target);
+        assert.deepEqual([target.mx, target.my], [11, 10]);
+        assert.equal(target.mhp, hitPointsBefore);
+        assert.match(game._pending_message, /pony whickers\.$/i);
+    });
+
+void test('riding moves the pony with the hero and trains riding skill', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    ensureHeroSkills(game);
+    game.u.urideturns = 99;
+    const ridingSkill = game.u.weaponSkills?.[P_RIDING];
+    assert.ok(ridingSkill);
+    const practice = ridingSkill.advance;
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(game.u.ux, 12);
+    assert.equal(pony.mx, game.u.ux);
+    assert.equal(pony.my, game.u.uy);
+    assert.ok(game.u.weaponSkills != null);
+    assert.equal(game.u.weaponSkills[P_RIDING]?.advance, practice + 1);
+});
+
+void test('a sleeping pony prevents walking but not an attack from the saddle', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    pony.msleeping = 1;
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(game.u.ux, 11);
+    assert.match(game._pending_message, /pony won't move/);
+    const foe = await createMonsterAt('lichen', 12, 10);
+    foe.mpeaceful = false;
+    const health = foe.mhp;
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.ok(foe.mhp < health);
+    assert.equal(game.u.usteed, pony);
+});
+
+void test('changing into a bat forces a dismount even when the saddle is cursed', async () => {
+    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    assert.ok(pony.saddle);
+    pony.saddle.cursed = true;
+    game.flags.debug = true;
+    const health = game.u.uhp;
+
+    await runExtendedCommand('polyself', 'bat\n                ');
+
+    assert.equal(game.u.usteed, null);
+    assert.ok(level.monsters.includes(pony));
+    assert.ok(game.u.ux !== pony.mx || game.u.uy !== pony.my);
+    assert.equal(game.u.uhp, health);
+});
+
+void test('a medium humanoid form can stay on the same pony', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    game.flags.debug = true;
+
+    await runExtendedCommand('polyself', 'vampire\n                ');
+
+    assert.equal(game.u.usteed, pony);
+    assert.equal(pony.mx, game.u.ux);
+    assert.equal(pony.my, game.u.uy);
+});
+
+void test('dismounting leaves the pony in the bear trap without striking it again', async () => {
+    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    const trap = addTrap(level, BEAR_TRAP, pony.mx, pony.my);
+    game.u.utrap = 5;
+    game.u.utraptype = TT_BEARTRAP;
+    const health = pony.mhp;
+
+    await runExtendedCommand('ride', ' ');
+
+    assert.equal(game.u.usteed, null);
+    assert.equal(game.u.utrap, 0);
+    assert.equal(pony.mhp, health);
+    assert.ok(level.monsters.includes(pony));
+    assert.equal(trap.tseen, true);
+});
+
+void test('a mount becoming too small drops its saddle and throws the rider', async () => {
+    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    const saddle = pony.saddle;
+    assert.ok(saddle);
+    const health = game.u.uhp;
+    const messages: string[] = [];
+
+    await changeMonsterForm(pony, nameToMonster('grid bug'), game, {
+        showMessage: true,
+        publish: async message => messages.push(message),
+    });
+
+    assert.equal(game.u.usteed, null);
+    assert.ok(level.monsters.includes(pony));
+    assert.ok(saddle != null);
+    assert.equal(saddle.where, 'floor');
+    assert.ok(game.u.uhp <= health - 10 && game.u.uhp >= health - 19);
+    assert.ok((game.u._woundedLegTurns ?? 0) > 0);
+    assert.match(messages[0] ?? '', /pony turns into a grid bug/);
+});
+
+void test('a mount becoming a horse keeps its rider and saddle', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    const saddle = pony.saddle;
+    assert.ok(saddle);
+    const health = game.u.uhp;
+    const messages: string[] = [];
+
+    await changeMonsterForm(pony, nameToMonster('horse'), game, {
+        publish: async message => messages.push(message),
+    });
+
+    assert.equal(game.u.usteed, pony);
+    assert.equal(pony.saddle, saddle);
+    assert.ok(saddle != null);
+    assert.equal(saddle.where, 'minvent');
+    assert.equal(game.u.uhp, health);
+    assert.ok(messages.some(message => /adjust yourself.*new horse/.test(message)));
+});
+
+void test('removing a worn saddle makes the rider fall', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    const saddle = pony.saddle;
+    assert.ok(saddle);
+    const health = game.u.uhp;
+
+    await removeObjectFromMonsterInventory(pony, saddle, game, {
+        publish: async () => {},
+    });
+
+    assert.equal(game.u.usteed, null);
+    assert.equal(pony.saddle, null);
+    assert.ok(saddle != null);
+    assert.equal(saddle.where, 'free');
+    assert.ok(game.u.uhp < health);
+});
+
+for (const lifesaving of [false, true]) {
+    void test(`environmental steed death ${lifesaving ? 'keeps a life-saved steed mounted' : 'dismounts without a saddle-removal accident'}`, async () => {
+        freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+        requirePlayingGame(game);
+        const steed = await createSaddledSteed();
+        if (lifesaving)
+            await equipMonsterObject(steed, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
+        await runExtendedCommand('ride', 'l');
+        assert.equal(game.u.usteed, steed);
+        const health = game.u.uhp;
+        pushKeys(' '.repeat(100));
+
+        const death = await finishEnvironmentalMonsterDeath(steed, game);
+
+        assert.equal(death.survived, lifesaving);
+        assert.equal(game.u.usteed, lifesaving ? steed : null);
+        assert.equal(game.u.uhp, health, 'generic dismount has no riding-accident damage');
+        assert.ok(!game.u._woundedLegSide);
+        if (lifesaving) assert.ok(steed.mhp > 0);
+        else {
+            assert.ok(!requireGameLevel().monsters.includes(steed));
+            assert.ok(!steed.minvent.length);
+        }
+    });
+}

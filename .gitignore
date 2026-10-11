@@ -1,2 +1,8 @@
 node_modules/
 .cache/
+dist/
+.DS_Store
+
+# Source maps emitted beside the grader-compatible runtime.
+*.js.map
+*.mjs.map

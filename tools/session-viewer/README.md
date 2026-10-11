@@ -24,7 +24,7 @@ by frame, on a per-PRNG-call timeline + a 24×80 map.
 ## Usage
 
 ```bash
-# from contest/template/
+# from the repository root
 python3 -m http.server 8080
 # then open http://localhost:8080/tools/session-viewer/ in a browser
 ```

@@ -1,128 +1,76 @@
 // Applying and eating royal jelly.
 // C refs: apply.c use_royal_jelly(), eat.c fpostfx().
-
-import {
-    adjustAttribute, attributeChangeMessage,
-} from './attrib.js';
-import { A_STR, POISONING } from './const.js';
+import { gainHeroStrength, } from './attrib.js';
+import { POISONING } from './const.js';
 import { pline, plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
-import { game } from './gstate.js';
+import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
+import { freeInventoryObject } from './hero_inventory.js';
 import { healHeroLegs } from './hero_legs.js';
-import { nextIdent } from './ident.js';
 import { restartEggHatchTimer } from './mklev.js';
 import { LUMP_OF_ROYAL_JELLY } from './object_data.js';
-import {
-    OBJECT_TIMER_KIND, objectTimers, stopObjectTimer,
-} from './object_timers.js';
-import {
-    moveUsedObjectToBill, rejoinShopBill, splitShopBill,
-} from './shk.js';
+import { OBJECT_TIMER_KIND, objectTimers, stopObjectTimer, } from './object_timers.js';
+import { moveUsedObjectToBill, } from './shk.js';
+import { rejoinObjectStack, splitObjectStack, } from './object_stack.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
-import { objectWeight } from './weight.js';
-import {
-    heroIsPolymorphed, heroIsUnchanging, polymonHero,
-    returnHeroToHumanForm,
-} from './polyself.js';
+import { heroIsPolymorphed, heroIsUnchanging, polymonHero, returnHeroToHumanForm, } from './polyself.js';
 import { rn2, rnd } from './rng.js';
-
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;
-
-function quantityOf(object) {
-    return object.quan ?? object.quantity ?? 1;
-}
-
-function takeOneJelly(stack) {
+// C use_royal_jelly(): split off one lump (splitobj -> splitbill), then
+// freeinv() it so the egg prompt cannot offer it.
+async function takeOneJelly(stack) {
     const inventoryIndex = game.inventory.indexOf(stack);
-    if (quantityOf(stack) === 1) {
-        game.inventory.splice(inventoryIndex, 1);
-        stack.where = 'free';
-        return {
-            jelly: stack,
-            parent: null,
-            inventoryIndex,
-            billSplit: null,
-        };
-    }
-
-    const jelly = {
-        ...stack,
-        o_id: nextIdent(game),
-        quan: 1,
-        quantity: 1,
-        owt: 0,
-        owornmask: 0,
-        worn: false,
-        wielded: false,
-        alternate: false,
-        ready: false,
-        timed: 0,
-        objectTimers: [],
-        where: 'free',
-    };
-    jelly.owt = objectWeight(jelly);
-    stack.quan = stack.quantity = quantityOf(stack) - 1;
-    stack.owt = objectWeight(stack);
-    return {
-        jelly,
-        parent: stack,
-        inventoryIndex,
-        billSplit: splitShopBill(stack, jelly),
-    };
+    if (inventoryIndex < 0)
+        throw new Error('Royal jelly must be carried before applying it.');
+    const parent = stack.quan === 1 ? null : stack;
+    const jelly = parent ? splitObjectStack(parent, 1, game) : stack;
+    if (!jelly)
+        throw new Error('Could not separate one lump from the royal jelly stack.');
+    await freeInventoryObject(jelly, game);
+    return { jelly, parent, inventoryIndex };
 }
-
-function putJellyBack(use) {
+async function putJellyBack(use) {
     if (use.parent) {
-        use.parent.quan = use.parent.quantity = quantityOf(use.parent) + 1;
-        use.parent.owt = objectWeight(use.parent);
-        rejoinShopBill(use.billSplit);
-        use.jelly.where = 'gone';
+        // C unsplitobj() refuses the freed lump, so it never returns.
+        await rejoinObjectStack(use.parent, use.jelly, game);
         return;
     }
-
-    const index = Math.max(0, Math.min(
-        use.inventoryIndex, game.inventory.length,
-    ));
+    const index = Math.max(0, Math.min(use.inventoryIndex, game.inventory.length));
     game.inventory.splice(index, 0, use.jelly);
     use.jelly.where = 'inventory';
 }
-
-function consumeJelly(jelly) {
-    releaseWeaponSlots(jelly);
+async function consumeJelly(jelly) {
+    await releaseWeaponSlots(jelly);
     jelly.owornmask = 0;
     jelly.worn = false;
-    if (!moveUsedObjectToBill(jelly)) jelly.where = 'gone';
+    if (!moveUsedObjectToBill(jelly))
+        jelly.where = 'gone';
     game._capacityDirty = true;
 }
-
 function eggHasHatchTimer(egg) {
-    return objectTimers(egg).some(timer =>
-        timer.kind === OBJECT_TIMER_KIND.HATCH_EGG);
+    return objectTimers(egg).some(timer => timer.kind === OBJECT_TIMER_KIND.HATCH_EGG);
 }
-
 function eggName(egg) {
-    return quantityOf(egg) === 1 ? 'egg' : `${quantityOf(egg)} eggs`;
+    return egg.quan === 1 ? 'egg' : `${egg.quan} eggs`;
 }
-
 function quiverMessage(egg, adverb) {
-    const verb = quantityOf(egg) === 1 ? 'quivers' : 'quiver';
+    const verb = egg.quan === 1 ? 'quivers' : 'quiver';
     return `The ${eggName(egg)} ${verb} ${adverb}.`;
 }
-
 export async function useRoyalJelly(stack, chooseEgg) {
-    if (stack?.otyp !== LUMP_OF_ROYAL_JELLY) return false;
-    const use = takeOneJelly(stack);
+    if (stack?.otyp !== LUMP_OF_ROYAL_JELLY)
+        return false;
+    const use = await takeOneJelly(stack);
     const egg = await chooseEgg();
     if (!egg) {
-        putJellyBack(use);
+        await putJellyBack(use);
         return false;
     }
-
     await pline(`You smear royal jelly all over your ${eggName(egg)}.`);
     const oldSpecies = egg.corpsenm ?? -1;
-    if (oldSpecies === PM_KILLER_BEE) egg.corpsenm = PM_QUEEN_BEE;
-
+    if (oldSpecies === PM_KILLER_BEE)
+        egg.corpsenm = PM_QUEEN_BEE;
     const hadTimer = eggHasHatchTimer(egg);
     let quivers = egg.corpsenm !== oldSpecies;
     if (use.jelly.cursed) {
@@ -130,7 +78,8 @@ export async function useRoyalJelly(stack, chooseEgg) {
         await pline(quivers || hadTimer
             ? quiverMessage(egg, 'feebly')
             : 'Nothing seems to happen.');
-    } else {
+    }
+    else {
         if ((egg.corpsenm ?? -1) >= 0 && !hadTimer) {
             restartEggHatchTimer(egg);
             quivers = eggHasHatchTimer(egg) || quivers;
@@ -139,61 +88,53 @@ export async function useRoyalJelly(stack, chooseEgg) {
             egg.spe = 2;
             quivers = true;
         }
-        if (egg.spe === 2) quivers = true;
+        if (egg.spe === 2)
+            quivers = true;
         await pline(quivers
             ? quiverMessage(egg, 'briefly')
             : 'Nothing seems to happen.');
     }
-
-    consumeJelly(use.jelly);
+    await consumeJelly(use.jelly);
     return true;
 }
-
 export function isRoyalJelly(object) {
     return object?.otyp === LUMP_OF_ROYAL_JELLY;
 }
-
-export async function eatRoyalJelly(jelly, {
-    state = game,
-    publish = plineWithContinuation,
-    die = finishHeroDeath,
-} = {}) {
-    const hero = state.u || (state.u = {});
+export async function eatRoyalJelly(jelly, { state = game, publish = plineWithContinuation, die = finishHeroDeath, } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const hero = state.u;
     if (heroIsPolymorphed(state) && hero.umonnum === PM_KILLER_BEE
         && !heroIsUnchanging(state)) {
-        await polymonHero(PM_QUEEN_BEE);
-        return { transformed: true, died: false };
+        const transformation = await polymonHero(PM_QUEEN_BEE);
+        if (transformation.transformed)
+            return { transformed: true, died: !!transformation.died };
     }
-
-    const strength = adjustAttribute(
-        A_STR, jelly.cursed ? -1 : 1, state,
-    );
-    const strengthMessage = attributeChangeMessage(A_STR, strength);
-    if (strengthMessage) await publish(strengthMessage);
-
+    await gainHeroStrength(jelly, 1, { state });
     const hitPointChange = rnd(20) * (jelly.cursed ? -1 : 1);
     if (heroIsPolymorphed(state)) {
-        hero.mh = (hero.mh ?? 0) + hitPointChange;
-        if (hero.mh > (hero.mhmax ?? 0)) {
-            if (rn2(17) === 0) hero.mhmax = (hero.mhmax ?? 0) + 1;
+        hero.mh += hitPointChange;
+        if (hero.mh > hero.mhmax) {
+            if (rn2(17) === 0)
+                hero.mhmax++;
             hero.mh = hero.mhmax;
-        } else if (hero.mh <= 0) {
-            const restored = await returnHeroToHumanForm(
-                state, { publish, die },
-            );
-            if (restored.died) return { transformed: true, died: true };
         }
-    } else {
-        hero.uhp = (hero.uhp ?? 0) + hitPointChange;
-        if (hero.uhp > (hero.uhpmax ?? 0)) {
+        else if (hero.mh <= 0) {
+            const restored = await returnHeroToHumanForm(state, { publish, die });
+            if (restored.died)
+                return { transformed: true, died: true };
+        }
+    }
+    else {
+        hero.uhp += hitPointChange;
+        if (hero.uhp > hero.uhpmax) {
             if (rn2(17) === 0) {
-                hero.uhpmax = (hero.uhpmax ?? 0) + 1;
-                hero.uhppeak = Math.max(
-                    hero.uhppeak ?? 0, hero.uhpmax,
-                );
+                hero.uhpmax++;
+                hero.uhppeak = Math.max(hero.uhppeak, hero.uhpmax);
             }
             hero.uhp = hero.uhpmax;
-        } else if (hero.uhp <= 0) {
+        }
+        else if (hero.uhp <= 0) {
             const died = await die({
                 killer: 'rotten lump of royal jelly',
                 deathType: POISONING,
@@ -201,10 +142,9 @@ export async function eatRoyalJelly(jelly, {
             return { transformed: false, died: !!died };
         }
     }
-
     if (!jelly.cursed) {
-        const healing = healHeroLegs(state);
-        for (const message of healing.messages) await publish(message);
+        await healHeroLegs(state, { publish });
     }
     return { transformed: false, died: false };
 }
+//# sourceMappingURL=royal_jelly.js.map

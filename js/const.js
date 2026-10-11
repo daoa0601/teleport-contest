@@ -1,47 +1,43 @@
-// const.js — game constants imported from upstream NetHack 5.0 headers.
-// Edit freely; the contest only freezes isaac64.js and terminal.js.
-const MAXPCHARS = 105; // from symbols.js
+// Game constants imported from the pinned NetHack 5.0 headers.
 // Mirrors constants from include/hack.h, include/global.h, include/rm.h
 //
 // Constant file DAG (must remain acyclic for initialization order):
 //   gstate.js (game state singleton, no imports from this DAG)
 //   terminal.js (leaf: ANSI color constants)
 //   hacklib.js (leaf: string utilities)
+//   object_grammar.js (leaf: pure noun grammar)
 //   version.js (leaf: build version)
-//   const.js (this file) <- imports: terminal.js, hacklib.js, version.js, gstate.js
+//   monster_data.js <- monster_attack_types.js (leaf metadata)
+//   const.js <- terminal.js, hacklib.js, object_grammar.js, version.js,
+//               gstate.js, monster_data.js
 //   objects.js <- imports: const.js
 //   monsters.js <- imports: const.js, objects.js
 //   symbols.js <- imports: const.js, monsters.js
 //
 // IMPORTANT: const.js imports gstate.js for the game object (used by
-// u_at, OBJ_AT, etc.). This is safe because gstate.js has no imports
+// u_at and level predicates). This is safe because gstate.js has no imports
 // from this DAG. Do NOT add imports from objects.js, monsters.js, or
 // symbols.js into const.js — that would create a cycle.
-
 import { COMMIT_NUMBER, TELEPORT_BUILD_DATE } from './version.js';
-// No imports from non-constant files — const.js is a leaf in the DAG
+import { MONSTER_NAME } from './monster_data.js';
+import { withIndefiniteArticle } from './object_grammar.js';
+// Runtime imports must keep the dependency graph above acyclic.
 import { game } from './gstate.js';
-import { CLR_BLACK, CLR_BLUE, CLR_BRIGHT_BLUE, CLR_BRIGHT_CYAN, CLR_BRIGHT_GREEN, CLR_BRIGHT_MAGENTA, CLR_BROWN, CLR_CYAN, CLR_GRAY, CLR_GREEN, CLR_MAGENTA, CLR_ORANGE, CLR_RED, CLR_WHITE, CLR_YELLOW, NO_COLOR } from './terminal.js';
-
+import { CLR_BLACK, CLR_BLUE, CLR_BRIGHT_BLUE, CLR_BRIGHT_CYAN, CLR_BRIGHT_GREEN, CLR_BRIGHT_MAGENTA, CLR_BROWN, CLR_CYAN, CLR_GRAY, CLR_GREEN, CLR_MAGENTA, CLR_ORANGE, CLR_RED, CLR_WHITE, CLR_YELLOW } from './terminal.js';
 // C macro: SIZE(arr) = sizeof(arr)/sizeof(arr[0]) → JS: arr.length
 export function SIZE(arr) { return arr.length; }
-
 // Version (patchlevel.h)
-export const VERSION_MAJOR = 3;
-export const VERSION_MINOR = 7;
+export const VERSION_MAJOR = 5;
+export const VERSION_MINOR = 0;
 export const PATCHLEVEL = 0;
 export const VERSION_STRING = `NetHack ${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL} Teleport #${COMMIT_NUMBER}`;
 export const TELEPORT_BANNER_C = `         Version ${VERSION_MAJOR}.${VERSION_MINOR}.${PATCHLEVEL}-134 Teleport JS (experiment ${COMMIT_NUMBER}) ${TELEPORT_BUILD_DATE}.`;
-
 // AUTO-IMPORT-BEGIN: CONST_GLOBAL_RM
 // Auto-imported global/rm constants from C headers
 // Sources: global.h, rm.h
-
 // Map dimensions — cf. global.h
-
 export const COLNO = 80;
 export const ROWNO = 21;
-
 // Level location types — cf. rm.h enum levl_typ_types
 export const STONE = 0;
 export const VWALL = 1;
@@ -81,7 +77,6 @@ export const DRAWBRIDGE_DOWN = 34;
 export const AIR = 35;
 export const CLOUD = 36;
 export const MAX_TYPE = 37;
-
 // Door states — cf. rm.h
 export const D_NODOOR = 0x00;
 export const D_BROKEN = 0x01;
@@ -91,22 +86,18 @@ export const D_LOCKED = 0x08;
 export const D_TRAPPED = 0x10;
 export const D_SECRET = 0x20;
 // AUTO-IMPORT-END: CONST_GLOBAL_RM
-
 // Display dimensions
 export const TERMINAL_COLS = 80;
-export const TERMINAL_ROWS = 24;  // message + map + 2 status lines
+export const TERMINAL_ROWS = 24; // message + map + 2 status lines
 export const MESSAGE_ROW = 0;
 export const MAP_ROW_START = 1;
 export const STATUS_ROW_1 = 22;
 export const STATUS_ROW_2 = 23;
-
-
 // Direction arrays (decl.h, hack.c)
 // Index: 0=W, 1=NW, 2=N, 3=NE, 4=E, 5=SE, 6=S, 7=SW, 8=up, 9=down
-export const xdir = [-1, -1,  0,  1,  1,  1,  0, -1, 0,  0];
-export const ydir = [ 0, -1, -1, -1,  0,  1,  1,  1, 0,  0];
+export const xdir = [-1, -1, 0, 1, 1, 1, 0, -1, 0, 0];
+export const ydir = [0, -1, -1, -1, 0, 1, 1, 1, 0, 0];
 export const zdir = [0, 0, 0, 0, 0, 0, 0, 0, 1, -1];
-
 // Direction constants
 export const DIR_W = 0;
 export const DIR_NW = 1;
@@ -121,7 +112,6 @@ export const DIR_DOWN = 9;
 export const N_DIRS = 8;
 export const N_DIRS_Z = 10;
 export function DIR_180(dir) { return (dir + 4) % N_DIRS; }
-
 // Encumbrance levels (hack.h)
 export const UNENCUMBERED = 0;
 export const SLT_ENCUMBER = 1;
@@ -129,13 +119,11 @@ export const MOD_ENCUMBER = 2;
 export const HVY_ENCUMBER = 3;
 export const EXT_ENCUMBER = 4;
 export const OVERLOADED = 5;
-
 // Alignment (align.h)
 export const A_NONE = -128;
 export const A_CHAOTIC = -1;
 export const A_NEUTRAL = 0;
 export const A_LAWFUL = 1;
-
 // Altar mask bits (C ref: align.h:29-37, rm.h:179)
 export const AM_NONE = 0x00;
 export const AM_CHAOTIC = 0x01;
@@ -144,36 +132,35 @@ export const AM_LAWFUL = 0x04;
 export const AM_MASK = 0x07;
 export const AM_SHRINE = 0x08;
 export const AM_SANCTUM = 0x10;
-
 // C ref: align.h Align2amask / Amask2align
 export function Align2amask(x) {
-    if (x === A_NONE) return AM_NONE;
-    if (x === A_LAWFUL) return AM_LAWFUL;
+    if (x === A_NONE)
+        return AM_NONE;
+    if (x === A_LAWFUL)
+        return AM_LAWFUL;
     return (x + 2) & 0xff; // A_NEUTRAL(0)->2, A_CHAOTIC(-1)->1
 }
 export function Amask2align(x) {
     const masked = x & AM_MASK;
-    if (masked === 0) return A_NONE;
-    if (masked === AM_LAWFUL) return A_LAWFUL;
+    if (masked === 0)
+        return A_NONE;
+    if (masked === AM_LAWFUL)
+        return A_LAWFUL;
     return masked - 2; // 2->0 (NEUTRAL), 1->-1 (CHAOTIC)
 }
-
 // Gender
 export const MALE = 0;
 export const FEMALE = 1;
 export const NEUTER = 2;
-
 // Races
 export const RACE_HUMAN = 0;
 export const RACE_ELF = 1;
 export const RACE_DWARF = 2;
 export const RACE_GNOME = 3;
 export const RACE_ORC = 4;
-
 // PM_* role constants removed — use real C monster-table PM_* from monsters.js
 // player.roleMnum stores the monster-table index (matching C's urole.mnum)
 // player.roleIndex remains as the roles[] array index (0-12) for chargen/iteration
-
 // Monster spell ids (src/mcastu.c: choose_magic_spell/choose_clerical_spell)
 export const MGC_PSI_BOLT = 0;
 export const MGC_CURE_SELF = 1;
@@ -187,7 +174,6 @@ export const MGC_AGGRAVATION = 8;
 export const MGC_SUMMON_MONS = 9;
 export const MGC_CLONE_WIZ = 10;
 export const MGC_DEATH_TOUCH = 11;
-
 export const CLC_OPEN_WOUNDS = 0;
 export const CLC_CURE_SELF = 1;
 export const CLC_CONFUSE_YOU = 2;
@@ -198,7 +184,6 @@ export const CLC_CURSE_ITEMS = 6;
 export const CLC_LIGHTNING = 7;
 export const CLC_FIRE_PILLAR = 8;
 export const CLC_GEYSER = 9;
-
 // Achievements enum (include/you.h, used by src/insight.c)
 export const ACH_BELL = 1;
 export const ACH_HELL = 2;
@@ -232,7 +217,6 @@ export const ACH_RNK7 = 29;
 export const ACH_RNK8 = 30;
 export const ACH_TUNE = 31;
 export const N_ACH = 32;
-
 // Attributes (attrib.h)
 export const A_STR = 0;
 export const A_INT = 1;
@@ -241,14 +225,11 @@ export const A_DEX = 3;
 export const A_CON = 4;
 export const A_CHA = 5;
 export const NUM_ATTRS = 6;
-
 // C ref: attrib.h — strength encoding helpers
-export function STR18(x) { return 18 + x; }  // 18/xx
+export function STR18(x) { return 18 + x; } // 18/xx
 export function STR19(x) { return 100 + x; } // 19 and above
-
 // C ref: zap.h — BZ_OFS_AD(x) = (x) - 1
 export function BZ_OFS_AD(adtyp) { return adtyp - 1; }
-
 // Room types (mkroom.h)
 export const OROOM = 0;
 export const THEMEROOM = 1;
@@ -265,7 +246,6 @@ export const LEPREHALL = 11;
 export const COCKNEST = 12;
 export const ANTHOLE = 13;
 export const SHOPBASE = 14;
-
 // Window/UI constants (wintype.h, winprocs.h, color.h)
 // Runtime fields:
 // - windows.WinDesc.type / .how / .mbehavior
@@ -285,7 +265,6 @@ export const ATR_ULINE = 1;
 export const ATR_BLINK = 4;
 export const ATR_URGENT = 16;
 export const ATR_NOHISTORY = 32;
-
 // Name formatting article selectors and suppression flags (src/do_name.c and include/flag.h)
 // Runtime fields:
 // - Naming function args/locals in do_name.js (article, suppress)
@@ -303,7 +282,6 @@ export const SUPPRESS_NAME = 0x20;
 export const AUGMENT_IT = 0x40;
 export const EXACT_NAME = (SUPPRESS_IT | SUPPRESS_INVISIBLE
     | SUPPRESS_HALLUCINATION | SUPPRESS_NAME);
-
 // Game end type constants (include/hack.h enum game_end_types; src/end.c)
 // Runtime fields:
 // - end.done(how) / end.really_done(how) `how` values
@@ -324,19 +302,16 @@ export const TRICKED = 12;
 export const QUIT = 13;
 export const ESCAPED = 14;
 export const ASCENDED = 15;
-
 // Killer name prefix selectors (include/hack.h; src/end.c killer.format)
 // Runtime fields: end.killer.format and delayed killer records.
 export const KILLED_BY_AN = 0;
 export const KILLED_BY = 1;
 export const NO_KILLER_PREFIX = 2;
-
 // cf. decl.c c_common_strings — frequently used string constants
 export const nothing_happens = "Nothing happens.";
 export const nothing_seems_to_happen = "Nothing seems to happen.";
 export const thats_enough_tries = "That's enough tries!";
 export const Never_mind = "Never mind.";
-
 // Command queue type IDs and queue selectors (include/hack.h cmdq_cmdtypes/CQ_*)
 // Runtime fields:
 // - input cmdq node fields: node.typ/node.key/node.dir*/node.intval
@@ -348,7 +323,6 @@ export const CMDQ_USER_INPUT = 3;
 export const CMDQ_INT = 4;
 export const CQ_CANNED = 0;
 export const CQ_REPEAT = 1;
-
 // Transient animation style/opcode constants (include/display.h DISP_*; src/display.c tmp_at)
 // Runtime fields:
 // - animation tmp_at(x, y): x opcode selector, y style/flush mode
@@ -362,7 +336,6 @@ export const DISP_CHANGE = -6;
 export const DISP_END = -7;
 export const DISP_FREEMEM = -8;
 export const BACKTRACK = -1;
-
 // Body-part selector enum (include/hack.h enum bodypart_types; src/polyself.c)
 // Runtime fields:
 // - body_part(partId) and mbodypart(mon, partId) selector args
@@ -386,26 +359,18 @@ export const BLOOD = 15;
 export const LUNG = 16;
 export const NOSE = 17;
 export const STOMACH = 18;
-
 // RANDOM_CLASS is exported from objects.js (canonical home for _CLASS constants)
-
 // Room fill policy enum for mkroom/mklev generation (src/mkroom.c)
 // Runtime fields: room.needfill on room structs.
 export const FILL_NONE = 0;
 export const FILL_NORMAL = 1;
-
 // Padded text chunk width for makedefs-generated rumor-like files.
 // Runtime fields: get_rnd_line_index(..., chunksize) for rumors/epitaph/engraving pools.
 export const RUMOR_PAD_LENGTH = 60;
-
-// Pet migration mode string token (src/dog.c mon_arrive)
-// Runtime field: migrating monster `mon_arrive(..., with_you, ...)` argument.
-export const MON_ARRIVE_WITH_YOU = 'With_you';
-
-// Input direction maps for command parsing/running (src/cmd.c/hack.c key semantics)
-// Runtime fields:
-// - command handlers: direction dispatch and movement vectors
-// - travel/run logic in cmd/hack/lock/kick/dokick
+// C dog.c:mon_arrive() arrival phases.
+export const MON_ARRIVE_BEFORE_YOU = 0;
+export const MON_ARRIVE_WITH_YOU = 1;
+export const MON_ARRIVE_AFTER_YOU = 2;
 export const DIRECTION_KEYS = {
     h: [-1, 0], j: [0, 1], k: [0, -1], l: [1, 0],
     y: [-1, -1], u: [1, -1], b: [-1, 1], n: [1, 1],
@@ -414,7 +379,6 @@ export const RUN_KEYS = {
     H: [-1, 0], J: [0, 1], K: [0, -1], L: [1, 0],
     Y: [-1, -1], U: [1, -1], B: [-1, 1], N: [1, 1],
 };
-
 // Movement/travel mode enums (src/hack.c domove()/test_move()/findtravelpath())
 // Runtime fields:
 // - `test_move(..., mode)` behavior selector
@@ -426,7 +390,6 @@ export const TEST_TRAP = 3;
 export const TRAVP_TRAVEL = 0;
 export const TRAVP_GUESS = 1;
 export const TRAVP_VALID = 2;
-
 // Shared monster/pathing distance constants (include/monst.h, include/hack.h, src/dogmove.c)
 // Runtime fields:
 // - monster mtrack ring size and object-search radius in dog/monmove logic
@@ -434,7 +397,6 @@ export const TRAVP_VALID = 2;
 export const MTSZ = 4;
 export const SQSRCHRADIUS = 5;
 export const FARAWAY = 127;
-
 // Dungeon branch indices (include/dungeon.h / src/dungeon.c)
 // Runtime fields:
 // - level coordinates: `lev.dnum` / `_genDnum`
@@ -447,28 +409,11 @@ export const KNOX = 4;
 export const GEHENNOM = 5;
 export const VLADS_TOWER = 6;
 export const TUTORIAL = 8;
-
-// C ref: dungeon.c init_dungeons() -> svd.dungeons[dnum].flags.align
-export const DUNGEON_ALIGN_BY_DNUM = {
-    [DUNGEONS_OF_DOOM]: A_NONE,
-    [GNOMISH_MINES]: A_LAWFUL,
-    [SOKOBAN]: A_NEUTRAL,
-    [QUEST]: A_NONE,
-    [KNOX]: A_NONE,
-    [GEHENNOM]: A_NONE,
-    [VLADS_TOWER]: A_CHAOTIC,
-    // C ref: dungeon.lua tutorial has flags={"mazelike","unconnected"}.
-    // UNCONNECTED=0x10 overlaps D_ALIGN_MASK=0x70: (0x14 & 0x70) >> 4 = 1 = AM_CHAOTIC.
-    // This is a C quirk — the UNCONNECTED flag bleeds into the alignment mask.
-    [TUTORIAL]: A_CHAOTIC,
-};
-
 // These values come from the pinned source tree's generated date.h.
 export const BUILD_DATE = "Sun May  3 01:27:17 2026";
 export const BUILD_TIME = (1777786037);
 // nomakedefs.copyright_banner_c — build-specific version string
 export const COPYRIGHT_BANNER_C = "         Version 5.0.0 MacOS, built Sun May  3 01:27:17 2026.";
-
 // AUTO-IMPORT-BEGIN: CONST_ALL_HEADERS
 // Auto-imported header constants (pre-symbol pass)
 // Source dir: nethack-c/upstream/include
@@ -478,7 +423,6 @@ export const COPYRIGHT_BANNER_C = "         Version 5.0.0 MacOS, built Sun May  
 // - include only const-style expressions (no runtime/lowercase identifiers)
 // - preserve include dependency order and in-header declaration order
 // - emit only when dependencies are resolvable at this marker location
-
 // Platform fallback constants (Ubuntu/ncurses-style defaults)
 // FROM_LEFT_1ST_BUTTON_PRESSED fallback
 export const LEFTBUTTON = 0x2;
@@ -494,7 +438,6 @@ export const A_LEFTLINE = 0;
 export const A_RIGHTLINE = 0;
 // A_UNDERLINE fallback disabled in web renderer
 export const A_ITALIC = 0;
-
 // ===== align.h =====
 export const A_COALIGNED = 1;
 export const A_OPALIGNED = (-1);
@@ -502,7 +445,6 @@ export const AM_SPLEV_CO = 0x20;
 export const AM_SPLEV_NONCO = 0x40;
 export const AM_SPLEV_RANDOM = 0x80;
 export const MSA_NONE = 0;
-
 // ===== pcconf.h =====
 export const CONFIG_FILE = "defaults.nh";
 export const GUIDEBOOK_FILE = "Guidebook.txt";
@@ -512,7 +454,6 @@ export const STKSIZ = 5 * 1024;
 export const HLOCK = "NHPERM";
 export const FCMASK = 0o660;
 export const PORT_HELP = "msdoshlp.txt";
-
 // ===== amiconf.h =====
 export const O_BINARY = 0;
 export const INTUI_NEW_LOOK = 1;
@@ -524,7 +465,6 @@ export const AMII_MUFFLED_VOLUME = 40;
 export const AMII_SOFT_VOLUME = 50;
 export const AMII_OKAY_VOLUME = 60;
 export const AMII_LOUDER_VOLUME = 80;
-
 // ===== monflag.h =====
 export const NEUTRAL = (FEMALE + 1);
 export const NUM_MGENDERS = (NEUTRAL + 1);
@@ -534,16 +474,13 @@ export const G_EXTINCT = 0x01;
 export const G_GONE = (G_GENOD | G_EXTINCT);
 export const MV_KNOWS_EGG = 0x08;
 export const G_NOCORPSE = 0x0010;
-
 // ===== prop.h =====
 export const W_ART = 0x00001000;
 export const W_ARTI = 0x00002000;
 export const FROMRACE = 0x02000000;
 export const FROMFORM = 0x10000000;
-
 // ===== attrib.h =====
 export const A_MAX = (A_CHA + 1);
-
 // ===== botl.h =====
 export const BL_CHARACTERISTICS = -3;
 export const BL_RESET = -2;
@@ -640,11 +577,9 @@ export const BL_TH_TEXTMATCH = 104;
 export const BL_TH_ALWAYS_HILITE = 105;
 export const BL_TH_CRITICALHP = 106;
 export const MAXVALWIDTH = 80;
-
 // ===== color.h =====
 export const NH_BASIC_COLOR = 0x1000000;
 export const NH_ALTPALETTE = 0x2000000;
-
 // ===== patchlevel.h =====
 export const EDITLEVEL = 134;
 export const NH_STATUS_RELEASED = 0;
@@ -655,24 +590,20 @@ export const NH_DEVEL_STATUS = NH_STATUS_WIP;
 export const COPYRIGHT_BANNER_A = "NetHack, Copyright 1985-2026";
 export const COPYRIGHT_BANNER_B = "         By Stichting Mathematisch Centrum and M. Stephenson.";
 export const COPYRIGHT_BANNER_D = "         See license for details.";
-
 // ===== tradstdc.h =====
 export const NH_C = 202300;
 export const NH_PRAGMA_MESSAGE = 1;
-
 // ===== vmsconf.h =====
 export const O_RDONLY = 0;
 export const O_WRONLY = 1;
 export const O_RDWR = 2;
 export const O_CREAT = 0x200;
 export const O_TRUNC = 0x400;
-
 // ===== unixconf.h =====
 export const AMS_MAILBOX = "/Mailbox";
 export const DEF_MAILREADER = "/usr/bin/mail";
 export const MAILCKFREQ = 50;
 export const SERVER_ADMIN_MSG_CKFREQ = 25;
-
 // ===== windconf.h =====
 export const OPTIONS_USED = "options";
 export const OPTIONS_FILE = OPTIONS_USED;
@@ -682,14 +613,12 @@ export const SYMBOLS_TEMPLATE = "symbols.template";
 export const INTERJECT_PANIC = 0;
 export const INTERJECTION_TYPES = (INTERJECT_PANIC + 1);
 export const MAX_LAN_USERNAME = 20;
-
 // ===== fnamesiz.h =====
 export const LOCKNAMEINIT = "1lock";
 export const BONESINIT = "bonesnn.xxx.le";
 export const INDEXT = ".xxxxxx";
 export const SAVEX = "save/99999.e";
 export const SAVE_EXTENSION = "";
-
 // ===== global.h =====
 export const HELP = "help";
 export const SHELP = "hh";
@@ -781,7 +710,6 @@ export const NHL_SBRV_DENY = 1;
 export const NHL_SBRV_ACCEPT = 2;
 export const NHL_SBRV_FAIL = 3;
 export const SFCTOOL_BIT = (1 << 30);
-
 // ===== config.h =====
 export const DEFAULT_WINDOW_SYS = "mac";
 export const GDBPATH = "/usr/bin/gdb";
@@ -797,7 +725,6 @@ export const COMPRESS = "/usr/bin/compress";
 export const COMPRESS_EXTENSION = ".Z";
 export const LIVELOGFILE = "livelog";
 export const DUMPLOG_MSG_COUNT = 50;
-
 // ===== context.h =====
 export const TIP_ENHANCE = 0;
 export const TIP_SWIM = (TIP_ENHANCE + 1);
@@ -805,14 +732,11 @@ export const TIP_UNTRAP_MON = (TIP_SWIM + 1);
 export const TIP_GETPOS = (TIP_UNTRAP_MON + 1);
 export const NUM_TIPS = (TIP_GETPOS + 1);
 export const CONTEXTVERBSZ = 30;
-
 // ===== date.h =====
 export const IGNORED_FEATURES = 0x40080000;
-
 // ===== decl.h =====
 export const DOMOVE_WALK = 0x00000001;
 export const DOMOVE_RUSH = 0x00000002;
-
 // ===== dgn_file.h =====
 export const TBR_STAIR = 0;
 export const TBR_NO_UP = 1;
@@ -830,7 +754,6 @@ export const D_ALIGN_LAWFUL = (AM_LAWFUL << 4);
 export const D_ALIGN_MASK = 0x70;
 export const LEV_LIMIT = 50;
 export const BRANCH_LIMIT = 32;
-
 // ===== vision.h =====
 export const LS_NONE = 0;
 export const COULD_SEE = 0x1;
@@ -844,7 +767,6 @@ export const MONSEEN_TELEPAT = 0x0008;
 export const MONSEEN_XRAYVIS = 0x0010;
 export const MONSEEN_DETECT = 0x0020;
 export const MONSEEN_WARNMON = 0x0040;
-
 // ===== dlb.h =====
 export const MAX_DLB_FILENAME = 256;
 export const DLBBASENAME = "nhdat";
@@ -855,7 +777,6 @@ export const RDTMODE = "r";
 export const WRTMODE = "w+b";
 export const RDBMODE = "rb";
 export const WRBMODE = "w+b";
-
 // ===== dungeon.h =====
 export const LR_DOWNSTAIR = 0;
 export const LR_UPSTAIR = (LR_DOWNSTAIR + 1);
@@ -886,7 +807,6 @@ export const MIGR_TO_SPECIES = 4096;
 export const MIGR_LEFTOVERS = 8192;
 export const VISITED = 0x01;
 export const LFILE_EXISTS = 0x04;
-
 // ===== engrave.h =====
 export const DUST = 1;
 export const ENGRAVE = 2;
@@ -895,7 +815,6 @@ export const MARK = 4;
 export const ENGR_BLOOD = 5;
 export const HEADSTONE = 6;
 export const N_ENGRAVE = 6;
-
 // ===== flag.h =====
 export const GFILTER_NONE = 0;
 export const GFILTER_VIEW = (GFILTER_NONE + 1);
@@ -914,6 +833,7 @@ export const PLNMSG_BACK_ON_GROUND = (PLNMSG_OK_DONT_DIE + 1);
 export const PLNMSG_GROWL = (PLNMSG_BACK_ON_GROUND + 1);
 export const PLNMSG_HIDE_UNDER = (PLNMSG_GROWL + 1);
 export const PLNMSG_MON_TAKES_OFF_ITEM = (PLNMSG_HIDE_UNDER + 1);
+export const PLNMSG_enum = (PLNMSG_MON_TAKES_OFF_ITEM + 1);
 export const RUN_TPORT = 0;
 export const RUN_LEAP = (RUN_TPORT + 1);
 export const RUN_STEP = (RUN_LEAP + 1);
@@ -965,7 +885,6 @@ export const TER_MON = 0x08;
 export const TER_FULL = 0x10;
 export const TER_DETECT = 0x20;
 export const MAX_ALTKEYHANDLING = 25;
-
 // ===== func_tab.h =====
 export const IFBURIED = 0x0001;
 export const AUTOCOMPLETE = 0x0002;
@@ -985,7 +904,6 @@ export const ECM_NOFLAGS = 0;
 export const ECM_IGNOREAC = 0x01;
 export const ECM_EXACTMATCH = 0x02;
 export const ECM_NO1CHARCMD = 0x04;
-
 // ===== weight.h =====
 export const WT_ETHEREAL = 0;
 export const WT_SPLASH_THRESHOLD = 9;
@@ -1005,7 +923,6 @@ export const MAX_CARR_CAP = 1000;
 export const WT_HUMAN = 1450;
 export const WT_BABY_DRAGON = 1500;
 export const WT_DRAGON = 4500;
-
 // ===== wintype.h =====
 export const ANY_VOID = 1;
 export const ANY_OBJ = (ANY_VOID + 1);
@@ -1047,7 +964,6 @@ export const MENU_ITEMFLAGS_NONE = 0x0000000;
 export const MENU_ITEMFLAGS_SELECTED = 0x0000001;
 export const MENU_ITEMFLAGS_SKIPINVERT = 0x0000002;
 export const MENU_ITEMFLAGS_SKIPMENUCOLORS = 0x0000004;
-
 // ===== sym.h =====
 export const H_UNK = 0;
 export const H_IBM = 1;
@@ -1060,7 +976,6 @@ export const ROGUESET = 1;
 export const NUM_GRAPHICS = (ROGUESET + 1);
 export const UNICODESET = NUM_GRAPHICS;
 export const DEFAULT_GRAPHICS = 0;
-
 // ===== trap.h =====
 export const TRAP_NOT_IMMUNE = 0;
 export const TRAP_CLEARLY_IMMUNE = 1;
@@ -1071,7 +986,6 @@ export const ANIMATE_SPELL = 2;
 export const AS_OK = 0;
 export const AS_NO_MON = 1;
 export const AS_MON_IS_UNIQUE = 2;
-
 // ===== mkroom.h =====
 export const ARMORSHOP = 15;
 export const SCROLLSHOP = 16;
@@ -1095,7 +1009,6 @@ export const NO_ROOM = 0;
 export const SHARED = 1;
 export const SHARED_PLUS = 2;
 export const FILL_LVFLAGS = 2;
-
 // ===== obj.h =====
 export const SPE_LIM = 99;
 export const OBJ_FREE = 0;
@@ -1127,16 +1040,13 @@ export const LOSTOVERRIDEMASK = 0x3;
 export const LOST_EXPLODING = 4;
 export const NAMED_PLAIN = 0;
 export const NAMED_KEEP = 1;
-
 // ===== quest.h =====
 export const MIN_QUEST_ALIGN = 20;
 export const MIN_QUEST_LEVEL = 14;
-
 // ===== region.h =====
 export const REG_HERO_INSIDE = 0x01;
 export const REG_NOT_HEROS = 0x02;
 export const MONST_INC = 5;
-
 // ===== rm.h =====
 export const T_LOOTED = 1;
 export const TREE_LOOTED = 1;
@@ -1169,7 +1079,6 @@ export const WM_X_BR = 4;
 export const WM_X_TLBR = 5;
 export const WM_X_BLTR = 6;
 export const SVALL = (0xFF);
-
 // ===== sndprocs.h =====
 export const SOUND_TRIGGER_USERSOUNDS = 0x0001;
 export const SOUND_TRIGGER_HEROMUSIC = 0x0002;
@@ -1177,14 +1086,12 @@ export const SOUND_TRIGGER_ACHIEVEMENTS = 0x0004;
 export const SOUND_TRIGGER_SOUNDEFFECTS = 0x0008;
 export const SOUND_TRIGGER_AMBIENCE = 0x0010;
 export const SOUND_TRIGGER_VERBAL = 0x0020;
-
 // ===== spell.h =====
 export const NO_SPELL = 0;
 export const UNKNOWN_SPELL = (-1);
 export const MAX_SPELL_STUDY = 3;
 export const ALL_MAP = 0x1;
 export const ALL_SPELLS = 0x2;
-
 // ===== timeout.h =====
 export const TIMER_NONE = 0;
 export const TIMER_LEVEL = 1;
@@ -1202,7 +1109,6 @@ export const FIG_TRANSFORM = (HATCH_EGG + 1);
 export const SHRINK_GLOB = (FIG_TRANSFORM + 1);
 export const RANGE_LEVEL = 0;
 export const RANGE_GLOBAL = 1;
-
 // ===== winprocs.h =====
 export const WC_COLOR = 0x00000001;
 export const WC_HILITE_PET = 0x00000002;
@@ -1273,12 +1179,10 @@ export const WININIT = 0;
 export const WININIT_UNDO = 1;
 export const WINCHAIN_ALLOC = 0;
 export const WINCHAIN_INIT = 1;
-
 // ===== mextra.h =====
 export const FCSIZ = (ROWNO + COLNO);
 export const REPAIR_DELAY = 5;
 export const BILLSZ = 200;
-
 // ===== monst.h =====
 export const M_AP_NOTHING = 0;
 export const M_AP_FURNITURE = 1;
@@ -1306,6 +1210,7 @@ export const MON_BUBBLEMOVE = 0x10;
 export const MON_ENDGAME_FREE = 0x20;
 export const MON_ENDGAME_MIGR = 0x40;
 export const MON_OBLITERATE = 0x80;
+export const MON_STILL_ARRIVING = 0x100;
 export const M_AP_TYPMASK = 0x7;
 export const M_AP_F_DKNOWN = 0x8;
 export const MAX_NUM_WORMS = 32;
@@ -1323,7 +1228,6 @@ export const STRAT_STRATMASK = 0x0f000000;
 export const STRAT_GOAL = 0x000000ff;
 export const MSLOW = 1;
 export const MFAST = 2;
-
 // ===== you.h =====
 export const UTOTYPE_NONE = 0x00;
 export const UTOTYPE_ATSTAIRS = 0x01;
@@ -1357,7 +1261,6 @@ export const LUCKADD = 3;
 export const LUCKMAX = 10;
 export const LUCKMIN = (-10);
 export const AC_MAX = 99;
-
 // ===== hack.h =====
 export const ZAPPED_WAND = 0;
 export const THROWN_WEAPON = 1;
@@ -1694,36 +1597,30 @@ export const NC_VIA_WAND_OR_SPELL = 0x02;
 export const PHYS_EXPL_TYPE = -1;
 export const DEVTEAM_EMAIL = "devteam@nethack.org";
 export const DEVTEAM_URL = "https://www.nethack.org/";
-
 // ===== isaac64.h =====
 // isaac64.h
 export const ISAAC64_SZ_LOG = (8);
 // isaac64.h
-export const ISAAC64_SZ = (1<<ISAAC64_SZ_LOG);
+export const ISAAC64_SZ = (1 << ISAAC64_SZ_LOG);
 // isaac64.h
-export const ISAAC64_SEED_SZ_MAX = (ISAAC64_SZ<<3);
-
+export const ISAAC64_SEED_SZ_MAX = (ISAAC64_SZ << 3);
 // ===== mail.h =====
 export const MSG_OTHER = 0;
 export const MSG_MAIL = 1;
 export const MSG_CALL = 2;
-
 // ===== mcastu.h =====
 export const MCF_NONE = 0x0000;
 export const MCF_INDIRECT = 0x0001;
 export const MCF_SIGHT = 0x0002;
 export const MCF_HOSTILE = 0x0004;
-
 // ===== nhmd4.h =====
 // nhmd4.h
 export const NHMD4_DIGEST_LENGTH = 128;
 // nhmd4.h
 export const NHMD4_RESULTLEN = (128 / 8);
-
 // ===== sfprocs.h =====
 export const NHTYPE_SIMPLE = 1;
 export const NHTYPE_COMPLEX = 2;
-
 // ===== sp_lev.h =====
 export const LVLINIT_NONE = 0;
 export const LVLINIT_SOLIDFILL = (LVLINIT_NONE + 1);
@@ -1772,11 +1669,9 @@ export const SPACELOC = 0x40;
 export const NO_INVENT = 0;
 export const CUSTOM_INVENT = 0x01;
 export const DEFAULT_INVENT = 0x02;
-
 // ===== tile2x11.h =====
 // tile2x11.h
 export const TILES_PER_ROW = (40);
-
 // ===== winX.h =====
 // winX.h
 export const START_SIZE = 512;
@@ -1808,7 +1703,6 @@ export const EXIT_ON_KEY_OR_BUTTON_PRESS = 1;
 export const EXIT_ON_EXIT = 2;
 // winX.h
 export const EXIT_ON_SENT_EVENT = 3;
-
 // ===== winami.h =====
 export const WEUNK = 0;
 export const WEKEY = (WEUNK + 1);
@@ -1822,7 +1716,6 @@ export const FLMSG_FIRST = 1;
 export const MAXWIN = 20;
 export const NHW_BASE = 6;
 export const NHW_OVER = 7;
-
 // ===== wincurs.h =====
 export const CENTER = 0;
 export const UP = (CENTER + 1);
@@ -1841,7 +1734,6 @@ export const TEXT_WIN = 5;
 export const MENU_WIN = 6;
 export const NHWIN_MAX = 7;
 export const CURSES_DARK_GRAY = 17;
-
 // ===== wintty.h =====
 export const WIN_CANCELLED = 1;
 export const WIN_STOP = 1;
@@ -1851,14 +1743,11 @@ export const TOPLINE_EMPTY = 0;
 export const TOPLINE_NEED_MORE = 1;
 export const TOPLINE_NON_EMPTY = 2;
 export const TOPLINE_SPECIAL_PROMPT = 3;
-
 // ===== botl.h =====
 export const REASSESS_ONLY = TRUE;
-
 // ===== fnamesiz.h =====
 export const LOCKNAMESIZE = (PL_NSIZ + 14);
 // AUTO-IMPORT-END: CONST_ALL_HEADERS
-
 // Digging target classification and digcheck return codes (src/dig.c)
 // Runtime fields:
 // - dig target classification from dig_typ()
@@ -1884,7 +1773,6 @@ export const DIGCHECK_FAIL_UNDESTROYABLETRAP = 18;
 export const DIGCHECK_FAIL_CANTDIG = 19;
 export const DIGCHECK_FAIL_BOULDER = 20;
 export const DIGCHECK_FAIL_OBJ_POOL_OR_TRAP = 21;
-
 // Explosion type/source/flag constants (src/explode.c)
 // Runtime fields:
 // - explode(..., expltype/olet) rendering and source class
@@ -1905,7 +1793,6 @@ export const MAY_HITYOU = 0x2;
 export const MAY_HIT = (0x1 | 0x2);
 export const MAY_DESTROY = 0x4;
 export const MAY_FRACTURE = 0x8;
-
 // Steed dismount reason enum (src/steed.c)
 // Runtime fields: dismount_steed(reason) reason selector.
 export const DISMOUNT_GENERIC = 0;
@@ -1916,19 +1803,16 @@ export const DISMOUNT_POLY = 4;
 export const DISMOUNT_ENGULFED = 5;
 export const DISMOUNT_BONES = 6;
 export const DISMOUNT_BYCHOICE = 7;
-
 // Vault guard constants (src/vault.c)
 // Runtime fields for vault guard timing and activity.
 export const VAULT_GUARD_TIME = 30;
 export const GD_EATGOLD = 0x01;
 export const GD_DESTROYGOLD = 0x02;
-
 // Attribute constitution-gain reason enum (src/attrib.c)
 // Runtime fields: adjcon(reason) reason selector.
 export const A_CG_CONVERT = 0;
 export const A_CG_HELM_ON = 1;
 export const A_CG_HELM_OFF = 2;
-
 // Punishment control bits and rectangle split limits (src/ball.c, src/rect.c)
 // Runtime fields:
 // - drag_ball control mask in punishment movement
@@ -1937,7 +1821,6 @@ export const BC_BALL = 0x01;
 export const BC_CHAIN = 0x02;
 export const XLIM = 4;
 export const YLIM = 3;
-
 // Bless/curse/unknown categories and getobj prompt policy flags (src/invent.c)
 // Runtime fields:
 // - inventory BUC classification and filters
@@ -1955,19 +1838,16 @@ export const GETOBJ_EXCLUDE_NONINVENT = 5;
 export const GETOBJ_ALLOWCNT = 0x01;
 export const GETOBJ_PROMPT = 0x02;
 export const GETOBJ_NOFLAGS = 0;
-
 // Extra-level room graph bitmasks (src/extralev.c)
 // Runtime fields: 3x3 room doortable directional connectivity bits.
 export const XL_UP = 1;
 export const XL_DOWN = 2;
 export const XL_LEFT = 4;
 export const XL_RIGHT = 8;
-
 // Light-source type tags (src/light.c)
 // Runtime fields: light_base[] entry type and routing for object/monster lookups.
 export const LS_OBJECT = 0;
 export const LS_MONSTER = 1;
-
 // Timeout timer-kind and timer-function enums (src/timeout.c)
 // Runtime fields: timer queue kind/func selectors and timer dispatch.
 export const TIMER_KIND = Object.freeze({
@@ -1987,11 +1867,9 @@ export const TIMER_FUNC = Object.freeze({
     MELT_ICE_AWAY: 'MELT_ICE_AWAY',
 });
 export const MELT_ICE_AWAY = TIMER_FUNC.MELT_ICE_AWAY;
-
 // Corpse taint/revival age window (src/mkobj.c)
 // Runtime fields: rot/revive scheduling bound for corpse timers.
 export const TAINT_AGE = 50;
-
 // Artifact naming/origin flags (src/artifact.c)
 // Runtime fields: oname()/artifact_origin() provenance bits.
 export const ONAME_NO_FLAGS = 0;
@@ -2003,7 +1881,6 @@ export const ONAME_LEVEL_DEF = 0x0010;
 export const ONAME_BONES = 0x0020;
 export const ONAME_RANDOM = 0x0040;
 export const ONAME_KNOW_ARTI = 0x0100;
-
 // seenv octants and wall-info bits (include/rm.h)
 export const SV0 = 0x01;
 export const SV1 = 0x02;
@@ -2016,20 +1893,17 @@ export const SV7 = 0x80;
 export const WM_MASK = 0x07;
 export const WM_C_OUTER = 1;
 export const WM_C_INNER = 2;
-
 // Maximum values
 export const MAXNROFROOMS = 40;
 export const MAXDUNGEON = 16;
 export const MAXLEVEL = 32;
 // MAXOCLASSES: canonical home is objects.js; MAXMCLASSES: canonical home is symbols.js
 export const ROOMOFFSET = 3;
-
 // Check if position is within map bounds
 // C ref: cmd.c isok() — x >= 1 && x <= COLNO-1 && y >= 0 && y <= ROWNO-1
 export function isok(x, y) {
     return x >= 1 && x <= COLNO - 1 && y >= 0 && y <= ROWNO - 1;
 }
-
 // Check terrain type helpers (rm.h)
 export function IS_WALL(typ) {
     // C ref: rm.h — IS_WALL(typ) ((typ) && (typ) <= DBWALL)
@@ -2075,46 +1949,42 @@ export function IS_WATERWALL(typ) {
     // C ref: rm.h — IS_WATERWALL(typ) ((typ) == WATER)
     return typ === WATER;
 }
-
 // Drawbridge mask bits (rm.h:269-282)
 export const DB_NORTH = 0;
 export const DB_SOUTH = 1;
 export const DB_EAST = 2;
 export const DB_WEST = 3;
-export const DB_DIR = 3;    // mask for direction
+export const DB_DIR = 3; // mask for direction
 export const DB_MOAT = 0;
 export const DB_LAVA = 4;
 export const DB_ICE = 8;
 export const DB_FLOOR = 16;
 export const DB_UNDER = 28; // mask for underneath
-
 // Monster movement flags used by mfndpos()/mon_allowflags()
 // C ref: src/mon.c (movement legality bitmask flags consumed by mfndpos)
-export const ALLOW_MDISP  = 0x00001000;
-export const ALLOW_TRAPS  = 0x00020000;
-export const ALLOW_U      = 0x00040000;
-export const ALLOW_M      = 0x00080000;
-export const ALLOW_TM     = 0x00100000;
-export const ALLOW_ALL    = ALLOW_U | ALLOW_M | ALLOW_TM | ALLOW_TRAPS;
-export const NOTONL       = 0x00200000;
-export const OPENDOOR     = 0x00400000;
-export const UNLOCKDOOR   = 0x00800000;
-export const BUSTDOOR     = 0x01000000;
-export const ALLOW_ROCK   = 0x02000000;
-export const ALLOW_WALL   = 0x04000000;
-export const ALLOW_DIG    = 0x08000000;
-export const ALLOW_BARS   = 0x10000000;
-export const ALLOW_SANCT  = 0x20000000;
-export const ALLOW_SSM    = 0x40000000;
-export const NOGARLIC     = 0x80000000 | 0; // force signed 32-bit
-
+export const ALLOW_MDISP = 0x00001000;
+export const ALLOW_TRAPS = 0x00020000;
+export const ALLOW_U = 0x00040000;
+export const ALLOW_M = 0x00080000;
+export const ALLOW_TM = 0x00100000;
+export const ALLOW_ALL = ALLOW_U | ALLOW_M | ALLOW_TM | ALLOW_TRAPS;
+export const NOTONL = 0x00200000;
+export const OPENDOOR = 0x00400000;
+export const UNLOCKDOOR = 0x00800000;
+export const BUSTDOOR = 0x01000000;
+export const ALLOW_ROCK = 0x02000000;
+export const ALLOW_WALL = 0x04000000;
+export const ALLOW_DIG = 0x08000000;
+export const ALLOW_BARS = 0x10000000;
+export const ALLOW_SANCT = 0x20000000;
+export const ALLOW_SSM = 0x40000000;
+export const NOGARLIC = 0x80000000 | 0; // force signed 32-bit
 // Monster attack result bitmask flags (src/uhitm.c and src/mhitm.c)
 export const M_ATTK_MISS = 0x0;
 export const M_ATTK_HIT = 0x1;
 export const M_ATTK_DEF_DIED = 0x2;
 export const M_ATTK_AGR_DIED = 0x4;
 export const M_ATTK_AGR_DONE = 0x8;
-
 // Monster creation flags (include/hack.h; consumed by src/makemon.c)
 // Runtime fields:
 // - makemon(..., mmflags) argument
@@ -2134,29 +2004,24 @@ export const MM_FEMALE = 0x00010000;
 export const MM_NOMSG = 0x00020000;
 export const MM_NOEXCLAM = 0x00040000;
 export const MM_IGNORELAVA = 0x00080000;
-export const MM_ASYNC = 0x00100000;      // caller will await; store appear-message promise on monster
-
+export const MM_ASYNC = 0x00100000; // caller will await; store appear-message promise on monster
 // Teleport target search flags (include/hack.h; src/teleport.c goodpos/enexto)
 // Runtime fields: teleport goodpos/enexto entflags/gpflags args
 export const GP_ALLOW_XY = 0x00200000;
 export const GP_ALLOW_U = 0x00400000;
 export const GP_CHECKSCARY = 0x00800000;
 export const GP_AVOID_MONPOS = 0x01000000;
-
 // Monster relocation flags (include/hack.h; src/teleport.c rloc/rloc_to)
 // Runtime fields: rloc/rloc_to rlocflags args
-export const RLOC_NONE = 0x0000;
-export const RLOC_NOMSG = 0x0001;
-export const RLOC_MSG = 0x0002;
-export const RLOC_TELE = 0x0004;
-export const RLOC_ERR = 0x0100;
-
+export const RLOC_NONE = 0x00;
+export const RLOC_ERR = 0x01;
+export const RLOC_MSG = 0x02;
+export const RLOC_NOMSG = 0x04;
 // Hero teleport placement flags (include/hack.h; src/teleport.c teleds)
 // Runtime fields: teleds/safe_teleds flags args
 export const TELEDS_NO_FLAGS = 0;
 export const TELEDS_ALLOW_DRAG = 1;
 export const TELEDS_TELEPORT = 2;
-
 // Dogfood classification enum (include/mextra.h dogfood_types; used by src/dog.c/dogmove.c)
 export const DOGFOOD = 0;
 export const CADAVER = 1;
@@ -2166,21 +2031,17 @@ export const APPORT = 4;
 export const POISON = 5;
 export const UNDEF = 6;
 export const TABU = 7;
-
 // Hero-kill/xkilled flag bits (include/hack.h; used by src/mon.c xkilled())
 export const XKILL_GIVEMSG = 0x0;
 export const XKILL_NOMSG = 0x1;
 export const XKILL_NOCORPSE = 0x2;
 export const XKILL_NOCONDUCT = 0x4;
-
 // Poison gas tolerance enum (src/mon.c m_poisongas_ok())
 export const M_POISONGAS_OK = 2;
 export const M_POISONGAS_MINOR = 1;
 export const M_POISONGAS_BAD = 0;
-
 // C ref: include/global.h MAXMONNO
 export const MAXMONNO = 120;
-
 // Wornmask bit flags (include/prop.h and include/youprop.h)
 // Runtime fields:
 // - object.owornmask
@@ -2207,7 +2068,6 @@ export const W_ACCESSORY = W_RING | W_AMUL | W_TOOL;
 export const W_SADDLE = 0x00100000;
 export const W_BALL = 0x00200000;
 export const W_CHAIN = 0x00400000;
-
 // Hero trap state enum (include/you.h enum utraptype)
 // Runtime field: player.utraptype
 export const TT_NONE = 0;
@@ -2217,7 +2077,6 @@ export const TT_WEB = 3;
 export const TT_LAVA = 4;
 export const TT_INFLOOR = 5;
 export const TT_BURIEDBALL = 6;
-
 // Trap trigger flags (include/hack.h; src/trap.c trigger_trap())
 // Runtime field: trigger_trap(...) tflags argument
 export const FORCETRAP = 0x01;
@@ -2227,7 +2086,6 @@ export const RECURSIVETRAP = 0x08;
 export const TOOKPLUNGE = 0x10;
 export const VIASITTING = 0x20;
 export const FAILEDUNTRAP = 0x40;
-
 // Item erosion kinds/results/flags (src/trap.c erode_obj*)
 // Runtime fields:
 // - erode_obj / erode_obj_player type/result/ef_flags arguments
@@ -2246,7 +2104,6 @@ export const EF_GREASE = 0x01;
 export const EF_DESTROY = 0x02;
 export const EF_VERBOSE = 0x04;
 export const EF_PAY = 0x08;
-
 // Trap types (trap.h)
 export const ALL_TRAPS = -1;
 export const NO_TRAP = 0;
@@ -2276,7 +2133,6 @@ export const VIBRATING_SQUARE = 23;
 export const TRAPPED_DOOR = 24;
 export const TRAPPED_CHEST = 25;
 export const TRAPNUM = 26;
-
 // C ref: defsym.h trap explanations, consumed by trapname(ttyp, FALSE).
 export const TRAP_EXPLANATIONS = [
     '', 'arrow trap', 'dart trap', 'falling rock trap', 'squeaky board',
@@ -2286,30 +2142,26 @@ export const TRAP_EXPLANATIONS = [
     'statue trap', 'magic trap', 'anti-magic field', 'polymorph trap',
     'vibrating square', 'trapped door', 'trapped chest',
 ];
-
 const SQUEAKY_BOARD_NOTES = [
     'C note', 'D flat', 'D note', 'E flat',
     'E note', 'F note', 'F sharp', 'G note',
     'G sharp', 'A note', 'B flat', 'B note',
 ];
-
 export function squeakyBoardNoteWithArticle(index) {
     const note = SQUEAKY_BOARD_NOTES[index];
-    if (!note) return '';
-    return `${/^[aeiou]/i.test(note) ? 'an' : 'a'} ${note}`;
+    if (!note)
+        return '';
+    return withIndefiniteArticle(note);
 }
-
 // Trap helpers (trap.h)
 export function is_pit(ttyp) { return ttyp === PIT || ttyp === SPIKED_PIT; }
 export function is_hole(ttyp) { return ttyp === HOLE || ttyp === TRAPDOOR; }
-
 // Trap flags for mktrap
 export const MKTRAP_NOFLAGS = 0;
 export const MKTRAP_SEEN = 0x01;
 export const MKTRAP_MAZEFLAG = 0x02;
 export const MKTRAP_NOSPIDERONWEB = 0x04;
 export const MKTRAP_NOVICTIM = 0x08;
-
 // Intrinsic property indices (prop.h)
 // C ref: include/prop.h — enum prop_types (Property #0 unused)
 export const FIRE_RES = 1;
@@ -2385,29 +2237,23 @@ export const LAST_PROP = LIFESAVED;
 // Temporary aliases still used in JS callsites.
 export const SLEEPING = SLEEPY;
 export const WATERPROOF = WWALKING;
-
 // Intrinsic bitmask constants (prop.h)
 // C ref: include/prop.h — bitmask for intrinsic field
-export const TIMEOUT = 0x00FFFFFF;     // timeout portion of intrinsic
-export const FROMEXPER = 0x01000000;   // from role/experience
-export const FROM_RACE = 0x02000000;   // from race/experience
+export const TIMEOUT = 0x00FFFFFF; // timeout portion of intrinsic
+export const FROMEXPER = 0x01000000; // from role/experience
+export const FROM_RACE = 0x02000000; // from race/experience
 export const FROMOUTSIDE = 0x04000000; // from outside source (corpse, potion)
 export const INTRINSIC = (FROMEXPER | FROM_RACE | FROMOUTSIDE);
-export const FROM_FORM = 0x10000000;   // from polymorph form
-export const I_SPECIAL = 0x20000000;   // property-specific flag
+export const FROM_FORM = 0x10000000; // from polymorph form
+export const I_SPECIAL = 0x20000000; // property-specific flag
 // Temporary alias used by existing imports.
 export const FROM_ROLE = FROMEXPER;
-
 // Sickness types (C ref: you.h usick_type)
-export const SICK_VOMITABLE = 0x01;    // food poisoning
+export const SICK_VOMITABLE = 0x01; // food poisoning
 export const SICK_NONVOMITABLE = 0x02; // illness (from corpse, etc.)
-
-
 // --------------------------------------------------------------------------
 // Merged from former symbol definitions module
 // --------------------------------------------------------------------------
-
-
 /**
  * const.js - NetHack 5.0 symbol and color definitions
  *
@@ -2419,67 +2265,55 @@ export const SICK_NONVOMITABLE = 0x02; // illness (from corpse, etc.)
  *   - include/trap.h       (trap type constants)
  *   - src/drawing.c        (drawing arrays, warning symbols)
  */
-
 // ==========================================================================
 // 1. Color Constants (from include/color.h, lines 14-30)
 // ==========================================================================
-
-export const CLR_MAX            = 16;
-
-export const BRIGHT             = 8;   // half-way point for tty color systems
-
+export const CLR_MAX = 16;
+export const BRIGHT = 8; // half-way point for tty color systems
 // Color aliases (from include/color.h, lines 37-55)
 // Material/object colors (moved from terminal.js — game-specific, not terminal-generic)
-export const HI_METAL           = CLR_CYAN;
-export const HI_WOOD            = CLR_BROWN;
-export const HI_GOLD            = CLR_YELLOW;
-export const HI_ZAP             = CLR_BRIGHT_BLUE;
-export const HI_DOMESTIC        = CLR_WHITE;          // for player + pets
-export const HI_LORD            = CLR_MAGENTA;        // for high-end monsters
-export const HI_OVERLORD        = CLR_BRIGHT_MAGENTA; // for few uniques
-
-export const HI_OBJ             = CLR_MAGENTA;
-export const HI_COPPER          = CLR_YELLOW;
-export const HI_SILVER          = CLR_GRAY;
-export const HI_LEATHER         = CLR_BROWN;
-export const HI_CLOTH           = CLR_BROWN;
-export const HI_ORGANIC         = CLR_BROWN;
-export const HI_PAPER           = CLR_WHITE;
-export const HI_GLASS           = CLR_BRIGHT_CYAN;
-export const HI_MINERAL         = CLR_GRAY;
-export const DRAGON_SILVER      = CLR_BRIGHT_CYAN;
+export const HI_METAL = CLR_CYAN;
+export const HI_WOOD = CLR_BROWN;
+export const HI_GOLD = CLR_YELLOW;
+export const HI_ZAP = CLR_BRIGHT_BLUE;
+export const HI_DOMESTIC = CLR_WHITE; // for player + pets
+export const HI_LORD = CLR_MAGENTA; // for high-end monsters
+export const HI_OVERLORD = CLR_BRIGHT_MAGENTA; // for few uniques
+export const HI_OBJ = CLR_MAGENTA;
+export const HI_COPPER = CLR_YELLOW;
+export const HI_SILVER = CLR_GRAY;
+export const HI_LEATHER = CLR_BROWN;
+export const HI_CLOTH = CLR_BROWN;
+export const HI_ORGANIC = CLR_BROWN;
+export const HI_PAPER = CLR_WHITE;
+export const HI_GLASS = CLR_BRIGHT_CYAN;
+export const HI_MINERAL = CLR_GRAY;
+export const DRAGON_SILVER = CLR_BRIGHT_CYAN;
 // [CONST_SYMBOLS content removed — now in symbols.js]
-
-export const MAXEXPCHARS = 9;                               // number of explosion characters
-
+export const MAXEXPCHARS = 9; // number of explosion characters
 // ==========================================================================
 // 3. Level Type Constants (from include/rm.h, lines 55-97)
 //    enum levl_typ_types
 // ==========================================================================
-
-export const MATCH_WALL      = 38;
-export const INVALID_TYPE    = 127;
-
+export const MATCH_WALL = 38;
+export const INVALID_TYPE = 127;
 // Level type utility macros (from include/rm.h, lines 104-128)
-export function IS_SDOOR(typ)      { return typ === SDOOR; }
+export function IS_SDOOR(typ) { return typ === SDOOR; }
 // C ref: rm.h — IS_TREE includes STONE on arboreal levels
-export function IS_TREE(typ)       { return typ === TREE || (game?.level?.flags?.arboreal && typ === STONE); }
-export function ZAP_POS(typ)       { return typ >= POOL; }
-export function SPACE_POS(typ)     { return typ > DOOR; }
-export function IS_THRONE(typ)     { return typ === THRONE; }
-export function IS_FOUNTAIN(typ)   { return typ === FOUNTAIN; }
-export function IS_SINK(typ)       { return typ === SINK; }
-export function IS_GRAVE(typ)      { return typ === GRAVE; }
-export function IS_ALTAR(typ)      { return typ === ALTAR; }
-export function IS_AIR(typ)        { return typ === AIR || typ === CLOUD; }
-export function IS_SOFT(typ)       { return typ === AIR || typ === CLOUD || IS_POOL(typ); }
-
+export function IS_TREE(typ) { return typ === TREE || (!!game?.level?.flags?.arboreal && typ === STONE); }
+export function ZAP_POS(typ) { return typ >= POOL; }
+export function SPACE_POS(typ) { return typ > DOOR; }
+export function IS_THRONE(typ) { return typ === THRONE; }
+export function IS_FOUNTAIN(typ) { return typ === FOUNTAIN; }
+export function IS_SINK(typ) { return typ === SINK; }
+export function IS_GRAVE(typ) { return typ === GRAVE; }
+export function IS_ALTAR(typ) { return typ === ALTAR; }
+export function IS_AIR(typ) { return typ === AIR || typ === CLOUD; }
+export function IS_SOFT(typ) { return typ === AIR || typ === CLOUD || IS_POOL(typ); }
 // ==========================================================================
 // 6. Trap Type Constants (from include/trap.h, lines 57-94)
 //    enum trap_types
 // ==========================================================================
-
-
 // Trap utility macros (from include/trap.h)
 export function is_magical_trap(ttyp) {
     return ttyp === TELEP_TRAP || ttyp === LEVEL_TELEP
@@ -2487,41 +2321,34 @@ export function is_magical_trap(ttyp) {
         || ttyp === POLY_TRAP;
 }
 export function is_xport(ttyp) { return ttyp >= TELEP_TRAP && ttyp <= MAGIC_PORTAL; }
-
 // trap_to_defsym/defsym_to_trap moved to symbols.js (depends on S_arrow_trap)
-
 // MAXTCHARS: number of trap characters (from include/sym.h, line 92)
 export const MAXTCHARS = TRAPNUM - 1;
-
 // ==========================================================================
 // 7. Warning Symbols (from src/drawing.c, lines 39-52)
 //    6 warning levels (WARNCOUNT = 6)
 // ==========================================================================
-
 export const WARNCOUNT = 6;
-
 export const def_warnsyms = [
     // level 0: white warning
-    { ch: '0', desc: "unknown creature causing you worry",    color: CLR_WHITE },
+    { ch: '0', desc: "unknown creature causing you worry", color: CLR_WHITE },
     // level 1: pink warning
-    { ch: '1', desc: "unknown creature causing you concern",  color: CLR_RED },
+    { ch: '1', desc: "unknown creature causing you concern", color: CLR_RED },
     // level 2: red warning
-    { ch: '2', desc: "unknown creature causing you anxiety",  color: CLR_RED },
+    { ch: '2', desc: "unknown creature causing you anxiety", color: CLR_RED },
     // level 3: ruby warning
     { ch: '3', desc: "unknown creature causing you disquiet", color: CLR_RED },
     // level 4: purple warning
-    { ch: '4', desc: "unknown creature causing you alarm",    color: CLR_MAGENTA },
+    { ch: '4', desc: "unknown creature causing you alarm", color: CLR_MAGENTA },
     // level 5: black warning
-    { ch: '5', desc: "unknown creature causing you dread",    color: CLR_BRIGHT_MAGENTA },
+    { ch: '5', desc: "unknown creature causing you dread", color: CLR_BRIGHT_MAGENTA },
 ];
-
 // ==========================================================================
 // 8. CSS Color Mapping for Browser Rendering
 //    Maps NetHack CLR_* constants to CSS color strings
 // ==========================================================================
-
 const cssColorMap = [
-    /* CLR_BLACK          0 */ "#555",   // dark gray (pure black invisible on black bg)
+    /* CLR_BLACK          0 */ "#555", // dark gray (pure black invisible on black bg)
     /* CLR_RED            1 */ "#a00",
     /* CLR_GREEN          2 */ "#0a0",
     /* CLR_BROWN          3 */ "#a50",
@@ -2529,7 +2356,7 @@ const cssColorMap = [
     /* CLR_MAGENTA        5 */ "#a0a",
     /* CLR_CYAN           6 */ "#0aa",
     /* CLR_GRAY           7 */ "#ccc",
-    /* NO_COLOR           8 */ "#f80",   // bright orange (NO_COLOR / CLR_ORANGE alias)
+    /* NO_COLOR           8 */ "#f80", // bright orange (NO_COLOR / CLR_ORANGE alias)
     /* CLR_ORANGE         9 */ "#f80",
     /* CLR_BRIGHT_GREEN  10 */ "#0f0",
     /* CLR_YELLOW        11 */ "#ff0",
@@ -2538,7 +2365,6 @@ const cssColorMap = [
     /* CLR_BRIGHT_CYAN   14 */ "#0ff",
     /* CLR_WHITE         15 */ "#fff",
 ];
-
 /**
  * Convert a NetHack color constant to a CSS color string suitable
  * for browser rendering on a dark background.
@@ -2548,103 +2374,54 @@ const cssColorMap = [
  */
 export function colorToCSS(color) {
     if (color >= 0 && color < cssColorMap.length) {
-        return cssColorMap[color];
+        return cssColorMap[color] ?? cssColorMap[CLR_GRAY];
     }
     return cssColorMap[CLR_GRAY]; // fallback to gray
 }
-
 // ==========================================================================
 // Misc Symbol Constants (from include/sym.h, lines 111-118)
 // ==========================================================================
-
-export const SYM_NOTHING       = 0;
-export const SYM_UNEXPLORED    = 1;
-export const SYM_BOULDER       = 2;
-export const SYM_INVISIBLE     = 3;
-export const SYM_PET_OVERRIDE  = 4;
+export const SYM_NOTHING = 0;
+export const SYM_UNEXPLORED = 1;
+export const SYM_BOULDER = 2;
+export const SYM_INVISIBLE = 3;
+export const SYM_PET_OVERRIDE = 4;
 export const SYM_HERO_OVERRIDE = 5;
-export const MAXOTHER          = 6;
-
+export const MAXOTHER = 6;
 // Symbol parse range (from include/sym.h, lines 58-65)
-export const SYM_INVALID       = 0;
-export const SYM_CONTROL       = 1;
-export const SYM_PCHAR         = 2;
-export const SYM_OC            = 3;
-export const SYM_MON           = 4;
-export const SYM_OTH           = 5;
-
+export const SYM_INVALID = 0;
+export const SYM_CONTROL = 1;
+export const SYM_PCHAR = 2;
+export const SYM_OC = 3;
+export const SYM_MON = 4;
+export const SYM_OTH = 5;
 // Cmap classification helpers — moved to drawing.js (depend on S_* from symbols.js)
-
 // ==========================================================================
 // DECgraphics Symbol Set
 // C ref: dat/symbols DECgraphics symset
 // These are the raw VT100 alternate-character bytes. display.js wraps them
 // with SO/SI so tty output matches recorded C sessions exactly.
 // ==========================================================================
-
 export const decgraphics = [
     // Walls and corners (matching defsyms indices 1-11)
-    'x',  // S_vwall (1)   - vertical rule
-    'q',  // S_hwall (2)   - horizontal rule
-    'l',  // S_tlcorn (3)  - top left corner
-    'k',  // S_trcorn (4)  - top right corner
-    'm',  // S_blcorn (5)  - bottom left
-    'j',  // S_brcorn (6)  - bottom right
-    'n',  // S_crwall (7)  - cross
-    'v',  // S_tuwall (8)  - T up
-    'w',  // S_tdwall (9)  - T down
-    'u',  // S_tlwall (10) - T left
-    't',  // S_trwall (11) - T right
+    'x', // S_vwall (1)   - vertical rule
+    'q', // S_hwall (2)   - horizontal rule
+    'l', // S_tlcorn (3)  - top left corner
+    'k', // S_trcorn (4)  - top right corner
+    'm', // S_blcorn (5)  - bottom left
+    'j', // S_brcorn (6)  - bottom right
+    'n', // S_crwall (7)  - cross
+    'v', // S_tuwall (8)  - T up
+    'w', // S_tdwall (9)  - T down
+    'u', // S_tlwall (10) - T left
+    't', // S_trwall (11) - T right
 ];
-
 // getSymbolChar: canonical version is pchar_sym() in drawing.js
-
 // def_char_to_objclass — moved to drawing.js (depends on MAXOCLASSES, def_oc_syms)
-
 // def_char_is_furniture: canonical version in drawing.js
-
-// C global structs from decl.c — module-level state for symbol sets
-// Note: init functions lost array indices in autotranslation; showsyms/primary_syms/rogue_syms
-// are scalars here (last-write-wins) rather than arrays. Functional but imprecise.
-export const gs = { showsyms: null, symset: [{ name: null, handling: 0, nocolor: 0 }, { name: null, handling: 0, nocolor: 0 }] };
-export const gp = { primary_syms: null, pl_race: null, plinemsg_types: null };
-const gr = { rogue_syms: null };
-
-// init_symbols, init_showsyms, init_primary_symbols, init_rogue_symbols:
-// Canonical versions in drawing.js. These were autotranslated duplicates
-// that used defsyms (from symbols.js), creating a const→symbols→monsters→const
-// cycle. Removed to keep the constant DAG acyclic.
-
-// Autotranslated from symbols.c:306
-export function update_primary_symset(symp, val) {
-  gp.primary_syms = val;
-}
-
-// Autotranslated from symbols.c:312
-export function update_rogue_symset(symp, val) {
-  gr.rogue_syms = val;
-}
-
-// symset_is_compatible — moved to drawing.js
-
-// Autotranslated from symbols.c:656
-const known_handling = ["UNKNOWN", "IBM", "DEC", "UTF8", null];
-
-export function set_symhandling(handling, which_set) {
-  let i = 0;
-  gs.symset[which_set].handling = H_UNK;
-  while (known_handling[i]) {
-    if (known_handling[i].toLowerCase() === handling.toLowerCase()) { gs.symset[which_set].handling = i; return; }
-    i++;
-  }
-}
-
-// free_symsets, savedsym_free, savedsym_add, savedsym_strbuf, parsesymbols
-// — moved to drawing.js (depend on symbols.js / hacklib.js)
 // AUTO-IMPORT-BEGIN: CONST_WEAPON_SKILLS
 // Auto-imported weapon/skill constants from C headers
 // Sources: skills.h, monst.h
-
 // Skill constants — cf. skills.h enum p_skills
 export const P_NONE = 0;
 export const P_DAGGER = 1;
@@ -2685,7 +2462,6 @@ export const P_BARE_HANDED_COMBAT = 35;
 export const P_TWO_WEAPON_COMBAT = 36;
 export const P_RIDING = 37;
 export const P_NUM_SKILLS = 38;
-
 export const P_FIRST_WEAPON = P_DAGGER;
 export const P_LAST_WEAPON = P_UNICORN_HORN;
 export const P_FIRST_SPELL = P_ATTACK_SPELL;
@@ -2694,7 +2470,6 @@ export const P_FIRST_H_TO_H = P_BARE_HANDED_COMBAT;
 export const P_LAST_H_TO_H = P_RIDING;
 export const P_MARTIAL_ARTS = P_BARE_HANDED_COMBAT;
 export const P_SKILL_LIMIT = 60;
-
 // Skill levels — cf. skills.h enum skill_levels
 export const P_ISRESTRICTED = 0;
 export const P_UNSKILLED = 1;
@@ -2703,7 +2478,6 @@ export const P_SKILLED = 3;
 export const P_EXPERT = 4;
 export const P_MASTER = 5;
 export const P_GRAND_MASTER = 6;
-
 // Monster weapon_check states — cf. monst.h enum wpn_chk_flags
 export const NO_WEAPON_WANTED = 0;
 export const NEED_WEAPON = 1;
@@ -2712,7 +2486,6 @@ export const NEED_HTH_WEAPON = 3;
 export const NEED_PICK_AXE = 4;
 export const NEED_AXE = 5;
 export const NEED_PICK_OR_AXE = 6;
-
 // Distance limits (hack.h)
 export const BOLT_LIM = 8;
 export const AKLYS_LIM = BOLT_LIM / 2;
@@ -2741,7 +2514,6 @@ export const WORN_BOOTS = W_ARMF;
 export const WORN_AMUL = W_AMUL;
 export const WORN_BLINDF = W_TOOL;
 export const WORN_SHIRT = W_ARMU;
-
 // ===== botl.h =====
 export const HL_ATTCLR_NONE = CLR_MAX + 1;
 export const HL_ATTCLR_BOLD = CLR_MAX + 2;
@@ -2751,18 +2523,14 @@ export const HL_ATTCLR_ULINE = CLR_MAX + 5;
 export const HL_ATTCLR_BLINK = CLR_MAX + 6;
 export const HL_ATTCLR_INVERSE = CLR_MAX + 7;
 export const BL_ATTCLR_MAX = CLR_MAX + 8;
-
 // ===== vision.h =====
 export const NUM_LS_SOURCES = (LS_MONSTER + 1);
-
 // ===== timeout.h =====
 export const NUM_TIME_FUNCS = (MELT_ICE_AWAY + 1);
-
 // ===== hack.h =====
 export const MAXLINFO = (MAXDUNGEON * MAXLEVEL);
 export const BUC_ALLBKNOWN = (BUC_BLESSED | BUC_CURSED | BUC_UNCURSED);
 export const BUCX_TYPES = (BUC_ALLBKNOWN | BUC_UNKNOWN);
-
 // ===== wincurs.h =====
 export const DIALOG_BORDER_COLOR = CLR_MAGENTA;
 export const ALERT_BORDER_COLOR = CLR_RED;
@@ -2772,16 +2540,13 @@ export const HIGHLIGHT_COLOR = CLR_WHITE;
 export const MORECOLOR = CLR_ORANGE;
 export const STAT_UP_COLOR = CLR_GREEN;
 export const STAT_DOWN_COLOR = CLR_RED;
-
 // AUTO-IMPORT-END: CONST_ALL_HEADERS_POST
-
 // permonst.h constants (blacklisted header, manually maintained)
 export const NON_PM = -1;
 export const LOW_PM = 0;
 export const LEAVESTATUE = NON_PM - 1;
 export const NATTK = 6;
 export const NORMAL_SPEED = 12;
-
 // ========================================================================
 // C macro accessors for monster/object extra fields
 // C: ESHK(mtmp) → ((struct eshk *)(mtmp)->mextra->eshk)
@@ -2790,18 +2555,14 @@ export const NORMAL_SPEED = 12;
 export function ESHK(mtmp) { return mtmp?.mextra?.eshk; }
 export function EPRI(mtmp) { return mtmp?.mextra?.epri; }
 export function EMIN(mtmp) { return mtmp?.mextra?.emin; }
-export function EGD(mtmp) { return mtmp?.mextra?.egd; }
 export function EDOG(mtmp) { return mtmp?.mextra?.edog; }
 export function EBONES(mtmp) { return mtmp?.mextra?.ebones; }
 export function MCORPSENM(mtmp) { return mtmp?.mextra?.mcorpsenm ?? -1; }
-
 export function has_eshk(mtmp) { return !!mtmp?.mextra?.eshk; }
 export function has_epri(mtmp) { return !!mtmp?.mextra?.epri; }
 export function has_emin(mtmp) { return !!mtmp?.mextra?.emin; }
-export function has_egd(mtmp) { return !!mtmp?.mextra?.egd; }
 export function has_edog(mtmp) { return !!mtmp?.mextra?.edog; }
 export function has_ebones(mtmp) { return !!mtmp?.mextra?.ebones; }
-
 // Object extra accessors
 // C: ONAME(obj) → ((char *)(obj)->oextra->oname)
 export function ONAME(obj) { return obj?.oextra?.oname || ''; }
@@ -2809,54 +2570,109 @@ export function has_oname(obj) { return !!obj?.oextra?.oname; }
 export function OMONST(obj) { return obj?.oextra?.omonst; }
 export function MGIVENNAME(mtmp) { return mtmp?.mextra?.mgivenname || mtmp?.mgivenname || ''; }
 export function has_mgivenname(mtmp) { return !!(mtmp?.mextra?.mgivenname || mtmp?.mgivenname); }
-
 // C you.h: the current body remains polymorphed until its species changes.
 export function Upolyd(player) {
     return !!player && player.umonnum !== player.umonster;
 }
-
 // Canonical macros — previously duplicated as local stubs in 15+ files
 export function u_at(x, y) { return game?.u?.ux === x && game?.u?.uy === y; }
-export function OBJ_AT(x, y) { return game?.level?.objects?.some(o => o.ox === x && o.oy === y) ?? false; }
-export function Has_contents(obj) { return obj?.cobj != null; }
-export function M_AP_TYPE(mon) { return mon?.m_ap_type ?? 0; }
-export function engulfing_u(mon) { const g = (typeof game !== 'undefined' ? game : null); return g?.u?.uswallow && g?.u?.ustuck === mon; }
-// C ref: permonst.h — ismnum(x) means x is a valid monster index.
+export function M_AP_TYPE(mon) { return (mon?.m_ap_type ?? 0) & M_AP_TYPMASK; }
+export function engulfing_u(mon) { return !!game?.u?.uswallow && game.u.ustuck === mon; }
+// C ref: monst.h — ismnum(x) means x is a valid monster index.
 // JS call sites pass integer indices (for example u.ulycn, corpsenm, cham).
 export function ismnum(pm) {
-    return Number.isInteger(pm) && pm >= LOW_PM;
+    return typeof pm === 'number' && Number.isInteger(pm) && pm >= LOW_PM && pm < MONSTER_NAME.length;
 }
-
 // ── Level classification predicates (C: dungeon.h macros) ──
 export function In_quest(uz) { return (uz ?? game?.u?.uz)?.dnum === game?.quest_dnum; }
-export function In_endgame(uz) { const lev = uz ?? game?.u?.uz; const al = game?.astral_level; return !!lev && !!al && lev.dnum === al.dnum; }
+export function In_endgame(uz) {
+    const level = uz ?? game?.u?.uz;
+    const specialLevel = game?.astral_level;
+    return !!level && !!specialLevel
+        && level.dnum === specialLevel.dnum;
+}
 export function Is_astralevel(uz) { return In_endgame(uz) && (uz ?? game?.u?.uz)?.dlevel === 1; }
-export function Is_waterlevel(uz) { const lev = uz ?? game?.u?.uz; const wl = game?.water_level; return !!lev && !!wl && lev.dnum === wl.dnum && lev.dlevel === wl.dlevel; }
-export function Is_firelevel(uz) { const lev = uz ?? game?.u?.uz; const fl = game?.fire_level; return !!lev && !!fl && lev.dnum === fl.dnum && lev.dlevel === fl.dlevel; }
-export function Is_earthlevel(uz) { const lev = uz ?? game?.u?.uz; const el = game?.earth_level; return !!lev && !!el && lev.dnum === el.dnum && lev.dlevel === el.dlevel; }
-export function Is_airlevel(uz) { const lev = uz ?? game?.u?.uz; const al = game?.air_level; return !!lev && !!al && lev.dnum === al.dnum && lev.dlevel === al.dlevel; }
+export function Is_waterlevel(uz) {
+    const level = uz ?? game?.u?.uz;
+    const specialLevel = game?.water_level;
+    return !!level && !!specialLevel
+        && level.dnum === specialLevel.dnum
+        && level.dlevel === specialLevel.dlevel;
+}
+export function Is_firelevel(uz) {
+    const level = uz ?? game?.u?.uz;
+    const specialLevel = game?.fire_level;
+    return !!level && !!specialLevel
+        && level.dnum === specialLevel.dnum
+        && level.dlevel === specialLevel.dlevel;
+}
+export function Is_earthlevel(uz) {
+    const level = uz ?? game?.u?.uz;
+    const specialLevel = game?.earth_level;
+    return !!level && !!specialLevel
+        && level.dnum === specialLevel.dnum
+        && level.dlevel === specialLevel.dlevel;
+}
+export function Is_airlevel(uz) {
+    const level = uz ?? game?.u?.uz;
+    const specialLevel = game?.air_level;
+    return !!level && !!specialLevel
+        && level.dnum === specialLevel.dnum
+        && level.dlevel === specialLevel.dlevel;
+}
 export function In_mines(uz) { return (uz ?? game?.u?.uz)?.dnum === game?.mines_dnum; }
 export function In_sokoban(uz) { return (uz ?? game?.u?.uz)?.dnum === game?.sokoban_dnum; }
 export function In_V_tower(uz) { return (uz ?? game?.u?.uz)?.dnum === game?.tower_dnum; }
-export function Is_stronghold(uz) { const g = game; return g?.stronghold_level && (uz ?? g?.u?.uz)?.dnum === g.stronghold_level.dnum && (uz ?? g?.u?.uz)?.dlevel === g.stronghold_level.dlevel; }
+export function Is_stronghold(uz) {
+    const level = uz ?? game?.u?.uz;
+    const specialLevel = game?.stronghold_level;
+    return !!specialLevel
+        && level?.dnum === specialLevel.dnum
+        && level?.dlevel === specialLevel.dlevel;
+}
 // C ref: dungeon.c:1637 — Is_botlevel checks if level is the deepest
 // in its dungeon branch. Each branch has its own num_dunlevs.
 export function Is_botlevel(uz) {
     const lev = uz ?? game?.u?.uz;
-    if (!lev) return false;
+    if (!lev)
+        return false;
     const dun = game?.dungeons?.[lev.dnum];
     return !!dun && lev.dlevel === dun.num_dunlevs;
 }
-export function Invocation_lev(uz) {
-    const lev = uz ?? game?.u?.uz;
-    if (!lev) return false;
-    const dungeon = game?.dungeons?.[lev.dnum];
-    return !!dungeon?.flags?.hellish
+export function In_hell(uz, state = game) {
+    const lev = uz ?? state?.u?.uz;
+    return !!lev && !!state?.valley_level
+        && lev.dnum === state.valley_level.dnum;
+}
+export function Invocation_lev(uz, state = game) {
+    const lev = uz ?? state?.u?.uz;
+    if (!lev)
+        return false;
+    const dungeon = state?.dungeons?.[lev.dnum];
+    return !!dungeon && In_hell(lev, state)
         && lev.dlevel === dungeon.num_dunlevs - 1;
 }
-export function Is_rogue_level(uz) { const g = game; return g?.rogue_level && (uz ?? g?.u?.uz)?.dnum === g.rogue_level.dnum && (uz ?? g?.u?.uz)?.dlevel === g.rogue_level.dlevel; }
-export function Is_oracle_level(uz) { const g = game; return g?.oracle_level && (uz ?? g?.u?.uz)?.dnum === g.oracle_level.dnum && (uz ?? g?.u?.uz)?.dlevel === g.oracle_level.dlevel; }
-export function Is_knox_level(uz) { const g = game; return g?.knox_level && (uz ?? g?.u?.uz)?.dnum === g.knox_level.dnum && (uz ?? g?.u?.uz)?.dlevel === g.knox_level.dlevel; }
+export function Is_rogue_level(uz, state = game) {
+    const level = uz ?? state.u.uz;
+    const specialLevel = state.rogue_level;
+    return !!specialLevel
+        && level?.dnum === specialLevel.dnum
+        && level?.dlevel === specialLevel.dlevel;
+}
+export function Is_oracle_level(uz) {
+    const level = uz ?? game?.u?.uz;
+    const specialLevel = game?.oracle_level;
+    return !!specialLevel
+        && level?.dnum === specialLevel.dnum
+        && level?.dlevel === specialLevel.dlevel;
+}
+export function Is_knox_level(uz) {
+    const level = uz ?? game?.u?.uz;
+    const specialLevel = game?.knox_level;
+    return !!specialLevel
+        && level?.dnum === specialLevel.dnum
+        && level?.dlevel === specialLevel.dlevel;
+}
 export function Is_juiblex_level(uz) {
     const level = uz ?? game?.u?.uz;
     const juiblexLevel = game?.juiblex_level;
@@ -2864,3 +2680,4 @@ export function Is_juiblex_level(uz) {
         && level.dnum === juiblexLevel.dnum
         && level.dlevel === juiblexLevel.dlevel;
 }
+//# sourceMappingURL=const.js.map

@@ -1,0 +1,61 @@
+import type { Role, RoleKey, Race, RaceName, Alignment, AlignmentName } from '../../js/roles.js';
+import type { GameState } from '../../js/game_state.js';
+import { requireInitializedHero } from '../../js/hero_types.js';
+import { resetGame } from '../../js/gstate.js';
+import { init_objects } from '../../js/o_init.js';
+import { initRng } from '../../js/rng.js';
+import { aligns, races, roles } from '../../js/roles.js';
+import {
+    finishStartingDiscoveries, uInitInventoryAttrs, uInitMisc,
+} from '../../js/u_init.js';
+
+export interface HeroStartupOptions {
+    role: RoleKey | Role;
+    race?: RaceName | Race;
+    alignment?: AlignmentName | Alignment;
+    flags?: GameState['flags'];
+    seed?: bigint;
+}
+
+
+function namedEntry<T extends { key?: string; name: string | { m: string; f: string } }>(
+    entries: readonly T[], requested: string | T, kind: string,
+): T {
+    if (typeof requested === 'object') return requested;
+    const entry = entries.find(candidate => (
+        candidate.key === requested || candidate.name === requested
+    ));
+    if (!entry) throw new Error(`Unknown ${kind}: ${requested}`);
+    return entry;
+}
+
+export function prepareHeroStartup({
+    role,
+    race = 'human',
+    alignment = 'chaotic',
+    flags = {},
+    seed = 123n,
+}: HeroStartupOptions) {
+    const state = resetGame();
+    const selectedRole = namedEntry(roles, role, 'role');
+    const selectedRace = namedEntry(races, race, 'race');
+    const selectedAlignment = namedEntry(aligns, alignment, 'alignment');
+    state.urole = selectedRole;
+    state.urace = selectedRace;
+    state.initAlignment = selectedAlignment;
+    state.flags = { ...flags };
+    initRng(seed);
+    init_objects();
+    uInitMisc(1);
+    return state;
+}
+
+export async function completeHeroStartup(options: HeroStartupOptions) {
+    const state = prepareHeroStartup(options);
+    if (!await uInitInventoryAttrs())
+        throw new Error('Hero inventory setup failed');
+    if (!await finishStartingDiscoveries())
+        throw new Error('Hero discovery setup failed');
+    requireInitializedHero(state.u);
+    return state;
+}

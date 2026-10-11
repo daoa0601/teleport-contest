@@ -2,22 +2,43 @@ name: Score
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 jobs:
   score:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    env:
+      # Approved hash of the scorer, oracle, frozen, and native patch sources.
+      # Set it as a repository secret after reviewing measurement changes.
+      MEASUREMENT_HASH: ${{ secrets.MEASUREMENT_HASH }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Overlay frozen fixture (ISAAC64 + Terminal)
+      - name: Install pinned development dependencies
+        run: npm ci
+
+      - name: Compile strict TypeScript and run behavior tests
+        run: npm test
+
+      - name: Check measurement sources against the approved hash
+        if: ${{ env.MEASUREMENT_HASH != '' }}
+        run: node src/scripts/check-measurement-guard.mts hash --expect "$MEASUREMENT_HASH"
+
+      - name: Check verified-function ledger on public sessions
+        run: |
+          node scripts/triage-holdout.mjs public .cache/ci-public
+          node scripts/rng-function-table.mjs .cache/ci-public --check-ledger docs/ledger/public-rng.tsv
+
+      - name: Overlay frozen runtime adapters
         run: |
           cp frozen/isaac64.js js/isaac64.js
           cp frozen/terminal.js js/terminal.js
+          cp frozen/storage.js js/storage.js
 
       - name: Score public sessions
         run: |
@@ -26,24 +47,7 @@ jobs:
           cat score-stderr.txt >&2
 
       - name: Extract score summary
-        run: |
-          # Parse results JSON and create a summary
-          node -e "
-            const fs = require('fs');
-            const raw = fs.readFileSync('score-stdout.txt', 'utf8');
-            const idx = raw.lastIndexOf('__RESULTS_JSON__');
-            if (idx < 0) { console.log('No results found'); process.exit(1); }
-            const data = JSON.parse(raw.slice(idx + '__RESULTS_JSON__'.length).trim());
-            const results = data.results || [];
-            const passed = results.filter(r => r.passed).length;
-            const total = results.length;
-            const rngPct = total > 0
-              ? (results.reduce((s, r) => s + (r.metrics?.rngCalls?.matched || 0), 0)
-                 / results.reduce((s, r) => s + (r.metrics?.rngCalls?.total || 1), 0) * 100).toFixed(1)
-              : '0.0';
-            console.log(JSON.stringify({ passed, total, rngPct, timestamp: data.timestamp }));
-            fs.writeFileSync('score-summary.json', JSON.stringify({ passed, total, rngPct, timestamp: data.timestamp, results: results.map(r => ({ session: r.session, passed: r.passed, rng: r.metrics?.rngCalls, screen: r.metrics?.screens, cursor: r.metrics?.cursor })) }, null, 2));
-          "
+        run: node scripts/summarize-score.mjs
 
       - name: Upload results
         uses: actions/upload-artifact@v4

@@ -3,18 +3,8 @@ import { init_objects } from '../../js/o_init.js';
 import { initRng } from '../../js/rng.js';
 import { vision_recalc, vision_reset_new_level } from '../../js/vision.js';
 import { freshPlayableRoom } from './playable-room.js';
-
-export function freshObjectRoom({
-    objectInitializationSeed = 999n,
-    gameplaySeed,
-    moves = 40,
-    flags = {},
-    context = {},
-    hero = {},
-    recalculateVision = true,
-    ...room
-} = {}) {
-    const attributes = Array(6).fill(12);
+export function freshObjectRoom({ objectInitializationSeed = 999n, gameplaySeed, moves = 40, flags = {}, context = {}, hero = {}, recalculateVision = true, ...room } = {}) {
+    const attributes = [12, 12, 12, 12, 12, 12];
     const level = freshPlayableRoom({
         left: 7,
         right: 16,
@@ -31,19 +21,21 @@ export function freshObjectRoom({
             uhp: 40,
             uhpmax: 40,
             ualign: { type: 0, record: 0 },
-            acurr: { a: attributes.slice() },
-            amax: { a: attributes.slice() },
+            acurr: { a: [...attributes] },
+            amax: { a: [...attributes] },
             uconduct: {},
             uhave: {},
             blindTurns: 0,
             ...hero,
         },
     });
-    game.mvitals = [];
     game.in_mklev = false;
     vision_reset_new_level();
-    if (recalculateVision) vision_recalc(0);
+    if (recalculateVision)
+        vision_recalc(0);
     init_objects();
-    if (gameplaySeed !== undefined) initRng(BigInt(gameplaySeed));
+    if (gameplaySeed !== undefined)
+        initRng(BigInt(gameplaySeed));
     return level;
 }
+//# sourceMappingURL=object-room.js.map

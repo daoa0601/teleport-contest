@@ -1,30 +1,23 @@
 // Monster body and terrain rules.
 // C ref: mon.c.
-
-import { game } from './gstate.js';
-import {
-    FOUNTAIN, G_GENOD, In_endgame, Is_earthlevel, Is_waterlevel, IS_LAVA,
-    IS_POOL, MSLOW, STRAT_WAITFORU, WATER,
-} from './const.js';
-import { dryFountainAt } from './fountain_terrain.js';
-import {
-    canSeeMonster, newsym, plineWithContinuation,
-} from './display.js';
-import {
-    lifeSaveMonster, preventMonsterDeath, wornMonsterLifeSaver,
-} from './mondeath.js';
+import { prepareVaultGuardDeath } from './vault_guard.js';
+import { game, requireGameLevel } from './gstate.js';
+import { isLavaAt, isPoolAt, levelIsWaterLevel, monsterFliesOrFloats, monsterInAir } from './terrain_properties.js';
+import { makeMonsterFlee } from './monster_flee.js';
+import { RLOC_MSG, RLOC_NOMSG, FOUNTAIN, G_GENOD, MSLOW, STRAT_WAITFORU, WATER } from './const.js';
+import { dryFountainAt } from './fountain.js';
+import { canSeeMonster, newsym, plineWithContinuation, } from './display.js';
+import { lifeSaveMonster, preventMonsterDeath, wornMonsterLifeSaver, } from './mondeath.js';
 import { splitMonster } from './monster_clone.js';
-import {
-    MONSTER_FLAGS1, MONSTER_NAME,
-    MONSTER_SYMBOL, monsterYoungerForm,
-} from './monster_data.js';
-import { place_object, stack_object } from './floor_object.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterYoungerForm, } from './monster_data.js';
+import { releaseMonsterInventory } from './monster_drop.js';
+import { finishMonsterEating } from './monster_eating.js';
+import { finishShopkeeperDeparture } from './shop_damage.js';
+import { hasShopkeeperData } from './shop_types.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { monsterHasFireResistance } from './monster_resistance.js';
 import { EGG } from './object_data.js';
-import {
-    OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer,
-} from './object_timers.js';
+import { OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer, } from './object_timers.js';
 import { d, rn2, rnd } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
@@ -34,29 +27,23 @@ import { cansee } from './vision.js';
 import { AD_COLD, AD_ELEC, AD_FIRE } from './monster_attack_types.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { monsterSentenceSubject } from './monster_sound.js';
-
-const M1_FLY = 0x00000001;
 const M1_SWIM = 0x00000002;
 const M1_CLING = 0x00000010;
 const M1_AMPHIBIOUS = 0x00000200;
 const M1_BREATHLESS = 0x00000400;
 const M1_TPORT = 0x02000000;
-const S_EYE = 5;
-const S_LIGHT = 25;
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_SALAMANDER = 329;
 const S_EEL = 57;
-
 // C mhitm.c:paralyze_monst(). Paralysis also interrupts eating and waiting.
 export function paralyzeMonster(monster, turns) {
     monster.mcanmove = 0;
     monster.mfrozen = Math.min(127, turns);
-    monster.meating = 0;
-    monster.mstrategy &= ~STRAT_WAITFORU;
+    finishMonsterEating(monster);
+    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
 }
-
 // C healmon(). Overhealing can increase the monster's maximum health.
 export function healMonster(monster, amount, overheal = 0) {
     const before = monster.mhp;
@@ -64,91 +51,73 @@ export function healMonster(monster, amount, overheal = 0) {
     monster.mhpmax = Math.max(monster.mhpmax, monster.mhp);
     return monster.mhp - before;
 }
-
-export async function applyMonsterGolemEffects(monster, damageType, damage, {
-    state = game, publish = plineWithContinuation,
-} = {}) {
+export async function applyMonsterGolemEffects(monster, damageType, damage, { state = game, publish = plineWithContinuation, } = {}) {
     const species = MONSTER_NAME[monster.mnum];
     let healing = 0;
     let slow = false;
     if (species === 'flesh golem') {
-        if (damageType === AD_ELEC) healing = Math.trunc((damage + 5) / 6);
-        else slow = damageType === AD_FIRE || damageType === AD_COLD;
-    } else if (species === 'iron golem') {
+        if (damageType === AD_ELEC)
+            healing = Math.trunc((damage + 5) / 6);
+        else
+            slow = damageType === AD_FIRE || damageType === AD_COLD;
+    }
+    else if (species === 'iron golem') {
         slow = damageType === AD_ELEC;
-        if (damageType === AD_FIRE) healing = damage;
-    } else return;
-
+        if (damageType === AD_FIRE)
+            healing = damage;
+    }
+    else
+        return;
     if (slow && monster.mspeed !== MSLOW) {
         const change = adjustMonsterSpeed(monster, -1);
         const message = monsterSpeedMessage(change, monsterSentenceSubject(monster));
-        if (message && !state.in_mklev && canSeeMonster(monster, monster.mx, monster.my))
+        if (message && !state.in_mklev && canSeeMonster(monster))
             await publish(message);
     }
     if (healing && healMonster(monster, healing) && cansee(monster.mx, monster.my))
         await publish(`${monsterSentenceSubject(monster)} seems healthier.`);
 }
-
 function speciesWasGenocided(mnum, state) {
     return !!((state.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD);
 }
-
 function eggSpeciesWasGenocided(egg, state) {
     const mnum = egg?.corpsenm;
-    if (!Number.isInteger(mnum) || mnum < 0) return true;
+    if (mnum === undefined || !Number.isInteger(mnum) || mnum < 0)
+        return true;
     return speciesWasGenocided(mnum, state)
         || speciesWasGenocided(monsterYoungerForm(mnum), state);
 }
-
-function dropGenocidedMonsterInventory(monster, state) {
-    const dropped = [];
-    for (const object of monster.minvent || monster.inventory || []) {
-        object.owornmask = 0;
-        object.worn = false;
-        object.wornSlot = null;
-        object.wielded = false;
-        object.alternate = false;
-        object.ready = false;
-        object.ocarry = null;
-        delete object.carrierMid;
-        place_object(object, monster.mx, monster.my);
-        dropped.push(stack_object(object, state));
-    }
-    monster.minvent = [];
-    monster.inventory = monster.minvent;
-    monster.hasInventory = false;
-    monster.mw = null;
-    return dropped;
-}
-
 export async function killGenocidedMonster(monster, state) {
     const lifeSaver = wornMonsterLifeSaver(monster);
     if (lifeSaver) {
         await lifeSaveMonster(monster, lifeSaver, {
-            visible: cansee(monster.mx, monster.my),
-            spotted: canSeeMonster(monster, monster.mx, monster.my),
             genocided: true,
         });
     }
-
     const x = monster.mx, y = monster.my;
-    const dropped = dropGenocidedMonsterInventory(monster, state);
     monster.mhp = 0;
+    if (monster.isgd && !await prepareVaultGuardDeath(monster, state))
+        return { monster, dropped: [] };
+    const dropped = await releaseMonsterInventory(monster, state);
+    if (monster.isshk) {
+        if (!hasShopkeeperData(monster))
+            throw new Error('A shopkeeper must have shop data before departure.');
+        finishShopkeeperDeparture(monster, state);
+    }
     monster.dead = true;
     monster.mundetected = 0;
-    if (state.u?.usteed === monster) state.u.usteed = null;
+    if (state.u?.usteed === monster)
+        state.u.usteed = null;
     if (state.u?.ustuck === monster) {
         state.u.ustuck = null;
         state.u.uswallow = false;
         state.u.uswldtim = 0;
     }
-    state.level.monsters = (state.level.monsters || []).filter(
-        candidate => candidate !== monster,
-    );
+    const level = requireGameLevel(state);
+    level.monsters = level.monsters.filter(candidate => candidate !== monster);
     newsym(x, y);
     return { monster, dropped };
 }
-
 // C mon.c:kill_genocided_monsters().  Genocide is not a hero kill: it drops
 // carried objects, creates no corpse or experience, and sterilizes eggs.
 export async function killGenocidedMonsters(state = game) {
@@ -157,20 +126,25 @@ export async function killGenocidedMonsters(state = game) {
     const killed = [];
     const reshaped = [];
     for (const monster of [...(state.level?.monsters || [])]) {
-        if (monster.dead || (monster.mhp ?? 1) <= 0) continue;
-        const baseWasGenocided = Number.isInteger(monster.cham)
+        if (monster.dead || (monster.mhp ?? 1) <= 0)
+            continue;
+        const baseWasGenocided = monster.cham !== undefined && Number.isInteger(monster.cham)
             && monster.cham >= 0
             && speciesWasGenocided(monster.cham, state);
         if (!speciesWasGenocided(monster.mnum, state)
-            && !baseWasGenocided) continue;
-        if (Number.isInteger(monster.cham) && monster.cham >= 0
+            && !baseWasGenocided)
+            continue;
+        if (monster.cham !== undefined && Number.isInteger(monster.cham) && monster.cham >= 0
             && !baseWasGenocided) {
-            if (await changeMonsterForm(monster)) reshaped.push(monster);
+            const change = await changeMonsterForm(monster, null, state);
+            if (change?.heroDied)
+                return { killed, reshaped, heroDied: true };
+            if (change)
+                reshaped.push(monster);
             continue;
         }
         killed.push(await killGenocidedMonster(monster, state));
     }
-
     const sterileEggs = [];
     for (const object of objectsInTimerGraph(state)) {
         if (object.otyp !== EGG || !eggSpeciesWasGenocided(object, state))
@@ -180,64 +154,30 @@ export async function killGenocidedMonsters(state = game) {
     }
     return { killed, reshaped, sterileEggs };
 }
-
-export function levelHasCeiling(state = game) {
-    const flags = state.level?.flags || {};
-    if (typeof flags.has_ceiling === 'boolean') return flags.has_ceiling;
-    if (state !== game)
-        return !(flags.is_endgame && !flags.is_earthlevel);
-    return !(In_endgame(state.u?.uz) && !Is_earthlevel(state.u?.uz));
-}
-
-function monsterFliesOrFloats(monster) {
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[monster?.mnum];
-    return !!(flags & M1_FLY) || symbol === S_EYE || symbol === S_LIGHT;
-}
-
-export function monsterInAir(monster, state = game) {
-    if (!monster) return false;
-    if (monsterFliesOrFloats(monster)) return true;
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    return !!(flags & M1_CLING)
-        && levelHasCeiling(state)
-        && !!monster.mundetected;
-}
-
 export function monsterSurvivesPool(monster, { waterWall = false } = {}) {
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     const safeFlags = M1_SWIM | M1_AMPHIBIOUS | M1_BREATHLESS
         | (waterWall ? 0 : M1_CLING);
     return !!(flags & safeFlags);
 }
-
-function levelIsWaterLevel(state) {
-    return !!state.level?.flags?.is_waterlevel
-        || (state === game && Is_waterlevel(state.u?.uz));
-}
-
 function heroKeepsSteedAboveWater(monster, state, waterWall) {
-    if (waterWall || state.u?.usteed !== monster) return false;
-    return !!(state.u?.flying || state.u?.flight || state.flying
+    if (waterWall || state.u?.usteed !== monster)
+        return false;
+    return !!(state.u?.flying || state.flying
         || state.u?.levitating || state.u?.levitation || state.levitating);
 }
-
-export function rollMonsterPoolReaction(
-    monster,
-    state = game,
-    { random = rn2, rollDice = d } = {},
-) {
+export function rollMonsterPoolReaction(monster, state = game, { random = rn2, rollDice = d } = {}) {
     const location = state.level?.at?.(monster?.mx, monster?.my);
     const waterWall = location?.typ === WATER;
     const waterLevel = levelIsWaterLevel(state);
     const safelyAirborne = !waterWall && !waterLevel
         && monsterFliesOrFloats(monster);
     if (heroKeepsSteedAboveWater(monster, state, waterWall)
-        || safelyAirborne
-        || monsterSurvivesPool(monster, { waterWall })) {
+        || safelyAirborne) {
         return { kind: 'safe' };
     }
-
+    // Breathlessness prevents drowning, but does not protect an iron body
+    // from rust. C checks this reaction before the drowning predicates.
     if (monster.mnum === PM_IRON_GOLEM && random(5) === 0) {
         const damage = rollDice(2, 6);
         return {
@@ -245,19 +185,18 @@ export function rollMonsterPoolReaction(
             damage,
         };
     }
-
+    if (monsterSurvivesPool(monster, { waterWall }))
+        return { kind: 'safe' };
     return { kind: 'drown' };
 }
-
 function monsterLikesLava(monster) {
     return monster?.mnum === PM_FIRE_ELEMENTAL
         || monster?.mnum === PM_SALAMANDER;
 }
-
 export function monsterLavaReaction(monster, state = game) {
     const location = state.level?.at?.(monster?.mx, monster?.my);
-    if (!location || !IS_LAVA(location.typ)) return null;
-
+    if (!location || !isLavaAt(monster.mx, monster.my, state))
+        return null;
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const likesLava = monsterLikesLava(monster);
     if (monsterInAir(monster, state) || (flags & M1_CLING) || likesLava)
@@ -265,101 +204,53 @@ export function monsterLavaReaction(monster, state = game) {
     const fireResistant = monsterHasFireResistance(monster);
     return { kind: fireResistant ? 'scorch' : 'burn' };
 }
-
-export function applyDryLandEel(monster, state = game, random = rn2) {
-    const location = state.level?.at?.(monster?.mx, monster?.my);
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    const waterLevel = levelIsWaterLevel(state);
-    if (!location || IS_POOL(location.typ) || waterLevel
-        || MONSTER_SYMBOL[monster.mnum] !== S_EEL
-        || (flags & M1_BREATHLESS)) return false;
-
-    if ((monster.mhp ?? 0) > 1
-        && random(monster.mhp) > random(8)) monster.mhp--;
-    if (!monster.mflee || (monster.mfleetim ?? 0) > 0) {
-        const fleeTime = 2 + (monster.mfleetim ?? 0);
-        monster.mfleetim = Math.min(fleeTime === 1 ? 2 : fleeTime, 127);
-    }
-    monster.mflee = 1;
-    monster.mtrack = [];
-    return true;
-}
-
 function monsterLiquidName(monster) {
     return monster?.name || MONSTER_NAME[monster?.mnum] || 'monster';
 }
-
-async function recoverMonsterFromLiquid(
-    monster, state, {
-        announce, saveMonster, random, rollOne,
-    },
-) {
+async function recoverMonsterFromLiquid(monster, state, { announce, random, rollOne, }) {
     monster.mhp = 0;
     return preventMonsterDeath(monster, {
         state,
-        visible: cansee(monster.mx, monster.my),
-        spotted: canSeeMonster(monster, monster.mx, monster.my),
-        petSpotted: canSeeMonster(monster, monster.mx, monster.my),
         publish: announce,
-        saveMonster,
         random,
         rollOne,
     });
 }
-
-export async function resolveMonsterLiquid(
-    monster,
-    state = game,
-    {
-        announce = async () => {},
-        finishDeath,
-        monsterMoving = true,
-        random = rn2,
-        rollDice = d,
-        rollOne = rnd,
-        saveMonster = lifeSaveMonster,
-    } = {},
-) {
+export async function resolveMonsterLiquid(monster, state = game, { announce = async () => { }, finishDeath, monsterMoving = true, random = rn2, rollDice = d, rollOne = rnd, } = {}) {
+    if (!monster)
+        return null;
     const calls = [];
-    const x = monster?.mx;
-    const y = monster?.my;
+    const x = monster.mx;
+    const y = monster.my;
     const location = state.level?.at?.(x, y);
     if (!monster || monster.dead || (monster.mhp ?? 1) <= 0 || !location)
         return null;
     if (typeof finishDeath !== 'function') {
         throw new TypeError('minliquid requires the monster death handler');
     }
-
     const waterLevel = levelIsWaterLevel(state);
     const waterWall = location.typ === WATER;
-    const inPool = IS_POOL(location.typ)
+    const inPool = isPoolAt(x, y, state)
         && (!monsterFliesOrFloats(monster) || waterLevel);
+    const inLava = isLavaAt(x, y, state) && !monsterFliesOrFloats(monster);
     const inFountain = location.typ === FOUNTAIN;
     if (monster.mnum === PM_GREMLIN && (inPool || inFountain)
         && random(3) !== 0) {
-        const clone = splitMonster(monster, state, {
+        const clone = await splitMonster(monster, state, {
             monsterMoving,
             random,
         });
         let fountainDried = false;
         if (clone && inFountain) {
-            const dryup = dryFountainAt(x, y, {
-                causedByHero: false,
-                random,
-                state,
+            fountainDried = await dryFountainAt(x, y, {
+                causedByHero: false, random, state, publish: announce,
             });
-            fountainDried = dryup.dried;
-            if (fountainDried && state === game && cansee(x, y))
-                await announce('The fountain dries up!');
         }
         if (inPool) {
-            await waterDamageChain(
-                monster.minvent || monster.inventory || [], [], state,
-            );
+            await waterDamageChain(monster.minvent || monster.inventory || [], [], state);
         }
         return { kind: 'split', survived: true, clone, fountainDried };
     }
-
     if (inPool || waterWall) {
         const reaction = rollMonsterPoolReaction(monster, state, {
             random, rollDice,
@@ -371,73 +262,66 @@ export async function resolveMonsterLiquid(
             if (state === game && cansee(x, y))
                 await announce(`The ${monsterLiquidName(monster)} rusts.`);
             if (monster.mhp <= 0) {
-                const recovery = await recoverMonsterFromLiquid(
-                    monster, state, {
-                        announce, saveMonster, random, rollOne,
-                    },
-                );
+                const recovery = await recoverMonsterFromLiquid(monster, state, {
+                    announce, random, rollOne,
+                });
                 if (!recovery.survived) {
-                    await waterDamageChain(
-                        monster.minvent || monster.inventory || [], [], state,
-                    );
+                    await waterDamageChain(monster.minvent || monster.inventory || [], [], state);
                     return finishDeath(monster, {
                         state, random, leaveCorpse: true, cause: 'rust',
                     });
                 }
             }
-            await waterDamageChain(
-                monster.minvent || monster.inventory || [], [], state,
-            );
-        } else if (reaction.kind === 'drown') {
+            await waterDamageChain(monster.minvent || monster.inventory || [], [], state);
+        }
+        else if (reaction.kind === 'drown') {
             const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
             if ((flags & M1_TPORT)
                 && !monsterTeleportRestricted(monster, state)) {
-                const relocation = randomMonsterRelocation(
-                    monster, state, calls, random,
-                );
-                if (relocation) return { survived: true, relocation };
+                const relocation = await randomMonsterRelocation(monster, {
+                    state, calls, random, rollOne, flags: RLOC_MSG,
+                });
+                if (relocation)
+                    return { survived: true, relocation };
             }
             if (state === game && cansee(x, y))
                 await announce(monsterMoving
                     ? `The ${monsterLiquidName(monster)} drowns.`
                     : `You drown the ${monsterLiquidName(monster)}.`);
             monster.mhp = 0;
-            const recovery = await recoverMonsterFromLiquid(
-                monster, state, {
-                    announce, saveMonster, random, rollOne,
-                },
-            );
+            const recovery = await recoverMonsterFromLiquid(monster, state, {
+                announce, random, rollOne,
+            });
             if (!recovery.survived) {
-                await waterDamageChain(
-                    monster.minvent || monster.inventory || [], [], state,
-                );
+                await waterDamageChain(monster.minvent || monster.inventory || [], [], state);
                 return finishDeath(monster, {
                     state, random, leaveCorpse: true, cause: 'drowning',
                 });
             }
-            await waterDamageChain(
-                monster.minvent || monster.inventory || [], [], state,
-            );
+            await waterDamageChain(monster.minvent || monster.inventory || [], [], state);
             const relocation = monsterInAir(monster, state) ? null
-                : randomMonsterRelocation(monster, state, calls, random);
+                : await randomMonsterRelocation(monster, {
+                    state, calls, random, rollOne, flags: RLOC_NOMSG,
+                });
             if (relocation && state === game) {
                 newsym(x, y);
                 newsym(monster.mx, monster.my);
             }
             return { survived: true, relocation };
         }
-    } else {
+    }
+    else {
         const lava = monsterLavaReaction(monster, state);
         if (lava && lava.kind !== 'safe') {
             const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
             if ((flags & M1_TPORT)
                 && !monsterTeleportRestricted(monster, state)) {
-                const relocation = randomMonsterRelocation(
-                    monster, state, calls, random,
-                );
-                if (relocation) return { survived: true, relocation };
+                const relocation = await randomMonsterRelocation(monster, {
+                    state, calls, random, rollOne, flags: RLOC_MSG,
+                });
+                if (relocation)
+                    return { survived: true, relocation };
             }
-
             if (lava.kind === 'scorch') {
                 monster.mhp = (monster.mhp ?? 1) - 1;
                 if (state === game && cansee(x, y)) {
@@ -445,7 +329,8 @@ export async function resolveMonsterLiquid(
                         ? 'surrenders to the fire' : 'burns slightly';
                     await announce(`The ${monsterLiquidName(monster)} ${verb}.`);
                 }
-            } else {
+            }
+            else {
                 monster.mhp = 0;
                 if (state === game && cansee(x, y)) {
                     const name = monsterLiquidName(monster);
@@ -456,13 +341,10 @@ export async function resolveMonsterLiquid(
                     await announce(`The ${name} ${verb}.`);
                 }
             }
-
             if (monster.mhp <= 0) {
-                const recovery = await recoverMonsterFromLiquid(
-                    monster, state, {
-                        announce, saveMonster, random, rollOne,
-                    },
-                );
+                const recovery = await recoverMonsterFromLiquid(monster, state, {
+                    announce, random, rollOne,
+                });
                 if (!recovery.survived) {
                     return finishDeath(monster, {
                         state,
@@ -475,18 +357,15 @@ export async function resolveMonsterLiquid(
             }
             if (monsterInAir(monster, state) || monsterLikesLava(monster))
                 return { survived: true };
-            await fireDamageChain(
-                monster.minvent || monster.inventory || [],
-                {
-                    carrier: monster,
-                    publish: announce,
-                    random,
-                    state,
-                },
-            );
-            const relocation = randomMonsterRelocation(
-                monster, state, calls, random,
-            );
+            await fireDamageChain(monster.minvent || monster.inventory || [], {
+                carrier: monster,
+                publish: announce,
+                random,
+                state,
+            });
+            const relocation = await randomMonsterRelocation(monster, {
+                state, calls, random, rollOne, flags: RLOC_MSG,
+            });
             if (relocation && state === game) {
                 newsym(x, y);
                 newsym(monster.mx, monster.my);
@@ -494,7 +373,16 @@ export async function resolveMonsterLiquid(
             return { survived: true, relocation };
         }
     }
-
-    applyDryLandEel(monster, state, random);
+    if (!inPool && !inLava && MONSTER_SYMBOL[monster.mnum] === S_EEL && !waterLevel
+        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_BREATHLESS)) {
+        if (monster.mhp > 1 && random(monster.mhp) > random(8))
+            monster.mhp--;
+        const flight = await makeMonsterFlee(monster, {
+            state, turns: 2, announce: false, publish: announce, random, rollOne,
+        });
+        if (flight.heroDied)
+            return { heroDied: true };
+    }
     return null;
 }
+//# sourceMappingURL=mon.js.map

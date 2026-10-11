@@ -1,28 +1,24 @@
 // Interrupt ongoing work without cancelling an involuntary delay.
 // C allmain.c:stop_occupation(), eat.c:maybe_finished_meal().
-
 import { plineWithContinuation } from './display.js';
 import { continueFoodMeal } from './eat.js';
 import { game } from './gstate.js';
-import { stopRun } from './runmode.js';
-
-export async function stopHeroOccupation(
-    state = game, publish = plineWithContinuation,
-) {
+import { endVoluntaryMultiTurn } from './command_state.js';
+export async function stopHeroOccupation(state = game, publish = plineWithContinuation, { finishMeal = true } = {}) {
     const occupation = state._occupation;
     if (occupation) {
-        if (occupation.key === 'eat-food'
-            && occupation.usedtime >= occupation.reqtime) {
+        if (finishMeal && occupation.key === 'eat-food'
+            && (state.context.victual?.usedtime ?? 0) >= (state.context.victual?.reqtime ?? 0)) {
+            state._occupation = null;
             await continueFoodMeal(occupation, state);
-        } else {
+        }
+        else {
             await publish(`You stop ${occupation.text}.`);
         }
         state._occupation = null;
     }
-    if (occupation || (state.multi ?? 0) >= 0) {
-        state.multi = 0;
-        state._commandCount = 0;
-        stopRun(state);
-    }
+    if (occupation || (state.multi ?? 0) >= 0)
+        endVoluntaryMultiTurn(state);
     state._cannedCommands = [];
 }
+//# sourceMappingURL=occupation.js.map

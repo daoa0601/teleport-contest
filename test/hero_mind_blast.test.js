@@ -1,15 +1,15 @@
+import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { game } from '../js/gstate.js';
 import { useHeroMindBlast } from '../js/hero_mind_blast.js';
 import { initRng } from '../js/rng.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
-
-test('a mind flayer uses #monster to strike nearby hostile minds', async () => {
+void test('a mind flayer uses #monster to strike nearby hostile minds', async () => {
     freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
+    requireFixtureGame(game);
     const target = await createMonsterAt('floating eye', 11, 10);
     target.mhp = target.mhpmax = 1;
     target.mcansee = 0;
@@ -26,7 +26,6 @@ test('a mind flayer uses #monster to strike nearby hostile minds', async () => {
     distant.mpeaceful = 0;
     initRng(7n);
     await runMonsterAbilityCommand(' '.repeat(20));
-
     assert.equal(game.u.uen, 10);
     assert.equal(game.context.move, 1);
     assert.equal(game.level.monsters.includes(target), false);
@@ -34,46 +33,40 @@ test('a mind flayer uses #monster to strike nearby hostile minds', async () => {
     assert.equal(peaceful.mhp, 20);
     assert.equal(distant.mhp, 20);
 });
-
-test('blind and sighted telepaths are found by their source chances',
-    async () => {
-        freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
-        const blindEye = await createMonsterAt('floating eye', 11, 10);
-        blindEye.mhp = blindEye.mhpmax = 20;
-        blindEye.mcansee = 0;
-        blindEye.mpeaceful = 0;
-        const sightedFlayer = await createMonsterAt(
-            'master mind flayer', 12, 10,
-        );
-        sightedFlayer.mhp = sightedFlayer.mhpmax = 20;
-        sightedFlayer.mpeaceful = 0;
-        const jackal = await createMonsterAt('jackal', 13, 10);
-        jackal.mhp = jackal.mhpmax = 20;
-
-        await useHeroMindBlast({
-            state: game,
-            publish: async () => {},
-            random: () => 1,
-            rollDamage: () => 4,
-        });
-
-        assert.equal(blindEye.mhp, 16);
-        assert.equal(sightedFlayer.mhp, 16);
-        assert.equal(jackal.mhp, 20);
+void test('blind and sighted telepaths are found by their source chances', async () => {
+    freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
+    requireFixtureGame(game);
+    const blindEye = await createMonsterAt('floating eye', 11, 10);
+    blindEye.mhp = blindEye.mhpmax = 20;
+    blindEye.mcansee = 0;
+    blindEye.mpeaceful = 0;
+    const sightedFlayer = await createMonsterAt('master mind flayer', 12, 10);
+    sightedFlayer.mhp = sightedFlayer.mhpmax = 20;
+    sightedFlayer.mpeaceful = 0;
+    const jackal = await createMonsterAt('jackal', 13, 10);
+    jackal.mhp = jackal.mhpmax = 20;
+    await useHeroMindBlast({
+        state: game,
+        publish: async () => { },
+        random: () => 1,
+        rollDamage: () => 4,
     });
-
-test('trying to mind blast without enough energy takes no time', async () => {
+    assert.equal(blindEye.mhp, 16);
+    assert.equal(sightedFlayer.mhp, 16);
+    assert.equal(jackal.mhp, 20);
+});
+void test('trying to mind blast without enough energy takes no time', async () => {
     freshMonsterAbilityRoom('mind flayer', { energy: 9, right: 24 });
+    requireFixtureGame(game);
     const messages = [];
-
     const result = await useHeroMindBlast({
         state: game,
-        publish: async message => messages.push(message),
+        publish: async (message) => messages.push(message),
     });
-
     assert.equal(result.spentTime, false);
     assert.equal(game.u.uen, 9);
     assert.deepEqual(messages, [
         'You concentrate but lack the energy to maintain doing so.',
     ]);
 });
+//# sourceMappingURL=hero_mind_blast.test.js.map

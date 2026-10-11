@@ -1,17 +1,15 @@
 // A monster falling into an ordinary or spiked pit.
 // C ref: trap.c:trapeffect_pit().
-
 import { SPIKED_PIT } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { monsterSelfTouch } from './monster_stoning.js';
-import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
-} from './monster_data.js';
+import { finishEnvironmentalMonsterDeath, finishMonsterKilled } from './monster_death.js';
+import { AD_PHYS } from './monster_attack_types.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { rnd } from './rng.js';
 import { monsterTrapVisibility } from './trap.js';
-
 const M1_CLING = 0x00000010;
 const M1_FLY = 0x00000001;
 const M1_WALLWALK = 0x00000008;
@@ -22,25 +20,19 @@ const S_LIGHT = 25;
 function ordinaryMonsterSubject(monster) {
     return `The ${monster.name || MONSTER_NAME[monster.mnum] || 'monster'}`;
 }
-
 function monsterIsUngrounded(monster) {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[monster.mnum];
     return !!(flags & M1_FLY) || symbol === S_EYE || symbol === S_LIGHT;
 }
-
 export function monsterAvoidsPit(monster, { forced = false } = {}) {
-    if (monsterIsUngrounded(monster)) return true;
+    if (monsterIsUngrounded(monster))
+        return true;
     return !forced && !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CLING);
 }
-
-export function beginMonsterPitTrap(
-    monster,
-    trap,
-    state = game,
-    { forced = false } = {},
-) {
-    if (!trap || monsterAvoidsPit(monster, { forced })) return null;
+export function beginMonsterPitTrap(monster, trap, state = game, { forced = false } = {}) {
+    if (!trap || monsterAvoidsPit(monster, { forced }))
+        return null;
     const visibility = monsterTrapVisibility(monster, state);
     const spiked = trap.ttyp === SPIKED_PIT;
     const relevantSpikes = spiked && !monsterWearsIronShoes(monster);
@@ -57,40 +49,23 @@ export function beginMonsterPitTrap(
         ...visibility,
     };
 }
-
-export async function finishMonsterPitTrap(
-    monster,
-    event,
-    {
-        finishDeath,
-        publish = plineWithContinuation,
-        random,
-        rollOne = rnd,
-        describeMonster = ordinaryMonsterSubject,
-        state = game,
-    } = {},
-) {
-    if (!event || event.finished) return event;
-    if (typeof finishDeath !== 'function')
-        throw new TypeError('pit trap requires the monster death handler');
-
+export async function finishMonsterPitTrap(monster, event, { publish = plineWithContinuation, random, rollOne = rnd, describeMonster = ordinaryMonsterSubject, state = game, } = {}) {
+    if (!event || event.finished)
+        return event;
     if (event.inSight) {
         const owner = event.trap.madeby_u ? 'your' : 'a';
-        await publish(
-            `${describeMonster(monster)} falls into ${owner} ${
-                event.spiked ? 'spiked ' : ''
-            }pit!`,
-        );
+        await publish(`${describeMonster(monster)} falls into ${owner} ${event.spiked ? 'spiked ' : ''}pit!`);
         event.trap.tseen = true;
         if (monster.mnum === PM_PIT_VIPER || monster.mnum === PM_PIT_FIEND)
             await publish("How pitiful.  Isn't that the pits?");
     }
-
     const selfTouch = await monsterSelfTouch(monster, {
         prefix: 'Falling, ',
-        finishDeath,
+        finishDeath: (victim, options) => finishEnvironmentalMonsterDeath(victim, state, {
+            ...options, publish,
+            ...(random === undefined ? {} : { random }),
+        }),
         publish,
-        rollOne,
         state,
     });
     if (!selfTouch.survived) {
@@ -98,22 +73,20 @@ export async function finishMonsterPitTrap(
         event.finished = true;
         return event;
     }
-
     const damage = rollOne(event.damageSides);
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     if (monster.mhp <= 0) {
-        const name = describeMonster(monster);
-        const death = await finishDeath(monster, {
-            deathMessage: event.seeSquare ? `${name} is killed!` : null,
-            visible: event.seeSquare,
-            spotted: event.inSight,
-            random,
+        const death = await finishMonsterKilled(monster, state, {
+            damageType: AD_PHYS,
+            ...(random === undefined ? {} : { random }),
             publish,
         });
         event.death = death;
         event.killed = !death.survived;
-        if (death.survived) monster.dead = false;
+        if (death.survived)
+            monster.dead = false;
     }
     event.finished = true;
     return event;
 }
+//# sourceMappingURL=monster_pit_trap.js.map

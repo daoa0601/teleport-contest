@@ -1,0 +1,144 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { MM_ANGRY, MOAT, NO_MINVENT, PIT, TT_PIT, W_AMUL } from '../js/const.js';
+import { rhack } from '../js/cmd.js';
+import { moveObject } from '../js/floor_object.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
+import { monsterAtPosition } from '../js/monster_location.js';
+import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
+import { punishHero } from '../js/punishment.js';
+import { initRng } from '../js/rng.js';
+import { knownObject } from './support/game-objects.js';
+import { addTrap, floorObjectsAt } from './support/level-state.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
+async function readyToDrag() {
+    freshObjectRoom({ flags: { pickup: false, verbose: true } });
+    requirePlayingGame(game);
+    installPagerInput(resetInputState(), {
+        expected: /punish|iron ball|jackal|pit|medallion|But wait|reconstitut|kill|fall|hit|welcome|Things that are here:/i,
+        limit: 15,
+    });
+    await punishHero();
+    const ball = game.uball, chain = game.uchain;
+    assert.ok(ball && chain);
+    await moveObject(ball, 8, 10);
+    await moveObject(chain, 9, 10);
+    game.u.ux0 = game.u.ux;
+    game.u.uy0 = game.u.uy;
+    game.u.uluck = 13;
+    game.u.moreluck = 3;
+    initRng(75003n);
+    return { ball, chain };
+}
+void test('a pit under the chain pulls the hero backward and places the ball in the pit', async () => {
+    const { ball, chain } = await readyToDrag();
+    requirePlayingGame(game);
+    const pit = addTrap(game.level, PIT, 9, 10);
+    await rhack('l'.charCodeAt(0));
+    assert.equal(game.u.ux, 9);
+    assert.equal(game.u.uy, 10);
+    assert.equal(game.u.utraptype, TT_PIT);
+    assert.ok((game.u.utrap ?? 0) > 0);
+    assert.equal(pit.tseen, true);
+    assert.ok(floorObjectsAt(game.level, 9, 10).includes(ball));
+    assert.ok(floorObjectsAt(game.level, 9, 10).includes(chain));
+    assert.equal(game.context.move, 1, 'Being jerked back spends the attempted move.');
+});
+void test('the dragging ball hurts a surviving monster without moving the hero onto it', async () => {
+    const { ball, chain } = await readyToDrag();
+    requirePlayingGame(game);
+    const jackal = await createMonsterAt('jackal', 9, 10, MM_ANGRY | NO_MINVENT);
+    jackal.mhp = jackal.mhpmax = 100;
+    jackal.msleeping = 1;
+    addTrap(game.level, PIT, 9, 10);
+    await rhack('l'.charCodeAt(0));
+    assert.ok(jackal.mhp > 0 && jackal.mhp < 100);
+    assert.equal(monsterAtPosition(game.level, 9, 10), jackal);
+    assert.equal(game.u.ux, 10);
+    assert.equal(game.u.utrap ?? 0, 0);
+    assert.equal(jackal.msleeping, 0);
+    assert.equal(ball.ox, 9);
+    assert.equal(chain.ox, 9);
+    assert.ok(!game.u.ustuck);
+    assert.equal(game.context.move, 1);
+});
+void test('a high-level hero can miss with the dragging ball without waking the target', async () => {
+    const { ball } = await readyToDrag();
+    requirePlayingGame(game);
+    const jackal = await createMonsterAt('jackal', 9, 10, MM_ANGRY | NO_MINVENT);
+    jackal.mhp = jackal.mhpmax = 100;
+    jackal.msleeping = 1;
+    game.u.uluck = -13;
+    game.u.moreluck = -3;
+    game.u.ulevel = 30;
+    game.u.uhitinc = 50;
+    addTrap(game.level, PIT, 9, 10);
+    await rhack('l'.charCodeAt(0));
+    assert.equal(jackal.mhp, 100);
+    assert.equal(jackal.msleeping, 1);
+    assert.equal(game.u.ux, 10);
+    assert.equal(ball.ox, 9);
+    assert.match(game._last_message, /iron ball misses the jackal/);
+});
+void test('killing the monster on the chain lets the hero fall into its pit', async () => {
+    const { ball } = await readyToDrag();
+    requirePlayingGame(game);
+    const jackal = await createMonsterAt('jackal', 9, 10, MM_ANGRY | NO_MINVENT);
+    jackal.mhp = 1;
+    jackal.msleeping = 1;
+    const experience = game.u.uexp;
+    addTrap(game.level, PIT, 9, 10);
+    await rhack('l'.charCodeAt(0));
+    assert.equal(jackal.dead, true);
+    assert.equal(monsterAtPosition(game.level, 9, 10), null);
+    assert.equal(game.u.ux, 9);
+    assert.equal(game.u.utraptype, TT_PIT);
+    assert.ok((game.u.utrap ?? 0) > 0);
+    assert.ok(game.u.uexp > experience, 'A dragged ball kill belongs to the hero.');
+    assert.equal(ball.ox, 9);
+});
+void test('life saving keeps a struck monster on the chain square and stops the hero there', async () => {
+    const { ball } = await readyToDrag();
+    requirePlayingGame(game);
+    const jackal = await createMonsterAt('jackal', 9, 10, MM_ANGRY | NO_MINVENT);
+    const amulet = await knownObject(AMULET_OF_LIFE_SAVING);
+    await equipMonsterObject(jackal, amulet, W_AMUL);
+    jackal.mhp = 1;
+    jackal.msleeping = 1;
+    addTrap(game.level, PIT, 9, 10);
+    await rhack('l'.charCodeAt(0));
+    assert.ok(jackal.mhp > 0);
+    assert.equal(monsterAtPosition(game.level, 9, 10), jackal);
+    assert.equal(amulet.where, 'gone');
+    assert.equal(game.u.ux, 10);
+    assert.equal(game.u.utrap ?? 0, 0);
+    assert.equal(ball.ox, 9);
+});
+void test('levitation reveals the pit but permits the ordinary dragging move', async () => {
+    const { ball, chain } = await readyToDrag();
+    requirePlayingGame(game);
+    const pit = addTrap(game.level, PIT, 9, 10);
+    game.u.levitationTurns = 10;
+    await rhack('l'.charCodeAt(0));
+    assert.equal(game.u.ux, 11);
+    assert.equal(game.u.utrap ?? 0, 0);
+    assert.equal(pit.tseen, true);
+    assert.equal(ball.ox, 9);
+    assert.equal(chain.ox, 10);
+    assert.match(game._last_message, /tug from the iron ball/);
+});
+void test('dragging through continuous moat water does not pull the hero backward', async () => {
+    const { ball, chain } = await readyToDrag();
+    requirePlayingGame(game);
+    game.level.requireAt(8, 10).typ = MOAT;
+    game.level.requireAt(9, 10).typ = MOAT;
+    await rhack('l'.charCodeAt(0));
+    assert.equal(game.u.ux, 11);
+    assert.equal(ball.ox, 9);
+    assert.equal(chain.ox, 10);
+    assert.ok(!game.u.uinwater);
+});
+//# sourceMappingURL=ball_drag.test.js.map

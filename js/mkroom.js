@@ -1,31 +1,23 @@
 // mkroom.js - room coordinate selection.
 // C refs: mkroom.c somexy(), somexyspace(); mklev.c occupied().
-
 import { game } from './gstate.js';
 import { rn1 } from './rng.js';
-import {
-    CORR, ICE, IS_FURNITURE, IS_LAVA, IS_POOL, IS_WALL,
-    ROOM, ROOMOFFSET, isok,
-} from './const.js';
+import { CORR, ICE, IS_FURNITURE, IS_LAVA, IS_POOL, IS_WALL, ROOM, ROOMOFFSET, isok, } from './const.js';
 import { insideRoom } from './room.js';
-
 export function somex(room) {
     return rn1(room.hx - room.lx + 1, room.lx);
 }
-
 export function somey(room) {
     return rn1(room.hy - room.ly + 1, room.ly);
 }
-
 export function occupied(x, y, state = game) {
     const location = state.level?.at?.(x, y);
-    if (!location) return false;
-    const trapped = state.level?.traps?.some(trap =>
-        trap.tx === x && trap.ty === y);
+    if (!location)
+        return false;
+    const trapped = state.level?.traps?.some(trap => trap.tx === x && trap.ty === y);
     return !!(trapped || IS_FURNITURE(location.typ)
         || IS_LAVA(location.typ) || IS_POOL(location.typ));
 }
-
 export function somexy(room, coordinate, state = game) {
     if (room.irregular) {
         const roomNumber = (room.roomnoidx ?? -1) + ROOMOFFSET;
@@ -35,43 +27,37 @@ export function somexy(room, coordinate, state = game) {
             coordinate.y = somey(room);
             const location = state.level?.at?.(coordinate.x, coordinate.y);
             if (location && !location.edge
-                && location.roomno === roomNumber) return true;
+                && location.roomno === roomNumber)
+                return true;
         }
-        for (coordinate.x = room.lx; coordinate.x <= room.hx;
-            coordinate.x++) {
-            for (coordinate.y = room.ly; coordinate.y <= room.hy;
-                coordinate.y++) {
-                const location = state.level?.at?.(
-                    coordinate.x, coordinate.y,
-                );
+        for (coordinate.x = room.lx; coordinate.x <= room.hx; coordinate.x++) {
+            for (coordinate.y = room.ly; coordinate.y <= room.hy; coordinate.y++) {
+                const location = state.level?.at?.(coordinate.x, coordinate.y);
                 if (location && !location.edge
-                    && location.roomno === roomNumber) return true;
+                    && location.roomno === roomNumber)
+                    return true;
             }
         }
         return false;
     }
-
     if (!room.nsubrooms) {
         coordinate.x = somex(room);
         coordinate.y = somey(room);
         return true;
     }
-
     let attempts = 0;
     while (attempts++ < 100) {
         coordinate.x = somex(room);
         coordinate.y = somey(room);
         const location = state.level?.at?.(coordinate.x, coordinate.y);
-        if (location && IS_WALL(location.typ)) continue;
-        if ((room.sbrooms || []).some(subroom =>
-            insideRoom(
-                state.level, subroom, coordinate.x, coordinate.y,
-            ))) continue;
+        if (location && IS_WALL(location.typ))
+            continue;
+        if ((room.sbrooms || []).some(subroom => insideRoom(state.level, subroom, coordinate.x, coordinate.y)))
+            continue;
         return true;
     }
     return false;
 }
-
 export function somexyspace(room, coordinate, state = game) {
     let attempts = 0;
     let valid;
@@ -81,8 +67,9 @@ export function somexyspace(room, coordinate, state = game) {
             && !occupied(coordinate.x, coordinate.y, state);
         if (valid) {
             const location = state.level?.at?.(coordinate.x, coordinate.y);
-            valid = location && [ROOM, CORR, ICE].includes(location.typ);
+            valid = !!location && [ROOM, CORR, ICE].includes(location.typ);
         }
     } while (attempts++ < 100 && !valid);
     return !!valid;
 }
+//# sourceMappingURL=mkroom.js.map
