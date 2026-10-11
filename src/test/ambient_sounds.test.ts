@@ -1,14 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { dosounds } from '../js/ambient_sounds.js';
-import { BARRACKS, BEEHIVE, COURT, MORGUE, ROOMOFFSET, SWAMP, TEMPLE, ZOO } from '../js/const.js';
+import { BARRACKS, BEEHIVE, COURT, MON_MIGRATING, MORGUE, ROOMOFFSET, SWAMP, TEMPLE, ZOO } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import type { Room } from '../js/map_types.js';
-import { createMonsterAt } from './support/monsters.js';
+import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createStaffedShop } from './support/shop.js';
 
 function soundRoom(type: number) {
     const level = freshObjectRoom();
@@ -115,4 +116,52 @@ void test('a swamp event ends the ambient pass before a later shop flag is clear
 
     assert.match(await topline(), /You (hear mosquitoes|smell marsh gas)!/);
     assert.equal(level.flags.has_shop, true);
+});
+
+void test('a mounted horse can supply the zoo sound while sharing the hero square', async () => {
+    const level = soundRoom(ZOO);
+    requirePlayingGame(game);
+    const horse = await createSaddledSteed('horse', { x: 8, y: 10 });
+    game.u.usteed = horse;
+    game.u.ux = horse.mx;
+    game.u.uy = horse.my;
+    level.flags.has_zoo = true;
+    initRng(167);
+
+    await dosounds();
+
+    assert.match(await topline(), /You hear a sound reminiscent of (a seal barking|an elephant stepping on a peanut)\./);
+});
+
+void test('a migrating animal cannot supply the zoo sound from its old coordinates', async () => {
+    const level = soundRoom(ZOO);
+    const horse = await createMonsterAt('horse', 8, 10);
+    horse.mstate = MON_MIGRATING;
+    level.flags.has_zoo = true;
+    initRng(167);
+
+    await dosounds();
+
+    assert.equal(await topline(), '');
+});
+
+void test('shop noise announces a visible sleeper and wakes only monsters within range', async () => {
+    freshObjectRoom({ right: 28 });
+    requirePlayingGame(game);
+    await createStaffedShop({ left: 12, right: 14, keeperX: 13 });
+    const golem = await createMonsterAt('flesh golem', 11, 10);
+    const invisible = await createMonsterAt('gnome', 14, 11);
+    const distant = await createMonsterAt('goblin', 25, 10);
+    golem.msleeping = invisible.msleeping = distant.msleeping = 1;
+    invisible.minvis = true;
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    initRng(167);
+
+    await dosounds();
+
+    assert.match(await topline(), /The flesh golem wakes up\. It's alive!$/);
+    assert.equal(golem.msleeping, 0);
+    assert.equal(invisible.msleeping, 0);
+    assert.equal(distant.msleeping, 1);
 });

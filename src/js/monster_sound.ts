@@ -34,6 +34,7 @@ const MS_BURBLE = 16;
 const MS_TRUMPET = 17;
 const MS_ANIMAL = 17;
 const MS_HUMANOID = 25;
+const MS_GROAN = 44;
 const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
 const COIN_CLASS = 12;
@@ -68,7 +69,7 @@ export function monsterGrowlSound(monster: Monster): string {
     case MS_SQAWK: return 'screech';
     case MS_NEIGH: return 'neigh';
     case MS_WAIL: return 'wail';
-    case 18: return 'groan';
+    case MS_GROAN: return 'groan';
     case MS_MOO: return 'low';
     case MS_SILENT: return 'commotion';
     default: return 'scream';

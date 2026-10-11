@@ -1,14 +1,13 @@
 // Level ambience and its resident checks. C ref: sounds.c:dosounds().
 import { hallucinatedDeityName } from './alignment.js';
 import { heroHairName, heroHeadName, heroNeckName } from './body_parts.js';
-import { BARRACKS, BEEHIVE, COURT, Is_astralevel, MORGUE, ROOMOFFSET, SHOPBASE, TEMPLE, VAULT, ZOO, } from './const.js';
+import { BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, SHOPBASE, TEMPLE, VAULT, ZOO, } from './const.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { requireInitializedGame } from './gstate.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { isRoom } from './map_types.js';
-import { monsterHasMapPosition } from './monster_location.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsAnimal, monsterIsUndead, monsterIsVampireShifter, } from './monster_data.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { GOLD_PIECE } from './object_data.js';
 import { verbForSubject } from './object_grammar.js';
 import { priestIsInOwnTemple } from './priest.js';
@@ -150,7 +149,7 @@ export async function dosounds(state = requireInitializedGame()) {
                 'someone cursing shoplifters.', 'the chime of a cash register.',
                 'Neiman and Marcus arguing!',
             ], rn2(2) + hallu);
-            wakeMonstersNear(keeper.mx, keeper.my, 11 * 11, state);
+            await wakeMonstersNearWithMessages(keeper.mx, keeper.my, 11 * 11, state);
         }
         return;
     }
@@ -197,7 +196,9 @@ async function templePriestSound(priest, state, hallu) {
     return true;
 }
 function livingResidents(state) {
-    return [...state.level.monsters].reverse().filter(monster => !monster.dead && monster.mhp > 0 && monsterHasMapPosition(monster, state));
+    // C get_iter_mons() tests mstate, not square occupancy: a mounted steed
+    // remains on fmon with MON_FLOOR even though the hero shares its square.
+    return [...state.level.monsters].reverse().filter(monster => !monster.dead && monster.mhp > 0 && (monster.mstate ?? MON_FLOOR) === MON_FLOOR);
 }
 function monInRoom(monster, type, state) {
     const roomno = state.level.at(monster.mx, monster.my)?.roomno ?? 0;
