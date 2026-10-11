@@ -5,6 +5,19 @@ import { getLine, promptYesNo, promptYesNoAllQuit, promptYesNoQuit } from '../js
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { flush_screen, pline, plineWithContinuation } from '../js/display.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+// C getline.c checks the erase character before the kill character, and the
+// recorder's NOMUX terminal synthesis sets erase to DEL and kill to ^U
+// (unixtty.c gettty()): DEL backs over one byte, ^U removes the whole line.
+void test('DEL erases one character and control-U clears the line', async () => {
+    freshPlayableRoom();
+    requirePlayingGame(game);
+    pushKeys('abc\x7fd\n');
+    assert.equal(await getLine('What do you want to write?', () => true), 'abd');
+    freshPlayableRoom();
+    requirePlayingGame(game);
+    pushKeys('abc\x15d\n');
+    assert.equal(await getLine('What do you want to write?', () => true), 'd');
+});
 void test('line input acknowledges unread prose before taking the answer', async () => {
     freshPlayableRoom();
     requirePlayingGame(game);

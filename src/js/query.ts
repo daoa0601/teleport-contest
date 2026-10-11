@@ -54,9 +54,18 @@ export async function getLine(
     renderEditor();
     for (;;) {
         const key = await nhgetch();
-        if (key === 27) return finish(null);
-        if (key === 10 || key === 13) return finish(value);
-        if (key === 8 || key === 127) value = value.slice(0, -1);
+        // C hooked_tty_getlin(): Escape first clears non-empty input; only
+        // Escape at an already empty prompt cancels with "\033" (Null here).
+        if (key === 27) {
+            if (value) {
+                value = '';
+            } else return finish(null);
+        } else if (key === 10 || key === 13) return finish(value);
+        // getline.c tests the erase character ('\b' or, under the recorder's
+        // NOMUX terminal synthesis, DEL) before the kill character, so DEL
+        // backs over one byte and ^U removes the whole line.
+        else if (key === 8 || key === 127) value = value.slice(0, -1);
+        else if (key === 21) value = '';
         else {
             const ch = String.fromCharCode(key);
             if (value.length < 80 && accepts(ch, key)) value += ch;

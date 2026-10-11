@@ -164,7 +164,8 @@ async function chooseFromInventoryMenu(verb: string, inventory: readonly GameObj
     }
 }
 
-function inventoryLetterOrder(letter: string | null | undefined): number {
+// C invent.c invletter_value(): '$' first, then a-z, then A-Z, then other.
+export function inventoryLetterOrder(letter: string | null | undefined): number {
     if (letter == null) return 53;
     if (letter === '$') return 0;
     if (letter >= 'a' && letter <= 'z') return letter.charCodeAt(0) - 96;

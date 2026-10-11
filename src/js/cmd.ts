@@ -276,6 +276,8 @@ import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
 import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
+import { continueEngraving, doengrave } from './engrave_command.js';
+
 import { heroCanMoveFromTrap, triggerHeroTrapAt } from './hero_traps.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import {
@@ -960,6 +962,13 @@ async function continueOccupation(g: GameState): Promise<boolean> {
     }
     if (occupation.key === 'wipe-face') {
         return continueWipingFace(occupation, g);
+    }
+    if (occupation.key === 'engrave') {
+        const continuing = await continueEngraving(g);
+        if (g.program_state.gameover) return false;
+        if (!continuing) g._occupation = null;
+        g.context.move = 1;
+        return true;
     }
     g._occupation = null;
     return false;
@@ -3050,86 +3059,21 @@ async function dotip() {
     game.context.move = 0;
 }
 
-function completeExtendedCommand(command: string) {
-    // cast/chat/conduct share `c`; once `co` is typed, conduct is the sole
-    // AUTOCOMPLETE entry and tty paints the remainder without moving the
-    // insertion point past the physical prefix.
-    if (command.length >= 2 && 'conduct'.startsWith(command))
-        return 'conduct';
-    if ('enhance'.startsWith(command)) return 'enhance';
-    if ('genocided'.startsWith(command)) return 'genocided';
-    if (command.length >= 2 && 'vanquished'.startsWith(command))
-        return 'vanquished';
-    // In normal play, pray is the only AUTOCOMPLETE command beginning with
-    // "p".  Wizard mode also exposes panic and polyself, so tty leaves a
-    // single "p" literal and completes pray only once "pr" is unique.
-    if ('pray'.startsWith(command)
-        && (!game.flags?.debug || command.length >= 2)) return 'pray';
-    if (game.flags?.debug && command.length >= 2
-        && 'polyself'.startsWith(command)) return 'polyself';
-    if ('name'.startsWith(command)) return 'name';
-    if ('invoke'.startsWith(command)) return 'invoke';
-    if ('force'.startsWith(command)) return 'force';
-    if ('jump'.startsWith(command)) return 'jump';
-    // quaff and quiver are ordinary commands, not AUTOCOMPLETE entries;
-    // tty's filtered match set therefore makes #q uniquely identify quit.
-    if ('quit'.startsWith(command)) return 'quit';
-    // C cmd.c:extcmdlist[] filters completion through both AUTOCOMPLETE and
-    // WIZMODECMD.  In ordinary play "l" uniquely selects loot.  Wizard mode
-    // also admits levelchange and lightsources, so the same prefix must stay
-    // literal until another byte makes the match unique.
-    if (command === 'l' && !game.flags?.debug) return 'loot';
-    if (command.length >= 2 && 'loot'.startsWith(command)) return 'loot';
-    if (command.length >= 2 && 'levelchange'.startsWith(command))
-        return 'levelchange';
-    if (command.length >= 2 && 'herecmdmenu'.startsWith(command))
-        return 'herecmdmenu';
-    // wizwish is deliberately not AUTOCOMPLETE, while wizwhere is.  This is
-    // why typing "wizw" temporarily displays wizwhere yet remains editable
-    // into the distinct wizwish command.
-    if (game.flags?.debug && command.length >= 4
-        && 'wizwhere'.startsWith(command)) return 'wizwhere';
-    // wizmakemap and wizmap are non-autocomplete entries.  Once "wizm" is
-    // typed, wizmondiff is the sole matching AUTOCOMPLETE command; NEWAUTOCOMP
-    // paints that suffix without committing it to the editable buffer.
-    if (game.flags?.debug && command.length >= 4
-        && 'wizmondiff'.startsWith(command)) return 'wizmondiff';
-    if (game.flags?.debug && command.length >= 4
-        && 'wizkill'.startsWith(command)) return 'wizkill';
-    if (game.flags?.debug && command.length >= 4
-        && 'wizintrinsic'.startsWith(command)) return 'wizintrinsic';
-    if (command.length >= 2 && 'ride'.startsWith(command)) return 'ride';
-    if (command.length >= 2 && 'rub'.startsWith(command)) return 'rub';
-    if (command.length >= 3 && 'chat'.startsWith(command)) return 'chat';
-    if (command.length >= 3 && 'chronicle'.startsWith(command))
-        return 'chronicle';
-    // In wizard mode, version and vision share `v`; the second physical byte
-    // makes `ve` the unique AUTOCOMPLETE entry.
-    if (command.length >= 2 && 'version'.startsWith(command))
-        return 'version';
-    if (command.length >= 2 && 'overview'.startsWith(command))
-        return 'overview';
-    // offer and overview share their first byte; "of" uniquely selects the
-    // AUTOCOMPLETE #offer entry.
-    if (command.length >= 2 && 'offer'.startsWith(command)) return 'offer';
-    if ('dip'.startsWith(command)) return 'dip';
-    if (command.length >= 2 && 'monster'.startsWith(command))
-        return 'monster';
-    // `a` is shared by the AUTOCOMPLETE commands adjust and annotate.
-    if (command.length >= 2 && 'annotate'.startsWith(command))
-        return 'annotate';
-    if (command.length >= 2 && 'adjust'.startsWith(command))
-        return 'adjust';
-    // `t` still matches several AUTOCOMPLETE commands (terrain,
-    // therecmdmenu, timeout, tip, turn); `tu` uniquely identifies turn.
-    if (command.length >= 2 && 'terrain'.startsWith(command))
-        return 'terrain';
-    if (command.length >= 2 && 'turn'.startsWith(command)) return 'turn';
-    if ('untrap'.startsWith(command)) return 'untrap';
-    if (command.length >= 3 && 'wipe'.startsWith(command)) return 'wipe';
-    if ('sit'.startsWith(command)
-        && (!game.flags?.debug || command.length >= 2)) return 'sit';
-    return null;
+// C cmd.c:extcmds_match(): availability applies to both full names and
+// completion; AUTOCOMPLETE only limits the latter.
+function availableExtendedCommands() {
+    return NATIVE_COMMANDS.filter(command =>
+        !(command.flags & (NATIVE_COMMAND_FLAGS.CMD_NOT_AVAILABLE
+            | NATIVE_COMMAND_FLAGS.INTERNALCMD))
+        && (game.flags.debug || !(command.flags & NATIVE_COMMAND_FLAGS.WIZMODECMD)));
+}
+
+function completeExtendedCommand(prefix: string): string | null {
+    const matches = availableExtendedCommands().filter(command =>
+        !!(command.flags & NATIVE_COMMAND_FLAGS.AUTOCOMPLETE)
+        && command.name !== null
+        && command.name.startsWith(prefix));
+    return matches.length === 1 ? matches[0]?.name ?? null : null;
 }
 
 const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
@@ -3161,6 +3105,9 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['offer', dosacrifice],
     ['dip', dodip],
     ['turn', doturn],
+    ['engrave', doengrave],
+    // C extcmdlist[] maps both "call" and "name" to docallcmd().
+    ['call', doname],
     ['untrap', () => doUntrap({ enterTrap: moveIntoFailedUntrap })],
     ['wipe', dowipe],
     ['monster', domonability],
@@ -3179,7 +3126,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
 ]);
 
 async function runExtendedCommand(name: string) {
-    const command = NATIVE_COMMANDS.find(entry => entry.name === name);
+    const command = availableExtendedCommands().find(entry => entry.name === name);
     if (!command) {
         await pline(`#${name}: unknown extended command.`);
         game.context.move = 0;

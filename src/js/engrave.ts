@@ -101,6 +101,17 @@ export function deleteEngravingAt(
     return true;
 }
 
+// C engrave.c del_engr(): unlink one known engraving unconditionally.  The
+// headstone-sensitive callers above keep deleteEngravingAt() instead.
+export function deleteEngraving(
+    engraving: Engraving,
+    level: EngravingStore | null = game.level,
+): boolean {
+    if (!level?.engravings?.includes(engraving)) return false;
+    level.engravings = level.engravings.filter((candidate) => candidate !== engraving);
+    return true;
+}
+
 export function makeEngravingAt(
     x: number,
     y: number,
