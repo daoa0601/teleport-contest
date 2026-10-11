@@ -94,7 +94,8 @@ unit's run.
 - Before merging, run a read-only Codex review in the unit's worktree:
   `codex exec -s read-only -o .cache/agents/UNIT/review.md - < .cache/agents/review-prompt.md`.
   (`codex exec review --base` does not accept custom instructions.) Send
-  back real findings; do not fix them in the main checkout.
+  back real findings in lines the branch changed; do not fix them in the
+  main checkout. Findings in unchanged code go to the queue instead.
 - Merge finished branches one at a time: compile and run the unit's
   focused tests after each merge. Resolve conflicts by reading both sides
   against the C source, not by preferring either branch.
