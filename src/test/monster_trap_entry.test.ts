@@ -7,6 +7,7 @@ import {
     W_ARMF, W_ARMH, WEB,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     finishDeferredMonsterRollingBoulderPlacement,
@@ -17,6 +18,7 @@ import { BOULDER, IRON_SHOES, ORCISH_HELM } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
+import { installPagerInput } from './support/pager-input.js';
 
 function monsterAtTrap(trapType: number, { monster = {}, trap = {} }: Parameters<typeof freshMonsterTrapRoom>[1] = {}) {
     return freshMonsterTrapRoom(trapType, {
@@ -113,6 +115,8 @@ void test('a fixed teleport trap sends a monster to its free destination', async
         trap: { tseen: true, teledest: destination },
     });
     requirePlayingGame(game);
+
+    installPagerInput(resetInputState(), { expected: /little dog|disoriented/, limit: 2 });
 
     await triggerImmediateMonsterTrap(monster, game);
 

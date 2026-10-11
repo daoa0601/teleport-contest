@@ -3,7 +3,7 @@ import {
     BEAR_TRAP, CORR, HOLE, In_endgame, In_sokoban, IS_DRAWBRIDGE, IS_FURNITURE,
     LADDER, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_RANDOM, MIGR_SSTAIRS,
     MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, PIT, RLOC_MSG, SCORR, STAIRS,
-    TELEP_TRAP, WEB, W_NONDIGGABLE, is_hole, is_pit, isok,
+    TELEP_TRAP, WEB, W_NONDIGGABLE, PLNMSG_enum, PLNMSG_UNKNOWN, is_hole, is_pit, isok,
 } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { levelAtDepth, levelIsWizardTower } from './dungeon.js';
@@ -11,6 +11,7 @@ import { dist2, depth } from './hacklib.js';
 import { inventoryItemDescription } from './invent.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { healMonster } from './mon.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE,
     MONSTER_SYMBOL,
@@ -31,7 +32,6 @@ import { touchPetrifies } from './stoning.js';
 import { monsterPolymorphsWhenStoned } from './monster_stoning.js';
 import { monsterLinedUpWithHero } from './monster_ranged_alignment.js';
 import { findDrawbridgeAt } from './dbridge.js';
-import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
 import { advanceMonsterWormBody } from './monster_worm.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import { tryCallObjectType } from './object_call.js';
@@ -278,16 +278,25 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         const scroll = choice.object.quan > 1 ? splitObjectStack(choice.object, 1, state) : choice.object;
         if (!scroll) throw new Error('A monster teleport scroll must retain one readable copy');
         unlinkObject(scroll, state);
-        await presentMonsterScrollRead(monster, scroll, options);
+        // A previously seen scroll is nameable only if this use produces feedback.
+        state._lastPlineKind = PLNMSG_enum;
+        const scrollOptions = {
+            ...options,
+            publish: async (message: string) => {
+                state._lastPlineKind = PLNMSG_UNKNOWN;
+                await publish(message);
+            },
+        };
+        await presentMonsterScrollRead(monster, scroll, scrollOptions);
         if (scroll.cursed || monster.mconf) {
             const destination = randomTeleportDepth(state, random, rollOne);
             if (hasAmulet(monster) || In_endgame(state.u.uz)) {
-                if (seen) await publish(`${subject()} seems very disoriented for a moment.`);
+                if (seen) await scrollOptions.publish(`${subject()} seems very disoriented for a moment.`);
             } else if (destination === depth(state.u.uz, state.dungeons)) {
-                if (seen) await publish(`${subject()} shudders for a moment.`);
+                if (seen) await scrollOptions.publish(`${subject()} shudders for a moment.`);
             } else await migrateMonsterOffLevel(monster, state, { dst: levelAtDepth(destination, { state }) });
-        } else await teleportForEscape(monster, scroll.otyp, seen, options);
-        await tryCallObjectType(scroll, state);
+        } else await teleportForEscape(monster, scroll.otyp, seen, scrollOptions);
+        if (scroll.dknown && state._lastPlineKind !== PLNMSG_enum) await tryCallObjectType(scroll, state);
         await deleteObject(scroll, state);
         return spent();
     }
@@ -339,7 +348,7 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         const trap = await maketrap(x, y, hole ? HOLE : PIT);
         if (!trap) return spent();
         trap.tseen = !!hole || cansee(x, y);
-        vision_note_blocker_change(x, y);
+        if (hole) vision_note_blocker_change(x, y);
         if (cansee(x, y)) {
             await publish(`${subject()} has made a ${hole ? 'hole' : 'pit'} in the ${surfaceName(x, y, state)}.`);
             if (hole) await publish(`${subject()} ${(MONSTER_FLAGS1[monster.mnum] ?? 0) & 1 ? 'dives' : 'falls'} through...`);
@@ -347,9 +356,11 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         await fillPitWithBoulderAt(x, y, state, { publish });
         if (hole) await migrateMonsterOffLevel(monster, state, { dst: { dnum: state.u.uz.dnum, dlevel: state.u.uz.dlevel + 1 } });
         else {
-            const event = beginMonsterPitTrap(monster, trap, state, { forced: true });
-            await finishMonsterPitTrap(monster, event, { state, publish, random, rollOne });
-            if (event?.killed) return { nativeResult: 1, heroDied: !!state.program_state.gameover };
+            vision_note_blocker_change(x, y);
+            const action = await triggerImmediateMonsterTrap(monster, state, { forceBungle: true, random, rollOne, rollDice });
+            await finishImmediateMonsterTrap(action, state, { publish, random, rollOne, rollDice });
+            if (action.event?.kind === 'pit-trap' && action.event.killed)
+                return { nativeResult: 1, heroDied: !!state.program_state.gameover };
         }
         return spent();
     }

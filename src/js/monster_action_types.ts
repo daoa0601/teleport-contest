@@ -584,6 +584,8 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     shopkeeper?: boolean;
     immediateTrap?: boolean;
     forcedTrapLanding?: boolean;
+    // FORCEBUNGLE retains the avoidance roll but makes its result ineffective.
+    forcedTrapBungle?: boolean;
     escapingTrap?: boolean;
     reluctant?: boolean;
     attack?: MonsterCombatResult;
