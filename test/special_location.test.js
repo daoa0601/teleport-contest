@@ -8,6 +8,8 @@ import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from '../js/special_location.js';
 import { freshGame } from './support/game-state.js';
+import { freshPlayableRoom } from './support/playable-room.js';
+import { requireScreenRow } from './support/screen.js';
 const square = { xstart: 10, ystart: 6, width: 1, height: 1 };
 void test('dry placement avoids a boulder unless solid locations are also allowed', async () => {
     const state = freshGame();
@@ -33,12 +35,12 @@ for (const [humidity, underlying] of drawbridgeCases) {
     });
 }
 void test('an unsuccessful random placement returns the absent coordinate without warnings', async () => {
-    const state = freshGame();
-    state.level.requireAt(10, 6).typ = STONE;
+    const level = freshPlayableRoom();
+    level.requireAt(10, 6).typ = STONE;
     initRng(17);
     const point = await getLocationCoord(square, null, DRY | NO_LOC_WARN);
     assert.deepEqual(point, { x: -1, y: -1 });
-    assert.equal(state.program_state.in_impossible, undefined);
+    assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trim(), '');
 });
 void test('explicit coordinates use the map origin and retain ANY_LOC coordinates outside the level', async () => {
     freshGame();

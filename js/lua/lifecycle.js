@@ -186,7 +186,7 @@ export class LuaLifecycle {
         try {
             const source = luaSource(filename);
             beforeExecute?.(state);
-            state.execute(source, filename);
+            await state.executeAsync(source, filename);
             this.themed.set(dungeonNumber, { gameState, state });
             return state;
         }

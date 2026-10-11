@@ -4,6 +4,7 @@ import { game } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { LuaUserdata } from '../js/lua/runtime.js';
 import { LuaLifecycle } from '../js/lua/lifecycle.js';
+import { createSelectionBindings } from '../js/lua/selection.js';
 import { initRng, rn2Display } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
@@ -96,6 +97,34 @@ void test('failed themed-state replacement closes both old and unregistered stat
     assert.ok(replacement);
     assert.throws(() => replacement.execute('later = 1'), /destroyed/);
     await lifecycle.destroy();
+});
+void test('themed scripts can build selections while loading', async (t) => {
+    freshLuaGame(125n);
+    const lifecycle = new LuaLifecycle();
+    t.after(() => lifecycle.destroy());
+    // The pinned script places three reward squares with top-level :set calls.
+    // Level writes are outside this loader test; the Lua and selection APIs are real.
+    const state = await lifecycle.createThemedState(game, 0, 'soko1-1.lua', {
+        selection: createSelectionBindings({ xstart: 2, ystart: 3, width: 30, height: 18 }),
+        des: {
+            level_init: () => { },
+            level_flags: () => { },
+            map: () => { },
+            stair: () => { },
+            region: () => { },
+            non_diggable: () => { },
+            non_passwall: () => { },
+            object: () => { },
+            exclusion: () => { },
+            trap: () => { },
+            monster: () => { },
+            door: () => { },
+            engraving: () => { },
+        },
+    });
+    state.execute('reward_count = place:numpoints()');
+    assert.equal(state.getGlobal('reward_count'), 3);
+    assert.equal(lifecycle.getThemedState(game, 0), state);
 });
 function luaObjectValue(state, name) {
     const handle = state.getGlobal(name);
