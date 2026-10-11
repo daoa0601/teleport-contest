@@ -10,6 +10,7 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME } from '../js/monster_data.js';
 import { makePlural } from '../js/object_grammar.js';
 import { G_EXTINCT, G_GENOD } from '../js/const.js';
+import { ATR_BOLD, ATR_INVERSE, NO_COLOR } from '../js/terminal.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 const M2_PNAME = 0x00080000;
@@ -60,7 +61,12 @@ async function advanceToQuestion(input, wanted) {
 }
 async function declineRemainingPrompts(input, ending) {
     for (let guard = 0; guard < 12; guard++) {
-        await input.waitUntilBlocked();
+        const finished = await Promise.race([
+            ending.then(() => true),
+            input.waitUntilBlocked().then(() => false),
+        ]);
+        if (finished)
+            return;
         const row = visibleRow();
         if (/Do you want|--More--/.test(row)) {
             input.feed(/Do you want/.test(row) ? 'n' : ' ');
@@ -198,11 +204,11 @@ void test("answering 'a' picks a sort order before the vanquished list", async (
     await advanceToQuestion(input, /creatures vanquished/);
     input.feed('a');
     await input.waitUntilBlocked();
-    // set_vanq_order(): the preselected traditional order carries '+',
-    // and the menu names both lists it governs.
+    // Native marks the current order with '*' and puts the title first.
     let screen = screenText();
-    assert.match(screen, /Sort order for vanquished monster counts/);
-    assert.match(screen, /t \+ traditional: by monster level/);
+    assert.match(visibleRow(), /Sort order for vanquished monster counts/);
+    assert.equal(screen.split('\n')[1]?.trim(), '');
+    assert.match(screen, /t \* traditional: by monster level/);
     assert.match(screen, /a - alphabetically, first unique monsters, then others/);
     input.feed('a');
     await input.waitUntilBlocked();
@@ -214,6 +220,86 @@ void test("answering 'a' picks a sort order before the vanquished list", async (
     input.feed(' ');
     await declineRemainingPrompts(input, ending);
 });
+void test('the sort menu marks the current order as selected', async () => {
+    freshPlayableRoom();
+    requirePlayingGame(game);
+    recordSpecies('newt', 1);
+    recordSpecies('jackal', 2);
+    const input = resetInputState();
+    const ending = deathWithPrompts();
+    await advanceToQuestion(input, /creatures vanquished/);
+    input.feed('a');
+    await input.waitUntilBlocked();
+    try {
+        assert.match(screenText(), /t \* traditional: by monster level/);
+    }
+    finally {
+        input.feed(27);
+        await declineRemainingPrompts(input, ending);
+    }
+});
+for (const [name, key] of [['Enter', '\n'], ['Space', ' ']]) {
+    void test(`${name} accepts the current vanquished sort order`, async () => {
+        freshPlayableRoom();
+        requirePlayingGame(game);
+        recordSpecies('newt', 1);
+        recordSpecies('jackal', 2);
+        const input = resetInputState();
+        const ending = deathWithPrompts();
+        await advanceToQuestion(input, /creatures vanquished/);
+        input.feed('a');
+        await input.waitUntilBlocked();
+        input.feed(key);
+        await input.waitUntilBlocked();
+        try {
+            assert.match(screenText(), /Vanquished creatures:/);
+            assert.doesNotMatch(screenText(), /Sort order for/);
+            assert.equal(game.flags.vanqSortmode ?? 0, 0);
+        }
+        finally {
+            input.feed(27);
+            await declineRemainingPrompts(input, ending);
+        }
+    });
+}
+for (const category of ['v', 'g']) {
+    for (const { ask, style, attr } of [
+        { ask: false, style: 'default', attr: ATR_INVERSE },
+        { ask: true, style: 'default', attr: ATR_INVERSE },
+        { ask: false, style: 'bold', attr: ATR_BOLD },
+        { ask: true, style: 'bold', attr: ATR_BOLD },
+    ]) {
+        void test(`${ask ? 'prompted' : 'automatic'} ${category === 'v' ? 'vanquished' : 'genocided'} disclosure ${ask ? 'omits' : 'uses'} ${style} class heading attributes`, async () => {
+            freshPlayableRoom();
+            requirePlayingGame(game);
+            if (style === 'bold')
+                game.iflags.menu_headings = { attr, color: NO_COLOR };
+            recordSpecies('newt', 1, category === 'g' ? G_GENOD : 0);
+            recordSpecies('jackal', 2, category === 'g' ? G_GENOD : 0);
+            game.flags.vanqSortmode = 5;
+            game.flags.disclose = `-i -a -c -o ${category === 'v' ? '-g' : '-v'} ${ask ? 'n' : '+'}${category}`;
+            const input = resetInputState();
+            const ending = deathWithPrompts();
+            if (ask) {
+                await advanceToQuestion(input, category === 'v' ? /creatures vanquished/ : /species genocided/);
+                input.feed('y');
+            }
+            await input.waitUntilBlocked();
+            try {
+                const display = game.nhDisplay;
+                assert.ok(display);
+                const header = display.grid.find(row => row.map(cell => cell.ch).join('').trim() === 'Dog or other canine');
+                assert.ok(header, 'the list groups jackals under the Dog or other canine heading');
+                const firstLetter = header.find(cell => cell.ch === 'D');
+                assert.equal(firstLetter?.attr, ask ? 0 : attr);
+            }
+            finally {
+                input.feed(' ');
+                await declineRemainingPrompts(input, ending);
+            }
+        });
+    }
+}
 void test('escaping the sort-order menu skips the list without stopping disclosure', async () => {
     freshPlayableRoom();
     requirePlayingGame(game);

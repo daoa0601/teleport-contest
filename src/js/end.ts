@@ -14,7 +14,7 @@ import {
 import { consumeInventoryItem, showIdentifiedInventory } from './invent.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
 import {
-    showDisclosureOverlay, showPagedPickOneMenu, showTextPages, showTextWindow,
+    ATR_INVERSE, ATR_NONE, showDisclosureOverlay, showInventoryWindow, showTextPages, showTextWindow,
 } from './windows.js';
 import { artifactById } from './artifacts.js';
 import {
@@ -39,7 +39,7 @@ import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
     A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED,
-    Is_astralevel, STRAT_WAITFORU, Upolyd,
+    Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd,
 } from './const.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING,
@@ -63,7 +63,7 @@ import { requireInitializedHero } from './hero_types.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { TextMenuLine, TextPage } from './windows.js';
+import type { InventoryMenuItem, TextMenuEntry, TextMenuLine, TextPage } from './windows.js';
 import type { ScoreOutcome, ScoreRecord } from './score_records.js';
 
 export interface DeathDamage {
@@ -428,14 +428,14 @@ function vanquishedIndent(text: string): number {
     return /[0-9]/.test(text.charAt(2)) ? 0 : 4;
 }
 
-export function vanquishedLines() {
+export function vanquishedLines(ask = false): TextMenuEntry[] {
     const mode = vanqSortMode();
     const entries = vanquishedEntries();
     const total = entries.reduce((sum, entry) => sum + entry.count, 0);
     const classHeaders = (mode === VANQ_MCLS_LTOH || mode === VANQ_MCLS_HTOL)
         && entries.length > 1;
     const uniqHeaders = mode === VANQ_ALPHA_SEP;
-    const lines = ['Vanquished creatures:', ''];
+    const lines: TextMenuEntry[] = ['Vanquished creatures:', ''];
     let previousClass = 0;
     let wasUnique = false;
     let riderHeader = false;
@@ -443,8 +443,10 @@ export function vanquishedLines() {
         const rider = RIDER_MONSTERS.has(entry.mnum);
         const mlet = MONSTER_SYMBOL[entry.mnum] ?? 0;
         if (classHeaders && (mlet !== previousClass || (riderHeader && !rider))) {
-            lines.push(upstart(rider
-                ? 'Rider' : MONSTER_CLASS_EXPLAIN[mlet] ?? ''));
+            lines.push({
+                text: upstart(rider ? 'Rider' : MONSTER_CLASS_EXPLAIN[mlet] ?? ''),
+                attr: ask ? ATR_NONE : game.iflags.menu_headings?.attr ?? ATR_INVERSE,
+            });
             riderHeader = rider;
             previousClass = mlet;
         }
@@ -494,8 +496,8 @@ function goneSpecies(): GoneSpecies[] {
 }
 
 function genocidedLines(
-    gone: GoneSpecies[], genocided: number, extinct: number,
-): string[] {
+    gone: GoneSpecies[], genocided: number, extinct: number, ask: boolean,
+): TextMenuEntry[] {
     let mode = vanqSortMode();
     // C list_genocided(): with more than one species the shared sort mode
     // drives the order, except that counting orders degrade to plain
@@ -508,7 +510,7 @@ function genocidedLines(
         : gone;
     const classHeaders = gone.length > 1
         && (mode === VANQ_MCLS_LTOH || mode === VANQ_MCLS_HTOL);
-    const lines = [
+    const lines: TextMenuEntry[] = [
         `${genocided ? 'Genocided' : 'Extinct'}${extinct && genocided ? ' or extinct' : ''} species:`,
         '',
     ];
@@ -516,7 +518,10 @@ function genocidedLines(
     for (const species of ordered) {
         const mlet = MONSTER_SYMBOL[species.mnum] ?? 0;
         if (classHeaders && mlet !== previousClass) {
-            lines.push(upstart(MONSTER_CLASS_EXPLAIN[mlet] ?? ''));
+            lines.push({
+                text: upstart(MONSTER_CLASS_EXPLAIN[mlet] ?? ''),
+                attr: ask ? ATR_NONE : game.iflags.menu_headings?.attr ?? ATR_INVERSE,
+            });
             previousClass = mlet;
         }
         const name = makePlural(MONSTER_NAME[species.mnum] || 'monster');
@@ -1058,10 +1063,8 @@ function vanqOrderDescription(mode: number, forVanquished: boolean): string {
 
 async function setVanqOrder(forVanquished: boolean): Promise<number> {
     const current = vanqSortMode();
-    const rows: string[] = ['', `Sort order for ${forVanquished
-        ? 'vanquished monster counts (also genocided types)'
-        : 'genocided monster types (also vanquished counts)'}`];
-    const choices = new Map<string, number>();
+    const items: InventoryMenuItem<number>[] = [];
+    let preselectedKey: string | null = null;
     for (const [mode, letter] of VANQ_ORDER_CHOICES) {
         // The two uppercase orders exist in the comparator but stay
         // unlisted; counting orders don't apply to genocided species.
@@ -1069,14 +1072,24 @@ async function setVanqOrder(forVanquished: boolean): Promise<number> {
             || (!forVanquished
                 && (mode === VANQ_COUNT_H_L || mode === VANQ_COUNT_L_H)))
             continue;
-        rows.push(`${letter} ${mode === current ? '+' : '-'} ${
-            vanqOrderDescription(mode, forVanquished)}`);
-        choices.set(letter, mode);
+        items.push({
+            text: `${letter} - ${vanqOrderDescription(mode, forVanquished)}`,
+            key: letter, value: mode,
+        });
+        if (mode === current) preselectedKey = letter;
     }
-    const selected = await showPagedPickOneMenu({ rows, choices });
-    if (selected === null) return -1;
-    game.flags.vanqSortmode = selected;
-    return selected;
+    const selected = await showInventoryWindow([{ items }], {
+        title: `Sort order for ${forVanquished
+            ? 'vanquished monster counts (also genocided types)'
+            : 'genocided monster types (also vanquished counts)'}`,
+        pickMode: PICK_ONE, preselectedKey,
+    });
+    if (selected.key === 27) return -1;
+    const mode = selected.value
+        ?? items.find(item => item.key === String.fromCharCode(selected.key))?.value
+        ?? current;
+    game.flags.vanqSortmode = mode;
+    return mode;
 }
 
 // C yn_function(): the answer set is shown as "[ynq]"; answers hidden
@@ -1156,7 +1169,7 @@ async function discloseGame({
             // the list without stopping the remaining questions.
             if (!(vanquished === 'a' && multiple
                 && await setVanqOrder(true) < 0))
-                await showDisclosureOverlay(vanquishedLines());
+                await showDisclosureOverlay(vanquishedLines(ask));
         }
     }
 
@@ -1185,7 +1198,7 @@ async function discloseGame({
             if (answer === 'y' || answer === 'a') {
                 if (!(answer === 'a' && multiple
                     && await setVanqOrder(false) < 0))
-                    await showDisclosureOverlay(genocidedLines(gone, genocided, extinct));
+                    await showDisclosureOverlay(genocidedLines(gone, genocided, extinct, ask));
             }
         }
     }

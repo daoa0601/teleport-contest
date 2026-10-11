@@ -55,6 +55,7 @@ export interface InterfaceFlags {
     getdir_click?: number;
     in_lava_effects?: number;
     menu_requested?: boolean;
+    menu_headings?: { attr: number; color: number };
     menu_tab_sep?: boolean;
     nofollowers?: boolean;
     num_pad?: boolean;

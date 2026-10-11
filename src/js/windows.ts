@@ -423,7 +423,7 @@ function inventorySearchMatches(query: string, text: string): boolean {
  * windows finish with either `--More--` or `(end)` and accept one dismissal
  * key before returning to their caller.
  */
-export async function showDisclosureOverlay(lines: readonly string[], {
+export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     marker = '--More--', minWidth = 38, restoreUnderlay = false,
     pagerStyle = 'text',
 }: {
@@ -432,24 +432,25 @@ export async function showDisclosureOverlay(lines: readonly string[], {
 } = {}): Promise<number> {
     const d = display();
     if (!d) return 27;
+    const content = lines.map(line => typeof line === 'string' ? { text: line } : line);
 
     // Native tty_display_nhwindow(): a putstr-built menu keeps its corner
     // placement only while it fits the screen and leaves the corner past
     // its minimum offset; taller (or menu-overlay-disabled) windows switch
     // to the full-screen paged layout of process_text_window().
-    const dataWidth = lines.reduce((widest, line) => Math.max(widest, line.length), 0);
-    const cornerOffset = Math.min(82, Math.floor(d.cols / 2), d.cols - dataWidth - 2);
+    const dataWidth = content.reduce((widest, line) => Math.max(widest, line.text.length), 0);
+    const cornerOffset = Math.max(10, Math.min(82, Math.floor(d.cols / 2), d.cols - dataWidth - 2));
     if (lines.length >= d.rows || cornerOffset === 10
         || game.flags.menu_overlay === false) {
-        return await pageDisclosureWindow(d, lines, { marker, pagerStyle, restoreUnderlay });
+        return await pageDisclosureWindow(d, content, { marker, pagerStyle, restoreUnderlay });
     }
 
-    const widest = Math.max(marker.length, ...lines.map(line => line.length));
+    const widest = Math.max(marker.length, dataWidth);
     // process_menu_window() leaves one terminal column to the right of a
     // PICK_NONE disclosure.  (Choice/inventory windows use a distinct
     // two-column corner margin.)
     const left = Math.max(0, d.cols - Math.max(minWidth, widest) - 1);
-    const rows = [...lines, marker];
+    const rows: TextMenuLine[] = [...content, { text: marker }];
     // NHW_MENU replaces the message row rather than leaving the preceding
     // yn_function prompt visible to the west of a narrow overlay.
     d.clearRow(0);
@@ -461,9 +462,9 @@ export async function showDisclosureOverlay(lines: readonly string[], {
     const underlayCursor = restoreUnderlay
         ? { col: d.cursorCol, row: d.cursorRow, visible: d.cursorVisible } : null;
     clearRect(left - 1, 0, d.cols, Math.min(d.rows, rows.length));
-    for (const [row, text] of rows.entries()) {
+    for (const [row, line] of rows.entries()) {
         if (row >= d.rows) break;
-        putLine(left, row, text);
+        putLine(left, row, line.text, line.attr);
     }
 
     const markerRow = Math.min(rows.length - 1, d.rows - 1);
@@ -491,7 +492,7 @@ export async function showDisclosureOverlay(lines: readonly string[], {
  * label every page but the single-page case with "(x of y)".
  */
 async function pageDisclosureWindow(
-    d: GameDisplay, lines: readonly string[],
+    d: GameDisplay, lines: readonly TextMenuLine[],
     { marker, pagerStyle, restoreUnderlay }: {
         marker: string; pagerStyle: 'text' | 'menu'; restoreUnderlay: boolean;
     },
@@ -499,34 +500,44 @@ async function pageDisclosureWindow(
     const rowColumn = pagerStyle === 'menu' ? 1 : 0;
     const pageSize = d.rows - 1;
     const pageCount = Math.max(1, Math.ceil(lines.length / pageSize));
-    const underlay = restoreUnderlay
-        ? d.grid.map(row => row.map(cell => ({ ...cell }))) : null;
-    const underlayCursor = restoreUnderlay
-        ? { col: d.cursorCol, row: d.cursorRow, visible: d.cursorVisible } : null;
-    const pages: TextPage[] = [];
-    for (let page = 0; page < pageCount; page++) {
-        const content = lines.slice(page * pageSize, (page + 1) * pageSize);
-        const markerText = pagerStyle === 'menu' && pageCount > 1
-            ? `(${page + 1} of ${pageCount})` : marker;
-        // tty_end_menu() keeps a trailing blank on its "(end) " morestr.
-        const markerLength = markerText === '(end)' ? 6 : markerText.length;
-        pages.push({
-            lines: [...content.map(text => ({ text, col: rowColumn })),
-                { text: markerText, col: 1 }],
-            cursor: [1 + markerLength, pageSize],
-        });
-    }
-    const key = await showTextPages(pages, { validKeys: [27, 32, 10, 13] });
-    if (underlay && underlayCursor) {
-        for (const [row, cells] of underlay.entries()) {
-            for (const [col, cell] of cells.entries()) {
-                d.setCell(col, row, cell.ch, cell.color, cell.attr);
+    let page = 0;
+    try {
+        for (;;) {
+            const content = lines.slice(page * pageSize, (page + 1) * pageSize);
+            const markerText = pagerStyle === 'menu' && pageCount > 1
+                ? `(${page + 1} of ${pageCount})` : marker;
+            d.clearScreen();
+            for (const [row, line] of content.entries())
+                putLine(rowColumn, row, line.text, line.attr);
+            putLine(1, content.length, markerText);
+            // tty_end_menu() retains a trailing blank in "(end) ".
+            const markerLength = markerText === '(end)' ? 6 : markerText.length;
+            d.setCursor(1 + markerLength, content.length);
+            const key = await nhgetch();
+            if (key === 27) return key;
+            if (pagerStyle === 'menu') {
+                // process_menu_window(): Return commits on any page;
+                // Space advances, or commits on the last page.
+                if (key === 10 || key === 13) return key;
+                const letter = String.fromCharCode(key);
+                if (key === 32 && page === pageCount - 1) return key;
+                if (key === 32 || letter === '>') page = Math.min(page + 1, pageCount - 1);
+                else if (letter === '<') page = Math.max(page - 1, 0);
+                else if (letter === '^') page = 0;
+                else if (letter === '|') page = pageCount - 1;
+            } else if (key === 32 || key === 10 || key === 13) {
+                if (page === pageCount - 1) return key;
+                page++;
             }
         }
-        d.setCursor(underlayCursor.col, underlayCursor.row);
-        d.cursorVisible = underlayCursor.visible;
+    } finally {
+        // erase_menu_or_text(): a full-screen window rebuilds vision and
+        // glyphs; docorner()'s saved cells only apply to corner windows.
+        if (restoreUnderlay) {
+            await docrt();
+            await flush_screen(1);
+        }
     }
-    return key;
 }
 
 /**
