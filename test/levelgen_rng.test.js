@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { COLNO, CORR, DOOR, D_NODOOR, LADDER, M_AP_FURNITURE, ROOM, ROOMOFFSET, ROWNO, SCORR, STAIRS, THEMEROOM } from '../js/const.js';
+import { COLNO, CORR, DOOR, D_NODOOR, LADDER, LAVAPOOL, M_AP_FURNITURE, ROOM, ROOMOFFSET, ROWNO, SCORR, STAIRS, THEMEROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
+import { resetInputState } from '../js/input.js';
 import { isRoom } from '../js/map_types.js';
 import { mkclassAligned, mklev } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -56,6 +57,49 @@ async function buildThemedLevel(t, definition) {
     await mklev();
     return game.level;
 }
+void test('ordinary themed regions stop at 40 rooms and only light excess regions', async (t) => {
+    await buildThemedLevel(t, `
+        themerooms = {{ frequency = 1, contents = function()
+            des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+        end }}
+    `);
+    const lua = currentLuaLifecycle().getThemedState(game, 0);
+    assert.ok(lua);
+    await lua.executeAsync(`
+        function themerooms_generate()
+            des.map({ coord = {1,0}, map = [[${('.'.repeat(61) + '\n').repeat(20)}]] })
+            for i = 1, 50 do
+                local x = 2 + ((i - 1) % 10) * 6
+                local y = 1 + math.floor((i - 1) / 10) * 4
+                des.region({ region = {x,y,x,y}, type = "ordinary",
+                    joined = false, filled = 0, lit = i > 40 and 1 or 0,
+                    contents = function()
+                        des.engraving({ x = 0, y = 0, type = "burn",
+                            text = "admitted region " .. i, degrade = false })
+                    end })
+            end
+        end
+    `);
+    resetInputState().feed(' '.repeat(40));
+    await mklev();
+    const level = game.level;
+    assert.ok(level);
+    assert.equal(level.nroom, 40, 'one theme must not exceed the native room capacity');
+    const engravings = level.engravings?.filter(entry => entry.text.startsWith('admitted region '));
+    assert.equal(engravings?.length, 40, 'excess regions must skip their contents');
+    assert.ok(engravings?.some(entry => entry.text === 'admitted region 40'), 'the last available room must still run its contents');
+    assert.equal(level.requireAt(3, 17).roomno, 0, 'an excess region must not assign a room number');
+    assert.equal(level.requireAt(3, 17).lit, true, 'an excess region must still apply its lighting');
+    assert.equal(level.requireAt(2, 16).lit, true, 'lit regions include their one-cell perimeter');
+    await lua.executeAsync(`
+        des.map({ coord = {10,6}, map = [[.L]], lit = 1 })
+        des.region({ region = {0,0,1,0}, type = "themed", lit = 0 })
+    `);
+    assert.equal(level.nroom, 40, 'special room types must obey the same limit');
+    assert.equal(level.requireAt(10, 6).lit, false, 'unlit excess regions darken ordinary terrain');
+    assert.equal(level.requireAt(11, 6).typ, LAVAPOOL);
+    assert.equal(level.requireAt(11, 6).lit, true, 'lava stays lit when a region is darkened');
+});
 void test('an explicit room trap falls back from stairs to its room floor', async (t) => {
     const level = await buildThemedLevel(t, `
         themerooms = {{ frequency = 1, contents = function()

@@ -5677,7 +5677,7 @@ function luaRoomTable(room) {
         type: type ?? 'ordinary',
     });
 }
-function createLuaRoomRegion(context, options) {
+async function createLuaRoomRegion(context, options) {
     const [x1, y1, x2, y2] = options.region
         ?? [options.x1, options.y1, options.x2, options.y2];
     if (typeof x1 !== 'number' || typeof y1 !== 'number'
@@ -5686,8 +5686,11 @@ function createLuaRoomRegion(context, options) {
         throw new TypeError('des.region requires four coordinates');
     const roomType = luaRoomType(options.type);
     const lit = luaRoomLighting(options.lit ?? -1);
-    if (roomType === OROOM && !options.irregular && !options.arrival_room
-        && !game.in_mk_themerooms) {
+    const roomNotNeeded = roomType === OROOM && !options.irregular
+        && !options.arrival_room && !game.in_mk_themerooms;
+    if (roomNotNeeded || requireGameLevel().nroom >= MAXNROFROOMS) {
+        if (!roomNotNeeded)
+            await impossible('Too many rooms on new level!');
         lightSpecialArea(context, x1, y1, x2, y2, lit);
         return null;
     }
@@ -6338,7 +6341,7 @@ function createLuaLevelSession() {
         roomRegion: async (options) => {
             if (roomFailed)
                 return null;
-            const room = createLuaRoomRegion(context, options);
+            const room = await createLuaRoomRegion(context, options);
             if (!room || !options.contents)
                 return room;
             const parent = context;
@@ -6760,11 +6763,17 @@ function specialMapSelection(context, rows = null) {
 }
 function lightSpecialArea(context, x1, y1, x2, y2, lit) {
     const level = requireGameLevel();
-    for (let x = x1; x <= x2; x++) {
-        for (let y = y1; y <= y2; y++) {
-            const loc = level.at(context.xstart + x, context.ystart + y);
+    // sp_lev.c:light_region() includes surrounding walls only when lit.
+    const halo = lit ? 1 : 0;
+    const lx = Math.max(1, context.xstart + x1 - halo);
+    const hx = Math.min(COLNO - 1, context.xstart + x2 + halo);
+    const ly = Math.max(0, context.ystart + y1 - halo);
+    const hy = Math.min(ROWNO - 1, context.ystart + y2 + halo);
+    for (let x = lx; x <= hx; x++) {
+        for (let y = ly; y <= hy; y++) {
+            const loc = level.at(x, y);
             if (loc)
-                loc.lit = lit;
+                loc.lit = lit || IS_LAVA(loc.typ);
         }
     }
 }
