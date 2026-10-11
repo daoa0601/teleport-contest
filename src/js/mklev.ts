@@ -4101,8 +4101,7 @@ async function fillEmptySpecialMaze(
 }
 
 // C ref: sp_lev.c pm_to_humidity().
-function specialMonsterHumidity(mndx: number | null): number {
-    if (mndx === null) return DRY;
+function specialMonsterHumidity(mndx: number): number {
     const flags = MONSTER_FLAGS1[mndx] ?? 0;
     const symbol = MONSTER_SYMBOL[mndx];
     let humidity = symbol === 57 || (flags & (0x00000002 | 0x00000200))
@@ -4891,6 +4890,9 @@ function specialNonPasswall(context: SpecialLevelContext): void {
 async function specialMonsterRandomLocation(
     context: SpecialLevelContext, mndx: number | null,
 ): Promise<Position | null> {
+    // create_monster() has no species humidity to retry when selection
+    // falls back to a random monster; it goes directly through DRY.
+    if (mndx === null) return await getLocationCoord(context, null, DRY);
     const humidity = specialMonsterHumidity(mndx);
     let point = await getLocationCoord(context, null, humidity | NO_LOC_WARN);
     if (point.x === -1 && point.y === -1)

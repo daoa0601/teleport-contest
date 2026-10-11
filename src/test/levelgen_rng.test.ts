@@ -2,7 +2,7 @@ import test from 'node:test';
 import type { TestContext } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { COLNO, CORR, DOOR, D_NODOOR, LADDER, LAVAPOOL, M_AP_FURNITURE, ROOM, ROOMOFFSET, ROWNO, SCORR, STAIRS, THEMEROOM } from '../js/const.js';
+import { COLNO, CORR, DOOR, D_NODOOR, G_GENOD, LADDER, LAVAPOOL, M_AP_FURNITURE, ROOM, ROOMOFFSET, ROWNO, SCORR, STAIRS, THEMEROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
@@ -13,6 +13,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { ROCK, STATUE } from '../js/object_data.js';
+import { DRY, getLocationCoord } from '../js/special_location.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
 import { createDungeon } from './support/topology.js';
@@ -63,6 +64,48 @@ async function buildThemedLevel(t: TestContext, definition: string) {
     await mklev();
     return game.level;
 }
+
+void test('an unavailable monster class uses dry placement without species retries', async t => {
+    const level = await buildThemedLevel(t, `
+        themerooms = {{ frequency = 1, contents = function()
+            des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+        end }}
+    `);
+    const lua = currentLuaLifecycle().getThemedState(game, 0);
+    assert.ok(lua);
+    requirePlayingGame(game);
+    assert.ok(game.mvitals);
+    for (const vital of game.mvitals) vital.mvflags |= G_GENOD;
+    const area = { xstart: 10, ystart: 6, width: 7, height: 3 };
+    const solidMap = 'des.map({ coord = {10,6}, map = [[       \n       \n       ]] })';
+    const dryMap = 'des.map({ coord = {10,6}, map = [[.......\n.......\n.......]] })';
+
+    for (let seed = 1; seed <= 3; seed++) {
+        await lua.executeAsync(solidMap);
+        resetInputState().feed(' '.repeat(20));
+        initRng(seed);
+        const species = mkclassAligned(29, 0x0200); // S_CENTAUR, G_NOGEN
+        assert.equal(species, null, 'the centaur class is unavailable');
+        // With no species, create_monster() uses the same DRY lookup as
+        // other dry contents, even when the map has no suitable square.
+        await getLocationCoord(area, null, DRY);
+        await lua.executeAsync(dryMap);
+        const expected = await getLocationCoord(area, null, DRY);
+
+        await lua.executeAsync(solidMap);
+        level.traps = [];
+        resetInputState().feed(' '.repeat(20));
+        initRng(seed);
+        await lua.executeAsync('des.monster({ class = "C", align = "law" })');
+        await lua.executeAsync(dryMap);
+        await lua.executeAsync('des.trap({ type = "pit", victim = false })');
+
+        const trap = level.traps[0];
+        assert.ok(trap, 'the following dry content should be placed');
+        assert.deepEqual({ x: trap.tx, y: trap.ty }, expected,
+            `failed monster placement must preserve the next dry placement (seed ${seed})`);
+    }
+});
 
 void test('ordinary themed regions stop at 40 rooms and only light excess regions', async t => {
     await buildThemedLevel(t, `
