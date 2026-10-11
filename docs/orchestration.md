@@ -108,5 +108,10 @@ unit's run.
 - Grow the ledgers with `--write-ledger` only after the batch rerun passes.
   Then update `docs/porting-status.md` once for the batch, and start the
   next baseline from the new commit.
-- Ask the user before pushing, updating the remote `main`, or removing a
+- Work autonomously: this is a contest in agentic engineering. Push the
+  integration branch and `main` after each verified batch, refill free unit
+  slots from the queue, and keep going without check-ins. Never remove a
   worktree that holds unmerged commits.
+- Keep the orchestrator's own context lean: read unit summaries and
+  reviews, not unit logs, and delegate any investigation longer than a few
+  tool calls to `glm-5.3-flash` or Codex.
