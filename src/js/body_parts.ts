@@ -224,6 +224,28 @@ export function heroHeadName(state: GameState = game) {
     return monsterHeadName(currentHeroMonsterNumber(state));
 }
 
+// C mbodypart(HAIR). The morgue's chill affects the current body's covering.
+export function heroHairName(state: GameState = game): string {
+    const mnum = currentHeroMonsterNumber(state);
+    const symbol = MONSTER_SYMBOL[mnum];
+    if (symbol === S_YETI && mnum !== PM_OWLBEAR) return 'hair';
+    if (MONSTER_NAME[mnum] === 'shark') return 'skin';
+    if (symbol === S_COCKATRICE) return 'scales';
+    if (mnum === PM_RAVEN) return 'feathers';
+    if (symbol === S_CENTAUR || symbol === S_UNICORN || mnum === PM_KI_RIN) return 'mane';
+    if (symbol === S_LIGHT) return 'beam';
+    if (symbol === S_EEL && mnum !== PM_JELLYFISH) return 'scales';
+    if (symbol === S_WORM) return 'setae';
+    if (symbol === S_SPIDER) return 'hair';
+    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY || symbol === 30) return 'scales';
+    if (symbol === S_EYE) return 'cilia';
+    if (symbol === S_JELLY || symbol === S_PUDDING || symbol === S_BLOB || mnum === PM_JELLYFISH)
+        return 'ripples';
+    if (symbol === S_VORTEX || symbol === S_ELEMENTAL) return 'currents';
+    if (symbol === S_FUNGUS) return 'spores';
+    return (MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID ? 'hair' : 'fur';
+}
+
 // C mbodypart(NOSE).
 export function heroNoseName(state: GameState = game) {
     const mnum = currentHeroMonsterNumber(state);

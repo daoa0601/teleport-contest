@@ -69,7 +69,7 @@ import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { doOptions } from './options.js';
 import {
-    blocksDiagonalDoor, blocksMove, heroBadRock, heroCanPassWallAt, heroLiquidEffects,
+    blocksDiagonalDoor, blocksMove, escapeFromStickyMonster, heroBadRock, heroCanPassWallAt, heroLiquidEffects,
     heroShouldAvoidLiquid,
     heroTightDiagonalReason,
 } from './hack.js';
@@ -7210,6 +7210,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
     const newy = u.uy + dy;
 
     if (!isok(newx, newy)) return moveOutOfBounds(newx, newy);
+    if (await escapeFromStickyMonster(newx, newy)) return true;
     const loc = game.level?.at(newx, newy);
 
     // C domove_core() resolves a destination monster before test_move()
@@ -7276,6 +7277,14 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             }
             if (u.utrap
                 && !await heroCanMoveFromTrap(newx, newy)) return true;
+            // hack.c:domove_swap_with_pet() refuses to send a peaceful
+            // companion onto any trap, including one the hero has not seen.
+            if (monster.mpeaceful && game.level.traps.some(trap =>
+                trap.tx === u.ux && trap.ty === u.uy)) {
+                const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
+                await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
+                return true;
+            }
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
                 if (ballChainMove.blockedMessage) await pline(ballChainMove.blockedMessage);

@@ -56,6 +56,25 @@ export function sessionIsNight(datetime: string | null | undefined): boolean {
     return Number.isInteger(hour) && (hour < 6 || hour > 21);
 }
 
+// C sounds.c:growl_sound(). Summoning uses the same noise while unseen.
+export function monsterGrowlSound(monster: Monster): string {
+    switch (MONSTER_SOUND[monster.mnum] ?? MS_SILENT) {
+    case MS_MEW: case MS_HISS: return 'hiss';
+    case MS_BARK: case MS_GROWL: return 'growl';
+    case MS_ROAR: return 'roar';
+    case MS_BELLOW: return 'bellow';
+    case MS_BUZZ: return 'buzz';
+    case MS_SQEEK: return 'squeal';
+    case MS_SQAWK: return 'screech';
+    case MS_NEIGH: return 'neigh';
+    case MS_WAIL: return 'wail';
+    case 18: return 'groan';
+    case MS_MOO: return 'low';
+    case MS_SILENT: return 'commotion';
+    default: return 'scream';
+    }
+}
+
 // C sounds.c:beg(). Speech is deliberately not gated by deafness here:
 // native verbalize() publishes text; only domonnoise() has a hearing guard.
 export async function begForFood(monster: Monster, state: GameState): Promise<void> {

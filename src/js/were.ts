@@ -32,6 +32,11 @@ import {
 } from './monster_sound.js';
 import { heroIsDeaf } from './senses.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
+import { monsterIsScaredAt } from './monster_fear.js';
+import { makeMonsterFlee } from './monster_flee.js';
+import { monsterName } from './monster_name.js';
+import { withIndefiniteArticle, makePlural } from './object_grammar.js';
+import { monsterGrowlSound } from './monster_sound.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -166,18 +171,8 @@ export async function useHeroWereSummon({
     await publish('You call upon your brethren for help!');
     await exerciseAttribute(A_WIS, true, state);
 
-    const helpers: Monster[] = [];
     const form = heroMonsterForm(state);
-    for (let count = rollOne(5); count > 0; count--) {
-        const species = form == null ? null : summonedWereAlly(form, random);
-        if (species === null) continue;
-        const monster = await makemonNear(
-            species, state.u.ux, state.u.uy, 0, true,
-        );
-        if (!monster) continue;
-        await tameMonster(monster, null, { state });
-        helpers.push(monster);
-    }
+    const helpers = form === null ? [] : await summonWerePack(form, true, state, random, rollOne);
     if (!helpers.length) await publish('But none arrive.');
     return { used: true, spentTime: true, helpers };
 }
@@ -302,6 +297,66 @@ export function isHumanWereMonster(monster: WereSpecies | null | undefined): boo
     return !!(flags & M2_WERE) && monsterIsHuman(mnum);
 }
 
+// C mhitu.c:summonmu(): the attack has a separate transformation chance
+// from were_change(), then calls helpers using the resulting species.
+export async function summonWereAttackHelp(
+    monster: Monster, state: GameState = game, random = rn2,
+): Promise<void> {
+    const seen = canSeeMonster(monster);
+    const protectedHero = heroHasProtectionFromShapeChangers(state);
+    if (isHumanWereMonster(monster)) {
+        if (!protectedHero && random(sessionIsNight(state.datetime) ? 3 : 5) === 0)
+            await transformWereMonster(monster, state);
+    } else if (protectedHero || random(30) === 0) {
+        await transformWereMonster(monster, state);
+    }
+    if (random(10) !== 0) return;
+    if (seen)
+        await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} summons help!`);
+    const helpers = await summonWerePack(monster.mnum, false, state, random);
+    const visible = helpers.filter(helper => canSeeMonster(helper)).length;
+    if (seen) {
+        if (!helpers.length) await plineWithContinuation('But none comes.');
+        else if (!visible) await plineWithContinuation('You feel hemmed in.');
+        return;
+    }
+    const deaf = heroIsDeaf(state);
+    if (!deaf)
+        await plineWithContinuation(`Something ${makePlural(monsterGrowlSound(monster))}!`);
+    if (!helpers.length) return;
+    if (!visible) {
+        await plineWithContinuation('You feel hemmed in.');
+        return;
+    }
+    const generic = werePackName(monster.mnum);
+    const appearance = visible === 1 ? `${withIndefiniteArticle(generic)} appears` : `${makePlural(generic)} appear`;
+    await plineWithContinuation(`${appearance.charAt(0).toUpperCase()}${appearance.slice(1)}${deaf ? ' from nowhere' : ''}!`);
+}
+
+function werePackName(mnum: number): string {
+    const beast = counterWereSpecies(mnum);
+    const name = MONSTER_NAME[mnum] ?? '';
+    const form = monsterIsHuman(mnum) ? MONSTER_NAME[beast ?? -1] ?? name : name;
+    return form.replace(/^were/u, '') || 'creature';
+}
+
+// C were.c:were_summon(), shared by monster attacks and #monster.
+async function summonWerePack(
+    form: number, yours: boolean, state: GameState,
+    random = rn2, rollOne = rnd,
+): Promise<Monster[]> {
+    if (!yours && heroHasProtectionFromShapeChangers(state)) return [];
+    const helpers: Monster[] = [];
+    for (let count = rollOne(5); count > 0; count--) {
+        const species = summonedWereAlly(form, random);
+        if (species === null) continue;
+        const helper = await makemonNear(species, state.u.ux, state.u.uy, 0, true);
+        if (!helper) continue;
+        if (yours) await tameMonster(helper, null, { state });
+        helpers.push(helper);
+    }
+    return helpers;
+}
 
 function changedWereFormName(monster: Pick<Monster, 'mnum'>) {
     if (isHumanWereMonster(monster)) return 'human';
@@ -398,5 +453,14 @@ export async function transformWereMonster(monster: Monster, state: GameState = 
     if (repaint) newsym(monster.mx, monster.my);
     await adjustMonsterClothingAfterPolymorph(monster, state, { publish });
     await updateMonsterWeaponAfterPolymorph(monster, state, { publish });
+    const targetX = monster.mux, targetY = monster.muy;
+    if (state.context.mon_moving && !monster.mpeaceful
+        && targetX !== undefined && targetY !== undefined
+        && Math.abs(monster.mx - targetX) <= 1 && Math.abs(monster.my - targetY) <= 1
+        && monsterIsScaredAt(monster, state, targetX, targetY)) {
+        await makeMonsterFlee(monster, {
+            state, turns: 2 + rn2(9), first: true, publish,
+        });
+    }
     return true;
 }

@@ -52,8 +52,10 @@ void test('a stationary pet spider can spin a web after a melee attack', async (
         requirePlayingGame(game);
         await takeMonsterTurn(pet, game);
         assert.deepEqual([pet.mx, pet.my], [9, 10]);
-        spunWeb = game.level.traps.some(trap =>
+        const web = game.level.traps.find(trap =>
             trap.ttyp === WEB && trap.tx === 9 && trap.ty === 10);
+        spunWeb = web !== undefined;
+        if (web) assert.equal(web.tseen, true, 'a visible new web must be revealed');
     }
     assert.ok(spunWeb, "an attack does not suppress the spider's web-spinning chance");
 });

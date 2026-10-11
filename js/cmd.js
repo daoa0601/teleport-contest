@@ -48,7 +48,7 @@ import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { doOptions } from './options.js';
-import { blocksDiagonalDoor, blocksMove, heroBadRock, heroCanPassWallAt, heroLiquidEffects, heroShouldAvoidLiquid, heroTightDiagonalReason, } from './hack.js';
+import { blocksDiagonalDoor, blocksMove, escapeFromStickyMonster, heroBadRock, heroCanPassWallAt, heroLiquidEffects, heroShouldAvoidLiquid, heroTightDiagonalReason, } from './hack.js';
 import { commandExecutionKey, controlRushDirection, promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -6745,6 +6745,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
     const newy = u.uy + dy;
     if (!isok(newx, newy))
         return moveOutOfBounds(newx, newy);
+    if (await escapeFromStickyMonster(newx, newy))
+        return true;
     const loc = game.level?.at(newx, newy);
     // C domove_core() resolves a destination monster before test_move()
     // applies terrain restrictions.  In particular, the hero can attack
@@ -6813,6 +6815,13 @@ async function domoveCore(dx, dy, explicitAttempt) {
             if (u.utrap
                 && !await heroCanMoveFromTrap(newx, newy))
                 return true;
+            // hack.c:domove_swap_with_pet() refuses to send a peaceful
+            // companion onto any trap, including one the hero has not seen.
+            if (monster.mpeaceful && game.level.traps.some(trap => trap.tx === u.ux && trap.ty === u.uy)) {
+                const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
+                await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
+                return true;
+            }
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
                 if (ballChainMove.blockedMessage)
