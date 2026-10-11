@@ -61,10 +61,11 @@ export async function getLine(
                 value = '';
             } else return finish(null);
         } else if (key === 10 || key === 13) return finish(value);
-        // DEL is tty's kill character in the recorder sessions: it removes
-        // the whole line, while the erase character backs over one byte.
-        else if (key === 8) value = value.slice(0, -1);
-        else if (key === 127) value = '';
+        // getline.c tests the erase character ('\b' or, under the recorder's
+        // NOMUX terminal synthesis, DEL) before the kill character, so DEL
+        // backs over one byte and ^U removes the whole line.
+        else if (key === 8 || key === 127) value = value.slice(0, -1);
+        else if (key === 21) value = '';
         else {
             const ch = String.fromCharCode(key);
             if (value.length < 80 && accepts(ch, key)) value += ch;

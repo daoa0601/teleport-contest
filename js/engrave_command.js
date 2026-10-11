@@ -5,7 +5,7 @@
 // invent.c getobj()'s "write with" flow.
 import { pline, plineWithContinuation, newsym } from './display.js';
 import { getLine, promptYesNoQuit } from './query.js';
-import { compactInventoryLetters, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
+import { compactInventoryLetters, inventoryLetterOrder, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
 import { deleteEngraving, engravingAt, makeEngravingAt } from './engrave.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName, ceilingName } from './terrain_name.js';
@@ -16,7 +16,8 @@ import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
-import { heroHasFreeHand, isBlade, isWetTowel, willWeld } from './weapon_type.js';
+import { heroHasFreeHand, isBlade, isWetTowel } from './weapon_type.js';
+import { isWeldedPrimary } from './weapon_slots.js';
 import { heroFingerTipName, heroHandName } from './body_parts.js';
 import { heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS2, MONSTER_SYMBOL, monsterHasNoHands, monsterIsAnimal, monsterIsVerySmall, monsterIsWhirly, } from './monster_data.js';
@@ -27,7 +28,7 @@ import { chargeUnpaidUsage, carriedObjectOwner, objectTypeKnown } from './shk.js
 import { zapWithoutDirection } from './wand_effects.js';
 import { dryTowel } from './towel.js';
 import { holdAnotherObject } from './hero_hold_object.js';
-import { inventoryItemDescription } from './invent.js';
+import { inventoryItemDescription, selectInventoryObject } from './invent.js';
 import { objectName, objectNameIsPlural, ownedObjectName } from './objnam.js';
 import { artifactByName } from './artifacts.js';
 import { exerciseWisdom } from './attrib.js';
@@ -132,16 +133,30 @@ function stylusClass(object) {
     return GETOBJ_DOWNPLAY;
 }
 // C invent.c getobj("write with", stylus_ok, GETOBJ_PROMPT).  The suggested
-// letters follow invlet order; stylus_ok(NULL) is GETOBJ_SUGGEST, so '-'
-// leads the displayed choices and stays selectable even with an otherwise
-// empty suggestion set.
+// letters follow sortloot(SORTLOOT_INVLET) order ($, a-z, A-Z);
+// stylus_ok(NULL) is GETOBJ_SUGGEST, so '-' leads the displayed choices and
+// stays selectable even with an otherwise empty suggestion set.
 async function chooseStylus(state) {
     if (state.flags?.fixinv === false)
         reassignInventoryLetters();
     const inventory = [...(state.inventory || [])]
-        .sort((left, right) => (left.invlet ?? '\xff').charCodeAt(0)
-        - (right.invlet ?? '\xff').charCodeAt(0));
+        .sort((left, right) => inventoryLetterOrder(left.invlet)
+        - inventoryLetterOrder(right.invlet));
     const suggested = inventory.filter(object => stylusClass(object) === GETOBJ_SUGGEST);
+    // C getobj(): force_invmenu skips the letter prompt and answers the
+    // question from the inventory menu, with the fingertip as its '-' entry.
+    if (state.flags?.force_invmenu) {
+        const { key } = await selectInventoryObject({
+            items: suggested.length ? suggested : inventory,
+            extraChoice: `your ${heroFingerTipName(state)}`,
+            title: 'What do you want to write with?',
+        });
+        if (key === 27 && state.flags?.verbose !== false)
+            await pline('Never mind.');
+        if (key === '-'.charCodeAt(0))
+            return 'hands';
+        return inventory.find(object => object.invlet === String.fromCharCode(key)) ?? null;
+    }
     const letters = compactInventoryLetters(suggested.map(object => object.invlet ?? '').join(''));
     // C getobj(): "- " plus the suggested letters, then the ?* alternatives.
     const choices = letters ? `- ${letters}` : '-';
@@ -378,7 +393,7 @@ export async function doengrave(state = game) {
         return;
     }
     const usingHands = stylus === 'hands';
-    const object = usingHands ? null : stylus;
+    let object = usingHands ? null : stylus;
     const writer = stylus === 'hands'
         ? `your ${heroFingerTipName(state)}`
         : `${carriedObjectOwner(stylus, state).toLowerCase()} ${objectName(stylus, state)}`;
@@ -494,7 +509,10 @@ export async function doengrave(state = game) {
                     setup.type = BURN; /* doesn't dull weapon */
                 }
                 else if (isBlade(object)) {
-                    if (willWeld(object)) {
+                    // C wield.c welded(): only a wielded cursed blade refuses to
+                    // carve, and the attempt reveals its curse (set_bknown).
+                    if (isWeldedPrimary(object, state)) {
+                        object.bknown = true;
                         await pline(`${ownedObjectName(object, state)} can only scratch the ${surfaceName(hero.ux, hero.uy, state)}.`);
                     }
                     else if ((object.spe ?? 0) <= -3) {
@@ -597,10 +615,14 @@ export async function doengrave(state = game) {
         setup.ptext = false;
     }
     if (setup.zapwand && object && (object.spe ?? 0) < 0) {
-        await pline(`${ownedObjectName(object, state)} ${heroIsBlind(state) ? '' : 'glows violently, then '}turns to dust.`);
+        // C names the spent wand with the definite article: The(xname()).
+        await pline(`The ${objectName(object, state)} ${heroIsBlind(state) ? '' : 'glows violently, then '}turns to dust.`);
         if (heroLocation.typ !== GRAVE)
             await pline(`You are not going to get anywhere trying to write in the ${frosted ? 'frost' : 'dust'} with your dust.`);
         await useUpInventoryStack(object, state);
+        // The wand is gone; C clears de->otmp so the early exit below cannot
+        // report the floor as out of reach for the destroyed stylus.
+        object = null;
         setup.ptext = false;
     }
     // Early exit for some implements.
@@ -910,6 +932,10 @@ export async function continueEngraving(state = game) {
     else if (!firsttime) {
         await pline(`You finish ${engravingFinishVerb(pos.x, pos.y, pos.engraveType, state)}.`);
     }
+    // C engrave(): the finished path falls through to the final newsym(), so
+    // an engraving completed in a single action still refreshes the map.
+    if (neweng)
+        newsym(pos.x, pos.y);
     return false;
 }
 function engravingFinishVerb(x, y, engraveType, state) {
