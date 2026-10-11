@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
-import { DB_ICE, DRAWBRIDGE_UP, DUST, MARK } from '../js/const.js';
-import { engravingAt } from '../js/engrave.js';
+import { DB_ICE, DRAWBRIDGE_UP, DUST, ENGRAVE, MARK } from '../js/const.js';
+import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { DAGGER, MAGIC_MARKER, POT_HEALING, WAN_LIGHT } from '../js/object_data.js';
+import { DAGGER, MAGIC_MARKER, POT_HEALING, WAN_LIGHT, WAN_POLYMORPH } from '../js/object_data.js';
 import { objectTypeKnown } from '../js/shk.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { makeBlinded } from '../js/sight_change.js';
+import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -17,6 +18,60 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { createDungeon } from './support/topology.js';
+void test('a dull blade warning is acknowledged before the writing announcement', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const dagger = await addInventoryWeapon(DAGGER, { spe: -3 });
+    const input = resetInputState();
+    input.feed(dagger.invlet);
+    await answerPrompts(rhack('E'.charCodeAt(0)), input, [
+        { prompt: /Your dagger is too dull for engraving\.[\s\S]*--More--/, keys: ' ' },
+        { prompt: /You write in the dust with/, keys: ' ' },
+        { prompt: /What do you want to write in the dust here\?/, keys: '\x1b' },
+    ]);
+    assert.equal(dagger.spe, -3);
+    assert.equal(game._occupation ?? null, null);
+    assert.equal(engravingAt(game.u.ux, game.u.uy, game.level), null);
+});
+void test('blind polymorph replaces a carving with unknown pristine text', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    await makeBlinded(20, { talk: false });
+    makeEngravingAt(game.u.ux, game.u.uy, 'old carving', null, game.moves, ENGRAVE);
+    const wand = await addInventoryObject(WAN_POLYMORPH, { spe: 3 });
+    const input = resetInputState();
+    input.feed(wand.invlet);
+    await rhack('E'.charCodeAt(0));
+    const engraving = engravingAt(game.u.ux, game.u.uy, game.level);
+    assert.ok(engraving, 'polymorph must leave a replacement carving');
+    assert.notEqual(engraving.text, 'old carving');
+    assert.notEqual(engraving.text, '');
+    assert.equal(engraving.pristine, '');
+    assert.equal(engraving.engr_type, ENGRAVE);
+    assert.equal(engraving.eread, false);
+    assert.equal(engraving.erevealed, false);
+    assert.equal(wand.spe, 2);
+    assert.equal(game._occupation ?? null, null);
+});
+void test('carving with a stack names the daggers before dulling one', async () => {
+    const input = freshTurnRoom();
+    requireFixtureGame(game);
+    const daggers = await addInventoryWeapon(DAGGER, { quan: 3, known: false });
+    input.feed('E');
+    await answerPrompts(moveloop_core(), input, [
+        { prompt: /What do you want to write with\?/, keys: daggers.invlet },
+        { prompt: /You engrave in the floor with 1 of 3/, keys: ' ' },
+        { prompt: /What do you want to engrave in the floor here\?/, keys: 'X\r' },
+    ]);
+    await moveloop_core();
+    assert.match(game._last_message, /One of your daggers gets dull\./);
+    assert.equal(daggers.quan, 2);
+    assert.equal(daggers.spe, 0);
+    const dulled = game.inventory.find(object => object.otyp === DAGGER && object.spe === -1);
+    assert.ok(dulled, 'carving must dull the single split-off dagger');
+    assert.equal(dulled.quan, 1);
+    assert.equal(engravingAt(game.u.ux, game.u.uy, game.level)?.text, 'X');
+});
 void test('fatal light while engraving ends the command before asking for writing', async () => {
     freshObjectRoom({
         flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
@@ -49,6 +104,9 @@ for (const blind of [false, true]) {
         const input = resetInputState();
         input.feed(wand.invlet);
         await answerPrompts(rhack('E'.charCodeAt(0)), input, [
+            ...(blind ? [] : [
+                { prompt: /A lit field surrounds you![\s\S]*--More--/, keys: ' ' },
+            ]),
             { prompt: /You write in the dust with/, keys: ' ' },
             { prompt: /What do you want to write in the dust here\?/, keys: '\x1b' },
         ]);

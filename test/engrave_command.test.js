@@ -116,6 +116,10 @@ void test('a dagger carves slowly and dulls to a stop', async () => {
         { prompt: /You engrave in the floor with/, keys: ' ' },
         { prompt: /What do you want to engrave in the floor here\?/, keys: 'Elberethxxxxxxxx\r' },
     ]);
+    installPagerInput(input, {
+        expected: /dagger|only able to write|cannot write any more/,
+        limit: 10,
+    });
     let guard = 0;
     while (game._occupation && guard++ < 40)
         await moveloop_core();
@@ -224,6 +228,7 @@ void test('a wielded cursed blade only scratches and reveals its curse', async (
     input.feed('E');
     await answerPrompts(moveloop_core(), input, [
         { prompt: /What do you want to write with\? \[- . or \?\*\]/, keys: dagger.invlet },
+        { prompt: /Your dagger can only scratch the floor\.[\s\S]*--More--/, keys: ' ' },
         { prompt: /You write in the dust with a cursed [^\n]*dagger/, keys: ' ' },
         { prompt: /What do you want to write in the dust here\?/, keys: 'X\r' },
     ]);

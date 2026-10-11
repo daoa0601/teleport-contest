@@ -3,7 +3,7 @@
 // doengrave_sfx_item(), doengrave_sfx_item_WAN(), doengrave_ctx_verb(),
 // engrave(), rloc_engr(), disturb_grave(), blengr(); hacklib.c xcrypt();
 // invent.c getobj()'s "write with" flow.
-import { pline, plineWithContinuation, newsym } from './display.js';
+import { plineWithContinuation as pline, newsym } from './display.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import { compactInventoryLetters, inventoryLetterOrder, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
 import { deleteEngraving, engravingAt, makeEngravingAt } from './engrave.js';
@@ -624,7 +624,7 @@ export async function doengrave(state = game) {
     }
     // A polymorphed engraving replaces whatever was here.
     if (setup.buf) {
-        makeEngravingAt(hero.ux, hero.uy, setup.buf, setup.ebuf || null, state.moves, setup.type);
+        makeEngravingAt(hero.ux, hero.uy, setup.buf, setup.ebuf, state.moves, setup.type);
         const changed = engravingAt(hero.ux, hero.uy, state.level);
         if (!heroIsBlind(state) && changed) {
             await pline(`The engraving now reads: "${setup.buf}".`);
@@ -811,7 +811,7 @@ export async function doengrave(state = game) {
         await pline('You are blinded by the flash!');
         await makeBlinded(rnd(50), { state, talk: false });
         if (!heroIsBlind(state))
-            await plineWithContinuation('Your vision clears.');
+            await pline('Your vision clears.');
     }
     // The engraving itself always takes at least one action via the
     // occupation, so this setup pass consumes no game time.
@@ -868,7 +868,9 @@ export async function continueEngraving(state = game) {
         let dulled = false;
         if ((stylus.quan ?? stylus.quantity ?? 1) > 1) {
             if (firsttime)
-                await pline(`One of ${carriedObjectOwner(stylus, state).toLowerCase()} ${objectName(stylus, state)} gets dull.`);
+                await pline(`One of ${ownedObjectName(stylus, state, {
+                    capitalized: false,
+                })} gets dull.`);
             // If the stack is wielded or quivered, the split-off one is not.
             const split = splitObjectStack(stylus, 1, state);
             if (!split)
