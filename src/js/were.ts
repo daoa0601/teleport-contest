@@ -3,6 +3,7 @@
 // mondata.c set_mon_data().
 
 import { heroIsHallucinating } from './senses.js';
+import { heroIsUnaware } from './hero_sleep.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_WIS, PARANOID_WERECHANGE } from './const.js';
 import { tameMonster } from './monster_taming.js';
@@ -315,9 +316,11 @@ export async function summonWereAttackHelp(
         await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} summons help!`);
     const helpers = await summonWerePack(monster.mnum, false, state, random);
     const visible = helpers.filter(helper => canSeeMonster(helper)).length;
+    const hemmedIn = heroIsUnaware(state)
+        ? 'You dream that you feel hemmed in.' : 'You feel hemmed in.';
     if (seen) {
         if (!helpers.length) await plineWithContinuation('But none comes.');
-        else if (!visible) await plineWithContinuation('You feel hemmed in.');
+        else if (!visible) await plineWithContinuation(hemmedIn);
         return;
     }
     const deaf = heroIsDeaf(state);
@@ -325,7 +328,7 @@ export async function summonWereAttackHelp(
         await plineWithContinuation(`Something ${makePlural(monsterGrowlSound(monster))}!`);
     if (!helpers.length) return;
     if (!visible) {
-        await plineWithContinuation('You feel hemmed in.');
+        await plineWithContinuation(hemmedIn);
         return;
     }
     const generic = werePackName(monster.mnum);

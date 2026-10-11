@@ -6825,22 +6825,30 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 game.context.move = Number(ballChainMove.consumedTurn);
                 return ballChainMove.consumedTurn;
             }
-            // C drag_ball() can pull the hero back before the swap check.
-            // A refused swap still completes ball placement and its delay.
-            if (monster.mpeaceful && game.level.traps.some(trap => trap.tx === u.ux && trap.ty === u.uy)) {
-                const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
-                await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
-                await finishBallAndChainMove(ballChainMove);
-                if (ballChainMove?.causeDelay)
-                    await delayAfterDraggingBall();
-                return true;
-            }
+            // C trains riding during the tentative move, even if the pet
+            // later refuses to swap and both rider and steed move back.
             const oldx = u.ux, oldy = u.uy;
             u.ux0 = oldx;
             u.uy0 = oldy;
             u.ux = newx;
             u.uy = newy;
             await moveSteedWithHero();
+            // C drag_ball() can pull the hero back before the swap check.
+            // A refused swap still completes ball placement and its delay.
+            if (monster.mpeaceful && game.level.traps.some(trap => trap.tx === oldx && trap.ty === oldy)) {
+                const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
+                await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
+                u.ux = oldx;
+                u.uy = oldy;
+                if (u.usteed) {
+                    u.usteed.mx = oldx;
+                    u.usteed.my = oldy;
+                }
+                await finishBallAndChainMove(ballChainMove);
+                if (ballChainMove?.causeDelay)
+                    await delayAfterDraggingBall();
+                return true;
+            }
             monster.mx = oldx;
             monster.my = oldy;
             const swapName = tame ? tameName
