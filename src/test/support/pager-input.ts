@@ -20,6 +20,13 @@ export function installPagerInput(input: InputGate, { expected, limit }: PagerIn
             assert.ok(topRow, 'The message pager needs its display row.');
             const message = game._pending_message || display.topMessage || display.toplines
                 || topRow.map(cell => cell.ch).join('');
+            // C disclose() asks its category questions between the death
+            // messages and the summary.  Pager-driven endings answer them
+            // with the default no, outside the pager's runaway limit.
+            if (!/--More--|Hit space to continue/.test(screen)
+                && /\? \[(?:ynaq|ynq)\] \([yna]\)/.test(message)) {
+                return 'n'.charCodeAt(0);
+            }
             assert.ok(++acknowledgements <= limit,
                 `Exceeded ${limit} acknowledgements for ${expected}: ${message}`);
             assert.match(screen, /--More--|Hit space to continue/,

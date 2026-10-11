@@ -4826,10 +4826,15 @@ async function removeWornItem(action: 'remove' | 'take off'): Promise<void> {
         || object === game.uright) {
         const wasStrangled = object.otyp === AMULET_OF_STRANGULATION
             && heroIsStrangled(game);
+        // C armor_or_accessory_off(): a ring's off_msg() runs while it is
+        // still worn, so the report keeps the "(on {right|left} hand)"
+        // suffix; Amulet_off() prints after clearing the slot, without one.
+        const ring = object === game.uleft || object === game.uright;
+        const ringMessage = ring ? armorOffMessage(object, game) : '';
         await removeHeroAccessory(object, game);
         findArmorClass(game);
         if (game.flags?.verbose !== false) {
-            await plineWithContinuation(armorOffMessage(object, game));
+            await plineWithContinuation(ringMessage || armorOffMessage(object, game));
         }
         if (wasStrangled) {
             await plineWithContinuation(heroIsBreathless(game)

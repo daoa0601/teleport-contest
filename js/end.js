@@ -1,6 +1,7 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 import { endVoluntaryMultiTurn } from './command_state.js';
+import { achievementEntries } from './achievements.js';
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
@@ -11,14 +12,13 @@ import { consumeInventoryItem, showIdentifiedInventory } from './invent.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
 import { showDisclosureOverlay, showTextPages, showTextWindow } from './windows.js';
 import { artifactById } from './artifacts.js';
-import { MONSTER_DIFFICULTY, MONSTER_NAME } from './monster_data.js';
-import { hasRecordedMonsterDeaths } from './monster_vitals.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME } from './monster_data.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
 import { mksobj } from './mklev.js';
 import { adjustedMonsterLevel } from './monster_hit_points.js';
 import { deleteObject } from './object_delete.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { objectName } from './objnam.js';
 import { objectClassForType, recordObjectKnowledge } from './object_knowledge.js';
 import { rebasePrayerAfterLifeSaving } from './pray.js';
@@ -29,7 +29,7 @@ import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
-import { A_CON, A_WIS, CHOKING, DIED, GENOCIDED, Is_astralevel, STRAT_WAITFORU, Upolyd, } from './const.js';
+import { A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, Is_astralevel, STRAT_WAITFORU, Upolyd, } from './const.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
@@ -37,7 +37,7 @@ import { heroIsBlind } from './senses.js';
 import { finishShopkeeperRepossession, settleShopkeepersOnExit } from './shop_settlement.js';
 import { payVaultGuardOnExit } from './vault_exit.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
-import { promptYesNo } from './query.js';
+import { promptChoice, promptYesNo } from './query.js';
 import { clearHeroRemains, setHeroRemainsFromDeath, } from './death_remains.js';
 import { loadScoreRecords, saveScoreRecords } from './score_records.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -196,8 +196,14 @@ async function promptDeathQuestion(message) {
     game.nhDisplay?.setCursor(message.length + 1, 0);
     return String.fromCharCode(await nhgetch()).toLowerCase();
 }
-export function vanquishedLines() {
-    const entries = (game.mvitals || []).flatMap((vital, mnum) => {
+// C insight.c:list_vanquished().  Only the default "traditional" order is
+// reachable here: monster level high to low, then internal index.  The
+// alternate vanq_sortmode orderings arrive through the tty sort menu.
+const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
+const G_UNIQ = 0x1000;
+const M2_PNAME = 0x00080000;
+function vanquishedEntries() {
+    return (game.mvitals || []).flatMap((vital, mnum) => {
         const count = vital?.died ?? 0;
         if (!count)
             return [];
@@ -205,25 +211,91 @@ export function vanquishedLines() {
                 mnum,
                 name: MONSTER_NAME[mnum] || 'monster',
                 count,
-                difficulty: MONSTER_DIFFICULTY[mnum] ?? 0,
+                unique: !!((MONSTER_GENO[mnum] ?? 0) & G_UNIQ)
+                    && mnum !== PM_HIGH_CLERIC,
+                pname: !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_PNAME),
             }];
-    })
-        .sort((a, b) => b.difficulty - a.difficulty || a.mnum - b.mnum);
+    }).sort((a, b) => (MONSTER_LEVEL[b.mnum] ?? 0) - (MONSTER_LEVEL[a.mnum] ?? 0)
+        || a.mnum - b.mnum);
+}
+function vanquishedTypeCount() {
+    return (game.mvitals || []).filter(vital => (vital?.died ?? 0) > 0).length;
+}
+// C N_times(): "once", "twice", "thrice", then "N times".
+function timesText(count) {
+    if (count === 2)
+        return 'twice';
+    if (count === 3)
+        return 'thrice';
+    return `${count} times`;
+}
+// C list_vanquished() indents each entry so its name column lines up with
+// the three-digit count prefix of multiple-kill rows.
+function vanquishedIndent(text) {
+    if (/^the /i.test(text))
+        return 0;
+    if (/^an /i.test(text))
+        return 1;
+    if (/^a /i.test(text))
+        return 2;
+    return /[0-9]/.test(text.charAt(2)) ? 0 : 4;
+}
+export function vanquishedLines() {
+    const entries = vanquishedEntries();
     const total = entries.reduce((sum, entry) => sum + entry.count, 0);
     const lines = ['Vanquished creatures:', ''];
     for (const entry of entries) {
-        if (entry.count === 1) {
-            const article = /^[aeiou]/i.test(entry.name) ? 'an' : 'a';
-            lines.push(`  ${article} ${entry.name}`);
+        let text;
+        if (entry.unique) {
+            text = `${entry.pname ? '' : 'the '}${entry.name}`;
+            if (entry.count > 1)
+                text += ` (${timesText(entry.count)})`;
+        }
+        else if (entry.count === 1) {
+            text = withIndefiniteArticle(entry.name);
         }
         else {
-            lines.push(`${String(entry.count).padStart(3)} ${entry.name}s`);
+            text = `${String(entry.count).padStart(3)} ${makePlural(entry.name)}`;
         }
+        lines.push(' '.repeat(vanquishedIndent(text)) + text);
     }
     if (entries.length > 1)
         lines.push('');
     if (entries.length > 1)
         lines.push(`${total} creatures vanquished.`);
+    return lines;
+}
+// C insight.c:num_gone()/num_genocides()/num_extinct(): end-of-game
+// disclosure reports genocides and extinctions together; uniques are
+// never listed, and a species carrying both flags counts once.
+function goneSpecies() {
+    return (game.mvitals || []).flatMap((vital, mnum) => {
+        const flags = vital?.mvflags ?? 0;
+        const unique = !!((MONSTER_GENO[mnum] ?? 0) & G_UNIQ)
+            && mnum !== PM_HIGH_CLERIC;
+        if (!flags || unique)
+            return [];
+        const genocided = !!(flags & G_GENOD);
+        const extinctOnly = (flags & (G_GENOD | G_EXTINCT)) === G_EXTINCT;
+        return genocided || extinctOnly
+            ? [{ mnum, genocided, extinctOnly }] : [];
+    }).sort((a, b) => (MONSTER_LEVEL[b.mnum] ?? 0) - (MONSTER_LEVEL[a.mnum] ?? 0)
+        || a.mnum - b.mnum);
+}
+function genocidedLines(gone, genocided, extinct) {
+    const lines = [
+        `${genocided ? 'Genocided' : 'Extinct'}${extinct && genocided ? ' or extinct' : ''} species:`,
+        '',
+    ];
+    for (const species of gone) {
+        const name = makePlural(MONSTER_NAME[species.mnum] || 'monster');
+        lines.push(` ${name}${species.extinctOnly ? ' (extinct)' : ''}`);
+    }
+    lines.push('');
+    if (genocided > 0)
+        lines.push(`${genocided} species genocided.`);
+    if (extinct > 0)
+        lines.push(`${extinct} species extinct.`);
     return lines;
 }
 function visitedMainDungeonLevels() {
@@ -643,25 +715,76 @@ async function waitForCurrentMore() {
         key = await nhgetch();
     while (![27, 32, 10, 13].includes(key));
 }
-function disclosureSetting(code) {
-    const raw = String(game.flags?.disclose || '');
-    if (!raw)
-        return null;
-    const token = raw.split(/\s+/).find(candidate => candidate.toLowerCase().endsWith(code));
-    if (!token)
-        return null;
-    const prefix = token.slice(0, -1);
-    return prefix ? prefix.slice(-1).toLowerCase() : '+';
+// C options.c optfn_disclose(): a prefix letter (y n ? + - #) applies to
+// the category letter that follows it; a bare category discloses without
+// asking; 'k' and 'd' are legacy aliases for vanquished and overview.  The
+// special 'a' answers only survive on the vanquished and genocided
+// categories; elsewhere they degrade to plain yes.
+const DISCLOSURE_CATEGORIES = ['i', 'a', 'v', 'g', 'c', 'o'];
+function endDiscloseSettings() {
+    const settings = {
+        i: '', a: '', v: '', g: '', c: '', o: '',
+    };
+    const raw = game.flags?.disclose;
+    // An unset option leaves the zero-initialized defaults: ask, answer no.
+    if (raw === undefined || raw === null)
+        return settings;
+    const text = String(raw).trim();
+    if (text === '' || text.toLowerCase() === 'all') {
+        for (const category of DISCLOSURE_CATEGORIES)
+            settings[category] = 'y';
+        return settings;
+    }
+    if (text.toLowerCase() === 'none') {
+        for (const category of DISCLOSURE_CATEGORIES)
+            settings[category] = '-';
+        return settings;
+    }
+    let prefix = null;
+    for (const character of text) {
+        const code = character.toLowerCase();
+        if (code === ' ')
+            continue;
+        const resolved = code === 'k' ? 'v' : code === 'd' ? 'o' : code;
+        const category = DISCLOSURE_CATEGORIES.find(entry => entry === resolved);
+        if (category) {
+            let value = prefix ?? '+';
+            if (prefix && category !== 'v' && category !== 'g') {
+                if (prefix === '?')
+                    value = 'y';
+                else if (prefix === '#')
+                    value = '+';
+            }
+            settings[category] = value;
+            prefix = null;
+        }
+        else if (['y', 'n', '?', '+', '-', '#'].includes(code)) {
+            prefix = code;
+        }
+    }
+    return settings;
 }
-async function disclosureAnswer(code, message) {
-    const setting = disclosureSetting(code);
-    if (setting === '-')
-        return 'n';
-    if (setting === '+' || setting === '#')
-        return setting === '#' && (code === 'v' || code === 'g') ? 'a' : 'y';
-    return promptDeathQuestion(message);
+// C end.c:should_query_disclose_option().
+function shouldQueryDiscloseOption(category) {
+    switch (endDiscloseSettings()[category]) {
+        case '+': return { ask: false, defquery: 'y' };
+        case '#': return { ask: false, defquery: 'a' };
+        case '-': return { ask: false, defquery: 'n' };
+        case 'y': return { ask: true, defquery: 'y' };
+        case 'a': return { ask: true, defquery: 'a' };
+        case '?': return { ask: true, defquery: 'a' };
+        default: return { ask: true, defquery: 'n' };
+    }
 }
-// Disclosure is shared by death, quitting, escape, and ascension.
+// C yn_function(): the answer set is shown as "[ynq]"; answers hidden
+// behind ESC (the single-vanquished-species 'a') stay acceptable.
+async function ynQuestion(question, visible, defquery, { hiddenAll = false } = {}) {
+    const choices = visible === 'ynaq' || hiddenAll ? ['y', 'n', 'a', 'q'] : ['y', 'n', 'q'];
+    return await promptChoice(`${question} [${visible}] (${defquery}) `, choices, defquery, 0);
+}
+// C end.c:disclose().  Shared by death, quitting, escape, and ascension.
+// Each category consults the end_disclose option first: it either fixes
+// the answer outright or asks with the option's default.
 async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null, possessionAnswer = null, taken = false, } = {}) {
     // really_done() displays WIN_MESSAGE before disclosure or bones.
     await displayMessageWindow();
@@ -686,38 +809,87 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
             const question = taken
                 ? `Do you want to see what you had when you ${deathVerb === 'quit' ? 'quit' : 'died'}?`
                 : 'Do you want your possessions identified?';
-            possessionAnswer = await disclosureAnswer('i', `${question} [ynq] (n)`);
+            const { ask, defquery } = shouldQueryDiscloseOption('i');
+            possessionAnswer = ask ? await ynQuestion(question, 'ynq', defquery)
+                : defquery;
         }
         if (possessionAnswer === 'y')
             await showIdentifiedInventory();
         if (possessionAnswer === 'q')
             return stopDisclosure();
     }
-    const attributes = await disclosureAnswer('a', 'Do you want to see your attributes? [ynq] (n)');
-    if (attributes === 'y')
-        await showFinalAttributes();
-    if (attributes === 'q')
-        return stopDisclosure();
-    if (hasRecordedMonsterDeaths()) {
-        const vanquished = await disclosureAnswer('v', 'Do you want an account of creatures vanquished? [ynaq] (n)');
+    if (!game.program_state.stopprint) {
+        const { ask, defquery } = shouldQueryDiscloseOption('a');
+        const attributes = ask
+            ? await ynQuestion('Do you want to see your attributes?', 'ynq', defquery)
+            : defquery;
+        if (attributes === 'y')
+            await showFinalAttributes();
+        if (attributes === 'q')
+            return stopDisclosure();
+    }
+    // C list_vanquished(): the sort-order choice 'a' is only offered when
+    // more than one species was vanquished; with a single species it stays
+    // acceptable but hidden, and an 'a' default degrades to 'y'.
+    if (!game.program_state.stopprint && vanquishedTypeCount() > 0) {
+        const { ask, defquery } = shouldQueryDiscloseOption('v');
+        const multiple = vanquishedTypeCount() > 1;
+        const defaultAnswer = !multiple && defquery === 'a'
+            ? 'y' : defquery;
+        const vanquished = ask
+            ? await ynQuestion('Do you want an account of creatures vanquished?', multiple ? 'ynaq' : 'ynq', defaultAnswer, { hiddenAll: !multiple })
+            : defquery;
         if (vanquished === 'y' || vanquished === 'a')
             await showDisclosureOverlay(vanquishedLines());
         if (vanquished === 'q')
             return stopDisclosure();
     }
-    const conduct = await disclosureAnswer('c', 'Do you want to see your conduct? [ynq] (n)');
-    if (conduct === 'y')
-        await showDisclosureOverlay(finalConductLines());
-    if (conduct === 'q')
-        return stopDisclosure();
-    const overview = await disclosureAnswer('o', 'Do you want to see the dungeon overview? [ynq] (n)');
-    if (overview === 'y') {
-        await showDisclosureOverlay(overviewLines(killer, deathVerb, deathCause), {
-            marker: '(end)', minWidth: game._tutorialActive ? 38 : 39,
-        });
+    // C list_genocided(): nothing is asked when no species is gone, and
+    // the question adapts to which of genocided/extinct apply.
+    if (!game.program_state.stopprint) {
+        const gone = goneSpecies();
+        const genocided = gone.filter(species => species.genocided).length;
+        const extinct = gone.filter(species => species.extinctOnly).length;
+        if (gone.length > 0) {
+            const { ask, defquery } = shouldQueryDiscloseOption('g');
+            const question = `Do you want a list of ${extinct && !genocided ? 'extinct ' : ''}species${genocided ? ' genocided' : ''}${extinct && genocided ? ' and extinct' : ''}?`;
+            const multiple = gone.length > 1;
+            const defaultAnswer = !multiple && defquery === 'a'
+                ? 'y' : defquery;
+            const answer = ask
+                ? await ynQuestion(question, multiple ? 'ynaq' : 'ynq', defaultAnswer, { hiddenAll: !multiple })
+                : defquery;
+            if (answer === 'q')
+                return stopDisclosure();
+            if (answer === 'y' || answer === 'a')
+                await showDisclosureOverlay(genocidedLines(gone, genocided, extinct));
+        }
     }
-    if (overview === 'q')
-        return stopDisclosure();
+    if (!game.program_state.stopprint) {
+        const { ask, defquery } = shouldQueryDiscloseOption('c');
+        const achievements = achievementEntries(game).length;
+        const question = 'Do you want to see your conduct'
+            + (achievements > 0 ? ' and achievements' : '') + '?';
+        const conduct = ask
+            ? await ynQuestion(question, 'ynq', defquery) : defquery;
+        if (conduct === 'y')
+            await showDisclosureOverlay(finalConductLines());
+        if (conduct === 'q')
+            return stopDisclosure();
+    }
+    if (!game.program_state.stopprint) {
+        const { ask, defquery } = shouldQueryDiscloseOption('o');
+        const overview = ask
+            ? await ynQuestion('Do you want to see the dungeon overview?', 'ynq', defquery)
+            : defquery;
+        if (overview === 'y') {
+            await showDisclosureOverlay(overviewLines(killer, deathVerb, deathCause), {
+                marker: '(end)', minWidth: game._tutorialActive ? 38 : 39,
+            });
+        }
+        if (overview === 'q')
+            return stopDisclosure();
+    }
     return true;
 }
 function stopDisclosure() {

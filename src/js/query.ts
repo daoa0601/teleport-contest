@@ -79,7 +79,7 @@ function placeToplinePromptCursor(position: number): void {
 
 // C tty_yn_function(): Escape prefers quit, then no; whitespace chooses
 // the displayed default. Invalid keys leave the same question active.
-async function promptChoice<Choice extends string>(
+export async function promptChoice<Choice extends string>(
     message: string, choices: readonly Choice[], defaultAnswer: Choice, cursorOffset: number,
 ): Promise<Choice> {
     game._suppressMessagesUntilInput = false;
