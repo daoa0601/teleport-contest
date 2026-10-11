@@ -276,6 +276,8 @@ import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
 import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
+import { continueEngraving, doengrave } from './engrave_command.js';
+
 import { heroCanMoveFromTrap, triggerHeroTrapAt } from './hero_traps.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import {
@@ -960,6 +962,13 @@ async function continueOccupation(g: GameState): Promise<boolean> {
     }
     if (occupation.key === 'wipe-face') {
         return continueWipingFace(occupation, g);
+    }
+    if (occupation.key === 'engrave') {
+        const continuing = await continueEngraving(g);
+        if (g.program_state.gameover) return false;
+        if (!continuing) g._occupation = null;
+        g.context.move = 1;
+        return true;
     }
     g._occupation = null;
     return false;
@@ -3161,6 +3170,9 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['offer', dosacrifice],
     ['dip', dodip],
     ['turn', doturn],
+    ['engrave', doengrave],
+    // C extcmdlist[] maps both "call" and "name" to docallcmd().
+    ['call', doname],
     ['untrap', () => doUntrap({ enterTrap: moveIntoFailedUntrap })],
     ['wipe', dowipe],
     ['monster', domonability],

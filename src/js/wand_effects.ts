@@ -114,7 +114,8 @@ export async function applyWandEffect(source: GameObject, { state = game }: { st
     }
 }
 
-async function zapWithoutDirection(source: GameObject, state: PlayingGameState) {
+// C zap.c zapnodir(), also the engrave command's no-direction wand effects.
+export async function zapWithoutDirection(source: GameObject, state: PlayingGameState) {
     let known = false;
     switch (source.otyp) {
     case WAN_LIGHT:
