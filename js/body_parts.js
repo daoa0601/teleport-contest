@@ -277,9 +277,6 @@ export function heroFingerTipName(state = game) {
     const mnum = currentHeroMonsterNumber(state);
     const symbol = MONSTER_SYMBOL[mnum];
     const flags = MONSTER_FLAGS1[mnum] ?? 0;
-    if (symbol === S_DOG || symbol === S_FELINE || symbol === S_RODENT
-        || mnum === PM_OWLBEAR)
-        return 'claw tip';
     if (symbol === S_YETI && mnum !== PM_OWLBEAR)
         return 'fingertip';
     if (flags & M1_HUMANOID)

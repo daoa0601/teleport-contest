@@ -226,8 +226,6 @@ export function heroFingerTipName(state: GameState = game) {
     const mnum = currentHeroMonsterNumber(state);
     const symbol = MONSTER_SYMBOL[mnum];
     const flags = MONSTER_FLAGS1[mnum] ?? 0;
-    if (symbol === S_DOG || symbol === S_FELINE || symbol === S_RODENT
-        || mnum === PM_OWLBEAR) return 'claw tip';
     if (symbol === S_YETI && mnum !== PM_OWLBEAR) return 'fingertip';
     if (flags & M1_HUMANOID) return 'fingertip';
     // C mbodypart() only maps jellyfish to "tentacle" for ARM, FINGER, HAND,

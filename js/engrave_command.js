@@ -10,7 +10,8 @@ import { deleteEngraving, engravingAt, makeEngravingAt } from './engrave.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName, ceilingName } from './terrain_name.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
-import { ACCESSIBLE, ALTAR, BURN, CLOUD, COLNO, DUST, ENGRAVE, ENGR_BLOOD, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, HEADSTONE, IS_AIR, IS_FOUNTAIN, MARK, NO_MM_FLAGS, ROWNO, WAND_BACKFIRE_CHANCE, } from './const.js';
+import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
+import { ACCESSIBLE, ALTAR, BURN, CLOUD, COLNO, DRAWBRIDGE_UP, DUST, ENGRAVE, ENGR_BLOOD, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, HEADSTONE, IS_AIR, IS_FOUNTAIN, MARK, NO_MM_FLAGS, ROWNO, WAND_BACKFIRE_CHANCE, } from './const.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -29,7 +30,7 @@ import { zapWithoutDirection } from './wand_effects.js';
 import { dryTowel } from './towel.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { inventoryItemDescription, selectInventoryObject } from './invent.js';
-import { objectName, objectNameIsPlural, ownedObjectName } from './objnam.js';
+import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { artifactByName } from './artifacts.js';
 import { exerciseWisdom } from './attrib.js';
 import { addExperience } from './exper.js';
@@ -80,9 +81,11 @@ async function cantReachFloor(x, y, up, checkPit, wandEngraving, state) {
 // C engrave.c u_can_engrave().
 async function heroCanEngrave(state) {
     const hero = state.u;
-    const surfaceType = requireGameLevel(state).at(hero.ux, hero.uy)?.typ;
-    if (surfaceType === undefined)
+    const location = requireGameLevel(state).at(hero.ux, hero.uy);
+    if (!location)
         throw new RangeError(`The hero location ${hero.ux},${hero.uy} is off the map`);
+    const surfaceType = location.typ === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
     if (hero.uswallow) {
         const engulfer = hero.ustuck;
         if (monsterIsAnimal(engulfer)) {
@@ -146,16 +149,28 @@ async function chooseStylus(state) {
     // C getobj(): force_invmenu skips the letter prompt and answers the
     // question from the inventory menu, with the fingertip as its '-' entry.
     if (state.flags?.force_invmenu) {
-        const { key } = await selectInventoryObject({
-            items: suggested.length ? suggested : inventory,
-            extraChoice: `your ${heroFingerTipName(state)}`,
-            title: 'What do you want to write with?',
-        });
-        if (key === 27 && state.flags?.verbose !== false)
-            await pline('Never mind.');
-        if (key === '-'.charCodeAt(0))
-            return 'hands';
-        return inventory.find(object => object.invlet === String.fromCharCode(key)) ?? null;
+        let showAll = false;
+        for (;;) {
+            const items = showAll || !suggested.length ? inventory : suggested;
+            const menuOptions = showAll
+                ? [{ key: '?', text: '(list likely candidates)' }]
+                : items.length < inventory.length
+                    ? [{ key: '*', text: '(list everything)' }] : [];
+            const { key } = await selectInventoryObject({
+                items, menuOptions,
+                extraChoice: `your ${heroFingerTipName(state)}`,
+                title: 'What do you want to write with?',
+            });
+            if (key === 42 || key === 63) {
+                showAll = key === 42;
+                continue;
+            }
+            if (key === 27 && state.flags?.verbose !== false)
+                await pline('Never mind.');
+            if (key === '-'.charCodeAt(0))
+                return 'hands';
+            return inventory.find(object => object.invlet === String.fromCharCode(key)) ?? null;
+        }
     }
     const letters = compactInventoryLetters(suggested.map(object => object.invlet ?? '').join(''));
     // C getobj(): "- " plus the suggested letters, then the ?* alternatives.
@@ -394,6 +409,9 @@ export async function doengrave(state = game) {
     }
     const usingHands = stylus === 'hands';
     let object = usingHands ? null : stylus;
+    // Native yname() observes the implement before its effects can identify it.
+    if (object)
+        observeObjectForNaming(object, { state });
     const writer = stylus === 'hands'
         ? `your ${heroFingerTipName(state)}`
         : `${carriedObjectOwner(stylus, state).toLowerCase()} ${objectName(stylus, state)}`;
@@ -489,6 +507,8 @@ export async function doengrave(state = game) {
                     if (!heroCanReachFloor(state, { checkPit: true }))
                         setup.ptext = false;
                     postEngrText = await wandEngraveEffects(object, setup, oep, oetype, frosted, state);
+                    if (state.program_state.gameover)
+                        return;
                 }
                 else {
                     // Failing to wrest one last charge takes time.
@@ -729,10 +749,10 @@ export async function doengrave(state = game) {
         await pline(`You ${everb} the ${eloc} with your ${heroFingerTipName(state)}.`);
     }
     // Prompt for the engraving text.
-    const line = await getLine(`What do you want to ${everb} the ${eloc} here?`, (_ch, key) => key >= 32 && key < 127);
+    const line = await getLine(`What do you want to ${everb} the ${eloc} here?`, (_ch, key) => key >= 32 && key <= 255 && key !== 127);
     const text = line === null
         ? '\x1b'
-        : line.replace(/\t/g, ' ').replace(/ +/g, ' ').trim();
+        : line.replace(/\t/g, ' ').replace(/ +/g, ' ').replace(/^ | $/g, '');
     const length = text.replaceAll(' ', '').length;
     if (length === 0 || text.includes('\x1b')) {
         if (setup.zapwand && object) {
