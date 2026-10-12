@@ -106,7 +106,7 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
         return true;
     if (range < 2) {
         await publish('Thump!');
-        return true;
+        return random(3) === 0 || martial;
     }
     if (object.oclass === 12 && quantity(object) > 1) {
         if (random(20) !== 0) {

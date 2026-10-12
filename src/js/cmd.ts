@@ -364,6 +364,7 @@ import {
     visiblePriestName,
 } from './priest.js';
 import { gameLogEvents } from './gamelog.js';
+import { killerObjectName } from './objnam.js';
 import { GRAVE } from './const.js';
 import { disturbGrave } from './grave.js';
 import { deleteEngravingAt, maybeSmudgeEngravings, wipeHeroEngraving } from './engrave.js';
@@ -1782,7 +1783,7 @@ async function doTerrainOverview() {
     game.context.move = 0;
 }
 
-async function kickOuch(x: number, y: number) {
+async function kickOuch(x: number, y: number, objectName = '') {
     await pline('Ouch!  That hurts!');
     await exerciseAttribute(A_DEX, false);
     await exerciseAttribute(A_STR, false);
@@ -1793,7 +1794,7 @@ async function kickOuch(x: number, y: number) {
     let damage = rnd(currentAttribute(A_CON) > 15 ? 3 : 5);
     if (game.u?.halfPhysicalDamage)
         damage = Math.trunc((damage + 1) / 2);
-    const died = await damageHeroFromKick(damage, x, y);
+    const died = await damageHeroFromKick(damage, x, y, objectName);
     if (!died && kickCausesRecoil())
         await recoilFromKick(4 + rn2(2));
 }
@@ -1814,8 +1815,9 @@ function kickDeathReason(x: number, y: number) {
     return 'kicking something weird';
 }
 
-async function damageHeroFromKick(amount: number, x: number, y: number) {
-    return loseHeroHp(amount, kickDeathReason(x, y));
+async function damageHeroFromKick(amount: number, x: number, y: number, objectName: string) {
+    const killer = objectName ? `kicking ${objectName}` : kickDeathReason(x, y);
+    return loseHeroHp(amount, killer, { deathCause: `killed by ${killer}` });
 }
 
 function finishHurtleMonsterDeath(monster: Monster, { noCorpse = true } = {}) {
@@ -2060,7 +2062,7 @@ async function dokick() {
             game.context.move = 1;
             return;
         }
-        await kickFloorObject(x, y, {
+        const kicked = await kickFloorObject(x, y, {
             state: game,
             dx: game.u.dx,
             dy: game.u.dy,
@@ -2068,6 +2070,7 @@ async function dokick() {
             captureFlight: captureThrownObjectFlight,
         });
         if (game.program_state.gameover) return;
+        if (!kicked) await kickOuch(x, y, killerObjectName(kickedObject));
         game.context.move = 1;
         return;
     }

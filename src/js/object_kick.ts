@@ -142,7 +142,7 @@ export async function kickFloorObject(x: number, y: number, {
     if (destroyed || state.program_state?.gameover) return true;
     if (range < 2) {
         await publish('Thump!');
-        return true;
+        return random(3) === 0 || martial;
     }
 
     if (object.oclass === 12 && quantity(object) > 1) {

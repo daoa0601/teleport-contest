@@ -200,6 +200,7 @@ import { doenhance, useHeroSkill, } from './skills.js';
 import { chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, } from './shk.js';
 import { visiblePriestName, } from './priest.js';
 import { gameLogEvents } from './gamelog.js';
+import { killerObjectName } from './objnam.js';
 import { GRAVE } from './const.js';
 import { disturbGrave } from './grave.js';
 import { deleteEngravingAt, maybeSmudgeEngravings, wipeHeroEngraving } from './engrave.js';
@@ -1632,7 +1633,7 @@ async function doTerrainOverview() {
     await flush_screen(1);
     game.context.move = 0;
 }
-async function kickOuch(x, y) {
+async function kickOuch(x, y, objectName = '') {
     await pline('Ouch!  That hurts!');
     await exerciseAttribute(A_DEX, false);
     await exerciseAttribute(A_STR, false);
@@ -1643,7 +1644,7 @@ async function kickOuch(x, y) {
     let damage = rnd(currentAttribute(A_CON) > 15 ? 3 : 5);
     if (game.u?.halfPhysicalDamage)
         damage = Math.trunc((damage + 1) / 2);
-    const died = await damageHeroFromKick(damage, x, y);
+    const died = await damageHeroFromKick(damage, x, y, objectName);
     if (!died && kickCausesRecoil())
         await recoilFromKick(4 + rn2(2));
 }
@@ -1667,8 +1668,9 @@ function kickDeathReason(x, y) {
         return 'kicking an iron bar';
     return 'kicking something weird';
 }
-async function damageHeroFromKick(amount, x, y) {
-    return loseHeroHp(amount, kickDeathReason(x, y));
+async function damageHeroFromKick(amount, x, y, objectName) {
+    const killer = objectName ? `kicking ${objectName}` : kickDeathReason(x, y);
+    return loseHeroHp(amount, killer, { deathCause: `killed by ${killer}` });
 }
 function finishHurtleMonsterDeath(monster, { noCorpse = true } = {}) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my, {
@@ -1884,7 +1886,7 @@ async function dokick() {
             game.context.move = 1;
             return;
         }
-        await kickFloorObject(x, y, {
+        const kicked = await kickFloorObject(x, y, {
             state: game,
             dx: game.u.dx,
             dy: game.u.dy,
@@ -1893,6 +1895,8 @@ async function dokick() {
         });
         if (game.program_state.gameover)
             return;
+        if (!kicked)
+            await kickOuch(x, y, killerObjectName(kickedObject));
         game.context.move = 1;
         return;
     }

@@ -132,4 +132,22 @@ void test('coins scattered out of a shop are charged and reported together', asy
     assert.equal(shopkeeper.eshk.debit, 20);
     assert.ok(messages.includes('Your debt has increased by 20 zorkmids.'));
 });
+void test('a heavy coin pile that stays together can hurt the kicker', async () => {
+    let injured = false;
+    for (let seed = 1n; seed <= 100n; seed++) {
+        const level = freshGameplayRoom({ role: 'tourist', hero: { uhp: 100, uhpmax: 100 } });
+        requirePlayingGame(game);
+        const gold = placeCreatedObject(await knownObject(GOLD_PIECE, { quantity: 500 }), 11, 10);
+        initRng(seed);
+        await kickDirection('l', ' '.repeat(10));
+        if (gold.quan === 500 && gold.ox === 11 && gold.oy === 10) {
+            assert.ok(floorObjects(level).includes(gold));
+            if (game.u.uhp < 100) {
+                injured = true;
+                break;
+            }
+        }
+    }
+    assert.equal(injured, true, 'a failed heavy-pile kick must sometimes injure the hero');
+});
 //# sourceMappingURL=object_kick.test.js.map
