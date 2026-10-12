@@ -360,6 +360,8 @@ for (const lifeSaving of [false, true]) {
                     confirmedDeath = true;
                     return 'y'.charCodeAt(0);
                 }
+                // The ending discloses its categories before the summary.
+                if (/Do you want/.test(screen)) return 'n'.charCodeAt(0);
                 return pager.readKey();
             },
         };

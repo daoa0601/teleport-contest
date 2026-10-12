@@ -9,7 +9,7 @@ import {
 } from './const.js';
 import { tameMonster } from './monster_taming.js';
 import {
-    newsym, pline, plineWithContinuation,
+    canSeeMonster, newsym, pline, plineWithContinuation,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { createEarthquake } from './earthquake.js';
@@ -21,6 +21,7 @@ import {
     MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS,
     MONSTER_SYMBOL,
 } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { monsterIsScaredAt } from './monster_fear.js';
@@ -240,8 +241,9 @@ async function calmNymphs(distance: number) {
     }
 }
 
-async function awakenSoldiers(distance: number): Promise<InstrumentEffectResult> {
+export async function awakenSoldiers(distance: number, bugler: Monster | null = null): Promise<InstrumentEffectResult> {
     for (const monster of liveMonsters()) {
+        const dist = bugler ? (bugler.mx - monster.mx) ** 2 + (bugler.my - monster.my) ** 2 : monsterDistance(monster);
         const mercenary = (MONSTER_FLAGS2[monster.mnum] || 0) & M2_MERC;
         if (mercenary && monster.mnum !== PM_GUARD) {
             if (!monster.mtame) monster.mpeaceful = 0;
@@ -249,15 +251,17 @@ async function awakenSoldiers(distance: number): Promise<InstrumentEffectResult>
             monster.mfrozen = 0;
             monster.mcanmove = 1;
             monster.mstrategy = (monster.mstrategy || 0) & ~STRAT_WAITMASK;
-            if (cansee(monster.mx, monster.my)) {
-                const name = MONSTER_NAME[monster.mnum] || 'soldier';
+            if (canSeeMonster(monster)) {
+                const name = monsterName(monster, { capitalized: true });
                 await plineWithContinuation(
-                    `The ${name} is now ready for battle!`,
+                    `${name} is now ready for battle!`,
                 );
+            } else if (!heroIsDeaf()) {
+                await plineWithContinuation('You hear the rattle of battle gear being readied.', { noRepeat: true });
             }
-        } else if (monsterDistance(monster) < distance) {
+        } else if (dist < distance) {
             const flight = await awakenMonster(
-                monster, monsterDistance(monster) < distance / 3,
+                monster, dist < distance / 3,
             );
             if (flight?.heroDied) return flight;
         }

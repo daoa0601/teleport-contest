@@ -105,4 +105,25 @@ for (const [name, date, luck] of [
         assert.equal(engine.state.u.uluck, luck);
     });
 }
+// save.c dosave0() undoes the date-dependent luck that moveloop_preamble()
+// granted at startup, so restoring on the same date does not apply it twice.
+for (const [name, date, setDate, luck] of [
+    ['full moon', '20260829193000', () => { game.flags.moonphase = 4; }, 1],
+    ['Friday the thirteenth', '20261113120000', () => { game.flags.friday13 = true; }, -1],
+]) {
+    void test(`saving and restoring on ${name} keeps its luck adjustment once`, async () => {
+        freshPlayableRoom({ role: 'wizard' });
+        game.plname = game.displayName = 'Saver';
+        setDate();
+        game.u.uluck = luck;
+        const storage = memoryStorage();
+        assert.equal(await saveGame(storage), true);
+        const engine = await runSegment({
+            seed: 11, datetime: date,
+            nethackrc: 'OPTIONS=name:Saver,!tutorial',
+            moves: ' ', storage,
+        });
+        assert.equal(engine.state.u.uluck, luck);
+    });
+}
 //# sourceMappingURL=startup_messages.test.js.map

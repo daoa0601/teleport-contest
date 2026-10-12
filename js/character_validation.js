@@ -163,6 +163,7 @@ export function validSavedGameFlags(value) {
         runmode: optional(string),
         sortloot: optional(oneOf('n', 'l', 'f')),
         suppress_alert: optional(string),
+        vanqSortmode: optional(integer),
     });
 }
 export function validSavedAttributeValues(value) {

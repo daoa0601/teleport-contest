@@ -154,6 +154,13 @@ export async function useMonsterStoningCure(monster: Monster, {
         curesStoning(monster, object, tinCanBeOpened));
     if (!cure) return { consumed: false, died: false };
 
+    return consumeMonsterStoningCure(monster, cure, { finishDeath, publish, rollOne, state, stoning: true });
+}
+
+export async function consumeMonsterStoningCure(monster: Monster, cure: GameObject, {
+    finishDeath, publish = plineWithContinuation, rollOne = rnd, state = game, stoning,
+}: MonsterStoningCureOptions & { stoning: boolean }): Promise<MonsterStoningCureResult> {
+
     const visible = canSeeMonster(monster);
     const tinned = cure.otyp === TIN;
     const food = cure.otyp === CORPSE || tinned;
@@ -163,10 +170,12 @@ export async function useMonsterStoningCure(monster: Monster, {
     const lizard = food && cure.corpsenm === PM_LIZARD;
     const nutrition = food ? petFoodNutrition(monster, cure) : 0;
 
-    const speed = adjustMonsterSpeed(monster, -3);
-    const speedMessage = state.flags?.verbose === false
-        ? null : monsterSpeedMessage(speed, monsterSubject(monster));
-    if (visible && speedMessage) await publish(speedMessage);
+    if (stoning) {
+        const speed = adjustMonsterSpeed(monster, -3);
+        const speedMessage = state.flags?.verbose === false
+            ? null : monsterSpeedMessage(speed, monsterSubject(monster));
+        if (visible && speedMessage) await publish(speedMessage);
+    }
     await describeCure(monster, cure, visible, state, publish);
     await consumeOneCure(monster, cure, state);
 
@@ -189,7 +198,7 @@ export async function useMonsterStoningCure(monster: Monster, {
         }
     }
 
-    if (visible) {
+    if (stoning && visible) {
         const hallucinating = heroIsHallucinating(state);
         const subject = monsterSubject(monster);
         await publish(hallucinating

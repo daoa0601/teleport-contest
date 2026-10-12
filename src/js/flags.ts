@@ -43,6 +43,8 @@ export interface GameFlags extends Partial<Record<GameBooleanFlag, boolean>> {
     runmode?: string;
     sortloot?: LootSortMode;
     suppress_alert?: string;
+    /** insight.c vanq_sortmode: VANQ_* order of vanquished/genocided lists. */
+    vanqSortmode?: number;
 }
 
 export interface InterfaceFlags {
@@ -53,6 +55,7 @@ export interface InterfaceFlags {
     getdir_click?: number;
     in_lava_effects?: number;
     menu_requested?: boolean;
+    menu_headings?: { attr: number; color: number };
     menu_tab_sep?: boolean;
     nofollowers?: boolean;
     num_pad?: boolean;

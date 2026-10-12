@@ -10,6 +10,7 @@ import { startHeroDigging } from '../js/hero_digging.js';
 import { syncHeroInvisibility } from '../js/hero_invisibility.js';
 import { pushKeys } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';
+import { destroyObjectFromMonsterInventory } from '../js/monster_inventory.js';
 import { DAGGER, PICK_AXE } from '../js/object_data.js';
 import { addShopObjectToBill, checkSpecialRoom } from '../js/shk.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
@@ -135,6 +136,10 @@ for (const canSee of [false, true]) {
         freshObjectRoom({ hero: { ux: 15, uy: 10 } });
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop({ left: 9, right: 17, keeperX: 12 });
+        // Blind keepers use healing before movement when they carry it.
+        for (const object of [...shopkeeper.minvent]) {
+            await destroyObjectFromMonsterInventory(shopkeeper, object, game, { silently: true });
+        }
         shopkeeper.eshk.shk = { x: 9, y: 10 };
         shopkeeper.mpeaceful = 0;
         shopkeeper.mcansee = canSee ? 1 : 0;

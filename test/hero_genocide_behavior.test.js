@@ -61,6 +61,9 @@ function observedGenocideInput(answers, scrollLetter) {
                 input.feed(answer.slice(1) + '\n');
                 return answer.charCodeAt(0);
             }
+            // The ending asks its disclosure questions before the summary.
+            if (/Do you want/.test(visible))
+                return 'n'.charCodeAt(0);
             assert.fail(`Unexpected input during genocide:\n${visible}`);
         },
     };

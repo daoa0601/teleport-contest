@@ -3,7 +3,7 @@
 
 import { game } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
-import { clearMessageWindow, docrt, pline, plineWithContinuation } from './display.js';
+import { clearMessageWindow, docrt, pline, plineWithContinuation, rawPrint } from './display.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -19,6 +19,7 @@ import type { StorageBackend } from './storage.js';
 import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.js';
 import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
+import { FULL_MOON, LUCKMAX, LUCKMIN } from './const.js';
 
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
@@ -74,7 +75,13 @@ export async function dosave(): Promise<void> {
     game.program_state.savefile_completed
         = (game.program_state.savefile_completed || 0) + 1;
     game.u.uhp = -1;
-    game._saveExitPending = true;
+    // C save.c:dosave() displays WIN_MESSAGE so the "Saving..." line is
+    // seen, then exit_nhwindows("Be seeing you...") tears the windows down
+    // (term_end_screen clears the screen, settty raw-prints the goodbye
+    // with a trailing newline), and nh_terminate() never returns here.
+    game.program_state.windows_exited = true;
+    game.nhDisplay?.clearScreen();
+    rawPrint('Be seeing you...');
     game.program_state.gameover = true;
     game.context.move = 0;
 }
@@ -117,6 +124,17 @@ async function prepareGameForSave(): Promise<void> {
     await doneObjectCleanup();
 }
 
+// C save.c dosave0(): undo the date-dependent luck that
+// moveloop_preamble() applied at startup; restoring applies it again.
+function undoDateLuck(): number {
+    const before = game.u.uluck || 0;
+    let luck = before;
+    if (game.flags.moonphase === FULL_MOON) luck = Math.max(LUCKMIN, luck - 1);
+    if (game.flags.friday13) luck = Math.min(LUCKMAX, luck + 1);
+    game.u.uluck = luck;
+    return before;
+}
+
 async function writeSave(
     storage: SaveStorage | null | undefined, key: string, reportFailure: boolean,
 ): Promise<boolean> {
@@ -126,8 +144,14 @@ async function writeSave(
         await prepareGameForSave();
         if (storage?.setItem) {
             currentLuaLifecycle().syncVariables(game);
-            const encoded = encodeSavedGraph(snapshotState());
-            storage.setItem(key, encoded);
+            const luck = undoDateLuck();
+            try {
+                storage.setItem(key, encodeSavedGraph(snapshotState()));
+            } catch (error) {
+                // The port keeps playing after a failed save; C has exited.
+                game.u.uluck = luck;
+                throw error;
+            }
             game.program_state.something_worth_saving = false;
             saved = true;
         }
