@@ -185,7 +185,8 @@ async function takeSelectedObjects(source, selected, telekinesis = false, batch 
                 continue;
         }
         if (object.otyp === CORPSE
-            && ((!telekinesis && await touchPetrifyingCorpse(object)) || await reviveTouchedRider(object)))
+            && ((!telekinesis && await touchPetrifyingCorpse(object))
+                || await reviveRiderCorpse(object, telekinesis)))
             break;
         let count = counted ? selection.count : objectQuantity(object);
         if (!(count > 0))
@@ -334,10 +335,10 @@ async function prepareScareScrollPickup(object, requested, telekinesis) {
     await useUpFloorObject(scroll, scroll.quan);
     return { decision: 'consumed' };
 }
-async function reviveTouchedRider(corpse) {
+async function reviveRiderCorpse(corpse, remotely) {
     if (!isRider(corpse.corpsenm))
         return false;
-    await pline('At your touch, the corpse suddenly moves...');
+    await pline(`At your ${remotely ? 'attempted acquisition' : 'touch'}, the corpse suddenly moves...`);
     const revival = await reviveCorpseImmediately(corpse, game);
     for (const message of revival?.messages || [])
         await plineWithContinuation(message);
