@@ -21,6 +21,15 @@ function monsterAtTrap(trapType, { monster = {}, trap = {} } = {}) {
         trap,
     });
 }
+void test('a removed trap no longer holds a monster', async () => {
+    const { monster, level } = await freshMonsterTrapRoom(PIT, {
+        monster: { mtrapped: 1 },
+    });
+    requirePlayingGame(game);
+    level.traps.length = 0;
+    await triggerImmediateMonsterTrap(monster, game);
+    assert.equal(monster.mtrapped, 0);
+});
 void test('a huge monster climbs out of a pit and exposes the trap', async () => {
     const { monster, trap } = await freshMonsterTrapRoom(PIT, {
         monster: { species: 'giant', mtrapped: 1 },

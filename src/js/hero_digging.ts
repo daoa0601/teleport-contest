@@ -36,7 +36,7 @@ import { woundHeroLegs } from './hero_legs.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { dist2, isok } from './hacklib.js';
-import { level_difficulty } from './dungeon.js';
+import { triggerBoobyTrap } from './booby_trap.js';
 import { carriedObjectOwner } from './shk.js';
 import { makemonAt, mksobj } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName, requireMonsterData } from './monster_data.js';
@@ -257,23 +257,6 @@ function ownedNameMidSentence(object: GameObject, state: GameState): string {
 
 function articleFor(name: string): string {
     return /^[aeiou]/i.test(name) ? `an ${name}` : `a ${name}`;
-}
-
-// C trap.c b_trapped("door", NO_PART): the trapped-door explosion from
-// finishing a dig through it.  force_bolt.js owns the parallel message
-// pair for zapped doors; this port covers the dig owner.
-async function explodeDoorTrap(state: GameState): Promise<void> {
-    const lvl = level_difficulty();
-    const damage = rnd(5 + (lvl < 5 ? lvl : 2 + Math.trunc(lvl / 2)));
-    await pline('KABOOM!!  The door was booby-trapped!');
-    await wakeMonstersNearWithMessages(
-        state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state,
-    );
-    await loseHeroHp(maybeHalfPhysical(damage, state), 'explosion', { state });
-    await exerciseAttribute(A_STR, false, state);
-    // make_stunned(HStun & TIMEOUT + dmg): stack onto any current timeout.
-    state.u.stunnedTurns = (state.u.stunnedTurns ?? 0) + damage;
-    state.u.stunned = true;
 }
 
 export async function placeTreeFruit(
@@ -711,7 +694,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
             if (IS_DOOR(location.typ)
                 && ((location.doormask ?? 0) & D_TRAPPED)) {
                 location.doormask = D_NODOOR;
-                await explodeDoorTrap(state);
+                if (await triggerBoobyTrap('door', { state })) return false;
                 vision_note_blocker_change(dpx, dpy);
                 newsym(dpx, dpy);
             }

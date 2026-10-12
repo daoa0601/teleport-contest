@@ -143,7 +143,7 @@ function heroCarriesBillFor(keeper) {
 // destination aside when moveOther is set.  A resident that cannot be
 // re-housed goes to limbo via the migration owner and re-arrives on this
 // level later (C deal_with_overcrowding() -> m_into_limbo()).
-async function mnearto(monster, x, y, state, { moveOther = false, flags = RLOC_NOMSG } = {}) {
+export async function mnearto(monster, x, y, state, { moveOther = false, flags = RLOC_NOMSG } = {}) {
     if (monster.mx === x && monster.my === y
         && monsterAt(state, x, y) === monster)
         return 1;

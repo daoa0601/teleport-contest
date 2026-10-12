@@ -266,6 +266,7 @@ import {
     propertyTimeout, refreshProperty, setPropertyTimeout,
 } from './properties.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
+import { resolveMonsterContactEffect } from './monster_contact_effects.js';
 import { setSlipperyHands } from './towel.js';
 import { restartMonsterShapechanging } from './monster_polymorph.js';
 import { msummon } from './minion.js';
@@ -2678,6 +2679,12 @@ async function presentMonsterAttackEffects(
                         publish: publishEquipmentMessage,
                     });
                 }
+                if (heroAttack.deferredSpecialContact)
+                    await resolveMonsterContactEffect(monster, heroAttack, {
+                        state: game, publish: publishEquipmentMessage, random, rollOne,
+                    });
+                if (game.program_state.gameover)
+                    return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
                 if (heroAttack.deferredStickingAfterHit)
                     resumeDeferredHeroSticking(action, game);
                 if (heroAttack.stickingMessage) {
@@ -2944,7 +2951,7 @@ async function presentMonsterAttackEffects(
                 const missedContact = heroAttack.effect === 'failed-grab'
                     || heroAttack.effect === 'engulf-unfound'
                     || heroAttack.effect === 'wild-miss';
-                if (!engulfAttack && !missedContact) {
+                if (!engulfAttack && !missedContact && !heroAttack.contactDone) {
                     await stopHeroOccupation(game);
                 }
                 if ((game.u?.[Upolyd(game.u) ? 'mh' : 'uhp'] ?? 1) > 0) {

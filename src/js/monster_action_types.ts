@@ -257,6 +257,8 @@ export interface HeroContactAttack extends HeroAttackProgress {
     passive?: { heroDied?: boolean; attackerStopped?: boolean };
     negated?: boolean;
     deferredPostHit?: boolean;
+    deferredSpecialContact?: boolean;
+    contactDone?: boolean;
     deferredRevealUnder?: boolean;
     revealUnderMessage?: string;
     poison?: { attribute: number; fatal?: number; chance?: number } | null;

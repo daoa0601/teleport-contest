@@ -3823,7 +3823,7 @@ function specialMazeWalk(context, mapX, mapY, direction, passageType = ROOM) {
         y += direction === 'south' ? 1 : -1;
     carveMazeFrom(x, y, passageType, (COLNO - 1) & ~1, (ROWNO - 1) & ~1);
 }
-function specialMazeStockPoint(context, mappedContexts = [context]) {
+function specialMazeStockPoint(mappedCells) {
     const level = requireGameLevel();
     // sp_lev.c:maze1xy().  The stock reservoir is outside every square
     // touched by des.map(), on an odd-coordinate dry passage carved by the
@@ -3835,18 +3835,16 @@ function specialMazeStockPoint(context, mappedContexts = [context]) {
             x: rn1(((COLNO - 1) & ~1) - 3, 3),
             y: rn1(((ROWNO - 1) & ~1) - 3, 3),
         };
-        const mapped = mappedContexts.some(mappedContext => point.x >= mappedContext.xstart
-            && point.x < mappedContext.xstart + mappedContext.width
-            && point.y >= mappedContext.ystart
-            && point.y < mappedContext.ystart + mappedContext.height);
+        if (--tries < 0)
+            break;
         const loc = level.at(point.x, point.y);
-        const hasBoulder = level.objects?.[point.x]?.[point.y]
+        const hasBoulder = level.objects[point.x]?.[point.y]
             ?.some(object => object.otyp === BOULDER);
-        if ((point.x % 2) && (point.y % 2) && !mapped
-            && loc && SPACE_POS(loc.typ) && !hasBoulder) {
+        if ((point.x % 2) && (point.y % 2) && !mappedCells.has(point.x, point.y)
+            && loc && (Is_waterlevel(game.u.uz) || (SPACE_POS(loc.typ) && !hasBoulder))) {
             break;
         }
-    } while (--tries >= 0);
+    } while (true);
     return point;
 }
 function randomSpecialTrapType() {
@@ -3872,21 +3870,18 @@ function randomSpecialTrapType() {
     } while (typ === NO_TRAP);
     return typ;
 }
-async function fillEmptySpecialMaze(context, mappedContexts = [context]) {
+async function fillEmptySpecialMaze(mappedCells) {
     const level = requireGameLevel();
     // sp_lev.c:fill_empty_maze().  mapcount intentionally begins at the
     // complete rectangle while only mapcountmax is halved; this historical
-    // asymmetry leaves Castle with a 43-percent stock budget.
+    // asymmetry increases the stocking budget beyond the uncovered fraction.
     const mazeXMax = (COLNO - 1) & ~1;
     const mazeYMax = (ROWNO - 1) & ~1;
     let mapcount = (mazeXMax - 2) * (mazeYMax - 2);
     const mapcountmax = Math.trunc(mapcount / 2);
     for (let x = 2; x < mazeXMax; x++) {
         for (let y = 0; y < mazeYMax; y++) {
-            if (mappedContexts.some(mappedContext => x >= mappedContext.xstart
-                && x < mappedContext.xstart + mappedContext.width
-                && y >= mappedContext.ystart
-                && y < mappedContext.ystart + mappedContext.height)) {
+            if (mappedCells.has(x, y)) {
                 mapcount--;
             }
         }
@@ -3895,30 +3890,30 @@ async function fillEmptySpecialMaze(context, mappedContexts = [context]) {
         return;
     const mapfact = Math.trunc(mapcount * 100 / mapcountmax);
     for (let count = rnd(Math.trunc(20 * mapfact / 100)); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         await mkobj_at(rn2(2) ? GEM_CLASS : RANDOM_CLASS, point.x, point.y, true);
     }
     for (let count = rnd(Math.trunc(12 * mapfact / 100)); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         const trap = level.traps?.find(candidate => candidate.tx === point.x && candidate.ty === point.y);
         if (trap && (is_pit(trap.ttyp) || is_hole(trap.ttyp)))
             continue;
         await mksobj_at(BOULDER, point.x, point.y, true, false);
     }
     for (let count = rn2(2); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         await makemon(PM_MINOTAUR, point.x, point.y, 0);
     }
     for (let count = rnd(Math.trunc(12 * mapfact / 100)); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         await makemon(null, point.x, point.y, 0);
     }
     for (let count = rn2(Math.trunc(15 * mapfact / 100)); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         await mkgold(0, point.x, point.y);
     }
     for (let count = rn2(Math.trunc(15 * mapfact / 100)); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         let typ = randomSpecialTrapType();
         if (level.objects?.[point.x]?.[point.y]
             ?.some(object => object.otyp === BOULDER)) {
@@ -3947,6 +3942,7 @@ async function specialStair(context, up) {
     const point = await specialRandomLocation(context, loc => loc.typ === ROOM || loc.typ === CORR || loc.typ === ICE);
     if (point)
         mkstairs(point.x, point.y, up, null);
+    return point;
 }
 function specialNonDiggable(context = null) {
     const level = requireGameLevel();
@@ -5635,10 +5631,10 @@ function luaRoomSpec(options) {
 }
 async function createLuaStair(context, { direction, point }) {
     const up = direction === 'up';
-    if (point)
-        specialStairAt(context, point.x, point.y, up);
-    else
-        await specialStair(context, up);
+    if (!point)
+        return await specialStair(context, up);
+    specialStairAt(context, point.x, point.y, up);
+    return { x: context.xstart + point.x, y: context.ystart + point.y };
 }
 function createLuaDoor(context, { state, point, wall = 'all', pos = -1, }) {
     if (!point) {
@@ -5685,6 +5681,7 @@ function createLuaDrawbridge(context, options) {
     if (!['open', 'closed', 'random', undefined].includes(options.state))
         throw new Error(`unknown Lua drawbridge state ${options.state}`);
     makeSpecialDrawbridge(context, coordinate.x, coordinate.y, direction, open);
+    return { x: context.xstart + coordinate.x, y: context.ystart + coordinate.y };
 }
 async function createLuaEngraving(context, options) {
     const point = options.point
@@ -6140,7 +6137,6 @@ function createLuaLevelSession() {
     let luaState = null;
     const containers = [];
     const monsterInventories = [];
-    const mappedContexts = [];
     let mappedCells = new SpecialSelection();
     let roomFailed = false;
     const currentLevel = () => {
@@ -6202,7 +6198,6 @@ function createLuaLevelSession() {
                     : mapOrigin(value, width, rows.length, !!currentLevel().levelInitialized);
                 mapContext = loadSpecialAsciiMap(rows, lit, origin);
             }
-            mappedContexts.push(mapContext);
             const mapSelection = specialMapSelection(mapContext, rows);
             mappedCells = mappedCells.union(mapSelection);
             context = mapContext;
@@ -6283,15 +6278,27 @@ function createLuaLevelSession() {
             context = parent;
             return room;
         },
-        stair: options => createLuaStair(context, options),
+        stair: async (options) => {
+            const point = await createLuaStair(context, options);
+            if (point)
+                mappedCells.add(point.x, point.y);
+        },
         ladder: options => {
             const up = options.direction === 'up';
             if (!options.point)
                 throw new TypeError('des.ladder requires coordinates');
             specialLadderAt(context, options.point.x, options.point.y, up);
+            mappedCells.add(context.xstart + options.point.x, context.ystart + options.point.y);
         },
-        door: options => createLuaDoor(context, options),
-        drawbridge: options => createLuaDrawbridge(context, options),
+        door: options => {
+            const point = createLuaDoor(context, options);
+            if (point)
+                mappedCells.add(point.x, point.y);
+        },
+        drawbridge: options => {
+            const point = createLuaDrawbridge(context, options);
+            mappedCells.add(point.x, point.y);
+        },
         engraving: options => createLuaEngraving(context, options),
         gold: async (options) => await createLuaGold(context, options),
         feature: options => createLuaFeature(context, options),
@@ -6372,7 +6379,7 @@ function createLuaLevelSession() {
                 throw new TypeError('Unknown maze terrain');
             specialMazeWalk(context, options.x, options.y, direction, terrain);
             if (options.stocked)
-                await fillEmptySpecialMaze(context, mappedContexts);
+                await fillEmptySpecialMaze(mappedCells);
         },
         object: async (options) => currentState().objects.wrap(await createLuaObject(context, options, containers.at(-1) ?? null, monsterInventories.at(-1) ?? null, invokeObjectContents)),
         trap: options => createLuaTrap(context, options),
@@ -6427,7 +6434,6 @@ function createLuaLevelSession() {
             active.context = context;
             containers.length = 0;
             monsterInventories.length = 0;
-            mappedContexts.length = 0;
             mappedCells = new SpecialSelection();
             roomFailed = false;
             currentLevel().allowFlips = 3;

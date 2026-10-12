@@ -14,7 +14,6 @@ import {
 } from './display.js';
 import { dungeonFeatureSentenceAt } from './dungeon_feature.js';
 import { showMultiSelectWindow } from './windows.js';
-import { mergable } from './object_merge.js';
 import { addInventoryItem } from './u_init.js';
 import { recordHeroPrizeAcquisition } from './hero_inventory.js';
 import { remove_object } from './floor_object.js';
@@ -65,7 +64,6 @@ type ScrollPickupResult = { decision: 'stop' } | { decision: 'consumed' }
 export interface AddedInventoryObject {
     object: GameObject;
     message: string;
-    comparisonLearned: boolean;
 }
 
 export function pickupClassOrder(): string[] {
@@ -234,8 +232,6 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         const quote = transaction && billedPickupQuote(transaction, pickupObjectNoun(object));
         if (quote) await plineWithContinuation(quote);
         const added = await addPickedInventoryObject(object);
-        if (added.comparisonLearned)
-            await plineWithContinuation('You learn more about your items by comparing them.');
         const capacity = nearCapacity(game);
         const prefix = capacity === previousCapacity ? '' : pickupLoadPrefix(capacity);
         previousCapacity = capacity;
@@ -255,15 +251,6 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
 export async function addPickedInventoryObject(object: GameObject): Promise<AddedInventoryObject> {
     recordHeroPrizeAcquisition(object, game);
     const count = objectQuantity(object);
-    const previousHowLost = object.how_lost ?? LOST_NONE;
-    // Capture knowledge before addInventoryItem merges the stacks.
-    const candidate: GameObject = { ...object, how_lost: LOST_NONE, no_charge: false };
-    const existing = game.inventory.find(item => mergable(item, candidate, game));
-    const comparisonLearned = !!(existing && !object.globby
-        && previousHowLost !== LOST_THROWN && existing.how_lost !== LOST_THROWN
-        && (!!existing.known !== !!object.known
-            || (!!existing.rknown !== !!object.rknown && existing.oerodeproof)
-            || (!!existing.bknown !== !!object.bknown && game.urole?.key !== 'priest')));
     const carried = await addInventoryItem(object, null, false);
     markJustPicked(carried);
     observeObjectForNaming(carried);
@@ -276,7 +263,6 @@ export async function addPickedInventoryObject(object: GameObject): Promise<Adde
     return {
         object: carried,
         message: `${carried.invlet} - ${floorObjectDescription(picked)}${total}`,
-        comparisonLearned,
     };
 }
 
