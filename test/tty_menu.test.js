@@ -3,8 +3,48 @@ import test from 'node:test';
 import { NHW_MENU, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from '../js/tty_menu.js';
+import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_display_nhwindow, tty_clear_nhwindow, tty_dismiss_nhwindow, tty_destroy_nhwindow } from '../js/tty_menu.js';
+import { docrt, flush_screen } from '../js/display.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+void test('clearing an active full-screen menu leaves a blank screen until dismissal', async () => {
+    freshPlayableRoom({ flags: { menu_overlay: false }, hero: { hallucinationTurns: 100 } });
+    await docrt();
+    await flush_screen(1);
+    const d = requireGameDisplay();
+    assert.equal(d.getChar(9, 11), '.');
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    tty_add_menu(window, { identifier: 'dagger', text: 'a dagger' });
+    tty_end_menu(window);
+    resetInputState().feed('\n');
+    await tty_display_nhwindow(window, PICK_ANY);
+    await tty_clear_nhwindow(window);
+    assert.equal(d.getChar(9, 11), ' ', 'clearing a menu must not redraw the map');
+    assert.equal(d.grid[23]?.map(cell => cell.ch).join('').trim(), '', 'the status stays erased too');
+    await tty_destroy_nhwindow(window);
+    assert.equal(d.getChar(9, 11), '.', 'destroying the still-active window restores the map');
+});
+void test('redisplaying an active corner menu restores the map after dismissal', async () => {
+    freshPlayableRoom({ left: 40, right: 60, heroX: 50 });
+    await docrt();
+    await flush_screen(1);
+    const d = requireGameDisplay();
+    assert.equal(d.getChar(49, 11), '.');
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    for (let index = 0; index < 12; index++)
+        tty_add_menu(window, { identifier: index, text: `map ${index}` });
+    tty_end_menu(window);
+    const input = resetInputState();
+    input.feed('\n');
+    await tty_display_nhwindow(window, PICK_ANY);
+    input.feed('\n');
+    await tty_display_nhwindow(window, PICK_ANY);
+    await tty_dismiss_nhwindow(window);
+    assert.equal(d.getChar(49, 11), '.', 'the menu must not become its own underlay');
+    assert.doesNotMatch(d.grid[2]?.map(cell => cell.ch).join('') ?? '', /map 2/);
+    await tty_destroy_nhwindow(window);
+});
 for (const overlay of [true, false]) {
     for (const { name, keys, selected } of [
         { name: 'no match', keys: 'nomatch\n', selected: false },

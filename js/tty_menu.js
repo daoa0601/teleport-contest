@@ -106,11 +106,18 @@ export function restoreMenuUnderlay(snapshot) {
     d.clearRow(0);
 }
 export function tty_create_nhwindow(_type) {
-    return { entries: [], layout: null, active: false, destroyed: false, underlay: null };
+    return { entries: [], layout: null, offx: 0, active: false, destroyed: false, underlay: null };
 }
 export async function tty_clear_nhwindow(window) {
     requireWindow(window);
-    await tty_dismiss_nhwindow(window);
+    // Native clear erases an active window without dismissing it. A full
+    // screen redraw belongs to dismissal, where hallucinations may change.
+    if (window.active) {
+        if (window.offx === 0)
+            display()?.clearScreen();
+        else
+            restoreMenuUnderlay(window.underlay);
+    }
     window.entries = [];
     window.layout = null;
 }
@@ -167,7 +174,11 @@ export async function tty_display_nhwindow(window, how = PICK_NONE) {
         throw new Error('The menu has no completed layout');
     await flushPendingTopline();
     clearMessageWindow();
-    window.underlay = snapshotMenuUnderlay();
+    // An active menu covers the map already; retain its backing cells when
+    // displaying it again, rather than saving the menu as its own underlay.
+    if (!window.active)
+        window.underlay = snapshotMenuUnderlay();
+    window.offx = layout.boundary;
     window.active = true;
     return process_menu_window(d, window.entries, layout, how, window.underlay);
 }
@@ -183,7 +194,7 @@ export async function tty_dismiss_nhwindow(window) {
     if (!window.active)
         return;
     window.active = false;
-    if (window.layout?.boundary === 0) {
+    if (window.offx === 0) {
         await docrt();
         await flush_screen(1);
     }
@@ -193,6 +204,7 @@ export async function tty_dismiss_nhwindow(window) {
 }
 export async function tty_destroy_nhwindow(window) {
     requireWindow(window);
+    await tty_dismiss_nhwindow(window);
     await tty_clear_nhwindow(window);
     window.destroyed = true;
 }
