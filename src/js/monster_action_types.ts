@@ -574,7 +574,6 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     sleeping?: boolean;
     eating?: boolean;
     retainedHidingPlace?: boolean;
-    wokeFromDisturb?: boolean;
     swallowedAttackSkipped?: boolean;
     fleeingRelocation?: boolean;
     fleeingTeleportFailed?: boolean;

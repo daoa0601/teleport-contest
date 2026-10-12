@@ -67,9 +67,8 @@ export async function runObjectTimer(claimed: DueObjectTimer, currentTurn: numbe
         return await finishBuriedZombieTimer(event, game);
     }
     const event = await runClaimedObjectRotTimer(claimed, game);
-    if (event && 'where' in event && event.where === 'floor') newsym(event.x, event.y);
-    if (kind === OBJECT_TIMER_KIND.ROT_CORPSE && event && 'where' in event && event.where === 'inventory')
-        await plineWithContinuation('Your corpse rots away.');
+    if (kind === OBJECT_TIMER_KIND.ROT_ORGANIC && event && 'where' in event && event.where === 'floor')
+        newsym(event.x, event.y);
     return event;
 }
 

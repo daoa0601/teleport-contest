@@ -59,7 +59,7 @@ import { veganCorpse } from './food_traits.js';
 import { displayRayName } from './ray_name.js';
 import { castNativeRay } from './ray_attack.js';
 import { breathWeaponName } from './breath_ray.js';
-import { AD_RBRE, AD_SLEE, AD_WERE } from './monster_attack_types.js';
+import { AD_RBRE, AD_SLEE } from './monster_attack_types.js';
 import { M_SEEN_REFL } from './const.js';
 import { seenResistanceForDamage } from './monster_perception.js';
 import { watchDigging } from './digging_watch.js';
@@ -257,6 +257,7 @@ import {
     AD_STON,
     AD_STUN,
     AD_WRAP,
+    AD_WERE,
     AD_RUST,
     AT_BOOM,
     AT_BREA,
@@ -342,7 +343,8 @@ import {
     wormCrossesBetween,
 } from './monster_worm.js';
 import { displaceMonster, monsterDisplacementFlags } from './monster_displacement.js';
-import { returnHeroToHumanForm } from './polyself.js';
+import { retouchEquipment } from './hero_retouch.js';
+import { returnHeroToHumanForm, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
 import {
     cansee,
@@ -450,7 +452,8 @@ import {
     monsterTeleportRestricted,
 } from './teleport_rules.js';
 import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
-import { wereChange } from './were.js';
+import { publishMonsterWake } from './monster_wake.js';
+import { wereChange, setHeroLycanthropy } from './were.js';
 import { aggravateMonsters, angerMonster, angerWatchGuards } from './monster_anger.js';
 import { stopHeroOccupation } from './occupation.js';
 import { rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';
@@ -461,6 +464,7 @@ import {
     A_CHA,
     A_DEX,
     A_STR,
+    A_CON,
     ALLOW_ALL,
     ALLOW_BARS,
     ALLOW_DIG,
@@ -2065,7 +2069,7 @@ async function watchOnDuty(
 // scheduler has debited this actor's movement.  A failed wake roll therefore
 // remains part of the actor's observable RNG slice even though no state or
 // screen changes.
-export function disturbSleepingMonster(
+export async function disturbSleepingMonster(
     monster: Monster,
     state: PlayingGameState,
     random: RandomBelow = rn2,
@@ -2105,6 +2109,7 @@ export function disturbSleepingMonster(
             return false;
     }
 
+    await publishMonsterWake(monster, !monster.mpeaceful, state);
     monster.msleeping = 0;
     return true;
 }
@@ -6117,6 +6122,13 @@ async function beginHeroAttackSlot(
             deferredSlimeEffect: true,
             oldFormMnum,
         };
+    } else if (hit && damageType === AD_WERE) {
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        return {
+            kind: 'hero-attack', roll, threshold, hit, damage, attackType, damageType,
+            deferredPostHit: true, oldFormMnum,
+        };
     } else if (hit && damageType === AD_STON) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
@@ -9027,10 +9039,9 @@ export async function runMonsterAction(
     // movemon_singlemon() has already debited this actor's movement.
     // dochug() gives a movable sleeper one source-ordered disturbance
     // attempt before returning ahead of set_apparxy()/distfleeck().
-    let wokeFromDisturb = false;
     if (monster.msleeping) {
-        wokeFromDisturb = disturbSleepingMonster(monster, state, random, calls);
-        if (!wokeFromDisturb) {
+        const woke = await disturbSleepingMonster(monster, state, random, calls);
+        if (!woke) {
             return {
                 monster,
                 calls,
@@ -9051,6 +9062,5 @@ export async function runMonsterAction(
         dochugContext,
     } = await takeMonsterTurn(monster, state, random, rollDice, rollOne);
     calls.push(...actionCalls);
-    if (wokeFromDisturb) movement.wokeFromDisturb = true;
     return { monster, calls, movement, dochugContext };
 }

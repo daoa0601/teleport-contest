@@ -297,7 +297,7 @@ function corpseMonsterIsUnique(species) {
 }
 // C corpse_xname(): corpse species is visible even when the object type has
 // not been discovered. Possessive species put adjectives after their name.
-export function corpseName(object, { adjective = '', includeArticle = false, singular = false, definite = false, } = {}) {
+export function corpseName(object, { adjective = '', includeArticle = false, singular = false, definite = false, omitPrefix = false, } = {}) {
     const glob = object.otyp !== CORPSE && object.globby;
     let name = glob ? requireObjectName(object.otyp) : objectMonsterName(object);
     const personal = !glob && object.corpsenm !== undefined
@@ -309,12 +309,12 @@ export function corpseName(object, { adjective = '', includeArticle = false, sin
         name = personal || unique
             ? `${name} ${adjective}` : `${adjective} ${name}`;
     name = name.trim().replace(/\s+/g, ' ');
-    if (!personal && (unique || definite))
+    if (!omitPrefix && !personal && (unique || definite))
         name = `the ${name}`;
     const plural = !glob && !singular && (object.quan ?? object.quantity ?? 1) > 1;
     if (!glob)
         name += ` corpse${plural ? 's' : ''}`;
-    return includeArticle && !personal && !unique && !definite && !plural
+    return !omitPrefix && includeArticle && !personal && !unique && !definite && !plural
         && !/^\d/.test(adjective) ? withIndefiniteArticle(name) : name;
 }
 function physicalObjectNoun(object, noun, state) {

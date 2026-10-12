@@ -6,7 +6,7 @@ import { veganCorpse } from './food_traits.js';
 import { displayRayName } from './ray_name.js';
 import { castNativeRay } from './ray_attack.js';
 import { breathWeaponName } from './breath_ray.js';
-import { AD_RBRE, AD_SLEE, AD_WERE } from './monster_attack_types.js';
+import { AD_RBRE, AD_SLEE } from './monster_attack_types.js';
 import { M_SEEN_REFL } from './const.js';
 import { seenResistanceForDamage } from './monster_perception.js';
 import { watchDigging } from './digging_watch.js';
@@ -91,7 +91,7 @@ import { artifactById } from './artifacts.js';
 import { respondMedusa } from './monster_gaze.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, randomDisplayMonsterName, randomDisplayMonsterSubject, plineWithContinuation, } from './display.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
-import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
+import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
 import { AMULET_OF_YENDOR, APPLE, BANANA, BELL_OF_OPENING, BULLWHIP, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_MATERIAL, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
 import { unlinkObject } from './object_location.js';
@@ -108,7 +108,8 @@ import { DISMOUNT_THROWN } from './const.js';
 import { breakMonsterBoulder, monsterCanBreakBoulder } from './monster_boulder.js';
 import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMonsterWorm, wormCrossesBetween, } from './monster_worm.js';
 import { displaceMonster, monsterDisplacementFlags } from './monster_displacement.js';
-import { returnHeroToHumanForm } from './polyself.js';
+import { retouchEquipment } from './hero_retouch.js';
+import { returnHeroToHumanForm, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
 import { cansee, clearPath, couldsee, visibleCellsFrom, vision_note_blocker_change, } from './vision.js';
 import { wipeEngravingAt } from './engrave.js';
@@ -170,13 +171,14 @@ import { findMonsterDefensiveItem, useMonsterDefensiveItem } from './monster_def
 import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
 import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted, } from './teleport_rules.js';
 import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
-import { wereChange } from './were.js';
+import { publishMonsterWake } from './monster_wake.js';
+import { wereChange, setHeroLycanthropy } from './were.js';
 import { aggravateMonsters, angerMonster, angerWatchGuards } from './monster_anger.js';
 import { stopHeroOccupation } from './occupation.js';
 import { rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';
 import { diggingTimeToHole } from './hero_digging.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
-import { RLOC_MSG, A_CHA, A_DEX, A_STR, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, MIGR_RANDOM, MIGR_PORTAL, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_APPEARMSG, STRAT_WAITFORU, STRAT_WAITMASK, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
+import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, MIGR_RANDOM, MIGR_PORTAL, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_APPEARMSG, STRAT_WAITFORU, STRAT_WAITMASK, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { monsterInAir, isLavaAt, isPoolAt } from './terrain_properties.js';
 export const NORMAL_SPEED = 12;
@@ -1486,7 +1488,7 @@ async function watchOnDuty(monster, state, random, calls) {
 // scheduler has debited this actor's movement.  A failed wake roll therefore
 // remains part of the actor's observable RNG slice even though no state or
 // screen changes.
-export function disturbSleepingMonster(monster, state, random = rn2, calls = []) {
+export async function disturbSleepingMonster(monster, state, random = rn2, calls = []) {
     if (!monster?.msleeping ||
         !couldSeeFromHero(state, monster.mx, monster.my) ||
         dist2(monster.mx, monster.my, state?.u?.ux ?? monster.mx, state?.u?.uy ?? monster.my) > 100)
@@ -1512,6 +1514,7 @@ export function disturbSleepingMonster(monster, state, random = rn2, calls = [])
         if (M_AP_TYPE(monster) === M_AP_FURNITURE || M_AP_TYPE(monster) === M_AP_OBJECT)
             return false;
     }
+    await publishMonsterWake(monster, !monster.mpeaceful, state);
     monster.msleeping = 0;
     return true;
 }
@@ -4996,6 +4999,14 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             oldFormMnum,
         };
     }
+    else if (hit && damageType === AD_WERE) {
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        return {
+            kind: 'hero-attack', roll, threshold, hit, damage, attackType, damageType,
+            deferredPostHit: true, oldFormMnum,
+        };
+    }
     else if (hit && damageType === AD_STON) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
@@ -7332,10 +7343,9 @@ export async function runMonsterAction(monster, state, random = rn2, rollDice = 
     // movemon_singlemon() has already debited this actor's movement.
     // dochug() gives a movable sleeper one source-ordered disturbance
     // attempt before returning ahead of set_apparxy()/distfleeck().
-    let wokeFromDisturb = false;
     if (monster.msleeping) {
-        wokeFromDisturb = disturbSleepingMonster(monster, state, random, calls);
-        if (!wokeFromDisturb) {
+        const woke = await disturbSleepingMonster(monster, state, random, calls);
+        if (!woke) {
             return {
                 monster,
                 calls,
@@ -7352,8 +7362,6 @@ export async function runMonsterAction(monster, state, random = rn2, rollDice = 
     }
     const { calls: actionCalls, movement, dochugContext, } = await takeMonsterTurn(monster, state, random, rollDice, rollOne);
     calls.push(...actionCalls);
-    if (wokeFromDisturb)
-        movement.wokeFromDisturb = true;
     return { monster, calls, movement, dochugContext };
 }
 //# sourceMappingURL=monmove.js.map

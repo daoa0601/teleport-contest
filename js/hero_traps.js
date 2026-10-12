@@ -72,8 +72,8 @@ import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { trapName } from './trap_name.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { monsterName } from './monster_name.js';
-import { killerObjectName, objectCombatName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { observeObject } from './object_knowledge.js';
 const M1_CLING = 0x00000010;
 const M1_HIDE = 0x00000100;
@@ -760,7 +760,8 @@ async function triggerFallingRockTrap(trap) {
     trap.tseen = true;
     const rock = await makeTrapMissile(ROCK, trap);
     placeCreatedObject(rock, hero.ux, hero.uy);
-    await plineWithContinuation(`A trap door in the ${ceiling} opens and ${withIndefiniteArticle(objectCombatName(rock))} falls on your ${heroHeadName(game)}!`);
+    observeObjectForNaming(rock);
+    await plineWithContinuation(`A trap door in the ${ceiling} opens and ${withIndefiniteArticle(objectName(rock))} falls on your ${heroHeadName(game)}!`);
     let harmless = false;
     const helmet = game.uarmh || hero.uarmh;
     if (helmet) {

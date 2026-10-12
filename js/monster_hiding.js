@@ -114,6 +114,16 @@ export async function hideMonsterUnder(monster, state = game) {
     await finishMonsterHideUnder(monster, concealment, state);
     return concealment.undetected;
 }
+// C mon.c:hideunder(&youmonst) reassesses cover without announcing hero hiding.
+export function hideHeroUnder(state = game) {
+    requireLiveGame(state);
+    const oldUndetected = !!state.u.uundetected;
+    const { undetected } = hidingPlace(heroHidingActor(state), state);
+    state.u.uundetected = undetected ? 1 : 0;
+    if (undetected !== oldUndetected)
+        newsym(state.u.ux, state.u.uy);
+    return undetected;
+}
 export function canMonsterHideUnderObjectAt(state, x, y) {
     const pile = state.level?.objects[x]?.[y] ?? [];
     if (pile[0]?.where !== 'floor')
@@ -139,10 +149,7 @@ export function maybeUnhideAt(x, y, state = game) {
         return;
     if (!(monster ? monster.mundetected : state.u.uundetected))
         return;
-    const actor = monster ? monsterHidingActor(monster, state) : {
-        species: heroSpecies(state), x, y, held: false, trapped: !!state.u.utrap,
-        tame: false, stoneResistant: heroResistsStoning(state),
-    };
+    const actor = monster ? monsterHidingActor(monster, state) : heroHidingActor(state);
     const hidesUnder = !!((MONSTER_FLAGS1[actor.species] ?? 0) & M1_CONCEAL);
     const eel = MONSTER_SYMBOL[actor.species] === S_EEL;
     const exposed = hidesUnder && (actor.trapped || !canMonsterHideUnderObjectAt(state, x, y))
@@ -156,6 +163,13 @@ export function maybeUnhideAt(x, y, state = game) {
         state.u.uundetected = hidden ? 1 : 0;
     if (!hidden)
         newsym(x, y);
+}
+function heroHidingActor(state) {
+    return {
+        species: heroSpecies(state), x: state.u.ux, y: state.u.uy,
+        held: false, trapped: !!state.u.utrap, tame: false,
+        stoneResistant: heroResistsStoning(state),
+    };
 }
 function monsterHidingActor(monster, state) {
     return {

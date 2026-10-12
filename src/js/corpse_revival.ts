@@ -1,3 +1,4 @@
+import { rotCorpse } from './corpse_rot.js';
 // Corpse revival timers.
 // C refs: do.c revive_corpse()/revive_mon()/zombify_mon() and zap.c revive().
 
@@ -575,14 +576,8 @@ export async function reviveCorpseByMagic(
 }
 
 async function rotCorpseNow(corpse: GameObject, state: GameState): Promise<CorpseRotted> {
-    const originalWhere = corpse.where;
-    const location = revivalLocation(corpse, state, corpse.where === 'buried');
-    await removeCorpse(corpse, location, state, true);
-    return {
-        kind: 'rotted', corpse, monster: null,
-        messages: originalWhere === 'inventory'
-            ? ['Your corpse rots away.'] : [],
-    };
+    await rotCorpse(corpse, state);
+    return { kind: 'rotted', corpse, monster: null, messages: [] };
 }
 
 export async function runClaimedCorpseRevivalTimer(
