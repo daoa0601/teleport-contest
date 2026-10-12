@@ -1456,7 +1456,7 @@ function reluctantPetMessage(monster, movement) {
 }
 async function monsterAttackMessage(monster, attack, previousAttack = null, random = rn2) {
     const game = requireInitializedGame();
-    if (attack.effect === 'petrifying-corpse')
+    if (attack.effect === 'petrifying-corpse' || attack.effect === 'wrapping-natural')
         return null;
     if (attack.effect === 'engulf' || attack.effect === 'engulf-tick'
         || attack.effect === 'engulf-refused' || attack.effect === 'item-theft')

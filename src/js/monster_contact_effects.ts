@@ -11,7 +11,8 @@ import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_PLYS, AD_POLY, AD_SLEE, AD_TLPT, AD_WERE } from './monster_attack_types.js';
+import { AD_PLYS, AD_POLY, AD_SLEE, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { resolveMonsterWrapping } from './monster_wrapping_contact.js';
 import { askTeleportDestination } from './cmd.js';
 import { heroControlsTeleport, teleportHero } from './teleport.js';
 import type { HeroContactAttack } from './monster_action_types.js';
@@ -49,6 +50,8 @@ export async function resolveMonsterContactEffect(
         await teleportHeroOnContact(monster, attack, state, publish, random);
     else if (attack.damageType === AD_PLYS)
         await paralyzeHero(monster, state, publish, random, rollOne);
+    else if (attack.damageType === AD_WRAP)
+        await resolveMonsterWrapping(monster, attack, state, publish, random);
     else throw new Error(`Damage type ${attack.damageType} has no deferred contact effect`);
     attack.deferredPostHit = true;
 }

@@ -5896,7 +5896,8 @@ async function beginHeroAttackSlot(
             oldFormMnum,
         };
     } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
-        || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS)) {
+        || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
+        || damageType === AD_WRAP)) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const negated = damageType === AD_POLY
@@ -5904,6 +5905,7 @@ async function beginHeroAttackSlot(
         return {
             kind: 'hero-attack', roll, threshold, hit, damage, attackType, damageType,
             oldFormMnum, negated, deferredSpecialContact: true,
+            ...(damageType === AD_WRAP ? { effect: 'wrapping-natural' } : {}),
         };
     } else if (hit && damageType === AD_STCK) {
         damage = rollDice(dice, sides);
