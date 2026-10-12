@@ -64,9 +64,9 @@ import { canSpotMonster, docrt, redrawMap, bot, flush_screen, flushPendingToplin
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset, init_vision_globals, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
-import { ACID_VENOM, CORPSE, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MATERIAL, SHIELD_OF_REFLECTION, } from './object_data.js';
+import { ACID_VENOM, CORPSE, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_NAMES, SHIELD_OF_REFLECTION, } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import { objectHasPersonalName, objectName, observeObjectForNaming, } from './objnam.js';
+import { observeDistantObjectForNaming, observeObjectForNaming, } from './objnam.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, STONE, ZAP_POS, STRAT_CLOSE, STRAT_WAITFORU, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_LAVA, } from './const.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries, } from './u_init.js';
 import { makeDeaf } from './hero_hearing.js';
@@ -107,7 +107,7 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NA
 import { finishHeroDeath, } from './end.js';
 import { runLevelRegions } from './regions.js';
 import { maintainVaultResidence, continueVaultGuardArrival, } from './vault.js';
-import { objectClassForType, observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType, } from './object_knowledge.js';
+import { observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType, } from './object_knowledge.js';
 import { automaticSearch } from './detect.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
@@ -115,29 +115,13 @@ import { getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness, } f
 import { chatWithQuestLeader, isQuestLeader } from './quest.js';
 import { moveElementalBubbles } from './elemental.js';
 import { removeObjectAndContentsFromBill, checkSpecialRoom, currentShopResident, } from './shk.js';
-import { bucAdjectiveForName, inventoryItemDescription, rerollMenu, } from './invent.js';
+import { inventoryItemDescription, rerollMenu, } from './invent.js';
 import { hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, refreshProperty, setPropertyTimeout, } from './properties.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { setSlipperyHands } from './towel.js';
 import { restartMonsterShapechanging } from './monster_polymorph.js';
 import { msummon } from './minion.js';
 import { captureRunmodeDelay } from './runmode.js';
-const COIN_CLASS = 12;
-// C distant_name() runs before floor extraction. Deferred pickup messages
-// retain that floor location even though the object is now in minvent.
-function observeMonsterPickup(object, x, y) {
-    const game = requireInitializedGame();
-    if (!object)
-        return;
-    observeBucForNaming(object);
-    if (!cansee(x, y))
-        return;
-    const range = Math.max(game.u.xray_range ?? -1, 2);
-    const nearDistance = range * range * 2 - range;
-    if (object.oartifact || dist2(x, y, game.u.ux, game.u.uy) <= nearDistance)
-        observeObject(object);
-    findArtifact(object, { source: { where: 'floor', ox: x, oy: y } });
-}
 function observeMonsterUsedObject(object) {
     if (!object)
         return;
@@ -1712,95 +1696,9 @@ function selectWizardCussMessage(action, monster) {
         return roll(2) ? '"I shall return."' : '"I\'ll be back."';
     return '"' + WIZARD_CUSS_MALEDICTIONS[roll(WIZARD_CUSS_MALEDICTIONS.length)] + ' ' + WIZARD_CUSS_INSULTS[roll(WIZARD_CUSS_INSULTS.length)] + '!"';
 }
-function petCarriedObjectName(object, quantity = object.quan ?? object.quantity ?? 1) {
-    const game = requireInitializedGame();
-    const objectClass = object?.oclass || objectClassForType(object?.otyp);
-    const descriptionHiddenClass = [4, 5, 8, 9, 10, 11, 13]
-        .includes(objectClass);
-    if (object?.dknown === false && descriptionHiddenClass) {
-        // C distant_name(..., doname) cannot expose a shuffled description
-        // which the hero has never seen.  The glyph class remains visible,
-        // so use its generic noun until dknown is established.
-        const genericNames = {
-            2: 'weapon', 4: 'ring', 5: 'amulet',
-            6: OBJECT_DESCRIPTIONS[object?.otyp] || 'tool',
-            // FOOD_CLASS always uses its actual type name in xname(); dknown
-            // hides shuffled descriptions, but foods have no such naming
-            // branch.  An unseen orange is still an orange.
-            7: OBJECT_NAMES[object?.otyp] || 'food',
-            8: 'potion', 9: 'scroll',
-            10: 'spellbook', 11: 'wand', 12: 'gold piece', 13: 'gem',
-            14: 'large rock', 15: 'iron ball', 16: 'chain', 17: 'venom',
-        };
-        const generic = genericNames[objectClass] || 'object';
-        return `${/^[aeiou]/i.test(generic) ? 'an' : 'a'} ${generic}`;
-    }
-    // C xname()/doname() keep four knowledge axes independent. dknown reveals
-    // the shuffled description; it does not reveal the true type, BUC, or
-    // enchantment.  Monster inventory objects often retain a placeholder
-    // `name`, so derive their visible noun from the live object tables.
-    const typeKnown = !!object?.typeKnown
-        || game._knownObjectTypes?.has(object?.otyp);
-    const appearance = game.objectDescriptions?.[object?.otyp]
-        ?? OBJECT_DESCRIPTIONS[object?.otyp];
-    const trueName = object?.otyp === CORPSE
-        && typeof object.corpsenm === 'number' && Number.isInteger(object.corpsenm)
-        ? `${MONSTER_NAME[object.corpsenm] || 'monster'} corpse`
-        : OBJECT_NAMES[object?.otyp] || object?.name || 'object';
-    const personalName = objectHasPersonalName(object);
-    let noun = personalName || objectClass === 3 ? objectName(object)
-        : typeKnown ? trueName : appearance || trueName;
-    if (!personalName && typeKnown) {
-        if (objectClass === 4)
-            noun = `ring of ${noun}`;
-        else if (objectClass === 8)
-            noun = `potion of ${noun}`;
-        else if (objectClass === 9)
-            noun = `scroll of ${noun}`;
-        else if (objectClass === 10)
-            noun = `spellbook of ${noun}`;
-        else if (objectClass === 11)
-            noun = `wand of ${noun}`;
-    }
-    else if (!personalName && appearance) {
-        if (objectClass === 4)
-            noun = `${appearance} ring`;
-        else if (objectClass === 5)
-            noun = `${appearance} amulet`;
-        else if (objectClass === 8)
-            noun = `${appearance} potion`;
-        else if (objectClass === 9)
-            noun = appearance === 'unlabeled' ? 'unlabeled scroll'
-                : `scroll labeled ${appearance}`;
-        else if (objectClass === 10)
-            noun = `${appearance} spellbook`;
-        else if (objectClass === 11)
-            noun = `${appearance} wand`;
-        else if (objectClass === 13)
-            noun = `${appearance} ${OBJECT_MATERIAL[object?.otyp] === 21 ? 'stone' : 'gem'}`;
-    }
-    // Native doname() never prefixes coins with blessed/uncursed/cursed.
-    const buc = objectClass === COIN_CLASS ? '' : bucAdjectiveForName(object);
-    const enchantment = object?.known && [2, 3].includes(objectClass)
-        ? (typeof object.enchantment === 'number' && Number.isInteger(object.enchantment)
-            ? object.enchantment
-            : Number.isInteger(object.spe) ? object.spe : null)
-        : null;
-    const bonus = enchantment === null ? ''
-        : `${enchantment >= 0 ? '+' : ''}${enchantment}`;
-    const poisoned = object?.opoisoned || object?.poisoned
-        ? 'poisoned' : '';
-    const pluralNoun = makePlural(noun);
-    const description = [buc, bonus, poisoned,
-        quantity > 1 ? pluralNoun : noun].filter(Boolean).join(' ');
-    if (quantity > 1)
-        return `${quantity} ${description}`;
-    const article = personalName ? 'the'
-        : /^[aeiou]/i.test(description) ? 'an' : 'a';
-    return `${article} ${description}`;
-}
 function distantMonsterObjectName(object) {
-    return petCarriedObjectName(object);
+    observeDistantObjectForNaming(object);
+    return inventoryItemDescription(object);
 }
 async function presentMonsterGrowth(monster, growth) {
     const game = requireInitializedGame();
@@ -2847,9 +2745,10 @@ async function presentMonsterPickups(action, game) {
     let movement = action.movement;
     if (movement?.pickedUp
         && cansee(movement.oldx, movement.oldy)) {
-        observeMonsterPickup(movement.pickedUp, movement.oldx, movement.oldy);
+        observeDistantObjectForNaming(movement.pickedUp);
+        const name = inventoryItemDescription(movement.pickedUp);
         if (game.flags.verbose !== false) {
-            await plineWithContinuation(`${visibleMonsterSubject(monster)} picks up ${petCarriedObjectName(movement.pickedUp)}.`);
+            await plineWithContinuation(`${visibleMonsterSubject(monster)} picks up ${name}.`);
         }
     }
     if (movement)
@@ -2860,9 +2759,10 @@ async function presentPetMovementPrelude(action, game, actorWasOpticallySeen) {
     let movement = action.movement;
     if (movement?.deferredPetMove) {
         if (movement.pickedUp && cansee(movement.oldx, movement.oldy)) {
-            observeMonsterPickup(movement.pickedUp, movement.oldx, movement.oldy);
+            observeDistantObjectForNaming(movement.pickedUp);
+            const name = inventoryItemDescription(movement.pickedUp);
             if (game.flags.verbose !== false) {
-                await plineWithContinuation(`${visibleMonsterSubject(monster)} picks up ${petCarriedObjectName(movement.pickedUp)}.`);
+                await plineWithContinuation(`${visibleMonsterSubject(monster)} picks up ${name}.`);
             }
         }
         await commitPetPickup(monster, movement, game);
