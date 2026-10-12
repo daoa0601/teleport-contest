@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/allmain.js';
-import { FAINTED, NO_MINVENT } from '../js/const.js';
+import { FAINTED, NO_MINVENT, W_ARMC } from '../js/const.js';
 import { canSeeMonster, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
@@ -12,6 +12,8 @@ import { vision_recalc } from '../js/vision.js';
 import { summonWereAttackHelp } from '../js/were.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { addInventoryObject, artifactObject } from './support/game-objects.js';
+import { CLOAK_OF_PROTECTION } from '../js/object_data.js';
 import { installPagerInput } from './support/pager-input.js';
 async function attacker() {
     const level = freshObjectRoom({ gameplaySeed: 314 });
@@ -81,6 +83,48 @@ for (const condition of ['sleeping', 'fainted', 'paralyzed', 'awake']) {
         const message = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
         assert.match(message, condition === 'sleeping' || condition === 'fainted'
             ? /You dream that you feel hemmed in\./ : /You feel hemmed in\./);
+    });
+}
+for (const protection of ['none', 'already infected', 'shapechanger protection', 'cancelled', 'magic negation', 'Werebane']) {
+    void test(`a werejackal bite ${protection === 'none' ? 'infects' : 'respects ' + protection} after its hit message`, async () => {
+        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        requirePlayingGame(game);
+        const jackal = await createMonsterAt('werejackal', 11, 10, NO_MINVENT);
+        jackal.mpeaceful = false;
+        jackal.mux = game.u.ux;
+        jackal.muy = game.u.uy;
+        if (protection === 'already infected')
+            game.u.ulycn = MONSTER_NAME.indexOf('wererat');
+        if (protection === 'shapechanger protection')
+            game.u.protectionFromShapeChangers = true;
+        if (protection === 'cancelled')
+            jackal.mcan = 1;
+        if (protection === 'magic negation') {
+            const cloak = await addInventoryObject(CLOAK_OF_PROTECTION, { owornmask: W_ARMC });
+            game.uarmc = cloak;
+        }
+        if (protection === 'Werebane')
+            game.uwep = await artifactObject('Werebane', { where: 'inventory' });
+        const input = resetInputState();
+        const messages = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        installPagerInput(input, { expected: /werejackal|feverish|harm/, limit: 5 });
+        await performMonsterHeroAttack(jackal, game, {
+            // Permit the bite and infection without summoning or transformation.
+            random: sides => sides === 4 ? 0 : sides === 10 && protection === 'magic negation' ? 0 : sides - 1,
+            rollOne: () => 1, rollDice: () => 2,
+        });
+        const prose = [...messages, game._pending_message].join('\n');
+        if (protection === 'none') {
+            assert.match(prose, /The werejackal bites!.*You feel feverish\./s);
+            assert.equal(game.u.ulycn, jackal.mnum);
+            assert.equal(game.u.drainResistance, true);
+        }
+        else {
+            assert.doesNotMatch(prose, /feverish/);
+            assert.equal(game.u.ulycn, protection === 'already infected' ? MONSTER_NAME.indexOf('wererat') : -1);
+        }
+        assert.equal(game.u.uhp, 98, 'The bite still deals its physical damage');
     });
 }
 //# sourceMappingURL=monster_were_attack.test.js.map

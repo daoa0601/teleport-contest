@@ -12,7 +12,7 @@ import { KICKING_BOOTS, OBJECT_BIMANUAL, OBJECT_MATERIAL, } from './object_data.
 import { rnd, rn2 } from './rng.js';
 import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted, } from './teleport_rules.js';
 import { invWeight, weightCapacity } from './weight.js';
-import { finishDeferredMonsterRollingBoulderPlacement, resumeDeferredMonsterRollingBoulderDeath, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from './monmove.js';
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from './monmove.js';
 const M1_FLY = 0x00000001;
 const M1_NOEYES = 0x00001000;
 const M1_NOHANDS = 0x00002000;
@@ -221,15 +221,9 @@ export async function tryKickReel(monster, dx, dy, { martial = false, state = ga
     newsym(oldx, oldy);
     newsym(x, y);
     const trap = await triggerImmediateMonsterTrap(monster, state);
-    if (trap.event?.kind === 'rolling-boulder') {
-        await resumeDeferredMonsterRollingBoulderDeath(trap, state, { publish: announce });
-        await finishDeferredMonsterRollingBoulderPlacement(trap, state);
-    }
-    else {
-        await resumeDeferredMonsterTrap(trap, state, {
-            publish: announce, describeMonster: nameMonster,
-        });
-    }
+    await resumeDeferredMonsterTrap(trap, state, {
+        publish: announce, describeMonster: nameMonster,
+    });
     return {
         oldx, oldy, x, y,
         trap: trap.event,

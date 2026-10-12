@@ -344,8 +344,8 @@ function corpseMonsterIsUnique(species: number | undefined): boolean {
 // C corpse_xname(): corpse species is visible even when the object type has
 // not been discovered. Possessive species put adjectives after their name.
 export function corpseName(object: CorpseNameView, {
-    adjective = '', includeArticle = false, singular = false, definite = false,
-}: { adjective?: string; includeArticle?: boolean; singular?: boolean; definite?: boolean } = {}): string {
+    adjective = '', includeArticle = false, singular = false, definite = false, omitPrefix = false,
+}: { adjective?: string; includeArticle?: boolean; singular?: boolean; definite?: boolean; omitPrefix?: boolean } = {}): string {
     const glob = object.otyp !== CORPSE && object.globby;
     let name = glob ? requireObjectName(object.otyp) : objectMonsterName(object);
     const personal = !glob && object.corpsenm !== undefined
@@ -355,10 +355,10 @@ export function corpseName(object: CorpseNameView, {
     if (adjective) name = personal || unique
         ? `${name} ${adjective}` : `${adjective} ${name}`;
     name = name.trim().replace(/\s+/g, ' ');
-    if (!personal && (unique || definite)) name = `the ${name}`;
+    if (!omitPrefix && !personal && (unique || definite)) name = `the ${name}`;
     const plural = !glob && !singular && (object.quan ?? object.quantity ?? 1) > 1;
     if (!glob) name += ` corpse${plural ? 's' : ''}`;
-    return includeArticle && !personal && !unique && !definite && !plural
+    return !omitPrefix && includeArticle && !personal && !unique && !definite && !plural
         && !/^\d/.test(adjective) ? withIndefiniteArticle(name) : name;
 }
 

@@ -259,8 +259,8 @@ export function monsterSubjectPronoun(monster, { state = game } = {}) {
     return SUBJECT_PRONOUNS[monsterPronounGender(monster, { state })];
 }
 // C mhim()/noit_mhim(): the same perceived gender, in the object case.
-export function monsterObjectPronoun(monster, { state = game, noIt = false } = {}) {
-    return OBJECT_PRONOUNS[monsterPronounGender(monster, { state, noIt })];
+export function monsterObjectPronoun(monster, { state = game, random = rn2, noIt = false } = {}) {
+    return OBJECT_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];
 }
 // C do_name.c:monverbself(). Obtain the displayed name before choosing a
 // hallucinated pronoun, since the two use distinct random streams.

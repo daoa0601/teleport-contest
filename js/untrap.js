@@ -2,6 +2,10 @@
 // C ref: trap.c dountrap(), could_untrap(), and untrap().
 import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
+import { vision_note_blocker_change } from './vision.js';
+import { addShopDamage } from './shop_damage.js';
+import { roomsAt } from './room.js';
+import { SHOPBASE } from './const.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { artifactById } from './artifacts.js';
@@ -761,9 +765,13 @@ async function handleDoor(x, y, { state, force, trapSkipped, ask, publish, rando
     return true;
 }
 async function triggerDoorTrap(door, x, y, { state, publish, rollOne }) {
-    await triggerBoobyTrap('door', { bodypart: true, state, publish, rollOne });
+    if (await triggerBoobyTrap('door', { bodypart: true, state, publish, rollOne }))
+        return;
     door.doormask = D_NODOOR;
+    vision_note_blocker_change(x, y);
     newsym(x, y);
+    if (roomsAt(state.level, x, y, SHOPBASE).length)
+        addShopDamage(x, y, 0, state);
 }
 async function awardExperience(experience, scoreBonus, state, publish) {
     addExperience(experience, scoreBonus, state);

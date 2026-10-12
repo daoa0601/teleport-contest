@@ -18,9 +18,10 @@ import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
-import { A_CHA, A_WIS, In_mines, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM, ROOMOFFSET, SHOPBASE, TEMPLE, Upolyd, MGIVENNAME, } from './const.js';
+import { A_CHA, A_WIS, DELPHI, In_mines, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM, ROOMOFFSET, SHOPBASE, TEMPLE, Upolyd, MGIVENNAME, } from './const.js';
 import { inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
 import { intemple } from './priest.js';
+import { recordDiscoveredRoom } from './dungeon.js';
 import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
 import { recordObjectPriceQuote } from './object_knowledge.js';
 import { ACH_SHOP, ACH_TOWN, recordAchievement } from './achievements.js';
@@ -1208,6 +1209,20 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
         if (room.rtype === MORGUE) {
             await plineWithContinuation(Number(String(game.datetime || '').slice(8, 10)) === 0
                 ? 'Run away!  Run away!' : 'You have an uncanny feeling...');
+            room.rtype = OROOM;
+            result = room;
+        }
+        else if (room.rtype === DELPHI) {
+            const oracle = [...game.level.monsters].reverse().find(monster => !monster.dead && monster.mhp > 0
+                && monster.mnum === MONSTER_NAME.indexOf('Oracle')
+                && roomsAt(game.level, monster.mx, monster.my).includes(roomno));
+            if (oracle) {
+                const name = game.plname;
+                await plineWithContinuation(oracle.mpeaceful
+                    ? `"${shopGreeting(oracle)}, ${name}, welcome to Delphi!"`
+                    : `"You're in Delphi, ${name}."`);
+                recordDiscoveredRoom(roomno - ROOMOFFSET);
+            }
             room.rtype = OROOM;
             result = room;
         }

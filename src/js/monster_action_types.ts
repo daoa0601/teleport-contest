@@ -574,7 +574,6 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     sleeping?: boolean;
     eating?: boolean;
     retainedHidingPlace?: boolean;
-    wokeFromDisturb?: boolean;
     swallowedAttackSkipped?: boolean;
     fleeingRelocation?: boolean;
     fleeingTeleportFailed?: boolean;
@@ -607,7 +606,6 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     deferredAfterMovementSpell?: boolean;
     deferredAfterPetAttack?: boolean;
     deferredAfterRestrictedTenguTeleport?: boolean;
-    deferredAfterRollingBoulderMessage?: boolean;
     deferredAfterSpecialAttack?: boolean;
     deferredCovetousRelocation?: boolean;
     covetousRelocation?: { appearMessage: boolean };
@@ -674,32 +672,13 @@ export interface MonsterEngulfOptions extends Omit<MonsterDamageOptions, 'die'> 
     flushMessages?: () => void | Promise<unknown>;
 }
 
-export type MonsterRollingBoulderEvent = {
+export interface MonsterRollingBoulderEvent {
     kind: 'rolling-boulder';
     trap: Trap;
-    visible: boolean;
-    wasSeen: boolean;
-    damage: number;
+    released: boolean;
     killed: boolean;
-} & (
-    | { released: false }
-    | {
-          released: true;
-          boulder: GameObject;
-          launch: Position;
-          endpoint: Position;
-          hitRoll: number;
-          hitThreshold: number;
-          hit: boolean;
-          monsterHpBefore: number;
-          monsterHpAfter: number;
-          deferredDeath: boolean;
-          deferredPlacement: boolean;
-          inSight: boolean;
-          seeSquare: boolean;
-          death?: MonsterDeath;
-      }
-);
+    heroDied: boolean;
+}
 
 export type MonsterDistressEvent =
     | { kind: 'stationary-liquid'; monster: Monster }

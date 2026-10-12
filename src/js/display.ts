@@ -1133,6 +1133,13 @@ export function map_location(x: number, y: number, show = true) {
     if (show && !heroIsBlind() && visibleMapRegionAt(x, y)) showMapRegion(x, y);
 }
 
+// C display.c:feel_newsym(). Known terrain changes update memory by touch
+// when the hero is blind.
+export function feel_newsym(x: number, y: number) {
+    if (heroIsBlind()) feel_location(x, y);
+    else newsym(x, y);
+}
+
 // C display.c:feel_location().  Blind explicit search refreshes each adjacent
 // nonliving layer before it tests for a concealed monster or trap.  This is
 // why a felt floor object can remain in hero memory after a later invisible

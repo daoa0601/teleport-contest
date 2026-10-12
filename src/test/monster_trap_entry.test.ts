@@ -10,8 +10,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
-    finishDeferredMonsterRollingBoulderPlacement,
-    resumeDeferredMonsterRollingBoulderDeath, resumeDeferredMonsterTrap,
+    finishImmediateMonsterTrap, resumeDeferredMonsterTrap,
     triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
 import { BOULDER, IRON_SHOES, ORCISH_HELM } from '../js/object_data.js';
@@ -230,10 +229,10 @@ void test('a boulder-hit vampire rises while the boulder keeps rolling',
         });
         requirePlayingGame(game);
         const boulder = await floorObject(BOULDER, 9, 10);
+        installPagerInput(resetInputState(), { expected: /boulder|wolf|vampire/i, limit: 8 });
 
         const action = await triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterRollingBoulderDeath(action, game);
-        await finishDeferredMonsterRollingBoulderPlacement(action, game);
+        await finishImmediateMonsterTrap(action, game);
 
         assert.equal(monster.mnum, vampireLeader);
         assert.equal(game.level.monsters.includes(monster), true);
