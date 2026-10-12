@@ -6,10 +6,12 @@ import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { SACK } from '../js/object_data.js';
+import { addObjectToContainer } from '../js/object_container.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopAllObjectTimers } from '../js/object_timers.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { nearCapacity } from '../js/weight.js';
-import { corpseObject } from './support/game-objects.js';
+import { addInventoryObject, corpseObject } from './support/game-objects.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
@@ -95,4 +97,32 @@ void test('turn maintenance reports relief immediately after a heavy corpse rots
     assert.match(messages.join('\n'), /Your red dragon corpse rots away\./);
     assert.match(messages.join('\n'), /Your movements are now unencumbered\./);
     assert.equal(game._encumbranceLevel, 0);
+});
+
+void test('turn maintenance reports relief when a corpse rots inside a carried sack', async () => {
+    freshObjectRoom({ flags: { verbose: true } });
+    requirePlayingGame(game);
+    const sack = await addInventoryObject(SACK);
+    const corpse = await corpseObject(MONSTER_NAME.indexOf('red dragon'));
+    await addObjectToContainer(sack, corpse);
+    stopAllObjectTimers(corpse);
+    scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ROT_CORPSE, game.moves + 1);
+    game._encumbranceLevel = nearCapacity(game);
+    assert.ok(game._encumbranceLevel > 0);
+    game._capacityDirty = false;
+    game._moveloopStarted = true;
+    game._heroTimePending = true;
+    game.u.umovement = 0;
+    const input = resetInputState();
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /unencumbered/, limit: 4 });
+
+    await finishAtCommandInput(input, moveloop_core, /unencumbered/);
+
+    assert.equal(corpse.where, 'gone');
+    assert.equal(sack.contents?.length, 0);
+    assert.match(messages.join('\n'), /Your movements are now unencumbered\./);
+    assert.equal(game._encumbranceLevel, 0);
+    assert.equal(game.u._encumbrance, '');
 });
