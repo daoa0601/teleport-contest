@@ -12,7 +12,7 @@ import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
 import { getLine } from './query.js';
-import { BUFSZ, PICK_NONE, PICK_ONE } from './const.js';
+import { BUFSZ, MENU_ITEMFLAGS_SKIPINVERT, PICK_NONE, PICK_ONE } from './const.js';
 import { NO_COLOR } from './terminal.js';
 import type { TerminalCell } from './terminal.js';
 import type { GameDisplay } from './game_display.js';
@@ -97,6 +97,7 @@ export interface ChoiceWindowOptions {
 export interface PageLocalMenuItem<T> {
     key?: string;
     groupAccelerator?: string;
+    itemFlags?: number;
     text: string;
     value: T;
     selectable?: true;
@@ -746,20 +747,24 @@ export async function showMultiSelectWindow<T>({
         }
         if (letter === '@') {
             if (pickOne) continue;
-            if (selected.size === allItems.length) {
-                selected.clear();
-                selectedCounts.clear();
-            } else {
-                for (const candidate of allItems) selected.add(candidate);
-                selectedCounts.clear();
+            for (const candidate of allItems) {
+                if (selected.has(candidate)) {
+                    selected.delete(candidate);
+                    selectedCounts.delete(candidate);
+                } else if (!((candidate.itemFlags ?? 0) & MENU_ITEMFLAGS_SKIPINVERT)) {
+                    // C menuitem_invert_test(), default menuinvertmode=1:
+                    // bulk changes can clear a filter but cannot enable it.
+                    selected.add(candidate);
+                }
             }
             continue;
         }
         if (letter === '.') {
             if (pickOne) continue;
-            for (const candidate of pageItems) {
+            for (const candidate of allItems) {
+                if (selected.has(candidate)
+                    || ((candidate.itemFlags ?? 0) & MENU_ITEMFLAGS_SKIPINVERT)) continue;
                 selected.add(candidate);
-                selectedCounts.delete(candidate);
             }
             continue;
         }

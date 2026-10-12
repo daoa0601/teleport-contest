@@ -1,6 +1,6 @@
 // C do_wear.c:menu_remarm(); pickup.c:query_category()/allow_category();
 // invent.c:ggetobj()/askchain(). The window API owns rendering and input.
-import { MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
+import { MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
 import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline, } from './display.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription, selectInventoryObject } from './invent.js';
@@ -43,6 +43,7 @@ export async function selectBulkTakeoff(selectOff) {
             consumeHallucinatedMenuObjectGlyph(object);
             return {
                 key: object.invlet ?? '#',
+                groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] ?? '',
                 text: objectDescription(object, { withPrice: true }),
                 value: object,
             };
@@ -100,7 +101,10 @@ async function categoryMenu() {
     const items = [];
     let letter = 97;
     if (classes.length > 1) {
-        items.push({ key: 'a', text: 'All worn and wielded types', value: 'all' });
+        items.push({
+            key: 'a', text: 'All worn and wielded types', value: 'all',
+            itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+        });
         letter++;
     }
     for (const oclass of classes)
@@ -111,11 +115,13 @@ async function categoryMenu() {
     if (unpaid || statuses.size)
         items.push({ text: '', selectable: false });
     if (unpaid)
-        items.push({ key: 'u', text: 'Unpaid items', value: 'u' });
+        items.push({
+            key: 'u', text: 'Unpaid items', value: 'u', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+        });
     for (const status of ['B', 'C', 'U', 'X']) {
         if (statuses.has(status))
             items.push({
-                key: status, value: status, text: status === 'X'
+                key: status, value: status, itemFlags: MENU_ITEMFLAGS_SKIPINVERT, text: status === 'X'
                     ? 'Items of unknown Bless/Curse status'
                     : `Items known to be ${status === 'B' ? 'Blessed' : status === 'C' ? 'Cursed' : 'Uncursed'}`,
             });

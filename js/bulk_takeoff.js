@@ -13,8 +13,8 @@ import { heroIsStrangled } from './hero_strangulation.js';
 import { hasIntrinsicProperty, propertyIsActive } from './properties.js';
 import { learnObjectType } from './object_knowledge.js';
 import { heroIsInDangerousRegion } from './regions.js';
-import { heroCanSwim, heroLiquidEffects } from './hack.js';
-import { applyHeroLocationEffects } from './cmd.js';
+import { heroCanSwim } from './hack.js';
+import { applyHeroLiquidEffects, applyHeroLocationEffects } from './cmd.js';
 import { isLavaAt, isPoolAt, levelIsWaterLevel } from './terrain_properties.js';
 import { makePlural } from './object_grammar.js';
 import { objectName } from './objnam.js';
@@ -169,7 +169,7 @@ async function removeAmulet(object, state) {
         if (state.underwater && !heroIsBreathless(state) && !state.u.amphibious
             && !(heroFormFlags(state) & M1_AMPHIBIOUS) && !heroCanSwim(state)) {
             await pline(`You suddenly inhale an unhealthy amount of ${displayLiquidName('water')}!`);
-            await heroLiquidEffects({ state, entry: 'float-down' });
+            await applyHeroLiquidEffects(undefined, { entry: 'float-down' });
             if (state.program_state.gameover)
                 return;
             learnObjectType(object.otyp, state);

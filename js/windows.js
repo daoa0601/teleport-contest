@@ -10,7 +10,7 @@ import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
 import { getLine } from './query.js';
-import { BUFSZ, PICK_NONE, PICK_ONE } from './const.js';
+import { BUFSZ, MENU_ITEMFLAGS_SKIPINVERT, PICK_NONE, PICK_ONE } from './const.js';
 import { NO_COLOR } from './terminal.js';
 export const ATR_NONE = 0;
 export const ATR_INVERSE = 1;
@@ -578,23 +578,27 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
         if (letter === '@') {
             if (pickOne)
                 continue;
-            if (selected.size === allItems.length) {
-                selected.clear();
-                selectedCounts.clear();
-            }
-            else {
-                for (const candidate of allItems)
+            for (const candidate of allItems) {
+                if (selected.has(candidate)) {
+                    selected.delete(candidate);
+                    selectedCounts.delete(candidate);
+                }
+                else if (!((candidate.itemFlags ?? 0) & MENU_ITEMFLAGS_SKIPINVERT)) {
+                    // C menuitem_invert_test(), default menuinvertmode=1:
+                    // bulk changes can clear a filter but cannot enable it.
                     selected.add(candidate);
-                selectedCounts.clear();
+                }
             }
             continue;
         }
         if (letter === '.') {
             if (pickOne)
                 continue;
-            for (const candidate of pageItems) {
+            for (const candidate of allItems) {
+                if (selected.has(candidate)
+                    || ((candidate.itemFlags ?? 0) & MENU_ITEMFLAGS_SKIPINVERT))
+                    continue;
                 selected.add(candidate);
-                selectedCounts.delete(candidate);
             }
             continue;
         }

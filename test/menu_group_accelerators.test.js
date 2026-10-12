@@ -59,4 +59,30 @@ void test('a pick-one menu accepts a class accelerator only when it identifies o
     });
     assert.deepEqual(selected, ['ring']);
 });
+void test('bulk inversion flips each menu item independently', async () => {
+    freshPlayableRoom();
+    pushKeys('a@\n');
+    const selected = await showMultiSelectWindow({
+        title: 'Remove which armor?', omitHeadings: true,
+        sections: [{ items: [
+                    { key: 'a', text: 'a cloak', value: 'cloak' },
+                    { key: 'b', text: 'a pair of boots', value: 'boots' },
+                ] }],
+    });
+    assert.deepEqual(selected, ['boots']);
+});
+void test('select all includes menu items on later pages', async () => {
+    freshPlayableRoom();
+    game.nhDisplay = new GameDisplay(new Terminal(null, { rows: 5, cols: 80 }));
+    pushKeys('.\n');
+    const selected = await showMultiSelectWindow({
+        title: 'Remove which armor?', omitHeadings: true,
+        sections: [{ items: [
+                    { key: 'a', text: 'a cloak', value: 'cloak' },
+                    { key: 'b', text: 'a pair of boots', value: 'boots' },
+                    { key: 'c', text: 'a helmet', value: 'helmet' },
+                ] }],
+    });
+    assert.deepEqual(selected, ['cloak', 'boots', 'helmet']);
+});
 //# sourceMappingURL=menu_group_accelerators.test.js.map

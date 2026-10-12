@@ -4,7 +4,7 @@ import { removeHeroArmor, wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { moveloop_core } from '../js/allmain.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
-import { MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NO_MINVENT, POOL, TT_BEARTRAP } from '../js/const.js';
+import { MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NO_MINVENT, PIT, POOL, ROOM, TT_BEARTRAP, TT_PIT } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -27,6 +27,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { createPoisonGasCloud } from '../js/regions.js';
+import { addTrap } from './support/level-state.js';
 
 const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 const T_SHIRT = OBJECT_NAMES.indexOf('T-shirt');
@@ -177,6 +178,101 @@ void test('interrupted disrobing resumes the remaining delay without selecting i
     await work(1);
     assert.equal(game.uarm, null);
 });
+
+void test('wearing selected quiver contents preserves replacement ammunition during resumed removal', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const suit = await addInventoryObject(RING_MAIL);
+    const ring = await addInventoryObject(RIN_PROTECTION);
+    const ammunition = await addInventoryObject(DAGGER);
+    wearHeroArmor(suit);
+    await setQuiverObject(ring);
+    await takeOff(`${suit.invlet}${ring.invlet}\n`);
+    await work(1);
+    await stopHeroOccupation(game, async () => {});
+
+    await wearHeroAccessory(ring, 'uleft');
+    await setQuiverObject(ammunition);
+    await takeOff('');
+    await work(5);
+
+    assert.equal(game.uarm, null);
+    assert.equal(game.uleft, ring);
+    assert.equal(game.uquiver, ammunition, 'unselected replacement ammunition stays readied');
+});
+
+void test('successfully dropping another item discards interrupted bulk removal', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const suit = await addInventoryObject(RING_MAIL);
+    const dagger = await addInventoryObject(DAGGER);
+    wearHeroArmor(suit);
+    await takeOff(`${suit.invlet}\n`);
+    await work(1);
+    await stopHeroOccupation(game, async () => {});
+
+    resetInputState();
+    pushKeys(`${dagger.invlet}`);
+    await rhack('d'.charCodeAt(0));
+
+    assert.equal(dagger.where, 'floor');
+    assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+    await takeOff('\x1b');
+    await work(5);
+    assert.equal(game.uarm, suit, 'a new cancelled selection does not resume discarded removal');
+});
+
+void test('a refused drop preserves interrupted bulk removal', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const suit = await addInventoryObject(RING_MAIL);
+    wearHeroArmor(suit);
+    await takeOff(`${suit.invlet}\n`);
+    await work(1);
+    await stopHeroOccupation(game, async () => {});
+
+    resetInputState();
+    pushKeys(`${suit.invlet}`);
+    await rhack('d'.charCodeAt(0));
+
+    assert.equal(game.context.move, 0);
+    await takeOff('');
+    await work(4);
+    assert.equal(game.uarm, null);
+});
+
+void test('the armor class symbol selects armor in the takeoff item menu', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const shield = await addInventoryObject(SMALL_SHIELD);
+    const cloak = await addInventoryObject(LEATHER_CLOAK);
+    const ring = await addInventoryObject(RIN_PROTECTION);
+    wearHeroArmor(shield);
+    wearHeroArmor(cloak);
+    await wearHeroAccessory(ring, 'uleft');
+
+    await takeOff('[\n');
+    await work(2);
+
+    assert.equal(game.uarms, null);
+    assert.equal(game.uarmc, null);
+    assert.equal(game.uleft, ring);
+});
+
+for (const selector of ['.', '@']) {
+    void test(`bulk category selection with ${selector} preserves paid equipment and mixed BUC states`, async () => {
+        freshObjectRoom({ flags: { menu_style: MENU_FULL, verbose: false } });
+        const shield = await addInventoryObject(SMALL_SHIELD, { unpaid: true });
+        const cloak = await addInventoryObject(LEATHER_CLOAK, { blessed: true });
+        const ring = await addInventoryObject(RIN_PROTECTION, { bknown: false });
+        wearHeroArmor(shield);
+        wearHeroArmor(cloak);
+        await wearHeroAccessory(ring, 'uleft');
+
+        await takeOff(`${selector}\n.\n`);
+        await work(3);
+
+        assert.equal(game.uarms, null);
+        assert.equal(game.uarmc, null, 'bulk selection does not enable the unpaid filter');
+        assert.equal(game.uleft, null, 'bulk selection does not enable BUC filters');
+    });
+}
 
 void test('full-menu class and curse filters intersect rather than selecting either category', async () => {
     freshObjectRoom({ flags: { menu_style: 2 } });
@@ -422,6 +518,34 @@ void test('bulk magical-breathing amulet removal forces an underwater hero to es
     assert.ok(game.u.ux !== ux || game.u.uy !== uy, 'the hero crawls to adjacent dry ground');
     assert.equal(!!game.program_state.gameover, false);
     assert.equal(objectTypeKnown(amulet), true);
+});
+
+void test('escaping drowning during bulk amulet removal leaves water and triggers the landing pit', async () => {
+    const level = freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const amulet = await addInventoryObject(AMULET_OF_MAGICAL_BREATHING);
+    await wearHeroAccessory(amulet, 'uamul');
+    const { ux, uy, uhp } = game.u;
+    assert.ok(uhp !== undefined);
+    for (let x = ux - 1; x <= ux + 1; x++) for (let y = uy - 1; y <= uy + 1; y++) {
+        level.requireAt(x, y).typ = POOL;
+    }
+    const landing = level.requireAt(ux + 1, uy);
+    landing.typ = ROOM;
+    addTrap(level, PIT, ux + 1, uy);
+    game.u.uinwater = 1;
+    game.underwater = true;
+    game._pending_message = '';
+
+    await takeOff(`${amulet.invlet}\n`);
+    await work(1);
+
+    assert.equal(game.u.ux, ux + 1);
+    assert.equal(game.u.uy, uy);
+    assert.ok((game.u.utrap ?? 0) > 0, 'the landing pit traps the hero');
+    assert.equal(game.u.utraptype, TT_PIT);
+    assert.ok(game.u.uhp !== undefined && game.u.uhp < uhp, 'falling into the pit inflicts damage');
+    assert.equal(game.u.uinwater, 0);
+    assert.equal(game.underwater, false);
 });
 
 void test('removing a restful-sleep amulet clears its timeout but retains permanent sleepiness', async () => {

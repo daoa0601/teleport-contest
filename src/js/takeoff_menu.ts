@@ -1,6 +1,6 @@
 // C do_wear.c:menu_remarm(); pickup.c:query_category()/allow_category();
 // invent.c:ggetobj()/askchain(). The window API owns rendering and input.
-import { MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
+import { MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
 import {
     consumeHallucinatedMenuObjectGlyph,
     plineWithContinuation as pline,
@@ -49,6 +49,7 @@ export async function selectBulkTakeoff(selectOff: SelectOff): Promise<void> {
             consumeHallucinatedMenuObjectGlyph(object);
             return {
                 key: object.invlet ?? '#',
+                groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] ?? '',
                 text: objectDescription(object, { withPrice: true }),
                 value: object,
             };
@@ -107,7 +108,10 @@ async function categoryMenu(): Promise<Category[]> {
     const items: MultiSelectItem<Category>[] = [];
     let letter = 97;
     if (classes.length > 1) {
-        items.push({ key: 'a', text: 'All worn and wielded types', value: 'all' });
+        items.push({
+            key: 'a', text: 'All worn and wielded types', value: 'all',
+            itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+        });
         letter++;
     }
     for (const oclass of classes) items.push({
@@ -115,10 +119,12 @@ async function categoryMenu(): Promise<Category[]> {
         text: objectClassHeading(oclass), value: oclass,
     });
     if (unpaid || statuses.size) items.push({ text: '', selectable: false });
-    if (unpaid) items.push({ key: 'u', text: 'Unpaid items', value: 'u' });
+    if (unpaid) items.push({
+        key: 'u', text: 'Unpaid items', value: 'u', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+    });
     for (const status of ['B', 'C', 'U', 'X'] as const) {
         if (statuses.has(status)) items.push({
-            key: status, value: status, text: status === 'X'
+            key: status, value: status, itemFlags: MENU_ITEMFLAGS_SKIPINVERT, text: status === 'X'
                 ? 'Items of unknown Bless/Curse status'
                 : `Items known to be ${status === 'B' ? 'Blessed' : status === 'C' ? 'Cursed' : 'Uncursed'}`,
         });

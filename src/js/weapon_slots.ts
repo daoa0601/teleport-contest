@@ -160,6 +160,11 @@ export async function releaseWeaponSlots(
     const primary = state.uwep === object || state.u?.uwep === object;
     const secondary = state.uswapwep === object
         || state.u?.uswapwep === object;
+    const quivered = state.uquiver === object || state.u?.uquiver === object;
+
+    if (primary) cancelSlotTakeoff('uwep', state);
+    if (secondary) cancelSlotTakeoff('uswapwep', state);
+    if (quivered) cancelSlotTakeoff('uquiver', state);
 
     if (primary || secondary) setTwoWeaponCombat(false, state);
     if (primary && artifactEmitsLight(object) && object.lamplit)

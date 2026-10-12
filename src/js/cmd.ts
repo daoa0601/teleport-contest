@@ -5275,6 +5275,7 @@ async function dodrop(): Promise<void> {
             state: game, publish: plineWithContinuation,
         });
         game.context.move = spentTime ? 1 : 0;
+        if (spentTime) resetBulkTakeoff();
         // Lock-picking's resumable record lives in the occupation itself.
         if (spentTime && game._occupation?.key === 'pick-lock')
             game._occupation = null;
