@@ -124,7 +124,8 @@ import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { trapName } from './trap_name.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { monsterName } from './monster_name.js';
-import { killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { withIndefiniteArticle } from './object_grammar.js';
+import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { observeObject } from './object_knowledge.js';
 
 export interface HeroTrapOptions extends Pick<HeroHurtleOptions, 'finishTeleport' | 'gotoLevel'> {
@@ -874,9 +875,10 @@ async function triggerFallingRockTrap(trap: Trap) {
     trap.tseen = true;
     const rock = await makeTrapMissile(ROCK, trap);
     placeCreatedObject(rock, hero.ux, hero.uy);
+    observeObjectForNaming(rock);
     await plineWithContinuation(
         `A trap door in the ${ceiling} opens and ${
-            simpleObjectNameWithArticle(rock)
+            withIndefiniteArticle(objectName(rock))
         } falls on your ${heroHeadName(game)}!`,
     );
 
