@@ -2096,13 +2096,18 @@ export function clearMessageWindow(coveredRows = 0) {
         display.clearRow(row);
         if (row <= ROWNO && !game._suppressMapStatusForFlush) writeMapRow(display, row - 1);
     }
-    if (rows > ROWNO + 1 && !game._suppressMapStatusForFlush)
-        writeStatusLines(display, statusLines(false));
+    // docorner() regenerates status after erasing rows a prompt covered;
+    // the physical cells no longer contain a status line we could reuse.
+    if (rows > ROWNO + 1) refreshStatusLines();
     display.setCursor(0, 0);
 }
 
 // ── bot ──
 export async function bot() {
+    refreshStatusLines();
+}
+
+function refreshStatusLines(): void {
     const display = game.nhDisplay;
     if (!display || game.u.uhp === -1 || game.program_state.saving
         || game.program_state.windows_exited || game._suppressMapStatusForFlush) return;

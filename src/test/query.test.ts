@@ -105,6 +105,28 @@ void test('an answered wrapped confirmation clears the covered message area', as
     assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(), '');
 });
 
+for (const lineInput of [true, false]) {
+    void test(`a wrapped ${lineInput ? 'line' : 'confirmation'} prompt restores the status rows it covered`, async () => {
+        freshPlayableRoom();
+        game.plname = 'Lin';
+        game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 6, rows: 24 }));
+        const input = resetInputState();
+        const prompt = 'Choose '.repeat(18);
+        const answer = lineInput ? getLine(prompt, () => true) : promptYesNo(prompt);
+        try {
+            await input.waitUntilBlocked();
+            assert.doesNotMatch(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/,
+                'the question should cover the first status row');
+        } finally {
+            input.feed(lineInput ? '\n' : 'n');
+            await answer;
+        }
+
+        assert.match(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/);
+        assert.match(game.nhDisplay.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dlvl:/);
+    });
+}
+
 void test('Escape rejects a yes/no question even when yes is the default', async () => {
     freshPlayableRoom();
     requirePlayingGame(game);
