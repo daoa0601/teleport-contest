@@ -188,7 +188,7 @@ function heroCarriesBillFor(keeper: Shopkeeper): boolean {
 // destination aside when moveOther is set.  A resident that cannot be
 // re-housed goes to limbo via the migration owner and re-arrives on this
 // level later (C deal_with_overcrowding() -> m_into_limbo()).
-async function mnearto(
+export async function mnearto(
     monster: Monster, x: number, y: number, state: ShopGameState,
     { moveOther = false, flags = RLOC_NOMSG }: { moveOther?: boolean; flags?: number } = {},
 ): Promise<0 | 1 | 2> {

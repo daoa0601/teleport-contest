@@ -5,6 +5,11 @@ import { grantMonsterWish } from './potion_occupants.js';
 import { quaff } from './quaff.js';
 import { tameMonster } from './monster_taming.js';
 import { jumpHero } from './jumping.js';
+import { triggerBoobyTrap } from './booby_trap.js';
+import { feel_location } from './display.js';
+import { D_TRAPPED, SHOP_DOOR_COST } from './const.js';
+import { roomsAt } from './room.js';
+import { addShopDamage } from './shop_damage.js';
 // cmd.js — Command dispatch and movement.
 // C ref: cmd.c rhack(), hack.c domove().
 import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
@@ -768,6 +773,15 @@ async function continueOccupation(g) {
             if (occupation.container) {
                 occupation.container.olocked = !occupation.container.olocked;
                 occupation.container.lknown = true;
+            }
+            else if (occupation.door && (occupation.door.doormask & D_TRAPPED)) {
+                if (await triggerBoobyTrap('door', { state: g, bodypart: true }))
+                    return true;
+                occupation.door.doormask = D_NODOOR;
+                if (g.level && roomsAt(g.level, occupation.x, occupation.y, SHOPBASE).length)
+                    addShopDamage(occupation.x, occupation.y, SHOP_DOOR_COST, g);
+                vision_reset();
+                vision_recalc(0);
             }
             else if (occupation.door && (occupation.door.doormask & D_LOCKED)) {
                 occupation.door.doormask &= ~D_LOCKED;
@@ -5031,17 +5045,34 @@ async function doopen() {
     if (rnl(20) < Math.trunc((currentStrength()
         + currentAttribute(A_DEX)
         + currentAttribute(A_CON)) / 3)) {
-        loc.doormask = D_ISOPEN;
-        newsym(x, y);
-        vision_reset();
-        vision_recalc(0);
-        await pline('The door opens.');
+        await openClosedDoor(loc, x, y);
     }
     else {
         await exerciseAttribute(A_STR, true);
         await pline('The door resists!');
     }
     game.context.move = 1;
+}
+// lock.c:doopen_indir() announces opening before the explosion. The door
+// remains closed across that message pause and any fatal explosion.
+async function openClosedDoor(door, x, y) {
+    await plineWithContinuation('The door opens.');
+    if (door.doormask & D_TRAPPED) {
+        if (await triggerBoobyTrap('door', { bodypart: true }))
+            return;
+        door.doormask = D_NODOOR;
+        const level = requireGameLevel();
+        if (roomsAt(level, x, y, SHOPBASE).length)
+            addShopDamage(x, y, SHOP_DOOR_COST);
+    }
+    else
+        door.doormask = D_ISOPEN;
+    if (heroIsBlind(game))
+        feel_location(x, y);
+    else
+        newsym(x, y);
+    vision_reset();
+    vision_recalc(0);
 }
 // C refs: write.c dowrite()/write_ok(); invent.c getobj().  The object picker
 // retains ownership after an absent inventory letter and reopens the same
@@ -6858,12 +6889,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
             await pline('The door resists!');
             return false;
         }
-        loc.doormask &= ~(D_CLOSED | D_LOCKED);
-        loc.doormask |= 2; // D_ISOPEN
-        await pline('The door opens.');
-        vision_reset();
-        vision_recalc(1);
-        newsym(newx, newy);
+        await openClosedDoor(loc, newx, newy);
         return false;
     }
     // C test_move() rejects an obstructed destination before it evaluates
