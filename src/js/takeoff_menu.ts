@@ -22,6 +22,8 @@ type Category = number | 'all' | 'u' | 'B' | 'C' | 'U' | 'X' | 'P';
 type BucCategory = 'B' | 'C' | 'U' | 'X';
 type SelectOff = (object: GameObject) => Promise<void>;
 
+const WEAPON_CLASS = 2;
+
 export async function selectBulkTakeoff(selectOff: SelectOff): Promise<void> {
     const style = game.flags.menu_style ?? MENU_FULL;
     let categories: Category[] = ['all'];
@@ -174,13 +176,15 @@ async function traditionalCategories(combo: boolean, selectOff: SelectOff): Prom
             await pline(`You don't have any ${character}'s.`);
             continue;
         }
-        const slottedClass = (['uwep', 'uswapwep', 'uquiver'] as const).some(slot =>
-            takeoffSlotObject(slot)?.oclass === oclass);
+        const weaponSlots = (['uwep', 'uswapwep', 'uquiver'] as const).map(slot => takeoffSlotObject(slot));
+        const slottedClass = weaponSlots.some(object => object?.oclass === oclass);
         if (!slottedClass && ![2, 3, 4, 5, 6].includes(oclass)) {
             await pline('Not applicable.');
             return null;
         }
-        if (!classes.includes(oclass)) {
+        const hasCategory = oclass === WEAPON_CLASS
+            ? weaponSlots.some(object => object !== null) : classes.includes(oclass);
+        if (!slottedClass && !hasCategory) {
             await pline(oclass === 2 ? 'You are not wielding anything.'
                 : oclass === 3 ? 'You are not wearing any armor.'
                     : oclass === 4 ? 'You are not wearing rings.'

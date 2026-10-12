@@ -6971,7 +6971,7 @@ async function fightEmptyDestination(x: number, y: number): Promise<boolean> {
 
 export function applyHeroLiquidEffects(
     publish: MessagePublisher = plineWithContinuation,
-    { entry = 'spot-effects' }: { entry?: 'spot-effects' | 'float-down' } = {},
+    { entry = 'spot-effects' }: { entry?: 'spot-effects' | 'float-down' | 'drown' } = {},
 ): Promise<LiquidEffectResult | null | undefined> {
     return heroLiquidEffects({
         publish, entry,

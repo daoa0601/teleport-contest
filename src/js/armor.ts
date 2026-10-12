@@ -63,7 +63,7 @@ import {
 } from './properties.js';
 import {
     A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX,
-    W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU,
+    W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU,
 } from './const.js';
 
 // objects[].a_ac is `10 - ac` for every ARMOR()/HELM()/CLOAK()/SHIELD()/
@@ -843,7 +843,7 @@ export async function stopDonning(stolenObject: GameObject | null = null, state:
         const progress = state.context.takeoff;
         const slot = progress?.current;
         const object = slot ? takeoffSlotObject(slot, state) : null;
-        if (!progress || !object || !armorSlotFor(object.otyp)) return false;
+        if (!progress || !object || !((object.owornmask ?? 0) & W_ARMOR)) return false;
         progress.current = null;
         progress.delay = 0;
         state.multi = 0;

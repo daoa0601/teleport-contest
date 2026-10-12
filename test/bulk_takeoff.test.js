@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { removeHeroArmor, wearHeroArmor } from '../js/armor.js';
+import { removeHeroArmor, stopDonning, wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { moveloop_core } from '../js/allmain.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
@@ -8,7 +8,7 @@ import { MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NO_MINVENT, PIT, POOL, ROOM,
 import { glyphAt, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, CORPSE, DAGGER, GAUNTLETS_OF_POWER, GOLD_PIECE, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD, } from '../js/object_data.js';
+import { AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, CORPSE, DAGGER, GAUNTLETS_OF_POWER, GOLD_PIECE, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD, WATER_WALKING_BOOTS, } from '../js/object_data.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { grantIntrinsicProperty, propertyIsActive, revokeIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { inventoryItemDescription } from '../js/invent.js';
@@ -147,6 +147,33 @@ void test('bulk disarming clears cursed alternate and quiver slots without dropp
     assert.ok(game.inventory.includes(ammunition));
     assert.match(game._pending_message, /You finish disarming\./);
 });
+for (const [slot, equip] of [
+    ['uwep', setPrimaryWeapon],
+    ['uswapwep', setSecondaryWeapon],
+    ['uquiver', setQuiverObject],
+]) {
+    void test(`a dressing interruption does not delay disarming armor in ${slot}`, async () => {
+        freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+        const shield = await addInventoryObject(SMALL_SHIELD);
+        await equip(shield);
+        await takeOff(`${shield.invlet}\n`);
+        await stopDonning();
+        await work(1);
+        assert.equal(game[slot], null, 'disarming still finishes on its first working turn');
+        assert.ok(game.inventory.includes(shield));
+        assert.doesNotMatch(game._pending_message, /You stop taking off/);
+    });
+    void test(`traditional takeoff accepts the weapon category before a ring in ${slot}`, async () => {
+        freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
+        const ring = await addInventoryObject(RIN_PROTECTION);
+        await equip(ring);
+        await takeOff(')=\ny');
+        await work(1);
+        assert.equal(game[slot], null);
+        assert.ok(game.inventory.includes(ring));
+        assert.match(game._pending_message, /You finish disarming\./);
+    });
+}
 void test('interrupted disrobing resumes the remaining delay without selecting items again', async () => {
     freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const suit = await addInventoryObject(RING_MAIL);
@@ -441,14 +468,14 @@ void test('bulk magical-breathing amulet removal warns about poison gas and iden
     assert.equal(propertyIsActive('magicalBreathing'), false);
     assert.equal(objectTypeKnown(amulet), true);
 });
-void test('bulk magical-breathing amulet removal forces an underwater hero to escape drowning', async () => {
+void test('bulk magical-breathing amulet removal checks the hero in-water state without the display flag', async () => {
     const level = freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const amulet = await addInventoryObject(AMULET_OF_MAGICAL_BREATHING, { typeKnown: false });
     await wearHeroAccessory(amulet, 'uamul');
     const { ux, uy } = game.u;
     level.requireAt(ux, uy).typ = POOL;
     game.u.uinwater = 1;
-    game.underwater = true;
+    game.underwater = false;
     game._pending_message = '';
     assert.equal(objectTypeKnown(amulet), false);
     await takeOff(`${amulet.invlet}\n`);
@@ -457,6 +484,32 @@ void test('bulk magical-breathing amulet removal forces an underwater hero to es
     assert.equal(!!game.program_state.gameover, false);
     assert.equal(objectTypeKnown(amulet), true);
 });
+for (const obstacle of ['water-walking boots', 'a holding monster']) {
+    void test(`breathing loss forces a submerged hero to escape despite ${obstacle}`, async () => {
+        const level = freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+        const amulet = await addInventoryObject(AMULET_OF_MAGICAL_BREATHING, { typeKnown: false });
+        await wearHeroAccessory(amulet, 'uamul');
+        const { ux, uy } = game.u;
+        level.requireAt(ux, uy).typ = POOL;
+        if (obstacle === 'water-walking boots') {
+            const boots = await addInventoryObject(WATER_WALKING_BOOTS);
+            wearHeroArmor(boots);
+        }
+        else {
+            game.u.ustuck = await createMonsterAt('owlbear', ux + 1, uy, NO_MINVENT);
+        }
+        game.u.uinwater = 1;
+        game.underwater = true;
+        game._pending_message = '';
+        await takeOff(`${amulet.invlet}\n`);
+        await work(1);
+        assert.ok(game.u.ux !== ux || game.u.uy !== uy, 'the hero crawls to adjacent dry ground');
+        assert.equal(game.u.uinwater, 0);
+        assert.equal(game.u.ustuck ?? null, null);
+        assert.equal(!!game.program_state.gameover, false);
+        assert.equal(objectTypeKnown(amulet), true);
+    });
+}
 void test('escaping drowning during bulk amulet removal leaves water and triggers the landing pit', async () => {
     const level = freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const amulet = await addInventoryObject(AMULET_OF_MAGICAL_BREATHING);

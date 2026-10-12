@@ -29,7 +29,7 @@ import { AMULET_OF_GUARDING, CLOAK_OF_DISPLACEMENT, CORPSE, GAUNTLETS_OF_POWER, 
 import { rn2, rnd } from './rng.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { captureLevitationState, grantWornProperty, hasIntrinsicProperty, propertyIsActive, refreshMovementProperties, removeWornProperty, } from './properties.js';
-import { A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, } from './const.js';
+import { A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, } from './const.js';
 // objects[].a_ac is `10 - ac` for every ARMOR()/HELM()/CLOAK()/SHIELD()/
 // GLOVES()/BOOTS() entry in the pinned objects.h. Armor occupies IDs 89..172.
 // Keeping the complete table here makes equipment transactions consume object
@@ -833,7 +833,7 @@ export async function stopDonning(stolenObject = null, state = game) {
         const progress = state.context.takeoff;
         const slot = progress?.current;
         const object = slot ? takeoffSlotObject(slot, state) : null;
-        if (!progress || !object || !armorSlotFor(object.otyp))
+        if (!progress || !object || !((object.owornmask ?? 0) & W_ARMOR))
             return false;
         progress.current = null;
         progress.delay = 0;

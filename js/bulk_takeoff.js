@@ -166,10 +166,10 @@ async function removeAmulet(object, state) {
         state.u.sleepyTurns = 0;
     }
     else if (object.otyp === AMULET_OF_MAGICAL_BREATHING) {
-        if (state.underwater && !heroIsBreathless(state) && !state.u.amphibious
+        if (state.u.uinwater && !heroIsBreathless(state) && !state.u.amphibious
             && !(heroFormFlags(state) & M1_AMPHIBIOUS) && !heroCanSwim(state)) {
             await pline(`You suddenly inhale an unhealthy amount of ${displayLiquidName('water')}!`);
-            await applyHeroLiquidEffects(undefined, { entry: 'float-down' });
+            await applyHeroLiquidEffects(undefined, { entry: 'drown' });
             if (state.program_state.gameover)
                 return;
             learnObjectType(object.otyp, state);

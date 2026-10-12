@@ -11,6 +11,7 @@ import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { restoreMenuUnderlay, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import { TAKEOFF_ORDER, takeoffSlotObject } from './takeoff_state.js';
+const WEAPON_CLASS = 2;
 export async function selectBulkTakeoff(selectOff) {
     const style = game.flags.menu_style ?? MENU_FULL;
     let categories = ['all'];
@@ -173,12 +174,15 @@ async function traditionalCategories(combo, selectOff) {
             await pline(`You don't have any ${character}'s.`);
             continue;
         }
-        const slottedClass = ['uwep', 'uswapwep', 'uquiver'].some(slot => takeoffSlotObject(slot)?.oclass === oclass);
+        const weaponSlots = ['uwep', 'uswapwep', 'uquiver'].map(slot => takeoffSlotObject(slot));
+        const slottedClass = weaponSlots.some(object => object?.oclass === oclass);
         if (!slottedClass && ![2, 3, 4, 5, 6].includes(oclass)) {
             await pline('Not applicable.');
             return null;
         }
-        if (!classes.includes(oclass)) {
+        const hasCategory = oclass === WEAPON_CLASS
+            ? weaponSlots.some(object => object !== null) : classes.includes(oclass);
+        if (!slottedClass && !hasCategory) {
             await pline(oclass === 2 ? 'You are not wielding anything.'
                 : oclass === 3 ? 'You are not wearing any armor.'
                     : oclass === 4 ? 'You are not wearing rings.'
