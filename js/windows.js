@@ -272,14 +272,22 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', minWid
     const d = display();
     if (!d)
         return 27;
-    const content = lines.map(line => typeof line === 'string' ? { text: line } : line);
+    const entries = lines.map(line => typeof line === 'string' ? { text: line } : line);
+    const dataWidth = entries.reduce((widest, line) => Math.max(widest, line.text.length), 0);
+    // putstr-built windows wrap prose; add_menu-built overviews keep their
+    // menu rows. Native retains the original width when deciding placement.
+    const content = pagerStyle === 'text'
+        ? entries.flatMap(line => textWindowRows(line.text, d.cols)
+            .map(text => ({ ...line, text }))) : entries;
     // Native tty_display_nhwindow(): a putstr-built menu keeps its corner
     // placement only while it fits the screen and leaves the corner past
     // its minimum offset; taller (or menu-overlay-disabled) windows switch
     // to the full-screen paged layout of process_text_window().
-    const dataWidth = content.reduce((widest, line) => Math.max(widest, line.text.length), 0);
     const cornerOffset = Math.max(10, Math.min(82, Math.floor(d.cols / 2), d.cols - dataWidth - 2));
-    if (lines.length >= d.rows || cornerOffset === 10
+    // tty_end_menu() counts its pager in maxrow; tty_putstr() only counts
+    // stored content rows.
+    const windowRows = content.length + (pagerStyle === 'menu' ? 1 : 0);
+    if (windowRows >= d.rows || cornerOffset === 10
         || game.flags.menu_overlay === false) {
         return await pageDisclosureWindow(d, content, { marker, pagerStyle, restoreUnderlay });
     }
@@ -292,9 +300,8 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', minWid
     // NHW_MENU replaces the message row rather than leaving the preceding
     // yn_function prompt visible to the west of a narrow overlay.
     d.clearRow(0);
-    // In-game disclosure destroys its temporary corner window with
-    // docorner(), restoring the already-painted map rather than recomputing
-    // vision.  End-of-game disclosure deliberately leaves the page in place.
+    // A dismissed corner window restores the already-painted map rather
+    // than recomputing vision. Callers may retain a final page after exit.
     const underlay = restoreUnderlay
         ? d.grid.map(row => row.map(cell => ({ ...cell }))) : null;
     const underlayCursor = restoreUnderlay
@@ -703,7 +710,7 @@ function textWindowRows(text, columns) {
         rows.push(text.slice(0, split));
         text = text.slice(split + 1);
     }
-    // NHW_TEXT truncates an indivisible oversized word; unlike topline
+    // tty text rendering truncates an indivisible oversized word; unlike topline
     // messages, its text-window renderer does not wrap at the final column.
     rows.push(text.slice(0, columns - 1));
     return rows;

@@ -1056,7 +1056,9 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
             if (answer === 'y' || answer === 'a') {
                 if (!(answer === 'a' && multiple
                     && await setVanqOrder(false) < 0))
-                    await showDisclosureOverlay(genocidedLines(gone, genocided, extinct, ask));
+                    await showDisclosureOverlay(genocidedLines(gone, genocided, extinct, ask), {
+                        restoreUnderlay: true,
+                    });
             }
         }
     }

@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { finishOrdinaryDeath, vanquishedLines } from '../js/end.js';
+import { docrt, flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME } from '../js/monster_data.js';
@@ -13,6 +14,7 @@ import { G_EXTINCT, G_GENOD } from '../js/const.js';
 import { ATR_BOLD, ATR_INVERSE, NO_COLOR } from '../js/terminal.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { createMonsterAt } from './support/monsters.js';
 const M2_PNAME = 0x00080000;
 const G_UNIQ = 0x1000;
 function visibleRow() {
@@ -142,6 +144,38 @@ void test('an extinct-only ending asks about extinct species instead', async () 
     assert.equal(row, 'Do you want a list of extinct species? [ynq] (n)');
     await declineRemainingPrompts(input, ending);
 });
+for (const [description, mvflags] of [['genocided', G_GENOD], ['extinct', G_EXTINCT]]) {
+    void test(`dismissing full-screen ${description} disclosure restores hallucinated monsters before the next question`, async () => {
+        freshPlayableRoom({ seed: 61023n });
+        requirePlayingGame(game);
+        await createMonsterAt('newt', 12, 10);
+        game.u.hallucinationTurns = 20;
+        await docrt();
+        await flush_screen(1);
+        recordSpecies('gnome', 0, mvflags);
+        game.flags.menu_overlay = false;
+        const input = resetInputState();
+        const ending = deathWithPrompts();
+        try {
+            await advanceToQuestion(input, /species/);
+            const oldGlyph = game.nhDisplay?.grid[11]?.[11];
+            assert.ok(oldGlyph, 'the visible monster has a terminal cell');
+            const oldAppearance = { ch: oldGlyph.ch, color: oldGlyph.color };
+            input.feed('y');
+            await input.waitUntilBlocked();
+            assert.match(screenText(), /species:/);
+            input.feed(' ');
+            await input.waitUntilBlocked();
+            assert.match(visibleRow(), /Do you want to see your conduct/);
+            const monsterGlyph = game.nhDisplay?.grid[11]?.[11];
+            assert.ok(monsterGlyph, 'the visible monster has a terminal cell');
+            assert.ok(monsterGlyph.ch !== oldAppearance.ch || monsterGlyph.color !== oldAppearance.color, 'dismissal gives the visible monster a fresh hallucinated appearance');
+        }
+        finally {
+            await declineRemainingPrompts(input, ending);
+        }
+    });
+}
 void test('the vanquished list orders by monster level with native indentation', () => {
     freshPlayableRoom();
     requirePlayingGame(game);

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { docrt, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { NO_COLOR } from '../js/terminal.js';
+import { ATR_INVERSE, NO_COLOR } from '../js/terminal.js';
 import { showDisclosureOverlay } from '../js/windows.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -11,6 +11,56 @@ import { createMonsterAt } from './support/monsters.js';
 function rowText(row: number): string {
     return requireGameDisplay().grid[row]?.map(cell => cell.ch).join('').trimEnd() ?? '';
 }
+
+void test('an overview filling all content rows uses the full screen for its pager', async () => {
+    freshPlayableRoom();
+    const display = requireGameDisplay();
+    display.setCell(30, 10, '@', NO_COLOR);
+    const input = resetInputState();
+    const overview = showDisclosureOverlay(
+        Array.from({ length: display.rows - 1 }, (_, n) => `Level ${n + 1}`),
+        { pagerStyle: 'menu', marker: '(end)' },
+    );
+    try {
+        await input.waitUntilBlocked();
+        assert.equal(rowText(0).indexOf('Level 1'), 1, 'the menu keeps its left selector column');
+        assert.equal(rowText(display.rows - 1).trim(), '(end)');
+        assert.equal(display.grid[10]?.[30]?.ch, ' ', 'the full window covers the map');
+    } finally {
+        input.feed(' ');
+        await overview;
+    }
+});
+
+void test('long disclosure prose wraps its final words onto the next page with its attribute', async () => {
+    freshPlayableRoom();
+    const display = requireGameDisplay();
+    const input = resetInputState();
+    const disclosure = showDisclosureOverlay([
+        ...Array.from({ length: display.rows - 2 }, (_, n) => `Entry ${n + 1}`),
+        {
+            text: 'You were carrying an uncursed very heavy iron chain beside an enormous wooden chest containing golden coins.',
+            attr: ATR_INVERSE,
+        },
+    ]);
+    try {
+        await input.waitUntilBlocked();
+        assert.match(rowText(display.rows - 2), /^You were carrying/);
+        assert.equal(rowText(display.rows - 1).trim(), '--More--');
+        input.feed(' ');
+        const nextPage = await Promise.race([
+            disclosure.then(() => false),
+            input.waitUntilBlocked().then(() => true),
+        ]);
+        assert.equal(nextPage, true, 'wrapped words still need a second page');
+        assert.match(rowText(0), /^chest containing golden coins\.$/);
+        assert.equal(display.grid[0]?.[0]?.attr, ATR_INVERSE);
+        assert.equal(rowText(1).trim(), '--More--');
+    } finally {
+        input.feed(27);
+        await disclosure;
+    }
+});
 
 void test('Enter dismisses a paged overview from its first page', async () => {
     freshPlayableRoom();
