@@ -75,7 +75,6 @@ import {
     finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
 } from './hero_monster_death.js';
 import { aggravateMonsters, angerMonster } from './monster_anger.js';
-import { animateRollingBoulderCell } from './hero_traps.js';
 import { grantAmuletWish } from './wish.js';
 import { checkAttributeExercise, reportHeroEncumbrance, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength } from './attrib.js';
 import { rndcurse } from './throne.js';
@@ -97,7 +96,6 @@ import {
     see_traps,
     show_glyph_cell,
     swallowed,
-    transientObjectGlyph,
     _statusLine1,
     _statusLine2,
     canSeeMonster, monsterVisible,
@@ -175,8 +173,6 @@ import {
     resumeDeferredMovementSpell, resumeDeferredSpecialAttack,
     resumeDeferredMonsterTrap,
     resumeDeferredMonsterHideUnder,
-    finishDeferredMonsterRollingBoulderPlacement,
-    resumeDeferredMonsterRollingBoulderDeath,
     completeMonsterOffensiveAction,
     resumeDeferredPetAttack,
     resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance,
@@ -232,7 +228,7 @@ import {
 import { dist2, dungeonDepth } from './hacklib.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving,
-    monsterIsVampireShifter, monsterTypeName,
+    monsterTypeName,
 } from './monster_data.js';
 import {
     finishHeroDeath,
@@ -457,11 +453,16 @@ export async function restoregamePreamble() {
     // pickup.c's oldcap is process-local (decl.c), not restored save state.
     game._encumbranceLevel = 0;
 
+    // C dorecover() rebuilds the unsaved vision state before docrt() and
+    // welcome(). Search and monster feedback use that same live sight.
+    init_vision_globals();
+    vision_reset();
+    await docrt();
+
     const race = game.urace?.adj || game.urace?.noun || 'human';
     const role = game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
     const greeting = `Hello ${game.displayName || game.plname}, the ${race} ${role}, welcome back to NetHack!`;
-    // The first flush paints the display state restored with the level.
     await bot();
     await plineWithContinuation(greeting);
     await checkSpecialRoom();
@@ -3025,87 +3026,6 @@ async function presentMonsterPostMove(
         movement = action.movement;
         if ('seeSquare' in event && event.seeSquare && event.kind !== 'vibrating-square')
             newsym(event.trap.tx, event.trap.ty);
-    }
-    if (movement?.trap?.kind === 'rolling-boulder') {
-        const event = movement.trap;
-        // postmov() has already installed the moving actor on the trap
-        // square when mintrap() begins. Fatal damage changes live HP
-        // before its plines, but tty retains the pre-death glyph while
-        // an older trigger line owns --More--.
-        const liveHp = monster.mhp;
-        if (event.released && event.killed) monster.mhp = event.monsterHpBefore;
-        newsym(movement.x, movement.y);
-        monster.mhp = liveHp;
-        if (event.released && event.inSight) {
-            const trigger = game.deaf
-                ? `${visibleMonsterSubject(monster)} triggers ${
-                    event.wasSeen ? 'a rolling boulder trap' : 'something'
-                }.`
-                : `Click!  ${visibleMonsterSubject(monster)} triggers ${
-                    event.wasSeen ? 'a rolling boulder trap' : 'something'
-                }.`;
-            await plineWithContinuation(trigger);
-        }
-        if (event.released) {
-            vision_note_blocker_change(event.launch.x, event.launch.y);
-            newsym(event.launch.x, event.launch.y);
-            const dx = Math.sign(event.endpoint.x - event.launch.x);
-            const dy = Math.sign(event.endpoint.y - event.launch.y);
-            const glyph = transientObjectGlyph(event.boulder);
-            let flightX = event.launch.x;
-            let flightY = event.launch.y;
-            const preTargetSteps = Math.max(
-                Math.abs(movement.x - flightX),
-                Math.abs(movement.y - flightY),
-            );
-            let transient: Position | null = null;
-            for (let step = 0; step < preTargetSteps; step++) {
-                transient = await animateRollingBoulderCell(
-                    event.boulder, glyph, flightX, flightY, transient,
-                );
-                flightX += dx;
-                flightY += dy;
-            }
-            if (event.hit && event.seeSquare) {
-                const target = event.inSight
-                    ? `the ${quietMonsterName(monster)}` : 'it';
-                await plineWithContinuation(`The boulder hits ${target}!`);
-                if (event.killed) {
-                    const subject = event.inSight
-                        ? `The ${quietMonsterName(monster)}` : 'It';
-                    const destroyed = monsterIsNonliving(monster.mnum)
-                        || monsterIsVampireShifter(monster)
-                        || !event.inSight;
-                    await plineWithContinuation(
-                        `${subject} is ${destroyed ? 'destroyed' : 'killed'}!`,
-                    );
-                }
-            } else if (event.seeSquare) {
-                const target = event.inSight
-                    ? `the ${quietMonsterName(monster)}` : 'it';
-                await plineWithContinuation(`The boulder misses ${target}.`);
-            }
-            // Death/corpse work precedes the remaining flight cells.
-            await resumeDeferredMonsterRollingBoulderDeath(action, game, {
-                publish: plineWithContinuation,
-            });
-            movement = action.movement;
-            const postTargetSteps = Math.max(
-                Math.abs(event.endpoint.x - flightX),
-                Math.abs(event.endpoint.y - flightY),
-            );
-            for (let step = 0; step < postTargetSteps; step++) {
-                transient = await animateRollingBoulderCell(
-                    event.boulder, glyph, flightX, flightY, transient,
-                );
-                flightX += dx;
-                flightY += dy;
-            }
-            await finishDeferredMonsterRollingBoulderPlacement(action, game);
-            movement = action.movement;
-            if (transient) newsym(transient.x, transient.y);
-            newsym(event.endpoint.x, event.endpoint.y);
-        }
     }
     if (movement?.trap?.kind === 'magic-portal-migration'
         && movement.trap.visible) {

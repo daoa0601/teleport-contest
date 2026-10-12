@@ -30,6 +30,7 @@ import { objectResistsDestruction } from './object_state.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2 } from './rng.js';
 import type { MessagePublisher } from './display.js';
+import { canSeeMonster } from './display.js';
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
@@ -228,10 +229,8 @@ export function monsterTrapVisibility(monster: Monster, state = game): { inSight
     const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
     const seeSquare = !blind
         && !!((state?.viz_array?.[monster.my]?.[monster.mx] ?? 0) & 0x2);
-    const seesInvisible = !!state.u.seeInvisible;
     const inSight = state?.u?.usteed === monster
-        || (seeSquare && !monster.mundetected
-            && (!monster.minvis || seesInvisible));
+        || canSeeMonster(monster);
     return { inSight, seeSquare };
 }
 

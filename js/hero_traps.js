@@ -2,13 +2,14 @@
 // C refs: trap.c dotrap(), trapeffect_*(), launch_obj(), and teleport.c
 // tele_trap().
 import { heroIsHallucinating } from './senses.js';
+import { launchRollingBoulder } from './rolling_boulder.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { maybeDestroyWeb } from './web_trap.js';
 import { currentAttribute, exerciseAttribute, } from './attrib.js';
 import { objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroFootName, heroHeadName, monsterFootName } from './body_parts.js';
 import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_quest, is_pit, HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP, LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
-import { flush_screen, lastDirtyMapCursor, map_trap, newsym, pline, plineWithContinuation, shieldeff, show_glyph_cell, transientObjectGlyph, } from './display.js';
+import { flush_screen, lastDirtyMapCursor, map_trap, newsym, pline, plineWithContinuation, shieldeff, show_glyph_cell, } from './display.js';
 import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { buriedBallNear, buriedBallToPunishment } from './buried_object.js';
@@ -17,7 +18,7 @@ import { hitHeroWithObject } from './hero_object_hit.js';
 import { refreshMovementProperties } from './properties.js';
 import { heroLiquidEffects } from './hack.js';
 import { hasInternalInvisibility, syncHeroInvisibility, } from './hero_invisibility.js';
-import { distmin, dungeonDepth } from './hacklib.js';
+import { dungeonDepth } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
@@ -71,7 +72,8 @@ import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { trapName } from './trap_name.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { monsterName } from './monster_name.js';
-import { killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { killerObjectName, objectCombatName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 import { observeObject } from './object_knowledge.js';
 const M1_CLING = 0x00000010;
 const M1_HIDE = 0x00000100;
@@ -758,7 +760,7 @@ async function triggerFallingRockTrap(trap) {
     trap.tseen = true;
     const rock = await makeTrapMissile(ROCK, trap);
     placeCreatedObject(rock, hero.ux, hero.uy);
-    await plineWithContinuation(`A trap door in the ${ceiling} opens and ${simpleObjectNameWithArticle(rock)} falls on your ${heroHeadName(game)}!`);
+    await plineWithContinuation(`A trap door in the ${ceiling} opens and ${withIndefiniteArticle(objectCombatName(rock))} falls on your ${heroHeadName(game)}!`);
     let harmless = false;
     const helmet = game.uarmh || hero.uarmh;
     if (helmet) {
@@ -814,10 +816,6 @@ async function triggerSleepingGasTrap(trap) {
     const name = steed.name || `The ${monsterTypeName(steed.mnum, !!steed.female)}`;
     await plineWithContinuation(`${name} suddenly falls asleep!`);
 }
-function boulderAt(x, y) {
-    return game.level?.objects?.[x]?.[y]
-        ?.find(object => object.otyp === BOULDER) ?? null;
-}
 export async function animateRollingBoulderCell(boulder, glyph, x, y, previous) {
     if (previous)
         newsym(previous.x, previous.y);
@@ -839,51 +837,15 @@ async function triggerRollingBoulderTrap(trap) {
     const wasKnown = !!trap.tseen;
     map_trap(trap, false);
     newsym(trap.tx, trap.ty);
-    const click = game.u?.deaf ? '' : 'Click!  ';
-    await pline(`${click}You trigger a rolling boulder trap!`);
-    let start = { ...trap.launch };
-    let finish = { ...(trap.launch2 || trap.launch) };
-    let boulder = boulderAt(start.x, start.y);
-    if (!boulder) {
-        boulder = boulderAt(finish.x, finish.y);
-        if (boulder)
-            [start, finish] = [finish, start];
-    }
-    if (!boulder) {
+    const click = heroIsDeaf(game) ? '' : 'Click!  ';
+    await plineWithContinuation(`${click}You trigger a rolling boulder trap!`);
+    requirePlayingGame(game);
+    const released = await launchRollingBoulder(trap.launch, trap.launch2 ?? trap.launch, {
+        state: game, known: wasKnown,
+    });
+    if (!released)
         await plineWithContinuation(wasKnown
-            ? 'No boulder was released.'
-            : 'Fortunately for you, no boulder was released.');
-        return;
-    }
-    remove_object(boulder);
-    newsym(start.x, start.y);
-    const glyph = transientObjectGlyph(boulder);
-    const dx = Math.sign(finish.x - start.x);
-    const dy = Math.sign(finish.y - start.y);
-    let remaining = distmin(start.x, start.y, finish.x, finish.y);
-    let x = start.x;
-    let y = start.y;
-    let transient = null;
-    while (remaining-- > 0) {
-        transient = await animateRollingBoulderCell(boulder, glyph, x, y, transient);
-        x += dx;
-        y += dy;
-        if (game.u?.ux === x && game.u?.uy === y) {
-            // C trap.c:launch_obj() hands the hero to thitu().
-            const damage = rollPhysicalWeaponDamageAgainstHero(boulder, game);
-            if (game.multi)
-                endVoluntaryMultiTurn(game);
-            const hit = await hitHeroWithObject(boulder, physicalDamage(damage), 9 + (boulder.spe ?? 0), { killer: killerObjectName(boulder, game) });
-            if (hit.died)
-                return;
-            if (hit.hit)
-                await stopHeroOccupation(game);
-        }
-    }
-    if (transient)
-        newsym(transient.x, transient.y);
-    await placeObject(boulder, finish.x, finish.y);
-    newsym(finish.x, finish.y);
+            ? 'No boulder was released.' : 'Fortunately for you, no boulder was released.');
 }
 async function triggerBearTrap(trap, { failedUntrap = false, forceTrap = false, forceBungle = false, viaSitting = false, tookPlunge = false, } = {}) {
     requirePlayingGame(game);

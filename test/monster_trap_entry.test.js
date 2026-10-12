@@ -5,7 +5,7 @@ import { ANTI_MAGIC, BEAR_TRAP, PIT, ROLLING_BOULDER_TRAP, RUST_TRAP, SPIKED_PIT
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { finishDeferredMonsterRollingBoulderPlacement, resumeDeferredMonsterRollingBoulderDeath, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
+import { finishImmediateMonsterTrap, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
 import { BOULDER, IRON_SHOES, ORCISH_HELM } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { floorObject, knownObject } from './support/game-objects.js';
@@ -182,9 +182,9 @@ void test('a boulder-hit vampire rises while the boulder keeps rolling', async (
     });
     requirePlayingGame(game);
     const boulder = await floorObject(BOULDER, 9, 10);
+    installPagerInput(resetInputState(), { expected: /boulder|wolf|vampire/i, limit: 8 });
     const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterRollingBoulderDeath(action, game);
-    await finishDeferredMonsterRollingBoulderPlacement(action, game);
+    await finishImmediateMonsterTrap(action, game);
     assert.equal(monster.mnum, vampireLeader);
     assert.equal(game.level.monsters.includes(monster), true);
     assert.equal(floorObjectsAt(game.level, 15, 10).includes(boulder), true);

@@ -41,8 +41,7 @@ import {
 } from './teleport_rules.js';
 import { invWeight, weightCapacity } from './weight.js';
 import {
-    finishDeferredMonsterRollingBoulderPlacement,
-    resumeDeferredMonsterRollingBoulderDeath, resumeDeferredMonsterTrap,
+    resumeDeferredMonsterTrap,
     triggerImmediateMonsterTrap,
 } from './monmove.js';
 
@@ -291,14 +290,9 @@ export async function tryKickReel(monster: Monster, dx: number, dy: number, {
     newsym(oldx, oldy);
     newsym(x, y);
     const trap = await triggerImmediateMonsterTrap(monster, state);
-    if (trap.event?.kind === 'rolling-boulder') {
-        await resumeDeferredMonsterRollingBoulderDeath(trap, state, { publish: announce });
-        await finishDeferredMonsterRollingBoulderPlacement(trap, state);
-    } else {
-        await resumeDeferredMonsterTrap(trap, state, {
-            publish: announce, describeMonster: nameMonster,
-        });
-    }
+    await resumeDeferredMonsterTrap(trap, state, {
+        publish: announce, describeMonster: nameMonster,
+    });
     return {
         oldx, oldy, x, y,
         trap: trap.event,
