@@ -36,6 +36,7 @@ import { experienceRankIndex } from './exper.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { heroIsInDangerousRegion } from './regions.js';
 import { rnd } from './rng.js';
+import { monsterName } from './monster_name.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { applyHeroLocationEffects } from './cmd.js';
 import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './monster_polymorph.js';
@@ -90,6 +91,7 @@ export async function wearHeroAccessory(
     if (property === 'levitation' || property === 'protectionFromShapeChangers')
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
+    const wasStealthy = propertyIsActive('stealth', state);
     const wasFlying = !!state.u.flying;
     const wasInGas = property === 'magicalBreathing' && heroIsInDangerousRegion(state);
     await releaseWeaponSlots(object, state);
@@ -105,6 +107,10 @@ export async function wearHeroAccessory(
     if (slot === 'uamul') await applyAmuletOnEffects(object, state, { wasFlying, wasInGas });
     if (property === 'protectionFromShapeChangers')
         await restoreNaturalMonsterShapes(state);
+    if (property === 'stealth' && !wasStealthy && propertyIsActive('stealth', state)) {
+        learnRing(object, true, state);
+        await plineWithContinuation('You move very quietly.');
+    }
     if (property === 'levitation') {
         if (!previousLevitation.hasSource && !previousLevitation.blockedByTerrain) {
             await floatHeroUp(state, previousLevitation);
@@ -187,7 +193,15 @@ export async function removeHeroAccessory(
     if (objectProperty === 'levitation' || objectProperty === 'protectionFromShapeChangers')
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
+    const wasStealthy = propertyIsActive('stealth', state);
     const property = clearHeroAccessory(object, state);
+    if (property === 'stealth' && wasStealthy && !propertyIsActive('stealth', state)) {
+        learnRing(object, true, state);
+        const steed = state.u.usteed;
+        await plineWithContinuation(steed
+            ? `You and ${monsterName(steed, { state, article: 'your', exact: true })} are noisy.`
+            : 'You sure are noisy.');
+    }
     if (property === 'protectionFromShapeChangers'
         && !propertyIsActive('protectionFromShapeChangers', state))
         await restartMonsterShapechanging(state);
