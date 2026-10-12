@@ -63,7 +63,7 @@ import { directionAssistPage, promptKey, readDirectionKey, restoreCommandMap, } 
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
-import { displayLiquidName, newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
+import { displayLiquidName, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_recalc, vision_reset } from './vision.js';
 import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
 import { dozap, } from './zap.js';
@@ -1890,9 +1890,9 @@ async function dokick() {
                     : 'As you kick the door, it crashes open!');
                 await exerciseAttribute(A_STR, true);
             }
+            feel_newsym(x, y);
             vision_reset();
             vision_recalc(0);
-            newsym(x, y);
             if (touchesShop) {
                 addShopDamage(x, y, SHOP_DOOR_COST);
                 await payForShopDamage('break');
@@ -1918,7 +1918,7 @@ async function dokick() {
             else if (location.doormask !== D_NODOOR && !(location.doormask & D_LOCKED)) {
                 location.doormask = D_ISOPEN;
             }
-            newsym(x, y);
+            feel_newsym(x, y);
             vision_reset();
             vision_recalc(0);
         }
