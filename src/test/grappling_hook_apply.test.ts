@@ -16,6 +16,7 @@ import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createStaffedShop } from './support/shop.js';
 
 async function installHook({ wielded = true, enchantment = 0 } = {}) {
     const hook = await addInventoryObject(GRAPPLING_HOOK, {
@@ -53,6 +54,29 @@ void test('a grappling hook snags one object from a visible floor square',
         assert.equal(floorObjectsAt(game.level, 12, 10).includes(rock), false);
         assert.equal(game.context.move, 1);
     });
+
+void test('a hooked shop item is described after credit settles its bill', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const hook = await installHook();
+    const { shopkeeper } = await createStaffedShop({ left: 12, keeperX: 14 });
+    shopkeeper.eshk.credit = 1000;
+    const darts = placeCreatedObject(await knownObject(DART, { quantity: 3 }), 12, 10);
+    game._travelTipShown = true;
+    initRng(3n);
+
+    await applyInventoryObject(hook, 'll.          ');
+
+    const carried = game.inventory.find(object => object.otyp === DART);
+    assert.ok(carried, 'The hook must bring a dart into inventory');
+    assert.equal(carried.quan, 1);
+    assert.equal(darts.quan, 2);
+    assert.equal(carried.unpaid, false);
+    assert.equal(shopkeeper.eshk.billct, 0);
+    assert.equal(shopkeeper.eshk.credit, 0);
+    assert.match(game._pending_message, / - .*dart.*\.$/);
+    assert.doesNotMatch(game._pending_message, /unpaid|zorkmids/);
+});
 
 void test('a grappling hook can yank the hero one square toward solid terrain',
     async () => {

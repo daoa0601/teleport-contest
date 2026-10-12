@@ -65,7 +65,7 @@ type ScrollPickupResult = { decision: 'stop' } | { decision: 'consumed' }
     | { decision: 'lift'; object: GameObject; count: number };
 export interface AddedInventoryObject {
     object: GameObject;
-    message: string;
+    count: number;
 }
 
 export function pickupClassOrder(): string[] {
@@ -256,10 +256,11 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         const remote = object.unpaid && shopRoom !== undefined && !savedShops.includes(shopRoom);
         const added = await addPickedInventoryObject(object);
         if (remote) await remoteBurglary(source.x, source.y);
+        const message = pickedInventoryDescription(added.object, added.count);
         const capacity = nearCapacity(game);
         const prefix = capacity === previousCapacity ? '' : pickupLoadPrefix(capacity);
         previousCapacity = capacity;
-        await plineWithContinuation(prefix ? `${prefix} lifting ${added.message}` : added.message);
+        await plineWithContinuation(prefix ? `${prefix} lifting ${message}` : message);
         const ghostlyMessage = finishGhostlyPickup(added.object, game);
         if (ghostlyMessage) await plineWithContinuation(ghostlyMessage);
         picked++;
@@ -278,16 +279,18 @@ export async function addPickedInventoryObject(object: GameObject): Promise<Adde
     const carried = await addInventoryItem(object, null, false);
     markJustPicked(carried);
     observeObjectForNaming(carried);
+    return { object: carried, count };
+}
+
+// C pickup_prinv(): format after pick_obj() has settled remote shop billing.
+function pickedInventoryDescription(carried: GameObject, count: number): string {
     const picked = { ...carried, quan: count, quantity: count };
     // Native pickup suppresses the primary-hand annotation when the new
     // objects merged into the wielded stack; other slot annotations remain.
     if (carried === game.uwep) picked.owornmask = (picked.owornmask ?? 0) & ~W_WEP;
     const total = count < objectQuantity(carried) && game.flags?.verbose !== false
         ? ` (${objectQuantity(carried)} in total).` : '.';
-    return {
-        object: carried,
-        message: `${carried.invlet} - ${floorObjectDescription(picked)}${total}`,
-    };
+    return `${carried.invlet} - ${floorObjectDescription(picked)}${total}`;
 }
 
 function pickupSourceAtHero(): PickupSource {
