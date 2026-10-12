@@ -228,7 +228,10 @@ async function process_menu_window(d, rows, layout, how, underlay) {
         }
         const key = await nhgetch();
         const letter = String.fromCharCode(key);
-        const explicit = pageRows.some(row => row.key === letter);
+        // PICK_ONE includes unique group shortcuts among explicit choices,
+        // so a digit shortcut selects its group even after a count prefix.
+        const explicit = pageRows.some(row => row.key === letter)
+            || how === PICK_ONE && groups.has(letter);
         // xwaitforspace ignores invalid input without resetting a count.
         if (!explicit && !groups.has(letter) && !'0123456789 \x1b\n\r><^|.,@\\-~:'.includes(letter))
             continue;

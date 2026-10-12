@@ -31,37 +31,40 @@ void test('identification menus show the complete object description after the s
     }
 });
 
-void test('dismissing a full-screen identification menu refreshes hallucinated monsters once', async () => {
-    freshGameplayRoom();
-    for (let spe = 0; spe < 24; spe++)
-        await addInventoryObject(CLUB, { spe, known: false, bknown: false });
-    await createMonsterAt('newt', 12, 10);
-    game.u.hallucinationTurns = 20;
+for (const wizard of [false, true]) {
+    void test(`dismissing a full-screen ${wizard ? 'wizard' : 'ordinary'} identification menu refreshes hallucinated monsters once`, async () => {
+        freshGameplayRoom();
+        if (wizard) applyNethackrc('OPTIONS=playmode:debug');
+        for (let spe = 0; spe < 24; spe++)
+            await addInventoryObject(CLUB, { spe, known: false, bknown: false });
+        await createMonsterAt('newt', 12, 10);
+        game.u.hallucinationTurns = 20;
 
-    // Use an ordinary map refresh as the reference for a single dismissal.
-    // Reset the random stream at dismissal so menu naming does not affect it.
-    initRng(8021n);
-    await docrt();
-    await flush_screen(1);
-    const display = requireGameDisplay();
-    const reference = display.grid[11]?.[11];
-    assert.ok(reference, 'the visible newt needs a displayed glyph');
-    const appearance = { ch: reference.ch, color: reference.color };
-    const input = resetInputState();
-    const identification = identifyPack(1);
-    try {
-        await input.waitUntilBlocked();
-        assert.match(display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n'), /\(1 of 2\)/);
-    } finally {
+        // Use an ordinary map refresh as the reference for a single dismissal.
+        // Reset the random stream at dismissal so menu naming does not affect it.
         initRng(8021n);
-        input.feed('\x1b');
-        await identification;
-    }
+        await docrt();
+        await flush_screen(1);
+        const display = requireGameDisplay();
+        const reference = display.grid[11]?.[11];
+        assert.ok(reference, 'the visible newt needs a displayed glyph');
+        const appearance = { ch: reference.ch, color: reference.color };
+        const input = resetInputState();
+        const identification = wizard ? runExtendedCommand('wizidentify') : identifyPack(1);
+        try {
+            await input.waitUntilBlocked();
+            assert.match(display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n'), /\(1 of 2\)/);
+        } finally {
+            initRng(8021n);
+            input.feed('\x1b');
+            await identification;
+        }
 
-    const restored = display.grid[11]?.[11];
-    assert.equal(restored?.ch, appearance.ch, 'dismissal should refresh the monster only once');
-    assert.equal(restored?.color, appearance.color, 'dismissal should retain that refresh\'s monster color');
-});
+        const restored = display.grid[11]?.[11];
+        assert.equal(restored?.ch, appearance.ch, 'dismissal should refresh the monster only once');
+        assert.equal(restored?.color, appearance.color, 'dismissal should retain that refresh\'s monster color');
+    });
+}
 
 void test('identifying the whole pack reveals every part of an object', async () => {
     freshGameplayRoom();

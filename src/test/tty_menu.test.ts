@@ -87,6 +87,23 @@ void test('pick-one accepts a unique group and returns the preset alongside a ne
     await tty_destroy_nhwindow(window);
 });
 
+for (const pickOne of [true, false]) {
+    void test(pickOne ? 'pick-one treats the ball group shortcut as a choice after a count'
+        : 'pick-any keeps the ball group digit inside an active count', async () => {
+        freshPlayableRoom();
+        const window = tty_create_nhwindow<string>(NHW_MENU);
+        await tty_start_menu(window);
+        tty_add_menu(window, { identifier: 'balls', text: 'iron balls', selector: 'a', group: '0' });
+        tty_end_menu(window);
+        resetInputState().feed(pickOne ? '20\n' : '20a\n');
+
+        const result = await tty_select_menu(window, pickOne ? PICK_ONE : PICK_ANY);
+
+        assert.deepEqual(result.selections.map(item => [item.identifier, item.count]), [['balls', pickOne ? 2 : 20]]);
+        await tty_destroy_nhwindow(window);
+    });
+}
+
 void test('invalid keys keep a count and Escape first cancels only the pending count', async () => {
     freshPlayableRoom();
     const window = tty_create_nhwindow<string>(NHW_MENU);

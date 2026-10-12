@@ -4039,7 +4039,6 @@ async function wizIdentify(): Promise<void> {
         titleAttr: ATR_NONE,
     });
     game._pending_message = '';
-    await docrt();
     for (const item of selected) {
         const learnedType = !objectTypeKnown(item);
         fullyIdentifyObject(item);
