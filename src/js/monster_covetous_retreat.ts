@@ -10,7 +10,7 @@ import { AMULET_OF_YENDOR } from './object_data.js';
 import type { Monster } from './monster_types.js';
 import { rn2, rnd } from './rng.js';
 import { mnearto } from './shop_damage.js';
-import { randomMonsterRelocation } from './teleport.js';
+import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
 
 export async function retreatCovetousMonster(
@@ -33,8 +33,11 @@ export async function retreatCovetousMonster(
             await randomMonsterRelocation(monster, { state, random, rollOne, flags: RLOC_MSG });
     } else if (stairs && (healingX !== stairs.sx || healingY !== stairs.sy)) {
         if (!monsterTeleportRestricted(monster, state)
-            && !await mnearto(monster, stairs.sx, stairs.sy, state, { moveOther: true, flags: RLOC_MSG }))
+            && !await mnearto(monster, stairs.sx, stairs.sy, state, { moveOther: true, flags: RLOC_MSG })) {
+            // Expulsion may have moved the monster since tactics() saved this square.
+            await relocateMonsterTo(monster, healingX, healingY, { state, random, rollOne });
             return 'blocked';
+        }
         healingX = monster.mx;
         healingY = monster.my;
     }

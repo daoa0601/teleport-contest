@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { NO_MINVENT, STRAT_HEAL } from '../js/const.js';
+import { NO_MINVENT, ROOM, STRAT_HEAL } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { mkstairs } from '../js/mklev.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { retreatCovetousMonster } from '../js/monster_covetous_retreat.js';
+import { BOULDER } from '../js/object_data.js';
+import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const woundedHp of [85, 50]) {
@@ -69,6 +71,31 @@ void test('wounded Juiblex swallowing the hero on its retreat stairs keeps its e
     assert.equal(juiblex.my, 9);
     assert.equal(juiblex.mhp, 50);
     assert.equal(result, 'harass');
+});
+void test('Juiblex returns to its pre-expulsion square when blocked stairs leave no retreat destination', async () => {
+    const level = freshObjectRoom({ left: 10, right: 10, top: 10, bottom: 10 });
+    await init_dungeons();
+    requirePlayingGame(game);
+    const expulsionSquare = level.at(9, 9);
+    assert.ok(expulsionSquare);
+    expulsionSquare.typ = ROOM;
+    mkstairs(40, 10, true, null);
+    await floorObject(BOULDER, 40, 10);
+    const juiblex = await createMonsterAt('Juiblex', 10, 10, NO_MINVENT);
+    juiblex.m_id = 2;
+    juiblex.mhpmax = 90;
+    juiblex.mhp = 50;
+    game.u.uswallow = 1;
+    game.u.ustuck = juiblex;
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    const result = await retreatCovetousMonster(juiblex, game, () => 0, () => 1);
+    assert.equal(game.u.uswallow, 0);
+    assert.equal(game.u.ustuck, null);
+    assert.equal(juiblex.mx, 10, 'failed retreat must restore the position saved before expulsion');
+    assert.equal(juiblex.my, 10);
+    assert.equal(juiblex.mhp, 50);
+    assert.equal(result, 'blocked');
 });
 for (const { startX, destinationX, heals } of [
     { startX: 11, destinationX: 40, heals: false },
