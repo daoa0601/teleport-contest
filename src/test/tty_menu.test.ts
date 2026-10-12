@@ -175,6 +175,62 @@ void test('a group accelerator toggles every matching item with the supplied cou
     await tty_destroy_nhwindow(window);
 });
 
+void test('select-all overrides the venom group across pages and preserves counts and restricted entries', async () => {
+    freshPlayableRoom();
+    game.iflags.menuinvertmode = 1;
+    const window = tty_create_nhwindow<number>(NHW_MENU);
+    await tty_start_menu(window);
+    for (let index = 0; index < 25; index++) {
+        tty_add_menu(window, {
+            identifier: index,
+            text: index === 0 ? 'a splash of venom' : `map ${index}`,
+            group: index === 0 ? '.' : '?',
+            itemflags: index === 24 ? MENU_ITEMFLAGS_SKIPINVERT : 0,
+        });
+    }
+    tty_end_menu(window);
+    resetInputState().feed('2b3..\n');
+
+    const result = await tty_select_menu(window, PICK_ANY);
+
+    assert.equal(result.selections.length, 24, 'select-all selects every eligible item and stays selected on repetition');
+    assert.equal(result.selections.find(item => item.identifier === 0)?.count, -1, 'a pending count does not limit select-all');
+    assert.equal(result.selections.find(item => item.identifier === 1)?.count, 2, 'select-all preserves an existing count');
+    assert.ok(result.selections.some(item => item.identifier === 23), 'select-all reaches the next page');
+    assert.equal(result.selections.some(item => item.identifier === 24), false, 'a restricted unselected item stays unselected');
+    await tty_destroy_nhwindow(window);
+});
+
+void test('pick-one accepts the unique venom group instead of select-all', async () => {
+    freshPlayableRoom();
+    const window = tty_create_nhwindow<string>(NHW_MENU);
+    await tty_start_menu(window);
+    tty_add_menu(window, { identifier: 'venom', text: 'a splash of venom', selector: 'a', group: '.' });
+    tty_add_menu(window, { identifier: 'dagger', text: 'a dagger', selector: 'b', group: ')' });
+    tty_end_menu(window);
+    resetInputState().feed('.\n');
+
+    const result = await tty_select_menu(window, PICK_ONE);
+
+    assert.deepEqual(result.selections.map(item => item.identifier), ['venom']);
+    await tty_destroy_nhwindow(window);
+});
+
+void test('an explicit period selector takes precedence over select-all', async () => {
+    freshPlayableRoom();
+    const window = tty_create_nhwindow<string>(NHW_MENU);
+    await tty_start_menu(window);
+    tty_add_menu(window, { identifier: 'special', text: 'a special option', selector: '.' });
+    tty_add_menu(window, { identifier: 'dagger', text: 'a dagger', selector: 'a' });
+    tty_end_menu(window);
+    resetInputState().feed('.\n');
+
+    const result = await tty_select_menu(window, PICK_ANY);
+
+    assert.deepEqual(result.selections.map(item => item.identifier), ['special']);
+    await tty_destroy_nhwindow(window);
+});
+
 void test('pick-one accepts a unique group and returns the preset alongside a new selection', async () => {
     freshPlayableRoom();
     const window = tty_create_nhwindow<string>(NHW_MENU);

@@ -323,6 +323,26 @@ async function process_menu_window<T>(
             const index = pageRows.indexOf(row);
             if (index >= 0) set_item_state(d, layout.boundary, index, row);
         };
+        // Native bulk commands precede group shortcuts unless the key is
+        // an explicit choice (including unique groups in PICK_ONE).
+        if (!explicit && '.@,\\-~'.includes(letter)) {
+            if (how !== PICK_ANY && !'-\\'.includes(letter)) continue;
+            const targets = ',\\~'.includes(letter) ? pageRows : rows;
+            for (const row of targets) {
+                if (row.identifier === null || !allowsBulkChange(row)) continue;
+                if ('.,'.includes(letter)) {
+                    if (row.selected) continue;
+                    row.selected = true;
+                } else if ('-\\'.includes(letter)) {
+                    if (!row.selected) continue;
+                    row.selected = false;
+                }
+                else row.selected = !row.selected;
+                if (!row.selected) row.count = -1;
+                update(row);
+            }
+            continue;
+        }
         if (how !== PICK_NONE && groups.has(letter)) {
             for (const row of rows) {
                 if (row.identifier === null || row.group !== letter) continue;
@@ -340,24 +360,6 @@ async function process_menu_window<T>(
             toggleItem(row, selectedCount);
             update(row);
             if (how === PICK_ONE) return result(key);
-            continue;
-        }
-        if ('.@,\\-~'.includes(letter)) {
-            if (how !== PICK_ANY && !'-\\'.includes(letter)) continue;
-            const targets = ',\\~'.includes(letter) ? pageRows : rows;
-            for (const row of targets) {
-                if (row.identifier === null || !allowsBulkChange(row)) continue;
-                if ('.,'.includes(letter)) {
-                    if (row.selected) continue;
-                    row.selected = true;
-                } else if ('-\\'.includes(letter)) {
-                    if (!row.selected) continue;
-                    row.selected = false;
-                }
-                else row.selected = !row.selected;
-                if (!row.selected) row.count = -1;
-                update(row);
-            }
             continue;
         }
         if (letter === ':' && how !== PICK_NONE) {

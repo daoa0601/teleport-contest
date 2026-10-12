@@ -283,31 +283,9 @@ async function process_menu_window(d, rows, layout, how, underlay) {
             if (index >= 0)
                 set_item_state(d, layout.boundary, index, row);
         };
-        if (how !== PICK_NONE && groups.has(letter)) {
-            for (const row of rows) {
-                if (row.identifier === null || row.group !== letter)
-                    continue;
-                row.selected = !row.selected;
-                row.count = row.selected ? selectedCount : -1;
-                update(row);
-            }
-            if (how === PICK_ONE)
-                return result(key);
-            continue;
-        }
-        if (explicit) {
-            if (how === PICK_NONE)
-                continue;
-            const row = pageRows.find(row => row.key === letter);
-            if (!row || row.identifier === null)
-                continue;
-            toggleItem(row, selectedCount);
-            update(row);
-            if (how === PICK_ONE)
-                return result(key);
-            continue;
-        }
-        if ('.@,\\-~'.includes(letter)) {
+        // Native bulk commands precede group shortcuts unless the key is
+        // an explicit choice (including unique groups in PICK_ONE).
+        if (!explicit && '.@,\\-~'.includes(letter)) {
             if (how !== PICK_ANY && !'-\\'.includes(letter))
                 continue;
             const targets = ',\\~'.includes(letter) ? pageRows : rows;
@@ -330,6 +308,30 @@ async function process_menu_window(d, rows, layout, how, underlay) {
                     row.count = -1;
                 update(row);
             }
+            continue;
+        }
+        if (how !== PICK_NONE && groups.has(letter)) {
+            for (const row of rows) {
+                if (row.identifier === null || row.group !== letter)
+                    continue;
+                row.selected = !row.selected;
+                row.count = row.selected ? selectedCount : -1;
+                update(row);
+            }
+            if (how === PICK_ONE)
+                return result(key);
+            continue;
+        }
+        if (explicit) {
+            if (how === PICK_NONE)
+                continue;
+            const row = pageRows.find(row => row.key === letter);
+            if (!row || row.identifier === null)
+                continue;
+            toggleItem(row, selectedCount);
+            update(row);
+            if (how === PICK_ONE)
+                return result(key);
             continue;
         }
         if (letter === ':' && how !== PICK_NONE) {
