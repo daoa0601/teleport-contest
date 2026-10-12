@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { races } from '../js/roles.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -63,5 +64,15 @@ void test('an unchanging polymorphed Wizard warns when monster health is low', a
     await loseHeroHp(1, 'injury', { publish: message => { messages.push(message); } });
     assert.equal(messages.pop(), 'Wizard, your life force is running out.');
     assert.equal(game.u.mh, 9);
+});
+void test('an Elf uses the racial warning outside the Wizard and Valkyrie roles', async () => {
+    const elf = races.find(race => race.name === 'elf');
+    assert.ok(elf);
+    freshGameplayRoom({ role: 'ranger', race: elf, hero: { uhp: 2, uhpmax: 100 } });
+    requirePlayingGame(game);
+    game.moves = 51;
+    const messages = [];
+    await loseHeroHp(1, 'injury', { publish: message => { messages.push(message); } });
+    assert.equal(messages.pop(), 'Elf is about to die.');
 });
 //# sourceMappingURL=hero_low_hp.test.js.map
