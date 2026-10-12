@@ -1156,28 +1156,28 @@ async function enterShop({ room, roomno }) {
         || 'shop';
     if (game.u?.invisible || game.u?.invis) {
         const message = `${shopkeeperName(shopkeeper, { capitalized: true })} senses your presence.`;
-        await pline(message);
+        await plineWithContinuation(message);
         return message;
     }
     if (!shopkeeper.mpeaceful) {
         const message = `"So, ${playerName}, you dare return to ${possessive(shopkeeperName(shopkeeper))} ${typeName}?!"`;
-        await pline(message);
+        await plineWithContinuation(message);
         return message;
     }
     if (eshk.surcharge) {
         const message = `"Back again, ${playerName}?  I've got my eye on you."`;
-        await pline(message);
+        await plineWithContinuation(message);
         return message;
     }
     if (eshk.robbed) {
         const message = `${shopkeeperName(shopkeeper, { capitalized: true })} mutters imprecations against shoplifters.`;
-        await pline(message);
+        await plineWithContinuation(message);
         return message;
     }
     const again = eshk.visitct ? ' again' : '';
     eshk.visitct = (eshk.visitct ?? 0) + 1;
     const message = `"${shopGreeting(shopkeeper)}, ${playerName}!  Welcome${again} to ${possessive(shopkeeperName(shopkeeper))} ${typeName}!"`;
-    await pline(message);
+    await plineWithContinuation(message);
     return message;
 }
 // C hack.c:check_special_room(). newLevel is the old-level exit, not arrival.

@@ -16,7 +16,7 @@ import { feelPetrifyingCorpse, formCanBecomeStoneGolem, willFeelPetrifyingCorpse
 export async function readFloorEngraving(x, y) {
     const read = await readEngravingAt(x, y, {
         showMore: async (message) => {
-            await pline(message);
+            await plineWithContinuation(message);
             return flushPendingTopline();
         },
         showLine: plineWithContinuation,
