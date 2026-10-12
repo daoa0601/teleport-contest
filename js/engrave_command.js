@@ -6,12 +6,13 @@
 import { plineWithContinuation as pline, newsym } from './display.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import { compactInventoryLetters, inventoryLetterOrder, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
+import { disturbGrave } from './grave.js';
 import { deleteEngraving, engravingAt, makeEngravingAt } from './engrave.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName, ceilingName } from './terrain_name.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
-import { ACCESSIBLE, ALTAR, BURN, CLOUD, COLNO, DRAWBRIDGE_UP, DUST, ENGRAVE, ENGR_BLOOD, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, HEADSTONE, IS_AIR, IS_FOUNTAIN, MARK, NO_MM_FLAGS, ROWNO, WAND_BACKFIRE_CHANCE, } from './const.js';
+import { ACCESSIBLE, ALTAR, BURN, CLOUD, COLNO, DRAWBRIDGE_UP, DUST, ENGRAVE, ENGR_BLOOD, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, HEADSTONE, IS_AIR, IS_FOUNTAIN, MARK, ROWNO, WAND_BACKFIRE_CHANCE, } from './const.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -37,7 +38,7 @@ import { addExperience } from './exper.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { goodPosition } from './teleport_rules.js';
 import { altarWrath } from './pray.js';
-import { randomEngraving, makemonAt } from './mklev.js';
+import { randomEngraving } from './mklev.js';
 import { monsterName } from './monster_name.js';
 import { unlinkObject } from './object_location.js';
 import { splitObjectStack } from './object_stack.js';
@@ -64,7 +65,6 @@ const BOOT_TYPES_FIRST = 163;
 const BOOT_TYPES_LAST = 172;
 const M2_DEMON = 0x100;
 const S_VAMPIRE = 48;
-const PM_GHOUL = 246;
 const BUFSZ = 256;
 const DRAWBRIDGE_DOWN = 34;
 // C engrave.c cant_reach_floor().
@@ -234,15 +234,6 @@ function relocateEngraving(engraving, state) {
         newsym(tx, ty);
         return;
     }
-}
-// C engrave.c disturb_grave().
-async function disturbGrave(x, y, state) {
-    await pline('You disturb the undead!');
-    const location = requireGameLevel(state).at(x, y);
-    if (location)
-        location.disturbed = 1;
-    await makemonAt(PM_GHOUL, x, y, NO_MM_FLAGS);
-    await exerciseWisdom(false, state);
 }
 // C engrave.c doengrave_sfx_item_WAN(): the wand-specific engraving effects.
 // Returns the post-engraving message and mutates the shared setup flags.
