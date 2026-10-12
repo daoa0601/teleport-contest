@@ -12,7 +12,7 @@ import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
 import { cansee, couldsee, vision_recalc } from './vision.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_WALL, LADDER, LA_DOWN, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, WEB, VIBRATING_SQUARE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, Is_rogue_level, Is_waterlevel, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, Is_rogue_level, Is_waterlevel, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
@@ -616,9 +616,21 @@ export function terrain_glyph(loc, x, y) {
     const glyph = terrainGlyphAppearance(loc, x, y);
     return { ...glyph, kind: 'terrain', terrainName: terrainGlyphName(loc, x, y, glyph) };
 }
+function projectedTerrainType(loc) {
+    // back_to_glyph() shows the exposed surface under a raised bridge.
+    // db_under_typ() uses STONE for dry ground, but its map symbol is room.
+    if (loc.typ === DRAWBRIDGE_UP) {
+        const surface = drawbridgeUnderlyingType(loc.drawbridgemask ?? 0);
+        return surface === STONE ? ROOM : surface;
+    }
+    if (isArborealBackground(loc))
+        return TREE;
+    if (loc.typ === CROSSWALL)
+        return projectedCrossWallType(loc);
+    return projectedTWallType(loc);
+}
 function terrainGlyphAppearance(loc, x, y) {
-    const typ = isArborealBackground(loc) ? TREE : loc.typ === CROSSWALL
-        ? projectedCrossWallType(loc) : projectedTWallType(loc);
+    const typ = projectedTerrainType(loc);
     const rogue = Is_rogue_level(game.u?.uz);
     const dec = !rogue && /^DECgraphics$/i.test(game.symset || '');
     // C selects wall glyphs by branch, independently of puzzle completion.
@@ -637,6 +649,13 @@ function terrainGlyphAppearance(loc, x, y) {
         case ROOM: return dec
             ? { ch: '~', color: NO_COLOR, dec: true }
             : { ch: '.', color: NO_COLOR, dec: false };
+        case ICE: return dec
+            ? { ch: '~', color: CLR_CYAN, dec: true }
+            : { ch: '.', color: CLR_CYAN, dec: false };
+        case DRAWBRIDGE_DOWN: return dec
+            ? { ch: '~', color: CLR_BROWN, dec: true }
+            : { ch: '.', color: CLR_BROWN, dec: false };
+        case DBWALL: return { ch: '#', color: CLR_BROWN, dec: false };
         // C back_to_glyph(): a corridor currently lit for display uses S_litcorr.
         // tty renders that CLR_GRAY symbol with its bright foreground treatment;
         // CLR_WHITE is the equivalent serialized color in this port.
@@ -1032,8 +1051,9 @@ function coversNonlivingLocation(x, y) {
         || typ === LAVAPOOL || typ === LAVAWALL;
 }
 function monsterAtMapCell(x, y) {
-    const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
-    return monster && !monster.dead && (monster.mhp ?? 1) > 0 ? monster : null;
+    // Native m_at() retains a dying actor until remove_monster(), including
+    // a vision refresh while its death announcement awaits acknowledgment.
+    return game.level ? monsterAtPosition(game.level, x, y) : null;
 }
 // C dungeon.c:update_lastseentyp(). Terrain memory is independent of the
 // remembered glyph: an object can hide the terrain, and a mimic can fake it.
@@ -1280,6 +1300,17 @@ function monsterDisplayAttribute(monster) {
         && game.iflags?.use_inverse !== false && game.iflags?.wc_inverse !== false;
     return howMonsterSeen(monster) === MONSEEN_DETECT && inverse ? 1 : 0;
 }
+// C show_mon_or_warn(): a located actor replaces remembered invisibility.
+// Its departure must reveal the lower layer rather than restore a stale I.
+function showMonsterOrWarning(x, y, glyph, attr = 0) {
+    if (game.level?.at(x, y)?.remembered_glyph?.kind === 'invisible') {
+        unmapObject(x, y);
+        const object = game.level?.objects[x]?.[y]?.[0];
+        if (cansee(x, y) && object)
+            map_object(object, false);
+    }
+    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, attr, glyph);
+}
 function visibleMapRegionAt(x, y) {
     return (game.level?.regions || []).find(region => region.visible
         && region.ttl !== -2 && region.cells?.some(cell => cell.x === x && cell.y === y)) || null;
@@ -1288,6 +1319,8 @@ function showMapRegion(x, y) {
     show_glyph_cell(x, y, '#', NO_COLOR, false, 0, { kind: 'terrain', terrainName: 'cloud' });
 }
 function monsterOverridesMapRegion(monster, x, y) {
+    if (game.level?.at(x, y)?.remembered_glyph?.kind === 'invisible')
+        return true;
     if (!monster)
         return false;
     if (x === monster.mx && y === monster.my
@@ -1358,8 +1391,13 @@ export function newsym(x, y) {
     const projection = monster ? monsterProjectionAtCell(monster, x, y) : null;
     if (projection && monster) {
         // A visible actor overlays rather than replaces the remembered layer.
-        if (physicallyVisible)
+        if (physicallyVisible) {
+            const trap = monster.mtrapped ? game.level?.traps.find(candidate => candidate.tx === x && candidate.ty === y) : undefined;
+            // Seeing a monster caught in a physical trap also reveals it.
+            if (trap && (trap.ttyp === BEAR_TRAP || is_pit(trap.ttyp) || trap.ttyp === WEB))
+                trap.tseen = true;
             map_location(x, y, false);
+        }
         // A visible disguise enters memory even when a sense exposes its
         // owner. Reading glyphAt() must not reroll this display-only choice.
         const sensed = canSenseMonster(monster)
@@ -1405,23 +1443,27 @@ export function newsym(x, y) {
         if (heroIsHallucinating()) {
             const displayMnum = rn2Display(MONSTER_COLOR.length);
             const glyph = displayMonsterGlyph(displayMnum);
-            show_glyph_cell(x, y, glyph.ch, glyph.color, false, monsterDisplayAttribute(monster), glyph);
+            showMonsterOrWarning(x, y, glyph, monsterDisplayAttribute(monster));
         }
         else {
             const tailGlyph = projection.wormTail ? displayMonsterGlyph(PM_LONG_WORM_TAIL) : null;
-            show_glyph_cell(x, y, tailGlyph?.ch || monster.symbol || '?', tailGlyph ? tailGlyph.color
-                : monster.mnum === 102 ? NO_COLOR
-                    : monster.mnum === 100 || monster.mnum === 239 ? CLR_BROWN
-                        : (MONSTER_COLOR[monster.mnum]
-                            ?? monster.color ?? CLR_GRAY), false, monsterDisplayAttribute(monster), { kind: 'monster',
-                mnum: projection.wormTail ? PM_LONG_WORM_TAIL : monster.mnum });
+            showMonsterOrWarning(x, y, {
+                ch: tailGlyph?.ch || monster.symbol || '?',
+                color: tailGlyph ? tailGlyph.color
+                    : monster.mnum === 102 ? NO_COLOR
+                        : monster.mnum === 100 || monster.mnum === 239 ? CLR_BROWN
+                            : (MONSTER_COLOR[monster.mnum]
+                                ?? monster.color ?? CLR_GRAY),
+                decgfx: false, kind: 'monster',
+                mnum: projection.wormTail ? PM_LONG_WORM_TAIL : monster.mnum,
+            }, monsterDisplayAttribute(monster));
         }
         monster.meverseen = 1;
         return;
     }
     const warning = isWormTail(monster, x, y) ? null : warningProjection(monster);
     if (warning) {
-        show_glyph_cell(x, y, warning.ch, warning.color, false, 0, { kind: 'warning' });
+        showMonsterOrWarning(x, y, { ...warning, decgfx: false, kind: 'warning' });
         return;
     }
     if (loc.remembered_glyph?.kind === 'invisible') {
@@ -2053,7 +2095,14 @@ export async function flush_screen(mode) {
         game._mapFlushPaused = !game._mapFlushPaused;
     if (game._mapFlushPaused)
         return;
+    const display = game.nhDisplay;
+    const mapCursor = mode === 0 && display
+        ? lastDirtyMapCursor() ?? [display.cursorCol, display.cursorRow] : null;
     _buildScreenOutput();
+    // print_glyph() advances the tty cursor; only a requested curs_on_u()
+    // subsequently moves it back to the hero.
+    if (mapCursor)
+        display?.setCursor(...mapCursor);
 }
 export function clearMapDisplay() {
     for (let row = 1; row <= ROWNO; row++)
@@ -2106,8 +2155,8 @@ export async function pline(msg) {
     // flushes the map or negotiates tty's previous-topline pager.
     if (game.vision_full_recalc)
         vision_recalc(0);
-    if (!game._mapFlushPaused)
-        await bot();
+    if (game.u.ux)
+        await flush_screen(1);
     game._pending_message = msg;
     game._retained_message = '';
     game._last_message = msg;
@@ -2212,8 +2261,8 @@ async function pageTopline(message, { urgent = false, menuLetter } = {}) {
         finalLine = moreCells;
         lines.push(finalLine);
     }
-    if (!game._mapFlushPaused)
-        _buildScreenOutput(false);
+    // tty more() only acknowledges the message window. Map changes queued
+    // after that message stay buffered until their caller flushes the map.
     if (display?.grid) {
         for (const [row, line] of lines.entries()) {
             display.clearRow(row);
@@ -2290,12 +2339,12 @@ export async function plineWithContinuation(msg, { noRepeat = false, urgent = fa
     }
     if (!urgent && noRepeat && msg === game._lastPlineMessage)
         return;
-    // vpline() refreshes status before tty decides whether older prose needs
-    // acknowledgment. This includes the optional showdamage() message.
+    // vpline() flushes the map before tty decides whether older prose needs
+    // acknowledgment. Direct message-window display does not do this.
     if (game.vision_full_recalc)
         vision_recalc(0);
-    if (!game._mapFlushPaused)
-        await bot();
+    if (game.u.ux)
+        await flush_screen(1);
     // Escape stops tty prose after vpline has refreshed the display.
     if (!urgent && game._suppressMessagesUntilInput)
         return;
