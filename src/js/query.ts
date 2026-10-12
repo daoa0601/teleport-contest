@@ -7,10 +7,31 @@ import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR } from './terminal.js';
 
+interface LineInputOptions {
+    suppressStatus?: boolean;
+    inMenu?: boolean;
+}
+
 export async function getLine(
     prompt: string,
     accepts: (character: string, key: number) => boolean = ch => /^[0-9+-]$/.test(ch),
-    { suppressStatus = false, inMenu = false }: { suppressStatus?: boolean; inMenu?: boolean } = {},
+    options: LineInputOptions = {},
+): Promise<string | null> {
+    // windows.c:getlin() disables bot() through tty's prompt cleanup.
+    // Covered status rows stay blank until a later status update.
+    const statusUpdatesDisabled = game._statusUpdatesDisabled ?? false;
+    game._statusUpdatesDisabled = true;
+    try {
+        return await editLine(prompt, accepts, options);
+    } finally {
+        game._statusUpdatesDisabled = statusUpdatesDisabled;
+    }
+}
+
+async function editLine(
+    prompt: string,
+    accepts: (character: string, key: number) => boolean,
+    { suppressStatus = false, inMenu = false }: LineInputOptions,
 ): Promise<string | null> {
     let value = '';
     let renderedRows = 1;
@@ -123,7 +144,11 @@ export async function promptChoice<Choice extends string>(
     query: string, choices: readonly Choice[], defaultAnswer: Choice,
     { visibleChoices = choices.join('') }: { visibleChoices?: string } = {},
 ): Promise<Choice> {
-    const message = `${query.slice(0, QBUFSZ - 1)} [${visibleChoices}] (${defaultAnswer}) `;
+    // cmd.c:yn_function() reserves the last three query characters for an
+    // ellipsis when the caller exceeds the native question buffer.
+    const question = query.length >= QBUFSZ
+        ? `${query.slice(0, QBUFSZ - 4)}...` : query;
+    const message = `${question} [${visibleChoices}] (${defaultAnswer}) `;
     const preserveCase = choices.some(choice => /[A-Z]/.test(choice));
     game._suppressMessagesUntilInput = false;
     await flushPendingTopline();

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { nhgetch, pushKeys, resetInputState } from '../js/input.js';
 import { getLine, promptChoice, promptYesNo, promptYesNoAllQuit, promptYesNoQuit } from '../js/query.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { flushPendingTopline, flush_screen, pline, plineWithContinuation } from '../js/display.js';
+import { bot, flushPendingTopline, flush_screen, pline, plineWithContinuation } from '../js/display.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';
@@ -105,25 +105,88 @@ void test('an answered wrapped confirmation clears the covered message area', as
     assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(), '');
 });
 
-for (const lineInput of [true, false]) {
-    void test(`a wrapped ${lineInput ? 'line' : 'confirmation'} prompt restores the status rows it covered`, async () => {
+void test('a wrapped line prompt leaves covered status rows blank until the next status update', async () => {
+    freshPlayableRoom();
+    game.plname = 'Lin';
+    game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 6, rows: 24 }));
+    const input = resetInputState();
+    const answer = getLine('Choose '.repeat(18), () => true);
+    try {
+        await input.waitUntilBlocked();
+        assert.doesNotMatch(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/,
+            'the question should cover the first status row');
+    } finally {
+        input.feed('\n');
+        await answer;
+    }
+
+    for (const row of [22, 23]) {
+        assert.equal(game.nhDisplay.grid[row]?.map(cell => cell.ch).join('').trim(), '',
+            `status row ${row} should stay blank after line input cleanup`);
+    }
+    await bot();
+    assert.match(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/);
+    assert.match(game.nhDisplay.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dlvl:/);
+});
+
+void test('line input holds existing status until it returns', async () => {
+    freshPlayableRoom();
+    game.plname = 'Before';
+    await bot();
+    game.plname = 'After';
+    const input = resetInputState();
+    const answer = getLine('Name?', () => true);
+    try {
+        await input.waitUntilBlocked();
+        await bot();
+        assert.match(game.nhDisplay?.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Before/);
+    } finally {
+        input.feed('\n');
+        await answer;
+    }
+    await bot();
+    assert.match(game.nhDisplay?.grid[22]?.map(cell => cell.ch).join('') ?? '', /^After/);
+});
+
+void test('a wrapped confirmation restores the status rows it covered', async () => {
+    freshPlayableRoom();
+    game.plname = 'Lin';
+    game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 6, rows: 24 }));
+    const input = resetInputState();
+    const prompt = 'Choose '.repeat(18);
+    const answer = promptYesNo(prompt);
+    try {
+        await input.waitUntilBlocked();
+        assert.doesNotMatch(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/,
+            'the question should cover the first status row');
+    } finally {
+        input.feed('n');
+        await answer;
+    }
+
+    assert.match(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/);
+    assert.match(game.nhDisplay.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dlvl:/);
+});
+
+for (const length of [127, 128, 160]) {
+    void test(`a ${length}-character confirmation ${length < 128 ? 'keeps the full question' : 'ends the shortened question with an ellipsis'}`, async () => {
         freshPlayableRoom();
-        game.plname = 'Lin';
-        game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 6, rows: 24 }));
+        const query = 'Will you leave before checking '.padEnd(length - 1, 'x') + '?';
         const input = resetInputState();
-        const prompt = 'Choose '.repeat(18);
-        const answer = lineInput ? getLine(prompt, () => true) : promptYesNo(prompt);
+        const answer = promptYesNo(query);
         try {
             await input.waitUntilBlocked();
-            assert.doesNotMatch(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/,
-                'the question should cover the first status row');
+            const display = game.nhDisplay;
+            assert.ok(display);
+            const text = [0, 1].map(row => display.grid[row]?.slice(0, display.cols - 1)
+                .map(cell => cell.ch).join('') ?? '').join('').trimEnd();
+            assert.equal(text.length, 136, 'the displayed question should have 127 characters before the choice suffix');
+            assert.ok(text.endsWith(length < 128 ? '? [yn] (n)' : '... [yn] (n)'),
+                `unexpected question ending: ${text.slice(-20)}`);
         } finally {
-            input.feed(lineInput ? '\n' : 'n');
+            input.feed('n');
             await answer;
         }
-
-        assert.match(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/);
-        assert.match(game.nhDisplay.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dlvl:/);
     });
 }
 

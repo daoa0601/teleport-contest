@@ -1978,7 +1978,7 @@ export function serialize_terminal_grid(display: Pick<GameDisplay, 'rows' | 'col
 function statusLines(update: boolean): readonly [string, string] {
     // C botl.c:bot() reserves uhp == -1 for saving. It leaves both status
     // rows untouched, even when real damage happens to produce that value.
-    if (!update || game.u.uhp === -1) {
+    if (!update || game._statusUpdatesDisabled || game.u.uhp === -1) {
         const row = (index: number) => game.nhDisplay?.grid[index]
             ?.map(cell => cell.ch).join('').trimEnd() ?? '';
         return [row(22), row(23)];
@@ -2103,8 +2103,8 @@ export function clearMessageWindow(coveredRows?: number) {
         display.clearRow(row);
         if (row <= ROWNO && !game._suppressMapStatusForFlush) writeMapRow(display, row - 1);
     }
-    // docorner() regenerates status after erasing rows a prompt covered;
-    // the physical cells no longer contain a status line we could reuse.
+    // docorner() asks bot() to restore covered status rows. getlin() keeps
+    // status updates disabled through this cleanup, leaving those rows blank.
     if (rows > ROWNO + 1) refreshStatusLines();
     display.setCursor(0, 0);
 }
@@ -2116,7 +2116,7 @@ export async function bot() {
 
 function refreshStatusLines(): void {
     const display = game.nhDisplay;
-    if (!display || game.u.uhp === -1 || game.program_state.saving
+    if (!display || game._statusUpdatesDisabled || game.u.uhp === -1 || game.program_state.saving
         || game.program_state.windows_exited || game._suppressMapStatusForFlush) return;
     writeStatusLines(display, statusLines(true));
 }

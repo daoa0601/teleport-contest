@@ -97,6 +97,7 @@ const transientFields = {
     _statusGoldOverride: true,
     _statusHpOverride: true,
     _statusProjectedAc: true,
+    _statusUpdatesDisabled: true,
     _steedDismounting: true,
     _suppressMapStatusForFlush: true,
     _suppressMessagesUntilInput: true,

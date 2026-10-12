@@ -5,7 +5,19 @@ import { clearMessageWindow, flushPendingTopline, flush_screen, pline } from './
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR } from './terminal.js';
-export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), { suppressStatus = false, inMenu = false } = {}) {
+export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), options = {}) {
+    // windows.c:getlin() disables bot() through tty's prompt cleanup.
+    // Covered status rows stay blank until a later status update.
+    const statusUpdatesDisabled = game._statusUpdatesDisabled ?? false;
+    game._statusUpdatesDisabled = true;
+    try {
+        return await editLine(prompt, accepts, options);
+    }
+    finally {
+        game._statusUpdatesDisabled = statusUpdatesDisabled;
+    }
+}
+async function editLine(prompt, accepts, { suppressStatus = false, inMenu = false }) {
     let value = '';
     let renderedRows = 1;
     const width = (game.nhDisplay?.cols ?? COLNO) - 1;
@@ -125,7 +137,11 @@ function renderChoicePrompt(message) {
 // C tty_yn_function(): Escape prefers quit, then no; whitespace chooses
 // the displayed default. Invalid keys leave the same question active.
 export async function promptChoice(query, choices, defaultAnswer, { visibleChoices = choices.join('') } = {}) {
-    const message = `${query.slice(0, QBUFSZ - 1)} [${visibleChoices}] (${defaultAnswer}) `;
+    // cmd.c:yn_function() reserves the last three query characters for an
+    // ellipsis when the caller exceeds the native question buffer.
+    const question = query.length >= QBUFSZ
+        ? `${query.slice(0, QBUFSZ - 4)}...` : query;
+    const message = `${question} [${visibleChoices}] (${defaultAnswer}) `;
     const preserveCase = choices.some(choice => /[A-Z]/.test(choice));
     game._suppressMessagesUntilInput = false;
     await flushPendingTopline();
