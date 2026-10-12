@@ -4756,6 +4756,7 @@ async function triggerMonsterTrap(
         movement.trap = event;
         if (event.killed) {
             movement.actorDied = true;
+            movement.postMoveStatus = MMOVE_DIED;
             movement.actionCompleted = true;
         }
         return event;
