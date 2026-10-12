@@ -2049,23 +2049,14 @@ async function dokick() {
         await exerciseAttribute(A_DEX, true);
         const strength = currentStrength();
         if (rnl(35) < average) {
-            // in_rooms(..., SHOPBASE) includes a shop immediately across a
-            // boundary door.  Such doors never take the high-strength
-            // shatter branch, though the ordinary crash still succeeds.
-            const touchesShop = ([[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]] as const)
-                .some(([dx, dy]) => {
-                    const roomno = game.level?.at(x + dx, y + dy)?.roomno ?? 0;
-                    return roomno >= ROOMOFFSET
-                        && (roomForRoomno(game.level, roomno)?.rtype
-                            ?? 0) >= SHOPBASE;
-                });
+            const shopDoor = roomsAt(game.level, x, y, SHOPBASE).length > 0;
             if (location.doormask & D_TRAPPED) {
                 if (game.flags.verbose) await pline('You kick the door.');
                 await exerciseAttribute(A_STR, false);
                 location.doormask = D_NODOOR;
                 if (await triggerBoobyTrap('door', { bodypart: true })) return;
             } else {
-                const shatters = strength > 18 && rn2(5) === 0 && !touchesShop;
+                const shatters = strength > 18 && rn2(5) === 0 && !shopDoor;
                 location.doormask = shatters ? D_NODOOR : D_BROKEN;
                 await pline(shatters
                     ? 'As you kick the door, it shatters to pieces!'
@@ -2075,7 +2066,7 @@ async function dokick() {
             feel_newsym(x, y);
             vision_reset();
             vision_recalc(0);
-            if (touchesShop) {
+            if (shopDoor) {
                 addShopDamage(x, y, SHOP_DOOR_COST);
                 await payForShopDamage('break');
             }
