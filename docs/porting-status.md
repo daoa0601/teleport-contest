@@ -130,53 +130,52 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
+## Parallel batch 1 (`fee2284`)
+
+Units ran in worktrees under `docs/orchestration.md` (GLM and Codex, each diff
+reviewed by Codex against the C source before merge). Merged:
+- **rank-title**: the Caveman and Tourist rank tables were truncated; titles
+  above the third rank fell back to the role name.
+- **levelgen-rng**: `makecorridors`/`join`, `get_location`/`get_location_coord`,
+  `mkclass`/`mkclass_aligned`, special-level trap placement, coordinate packing,
+  and the 40-room limit for themed regions.
+- **rng-tail-2**: `summonmu`, `escape_from_sticky_mon`, zoo and special-room
+  stocking (`next_ident`), and `dosounds` with its feature order.
+- **engrave-command**: `#engrave`/`E` through `doengrave()` and the engrave
+  occupation; command lookup now follows `extcmds_match()`.
+- **special-level-display**: native lighting for Lua maps and irregular rooms.
+
 ## Verification
 
-`npm test` on the combined tree (oracles, hidden-state fixes, `losehp`
-routing, `splitobj` linking, stale level-file cleanup) ran: **6,972/6,973**
-pass. The single failure is
-`wizard shapechanger protection restores a changed monster and reveals a
-mimic`. It lives in untracked work that predates these batches
-(`src/js/wizard_intrinsics.ts`) and fails without these changes as well.
-Compile, strict types, type-aware lint, and the seed guard pass. Frozen
-grader sources are unchanged.
+`npm test` at `fee2284`: **7,072/7,074**. `wizard_intrinsics` "shapechanger
+protection" predates these batches. The `#wizmap` admission test expected the
+wrong message: `extcmds_match()` hides wizard commands outside wizard mode, so
+a typed `#wizmap` is an unknown extended command. The test now expects that.
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
-| Public | 20/44 | 7,221/11,405 | 454,136/792,838 | 0 |
-| Native eval sample | 143/300 | 33,650/50,586 | 2,773,779/3,616,669 | 0 |
+| Public | 20/44 | 7,631/11,405 | 547,875/792,838 | 0 |
+| Native eval sample | 165/300 | 38,001/50,586 | 2,921,532/3,616,669 | 0 |
 
-The runs are `.cache/generalization/hidden-{eval,public}/`. Screens and random
-calls are identical to the stacking batch: these defects stayed hidden until
-after each session's first visible difference, which has other causes. The
-function table reports no lost or newly blamed calls, and both ledgers hold.
-The state oracle (`.cache/state-oracle/eval-1/compare-hidden.md`) now finds
-**0** hidden-state sessions, down from 22. 183 sessions match C state
-throughout, up from 162. 27 first state differences move later and none
-move earlier.
+Runs: `.cache/generalization/batch1-fee2284-{eval,public}` (baseline
+`base-06d7e73`: 143/300 and 20/44). No verified call was lost; the ledgers grew
+to 68 (eval) and 91 (public) fully verified functions. The state oracle finds
+207 sessions matching C state throughout (was 183). Its two hidden-state
+sessions (21abd264, 8793afd7) carry an extra floor boulder in Gehennom; the
+baseline already had it behind an earlier screen difference.
 
-## Next work from the new instruments
+## Next work
 
-Every remaining first state difference coincides with a visible difference.
-The 157 failing eval sessions (`split-after-eval`) split into 98 that differ
-first on screen and 59 that differ first in a random call. Queue for parallel
-units (`docs/orchestration.md`), largest and most separable first:
-
-| Unit | Owner | Sessions | First difference |
-| --- | --- | ---: | --- |
-| Rank title | `role.c` rank tables, `botl.c` title | 17 | After wizard `#levelchange`, C shows the new rank ("Wizard the Vagrant"); the port shows another title |
-| End of game | `end.c` `done()`, disclosure, goodbye | ~20 | Missing "Be seeing you..." (11); vanquished-creature and worn-item disclosure lines differ (~9) |
-| `#engrave` | `cmd.c` extended-command table, `engrave.c` | 7 | Port answers "#engrave: unknown extended command." |
-| Native tty menus and prompts | `wintty.c` menu owner, `yn_function` choices | ~12 | Cursor row 22 vs 21 (7), `[ynq] (q)` suffix missing (3), getobj letter list spacing (2) |
-| Special-level arrival display | Gehennom filler lighting (`hellfill.lua`, `sp_lev.c`) or arrival vision (`do.c` `goto_level`, `vision.c`) | 19 | After a wizard Ctrl-V teleport to Dlvl 30-45, the port shows room walls and floor that C leaves unseen; screen differs before any random call. Next batch, Codex; brief in `.cache/agents/special-level-display.md` |
-| Random-call tail | various | 59 | `mkclass_aligned` 5, `get_location` 5, `makecorridors` 4, `next_ident` 3, `summonmu` 3, `escape_from_sticky_mon` 3, then singletons |
-
-The 28 map-cell and remaining message differences are not yet grouped. The
-tty menu unit overlaps the end-of-game disclosure menus, so run it after
-that unit merges. Coverage shows that `read.c`, `potion.c`, and `pray.c` are
-barely exercised; add scenario recipes there.
+In flight: small-messages (smell hints, poisoned orcish arrows, hide-under
+reveal, quest text substitution), end-of-game (disclosure and goodbye),
+rng-tail-3 (`muse.c`, `castmu`, gas clouds, level teleport), extcmds (about 30
+missing extended commands). Queued: native tty windows and prompts
+(`wintty.c`, after end-of-game), object naming (Samurai names, gold listing),
+the extra Gehennom boulder, `mktrap()` pool/lava rejection order, and
+`create_monster` class-selection fallback. Coverage shows that `read.c`,
+`potion.c`, and `pray.c` are barely exercised; add scenario recipes there.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,
