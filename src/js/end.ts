@@ -249,7 +249,7 @@ export async function finishHeroDeath({
     }
 
     if (game.flags?.debug || game.flags?.explore) {
-        const answer = await promptYesNo('Die? [yn] (n) ');
+        const answer = await promptYesNo('Die?');
         if (answer !== 'y') {
             await plineWithContinuation("OK, so you don't die.");
             await restoreHeroAfterDeath({ deathType });
@@ -279,13 +279,6 @@ export function recordHeroKillConduct(state: GameState = game) {
     conduct.killer = (conduct.killer || 0) + 1;
     if (firstKill)
         recordGameLogEvent('killed for the first time', { state });
-}
-
-async function promptDeathQuestion(message: string) {
-    await pline(message);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(message.length + 1, 0);
-    return String.fromCharCode(await nhgetch()).toLowerCase();
 }
 
 // C insight.c:list_vanquished()/vanqsort_cmp().  The order comes from
@@ -1100,7 +1093,7 @@ async function setVanqOrder(forVanquished: boolean): Promise<number> {
                 && (mode === VANQ_COUNT_H_L || mode === VANQ_COUNT_L_H)))
             continue;
         items.push({
-            text: `${letter} - ${vanqOrderDescription(mode, forVanquished)}`,
+            text: vanqOrderDescription(mode, forVanquished),
             key: letter, value: mode,
         });
         if (mode === current) preselectedKey = letter;
@@ -1128,7 +1121,7 @@ async function ynQuestion(
     const choices: Array<'y' | 'n' | 'a' | 'q'>
         = visible === 'ynaq' || hiddenAll ? ['y', 'n', 'a', 'q'] : ['y', 'n', 'q'];
     return await promptChoice(
-        `${question} [${visible}] (${defquery}) `, choices, defquery, 0,
+        question, choices, defquery, { visibleChoices: visible },
     );
 }
 
@@ -1228,7 +1221,7 @@ async function discloseGame({
         if (overview === 'y') {
             await showDisclosureOverlay(
                 overviewLines(killer, deathVerb, deathCause), {
-                    marker: '(end)', minWidth: game._tutorialActive ? 38 : 39,
+                    marker: '(end)',
                     // C show_overview() builds the window with add_menu(),
                     // so its paged layout keeps the selector column and
                     // "(x of y)" page markers.
@@ -1291,7 +1284,7 @@ async function completeOrdinaryDeath({
     const summary = gameSummaryValues('died');
     game.u.urexp = summary.score;
     await createBonesFromDeath(
-        deathCause || deathCauseRecord(killer, deathVerb), promptDeathQuestion,
+        deathCause || deathCauseRecord(killer, deathVerb), promptYesNo,
     );
 
     if (showSummary) {
@@ -1306,7 +1299,7 @@ async function completeOrdinaryDeath({
 
 export async function doquit() {
     const answer = await promptYesNo(
-        'Really quit without saving? [yn] (n) ',
+        'Really quit without saving?',
     );
     if (answer !== 'y') {
         // C end.c:done2() clears the answered question without a docrt,

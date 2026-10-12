@@ -36,7 +36,7 @@ export async function quaff({ state = game }: PotionEffectOptions = {}): Promise
     if (!state.iflags.menu_requested) {
         if (heroCanReachFloor(state) && [FOUNTAIN, SINK].includes(location.typ)) {
             const fountain = location.typ === FOUNTAIN;
-            if (await promptYesNo(`Drink from the ${fountain ? 'fountain' : 'sink'}? [yn] (n)`, 'n', 1) === 'y') {
+            if (await promptYesNo(`Drink from the ${fountain ? 'fountain' : 'sink'}?`, 'n') === 'y') {
                 if (fountain) await drinkFountain(location);
                 else await drinkSink({ state });
                 return outcome(true, state);
@@ -44,7 +44,7 @@ export async function quaff({ state = game }: PotionEffectOptions = {}): Promise
             declinedSource = true;
         }
         if ((hero.uinwater || state.underwater) && !hero.uswallow) {
-            if (await promptYesNo('Drink the water around you? [yn] (n)', 'n', 1) === 'y') {
+            if (await promptYesNo('Drink the water around you?', 'n') === 'y') {
                 await pline('Do you know what lives in this water?');
                 return outcome(true, state);
             }

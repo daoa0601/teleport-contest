@@ -461,7 +461,7 @@ export async function playInstrument(instrument, options = {}) {
     }
     const unimpaired = !heroIsImpaired() && !heroIsHallucinating();
     if (!DRUMS.has(instrument.otyp) && unimpaired) {
-        const answer = await promptYesNoQuit('Improvise? [ynq] (q) ', 'q');
+        const answer = await promptYesNoQuit('Improvise?', 'q');
         if (answer === 'q') {
             await pline('Never mind.');
             game.context.move = 0;

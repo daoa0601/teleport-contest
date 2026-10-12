@@ -152,6 +152,22 @@ void test('a wield menu offers empty hands alongside its one suggested weapon', 
     assert.equal(game.context.move, 1);
 });
 
+void test('an inventory menu adds one selector prefix to its empty-hands description', async () => {
+    freshObjectRoom();
+    await addInventoryObject(DAGGER);
+    const input = resetInputState();
+    const selection = selectInventoryObject({ extraChoice: 'bare hands' });
+    try {
+        await input.waitUntilBlocked();
+        const handsRow = requireGameDisplay().grid.find(row => row.map(cell => cell.ch).join('').includes('bare hands'));
+        assert.ok(handsRow, 'the menu offers bare hands');
+        assert.equal(handsRow.map(cell => cell.ch).join('').trim(), '- - bare hands');
+    } finally {
+        input.feed('-');
+        assert.equal((await selection).key, '-'.charCodeAt(0));
+    }
+});
+
 void test('empty hands can be selected from an otherwise empty inventory', async () => {
     freshObjectRoom();
     const input = resetInputState();

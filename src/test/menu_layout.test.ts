@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { NO_COLOR, Terminal } from '../js/terminal.js';
 import {
     ATR_INVERSE, showChoiceWindow, showInventoryWindow, showMultiSelectWindow,
-    showPagedPickOneMenu, showTextMenuOverlay,
+    showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay,
 } from '../js/windows.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -21,6 +21,23 @@ function menuDisplay(columns = 80, rows = 24): GameDisplay {
 
 function textRow(display: GameDisplay, row: number): string {
     return display.grid[row]?.map(cell => cell.ch).join('') ?? '';
+}
+
+for (const columns of [40, 120]) {
+    void test(`a putstr-built menu on a ${columns}-column terminal uses the native corner origin`, async () => {
+        const display = menuDisplay(columns);
+        const input = resetInputState();
+        const window = showDisclosureOverlay(['No creatures have died.']);
+        try {
+            await input.waitUntilBlocked();
+            const left = Math.min(Math.floor(columns / 2), columns - 'No creatures have died.'.length - 2) + 1;
+            assert.equal(textRow(display, 0).indexOf('No creatures'), left);
+            assert.equal(display.cursorCol, left + '--More--'.length);
+        } finally {
+            input.feed(' ');
+            await window;
+        }
+    });
 }
 
 for (const { columns, firstColumn } of [
@@ -225,7 +242,7 @@ void test('a single-page pick-one menu uses the shared corner and end marker', a
 void test('menu attributes start after the selector prefix', async () => {
     const display = menuDisplay();
     const input = resetInputState();
-    const menu = showInventoryWindow([{ items: [{ text: 'z - robe', key: 'z', attr: ATR_INVERSE }] }], { pickMode: PICK_ONE });
+    const menu = showInventoryWindow([{ items: [{ text: 'robe', key: 'z', attr: ATR_INVERSE }] }], { pickMode: PICK_ONE });
     try {
         await input.waitUntilBlocked();
         assert.equal(display.grid[0]?.[41]?.attr, 0);
@@ -279,7 +296,7 @@ void test('a nonselectable heading with native fake-entry syntax keeps its prefi
 void test('preselected inventory entries retain description-only attributes after their marker changes', async () => {
     const display = menuDisplay();
     const input = resetInputState();
-    const menu = showInventoryWindow([{ items: [{ key: 'a', text: 'a - robe', attr: ATR_INVERSE }] }], {
+    const menu = showInventoryWindow([{ items: [{ key: 'a', text: 'robe', attr: ATR_INVERSE }] }], {
         pickMode: PICK_ONE, preselectedKey: 'a',
     });
     try {
@@ -291,4 +308,46 @@ void test('preselected inventory entries retain description-only attributes afte
         input.feed('\x1b');
         await menu;
     }
+});
+
+void test('multi-select paging stops at its ends and only selects visible item letters', async () => {
+    const display = menuDisplay(80, 8);
+    const input = resetInputState();
+    const menu = showMultiSelectWindow({
+        title: 'Take which maps?', omitHeadings: true,
+        sections: [{ items: Array.from({ length: 10 }, (_, index) => ({
+            key: String.fromCharCode(97 + index), text: `map ${index}`, value: index,
+        })) }],
+    });
+    try {
+        await input.waitUntilBlocked();
+        input.feed('<');
+        await input.waitUntilBlocked();
+        assert.match(textRow(display, 7), /\(1 of 2\)/);
+        input.feed('j>');
+        await input.waitUntilBlocked();
+        assert.match(textRow(display, 0), /f - map 5/);
+        input.feed('j^');
+        await input.waitUntilBlocked();
+        assert.match(textRow(display, 7), /\(1 of 2\)/);
+        input.feed('|>');
+        await input.waitUntilBlocked();
+        assert.match(textRow(display, 4), /j \* map 9/);
+        input.feed('\n');
+        assert.deepEqual(await menu, [9]);
+    } finally {
+        input.feed('\x1b');
+        await menu;
+    }
+});
+
+void test('bulk select-all selects rather than inverts and page selection stays on its page', async () => {
+    menuDisplay(80, 8);
+    const input = resetInputState();
+    input.feed('a,|b.\n');
+    const values = await showMultiSelectWindow({
+        title: 'Take which maps?', omitHeadings: true, pageLocalKeys: true,
+        sections: [{ items: Array.from({ length: 10 }, (_, value) => ({ text: `map ${value}`, value })) }],
+    });
+    assert.deepEqual(values, Array.from({ length: 10 }, (_, value) => value));
 });

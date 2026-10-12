@@ -6,6 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { initRng } from '../js/rng.js';
 
 const BEC_DE_CORBIN = 70;
 
@@ -47,4 +48,26 @@ void test('a raven is born peaceful to a hero wielding a bec de corbin', async (
     await wield(BEC_DE_CORBIN);
     const raven = await createMonsterAt('raven', 13, 10);
     assert.equal(!!raven.mpeaceful, true);
+});
+
+// makemon.c species switch: a unicorn whose alignment sign matches the
+// hero's is born peaceful, overriding peace_minded()'s random hostility.
+void test('a co-aligned unicorn is always born peaceful', async () => {
+    for (let seed = 1; seed <= 24; seed++) {
+        freshTurnRoom({ role: 'wizard' });
+        requirePlayingGame(game);
+        initRng(BigInt(seed));
+        game.u.ualign.type = 0;
+        game.u.ualign.record = 0;
+        const unicorn = await createMonsterAt('gray unicorn', 13, 10);
+        assert.equal(!!unicorn.mpeaceful, true, `seed ${seed}`);
+    }
+});
+
+void test('a cross-aligned unicorn is born hostile', async () => {
+    freshTurnRoom({ role: 'wizard' });
+    requirePlayingGame(game);
+    game.u.ualign.type = 1;
+    const unicorn = await createMonsterAt('gray unicorn', 13, 10);
+    assert.equal(!!unicorn.mpeaceful, false);
 });

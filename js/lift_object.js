@@ -193,7 +193,7 @@ export async function liftObject({ object, container = null, count = objectQuant
         }
         const action = container ? 'removing' : 'lifting';
         observeObjectForNaming(object, { state });
-        const answer = await promptYesNoQuit(`${pickupLoadPrefix(nextBurden)} ${action} ${itemDescription(object, liftedCount)}.  Continue? [ynq] (q) `);
+        const answer = await promptYesNoQuit(`${pickupLoadPrefix(nextBurden)} ${action} ${itemDescription(object, liftedCount)}.  Continue?`);
         if (answer !== 'y') {
             resetRejectedScareScroll(object, container);
             return {

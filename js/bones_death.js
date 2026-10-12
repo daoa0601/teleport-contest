@@ -131,14 +131,14 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion) {
         }
     }
     if (game.flags?.debug) {
-        const save = await promptDeathQuestion('Save bones? [yn] (n) ');
+        const save = await promptDeathQuestion('Save bones?');
         if (save !== 'y')
             return false;
     }
     if (bonesLevelExists()) {
         if (!game.flags?.debug)
             return false;
-        const replace = await promptDeathQuestion('Bones file already exists.  Replace it? [yn] (n) ');
+        const replace = await promptDeathQuestion('Bones file already exists.  Replace it?');
         if (replace !== 'y')
             return false;
     }

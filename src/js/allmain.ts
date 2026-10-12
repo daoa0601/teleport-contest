@@ -22,7 +22,9 @@ import type {
     RandomBelow, RollDice, RollOne,
 } from './monster_action_types.js';
 import { clearImmediateZapBypasses } from './immediate_zap.js';
-import { MON_FLOOR } from './const.js';
+import { MON_FLOOR, PICK_ONE } from './const.js';
+import { showInventoryWindow } from './windows.js';
+import type { InventoryMenuItem } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
 import { dosounds } from './ambient_sounds.js';
 import { ceilingName } from './terrain_name.js';
@@ -83,7 +85,7 @@ import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
 import {
-    canSpotMonster, docrt, redrawMap,
+    canSpotMonster, displayMessageWindow, docrt, redrawMap,
     bot,
     flush_screen, flushPendingTopline,
     pline,
@@ -478,43 +480,24 @@ export async function restoregamePreamble() {
     await finishMoveloopPreamble();
 }
 
-async function askTutorial() {
-    const game = requireInitializedGame();
-    const d = requireGameDisplay(game);
-    // tty_end_menu() derives a 59-column tutorial window (content plus menu
-    // margins) from its longest row.  tty_display_nhwindow() therefore puts
-    // the recorded .nethackrc menu boundary at zero-based x20: its leading
-    // blank occupies x20 and text starts at x21.  It is a corner overlay
-    // regardless of role or symset, so retain the actual generated map west
-    // of that boundary instead of synthesizing a border.
-    game._pending_message = '';
-    d.clearRow(0);
-    d.clearRow(1);
-    for (let row = 2; row <= 6; row++)
-        putLine(20, row, ' '.repeat(60));
-    putLine(21, 0, 'Do you want a tutorial?', 1);
-    putLine(21, 2, 'y - Yes, do a tutorial');
-    putLine(21, 3, 'n - No, just start play');
-    putLine(21, 5, 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.');
-    putLine(21, 6, '(end)');
-    putStatusLines();
-    d.setCursor(27, 6);
-    let key = await nhgetch();
-    while (key !== 121 && key !== 110 && key !== 27) {
-        // select_menu() handles ordinary invalid accelerators in place.  Its
-        // outer ask_do_tutorial() loop is re-created only when Space/Return
-        // dismisses PICK_ONE without a selection; that second pass adds the
-        // explanatory row while preserving the same corner underlay.
-        if (key === 32 || key === 10 || key === 13) {
-            putLine(20, 6, ' '.repeat(60));
-            putLine(20, 7, ' '.repeat(60));
-            putLine(21, 6, "(Please choose 'y' or 'n'.)");
-            putLine(21, 7, '(end)');
-            d.setCursor(27, 7);
-        }
-        key = await nhgetch();
+// C options.c:ask_do_tutorial(). Empty acceptance rebuilds the menu with
+// an explanation; a selected answer or Escape ends the question.
+async function askTutorial(): Promise<boolean> {
+    let pass = 0;
+    for (;;) {
+        const items: InventoryMenuItem[] = [
+            { key: 'y', text: 'Yes, do a tutorial' },
+            { key: 'n', text: 'No, just start play' },
+            { text: '' },
+            { text: 'Put "OPTIONS=!tutorial" in .nethackrc to skip this query.' },
+        ];
+        if (pass++) items.push({ text: "(Please choose 'y' or 'n'.)" });
+        const answer = await showInventoryWindow([{ items }], {
+            title: 'Do you want a tutorial?', pickMode: PICK_ONE,
+        });
+        if (answer.key === 0) continue;
+        return answer.key === 'y'.charCodeAt(0);
     }
-    return key === 121;
 }
 
 // C/Lua refs: allmain.c maybe_do_tutorial(), do.c goto_level(),
@@ -2717,7 +2700,7 @@ async function presentMonsterAttackEffects(
                             earlierActorPager: earlierActorPagerInScan,
                         }),
                         flushMessages: async () => {
-                            const dismissal = await flushPendingTopline();
+                            const dismissal = await displayMessageWindow();
                             if (dismissal != null) paging.pagerOwned = true;
                             paging.messageAfterPager = !!game._pending_message;
                         },

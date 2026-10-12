@@ -18,8 +18,9 @@ export function installPagerInput(input: InputGate, { expected, limit }: PagerIn
             const screen = display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
             const topRow = display.grid[0];
             assert.ok(topRow, 'The message pager needs its display row.');
-            const message = game._pending_message || display.topMessage || display.toplines
-                || topRow.map(cell => cell.ch).join('');
+            // tty retains answered questions in toplines even after a text
+            // window replaces them. Validate the currently visible page.
+            const message = game._pending_message || topRow.map(cell => cell.ch).join('').trim() || screen;
             // C disclose() asks its category questions between the death
             // messages and the summary.  Pager-driven endings answer them
             // with the default no, outside the pager's runaway limit.
@@ -59,8 +60,11 @@ export async function finishAtCommandInput<T>(
         async readKey(): Promise<number> {
             const display = requireGameDisplay(game);
             const screen = display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
-            if (/--More--|Hit space to continue/.test(screen)) return pager.readKey();
-            const message = game._pending_message || display.topMessage || display.toplines;
+            // Native more() can leave its acknowledged marker visible at
+            // command input. Only unread prose still belongs to that pager.
+            if (game._pending_message && /--More--|Hit space to continue/.test(screen)) return pager.readKey();
+            const message = game._pending_message
+                || display.grid[0]?.map(cell => cell.ch).join('').trim() || '';
             assert.doesNotMatch(message, /\?/, 'The next command must not bypass a question');
             assert.match(message, expected, 'Unexpected message before the next command');
             assert.equal(cancelled, false, 'Cancelling the next command must finish the turn');

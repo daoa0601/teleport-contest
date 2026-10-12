@@ -653,7 +653,7 @@ export async function doengrave(state = game) {
         else if (setup.type === oep.engr_type
             && (!heroIsBlind(state) || oep.engr_type === BURN
                 || oep.engr_type === ENGRAVE)) {
-            answer = await promptYesNoQuit('Do you want to add to the current engraving? [ynq] (y) ', 'y');
+            answer = await promptYesNoQuit('Do you want to add to the current engraving?', 'y');
             if (answer === 'q') {
                 await pline('Never mind.');
                 exit();

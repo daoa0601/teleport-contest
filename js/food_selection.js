@@ -146,7 +146,7 @@ function canSelectFloorFood(state) {
         || heroIsFlying(state) && !heroIsBreathless(state));
 }
 function askFloorFood(prompt) {
-    return promptYesNoQuit(`${prompt} [ynq] (n) `, 'n');
+    return promptYesNoQuit(`${prompt}`, 'n');
 }
 function objectIsFlammable(object, material) {
     return ![TALLOW_CANDLE, WAX_CANDLE, WAN_FIRE].includes(object.otyp)

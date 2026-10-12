@@ -1962,7 +1962,7 @@ export function serialize_terminal_grid(display) {
 function statusLines(update) {
     // C botl.c:bot() reserves uhp == -1 for saving. It leaves both status
     // rows untouched, even when real damage happens to produce that value.
-    if (!update || game.u.uhp === -1) {
+    if (!update || game._statusUpdatesDisabled || game.u.uhp === -1) {
         const row = (index) => game.nhDisplay?.grid[index]
             ?.map(cell => cell.ch).join('').trimEnd() ?? '';
         return [row(22), row(23)];
@@ -2011,26 +2011,8 @@ function _buildScreenOutput(updateStatus = true) {
             display.setCell(c, 0, msg.charAt(c), NO_COLOR, 0);
         if (!blankMainWindow) {
             // Map — write characters to grid (DEC → Unicode for browser display)
-            for (let y = 0; y < ROWNO; y++) {
-                for (let x = 1; x < COLNO; x++) {
-                    const loc = game.level?.at(x, y);
-                    if (!loc?.disp_ch)
-                        continue;
-                    const color = loc.disp_color ?? NO_COLOR;
-                    const attr = loc.disp_attr ?? 0;
-                    // Plane-of-Air AIR is a cyan space.  Although it paints
-                    // no glyph, the C tty records its foreground SGR state
-                    // between neighboring cloud glyphs.  Preserve such
-                    // semantic spaces in the terminal grid; ordinary
-                    // default/gray blanks may remain sparse.
-                    if (loc.disp_ch === ' ' && !(attr & 5)
-                        && (color === NO_COLOR || color === CLR_GRAY)) {
-                        continue;
-                    }
-                    const ch = loc.disp_decgfx ? (DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch) : loc.disp_ch;
-                    display.setCell(x - 1, y + 1, ch, color, attr);
-                }
-            }
+            for (let y = 0; y < ROWNO; y++)
+                writeMapRow(display, y);
             // Status lines
             writeStatusLines(display, status);
             const cursorOverride = game._cursorOverride;
@@ -2041,6 +2023,22 @@ function _buildScreenOutput(updateStatus = true) {
                 display.setCursor(game.u.ux - 1, game.u.uy + 1);
             }
         }
+    }
+}
+function writeMapRow(display, y) {
+    for (let x = 1; x < COLNO; x++) {
+        const loc = game.level?.at(x, y);
+        if (!loc?.disp_ch)
+            continue;
+        const color = loc.disp_color ?? NO_COLOR;
+        const attr = loc.disp_attr ?? 0;
+        // Plane-of-Air AIR is a cyan space. Preserve its foreground color
+        // between cloud glyphs; ordinary default/gray blanks stay sparse.
+        if (loc.disp_ch === ' ' && !(attr & 5)
+            && (color === NO_COLOR || color === CLR_GRAY))
+            continue;
+        const ch = loc.disp_decgfx ? (DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch) : loc.disp_ch;
+        display.setCell(x - 1, y + 1, ch, color, attr);
     }
 }
 // ── flush_screen ──
@@ -2070,25 +2068,37 @@ export async function cls() {
 }
 // C tty_clear_nhwindow(WIN_MESSAGE). A seen prompt still occupies the
 // physical message row; clearing it is separate from acknowledging input.
-export function clearMessageWindow() {
+export function clearMessageWindow(coveredRows) {
     const text = game._pending_message || game._retained_message || '';
-    const wrapped = toplineRows(text, game.nhDisplay?.cols ?? COLNO).length > 1;
+    const display = game.nhDisplay;
+    // The line editor wraps at character boundaries, unlike update_topl().
+    // Its rendered row count is authoritative when clearing its prompt.
+    const rows = coveredRows ?? toplineRows(text, display?.cols ?? COLNO).length;
     game._pending_message = '';
     game._retained_message = '';
-    if (wrapped) {
-        // Wrapped text covered map rows. Restore their buffered display,
-        // without a vision update or the message pager of a screen reset.
-        _buildScreenOutput(false);
+    if (!display)
+        return;
+    display.clearRow(0);
+    // tty_clear_nhwindow(WIN_MESSAGE) calls docorner() only for rows the
+    // message covered. Menus and text windows below those rows stay visible.
+    for (let row = 1; row < Math.min(rows, display.rows); row++) {
+        display.clearRow(row);
+        if (row <= ROWNO && !game._suppressMapStatusForFlush)
+            writeMapRow(display, row - 1);
     }
-    else {
-        game.nhDisplay?.clearRow(0);
-        game.nhDisplay?.setCursor(0, 0);
-    }
+    // docorner() asks bot() to restore covered status rows. getlin() keeps
+    // status updates disabled through this cleanup, leaving those rows blank.
+    if (rows > ROWNO + 1)
+        refreshStatusLines();
+    display.setCursor(0, 0);
 }
 // ── bot ──
 export async function bot() {
+    refreshStatusLines();
+}
+function refreshStatusLines() {
     const display = game.nhDisplay;
-    if (!display || game.u.uhp === -1 || game.program_state.saving
+    if (!display || game._statusUpdatesDisabled || game.u.uhp === -1 || game.program_state.saving
         || game.program_state.windows_exited || game._suppressMapStatusForFlush)
         return;
     writeStatusLines(display, statusLines(true));
@@ -2239,21 +2249,22 @@ async function pageTopline(message, { urgent = false, menuLetter } = {}) {
         display?.setCursor(0, 0);
         return key;
     }
-    // tty ESC at more() sets WIN_STOP.  The message which requested this
-    // pager is discarded, but tty's first old topline remains physically
-    // visible when it occupied one row.  A wrapped topline takes the
-    // docorner() path instead and restores all of its map-covered rows.
-    // Keep either result out of continuation ownership so later ordinary
-    // plines are still suppressed until the next command read. Urgent output
-    // holds WIN_NOSTOP through this pager, so Escape cannot suppress it.
-    if (key === 27 && !urgent) {
-        game._retained_message = lines.length > 1
-            ? '' : message.split('  ')[0] ?? '';
-        game._suppressMessagesUntilInput = true;
+    // more() repairs covered map rows after any dismissal. Escape also
+    // erases a one-line message; WIN_NOSTOP only prevents output suppression.
+    game._retained_message = '';
+    if (lines.length > 1) {
+        _buildScreenOutput(false);
+        display?.setCursor(0, 0);
+    }
+    else if (key === 27) {
+        display?.clearRow(0);
+        display?.setCursor(0, 0);
     }
     else {
-        game._retained_message = '';
+        game._retained_message = message + '--More--';
     }
+    if (key === 27 && !urgent)
+        game._suppressMessagesUntilInput = true;
     return key;
 }
 // Opening a tty text window flushes any older topline before the window is
@@ -2267,9 +2278,10 @@ export async function flushPendingTopline() {
 // display honors Escape's WIN_STOP/WIN_CANCELLED flag before acknowledging.
 export async function displayMessageWindow() {
     if (game._suppressMessagesUntilInput)
-        return;
-    await flushPendingTopline();
+        return null;
+    const dismissal = await flushPendingTopline();
     clearMessageWindow();
+    return dismissal;
 }
 // C tty topl.c:update_topl().  A later pline either appends to the pending
 // topline or owns a --More-- boundary before replacing it.  Keep this policy

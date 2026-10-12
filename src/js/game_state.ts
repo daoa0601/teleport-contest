@@ -398,6 +398,7 @@ export interface GameState {
     _lastPlineKind?: number;
     _screen_output: string;
     _mapFlushPaused?: boolean;
+    _statusUpdatesDisabled?: boolean;
     _cursorOverride?: [number, number] | null;
     _statusAcOverride?: number;
     _statusDeafOverride?: boolean;

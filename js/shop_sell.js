@@ -393,10 +393,9 @@ function isGold(object) {
 function hasContents(object) {
     return !!(object.contents?.length);
 }
-// C sellobj's ynaq: the shared query owner displays [ynaq] (y) as part of
-// the caller's message.
+// C sellobj() uses the shared ynaq confirmation with default yes.
 function askSell(question, { query }) {
-    return query(`${question} [ynaq] (y) `);
+    return query(question);
 }
 // ---- the owner: C shk.c:3927 sellobj() -----------------------------------
 export async function sellHeroDroppedObject(object, x, y, state = game, { publish = plineWithContinuation, query = promptYesNoAllQuit } = {}) {

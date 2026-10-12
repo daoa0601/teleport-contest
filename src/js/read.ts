@@ -51,7 +51,7 @@ export async function doread(options: Omit<ScrollEffectOptions, 'state'> = {}) {
     const confused = type !== SCR_MAIL && (game.u.confusionTurns ?? 0) > 0;
     if (type === SCR_MAIL && !game.u.uconduct?.literate && !source.spe) {
         const answer = await promptYesNo(
-            'Reading mail will violate "illiterate" conduct.  Read anyway? [yn] (n)', 'n', 1);
+            'Reading mail will violate "illiterate" conduct.  Read anyway?', 'n');
         if (answer !== 'y') return finishRead(false);
     }
     if (![SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, SPE_BLANK_PAPER, SCR_BLANK_PAPER].includes(type))

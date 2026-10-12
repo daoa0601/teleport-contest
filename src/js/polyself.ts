@@ -1356,7 +1356,7 @@ async function changeVampireForm(mnum: number, controlled: boolean) {
     }
     if (controlled) {
         const answer = await promptYesNo(
-            `Become ${formNameWithArticle(mnum)}? [yn] (n) `,
+            `Become ${formNameWithArticle(mnum)}?`,
         );
         if (answer !== 'y') return { transformed: false };
     }

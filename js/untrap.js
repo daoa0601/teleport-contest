@@ -236,7 +236,7 @@ async function chooseFloorTrapOrBox(trap, boxCount, ask) {
     const verb = trap.ttyp === WEB ? 'Remove' : 'Disarm';
     const subject = `There ${boxCount === 1 ? 'is' : 'are'} ${containers} `
         + `and ${article(noun)} ${noun} here.`;
-    return ask(`${subject}  ${verb} the ${noun}? [ynq] (q) `);
+    return ask(`${subject}  ${verb} the ${noun}?`);
 }
 async function handleFloorTrap(trap, options) {
     const { state, publish } = options;
@@ -643,8 +643,8 @@ async function handleBoxes(boxes, { state, force, ask, publish, random, rollOne,
         const known = box.tknown && box.dknown;
         const name = OBJECT_NAMES[box.otyp] || box.name || 'box';
         const answer = await ask(known
-            ? `Disarm this ${name}? [ynq] (q) `
-            : `There is ${article(name)} ${name} here.  Check it for traps? [ynq] (q) `);
+            ? `Disarm this ${name}?`
+            : `There is ${article(name)} ${name} here.  Check it for traps?`);
         if (answer === 'q')
             return false;
         if (answer === 'n')
@@ -684,7 +684,7 @@ async function inspectBox(box, options) {
     box.dknown = true;
     if (!impaired)
         await exerciseAttribute(A_WIS, true, state);
-    if (await ask('Disarm it? [ynq] (q) ') === 'y')
+    if (await ask('Disarm it?') === 'y')
         await disarmBox(box, options);
 }
 async function disarmBox(box, { state, force, publish, random, rollOne, rollDice, }) {
@@ -743,7 +743,7 @@ async function handleDoor(x, y, { state, force, trapSkipped, ask, publish, rando
     }
     await publish('You find a trap on the door!');
     await exerciseAttribute(A_WIS, true, state);
-    if (await ask('Disarm it? [ynq] (q) ') !== 'y')
+    if (await ask('Disarm it?') !== 'y')
         return true;
     if (!(door.doormask & D_TRAPPED)) {
         await publish('This door was not trapped.');
