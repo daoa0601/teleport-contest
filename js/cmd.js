@@ -124,7 +124,7 @@ import { objectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
+import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
@@ -138,7 +138,7 @@ import { isPoolAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
-import { applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor, armorSimpleName, armorOffMessage, findArmorClass, heroIsDisplaced, objectErosionKind, objectErosionMessage, removeHeroArmor, wearHeroArmor, } from './armor.js';
+import { announceDisplacementLoss, applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor, armorSimpleName, armorOffMessage, findArmorClass, heroIsDisplaced, objectErosionKind, objectErosionMessage, removeHeroArmor, wearHeroArmor, } from './armor.js';
 import { findMonsterArmorClass, nameMonsterForCreationArmorChecks, } from './monworn.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { wakeMonstersNear } from './monster_wake.js';
@@ -4464,24 +4464,6 @@ async function removeWornItem(action) {
         return;
     }
     const previousArmorClass = game.u?.uac ?? 10;
-    const hero = game.u;
-    const otherDisplacementSource = (game.inventory || []).some(candidate => candidate !== object && candidate.worn
-        && candidate.otyp === CLOAK_OF_DISPLACEMENT)
-        || (hero.displacedTurns ?? 0) > 0
-        || !!hero.displacedIntrinsic
-        || !!hero.intrinsicDisplacement;
-    const canNoticeDisplacementChange = (!game.blind
-        && !hero.uswallow
-        && !(game.invisible || hero.invisible || hero.invis))
-        || !!(hero.unblindTelepathy || hero.blindTelepathy
-            || hero.telepathy || hero.detectMonsters
-            || game.detectMonsters);
-    const displacementOffMessage = object.otyp === CLOAK_OF_DISPLACEMENT
-        && !otherDisplacementSource
-        && !(hero.displacementBlocked || hero.displacedBlocked)
-        && canNoticeDisplacementChange
-        ? 'You feel that monsters no longer have difficulty pinpointing your location.'
-        : null;
     const removalMessage = await finishArmorRemoval(object);
     if (removalMessage && game.u?.uac !== previousArmorClass)
         game._statusAcOverride = previousArmorClass;
@@ -4491,8 +4473,7 @@ async function removeWornItem(action) {
     game._pending_message = '';
     if (!removalMessage && game.flags?.verbose === false && inventoryPrompt)
         game._retained_message = inventoryPrompt.trimEnd();
-    if (displacementOffMessage)
-        await plineWithContinuation(displacementOffMessage);
+    await announceDisplacementLoss(object, game);
     if (removalMessage)
         await plineWithContinuation(removalMessage);
     game.context.move = 1;
@@ -4597,6 +4578,7 @@ async function dowield(cannedInvlet = null) {
         return;
     }
     if (await refuseWeldedPrimary()) {
+        resetBulkTakeoff();
         game.context.move = 0;
         return;
     }

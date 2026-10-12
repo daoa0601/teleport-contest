@@ -8,7 +8,7 @@ import { MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NO_MINVENT, PIT, POOL, ROOM,
 import { glyphAt, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, CORPSE, DAGGER, GAUNTLETS_OF_POWER, GOLD_PIECE, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD, WATER_WALKING_BOOTS, } from '../js/object_data.js';
+import { AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, CLOAK_OF_DISPLACEMENT, CORPSE, DAGGER, GAUNTLETS_OF_POWER, GOLD_PIECE, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD, WATER_WALKING_BOOTS, } from '../js/object_data.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { grantIntrinsicProperty, propertyIsActive, revokeIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { inventoryItemDescription } from '../js/invent.js';
@@ -240,6 +240,102 @@ void test('interrupted disrobing resumes the remaining delay without selecting i
     assert.equal(game.uarm, suit);
     await work(1);
     assert.equal(game.uarm, null);
+});
+void test('a welded-weapon wield refusal discards interrupted disrobing', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const suit = await addInventoryObject(RING_MAIL);
+    const boots = await addInventoryObject(LOW_BOOTS);
+    const dagger = await addInventoryObject(DAGGER, { cursed: true });
+    wearHeroArmor(suit);
+    wearHeroArmor(boots);
+    await setPrimaryWeapon(dagger);
+    await takeOff(`${suit.invlet}${boots.invlet}\n`);
+    await work(1);
+    await stopHeroOccupation(game, async () => { });
+    resetInputState();
+    pushKeys('-');
+    await rhack('w'.charCodeAt(0));
+    assert.match(game._pending_message, /welded to your hand/);
+    await takeOff('\x1b');
+    await work(8);
+    assert.equal(game.uarm, suit, 'a new cancelled selection leaves the interrupted suit worn');
+    assert.equal(game.uarmf, boots, 'a new cancelled selection leaves the pending boots worn');
+    assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+    assert.equal(game.uwep, dagger);
+});
+void test('bulk displacement cloak removal announces the loss and identifies the cloak', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
+    wearHeroArmor(cloak);
+    await takeOff(`${cloak.invlet}\n`);
+    const messages = [];
+    resetInputState().display = {
+        async readKey() {
+            messages.push(game._pending_message);
+            return 32;
+        },
+    };
+    await continueCountedCommand();
+    assert.ok(messages.includes('You feel that monsters no longer have difficulty pinpointing your location.'), `Expected displacement-loss feedback, received: ${messages.join('; ')}`);
+    assert.equal(game.uarmc, null);
+    assert.equal(propertyIsActive('displaced'), false);
+    assert.equal(objectTypeKnown(cloak), true);
+});
+for (const remainingSource of ['timed', 'permanent']) {
+    void test(`bulk cloak removal leaves ${remainingSource} displacement active without feedback`, async () => {
+        freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+        const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
+        wearHeroArmor(cloak);
+        if (remainingSource === 'timed')
+            setPropertyTimeout('displaced', 10);
+        else
+            grantIntrinsicProperty('displaced', 'outside');
+        await takeOff(`${cloak.invlet}\n`);
+        await work(1);
+        assert.equal(game.uarmc, null);
+        assert.equal(propertyIsActive('displaced'), true);
+        assert.doesNotMatch(game._pending_message, /pinpointing your location/);
+        assert.equal(objectTypeKnown(cloak), false);
+    });
+}
+void test('a blind hero senses displacement loss through intrinsic telepathy', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT);
+    wearHeroArmor(cloak);
+    setPropertyTimeout('blinded', 10);
+    grantIntrinsicProperty('telepathy', 'outside');
+    await takeOff(`${cloak.invlet}\n`);
+    const messages = [];
+    resetInputState().display = {
+        async readKey() {
+            messages.push(game._pending_message);
+            return 32;
+        },
+    };
+    await continueCountedCommand();
+    assert.ok(messages.some(message => /no longer have difficulty pinpointing/.test(message)), `Expected displacement-loss feedback through telepathy, received: ${messages.join('; ')}`);
+    assert.equal(game.uarmc, null);
+});
+void test('a sighted invisible hero cannot notice displacement loss through intrinsic telepathy', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
+    wearHeroArmor(cloak);
+    grantIntrinsicProperty('invisible', 'outside');
+    grantIntrinsicProperty('telepathy', 'outside');
+    await takeOff(`${cloak.invlet}\n`);
+    await work(1);
+    assert.equal(game.uarmc, null);
+    assert.doesNotMatch(game._pending_message, /pinpointing your location/);
+    assert.equal(objectTypeKnown(cloak), false);
+});
+void test('single displacement cloak removal uses the same feedback and discovery', async () => {
+    freshObjectRoom({ flags: { verbose: false } });
+    const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
+    wearHeroArmor(cloak);
+    await rhack('T'.charCodeAt(0));
+    assert.equal(game._pending_message, 'You feel that monsters no longer have difficulty pinpointing your location.');
+    assert.equal(game.uarmc, null);
+    assert.equal(objectTypeKnown(cloak), true);
 });
 for (const armorType of [SMALL_SHIELD, GAUNTLETS_OF_POWER]) {
     void test(`wearing ${OBJECT_NAMES[armorType]} discards all interrupted bulk removal`, async () => {
@@ -715,6 +811,34 @@ void test('removing a restful-sleep amulet clears its timeout but retains perman
         assert.equal(game.uamul, null);
         assert.equal(game.u.sleepyTurns, permanent ? 15 : 0);
         assert.equal(propertyIsActive('sleepy'), permanent);
+    }
+});
+void test('a wrapped restful-sleep removal message waits with sleepiness already cleared', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
+    const amulet = await addInventoryObject(AMULET_OF_RESTFUL_SLEEP, {
+        oname: 'the treasured keepsake of a very long and particularly restful summer holiday',
+    });
+    pushKeys(' '.repeat(10));
+    await wearHeroAccessory(amulet, 'uamul');
+    resetInputState();
+    setPropertyTimeout('sleepy', 15);
+    await takeOff(`${amulet.invlet}\n`);
+    const pagedRemovals = [];
+    resetInputState().display = {
+        async readKey() {
+            if (/You were wearing .*amulet of restful sleep/.test(game._pending_message)) {
+                pagedRemovals.push({ stillWorn: !!game.uamul,
+                    sleepy: propertyIsActive('sleepy'), timeout: game.u.sleepyTurns });
+            }
+            return 32;
+        },
+    };
+    await continueCountedCommand();
+    assert.ok(pagedRemovals.length > 0, 'the long removal message must reach a pager');
+    for (const removal of pagedRemovals) {
+        assert.equal(removal.stillWorn, false, 'the amulet is already removed at its message');
+        assert.equal(removal.sleepy, false, 'its sleepiness ends before the message waits');
+        assert.equal(removal.timeout, 0, 'its timeout is cleared before the message waits');
     }
 });
 void test('the turn scheduler spends exactly the suit removal delay after the free initiating command', async () => {

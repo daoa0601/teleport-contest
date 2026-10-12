@@ -1,6 +1,6 @@
 // C do_wear.c:doddoremarm(), select_off(), take_off(), do_takeoff().
 import { removeHeroAccessory } from './accessory.js';
-import { armorOffMessage, armorSimpleName, findArmorClass, removeHeroArmor } from './armor.js';
+import { announceDisplacementLoss, armorOffMessage, armorSimpleName, findArmorClass, removeHeroArmor } from './armor.js';
 import { heroFingerName, heroFootName, heroHandName, heroNeckName } from './body_parts.js';
 import { Is_airlevel, TT_BEARTRAP, TT_INFLOOR, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, } from './const.js';
 import { displayLiquidName, plineWithContinuation as pline, see_monsters } from './display.js';
@@ -142,8 +142,10 @@ async function removeSelectedSlot(slot, state) {
     }
     else {
         await removeHeroArmor(object, state);
-        if (!state.program_state.gameover)
+        if (!state.program_state.gameover) {
+            await announceDisplacementLoss(object, state);
             await offMessage(object, state);
+        }
     }
 }
 async function removeAmulet(object, state) {
@@ -156,6 +158,12 @@ async function removeAmulet(object, state) {
     await removeHeroAccessory(object, state);
     if (guarding)
         state._armorClassDirty = true;
+    if (object.otyp === AMULET_OF_RESTFUL_SLEEP && !hasIntrinsicProperty('sleepy', null, state)
+        && !state.u._propertySources?.sleepy?.worn.length
+        && !state.u._propertySources?.sleepy?.carried.length) {
+        state.u._sleepyTimeout = 0;
+        state.u.sleepyTurns = 0;
+    }
     await offMessage(object, state);
     if (object.otyp === AMULET_OF_ESP)
         await see_monsters();
@@ -163,12 +171,6 @@ async function removeAmulet(object, state) {
         await pline(heroIsBreathless(state)
             ? `Your ${heroNeckName(state)} is no longer constricted!` : 'You can breathe more easily!');
         learnObjectType(object.otyp, state);
-    }
-    else if (object.otyp === AMULET_OF_RESTFUL_SLEEP && !hasIntrinsicProperty('sleepy', null, state)
-        && !state.u._propertySources?.sleepy?.worn.length
-        && !state.u._propertySources?.sleepy?.carried.length) {
-        state.u._sleepyTimeout = 0;
-        state.u.sleepyTurns = 0;
     }
     else if (object.otyp === AMULET_OF_MAGICAL_BREATHING) {
         if (state.u.uinwater && !heroIsBreathless(state) && !state.u.amphibious

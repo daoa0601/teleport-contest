@@ -1,7 +1,7 @@
 // armor.js — Hero armor-class projection.
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
 
-import { heroIsBlind } from './senses.js';
+import { heroDetectsMonsters, heroIsBlind } from './senses.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { game, requireLiveGame } from './gstate.js';
 import { corpseName, killerObjectName, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
@@ -58,7 +58,7 @@ type ArmorBonusSource = Pick<GameObject, 'otyp'>
 
 import { MONSTER_NAME } from './monster_data.js';
 import {
-    captureLevitationState, grantWornProperty, hasIntrinsicProperty,
+    captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty,
     propertyIsActive, refreshMovementProperties, removeWornProperty,
 } from './properties.js';
 import {
@@ -280,6 +280,25 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
         delete object._levitationBeforeWear;
     }
     return removed;
+}
+
+// C Cloak_off(): toggle_displacement() runs after the cloak's source is removed.
+export async function announceDisplacementLoss(object: GameObject, state: GameState = game): Promise<void> {
+    if (object.otyp !== CLOAK_OF_DISPLACEMENT) return;
+    const hero = state.u;
+    if (propertyIsActive('displaced', state)
+        || hero.displacedIntrinsic || hero.intrinsicDisplacement
+        || hero.displacementBlocked || hero.displacedBlocked) return;
+    const blind = heroIsBlind(state);
+    const visibleSelf = !blind && !hero.uswallow
+        && !(state.invisible || hero.invisible || hero.invis);
+    const unblindTelepathy = hasWornProperty('telepathy', state)
+        || hero.unblindTelepathy || (hero.unblind_telepat_range ?? -1) >= 0;
+    const blindTelepathy = blind
+        && (propertyIsActive('telepathy', state) || hero.blindTelepathy || hero.telepathy);
+    if (!(visibleSelf || unblindTelepathy || blindTelepathy || heroDetectsMonsters(state))) return;
+    learnObjectType(object.otyp, state);
+    await plineWithContinuation('You feel that monsters no longer have difficulty pinpointing your location.');
 }
 
 // C Gloves_off(): wielding_corpse(). Glove loss resolves life saving or

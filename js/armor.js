@@ -1,6 +1,6 @@
 // armor.js — Hero armor-class projection.
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
-import { heroIsBlind } from './senses.js';
+import { heroDetectsMonsters, heroIsBlind } from './senses.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { game, requireLiveGame } from './gstate.js';
 import { corpseName, killerObjectName, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
@@ -28,7 +28,7 @@ import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLig
 import { AMULET_OF_GUARDING, CLOAK_OF_DISPLACEMENT, CORPSE, GAUNTLETS_OF_POWER, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { captureLevitationState, grantWornProperty, hasIntrinsicProperty, propertyIsActive, refreshMovementProperties, removeWornProperty, } from './properties.js';
+import { captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, removeWornProperty, } from './properties.js';
 import { A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, } from './const.js';
 // objects[].a_ac is `10 - ac` for every ARMOR()/HELM()/CLOAK()/SHIELD()/
 // GLOVES()/BOOTS() entry in the pinned objects.h. Armor occupies IDs 89..172.
@@ -248,6 +248,27 @@ export async function removeHeroArmor(object, state = game, options = {}) {
         delete object._levitationBeforeWear;
     }
     return removed;
+}
+// C Cloak_off(): toggle_displacement() runs after the cloak's source is removed.
+export async function announceDisplacementLoss(object, state = game) {
+    if (object.otyp !== CLOAK_OF_DISPLACEMENT)
+        return;
+    const hero = state.u;
+    if (propertyIsActive('displaced', state)
+        || hero.displacedIntrinsic || hero.intrinsicDisplacement
+        || hero.displacementBlocked || hero.displacedBlocked)
+        return;
+    const blind = heroIsBlind(state);
+    const visibleSelf = !blind && !hero.uswallow
+        && !(state.invisible || hero.invisible || hero.invis);
+    const unblindTelepathy = hasWornProperty('telepathy', state)
+        || hero.unblindTelepathy || (hero.unblind_telepat_range ?? -1) >= 0;
+    const blindTelepathy = blind
+        && (propertyIsActive('telepathy', state) || hero.blindTelepathy || hero.telepathy);
+    if (!(visibleSelf || unblindTelepathy || blindTelepathy || heroDetectsMonsters(state)))
+        return;
+    learnObjectType(object.otyp, state);
+    await plineWithContinuation('You feel that monsters no longer have difficulty pinpointing your location.');
 }
 // C Gloves_off(): wielding_corpse(). Glove loss resolves life saving or
 // stone-golem transformation before the armor's destruction can continue.
