@@ -27,7 +27,7 @@ import {
 } from './object_data.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { moveSwallowedBallAndChain, placeBallAndChain } from './ball.js';
-import { flushPendingTopline, newsym, plineWithContinuation, shieldeff, swallowed } from './display.js';
+import { displayMessageWindow, newsym, plineWithContinuation, shieldeff, swallowed } from './display.js';
 import { applyEngulfBlindness } from './engulf_blindness.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { damageHeroFromMonster } from './hero_damage.js';
@@ -114,7 +114,7 @@ function engulfSquareBlocked(location: MapLocation | null, otherBody: Pick<Monst
 // until dismounting, releases and contact petrification have completed.
 export async function beginHeroEngulf(monster: Monster, attack: HeroContactAttack, {
     state = game, random = rn2, rollOne = rnd, publish = plineWithContinuation,
-    flushMessages = flushPendingTopline,
+    flushMessages = displayMessageWindow,
 }: HeroEngulfOptions = {}): Promise<HeroEngulfCaptureResult> {
     requireLiveGame(state);
     requirePlayingGame(state);
