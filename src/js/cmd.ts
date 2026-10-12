@@ -103,7 +103,7 @@ import { displayLiquidName,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
     see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject,
 } from './display.js';
-import { cansee, couldsee, vision_recalc, vision_reset } from './vision.js';
+import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import {
     lightWieldedArtifact,
     transformMagicLampToOilLamp,
@@ -2064,8 +2064,9 @@ async function dokick() {
                 await exerciseAttribute(A_STR, true);
             }
             feel_newsym(x, y);
-            vision_reset();
-            vision_recalc(0);
+            // kick_door() defers sight refresh so billing sees the keeper's
+            // visibility before the door broke, as rloc_to_core() requires.
+            vision_note_blocker_change(x, y);
             if (shopDoor) {
                 addShopDamage(x, y, SHOP_DOOR_COST);
                 await payForShopDamage('break');

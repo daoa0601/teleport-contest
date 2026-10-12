@@ -64,7 +64,7 @@ import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.j
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
 import { displayLiquidName, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
-import { cansee, couldsee, vision_recalc, vision_reset } from './vision.js';
+import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
 import { dozap, } from './zap.js';
 import { bucAdjectiveForName, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, } from './invent.js';
@@ -1884,8 +1884,9 @@ async function dokick() {
                 await exerciseAttribute(A_STR, true);
             }
             feel_newsym(x, y);
-            vision_reset();
-            vision_recalc(0);
+            // kick_door() defers sight refresh so billing sees the keeper's
+            // visibility before the door broke, as rloc_to_core() requires.
+            vision_note_blocker_change(x, y);
             if (shopDoor) {
                 addShopDamage(x, y, SHOP_DOOR_COST);
                 await payForShopDamage('break');
