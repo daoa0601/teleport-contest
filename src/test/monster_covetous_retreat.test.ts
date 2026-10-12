@@ -6,6 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { mkstairs } from '../js/mklev.js';
 import { takeMonsterTurn } from '../js/monmove.js';
+import { retreatCovetousMonster } from '../js/monster_covetous_retreat.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -53,3 +54,30 @@ void test('cosmic stasis keeps a covetous retreat at its current square', async 
     assert.equal(lich.mhp, 50);
     assert.equal(lich.mavenge, 1);
 });
+
+for (const { startX, destinationX, heals } of [
+    { startX: 11, destinationX: 40, heals: false },
+    { startX: 40, destinationX: 11, heals: true },
+]) {
+    void test(`a wounded tower lich teleporting ${heals ? 'toward' : 'away from'} the hero checks its original distance before healing`, async () => {
+        freshObjectRoom({ left: 8, right: 45 });
+        await init_dungeons();
+        requirePlayingGame(game);
+        game._activeSpecialLevel = {
+            prototype: 'wizard1', file: 'wizard1.lua',
+            downTeleportExclude: { lx: 8, ly: 6, hx: 45, hy: 14 },
+        };
+        const lich = await createMonsterAt('master lich', startX, 10, NO_MINVENT);
+        lich.mhpmax = 90;
+        lich.mhp = 50;
+
+        const result = await retreatCovetousMonster(lich, game,
+            limit => limit === 21 ? 10 : 0,
+            sides => sides === 79 ? destinationX : 5);
+
+        assert.equal(lich.mx, destinationX);
+        assert.equal(lich.my, 10);
+        assert.equal(lich.mhp, heals ? 55 : 50);
+        assert.equal(result, heals ? 'recovered' : 'harass');
+    });
+}

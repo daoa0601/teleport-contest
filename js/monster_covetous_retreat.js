@@ -11,6 +11,7 @@ import { randomMonsterRelocation } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
 export async function retreatCovetousMonster(monster, state, random = rn2, rollOne = rnd) {
     monster.mstrategy = ((monster.mstrategy ?? 0) & (STRAT_WAITMASK | STRAT_APPEARMSG)) | STRAT_HEAL;
+    let healingX = monster.mx, healingY = monster.my;
     if (state.u.uswallow && state.u.ustuck === monster) {
         const expelled = await expelHero(monster, { state, random, rollOne });
         if (expelled.died)
@@ -19,7 +20,7 @@ export async function retreatCovetousMonster(monster, state, random = rn2, rollO
     const stairs = chooseRetreatStairs(monster, state);
     monster.mavenge = 1;
     const amulet = (monster.minvent ?? []).some(object => object.otyp === AMULET_OF_YENDOR);
-    const staysInTower = insideWizardTower(monster.mx, monster.my, state)
+    const staysInTower = insideWizardTower(healingX, healingY, state)
         || (monster.iswiz && !stairs && !amulet);
     if (staysInTower) {
         if (!monsterTeleportRestricted(monster, state)
@@ -30,8 +31,11 @@ export async function retreatCovetousMonster(monster, state, random = rn2, rollO
         if (!monsterTeleportRestricted(monster, state)
             && !await mnearto(monster, stairs.sx, stairs.sy, state, { moveOther: true, flags: RLOC_MSG }))
             return 'blocked';
+        healingX = monster.mx;
+        healingY = monster.my;
     }
-    const dx = monster.mx - state.u.ux, dy = monster.my - state.u.uy;
+    // tactics() updates its cached position only when retreating to stairs.
+    const dx = healingX - state.u.ux, dy = healingY - state.u.uy;
     if (dx * dx + dy * dy > BOLT_LIM * BOLT_LIM && monster.mhp <= monster.mhpmax - 8) {
         healMonster(monster, rollOne(8));
         return 'recovered';

@@ -3,12 +3,15 @@
 import { artifactById } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, M_SEEN_SLEEP, Upolyd } from './const.js';
+import { shieldeff } from './display.js';
 import { heroIsBlind } from './senses.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
 import { AD_POLY, AD_SLEE, AD_WERE } from './monster_attack_types.js';
 import { monsterName } from './monster_name.js';
+import { monsterHasLineOfSightToHero, monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
+import { stopHeroOccupation } from './occupation.js';
 import { heroIsUnchanging, heroHasProtectionFromShapeChangers, polymorphHero, } from './polyself.js';
 import { applyHeroWereChange, revertHeroWereForm, setHeroLycanthropy } from './were.js';
 import { rn2, rnd } from './rng.js';
@@ -39,7 +42,7 @@ async function infectHero(monster, state, publish, random) {
         return;
     if (await magicPreventsContact(monster, state, publish, random))
         return;
-    await publish('You feel feverish.');
+    await publish('You feel feverish.', { urgent: true });
     await exerciseAttribute(A_CON, false, state);
     setHeroLycanthropy(monster.mnum, state);
     await retouchEquipment(2, { state, publish });
@@ -49,12 +52,15 @@ async function sleepHero(monster, state, publish, random, rollOne) {
         return;
     if (await magicPreventsContact(monster, state, publish, random))
         return;
+    const seesHero = (observer) => monsterHasLineOfSightToHero(observer, state);
     if (state.u.sleepResistance) {
-        monster.seen_resistance = (monster.seen_resistance ?? 0) | M_SEEN_SLEEP;
+        monstersObserveHeroResistance(M_SEEN_SLEEP, state, seesHero);
         return;
     }
-    monster.seen_resistance = (monster.seen_resistance ?? 0) & ~M_SEEN_SLEEP;
-    putHeroToSleep(rollOne(10), { state });
+    monstersForgetHeroResistance(M_SEEN_SLEEP, state, seesHero);
+    const turns = rollOne(10);
+    await stopHeroOccupation(state, publish);
+    putHeroToSleep(turns, { state });
     await publish(heroIsBlind(state) ? 'You are put to sleep!'
         : `You are put to sleep by ${monsterName(monster, { state })}!`);
 }
@@ -69,7 +75,10 @@ async function polymorphHeroOnContact(monster, attack, state, publish, rollOne) 
         return;
     }
     const oldForm = state.u.umonnum;
-    if (!state.u.antimagic && !heroIsUnchanging(state)) {
+    if (state.u.antimagic) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+    }
+    else if (!heroIsUnchanging(state)) {
         if (state.u.ulycn === -1) {
             await publish('You are subjected to a freakish metamorphosis.');
             await polymorphHero();
