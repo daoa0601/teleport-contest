@@ -3239,8 +3239,11 @@ async function executeMonsterTurns(messageContext) {
             return false;
         if (action.conflictFight)
             continue;
-        // C dochug() returns immediately after a completed defensive action.
+        // C dochug() returns immediately when item use spends the turn.
         if (action.movement?.usedDefense)
+            continue;
+        if (action.movement?.usedMisc?.kind === 'item-result'
+            && action.movement.usedMisc.nativeResult !== 0)
             continue;
         await resumeTrappedMonster(action);
         let { monster, movement } = action;
@@ -3279,6 +3282,9 @@ async function executeMonsterTurns(messageContext) {
             await resumeTrappedMonster(action);
             movement = action.movement;
             if (movement?.usedDefense)
+                continue;
+            if (movement?.usedMisc?.kind === 'item-result'
+                && movement.usedMisc.nativeResult !== 0)
                 continue;
         }
         await presentPetMovementPrelude(action, game, actorWasOpticallySeen);

@@ -49,8 +49,11 @@ export async function lootMonsterContainer(monster: Monster, container: GameObje
             if (visible) {
                 const subject = () => monsterName(monster, { state, capitalized: true });
                 if (distance > 2) await publish(`${subject()} rummages through ${name}.`, { noRepeat: true });
-                else if (!index) await publish(`${subject()} removes ${inventoryItemDescription(object)} from ${name}.`);
-                else await publish(`${pronoun.charAt(0).toUpperCase() + pronoun.slice(1)} removes ${inventoryItemDescription(object)}.`);
+                else {
+                    observeObjectForNaming(object, { state });
+                    if (!index) await publish(`${subject()} removes ${inventoryItemDescription(object)} from ${name}.`);
+                    else await publish(`${pronoun.charAt(0).toUpperCase() + pronoun.slice(1)} removes ${inventoryItemDescription(object)}.`);
+                }
             }
             if (container.otyp === ICE_BOX) thawObject(object, state);
             await addObjectToMonsterInventory(monster, object, state);

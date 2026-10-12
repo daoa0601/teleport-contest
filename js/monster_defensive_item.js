@@ -4,6 +4,7 @@ import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './
 import { levelAtDepth, levelIsWizardTower } from './dungeon.js';
 import { dist2, depth } from './hacklib.js';
 import { inventoryItemDescription } from './invent.js';
+import { artifactById } from './artifacts.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { healMonster } from './mon.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
@@ -14,7 +15,7 @@ import { makeMonsterFlee } from './monster_flee.js';
 import { consumeMonsterItem, prepareMonsterItemUse, presentMonsterQuaff, presentMonsterScrollRead, presentMonsterWandUse, } from './monster_item_use.js';
 import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
-import { monsterName } from './monster_name.js';
+import { monsterName, monsterObjectPronoun } from './monster_name.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { verbForSubject } from './object_grammar.js';
 import { touchPetrifies } from './stoning.js';
@@ -34,6 +35,7 @@ import { resolveMonsterImmediateWand } from './monster_wand_ray.js';
 import { canDigDown, canFallThrough, makemonAt, maketrap } from './mklev.js';
 import { AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, BOULDER, BUGLE, CANDELABRUM_OF_INVOCATION, CORPSE, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_HEALING, POT_SICKNESS, SCR_CREATE_MONSTER, SCR_TELEPORTATION, TIN, UNICORN_HORN, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
+import { observeObjectForNaming } from './objnam.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsDeaf } from './senses.js';
@@ -268,8 +270,10 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             return spent();
         }
         case 'bugle':
-            if (seen)
+            if (seen) {
+                observeObjectForNaming(choice.object, { state });
                 await publish(`${subject()} plays ${inventoryItemDescription(choice.object)}!`);
+            }
             else if (!heroIsDeaf(state))
                 await publish('You hear a bugle playing reveille!');
             await awakenSoldiers((MONSTER_LEVEL[monster.mnum] ?? 0) * 30, monster);
@@ -412,7 +416,7 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             await fleeForEscape(monster, options);
             const stair = choice.stair;
             if (state.u.uz.dnum === 0 && state.u.uz.dlevel === 1 && stair.up) {
-                if (monsterHasSpecial(monster) || monster.iswiz && (state.context.no_of_wizards ?? 0) < 2)
+                if (monsterHasSpecial(monster, state) || monster.iswiz && (state.context.no_of_wizards ?? 0) < 2)
                     return { nativeResult: 0, heroDied: false };
                 if (seen)
                     await publish(`${subject()} escapes the dungeon!`);
@@ -427,7 +431,7 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
                 && hasAmulet(monster) && !random(4)
                 && state.u.uz.dlevel < (state.dungeons[state.u.uz.dnum]?.num_dunlevs ?? 0) - 3) {
                 if (seen)
-                    await publish(`As ${monsterName(monster, { state })} climbs the stairs, a mysterious force momentarily surrounds ${monster.female ? 'her' : 'him'}...`);
+                    await publish(`As ${monsterName(monster, { state })} climbs the stairs, a mysterious force momentarily surrounds ${monsterObjectPronoun(monster, { state })}...`);
                 destination = { dnum: state.u.uz.dnum, dlevel: state.u.uz.dlevel + 1 };
                 mode = MIGR_RANDOM;
             }
@@ -513,8 +517,9 @@ function teleportNotKnownBlocked(monster, state) {
 function hasAmulet(monster) {
     return (monster.minvent || monster.inventory || []).some(object => object.otyp === AMULET_OF_YENDOR);
 }
-function monsterHasSpecial(monster) {
-    return (monster.minvent || monster.inventory || []).some(object => [AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD].includes(object.otyp));
+function monsterHasSpecial(monster, state) {
+    return (monster.minvent || monster.inventory || []).some(object => artifactById(object.oartifact, state)?.questArtifact
+        || [AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD].includes(object.otyp));
 }
 function atBottom(state) {
     return state.u.uz.dlevel === state.dungeons[state.u.uz.dnum]?.num_dunlevs;

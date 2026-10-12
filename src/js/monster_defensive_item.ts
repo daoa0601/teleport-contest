@@ -9,6 +9,7 @@ import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './
 import { levelAtDepth, levelIsWizardTower } from './dungeon.js';
 import { dist2, depth } from './hacklib.js';
 import { inventoryItemDescription } from './invent.js';
+import { artifactById } from './artifacts.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { healMonster } from './mon.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
@@ -25,7 +26,7 @@ import {
 } from './monster_item_use.js';
 import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
-import { monsterName } from './monster_name.js';
+import { monsterName, monsterObjectPronoun } from './monster_name.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { verbForSubject } from './object_grammar.js';
 import { touchPetrifies } from './stoning.js';
@@ -50,6 +51,7 @@ import {
     UNICORN_HORN, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING,
 } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
+import { observeObjectForNaming } from './objnam.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsDeaf } from './senses.js';
@@ -256,7 +258,10 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         return spent();
     }
     case 'bugle':
-        if (seen) await publish(`${subject()} plays ${inventoryItemDescription(choice.object)}!`);
+        if (seen) {
+            observeObjectForNaming(choice.object, { state });
+            await publish(`${subject()} plays ${inventoryItemDescription(choice.object)}!`);
+        }
         else if (!heroIsDeaf(state)) await publish('You hear a bugle playing reveille!');
         await awakenSoldiers((MONSTER_LEVEL[monster.mnum] ?? 0) * 30, monster);
         return spent();
@@ -368,7 +373,7 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         await fleeForEscape(monster, options);
         const stair = choice.stair;
         if (state.u.uz.dnum === 0 && state.u.uz.dlevel === 1 && stair.up) {
-            if (monsterHasSpecial(monster) || monster.iswiz && (state.context.no_of_wizards ?? 0) < 2) return { nativeResult: 0, heroDied: false };
+            if (monsterHasSpecial(monster, state) || monster.iswiz && (state.context.no_of_wizards ?? 0) < 2) return { nativeResult: 0, heroDied: false };
             if (seen) await publish(`${subject()} escapes the dungeon!`);
             await removeMonsterFromGame(monster);
             return spent();
@@ -380,7 +385,7 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         if (mode === MIGR_STAIRS_DOWN && state.dungeons[state.u.uz.dnum]?.flags.hellish
             && hasAmulet(monster) && !random(4)
             && state.u.uz.dlevel < (state.dungeons[state.u.uz.dnum]?.num_dunlevs ?? 0) - 3) {
-            if (seen) await publish(`As ${monsterName(monster, { state })} climbs the stairs, a mysterious force momentarily surrounds ${monster.female ? 'her' : 'him'}...`);
+            if (seen) await publish(`As ${monsterName(monster, { state })} climbs the stairs, a mysterious force momentarily surrounds ${monsterObjectPronoun(monster, { state })}...`);
             destination = { dnum: state.u.uz.dnum, dlevel: state.u.uz.dlevel + 1 };
             mode = MIGR_RANDOM;
         } else if (seen) await publish(`${subject()} escapes ${stair.isladder ? `${stair.up ? 'up' : 'down'} the ladder` : `${stair.up ? 'up' : 'down'}stairs`}!`);
@@ -451,8 +456,10 @@ function hasAmulet(monster: Monster): boolean {
     return (monster.minvent || monster.inventory || []).some(object => object.otyp === AMULET_OF_YENDOR);
 }
 
-function monsterHasSpecial(monster: Monster): boolean {
-    return (monster.minvent || monster.inventory || []).some(object => [AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD].includes(object.otyp));
+function monsterHasSpecial(monster: Monster, state: PlayingGameState): boolean {
+    return (monster.minvent || monster.inventory || []).some(object =>
+        artifactById(object.oartifact, state)?.questArtifact
+        || [AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD].includes(object.otyp));
 }
 
 function atBottom(state: PlayingGameState): boolean {

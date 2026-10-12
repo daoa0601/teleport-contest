@@ -94,7 +94,7 @@ import { AMULET_OF_YENDOR, APPLE, BANANA, BELL_OF_OPENING, BULLWHIP, BOULDER, CA
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
 import { unlinkObject } from './object_location.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { finishInventoryRemoval } from './hero_inventory.js';
+import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { dropObjectAtHero } from './object_drop.js';
 import { makemonNear, mksobj, summonNastyMonsters } from './mklev.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
@@ -446,10 +446,8 @@ async function readyCloseMonsterWeapon(monster, state) {
     monster.weaponCheck = NEED_HTH_WEAPON;
     return wieldMonsterWeapon(monster, state);
 }
-function heroCanReleaseWeapon(object) {
-    // C canletgo(): a wielded cursed weapon is welded in place.  The
-    // miscellaneous-item caller has already limited this to active weapons.
-    return !!object && !willWeld(object);
+async function heroCanReleaseWeapon(object, state) {
+    return !!object && await canLetGo(object, '', state);
 }
 // C muse.c find_misc()/use_misc().  JavaScript minvent mirrors the C chain
 // head-to-tail.  Scan newest-to-oldest and retain each later viable type,
@@ -527,8 +525,8 @@ async function useMonsterMiscItem(monster, state, random, calls) {
                 apparentY === heroY &&
                 distmin(monster.mx, monster.my, heroX, heroY) <= 1 &&
                 !state?.u?.uswallow &&
-                (heroCanReleaseWeapon(heroWeapon) ||
-                    (state?.u?.twoweap && heroCanReleaseWeapon(heroSwapWeapon)))) {
+                (await heroCanReleaseWeapon(heroWeapon, state) ||
+                    (state?.u?.twoweap && await heroCanReleaseWeapon(heroSwapWeapon, state)))) {
                 selected = {
                     kind: 'bullwhip-disarm',
                     object,
@@ -606,9 +604,9 @@ async function useMonsterMiscItem(monster, state, random, calls) {
         // selection.  Removal itself follows the urgent wrap message.
         let whereTo = recordRandom(random, calls, 4);
         let target = selected.heroWeapon;
-        if (!heroCanReleaseWeapon(target) ||
+        if (!await heroCanReleaseWeapon(target, state) ||
             (state?.u?.twoweap &&
-                heroCanReleaseWeapon(selected.heroSwapWeapon) &&
+                await heroCanReleaseWeapon(selected.heroSwapWeapon, state) &&
                 recordRandom(random, calls, 2))) {
             target = selected.heroSwapWeapon;
         }
@@ -617,7 +615,7 @@ async function useMonsterMiscItem(monster, state, random, calls) {
         return {
             ...selected,
             target,
-            whereTo: heroCanReleaseWeapon(target) ? whereTo : 0,
+            whereTo: target && !willWeld(target) ? whereTo : 0,
             deferredEffect: true,
         };
     }
@@ -3563,6 +3561,8 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
+        if (trap.madeby_u && rnl(5))
+            await angerMonster(monster);
         const event = await teleportMonsterToRandomLevel(monster, trap, {
             state, random, rollOne, force: !!movement.forcedTrapLanding,
         });
