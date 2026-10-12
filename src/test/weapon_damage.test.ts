@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 
 import {
     ACID_VENOM, AXE, BULLWHIP, CREAM_PIE, DAGGER, HEAVY_IRON_BALL,
-    OBJECT_MATERIAL, OBJECT_WEIGHT, WAN_LIGHT, WAN_LIGHTNING,
+    DWARVISH_MATTOCK, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT,
+    TWO_HANDED_SWORD, WAN_LIGHT, WAN_LIGHTNING,
 } from '../js/object_data.js';
 import {
     rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
@@ -40,6 +41,22 @@ void test('acid venom rolls both of its damage dice', async () => {
 
     assert.equal(damage, 12);
 });
+
+for (const type of [OBJECT_NAMES.indexOf('tsurugi'), DWARVISH_MATTOCK, TWO_HANDED_SWORD]) {
+    void test(`large-target damage for weapon ${type} includes two independent extra dice`, async () => {
+        const weapon = await uninitializedObject(type, { spe: 0 });
+        const giant = { mnum: nameToMonster('hill giant') };
+        const damages: number[] = [];
+        for (let seed = 1; seed <= 20; seed++) {
+            initRng(seed);
+            // Hold the base die at its minimum; the two extra dice still roll.
+            damages.push(rollPhysicalWeaponDamage(weapon, giant, { rollOne: () => 1 }));
+        }
+
+        assert.ok(damages.every(damage => damage >= 3 && damage <= 13));
+        assert.ok(damages.some(damage => damage > 3), 'the extra 2d6 must vary independently of the base die');
+    });
+}
 
 void test('a leather whip cannot hurt a thick-skinned monster', async () => {
     const whip = await uninitializedObject(BULLWHIP);

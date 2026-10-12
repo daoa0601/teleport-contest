@@ -9,7 +9,7 @@ import { CREAM_PIE, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, OBJECT_LARGE_DAMAGE, OB
 import { MONSTER_SIZE, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsShade, monsterIsThickSkinned, monsterIsWooden, } from './monster_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { objectMaterial } from './object_material.js';
-import { rn2, rnd } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
 const GEM_CLASS = 13;
@@ -135,12 +135,7 @@ function applyErosion(object, damage) {
         damage = Math.max(1, damage - erosion(object));
     return damage;
 }
-export function rollPhysicalWeaponDamage(object, monster, { state = game, hero = false, rollOne = rnd, hatesBlessings = monsterHatesBlessings(monster), hatesSilver = monsterHatesSilver(monster), rollDice = (count, sides) => {
-    let total = 0;
-    for (let die = 0; die < count; die++)
-        total += rollOne(sides);
-    return total;
-}, } = {}) {
+export function rollPhysicalWeaponDamage(object, monster, { state = game, hero = false, rollOne = rnd, hatesBlessings = monsterHatesBlessings(monster), hatesSilver = monsterHatesSilver(monster), rollDice = d, } = {}) {
     if (object.otyp === CREAM_PIE)
         return 0;
     const profile = damageProfile(object, monster);
