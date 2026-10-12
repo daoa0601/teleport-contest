@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ARROW_TRAP, COLNO, CORR, DOOR, D_NODOOR, G_EXTINCT, G_GENOD, HOLE, LADDER, LAVAPOOL, LEVEL_TELEP, M_AP_FURNITURE, PIT, POOL, ROCKTRAP, ROOM, ROOMOFFSET, ROWNO, SCORR, STAIRS, TELEP_TRAP, THEMEROOM, TRAPDOOR, WEB } from '../js/const.js';
+import { A_LAWFUL, ARROW_TRAP, COLNO, CORR, DOOR, D_NODOOR, G_EXTINCT, G_GENOD, HOLE, LADDER, LAVAPOOL, LEVEL_TELEP, M_AP_FURNITURE, PIT, POOL, ROCKTRAP, ROOM, ROOMOFFSET, ROWNO, SCORR, STAIRS, TELEP_TRAP, THEMEROOM, TRAPDOOR, WEB } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
@@ -81,8 +81,11 @@ for (const unavailable of [G_GENOD, G_EXTINCT]) {
                     ${unavailable === G_EXTINCT ? 'align = "law",' : ''}
                     group = false, countbirth = false, peaceful = true, asleep = true,
                     name = "class survivor" })`);
-                assert.equal(level.monsters.length, 1, `unavailable class must fall back to a random species (seed ${seed})`);
-                const monster = level.monsters[0];
+                if (unavailable === G_GENOD)
+                    assert.equal(level.monsters.length, 1, 'ordinary creation honors group=false');
+                const survivors = level.monsters.filter(monster => monster.name === 'class survivor');
+                assert.equal(survivors.length, 1, `the fallback must create the requested monster (seed ${seed})`);
+                const monster = survivors[0];
                 assert.ok(monster);
                 assert.notEqual(MONSTER_SYMBOL[monster.mnum], 29, 'the fallback cannot use the unavailable class');
                 assert.equal(level.requireAt(monster.mx, monster.my).typ, ROOM, 'a missing species uses dry placement');
@@ -98,6 +101,56 @@ for (const unavailable of [G_GENOD, G_EXTINCT]) {
             }
         });
     }
+}
+for (const explicit of [false, true]) {
+    void test(`aligned unavailable classes allow companions and count births at ${explicit ? 'explicit' : 'random'} coordinates despite Lua flags`, async (t) => {
+        const level = await buildThemedLevel(t, `
+            themerooms = {{ frequency = 1, contents = function()
+                des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+            end }}
+        `);
+        const lua = currentLuaLifecycle().getThemedState(game, 0);
+        assert.ok(lua);
+        requirePlayingGame(game);
+        assert.ok(game.mvitals);
+        const jackalSpecies = MONSTER_NAME.indexOf('jackal');
+        const jackalVital = game.mvitals[jackalSpecies];
+        assert.ok(jackalVital);
+        // Leave one ordinary group-forming species available, so fallback
+        // groups do not depend on which species happens to be selected.
+        for (const [species, vital] of game.mvitals.entries())
+            if (species !== jackalSpecies)
+                vital.mvflags |= G_GENOD;
+        game.u.ualign.type = A_LAWFUL;
+        const birthsBefore = jackalVital.born ?? 0;
+        let created = 0;
+        let companions = 0;
+        for (let seed = 1; seed <= 32; seed++) {
+            level.monsters = [];
+            await lua.executeAsync('des.map({ coord = {10,6}, map = [[.......\n.......\n.......\n.......\n.......]] })');
+            initRng(seed);
+            await lua.executeAsync(`des.monster({ class = "C", align = "law",
+                ${explicit ? 'x = 3, y = 2,' : ''}
+                group = false, countbirth = false, peaceful = true, asleep = true,
+                name = "class survivor" })`);
+            const survivors = level.monsters.filter(monster => monster.name === 'class survivor');
+            assert.equal(survivors.length, 1, `the fallback must create the requested roamer (seed ${seed})`);
+            const roamer = survivors[0];
+            assert.ok(roamer);
+            assert.equal(roamer.mnum, jackalSpecies);
+            assert.equal(roamer.emin?.min_align, A_LAWFUL);
+            assert.equal(roamer.mpeaceful, 1, 'Lua attributes apply to the requested roamer');
+            assert.equal(roamer.msleeping, 1);
+            for (const member of level.monsters.filter(monster => monster !== roamer)) {
+                assert.equal(member.mnum, jackalSpecies, 'companions share the fallback species');
+                assert.equal(member.mpeaceful, 0, 'group companions keep their native hostile attitude');
+                companions++;
+            }
+            created += level.monsters.length;
+        }
+        assert.ok(companions > 0, 'mk_roamer allows fallback companions even with group=false');
+        assert.equal((jackalVital.born ?? 0) - birthsBefore, created, 'mk_roamer counts the roamer and companion births even with countbirth=false');
+    });
 }
 for (const terrain of [POOL, LAVAPOOL]) {
     void test(`Lua traps leave an existing trap untouched when its square becomes ${terrain === POOL ? 'water' : 'lava'}`, async (t) => {

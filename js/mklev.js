@@ -5917,9 +5917,11 @@ async function createLuaMonster(context, options) {
         mmflags |= MM_NOCOUNTBIRTH;
     const explicitAlignment = options.align != null
         && options.align !== 'random';
+    // priest.c:mk_roamer() supplies its own flags, allowing random-species
+    // companions and counting births regardless of Lua's creation options.
     const creation = explicitAlignment ? {
         randomAlignment: false,
-        mmflags: mmflags | MM_ADJACENTOK | MM_EMIN | MM_NOMSG,
+        mmflags: MM_ADJACENTOK | MM_EMIN | MM_NOMSG,
         roamerAlignment: () => luaSpecialAlignment(options.align),
     } : { mmflags };
     let monster;
