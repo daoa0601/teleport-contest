@@ -128,7 +128,7 @@ import {
     wieldMonsterWeapon,
 } from './monster_weapon.js';
 import { attackHeroWithPolearm } from './monster_polearm.js';
-import { tryDemonSummon } from './minion.js';
+import { summonMonsterAttackHelp } from './minion.js';
 import { releaseMonsterLeash } from './monster_leash.js';
 import {
     ammunitionMatchesLauncher,
@@ -358,6 +358,7 @@ import {
     nameMonsterForCreationArmorChecks,
 } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
+import { addShopDamage } from './shop_damage.js';
 import {
     createHarmlessGasCloudSelection,
     createPoisonGasCloud,
@@ -3859,7 +3860,9 @@ export async function beginMonsterHeroAttack(
     if (monster === state.u.usteed) return {};
     if (await disturbMealMimicry(monster, { state })) return {};
     const threshold = monsterAttackThreshold(monster, state, rollOne, calls);
-    await tryDemonSummon(monster, state, random);
+    const alreadyFleeing = !!monster.mflee;
+    await summonMonsterAttackHelp(monster, state, random);
+    if (monster.mflee && !alreadyFleeing) return {};
     if (state.u.invulnerable) {
         const apparentDistance = dist2(monster.mx, monster.my, monster.mux ?? 0, monster.muy ?? 0);
         const appearsAdjacent = apparentDistance < 3
@@ -7667,7 +7670,7 @@ export async function resumeDeferredMovementSpell(
     return effect;
 }
 
-function maybeSpinMonsterWeb(
+async function maybeSpinMonsterWeb(
     monster: Monster,
     movement: MonsterMovement,
     state: PlayingGameState,
@@ -7684,6 +7687,13 @@ function maybeSpinMonsterWeb(
     )
         return null;
 
+    if (state.level.flags.sokoban_rules) {
+        let stairs = state.stairs;
+        while (stairs && !stairs.up) stairs = stairs.next;
+        if (!stairs || !clearPath(monster.mx, monster.my, stairs.sx, stairs.sy))
+            return null;
+    }
+
     // count_webbing_walls() deliberately checks only the four cardinal
     // anchors.  Diagonal rock can visually surround a spider without being
     // able to hold a web, and must not inflate the creation probability.
@@ -7694,7 +7704,7 @@ function maybeSpinMonsterWeb(
         [monster.mx - 1, monster.my],
     ];
     const webbingWalls = webbingAnchors.reduce(
-        (count, [x, y]) => count + (IS_OBSTRUCTED(state?.level?.at?.(x, y)?.typ ?? STONE) ? 1 : 0),
+        (count, [x, y]) => count + Number(holdsUpMonsterWeb(x, y, state)),
         0,
     );
     const existingWebs = (state?.level?.traps || []).filter((trap) => trap.ttyp === WEB).length;
@@ -7714,7 +7724,25 @@ function maybeSpinMonsterWeb(
     state.level.traps.push(trap);
     monster.mspec_used = rollDice(4, 4);
     calls.push('d(4,4)');
+    if (cansee(monster.mx, monster.my)) {
+        const name = canSpotMonster(monster)
+            ? canonicalMonsterName(monster, { state, article: 'your', capitalized: true })
+            : 'Something';
+        await plineWithContinuation(`${name} spins a web.`);
+        trap.tseen = true;
+    }
+    if (roomsAt(state.level, monster.mx, monster.my, SHOPBASE).length)
+        addShopDamage(monster.mx, monster.my, 0, state);
     return { roll, probability, created: true, trap };
+}
+
+function holdsUpMonsterWeb(x: number, y: number, state: PlayingGameState): boolean {
+    const location = state.level.at(x, y);
+    if (x < 1 || !location || IS_OBSTRUCTED(location.typ) || location.typ === IRONBARS)
+        return true;
+    for (let stairs = state.stairs; stairs; stairs = stairs.next)
+        if (stairs.sx === x && stairs.sy === y && stairs.up) return true;
+    return false;
 }
 
 function postMoveHideUnder(
@@ -8052,7 +8080,7 @@ async function finishMonsterFloorTail(
     calls: MonsterCallLog,
     dochugContext: DochugContext | undefined,
 ) {
-    maybeSpinMonsterWeb(monster, movement, state, random, rollDice, calls);
+    await maybeSpinMonsterWeb(monster, movement, state, random, rollDice, calls);
     postMoveHideUnder(monster, movement, state, random, calls);
     if (movement.deferredAfterHideUnder) return;
     if (monster.isshk) {

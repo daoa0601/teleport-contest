@@ -46,12 +46,24 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), { su
     renderEditor();
     for (;;) {
         const key = await nhgetch();
-        if (key === 27)
-            return finish(null);
-        if (key === 10 || key === 13)
+        // C hooked_tty_getlin(): Escape first clears non-empty input; only
+        // Escape at an already empty prompt cancels with "\033" (Null here).
+        if (key === 27) {
+            if (value) {
+                value = '';
+            }
+            else
+                return finish(null);
+        }
+        else if (key === 10 || key === 13)
             return finish(value);
-        if (key === 8 || key === 127)
+        // getline.c tests the erase character ('\b' or, under the recorder's
+        // NOMUX terminal synthesis, DEL) before the kill character, so DEL
+        // backs over one byte and ^U removes the whole line.
+        else if (key === 8 || key === 127)
             value = value.slice(0, -1);
+        else if (key === 21)
+            value = '';
         else {
             const ch = String.fromCharCode(key);
             if (value.length < 80 && accepts(ch, key))
@@ -73,7 +85,7 @@ function placeToplinePromptCursor(position) {
 }
 // C tty_yn_function(): Escape prefers quit, then no; whitespace chooses
 // the displayed default. Invalid keys leave the same question active.
-async function promptChoice(message, choices, defaultAnswer, cursorOffset) {
+export async function promptChoice(message, choices, defaultAnswer, cursorOffset) {
     game._suppressMessagesUntilInput = false;
     await flushPendingTopline();
     await pline(message);

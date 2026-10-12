@@ -4,6 +4,7 @@
 import { heroIsHallucinating } from './senses.js';
 import { observeObjectForNaming } from './objnam.js';
 import { artifactById } from './artifacts.js';
+import { AD_STCK } from './monster_attack_types.js';
 import {
     IS_POOL, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, PARANOID_HIT,
     STRAT_WAITMASK,
@@ -16,18 +17,22 @@ import {
 import { floorObjectDescription } from './floor_object_display.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
+import type { Position } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { revealMimic } from './mimic.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
+    requireMonsterData,
 } from './monster_data.js';
 import { paranoidQuery } from './query.js';
 
 export interface AppliedWeaponAttackOptions {
     state?: GameState;
+    // C gb.bhitpos: a struck worm tail can be away from the head.
+    struckAt?: Position;
 }
 
 export interface AppliedWeaponAttackPermission {
@@ -57,8 +62,8 @@ function shapechangerProtection(state: GameState) {
         || state.protectionFromShapeChangers);
 }
 
-function targetGlyphState(monster: Monster, state: GameState) {
-    const glyph = glyphAt(monster.mx, monster.my, state);
+function targetGlyphState(at: Position, state: GameState) {
+    const glyph = glyphAt(at.x, at.y, state);
     return {
         invisible: glyph?.kind === 'invisible',
         warning: glyph?.kind === 'warning',
@@ -76,6 +81,19 @@ function hidesUnder(monster: Monster) {
 
 function isEel(monster: Monster) {
     return MONSTER_SYMBOL[monster?.mnum] === S_EEL;
+}
+
+// C dmgtype(mtmp->data, AD_STCK): any attack of the species adheres.
+function hasStickyAttack(monster: Monster) {
+    return requireMonsterData(MONSTER_ATTACKS, monster.mnum)
+        .some(attack => attack[1] === AD_STCK);
+}
+
+// C m_next2u(m): the squared euclidean distance to the hero is at most 2.
+function isAdjacentToHero(monster: Monster, state: GameState) {
+    const dx = monster.mx - (state.u?.ux ?? monster.mx);
+    const dy = monster.my - (state.u?.uy ?? monster.my);
+    return dx * dx + dy * dy <= 2;
 }
 
 function targetName(monster: Monster) {
@@ -155,7 +173,8 @@ function stormbringerOverridesConfirmation(weapon: GameObject | null, state: Gam
 }
 
 export async function prepareAppliedWeaponAttack(
-    monster: Monster, weapon: GameObject | null, { state = game }: AppliedWeaponAttackOptions = {},
+    monster: Monster, weapon: GameObject | null,
+    { state = game, struckAt }: AppliedWeaponAttackOptions = {},
 ): Promise<AppliedWeaponAttackPermission> {
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
 
@@ -164,7 +183,9 @@ export async function prepareAppliedWeaponAttack(
     if (state.context?.forcefight)
         return { proceed: true, spentTime: false };
 
-    const glyph = targetGlyphState(monster, state);
+    // Read and mark the struck square, including when it is a worm tail.
+    const struck = struckAt ?? { x: monster.mx, y: monster.my };
+    const glyph = targetGlyphState(struck, state);
     const sensed = canSenseMonster(monster);
     const unrevealedAppearance = hasUnrevealedAppearance(monster, state);
     const spotted = canSpotMonster(monster);
@@ -176,7 +197,14 @@ export async function prepareAppliedWeaponAttack(
         await plineWithContinuation(
             "Wait!  There's something there you can't see!",
         );
-        map_invisible(monster.mx, monster.my);
+        map_invisible(struck.x, struck.y);
+        // An unseen mimic sticks to the hero before being woken, exactly
+        // as if it had been stumbled upon while visible.
+        if (hasUnrevealedAppearance(monster, state) && !state.u.ustuck
+            && !monster.mflee && hasStickyAttack(monster)
+            && isAdjacentToHero(monster, state)) {
+            state.u.ustuck = monster;
+        }
         await wakeAttackedMonster(monster);
         return { proceed: false, spentTime: true };
     }

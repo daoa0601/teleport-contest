@@ -271,8 +271,80 @@ export function heroFingerName(state = game) {
         return 'minor current';
     return symbol === S_FUNGUS ? 'hypha' : 'foreclaw';
 }
+// C mbodypart(FINGERTIP). Engraving is the sole FINGERTIP caller; each form
+// keeps its own writing tip name rather than reusing FINGER or TOE.
+export function heroFingerTipName(state = game) {
+    const mnum = currentHeroMonsterNumber(state);
+    const symbol = MONSTER_SYMBOL[mnum];
+    const flags = MONSTER_FLAGS1[mnum] ?? 0;
+    if (symbol === S_YETI && mnum !== PM_OWLBEAR)
+        return 'fingertip';
+    if (flags & M1_HUMANOID)
+        return 'fingertip';
+    // C mbodypart() only maps jellyfish to "tentacle" for ARM, FINGER, HAND,
+    // FOOT, and TOE; FINGERTIP falls through to the per-symbol tables.
+    if (symbol === S_COCKATRICE || mnum === PM_RAVEN)
+        return 'wing tip';
+    if ((symbol !== undefined && [S_CENTAUR, S_UNICORN].includes(symbol))
+        || mnum === PM_KI_RIN || mnum === PM_ROTHE)
+        return 'hoof tip';
+    if (symbol === S_LIGHT)
+        return 'ray';
+    if (symbol === S_EEL && mnum !== PM_JELLYFISH)
+        return 'pelvic fin';
+    if (symbol === S_WORM)
+        return 'setae';
+    if (symbol === S_SPIDER)
+        return 'tarsus';
+    if (flags & M1_SLITHY)
+        return 'large scale tip';
+    if (symbol === S_EYE)
+        return 'tentacle tip';
+    if (mnum === PM_JELLYFISH
+        || (symbol !== undefined && [S_JELLY, S_PUDDING, S_BLOB].includes(symbol)))
+        return 'pseudopod extremity';
+    if (symbol === S_VORTEX || symbol === S_ELEMENTAL)
+        return 'minor current';
+    if (symbol === S_FUNGUS)
+        return 'hypha';
+    return 'claw tip';
+}
 export function heroHeadName(state = game) {
     return monsterHeadName(currentHeroMonsterNumber(state));
+}
+// C mbodypart(HAIR). The morgue's chill affects the current body's covering.
+export function heroHairName(state = game) {
+    const mnum = currentHeroMonsterNumber(state);
+    const symbol = MONSTER_SYMBOL[mnum];
+    if (symbol === S_YETI && mnum !== PM_OWLBEAR)
+        return 'hair';
+    if (MONSTER_NAME[mnum] === 'shark')
+        return 'skin';
+    if (symbol === S_COCKATRICE)
+        return 'scales';
+    if (mnum === PM_RAVEN)
+        return 'feathers';
+    if (symbol === S_CENTAUR || symbol === S_UNICORN || mnum === PM_KI_RIN)
+        return 'mane';
+    if (symbol === S_LIGHT)
+        return 'beam';
+    if (symbol === S_EEL && mnum !== PM_JELLYFISH)
+        return 'scales';
+    if (symbol === S_WORM)
+        return 'setae';
+    if (symbol === S_SPIDER)
+        return 'hair';
+    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY || symbol === 30)
+        return 'scales';
+    if (symbol === S_EYE)
+        return 'cilia';
+    if (symbol === S_JELLY || symbol === S_PUDDING || symbol === S_BLOB || mnum === PM_JELLYFISH)
+        return 'ripples';
+    if (symbol === S_VORTEX || symbol === S_ELEMENTAL)
+        return 'currents';
+    if (symbol === S_FUNGUS)
+        return 'spores';
+    return (MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID ? 'hair' : 'fur';
 }
 // C mbodypart(NOSE).
 export function heroNoseName(state = game) {

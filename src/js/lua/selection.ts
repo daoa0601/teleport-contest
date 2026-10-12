@@ -5,12 +5,12 @@ import {
     specialSelectionLine,
     specialSelectionMatch,
     specialSelectionRandLine,
-    specialSelectionRandomPoint,
     specialSelectionRect,
     selection_from_mkroom,
 } from '../selvar.js';
 import { LuaTable, LuaUserdata } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
+import { ANY_LOC, getLocationCoord } from '../special_location.js';
 import type { Coordinate, SelectionBounds } from '../selvar.js';
 import type { LuaHostObject, LuaMetatable, LuaValue } from './runtime.js';
 
@@ -58,20 +58,13 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
             y: point.y - active.ystart,
         };
     };
-    const set = (self: LuaValue, x: LuaValue = null, y: LuaValue = null, value: LuaValue = 1) => {
+    const set = async (self: LuaValue, x: LuaValue = null, y: LuaValue = null, value: LuaValue = 1) => {
         const selection = selectionValue(self);
-        if (x != null || y != null) {
-            const active = currentContext();
-            const absoluteX = active.xstart + luaInteger(x);
-            const absoluteY = active.ystart + luaInteger(y);
-            if (luaInteger(value ?? 1)) selection.add(absoluteX, absoluteY);
-            else selection.remove(absoluteX, absoluteY);
-        } else {
-            const point = specialSelectionRandomPoint(currentContext())
-                .randomCoordinate();
-            if (!point) throw new Error('Random point selection is empty');
-            selection.add(point.x, point.y);
-        }
+        const coordinate = x === null && y === null ? null
+            : { x: luaInteger(x), y: luaInteger(y) };
+        const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
+        if (luaInteger(value ?? 1)) selection.add(point.x, point.y);
+        else selection.remove(point.x, point.y);
         return self;
     };
     const clone = (self: LuaValue) => wrap(selectionValue(self).clone());

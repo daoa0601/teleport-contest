@@ -123,7 +123,8 @@ async function chooseFromInventoryMenu(verb, inventory, suggestions) {
         return items.find(object => object.invlet === String.fromCharCode(key)) || null;
     }
 }
-function inventoryLetterOrder(letter) {
+// C invent.c invletter_value(): '$' first, then a-z, then A-Z, then other.
+export function inventoryLetterOrder(letter) {
     if (letter == null)
         return 53;
     if (letter === '$')

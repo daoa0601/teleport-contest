@@ -97,6 +97,21 @@ export interface WipeFaceOccupation {
     remaining: number;
 }
 
+// C svc.context.engraving plus the running occupation.  The progress fields
+// belong to this engraving attempt only; a stopped attempt discards them,
+// matching how native resumes no occupation after restore or interruption.
+export interface EngraveOccupation {
+    key: 'engrave';
+    text: 'engraving';
+    remainingText: string;
+    nextIndex: number;
+    stylus: GameObject | null;
+    engraveType: number;
+    x: number;
+    y: number;
+    actionct: number;
+}
+
 // The occupation schedules eating and supplies its label. Meal progress belongs
 // to context.victual and survives when the occupation is interrupted.
 export interface FoodOccupation {
@@ -106,4 +121,4 @@ export interface FoodOccupation {
 
 export type HeroOccupation = CommandOccupation | DiggingOccupation
     | StudyOccupation | ForceLockOccupation | PickLockOccupation
-    | WipeFaceOccupation | FoodOccupation | TinOpening;
+    | WipeFaceOccupation | FoodOccupation | TinOpening | EngraveOccupation;

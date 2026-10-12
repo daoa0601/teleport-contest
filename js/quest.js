@@ -8,6 +8,7 @@ import { showTextPages } from './windows.js';
 import { rn2 } from './rng.js';
 import { MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_CLOSE, } from './const.js';
 import { monsterIsQuestNemesis } from './monster_data.js';
+import { convertQuestLine, questLeaderName, questNemesisName } from './quest_pager.js';
 // C struct q_score is global game state, not a property inferred from the
 // current special level.  Keeping the complete shape here makes the state
 // survive level cache changes and ordinary game serialization as later quest
@@ -117,7 +118,7 @@ function barbarianFirstTime(g = game) {
     const role = g.urole;
     const perceive = g.blind ? 'sense' : 'see';
     const homebase = role?.homebase || 'the Camp of the Duali Tribe';
-    const leader = role?.leaderName || 'Pelias';
+    const leader = questLeaderName(g) || 'Pelias';
     return [
         'Warily you scan your surroundings, all of your senses alert for signs',
         `of possible danger.  Off in the distance, you can ${perceive} the familiar shapes`,
@@ -154,7 +155,7 @@ function archeologistLeaderFirst(g = game) {
 }
 function archeologistAssignQuest(g = game) {
     const role = g.urole;
-    const nemesis = role?.nemesisName || 'the Minion of Huhetotl';
+    const nemesis = questNemesisName(g) || 'the Minion of Huhetotl';
     const artifact = role?.artifactName || 'the Orb of Detection';
     const intermediate = role?.intermediate || 'the Tomb of the Toltec Kings';
     return [
@@ -214,7 +215,7 @@ function priestLeaderFirst(g = game) {
 function priestAssignQuest(g = game) {
     const role = g.urole;
     const name = heroName(g);
-    const nemesis = role?.nemesisName || 'Nalzok';
+    const nemesis = questNemesisName(g) || 'Nalzok';
     const homebase = role?.homebase || 'the Great Temple';
     const guardians = role?.guardianPlural || 'Acolytes';
     const artifact = role?.artifactName || 'the Mitre of Holiness';
@@ -245,7 +246,7 @@ function priestAssignQuest(g = game) {
 function priestFirstTime(g = game) {
     const role = g.urole;
     const homebase = role?.homebase || 'the Great Temple';
-    const leader = role?.leaderName || 'the Arch Priest';
+    const leader = questLeaderName(g) || 'the Arch Priest';
     return [
         `You find yourself standing in sight of ${homebase}.  Something`,
         `is obviously wrong here.  The doors to ${homebase}, which usually`,
@@ -258,8 +259,8 @@ function priestFirstTime(g = game) {
 function priestLocateFirst(g = game) {
     const role = g.urole;
     const intermediate = role?.intermediate || 'the Temple of Nalzok';
-    const leader = role?.leaderName || 'the Arch Priest';
-    const nemesis = role?.nemesisName || 'Nalzok';
+    const leader = questLeaderName(g) || 'the Arch Priest';
+    const nemesis = questNemesisName(g) || 'Nalzok';
     return [
         'You stand facing a large graveyard.  The sky above is filled with clouds',
         'that seem to get thicker closer to the center.  You sense the presence of',
@@ -278,7 +279,7 @@ function priestGoalFirst() {
     ];
 }
 function archeologistGoalFirst(g = game) {
-    const leader = g.urole?.leaderName || 'Lord Carnarvon';
+    const leader = questLeaderName(g) || 'Lord Carnarvon';
     const artifact = g.urole?.artifactName || 'the Orb of Detection';
     return [
         'A strange feeling washes over you, and you think back to things you',
@@ -315,8 +316,7 @@ function archeologistGoalNext(g = game) {
     return `The familiar presence of ${artifact} is in the ether.`;
 }
 function archeologistGoalAlt(g = game) {
-    const nemesis = (g.urole?.nemesisName || 'the Minion of Huhetotl')
-        .replace(/^the /, '');
+    const nemesis = questNemesisName(g).replace(/^the /, '');
     return `You have returned to ${nemesis}'s lair.`;
 }
 function priestLocateNext(g = game) {
@@ -324,7 +324,7 @@ function priestLocateNext(g = game) {
     return `Again, you stand before ${intermediate}.`;
 }
 function wizardFirstTime(g = game) {
-    const leader = g.urole?.leaderName || 'Neferet the Green';
+    const leader = questLeaderName(g) || 'Neferet the Green';
     return [
         'You are suddenly in familiar surroundings.  You notice what appears to',
         'be a large, squat stone structure nearby.  Wait!  That looks like the',
@@ -339,7 +339,7 @@ function wizardFirstTime(g = game) {
     ];
 }
 function wizardLocateFirst(g = game) {
-    const nemesis = g.urole?.nemesisName || 'the Dark One';
+    const nemesis = questNemesisName(g) || 'the Dark One';
     const possessive = nemesis.endsWith('s')
         ? `${nemesis}'`
         : `${nemesis}'s`;
@@ -555,20 +555,20 @@ export function prepareMainQuestPortalCall({ firstVisit = true } = {}, g = game)
         return null;
     rn2(3);
     rn2(2);
+    // dat/quest.lua quest_portal text; convertQuestLine expands %l and %H
+    // for the current role the same way com_pager() does for every role.
     if (event.qcalled) {
-        return [g.urole?.key === 'rogue'
-                ? `You again sense ${g.urole?.leaderName || 'your leader'} demanding your attendance.`
-                : `You again sense ${g.urole?.leaderName || 'your leader'} pleading for help.`];
+        return [convertQuestLine(g.urole?.key === 'rogue'
+                ? 'You again sense %l demanding your attendance.'
+                : 'You again sense %l pleading for help.', g)];
     }
     event.qcalled = true;
-    const leader = g.urole?.leaderName || 'your leader';
-    const homebase = g.urole?.homebase || 'your quest home';
     return [
-        `You receive a faint telepathic message from ${leader}:`,
-        `Your help is urgently needed at ${homebase}!`,
+        'You receive a faint telepathic message from %l:',
+        'Your help is urgently needed at %H!',
         'Look for a ...ic transporter.',
         "You couldn't quite make out that last message.",
-    ];
+    ].map(line => convertQuestLine(line, g));
 }
 export async function displayPreparedQuestArrival(arrival, g = game) {
     if (!arrival)

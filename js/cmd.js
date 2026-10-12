@@ -30,6 +30,7 @@ import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
 import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
+import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
@@ -48,7 +49,7 @@ import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { doOptions } from './options.js';
-import { blocksDiagonalDoor, blocksMove, heroBadRock, heroCanPassWallAt, heroLiquidEffects, heroShouldAvoidLiquid, heroTightDiagonalReason, } from './hack.js';
+import { blocksDiagonalDoor, blocksMove, escapeFromStickyMonster, heroBadRock, heroCanPassWallAt, heroLiquidEffects, heroShouldAvoidLiquid, heroTightDiagonalReason, } from './hack.js';
 import { commandExecutionKey, controlRushDirection, promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -126,7 +127,6 @@ import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, L
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
-import { revealMimic } from './mimic.js';
 import { nameToMonster } from './mondata.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
 import { removeHeroAccessory, wearHeroAccessory, } from './accessory.js';
@@ -148,6 +148,7 @@ import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
 import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
+import { continueEngraving, doengrave } from './engrave_command.js';
 import { heroCanMoveFromTrap, triggerHeroTrapAt } from './hero_traps.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedBucFate, resolveDippedSensationFate, } from './fountain_effects.js';
@@ -791,6 +792,15 @@ async function continueOccupation(g) {
     }
     if (occupation.key === 'wipe-face') {
         return continueWipingFace(occupation, g);
+    }
+    if (occupation.key === 'engrave') {
+        const continuing = await continueEngraving(g);
+        if (g.program_state.gameover)
+            return false;
+        if (!continuing)
+            g._occupation = null;
+        g.context.move = 1;
+        return true;
     }
     g._occupation = null;
     return false;
@@ -2805,110 +2815,18 @@ async function dotip() {
     await pline('Nothing happens.');
     game.context.move = 0;
 }
-function completeExtendedCommand(command) {
-    // cast/chat/conduct share `c`; once `co` is typed, conduct is the sole
-    // AUTOCOMPLETE entry and tty paints the remainder without moving the
-    // insertion point past the physical prefix.
-    if (command.length >= 2 && 'conduct'.startsWith(command))
-        return 'conduct';
-    if ('enhance'.startsWith(command))
-        return 'enhance';
-    if ('genocided'.startsWith(command))
-        return 'genocided';
-    if (command.length >= 2 && 'vanquished'.startsWith(command))
-        return 'vanquished';
-    // In normal play, pray is the only AUTOCOMPLETE command beginning with
-    // "p".  Wizard mode also exposes panic and polyself, so tty leaves a
-    // single "p" literal and completes pray only once "pr" is unique.
-    if ('pray'.startsWith(command)
-        && (!game.flags?.debug || command.length >= 2))
-        return 'pray';
-    if (game.flags?.debug && command.length >= 2
-        && 'polyself'.startsWith(command))
-        return 'polyself';
-    if ('name'.startsWith(command))
-        return 'name';
-    if ('invoke'.startsWith(command))
-        return 'invoke';
-    if ('force'.startsWith(command))
-        return 'force';
-    if ('jump'.startsWith(command))
-        return 'jump';
-    // quaff and quiver are ordinary commands, not AUTOCOMPLETE entries;
-    // tty's filtered match set therefore makes #q uniquely identify quit.
-    if ('quit'.startsWith(command))
-        return 'quit';
-    // C cmd.c:extcmdlist[] filters completion through both AUTOCOMPLETE and
-    // WIZMODECMD.  In ordinary play "l" uniquely selects loot.  Wizard mode
-    // also admits levelchange and lightsources, so the same prefix must stay
-    // literal until another byte makes the match unique.
-    if (command === 'l' && !game.flags?.debug)
-        return 'loot';
-    if (command.length >= 2 && 'loot'.startsWith(command))
-        return 'loot';
-    if (command.length >= 2 && 'levelchange'.startsWith(command))
-        return 'levelchange';
-    if (command.length >= 2 && 'herecmdmenu'.startsWith(command))
-        return 'herecmdmenu';
-    // wizwish is deliberately not AUTOCOMPLETE, while wizwhere is.  This is
-    // why typing "wizw" temporarily displays wizwhere yet remains editable
-    // into the distinct wizwish command.
-    if (game.flags?.debug && command.length >= 4
-        && 'wizwhere'.startsWith(command))
-        return 'wizwhere';
-    // wizmakemap and wizmap are non-autocomplete entries.  Once "wizm" is
-    // typed, wizmondiff is the sole matching AUTOCOMPLETE command; NEWAUTOCOMP
-    // paints that suffix without committing it to the editable buffer.
-    if (game.flags?.debug && command.length >= 4
-        && 'wizmondiff'.startsWith(command))
-        return 'wizmondiff';
-    if (game.flags?.debug && command.length >= 4
-        && 'wizkill'.startsWith(command))
-        return 'wizkill';
-    if (game.flags?.debug && command.length >= 4
-        && 'wizintrinsic'.startsWith(command))
-        return 'wizintrinsic';
-    if (command.length >= 2 && 'ride'.startsWith(command))
-        return 'ride';
-    if (command.length >= 2 && 'rub'.startsWith(command))
-        return 'rub';
-    if (command.length >= 3 && 'chat'.startsWith(command))
-        return 'chat';
-    if (command.length >= 3 && 'chronicle'.startsWith(command))
-        return 'chronicle';
-    // In wizard mode, version and vision share `v`; the second physical byte
-    // makes `ve` the unique AUTOCOMPLETE entry.
-    if (command.length >= 2 && 'version'.startsWith(command))
-        return 'version';
-    if (command.length >= 2 && 'overview'.startsWith(command))
-        return 'overview';
-    // offer and overview share their first byte; "of" uniquely selects the
-    // AUTOCOMPLETE #offer entry.
-    if (command.length >= 2 && 'offer'.startsWith(command))
-        return 'offer';
-    if ('dip'.startsWith(command))
-        return 'dip';
-    if (command.length >= 2 && 'monster'.startsWith(command))
-        return 'monster';
-    // `a` is shared by the AUTOCOMPLETE commands adjust and annotate.
-    if (command.length >= 2 && 'annotate'.startsWith(command))
-        return 'annotate';
-    if (command.length >= 2 && 'adjust'.startsWith(command))
-        return 'adjust';
-    // `t` still matches several AUTOCOMPLETE commands (terrain,
-    // therecmdmenu, timeout, tip, turn); `tu` uniquely identifies turn.
-    if (command.length >= 2 && 'terrain'.startsWith(command))
-        return 'terrain';
-    if (command.length >= 2 && 'turn'.startsWith(command))
-        return 'turn';
-    if ('untrap'.startsWith(command))
-        return 'untrap';
-    if (command.length >= 3 && 'wipe'.startsWith(command))
-        return 'wipe';
-    if ('sit'.startsWith(command)
-        && (!game.flags?.debug || command.length >= 2))
-        return 'sit';
-    return null;
+// C cmd.c:extcmds_match(): availability applies to both full names and
+// completion; AUTOCOMPLETE only limits the latter.
+function availableExtendedCommands() {
+    return NATIVE_COMMANDS.filter(command => !(command.flags & (NATIVE_COMMAND_FLAGS.CMD_NOT_AVAILABLE
+        | NATIVE_COMMAND_FLAGS.INTERNALCMD))
+        && (game.flags.debug || !(command.flags & NATIVE_COMMAND_FLAGS.WIZMODECMD)));
+}
+function completeExtendedCommand(prefix) {
+    const matches = availableExtendedCommands().filter(command => !!(command.flags & NATIVE_COMMAND_FLAGS.AUTOCOMPLETE)
+        && command.name !== null
+        && command.name.startsWith(prefix));
+    return matches.length === 1 ? matches[0]?.name ?? null : null;
 }
 const EXTENDED_COMMAND_HANDLERS = new Map([
     ['conduct', doconduct],
@@ -2939,6 +2857,9 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['offer', dosacrifice],
     ['dip', dodip],
     ['turn', doturn],
+    ['engrave', doengrave],
+    // C extcmdlist[] maps both "call" and "name" to docallcmd().
+    ['call', doname],
     ['untrap', () => doUntrap({ enterTrap: moveIntoFailedUntrap })],
     ['wipe', dowipe],
     ['monster', domonability],
@@ -2956,7 +2877,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['wizmap', wizMap],
 ]);
 async function runExtendedCommand(name) {
-    const command = NATIVE_COMMANDS.find(entry => entry.name === name);
+    const command = availableExtendedCommands().find(entry => entry.name === name);
     if (!command) {
         await pline(`#${name}: unknown extended command.`);
         game.context.move = 0;
@@ -4499,9 +4420,18 @@ async function removeWornItem(action) {
         || object === game.uright) {
         const wasStrangled = object.otyp === AMULET_OF_STRANGULATION
             && heroIsStrangled(game);
+        // C armor_or_accessory_off(): a ring's off_msg() runs while it is
+        // still worn, so the report keeps the "(on {right|left} hand)"
+        // suffix and precedes Ring_off()'s side effects such as a
+        // levitation landing or the death it causes; Amulet_off() clears
+        // the slot first and reports afterwards, without a suffix.
+        const ring = object === game.uleft || object === game.uright;
+        if (ring && game.flags?.verbose !== false) {
+            await plineWithContinuation(armorOffMessage(object, game));
+        }
         await removeHeroAccessory(object, game);
         findArmorClass(game);
-        if (game.flags?.verbose !== false) {
+        if (!ring && game.flags?.verbose !== false) {
             await plineWithContinuation(armorOffMessage(object, game));
         }
         if (wasStrangled) {
@@ -6460,25 +6390,6 @@ async function pushBoulder(boulder, x, y, dx, dy) {
     await moveObject(boulder, targetX, targetY, game);
     return true;
 }
-// C uhitm.c:attack_checks().  An ordinary direction into an actor which the
-// hero cannot spot is not yet a melee attack unless warning or a remembered
-// invisible-monster glyph has already identified the occupied square.
-// Returning true means that this preflight consumed the turn.
-async function markUnseenMonsterBeforeAttack(monster, x, y) {
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    if (game.context?.forcefight
-        || canSpotMonster(monster)
-        || monsterHasWarningProjection(monster)
-        || game.level?.at(x, y)?.remembered_glyph?.kind === 'invisible') {
-        return false;
-    }
-    await plineWithContinuation("Wait!  There's something there you can't see!");
-    map_invisible(x, y);
-    // mon.c:wakeup() clears sleep here.
-    // TODO: add mimic reveal, peaceful response, and the sleeping growl.
-    monster.msleeping = 0;
-    return true;
-}
 // C ref: hack.c:domove_fight_empty(). Forced attacks at the map edge and
 // ordinary moves into remembered invisible-monster knowledge converge here.
 // Both spend the action without entering terrain movement; only the
@@ -6611,20 +6522,23 @@ async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, b
         maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
     // C domove_core(): landing and pickup finish before nomul(-2).
     // A longer trap-induced delay survives, but its completion prose changes.
-    if (ballChainMove?.causeDelay) {
-        if ((game._helplessTurns ?? 0) <= 2) {
-            u.invulnerable = false;
-            u.usleep = 0;
-            game.multi = 0;
-            stopRun();
-            game._cannedCommands = [];
-            game._helplessTurns = 2;
-        }
-        game._helplessReason = 'dragging an iron ball';
-        game._helplessDoneMessage = '';
-        await captureRunmodeDelay(game, true, game.moves || 0, { preservePhysicalTopline: true });
-    }
+    if (ballChainMove?.causeDelay)
+        await delayAfterDraggingBall();
     return true;
+}
+// C domove_core() applies the dragging delay even when a pet refuses the swap.
+async function delayAfterDraggingBall() {
+    if ((game._helplessTurns ?? 0) <= 2) {
+        game.u.invulnerable = false;
+        game.u.usleep = 0;
+        game.multi = 0;
+        stopRun();
+        game._cannedCommands = [];
+        game._helplessTurns = 2;
+    }
+    game._helplessReason = 'dragging an iron ball';
+    game._helplessDoneMessage = '';
+    await captureRunmodeDelay(game, true, game.moves || 0, { preservePhysicalTopline: true });
 }
 // C hack.c:domove() clears kickedloc after even an unsuccessful attempt.
 async function domove(dx, dy, explicitAttempt = true) {
@@ -6745,6 +6659,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
     const newy = u.uy + dy;
     if (!isok(newx, newy))
         return moveOutOfBounds(newx, newy);
+    if (await escapeFromStickyMonster(newx, newy))
+        return true;
     const loc = game.level?.at(newx, newy);
     // C domove_core() resolves a destination monster before test_move()
     // applies terrain restrictions.  In particular, the hero can attack
@@ -6820,12 +6736,30 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 game.context.move = Number(ballChainMove.consumedTurn);
                 return ballChainMove.consumedTurn;
             }
+            // C trains riding during the tentative move, even if the pet
+            // later refuses to swap and both rider and steed move back.
             const oldx = u.ux, oldy = u.uy;
             u.ux0 = oldx;
             u.uy0 = oldy;
             u.ux = newx;
             u.uy = newy;
             await moveSteedWithHero();
+            // C drag_ball() can pull the hero back before the swap check.
+            // A refused swap still completes ball placement and its delay.
+            if (monster.mpeaceful && game.level.traps.some(trap => trap.tx === oldx && trap.ty === oldy)) {
+                const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
+                await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
+                u.ux = oldx;
+                u.uy = oldy;
+                if (u.usteed) {
+                    u.usteed.mx = oldx;
+                    u.usteed.my = oldy;
+                }
+                await finishBallAndChainMove(ballChainMove);
+                if (ballChainMove?.causeDelay)
+                    await delayAfterDraggingBall();
+                return true;
+            }
             monster.mx = oldx;
             monster.my = oldy;
             const swapName = tame ? tameName
@@ -6837,10 +6771,13 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 ballChainMove,
             });
         }
-        if (await revealMimic(monster))
-            return true;
-        if (await markUnseenMonsterBeforeAttack(monster, newx, newy))
-            return true;
+        // attack() runs the whole attack_checks() reveal sequence: the
+        // unseen-monster marker, the disguised-mimic stumble, and the
+        // hidden-under reveal, each able to consume the move on its own.
+        // C gb.bhitpos is the struck square, even for a worm tail.
+        const verdict = await prepareAppliedWeaponAttack(monster, game.uwep ?? null, { state: game, struckAt: { x: newx, y: newy } });
+        if (!verdict.proceed)
+            return verdict.spentTime;
         if (await attackHostileMonster(monster, newx, newy))
             return true;
     }

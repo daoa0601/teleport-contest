@@ -13,7 +13,8 @@ import { game, requireInitializedGame, requireGameDisplay, requireLiveGame } fro
 import { isRoom } from './map_types.js';
 import { clearImmediateZapBypasses } from './immediate_zap.js';
 import { MON_FLOOR } from './const.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { dosounds } from './ambient_sounds.js';
 import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
 import { monsterGainLevelRiseDestination } from './monmove.js';
@@ -66,7 +67,7 @@ import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import { ACID_VENOM, CORPSE, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MATERIAL, SHIELD_OF_REFLECTION, } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { objectHasPersonalName, objectName, observeObjectForNaming, } from './objnam.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, STONE, ZAP_POS, COURT, VAULT, SHOPBASE, ROOMOFFSET, STRAT_CLOSE, STRAT_WAITFORU, STRAT_WAITMASK, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_LAVA, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, STONE, ZAP_POS, STRAT_CLOSE, STRAT_WAITFORU, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_LAVA, } from './const.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries, } from './u_init.js';
 import { makeDeaf } from './hero_hearing.js';
 import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
@@ -121,9 +122,6 @@ import { setSlipperyHands } from './towel.js';
 import { restartMonsterShapechanging } from './monster_polymorph.js';
 import { msummon } from './minion.js';
 import { captureRunmodeDelay } from './runmode.js';
-const M1_ANIMAL = 0x00040000;
-const M2_LORD = 0x00000400;
-const M2_PRINCE = 0x00000800;
 const COIN_CLASS = 12;
 // C distant_name() runs before floor extraction. Deferred pickup messages
 // retain that floor location even though the object is now in minvent.
@@ -506,166 +504,6 @@ function interruptCountedActivity(message) {
         appendTurnMessage(message);
     }
 }
-function monsterInRoom(monster, roomType) {
-    const game = requireInitializedGame();
-    const roomNumber = game.level?.at(monster.mx, monster.my)?.roomno;
-    if (typeof roomNumber !== 'number' || !Number.isInteger(roomNumber) || roomNumber < ROOMOFFSET)
-        return false;
-    const room = game.level.rooms[roomNumber - ROOMOFFSET];
-    return isRoom(room) && room.rtype === roomType;
-}
-function courtResident() {
-    const game = requireInitializedGame();
-    return (game.level?.monsters || []).find(monster => {
-        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0)
-            return false;
-        const flags1 = MONSTER_FLAGS1[monster.mnum] ?? 0;
-        const flags2 = MONSTER_FLAGS2[monster.mnum] ?? 0;
-        return !!(monster.msleeping || (flags2 & (M2_LORD | M2_PRINCE)))
-            && !(flags1 & M1_ANIMAL)
-            && monsterInRoom(monster, COURT);
-    });
-}
-// C ref: sounds.c:dosounds().  Feature checks are ordered and several
-// successful branches return from dosounds(), so later feature flags must not
-// be sampled after an audible vault/shop/swamp event.
-function ambientFeatureSounds(flags) {
-    const game = requireInitializedGame();
-    // sounds.c:dosounds() returns before sampling any feature trigger while
-    // the hero is unable to hear.  This guard owns RNG as well as prose.
-    if (game.deaf || game.flags?.acoustics === false
-        || game.u?.uswallow || game.u?.underwater || game.underwater)
-        return;
-    if (flags.nfountains && rn2(400) === 0) {
-        const messages = [
-            'You hear bubbling water.',
-            'You hear water falling on coins.',
-            'You hear the splashing of a naiad.',
-        ];
-        appendAmbientSound(messages, rn2(3));
-    }
-    if (flags.nsinks && rn2(300) === 0) {
-        const messages = [
-            'You hear a slow drip.',
-            'You hear a gurgling noise.',
-        ];
-        appendAmbientSound(messages, rn2(2));
-    }
-    if (flags.has_court && rn2(200) === 0) {
-        if (courtResident()) {
-            const hallucinating = heroIsHallucinating(game);
-            const sound = rn2(3) + Number(hallucinating);
-            const messages = [
-                'You hear the tones of courtly conversation.',
-                'You hear a sceptre pounded in judgment.',
-                'Someone shouts "Off with your head!"',
-                "You hear Queen Beruthiel's cats!",
-            ];
-            appendAmbientSound(messages, sound);
-            return;
-        }
-    }
-    if (flags.has_swamp && rn2(200) === 0) {
-        const messages = ['You hear mosquitoes!', 'You smell marsh gas!'];
-        appendAmbientSound(messages, rn2(2));
-        return;
-    }
-    if (flags.has_vault && rn2(200) === 0) {
-        const vault = game.level.rooms.find((room) => isRoom(room) && room.rtype === VAULT);
-        if (!vault) {
-            flags.has_vault = false;
-            return;
-        }
-        const guard = game.level?.monsters?.find(monster => monster.isgd);
-        const heroInVault = game.level?.at(game.u.ux, game.u.uy)?.roomno
-            === (game.level.rooms.indexOf(vault) + 3);
-        if (!guard && !heroInVault) {
-            const sound = rn2(2);
-            if (sound === 0) {
-                appendTurnMessage('You hear the footsteps of a guard on patrol.');
-            }
-            else {
-                let hasGold = false;
-                for (let x = vault.lx; x <= vault.hx && !hasGold; x++) {
-                    for (let y = vault.ly; y <= vault.hy; y++) {
-                        if ((game.level?.objects?.[x]?.[y] || [])
-                            .some(object => object.otyp === GOLD_PIECE)) {
-                            hasGold = true;
-                            break;
-                        }
-                    }
-                }
-                appendTurnMessage(hasGold
-                    ? 'You hear someone counting gold coins.'
-                    : 'You hear someone searching.');
-            }
-        }
-        return;
-    }
-    for (const feature of [
-        'has_beehive', 'has_morgue', 'has_barracks', 'has_zoo',
-    ]) {
-        if (flags[feature])
-            rn2(200);
-    }
-    if (flags.has_shop && rn2(200) === 0) {
-        const rooms = game.level?.rooms || [];
-        const shop = rooms.find((room) => isRoom(room) && room.rtype >= SHOPBASE);
-        if (!shop) {
-            flags.has_shop = false;
-            return;
-        }
-        const resident = shop.resident;
-        const shopRoom = resident?.eshk?.shoproom
-            ?? (rooms.indexOf(shop) + ROOMOFFSET);
-        const residentRoom = resident
-            ? game.level?.at(resident.mx, resident.my)?.roomno : null;
-        const heroRoom = game.level?.at(game.u.ux, game.u.uy)?.roomno;
-        if (resident && residentRoom === shopRoom && heroRoom !== shopRoom) {
-            const messages = [
-                'You hear someone cursing shoplifters.',
-                'You hear the chime of a cash register.',
-            ];
-            appendAmbientSound(messages, rn2(2));
-            for (const monster of game.level?.monsters || []) {
-                if (dist2(monster.mx, monster.my, resident.mx, resident.my) < 11 * 11) {
-                    monster.msleeping = 0;
-                    if (typeof monster.mstrategy === 'number' && Number.isInteger(monster.mstrategy))
-                        monster.mstrategy &= ~STRAT_WAITMASK;
-                }
-            }
-        }
-        return;
-    }
-    if (flags.has_temple)
-        rn2(200);
-    const onOracleLevel = game._activeSpecialLevel?.prototype === 'oracle'
-        || (game.oracle_level
-            && game.u?.uz?.dnum === game.oracle_level.dnum
-            && game.u?.uz?.dlevel === game.oracle_level.dlevel);
-    if (onOracleLevel && rn2(400) === 0) {
-        const oracle = game.level?.monsters?.find(monster => !monster.dead && monster.mnum === 274);
-        if (oracle) {
-            const hallucinating = heroIsHallucinating(game);
-            if (hallucinating || !cansee(oracle.mx, oracle.my)) {
-                const messages = [
-                    'a strange wind.',
-                    'convulsive ravings.',
-                    'snoring snakes.',
-                    'someone say "No more woodchucks!"',
-                    'a loud ZOT!',
-                ];
-                appendTurnMessage(`You hear ${messages[rn2(3) + (hallucinating ? 2 : 0)]}`);
-            }
-        }
-    }
-}
-function appendAmbientSound(messages, index) {
-    const message = messages[index];
-    if (message === undefined)
-        throw new RangeError(`Ambient sound ${index} is outside its ${messages.length} choices.`);
-    appendTurnMessage(message);
-}
 // C ref: allmain.c's `once-per-hero-took-time` tail, after the movement-ration
 // loop has allocated as many global turns as the hero needs.  Burden can make
 // one action span two allocations; seer_turn is checked only after the last
@@ -888,29 +726,10 @@ function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
         || game.u?.fumblingIntrinsic
         || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
 }
-async function finishInitialTurnMaintenanceAfterAutomaticSearch({ sourceTurn, moveAmount, deferAmbientMessage, }) {
-    const game = requireInitializedGame();
-    const flags = game.level?.flags || {};
-    const pendingBeforeAmbient = game._pending_message || '';
-    const lastBeforeAmbient = game._last_message || '';
-    ambientFeatureSounds(flags);
-    if (deferAmbientMessage
-        && (game._pending_message || '') !== pendingBeforeAmbient) {
-        const combined = game._pending_message || '';
-        const prefix = pendingBeforeAmbient
-            ? `${pendingBeforeAmbient}  ` : '';
-        const message = prefix && combined.startsWith(prefix)
-            ? combined.slice(prefix.length) : combined;
-        game._pending_message = pendingBeforeAmbient;
-        game._last_message = lastBeforeAmbient;
-        return {
-            kind: 'ambient-message',
-            message, sourceTurn, moveAmount,
-        };
-    }
-    return await finishInitialTurnMaintenanceAfterAmbient({
-        sourceTurn, moveAmount,
-    });
+async function finishInitialTurnMaintenanceAfterAutomaticSearch({ sourceTurn, moveAmount, }) {
+    // Each sound keeps its native message wait before later feature rolls.
+    await dosounds();
+    return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount });
 }
 async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount, deferAmbientMessage, polymorphed, }) {
     const game = requireInitializedGame();
@@ -968,7 +787,7 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
         }
     }
     if (game.u?.searching && !game.level?.flags?.noautosearch
-        && !game._delayedAction) {
+        && !heroHasInvoluntaryDelay(game)) {
         const search = automaticSearch();
         if (typeof search === 'object' && search.statueTrap) {
             const { x, y } = search.statueTrap;
@@ -980,7 +799,7 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
         }
     }
     return await finishInitialTurnMaintenanceAfterAutomaticSearch({
-        sourceTurn, moveAmount, deferAmbientMessage,
+        sourceTurn, moveAmount,
     });
 }
 function finishInitialTurnMaintenanceAfterTimeout({ sourceTurn, moveAmount, deferAmbientMessage, polymorphed, }) {
@@ -1520,10 +1339,6 @@ async function advanceWorldTurn() {
         if (monster)
             await exerciseAttribute(A_WIS, true);
         phase = await finishInitialTurnMaintenanceAfterAutomaticSearch(phase);
-    }
-    if (phase.kind === 'ambient-message') {
-        await plineWithContinuation(phase.message);
-        await finishInitialTurnMaintenanceAfterAmbient(phase);
     }
     if (game._pendingDemigodIntervention) {
         const intervention = game._pendingDemigodIntervention;
@@ -3558,14 +3373,6 @@ export async function newgame() {
 // C ref: allmain.c moveloop_core()
 export async function moveloop_core() {
     const g = requireInitializedGame();
-    if (g._saveExitPending) {
-        const display = g.nhDisplay;
-        display?.clearScreen();
-        putLine(0, 0, 'Be seeing you...');
-        display?.setCursor(0, 1);
-        await nhgetch();
-        return;
-    }
     if (g.program_state?.gameover) {
         await nhgetch();
         return;

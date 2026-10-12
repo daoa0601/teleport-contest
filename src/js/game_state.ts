@@ -385,7 +385,6 @@ export interface GameState {
     _travelTipShown?: boolean;
     _monTelecontrol?: boolean;
     _inTeleportTrap?: boolean;
-    _saveExitPending?: boolean;
 
     // Display and vision data are transient, except the saved topline.
     bhitpos: Position;
