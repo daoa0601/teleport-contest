@@ -4,10 +4,11 @@ import { createDungeon } from './support/topology.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { STONE } from '../js/const.js';
+import { ICE, STONE } from '../js/const.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { CLUB } from '../js/object_data.js';
+import { GOLD_PIECE, CLUB } from '../js/object_data.js';
+import { kickFloorObject } from '../js/object_kick.js';
 import { initRng } from '../js/rng.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -88,4 +89,40 @@ void test('a kicked club can hit a monster before it lands', async () => {
     assert.ok(jackal.mhp < 20);
     assert.deepEqual([club.ox, club.oy], [13, 10]);
     assert.equal(floorObjects(level).includes(club), true);
+});
+
+
+void test('a kicked object slides across ice and grease with visible feedback', async () => {
+    const level = freshGameplayRoom({ role: 'tourist', right: 30 });
+    requirePlayingGame(game);
+    game.u.acurr.a[0] = 18;
+    level.requireAt(11, 10).typ = ICE;
+    const club = placeCreatedObject(await knownObject(CLUB, { greased: true }), 11, 10);
+    const messages: string[] = [];
+
+    await kickFloorObject(11, 10, { dx: 1, dy: 0, rollOne: () => 3,
+        publish: message => { messages.push(message); } });
+
+    assert.ok(messages.some(message => /^Whee!  .* slides across the ice\.$/.test(message)));
+    assert.equal(club.ox, 25);
+});
+
+void test('kicking a pile of coins scatters that pile and leaves other objects alone', async () => {
+    const level = freshGameplayRoom({ role: 'tourist', hero: { uhp: 100, uhpmax: 100 } });
+    requirePlayingGame(game);
+    const club = placeCreatedObject(await knownObject(CLUB), 11, 10);
+    placeCreatedObject(await knownObject(GOLD_PIECE, { quantity: 600 }), 11, 10);
+    const messages: string[] = [];
+    initRng(7n);
+
+    await kickFloorObject(11, 10, { dx: 1, dy: 0,
+        publish: message => { messages.push(message); } });
+
+    assert.ok(messages.includes('Thwwpingg!'));
+    assert.ok(messages.some(message => /coins.*!$/.test(message)));
+    const coins = floorObjects(level).filter(object => object.otyp === GOLD_PIECE);
+    assert.equal(coins.reduce((sum, object) => sum + object.quan, 0), 600);
+    assert.ok(coins.some(object => object.oy !== 10));
+    assert.equal(club.ox, 11);
+    assert.equal(club.oy, 10);
 });

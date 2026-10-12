@@ -24,6 +24,10 @@ import { breakFloorObject } from './object_breakage.js';
 import { KICKING_BOOTS, OBJECT_NAMES } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { flyKickedObject } from './thrown_object.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { inventoryItemDescription } from './invent.js';
+import { surfaceName } from './terrain_name.js';
+import { scatterFloorObjects } from './scatter.js';
 import { objectWeight } from './weight.js';
 
 export interface KickObjectOptions {
@@ -72,8 +76,9 @@ function kickRange(
     object: GameObject, state: GameState, dx: number, dy: number, martial: boolean,
     rollOne: typeof rnd,
 ) {
+    let slide = false;
     let range = Math.trunc(currentAttribute(A_STR, state) / 2)
-        - Math.trunc(unitWeight(object) / 40);
+        - Math.trunc((object.oclass === 12 ? objectWeight(object) : unitWeight(object)) / 40);
     if (martial) range += rollOne(3);
 
     const source = state.level?.at?.(object.ox, object.oy);
@@ -81,8 +86,9 @@ function kickRange(
         range = Math.trunc(range / 3) + 1;
     } else if (Is_airlevel(state.u?.uz) || Is_waterlevel(state.u?.uz)) {
         range += rollOne(3);
-    } else if (source?.typ === ICE || object.greased) {
-        range += rollOne(3);
+    } else {
+        if (source?.typ === ICE) { range += rollOne(3); slide = true; }
+        if (object.greased) { range += rollOne(3); slide = true; }
     }
 
     if (artifactById(object.oartifact ?? 0, state)?.name === 'Mjollnir')
@@ -92,7 +98,7 @@ function kickRange(
     const next = state.level?.at?.(nextX, nextY);
     if (!isok(nextX, nextY) || !next || !ZAP_POS(next.typ) || closedDoor(next))
         range = 1;
-    return range;
+    return { range, slide };
 }
 
 export async function kickFloorObject(x: number, y: number, {
@@ -123,7 +129,7 @@ export async function kickFloorObject(x: number, y: number, {
     }
 
     const martial = heroKnowsMartialArts(state);
-    const range = kickRange(object, state, dx, dy, martial, rollOne);
+    const { range, slide } = kickRange(object, state, dx, dy, martial, rollOne);
     await publish(`You kick ${objectName(object)}.`);
 
     const { destroyed } = await breakFloorObject(object, {
@@ -139,9 +145,35 @@ export async function kickFloorObject(x: number, y: number, {
         return true;
     }
 
+    if (object.oclass === 12 && quantity(object) > 1) {
+        if (random(20) !== 0) {
+            if (!heroIsDeaf(state)) await publish('Thwwpingg!');
+            const messages = ['scatter the coins', 'knock coins all over the place',
+                'send coins flying in all directions'];
+            await publish(`You ${messages[random(messages.length)]}!`);
+            await scatterFloorObjects(x, y, rollOne(3), {
+                state, onlyObject: object, mayDestroy: false, mayFracture: false,
+                mayHitHero: true, mayHitMonsters: true, heroCaused: true,
+                publish, random, rollOne,
+            });
+            newsym(x, y);
+            return true;
+        }
+        if (quantity(object) > 300) {
+            await publish('Thump!');
+            return random(3) === 0 || martial;
+        }
+    }
+
     const moving = object.oclass === 12
         ? remove_object(object, state)
         : detachFloorObjectUnit(object, state);
+    if (!moving) throw new Error('A kicked stack must yield an object.');
+    if (slide && !heroIsBlind(state)) {
+        const name = inventoryItemDescription(moving);
+        await publish(`Whee!  ${name.charAt(0).toUpperCase() + name.slice(1)} ${
+            quantity(moving) === 1 ? 'slides' : 'slide'} across the ${surfaceName(x, y, state)}.`);
+    }
     state._kickedObject = moving;
     try {
         newsym(x, y);
