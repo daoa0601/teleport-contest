@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { useBullwhip } from '../js/bullwhip.js';
+import { pushKeys } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
 import { TT_PIT, W_WEP } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
@@ -107,4 +109,23 @@ void test('snatching an unproofed crysknife keeps it a crysknife in the pack', a
     assert.ok(game.inventory.includes(knife));
     assert.equal(knife.otyp, CRYSKNIFE);
     assert.equal((requireGameLevel().objects[game.u.ux]?.[game.u.uy] || []).includes(knife), false);
+});
+
+void test('a whip cannot acquire a floor stack when the hero is overloaded', async () => {
+    freshPlayableRoom({ role: 'archeologist' });
+    requirePlayingGame(game);
+    const whip = await addInventoryObject(BULLWHIP, { wielded: true, owornmask: W_WEP });
+    game.uwep = game.u.uwep = whip;
+    game.u.levitating = true;
+    await addInventoryObject(BOULDER, { quantity: 4 });
+    const clubs = await floorObject(CLUB, 10, 10, { quantity: 3 });
+    for (let seed = 1n; seed <= 30n; seed++) {
+        initRng(seed);
+        pushKeys(' '.repeat(8));
+        await useBullwhip(whip, { dx: 0, dy: 0, dz: 1 }, {
+            holdObject: async object => { game.inventory.push(object); return true; },
+        });
+        assert.equal(clubs.quan, 3);
+        assert.equal(game.inventory.some(object => object.otyp === CLUB), false);
+    }
 });

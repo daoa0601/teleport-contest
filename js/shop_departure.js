@@ -4,6 +4,7 @@
 import { adjustHeroAlignment } from './alignment.js';
 import { G_GONE, MM_NOMSG, SHOPBASE, isok } from './const.js';
 import { plineWithContinuation } from './display.js';
+import { roomsAt } from './room.js';
 import { dungeonBuildsUp } from './dungeon.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -54,6 +55,18 @@ export async function leaveHeroShop(roomnos, { newLevel = false, state = game } 
     }
     if (await robShop(keeper, state))
         await callKops(keeper, !newLevel && !!state.level.at(hero.ux0, hero.uy0)?.edge, state);
+}
+// C shk.c:remote_burglary(): bill first, then pursue from the distant shop.
+export async function remoteBurglary(x, y, state = game) {
+    requireLiveGame(state);
+    requireShopGame(state);
+    const keeper = shopResident(roomsAt(state.level, x, y, SHOPBASE)[0], state);
+    if (!keeper || !shopkeeperInOwnShop(keeper, state))
+        return;
+    if (!keeper.eshk.billct && !keeper.eshk.debit)
+        return;
+    if (await robShop(keeper, state))
+        await callKops(keeper, false, state);
 }
 async function robShop(keeper, state) {
     await rouseShopkeeper(keeper);

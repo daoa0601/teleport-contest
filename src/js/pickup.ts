@@ -19,7 +19,9 @@ import { recordHeroPrizeAcquisition } from './hero_inventory.js';
 import { remove_object } from './floor_object.js';
 import { carryableObjectCount, liftObject } from './lift_object.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
-import { deleteObject } from './object_delete.js';
+import { useUpFloorObject } from './floor_consumption.js';
+import { remoteBurglary } from './shop_departure.js';
+import { roomsAt } from './room.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
@@ -43,7 +45,7 @@ import { heroCannotTake } from './polyself.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
 import {
-    A_WIS, STONE, DOOR, D_BROKEN, W_WEP, is_pit,
+    SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, W_WEP, is_pit,
     LOST_NONE, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING,
 } from './const.js';
 
@@ -174,9 +176,19 @@ async function choosePickupObjects(objects: readonly GameObject[], count: number
     return showMultiSelectWindow({ ...menu, returnCounts: true });
 }
 
-async function takeSelectedObjects(source: PickupSource, selected: readonly PickupSelection[]): Promise<{ picked: number; attempted: boolean }> {
+// C pickup.c:pickup_object(): remote tools lift the original floor stack.
+export async function pickupFloorObject(object: GameObject, count: number, telekinesis = false): Promise<boolean> {
+    const source: PickupSource = {
+        x: object.ox, y: object.oy, monster: null,
+        objects: requireGameLevel().objects[object.ox]?.[object.oy] ?? [],
+    };
+    const result = await takeSelectedObjects(source, [{ value: object, count }], telekinesis, false);
+    return result.picked > 0;
+}
+
+async function takeSelectedObjects(source: PickupSource, selected: readonly PickupSelection[], telekinesis = false, batch = true): Promise<{ picked: number; attempted: boolean }> {
     if (!selected.length) return { picked: 0, attempted: false };
-    clearJustPicked(game);
+    if (batch) clearJustPicked(game);
     let picked = 0;
     let attempted = false;
     let previousCapacity = 0;
@@ -191,18 +203,19 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         }
         attempted = true;
         observePickupObject(object);
+        if (object === game.uchain) continue;
         if (object.oartifact) {
             const touch = await touchArtifactByHero(object);
             if (touch.died) break;
             if (!touch.allowed) continue;
         }
         if (object.otyp === CORPSE
-            && (await touchPetrifyingCorpse(object) || await reviveTouchedRider(object))) break;
+            && ((!telekinesis && await touchPetrifyingCorpse(object)) || await reviveTouchedRider(object))) break;
 
         let count = counted ? selection.count : objectQuantity(object);
         if (!(count > 0)) count = objectQuantity(object);
         if (object.otyp === SCR_SCARE_MONSTER) {
-            const scroll = await prepareScareScrollPickup(object, count, source);
+            const scroll = await prepareScareScrollPickup(object, count, telekinesis);
             if (scroll.decision === 'stop') break;
             if (scroll.decision === 'consumed') {
                 picked++;
@@ -211,7 +224,7 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
             object = scroll.object;
             count = scroll.count;
         }
-        const lift = await liftObject({ object, count });
+        const lift = await liftObject({ object, count, telekinesis });
         if (lift.decision === 'stop') break;
         if (lift.decision !== 'lift') continue;
         if (object.otyp !== LOADSTONE)
@@ -226,12 +239,22 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
             remove_object(object);
             newsym(source.x, source.y);
         }
-        const transaction = source.monster || object === game.uball
-            ? null : await addShopObjectToBill(object);
+        const shopRoom = !source.monster && object !== game.uball
+            && costlySpot(source.x, source.y)
+            ? roomsAt(game.level, source.x, source.y, SHOPBASE)[0] : undefined;
+        const savedShops = game.u.ushops ?? [];
+        let transaction = null;
+        if (shopRoom !== undefined) {
+            game.u.ushops = [shopRoom];
+            try { transaction = await addShopObjectToBill(object); }
+            finally { game.u.ushops = savedShops; }
+        }
         if (transaction) observeObjectForNaming(object);
         const quote = transaction && billedPickupQuote(transaction, pickupObjectNoun(object));
         if (quote) await plineWithContinuation(quote);
+        const remote = object.unpaid && shopRoom !== undefined && !savedShops.includes(shopRoom);
         const added = await addPickedInventoryObject(object);
+        if (remote) await remoteBurglary(source.x, source.y);
         const capacity = nearCapacity(game);
         const prefix = capacity === previousCapacity ? '' : pickupLoadPrefix(capacity);
         previousCapacity = capacity;
@@ -241,7 +264,7 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         picked++;
         if (game.program_state?.gameover) break;
     }
-    if (picked && !game.program_state?.gameover) {
+    if (batch && picked && !game.program_state?.gameover) {
         if (!source.monster) newsym(source.x, source.y);
         await bot();
     }
@@ -302,7 +325,7 @@ function observePickupObject(object: GameObject): void {
     if (!heroIsBlind(game)) observeObject(object);
 }
 
-async function prepareScareScrollPickup(object: GameObject, requested: number, source: PickupSource): Promise<ScrollPickupResult> {
+async function prepareScareScrollPickup(object: GameObject, requested: number, telekinesis: boolean): Promise<ScrollPickupResult> {
     const count = await carryableObjectCount({ object, count: requested });
     if (count < 1) return { decision: 'stop' };
 
@@ -318,10 +341,10 @@ async function prepareScareScrollPickup(object: GameObject, requested: number, s
 
     const quantity = objectQuantity(scroll);
     await pline(`The scroll${quantity === 1 ? '' : 's'} ${
-        quantity === 1 ? 'turns' : 'turn'} to dust as you pick ${
+        quantity === 1 ? 'turns' : 'turn'} to dust as you ${telekinesis ? 'raise' : 'pick'} ${
         quantity === 1 ? 'it' : 'them'} up.`);
     await tryCallObjectType(scroll);
-    await deleteObject(scroll, game);
+    await useUpFloorObject(scroll, scroll.quan);
     return { decision: 'consumed' };
 }
 

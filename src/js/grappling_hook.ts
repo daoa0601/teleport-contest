@@ -7,9 +7,7 @@ import {
 } from './const.js';
 import { docrt, newsym, pline } from './display.js';
 import { wipeHeroEngraving } from './engrave.js';
-import {
-    detachFloorObjectUnit, placeObject, stack_object,
-} from './floor_object.js';
+import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import {
@@ -34,13 +32,10 @@ import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { WieldToolResult } from './wield_tool.js';
 
-type HoldHookedObject = (object: GameObject) => boolean | Promise<boolean>;
-
 export interface GrapplingHookOptions {
     state?: GameState;
     ensureWielded: () => WieldToolResult | Promise<WieldToolResult>;
     describeTarget: PositionDescription;
-    holdObject: HoldHookedObject;
     attackMonster?: typeof hitMonsterWithAppliedWeapon;
     hurtle: (dx: number, dy: number) => unknown;
 }
@@ -117,17 +112,12 @@ async function chooseAim(x: number, y: number, state: GameState) {
     return selection;
 }
 
-async function snagObject(x: number, y: number, holdObject: HoldHookedObject, state: GameState) {
+async function snagObject(x: number, y: number, state: GameState) {
     const object = state.level?.objects?.[x]?.[y]?.[0];
     if (!object) return false;
 
     await pline(`You snag an object from the ${surfaceName(x, y, state)}!`);
-    const unit = detachFloorObjectUnit(object, state);
-    if (!unit) throw new Error('A hooked floor stack could not provide an object.');
-    if (!await holdObject(unit)) {
-        await placeObject(unit, x, y);
-        await stack_object(unit, state);
-    }
+    await pickupFloorObject(object, 1);
     newsym(x, y);
     return true;
 }
@@ -158,7 +148,6 @@ export async function useGrapplingHook(hook: GameObject, {
     state = game,
     ensureWielded,
     describeTarget,
-    holdObject,
     attackMonster = hitMonsterWithAppliedWeapon,
     hurtle,
 }: GrapplingHookOptions): Promise<GrapplingHookResult> {
@@ -204,7 +193,7 @@ export async function useGrapplingHook(hook: GameObject, {
     }
 
     if (toHit === 1
-        && await snagObject(target.x, target.y, holdObject, state)) {
+        && await snagObject(target.x, target.y, state)) {
         return { spentTime: true };
     }
 

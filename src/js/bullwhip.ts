@@ -16,9 +16,10 @@ import {
     canSpotMonster, map_invisible, newsym, pline, plineWithContinuation,
 } from './display.js';
 import {
-    detachFloorObjectUnit, placeObject, remove_object, stack_object,
+    placeObject, remove_object, stack_object,
 } from './floor_object.js';
 import { objectNoLongerHeld } from './object_release.js';
+import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { inventoryItemDescription } from './invent.js';
@@ -152,7 +153,7 @@ function isHorseCorpse(object: GameObject | null | undefined) {
     return species === 'pony' || species === 'horse' || species === 'warhorse';
 }
 
-async function snagFloorObject(proficiency: number, holdObject: HoldWhippedObject, state: GameState) {
+async function snagFloorObject(proficiency: number, state: GameState) {
     const pile = state.level?.objects?.[state.u.ux]?.[state.u.uy] || [];
     const object = pile[0];
     if (isHorseCorpse(object)) {
@@ -170,13 +171,8 @@ async function snagFloorObject(proficiency: number, holdObject: HoldWhippedObjec
         await pline('The bullwhip slips free.');
         return true;
     }
-    const unit = detachFloorObjectUnit(object, state);
-    if (!unit) throw new Error('A whipped floor stack could not provide an object.');
-    if (!await holdObject(unit)) {
-        await placeObject(unit, state.u.ux, state.u.uy);
-        await stack_object(unit, state);
+    if (!await pickupFloorObject(object, 1, true))
         await pline('The bullwhip slips free.');
-    }
     return true;
 }
 
@@ -467,7 +463,7 @@ export async function useBullwhip(
             return { spentTime: true };
         }
         if ((heroIsAirborne(state) || hero.usteed)
-            && await snagFloorObject(proficiency, holdObject, state)) {
+            && await snagFloorObject(proficiency, state)) {
             return { spentTime: true };
         }
         await damageHeroWithWhip(whip, state);

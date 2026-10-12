@@ -5369,11 +5369,6 @@ async function applyTool(item, underlay) {
             state: game,
             ensureWielded: () => wieldTool(item, 'cast', { swapWeapons: doswapweapon }, game),
             describeTarget: wizardPositionDescription,
-            holdObject: async (object) => {
-                const prepared = await addPickedInventoryObject(object);
-                await plineWithContinuation(prepared.message);
-                return true;
-            },
             hurtle: (dx, dy) => hurtleHero(dx, dy, 1, {
                 finishTeleport: finishTeleportArrival,
                 gotoLevel,

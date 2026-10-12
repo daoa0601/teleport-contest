@@ -5,7 +5,7 @@ import { DUST, P_BASIC, P_FLAIL, W_WEP } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
-import { GRAPPLING_HOOK, ROCK } from '../js/object_data.js';
+import { DART, GRAPPLING_HOOK, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject, } from './support/game-objects.js';
@@ -116,5 +116,23 @@ void test('a levitating hero scuffs no engraving while hooking', async () => {
     assert.equal(underHero.text, '?');
     assert.equal(engravingAt(12, 10)?.text, '?');
     assert.equal(game.context.move, 1);
+});
+void test('a hook leaves an unliftable stack together on the floor', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const hook = await installHook();
+    for (const invlet of 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+        if (invlet === hook.invlet)
+            continue;
+        await addInventoryObject(DART, { invlet, nomerge: true });
+    }
+    const rocks = placeCreatedObject(await knownObject(ROCK, { quantity: 4 }), 12, 10);
+    game._travelTipShown = true;
+    initRng(3n);
+    await applyInventoryObject(hook, 'll.    ');
+    assert.equal(rocks.quan, 4);
+    assert.equal(floorObjectsAt(game.level, 12, 10).length, 1);
+    assert.equal(floorObjectsAt(game.level, 12, 10)[0], rocks);
+    assert.match(game._pending_message, /knapsack cannot accommodate/);
 });
 //# sourceMappingURL=grappling_hook_apply.test.js.map

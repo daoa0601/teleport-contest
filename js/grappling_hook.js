@@ -4,7 +4,7 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { IS_AIR, IS_POOL, P_BASIC, P_SKILLED, isok, } from './const.js';
 import { docrt, newsym, pline } from './display.js';
 import { wipeHeroEngraving } from './engrave.js';
-import { detachFloorObjectUnit, placeObject, stack_object, } from './floor_object.js';
+import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { shouldShowGetposTip, showGetposTip, selectMapPosition, } from './getpos.js';
@@ -76,18 +76,12 @@ async function chooseAim(x, y, state) {
     await docrt();
     return selection;
 }
-async function snagObject(x, y, holdObject, state) {
+async function snagObject(x, y, state) {
     const object = state.level?.objects?.[x]?.[y]?.[0];
     if (!object)
         return false;
     await pline(`You snag an object from the ${surfaceName(x, y, state)}!`);
-    const unit = detachFloorObjectUnit(object, state);
-    if (!unit)
-        throw new Error('A hooked floor stack could not provide an object.');
-    if (!await holdObject(unit)) {
-        await placeObject(unit, x, y);
-        await stack_object(unit, state);
-    }
+    await pickupFloorObject(object, 1);
     newsym(x, y);
     return true;
 }
@@ -110,7 +104,7 @@ async function damageHero(state) {
         damage = Math.trunc((damage + 1) / 2);
     return loseHeroHp(damage, 'a grappling hook', { state, publish: pline });
 }
-export async function useGrapplingHook(hook, { state = game, ensureWielded, describeTarget, holdObject, attackMonster = hitMonsterWithAppliedWeapon, hurtle, }) {
+export async function useGrapplingHook(hook, { state = game, ensureWielded, describeTarget, attackMonster = hitMonsterWithAppliedWeapon, hurtle, }) {
     if (state.u?.uswallow) {
         await pline("There's not enough room here to use that.");
         return { spentTime: false };
@@ -149,7 +143,7 @@ export async function useGrapplingHook(hook, { state = game, ensureWielded, desc
         wipeHeroEngraving(rnd(2), state);
     }
     if (toHit === 1
-        && await snagObject(target.x, target.y, holdObject, state)) {
+        && await snagObject(target.x, target.y, state)) {
         return { spentTime: true };
     }
     let hitSurface = toHit === 3;

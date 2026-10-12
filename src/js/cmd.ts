@@ -5751,11 +5751,6 @@ async function applyTool(
                 game,
             ),
             describeTarget: wizardPositionDescription,
-            holdObject: async (object: GameObject) => {
-                const prepared = await addPickedInventoryObject(object);
-                await plineWithContinuation(prepared.message);
-                return true;
-            },
             hurtle: (dx: number, dy: number) => hurtleHero(dx, dy, 1, {
                 finishTeleport: finishTeleportArrival,
                 gotoLevel,
