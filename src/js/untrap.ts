@@ -911,7 +911,7 @@ async function handleDoor(x: number, y: number, {
 }
 
 async function triggerDoorTrap(door: MapLocation, x: number, y: number, { state, publish, rollOne }: Pick<BoxTrapOptions, 'state' | 'publish' | 'rollOne'>): Promise<void> {
-    await triggerBoobyTrap('door', { bodypart: true, state, publish, rollOne });
+    if (await triggerBoobyTrap('door', { bodypart: true, state, publish, rollOne })) return;
     door.doormask = D_NODOOR;
     vision_note_blocker_change(x, y);
     newsym(x, y);

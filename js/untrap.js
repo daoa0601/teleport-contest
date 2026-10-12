@@ -765,7 +765,8 @@ async function handleDoor(x, y, { state, force, trapSkipped, ask, publish, rando
     return true;
 }
 async function triggerDoorTrap(door, x, y, { state, publish, rollOne }) {
-    await triggerBoobyTrap('door', { bodypart: true, state, publish, rollOne });
+    if (await triggerBoobyTrap('door', { bodypart: true, state, publish, rollOne }))
+        return;
     door.doormask = D_NODOOR;
     vision_note_blocker_change(x, y);
     newsym(x, y);

@@ -944,7 +944,7 @@ async function continueOccupation(g: GameState): Promise<boolean> {
                 occupation.container.olocked = !occupation.container.olocked;
                 occupation.container.lknown = true;
             } else if (occupation.door && (occupation.door.doormask & D_TRAPPED)) {
-                await triggerBoobyTrap('door', { bodypart: true, state: g });
+                if (await triggerBoobyTrap('door', { bodypart: true, state: g })) return false;
                 occupation.door.doormask = D_NODOOR;
                 if (roomsAt(g.level, occupation.x, occupation.y, SHOPBASE).length)
                     addShopDamage(occupation.x, occupation.y, SHOP_DOOR_COST, g);
@@ -2063,7 +2063,7 @@ async function dokick() {
                 if (game.flags.verbose) await pline('You kick the door.');
                 await exerciseAttribute(A_STR, false);
                 location.doormask = D_NODOOR;
-                await triggerBoobyTrap('door', { bodypart: true });
+                if (await triggerBoobyTrap('door', { bodypart: true })) return;
             } else {
                 const shatters = strength > 18 && rn2(5) === 0 && !touchesShop;
                 location.doormask = shatters ? D_NODOOR : D_BROKEN;
@@ -2094,7 +2094,7 @@ async function dokick() {
             await exerciseAttribute(A_DEX, true);
             if (location.doormask & D_TRAPPED) {
                 location.doormask = D_NODOOR;
-                await triggerBoobyTrap('door', { bodypart: true });
+                if (await triggerBoobyTrap('door', { bodypart: true })) return;
             } else if (location.doormask !== D_NODOOR && !(location.doormask & D_LOCKED)) {
                 location.doormask = D_ISOPEN;
             }
@@ -5475,6 +5475,7 @@ async function doopen(): Promise<void> {
         await exerciseAttribute(A_STR, true);
         await pline('The door resists!');
     }
+    if (game.program_state.gameover) return;
     game.context.move = 1;
 }
 
@@ -5482,7 +5483,7 @@ async function doopen(): Promise<void> {
 async function openClosedDoor(door: MapLocation, x: number, y: number): Promise<void> {
     await pline('The door opens.');
     if (door.doormask & D_TRAPPED) {
-        await triggerBoobyTrap('door', { bodypart: true });
+        if (await triggerBoobyTrap('door', { bodypart: true })) return;
         door.doormask = D_NODOOR;
         if (roomsAt(game.level, x, y, SHOPBASE).length)
             addShopDamage(x, y, SHOP_DOOR_COST);

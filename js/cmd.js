@@ -773,7 +773,8 @@ async function continueOccupation(g) {
                 occupation.container.lknown = true;
             }
             else if (occupation.door && (occupation.door.doormask & D_TRAPPED)) {
-                await triggerBoobyTrap('door', { bodypart: true, state: g });
+                if (await triggerBoobyTrap('door', { bodypart: true, state: g }))
+                    return false;
                 occupation.door.doormask = D_NODOOR;
                 if (roomsAt(g.level, occupation.x, occupation.y, SHOPBASE).length)
                     addShopDamage(occupation.x, occupation.y, SHOP_DOOR_COST, g);
@@ -1880,7 +1881,8 @@ async function dokick() {
                     await pline('You kick the door.');
                 await exerciseAttribute(A_STR, false);
                 location.doormask = D_NODOOR;
-                await triggerBoobyTrap('door', { bodypart: true });
+                if (await triggerBoobyTrap('door', { bodypart: true }))
+                    return;
             }
             else {
                 const shatters = strength > 18 && rn2(5) === 0 && !touchesShop;
@@ -1913,7 +1915,8 @@ async function dokick() {
             await exerciseAttribute(A_DEX, true);
             if (location.doormask & D_TRAPPED) {
                 location.doormask = D_NODOOR;
-                await triggerBoobyTrap('door', { bodypart: true });
+                if (await triggerBoobyTrap('door', { bodypart: true }))
+                    return;
             }
             else if (location.doormask !== D_NODOOR && !(location.doormask & D_LOCKED)) {
                 location.doormask = D_ISOPEN;
@@ -5095,13 +5098,16 @@ async function doopen() {
         await exerciseAttribute(A_STR, true);
         await pline('The door resists!');
     }
+    if (game.program_state.gameover)
+        return;
     game.context.move = 1;
 }
 // C lock.c:doopen_indir(): announce the opening before detonating its trap.
 async function openClosedDoor(door, x, y) {
     await pline('The door opens.');
     if (door.doormask & D_TRAPPED) {
-        await triggerBoobyTrap('door', { bodypart: true });
+        if (await triggerBoobyTrap('door', { bodypart: true }))
+            return;
         door.doormask = D_NODOOR;
         if (roomsAt(game.level, x, y, SHOPBASE).length)
             addShopDamage(x, y, SHOP_DOOR_COST);
