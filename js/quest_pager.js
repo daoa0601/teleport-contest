@@ -149,6 +149,8 @@ export function convertQuestLine(line, g = game) {
     let out = '';
     for (let i = 0; i < line.length; i++) {
         const ch = line[i] ?? '';
+        if (ch === '\r' || ch === '\n')
+            return out;
         if (ch !== '%' || i + 1 >= line.length) {
             out += ch;
             continue;

@@ -32,6 +32,16 @@ void test('quest text substitutions follow the native code table', () => {
     assert.equal(convertQuestLine('%lh summons you, %p, and %c answers.', game), 'she summons you, Sigrid, and Valkyrie answers.');
     assert.equal(convertQuestLine('100%% of %Z', game), '100% of The Dungeons of Doom');
 });
+for (const [name, ending] of [
+    ['line feed', '\n'], ['carriage return', '\r'], ['CRLF', '\r\n'],
+]) {
+    void test(`quest line conversion stops at ${name}`, () => {
+        freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
+        game.plname = 'Sigrid';
+        assert.equal(convertQuestLine(`Welcome, %p${ending}Return %o.`, game), 'Welcome, Sigrid');
+        assert.equal(convertQuestLine(`${ending}Welcome, %p.`, game), '');
+    });
+}
 void test('quest guardians are named without an article in singular and plural', () => {
     freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
     assert.equal(convertQuestLine('%g; %gp; %gP', game), 'warrior; warriors; Warriors');
