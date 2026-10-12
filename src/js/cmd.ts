@@ -76,6 +76,8 @@ import {
 import { commandExecutionKey, controlRushDirection, promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
+import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
+import { resetBulkTakeoff } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
 import { nhgetch } from './input.js';
@@ -925,6 +927,11 @@ async function continueOccupation(g: GameState): Promise<boolean> {
     if (occupation.key === 'force-lock') {
         return continueForceLock(occupation, g);
     }
+    if (occupation.key === 'takeoff') {
+        const continuing = await continueBulkTakeoff(g);
+        if (!continuing) g._occupation = null;
+        return continuing;
+    }
     if ('remaining' in occupation && occupation.remaining <= 0) {
         g._occupation = null;
         return false;
@@ -1272,6 +1279,8 @@ async function runCommandHandler(binding: CommandBinding, {
         await doread({ gotoLevel });
     } else if (ch === 'T' || ch === 'R') {
         await removeWornItem(ch === 'R' ? 'remove' : 'take off');
+    } else if (ch === 'A') {
+        await takeOffAll();
     } else if (ch === 'P') {
         await doputon();
     } else if (ch === 'W') {
@@ -3077,6 +3086,7 @@ function completeExtendedCommand(prefix: string): string | null {
 }
 
 const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
+    ['takeoffall', takeOffAll],
     ['conduct', doconduct],
     ['chronicle', doChronicle],
     ['vanquished', doVanquished],
@@ -4750,6 +4760,8 @@ async function removeWornItem(action: 'remove' | 'take off'): Promise<void> {
         game.context.move = 0;
         return;
     }
+
+    resetBulkTakeoff();
 
     if (object.cursed) {
         object.bknown = true;
@@ -6997,6 +7009,7 @@ async function finishMovedHero({
     trapOptions?: Parameters<typeof triggerHeroTrapAt>[2];
 }): Promise<boolean> {
     const u = game.u;
+    resetBulkTakeoff();
     // C hack.c:domove_core() sets this only in the common tail after map
     // coordinates changed.  The turn loop retains it through every global
     // allocation needed to settle this action, then clears it before the next

@@ -1,6 +1,7 @@
 import { arrayOf, boolean, closedFieldsMatch, integer, nullable, oneOf, optional, string, } from './saved_validation.js';
 import { isSavedRecord } from './saved_graph.js';
 import { validSavedDungeonLocation, validSavedPosition } from './map_validation.js';
+import { TAKEOFF_ORDER } from './takeoff_state.js';
 export function validSavedGameContext(value, entities) {
     return closedFieldsMatch(value, {
         move: integer,
@@ -27,6 +28,7 @@ export function validSavedGameContext(value, entities) {
         })),
         startingpet_mid: optional(integer),
         startingpet_typ: optional(integer),
+        takeoff: optional(validTakeoffContext),
         tips: optional(integer),
         travel: optional(boolean),
         travel1: optional(boolean),
@@ -42,6 +44,15 @@ export function validSavedGameContext(value, entities) {
         forceSaveHungerState: optional(boolean),
         hungerStateBeforeMeal: optional(integer),
     });
+}
+function validTakeoffContext(value) {
+    return closedFieldsMatch(value, {
+        pending: arrayOf(oneOf(...TAKEOFF_ORDER)),
+        current: nullable(oneOf(...TAKEOFF_ORDER)),
+        delay: (entry) => integer(entry) && entry >= 0,
+        text: oneOf('disrobing', 'disarming'),
+    }) && new Set(value.pending).size === value.pending.length
+        && (value.current === null || value.pending.includes(value.current));
 }
 export function validSavedDungeon(value) {
     return closedFieldsMatch(value, {

@@ -14,6 +14,7 @@ import { endObjectBurn, equipmentLightMessage } from './light.js';
 import { plineWithContinuation } from './display.js';
 import { heroIsBlind } from './senses.js';
 import { weaponNeedsBashingMessage, willWeld } from './weapon_type.js';
+import { cancelSlotTakeoff } from './takeoff_state.js';
 
 export type WeaponSlot = 'uwep' | 'uswapwep' | 'uquiver';
 type WeaponFlag = 'wielded' | 'alternate' | 'ready';
@@ -43,6 +44,7 @@ function clearSlot(
     slot: WeaponSlot, mask: number, flag: WeaponFlag, state: GameState,
 ): GameObject | null {
     const object = slotObject(slot, state);
+    if (object) cancelSlotTakeoff(slot, state);
     state[slot] = null;
     if (state.u) state.u[slot] = null;
     if (!object) return null;
@@ -92,6 +94,7 @@ export async function setPrimaryWeapon(
 ): Promise<GameObject | null> {
     const previous = slotObject('uwep', state);
     if (previous === object) return previous;
+    if (previous) cancelSlotTakeoff('uwep', state);
     // Semantic unwielding retains the old pointer while its warning stops.
     if (previous) {
         setTwoWeaponCombat(false, state);
@@ -135,6 +138,7 @@ export async function setQuiverObject(
 export async function losePrimaryWeapon(state: GameState = game): Promise<void> {
     const object = slotObject('uwep', state);
     if (!object) return;
+    cancelSlotTakeoff('uwep', state);
     if (object.lamplit && artifactEmitsLight(object)) {
         endObjectBurn(object, state);
         if (!heroIsBlind(state))

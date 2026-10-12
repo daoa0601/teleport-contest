@@ -52,6 +52,8 @@ import { blocksDiagonalDoor, blocksMove, escapeFromStickyMonster, heroBadRock, h
 import { commandExecutionKey, controlRushDirection, promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
+import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
+import { resetBulkTakeoff } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
 import { nhgetch } from './input.js';
@@ -752,6 +754,12 @@ async function continueOccupation(g) {
     if (occupation.key === 'force-lock') {
         return continueForceLock(occupation, g);
     }
+    if (occupation.key === 'takeoff') {
+        const continuing = await continueBulkTakeoff(g);
+        if (!continuing)
+            g._occupation = null;
+        return continuing;
+    }
     if ('remaining' in occupation && occupation.remaining <= 0) {
         g._occupation = null;
         return false;
@@ -1121,6 +1129,9 @@ async function runCommandHandler(binding, { cannedCommand = null, previousMessag
     }
     else if (ch === 'T' || ch === 'R') {
         await removeWornItem(ch === 'R' ? 'remove' : 'take off');
+    }
+    else if (ch === 'A') {
+        await takeOffAll();
     }
     else if (ch === 'P') {
         await doputon();
@@ -2829,6 +2840,7 @@ function completeExtendedCommand(prefix) {
     return matches.length === 1 ? matches[0]?.name ?? null : null;
 }
 const EXTENDED_COMMAND_HANDLERS = new Map([
+    ['takeoffall', takeOffAll],
     ['conduct', doconduct],
     ['chronicle', doChronicle],
     ['vanquished', doVanquished],
@@ -4399,6 +4411,7 @@ async function removeWornItem(action) {
         game.context.move = 0;
         return;
     }
+    resetBulkTakeoff();
     if (object.cursed) {
         object.bknown = true;
         const plural = /gloves|boots|shoes|lenses/.test(object.name || '')
@@ -6504,6 +6517,7 @@ export async function applyHeroLocationEffects(publish = plineWithContinuation, 
 // termination, u_on_newpos/vision work, and spoteffects in this order.
 async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove = null, trapOptions = {}, }) {
     const u = game.u;
+    resetBulkTakeoff();
     // C hack.c:domove_core() sets this only in the common tail after map
     // coordinates changed.  The turn loop retains it through every global
     // allocation needed to settle this action, then clears it before the next

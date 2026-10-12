@@ -16,6 +16,7 @@ import {
 } from './senses.js';
 import { toggleBlindness } from './sight_change.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
+import { cancelSlotTakeoff } from './takeoff_state.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './display.js';
@@ -41,6 +42,7 @@ async function equipEyewear(object: GameObject): Promise<void> {
 }
 
 export function unequipEyewear(object: GameObject, state: GameState = game): void {
+    if (state.ublindf === object || state.u.ublindf === object) cancelSlotTakeoff('ublindf', state);
     if (state.ublindf === object) state.ublindf = null;
     if (state.u?.ublindf === object) state.u.ublindf = null;
     object.worn = false;

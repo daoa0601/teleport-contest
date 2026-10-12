@@ -3,7 +3,7 @@
 import { heroIsBlind } from './senses.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { game, requireLiveGame } from './gstate.js';
-import { corpseName, killerObjectName, observeObjectForNaming } from './objnam.js';
+import { corpseName, killerObjectName, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { plineWithContinuation } from './display.js';
@@ -18,6 +18,7 @@ import { releaseWeaponSlots } from './weapon_slots.js';
 import { surfaceName } from './terrain_name.js';
 import { magicNegation } from './magic_negation.js';
 import { removeWornHeroItem } from './hero_equipment.js';
+import { cancelSlotTakeoff, takeoffSlotObject } from './takeoff_state.js';
 import { learnObjectType } from './object_knowledge.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { applyHeroLocationEffects } from './cmd.js';
@@ -181,6 +182,9 @@ export function wearHeroArmor(object, state = game) {
     if (!slot)
         return null;
     const hero = state.u;
+    const previous = equippedObject(state, slot);
+    if (previous && previous !== object)
+        cancelSlotTakeoff(slot, state);
     // setworn() installs physical properties immediately. The later *_on()
     // callback needs the sources that existed before that installation.
     if (object.otyp === LEVITATION_BOOTS)
@@ -273,6 +277,8 @@ export async function clearHeroArmor(object, state = game, { cancelledDon = stat
     const slot = armorSlotFor(object?.otyp);
     if (!slot)
         return false;
+    if (equippedObject(state, slot) === object)
+        cancelSlotTakeoff(slot, state);
     if (equippedObject(state, slot) === object && !cancelledDon)
         adjustArmorAttributeBonus(object, -objectEnchantment(object), state);
     const wasShining = object.lamplit && artifactEmitsLight(object);
@@ -823,8 +829,21 @@ export function armorOffMessage(object, state = game) {
 // interrupted removal leaves the item worn.
 export async function stopDonning(stolenObject = null, state = game) {
     const delayed = state._delayedAction;
-    if (!delayed)
+    if (!delayed) {
+        const progress = state.context.takeoff;
+        const slot = progress?.current;
+        const object = slot ? takeoffSlotObject(slot, state) : null;
+        if (!progress || !object || !armorSlotFor(object.otyp))
+            return false;
+        progress.current = null;
+        progress.delay = 0;
+        state.multi = 0;
+        if (object !== stolenObject) {
+            const name = simpleObjectNameWithArticle(object, state).replace(/^(?:a|an) /, '');
+            await plineWithContinuation(`You stop taking off the ${name}.`);
+        }
         return false;
+    }
     const puttingOn = delayed.kind === 'wear';
     state._delayedAction = null;
     state.multi = 0;
