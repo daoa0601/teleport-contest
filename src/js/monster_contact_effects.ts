@@ -2,6 +2,7 @@
 // These effects resume after hitmsg(); polymorph negation precedes hitmsg().
 import { artifactById } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
+import { heroHasInvoluntaryDelay } from './command_state.js';
 import { A_CON, M_SEEN_SLEEP, Upolyd } from './const.js';
 import { shieldeff, type MessagePublisher } from './display.js';
 import type { PlayingGameState } from './game_state.js';
@@ -73,7 +74,7 @@ async function sleepHero(
     monster: Monster, state: PlayingGameState,
     publish: MessagePublisher, random: typeof rn2, rollOne: typeof rnd,
 ): Promise<void> {
-    if ((state._helplessTurns ?? 0) > 0 || random(5) !== 0) return;
+    if (heroHasInvoluntaryDelay(state) || random(5) !== 0) return;
     if (await magicPreventsContact(monster, state, publish, random)) return;
     const seesHero = (observer: Monster) => monsterHasLineOfSightToHero(observer, state);
     if (state.u.sleepResistance) {

@@ -55,6 +55,32 @@ void test('cosmic stasis keeps a covetous retreat at its current square', async 
     assert.equal(lich.mavenge, 1);
 });
 
+void test('wounded Juiblex swallowing the hero on its retreat stairs keeps its expulsion destination', async () => {
+    freshObjectRoom();
+    await init_dungeons();
+    requirePlayingGame(game);
+    mkstairs(10, 10, true, null);
+    const juiblex = await createMonsterAt('Juiblex', 10, 10, NO_MINVENT);
+    juiblex.m_id = 2;
+    juiblex.mhpmax = 90;
+    juiblex.mhp = 50;
+    game.u.uswallow = 1;
+    game.u.ustuck = juiblex;
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+
+    const result = await retreatCovetousMonster(juiblex, game, () => 0, () => 1);
+
+    assert.equal(game.u.uswallow, 0);
+    assert.equal(game.u.ustuck, null);
+    assert.equal(game.u.ux, 10);
+    assert.equal(game.u.uy, 10);
+    assert.equal(juiblex.mx, 9, 'expulsion places Juiblex beside the hero without another stair relocation');
+    assert.equal(juiblex.my, 9);
+    assert.equal(juiblex.mhp, 50);
+    assert.equal(result, 'harass');
+});
+
 for (const { startX, destinationX, heals } of [
     { startX: 11, destinationX: 40, heals: false },
     { startX: 40, destinationX: 11, heals: true },

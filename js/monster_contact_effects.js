@@ -2,6 +2,7 @@
 // These effects resume after hitmsg(); polymorph negation precedes hitmsg().
 import { artifactById } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
+import { heroHasInvoluntaryDelay } from './command_state.js';
 import { A_CON, M_SEEN_SLEEP, Upolyd } from './const.js';
 import { shieldeff } from './display.js';
 import { heroIsBlind } from './senses.js';
@@ -48,7 +49,7 @@ async function infectHero(monster, state, publish, random) {
     await retouchEquipment(2, { state, publish });
 }
 async function sleepHero(monster, state, publish, random, rollOne) {
-    if ((state._helplessTurns ?? 0) > 0 || random(5) !== 0)
+    if (heroHasInvoluntaryDelay(state) || random(5) !== 0)
         return;
     if (await magicPreventsContact(monster, state, publish, random))
         return;

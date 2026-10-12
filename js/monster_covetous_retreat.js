@@ -27,7 +27,7 @@ export async function retreatCovetousMonster(monster, state, random = rn2, rollO
             && random(3 + Math.trunc(monster.mhp / 10)) === 0)
             await randomMonsterRelocation(monster, { state, random, rollOne, flags: RLOC_MSG });
     }
-    else if (stairs && (monster.mx !== stairs.sx || monster.my !== stairs.sy)) {
+    else if (stairs && (healingX !== stairs.sx || healingY !== stairs.sy)) {
         if (!monsterTeleportRestricted(monster, state)
             && !await mnearto(monster, stairs.sx, stairs.sy, state, { moveOther: true, flags: RLOC_MSG }))
             return 'blocked';

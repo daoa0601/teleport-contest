@@ -7,7 +7,8 @@ import { rhack } from '../js/cmd.js';
 import { flushPendingTopline, flush_screen, plineWithContinuation } from '../js/display.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { FOOD_RATION } from '../js/object_data.js';
+import { FOOD_RATION, RING_MAIL } from '../js/object_data.js';
+import { dopray } from '../js/pray.js';
 import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -60,6 +61,39 @@ for (const resistant of [false, true]) {
         assert.equal(game.u.uhp, 97);
         assert.equal(game._helplessTurns ?? 0, resistant ? 0 : 4);
         assert.equal(!!game.u.usleep, !resistant);
+    });
+}
+for (const delay of ['dressing', 'unprotected prayer', 'negative multi']) {
+    void test(`a homunculus bite hurts without putting the hero to sleep during ${delay}`, async () => {
+        const attacker = await contactAttacker('homunculus');
+        requirePlayingGame(game);
+        if (delay === 'dressing') {
+            const armor = await addInventoryObject(RING_MAIL);
+            assert.ok(armor.invlet);
+            resetInputState().feed(armor.invlet);
+            await rhack('W'.charCodeAt(0));
+            assert.ok((game._delayedAction?.remainingGlobalTurns ?? 0) > 0);
+        }
+        else if (delay === 'unprotected prayer') {
+            game.flags.paranoia_bits = 0;
+            game.flags.debug = false;
+            game.u.ublesscnt = 500;
+            await dopray();
+            assert.equal(game._prayerTurnsRemaining, 3);
+            assert.ok(!game.u.invulnerable);
+        }
+        else {
+            game.multi = -3;
+        }
+        const input = resetInputState();
+        input.beforeRead = () => input.feed(' ');
+        await performMonsterHeroAttack(attacker, game, {
+            random: limit => limit === 10 ? 9 : 0,
+            rollOne: () => 1, rollDice: () => 3,
+        });
+        assert.equal(game.u.uhp, 97);
+        assert.equal(game._helplessTurns ?? 0, 0);
+        assert.ok(!game.u.usleep);
     });
 }
 void test('magic resistance prevents a genetic engineer from changing the hero', async () => {
