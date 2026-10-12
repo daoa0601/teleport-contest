@@ -11,7 +11,6 @@ import { lifeSaveMonster, preventMonsterDeath, wornMonsterLifeSaver, } from './m
 import { splitMonster } from './monster_clone.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterYoungerForm, } from './monster_data.js';
 import { releaseMonsterInventory } from './monster_drop.js';
-import { finishMonsterEating } from './monster_eating.js';
 import { finishShopkeeperDeparture } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { changeMonsterForm } from './monster_polymorph.js';
@@ -41,7 +40,7 @@ const S_EEL = 57;
 export function paralyzeMonster(monster, turns) {
     monster.mcanmove = 0;
     monster.mfrozen = Math.min(127, turns);
-    finishMonsterEating(monster);
+    monster.meating = 0;
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
 }
 // C healmon(). Overhealing can increase the monster's maximum health.

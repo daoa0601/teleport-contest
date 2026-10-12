@@ -413,16 +413,17 @@ function definiteKillerName(name: string): string {
 
 // C minimal_xname() builds a bare object so personal names, call names,
 // quantity, and statue identity cannot reveal more than the known type.
-export function minimalObjectName(object: GameObject, state: GameState = game): string {
+export function minimalObjectName(object: ObjectNameView, state: GameState = game): string {
     const bare = {
         otyp: object.otyp,
         oclass: object.oclass,
-        dknown: object.dknown,
+        dknown: !!object.dknown,
+        typeKnown: !!object.dknown && objectTypeKnown(object, state),
         known: object.oclass === AMULET_CLASS
-            ? object.known : !OBJECT_USES_KNOWN[object.otyp],
+            ? !!object.known : !OBJECT_USES_KNOWN[object.otyp],
         quan: 1,
         corpsenm: object.otyp === BOULDER ? 0 : -1,
-        spe: object.otyp === SLIME_MOLD ? object.spe : 0,
+        spe: object.otyp === SLIME_MOLD ? object.spe ?? 0 : 0,
     };
     return objectName(bare, state, { minimal: true });
 }
@@ -477,12 +478,12 @@ export function armorObjectName(
 
 // C ansimpleoname(): no personal/call names, quantity prefix, or observation.
 export function simpleObjectNameWithArticle(object: ObjectNameView, state: GameState = game): string {
-    const noun = object.oclass === ARMOR_CLASS
-        ? armorObjectName(object, state, { minimal: true })
-        : object.otyp === SLIME_MOLD ? objectName(object, state, { minimal: true })
-        : OBJECT_NAMES[object.otyp] || object.name || 'object';
+    const noun = minimalObjectName(object, state);
     const quantity = object.quan ?? object.quantity ?? 1;
     if (quantity !== 1) return pluralizeObjectNoun(object, noun);
+    const uniqueType = object.otyp === FAKE_AMULET_OF_YENDOR ? AMULET_OF_YENDOR : object.otyp;
+    if (OBJECT_UNIQUE[uniqueType] && noun === OBJECT_NAMES[uniqueType])
+        return definiteKillerName(noun);
     return withIndefiniteArticle(noun);
 }
 
@@ -655,8 +656,8 @@ function candidateNames(otyp: number): string[] {
 
 function singularizeObjectName(value: string): string {
     const requested = normalizeName(value);
-    const isExactCandidate = (candidate: string) => OBJECT_NAMES.some((name, otyp) =>
-        name && candidateNames(otyp).includes(candidate));
+    const isExactCandidate = (candidate: string) => japaneseWishType(candidate) !== null
+        || OBJECT_NAMES.some((name, otyp) => name && candidateNames(otyp).includes(candidate));
     if (isExactCandidate(requested)) return requested;
 
     const alternatives = [];
@@ -676,6 +677,29 @@ function singularizeObjectName(value: string): string {
         alternatives.push(requested.slice(0, -2));
     if (requested.endsWith('s')) alternatives.push(requested.slice(0, -1));
     return alternatives.find(isExactCandidate) || requested;
+}
+
+// C readobjnam_postparse3(): Japanese aliases follow the ordinary name and
+// description lottery, regardless of the hero's role, without another draw.
+function japaneseWishType(request: string): number | null {
+    let name = request;
+    for (const wrapper of ['wand', 'ring', 'potion', 'scroll', 'gem', 'spellbook',
+        'spell book', 'weapon', 'armor', 'tool', 'food', 'comestible']) {
+        const prefix = `${wrapper} of `;
+        const suffix = ` ${wrapper}`;
+        if (request.startsWith(prefix)) {
+            name = request.slice(prefix.length);
+            break;
+        }
+        if (request.endsWith(suffix)) {
+            name = request.slice(0, -suffix.length);
+            break;
+        }
+    }
+    for (const [type, japaneseName] of JAPANESE_ITEM_NAMES) {
+        if (name === japaneseName) return type;
+    }
+    return null;
 }
 
 const GENERIC_SCALE_MAIL = OBJECT_NAMES.findIndex(name => name === 'scale mail');
@@ -948,7 +972,8 @@ export async function readObjectName(
     } else {
         const lookup = namedLookupPlan(parsed.name);
         let matchedType = artifact?.baseType ?? exactRealGemType(lookup.lookupName)
-            ?? rndObjectTypeByName(lookup.lookupName, 1);
+            ?? rndObjectTypeByName(lookup.lookupName, 1)
+            ?? japaneseWishType(lookup.lookupName);
         if (matchedType === null) {
             const match = matchWishedFruit(parsed.fruitName);
             if (match) {

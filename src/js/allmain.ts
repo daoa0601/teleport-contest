@@ -27,6 +27,11 @@ import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
 import { dosounds } from './ambient_sounds.js';
+import { ceilingName } from './terrain_name.js';
+import { tryCallObjectType } from './object_call.js';
+import { monsterGainLevelRiseDestination } from './monmove.js';
+import { WATER } from './const.js';
+import { presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse } from './monster_item_use.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
 import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
@@ -57,9 +62,10 @@ import { readEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { d, rn2, rnd } from './rng.js';
 import {
     mklev, l_nhcore_init, makemonAt, recorderLocalEpochSeconds,
-    summonInsectsForMonster, summonNastyMonsters,
+    summonNastyMonsters,
     u_on_upstairs,
 } from './mklev.js';
+import { summonMonsterInsects } from './monster_spell_insects.js';
 import {
     applyHeroLiquidEffects, continueCountedCommand, continueRun,
     finishArmorRemoval, getLine, promptYesNo, rhack,
@@ -108,14 +114,12 @@ import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import {
     ACID_VENOM, CORPSE,
     GOLD_PIECE,
-    OBJECT_BIMANUAL, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
-    OBJECT_MATERIAL,
-    POT_HEALING,
+    OBJECT_BIMANUAL, OBJECT_NAMES,
     SHIELD_OF_REFLECTION,
 } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import {
-    objectHasPersonalName, objectName, observeObjectForNaming,
+    observeDistantObjectForNaming, observeObjectForNaming,
 } from './objnam.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
@@ -241,7 +245,7 @@ import {
     maintainVaultResidence, continueVaultGuardArrival,
 } from './vault.js';
 import {
-    objectClassForType, observeObject, recordObjectCall, recordObjectEncounter,
+    observeObject, recordObjectEncounter,
     recordObjectKnowledge, learnObjectType,
 } from './object_knowledge.js';
 import { automaticSearch } from './detect.js';
@@ -257,13 +261,14 @@ import {
     currentShopResident,
 } from './shk.js';
 import {
-    bucAdjectiveForName, inventoryItemDescription, rerollMenu,
+    inventoryItemDescription, rerollMenu,
 } from './invent.js';
 import {
     hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive,
     propertyTimeout, refreshProperty, setPropertyTimeout,
 } from './properties.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
+import { resolveMonsterContactEffect } from './monster_contact_effects.js';
 import { setSlipperyHands } from './towel.js';
 import { restartMonsterShapechanging } from './monster_polymorph.js';
 import { msummon } from './minion.js';
@@ -294,24 +299,6 @@ type MaintenancePhase =
     | (TurnMaintenance & { kind: 'regions' })
     | (TurnMaintenance & Position & { kind: 'statue-trap' });
 
-const COIN_CLASS = 12;
-
-// C distant_name() runs before floor extraction. Deferred pickup messages
-// retain that floor location even though the object is now in minvent.
-function observeMonsterPickup(
-    object: GameObject | null | undefined, x: number, y: number,
-): void {
-    const game = requireInitializedGame();
-    if (!object) return;
-    observeBucForNaming(object);
-    if (!cansee(x, y)) return;
-    const range = Math.max(game.u.xray_range ?? -1, 2);
-    const nearDistance = range * range * 2 - range;
-    if (object.oartifact || dist2(x, y, game.u.ux, game.u.uy) <= nearDistance)
-        observeObject(object);
-    findArtifact(object, { source: { where: 'floor', ox: x, oy: y } });
-}
-
 function observeMonsterUsedObject(object: GameObject | null | undefined): void {
     if (!object) return;
     observeBucForNaming(object);
@@ -320,19 +307,8 @@ function observeMonsterUsedObject(object: GameObject | null | undefined): void {
 }
 
 // C muse.c:mquaffmsg(). Sensing the drinker does not reveal the potion.
-async function presentMonsterQuaff(
-    monster: Monster, object: GameObject,
-): Promise<boolean> {
-    const seen = canSeeMonster(monster);
-    if (seen) {
-        observeMonsterUsedObject(object);
-        await plineWithContinuation(
-            `${visibleMonsterSubject(monster)} drinks ${petCarriedObjectName(object, 1)}!`,
-        );
-    } else if (!heroIsDeaf()) {
-        await plineWithContinuation('You hear a chugging sound.');
-    }
-    return seen;
+async function presentMonsterQuaff(monster: Monster, object: GameObject): Promise<boolean> {
+    return publishMonsterQuaff(monster, object, { state: requireInitializedGame() });
 }
 
 function putLine(col: number, row: number, text: string, attr = 0): void {
@@ -1623,7 +1599,7 @@ async function advanceWorldTurn(): Promise<void> {
     // Native find_ac() follows the elapsed-turn loop.  setworn() is already
     // live for effects, but the first donning cadence frame still shows the
     // prior AC; the next automatic core observes the recomputed value.
-    if (game._armorClassDirtyAfterDelayedFrame) {
+    if (game._armorClassDirtyAfterDelayedFrame && !game._delayedAction?.ready) {
         findArmorClass(game);
         game._armorClassDirty = false;
         delete game._armorClassDirtyAfterDelayedFrame;
@@ -1891,23 +1867,6 @@ function visibleMonsterSubject(monster: Monster): string {
     return monsterName(monster, { capitalized: true });
 }
 
-function monsterYelpVerb(monster: Monster): string | null {
-    const game = requireInitializedGame();
-    if (monster?.mcanmove === 0 || monster?.msleeping
-        || (monster?.mfrozen ?? 0) > 0) return null;
-    const sound = MONSTER_SOUND[monster?.mnum] ?? 0;
-    const verbs: Readonly<Partial<Record<number, string>>> = game.deaf
-        ? {
-            1: 'recoils', 2: 'arches', 3: 'bluffs',
-            6: 'quivers', 8: 'thrashes', 14: 'cringes',
-        }
-        : {
-            1: 'yelps', 2: 'yowls', 3: 'snarls', 5: 'yelps',
-            6: 'squeals', 8: 'screaks', 14: 'wails',
-        };
-    return verbs[sound] || null;
-}
-
 function covetousRelocationMessage(
     monster: Monster, movement: MonsterMovement, actorWasSpotted: boolean,
 ): string | null {
@@ -2001,88 +1960,9 @@ function selectWizardCussMessage(action: MonsterAction, monster: Monster): strin
     ] + '!"';
 }
 
-function petCarriedObjectName(
-    object: GameObject, quantity = object.quan ?? object.quantity ?? 1,
-) {
-    const game = requireInitializedGame();
-    const objectClass = object?.oclass || objectClassForType(object?.otyp);
-    const descriptionHiddenClass = [4, 5, 8, 9, 10, 11, 13]
-        .includes(objectClass);
-    if (object?.dknown === false && descriptionHiddenClass) {
-        // C distant_name(..., doname) cannot expose a shuffled description
-        // which the hero has never seen.  The glyph class remains visible,
-        // so use its generic noun until dknown is established.
-        const genericNames: Readonly<Partial<Record<number, string>>> = {
-            2: 'weapon', 4: 'ring', 5: 'amulet',
-            6: OBJECT_DESCRIPTIONS[object?.otyp] || 'tool',
-            // FOOD_CLASS always uses its actual type name in xname(); dknown
-            // hides shuffled descriptions, but foods have no such naming
-            // branch.  An unseen orange is still an orange.
-            7: OBJECT_NAMES[object?.otyp] || 'food',
-            8: 'potion', 9: 'scroll',
-            10: 'spellbook', 11: 'wand', 12: 'gold piece', 13: 'gem',
-            14: 'large rock', 15: 'iron ball', 16: 'chain', 17: 'venom',
-        };
-        const generic = genericNames[objectClass] || 'object';
-        return `${/^[aeiou]/i.test(generic) ? 'an' : 'a'} ${generic}`;
-    }
-    // C xname()/doname() keep four knowledge axes independent. dknown reveals
-    // the shuffled description; it does not reveal the true type, BUC, or
-    // enchantment.  Monster inventory objects often retain a placeholder
-    // `name`, so derive their visible noun from the live object tables.
-    const typeKnown = !!object?.typeKnown
-        || game._knownObjectTypes?.has(object?.otyp);
-    const appearance = game.objectDescriptions?.[object?.otyp]
-        ?? OBJECT_DESCRIPTIONS[object?.otyp];
-    const trueName = object?.otyp === CORPSE
-        && typeof object.corpsenm === 'number' && Number.isInteger(object.corpsenm)
-        ? `${MONSTER_NAME[object.corpsenm] || 'monster'} corpse`
-        : OBJECT_NAMES[object?.otyp] || object?.name || 'object';
-    const personalName = objectHasPersonalName(object);
-    let noun = personalName || objectClass === 3 ? objectName(object)
-        : typeKnown ? trueName : appearance || trueName;
-    if (!personalName && typeKnown) {
-        if (objectClass === 4) noun = `ring of ${noun}`;
-        else if (objectClass === 8) noun = `potion of ${noun}`;
-        else if (objectClass === 9) noun = `scroll of ${noun}`;
-        else if (objectClass === 10) noun = `spellbook of ${noun}`;
-        else if (objectClass === 11) noun = `wand of ${noun}`;
-    } else if (!personalName && appearance) {
-        if (objectClass === 4) noun = `${appearance} ring`;
-        else if (objectClass === 5) noun = `${appearance} amulet`;
-        else if (objectClass === 8) noun = `${appearance} potion`;
-        else if (objectClass === 9)
-            noun = appearance === 'unlabeled' ? 'unlabeled scroll'
-                : `scroll labeled ${appearance}`;
-        else if (objectClass === 10) noun = `${appearance} spellbook`;
-        else if (objectClass === 11) noun = `${appearance} wand`;
-        else if (objectClass === 13)
-            noun = `${appearance} ${
-                OBJECT_MATERIAL[object?.otyp] === 21 ? 'stone' : 'gem'
-            }`;
-    }
-    // Native doname() never prefixes coins with blessed/uncursed/cursed.
-    const buc = objectClass === COIN_CLASS ? '' : bucAdjectiveForName(object);
-    const enchantment = object?.known && [2, 3].includes(objectClass)
-        ? (typeof object.enchantment === 'number' && Number.isInteger(object.enchantment)
-            ? object.enchantment
-            : Number.isInteger(object.spe) ? object.spe : null)
-        : null;
-    const bonus = enchantment === null ? ''
-        : `${enchantment >= 0 ? '+' : ''}${enchantment}`;
-    const poisoned = object?.opoisoned || object?.poisoned
-        ? 'poisoned' : '';
-    const pluralNoun = makePlural(noun);
-    const description = [buc, bonus, poisoned,
-        quantity > 1 ? pluralNoun : noun].filter(Boolean).join(' ');
-    if (quantity > 1) return `${quantity} ${description}`;
-    const article = personalName ? 'the'
-        : /^[aeiou]/i.test(description) ? 'an' : 'a';
-    return `${article} ${description}`;
-}
-
 function distantMonsterObjectName(object: GameObject): string {
-    return petCarriedObjectName(object);
+    observeDistantObjectForNaming(object);
+    return inventoryItemDescription(object);
 }
 
 
@@ -2202,22 +2082,9 @@ async function resolveDeferredHeroInsectSpell(
 ): Promise<void> {
     const game = requireInitializedGame();
     if (!heroAttack?.deferredInsectSpell) return;
-    const result = await summonInsectsForMonster(action.monster);
-    for (const monster of result.created || []) newsym(monster.mx, monster.my);
-    const snakes = result.monsterClass === 45;
-    const what = snakes ? 'snakes' : 'insects';
-    let message;
-    if (game.blind) {
-        message = `You hear someone summoning ${what}.`;
-    } else if (!(result.created || []).length) {
-        message = `${visibleMonsterSubject(action.monster)} casts at a clump of sticks, but nothing happens.`;
-    } else if (snakes) {
-        message = `${visibleMonsterSubject(action.monster)} transforms a clump of sticks into snakes!`;
-    } else {
-        message = `${visibleMonsterSubject(action.monster)} summons insects!`;
-    }
-    await plineWithContinuation(message);
-    heroAttack.summonedInsects = result.created || [];
+    const result = await summonMonsterInsects(action.monster, game);
+    if (result.message) await plineWithContinuation(result.message);
+    heroAttack.summonedInsects = result.created;
     heroAttack.deferredInsectSpell = false;
 }
 
@@ -2530,7 +2397,11 @@ async function presentMonsterAttackEffects(
                         };
                         if (!heroAttack.cast) {
                             let curseMessage = null;
-                            if (heroAttack.fumbled && !game.deaf
+                            if (heroAttack.misdirected) {
+                                const water = game.level.at(monster.mux ?? 0, monster.muy ?? 0)?.typ === WATER;
+                                const caster = canSeeMonster(monster) ? visibleMonsterSubject(monster) : 'Something';
+                                curseMessage = `${caster} casts a spell at ${water ? 'empty water' : 'thin air'}!`;
+                            } else if (heroAttack.fumbled && !game.deaf
                                 && canSeeMonster(monster)) {
                                 curseMessage = `The air crackles around the ${
                                     quietMonsterName(monster)
@@ -2542,7 +2413,11 @@ async function presentMonsterAttackEffects(
                                 curseMessage = heroAttack.curseKind
                                     === 'visible-undirected'
                                     ? `${caster} points all around, then curses.`
-                                    : `${caster} points at you, then curses.`;
+                                    : heroAttack.curseKind === 'visible-general'
+                                        ? `${caster} points and curses in your general direction.`
+                                        : heroAttack.curseKind === 'visible-displaced'
+                                            ? `${caster} points and curses at your displaced image.`
+                                            : `${caster} points at you, then curses.`;
                             }
                             const repeatedAudibleCurse
                                 = heroAttack.curseKind === 'audible'
@@ -2787,6 +2662,12 @@ async function presentMonsterAttackEffects(
                         publish: publishEquipmentMessage,
                     });
                 }
+                if (heroAttack.deferredSpecialContact)
+                    await resolveMonsterContactEffect(monster, heroAttack, {
+                        state: game, publish: publishEquipmentMessage, random, rollOne,
+                    });
+                if (game.program_state.gameover)
+                    return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
                 if (heroAttack.deferredStickingAfterHit)
                     resumeDeferredHeroSticking(action, game);
                 if (heroAttack.stickingMessage) {
@@ -3053,7 +2934,7 @@ async function presentMonsterAttackEffects(
                 const missedContact = heroAttack.effect === 'failed-grab'
                     || heroAttack.effect === 'engulf-unfound'
                     || heroAttack.effect === 'wild-miss';
-                if (!engulfAttack && !missedContact) {
+                if (!engulfAttack && !missedContact && !heroAttack.contactDone) {
                     await stopHeroOccupation(game);
                 }
                 if ((game.u?.[Upolyd(game.u) ? 'mh' : 'uhp'] ?? 1) > 0) {
@@ -3127,26 +3008,6 @@ async function presentMonsterPostMove(
         movement = action.movement;
         if ('seeSquare' in event && event.seeSquare && event.kind !== 'vibrating-square')
             newsym(event.trap.tx, event.trap.ty);
-    }
-    if (movement?.trap?.kind === 'teleport-trap') {
-        const event = movement.trap;
-        if (event.leashReleased)
-            await plineWithContinuation('Your leash goes slack.');
-        if (event.cursedLeash && (event.visible || !game.deaf)) {
-            const verb = monsterYelpVerb(monster);
-            if (verb) {
-                await plineWithContinuation(
-                    `${visibleMonsterSubject(monster)} ${verb}!`,
-                );
-            }
-        }
-        if (event.teleportAttempted && event.visible) {
-            event.trap.tseen = true;
-            const outcome = canSeeMonster(monster) ? 'seems disoriented.' : 'suddenly disappears!';
-            await plineWithContinuation(
-                `${visibleMonsterSubject(monster)} ${outcome}`,
-            );
-        }
     }
     if (movement?.trap?.kind === 'rolling-boulder') {
         const event = movement.trap;
@@ -3258,13 +3119,11 @@ async function presentMonsterPickups(action: MonsterMovementAction, game: Playin
     let movement = action.movement;
     if (movement?.pickedUp
         && cansee(movement.oldx, movement.oldy)) {
-        observeMonsterPickup(
-            movement.pickedUp, movement.oldx, movement.oldy,
-        );
+        observeDistantObjectForNaming(movement.pickedUp);
+        const name = inventoryItemDescription(movement.pickedUp);
         if (game.flags.verbose !== false) {
             await plineWithContinuation(
-                `${visibleMonsterSubject(monster)} picks up ${
-                    petCarriedObjectName(movement.pickedUp)}.`,
+                `${visibleMonsterSubject(monster)} picks up ${name}.`,
             );
         }
     }
@@ -3278,13 +3137,11 @@ async function presentPetMovementPrelude(
     let movement = action.movement;
     if (movement?.deferredPetMove) {
         if (movement.pickedUp && cansee(movement.oldx, movement.oldy)) {
-            observeMonsterPickup(
-                movement.pickedUp, movement.oldx, movement.oldy,
-            );
+            observeDistantObjectForNaming(movement.pickedUp);
+            const name = inventoryItemDescription(movement.pickedUp);
             if (game.flags.verbose !== false) {
                 await plineWithContinuation(
-                    `${visibleMonsterSubject(monster)} picks up ${
-                        petCarriedObjectName(movement.pickedUp)}.`,
+                    `${visibleMonsterSubject(monster)} picks up ${name}.`,
                 );
             }
         }
@@ -3309,20 +3166,6 @@ async function presentPetMovementPrelude(
         if (actorWasOpticallySeen || canSeeMonster(monster))
             await plineWithContinuation(reluctantPetMessage(monster, movement));
         await resumeDeferredPetReluctance(action, game);
-    }
-}
-
-async function presentMovementDefensiveItem(action: MonsterMovementAction): Promise<void> {
-    const { monster, movement } = action;
-    if (movement?.usedDefensive?.kind === 'potion-healing') {
-        const defensive = movement.usedDefensive;
-        const sawDrinking = await presentMonsterQuaff(monster, defensive.object);
-        if (sawDrinking && !defensive.deferredOccupant) {
-            await plineWithContinuation(
-                `${visibleMonsterSubject(monster)} looks better.`,
-            );
-            learnObjectType(POT_HEALING);
-        }
     }
 }
 
@@ -3423,7 +3266,6 @@ export async function moveMonsterForHeroAttack(
     }
     if (!heroDied) {
         await presentMonsterPickups(action, state);
-        await presentMovementDefensiveItem(action);
         await presentMonsterMoveMessage(action, state);
     }
     const status = action.movement.postMoveStatus;
@@ -3500,6 +3342,10 @@ async function executeMonsterTurns(messageContext: MonsterMessageContext): Promi
         }
         if (game.program_state?.gameover) return false;
         if (action.conflictFight) continue;
+        // C dochug() returns immediately when item use spends the turn.
+        if (action.movement?.usedDefense) continue;
+        if (action.movement?.usedMisc?.kind === 'item-result'
+            && action.movement.usedMisc.nativeResult !== 0) continue;
         await resumeTrappedMonster(action);
         let { monster, movement } = action;
         if (movement?.spellCast?.cast) {
@@ -3511,11 +3357,9 @@ async function executeMonsterTurns(messageContext: MonsterMessageContext): Promi
                     `${visibleMonsterSubject(monster)} casts a spell!`,
                 );
             }
-            const spellEffect = await resumeDeferredMovementSpell(
+            await resumeDeferredMovementSpell(
                 action, game,
             );
-            if (spellEffect?.message)
-                await plineWithContinuation(spellEffect.message);
             movement = action.movement;
         }
         // A fleeing teleport spends this actor's turn, even if no destination was found.
@@ -3542,6 +3386,9 @@ async function executeMonsterTurns(messageContext: MonsterMessageContext): Promi
             }
             await resumeTrappedMonster(action);
             movement = action.movement;
+            if (movement?.usedDefense) continue;
+            if (movement?.usedMisc?.kind === 'item-result'
+                && movement.usedMisc.nativeResult !== 0) continue;
         }
         await presentPetMovementPrelude(action, game, actorWasOpticallySeen);
         movement = action.movement;
@@ -3552,11 +3399,11 @@ async function executeMonsterTurns(messageContext: MonsterMessageContext): Promi
         if (attackEffects.heroDied) return false;
         movement = action.movement;
         // monmove.c:dochug() performs the vile-monster emotional attack only
-        // after the complete standard attack set.  Even a nonzero result is
-        // RNG-visible before ambient/global maintenance.
+        // after the complete standard attack set. Item use returns earlier,
+        // including items whose effects await their messages below.
         const offensive = movement.heroAttackSequence?.offensive;
         const attackReturnedDeath = offensive?.status === 'completed' && offensive.result.nativeResult === 1;
-        if (!attackReturnedDeath && action.dochugContext?.range?.inRange
+        if (!movement.usedMisc && !attackReturnedDeath && action.dochugContext?.range?.inRange
             && !monster.dead && monster.mhp > 0 && monster.mx !== 0
             && MONSTER_SOUND[monster.mnum] === 34 && !monster.mpeaceful
             && couldsee(monster.mx, monster.my) && !monster.minvis) {
@@ -3580,33 +3427,20 @@ async function executeMonsterTurns(messageContext: MonsterMessageContext): Promi
         }
         await presentMonsterPickups(action, game);
         movement = action.movement;
-        await presentMovementDefensiveItem(action);
+        if (movement?.usedMisc?.kind === 'polymorph-trap'
+            || movement?.usedMisc?.kind === 'wand-polymorph' || movement?.usedMisc?.kind === 'potion-polymorph')
+            await finishDeferredMonsterMiscItem(action, game);
         if (movement?.usedMisc?.kind === 'potion-gain-level') {
             const misc = movement.usedMisc;
             const sawDrinking = await presentMonsterQuaff(monster, misc.object);
             if (sawDrinking) {
                 if (misc.object.cursed) {
-                    await plineWithContinuation(
-                        `${visibleMonsterSubject(monster)} looks uneasy.`,
-                    );
-                    if (!game._knownObjectTypes?.has(misc.object.otyp)
-                        && !game._objectCallNames?.[misc.object.otyp]) {
-                        await waitForCurrentMonsterMore();
-                        const appearance = game.objectDescriptions?.[
-                            misc.object.otyp
-                        ] || 'strange';
-                        const description = appearance + ' potion';
-                        const article = /^[aeiou]/i.test(description)
-                            ? 'an' : 'a';
-                        const callName = await getLine(
-                            'Call ' + article + ' ' + description + ':',
-                            (_ch: string, key: number) => key >= 32 && key < 127,
-                        );
-                        if (callName?.trim())
-                            recordObjectCall(
-                                misc.object.otyp, callName.trim(),
-                            );
-                    }
+                    const destination = monsterGainLevelRiseDestination(monster, game);
+                    if (destination) misc.riseDestination = destination;
+                    await plineWithContinuation(destination
+                        ? `${visibleMonsterSubject(monster)} rises up, through the ${ceilingName(monster.mx, monster.my, game)}!`
+                        : `${visibleMonsterSubject(monster)} looks uneasy.`);
+                    await tryCallObjectType(misc.object, game);
                 } else {
                     await plineWithContinuation(
                         `${visibleMonsterSubject(monster)} seems more experienced.`,
@@ -3614,14 +3448,22 @@ async function executeMonsterTurns(messageContext: MonsterMessageContext): Promi
                     learnObjectType(misc.object.otyp);
                 }
             }
+            if (misc.object.cursed && !sawDrinking) {
+                const destination = monsterGainLevelRiseDestination(monster, game);
+                if (destination) misc.riseDestination = destination;
+            }
             await finishDeferredMonsterMiscItem(action, game);
             await presentMonsterGrowth(monster, misc.growth);
             movement = action.movement;
         }
-        if (movement?.usedMisc?.kind === 'potion-invisibility') {
+        if (movement?.usedMisc?.kind === 'potion-invisibility' || movement?.usedMisc?.kind === 'wand-invisibility') {
             const misc = movement.usedMisc;
             const monsterName = quietMonsterName(monster);
-            const sawDrinking = await presentMonsterQuaff(monster, misc.object);
+            let sawDrinking;
+            if (misc.kind === 'wand-invisibility') {
+                sawDrinking = canSeeMonster(monster);
+                await presentMonsterWandUse(monster, misc.object, { state: game, self: true });
+            } else sawDrinking = await presentMonsterQuaff(monster, misc.object);
             await finishDeferredMonsterMiscItem(action, game);
             newsym(monster.mx, monster.my);
             const stillSeen = canSpotMonster(monster);
@@ -3698,25 +3540,7 @@ async function executeMonsterTurns(messageContext: MonsterMessageContext): Promi
         }
         if (movement?.usedMisc?.kind === 'wand-speed-monster') {
             const misc = movement.usedMisc;
-            if (actorWasOpticallySeen) {
-                observeMonsterUsedObject(misc.object);
-                const reflexive = monster.female ? 'herself' : 'himself';
-                await plineWithContinuation(
-                    `${visibleMonsterSubject(monster)} zaps ${reflexive} with ${
-                        petCarriedObjectName(misc.object)
-                    }!`,
-                );
-            } else if (!game.deaf) {
-                const range = couldsee(monster.mx, monster.my)
-                    ? BOLT_LIM + 1 : BOLT_LIM - 3;
-                const proximity = dist2(
-                    monster.mx, monster.my,
-                    game.u?.ux ?? monster.mx,
-                    game.u?.uy ?? monster.my,
-                ) <= range * range ? 'nearby' : 'distant';
-                await plineWithContinuation(`You hear a ${proximity} zap.`);
-                misc.object.dknown = false;
-            }
+            await presentMonsterWandUse(monster, misc.object, { state: game, self: true });
             await finishDeferredMonsterMiscItem(action, game);
             if (actorWasOpticallySeen && misc.speedChanged) {
                 await plineWithContinuation(
@@ -3967,10 +3791,9 @@ export async function moveloop_core() {
         const delayed = g._delayedAction;
         g._delayedAction = null;
         if (delayed.kind === 'wear') {
-            if (!delayed.object._armorApplied) {
-                findArmorClass(g);
-                delayed.object._armorApplied = true;
-            }
+            // unmul() prints nomovemsg before Armor_on() and find_ac().
+            // An earlier attack can hold that message at a pager while AC
+            // still belongs to the turn before the dressing finished.
             if (delayed.finishMessage)
                 await plineWithContinuation(delayed.finishMessage);
             const effectMessages = await applyArmorOnEffects(delayed.object, g);
@@ -3996,6 +3819,10 @@ export async function moveloop_core() {
                 recordObjectKnowledge(delayed.object.otyp);
                 await exerciseAttribute(A_WIS, true);
             }
+            findArmorClass(g);
+            g._armorClassDirty = false;
+            delete g._armorClassDirtyAfterDelayedFrame;
+            delete g._statusProjectedAc;
         } else if (delayed.kind === 'remove') {
             // C allmain.c:unmul() emits nomovemsg before calling afternmv.
             // If an earlier monster-combat line already owns tty, this await

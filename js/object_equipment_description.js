@@ -10,6 +10,7 @@ import { AKLYS, MEAT_RING, OBJECT_BIMANUAL, OBJECT_SUBTYPE } from './object_data
 import { makePlural } from './object_grammar.js';
 import { isLauncherAmmunition, isMissileObject, isWeaponTool } from './object_properties.js';
 import { heroIsBlind } from './senses.js';
+import { isBeingTakenOff } from './takeoff_state.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const RING_CLASS = 4;
@@ -82,7 +83,7 @@ export function primaryHandDescriptionDetail(item, state = game) {
 function wornArmorDescription(item, state) {
     const dressing = state._delayedAction?.object === item ? state._delayedAction.kind : null;
     let description = item === (state.uskin || state.u.uskin) ? 'embedded in your skin'
-        : dressing === 'remove' ? 'being doffed'
+        : dressing === 'remove' || isBeingTakenOff(item, state) ? 'being doffed'
             : dressing === 'wear' ? 'being donned' : 'being worn';
     if (item === (state.uarmg || state.u.uarmg)
         && (state.u.glib || (state.u.glibTurns ?? 0) > 0))

@@ -353,7 +353,7 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
                     tty_add_menu(window, { identifier: null, text: '--' });
                 tty_add_menu(window, { identifier: item, text: item.text,
                     ...(item.key ? { selector: item.key } : {}),
-                    ...(item.group ? { group: item.group } : {}), itemflags: item.itemflags ?? 0 });
+                    ...(item.groupAccelerator ? { group: item.groupAccelerator } : {}), itemflags: item.itemFlags ?? 0 });
             }
         }
         tty_end_menu(window);

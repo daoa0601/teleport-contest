@@ -69,8 +69,8 @@ export interface ChoiceWindowOptions {
 
 export interface PageLocalMenuItem<T> {
     key?: string;
-    group?: string;
-    itemflags?: number;
+    groupAccelerator?: string;
+    itemFlags?: number;
     text: string;
     value: T;
     selectable?: true;
@@ -430,7 +430,7 @@ export async function showChoiceWindow({
 /**
  * Display a PICK_ANY tty menu.  Sections contain
  * `{ heading, items: [{ key, text, value }] }`; items with `selectable: false`
- * are labels. Selected rows are redrawn with `+`.
+ * are labels. The tty owner handles selection markers and paging.
  */
 export function showMultiSelectWindow<T>(options: MultiSelectWindowOptions<T> & {
     returnCounts: true; signalEscape: true;
@@ -474,7 +474,7 @@ export async function showMultiSelectWindow<T>({
                 if (item.separatorBefore) tty_add_menu(window, { identifier: null, text: '--' });
                 tty_add_menu(window, { identifier: item, text: item.text,
                     ...(item.key ? { selector: item.key } : {}),
-                    ...(item.group ? { group: item.group } : {}), itemflags: item.itemflags ?? 0 });
+                    ...(item.groupAccelerator ? { group: item.groupAccelerator } : {}), itemflags: item.itemFlags ?? 0 });
             }
         }
         tty_end_menu(window);

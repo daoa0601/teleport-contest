@@ -119,6 +119,11 @@ export interface FoodOccupation {
     text: string;
 }
 
+export interface TakeoffOccupation {
+    key: 'takeoff';
+    text: 'disrobing' | 'disarming';
+}
+
 export type HeroOccupation = CommandOccupation | DiggingOccupation
     | StudyOccupation | ForceLockOccupation | PickLockOccupation
-    | WipeFaceOccupation | FoodOccupation | TinOpening | EngraveOccupation;
+    | WipeFaceOccupation | FoodOccupation | TinOpening | EngraveOccupation | TakeoffOccupation;

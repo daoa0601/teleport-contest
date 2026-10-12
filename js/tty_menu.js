@@ -174,7 +174,9 @@ export async function tty_display_nhwindow(window, how = PICK_NONE) {
     const layout = window.layout;
     if (!layout)
         throw new Error('The menu has no completed layout');
-    await flushPendingTopline();
+    // Native message-window display returns immediately while WIN_STOP is set.
+    if (!game._suppressMessagesUntilInput)
+        await flushPendingTopline();
     clearMessageWindow();
     // An active menu covers the map already; retain its backing cells when
     // displaying it again, rather than saving the menu as its own underlay.

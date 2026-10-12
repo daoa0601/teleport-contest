@@ -16,6 +16,7 @@ import { makePlural } from './object_grammar.js';
 import { isLauncherAmmunition, isMissileObject, isWeaponTool } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import { heroIsBlind } from './senses.js';
+import { isBeingTakenOff } from './takeoff_state.js';
 
 interface HeldObjectDescriptionOptions {
     state?: GameState;
@@ -99,7 +100,7 @@ export function primaryHandDescriptionDetail(item: GameObject, state: GameState 
 function wornArmorDescription(item: GameObject, state: GameState): string {
     const dressing = state._delayedAction?.object === item ? state._delayedAction.kind : null;
     let description = item === (state.uskin || state.u.uskin) ? 'embedded in your skin'
-        : dressing === 'remove' ? 'being doffed'
+        : dressing === 'remove' || isBeingTakenOff(item, state) ? 'being doffed'
             : dressing === 'wear' ? 'being donned' : 'being worn';
     if (item === (state.uarmg || state.u.uarmg)
         && (state.u.glib || (state.u.glibTurns ?? 0) > 0)) description += '; slippery';

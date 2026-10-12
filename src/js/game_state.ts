@@ -17,6 +17,7 @@ import type { Isaac64Context } from './isaac64.js';
 import type { RngSeed } from './rng.js';
 import type { CannedCommand, DelayedArmorAction, RunState } from './command_types.js';
 import type { FoodContext, HeroOccupation } from './occupation_types.js';
+import type { TakeoffContext } from './takeoff_state.js';
 import type { Artifact } from './artifacts.js';
 import type { LuaVariables } from './lua/runtime.js';
 import type { LuaAlignmentName } from './lua/lifecycle.js';
@@ -86,6 +87,7 @@ export interface GameContext extends FoodContext {
     spbook?: SpellbookContext;
     startingpet_mid?: number;
     startingpet_typ?: number;
+    takeoff?: TakeoffContext;
     tips?: number;
     travel?: boolean;
     travel1?: boolean;

@@ -2,14 +2,14 @@ import test from 'node:test';
 import type { TestContext } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { COLNO, CORR, DOOR, D_NODOOR, G_GENOD, LADDER, LAVAPOOL, M_AP_FURNITURE, ROOM, ROOMOFFSET, ROWNO, SCORR, STAIRS, THEMEROOM } from '../js/const.js';
+import { A_LAWFUL, ARROW_TRAP, COLNO, CORR, DOOR, D_NODOOR, G_EXTINCT, G_GENOD, HOLE, LADDER, LAVAPOOL, LEVEL_TELEP, M_AP_FURNITURE, PIT, POOL, ROCKTRAP, ROOM, ROOMOFFSET, ROWNO, SCORR, STAIRS, TELEP_TRAP, THEMEROOM, TRAPDOOR, WEB } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { resetInputState } from '../js/input.js';
 import { isRoom } from '../js/map_types.js';
-import { mkclassAligned, mklev } from '../js/mklev.js';
-import { MONSTER_NAME } from '../js/monster_data.js';
+import { maketrap, mkclassAligned, mklev } from '../js/mklev.js';
+import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { ROCK, STATUE } from '../js/object_data.js';
@@ -64,6 +64,232 @@ async function buildThemedLevel(t: TestContext, definition: string) {
     await mklev();
     return game.level;
 }
+
+for (const unavailable of [G_GENOD, G_EXTINCT]) {
+    for (const explicit of [false, true]) {
+        void test(`${unavailable === G_GENOD ? 'genocided' : 'extinct'} Lua monster classes create a random monster at ${explicit ? 'explicit' : 'random dry'} coordinates`, async t => {
+            const level = await buildThemedLevel(t, `
+                themerooms = {{ frequency = 1, contents = function()
+                    des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+                end }}
+            `);
+            const lua = currentLuaLifecycle().getThemedState(game, 0);
+            assert.ok(lua);
+            requirePlayingGame(game);
+            assert.ok(game.mvitals);
+            for (const [species, vital] of game.mvitals.entries())
+                if (MONSTER_SYMBOL[species] === 29) vital.mvflags |= unavailable; // S_CENTAUR
+
+            for (let seed = 1; seed <= 8; seed++) {
+                level.monsters = [];
+                await lua.executeAsync('des.map({ coord = {10,6}, map = [[.PL\n.P.]] })');
+                initRng(seed);
+
+                await lua.executeAsync(`des.monster({ class = "C", ${explicit ? 'x = 0, y = 0,' : ''}
+                    ${unavailable === G_EXTINCT ? 'align = "law",' : ''}
+                    group = false, countbirth = false, peaceful = true, asleep = true,
+                    name = "class survivor" })`);
+
+                if (unavailable === G_GENOD)
+                    assert.equal(level.monsters.length, 1, 'ordinary creation honors group=false');
+                const survivors = level.monsters.filter(monster => monster.name === 'class survivor');
+                assert.equal(survivors.length, 1, `the fallback must create the requested monster (seed ${seed})`);
+                const monster = survivors[0];
+                assert.ok(monster);
+                assert.notEqual(MONSTER_SYMBOL[monster.mnum], 29, 'the fallback cannot use the unavailable class');
+                assert.equal(level.requireAt(monster.mx, monster.my).typ, ROOM, 'a missing species uses dry placement');
+                if (explicit) {
+                    assert.equal(monster.mx, 10);
+                    assert.equal(monster.my, 6);
+                }
+                assert.equal(monster.mpeaceful, 1);
+                assert.equal(monster.msleeping, 1);
+                assert.equal(monster.name, 'class survivor');
+                if (unavailable === G_EXTINCT) assert.equal(monster.emin?.min_align, 1);
+            }
+        });
+    }
+}
+
+for (const explicit of [false, true]) {
+    void test(`aligned unavailable classes allow companions and count births at ${explicit ? 'explicit' : 'random'} coordinates despite Lua flags`, async t => {
+        const level = await buildThemedLevel(t, `
+            themerooms = {{ frequency = 1, contents = function()
+                des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+            end }}
+        `);
+        const lua = currentLuaLifecycle().getThemedState(game, 0);
+        assert.ok(lua);
+        requirePlayingGame(game);
+        assert.ok(game.mvitals);
+        const jackalSpecies = MONSTER_NAME.indexOf('jackal');
+        const jackalVital = game.mvitals[jackalSpecies];
+        assert.ok(jackalVital);
+        // Leave one ordinary group-forming species available, so fallback
+        // groups do not depend on which species happens to be selected.
+        for (const [species, vital] of game.mvitals.entries())
+            if (species !== jackalSpecies) vital.mvflags |= G_GENOD;
+        game.u.ualign.type = A_LAWFUL;
+        const birthsBefore = jackalVital.born ?? 0;
+        let created = 0;
+        let companions = 0;
+
+        for (let seed = 1; seed <= 32; seed++) {
+            level.monsters = [];
+            await lua.executeAsync('des.map({ coord = {10,6}, map = [[.......\n.......\n.......\n.......\n.......]] })');
+            initRng(seed);
+
+            await lua.executeAsync(`des.monster({ class = "C", align = "law",
+                ${explicit ? 'x = 3, y = 2,' : ''}
+                group = false, countbirth = false, peaceful = true, asleep = true,
+                name = "class survivor" })`);
+
+            const survivors = level.monsters.filter(monster => monster.name === 'class survivor');
+            assert.equal(survivors.length, 1, `the fallback must create the requested roamer (seed ${seed})`);
+            const roamer = survivors[0];
+            assert.ok(roamer);
+            assert.equal(roamer.mnum, jackalSpecies);
+            assert.equal(roamer.emin?.min_align, A_LAWFUL);
+            assert.equal(roamer.mpeaceful, 1, 'Lua attributes apply to the requested roamer');
+            assert.equal(roamer.msleeping, 1);
+            for (const member of level.monsters.filter(monster => monster !== roamer)) {
+                assert.equal(member.mnum, jackalSpecies, 'companions share the fallback species');
+                assert.equal(member.mpeaceful, 0, 'group companions keep their native hostile attitude');
+                companions++;
+            }
+            created += level.monsters.length;
+        }
+
+        assert.ok(companions > 0, 'mk_roamer allows fallback companions even with group=false');
+        assert.equal((jackalVital.born ?? 0) - birthsBefore, created,
+            'mk_roamer counts the roamer and companion births even with countbirth=false');
+    });
+}
+
+for (const terrain of [POOL, LAVAPOOL]) {
+    void test(`Lua traps leave an existing trap untouched when its square becomes ${terrain === POOL ? 'water' : 'lava'}`, async t => {
+        const level = await buildThemedLevel(t, `
+            themerooms = {{ frequency = 1, contents = function()
+                des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+            end }}
+        `);
+        const lua = currentLuaLifecycle().getThemedState(game, 0);
+        assert.ok(lua);
+        await lua.executeAsync('des.map({ coord = {10,6}, map = [[.]] })');
+        level.traps = [];
+        const original = await maketrap(10, 6, PIT);
+        assert.ok(original);
+        level.requireAt(10, 6).typ = terrain;
+
+        await lua.executeAsync('des.trap({ type = "arrow", x = 0, y = 0, seen = true, victim = false })');
+
+        assert.equal(original.ttyp, PIT, 'mktrap rejects explicit liquid coordinates before constructing a replacement');
+        assert.equal(original.tseen, false);
+        assert.equal(level.traps.length, 1);
+    });
+}
+
+void test('rejecting random traps in water and lava leaves the following dry trap choice unchanged', async t => {
+    const level = await buildThemedLevel(t, `
+        themerooms = {{ frequency = 1, contents = function()
+            des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+        end }}
+    `);
+    const lua = currentLuaLifecycle().getThemedState(game, 0);
+    assert.ok(lua);
+    await lua.executeAsync('des.map({ coord = {10,6}, map = [[.PL]] })');
+
+    for (let seed = 1; seed <= 32; seed++) {
+        level.traps = [];
+        initRng(seed);
+        await lua.executeAsync('des.trap({ x = 0, y = 0, spider_on_web = false, victim = false })');
+        const control = level.traps[0];
+        assert.ok(control);
+        const expectedKind = control.ttyp;
+        level.traps = [];
+        initRng(seed);
+
+        await lua.executeAsync(`
+            des.trap({ x = 1, y = 0, spider_on_web = false, victim = false })
+            des.trap({ x = 2, y = 0, spider_on_web = false, victim = false })
+            des.trap({ x = 0, y = 0, spider_on_web = false, victim = false })
+        `);
+
+        assert.equal(level.traps.length, 1, 'only the dry square can receive a trap');
+        assert.equal(level.traps[0]?.ttyp, expectedKind,
+            `rejected explicit liquid coordinates must not change subsequent trap choices (seed ${seed})`);
+    }
+});
+
+void test('Lua holes and trapdoors become falling-rock traps when the level cannot be fallen through', async t => {
+    const level = await buildThemedLevel(t, `
+        themerooms = {{ frequency = 1, contents = function()
+            des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+        end }}
+    `);
+    const lua = currentLuaLifecycle().getThemedState(game, 0);
+    assert.ok(lua);
+    await lua.executeAsync('des.map({ coord = {10,6}, map = [[..]] }); des.level_flags("hardfloor")');
+    level.traps = [];
+
+    await lua.executeAsync(`
+        des.trap({ type = "hole", x = 0, y = 0, victim = false })
+        des.trap({ type = "trap door", x = 1, y = 0, victim = false })
+    `);
+
+    assert.equal(level.traps.length, 2);
+    for (const trap of level.traps) assert.equal(trap.ttyp, ROCKTRAP);
+});
+
+void test('shallow random Lua traps allow spiderless webs and obey teleport and falling restrictions', async t => {
+    const level = await buildThemedLevel(t, `
+        themerooms = {{ frequency = 1, contents = function()
+            des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+        end }}
+    `);
+    const lua = currentLuaLifecycle().getThemedState(game, 0);
+    assert.ok(lua);
+    await lua.executeAsync('des.map({ coord = {10,6}, map = [[.]] }); des.level_flags("hardfloor", "noteleport")');
+    const kinds = new Set<number>();
+
+    for (let seed = 1; seed <= 128; seed++) {
+        level.traps = [];
+        initRng(seed);
+        await lua.executeAsync('des.trap({ x = 0, y = 0, spider_on_web = false, victim = false })');
+
+        const trap = level.traps[0];
+        assert.ok(trap, `a dry square should receive a trap (seed ${seed})`);
+        assert.ok(![TELEP_TRAP, LEVEL_TELEP, HOLE, TRAPDOOR].includes(trap.ttyp),
+            `trap kind ${trap.ttyp} violates the level's restrictions`);
+        kinds.add(trap.ttyp);
+    }
+    assert.ok(kinds.has(WEB), 'without a resident spider, webs are eligible even on the first level');
+    assert.ok(kinds.has(ARROW_TRAP), 'ordinary shallow traps remain eligible');
+});
+
+void test('deep random Lua traps reject both teleport kinds on a no-teleport level', async t => {
+    const level = await buildThemedLevel(t, `
+        themerooms = {{ frequency = 1, contents = function()
+            des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+        end }}
+    `);
+    const lua = currentLuaLifecycle().getThemedState(game, 0);
+    assert.ok(lua);
+    requirePlayingGame(game);
+    game.u.uz.dlevel = 12;
+    await lua.executeAsync('des.map({ coord = {10,6}, map = [[.]] }); des.level_flags("noteleport")');
+
+    for (let seed = 1; seed <= 64; seed++) {
+        level.traps = [];
+        initRng(seed);
+        await lua.executeAsync('des.trap({ x = 0, y = 0, spider_on_web = false, victim = false })');
+
+        const trap = level.traps[0];
+        assert.ok(trap, `a dry square should receive a trap (seed ${seed})`);
+        assert.ok(trap.ttyp !== TELEP_TRAP && trap.ttyp !== LEVEL_TELEP,
+            `trap kind ${trap.ttyp} violates no-teleport admission`);
+    }
+});
 
 void test('an unavailable monster class uses dry placement without species retries', async t => {
     const level = await buildThemedLevel(t, `

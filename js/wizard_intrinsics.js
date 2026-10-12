@@ -88,10 +88,9 @@ const INTRINSICS = [
 ];
 export async function wizIntrinsic() {
     const state = requireInitializedGame();
-    const items = INTRINSICS.map((intrinsic, index) => {
+    const items = INTRINSICS.map(intrinsic => {
         const timeout = propertyTimeout(intrinsic.property, state);
         return {
-            key: intrinsicAccelerator(index),
             text: timeout ? `${intrinsic.name.padEnd(27)} [${timeout}]` : intrinsic.name,
             value: intrinsic,
             separatorBefore: intrinsic.property === 'fireResistance',
@@ -190,12 +189,5 @@ async function increaseIntrinsic({ name, property }, amount, state) {
     if ((property === 'waterWalking' || property === 'levitation' || property === 'flying') &&
         state.u.uinwater)
         await heroLiquidEffects({ state });
-}
-function intrinsicAccelerator(index) {
-    if (index < 26)
-        return String.fromCharCode(97 + index);
-    if (index < 52)
-        return String.fromCharCode(65 + index - 26);
-    return String(index - 51);
 }
 //# sourceMappingURL=wizard_intrinsics.js.map

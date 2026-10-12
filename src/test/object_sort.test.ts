@@ -108,7 +108,7 @@ void test('configured pack order is visible in the actual inventory window, incl
     const text = screenText();
     assert.ok(text.indexOf('Comestibles') < text.indexOf('Weapons'));
     assert.ok(text.indexOf('Weapons') < text.indexOf('Coins'));
-    assert.match(text, /1 gold piece\b/);
+    assert.match(text, /a gold piece\b/);
     pushKeys(' ');
     await action;
 });

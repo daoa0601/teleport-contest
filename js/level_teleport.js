@@ -126,13 +126,13 @@ async function readLevelRequest(state, menuRequested) {
     return { random: true };
 }
 // The 1-in-5 no-op is evaluated even in branches which forbid random travel.
-export function randomTeleportDepth(state = game) {
+export function randomTeleportDepth(state = game, random = rn2, rollOne = rnd) {
     requirePlayingGame(state);
     const hero = state.u;
     const current = depth(hero.uz, state.dungeons);
-    if (!rn2(5) || atKnox(state) || In_endgame(hero.uz))
-        return current;
     const dungeon = dungeonAt(state, hero.uz.dnum);
+    if (!random(5) || dungeon.num_dunlevs === 1 || In_endgame(hero.uz))
+        return current;
     let minimum = 1;
     let maximum = dungeon.depth_start + dungeon.num_dunlevs - 1;
     if (In_quest(hero.uz)) {
@@ -143,18 +143,18 @@ export function randomTeleportDepth(state = game) {
     }
     else if (dungeon.flags?.hellish && !hero.uevent?.invoked)
         maximum--;
-    let destination = rn2(current + 3 - minimum) + minimum;
+    let destination = random(current + 3 - minimum) + minimum;
     if (destination >= current)
         destination++;
     if (destination > maximum) {
         destination = maximum;
         if (hero.uz.dlevel === dungeon.num_dunlevs)
-            destination -= rnd(3);
+            destination -= rollOne(3);
     }
     if (destination < minimum) {
         destination = minimum;
         if (destination === current)
-            destination = Math.min(maximum, destination + rnd(3));
+            destination = Math.min(maximum, destination + rollOne(3));
     }
     return destination;
 }

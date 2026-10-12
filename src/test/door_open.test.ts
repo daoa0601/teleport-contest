@@ -4,13 +4,42 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    A_CON, A_DEX, A_STR, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, STONE,
+    A_CON, A_DEX, A_STR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, STONE,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys } from '../js/input.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { createMonsterAt } from './support/monsters.js';
+
+for (const command of ['o', 'l'] as const) {
+    for (const halfDamage of [false, true]) {
+        void test(`${command === 'o' ? 'explicit' : 'automatic'} opening explodes a trapped door${halfDamage ? ' with half physical damage' : ''}`, async () => {
+            const level = freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+            requireFixtureGame(game);
+            const door = level.requireAt(11, 10);
+            door.typ = DOOR;
+            door.doormask = D_CLOSED | D_TRAPPED;
+            const sleeper = await createMonsterAt('newt', 14, 10);
+            sleeper.msleeping = 1;
+            game.u.halfPhysicalDamage = halfDamage;
+            for (const attribute of [A_STR, A_DEX, A_CON]) game.u.acurr.a[attribute] = 25;
+            initRng(902n);
+            pushKeys((command === 'o' ? 'l' : '') + ' '.repeat(10));
+
+            await rhack(command.charCodeAt(0));
+
+            assert.equal(door.doormask, D_NODOOR);
+            const blastDamage = game.u.stunnedTurns;
+            assert.ok(blastDamage && blastDamage >= 1 && blastDamage <= 11);
+            assert.equal(game.u.uhp, 100 - (halfDamage ? Math.ceil(blastDamage / 2) : blastDamage));
+            assert.equal(sleeper.msleeping, 0);
+            assert.equal(game.u.ux, 10, 'opening spends the turn without entering the doorway');
+        });
+    }
+}
 
 async function openDoorOutcome(role: RoleKey) {
     const level = freshPlayableRoom({

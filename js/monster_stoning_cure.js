@@ -108,6 +108,9 @@ export async function useMonsterStoningCure(monster, { finishDeath, publish = pl
     const cure = inventory.find(object => curesStoning(monster, object, tinCanBeOpened));
     if (!cure)
         return { consumed: false, died: false };
+    return consumeMonsterStoningCure(monster, cure, { finishDeath, publish, rollOne, state, stoning: true });
+}
+export async function consumeMonsterStoningCure(monster, cure, { finishDeath, publish = plineWithContinuation, rollOne = rnd, state = game, stoning, }) {
     const visible = canSeeMonster(monster);
     const tinned = cure.otyp === TIN;
     const food = cure.otyp === CORPSE || tinned;
@@ -116,11 +119,13 @@ export async function useMonsterStoningCure(monster, { finishDeath, publish = pl
             && !!((MONSTER_FLAGS1[cure.corpsenm] ?? 0) & M1_ACID));
     const lizard = food && cure.corpsenm === PM_LIZARD;
     const nutrition = food ? petFoodNutrition(monster, cure) : 0;
-    const speed = adjustMonsterSpeed(monster, -3);
-    const speedMessage = state.flags?.verbose === false
-        ? null : monsterSpeedMessage(speed, monsterSubject(monster));
-    if (visible && speedMessage)
-        await publish(speedMessage);
+    if (stoning) {
+        const speed = adjustMonsterSpeed(monster, -3);
+        const speedMessage = state.flags?.verbose === false
+            ? null : monsterSpeedMessage(speed, monsterSubject(monster));
+        if (visible && speedMessage)
+            await publish(speedMessage);
+    }
     await describeCure(monster, cure, visible, state, publish);
     await consumeOneCure(monster, cure, state);
     if (acidic && !tinned && !monsterHasAcidResistance(monster)) {
@@ -138,7 +143,7 @@ export async function useMonsterStoningCure(monster, { finishDeath, publish = pl
             return { consumed: true, cure, died: monster.mhp <= 0 || !!monster.dead };
         }
     }
-    if (visible) {
+    if (stoning && visible) {
         const hallucinating = heroIsHallucinating(state);
         const subject = monsterSubject(monster);
         await publish(hallucinating

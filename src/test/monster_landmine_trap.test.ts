@@ -49,7 +49,25 @@ void test('a light monster can cross a land mine without setting it off', async 
     assert.equal(monster.mhp, 30);
 });
 
-void test('a flying monster can reveal a land mine without detonating it',
+void test('a flying monster passes over a land mine without revealing it', async () => {
+    const { monster, trap } = await freshMonsterTrapRoom(LANDMINE, {
+        monster: { species: 'red dragon', hitPoints: 30 },
+    });
+    requirePlayingGame(game);
+    const messages: string[] = [];
+
+    const action = await triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, {
+        publish: async (message: string) => messages.push(message),
+    });
+
+    assert.equal(trap.ttyp, LANDMINE);
+    assert.equal(trap.tseen, false);
+    assert.equal(monster.mhp, 30);
+    assert.equal(messages.length, 0);
+});
+
+void test('a forced land mine activation can reveal its trigger below a flying monster without detonating',
     async () => {
         const { monster, trap } = await freshMonsterTrapRoom(LANDMINE, {
             gameplaySeed: 2n,
@@ -58,7 +76,7 @@ void test('a flying monster can reveal a land mine without detonating it',
         requirePlayingGame(game);
         const messages: string[] = [];
 
-        const action = await triggerImmediateMonsterTrap(monster, game);
+        const action = await triggerImmediateMonsterTrap(monster, game, { force: true });
         await resumeDeferredMonsterTrap(action, game, {
             publish: async (message: string) => messages.push(message),
         });

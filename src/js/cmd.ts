@@ -19,6 +19,11 @@ import { grantMonsterWish } from './potion_occupants.js';
 import { quaff } from './quaff.js';
 import { tameMonster } from './monster_taming.js';
 import { jumpHero } from './jumping.js';
+import { triggerBoobyTrap } from './booby_trap.js';
+import { feel_location } from './display.js';
+import { D_TRAPPED, SHOP_DOOR_COST } from './const.js';
+import { roomsAt } from './room.js';
+import { addShopDamage } from './shop_damage.js';
 // cmd.js — Command dispatch and movement.
 // C ref: cmd.c rhack(), hack.c domove().
 
@@ -77,6 +82,8 @@ import {
 import { commandExecutionKey, controlRushDirection, promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
+import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
+import { resetBulkTakeoff } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
 import { nhgetch } from './input.js';
@@ -226,7 +233,7 @@ import {
     TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL,
     RIN_CONFLICT,
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN,
-    SHIELD_OF_REFLECTION, CLOAK_OF_DISPLACEMENT, AMULET_OF_YENDOR,
+    SHIELD_OF_REFLECTION, AMULET_OF_YENDOR,
     AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY,
     OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE,
 } from './object_data.js';
@@ -252,7 +259,7 @@ import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
 import {
-    applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
+    announceDisplacementLoss, applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
     armorSimpleName, armorOffMessage,
     findArmorClass, heroIsDisplaced,
     objectErosionKind, objectErosionMessage, removeHeroArmor, wearHeroArmor,
@@ -925,6 +932,11 @@ async function continueOccupation(g: GameState): Promise<boolean> {
     if (occupation.key === 'force-lock') {
         return continueForceLock(occupation, g);
     }
+    if (occupation.key === 'takeoff') {
+        const continuing = await continueBulkTakeoff(g);
+        if (!continuing) g._occupation = null;
+        return continuing;
+    }
     if ('remaining' in occupation && occupation.remaining <= 0) {
         g._occupation = null;
         return false;
@@ -940,6 +952,13 @@ async function continueOccupation(g: GameState): Promise<boolean> {
             if (occupation.container) {
                 occupation.container.olocked = !occupation.container.olocked;
                 occupation.container.lknown = true;
+            } else if (occupation.door && (occupation.door.doormask & D_TRAPPED)) {
+                if (await triggerBoobyTrap('door', { state: g, bodypart: true })) return true;
+                occupation.door.doormask = D_NODOOR;
+                if (g.level && roomsAt(g.level, occupation.x, occupation.y, SHOPBASE).length)
+                    addShopDamage(occupation.x, occupation.y, SHOP_DOOR_COST, g);
+                vision_reset();
+                vision_recalc(0);
             } else if (occupation.door && (occupation.door.doormask & D_LOCKED)) {
                 occupation.door.doormask &= ~D_LOCKED;
                 occupation.door.doormask |= D_CLOSED;
@@ -1272,6 +1291,8 @@ async function runCommandHandler(binding: CommandBinding, {
         await doread({ gotoLevel });
     } else if (ch === 'T' || ch === 'R') {
         await removeWornItem(ch === 'R' ? 'remove' : 'take off');
+    } else if (ch === 'A') {
+        await takeOffAll();
     } else if (ch === 'P') {
         await doputon();
     } else if (ch === 'W') {
@@ -3073,6 +3094,7 @@ function completeExtendedCommand(prefix: string): string | null {
 }
 
 const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
+    ['takeoffall', takeOffAll],
     ['conduct', doconduct],
     ['chronicle', doChronicle],
     ['vanquished', doVanquished],
@@ -4724,6 +4746,8 @@ async function removeWornItem(action: 'remove' | 'take off'): Promise<void> {
         return;
     }
 
+    resetBulkTakeoff();
+
     if (object.cursed) {
         object.bknown = true;
         const plural = /gloves|boots|shoes|lenses/.test(object.name || '')
@@ -4790,25 +4814,6 @@ async function removeWornItem(action: 'remove' | 'take off'): Promise<void> {
     }
 
     const previousArmorClass = game.u?.uac ?? 10;
-    const hero = game.u;
-    const otherDisplacementSource = (game.inventory || []).some(candidate =>
-        candidate !== object && candidate.worn
-        && candidate.otyp === CLOAK_OF_DISPLACEMENT)
-        || (hero.displacedTurns ?? 0) > 0
-        || !!hero.displacedIntrinsic
-        || !!hero.intrinsicDisplacement;
-    const canNoticeDisplacementChange = (!game.blind
-            && !hero.uswallow
-            && !(game.invisible || hero.invisible || hero.invis))
-        || !!(hero.unblindTelepathy || hero.blindTelepathy
-            || hero.telepathy || hero.detectMonsters
-            || game.detectMonsters);
-    const displacementOffMessage = object.otyp === CLOAK_OF_DISPLACEMENT
-        && !otherDisplacementSource
-        && !(hero.displacementBlocked || hero.displacedBlocked)
-        && canNoticeDisplacementChange
-        ? 'You feel that monsters no longer have difficulty pinpointing your location.'
-        : null;
     const removalMessage = await finishArmorRemoval(object);
     if (removalMessage && game.u?.uac !== previousArmorClass)
         game._statusAcOverride = previousArmorClass;
@@ -4818,8 +4823,7 @@ async function removeWornItem(action: 'remove' | 'take off'): Promise<void> {
     game._pending_message = '';
     if (!removalMessage && game.flags?.verbose === false && inventoryPrompt)
         game._retained_message = inventoryPrompt.trimEnd();
-    if (displacementOffMessage)
-        await plineWithContinuation(displacementOffMessage);
+    await announceDisplacementLoss(object, game);
     if (removalMessage)
         await plineWithContinuation(removalMessage);
     game.context.move = 1;
@@ -4874,6 +4878,8 @@ async function putOnArmorObject(object: GameObject): Promise<void> {
             else await pline(onMessage);
         }
     }
+    // C accessory_or_armor_on() discards interrupted 'A' after armor wear.
+    resetBulkTakeoff();
     game.context.move = 1;
 }
 
@@ -4930,6 +4936,7 @@ async function dowield(cannedInvlet: string | null = null): Promise<void> {
         return;
     }
     if (await refuseWeldedPrimary()) {
+        resetBulkTakeoff();
         game.context.move = 0;
         return;
     }
@@ -5245,6 +5252,7 @@ async function dodrop(): Promise<void> {
             state: game, publish: plineWithContinuation,
         });
         game.context.move = spentTime ? 1 : 0;
+        if (spentTime) resetBulkTakeoff();
         // Lock-picking's resumable record lives in the occupation itself.
         if (spentTime && game._occupation?.key === 'pick-lock')
             game._occupation = null;
@@ -5401,16 +5409,29 @@ async function doopen(): Promise<void> {
     if (rnl(20) < Math.trunc((currentStrength()
         + currentAttribute(A_DEX)
         + currentAttribute(A_CON)) / 3)) {
-        loc.doormask = D_ISOPEN;
-        newsym(x, y);
-        vision_reset();
-        vision_recalc(0);
-        await pline('The door opens.');
+        await openClosedDoor(loc, x, y);
     } else {
         await exerciseAttribute(A_STR, true);
         await pline('The door resists!');
     }
     game.context.move = 1;
+}
+
+// lock.c:doopen_indir() announces opening before the explosion. The door
+// remains closed across that message pause and any fatal explosion.
+async function openClosedDoor(door: MapLocation, x: number, y: number): Promise<void> {
+    await plineWithContinuation('The door opens.');
+    if (door.doormask & D_TRAPPED) {
+        if (await triggerBoobyTrap('door', { bodypart: true })) return;
+        door.doormask = D_NODOOR;
+        const level = requireGameLevel();
+        if (roomsAt(level, x, y, SHOPBASE).length)
+            addShopDamage(x, y, SHOP_DOOR_COST);
+    } else door.doormask = D_ISOPEN;
+    if (heroIsBlind(game)) feel_location(x, y);
+    else newsym(x, y);
+    vision_reset();
+    vision_recalc(0);
 }
 
 // C refs: write.c dowrite()/write_ok(); invent.c getobj().  The object picker
@@ -6917,7 +6938,7 @@ async function fightEmptyDestination(x: number, y: number): Promise<boolean> {
 
 export function applyHeroLiquidEffects(
     publish: MessagePublisher = plineWithContinuation,
-    { entry = 'spot-effects' }: { entry?: 'spot-effects' | 'float-down' } = {},
+    { entry = 'spot-effects' }: { entry?: 'spot-effects' | 'float-down' | 'drown' } = {},
 ): Promise<LiquidEffectResult | null | undefined> {
     return heroLiquidEffects({
         publish, entry,
@@ -6956,6 +6977,7 @@ async function finishMovedHero({
     trapOptions?: Parameters<typeof triggerHeroTrapAt>[2];
 }): Promise<boolean> {
     const u = game.u;
+    resetBulkTakeoff();
     // C hack.c:domove_core() sets this only in the common tail after map
     // coordinates changed.  The turn loop retains it through every global
     // allocation needed to settle this action, then clears it before the next
@@ -7209,6 +7231,9 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                     u.usteed.mx = oldx;
                     u.usteed.my = oldy;
                 }
+                // C domove_core() resets occupations after restoring the
+                // hero's position, even when a peaceful refuses the swap.
+                resetBulkTakeoff();
                 await finishBallAndChainMove(ballChainMove);
                 if (ballChainMove?.causeDelay) await delayAfterDraggingBall();
                 return true;
@@ -7326,12 +7351,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             await pline('The door resists!');
             return false;
         }
-        loc.doormask &= ~(D_CLOSED | D_LOCKED);
-        loc.doormask |= 2; // D_ISOPEN
-        await pline('The door opens.');
-        vision_reset();
-        vision_recalc(1);
-        newsym(newx, newy);
+        await openClosedDoor(loc, newx, newy);
         return false;
     }
 

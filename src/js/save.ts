@@ -19,6 +19,7 @@ import type { StorageBackend } from './storage.js';
 import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.js';
 import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
+import { FULL_MOON, LUCKMAX, LUCKMIN } from './const.js';
 
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
@@ -123,6 +124,17 @@ async function prepareGameForSave(): Promise<void> {
     await doneObjectCleanup();
 }
 
+// C save.c dosave0(): undo the date-dependent luck that
+// moveloop_preamble() applied at startup; restoring applies it again.
+function undoDateLuck(): number {
+    const before = game.u.uluck || 0;
+    let luck = before;
+    if (game.flags.moonphase === FULL_MOON) luck = Math.max(LUCKMIN, luck - 1);
+    if (game.flags.friday13) luck = Math.min(LUCKMAX, luck + 1);
+    game.u.uluck = luck;
+    return before;
+}
+
 async function writeSave(
     storage: SaveStorage | null | undefined, key: string, reportFailure: boolean,
 ): Promise<boolean> {
@@ -132,8 +144,14 @@ async function writeSave(
         await prepareGameForSave();
         if (storage?.setItem) {
             currentLuaLifecycle().syncVariables(game);
-            const encoded = encodeSavedGraph(snapshotState());
-            storage.setItem(key, encoded);
+            const luck = undoDateLuck();
+            try {
+                storage.setItem(key, encodeSavedGraph(snapshotState()));
+            } catch (error) {
+                // The port keeps playing after a failed save; C has exited.
+                game.u.uluck = luck;
+                throw error;
+            }
             game.program_state.something_worth_saving = false;
             saved = true;
         }

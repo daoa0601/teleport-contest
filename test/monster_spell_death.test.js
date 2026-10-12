@@ -12,6 +12,7 @@ import { createRoom } from './support/topology.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { initRng } from '../js/rng.js';
 import { updateHeroRoomMembership } from '../js/room.js';
+import { makeBlinded } from '../js/sight_change.js';
 import { vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
@@ -77,6 +78,23 @@ async function attackingPriest(seed = 9n, species = 'aligned cleric') {
     initRng(seed);
     return { input, priest };
 }
+void test('a blind deaf telepath observes the priest summoning insects during combat', async () => {
+    const { input, priest } = await attackingPriest(2n);
+    requirePlayingGame(game);
+    game.u.uhp = 500;
+    game.u.telepathy = true;
+    game.u.deafTurns = 10;
+    await makeBlinded(10, { state: game, talk: false });
+    vision_recalc(0);
+    initRng(2n);
+    const messages = [];
+    await runSpellTurn(input, messages);
+    const text = messages.join('\n');
+    assert.match(text, /summons insects!/);
+    assert.doesNotMatch(text, /You hear/);
+    assert.ok(game.level.monsters.some(monster => monster !== priest));
+    assert.equal(!!game.program_state.gameover, false);
+});
 void test('fatal priest wounds end the turn before the second attack round', async () => {
     const { input } = await attackingPriest();
     requirePlayingGame(game);

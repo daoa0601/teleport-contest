@@ -4,10 +4,27 @@ import { NHW_MENU, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_S
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_display_nhwindow, tty_clear_nhwindow, tty_dismiss_nhwindow, tty_destroy_nhwindow } from '../js/tty_menu.js';
-import { docrt, flush_screen } from '../js/display.js';
+import { docrt, flush_screen, plineWithContinuation } from '../js/display.js';
+import { showMultiSelectWindow } from '../js/windows.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';
+for (const overlay of [true, false]) {
+    void test(`a ${overlay ? 'corner' : 'full-screen'} multi-select menu accepts its first key after Escape stops prose`, async () => {
+        freshPlayableRoom({ flags: { menu_overlay: overlay } });
+        const input = resetInputState();
+        await plineWithContinuation('The guard blocks the doorway and asks you to leave the room.');
+        input.feed('\x1b');
+        await plineWithContinuation('You hear footsteps approaching from the corridor.');
+        // A spare Return finishes a spurious pager so a lost selector fails the assertion.
+        input.feed('a\n\n');
+        const selected = await showMultiSelectWindow({
+            title: 'Choose weapons', omitHeadings: true,
+            sections: [{ items: [{ key: 'a', text: 'a dagger', value: 'dagger' }] }],
+        });
+        assert.deepEqual(selected, ['dagger'], 'stopped prose must not consume the menu selector');
+    });
+}
 void test('a cancelled menu skips redisplay until dismissal and leaves the next selection key unread', async () => {
     freshPlayableRoom();
     const window = tty_create_nhwindow(NHW_MENU);

@@ -130,52 +130,56 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batch 1 (`fee2284`)
+## Parallel batches 1–2 (`3280bae`)
 
-Units ran in worktrees under `docs/orchestration.md` (GLM and Codex, each diff
-reviewed by Codex against the C source before merge). Merged:
-- **rank-title**: the Caveman and Tourist rank tables were truncated; titles
-  above the third rank fell back to the role name.
-- **levelgen-rng**: `makecorridors`/`join`, `get_location`/`get_location_coord`,
-  `mkclass`/`mkclass_aligned`, special-level trap placement, coordinate packing,
-  and the 40-room limit for themed regions.
-- **rng-tail-2**: `summonmu`, `escape_from_sticky_mon`, zoo and special-room
-  stocking (`next_ident`), and `dosounds` with its feature order.
-- **engrave-command**: `#engrave`/`E` through `doengrave()` and the engrave
-  occupation; command lookup now follows `extcmds_match()`.
-- **special-level-display**: native lighting for Lua maps and irregular rooms.
+Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
+by Codex against the C source before merge). Merged:
+- **rank-title**, **levelgen-rng**, **rng-tail-2**, **engrave-command**,
+  **special-level-display** (batch 1, `fee2284`).
+- **small-messages**: smell hints, poisoned orcish arrows, hide-under reveal,
+  quest text pronoun substitution (`convert_line()`).
+- **end-of-game**: disclosure and goodbye sequence.
+- **rng-tail-3**: `muse.c` defensive and miscellaneous item use, monster spell
+  timing, gas-cloud trails, teleport and level-teleport feedback.
+- **extra-boulder**: the extra Gehennom floor boulder.
+- **object-naming**: Samurai Japanese object names, gold listing.
+- **save-luck**: `dosave0()` undoes full-moon and Friday-13th luck before
+  saving, so a restore on the same date does not apply it twice.
+- **suite-fixes**: six tests broken by rng-tail-3 pinned one seed's outcome or
+  expected non-C behavior (`paralyze_monst()` keeps a borrowed appearance);
+  they now state the C rule over a range of seeds.
 
 ## Verification
 
-`npm test` at `fee2284`: **7,072/7,074**. `wizard_intrinsics` "shapechanger
-protection" predates these batches. The `#wizmap` admission test expected the
-wrong message: `extcmds_match()` hides wizard commands outside wizard mode, so
-a typed `#wizmap` is an unknown extended command. The test now expects that.
+`npm test` at `3280bae`: **7,253/7,254**. `wizard_intrinsics` "shapechanger
+protection" predates these batches. Merges now run the full suite and reject
+any failure outside `.cache/agents/suite-known-failures.txt`.
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
-| Public | 20/44 | 7,631/11,405 | 547,875/792,838 | 0 |
-| Native eval sample | 165/300 | 38,001/50,586 | 2,921,532/3,616,669 | 0 |
+| Public | 21/44 | 7,633/11,405 | 547,827/792,838 | 0 |
+| Native eval sample | 185/300 | 39,085/50,586 | 2,991,551/3,616,669 | 0 |
 
-Runs: `.cache/generalization/batch1-fee2284-{eval,public}` (baseline
-`base-06d7e73`: 143/300 and 20/44). No verified call was lost; the ledgers grew
-to 68 (eval) and 91 (public) fully verified functions. The state oracle finds
-207 sessions matching C state throughout (was 183). Its two hidden-state
-sessions (21abd264, 8793afd7) carry an extra floor boulder in Gehennom; the
-baseline already had it behind an earlier screen difference.
+Runs: `.cache/generalization/batch2b-3280bae-{eval,public}` in the verify
+worktree (baseline `base-06d7e73`: 143/300 and 20/44; batch 1: 165/300).
+No verified call was lost; the ledgers grew to 79 (eval) and 91 (public) fully
+verified functions. The state oracle finds 217 sessions matching C state
+throughout and no hidden-state session. Newly exposed random-call blame:
+`m_move`, `collect_coords`, `distfleeck`, `obj_resists`, `regen_hp`,
+`set_apparxy`.
 
 ## Next work
 
-In flight: small-messages (smell hints, poisoned orcish arrows, hide-under
-reveal, quest text substitution), end-of-game (disclosure and goodbye),
-rng-tail-3 (`muse.c`, `castmu`, gas clouds, level teleport), extcmds (about 30
-missing extended commands). Queued: native tty windows and prompts
-(`wintty.c`, after end-of-game), object naming (Samurai names, gold listing),
-the extra Gehennom boulder, `mktrap()` pool/lava rejection order, and
-`create_monster` class-selection fallback. Coverage shows that `read.c`,
-`potion.c`, and `pray.c` are barely exercised; add scenario recipes there.
+In flight: rng-tail-4 (`distfleeck`, `hitmu`, and the batch-1 random-call
+tail), tty-menus (`wintty.c` menus and prompts), extcmds (missing extended
+commands and bulk take-off), levelgen-gaps (`mktrap()` rejection order,
+`create_monster` class fallback). Queued: `Boots_off()` terrain effects,
+`lift_object()` for grappling hook and bullwhip, kick "Whee!" and gold
+scatter, fall killers, `maybe_wail()`, headstone engravings, `#genocided`
+from `mvitals`. Coverage shows that `read.c`, `potion.c`, and `pray.c` are
+barely exercised; add scenario recipes there.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,

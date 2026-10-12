@@ -8,7 +8,6 @@ import { tryCallObjectType } from './object_call.js';
 import { newsym, flush_screen, pline, plineWithContinuation, bot, map_object, } from './display.js';
 import { dungeonFeatureSentenceAt } from './dungeon_feature.js';
 import { showMultiSelectWindow } from './windows.js';
-import { mergable } from './object_merge.js';
 import { addInventoryItem } from './u_init.js';
 import { recordHeroPrizeAcquisition } from './hero_inventory.js';
 import { remove_object } from './floor_object.js';
@@ -213,8 +212,6 @@ async function takeSelectedObjects(source, selected) {
         if (quote)
             await plineWithContinuation(quote);
         const added = await addPickedInventoryObject(object);
-        if (added.comparisonLearned)
-            await plineWithContinuation('You learn more about your items by comparing them.');
         const capacity = nearCapacity(game);
         const prefix = capacity === previousCapacity ? '' : pickupLoadPrefix(capacity);
         previousCapacity = capacity;
@@ -236,15 +233,6 @@ async function takeSelectedObjects(source, selected) {
 export async function addPickedInventoryObject(object) {
     recordHeroPrizeAcquisition(object, game);
     const count = objectQuantity(object);
-    const previousHowLost = object.how_lost ?? LOST_NONE;
-    // Capture knowledge before addInventoryItem merges the stacks.
-    const candidate = { ...object, how_lost: LOST_NONE, no_charge: false };
-    const existing = game.inventory.find(item => mergable(item, candidate, game));
-    const comparisonLearned = !!(existing && !object.globby
-        && previousHowLost !== LOST_THROWN && existing.how_lost !== LOST_THROWN
-        && (!!existing.known !== !!object.known
-            || (!!existing.rknown !== !!object.rknown && existing.oerodeproof)
-            || (!!existing.bknown !== !!object.bknown && game.urole?.key !== 'priest')));
     const carried = await addInventoryItem(object, null, false);
     markJustPicked(carried);
     observeObjectForNaming(carried);
@@ -258,7 +246,6 @@ export async function addPickedInventoryObject(object) {
     return {
         object: carried,
         message: `${carried.invlet} - ${floorObjectDescription(picked)}${total}`,
-        comparisonLearned,
     };
 }
 function pickupSourceAtHero() {

@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { MM_ANGRY, NO_MINVENT, POLY_TRAP, WEB } from '../js/const.js';
 import { moveloop_core } from '../js/allmain.js';
-import { MONSTER_NAME } from '../js/monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_NAME } from '../js/monster_data.js';
 import { maketrap } from '../js/mklev.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
+import { AT_BREA } from '../js/monster_attack_types.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { GOLD_PIECE, RIN_CONFLICT } from '../js/object_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
@@ -51,24 +52,36 @@ void test('a blocked peaceful monster leaves the hero alone without Conflict', a
 });
 for (const species of ['floating eye', 'kobold']) {
     void test(`a ${species} retains its attack eligibility after a polymorph trap`, async () => {
-        const input = freshTurnRoom({ heroLevel: 30,
-            left: 10, right: 14, top: 10, bottom: 10 });
-        requirePlayingGame(game);
-        const messages = [];
-        input.beforeRead = () => { messages.push(game._screen_output); };
-        game.u.uhp = game.u.uhpmax = 2000;
-        const monster = await createMonsterAt(species, 14, 10, MM_ANGRY | NO_MINVENT);
-        monster.msleeping = 0;
-        monster.movement = 12;
-        monster.mcan = 1;
-        await maketrap(13, 10, POLY_TRAP);
-        initRng(203n);
-        pushKeys('m.' + ' '.repeat(200) + 'm.');
-        await moveloop_core();
-        await moveloop_core();
-        assert.equal(MONSTER_NAME[monster.mnum], 'yellow dragon');
-        assert.equal(messages.some(text => text.includes('The yellow dragon coughs.')), species === 'kobold', 'only the actor with an active entry attack tries its new breath');
-        assert.equal(game.u.uhp, 2000);
+        let breathForms = 0;
+        for (let seed = 1; seed <= 64; seed++) {
+            // find_misc() only seeks traps within six squares of the hero.
+            // Here ordinary movement reaches the trap, so dochug() retains
+            // the entry species for its noattacks() check after polymorph.
+            const input = freshTurnRoom({ heroLevel: 30,
+                left: 10, right: 17, top: 10, bottom: 10 });
+            requirePlayingGame(game);
+            const messages = [];
+            input.beforeRead = () => { messages.push(game._screen_output); };
+            game.u.uhp = game.u.uhpmax = 2000;
+            const monster = await createMonsterAt(species, 17, 10, MM_ANGRY | NO_MINVENT);
+            monster.msleeping = 0;
+            monster.movement = 12;
+            monster.mcan = 1;
+            await maketrap(16, 10, POLY_TRAP);
+            initRng(BigInt(seed));
+            pushKeys('m.' + ' '.repeat(200) + 'm.');
+            await moveloop_core();
+            await moveloop_core();
+            assert.equal(monster.mx, 16, `seed ${seed}: the monster steps onto the trap`);
+            assert.equal(monster.my, 10);
+            assert.equal(messages.some(text => text.includes('deliberately')), false);
+            if (!MONSTER_ATTACKS[monster.mnum]?.some(([type]) => type === AT_BREA))
+                continue;
+            breathForms++;
+            assert.equal(messages.some(text => text.includes('coughs.')), species === 'kobold', `seed ${seed}, ${MONSTER_NAME[monster.mnum]}: only an active entry attack admits the new breath`);
+            assert.equal(game.u.uhp, 2000, 'cancellation prevents the admitted breath from dealing damage');
+        }
+        assert.ok(breathForms > 0, 'the seed range exercises a new form with a breath attack');
     });
 }
 for (const blind of [false, true]) {

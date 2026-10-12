@@ -141,7 +141,7 @@ export interface HeroLiquidOptions {
     chooseTeleportDestination?: (() => Promise<Position | null>) | null;
     applyLandingEffects?: LandingEffect;
     die?: OrdinaryDeathHandler;
-    entry?: 'spot-effects' | 'float-down';
+    entry?: 'spot-effects' | 'float-down' | 'drown';
 }
 interface LiquidTeleportContext {
     state: PlayingGameState;
@@ -347,7 +347,7 @@ function heroStaysAboveWater(state: GameState, location: MapLocation | null) {
 function heroCanLiveUnderwater(state: GameState) {
     const u = state.u;
     const flags = heroFormFlags(state);
-    return !!(u.amphibious || u.swimming || u.breathless
+    return !!(u.amphibious || u.swimming || u.breathless || u.magicalBreathing
         || (flags & (M1_SWIM | M1_AMPHIBIOUS | M1_BREATHLESS)));
 }
 
@@ -625,7 +625,7 @@ export async function sinkHeroIntoLava({
 function heroDoesNotNeedAir(state: GameState) {
     const u = state.u;
     const flags = heroFormFlags(state);
-    return !!(u.amphibious || u.breathless
+    return !!(u.amphibious || u.breathless || u.magicalBreathing
         || (flags & (M1_AMPHIBIOUS | M1_BREATHLESS)));
 }
 
@@ -809,8 +809,9 @@ async function leaveWater({
 // default.  entry 'float-down' (C trap.c:float_down() -> drown()/
 // lava_effects()) skips the spoteffects-only stages: leaving water, the
 // mounted-steed dismount, and the ceiling-hider check, none of which the
-// direct drown()/lava_effects() calls perform.  All other guards stay
-// sourced from the shared owners below.
+// direct drown()/lava_effects() calls perform.  Entry 'drown' also skips
+// their terrain-entry guards: a submerged hero still drowns while held
+// by a monster or wearing water-walking boots (C Amulet_off()).
 export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promise<LiquidEffectResult | null | undefined> {
     const {
         state = game,
@@ -834,50 +835,48 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
     let y = u?.uy;
     let location = state.level?.at?.(x, y);
     if (!u || !location) return null;
-    const leftWater = fromFloatDown ? false : await leaveWater({
-        state, location, publish, resetVision, recalculateVision,
-    });
-    const airborne = u.levitating || u.levitation
-        || u.flying;
-    if ((!isPoolAt(x, y, state) && !isLavaAt(x, y, state))
-        || u.ustuck || airborne)
-        return leftWater ? { left: true } : null;
-    if (!fromFloatDown && u.usteed && !steedIsGrounded(u.usteed, state))
-        return null;
-    if (!fromFloatDown && heroHidesOnCeiling(state))
-        return leftWater ? { left: true } : null;
-
-    if (!fromFloatDown && u.usteed) {
-        const from = { x, y };
-        // C pooleffects -> dismount_steed: the teleds spot effects and the
-        // tail float_down both run inside dismountHero with the shared
-        // production owners (the complete destination owner at the teleds
-        // moment, float_down's own liquid entry for an unmoved hero); this
-        // branch injects no sub-owner.  Relocation and death are read back
-        // from the hero's actual coordinates and the game-over state.
-        const dismount = await dismountHero(u.uinwater ? DISMOUNT_FELL : DISMOUNT_GENERIC, {
-            state,
-            random,
-            announce: publish,
+    if (entry !== 'drown') {
+        const leftWater = fromFloatDown ? false : await leaveWater({
+            state, location, publish, resetVision, recalculateVision,
         });
-        return {
-            entered: true, dismounted: dismount.dismounted,
-            moved: u.ux !== from.x || u.uy !== from.y
-                || (dismount.dismounted && (!!dismount.movement || !!dismount.location?.moved)),
-            died: !!dismount.died || !!state.program_state?.gameover,
-            from, to: { x: u.ux, y: u.uy },
-        };
-    }
+        const airborne = u.levitating || u.levitation
+            || u.flying;
+        if ((!isPoolAt(x, y, state) && !isLavaAt(x, y, state))
+            || u.ustuck || airborne)
+            return leftWater ? { left: true } : null;
+        if (!fromFloatDown && u.usteed && !steedIsGrounded(u.usteed, state))
+            return null;
+        if (!fromFloatDown && heroHidesOnCeiling(state))
+            return leftWater ? { left: true } : null;
 
-    if (isLavaAt(x, y, state)) {
-        return heroLavaEffects({
-            state, location, publish, random, rollDice, rollOne,
-            repaint, resetVision, recalculateVision, applyLandingEffects,
-            die,
-        });
+        if (!fromFloatDown && u.usteed) {
+            const from = { x, y };
+            // Native pooleffects() lets dismount_steed() apply destination
+            // effects and float_down(); this caller only reports the result.
+            const dismount = await dismountHero(u.uinwater ? DISMOUNT_FELL : DISMOUNT_GENERIC, {
+                state,
+                random,
+                announce: publish,
+            });
+            return {
+                entered: true, dismounted: dismount.dismounted,
+                moved: u.ux !== from.x || u.uy !== from.y
+                    || (dismount.dismounted && (!!dismount.movement || !!dismount.location?.moved)),
+                died: !!dismount.died || !!state.program_state?.gameover,
+                from, to: { x: u.ux, y: u.uy },
+            };
+        }
+
+        if (isLavaAt(x, y, state)) {
+            return heroLavaEffects({
+                state, location, publish, random, rollDice, rollOne,
+                repaint, resetVision, recalculateVision, applyLandingEffects,
+                die,
+            });
+        }
+        if (heroStaysAboveWater(state, location))
+            return leftWater ? { left: true } : null;
     }
-    if (heroStaysAboveWater(state, location))
-        return leftWater ? { left: true } : null;
 
     const waterWall = location.typ === WATER;
     let canLiveUnderwater = heroCanLiveUnderwater(state);

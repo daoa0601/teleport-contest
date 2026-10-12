@@ -107,7 +107,7 @@ import {
     DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA,
     DB_UNDER, DB_FLOOR, SHOP_HOLE_COST,
     TREE, AIR, CLOUD,
-    A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL,
+    A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, P_SHORT_SWORD, P_SABER,
     AM_SHRINE, AM_SANCTUM, Align2amask,
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE,
     M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE,
@@ -124,7 +124,7 @@ import {
     getObjectClassBounds, getObjectDefinition, requireObjectData,
     OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL,
     OBJECT_SPELL_LEVEL,
-    OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST,
+    OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, OBJECT_SUBTYPE,
     WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT,
     GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS,
     AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE,
@@ -138,7 +138,7 @@ import {
     DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING,
     GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND,
     SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR,
-    TIN, GOLD_PIECE, SPE_NOVEL,
+    TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD,
     DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE,
     ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE,
     QUARTERSTAFF,
@@ -164,7 +164,7 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3,
     MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS,
-    SPECIAL_PM, monsterClassSymbol, requireMonsterData,
+    SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData,
 } from './monster_data.js';
 import {
     isReviver, isRider, ZOMBIE_FORM_BY_LIVING_CORPSE,
@@ -178,7 +178,7 @@ import {
 import {
     initializeMonsterWormBody, restoreMonsterWormHeads, validMonsterWormBodies,
 } from './monster_worm.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { saveMonsterTraits } from './monster_traits.js';
 
 import { nhgetch } from './input.js';
@@ -1841,17 +1841,48 @@ async function makemon(
     let hasMonsterInventory = false;
     const allowMonsterInventory = !(mmflags & NO_MINVENT);
     let skipCommonMonsterInventory = Is_rogue_level(game.u?.uz);
-    const mongets = async (otyp: number): Promise<GameObject> => {
+    // C makemon.c:mongets(). Normalize birth equipment before mpickobj().
+    const mongets = async (otyp: number): Promise<GameObject | null> => {
+        if (!otyp) return null;
         const object = await mksobj(otyp, true, false);
-        // makemon.c:mongets(): demons never retain blessed objects; a raw
-        // blessing becomes a curse before the identity enters minvent.
-        if (MONSTER_SYMBOL[mndx] === 56 && object.blessed) {
+        if (MONSTER_SYMBOL[mndx] === 56) {
+            if (object.blessed) {
+                object.blessed = false;
+                object.cursed = true;
+            }
+        } else if ((genderFlags & M2_MINION)
+            && (clericMinion?.min_align ?? monsterAlignmentType(pendingMonster)) === A_LAWFUL) {
+            object.cursed = false;
+            object.spe = Math.max(0, object.spe);
+            object.oerodeproof = true;
+            object.oeroded = object.oeroded2 = 0;
+        } else if (monsterIsPlayerMonster(mndx)
+            && object.oclass === WEAPON_CLASS
+            && (OBJECT_SUBTYPE[otyp] ?? 0) >= P_SHORT_SWORD
+            && (OBJECT_SUBTYPE[otyp] ?? 0) <= P_SABER) {
+            object.spe = 3 + rn2(4);
+        }
+
+        if (otyp === CANDELABRUM_OF_INVOCATION) {
+            object.spe = 0;
+            object.age = 0;
+            object.lamplit = false;
+            object.blessed = object.cursed = false;
+        } else if (otyp === BELL_OF_OPENING) {
+            object.blessed = object.cursed = false;
+        } else if (otyp === SPE_BOOK_OF_THE_DEAD) {
             object.blessed = false;
             object.cursed = true;
         }
+
+        if (genderFlags & M2_PRINCE) {
+            if (object.oclass === WEAPON_CLASS) object.spe = Math.max(1, object.spe);
+            else if (object.oclass === ARMOR_CLASS) object.spe = Math.max(0, object.spe);
+        }
+
         await addCreatedObjectToMonsterInventory(pendingMonster, object, game);
         hasMonsterInventory = true;
-        return object;
+        return object.where === 'gone' ? null : object;
     };
     // C makemon.c:m_initthrow(). Throwing stacks bypass mongets(): the raw
     // mksobj() result goes straight into the inventory, so demons keep any
@@ -2426,12 +2457,11 @@ async function makemon(
             && dungeonName === 'The Gnomish Mines' ? 20 : 60;
         if (!rn2(candleChance)) {
             const candle = await mongets(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE);
-            candle.quan = 1;
-            candle.quantity = 1;
-            // levl is addressed by map coordinates; Level.at() is the shared
-            // accessor for ordinary and Lua-special maps, whose backing
-            // storage need not expose a column at map[x].
-            candle.lamplit = !level.at(x, y)?.lit;
+            if (candle) {
+                candle.quan = 1;
+                candle.quantity = 1;
+                candle.lamplit = !level.at(x, y)?.lit;
+            }
         }
     }
     if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 43) { // S_QUANTMECH
@@ -2817,65 +2847,6 @@ export async function createCritters(count: number, mnum: number | null = null):
         if (seenInOwnForm || canSenseMonster(monster)) known = true;
     }
     return known;
-}
-
-// C mcastu.c:mcast_insects().  enexto() tests positions using the caster's
-// species before mkclass() chooses each summoned insect.  Keep both private
-// constructor owners in this module so the spell layer receives only actors.
-export async function summonInsectsForMonster(summoner: Monster): Promise<{ created: Monster[]; monsterClass: number }> {
-    const created: Monster[] = [];
-    let insect = mkclass(1, 0); // S_ANT
-    const monsterClass = insect == null ? 45 : 1; // fallback S_SNAKE
-    let quantity = (summoner.m_lev ?? 0) < 2
-        ? 1 : rnd(Math.trunc((summoner.m_lev ?? 0) / 2));
-    if (quantity < 3) quantity = 3;
-
-    for (let count = 0; count <= quantity; count++) {
-        const centerX = summoner.mux ?? game.u?.ux ?? summoner.mx;
-        const centerY = summoner.muy ?? game.u?.uy ?? summoner.my;
-        const candidates: Position[] = [];
-        for (let radius = 1; radius <= 3; radius++) {
-            const ring: Position[] = [];
-            const lowx = centerX - radius, highx = centerX + radius;
-            const lowy = centerY - radius, highy = centerY + radius;
-            for (let y = Math.max(lowy, 0);
-                y <= Math.min(highy, ROWNO - 1); y++) {
-                for (let x = Math.max(lowx, 1);
-                    x <= Math.min(highx, COLNO - 1); x++) {
-                    if (x !== lowx && x !== highx
-                        && y !== lowy && y !== highy) continue;
-                    ring.push({ x, y });
-                }
-            }
-            for (let index = 0, remaining = ring.length;
-                remaining > 1; index++, remaining--) {
-                const pick = rn2(remaining);
-                if (pick) {
-                    const current = ring[index];
-                    const selected = ring[index + pick];
-                    if (!current || !selected)
-                        throw new Error('Summoned insect placement selected a missing coordinate');
-                    ring[index] = selected;
-                    ring[index + pick] = current;
-                }
-            }
-            candidates.push(...ring);
-        }
-        const position = candidates.find(({ x, y }) =>
-            goodPosition(x, y, { kind: 'species', mnum: summoner.mnum }));
-        if (!position) return { created, monsterClass };
-        insect = mkclass(monsterClass, 0);
-        if (insect == null) continue;
-        const monster = await makemon(
-            insect, position.x, position.y, MM_ANGRY | MM_NOMSG, false,
-        );
-        if (!monster) continue;
-        monster.msleeping = 0;
-        monster.mpeaceful = 0;
-        monster.mtame = 0;
-        created.push(monster);
-    }
-    return { created, monsterClass };
 }
 
 // C refs: wizard.c:nasty()/pick_nasty() and mcastu.c:mcast_summon_mons().
@@ -3966,9 +3937,7 @@ function specialMazeWalk(
     );
 }
 
-function specialMazeStockPoint(
-    context: SpecialLevelContext, mappedContexts: readonly SpecialLevelContext[] = [context],
-): Position {
+function specialMazeStockPoint(mappedCells: SpecialSelection): Position {
     const level = requireGameLevel();
     // sp_lev.c:maze1xy().  The stock reservoir is outside every square
     // touched by des.map(), on an odd-coordinate dry passage carved by the
@@ -3980,19 +3949,15 @@ function specialMazeStockPoint(
             x: rn1(((COLNO - 1) & ~1) - 3, 3),
             y: rn1(((ROWNO - 1) & ~1) - 3, 3),
         };
-        const mapped = mappedContexts.some(mappedContext =>
-            point.x >= mappedContext.xstart
-            && point.x < mappedContext.xstart + mappedContext.width
-            && point.y >= mappedContext.ystart
-            && point.y < mappedContext.ystart + mappedContext.height);
+        if (--tries < 0) break;
         const loc = level.at(point.x, point.y);
-        const hasBoulder = level.objects?.[point.x]?.[point.y]
+        const hasBoulder = level.objects[point.x]?.[point.y]
             ?.some(object => object.otyp === BOULDER);
-        if ((point.x % 2) && (point.y % 2) && !mapped
-            && loc && SPACE_POS(loc.typ) && !hasBoulder) {
+        if ((point.x % 2) && (point.y % 2) && !mappedCells.has(point.x, point.y)
+            && loc && (Is_waterlevel(game.u.uz) || (SPACE_POS(loc.typ) && !hasBoulder))) {
             break;
         }
-    } while (--tries >= 0);
+    } while (true);
     return point;
 }
 
@@ -4017,24 +3982,18 @@ function randomSpecialTrapType(): number {
     return typ;
 }
 
-async function fillEmptySpecialMaze(
-    context: SpecialLevelContext, mappedContexts: readonly SpecialLevelContext[] = [context],
-): Promise<void> {
+async function fillEmptySpecialMaze(mappedCells: SpecialSelection): Promise<void> {
     const level = requireGameLevel();
     // sp_lev.c:fill_empty_maze().  mapcount intentionally begins at the
     // complete rectangle while only mapcountmax is halved; this historical
-    // asymmetry leaves Castle with a 43-percent stock budget.
+    // asymmetry increases the stocking budget beyond the uncovered fraction.
     const mazeXMax = (COLNO - 1) & ~1;
     const mazeYMax = (ROWNO - 1) & ~1;
     let mapcount = (mazeXMax - 2) * (mazeYMax - 2);
     const mapcountmax = Math.trunc(mapcount / 2);
     for (let x = 2; x < mazeXMax; x++) {
         for (let y = 0; y < mazeYMax; y++) {
-            if (mappedContexts.some(mappedContext =>
-                x >= mappedContext.xstart
-                && x < mappedContext.xstart + mappedContext.width
-                && y >= mappedContext.ystart
-                && y < mappedContext.ystart + mappedContext.height)) {
+            if (mappedCells.has(x, y)) {
                 mapcount--;
             }
         }
@@ -4044,7 +4003,7 @@ async function fillEmptySpecialMaze(
 
     for (let count = rnd(Math.trunc(20 * mapfact / 100));
         count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         await mkobj_at(
             rn2(2) ? GEM_CLASS : RANDOM_CLASS,
             point.x, point.y, true,
@@ -4052,29 +4011,29 @@ async function fillEmptySpecialMaze(
     }
     for (let count = rnd(Math.trunc(12 * mapfact / 100));
         count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         const trap = level.traps?.find(candidate =>
             candidate.tx === point.x && candidate.ty === point.y);
         if (trap && (is_pit(trap.ttyp) || is_hole(trap.ttyp))) continue;
         await mksobj_at(BOULDER, point.x, point.y, true, false);
     }
     for (let count = rn2(2); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         await makemon(PM_MINOTAUR, point.x, point.y, 0);
     }
     for (let count = rnd(Math.trunc(12 * mapfact / 100));
         count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         await makemon(null, point.x, point.y, 0);
     }
     for (let count = rn2(Math.trunc(15 * mapfact / 100));
         count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         await mkgold(0, point.x, point.y);
     }
     for (let count = rn2(Math.trunc(15 * mapfact / 100));
         count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         let typ = randomSpecialTrapType();
         if (level.objects?.[point.x]?.[point.y]
             ?.some(object => object.otyp === BOULDER)) {
@@ -4100,10 +4059,11 @@ function specialMonsterHumidity(mndx: number): number {
     return humidity;
 }
 
-async function specialStair(context: SpecialLevelContext, up: boolean): Promise<void> {
+async function specialStair(context: SpecialLevelContext, up: boolean): Promise<Position | null> {
     const point = await specialRandomLocation(context,
         loc => loc.typ === ROOM || loc.typ === CORR || loc.typ === ICE);
     if (point) mkstairs(point.x, point.y, up, null);
+    return point;
 }
 
 function specialNonDiggable(context: SpecialLevelContext | null = null): void {
@@ -4858,7 +4818,7 @@ async function specialMonsterClassAt(
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
     let mndx = mkclass(monsterClass, 0x0200);
-    if (mndx == null) return null;
+    // A null class choice asks makemon() for a random species.
     mndx = applyMinesSameRaceMonsterGate(mndx);
     const absoluteX = context.xstart + x, absoluteY = context.ystart + y;
     const occupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, game) && candidate.mhp > 0
@@ -4979,7 +4939,7 @@ async function specialMonsterOfClass(
     let mndx = mkclass(monsterClass, 0x0200);
     mndx = applyMinesSameRaceMonsterGate(mndx);
     const point = await specialMonsterRandomLocation(context, mndx);
-    if (!point || mndx == null) return null;
+    if (!point) return null;
     const occupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, game) && candidate.mhp > 0
         && candidate.mx === point.x && candidate.my === point.y);
     const monster = occupied
@@ -4995,20 +4955,19 @@ async function specialMonsterOfClass(
     return resolved;
 }
 
-async function finishSpecialTrapConstruction(
+async function finishLevelTrapConstruction(
     trap: Trap | null, { spiderOnWeb = true, seen = false, victim = true }: SpecialTrapOptions = {},
 ): Promise<Trap | null> {
     if (!trap) return null;
     const kind = trap.ttyp;
-    if (seen) trap.tseen = true;
-    if (kind === MAGIC_PORTAL && !trap.dst) {
-        if (!game.u.ucamefrom) throw new Error('Portal creation requires the previous dungeon location.');
-        trap.dst = { ...game.u.ucamefrom };
-    }
     // mklev.c:mktrap() owns the web's resident spider before evaluating the
     // shallow-level dead-predecessor gate.
     if (kind === WEB && spiderOnWeb)
         await makemon(PM_GIANT_SPIDER, trap.tx, trap.ty, 0);
+    if (seen) trap.tseen = true;
+    const cameFrom = game.u.ucamefrom;
+    if (kind === MAGIC_PORTAL && cameFrom && (cameFrom.dnum || cameFrom.dlevel))
+        trap.dst = { ...cameFrom };
 
     if (!game.in_mklev || kind === NO_TRAP || !victim) return trap;
     const predecessorRoll = rnd(4);
@@ -5059,57 +5018,7 @@ async function specialTrapOfType(
 ): Promise<Trap | null> {
     const point = await specialTrapLocation(context, coordinate);
     if (!point) return null;
-    const trap = await maketrap(point.x, point.y, typ);
-    return finishSpecialTrapConstruction(trap, options);
-}
-
-function specialRandomTrapType(inHell = false): number {
-    const level = level_difficulty();
-    const noTeleport = !!game.level?.flags?.noteleport;
-    const singleLevelBranch = game.dungeons?.[
-        game.u?.uz?.dnum ?? 0
-    ]?.dname === 'Fort Ludios';
-    for (;;) {
-        let type = rnd(TRAPNUM - 1);
-        if (type === TRAPPED_DOOR || type === TRAPPED_CHEST
-            || type === MAGIC_PORTAL || type === VIBRATING_SQUARE) {
-            type = NO_TRAP;
-        } else if ((type === ROLLING_BOULDER_TRAP || type === SLP_GAS_TRAP)
-            && level < 2) {
-            type = NO_TRAP;
-        } else if (type === LEVEL_TELEP
-            && (level < 5 || noTeleport || singleLevelBranch)) {
-            type = NO_TRAP;
-        } else if (type === SPIKED_PIT && level < 5) {
-            type = NO_TRAP;
-        } else if (type === LANDMINE && level < 6) {
-            type = NO_TRAP;
-        } else if (type === WEB && level < 7) {
-            type = NO_TRAP;
-        } else if ((type === STATUE_TRAP || type === POLY_TRAP) && level < 8) {
-            type = NO_TRAP;
-        } else if (type === FIRE_TRAP && !inHell) {
-            type = NO_TRAP;
-        } else if (type === TELEP_TRAP && noTeleport) {
-            type = NO_TRAP;
-        } else if (type === HOLE && rn2(7)) {
-            type = NO_TRAP;
-        }
-        if (type !== NO_TRAP) return type;
-    }
-}
-
-async function specialTrap(
-    context: SpecialLevelContext, options: SpecialTrapOptions, coordinate: Position | null,
-): Promise<void> {
-    const point = await specialTrapLocation(context, coordinate);
-    if (!point) return;
-    const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
-    let type = inHell && !rn2(5)
-        ? FIRE_TRAP : specialRandomTrapType(inHell);
-    if (is_hole(type) && !canFallThrough()) type = ROCKTRAP;
-    const trap = await maketrap(point.x, point.y, type);
-    await finishSpecialTrapConstruction(trap, options);
+    return await mktrap(typ, options, null, point);
 }
 
 async function specialMonster(context: SpecialLevelContext, {
@@ -5884,10 +5793,11 @@ function luaRoomSpec(options: DesOptions) {
     };
 }
 
-async function createLuaStair(context: SpecialLevelContext, { direction, point }: Parameters<DesOperations['stair']>[0]): Promise<void> {
+async function createLuaStair(context: SpecialLevelContext, { direction, point }: Parameters<DesOperations['stair']>[0]): Promise<Position | null> {
     const up = direction === 'up';
-    if (point) specialStairAt(context, point.x, point.y, up);
-    else await specialStair(context, up);
+    if (!point) return await specialStair(context, up);
+    specialStairAt(context, point.x, point.y, up);
+    return { x: context.xstart + point.x, y: context.ystart + point.y };
 }
 
 function createLuaDoor(context: SpecialLevelContext, {
@@ -5918,7 +5828,7 @@ function createLuaDoor(context: SpecialLevelContext, {
     return specialDoorAt(context, mask, point.x, point.y);
 }
 
-function createLuaDrawbridge(context: SpecialLevelContext, options: DesOptions): void {
+function createLuaDrawbridge(context: SpecialLevelContext, options: DesOptions): Position {
     const coordinate = luaCoordinate(options);
     if (!coordinate)
         throw new TypeError('des.drawbridge requires coordinates');
@@ -5938,6 +5848,7 @@ function createLuaDrawbridge(context: SpecialLevelContext, options: DesOptions):
     makeSpecialDrawbridge(
         context, coordinate.x, coordinate.y, direction, open,
     );
+    return { x: context.xstart + coordinate.x, y: context.ystart + coordinate.y };
 }
 
 async function createLuaEngraving(context: SpecialLevelContext, options: Parameters<DesOperations['engraving']>[0]) {
@@ -6156,9 +6067,11 @@ async function createLuaMonster(context: SpecialLevelContext, options: DesMonste
     if (options.countbirth === false) mmflags |= MM_NOCOUNTBIRTH;
     const explicitAlignment = options.align != null
         && options.align !== 'random';
+    // priest.c:mk_roamer() supplies its own flags, allowing random-species
+    // companions and counting births regardless of Lua's creation options.
     const creation = explicitAlignment ? {
         randomAlignment: false,
-        mmflags: mmflags | MM_ADJACENTOK | MM_EMIN | MM_NOMSG,
+        mmflags: MM_ADJACENTOK | MM_EMIN | MM_NOMSG,
         roamerAlignment: () => luaSpecialAlignment(options.align),
     } : { mmflags };
     let monster: Monster | null | undefined;
@@ -6248,12 +6161,7 @@ async function createLuaTrap(context: SpecialLevelContext, options: Parameters<D
         victim: options.victim !== false,
         spiderOnWeb: options.spider_on_web !== false,
     };
-    let trap: Trap | null | void;
-    if (trapType == null) {
-        trap = await specialTrap(context, construction, point);
-    } else {
-        trap = await specialTrapOfType(context, trapType, construction, point);
-    }
+    const trap = await specialTrapOfType(context, trapType ?? NO_TRAP, construction, point);
     const teleportDestination = luaCoordinate({ coord: options.teledest });
     if (trap && teleportDestination) {
         trap.teledest = {
@@ -6399,7 +6307,6 @@ function createLuaLevelSession() {
     let luaState: LuaGameState | null = null;
     const containers: GameObject[] = [];
     const monsterInventories: Array<Monster | null> = [];
-    const mappedContexts: SpecialLevelContext[] = [];
     let mappedCells = new SpecialSelection();
     let roomFailed = false;
     const currentLevel = (): ActiveSpecialLevel => {
@@ -6458,7 +6365,6 @@ function createLuaLevelSession() {
                     );
                 mapContext = loadSpecialAsciiMap(rows, lit, origin);
             }
-            mappedContexts.push(mapContext);
             const mapSelection = specialMapSelection(mapContext, rows);
             mappedCells = mappedCells.union(mapSelection);
             context = mapContext;
@@ -6536,7 +6442,10 @@ function createLuaLevelSession() {
             context = parent;
             return room;
         },
-        stair: options => createLuaStair(context, options),
+        stair: async options => {
+            const point = await createLuaStair(context, options);
+            if (point) mappedCells.add(point.x, point.y);
+        },
         ladder: options => {
             const up = options.direction === 'up';
             if (!options.point)
@@ -6544,9 +6453,16 @@ function createLuaLevelSession() {
             specialLadderAt(
                 context, options.point.x, options.point.y, up,
             );
+            mappedCells.add(context.xstart + options.point.x, context.ystart + options.point.y);
         },
-        door: options => createLuaDoor(context, options),
-        drawbridge: options => createLuaDrawbridge(context, options),
+        door: options => {
+            const point = createLuaDoor(context, options);
+            if (point) mappedCells.add(point.x, point.y);
+        },
+        drawbridge: options => {
+            const point = createLuaDrawbridge(context, options);
+            mappedCells.add(point.x, point.y);
+        },
         engraving: options => createLuaEngraving(context, options),
         gold: async options => await createLuaGold(context, options),
         feature: options => createLuaFeature(context, options),
@@ -6639,7 +6555,7 @@ function createLuaLevelSession() {
             if (terrain === undefined) throw new TypeError('Unknown maze terrain');
             specialMazeWalk(context, options.x, options.y, direction, terrain);
             if (options.stocked)
-                await fillEmptySpecialMaze(context, mappedContexts);
+                await fillEmptySpecialMaze(mappedCells);
         },
         object: async options => currentState().objects.wrap(await createLuaObject(
             context,
@@ -6708,7 +6624,6 @@ function createLuaLevelSession() {
             active.context = context;
             containers.length = 0;
             monsterInventories.length = 0;
-            mappedContexts.length = 0;
             mappedCells = new SpecialSelection();
             roomFailed = false;
             currentLevel().allowFlips = 3;
@@ -7551,7 +7466,7 @@ async function populateRandomMaze(): Promise<void> {
         await mkgold(0, point.x, point.y);
     }
     for (let count = rn1(6, 7); count > 0; count--)
-        await createRandomLevelTrap();
+        await mktrap(NO_TRAP, {}, null, null);
 }
 
 async function generateDungeonMazeFile(prototype: string): Promise<void> {
@@ -8351,6 +8266,10 @@ async function stockShopRoom(sroom: Room): Promise<void> {
     const shopDoor = goodShopDoor(sroom);
     if (!shopDoor) return;
     const shopIndex = sroom.rtype - SHOPBASE;
+    // shknam.c:shkinit() relocates an existing occupant before creating
+    // the resident; it does not abandon this shop when its doorway is busy.
+    const occupant = monsterAtPosition(level, shopDoor.x, shopDoor.y);
+    if (occupant) await randomMonsterRelocation(occupant, { flags: RLOC_NOMSG });
     const shopkeeper = await makemon(PM_SHOPKEEPER, shopDoor.x, shopDoor.y, 0);
     if (!shopkeeper) return;
     shopkeeper.eshk = {
@@ -10057,7 +9976,7 @@ export function wallifyMap(x1: number, y1: number, x2: number, y2: number): void
 // Fill ordinary room
 // ============================================================
 
-function traptype_rnd(): number {
+function traptype_rnd({ spiderOnWeb = true }: SpecialTrapOptions): number {
     const lvl = level_difficulty();
     let kind = rnd(TRAPNUM - 1);
     switch (kind) {
@@ -10073,7 +9992,7 @@ function traptype_rnd(): number {
     case LANDMINE:
         if (lvl < 6) kind = NO_TRAP; break;
     case WEB:
-        if (lvl < 7) kind = NO_TRAP; break;
+        if (lvl < 7 && spiderOnWeb) kind = NO_TRAP; break;
     case STATUE_TRAP: case POLY_TRAP:
         if (lvl < 8) kind = NO_TRAP; break;
     case FIRE_TRAP:
@@ -10185,47 +10104,44 @@ function trapVictimObjectBreaks(object: GameObject): boolean {
 
 // C mktrap(): the room and maze callers share type selection, collision
 // checks, web residents, and shallow-level victims.
-async function createRandomLevelTrap(croom: Room | null = null): Promise<void> {
+async function mktrap(
+    num: number, options: SpecialTrapOptions, croom: Room | null, coordinate: Position | null,
+): Promise<Trap | null> {
     const level = requireGameLevel();
+    // Explicit locations are screened before type selection. Room and maze
+    // callers select the type first, then search for an unoccupied square.
+    if (coordinate && (isPoolAt(coordinate.x, coordinate.y)
+        || isLavaAt(coordinate.x, coordinate.y))) return null;
     let kind;
-    if (Is_rogue_level(game.u.uz)) {
+    if (num > NO_TRAP && num < TRAPNUM) {
+        kind = num;
+    } else if (Is_rogue_level(game.u.uz)) {
         kind = [BEAR_TRAP, ARROW_TRAP, DART_TRAP, TRAPDOOR,
             PIT, SLP_GAS_TRAP, RUST_TRAP][rn2(7)];
     } else if (In_hell(game.u.uz)
         && !rn2(5)) kind = FIRE_TRAP;
-    else do { kind = traptype_rnd(); } while (kind === NO_TRAP);
+    else do { kind = traptype_rnd(options); } while (kind === NO_TRAP);
     if (kind === undefined) throw new RangeError('Rogue trap selection is out of range.');
     if (is_hole(kind) && !canFallThrough()) kind = ROCKTRAP;
-    const pos = { x: 0, y: 0 };
-    const avoidBoulder = is_pit(kind) || is_hole(kind);
-    let attempts = 0;
-    do {
-        if (++attempts > 200) return;
-        if (croom) {
-            if (!somexyspace(croom, pos)) return;
-        } else {
-            const point = mazeFloorPoint();
-            pos.x = point.x;
-            pos.y = point.y;
-        }
-    } while (occupied(pos.x, pos.y)
-        || (avoidBoulder && level.objects[pos.x]?.[pos.y]
-            ?.some(object => object.otyp === BOULDER)));
-    const trap = await maketrap(pos.x, pos.y, kind);
-    kind = trap ? trap.ttyp : NO_TRAP;
-    // C mktrap(), not maketrap(), owns the web's resident spider.  Its
-    // constructor runs before the shallow trap-victim rnd(4) gate.
-    if (kind === WEB)
-        await makemon(PM_GIANT_SPIDER, pos.x, pos.y, 0);
-    const lvl = level_difficulty();
-    if (game.in_mklev && trap && kind !== NO_TRAP
-        && lvl <= rnd(4)
-        && kind !== SQKY_BOARD && kind !== RUST_TRAP
-        && !(kind === ROLLING_BOULDER_TRAP && trap.launch?.x === trap.tx && trap.launch?.y === trap.ty)
-        && !is_pit(kind) && (kind < HOLE || kind === MAGIC_TRAP)) {
-        if (kind === LANDMINE) { trap.ttyp = PIT; trap.tseen = true; }
-        await mktrap_victim(trap);
+    const pos = coordinate ? { ...coordinate } : { x: 0, y: 0 };
+    if (!coordinate) {
+        const avoidBoulder = is_pit(kind) || is_hole(kind);
+        let attempts = 0;
+        do {
+            if (++attempts > 200) return null;
+            if (croom) {
+                if (!somexyspace(croom, pos)) return null;
+            } else {
+                const point = mazeFloorPoint();
+                pos.x = point.x;
+                pos.y = point.y;
+            }
+        } while (occupied(pos.x, pos.y)
+            || (avoidBoulder && level.objects[pos.x]?.[pos.y]
+                ?.some(object => object.otyp === BOULDER)));
     }
+    const trap = await maketrap(pos.x, pos.y, kind);
+    return await finishLevelTrapConstruction(trap, options);
 }
 
 function mkfount(croom: Room): void {
@@ -10312,7 +10228,7 @@ export async function fill_ordinary_room(croom: Room | null | undefined, bonus_i
     if (x <= 1) x = 2;
     let trycnt = 0;
     while (!rn2(x) && ++trycnt < 1000) {
-        await createRandomLevelTrap(croom);
+        await mktrap(NO_TRAP, {}, croom, null);
     }
     // Gold
     if (!rn2(3) && somexyspace(croom, pos)) {

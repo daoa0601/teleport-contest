@@ -1601,6 +1601,11 @@ export function randomDisplayMonsterName() {
     return randomDisplayMonsterIdentity().name;
 }
 
+// C do_name.c:bogusmon(), for descriptions that require a fictitious species.
+export function randomBogusMonsterName(): string {
+    return randomBogusMonsterIdentity().name;
+}
+
 const HALLUCINATED_COLORS = [
     'ultraviolet', 'infrared', 'bluish-orange', 'reddish-green', 'dark white',
     'light black', 'sky blue-pink', 'pinkish-cyan', 'indigo-chartreuse',
