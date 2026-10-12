@@ -1784,7 +1784,7 @@ async function doTerrainOverview() {
 }
 
 async function kickOuch(x: number, y: number, objectName = '') {
-    await pline('Ouch!  That hurts!');
+    await plineWithContinuation('Ouch!  That hurts!');
     await exerciseAttribute(A_DEX, false);
     await exerciseAttribute(A_STR, false);
     wakeMonstersNear(x, y, 25);

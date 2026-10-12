@@ -51,6 +51,27 @@ void test('an object cannot be kicked through a wall', async () => {
     assert.equal(floorObjects(level).includes(club), true);
 });
 
+void test('a blocked kick keeps its impact feedback when it hurts the hero', async () => {
+    let injured = false;
+    for (let seed = 1n; seed <= 50n; seed++) {
+        const level = freshGameplayRoom({ role: 'tourist', hero: { uhp: 100, uhpmax: 100 } });
+        requirePlayingGame(game);
+        const club = placeCreatedObject(await knownObject(CLUB, { spe: 0 }), 11, 10);
+        level.requireAt(12, 10).typ = STONE;
+        initRng(seed);
+
+        await kickDirection('l');
+
+        if (game.u.uhp < 100) {
+            assert.match(game._pending_message, /^You kick .*club\.  Thump!  Ouch!  That hurts!$/);
+            assert.equal(floorObjectsAt(level, 11, 10).includes(club), true);
+            injured = true;
+            break;
+        }
+    }
+    assert.equal(injured, true, 'a blocked kick must sometimes hurt the hero');
+});
+
 void test('a kicked object can fall down a ladder during flight', async () => {
     const level = freshGameplayRoom({ role: 'tourist' });
     requirePlayingGame(game);

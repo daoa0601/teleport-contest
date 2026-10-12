@@ -1634,7 +1634,7 @@ async function doTerrainOverview() {
     game.context.move = 0;
 }
 async function kickOuch(x, y, objectName = '') {
-    await pline('Ouch!  That hurts!');
+    await plineWithContinuation('Ouch!  That hurts!');
     await exerciseAttribute(A_DEX, false);
     await exerciseAttribute(A_STR, false);
     wakeMonstersNear(x, y, 25);
