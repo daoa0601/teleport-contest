@@ -4549,6 +4549,8 @@ async function putOnArmorObject(object) {
                 await pline(onMessage);
         }
     }
+    // C accessory_or_armor_on() discards interrupted 'A' after armor wear.
+    resetBulkTakeoff();
     game.context.move = 1;
 }
 // C refs: wield.c:dowield(), ready_weapon(), invent.c:getobj().  The prompt

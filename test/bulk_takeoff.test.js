@@ -14,6 +14,8 @@ import { grantIntrinsicProperty, propertyIsActive, revokeIntrinsicProperty, setP
 import { inventoryItemDescription } from '../js/invent.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { recordObjectKnowledge } from '../js/object_knowledge.js';
+import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/weapon_slots.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -24,6 +26,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { createPoisonGasCloud } from '../js/regions.js';
 import { addTrap } from './support/level-state.js';
+import { createDungeon } from './support/topology.js';
 const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 const T_SHIRT = OBJECT_NAMES.indexOf('T-shirt');
 const AMULET_OF_ESP = OBJECT_NAMES.indexOf('amulet of ESP');
@@ -131,6 +134,23 @@ void test('cursed gloves block removing a ring and reveal the glove curse', asyn
     assert.equal(gloves.bknown, true);
     assert.equal(game.uleft, ring);
 });
+for (const rightHanded of [true, false]) {
+    void test(`removing an off-hand ring reveals a welded weapon's curse for a ${rightHanded ? 'right' : 'left'}-handed hero`, async () => {
+        freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false }, hero: { rightHanded } });
+        const dagger = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
+        const ring = await addInventoryObject(RIN_PROTECTION);
+        const offHand = rightHanded ? 'uleft' : 'uright';
+        await setPrimaryWeapon(dagger);
+        await wearHeroAccessory(ring, offHand);
+        assert.equal(dagger.bknown, false);
+        await takeOff(`${ring.invlet}\n`);
+        await work(1);
+        assert.equal(dagger.bknown, true);
+        assert.equal(game.uwep, dagger);
+        assert.equal(game[offHand], null, 'the welded weapon does not block the other hand');
+        assert.ok(game.inventory.includes(ring));
+    });
+}
 void test('bulk disarming clears cursed alternate and quiver slots without dropping their objects', async () => {
     freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const alternate = await addInventoryObject(DAGGER, { cursed: true });
@@ -187,6 +207,43 @@ void test('interrupted disrobing resumes the remaining delay without selecting i
     await work(2);
     assert.equal(game.uarm, suit);
     await work(1);
+    assert.equal(game.uarm, null);
+});
+for (const armorType of [SMALL_SHIELD, GAUNTLETS_OF_POWER]) {
+    void test(`wearing ${OBJECT_NAMES[armorType]} discards all interrupted bulk removal`, async () => {
+        freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+        const suit = await addInventoryObject(RING_MAIL);
+        const boots = await addInventoryObject(LOW_BOOTS);
+        const armor = await addInventoryObject(armorType);
+        wearHeroArmor(suit);
+        wearHeroArmor(boots);
+        await takeOff(`${suit.invlet}${boots.invlet}\n`);
+        await work(1);
+        await stopHeroOccupation(game, async () => { });
+        resetInputState();
+        pushKeys(armor.invlet);
+        await rhack('W'.charCodeAt(0));
+        assert.equal(armor.worn, true);
+        assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+        await takeOff('\x1b');
+        await work(8);
+        assert.equal(game.uarm, suit, 'cancelled new selection leaves the old current item worn');
+        assert.equal(game.uarmf, boots, 'cancelled new selection leaves the old pending item worn');
+    });
+}
+void test('trying to wear armor already worn preserves interrupted bulk removal', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const suit = await addInventoryObject(RING_MAIL);
+    wearHeroArmor(suit);
+    await takeOff(`${suit.invlet}\n`);
+    await work(1);
+    await stopHeroOccupation(game, async () => { });
+    resetInputState();
+    pushKeys(suit.invlet);
+    await rhack('W'.charCodeAt(0));
+    assert.equal(game.context.move, 0);
+    await takeOff('');
+    await work(4);
     assert.equal(game.uarm, null);
 });
 void test('wearing selected quiver contents preserves replacement ammunition during resumed removal', async () => {
@@ -454,6 +511,54 @@ void test('bulk flying amulet removal announces landing and identifies the amule
     assert.match(game._pending_message, /You land\./);
     assert.equal(propertyIsActive('flying'), false);
     assert.equal(objectTypeKnown(amulet), true);
+});
+void test('identifying a removed flying amulet does not change the landing pit injury or confinement', async () => {
+    const landings = [];
+    for (const known of [true, false]) {
+        const level = freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+        grantIntrinsicProperty('flying', 'outside');
+        const amulet = await addInventoryObject(AMULET_OF_FLYING, { typeKnown: known });
+        await wearHeroAccessory(amulet, 'uamul');
+        revokeIntrinsicProperty('flying', 'outside');
+        if (known)
+            recordObjectKnowledge(AMULET_OF_FLYING);
+        addTrap(level, PIT, game.u.ux, game.u.uy);
+        game._pending_message = '';
+        // Knowledge is the only difference between the two landings.
+        initRng(5n);
+        await takeOff(`${amulet.invlet}\n`);
+        await work(1);
+        assert.equal(game.uamul, null);
+        assert.equal(game.u.utraptype, TT_PIT);
+        assert.ok(game.u.uhp !== undefined && game.u.uhp < 40, 'the landing pit injures the hero');
+        assert.ok(game.u.utrap !== undefined && game.u.utrap > 0, 'the landing pit confines the hero');
+        assert.equal(objectTypeKnown(amulet), true);
+        landings.push({ hitPoints: game.u.uhp, trappedTurns: game.u.utrap });
+    }
+    const [known, unknown] = landings;
+    assert.ok(known && unknown);
+    assert.equal(unknown.hitPoints, known.hitPoints, 'identification follows the landing damage');
+    assert.equal(unknown.trappedTurns, known.trappedTurns, 'identification follows the pit confinement');
+});
+void test('fatal landing after flying amulet removal does not identify the amulet', async () => {
+    const level = freshObjectRoom({
+        flags: { menu_style: MENU_PARTIAL, verbose: false, bones: false,
+            disclose: '-i -a -v -c -o', tombstone: false },
+        hero: { uhp: 1 },
+    });
+    game.storage = memoryStorage();
+    game.iflags.toptenwin = false;
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
+    grantIntrinsicProperty('flying', 'outside');
+    const amulet = await addInventoryObject(AMULET_OF_FLYING, { typeKnown: false });
+    await wearHeroAccessory(amulet, 'uamul');
+    revokeIntrinsicProperty('flying', 'outside');
+    addTrap(level, PIT, game.u.ux, game.u.uy);
+    game._pending_message = '';
+    await takeOff(`${amulet.invlet}\n`);
+    await work(1);
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(objectTypeKnown(amulet), false, 'the fatal fall ends play before discovery');
 });
 void test('bulk magical-breathing amulet removal warns about poison gas and identifies the amulet', async () => {
     freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });

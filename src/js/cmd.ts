@@ -4904,6 +4904,8 @@ async function putOnArmorObject(object: GameObject): Promise<void> {
             else await pline(onMessage);
         }
     }
+    // C accessory_or_armor_on() discards interrupted 'A' after armor wear.
+    resetBulkTakeoff();
     game.context.move = 1;
 }
 

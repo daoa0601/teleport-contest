@@ -179,8 +179,9 @@ async function removeAmulet(object: GameObject, state: GameState): Promise<void>
         const overLiquid = isPoolAt(state.u.ux, state.u.uy, state) || isLavaAt(state.u.ux, state.u.uy, state)
             || levelIsWaterLevel(state) || Is_airlevel(state.u.uz);
         await pline(overLiquid ? 'You stop flying.' : 'You land.');
-        learnObjectType(object.otyp, state);
         await applyHeroLocationEffects();
+        if (state.program_state.gameover) return;
+        learnObjectType(object.otyp, state);
     }
 }
 
@@ -201,10 +202,11 @@ async function canSelectOff(object: GameObject, slot: TakeoffSlot): Promise<bool
             await pline('The ring is stuck.');
             return false;
         }
+        // C welded() reveals the curse even when the other hand is free.
+        if (welded && weapon) weapon.bknown = true;
         const primary = game.u.rightHanded === false ? 'uleft' : 'uright';
         if (welded && (slot === primary || !!weapon && !!OBJECT_BIMANUAL[weapon.otyp])) {
             await pline(`You cannot free a weapon ${heroHandName(game)} to remove the ring.`);
-            if (weapon) weapon.bknown = true;
             return false;
         }
         if (gloves && (gloves.cursed || slippery)) {
