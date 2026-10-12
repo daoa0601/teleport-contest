@@ -25,6 +25,21 @@ import { addTrap } from './support/level-state.js';
 import { checkMonsterGearNextTurn } from '../js/monworn.js';
 import { canSeeMonster } from '../js/display.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { setHeroLycanthropy } from '../js/were.js';
+void test('an infected human changes into its were form during ordinary turn maintenance', async () => {
+    const input = freshTurnRoom({ seed: 81n });
+    requirePlayingGame(game);
+    game.datetime = '20010601120000';
+    const beast = MONSTER_NAME.indexOf('werejackal');
+    setHeroLycanthropy(beast);
+    installPagerInput(input, { expected: /turn into|hear|feel|starving|hungry/, limit: 40 });
+    for (let turn = 0; turn < 240 && game.u.umonnum !== beast; turn++) {
+        input.feed('.');
+        await moveloop_core();
+    }
+    assert.equal(game.u.umonnum, beast, 'ordinary turns must permit the native lycanthropy change');
+});
 void test('a Knight with movement left can act again without advancing global time', async () => {
     freshTurnRoom({ role: 'knight' });
     requirePlayingGame(game);

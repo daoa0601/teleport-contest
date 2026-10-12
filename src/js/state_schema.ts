@@ -91,6 +91,7 @@ const transientFields = {
     _monsterEngulf: true,
     _occupation: true,
     _pendingDemigodIntervention: true,
+    _pendingHeroShapeChange: true,
     _pending_message: true,
     _prayerHeroTookTimePending: true,
     _queuedHelplessRecoveryMessage: true,

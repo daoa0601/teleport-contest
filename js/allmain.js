@@ -87,11 +87,12 @@ import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { killGenocidedMonster, resolveMonsterLiquid, } from './mon.js';
 import { wakeMonstersNear, wakeMonstersNearWithMessages, } from './monster_wake.js';
-import { presentWereChange } from './were.js';
+import { applyHeroWereChange, presentWereChange } from './were.js';
+import { sessionIsNight } from './monster_sound.js';
 import { burnHeroArmorByFire } from './trap.js';
 import { sinkHeroIntoLava } from './hack.js';
 import { monsterTeleportRestricted, } from './teleport_rules.js';
-import { polymonHero, returnHeroToHumanForm } from './polyself.js';
+import { heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { healHeroLegs } from './hero_legs.js';
 import { advanceHeroSickness, advanceHeroVomiting, heroIsSick, heroIsVomiting, } from './hero_illness.js';
 import { advanceHeroSliming, clearHeroSliming, finishDeferredHeroSlime, heroIsSliming, resumeDeferredHeroSlime, } from './slime.js';
@@ -269,6 +270,7 @@ async function applyCalendarMessages() {
 // shuffle, presents the saved map, and applies real-world calendar effects.
 export async function restoregamePreamble() {
     const game = requireInitializedGame();
+    delete game._pendingHeroShapeChange;
     await l_nhcore_init();
     game._moveloopStarted = false;
     // pickup.c's oldcap is process-local (decl.c), not restored save state.
@@ -761,6 +763,9 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
                 interruptCountedActivity('You feel full of energy.');
         }
     }
+    await advanceHeroShapeChange();
+    if (game.program_state.gameover)
+        return { kind: 'complete', moveAmount };
     if (game.u?.searching && !game.level?.flags?.noautosearch
         && !heroHasInvoluntaryDelay(game)) {
         const search = await automaticSearch();
@@ -776,6 +781,31 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
     return await finishInitialTurnMaintenanceAfterAutomaticSearch({
         sourceTurn, moveAmount,
     });
+}
+// C allmain.c:moveloop_core(). A selected change waits through involuntary
+// delays and Unchanging; losing the source of the change cancels it.
+async function advanceHeroShapeChange() {
+    if (game.u.invulnerable)
+        return;
+    const polymorph = propertyIsActive('polymorph', game);
+    const infection = game.u.ulycn;
+    const infected = infection !== undefined && infection >= 0 && infection < MONSTER_NAME.length;
+    if ((game._pendingHeroShapeChange === 'polymorph' && !polymorph)
+        || (game._pendingHeroShapeChange === 'were' && !infected))
+        delete game._pendingHeroShapeChange;
+    if (polymorph && rn2(100) === 0)
+        game._pendingHeroShapeChange = 'polymorph';
+    else if (infected && !Upolyd(game.u)
+        && rn2(80 - (sessionIsNight(game.datetime) ? 20 : 0)) === 0)
+        game._pendingHeroShapeChange = 'were';
+    if (!game._pendingHeroShapeChange || heroIsUnchanging(game) || game.multi < 0)
+        return;
+    await stopHeroOccupation(game);
+    if (game._pendingHeroShapeChange === 'polymorph')
+        await polymorphHero();
+    else
+        await applyHeroWereChange();
+    delete game._pendingHeroShapeChange;
 }
 function finishInitialTurnMaintenanceAfterTimeout({ sourceTurn, moveAmount, deferAmbientMessage, polymorphed, }) {
     return {
@@ -3144,6 +3174,7 @@ async function moveMonsters() {
 }
 // C ref: allmain.c newgame()
 export async function newgame() {
+    delete game._pendingHeroShapeChange;
     const g = game;
     const handednessRoll = await initializeSourceStartup();
     if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
