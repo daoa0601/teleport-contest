@@ -6,7 +6,8 @@ import { stolenValue } from './shop_loss.js';
 import { roomsAt } from './room.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { plineWithContinuation } from './display.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { heroFormHidesUnderObjects } from './polyself.js';
+import { hideHeroUnder } from './monster_hiding.js';
 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -29,5 +30,6 @@ export async function useUpFloorObject(object: GameObject, count: number, {
         else await stolenValue(consumed, x, y, false, { silent: false, state, publish });
     }
     await delobj(consumed, state);
-    if (state.u.ux === x && state.u.uy === y) maybeUnhideAt(x, y, state);
+    if (state.u.ux === x && state.u.uy === y
+        && state.u.uundetected && heroFormHidesUnderObjects(state)) hideHeroUnder(state);
 }
