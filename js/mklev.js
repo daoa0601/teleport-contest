@@ -1393,6 +1393,8 @@ async function initMonsterGroup(mndx, x, y, countRange, mmflags) {
         const member = await makemonNear(mndx, centerX, centerY, mmflags | MM_NOGRP);
         if (member) {
             member.mpeaceful = 0;
+            member.mavenge = 0;
+            setMonsterMalign(member);
             centerX = member.mx;
             centerY = member.my;
         }
@@ -2878,6 +2880,7 @@ export async function summonNastyMonsters(summoner, { onCreate = null } = {}) {
             monster.msleeping = 0;
             monster.mpeaceful = 0;
             monster.mtame = 0;
+            setMonsterMalign(monster);
             monster.mspec_used = rnd(4);
             created.push(monster);
             if (monster.mnum === archLich || monster.mnum === archon) {
@@ -4524,6 +4527,7 @@ async function fillCourtRoom(room) {
     if (ruler) {
         ruler.msleeping = 1;
         ruler.mpeaceful = 0;
+        setMonsterMalign(ruler);
         const mace = await mksobj(MACE, true, false);
         await addObjectToMonsterInventory(ruler, mace, game, { atFront: true });
     }
@@ -4557,7 +4561,10 @@ async function fillCourtRoom(room) {
                 : await makemon(mndx, x, y, MM_ASLEEP | MM_NOGRP);
             if (monster) {
                 monster.msleeping = 1;
-                monster.mpeaceful = 0;
+                if (monster.mpeaceful) {
+                    monster.mpeaceful = 0;
+                    setMonsterMalign(monster);
+                }
             }
         }
     }
