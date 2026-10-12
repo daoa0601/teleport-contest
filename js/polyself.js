@@ -1259,7 +1259,7 @@ async function changeVampireForm(mnum, controlled) {
             mnum = hero.mcham;
     }
     if (controlled) {
-        const answer = await promptYesNo(`Become ${formNameWithArticle(mnum)}? [yn] (n) `);
+        const answer = await promptYesNo(`Become ${formNameWithArticle(mnum)}?`);
         if (answer !== 'y')
             return { transformed: false };
     }

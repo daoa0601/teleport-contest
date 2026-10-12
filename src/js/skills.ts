@@ -414,7 +414,7 @@ export async function doenhance() {
     let speedy = false;
     if (game.flags.debug) {
         await flushPendingTopline();
-        speedy = await promptYesNo('Advance skills without practice? [yn] (n) ') === 'y';
+        speedy = await promptYesNo('Advance skills without practice?') === 'y';
     }
     game.context.move = 0;
     for (;;) {

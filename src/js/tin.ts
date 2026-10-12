@@ -166,7 +166,7 @@ export async function useTinOpener(tool: GameObject, { state = game, swapWeapons
     let usedTime = false;
     if (tool !== state.uwep) {
         if (tool.cursed && tool.bknown && await promptYesNoQuit(
-            `Really wield ${inventoryItemDescription(tool)}? [ynq] (q) `,
+            `Really wield ${inventoryItemDescription(tool)}?`,
         ) !== 'y') return { usedTime, cancelled: true, heroDied: false };
         const wielded = await wieldTool(tool, 'use', { swapWeapons }, state);
         if (!wielded.ready || state.program_state.gameover)
@@ -218,7 +218,7 @@ async function consumeTin(message: string, { state }: { state: PlayingGameState 
     const smell = tinSmell(species, state);
     if (!eatsMetal(state)) {
         await plineWithContinuation(`It smells like ${smell}.`);
-        if (await promptYesNo('Eat it? [yn] (n) ') === 'n') {
+        if (await promptYesNo('Eat it?') === 'n') {
             await discardTin(tin, state, !heroIsHallucinating(state));
             return;
         }
@@ -261,7 +261,7 @@ async function consumeSpinach(tin: GameObject, state: PlayingGameState) {
         observeObject(tin, state);
         tin.known = true;
     }
-    if (!eatsMetal(state) && await promptYesNo('Eat it? [yn] (n) ') === 'n') {
+    if (!eatsMetal(state) && await promptYesNo('Eat it?') === 'n') {
         await discardTin(tin, state, false);
         return;
     }

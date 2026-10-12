@@ -7,6 +7,21 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { flush_screen, pline, plineWithContinuation } from '../js/display.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
+void test('a confirmation displays its choices and default before reading input', async () => {
+    freshPlayableRoom();
+    const input = resetInputState();
+    const answer = promptYesNoQuit('Leave this level?');
+    try {
+        await input.waitUntilBlocked();
+        assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(),
+            'Leave this level? [ynq] (q)');
+        assert.equal(game.nhDisplay?.cursorCol, 28);
+    } finally {
+        input.feed(' ');
+        assert.equal(await answer, 'q');
+    }
+});
+
 // C getline.c checks the erase character before the kill character, and the
 // recorder's NOMUX terminal synthesis sets erase to DEL and kill to ^U
 // (unixtty.c gettty()): DEL backs over one byte, ^U removes the whole line.
@@ -52,7 +67,7 @@ void test('confirmation acknowledges distinct unread prose and asks its question
     requirePlayingGame(game);
     await pline('You find a trap on the door!');
     const input = resetInputState();
-    const answer = promptYesNoQuit('Disarm it? [ynq] (q) ');
+    const answer = promptYesNoQuit('Disarm it?');
     await input.waitUntilBlocked();
     assert.equal(game._pending_message, 'You find a trap on the door!');
     input.feed(' ');
@@ -68,7 +83,7 @@ void test('an answered one-line confirmation remains visible without paging agai
     const prompt = 'Continue studying? [yn] (n) ';
     pushKeys('nX');
 
-    assert.equal(await promptYesNo(prompt), 'n');
+    assert.equal(await promptYesNo('Continue studying?'), 'n');
     await flush_screen(1);
     assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(), prompt.trimEnd());
 
@@ -80,7 +95,7 @@ void test('an answered one-line confirmation remains visible without paging agai
 
 void test('an answered wrapped confirmation clears the covered message area', async () => {
     freshPlayableRoom();
-    const prompt = 'Do you really want to leave this room before examining the strange inscription on the far wall? [yn] (n) ';
+    const prompt = 'Do you really want to leave this room before examining the strange inscription on the far wall?';
     pushKeys('n');
 
     assert.equal(await promptYesNo(prompt), 'n');
@@ -92,15 +107,15 @@ void test('Escape rejects a yes/no question even when yes is the default', async
     freshPlayableRoom();
     requirePlayingGame(game);
     pushKeys('\x1b');
-    assert.equal(await promptYesNo('Continue? [yn] (y) ', 'y'), 'n');
+    assert.equal(await promptYesNo('Continue?', 'y'), 'n');
 });
 
 void test('Escape quits a multi-item question rather than choosing its default', async () => {
     freshPlayableRoom();
     requirePlayingGame(game);
     pushKeys('\x1b\x1b');
-    assert.equal(await promptYesNoQuit('Take it? [ynq] (n) ', 'n'), 'q');
-    assert.equal(await promptYesNoAllQuit('Sell it? [ynaq] (y) '), 'q');
+    assert.equal(await promptYesNoQuit('Take it?', 'n'), 'q');
+    assert.equal(await promptYesNoAllQuit('Sell it?'), 'q');
 });
 
 void test('space and either newline accept the displayed sale default', async () => {
@@ -108,18 +123,18 @@ void test('space and either newline accept the displayed sale default', async ()
         freshPlayableRoom();
         requirePlayingGame(game);
         pushKeys(key);
-        assert.equal(await promptYesNoAllQuit('Sell it? [ynaq] (y) '), 'y');
+        assert.equal(await promptYesNoAllQuit('Sell it?'), 'y');
     }
     freshPlayableRoom();
     requirePlayingGame(game);
     pushKeys(' ');
-    assert.equal(await promptYesNoAllQuit('Accept credit? [ynaq] (n) ', 'n'), 'n');
+    assert.equal(await promptYesNoAllQuit('Accept credit?', 'n'), 'n');
 });
 
 void test('a sale question ignores invalid keys and accepts all without consuming the next answer', async () => {
     freshPlayableRoom();
     requirePlayingGame(game);
     pushKeys('xAy');
-    assert.equal(await promptYesNoAllQuit('Sell it? [ynaq] (y) '), 'a');
-    assert.equal(await promptYesNo('Continue? [yn] (n) '), 'y');
+    assert.equal(await promptYesNoAllQuit('Sell it?'), 'a');
+    assert.equal(await promptYesNo('Continue?'), 'y');
 });

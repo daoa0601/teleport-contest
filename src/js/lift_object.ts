@@ -264,7 +264,7 @@ export async function liftObject({
         const answer = await promptYesNoQuit(
             `${pickupLoadPrefix(nextBurden)} ${action} ${
                 itemDescription(object, liftedCount)
-            }.  Continue? [ynq] (q) `,
+            }.  Continue?`,
         );
         if (answer !== 'y') {
             resetRejectedScareScroll(object, container);

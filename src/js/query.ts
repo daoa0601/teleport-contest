@@ -1,7 +1,7 @@
 // query.js — Shared tty line and confirmation input ownership.
 // C refs: cmd.c paranoid_query()/paranoid_ynq(), tty getlin/yn_function.
 
-import { COLNO, PARANOID_CONFIRM } from './const.js';
+import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
 import { clearMessageWindow, flushPendingTopline, flush_screen, pline } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
@@ -77,29 +77,36 @@ export async function getLine(
     }
 }
 
-function placeToplinePromptCursor(position: number): void {
+function renderChoicePrompt(message: string): void {
     const display = game.nhDisplay;
-    const columns = display?.cols ?? COLNO;
-    if (position > columns - 1)
-        display?.setCursor(position - (columns - 1), 1);
-    else
-        display?.setCursor(position, 0);
+    if (!display) return;
+    const width = display.cols - 1;
+    for (let row = 0; row * width < message.length; row++) {
+        display.clearRow(row);
+        display.putstr(0, row, message.slice(row * width, (row + 1) * width), NO_COLOR);
+    }
+    const length = message.length;
+    display.setCursor(length ? (length - 1) % width + 1 : 0,
+        length ? Math.floor((length - 1) / width) : 0);
 }
 
 // C tty_yn_function(): Escape prefers quit, then no; whitespace chooses
 // the displayed default. Invalid keys leave the same question active.
 export async function promptChoice<Choice extends string>(
-    message: string, choices: readonly Choice[], defaultAnswer: Choice, cursorOffset: number,
+    query: string, choices: readonly Choice[], defaultAnswer: Choice,
+    { visibleChoices = choices.join('') }: { visibleChoices?: string } = {},
 ): Promise<Choice> {
+    const message = `${query.slice(0, QBUFSZ - 1)} [${visibleChoices}] (${defaultAnswer}) `;
+    const preserveCase = choices.some(choice => /[A-Z]/.test(choice));
     game._suppressMessagesUntilInput = false;
     await flushPendingTopline();
     await pline(message);
     await flush_screen(1);
-    placeToplinePromptCursor(message.length + cursorOffset);
+    renderChoicePrompt(message);
     const wrapped = (game.nhDisplay?.cursorRow ?? 0) > 0;
     for (;;) {
         const key = await nhgetch();
-        const character = String.fromCharCode(key).toLowerCase();
+        const character = preserveCase ? String.fromCharCode(key) : String.fromCharCode(key).toLowerCase();
         let answer: Choice | undefined;
         if (key === 27) {
             answer = choices.find(choice => choice === 'q')
@@ -108,6 +115,7 @@ export async function promptChoice<Choice extends string>(
             answer = defaultAnswer;
         } else answer = choices.find(choice => choice === character);
         if (answer === undefined) continue;
+        if (game.nhDisplay) game.nhDisplay.toplines = message + answer;
         // nhgetch marks the question as seen. tty_yn_function keeps a
         // one-line question visible and clears only prompts covering the map.
         if (wrapped) clearMessageWindow();
@@ -115,16 +123,16 @@ export async function promptChoice<Choice extends string>(
     }
 }
 
-export function promptYesNo(message: string, defaultAnswer: 'y' | 'n' = 'n', cursorOffset = 0): Promise<'y' | 'n'> {
-    return promptChoice(message, ['y', 'n'], defaultAnswer, cursorOffset);
+export function promptYesNo(message: string, defaultAnswer: 'y' | 'n' = 'n'): Promise<'y' | 'n'> {
+    return promptChoice(message, ['y', 'n'], defaultAnswer);
 }
 
-export function promptYesNoQuit(message: string, defaultAnswer: 'y' | 'n' | 'q' = 'q', cursorOffset = 0): Promise<'y' | 'n' | 'q'> {
-    return promptChoice(message, ['y', 'n', 'q'], defaultAnswer, cursorOffset);
+export function promptYesNoQuit(message: string, defaultAnswer: 'y' | 'n' | 'q' = 'q'): Promise<'y' | 'n' | 'q'> {
+    return promptChoice(message, ['y', 'n', 'q'], defaultAnswer);
 }
 
-export function promptYesNoAllQuit(message: string, defaultAnswer: 'y' | 'n' | 'a' | 'q' = 'y', cursorOffset = 0): Promise<'y' | 'n' | 'a' | 'q'> {
-    return promptChoice(message, ['y', 'n', 'a', 'q'], defaultAnswer, cursorOffset);
+export function promptYesNoAllQuit(message: string, defaultAnswer: 'y' | 'n' | 'a' | 'q' = 'y'): Promise<'y' | 'n' | 'a' | 'q'> {
+    return promptChoice(message, ['y', 'n', 'a', 'q'], defaultAnswer);
 }
 
 // A per-question paranoia bit changes affirmative input from `y` to the full
@@ -136,7 +144,7 @@ export async function paranoidQuery(
     paranoiaBits = game.flags?.paranoia_bits ?? 0,
 ) {
     if (!beParanoid)
-        return await promptYesNo(`${prompt} [yn] (n) `) === 'y';
+        return await promptYesNo(prompt) === 'y';
 
     const confirmAll = !!(paranoiaBits & PARANOID_CONFIRM);
     const responseType = confirmAll ? '[yes|no]' : '[yes|n] (n)';

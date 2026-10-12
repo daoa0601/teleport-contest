@@ -119,7 +119,7 @@ async function chooseOffering(): Promise<GameObject | null> {
             const single = objectQuantity(corpse) === 1;
             observeObjectForNaming(corpse);
             const answer = await promptYesNoQuit(
-                `There ${single ? 'is' : 'are'} ${floorObjectDescription(corpse)} here; sacrifice ${single ? 'it' : 'one'}? [ynq] (n) `,
+                `There ${single ? 'is' : 'are'} ${floorObjectDescription(corpse)} here; sacrifice ${single ? 'it' : 'one'}?`,
                 'n',
             );
             if (answer === 'y') return corpse;
@@ -447,7 +447,7 @@ async function bestowArtifact(value: number): Promise<boolean> {
     if (hero.ulevel <= 2 || (hero.uluck ?? 0) < 0) return false;
     const count = artifactExistCount();
     const selected = game.flags.debug
-        ? await promptYesNo('Gift an artifact? [yn] (n) ') === 'y'
+        ? await promptYesNo('Gift an artifact?') === 'y'
         : rn2(6 + 2 * (hero.ugifts || 0) * count) === 0;
     if (!selected) return false;
     const object = await createArtifactGift(hero.ualign.type, value);

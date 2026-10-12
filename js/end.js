@@ -160,7 +160,7 @@ export async function finishHeroDeath({ killer, beforeFinalDeath = null, deathCa
         }
     }
     if (game.flags?.debug || game.flags?.explore) {
-        const answer = await promptYesNo('Die? [yn] (n) ');
+        const answer = await promptYesNo('Die?');
         if (answer !== 'y') {
             await plineWithContinuation("OK, so you don't die.");
             await restoreHeroAfterDeath({ deathType });
@@ -967,7 +967,7 @@ async function setVanqOrder(forVanquished) {
 // behind ESC (the single-vanquished-species 'a') stay acceptable.
 async function ynQuestion(question, visible, defquery, { hiddenAll = false } = {}) {
     const choices = visible === 'ynaq' || hiddenAll ? ['y', 'n', 'a', 'q'] : ['y', 'n', 'q'];
-    return await promptChoice(`${question} [${visible}] (${defquery}) `, choices, defquery, 0);
+    return await promptChoice(question, choices, defquery, { visibleChoices: visible });
 }
 // C end.c:disclose().  Shared by death, quitting, escape, and ascension.
 // Each category consults the end_disclose option first: it either fixes
@@ -1144,7 +1144,7 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
     game.context.move = 0;
 }
 export async function doquit() {
-    const answer = await promptYesNo('Really quit without saving? [yn] (n) ');
+    const answer = await promptYesNo('Really quit without saving?');
     if (answer !== 'y') {
         // C end.c:done2() clears the answered question without a docrt,
         // cancels voluntary repetition, and releases prayer/sleep only

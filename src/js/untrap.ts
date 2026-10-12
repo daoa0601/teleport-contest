@@ -343,7 +343,7 @@ async function chooseFloorTrapOrBox(trap: Trap, boxCount: number, ask: typeof pr
     const verb = trap.ttyp === WEB ? 'Remove' : 'Disarm';
     const subject = `There ${boxCount === 1 ? 'is' : 'are'} ${containers} `
         + `and ${article(noun)} ${noun} here.`;
-    return ask(`${subject}  ${verb} the ${noun}? [ynq] (q) `);
+    return ask(`${subject}  ${verb} the ${noun}?`);
 }
 
 async function handleFloorTrap(trap: Trap, options: FloorTrapOptions): Promise<boolean> {
@@ -782,8 +782,8 @@ async function handleBoxes(boxes: GameObject[], {
         const known = box.tknown && box.dknown;
         const name = OBJECT_NAMES[box.otyp] || box.name || 'box';
         const answer = await ask(known
-            ? `Disarm this ${name}? [ynq] (q) `
-            : `There is ${article(name)} ${name} here.  Check it for traps? [ynq] (q) `);
+            ? `Disarm this ${name}?`
+            : `There is ${article(name)} ${name} here.  Check it for traps?`);
         if (answer === 'q') return false;
         if (answer === 'n') continue;
         if (known) {
@@ -821,7 +821,7 @@ async function inspectBox(box: GameObject, options: BoxTrapOptions): Promise<voi
     box.tknown = true;
     box.dknown = true;
     if (!impaired) await exerciseAttribute(A_WIS, true, state);
-    if (await ask('Disarm it? [ynq] (q) ') === 'y')
+    if (await ask('Disarm it?') === 'y')
         await disarmBox(box, options);
 }
 
@@ -885,7 +885,7 @@ async function handleDoor(x: number, y: number, {
 
     await publish('You find a trap on the door!');
     await exerciseAttribute(A_WIS, true, state);
-    if (await ask('Disarm it? [ynq] (q) ') !== 'y') return true;
+    if (await ask('Disarm it?') !== 'y') return true;
     if (!(door.doormask & D_TRAPPED)) {
         await publish('This door was not trapped.');
         return true;

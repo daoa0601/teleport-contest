@@ -3,10 +3,23 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { CLUB, OIL_LAMP } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+void test('wielding with no suggested weapons shows the hands choice with one separator', async () => {
+    freshPlayableRoom();
+    const input = resetInputState();
+    const wield = rhack('w'.charCodeAt(0));
+    try {
+        await input.waitUntilBlocked();
+        assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(), 'What do you want to wield? [- or ?*]');
+    }
+    finally {
+        input.feed('\x1b');
+        await wield;
+    }
+});
 void test('rubbing a lamp wields it and keeps the old weapon as secondary', async () => {
     freshPlayableRoom();
     requirePlayingGame(game);

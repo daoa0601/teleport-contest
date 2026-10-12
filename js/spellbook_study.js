@@ -78,7 +78,7 @@ export async function studyBook(book, { state = game } = {}) {
         if (remembered && currentSpellKnowledge(remembered, state) > 2000) {
             await pline(`You know "${OBJECT_NAMES[type]}" quite well already.`);
             learnObjectType(type, state);
-            if (await promptYesNo('Refresh your memory anyway? [yn] (n)', 'n', 1) !== 'y')
+            if (await promptYesNo('Refresh your memory anyway?', 'n') !== 'y')
                 return outcome(false, state);
         }
         book.in_use = true;
@@ -91,8 +91,8 @@ export async function studyBook(book, { state = game } = {}) {
                 const ability = currentAttribute(A_INT, state) + 4
                     + Math.trunc(state.u.ulevel / 2) - 2 * level + (lenses ? 2 : 0);
                 if (state.urole.key === 'wizard' && ability < 20 && !confused) {
-                    const question = `This spellbook is ${ability < 12 ? 'very ' : ''}difficult to comprehend.  Continue? [yn] (n)`;
-                    if (await promptYesNo(question, 'n', 1) !== 'y') {
+                    const question = `This spellbook is ${ability < 12 ? 'very ' : ''}difficult to comprehend.  Continue?`;
+                    if (await promptYesNo(question, 'n') !== 'y') {
                         book.in_use = false;
                         return outcome(true, state);
                     }

@@ -230,7 +230,7 @@ async function identifyTraditionally(limit: number): Promise<IdentificationResul
                         primaryHandDetail: inventoryPrimaryHandDetail(object),
                     });
                     await flushPendingTopline();
-                    response = await promptYesNoAllQuit(`${letter} - ${description}? [ynaq] (n) `, 'n');
+                    response = await promptYesNoAllQuit(`${letter} - ${description}?`, 'n');
                 }
                 if (response === 'q') return { identified, remaining: 0 };
                 questioned++;

@@ -133,7 +133,7 @@ async function applyFieryGaze({ monster, state, publish, random, rollDice, finis
 }
 async function confirmPeacefulGaze(monster, damageType) {
     const action = damageType === AD_CONF ? 'confuse' : 'attack';
-    return await promptYesNo(`Really ${action} ${monsterObject(monster)}? [yn] (n) `) === 'y';
+    return await promptYesNo(`Really ${action} ${monsterObject(monster)}?`) === 'y';
 }
 export async function useHeroGaze({ state = game, attack = heroGazeAttack(state), publish = plineWithContinuation, random = rn2, rollDice = d, finishMonsterKill = finishHeroMonsterKill, die = finishHeroDeath, } = {}) {
     if (!attack)

@@ -249,7 +249,7 @@ export async function finishHeroDeath({
     }
 
     if (game.flags?.debug || game.flags?.explore) {
-        const answer = await promptYesNo('Die? [yn] (n) ');
+        const answer = await promptYesNo('Die?');
         if (answer !== 'y') {
             await plineWithContinuation("OK, so you don't die.");
             await restoreHeroAfterDeath({ deathType });
@@ -1101,7 +1101,7 @@ async function ynQuestion(
     const choices: Array<'y' | 'n' | 'a' | 'q'>
         = visible === 'ynaq' || hiddenAll ? ['y', 'n', 'a', 'q'] : ['y', 'n', 'q'];
     return await promptChoice(
-        `${question} [${visible}] (${defquery}) `, choices, defquery, 0,
+        question, choices, defquery, { visibleChoices: visible },
     );
 }
 
@@ -1305,7 +1305,7 @@ async function completeOrdinaryDeath({
 
 export async function doquit() {
     const answer = await promptYesNo(
-        'Really quit without saving? [yn] (n) ',
+        'Really quit without saving?',
     );
     if (answer !== 'y') {
         // C end.c:done2() clears the answered question without a docrt,
