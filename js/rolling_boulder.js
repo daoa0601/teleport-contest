@@ -26,6 +26,7 @@ import { applyMonsterPassiveToObject } from './monster_passive.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { BOULDER } from './object_data.js';
+import { observeObject } from './object_knowledge.js';
 import { shipObject } from './object_migration.js';
 import { unlinkObject } from './object_location.js';
 import { splitObjectStack } from './object_stack.js';
@@ -237,11 +238,13 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
         const spotted = canSpotMonster(monster);
         const mimic = !!monster.m_ap_type && monster.m_ap_type !== M_AP_MONSTER;
         if (visible)
-            object.dknown = true;
+            observeObject(object, state);
         const accuracy = 5 + findMonsterArmorClass(monster) + rangedTargetHitBonus(object, monster, { state });
         if (accuracy < rollOne(20)) {
-            if (visible && !mimic)
-                await publish(`The boulder misses ${spotted ? monsterName(monster, { state }) : 'it'}.`);
+            if (visible && !mimic) {
+                const target = state.flags.verbose ? monsterName(monster, { state }) : 'it';
+                await publish(`The boulder misses ${target}.`);
+            }
             return false;
         }
         const damage = rollPhysicalWeaponDamage(object, monster, { state, rollOne, rollDice });
@@ -250,8 +253,11 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
         if (mimic)
             revealMonsterAppearance(monster);
         monster.msleeping = 0;
-        if (visible)
-            await publish(`The boulder hits ${spotted ? monsterName(monster, { state }) : 'it'}${harmless ? ' but passes harmlessly through it.' : damage > 4 ? '!' : '.'}`);
+        if (visible) {
+            const target = state.flags.verbose ? monsterName(monster, { state }) : 'it';
+            const ending = harmless ? ' but passes harmlessly through it.' : damage > 4 ? '!' : '.';
+            await publish(`The boulder hits ${target}${ending}`);
+        }
         if (!harmless) {
             monster.mhp -= damage;
             if (monster.mhp <= 0) {
@@ -267,11 +273,14 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
             await angerMonster(monster);
         if (await shipObject(object, position.x, position.y, { state, publish, random }))
             return true;
+        const occupant = monsterAtPosition(level, position.x, position.y);
         const floor = await applyFloorEffects(object, position.x, position.y, { state, publish, random, verb: 'fall' });
         if (floor.finished)
             return true;
         await placeObject(object, position.x, position.y, state);
-        await applyMonsterPassiveToObject(monster, object, { state, publish, random });
+        const defender = occupant ?? (state.u.ux === position.x && state.u.uy === position.y ? state.u : null);
+        if (defender)
+            await applyMonsterPassiveToObject(defender, object, { state, publish, random });
         object = await stack_object(object, state);
         boulder = object;
         unlinkObject(object, state);

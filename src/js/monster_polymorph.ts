@@ -294,7 +294,9 @@ function selectSandestinForm(): number | null {
         const targetMnum = rn2(7)
             ? pickNastyShape((MONSTER_DIFFICULTY[PM_ARCHON] ?? 0) - 1)
             : randomShape(PM_SANDESTIN);
-        if (acceptsShapechangerForm(PM_SANDESTIN, targetMnum))
+        const wantsUppercase = triesLeft > 15 && Is_rogue_level(game.u?.uz);
+        if (acceptsShapechangerForm(PM_SANDESTIN, targetMnum)
+            && (!wantsUppercase || /^[A-Z]$/.test(monsterClassSymbol(targetMnum))))
             return targetMnum;
     }
     return null;
