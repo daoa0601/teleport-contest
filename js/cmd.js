@@ -776,10 +776,9 @@ async function continueOccupation(g) {
                 if (await triggerBoobyTrap('door', { bodypart: true, state: g }))
                     return false;
                 occupation.door.doormask = D_NODOOR;
+                vision_note_blocker_change(occupation.x, occupation.y);
                 if (roomsAt(g.level, occupation.x, occupation.y, SHOPBASE).length)
                     addShopDamage(occupation.x, occupation.y, SHOP_DOOR_COST, g);
-                vision_reset();
-                vision_recalc(0);
             }
             else if (occupation.door && (occupation.door.doormask & D_LOCKED)) {
                 occupation.door.doormask &= ~D_LOCKED;
