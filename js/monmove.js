@@ -169,6 +169,7 @@ import { findMonsterDefensiveItem, useMonsterDefensiveItem } from './monster_def
 import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
 import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted, } from './teleport_rules.js';
 import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
+import { publishMonsterWake } from './monster_wake.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
 import { aggravateMonsters, angerMonster, angerWatchGuards } from './monster_anger.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -1493,7 +1494,7 @@ async function watchOnDuty(monster, state, random, calls) {
 // scheduler has debited this actor's movement.  A failed wake roll therefore
 // remains part of the actor's observable RNG slice even though no state or
 // screen changes.
-export function disturbSleepingMonster(monster, state, random = rn2, calls = []) {
+export async function disturbSleepingMonster(monster, state, random = rn2, calls = []) {
     if (!monster?.msleeping ||
         !couldSeeFromHero(state, monster.mx, monster.my) ||
         dist2(monster.mx, monster.my, state?.u?.ux ?? monster.mx, state?.u?.uy ?? monster.my) > 100)
@@ -1519,6 +1520,7 @@ export function disturbSleepingMonster(monster, state, random = rn2, calls = [])
         if (M_AP_TYPE(monster) === M_AP_FURNITURE || M_AP_TYPE(monster) === M_AP_OBJECT)
             return false;
     }
+    await publishMonsterWake(monster, !monster.mpeaceful, state);
     monster.msleeping = 0;
     return true;
 }
@@ -7439,10 +7441,9 @@ export async function runMonsterAction(monster, state, random = rn2, rollDice = 
     // movemon_singlemon() has already debited this actor's movement.
     // dochug() gives a movable sleeper one source-ordered disturbance
     // attempt before returning ahead of set_apparxy()/distfleeck().
-    let wokeFromDisturb = false;
     if (monster.msleeping) {
-        wokeFromDisturb = disturbSleepingMonster(monster, state, random, calls);
-        if (!wokeFromDisturb) {
+        const woke = await disturbSleepingMonster(monster, state, random, calls);
+        if (!woke) {
             return {
                 monster,
                 calls,
@@ -7459,8 +7460,6 @@ export async function runMonsterAction(monster, state, random = rn2, rollDice = 
     }
     const { calls: actionCalls, movement, dochugContext, } = await takeMonsterTurn(monster, state, random, rollDice, rollOne);
     calls.push(...actionCalls);
-    if (wokeFromDisturb)
-        movement.wokeFromDisturb = true;
     return { monster, calls, movement, dochugContext };
 }
 //# sourceMappingURL=monmove.js.map

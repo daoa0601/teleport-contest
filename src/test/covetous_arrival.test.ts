@@ -28,9 +28,9 @@ void test('an unseen arch-lich introduces its covetous arrival with An', async (
         const input = resetInputState();
         input.beforeRead = () => { messages.push(game._pending_message); };
         installPagerInput(input, { expected: /arch-lich/, limit: 5 });
-    
+
         await finishAtCommandInput(input, moveloop_core, /arch-lich|^$/);
-    
+
         if (Math.max(Math.abs(lich.mx - game.u.ux), Math.abs(lich.my - game.u.uy)) <= 1) {
             arrivals++;
             assert.match(messages.join('\n'), /An arch-lich suddenly appears next to you!/);

@@ -450,6 +450,7 @@ import {
     monsterTeleportRestricted,
 } from './teleport_rules.js';
 import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
+import { publishMonsterWake } from './monster_wake.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
 import { aggravateMonsters, angerMonster, angerWatchGuards } from './monster_anger.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -2073,7 +2074,7 @@ async function watchOnDuty(
 // scheduler has debited this actor's movement.  A failed wake roll therefore
 // remains part of the actor's observable RNG slice even though no state or
 // screen changes.
-export function disturbSleepingMonster(
+export async function disturbSleepingMonster(
     monster: Monster,
     state: PlayingGameState,
     random: RandomBelow = rn2,
@@ -2113,6 +2114,7 @@ export function disturbSleepingMonster(
             return false;
     }
 
+    await publishMonsterWake(monster, !monster.mpeaceful, state);
     monster.msleeping = 0;
     return true;
 }
@@ -9154,10 +9156,9 @@ export async function runMonsterAction(
     // movemon_singlemon() has already debited this actor's movement.
     // dochug() gives a movable sleeper one source-ordered disturbance
     // attempt before returning ahead of set_apparxy()/distfleeck().
-    let wokeFromDisturb = false;
     if (monster.msleeping) {
-        wokeFromDisturb = disturbSleepingMonster(monster, state, random, calls);
-        if (!wokeFromDisturb) {
+        const woke = await disturbSleepingMonster(monster, state, random, calls);
+        if (!woke) {
             return {
                 monster,
                 calls,
@@ -9178,6 +9179,5 @@ export async function runMonsterAction(
         dochugContext,
     } = await takeMonsterTurn(monster, state, random, rollDice, rollOne);
     calls.push(...actionCalls);
-    if (wokeFromDisturb) movement.wokeFromDisturb = true;
     return { monster, calls, movement, dochugContext };
 }
