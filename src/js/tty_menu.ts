@@ -389,4 +389,3 @@ function menuSearchMatches(query: string, text: string): boolean {
         : character === '?' ? '.' : character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('');
     return new RegExp(pattern, 'i').test(text);
 }
-
