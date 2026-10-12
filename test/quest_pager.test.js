@@ -36,6 +36,15 @@ void test('quest guardians are named without an article in singular and plural',
     freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
     assert.equal(convertQuestLine('%g; %gp; %gP', game), 'warrior; warriors; Warriors');
 });
+void test('shortened quest artifact names consume pronoun suffixes', () => {
+    freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
+    assert.equal(convertQuestLine('Keep %O safe: %Oh must return home. Protect %Oi and %Oj power.', game), 'Keep the Orb safe: it must return home. Protect it and its power.');
+    assert.equal(convertQuestLine('%OH must return home. Protect %OI and %OJ power.', game), 'It must return home. Protect It and Its power.');
+});
+void test('shortened plural quest artifact names use singular pronouns', () => {
+    freshObjectRoom({ role: 'monk', gameplaySeed: 11n });
+    assert.equal(convertQuestLine('Recover %o: %oh belong here. Recover %O: %Oh belongs here.', game), 'Recover the Eyes of the Overworld: they belong here. Recover the Eyes: it belongs here.');
+});
 const deityCases = [
     { role: 'caveman', alignment: 0, deity: 'Ishtar', title: 'goddess' },
     { role: 'ranger', alignment: 0, deity: 'Venus', title: 'goddess' },

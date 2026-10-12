@@ -175,7 +175,7 @@ export function convertQuestLine(line, g = game) {
             case 'I':
             case 'j':
             case 'J':
-                if ('dlno'.includes(code)) {
+                if ('dlno'.includes(code.toLowerCase())) {
                     value = questPronoun(code, modifier, value, g);
                     i++;
                     break;

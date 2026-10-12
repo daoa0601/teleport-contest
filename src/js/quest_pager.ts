@@ -181,7 +181,7 @@ export function convertQuestLine(line: string, g: GameState = game): string {
             i++;
             break;
         case 'h': case 'H': case 'i': case 'I': case 'j': case 'J':
-            if ('dlno'.includes(code)) {
+            if ('dlno'.includes(code.toLowerCase())) {
                 value = questPronoun(code, modifier, value, g);
                 i++;
                 break;
