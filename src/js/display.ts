@@ -1220,17 +1220,43 @@ export function show_glyph_cell(
         color = NO_COLOR;
         decgfx = false;
     }
-    // show_glyph() compares with the buffered appearance, not the terminal.
+    const nextGlyph: GlyphMetadata = glyph || { kind: 'effect' };
+    // show_glyph() compares glyph identity as well as buffered appearance.
+    // Different species can share the same character and color.
     // Once queued, a cell still needs printing if a later update restores it.
-    if (loc.disp_ch !== ch || loc.disp_color !== color
+    if (!sameGlyphIdentity(loc.disp_glyph, nextGlyph)
+        || loc.disp_ch !== ch || loc.disp_color !== color
         || loc.disp_decgfx !== decgfx || loc.disp_attr !== (attr | 0)) {
         loc.gnew = 1;
     }
-    loc.disp_glyph = glyph || { kind: 'effect' };
+    loc.disp_glyph = nextGlyph;
     loc.disp_ch = ch;
     loc.disp_color = color;
     loc.disp_decgfx = !!decgfx;
     loc.disp_attr = attr | 0;
+}
+
+function sameGlyphIdentity(previous: GlyphMetadata | null | undefined, next: GlyphMetadata) {
+    if (!previous || previous.kind !== next.kind) return false;
+    switch (next.kind) {
+    case 'monster':
+        return previous.kind === 'monster' && previous.mnum === next.mnum;
+    case 'object':
+        return previous.kind === 'object' && previous.otyp === next.otyp
+            && !!previous.statueGlyph === !!next.statueGlyph
+            && !!previous.piletop === !!next.piletop;
+    case 'terrain':
+        return previous.kind === 'terrain' && previous.terrainName === next.terrainName;
+    case 'trap':
+        return previous.kind === 'trap' && previous.trapType === next.trapType;
+    case 'nothing':
+    case 'engraving':
+    case 'invisible':
+    case 'effect':
+    case 'warning':
+    case 'unexplored':
+        return true;
+    }
 }
 
 // flush_screen() prints queued glyphs in row order. tty_print_glyph() leaves

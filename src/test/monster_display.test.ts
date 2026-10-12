@@ -12,6 +12,8 @@ import {
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { placeMonsterAt } from '../js/monster_location.js';
+import { nameToMonster } from '../js/mondata.js';
+import { setMonsterSpecies } from '../js/monster_species.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { CLR_BLUE, CLR_BROWN, CLR_CYAN, CLR_RED, NO_COLOR } from '../js/terminal.js';
@@ -185,6 +187,39 @@ void test('showing the same buffered glyph does not move the cursor', async () =
     display.setCursor(20, 0);
     newsym(9, 10);
 
+    await flush_screen(0);
+
+    assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
+});
+
+void test('a species change redraws a monster even when its character and color stay the same', async () => {
+    freshObjectRoom();
+    const monster = await createMonsterAt('jackal', 11, 10, MM_NOGRP | NO_MINVENT);
+    newsym(11, 10);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(10, 11).ch, 'd');
+    assert.equal(requireScreenCell(10, 11).color, CLR_BROWN);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+
+    setMonsterSpecies(monster, nameToMonster('coyote'));
+    newsym(11, 10);
+    await flush_screen(0);
+
+    assert.equal(requireScreenCell(10, 11).ch, 'd');
+    assert.equal(requireScreenCell(10, 11).color, CLR_BROWN);
+    assert.deepEqual([display.cursorCol, display.cursorRow], [11, 11]);
+});
+
+void test('redrawing an unchanged monster preserves the cursor', async () => {
+    freshObjectRoom();
+    await createMonsterAt('jackal', 11, 10, MM_NOGRP | NO_MINVENT);
+    newsym(11, 10);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+
+    newsym(11, 10);
     await flush_screen(0);
 
     assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
