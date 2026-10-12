@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
     BEAR_TRAP, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DBWALL, DRAWBRIDGE_DOWN,
+    CORPSTAT_FEMALE, CORPSTAT_MALE, DOOR, D_CLOSED,
     DRAWBRIDGE_UP, ICE, MAGIC_TRAP, MM_NOGRP, NO_MINVENT, PIT, SPIKED_PIT, WEB,
 } from '../js/const.js';
 import {
@@ -14,6 +15,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { nameToMonster } from '../js/mondata.js';
 import { setMonsterSpecies } from '../js/monster_species.js';
+import { CORPSE, STATUE } from '../js/object_data.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { CLR_BLUE, CLR_BROWN, CLR_CYAN, CLR_RED, NO_COLOR } from '../js/terminal.js';
@@ -21,6 +23,7 @@ import { cansee } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { floorObject } from './support/game-objects.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('Warning replaces invisible memory, so a departing monster leaves the floor', async () => {
@@ -223,6 +226,121 @@ void test('redrawing an unchanged monster preserves the cursor', async () => {
     await flush_screen(0);
 
     assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
+});
+
+for (const { name, type, ch } of [
+    { name: 'corpse', type: CORPSE, ch: '%' },
+    { name: 'statue', type: STATUE, ch: 'd' },
+]) {
+    void test(`a ${name} species change redraws even when its appearance stays the same`, async () => {
+        freshObjectRoom();
+        const object = await floorObject(type, 11, 10, {
+            corpsenm: nameToMonster('jackal'), initialize: false,
+        });
+        newsym(11, 10);
+        await flush_screen(1);
+        const initialColor = requireScreenCell(10, 11).color;
+        assert.equal(requireScreenCell(10, 11).ch, ch);
+        const display = requireGameDisplay(game);
+        display.setCursor(20, 0);
+
+        object.corpsenm = nameToMonster('coyote');
+        newsym(11, 10);
+        await flush_screen(0);
+
+        assert.equal(requireScreenCell(10, 11).ch, ch);
+        assert.equal(requireScreenCell(10, 11).color, initialColor);
+        assert.deepEqual([display.cursorCol, display.cursorRow], [11, 11]);
+    });
+}
+
+void test('a statue gender change redraws its unchanged map symbol', async () => {
+    freshObjectRoom();
+    const statue = await floorObject(STATUE, 11, 10, {
+        corpsenm: nameToMonster('jackal'), spe: CORPSTAT_MALE, initialize: false,
+    });
+    newsym(11, 10);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+
+    statue.spe = CORPSTAT_FEMALE;
+    newsym(11, 10);
+    await flush_screen(0);
+
+    assert.equal(requireScreenCell(10, 11).ch, 'd');
+    assert.deepEqual([display.cursorCol, display.cursorRow], [11, 11]);
+});
+
+void test('a monster gender change redraws its unchanged map symbol', async () => {
+    freshObjectRoom();
+    const monster = await createMonsterAt('jackal', 11, 10, MM_NOGRP | NO_MINVENT);
+    newsym(11, 10);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+
+    monster.female = !monster.female;
+    newsym(11, 10);
+    await flush_screen(0);
+
+    assert.equal(requireScreenCell(10, 11).ch, 'd');
+    assert.deepEqual([display.cursorCol, display.cursorRow], [11, 11]);
+});
+
+void test('taming redraws a monster even with pet highlighting disabled', async () => {
+    freshObjectRoom({ flags: { hilite_pet: false } });
+    const monster = await createMonsterAt('jackal', 11, 10, MM_NOGRP | NO_MINVENT);
+    newsym(11, 10);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+
+    monster.mtame = 10;
+    newsym(11, 10);
+    await flush_screen(0);
+
+    assert.equal(requireScreenCell(10, 11).ch, 'd');
+    assert.equal(requireScreenCell(10, 11).attr, 0);
+    assert.deepEqual([display.cursorCol, display.cursorRow], [11, 11]);
+});
+
+void test('seeing a previously detected monster redraws even with inverse disabled', async () => {
+    freshObjectRoom({ hero: { detectMonsters: true }, flags: { use_inverse: false } });
+    const monster = await createMonsterAt('jackal', 11, 10, MM_NOGRP | NO_MINVENT);
+    monster.minvis = 1;
+    newsym(11, 10);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(10, 11).ch, 'd');
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+
+    game.u.seeInvisible = true;
+    newsym(11, 10);
+    await flush_screen(0);
+
+    assert.equal(requireScreenCell(10, 11).ch, 'd');
+    assert.equal(requireScreenCell(10, 11).attr, 0);
+    assert.deepEqual([display.cursorCol, display.cursorRow], [11, 11]);
+});
+
+void test('rotating a closed door redraws its unchanged map symbol', async () => {
+    const level = freshObjectRoom();
+    const door = level.requireAt(11, 10);
+    door.typ = DOOR;
+    door.doormask = D_CLOSED;
+    door.horizontal = false;
+    newsym(11, 10);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+
+    door.horizontal = true;
+    newsym(11, 10);
+    await flush_screen(0);
+
+    assert.equal(requireScreenCell(10, 11).ch, '+');
+    assert.deepEqual([display.cursorCol, display.cursorRow], [11, 11]);
 });
 
 for (const { name, typ, mask, ch, color } of [

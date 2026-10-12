@@ -23,7 +23,8 @@ import {
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED,
     SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7,
     WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR,
-    BEAR_TRAP, WEB, VIBRATING_SQUARE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
+    BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE,
+    is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
     def_warnsyms, MON_STILL_ARRIVING,
     In_endgame, Is_rogue_level, Is_waterlevel, In_sokoban, PLNMSG_UNKNOWN,
     MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT,
@@ -72,9 +73,11 @@ export interface GlyphAppearance {
 }
 
 export type GlyphMetadata =
-    | { kind: 'terrain'; terrainName: string }
-    | { kind: 'monster'; mnum?: number; piletop?: false }
-    | { kind: 'object'; otyp: number; statueGlyph?: boolean; piletop?: boolean }
+    | { kind: 'terrain'; terrainName: string; wallShape?: number; horizontal?: boolean }
+    | { kind: 'monster'; mnum?: number; female?: boolean;
+        monsterState?: 'normal' | 'pet' | 'detected'; piletop?: false }
+    | { kind: 'object'; otyp: number; corpsenm?: number; female?: boolean;
+        statueGlyph?: boolean; piletop?: boolean }
     | { kind: 'trap'; trapType: number }
     | { kind: 'nothing' | 'engraving' | 'invisible' | 'effect' | 'warning' | 'unexplored' };
 
@@ -94,6 +97,7 @@ interface ObjectGlyphSource {
     ox?: number;
     oy?: number;
     corpsenm?: number;
+    spe?: number;
     color?: number;
     dknown?: boolean;
 }
@@ -105,7 +109,7 @@ interface MimicAppearance {
     mappearance?: number;
     mcorpsenm?: number;
 }
-interface MonsterProjection { wormTail: boolean; showAppearance: boolean }
+interface MonsterProjection { wormTail: boolean; showAppearance: boolean; detected: boolean }
 interface MonsterIdentity { name: string; personal: boolean }
 interface ToplineCell { ch: string; dec: boolean }
 interface RedrawOptions { beforeGlow?: (() => void | Promise<void>) | null }
@@ -248,13 +252,14 @@ function monsterProjectionAtCell(monster: Monster, x: number, y: number): Monste
         // Native PHYSICALLY_SEEN includes telepathy/warning on a visible head
         // square. Only this branch can map a mimic's appearance into memory.
         const showAppearance = monsterVisible(monster) || (!wormTail && located);
-        return showAppearance || (!wormTail && detected) ? { wormTail, showAppearance } : null;
+        return showAppearance || (!wormTail && detected)
+            ? { wormTail, showAppearance, detected: !showAppearance } : null;
     }
     // Native permits telepathy/warn-of-monster on unseen tails, but ordinary
     // Detect monsters only projects the head.
-    return located || (!wormTail && detected)
-        || (seeMonsterWithInfrared(monster) && monsterVisible(monster))
-        ? { wormTail, showAppearance: false } : null;
+    const seen = located || (seeMonsterWithInfrared(monster) && monsterVisible(monster));
+    return seen || (!wormTail && detected)
+        ? { wormTail, showAppearance: false, detected: !seen } : null;
 }
 
 // C display.h:sensemon().  This excludes ordinary sight so callers can tell
@@ -653,7 +658,23 @@ function terrainGlyphName(loc: MapLocation, x: number, y: number, glyph: GlyphAp
 
 export function terrain_glyph(loc: MapLocation, x: number, y: number): TerrainGlyph {
     const glyph = terrainGlyphAppearance(loc, x, y);
-    return { ...glyph, kind: 'terrain', terrainName: terrainGlyphName(loc, x, y, glyph) };
+    const typ = projectedTerrainType(loc);
+    // back_to_glyph() distinguishes wall angles and door/bridge orientation
+    // even when the selected character set gives them the same appearance.
+    const wallShape = terrainWallShape(loc, typ, glyph);
+    const oriented = typ === DBWALL || typ === DRAWBRIDGE_DOWN
+        || (typ === DOOR && !!(loc.doormask & (D_ISOPEN | D_CLOSED | D_LOCKED)));
+    return {
+        ...glyph, kind: 'terrain', terrainName: terrainGlyphName(loc, x, y, glyph),
+        ...(wallShape === undefined ? {} : { wallShape }),
+        ...(oriented ? { horizontal: loc.horizontal } : {}),
+    };
+}
+
+function terrainWallShape(loc: MapLocation, typ: number, glyph: GlyphAppearance) {
+    if ((!IS_WALL(typ) && typ !== SDOOR) || glyph.ch === ' ') return undefined;
+    if (typ === SDOOR) return loc.horizontal ? HWALL : VWALL;
+    return typ;
 }
 
 function projectedTerrainType(loc: MapLocation) {
@@ -817,7 +838,10 @@ function objectGlyphAttr(glyph: GlyphMetadata) {
         ? ATR_INVERSE : 0;
 }
 
-function displayMonsterGlyph(mnum: number): GlyphAppearance & Extract<GlyphMetadata, { kind: 'monster' }> {
+function displayMonsterGlyph(
+    mnum: number, female = false,
+    monsterState: 'normal' | 'pet' | 'detected' = 'normal',
+): GlyphAppearance & Extract<GlyphMetadata, { kind: 'monster' }> {
     const rawColor = MONSTER_COLOR[mnum] ?? CLR_GRAY;
     return {
         ch: MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[mnum] ?? 0] || '?',
@@ -825,7 +849,7 @@ function displayMonsterGlyph(mnum: number): GlyphAppearance & Extract<GlyphMetad
         // default foreground rather than retaining an explicit color code.
         color: rawColor === CLR_BLACK || rawColor === CLR_GRAY
             ? NO_COLOR : rawColor,
-        decgfx: false, kind: 'monster', mnum, piletop: false,
+        decgfx: false, kind: 'monster', mnum, female, monsterState, piletop: false,
     };
 }
 
@@ -874,7 +898,7 @@ function randomHallucinatedObjectGlyph(): ObjectGlyph {
         return {
             ch: activeObjectSymbols()[7] || '?',
             color: MONSTER_COLOR[mnum] ?? CLR_GRAY,
-            decgfx: false, kind: 'object', otyp, piletop: false,
+            decgfx: false, kind: 'object', otyp, corpsenm: mnum, piletop: false,
         };
     }
     const oclass = objectClassForType(otyp);
@@ -895,33 +919,36 @@ function objectGlyph(object: ObjectGlyphSource): ObjectGlyph {
         // display.h:statue_to_glyph() uses a monster plus random gender;
         // map_object() separately stores a random-object memory glyph below.
         if (object.otyp === STATUE) {
-            const glyph = displayMonsterGlyph(
-                rn2Display(MONSTER_COLOR.length),
-            );
-            rn2Display(2);
-            return glyph;
+            const mnum = rn2Display(MONSTER_COLOR.length);
+            return displayMonsterGlyph(mnum, !!rn2Display(2));
         }
         return randomHallucinatedObjectGlyph();
     }
     const statueSymbol = object.otyp === STATUE && object.corpsenm !== undefined
         ? MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[object.corpsenm] ?? 0]
         : null;
+    const species = (object.otyp === CORPSE || object.otyp === STATUE)
+        && object.corpsenm !== undefined ? { corpsenm: object.corpsenm } : {};
+    const gender = object.otyp === STATUE
+        ? { female: ((object.spe ?? 0) & CORPSTAT_GENDER) === CORPSTAT_FEMALE } : {};
     return statueSymbol
         ? {
             ch: statueSymbol, color: CLR_WHITE, decgfx: false,
-            kind: 'object', otyp: object.otyp, statueGlyph: true, piletop,
+            kind: 'object', otyp: object.otyp, ...species, ...gender,
+            statueGlyph: true, piletop,
         }
         : {
             ch: activeObjectSymbols()[object.oclass] || '?',
             color: objectColor(object), decgfx: false,
-            kind: 'object', otyp: object.otyp, statueGlyph: object.otyp === STATUE, piletop,
+            kind: 'object', otyp: object.otyp, ...species, ...gender,
+            statueGlyph: object.otyp === STATUE, piletop,
         };
 }
 
 // C display.h:mon_to_glyph(). Ignore disguises for a revelation flash.
-export function transientMonsterGlyph(monster: Pick<Monster, 'mnum'>) {
+export function transientMonsterGlyph(monster: Pick<Monster, 'mnum'> & Partial<Pick<Monster, 'female'>>) {
     return displayMonsterGlyph(heroIsHallucinating()
-        ? rn2Display(MONSTER_COLOR.length) : monster.mnum);
+        ? rn2Display(MONSTER_COLOR.length) : monster.mnum, !!monster.female);
 }
 
 // C display.h:obj_to_glyph(), for tmp_at() callers.  A projectile has already
@@ -1240,13 +1267,19 @@ function sameGlyphIdentity(previous: GlyphMetadata | null | undefined, next: Gly
     if (!previous || previous.kind !== next.kind) return false;
     switch (next.kind) {
     case 'monster':
-        return previous.kind === 'monster' && previous.mnum === next.mnum;
+        return previous.kind === 'monster' && previous.mnum === next.mnum
+            && !!previous.female === !!next.female
+            && (previous.monsterState ?? 'normal') === (next.monsterState ?? 'normal');
     case 'object':
         return previous.kind === 'object' && previous.otyp === next.otyp
+            && previous.corpsenm === next.corpsenm
+            && !!previous.female === !!next.female
             && !!previous.statueGlyph === !!next.statueGlyph
             && !!previous.piletop === !!next.piletop;
     case 'terrain':
-        return previous.kind === 'terrain' && previous.terrainName === next.terrainName;
+        return previous.kind === 'terrain' && previous.terrainName === next.terrainName
+            && previous.wallShape === next.wallShape
+            && previous.horizontal === next.horizontal;
     case 'trap':
         return previous.kind === 'trap' && previous.trapType === next.trapType;
     case 'nothing':
@@ -1502,16 +1535,18 @@ export function newsym(x: number, y: number) {
                 && Number.isInteger(monster.mappearance)) {
                 const mnum = heroIsHallucinating()
                     ? rn2Display(MONSTER_COLOR.length) : mimicAppearance(monster);
-                const glyph = displayMonsterGlyph(mnum);
+                const glyph = displayMonsterGlyph(mnum, !!monster.female);
                 show_glyph_cell(x, y, glyph.ch, glyph.color, false,
                     (monster.pet || (monster.mtame ?? 0) > 0)
                         && game.flags?.hilite_pet ? 1 : 0, glyph);
                 if (!sensed) return;
             }
         }
+        const monsterState = (monster.pet || (monster.mtame ?? 0) > 0) && !heroIsHallucinating()
+            ? 'pet' : projection.detected ? 'detected' : 'normal';
         if (heroIsHallucinating()) {
             const displayMnum = rn2Display(MONSTER_COLOR.length);
-            const glyph = displayMonsterGlyph(displayMnum);
+            const glyph = displayMonsterGlyph(displayMnum, !!monster.female, monsterState);
             showMonsterOrWarning(x, y, glyph, monsterDisplayAttribute(monster));
         } else {
             const tailGlyph = projection.wormTail ? displayMonsterGlyph(PM_LONG_WORM_TAIL) : null;
@@ -1524,6 +1559,7 @@ export function newsym(x: number, y: number) {
                             ?? monster.color ?? CLR_GRAY),
                 decgfx: false, kind: 'monster',
                 mnum: projection.wormTail ? PM_LONG_WORM_TAIL : monster.mnum,
+                female: !!monster.female, monsterState,
             }, monsterDisplayAttribute(monster));
         }
         monster.meverseen = 1;
