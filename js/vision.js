@@ -68,11 +68,12 @@ function mobileLightSources(level) {
 export function hasLightSources() {
     if (game.level && mobileLightSources(game.level).length > 0)
         return true;
-    // C retains migrating sources in light_base, but do_light_sources()
-    // cannot locate them on this level. They still require movemon's refresh.
-    return (game._migratingMonsters || []).some(monster => !monster.dead
-        && (monsterEmitsLight(monster.mnum)
-            || (monster.minvent || monster.inventory || []).some(object => objectLightRadius(object) > 0)))
+    // C retains buried oil and migrating sources in light_base, but
+    // do_light_sources() cannot locate them. They still require movemon's refresh.
+    return (game.level?.buriedObjects || []).some(object => objectLightRadius(object) > 0)
+        || (game._migratingMonsters || []).some(monster => !monster.dead
+            && (monsterEmitsLight(monster.mnum)
+                || (monster.minvent || monster.inventory || []).some(object => objectLightRadius(object) > 0)))
         || (game.migratingObjects || []).some(object => objectLightRadius(object) > 0);
 }
 function mobileLightMap(level, couldSee) {
