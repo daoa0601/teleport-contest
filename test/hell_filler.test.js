@@ -1,7 +1,8 @@
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ICE, ROOM, VIBRATING_SQUARE } from '../js/const.js';
+import { ICE, IS_LAVA, IS_POOL, ROOM, VIBRATING_SQUARE } from '../js/const.js';
+import { BOULDER } from '../js/object_data.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { generateHellFillerLevel } from '../js/mklev.js';
 import { countTerrain, levelStairs } from './support/level-state.js';
@@ -26,6 +27,22 @@ void test('Hell filler builds playable populated levels', async () => {
         assert.equal(levelStairs(game).length, 2);
         assert.ok(countTerrain(requireGameLevel(), ROOM, ICE) > 20);
         assert.ok(requireGameLevel(game).monsters.length >= 8);
+    }
+});
+void test('Hell filler removes boulders from liquid before the level is entered', async () => {
+    for (const seed of [173, 178, 1038]) {
+        await buildHell({ seed });
+        const level = requireGameLevel();
+        for (const column of level.objects) {
+            for (const pile of column ?? []) {
+                for (const object of pile ?? []) {
+                    if (object.otyp !== BOULDER)
+                        continue;
+                    const terrain = level.requireAt(object.ox, object.oy).typ;
+                    assert.equal(IS_LAVA(terrain) || IS_POOL(terrain), false, `seed ${seed}: boulder remains on liquid at ${object.ox},${object.oy}`);
+                }
+            }
+        }
     }
 });
 void test('the invocation level has a vibrating square instead of a down stair', async () => {
