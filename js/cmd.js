@@ -1810,6 +1810,9 @@ async function dokick() {
     // dispatching the target.  Peaceful monsters and pets consult it during
     // this same elapsed turn so they do not step into the square just kicked.
     game._kickedLoc = { x, y };
+    const average = game.uarmf?.otyp === KICKING_BOOTS ? 99
+        : Math.trunc((currentStrength()
+            + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);
     const monster = monsterAtPosition(requireGameLevel(), x, y);
     if (monster) {
         const recoilRange = kickRecoilRange(monster.mnum);
@@ -1861,7 +1864,6 @@ async function dokick() {
         }
         await exerciseAttribute(A_DEX, true);
         const strength = currentStrength();
-        const average = Math.trunc((strength + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);
         if (rnl(35) < average) {
             // in_rooms(..., SHOPBASE) includes a shop immediately across a
             // boundary door.  Such doors never take the high-strength
@@ -1904,8 +1906,6 @@ async function dokick() {
         return;
     }
     if (location.typ === SDOOR) {
-        const average = Math.trunc((currentStrength()
-            + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);
         if (!game.u.levitating && rn2(30) < average) {
             convertSecretDoor(location);
             const uncover = (location.doormask & (D_LOCKED | D_TRAPPED)) === D_LOCKED;
