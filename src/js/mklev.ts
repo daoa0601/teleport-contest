@@ -1799,6 +1799,7 @@ async function makemon(
     if (shaped) {
         if (requestedByHero)
             setMonsterApparentHeroPosition(shaped, game, rn2);
+        setMonsterMalign(shaped);
         level.monsters[monsterIndex] = shaped;
         return finishMonsterBirth(shaped, mmflags);
     }
@@ -6130,6 +6131,11 @@ async function createLuaMonster(context: SpecialLevelContext, options: DesMonste
     applyLuaMonsterAppearance(monster, options.appearance);
     if (monster && options.name != null)
         setMonsterGivenName(monster, options.name);
+    if (monster && peaceful != null) {
+        monster.mpeaceful = peaceful ? 1 : 0;
+        // sp_lev.c:create_monster() resets kill credit after the Lua override.
+        setMonsterMalign(monster);
+    }
     if (monster && options.waiting) {
         monster.mstrategy = (monster.mstrategy ?? 0) | STRAT_WAITFORU;
         monster.waiting = true;
@@ -6165,7 +6171,6 @@ async function createLuaMonster(context: SpecialLevelContext, options: DesMonste
             0, Math.min(49, monster.m_lev + options.m_lev_adj),
         );
     }
-    if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
     return monster ?? null;
 }
