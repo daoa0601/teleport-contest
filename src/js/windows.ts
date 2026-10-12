@@ -208,9 +208,15 @@ function menuLayout<T extends TextMenuLine>(
     const width = clippedRows.reduce((widest, row) => Math.max(widest, row.text.length + 2),
         Math.min(columns, pager.length));
     const maxRows = (pageCount > 1 ? pageSize : rows.length) + 1;
-    const boundary = maxRows >= terminalRows || !overlay ? 0
-        : Math.max(0, Math.min(82, Math.floor(columns / 2), columns - width - 1));
+    const boundary = windowOrigin(columns, terminalRows, width, maxRows, overlay);
     return { rows: clippedRows, pageSize, pageCount, maxRows, boundary };
+}
+
+// The pinned tty build enables H2344_BROKEN: corner windows occupy at
+// most half the terminal and at most 82 columns from its left edge.
+function windowOrigin(columns: number, rows: number, maxcol: number, maxrow: number, overlay: boolean): number {
+    if (maxrow >= rows || !overlay) return 0;
+    return Math.max(0, Math.min(82, Math.floor(columns / 2), columns - maxcol - 1));
 }
 
 function menuSelector(index: number): string {
@@ -422,10 +428,10 @@ function inventorySearchMatches(query: string, text: string): boolean {
  * menu layout and page controls.
  */
 export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
-    marker = '--More--', minWidth = 38, restoreUnderlay = false,
+    marker = '--More--', restoreUnderlay = false,
     pagerStyle = 'text',
 }: {
-    marker?: string; minWidth?: number; restoreUnderlay?: boolean;
+    marker?: string; restoreUnderlay?: boolean;
     pagerStyle?: 'text' | 'menu';
 } = {}): Promise<number> {
     const d = display();
@@ -443,16 +449,14 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     // The pinned H2344_BROKEN path permits corners narrower than ten
     // columns. A zero offset, excess height, or disabled overlay uses
     // the full-screen renderer instead.
-    const cornerOffset = Math.max(0, Math.min(82, Math.floor(d.cols / 2), d.cols - dataWidth - 2));
+    const cornerOffset = windowOrigin(d.cols, d.rows, dataWidth + 1, content.length,
+        game.flags.menu_overlay !== false);
     if (content.length >= d.rows || cornerOffset === 0
         || game.flags.menu_overlay === false) {
         return await pageDisclosureWindow(d, content, { marker, pagerStyle, restoreUnderlay });
     }
 
-    const widest = Math.max(marker.length, dataWidth);
-    // process_text_window() leaves one terminal column to the right of
-    // corner-window prose.
-    const left = Math.max(0, d.cols - Math.max(minWidth, widest) - 1);
+    const left = cornerOffset + 1;
     const rows: TextMenuLine[] = [...content, { text: marker }];
     // Replace the preceding question across the whole message row.
     d.clearRow(0);

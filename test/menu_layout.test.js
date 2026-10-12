@@ -5,7 +5,7 @@ import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { NO_COLOR, Terminal } from '../js/terminal.js';
-import { ATR_INVERSE, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, showPagedPickOneMenu, showTextMenuOverlay, } from '../js/windows.js';
+import { ATR_INVERSE, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay, } from '../js/windows.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 function menuDisplay(columns = 80, rows = 24) {
     freshPlayableRoom();
@@ -16,6 +16,23 @@ function menuDisplay(columns = 80, rows = 24) {
 }
 function textRow(display, row) {
     return display.grid[row]?.map(cell => cell.ch).join('') ?? '';
+}
+for (const columns of [40, 120]) {
+    void test(`a putstr-built menu on a ${columns}-column terminal uses the native corner origin`, async () => {
+        const display = menuDisplay(columns);
+        const input = resetInputState();
+        const window = showDisclosureOverlay(['No creatures have died.']);
+        try {
+            await input.waitUntilBlocked();
+            const left = Math.min(Math.floor(columns / 2), columns - 'No creatures have died.'.length - 2) + 1;
+            assert.equal(textRow(display, 0).indexOf('No creatures'), left);
+            assert.equal(display.cursorCol, left + '--More--'.length);
+        }
+        finally {
+            input.feed(' ');
+            await window;
+        }
+    });
 }
 for (const { columns, firstColumn } of [
     { columns: 40, firstColumn: 21 },

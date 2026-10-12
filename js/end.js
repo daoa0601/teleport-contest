@@ -1075,7 +1075,7 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
             : defquery;
         if (overview === 'y') {
             await showDisclosureOverlay(overviewLines(killer, deathVerb, deathCause), {
-                marker: '(end)', minWidth: game._tutorialActive ? 38 : 39,
+                marker: '(end)',
                 // C show_overview() builds the window with add_menu(),
                 // so its paged layout keeps the selector column and
                 // "(x of y)" page markers.
