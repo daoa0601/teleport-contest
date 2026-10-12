@@ -7,7 +7,15 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { applyNethackrc } from '../js/options.js';
 import { freshGameplayRoom } from './support/playable-room.js';
-for (const keys of ['\x06', '#wizmap\n', '!', 'm\x06', 'F\x06']) {
+// cmd.c extcmds_match() skips wizard-mode commands outside wizard mode, so a
+// typed #wizmap is unknown to the tty prompt; bound keys reach the command.
+for (const [keys, message] of [
+    ['\x06', "Unavailable command 'wizmap'."],
+    ['#wizmap\n', '#wizmap: unknown extended command.'],
+    ['!', "Unavailable command 'wizmap'."],
+    ['m\x06', "Unavailable command 'wizmap'."],
+    ['F\x06', "Unavailable command 'wizmap'."],
+]) {
     void test(`wizard command admission rejects ${JSON.stringify(keys)} in normal play`, async () => {
         const level = freshGameplayRoom();
         requirePlayingGame(game);
@@ -16,7 +24,7 @@ for (const keys of ['\x06', '#wizmap\n', '!', 'm\x06', 'F\x06']) {
         pushKeys(keys);
         await rhack(0);
         assert.equal(game.context.move, 0);
-        assert.equal(game._pending_message, "Unavailable command 'wizmap'.");
+        assert.equal(game._pending_message, message);
         assert.equal(level.requireAt(30, 10).typ, SCORR);
     });
 }
