@@ -7258,6 +7258,9 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                 await pline(`You stop.  ${displayName} is in the way!`);
                 return true;
             }
+            // C domove_core() confirms a yielded step before either actor
+            // changes position or the hero tries to escape a current trap.
+            if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy)) return false;
             if (u.utrap
                 && !await heroCanMoveFromTrap(newx, newy)) return true;
             const ballChainMove = await beginBallAndChainMove(newx, newy);
