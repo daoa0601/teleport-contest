@@ -2,7 +2,7 @@ import { loadScoreRecords } from '../js/score_records.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { moveloop_core } from '../js/allmain.js';
+import { moveloop_core, restoregamePreamble } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
 import { LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
@@ -227,6 +227,7 @@ for (const { seed, lifeSavedInside, holderHp } of [
                 game.plname = 'EngulfRecovery';
                 assert.equal(await saveGame(storage), true);
                 assert.equal(restoreGame('EngulfRecovery', storage), true);
+                await restoregamePreamble();
             }
             messages.length = 0;
             answerRecoveryMessages(messages);
