@@ -9,7 +9,7 @@
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { docrt, flush_screen } from './display.js';
-import { NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED } from './const.js';
+import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED } from './const.js';
 import { NO_COLOR } from './terminal.js';
 import { menuLayout, windowOrigin, selectableMenuText, paintMenuPage, snapshotMenuUnderlay, restoreMenuUnderlay, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from './tty_menu.js';
 export { snapshotMenuUnderlay, restoreMenuUnderlay } from './tty_menu.js';
@@ -95,10 +95,11 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     if (pagerStyle === 'menu') {
         return await pageDisclosureWindow(d, entries, { marker, pagerStyle, restoreUnderlay });
     }
-    const dataWidth = entries.reduce((widest, line) => Math.max(widest, line.text.length), 0);
+    const prose = entries.map(line => ({ ...line, text: compressTextWindowLine(line.text, d.cols) }));
+    const dataWidth = prose.reduce((widest, line) => Math.max(widest, line.text.length), 0);
     // putstr-built windows wrap prose but retain their original width
     // when deciding placement.
-    const content = entries.flatMap(line => textWindowRows(line.text, d.cols)
+    const content = prose.flatMap(line => textWindowRows(line.text, d.cols)
         .map(text => ({ ...line, text })));
     // The pinned H2344_BROKEN path permits corners narrower than ten
     // columns. A zero offset, excess height, or disabled overlay uses
@@ -127,7 +128,10 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     const markerRow = Math.min(rows.length - 1, d.rows - 1);
     const cursorOffset = marker === '(end)' ? marker.length + 1 : marker.length;
     d.setCursor(Math.min(d.cols - 1, left + cursorOffset), markerRow);
-    const key = await nhgetch();
+    let key;
+    do
+        key = await nhgetch();
+    while (![27, 32, 10, 13].includes(key));
     if (underlay && underlayCursor) {
         for (const [row, cells] of underlay.entries()) {
             for (const [col, cell] of cells.entries()) {
@@ -374,7 +378,7 @@ export async function showTextWindow(lines) {
     const rows = lines.flatMap(line => textWindowRows(line, d.cols));
     const pageSize = d.rows - 1;
     const pages = [];
-    for (let first = 0; first < rows.length; first += pageSize) {
+    for (let first = 0; first < Math.max(1, rows.length); first += pageSize) {
         const page = rows.slice(first, first + pageSize);
         while (page.length < pageSize)
             page.push('');
@@ -384,6 +388,7 @@ export async function showTextWindow(lines) {
     return showTextPages(pages, { validKeys: [27, 32, 10, 13] });
 }
 function textWindowRows(text, columns) {
+    text = compressTextWindowLine(text, columns);
     const rows = [];
     while (text.length >= columns) {
         let split = columns - 1;
@@ -399,12 +404,21 @@ function textWindowRows(text, columns) {
     rows.push(text.slice(0, columns - 1));
     return rows;
 }
+// tty_putstr() compresses long lines before buffering them. It leaves
+// indentation alone on short lines and reserves BUFSZ's terminator slot.
+function compressTextWindowLine(text, columns) {
+    if (text.length < columns && !text.includes('\n'))
+        return text;
+    const compressed = text.replace(/[ \n]+/g, ' ').replace(/^ /, '').slice(0, BUFSZ - 1);
+    return compressed.length === BUFSZ - 1 || compressed.endsWith(' ')
+        ? compressed.slice(0, -1) : compressed;
+}
 /**
  * Display one or more full-screen tty text pages.  Each page has
  * `{ lines, cursor }`; a line is either a string or `{ text, attr }`.
  * Escape closes the window, while any other key advances to the next page.
  */
-export async function showTextPages(pages, { validKeys = null } = {}) {
+export async function showTextPages(pages, { validKeys = [27, 32, 10, 13] } = {}) {
     const d = display();
     if (!d)
         return 27;

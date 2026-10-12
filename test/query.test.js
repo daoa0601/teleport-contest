@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { nhgetch, pushKeys, resetInputState } from '../js/input.js';
-import { getLine, promptYesNo, promptYesNoAllQuit, promptYesNoQuit } from '../js/query.js';
+import { getLine, promptChoice, promptYesNo, promptYesNoAllQuit, promptYesNoQuit } from '../js/query.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { flush_screen, pline, plineWithContinuation } from '../js/display.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { GameDisplay } from '../js/game_display.js';
+import { Terminal } from '../js/terminal.js';
 void test('a confirmation displays its choices and default before reading input', async () => {
     freshPlayableRoom();
     const input = resetInputState();
@@ -121,5 +123,36 @@ void test('a sale question ignores invalid keys and accepts all without consumin
     pushKeys('xAy');
     assert.equal(await promptYesNoAllQuit('Sell it?'), 'a');
     assert.equal(await promptYesNo('Continue?'), 'y');
+});
+void test('line input wraps at the terminal margin and erases without crossing the new row early', async () => {
+    freshPlayableRoom();
+    game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 40, rows: 24 }));
+    const input = resetInputState();
+    const answer = getLine('Write'.padEnd(37, '.'), () => true);
+    try {
+        await input.waitUntilBlocked();
+        input.feed('ab');
+        await input.waitUntilBlocked();
+        assert.equal(game.nhDisplay.cursorCol, 1);
+        assert.equal(game.nhDisplay.cursorRow, 1);
+        input.feed('\b');
+        await input.waitUntilBlocked();
+        assert.equal(game.nhDisplay.cursorCol, 0);
+        assert.equal(game.nhDisplay.cursorRow, 1);
+    }
+    finally {
+        input.feed('\n');
+        await answer;
+    }
+    assert.equal(await answer, 'a');
+});
+void test('uppercase hidden choices preserve case while only visible choices enter the suffix', async () => {
+    freshPlayableRoom();
+    const input = resetInputState();
+    const answer = promptChoice('Continue?', ['y', 'Y', 'q'], 'q', { visibleChoices: 'yq' });
+    await input.waitUntilBlocked();
+    assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(), 'Continue? [yq] (q)');
+    input.feed('Y');
+    assert.equal(await answer, 'Y');
 });
 //# sourceMappingURL=query.test.js.map

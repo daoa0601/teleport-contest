@@ -8,6 +8,20 @@ import { NO_COLOR } from './terminal.js';
 export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), { suppressStatus = false } = {}) {
     let value = '';
     let renderedRows = 1;
+    const width = (game.nhDisplay?.cols ?? COLNO) - 1;
+    const promptLength = prompt.length + 1;
+    const promptRow = Math.floor((promptLength - 1) / width);
+    const promptColumn = (promptLength - 1) % width + 1;
+    let cursorRow = promptRow;
+    let cursorColumn = promptColumn;
+    const eraseCharacter = () => {
+        if (cursorColumn === 0 && cursorRow > 0) {
+            cursorRow--;
+            cursorColumn = width;
+        }
+        if (cursorColumn > 0)
+            cursorColumn--;
+    };
     const clearEditorRows = () => {
         for (let row = 0; row < renderedRows; row++)
             game.nhDisplay?.clearRow(row);
@@ -15,20 +29,15 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), { su
     const renderEditor = () => {
         const line = `${prompt} ${value}`;
         clearEditorRows();
-        const width = 79; // tty safe margin; column79 remains wrap sentinel
-        renderedRows = Math.max(1, Math.ceil(line.length / width));
-        for (let row = 0; row < renderedRows; row++) {
+        const contentRows = Math.max(1, Math.ceil(line.length / width));
+        renderedRows = Math.max(renderedRows, contentRows);
+        for (let row = 0; row < contentRows; row++) {
             game.nhDisplay?.putstr(0, row, line.slice(row * width, (row + 1) * width), NO_COLOR);
         }
-        const length = line.length;
-        const cursorRow = length ? Math.floor((length - 1) / width) : 0;
-        const cursorX = length ? ((length - 1) % width) + 1 : 0;
-        game.nhDisplay?.setCursor(cursorX, cursorRow);
+        game.nhDisplay?.setCursor(cursorColumn, cursorRow);
     };
     const finish = (result) => {
-        game._pending_message = '';
-        game._retained_message = '';
-        clearEditorRows();
+        clearMessageWindow(renderedRows);
         return result;
     };
     const clearSuppressedStatus = () => {
@@ -51,6 +60,10 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), { su
         if (key === 27) {
             if (value) {
                 value = '';
+                clearMessageWindow(renderedRows);
+                renderedRows = 1;
+                cursorColumn = promptColumn;
+                cursorRow = promptRow;
             }
             else
                 return finish(null);
@@ -60,17 +73,29 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), { su
         // getline.c tests the erase character ('\b' or, under the recorder's
         // NOMUX terminal synthesis, DEL) before the kill character, so DEL
         // backs over one byte and ^U removes the whole line.
-        else if (key === 8 || key === 127)
-            value = value.slice(0, -1);
-        else if (key === 21)
+        else if (key === 8 || key === 127) {
+            if (value) {
+                value = value.slice(0, -1);
+                eraseCharacter();
+            }
+        }
+        else if (key === 21) {
+            for (let index = 0; index < value.length; index++)
+                eraseCharacter();
             value = '';
+        }
         else {
             const ch = String.fromCharCode(key);
-            if (value.length < 80 && accepts(ch, key))
+            if (key >= 32 && key !== 127 && value.length < COLNO && accepts(ch, key)) {
                 value += ch;
+                if (cursorColumn === width) {
+                    cursorColumn = 0;
+                    cursorRow++;
+                }
+                cursorColumn++;
+            }
         }
         game._pending_message = `${prompt} ${value}`;
-        await flush_screen(1);
         clearSuppressedStatus();
         renderEditor();
     }

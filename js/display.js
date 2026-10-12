@@ -2058,9 +2058,9 @@ export async function cls() {
 }
 // C tty_clear_nhwindow(WIN_MESSAGE). A seen prompt still occupies the
 // physical message row; clearing it is separate from acknowledging input.
-export function clearMessageWindow() {
+export function clearMessageWindow(coveredRows = 0) {
     const text = game._pending_message || game._retained_message || '';
-    const wrapped = toplineRows(text, game.nhDisplay?.cols ?? COLNO).length > 1;
+    const wrapped = coveredRows > 1 || toplineRows(text, game.nhDisplay?.cols ?? COLNO).length > 1;
     game._pending_message = '';
     game._retained_message = '';
     if (wrapped) {
