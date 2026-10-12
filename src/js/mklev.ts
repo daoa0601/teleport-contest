@@ -27,6 +27,7 @@ import { finishMonsterBirth } from './monster_birth.js';
 import { nameObjectFromTopten } from './topten.js';
 import { normalDemon } from './minion.js';
 import { randomMonsterRelocation } from './teleport.js';
+import { sendMonsterToLimbo } from './monster_migration.js';
 
 import { relocateObjectRandomly } from './object_teleport.js';
 import { discardMonsterInventory, dropSpecialMonsterObjects } from './monster_drop.js';
@@ -110,7 +111,7 @@ import {
     TREE, AIR, CLOUD,
     A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, P_SHORT_SWORD, P_SABER,
     AM_SHRINE, AM_SANCTUM, Align2amask,
-    LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE,
+    LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL,
     M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE,
     MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
     MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK,
@@ -509,7 +510,7 @@ function bad_location(x: number, y: number, nlx: number, nly: number, nhx: numbe
     if (!loc) return true;
     if (occupied(x, y)) return true;
     // Excluded region
-    if (nlx && x >= nlx && x <= nhx && y >= nly && y <= nhy) return true;
+    if (x >= nlx && x <= nhx && y >= nly && y <= nhy) return true;
     // Must be ROOM, literal AIR, or CORR on a maze level.  IS_AIR also
     // includes CLOUD for movement/vision, but C's bad_location() deliberately
     // rejects clouds when placing a portal, stair, branch, or hero region.
@@ -520,12 +521,16 @@ function bad_location(x: number, y: number, nlx: number, nly: number, nhx: numbe
 }
 
 // C ref: mkmaze.c place_lregion — place hero (LR_UPTELE/LR_DOWNTELE)
-export function place_lregion(
+export async function place_lregion(
     lx: number, ly: number, hx: number, hy: number,
     nlx: number, nly: number, nhx: number, nhy: number,
-    rtype: number, _lev: DungeonLocation | null,
-): void {
+    rtype: number, destination: DungeonLocation | null,
+): Promise<void> {
     if (!lx) {
+        if (rtype === LR_BRANCH && (game.level?.nroom ?? 0) > 0) {
+            await place_branch(is_branchlev());
+            return;
+        }
         lx = 1; hx = COLNO - 1; ly = 0; hy = ROWNO - 1;
     }
     if (lx < 1) lx = 1;
@@ -533,49 +538,82 @@ export function place_lregion(
     if (ly < 0) ly = 0;
     if (hy > ROWNO - 1) hy = ROWNO - 1;
 
-    // Probabilistic search
+    const oneshot = lx === hx && ly === hy;
     for (let trycnt = 0; trycnt < 200; trycnt++) {
         const x = rn1((hx - lx) + 1, lx);
         const y = rn1((hy - ly) + 1, ly);
-        if (!bad_location(x, y, nlx, nly, nhx, nhy)) {
-            if (rtype === LR_DOWNSTAIR || rtype === LR_UPSTAIR)
-                mkstairs(x, y, rtype === LR_UPSTAIR, null);
-            else
-                u_on_newpos(x, y);
-            return;
-        }
+        if (await putLregionHere(x, y, nlx, nly, nhx, nhy, rtype, oneshot, destination)) return;
     }
     // Deterministic fallback
     for (let x = lx; x <= hx; x++)
         for (let y = ly; y <= hy; y++)
-            if (!bad_location(x, y, nlx, nly, nhx, nhy)) {
-                if (rtype === LR_DOWNSTAIR || rtype === LR_UPSTAIR)
-                    mkstairs(x, y, rtype === LR_UPSTAIR, null);
-                else
-                    u_on_newpos(x, y);
-                return;
-            }
+            if (await putLregionHere(x, y, nlx, nly, nhx, nhy, rtype, true, destination)) return;
+    await impossible(`Couldn't place lregion type ${rtype}!`);
+}
+
+function excludedLregion(type: number, x: number, y: number): boolean {
+    const direction = type === LR_UPTELE ? 'teleport-up' : 'teleport-down';
+    return (type === LR_TELE || type === LR_UPTELE || type === LR_DOWNTELE)
+        && !!game.level?.exclusionZones.some(zone =>
+            (zone.type === 'teleport' || (type !== LR_TELE && zone.type === direction))
+            && x >= zone.lx && x <= zone.hx && y >= zone.ly && y <= zone.hy);
+}
+
+async function putLregionHere(
+    x: number, y: number, nlx: number, nly: number, nhx: number, nhy: number,
+    type: number, oneshot: boolean, destination: DungeonLocation | null,
+): Promise<boolean> {
+    const level = requireGameLevel();
+    if (bad_location(x, y, nlx, nly, nhx, nhy) || excludedLregion(type, x, y)) {
+        if (!oneshot) return false;
+        const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+        if (trap && trap.ttyp !== MAGIC_PORTAL && trap.ttyp !== VIBRATING_SQUARE) {
+            const monster = monsterAtPosition(level, x, y);
+            if (monster) monster.mtrapped = 0;
+            deleteTrap(trap);
+        }
+        if (bad_location(x, y, nlx, nly, nhx, nhy) || excludedLregion(type, x, y)) return false;
+    }
+    if (type === LR_TELE || type === LR_UPTELE || type === LR_DOWNTELE) {
+        const monster = monsterAtPosition(level, x, y);
+        if (monster) {
+            if (!oneshot) return false;
+            if (!await randomMonsterRelocation(monster, { flags: RLOC_NOMSG }))
+                await sendMonsterToLimbo(monster);
+        }
+        u_on_newpos(x, y);
+    } else if (type === LR_PORTAL) {
+        if (!destination) throw new Error('Portal region requires a destination');
+        const portal = await maketrap(x, y, MAGIC_PORTAL);
+        if (!portal) throw new Error(`Portal region could not place a trap at ${x},${y}`);
+        portal.dst = { ...destination };
+    } else if (type === LR_BRANCH) {
+        await placeBranchAt(is_branchlev(), x, y);
+    } else if (type === LR_DOWNSTAIR || type === LR_UPSTAIR) {
+        mkstairs(x, y, type === LR_UPSTAIR, null);
+    }
+    return true;
 }
 
 // C ref: stairs.c u_on_upstairs — place hero on upstairs or fallback
-export function u_on_upstairs(): void {
+export async function u_on_upstairs(): Promise<void> {
     const stway = stairway_find_dir(true);
     if (stway) { u_on_newpos(stway.sx, stway.sy); return; }
     // No upstair — try special stairs, then random
     const special = stairway_find_special_dir(false);
     if (special) { u_on_newpos(special.sx, special.sy); return; }
     // Random placement via place_lregion
-    place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_UPTELE, null);
+    await place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_UPTELE, null);
 }
 
 // C ref: stairs.c u_on_dnstairs — ascending arrives on the destination's
 // downstairs, its upward special stair, or a random legal location.
-export function u_on_downstairs(): void {
+export async function u_on_downstairs(): Promise<void> {
     const stway = stairway_find_dir(false);
     if (stway) { u_on_newpos(stway.sx, stway.sy); return; }
     const special = stairway_find_special_dir(true);
     if (special) { u_on_newpos(special.sx, special.sy); return; }
-    place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_DOWNTELE, null);
+    await place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_DOWNTELE, null);
 }
 
 // Object probabilities are mutable because gemstone rarity changes with
@@ -6211,14 +6249,15 @@ function flipLuaRegions(active: ActiveSpecialLevel): void {
     for (const field of [
         'upTeleportRegion', 'upTeleportExclude',
         'downTeleportRegion', 'downTeleportExclude',
-        'explicitUpStairRegion', 'explicitDownStairRegion',
-        'explicitBranchRegion', 'explicitBranchExclude',
-        'explicitPortalRegion', 'explicitPortalExclude',
     ] as const) {
         const region = active[field];
         if (!region) continue;
         const flipped = flipSpecialRegion(region);
         if (flipped) active[field] = flipped;
+    }
+    for (const region of active.levelRegions ?? []) {
+        region.area = flipSpecialRegion(region.area) ?? region.area;
+        if (region.exclude) region.exclude = flipSpecialRegion(region.exclude) ?? region.exclude;
     }
 }
 
@@ -6523,28 +6562,14 @@ function createLuaLevelSession() {
                     context, options.exclude, options.exclude_islev,
                 )
                 : null;
-            const value = {
-                ...region,
-                ...(exclude ? {
-                    nlx: exclude.lx, nly: exclude.ly,
-                    nhx: exclude.hx, nhy: exclude.hy,
-                } : {}),
-            };
-            if (options.type === 'stair-up')
-                currentLevel().explicitUpStairRegion = value;
-            else if (options.type === 'stair-down')
-                currentLevel().explicitDownStairRegion = value;
-            else if (options.type === 'branch') {
-                currentLevel().explicitBranchRegion = region;
-                currentLevel().explicitBranchExclude = exclude;
-            }
-            else if (options.type === 'portal') {
-                currentLevel().explicitPortalRegion = region;
-                currentLevel().explicitPortalExclude = exclude;
-                if (options.name === undefined) delete currentLevel().portalDestinationName;
-                else currentLevel().portalDestinationName = options.name;
-            }
-            else throw new Error(`unsupported Lua level region ${options.type}`);
+            const type = options.type;
+            if (type !== 'stair-up' && type !== 'stair-down' && type !== 'branch' && type !== 'portal')
+                throw new Error(`unsupported Lua level region ${type}`);
+            const active = currentLevel();
+            active.levelRegions ??= [];
+            active.levelRegions.push({ type, area: region, exclude,
+                ...(options.name === undefined ? {} : { destination: options.name }),
+            });
         },
         exclusion: options => createLuaExclusion(context, options),
         gasCloud: options => createHarmlessGasCloudSelection(
@@ -7179,125 +7204,32 @@ async function fixupBaalz(active: ActiveSpecialLevel): Promise<void> {
     );
 }
 
-// C ref: mkmaze.c fixup_special() LR_PORTAL case.  Named Lua portals are
-// level regions rather than dungeon branches: after every script operation
-// has completed, place_lregion() samples the declared area, rejects its
-// exclusion rectangle and occupied terrain, then installs a magic portal
-// whose destination is the named special level.
-async function fixupSpecialPortal(active: ActiveSpecialLevel): Promise<void> {
-    const region = active?.explicitPortalRegion;
-    if (!region) return;
-    const exclude = active.explicitPortalExclude || {
-        lx: -1, ly: -1, hx: -1, hy: -1,
-    };
-    const lx = Math.max(1, region.lx);
-    const hx = Math.min(COLNO - 1, region.hx);
-    const ly = Math.max(0, region.ly);
-    const hy = Math.min(ROWNO - 1, region.hy);
-    const destination = active.portalDestinationName
-        ? game.specialLevels?.get(active.portalDestinationName) : undefined;
-    if (!destination) return;
-
-    let point = null;
-    for (let attempt = 0; attempt < 200; attempt++) {
-        const x = rn1(hx - lx + 1, lx);
-        const y = rn1(hy - ly + 1, ly);
-        if (!bad_location(x, y,
-            exclude.lx, exclude.ly, exclude.hx, exclude.hy)) {
-            point = { x, y };
-            break;
+// C mkmaze.c:fixup_special() processes regions in Lua declaration order.
+async function fixupSpecialRegions(active: ActiveSpecialLevel): Promise<void> {
+    let branchDeclared = false;
+    for (const region of active.levelRegions ?? []) {
+        const { area } = region;
+        const exclude = region.exclude ?? { lx: -1, ly: -1, hx: -1, hy: -1 };
+        const type = region.type === 'stair-up' ? LR_UPSTAIR
+            : region.type === 'stair-down' ? LR_DOWNSTAIR
+                : region.type === 'branch' ? LR_BRANCH : LR_PORTAL;
+        let destination: DungeonLocation | null = null;
+        if (region.type === 'branch') branchDeclared = true;
+        if (region.type === 'portal') {
+            const name = region.destination;
+            if (!name) throw new Error('Portal region requires a destination name');
+            const currentLevel = game.u.uz;
+            if (!currentLevel) throw new Error('Portal region requires a current dungeon level');
+            destination = /^\d/u.test(name)
+                ? { dnum: currentLevel.dnum, dlevel: parseInt(name, 10) }
+                : game.specialLevels?.get(name) ?? null;
+            if (!destination) throw new Error(`Portal destination ${name} does not exist`);
         }
+        await place_lregion(area.lx, area.ly, area.hx, area.hy,
+            exclude.lx, exclude.ly, exclude.hx, exclude.hy, type, destination);
     }
-    if (!point) {
-        for (let x = lx; x <= hx && !point; x++) {
-            for (let y = ly; y <= hy; y++) {
-                if (!bad_location(x, y,
-                    exclude.lx, exclude.ly, exclude.hx, exclude.hy)) {
-                    point = { x, y };
-                    break;
-                }
-            }
-        }
-    }
-    if (!point) return;
-    const portal = await maketrap(point.x, point.y, MAGIC_PORTAL);
-    if (!portal) throw new Error('Special-level portal could not be created.');
-    portal.dst = { ...destination };
-}
-
-function fixupSpecialStair(active: ActiveSpecialLevel): void {
-    // Preserve Lua declaration order for the common paired regions: Juiblex
-    // declares its down stair before its up stair.
-    for (const [field, type] of [
-        ['explicitDownStairRegion', LR_DOWNSTAIR],
-        ['explicitUpStairRegion', LR_UPSTAIR],
-    ] as const) {
-        const region = active?.[field];
-        if (!region) continue;
-        place_lregion(
-            region.lx, region.ly, region.hx, region.hy,
-            region.nlx ?? -1, region.nly ?? -1,
-            region.nhx ?? -1, region.nhy ?? -1,
-            type, null,
-        );
-    }
-}
-
-// C mkmaze.c:fixup_special() owns implicit dungeon-branch placement after a
-// special-level Lua script finishes.  An explicit branch region (Pri-strt)
-// has already set made_branch; an unadorned special map such as Big Room uses
-// place_lregion() over the whole level before hero arrival begins.
-async function fixupSpecialBranch(active: ActiveSpecialLevel): Promise<void> {
-    if (game.made_branch) return;
-    const branch = is_branchlev();
-
-    if (active?.explicitBranchRegion) {
-        const region = active.explicitBranchRegion;
-        const exclude = active.explicitBranchExclude
-            || { lx: -1, ly: -1, hx: -1, hy: -1 };
-        const lx = Math.max(1, region.lx), hx = Math.min(COLNO - 1, region.hx);
-        const ly = Math.max(0, region.ly), hy = Math.min(ROWNO - 1, region.hy);
-        let point = null;
-        for (let attempt = 0; attempt < 200; attempt++) {
-            const x = lx + rn2(hx - lx + 1);
-            const y = ly + rn2(hy - ly + 1);
-            if (!bad_location(x, y,
-                exclude.lx, exclude.ly, exclude.hx, exclude.hy)) {
-                point = { x, y };
-                break;
-            }
-        }
-        if (point && branch) await placeBranchAt(branch, point.x, point.y);
-        return;
-    }
-
-    if (!branch) return;
-
-    if ((game.level?.nroom ?? 0) > 0) {
-        await place_branch(branch);
-        return;
-    }
-
-    let point = null;
-    for (let attempt = 0; attempt < 200; attempt++) {
-        const x = 1 + rn2(COLNO - 1);
-        const y = rn2(ROWNO);
-        if (!bad_location(x, y, 0, 0, 0, 0)) {
-            point = { x, y };
-            break;
-        }
-    }
-    if (!point) {
-        for (let x = 1; x < COLNO && !point; x++) {
-            for (let y = 0; y < ROWNO; y++) {
-                if (!bad_location(x, y, 0, 0, 0, 0)) {
-                    point = { x, y };
-                    break;
-                }
-            }
-        }
-    }
-    if (point) await placeBranchAt(branch, point.x, point.y);
+    if (!branchDeclared && is_branchlev())
+        await place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_BRANCH, null);
 }
 
 async function generateSpecialAndFixup(
@@ -7330,9 +7262,7 @@ async function generateSpecialAndFixup(
     // mkmaze.c:fixup_special() must allocate and initially paint Air/Water
     // bubbles before named portals and arrival regions are materialized.
     if (active?.elementalBubbles) await setupElementalBubbles();
-    await fixupSpecialPortal(active);
-    fixupSpecialStair(active);
-    await fixupSpecialBranch(active);
+    await fixupSpecialRegions(active);
     if (active?.baalzFixup) await fixupBaalz(active);
     // sp_lev.c explicitly places deferred portals, stairs, and branches
     // before premap_detect(); otherwise their remembered glyphs retain the

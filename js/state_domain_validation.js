@@ -117,17 +117,16 @@ export function validSavedActiveSpecialLevel(value, entities) {
         baalzFixupArea: optional(validBaalzebubArea),
         baalzPoolMarkers: optional(arrayOf(validSavedPosition)),
         specialMessages: optional(arrayOf(string)),
-        portalDestinationName: optional(string),
+        levelRegions: optional(arrayOf((region) => closedFieldsMatch(region, {
+            type: oneOf('stair-up', 'stair-down', 'branch', 'portal'),
+            area: validRectangle,
+            exclude: nullable(validRectangle),
+            destination: optional(string),
+        }))),
         upTeleportRegion: optional(validRectangle),
         upTeleportExclude: optional(nullable(validRectangle)),
         downTeleportRegion: optional(validRectangle),
         downTeleportExclude: optional(nullable(validRectangle)),
-        explicitBranchRegion: optional(validRectangle),
-        explicitBranchExclude: optional(nullable(validRectangle)),
-        explicitPortalRegion: optional(validRectangle),
-        explicitPortalExclude: optional(nullable(validRectangle)),
-        explicitUpStairRegion: optional(validStairRegion),
-        explicitDownStairRegion: optional(validStairRegion),
     });
 }
 function validDiggingContext(value) {
@@ -230,13 +229,6 @@ function validBaalzebubArea(value) {
 function validRectangle(value) {
     return closedFieldsMatch(value, {
         lx: integer, ly: integer, hx: integer, hy: integer,
-    });
-}
-function validStairRegion(value) {
-    return closedFieldsMatch(value, {
-        lx: integer, ly: integer, hx: integer, hy: integer,
-        nlx: optional(integer), nly: optional(integer),
-        nhx: optional(integer), nhy: optional(integer),
     });
 }
 //# sourceMappingURL=state_domain_validation.js.map

@@ -3204,7 +3204,7 @@ export async function newgame() {
     await mklev();
     // C does this before makedog() so that the starting pet is placed next
     // to the hero rather than next to the level-generation origin.
-    u_on_upstairs();
+    await u_on_upstairs();
     init_vision_globals();
     vision_reset();
     await checkSpecialRoom();

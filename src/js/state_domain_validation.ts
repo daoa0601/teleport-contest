@@ -3,7 +3,7 @@ import type {
     Dungeon, DungeonBranch, DungeonFlags, OverviewRecord, SpecialLevelDescriptor,
 } from './dungeon_types.js';
 import type {
-    ActiveSpecialLevel, Rectangle, SpecialLevelContext, StairRegion,
+    ActiveSpecialLevel, LevelRegion, Rectangle, SpecialLevelContext,
 } from './map_types.js';
 import type {
     FoodMeal, NonfoodMeal, PreparedFoodObject, TinOpening,
@@ -148,17 +148,17 @@ export function validSavedActiveSpecialLevel(
         baalzFixupArea: optional(validBaalzebubArea),
         baalzPoolMarkers: optional(arrayOf(validSavedPosition)),
         specialMessages: optional(arrayOf(string)),
-        portalDestinationName: optional(string),
+        levelRegions: optional(arrayOf((region): region is LevelRegion =>
+            closedFieldsMatch<LevelRegion>(region, {
+                type: oneOf('stair-up', 'stair-down', 'branch', 'portal'),
+                area: validRectangle,
+                exclude: nullable(validRectangle),
+                destination: optional(string),
+            }))),
         upTeleportRegion: optional(validRectangle),
         upTeleportExclude: optional(nullable(validRectangle)),
         downTeleportRegion: optional(validRectangle),
         downTeleportExclude: optional(nullable(validRectangle)),
-        explicitBranchRegion: optional(validRectangle),
-        explicitBranchExclude: optional(nullable(validRectangle)),
-        explicitPortalRegion: optional(validRectangle),
-        explicitPortalExclude: optional(nullable(validRectangle)),
-        explicitUpStairRegion: optional(validStairRegion),
-        explicitDownStairRegion: optional(validStairRegion),
     });
 }
 
@@ -280,10 +280,3 @@ function validRectangle(value: unknown): value is Rectangle {
     });
 }
 
-function validStairRegion(value: unknown): value is StairRegion {
-    return closedFieldsMatch<StairRegion>(value, {
-        lx: integer, ly: integer, hx: integer, hy: integer,
-        nlx: optional(integer), nly: optional(integer),
-        nhx: optional(integer), nhy: optional(integer),
-    });
-}

@@ -23,7 +23,7 @@ import { collectLevelFollowers } from './monster_followers.js';
 import { hideMonsterUnder, hideMonsterOnRestore } from './monster_hiding.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterWormHeads } from './monster_worm.js';
-import { mklev, u_on_downstairs, u_on_upstairs } from './mklev.js';
+import { mklev, place_lregion, u_on_downstairs, u_on_upstairs } from './mklev.js';
 import { dungeonBuildsUp, level_difficulty, specialPrototypeAt } from './dungeon.js';
 import { collectNearbyCoords } from './u_init.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
@@ -48,7 +48,7 @@ import {
 import { fumaroles } from './monmove.js';
 import { moveElementalBubbles } from './elemental.js';
 import {
-    COLNO, ROWNO, CORR, ROOM, DISMOUNT_FELL, IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA,
+    COLNO, ROWNO, CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, IS_POOL, IS_LAVA,
     MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel,
     Is_rogue_level,
 } from './const.js';
@@ -371,8 +371,8 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
                 game.u.uy = stairs.sy;
                 stairs.u_traversed = true;
                 await moveSteedWithHero();
-            } else if (up) u_on_downstairs();
-            else u_on_upstairs();
+            } else if (up) await u_on_downstairs();
+            else await u_on_upstairs();
             if (await applyStairTravelEffects(up, ladder)) return true;
         } else if (arrival === 'portal' && !In_endgame(game.u.uz)) {
             const portal = game.level.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
@@ -383,10 +383,10 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
                 game.u.uy = portal.ty;
                 portal.tseen = true;
                 await moveSteedWithHero();
-            } else placeHeroAtRandomArrival(game.level.upTeleportRegion);
+            } else await placeHeroAtRandomArrival(game.level.upTeleportRegion, true);
         } else {
-            placeHeroAtRandomArrival(up
-                ? game.level.upTeleportRegion : game.level.downTeleportRegion);
+            await placeHeroAtRandomArrival(up
+                ? game.level.upTeleportRegion : game.level.downTeleportRegion, up);
             if (arrival === 'falling') {
                 if (heroIsPunished() && await fallWithIronBall()) return true;
                 const contact = await selfTouchPetrifyingWeapons({
@@ -513,48 +513,16 @@ function restoreCachedLevelMetadata(cached: CachedLevelState): void {
     game._activeSpecialLevel = cached?.activeSpecialLevel || null;
 }
 
-function randomArrivalCellOk(x: number, y: number): boolean {
-    const level = requireGameLevel();
-    const loc = level?.at?.(x, y);
-    if (!loc) return false;
-    const openTerrain = loc.typ === ROOM || IS_AIR(loc.typ)
-        || (loc.typ === CORR && level.flags?.is_maze_lev);
-    if (!openTerrain || IS_FURNITURE(loc.typ)
-        || IS_POOL(loc.typ) || IS_LAVA(loc.typ)) return false;
-    if (level.traps?.some(trap => trap.tx === x && trap.ty === y)) return false;
-    return !level.monsters?.some(monster => monsterHasMapPosition(monster, game) && !monster.dead
-        && monster.mx === x && monster.my === y);
-}
-
-// C refs: dungeon.c u_on_rndspot(), mkmaze.c place_lregion().  Ordinary
-// numeric level teleport uses the whole map; a special level can replace it
-// with the direction-specific updest/dndest saved by fixup_special().
-export function placeHeroAtRandomArrival(region: ArrivalRegion | null | undefined = null): Position | null {
-    const lx = Math.max(1, region?.lx ?? 1);
-    const hx = Math.min(COLNO - 1, region?.hx ?? COLNO - 1);
-    const ly = Math.max(0, region?.ly ?? 0);
-    const hy = Math.min(ROWNO - 1, region?.hy ?? ROWNO - 1);
-    const excluded = (x: number, y: number) => region?.exclude
-        && x >= region.exclude.lx && x <= region.exclude.hx
-        && y >= region.exclude.ly && y <= region.exclude.hy;
-    let x = lx, y = ly;
-    for (let attempt = 0; attempt < 200; attempt++) {
-        x = rn2(hx - lx + 1) + lx;
-        y = rn2(hy - ly + 1) + ly;
-        if (excluded(x, y) || !randomArrivalCellOk(x, y)) continue;
-        game.u.ux = game.u.ux0 = x;
-        game.u.uy = game.u.uy0 = y;
-        return { x, y };
-    }
-    for (x = lx; x <= hx; x++) {
-        for (y = ly; y <= hy; y++) {
-            if (excluded(x, y) || !randomArrivalCellOk(x, y)) continue;
-            game.u.ux = game.u.ux0 = x;
-            game.u.uy = game.u.uy0 = y;
-            return { x, y };
-        }
-    }
-    return null;
+// C dungeon.c:u_on_rndspot() delegates arrival to the shared lregion owner.
+export async function placeHeroAtRandomArrival(
+    region: ArrivalRegion | null | undefined = null, up = false,
+): Promise<Position> {
+    const area = region ?? { lx: 0, ly: 0, hx: 0, hy: 0 };
+    const excluded = region?.exclude ?? { lx: -1, ly: -1, hx: -1, hy: -1 };
+    await place_lregion(area.lx, area.ly, area.hx, area.hy,
+        excluded.lx, excluded.ly, excluded.hx, excluded.hy,
+        up ? LR_UPTELE : LR_DOWNTELE, null);
+    return { x: game.u.ux, y: game.u.uy };
 }
 
 function shuffledArrivalCoords(cx: number, cy: number, maxRadius = 3): Position[] {
