@@ -214,7 +214,7 @@ async function traditionalCategories(combo, selectOff) {
             const position = index - (sorted[0]?.oclass === 12 ? 1 : 0);
             const letter = game.flags.fixinv !== false ? object.invlet
                 : object.oclass === 12 ? '$' : 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.charAt(position) || '#';
-            const answer = acceptAll ? 'y' : await promptYesNoAllQuit(`${letter} - ${inventoryItemDescription(object)}? [ynaq] (n) `, 'n');
+            const answer = acceptAll ? 'y' : await promptYesNoAllQuit(`${letter} - ${inventoryItemDescription(object)}?`, 'n');
             if (answer === 'q')
                 return null;
             if (answer === 'n')
