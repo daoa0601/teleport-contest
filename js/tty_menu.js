@@ -106,7 +106,7 @@ export function restoreMenuUnderlay(snapshot) {
     d.clearRow(0);
 }
 export function tty_create_nhwindow(_type) {
-    return { entries: [], layout: null, offx: 0, active: false, destroyed: false, underlay: null };
+    return { entries: [], layout: null, offx: 0, active: false, cancelled: false, destroyed: false, underlay: null };
 }
 export async function tty_clear_nhwindow(window) {
     requireWindow(window);
@@ -164,6 +164,8 @@ export function tty_end_menu(window, prompt = null) {
 }
 export async function tty_display_nhwindow(window, how = PICK_NONE) {
     requireWindow(window);
+    if (window.cancelled)
+        return { cancelled: true, key: 27, selections: [] };
     const d = display();
     if (!d)
         return { cancelled: true, key: 27, selections: [] };
@@ -180,7 +182,9 @@ export async function tty_display_nhwindow(window, how = PICK_NONE) {
         window.underlay = snapshotMenuUnderlay();
     window.offx = layout.boundary;
     window.active = true;
-    return process_menu_window(d, window.entries, layout, how, window.underlay);
+    const result = await process_menu_window(d, window.entries, layout, how, window.underlay);
+    window.cancelled = result.cancelled;
+    return result;
 }
 export async function tty_select_menu(window, how) {
     try {
@@ -191,6 +195,7 @@ export async function tty_select_menu(window, how) {
     }
 }
 export async function tty_dismiss_nhwindow(window) {
+    window.cancelled = false;
     if (!window.active)
         return;
     window.active = false;

@@ -7,6 +7,34 @@ import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_se
     tty_display_nhwindow, tty_clear_nhwindow, tty_dismiss_nhwindow, tty_destroy_nhwindow } from '../js/tty_menu.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { GameDisplay } from '../js/game_display.js';
+import { Terminal } from '../js/terminal.js';
+
+void test('a cancelled menu skips redisplay until dismissal and leaves the next selection key unread', async () => {
+    freshPlayableRoom();
+    const window = tty_create_nhwindow<string>(NHW_MENU);
+    await tty_start_menu(window);
+    tty_add_menu(window, { identifier: 'dagger', selector: 'a', text: 'a dagger' });
+    tty_end_menu(window);
+    const input = resetInputState();
+    input.feed('a\x1b');
+    const cancelled = await tty_display_nhwindow(window, PICK_ANY);
+    assert.equal(cancelled.cancelled, true);
+    assert.equal(cancelled.selections.length, 0, 'Escape discards selected items');
+
+    input.feed('a\n');
+    try {
+        const redisplayed = await tty_display_nhwindow(window, PICK_ANY);
+        assert.equal(redisplayed.cancelled, true, 'an undismissed cancelled menu must not read another key');
+        assert.equal(redisplayed.selections.length, 0);
+
+        await tty_dismiss_nhwindow(window);
+        const selected = await tty_select_menu(window, PICK_ONE);
+        assert.equal(selected.selections[0]?.identifier, 'dagger', 'dismissal allows the queued key to select again');
+    } finally {
+        await tty_destroy_nhwindow(window);
+    }
+});
 
 void test('clearing an active full-screen menu leaves a blank screen until dismissal', async () => {
     freshPlayableRoom({ flags: { menu_overlay: false }, hero: { hallucinationTurns: 100 } });
@@ -54,6 +82,33 @@ void test('redisplaying an active corner menu restores the map after dismissal',
 });
 
 for (const overlay of [true, false]) {
+    void test(`${overlay ? 'corner' : 'full-screen'} menu search clears only rows rendered by the line editor`, async () => {
+        freshPlayableRoom({ flags: { menu_overlay: overlay } });
+        game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 40, rows: 24 }));
+        const window = tty_create_nhwindow<string>(NHW_MENU);
+        await tty_start_menu(window);
+        tty_add_menu(window, { identifier: 'dagger', selector: 'a', text: 'a dagger' });
+        tty_end_menu(window, 'Choose a weapon');
+        const input = resetInputState();
+        const selection = tty_select_menu(window, PICK_ANY);
+        try {
+            await input.waitUntilBlocked();
+            input.feed(':' + 'x'.repeat(28) + ' ' + 'y'.repeat(27));
+            await input.waitUntilBlocked();
+            assert.equal(game.nhDisplay.cursorRow, 1, 'the two-word search occupies two editor rows');
+
+            input.feed('\n');
+            await input.waitUntilBlocked();
+
+            assert.match(game.nhDisplay.grid[2]?.map(cell => cell.ch).join('') ?? '', /a - a dagger/,
+                'the item below the editor must remain visible after search');
+        } finally {
+            input.feed('\n');
+            await selection;
+            await tty_destroy_nhwindow(window);
+        }
+    });
+
     for (const { name, keys, selected } of [
         { name: 'no match', keys: 'nomatch\n', selected: false },
         { name: 'a match', keys: 'dagger\n', selected: true },

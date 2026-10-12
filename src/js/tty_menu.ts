@@ -143,6 +143,7 @@ export interface TtyMenuWindow<T> {
     layout: MenuLayout<TtyMenuRow<T>> | null;
     offx: number;
     active: boolean;
+    cancelled: boolean;
     destroyed: boolean;
     underlay: MenuUnderlay | null;
 }
@@ -154,7 +155,7 @@ export interface TtyMenuResult<T> {
 }
 
 export function tty_create_nhwindow<T>(_type: typeof NHW_MENU): TtyMenuWindow<T> {
-    return { entries: [], layout: null, offx: 0, active: false, destroyed: false, underlay: null };
+    return { entries: [], layout: null, offx: 0, active: false, cancelled: false, destroyed: false, underlay: null };
 }
 
 export async function tty_clear_nhwindow<T>(window: TtyMenuWindow<T>): Promise<void> {
@@ -213,6 +214,7 @@ export function tty_end_menu<T>(window: TtyMenuWindow<T>, prompt: string | null 
 
 export async function tty_display_nhwindow<T>(window: TtyMenuWindow<T>, how: MenuPickMode = PICK_NONE): Promise<TtyMenuResult<T>> {
     requireWindow(window);
+    if (window.cancelled) return { cancelled: true, key: 27, selections: [] };
     const d = display();
     if (!d) return { cancelled: true, key: 27, selections: [] };
     if (!window.layout) tty_end_menu(window);
@@ -225,7 +227,9 @@ export async function tty_display_nhwindow<T>(window: TtyMenuWindow<T>, how: Men
     if (!window.active) window.underlay = snapshotMenuUnderlay();
     window.offx = layout.boundary;
     window.active = true;
-    return process_menu_window(d, window.entries, layout, how, window.underlay);
+    const result = await process_menu_window(d, window.entries, layout, how, window.underlay);
+    window.cancelled = result.cancelled;
+    return result;
 }
 
 export async function tty_select_menu<T>(window: TtyMenuWindow<T>, how: MenuPickMode): Promise<TtyMenuResult<T>> {
@@ -237,6 +241,7 @@ export async function tty_select_menu<T>(window: TtyMenuWindow<T>, how: MenuPick
 }
 
 export async function tty_dismiss_nhwindow<T>(window: TtyMenuWindow<T>): Promise<void> {
+    window.cancelled = false;
     if (!window.active) return;
     window.active = false;
     if (window.offx === 0) {
