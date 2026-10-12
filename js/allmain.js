@@ -3309,6 +3309,9 @@ export async function moveloop_core() {
         }
         g._heroTimePending = false;
         g._heroActionSeq = (g._heroActionSeq ?? 0) + 1;
+        // C moveloop_core() checks again after nh_timeout() can remove weight.
+        if (g._capacityDirty)
+            await reportHeroEncumbrance(g);
         if (!g.program_state?.gameover)
             finishOrDeferHeroTookTimeRng(g.moves || 1);
     }

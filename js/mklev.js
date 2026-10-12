@@ -1,7 +1,4 @@
-// mklev.js — Level generation.
-// C ref: mklev.c — makelevel, makerooms, makecorridors, generate_stairs.
-// Also includes parts of sp_lev.c (create_room) and mkmap.c (litstate_rnd).
-// Level construction uses the game's main random-number stream.
+import { rotCorpse } from './corpse_rot.js';
 import { isRoom } from './map_types.js';
 import { createObjectBase } from './object_constructor.js';
 import { deleteTrap, finishSokobanIfSolved } from './trap_lifecycle.js';
@@ -3141,7 +3138,10 @@ export async function runClaimedObjectRotTimer(claimed, state = game) {
         }
     }
     const { where, ox: x, oy: y } = object;
-    await deleteObject(object, state);
+    if (kind === OBJECT_TIMER_KIND.ROT_CORPSE)
+        await rotCorpse(object, state);
+    else
+        await deleteObject(object, state);
     return { kind, object, where, x, y };
 }
 function make_engr_at(x, y, text, pristine, epoch, engr_type, options = undefined) {
