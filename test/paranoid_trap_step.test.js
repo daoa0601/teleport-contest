@@ -4,12 +4,17 @@ import { rhack } from '../js/cmd.js';
 import { PARANOID_CONFIRM, PARANOID_TRAP, PIT, TT_WEB, WEB } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { parseNethackrc } from '../js/options.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('startup enables trap confirmation unless configuration explicitly disables it', () => {
+    assert.ok((parseNethackrc('OPTIONS=!legacy').flags.paranoia_bits ?? 0) & PARANOID_TRAP);
+    assert.equal(parseNethackrc('OPTIONS=paranoid_confirmation:none').flags.paranoia_bits, 0);
+});
 void test('declining a known web consumes no turn and leaves the hero outside it', async () => {
     const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
     requirePlayingGame(game);

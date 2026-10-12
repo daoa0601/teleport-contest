@@ -227,7 +227,7 @@ function parseScoreOption(value: string | null, negated: boolean): Required<Pick
 export function parseNethackrc(rc: string): NethackConfiguration {
     const result: NethackConfiguration = {
         name: '', role: null, race: null, gender: null, align: null,
-        flags: {}, iflags: {}, commandBindings: new CommandBindings(),
+        flags: { paranoia_bits: DEFAULT_PARANOIA_BITS }, iflags: {}, commandBindings: new CommandBindings(),
     };
     parseConfiguration(rc, result);
     result.commandBindings.finishConfiguration();
