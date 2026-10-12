@@ -3,9 +3,10 @@ import { plineWithContinuation, newsym } from './display.js';
 import { game, requireLiveGame, requireGameLevel } from './gstate.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
+import { heroSpecies } from './hero_species.js';
 import { monsterAtPosition } from './monster_location.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { hideHeroUnder } from './monster_hiding.js';
 import { unwieldMonsterWeapon } from './monster_weapon.js';
 import { corpseName } from './objnam.js';
 import { deleteObject } from './object_delete.js';
@@ -41,8 +42,9 @@ export async function rotCorpse(corpse, state = game) {
             && ((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x80)) {
             monster.mundetected = 0;
         }
-        else if (state.u.ux === x && state.u.uy === y && state.u.uundetected) {
-            maybeUnhideAt(x, y, state);
+        else if (state.u.ux === x && state.u.uy === y && state.u.uundetected
+            && ((MONSTER_FLAGS1[heroSpecies(state)] ?? 0) & 0x80)) {
+            hideHeroUnder(state);
         }
         newsym(x, y);
     }

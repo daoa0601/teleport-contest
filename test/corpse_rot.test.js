@@ -10,6 +10,7 @@ import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopAllObjectTimers } from '../
 import { runDueTimers } from '../js/timer_effects.js';
 import { nearCapacity } from '../js/weight.js';
 import { corpseObject } from './support/game-objects.js';
+import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 for (const [species, quantity, wielded, expected] of [
@@ -47,6 +48,24 @@ void test('a visible floor corpse rots silently', async () => {
     assert.equal(corpse.where, 'gone');
     assert.equal(game._pending_message, '');
 });
+for (const stoneResistant of [false, true]) {
+    void test(`rotting safe cover ${stoneResistant ? 'keeps a stone-resistant hero hidden' : 'exposes a hero'} above petrifying corpses`, async () => {
+        freshRoomWithPolymorphedHero('garter snake');
+        requirePlayingGame(game);
+        const safeCorpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('newt')), game.u.ux, game.u.uy);
+        const petrifyingCorpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('cockatrice')), game.u.ux, game.u.uy);
+        stopAllObjectTimers(petrifyingCorpse);
+        stopAllObjectTimers(safeCorpse);
+        scheduleObjectTimer(safeCorpse, OBJECT_TIMER_KIND.ROT_CORPSE, game.moves);
+        game.u.stoneResistance = stoneResistant;
+        game.u.uundetected = 1;
+        await runDueTimers();
+        assert.equal(safeCorpse.where, 'gone');
+        assert.equal(petrifyingCorpse.where, 'floor');
+        assert.equal(game.u.uundetected, stoneResistant ? 1 : 0);
+        assert.equal(game._pending_message, '');
+    });
+}
 void test('turn maintenance reports relief immediately after a heavy corpse rots', async () => {
     freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
