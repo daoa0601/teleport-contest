@@ -266,6 +266,7 @@ import {
     propertyTimeout, refreshProperty, setPropertyTimeout,
 } from './properties.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
+import { resolveMonsterContactEffect } from './monster_contact_effects.js';
 import { setSlipperyHands } from './towel.js';
 import { restartMonsterShapechanging } from './monster_polymorph.js';
 import { msummon } from './minion.js';
@@ -1615,7 +1616,7 @@ async function advanceWorldTurn(): Promise<void> {
     // Native find_ac() follows the elapsed-turn loop.  setworn() is already
     // live for effects, but the first donning cadence frame still shows the
     // prior AC; the next automatic core observes the recomputed value.
-    if (game._armorClassDirtyAfterDelayedFrame) {
+    if (game._armorClassDirtyAfterDelayedFrame && !game._delayedAction?.ready) {
         findArmorClass(game);
         game._armorClassDirty = false;
         delete game._armorClassDirtyAfterDelayedFrame;
@@ -2678,6 +2679,12 @@ async function presentMonsterAttackEffects(
                         publish: publishEquipmentMessage,
                     });
                 }
+                if (heroAttack.deferredSpecialContact)
+                    await resolveMonsterContactEffect(monster, heroAttack, {
+                        state: game, publish: publishEquipmentMessage, random, rollOne,
+                    });
+                if (game.program_state.gameover)
+                    return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
                 if (heroAttack.deferredStickingAfterHit)
                     resumeDeferredHeroSticking(action, game);
                 if (heroAttack.stickingMessage) {
@@ -2946,7 +2953,7 @@ async function presentMonsterAttackEffects(
                 const missedContact = heroAttack.effect === 'failed-grab'
                     || heroAttack.effect === 'engulf-unfound'
                     || heroAttack.effect === 'wild-miss';
-                if (!engulfAttack && !missedContact) {
+                if (!engulfAttack && !missedContact && !heroAttack.contactDone) {
                     await stopHeroOccupation(game);
                 }
                 if ((game.u?.[Upolyd(game.u) ? 'mh' : 'uhp'] ?? 1) > 0) {
@@ -3805,10 +3812,9 @@ export async function moveloop_core() {
         const delayed = g._delayedAction;
         g._delayedAction = null;
         if (delayed.kind === 'wear') {
-            if (!delayed.object._armorApplied) {
-                findArmorClass(g);
-                delayed.object._armorApplied = true;
-            }
+            // unmul() prints nomovemsg before Armor_on() and find_ac().
+            // An earlier attack can hold that message at a pager while AC
+            // still belongs to the turn before the dressing finished.
             if (delayed.finishMessage)
                 await plineWithContinuation(delayed.finishMessage);
             const effectMessages = await applyArmorOnEffects(delayed.object, g);
@@ -3834,6 +3840,10 @@ export async function moveloop_core() {
                 recordObjectKnowledge(delayed.object.otyp);
                 await exerciseAttribute(A_WIS, true);
             }
+            findArmorClass(g);
+            g._armorClassDirty = false;
+            delete g._armorClassDirtyAfterDelayedFrame;
+            delete g._statusProjectedAc;
         } else if (delayed.kind === 'remove') {
             // C allmain.c:unmul() emits nomovemsg before calling afternmv.
             // If an earlier monster-combat line already owns tty, this await

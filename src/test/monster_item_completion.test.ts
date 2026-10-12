@@ -76,8 +76,10 @@ void test('a monster stepping onto a level teleport trap disappears without fall
 
 void test('the Wizard spends its healing turn without adding an insult', async () => {
     for (let seed = 1; seed <= 12; seed++) {
-        freshObjectRoom({ heroX: 14, heroY: 10 });
+        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
+        game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom' })];
+        level.flags.stasis_until = game.moves + 5;
         const wizard = await createMonsterAt('Wizard of Yendor', 10, 10, MM_ANGRY | MM_NOWAIT | NO_MINVENT);
         wizard.mhp = 1;
         wizard.mhpmax = 40;

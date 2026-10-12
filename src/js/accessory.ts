@@ -23,6 +23,7 @@ import {
     refreshMovementProperties, removeWornProperty,
 } from './properties.js';
 import { isWeldedPrimary, releaseWeaponSlots } from './weapon_slots.js';
+import { cancelSlotTakeoff } from './takeoff_state.js';
 import { heroHasNoLimbs, heroIsUnchanging } from './polyself.js';
 import { changeHeroSex, heroPolyGender } from './hero_species.js';
 import { newsym, plineWithContinuation } from './display.js';
@@ -92,6 +93,8 @@ export async function wearHeroAccessory(
     const wasFlying = !!state.u.flying;
     const wasInGas = property === 'magicalBreathing' && heroIsInDangerousRegion(state);
     await releaseWeaponSlots(object, state);
+    const previous = state[slot] || state.u[slot];
+    if (previous && previous !== object) cancelSlotTakeoff(slot, state);
     state[slot] = object;
     state.u[slot] = object;
     object.worn = true;
@@ -207,6 +210,7 @@ export function clearHeroAccessory(
         state[slot] === object || state.u[slot] === object);
     if (!position) return null;
     const { slot } = position;
+    cancelSlotTakeoff(slot, state);
     state[slot] = null;
     state.u[slot] = null;
     object.worn = false;

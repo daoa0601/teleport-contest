@@ -9,6 +9,7 @@ import { endObjectBurn, equipmentLightMessage } from './light.js';
 import { plineWithContinuation } from './display.js';
 import { heroIsBlind } from './senses.js';
 import { weaponNeedsBashingMessage, willWeld } from './weapon_type.js';
+import { cancelSlotTakeoff } from './takeoff_state.js';
 const WEAPON_SLOTS = [
     ['uwep', W_WEP, 'wielded'],
     ['uswapwep', W_SWAPWEP, 'alternate'],
@@ -25,6 +26,8 @@ function slotObject(slot, state) {
 }
 function clearSlot(slot, mask, flag, state) {
     const object = slotObject(slot, state);
+    if (object)
+        cancelSlotTakeoff(slot, state);
     state[slot] = null;
     if (state.u)
         state.u[slot] = null;
@@ -69,6 +72,8 @@ export async function setPrimaryWeapon(object, state = game) {
     const previous = slotObject('uwep', state);
     if (previous === object)
         return previous;
+    if (previous)
+        cancelSlotTakeoff('uwep', state);
     // Semantic unwielding retains the old pointer while its warning stops.
     if (previous) {
         setTwoWeaponCombat(false, state);
@@ -107,6 +112,7 @@ export async function losePrimaryWeapon(state = game) {
     const object = slotObject('uwep', state);
     if (!object)
         return;
+    cancelSlotTakeoff('uwep', state);
     if (object.lamplit && artifactEmitsLight(object)) {
         endObjectBurn(object, state);
         if (!heroIsBlind(state))
@@ -127,6 +133,13 @@ export async function releaseWeaponSlots(object, state = game) {
     const primary = state.uwep === object || state.u?.uwep === object;
     const secondary = state.uswapwep === object
         || state.u?.uswapwep === object;
+    const quivered = state.uquiver === object || state.u?.uquiver === object;
+    if (primary)
+        cancelSlotTakeoff('uwep', state);
+    if (secondary)
+        cancelSlotTakeoff('uswapwep', state);
+    if (quivered)
+        cancelSlotTakeoff('uquiver', state);
     if (primary || secondary)
         setTwoWeaponCombat(false, state);
     if (primary && artifactEmitsLight(object) && object.lamplit)

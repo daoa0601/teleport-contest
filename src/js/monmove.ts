@@ -147,6 +147,7 @@ import { heroHasDrainResistance, heroHasFreeAction, heroIsDisplaced } from './ar
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { checkMonsterHeroRange } from './monster_flee.js';
+import { retreatCovetousMonster } from './monster_covetous_retreat.js';
 import {
     monsterName as canonicalMonsterName,
     monsterPossessive,
@@ -1405,22 +1406,7 @@ function monsterTrapIsHarmless(monster: Monster, trap: Trap, state: PlayingGameS
     const symbol = MONSTER_SYMBOL[monster.mnum];
     const airborne = speciesFlags & M1_FLY || symbol === S_EYE || symbol === S_LIGHT;
     const sokoban = state.level.flags.sokoban_rules;
-    const floorTriggered = [
-        ARROW_TRAP,
-        DART_TRAP,
-        ROCKTRAP,
-        SQKY_BOARD,
-        BEAR_TRAP,
-        LANDMINE,
-        ROLLING_BOULDER_TRAP,
-        SLP_GAS_TRAP,
-        RUST_TRAP,
-        FIRE_TRAP,
-        PIT,
-        SPIKED_PIT,
-        HOLE,
-        TRAPDOOR,
-    ].includes(trap.ttyp);
+    const floorTriggered = trapTriggeredByFloor(trap);
     if (!sokoban && floorTriggered && airborne) return true;
     const whirly = symbol === S_VORTEX || monster.mnum === PM_AIR_ELEMENTAL;
     switch (trap.ttyp) {
@@ -1456,6 +1442,14 @@ function monsterTrapIsHarmless(monster: Monster, trap: Trap, state: PlayingGameS
         default:
             return false;
     }
+}
+
+// trap.c:floor_trigger(). These traps require contact with the floor even
+// when their eventual effect (a dart or falling rock) could hit a flyer.
+function trapTriggeredByFloor(trap: Trap): boolean {
+    return [ARROW_TRAP, DART_TRAP, ROCKTRAP, SQKY_BOARD, BEAR_TRAP,
+        LANDMINE, ROLLING_BOULDER_TRAP, SLP_GAS_TRAP, RUST_TRAP, FIRE_TRAP,
+        PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
 }
 
 // C ref: monmove.c:m_avoid_kicked_loc().  dokick() retains its directed
@@ -4566,6 +4560,13 @@ async function triggerMonsterTrap(
 ) {
     const trap = trapAtMonster(monster, state);
     if (!trap || monster.mtrapped) return null;
+    const symbol = MONSTER_SYMBOL[monster.mnum];
+    const airborne = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY)
+        || symbol === S_EYE || symbol === S_LIGHT;
+    const sokobanFall = state.level.flags.sokoban_rules && !trap.madeby_u
+        && [PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
+    if (!movement.forcedTrapLanding && !sokobanFall && airborne && trapTriggeredByFloor(trap))
+        return null;
     if (trap.ttyp === MAGIC_PORTAL) {
         // trap.c:mintrap()->trapeffect_magic_portal() treats a fixed portal
         // as inescapable, then routes monsters through mlevel_tele_trap().
@@ -5139,23 +5140,7 @@ export async function triggerImmediateMonsterTrap(
         monster.mtrapped = 0;
         return { monster, movement, event: null, calls };
     }
-    const floorTriggered =
-        [
-            ARROW_TRAP,
-            DART_TRAP,
-            ROCKTRAP,
-            SQKY_BOARD,
-            BEAR_TRAP,
-            LANDMINE,
-            ROLLING_BOULDER_TRAP,
-            SLP_GAS_TRAP,
-            RUST_TRAP,
-            FIRE_TRAP,
-            PIT,
-            SPIKED_PIT,
-            HOLE,
-            TRAPDOOR,
-        ].includes(trap.ttyp);
+    const floorTriggered = trapTriggeredByFloor(trap);
     const sokobanFall =
         state.level.flags.sokoban_rules &&
         !trap.madeby_u &&
@@ -5962,6 +5947,15 @@ async function beginHeroAttackSlot(
             deferredPostHit: true,
             oldFormMnum,
         };
+    } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE || damageType === AD_POLY)) {
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        const negated = damageType === AD_POLY
+            && (specialAttackNegated(monster, state.u, { state, random }) || !!monster.mspec_used);
+        return {
+            kind: 'hero-attack', roll, threshold, hit, damage, attackType, damageType,
+            oldFormMnum, negated, deferredSpecialContact: true,
+        };
     } else if (hit && damageType === AD_STCK) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
@@ -6700,16 +6694,28 @@ function covetousUsesHarassStrategy(monster: Monster, state: PlayingGameState) {
     );
 }
 
+function covetousSeeksHealing(monster: Monster, state: PlayingGameState): boolean {
+    if (!monsterIsCovetous(monster) || shopkeeperInOwnShop(monster, state)
+        || priestIsInOwnTemple(monster, state)) return false;
+    const health = Math.trunc(monster.mhp * 3 / monster.mhpmax);
+    if (health === 0 || (health === 1 && MONSTER_NAME[monster.mnum] !== 'Wizard of Yendor'))
+        return true;
+    return health < 3 && !covetousTargetMasks(state).some(mask =>
+        covetousExternalTargetExists(monster, state, mask));
+}
+
 function runCovetousHarassTactics(
     monster: Monster,
     state: PlayingGameState,
     random: RandomBelow,
     calls: MonsterCallLog,
+    afterRetreat = false,
 ): MonsterMovement | null {
-    if (!covetousUsesHarassStrategy(monster, state)) return null;
+    if (!afterRetreat && !covetousUsesHarassStrategy(monster, state)) return null;
     // tactics() replaces the previous strategy while retaining the two
     // waiting bits and its one-shot relocation presentation bit.
-    monster.mstrategy = (monster.mstrategy ?? 0) & (STRAT_WAITMASK | STRAT_APPEARMSG);
+    if (!afterRetreat)
+        monster.mstrategy = (monster.mstrategy ?? 0) & (STRAT_WAITMASK | STRAT_APPEARMSG);
     if (
         monsterTeleportRestricted(monster, state) ||
         recordRandom(random, calls, monster.mflee ? 33 : 5) !== 0
@@ -6724,8 +6730,9 @@ function runCovetousHarassTactics(
     if (!destination) return null;
     const oldx = monster.mx;
     const oldy = monster.my;
-    const appearMessage = !!(monster.mstrategy & STRAT_APPEARMSG);
-    monster.mstrategy &= ~STRAT_APPEARMSG;
+    const strategy = monster.mstrategy ?? 0;
+    const appearMessage = !!(strategy & STRAT_APPEARMSG);
+    monster.mstrategy = strategy & ~STRAT_APPEARMSG;
     monster.mx = destination.x;
     monster.my = destination.y;
     monster.mtrack = [];
@@ -6777,27 +6784,6 @@ export async function resumeDeferredHeroContact(
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredPostHit) return action;
     const calls = action.calls;
-    // C uhitm.c:mhitm_ad_were(): even a protected hero gets the infection roll.
-    if (attack.damageType === AD_WERE && recordRandom(random, calls, 4) === 0
-        && state.u.ulycn === -1 && !heroHasProtectionFromShapeChangers(state)
-        && artifactById((state.uwep || state.u.uwep)?.oartifact, state)?.defense !== 'lycanthropy') {
-        const negated = specialAttackNegated(action.monster, state.u, {
-            state, random: sides => recordRandom(random, calls, sides),
-        });
-        if (negated) {
-            if (!action.monster.mcan) await publish('You avoid harm.');
-        } else {
-            await publish('You feel feverish.', { urgent: true });
-            await exerciseAttribute(A_CON, false, state);
-            setHeroLycanthropy(action.monster.mnum, state);
-            const retouch = await retouchEquipment(2, { state, publish, ...(die ? { die } : {}) });
-            if (retouch.died) {
-                attack.heroDied = true;
-                attack.deferredPostHit = false;
-                return action;
-            }
-        }
-    }
     if (
         attack.damageType === AD_STON &&
         (await applyMonsterStoningAttack(action.monster, { state, random, publish }))
@@ -6892,6 +6878,11 @@ export async function resumeDeferredHeroContact(
     if (knockback.defenderLeftLevel) attack.attackerDone = true;
     if (knockback.defenderDied) {
         attack.heroDied = true;
+        attack.deferredPostHit = false;
+        return action;
+    }
+    if (attack.contactDone) {
+        attack.nativeResult = M_ATTK_HIT;
         attack.deferredPostHit = false;
         return action;
     }
@@ -8471,10 +8462,25 @@ export async function takeMonsterTurn(
     }
     setMonsterApparentHeroPosition(monster, state, random, calls);
     if (!options.afterCovetousRelocation) {
-        const pickedCovetousTarget = await covetousPicksUpTargetUnderfoot(monster, state);
-        const tacticsMovement = pickedCovetousTarget
-            ? null
-            : runCovetousHarassTactics(monster, state, random, calls);
+        let tacticsMovement: MonsterMovement | null = null;
+        if (covetousSeeksHealing(monster, state)) {
+            const retreat = await retreatCovetousMonster(monster, state, random, rollOne);
+            if (retreat === 'harass')
+                tacticsMovement = runCovetousHarassTactics(monster, state, random, calls, true);
+        } else {
+            const pickedTarget = await covetousPicksUpTargetUnderfoot(monster, state);
+            if (!pickedTarget)
+                tacticsMovement = runCovetousHarassTactics(monster, state, random, calls);
+        }
+        if (state.program_state.gameover) {
+            return {
+                calls, dochugContext,
+                movement: {
+                    oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                    moved: false, heroDied: true,
+                },
+            };
+        }
         if (tacticsMovement) return { calls, dochugContext, movement: tacticsMovement };
         if (monsterIsCovetous(monster))
             setMonsterApparentHeroPosition(monster, state, random, calls);

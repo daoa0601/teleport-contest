@@ -10,7 +10,7 @@ import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
 import { getLine } from './query.js';
-import { BUFSZ, PICK_NONE, PICK_ONE } from './const.js';
+import { BUFSZ, MENU_ITEMFLAGS_SKIPINVERT, PICK_NONE, PICK_ONE } from './const.js';
 import { NO_COLOR } from './terminal.js';
 export const ATR_NONE = 0;
 export const ATR_INVERSE = 1;
@@ -625,7 +625,11 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
     for (;;) {
         const { pageCount, pageItems, pageKeys } = render();
         const key = await nhgetch();
-        if (returnCounts && key >= 48 && key <= 57) {
+        const letter = String.fromCharCode(key);
+        const group = allItems.filter(item => item.groupAccelerator === letter);
+        const isGroup = group.some(item => item.key !== letter || letter === '$')
+            && (!pickOne || group.length === 1);
+        if (returnCounts && key >= 48 && key <= 57 && (!isGroup || pendingCount !== null)) {
             const digit = key - 48;
             const next = Math.min(Number.MAX_SAFE_INTEGER, (pendingCount ?? 0) * 10 + digit);
             if (next > 0)
@@ -644,7 +648,24 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
         if (key === 10 || key === 13) {
             return selectedValues();
         }
-        const letter = String.fromCharCode(key);
+        // C tty process_menu_window(): group accelerators invert matching
+        // entries across pages; PICK_ONE accepts only a single match.
+        if (isGroup) {
+            for (const item of group) {
+                if (selected.has(item)) {
+                    selected.delete(item);
+                    selectedCounts.delete(item);
+                }
+                else {
+                    selected.add(item);
+                    if (count !== null)
+                        selectedCounts.set(item, count);
+                }
+            }
+            if (pickOne)
+                return selectedValues();
+            continue;
+        }
         if (letter === ' ') {
             if (pageCount > 1 && page < pageCount - 1) {
                 page++;
@@ -661,23 +682,27 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
         if (letter === '@') {
             if (pickOne)
                 continue;
-            if (selected.size === allItems.length) {
-                selected.clear();
-                selectedCounts.clear();
-            }
-            else {
-                for (const candidate of allItems)
+            for (const candidate of allItems) {
+                if (selected.has(candidate)) {
+                    selected.delete(candidate);
+                    selectedCounts.delete(candidate);
+                }
+                else if (!((candidate.itemFlags ?? 0) & MENU_ITEMFLAGS_SKIPINVERT)) {
+                    // C menuitem_invert_test(), default menuinvertmode=1:
+                    // bulk changes can clear a filter but cannot enable it.
                     selected.add(candidate);
-                selectedCounts.clear();
+                }
             }
             continue;
         }
         if (letter === '.') {
             if (pickOne)
                 continue;
-            for (const candidate of pageItems) {
+            for (const candidate of allItems) {
+                if (selected.has(candidate)
+                    || ((candidate.itemFlags ?? 0) & MENU_ITEMFLAGS_SKIPINVERT))
+                    continue;
                 selected.add(candidate);
-                selectedCounts.delete(candidate);
             }
             continue;
         }

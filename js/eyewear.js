@@ -11,6 +11,7 @@ import { heroHasNoHead } from './hero_species.js';
 import { heroIsBlind, isEyesOfTheOverworld, syncBlindness, } from './senses.js';
 import { toggleBlindness } from './sight_change.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
+import { cancelSlotTakeoff } from './takeoff_state.js';
 function currentEyewear() {
     return game.ublindf || game.u?.ublindf || null;
 }
@@ -33,6 +34,8 @@ async function equipEyewear(object) {
     object.owornmask = (object.owornmask ?? 0) | W_TOOL;
 }
 export function unequipEyewear(object, state = game) {
+    if (state.ublindf === object || state.u.ublindf === object)
+        cancelSlotTakeoff('ublindf', state);
     if (state.ublindf === object)
         state.ublindf = null;
     if (state.u?.ublindf === object)

@@ -49,14 +49,14 @@ import { mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
 import { cleanupSpecialLevelMap } from './special_level_cleanup.js';
-import { A_CHA, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
-import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL, OBJECT_SPELL_LEVEL, OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE, ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE, QUARTERSTAFF, BULLWHIP, FEDORA, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ORCISH_ARROW, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, SCIMITAR, AXE, PICK_AXE, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, IRON_SHOES, HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, MIRROR, POT_OBJECT_DETECTION, SHIELD_OF_REFLECTION, SADDLE, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, } from './object_data.js';
-import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND, MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS, SPECIAL_PM, monsterClassSymbol, requireMonsterData, } from './monster_data.js';
+import { A_CHA, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, P_SHORT_SWORD, P_SABER, AM_SHRINE, AM_SANCTUM, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
+import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL, OBJECT_SPELL_LEVEL, OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, OBJECT_SUBTYPE, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE, ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE, QUARTERSTAFF, BULLWHIP, FEDORA, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ORCISH_ARROW, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, SCIMITAR, AXE, PICK_AXE, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, IRON_SHOES, HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, MIRROR, POT_OBJECT_DETECTION, SHIELD_OF_REFLECTION, SADDLE, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, } from './object_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND, MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS, SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData, } from './monster_data.js';
 import { isReviver, isRider, ZOMBIE_FORM_BY_LIVING_CORPSE, } from './corpse_species.js';
 import { adjustedMonsterLevel, newMonsterHitPoints, } from './monster_hit_points.js';
 import { changeMonsterForm, initialShapechangedBirth, pickNastyShape, } from './monster_polymorph.js';
 import { initializeMonsterWormBody, restoreMonsterWormHeads, validMonsterWormBodies, } from './monster_worm.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { saveMonsterTraits } from './monster_traits.js';
 import { nhgetch } from './input.js';
 import { canSeeMonster, canSenseMonster, flush_screen, newsym, pline, } from './display.js';
@@ -1711,17 +1711,52 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     let hasMonsterInventory = false;
     const allowMonsterInventory = !(mmflags & NO_MINVENT);
     let skipCommonMonsterInventory = Is_rogue_level(game.u?.uz);
+    // C makemon.c:mongets(). Normalize birth equipment before mpickobj().
     const mongets = async (otyp) => {
+        if (!otyp)
+            return null;
         const object = await mksobj(otyp, true, false);
-        // makemon.c:mongets(): demons never retain blessed objects; a raw
-        // blessing becomes a curse before the identity enters minvent.
-        if (MONSTER_SYMBOL[mndx] === 56 && object.blessed) {
+        if (MONSTER_SYMBOL[mndx] === 56) {
+            if (object.blessed) {
+                object.blessed = false;
+                object.cursed = true;
+            }
+        }
+        else if ((genderFlags & M2_MINION)
+            && (clericMinion?.min_align ?? monsterAlignmentType(pendingMonster)) === A_LAWFUL) {
+            object.cursed = false;
+            object.spe = Math.max(0, object.spe);
+            object.oerodeproof = true;
+            object.oeroded = object.oeroded2 = 0;
+        }
+        else if (monsterIsPlayerMonster(mndx)
+            && object.oclass === WEAPON_CLASS
+            && (OBJECT_SUBTYPE[otyp] ?? 0) >= P_SHORT_SWORD
+            && (OBJECT_SUBTYPE[otyp] ?? 0) <= P_SABER) {
+            object.spe = 3 + rn2(4);
+        }
+        if (otyp === CANDELABRUM_OF_INVOCATION) {
+            object.spe = 0;
+            object.age = 0;
+            object.lamplit = false;
+            object.blessed = object.cursed = false;
+        }
+        else if (otyp === BELL_OF_OPENING) {
+            object.blessed = object.cursed = false;
+        }
+        else if (otyp === SPE_BOOK_OF_THE_DEAD) {
             object.blessed = false;
             object.cursed = true;
         }
+        if (genderFlags & M2_PRINCE) {
+            if (object.oclass === WEAPON_CLASS)
+                object.spe = Math.max(1, object.spe);
+            else if (object.oclass === ARMOR_CLASS)
+                object.spe = Math.max(0, object.spe);
+        }
         await addCreatedObjectToMonsterInventory(pendingMonster, object, game);
         hasMonsterInventory = true;
-        return object;
+        return object.where === 'gone' ? null : object;
     };
     // C makemon.c:m_initthrow(). Throwing stacks bypass mongets(): the raw
     // mksobj() result goes straight into the inventory, so demons keep any
@@ -2397,12 +2432,11 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             && dungeonName === 'The Gnomish Mines' ? 20 : 60;
         if (!rn2(candleChance)) {
             const candle = await mongets(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE);
-            candle.quan = 1;
-            candle.quantity = 1;
-            // levl is addressed by map coordinates; Level.at() is the shared
-            // accessor for ordinary and Lua-special maps, whose backing
-            // storage need not expose a column at map[x].
-            candle.lamplit = !level.at(x, y)?.lit;
+            if (candle) {
+                candle.quan = 1;
+                candle.quantity = 1;
+                candle.lamplit = !level.at(x, y)?.lit;
+            }
         }
     }
     if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 43) { // S_QUANTMECH
@@ -3823,7 +3857,7 @@ function specialMazeWalk(context, mapX, mapY, direction, passageType = ROOM) {
         y += direction === 'south' ? 1 : -1;
     carveMazeFrom(x, y, passageType, (COLNO - 1) & ~1, (ROWNO - 1) & ~1);
 }
-function specialMazeStockPoint(context, mappedContexts = [context]) {
+function specialMazeStockPoint(mappedCells) {
     const level = requireGameLevel();
     // sp_lev.c:maze1xy().  The stock reservoir is outside every square
     // touched by des.map(), on an odd-coordinate dry passage carved by the
@@ -3835,18 +3869,16 @@ function specialMazeStockPoint(context, mappedContexts = [context]) {
             x: rn1(((COLNO - 1) & ~1) - 3, 3),
             y: rn1(((ROWNO - 1) & ~1) - 3, 3),
         };
-        const mapped = mappedContexts.some(mappedContext => point.x >= mappedContext.xstart
-            && point.x < mappedContext.xstart + mappedContext.width
-            && point.y >= mappedContext.ystart
-            && point.y < mappedContext.ystart + mappedContext.height);
+        if (--tries < 0)
+            break;
         const loc = level.at(point.x, point.y);
-        const hasBoulder = level.objects?.[point.x]?.[point.y]
+        const hasBoulder = level.objects[point.x]?.[point.y]
             ?.some(object => object.otyp === BOULDER);
-        if ((point.x % 2) && (point.y % 2) && !mapped
-            && loc && SPACE_POS(loc.typ) && !hasBoulder) {
+        if ((point.x % 2) && (point.y % 2) && !mappedCells.has(point.x, point.y)
+            && loc && (Is_waterlevel(game.u.uz) || (SPACE_POS(loc.typ) && !hasBoulder))) {
             break;
         }
-    } while (--tries >= 0);
+    } while (true);
     return point;
 }
 function randomSpecialTrapType() {
@@ -3872,21 +3904,18 @@ function randomSpecialTrapType() {
     } while (typ === NO_TRAP);
     return typ;
 }
-async function fillEmptySpecialMaze(context, mappedContexts = [context]) {
+async function fillEmptySpecialMaze(mappedCells) {
     const level = requireGameLevel();
     // sp_lev.c:fill_empty_maze().  mapcount intentionally begins at the
     // complete rectangle while only mapcountmax is halved; this historical
-    // asymmetry leaves Castle with a 43-percent stock budget.
+    // asymmetry increases the stocking budget beyond the uncovered fraction.
     const mazeXMax = (COLNO - 1) & ~1;
     const mazeYMax = (ROWNO - 1) & ~1;
     let mapcount = (mazeXMax - 2) * (mazeYMax - 2);
     const mapcountmax = Math.trunc(mapcount / 2);
     for (let x = 2; x < mazeXMax; x++) {
         for (let y = 0; y < mazeYMax; y++) {
-            if (mappedContexts.some(mappedContext => x >= mappedContext.xstart
-                && x < mappedContext.xstart + mappedContext.width
-                && y >= mappedContext.ystart
-                && y < mappedContext.ystart + mappedContext.height)) {
+            if (mappedCells.has(x, y)) {
                 mapcount--;
             }
         }
@@ -3895,30 +3924,30 @@ async function fillEmptySpecialMaze(context, mappedContexts = [context]) {
         return;
     const mapfact = Math.trunc(mapcount * 100 / mapcountmax);
     for (let count = rnd(Math.trunc(20 * mapfact / 100)); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         await mkobj_at(rn2(2) ? GEM_CLASS : RANDOM_CLASS, point.x, point.y, true);
     }
     for (let count = rnd(Math.trunc(12 * mapfact / 100)); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         const trap = level.traps?.find(candidate => candidate.tx === point.x && candidate.ty === point.y);
         if (trap && (is_pit(trap.ttyp) || is_hole(trap.ttyp)))
             continue;
         await mksobj_at(BOULDER, point.x, point.y, true, false);
     }
     for (let count = rn2(2); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         await makemon(PM_MINOTAUR, point.x, point.y, 0);
     }
     for (let count = rnd(Math.trunc(12 * mapfact / 100)); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         await makemon(null, point.x, point.y, 0);
     }
     for (let count = rn2(Math.trunc(15 * mapfact / 100)); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         await mkgold(0, point.x, point.y);
     }
     for (let count = rn2(Math.trunc(15 * mapfact / 100)); count > 0; count--) {
-        const point = specialMazeStockPoint(context, mappedContexts);
+        const point = specialMazeStockPoint(mappedCells);
         let typ = randomSpecialTrapType();
         if (level.objects?.[point.x]?.[point.y]
             ?.some(object => object.otyp === BOULDER)) {
@@ -3947,6 +3976,7 @@ async function specialStair(context, up) {
     const point = await specialRandomLocation(context, loc => loc.typ === ROOM || loc.typ === CORR || loc.typ === ICE);
     if (point)
         mkstairs(point.x, point.y, up, null);
+    return point;
 }
 function specialNonDiggable(context = null) {
     const level = requireGameLevel();
@@ -5635,10 +5665,10 @@ function luaRoomSpec(options) {
 }
 async function createLuaStair(context, { direction, point }) {
     const up = direction === 'up';
-    if (point)
-        specialStairAt(context, point.x, point.y, up);
-    else
-        await specialStair(context, up);
+    if (!point)
+        return await specialStair(context, up);
+    specialStairAt(context, point.x, point.y, up);
+    return { x: context.xstart + point.x, y: context.ystart + point.y };
 }
 function createLuaDoor(context, { state, point, wall = 'all', pos = -1, }) {
     if (!point) {
@@ -5685,6 +5715,7 @@ function createLuaDrawbridge(context, options) {
     if (!['open', 'closed', 'random', undefined].includes(options.state))
         throw new Error(`unknown Lua drawbridge state ${options.state}`);
     makeSpecialDrawbridge(context, coordinate.x, coordinate.y, direction, open);
+    return { x: context.xstart + coordinate.x, y: context.ystart + coordinate.y };
 }
 async function createLuaEngraving(context, options) {
     const point = options.point
@@ -6140,7 +6171,6 @@ function createLuaLevelSession() {
     let luaState = null;
     const containers = [];
     const monsterInventories = [];
-    const mappedContexts = [];
     let mappedCells = new SpecialSelection();
     let roomFailed = false;
     const currentLevel = () => {
@@ -6202,7 +6232,6 @@ function createLuaLevelSession() {
                     : mapOrigin(value, width, rows.length, !!currentLevel().levelInitialized);
                 mapContext = loadSpecialAsciiMap(rows, lit, origin);
             }
-            mappedContexts.push(mapContext);
             const mapSelection = specialMapSelection(mapContext, rows);
             mappedCells = mappedCells.union(mapSelection);
             context = mapContext;
@@ -6283,15 +6312,27 @@ function createLuaLevelSession() {
             context = parent;
             return room;
         },
-        stair: options => createLuaStair(context, options),
+        stair: async (options) => {
+            const point = await createLuaStair(context, options);
+            if (point)
+                mappedCells.add(point.x, point.y);
+        },
         ladder: options => {
             const up = options.direction === 'up';
             if (!options.point)
                 throw new TypeError('des.ladder requires coordinates');
             specialLadderAt(context, options.point.x, options.point.y, up);
+            mappedCells.add(context.xstart + options.point.x, context.ystart + options.point.y);
         },
-        door: options => createLuaDoor(context, options),
-        drawbridge: options => createLuaDrawbridge(context, options),
+        door: options => {
+            const point = createLuaDoor(context, options);
+            if (point)
+                mappedCells.add(point.x, point.y);
+        },
+        drawbridge: options => {
+            const point = createLuaDrawbridge(context, options);
+            mappedCells.add(point.x, point.y);
+        },
         engraving: options => createLuaEngraving(context, options),
         gold: async (options) => await createLuaGold(context, options),
         feature: options => createLuaFeature(context, options),
@@ -6372,7 +6413,7 @@ function createLuaLevelSession() {
                 throw new TypeError('Unknown maze terrain');
             specialMazeWalk(context, options.x, options.y, direction, terrain);
             if (options.stocked)
-                await fillEmptySpecialMaze(context, mappedContexts);
+                await fillEmptySpecialMaze(mappedCells);
         },
         object: async (options) => currentState().objects.wrap(await createLuaObject(context, options, containers.at(-1) ?? null, monsterInventories.at(-1) ?? null, invokeObjectContents)),
         trap: options => createLuaTrap(context, options),
@@ -6427,7 +6468,6 @@ function createLuaLevelSession() {
             active.context = context;
             containers.length = 0;
             monsterInventories.length = 0;
-            mappedContexts.length = 0;
             mappedCells = new SpecialSelection();
             roomFailed = false;
             currentLevel().allowFlips = 3;
