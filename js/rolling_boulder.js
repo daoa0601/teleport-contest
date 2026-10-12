@@ -12,7 +12,7 @@ import { requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { depth, distmin } from './hacklib.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { formatHeardMessage } from './hero_speech.js';
+import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { animateRollingBoulderCell } from './hero_traps.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { angerMonster } from './monster_anger.js';
@@ -21,17 +21,18 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2, monsterIsNonliving, monsterIsVampireShi
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName, monsterObjectPronoun } from './monster_name.js';
 import { applyMonsterPassiveToObject } from './monster_passive.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { BOULDER } from './object_data.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 import { observeObject } from './object_knowledge.js';
 import { shipObject } from './object_migration.js';
 import { unlinkObject } from './object_location.js';
 import { splitObjectStack } from './object_stack.js';
 import { relocateObjectRandomly } from './object_teleport.js';
-import { killerObjectName, objectName } from './objnam.js';
+import { killerObjectName, objectCombatName } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { fractureRock } from './rock_breakage.js';
@@ -70,8 +71,10 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
         delete state.context.digging;
     boulder.otrapped = known;
     if (unseen) {
-        if (cansee(source.x, source.y))
-            await publish(`You see a ${objectName(boulder, state)} start to roll.`);
+        if (cansee(source.x, source.y)) {
+            const name = withIndefiniteArticle(objectCombatName(boulder, { state }));
+            await publish(formatSeenMessage(`${name} start to roll.`, state));
+        }
         else
             await hear(heroIsHallucinating(state) ? 'someone bowling.'
                 : `rumbling ${(source.x - state.u.ux) ** 2 + (source.y - state.u.uy) ** 2 <= 16 ? 'nearby' : 'in the distance'}.`);
@@ -134,7 +137,19 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
                 await fractureRock(boulder, position.x, position.y, { state, publish, random });
                 await scatterFloorObjects(position.x, position.y, 4, {
                     state, publish, random, rollOne, rollDice,
-                    finishMonsterDeath: target => finishEnvironmentalMonsterDeath(target, state, { publish, random }),
+                    heroCaused: !state.context.mon_moving,
+                    finishMonsterDeath: async (target, deathOptions = {}) => {
+                        if (state.context.mon_moving)
+                            return finishEnvironmentalMonsterDeath(target, state, { ...deathOptions, publish, random });
+                        if (deathOptions.deathMessage)
+                            await publish(deathOptions.deathMessage);
+                        // Debris uses ohitmon's ordinary missile range, so
+                        // an unknown boulder trap still gives hero kill credit.
+                        const death = await finishHeroMonsterKillOutcome(target, target.mx, target.my, {
+                            showKillMessage: false, publish,
+                        });
+                        return { survived: !death.killed, heroDied: death.heroDied };
+                    },
                 });
                 newsym(position.x, position.y);
                 usedUp = true;
@@ -242,8 +257,9 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
         const accuracy = 5 + findMonsterArmorClass(monster) + rangedTargetHitBonus(object, monster, { state });
         if (accuracy < rollOne(20)) {
             if (visible && !mimic) {
+                const name = objectCombatName(object, { state });
                 const target = state.flags.verbose ? monsterName(monster, { state }) : 'it';
-                await publish(`The boulder misses ${target}.`);
+                await publish(`The ${name} misses ${target}.`);
             }
             return false;
         }
@@ -254,9 +270,12 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
             revealMonsterAppearance(monster);
         monster.msleeping = 0;
         if (visible) {
+            const ending = harmless
+                ? ` but passes harmlessly through ${monsterObjectPronoun(monster, { state, random })}.`
+                : damage > 4 ? '!' : '.';
+            const name = objectCombatName(object, { state });
             const target = state.flags.verbose ? monsterName(monster, { state }) : 'it';
-            const ending = harmless ? ' but passes harmlessly through it.' : damage > 4 ? '!' : '.';
-            await publish(`The boulder hits ${target}${ending}`);
+            await publish(`The ${name} hits ${target}${ending}`);
         }
         if (!harmless) {
             monster.mhp -= damage;
@@ -264,7 +283,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
                 if (visible)
                     await publish(`${monsterName(monster, { state, capitalized: true })} is ${monsterIsNonliving(monster.mnum) || monsterIsVampireShifter(monster) || !spotted ? 'destroyed' : 'killed'}!`);
                 if (!state.context.mon_moving && object.otrapped)
-                    await finishHeroMonsterKillOutcome(monster, position.x, position.y, { showKillMessage: false });
+                    await finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, { showKillMessage: false, publish });
                 else
                     await finishEnvironmentalMonsterDeath(monster, state, { publish, random });
             }

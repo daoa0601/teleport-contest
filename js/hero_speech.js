@@ -2,7 +2,7 @@
 // C pline.c:You_hear() prefix and gating for heard-sound messages.
 import { game } from './gstate.js';
 import { MONSTER_FLAGS1, MONSTER_SOUND } from './monster_data.js';
-import { heroIsDeaf } from './senses.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { heroIsUnaware } from './hero_sleep.js';
 const M1_NOHEAD = 0x00008000;
 const MS_SILENT = 0;
@@ -22,6 +22,14 @@ export function formatHeardMessage(text, state = game) {
     if (unaware)
         return `You dream that you hear ${text}`;
     return `You hear ${text}`;
+}
+// C pline.c:You_see(). Callers decide whether the event can be seen.
+export function formatSeenMessage(text, state = game) {
+    if (heroIsUnaware(state))
+        return `You dream that you see ${text}`;
+    if (heroIsBlind(state))
+        return `You sense ${text}`;
+    return `You see ${text}`;
 }
 export function heroCanChant(state = game) {
     const hero = state.u;
