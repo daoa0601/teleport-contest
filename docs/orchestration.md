@@ -92,7 +92,8 @@ unit's run.
   lock rather than go faster.
 - Do not edit `src/` files that a running unit is likely to touch.
 - Before merging, run a read-only Codex review in the unit's worktree:
-  `codex exec -s read-only -o .cache/agents/UNIT/review.md - < .cache/agents/review-prompt.md`.
+  `codex exec -s read-only -o .cache/agents/UNIT/review.md - < .cache/agents/review-prompt.md`,
+  which diffs against the integration branch merge base.
   (`codex exec review --base` does not accept custom instructions.) Send
   back real findings in lines the branch changed; do not fix them in the
   main checkout. Findings in unchanged code go to the queue instead.
