@@ -8,6 +8,7 @@ import { displayLiquidName, docrt, newsym, plineWithContinuation } from './displ
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { loseHeroHp } from './hero_damage.js';
+import { formatHeardMessage } from './hero_speech.js';
 import { deleteFloorTrap } from './mklev.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
@@ -79,7 +80,8 @@ export async function dropBoulderIntoLiquid(boulder: GameObject | null, x: numbe
             await publish(`There is a large splash as the ${objectName(boulder, state)} ${
                 fills ? 'fills' : 'falls into'} the ${liquid}.`);
         } else if (!heroIsDeaf(state)) {
-            await publish(`You hear a${lava ? ' sizzling' : ''} splash.`);
+            const message = formatHeardMessage(`a${lava ? ' sizzling' : ''} splash.`, state);
+            if (message) await publish(message);
         }
         await wakeMonstersNearWithMessages(x, y, 40, state, publish);
         if (state.program_state.gameover) return true;

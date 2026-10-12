@@ -219,7 +219,7 @@ function parseScoreOption(value, negated) {
 export function parseNethackrc(rc) {
     const result = {
         name: '', role: null, race: null, gender: null, align: null,
-        flags: {}, iflags: {}, commandBindings: new CommandBindings(),
+        flags: { paranoia_bits: DEFAULT_PARANOIA_BITS }, iflags: {}, commandBindings: new CommandBindings(),
     };
     parseConfiguration(rc, result);
     result.commandBindings.finishConfiguration();

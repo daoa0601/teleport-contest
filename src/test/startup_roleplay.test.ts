@@ -36,14 +36,13 @@ function requireStartingKnowledge(state: GameState): asserts state is GameState 
 }
 
 void test('pauper implies nudist at its option position and allows later override', () => {
-    assert.deepEqual(
-        parseNethackrc('OPTIONS=!nudist,pauper').flags,
-        { pauper: true, nudist: false },
-    );
-    assert.deepEqual(
-        parseNethackrc('OPTIONS=pauper,!nudist').flags,
-        { nudist: true, pauper: true },
-    );
+    const overridden = parseNethackrc('OPTIONS=!nudist,pauper').flags;
+    assert.equal(overridden.pauper, true);
+    assert.equal(overridden.nudist, false);
+
+    const implied = parseNethackrc('OPTIONS=pauper,!nudist').flags;
+    assert.equal(implied.pauper, true);
+    assert.equal(implied.nudist, true);
 });
 
 void test('every pauper role starts empty, untrained, and selectively preknown', async () => {

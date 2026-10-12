@@ -78,13 +78,13 @@ export function quietMonsterName(monster) {
     const name = monsterTypeName(monster?.mnum, !!monster?.female);
     return monster?.saddled ? `saddled ${name}` : name;
 }
-export function monsterName(monster, { capitalized = false, state = game, article = 'the', adjective = '', suppressIt = false, suppressSaddle = !!MGIVENNAME(monster), augmentIt = false, suppressInvisible = false, exact = false, } = {}) {
+export function monsterName(monster, { capitalized = false, state = game, article = 'the', adjective = '', suppressIt = false, suppressSaddle = !!MGIVENNAME(monster), augmentIt = false, suppressInvisible = false, suppressHallucination = false, exact = false, } = {}) {
     requireLiveGame(state);
     const name = formatMonsterName(monster, state, {
         article, adjective, suppressIt: suppressIt || exact,
         suppressSaddle: suppressSaddle || exact, augmentIt,
         suppressInvisible: suppressInvisible || exact,
-        suppressHallucination: exact, suppressAppearance: exact,
+        suppressHallucination: suppressHallucination || exact, suppressAppearance: exact,
     });
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
@@ -259,8 +259,8 @@ export function monsterSubjectPronoun(monster, { state = game } = {}) {
     return SUBJECT_PRONOUNS[monsterPronounGender(monster, { state })];
 }
 // C mhim()/noit_mhim(): the same perceived gender, in the object case.
-export function monsterObjectPronoun(monster, { state = game, noIt = false } = {}) {
-    return OBJECT_PRONOUNS[monsterPronounGender(monster, { state, noIt })];
+export function monsterObjectPronoun(monster, { state = game, random = rn2, noIt = false } = {}) {
+    return OBJECT_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];
 }
 // C do_name.c:monverbself(). Obtain the displayed name before choosing a
 // hallucinated pronoun, since the two use distinct random streams.

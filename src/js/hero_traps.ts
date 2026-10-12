@@ -3,6 +3,7 @@
 // tele_trap().
 
 import { heroIsHallucinating } from './senses.js';
+import { launchRollingBoulder } from './rolling_boulder.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { maybeDestroyWeb } from './web_trap.js';
 import {
@@ -24,7 +25,6 @@ import {
 import {
     flush_screen, lastDirtyMapCursor, map_trap, newsym, pline,
     plineWithContinuation, shieldeff, show_glyph_cell,
-    transientObjectGlyph,
 } from './display.js';
 import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -43,7 +43,7 @@ import { heroLiquidEffects } from './hack.js';
 import {
     hasInternalInvisibility, syncHeroInvisibility,
 } from './hero_invisibility.js';
-import { distmin, dungeonDepth } from './hacklib.js';
+import { dungeonDepth } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import {
@@ -942,11 +942,6 @@ async function triggerSleepingGasTrap(trap: Trap) {
     await plineWithContinuation(`${name} suddenly falls asleep!`);
 }
 
-function boulderAt(x: number, y: number): GameObject | null {
-    return game.level?.objects?.[x]?.[y]
-        ?.find(object => object.otyp === BOULDER) ?? null;
-}
-
 export async function animateRollingBoulderCell(
     boulder: GameObject, glyph: GlyphAppearance, x: number, y: number, previous: Position | null,
 ): Promise<Position | null> {
@@ -971,56 +966,15 @@ async function triggerRollingBoulderTrap(trap: Trap) {
     map_trap(trap, false);
     newsym(trap.tx, trap.ty);
 
-    const click = game.u?.deaf ? '' : 'Click!  ';
-    await pline(`${click}You trigger a rolling boulder trap!`);
+    const click = heroIsDeaf(game) ? '' : 'Click!  ';
+    await plineWithContinuation(`${click}You trigger a rolling boulder trap!`);
 
-    let start = { ...trap.launch };
-    let finish = { ...(trap.launch2 || trap.launch) };
-    let boulder = boulderAt(start.x, start.y);
-    if (!boulder) {
-        boulder = boulderAt(finish.x, finish.y);
-        if (boulder) [start, finish] = [finish, start];
-    }
-    if (!boulder) {
-        await plineWithContinuation(wasKnown
-            ? 'No boulder was released.'
-            : 'Fortunately for you, no boulder was released.');
-        return;
-    }
-
-    remove_object(boulder);
-    newsym(start.x, start.y);
-    const glyph = transientObjectGlyph(boulder);
-    const dx = Math.sign(finish.x - start.x);
-    const dy = Math.sign(finish.y - start.y);
-    let remaining = distmin(start.x, start.y, finish.x, finish.y);
-    let x = start.x;
-    let y = start.y;
-    let transient = null;
-
-    while (remaining-- > 0) {
-        transient = await animateRollingBoulderCell(
-            boulder, glyph, x, y, transient,
-        );
-        x += dx;
-        y += dy;
-
-        if (game.u?.ux === x && game.u?.uy === y) {
-            // C trap.c:launch_obj() hands the hero to thitu().
-            const damage = rollPhysicalWeaponDamageAgainstHero(boulder, game);
-            if (game.multi) endVoluntaryMultiTurn(game);
-            const hit = await hitHeroWithObject(
-                boulder, physicalDamage(damage), 9 + (boulder.spe ?? 0),
-                { killer: killerObjectName(boulder, game) },
-            );
-            if (hit.died) return;
-            if (hit.hit) await stopHeroOccupation(game);
-        }
-    }
-
-    if (transient) newsym(transient.x, transient.y);
-    await placeObject(boulder, finish.x, finish.y);
-    newsym(finish.x, finish.y);
+    requirePlayingGame(game);
+    const released = await launchRollingBoulder(trap.launch, trap.launch2 ?? trap.launch, {
+        state: game, known: wasKnown,
+    });
+    if (!released) await plineWithContinuation(wasKnown
+        ? 'No boulder was released.' : 'Fortunately for you, no boulder was released.');
 }
 
 async function triggerBearTrap(trap: Trap, {

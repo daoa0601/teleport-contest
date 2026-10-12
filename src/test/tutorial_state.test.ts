@@ -200,6 +200,12 @@ void test('tutorial entry stores starting gear and its exit portal restores norm
     engine.state.u.uy = engine.state.u.uy0 = portal.ty - approach.dy;
     engine.inputGate.feed(approach.key);
     await engine.runUntilInputNeeded();
+    assert.match(engine.state._pending_message, /Really step into that magic portal\?/);
+    assert.equal(engine.state._tutorialActive, true);
+    assert.equal(engine.state.u.ux, portal.tx - approach.dx);
+    assert.equal(engine.state.u.uy, portal.ty - approach.dy);
+    engine.inputGate.feed('y');
+    await engine.runUntilInputNeeded();
     for (let page = 0; page < 4; page++) {
         const screen = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
         if (!screen.includes('--More--')) break;

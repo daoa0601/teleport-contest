@@ -52,7 +52,6 @@ import { performQuestExpulsion } from './quest.js';
 import { resurrectWizard } from './wizard.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill, } from './hero_monster_death.js';
 import { aggravateMonsters, angerMonster } from './monster_anger.js';
-import { animateRollingBoulderCell } from './hero_traps.js';
 import { grantAmuletWish } from './wish.js';
 import { checkAttributeExercise, reportHeroEncumbrance, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength } from './attrib.js';
 import { rndcurse } from './throne.js';
@@ -60,7 +59,7 @@ import { stopRun } from './runmode.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
-import { canSpotMonster, docrt, redrawMap, bot, flush_screen, flushPendingTopline, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, transientObjectGlyph, _statusLine1, _statusLine2, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
+import { canSpotMonster, docrt, redrawMap, bot, flush_screen, flushPendingTopline, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, _statusLine1, _statusLine2, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset, hasLightSources, init_vision_globals, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
@@ -81,7 +80,7 @@ import { claimNextDueObjectTimer, peekNextDueObjectTimer, } from './object_timer
 import { roles } from './roles.js';
 import { initializeSourceStartup } from './startup.js';
 import { initialDungeonEntryText, recordGameLogEvent, } from './gamelog.js';
-import { allocateMonsterMovement, applyHeroSpellDamage, beginDeferredHeroCloneWizard, completeHeroAttackSlot, resumeDeferredHeroColdSpecial, resumeDeferredHeroContact, resumeDeferredHeroFireSpecial, resumeDeferredHeroElectricSpecial, resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroSticking, resumeDeferredHeroEngulf, resumeDeferredHeroBlindness, resumeDeferredHeroLegs, resumeDeferredHeroReveal, rollDeferredHeroSpellDamage, resumeDeferredHeroSpell, resolveDeferredHeroSummonMonsters, resolveDeferredHeroHasteSelf, resolveDeferredHeroAggravation, finishDeferredMonsterMiscItem, finishDeferredHeroCloneWizard, resumeDeferredCovetousRelocation, resumeDeferredRestrictedTenguTeleport, resumeDeferredMovementSpell, resumeDeferredSpecialAttack, resumeDeferredMonsterTrap, resumeDeferredMonsterHideUnder, finishDeferredMonsterRollingBoulderPlacement, resumeDeferredMonsterRollingBoulderDeath, completeMonsterOffensiveAction, resumeDeferredPetAttack, resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance, resolveDeferredMonsterBreath, fumaroles, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterHeroAttack, runMonsterAction, monstersInFmonOrder, monsterDistressEvents, commitPetPickup, } from './monmove.js';
+import { allocateMonsterMovement, applyHeroSpellDamage, beginDeferredHeroCloneWizard, completeHeroAttackSlot, resumeDeferredHeroColdSpecial, resumeDeferredHeroContact, resumeDeferredHeroFireSpecial, resumeDeferredHeroElectricSpecial, resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroSticking, resumeDeferredHeroEngulf, resumeDeferredHeroBlindness, resumeDeferredHeroLegs, resumeDeferredHeroReveal, rollDeferredHeroSpellDamage, resumeDeferredHeroSpell, resolveDeferredHeroSummonMonsters, resolveDeferredHeroHasteSelf, resolveDeferredHeroAggravation, finishDeferredMonsterMiscItem, finishDeferredHeroCloneWizard, resumeDeferredCovetousRelocation, resumeDeferredRestrictedTenguTeleport, resumeDeferredMovementSpell, resumeDeferredSpecialAttack, resumeDeferredMonsterTrap, resumeDeferredMonsterHideUnder, completeMonsterOffensiveAction, resumeDeferredPetAttack, resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance, resolveDeferredMonsterBreath, fumaroles, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterHeroAttack, runMonsterAction, monstersInFmonOrder, monsterDistressEvents, commitPetPickup, } from './monmove.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, } from './monster_death.js';
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
@@ -103,12 +102,12 @@ import { clearJustPicked } from './just_picked.js';
 import { applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, destroyWornArmor, objectErosionKind, objectErosionMessage, projectedArmorClass, wornArmorInDestroyOrder, } from './armor.js';
 import { nearCapacity, } from './weight.js';
 import { dist2, dungeonDepth } from './hacklib.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, monsterTypeName, } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName, } from './monster_data.js';
 import { finishHeroDeath, } from './end.js';
 import { runLevelRegions } from './regions.js';
 import { maintainVaultResidence, continueVaultGuardArrival, } from './vault.js';
 import { observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType, } from './object_knowledge.js';
-import { automaticSearch } from './detect.js';
+import { automaticSearch, revealWarnedMonsters } from './detect.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
 import { getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness, } from './hunger.js';
@@ -273,6 +272,11 @@ export async function restoregamePreamble() {
     game._moveloopStarted = false;
     // pickup.c's oldcap is process-local (decl.c), not restored save state.
     game._encumbranceLevel = 0;
+    // C dorecover() rebuilds the unsaved vision state before docrt() and
+    // welcome(). Search and monster feedback use that same live sight.
+    init_vision_globals();
+    vision_reset();
+    await docrt();
     const race = game.urace?.adj || game.urace?.noun || 'human';
     const role = game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
@@ -712,6 +716,8 @@ function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
         || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
 }
 async function finishInitialTurnMaintenanceAfterAutomaticSearch({ sourceTurn, moveAmount, }) {
+    if (game.u.warning)
+        await revealWarnedMonsters();
     // Each sound keeps its native message wait before later feature rolls.
     await dosounds();
     return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount });
@@ -773,7 +779,7 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
     }
     if (game.u?.searching && !game.level?.flags?.noautosearch
         && !heroHasInvoluntaryDelay(game)) {
-        const search = automaticSearch();
+        const search = await automaticSearch();
         if (typeof search === 'object' && search.statueTrap) {
             const { x, y } = search.statueTrap;
             return {
@@ -2461,7 +2467,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     }
                 }
                 if (heroAttack.deferredLifeDrainGate)
-                    resumeDeferredHeroLifeDrain(action, game);
+                    await resumeDeferredHeroLifeDrain(action, game, random, publishSlotMessage);
                 if (heroAttack.deferredLifeDrain) {
                     heroAttack.deferredLifeDrain = false;
                     const died = await loseHeroExperience('life drainage', {
@@ -2663,74 +2669,6 @@ async function presentMonsterPostMove(action, game) {
         movement = action.movement;
         if ('seeSquare' in event && event.seeSquare && event.kind !== 'vibrating-square')
             newsym(event.trap.tx, event.trap.ty);
-    }
-    if (movement?.trap?.kind === 'rolling-boulder') {
-        const event = movement.trap;
-        // postmov() has already installed the moving actor on the trap
-        // square when mintrap() begins. Fatal damage changes live HP
-        // before its plines, but tty retains the pre-death glyph while
-        // an older trigger line owns --More--.
-        const liveHp = monster.mhp;
-        if (event.released && event.killed)
-            monster.mhp = event.monsterHpBefore;
-        newsym(movement.x, movement.y);
-        monster.mhp = liveHp;
-        if (event.released && event.inSight) {
-            const trigger = game.deaf
-                ? `${visibleMonsterSubject(monster)} triggers ${event.wasSeen ? 'a rolling boulder trap' : 'something'}.`
-                : `Click!  ${visibleMonsterSubject(monster)} triggers ${event.wasSeen ? 'a rolling boulder trap' : 'something'}.`;
-            await plineWithContinuation(trigger);
-        }
-        if (event.released) {
-            vision_note_blocker_change(event.launch.x, event.launch.y);
-            newsym(event.launch.x, event.launch.y);
-            const dx = Math.sign(event.endpoint.x - event.launch.x);
-            const dy = Math.sign(event.endpoint.y - event.launch.y);
-            const glyph = transientObjectGlyph(event.boulder);
-            let flightX = event.launch.x;
-            let flightY = event.launch.y;
-            const preTargetSteps = Math.max(Math.abs(movement.x - flightX), Math.abs(movement.y - flightY));
-            let transient = null;
-            for (let step = 0; step < preTargetSteps; step++) {
-                transient = await animateRollingBoulderCell(event.boulder, glyph, flightX, flightY, transient);
-                flightX += dx;
-                flightY += dy;
-            }
-            if (event.hit && event.seeSquare) {
-                const target = event.inSight
-                    ? `the ${quietMonsterName(monster)}` : 'it';
-                await plineWithContinuation(`The boulder hits ${target}!`);
-                if (event.killed) {
-                    const subject = event.inSight
-                        ? `The ${quietMonsterName(monster)}` : 'It';
-                    const destroyed = monsterIsNonliving(monster.mnum)
-                        || monsterIsVampireShifter(monster)
-                        || !event.inSight;
-                    await plineWithContinuation(`${subject} is ${destroyed ? 'destroyed' : 'killed'}!`);
-                }
-            }
-            else if (event.seeSquare) {
-                const target = event.inSight
-                    ? `the ${quietMonsterName(monster)}` : 'it';
-                await plineWithContinuation(`The boulder misses ${target}.`);
-            }
-            // Death/corpse work precedes the remaining flight cells.
-            await resumeDeferredMonsterRollingBoulderDeath(action, game, {
-                publish: plineWithContinuation,
-            });
-            movement = action.movement;
-            const postTargetSteps = Math.max(Math.abs(event.endpoint.x - flightX), Math.abs(event.endpoint.y - flightY));
-            for (let step = 0; step < postTargetSteps; step++) {
-                transient = await animateRollingBoulderCell(event.boulder, glyph, flightX, flightY, transient);
-                flightX += dx;
-                flightY += dy;
-            }
-            await finishDeferredMonsterRollingBoulderPlacement(action, game);
-            movement = action.movement;
-            if (transient)
-                newsym(transient.x, transient.y);
-            newsym(event.endpoint.x, event.endpoint.y);
-        }
     }
     if (movement?.trap?.kind === 'magic-portal-migration'
         && movement.trap.visible) {

@@ -19,6 +19,7 @@ import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, ICE_BOX, LARGE_BOX,
 import { objectResistsDestruction } from './object_state.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2 } from './rng.js';
+import { canSeeMonster } from './display.js';
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
 const M1_HUMANOID = 0x00020000;
@@ -119,10 +120,8 @@ export function monsterTrapVisibility(monster, state = game) {
     const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
     const seeSquare = !blind
         && !!((state?.viz_array?.[monster.my]?.[monster.mx] ?? 0) & 0x2);
-    const seesInvisible = !!state.u.seeInvisible;
     const inSight = state?.u?.usteed === monster
-        || (seeSquare && !monster.mundetected
-            && (!monster.minvis || seesInvisible));
+        || canSeeMonster(monster);
     return { inSight, seeSquare };
 }
 function wornObject(monster, mask) {

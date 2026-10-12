@@ -22,8 +22,12 @@ function initializeSenses(flags) {
     return game;
 }
 void test('blind and deaf option aliases retain ordered negation', () => {
-    assert.deepEqual(parseNethackrc('OPTIONS=permablind,permadeaf').flags, { blind: true, deaf: true });
-    assert.deepEqual(parseNethackrc('OPTIONS=!permablind,blind,!permadeaf,deaf').flags, { blind: false, deaf: false });
+    const enabled = parseNethackrc('OPTIONS=permablind,permadeaf').flags;
+    assert.equal(enabled.blind, true);
+    assert.equal(enabled.deaf, true);
+    const negated = parseNethackrc('OPTIONS=!permablind,blind,!permadeaf,deaf').flags;
+    assert.equal(negated.blind, false);
+    assert.equal(negated.deaf, false);
 });
 void test('startup installs permanent sensory sources and conduct separately', () => {
     const state = initializeSenses({ blind: true, deaf: true });

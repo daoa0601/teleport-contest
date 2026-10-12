@@ -36,11 +36,12 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
 import {
-    A_CHA, A_WIS, In_mines, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM,
+    A_CHA, A_WIS, DELPHI, In_mines, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM,
     ROOMOFFSET, SHOPBASE, TEMPLE, Upolyd, MGIVENNAME,
 } from './const.js';
 import { inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
 import { intemple } from './priest.js';
+import { recordDiscoveredRoom } from './dungeon.js';
 import {
     BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CRYSTAL_BALL,
     DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX,
@@ -1218,30 +1219,30 @@ async function enterShop({ room, roomno }: ShopRoom): Promise<string | null> {
         || 'shop';
     if (game.u?.invisible || game.u?.invis) {
         const message = `${shopkeeperName(shopkeeper, { capitalized: true })} senses your presence.`;
-        await pline(message);
+        await plineWithContinuation(message);
         return message;
     }
 
     if (!shopkeeper.mpeaceful) {
         const message = `"So, ${playerName}, you dare return to ${possessive(shopkeeperName(shopkeeper))} ${typeName}?!"`;
-        await pline(message);
+        await plineWithContinuation(message);
         return message;
     }
     if (eshk.surcharge) {
         const message = `"Back again, ${playerName}?  I've got my eye on you."`;
-        await pline(message);
+        await plineWithContinuation(message);
         return message;
     }
     if (eshk.robbed) {
         const message = `${shopkeeperName(shopkeeper, { capitalized: true })} mutters imprecations against shoplifters.`;
-        await pline(message);
+        await plineWithContinuation(message);
         return message;
     }
 
     const again = eshk.visitct ? ' again' : '';
     eshk.visitct = (eshk.visitct ?? 0) + 1;
     const message = `"${shopGreeting(shopkeeper)}, ${playerName}!  Welcome${again} to ${possessive(shopkeeperName(shopkeeper))} ${typeName}!"`;
-    await pline(message);
+    await plineWithContinuation(message);
     return message;
 }
 
@@ -1269,6 +1270,20 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
         if (room.rtype === MORGUE) {
             await plineWithContinuation(Number(String(game.datetime || '').slice(8, 10)) === 0
                 ? 'Run away!  Run away!' : 'You have an uncanny feeling...');
+            room.rtype = OROOM;
+            result = room;
+        } else if (room.rtype === DELPHI) {
+            const oracle = [...game.level.monsters].reverse().find(monster =>
+                !monster.dead && monster.mhp > 0
+                && monster.mnum === MONSTER_NAME.indexOf('Oracle')
+                && roomsAt(game.level, monster.mx, monster.my).includes(roomno));
+            if (oracle) {
+                const name = game.plname;
+                await plineWithContinuation(oracle.mpeaceful
+                    ? `"${shopGreeting(oracle)}, ${name}, welcome to Delphi!"`
+                    : `"You're in Delphi, ${name}."`);
+                recordDiscoveredRoom(roomno - ROOMOFFSET);
+            }
             room.rtype = OROOM;
             result = room;
         } else if (room.rtype === TEMPLE) {

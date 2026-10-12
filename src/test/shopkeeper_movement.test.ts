@@ -9,7 +9,7 @@ import { cls } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { startHeroDigging } from '../js/hero_digging.js';
 import { syncHeroInvisibility } from '../js/hero_invisibility.js';
-import { pushKeys } from '../js/input.js';
+import { pushKey, pushKeys } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { destroyObjectFromMonsterInventory } from '../js/monster_inventory.js';
 import { DAGGER, PICK_AXE } from '../js/object_data.js';
@@ -218,6 +218,9 @@ void test('a keeper at home waits instead of milling around a mounted hero', asy
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
     assert.equal(game.u.usteed, pony);
+    // Mounting owns a message pager before the shopkeeper can greet us.
+    pushKey(' ');
+    await cls();
     const { shopkeeper } = await createStaffedShop({ keeperX: 13 });
     pushKeys('          ');
 

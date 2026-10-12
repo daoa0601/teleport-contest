@@ -1,8 +1,10 @@
+import { launchRollingBoulder } from './rolling_boulder.js';
 import type { MonsterLiquidDeathContext } from './mon.js';
 import type { MonsterDeathOptions } from './monster_death.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { PlayingGameState } from './game_state.js';
+import type { MessagePublisher } from './display.js';
 import type { Position, MapLocation, Trap } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type {
@@ -242,6 +244,7 @@ import {
     AD_LEGS,
     AD_PHYS,
     AD_POLY,
+    AD_TLPT,
     AD_DISE,
     AD_PEST,
     AD_FAMN,
@@ -4721,7 +4724,7 @@ async function triggerMonsterTrap(
         // trap.c:trapeffect_rolling_boulder_trap()->launch_obj().  Airborne
         // actors do not depress the trigger.  A monster which already knows
         // the trap gets mintrap()'s ordinary three-in-four avoidance chance.
-        if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY) return null;
+        if (monsterInAir(monster, state)) return null;
         if (
             monsterKnowsTrap(monster, trap) &&
             !movement.forcedTrapLanding &&
@@ -4734,72 +4737,28 @@ async function triggerMonsterTrap(
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
 
-        const visibility = monsterTrapVisibility(monster, state);
-        const visible = visibility.inSight;
+        const inSight = state.u.usteed === monster
+            || cansee(monster.mx, monster.my) && canSpotMonster(monster);
         const wasSeen = !!trap.tseen;
-        const launch = trap.launch || { x: trap.tx, y: trap.ty };
-        const endpoint = trap.launch2 || { x: trap.tx, y: trap.ty };
-        const sourcePile = state.level.objects?.[launch.x]?.[launch.y] || [];
-        const boulder = sourcePile.find((object) => object.otyp === BOULDER);
-        if (!boulder) {
-            const event: MonsterRollingBoulderEvent = {
-                kind: 'rolling-boulder',
-                trap,
-                visible,
-                wasSeen,
-                released: false,
-                damage: 0,
-                killed: false,
-            };
-            movement.trap = event;
-            return event;
-        }
-        sourcePile.splice(sourcePile.indexOf(boulder), 1);
-        boulder.where = 'free';
-
-        // The launch line always crosses the trigger square.  ohitmon()
-        // resolves that accidental target before the boulder continues to
-        // the opposite endpoint.
-        const hitRoll = rollOne(20);
-        calls.push('rnd(20)');
-        const hitThreshold = 5 + findMonsterArmorClass(monster);
-        const hit = hitRoll <= hitThreshold;
-        const monsterHpBefore = monster.mhp ?? 1;
-        let damage = 0;
-        if (hit) {
-            const damageTable =
-                (MONSTER_SIZE[monster.mnum] ?? 2) >= 3 ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE;
-            const damageSides = Math.max(1, damageTable[BOULDER] || 1);
-            damage = rollOne(damageSides);
-            calls.push(`rnd(${damageSides})`);
-            monster.mhp = Math.max(0, monsterHpBefore - damage);
-        }
-        if (visible) trap.tseen = true;
-        const killed = monster.mhp <= 0;
+        newsym(monster.mx, monster.my);
+        if (inSight) await publish(`${heroIsDeaf(state) ? '' : 'Click!  '}${
+            canonicalMonsterName(monster, { state, capitalized: true })} triggers ${
+            wasSeen ? 'a rolling boulder trap' : 'something'}.`);
+        const launch = trap.launch;
+        const endpoint = trap.launch2 ?? launch;
+        const released = await launchRollingBoulder(launch, endpoint, {
+            state, unseen: !inSight, publish, random, rollOne, rollDice,
+        });
+        if (released && inSight) trap.tseen = true;
         const event: MonsterRollingBoulderEvent = {
-            kind: 'rolling-boulder',
-            trap,
-            visible,
-            wasSeen,
-            released: true,
-            boulder,
-            launch: { ...launch },
-            endpoint: { ...endpoint },
-            hitRoll,
-            hitThreshold,
-            hit,
-            monsterHpBefore,
-            monsterHpAfter: monster.mhp,
-            damage,
-            killed,
-            deferredDeath: killed,
-            deferredPlacement: true,
-            ...visibility,
+            kind: 'rolling-boulder', trap,
+            released, killed: !!monster.dead || monster.mhp <= 0,
+            heroDied: !!state.program_state.gameover,
         };
         movement.trap = event;
-        movement.deferredAfterRollingBoulderMessage = true;
-        if (killed) {
+        if (event.killed) {
             movement.actorDied = true;
+            movement.postMoveStatus = MMOVE_DIED;
             movement.actionCompleted = true;
         }
         return event;
@@ -5170,23 +5129,11 @@ export async function finishImmediateMonsterTrap(
     { publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, finishDeath }: MonsterTrapResumeOptions = {},
 ) {
     if (action.movement.escapingTrap) return action;
-    if (action.event?.kind === 'rolling-boulder') {
-        const event = action.event;
-        if (event.released && canSeeMonster(action.monster)) {
-            const name = monsterSentenceSubject(action.monster).replace(/^The /u, 'the ');
-            await publish(`A boulder ${event.hit ? 'hits' : 'misses'} ${name}!`);
-        }
-        await resumeDeferredMonsterRollingBoulderDeath(action, state, { publish, random });
-        await finishDeferredMonsterRollingBoulderPlacement(action, state, random);
-    } else {
-        await resumeDeferredMonsterTrap(action, state, {
-            publish,
-            random,
-            rollOne,
-            rollDice,
-            ...(finishDeath ? { finishDeath } : {}),
-        });
-    }
+    if (action.event?.kind === 'rolling-boulder') return action;
+    await resumeDeferredMonsterTrap(action, state, {
+        publish, random, rollOne, rollDice,
+        ...(finishDeath ? { finishDeath } : {}),
+    });
     return action;
 }
 
@@ -5947,7 +5894,8 @@ async function beginHeroAttackSlot(
             deferredPostHit: true,
             oldFormMnum,
         };
-    } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE || damageType === AD_POLY)) {
+    } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
+        || damageType === AD_POLY || damageType === AD_TLPT)) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const negated = damageType === AD_POLY
@@ -6564,19 +6512,21 @@ export function resumeDeferredHeroElectricSpecial(
 
 // Resume mhitm_ad_drli() after hitmsg().  A selected level loss and its
 // message precede shared knockback and the touch's ordinary HP damage.
-export function resumeDeferredHeroLifeDrain(
+export async function resumeDeferredHeroLifeDrain(
     action: MonsterMovementAction,
     state: PlayingGameState,
     random: RandomBelow = rn2,
+    publish: MessagePublisher = plineWithContinuation,
 ) {
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredLifeDrainGate) return action;
     const selected = recordRandom(random, action.calls, 3) === 0;
     const drainResistant = heroHasDrainResistance(state);
     if (selected && !drainResistant) {
-        const armorProtection = state.u?._magicNegation ?? 0;
-        const negated =
-            !!action.monster?.mcan || recordRandom(random, action.calls, 10) < 3 * armorProtection;
+        const negated = specialAttackNegated(action.monster, state.u, {
+            state, random: limit => recordRandom(random, action.calls, limit),
+        });
+        if (negated && !action.monster.mcan) await publish('You avoid harm.');
         attack.deferredLifeDrain = !negated;
     }
     attack.deferredLifeDrainGate = false;
@@ -7994,7 +7944,7 @@ async function completeMovedMonsterAction(
             movement.postMoveOldSquarePainted = true;
             await triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls);
         }
-        if (movement.deferredAfterMonsterTrap || movement.deferredAfterRollingBoulderMessage)
+        if (movement.deferredAfterMonsterTrap)
             return movement;
         if (movementHasEnded(movement) || state.program_state.gameover) return movement;
         if (!trapAlreadyHandled)
@@ -8846,73 +8796,6 @@ export async function resumeDeferredMonsterHideUnder(
         action.calls,
         action.dochugContext,
     );
-    return action;
-}
-
-// Resume a visible rolling boulder after tty has installed its hit/miss and
-// optional kill lines.  ohitmon() has already consumed hit/damage RNG and
-// reduced HP; fatal detach/corpse work precedes launch_obj() continuing the
-// free in-flight boulder to its opposite endpoint.
-export async function resumeDeferredMonsterRollingBoulderDeath(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    { random = rn2, publish = plineWithContinuation }: MonsterDamageOptions = {},
-) {
-    const movement = action?.movement;
-    const event = movement?.trap;
-    if (event?.kind !== 'rolling-boulder' || !event.released) return action;
-    if (movement?.deferredAfterRollingBoulderMessage && event.deferredDeath) {
-        delete movement.deferredAfterRollingBoulderMessage;
-        event.deferredDeath = false;
-        const death = await finishEnvironmentalMonsterDeath(action.monster, state, {
-            random,
-            publish,
-        });
-        event.death = death;
-        event.killed = !death.survived;
-        if (death.survived) {
-            movement.actorDied = false;
-            movement.actionCompleted = false;
-        } else {
-            movement.postMoveStatus = MMOVE_DIED;
-        }
-    }
-    return action;
-}
-
-// launch_obj() keeps rolling after ohitmon() returns.  Endpoint placement is
-// later than death/corpse resolution and every remaining per-cell delay.
-export async function finishDeferredMonsterRollingBoulderPlacement(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-    rollDice: RollDice = d,
-    rollOne: RollOne = rnd,
-) {
-    const movement = action?.movement;
-    const event = movement?.trap;
-    if (event?.kind !== 'rolling-boulder' || !event.released) return action;
-    if (event.deferredPlacement) {
-        event.deferredPlacement = false;
-        delete movement.deferredAfterRollingBoulderMessage;
-        event.boulder = await placeAndStackTrapMissile(
-            event.boulder,
-            state,
-            event.endpoint.x,
-            event.endpoint.y,
-        );
-        if (state === game) vision_note_blocker_change(event.endpoint.x, event.endpoint.y);
-        if (!event.killed) {
-            await continueAfterMonsterTrap(
-                action,
-                state,
-                random,
-                rollDice,
-                rollOne,
-                action.calls || DISCARDED_CALL_LOG,
-            );
-        }
-    }
     return action;
 }
 
