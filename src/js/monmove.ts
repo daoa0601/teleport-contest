@@ -242,6 +242,7 @@ import {
     AD_LEGS,
     AD_PHYS,
     AD_POLY,
+    AD_TLPT,
     AD_DISE,
     AD_PEST,
     AD_FAMN,
@@ -5942,7 +5943,8 @@ async function beginHeroAttackSlot(
             deferredPostHit: true,
             oldFormMnum,
         };
-    } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE || damageType === AD_POLY)) {
+    } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
+        || damageType === AD_POLY || damageType === AD_TLPT)) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const negated = damageType === AD_POLY
