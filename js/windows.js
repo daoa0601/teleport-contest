@@ -346,8 +346,12 @@ async function pageDisclosureWindow(d, lines, { marker, pagerStyle }) {
             const markerText = pagerStyle === 'menu' && pageCount > 1
                 ? `(${page + 1} of ${pageCount})` : marker;
             d.clearScreen();
-            for (const [row, line] of content.entries())
-                putLine(rowColumn, row, line.text, line.attr);
+            for (const [row, line] of content.entries()) {
+                // tty_end_menu() leaves room for the leading blank and
+                // the terminal's final blank column.
+                const text = pagerStyle === 'menu' ? line.text.slice(0, d.cols - 2) : line.text;
+                putLine(rowColumn, row, text, line.attr);
+            }
             putLine(1, content.length, markerText);
             // tty_end_menu() retains a trailing blank in "(end) ".
             const markerLength = markerText === '(end)' ? 6 : markerText.length;
@@ -361,6 +365,11 @@ async function pageDisclosureWindow(d, lines, { marker, pagerStyle }) {
                     count = nextCount > 9223372036854775807n ? null : nextCount || null;
                     continue;
                 }
+                // xwaitforspace() ignores keys outside the menu response
+                // set without returning to the loop that resets counts.
+                const letter = String.fromCharCode(key);
+                if (!' \x1b\n\r\0><^|.@,\\-~:'.includes(letter))
+                    continue;
                 const wasCounting = count !== null;
                 count = null;
                 if (key === 27) {
@@ -372,7 +381,6 @@ async function pageDisclosureWindow(d, lines, { marker, pagerStyle }) {
                 // Space advances, or commits on the last page.
                 if (key === 0 || key === 10 || key === 13)
                     return key;
-                const letter = String.fromCharCode(key);
                 if (key === 32 && page === pageCount - 1)
                     return key;
                 if (key === 32 || letter === '>')

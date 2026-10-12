@@ -77,32 +77,36 @@ void test('Enter dismisses a paged overview from its first page', async () => {
         await overview;
     }
 });
-void test('Escape cancels an overview count before it can dismiss the window', async () => {
-    freshPlayableRoom();
-    const input = resetInputState();
-    const overview = showDisclosureOverlay(Array.from({ length: 28 }, (_, n) => `Level ${n + 1}`), {
-        pagerStyle: 'menu', marker: '(end)',
+for (const prefix of ['1', '1x']) {
+    void test(`Escape cancels an overview count after ${JSON.stringify(prefix)} before it can dismiss the window`, async () => {
+        freshPlayableRoom();
+        const input = resetInputState();
+        const overview = showDisclosureOverlay(Array.from({ length: 28 }, (_, n) => `Level ${n + 1}`), {
+            pagerStyle: 'menu', marker: '(end)',
+        });
+        try {
+            await input.waitUntilBlocked();
+            for (const key of prefix) {
+                input.feed(key);
+                await input.waitUntilBlocked();
+            }
+            input.feed(27);
+            const state = await Promise.race([
+                overview.then(() => 'dismissed'),
+                input.waitUntilBlocked().then(() => 'waiting'),
+            ]);
+            assert.equal(state, 'waiting', 'Escape cancels the count and leaves the overview open');
+            assert.equal(rowText(0).trim(), 'Level 1');
+            input.feed(27);
+            assert.equal(await overview, 27, 'Escape with no count dismisses the overview');
+        }
+        finally {
+            input.feed('\x1b\x1b');
+            await overview;
+        }
     });
-    try {
-        await input.waitUntilBlocked();
-        input.feed('1');
-        await input.waitUntilBlocked();
-        input.feed(27);
-        const state = await Promise.race([
-            overview.then(() => 'dismissed'),
-            input.waitUntilBlocked().then(() => 'waiting'),
-        ]);
-        assert.equal(state, 'waiting', 'Escape cancels the count and leaves the overview open');
-        assert.equal(rowText(0).trim(), 'Level 1');
-        input.feed(27);
-        assert.equal(await overview, 27, 'Escape with no count dismisses the overview');
-    }
-    finally {
-        input.feed('\x1b\x1b');
-        await overview;
-    }
-});
-for (const prefix of ['0', '1>', '1x', '9223372036854775808']) {
+}
+for (const prefix of ['0', '1>', '9223372036854775808']) {
     void test(`an overview dismisses on Escape after ${JSON.stringify(prefix)} leaves no active count`, async () => {
         freshPlayableRoom();
         const input = resetInputState();
@@ -128,6 +132,29 @@ for (const prefix of ['0', '1>', '1x', '9223372036854775808']) {
         }
     });
 }
+void test('a full-screen overview clips long rows and leaves the final column blank', async () => {
+    freshPlayableRoom();
+    const display = requireGameDisplay();
+    const input = resetInputState();
+    const text = 'An unexplored level on a branch of the dungeon. '.repeat(3);
+    const overview = showDisclosureOverlay([{ text, attr: ATR_INVERSE }], {
+        pagerStyle: 'menu', marker: '(end)',
+    });
+    try {
+        await input.waitUntilBlocked();
+        assert.equal(display.grid[0]?.[0]?.ch, ' ', 'the menu keeps its leading blank');
+        assert.equal(display.grid[0]?.[1]?.ch, text[0]);
+        assert.equal(display.grid[0]?.[display.cols - 2]?.ch, text[display.cols - 3]);
+        assert.equal(display.grid[0]?.[display.cols - 2]?.attr, ATR_INVERSE);
+        assert.equal(display.grid[0]?.[display.cols - 1]?.ch, ' ', 'content stops before the final column');
+        assert.equal(display.grid[0]?.[display.cols - 1]?.attr, 0, 'the final blank has no menu highlighting');
+        assert.equal(rowText(1).trim(), '(end)', 'the clipped row does not wrap');
+    }
+    finally {
+        input.feed(' ');
+        await overview;
+    }
+});
 void test('a paged overview goes back and keeps its marker beside the final content', async () => {
     freshPlayableRoom();
     const display = requireGameDisplay();
