@@ -373,6 +373,7 @@ export interface GameState {
     _emptyShops?: number[];
     _shopFollowMessageTurn?: number;
     _monsterNoiseTime?: number;
+    _wailMessageMove?: number;
     lastMonsterWeaponReturnMessage?: number;
     _farMonsterNoise?: boolean;
     _monsterSwallower: Monster | { kind: 'hero' } | null;
