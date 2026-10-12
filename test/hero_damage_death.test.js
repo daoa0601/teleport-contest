@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 // C hack.c:losehp() lets hit points fall below one and then dies with the
 // caller's killer and format. Each case starts the hero at one hit point.
 import { LAVAPOOL, MAGIC_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, SPIKED_PIT, TT_LAVA, TT_PIT, } from '../js/const.js';
+import { gotoLevel } from '../js/level_change.js';
+import { freshConnectedLevels } from './support/connected-levels.js';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
@@ -95,4 +97,24 @@ void test('a coin fired straight up can kill the hero it falls on', async () => 
     pushKeys('<');
     await dieWith(() => rhack('f'.charCodeAt(0)), 'killed by a falling object');
 });
+for (const [arrival, ladder, killer] of [
+    ['falling', false, 'falling down a mine shaft'],
+    ['stairs', false, 'tumbling down a flight of stairs'],
+    ['stairs', true, 'falling off a ladder'],
+]) {
+    void test(`a fatal fall records ${killer} without an article`, async () => {
+        freshConnectedLevels({ ladder });
+        requirePlayingGame(game);
+        game.u.uhp = 1;
+        game.u.uhpmax = 100;
+        game.u.fumbling = true;
+        game.u.dz = 1;
+        game.flags.bones = false;
+        game.flags.disclose = '-i -a -v -g -c -o';
+        game.flags.tombstone = false;
+        game.storage = memoryStorage();
+        game.iflags.toptenwin = false;
+        await dieWith(() => gotoLevel({ dnum: 0, dlevel: 2 }, { arrival, ladder }), `killed by ${killer}`);
+    });
+}
 //# sourceMappingURL=hero_damage_death.test.js.map
