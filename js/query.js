@@ -1,13 +1,39 @@
 // query.js — Shared tty line and confirmation input ownership.
 // C refs: cmd.c paranoid_query()/paranoid_ynq(), tty getlin/yn_function.
-import { COLNO, PARANOID_CONFIRM } from './const.js';
+import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
 import { clearMessageWindow, flushPendingTopline, flush_screen, pline } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR } from './terminal.js';
-export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), { suppressStatus = false } = {}) {
+export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), options = {}) {
+    // windows.c:getlin() disables bot() through tty's prompt cleanup.
+    // Covered status rows stay blank until a later status update.
+    const statusUpdatesDisabled = game._statusUpdatesDisabled ?? false;
+    game._statusUpdatesDisabled = true;
+    try {
+        return await editLine(prompt, accepts, options);
+    }
+    finally {
+        game._statusUpdatesDisabled = statusUpdatesDisabled;
+    }
+}
+async function editLine(prompt, accepts, { suppressStatus = false, inMenu = false }) {
     let value = '';
     let renderedRows = 1;
+    const width = (game.nhDisplay?.cols ?? COLNO) - 1;
+    const promptLength = prompt.length + 1;
+    const promptRow = Math.floor((promptLength - 1) / width);
+    const promptColumn = (promptLength - 1) % width + 1;
+    let cursorRow = promptRow;
+    let cursorColumn = promptColumn;
+    const eraseCharacter = () => {
+        if (cursorColumn === 0 && cursorRow > 0) {
+            cursorRow--;
+            cursorColumn = width;
+        }
+        if (cursorColumn > 0)
+            cursorColumn--;
+    };
     const clearEditorRows = () => {
         for (let row = 0; row < renderedRows; row++)
             game.nhDisplay?.clearRow(row);
@@ -15,20 +41,15 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), { su
     const renderEditor = () => {
         const line = `${prompt} ${value}`;
         clearEditorRows();
-        const width = 79; // tty safe margin; column79 remains wrap sentinel
-        renderedRows = Math.max(1, Math.ceil(line.length / width));
-        for (let row = 0; row < renderedRows; row++) {
+        const contentRows = Math.max(1, Math.ceil(line.length / width));
+        renderedRows = Math.max(renderedRows, contentRows);
+        for (let row = 0; row < contentRows; row++) {
             game.nhDisplay?.putstr(0, row, line.slice(row * width, (row + 1) * width), NO_COLOR);
         }
-        const length = line.length;
-        const cursorRow = length ? Math.floor((length - 1) / width) : 0;
-        const cursorX = length ? ((length - 1) % width) + 1 : 0;
-        game.nhDisplay?.setCursor(cursorX, cursorRow);
+        game.nhDisplay?.setCursor(cursorColumn, cursorRow);
     };
     const finish = (result) => {
-        game._pending_message = '';
-        game._retained_message = '';
-        clearEditorRows();
+        clearMessageWindow(renderedRows);
         return result;
     };
     const clearSuppressedStatus = () => {
@@ -39,9 +60,19 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), { su
     };
     // tty_getlin() acknowledges unread prose before replacing it with its
     // special prompt; the first key must still belong to that prose's pager.
-    await flushPendingTopline();
-    await pline(prompt);
-    await flush_screen(1);
+    if (!game._suppressMessagesUntilInput)
+        await flushPendingTopline();
+    game._suppressMessagesUntilInput = false;
+    if (inMenu) {
+        // hooked_tty_getlin() writes to WIN_MESSAGE while the menu stays
+        // active. A full screen flush here would replace it with the map.
+        game._pending_message = prompt;
+        game._retained_message = '';
+    }
+    else {
+        await pline(prompt);
+        await flush_screen(1);
+    }
     clearSuppressedStatus();
     renderEditor();
     for (;;) {
@@ -51,6 +82,10 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), { su
         if (key === 27) {
             if (value) {
                 value = '';
+                clearMessageWindow(renderedRows);
+                renderedRows = 1;
+                cursorColumn = promptColumn;
+                cursorRow = promptRow;
             }
             else
                 return finish(null);
@@ -60,41 +95,63 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), { su
         // getline.c tests the erase character ('\b' or, under the recorder's
         // NOMUX terminal synthesis, DEL) before the kill character, so DEL
         // backs over one byte and ^U removes the whole line.
-        else if (key === 8 || key === 127)
-            value = value.slice(0, -1);
-        else if (key === 21)
+        else if (key === 8 || key === 127) {
+            if (value) {
+                value = value.slice(0, -1);
+                eraseCharacter();
+            }
+        }
+        else if (key === 21) {
+            for (let index = 0; index < value.length; index++)
+                eraseCharacter();
             value = '';
+        }
         else {
             const ch = String.fromCharCode(key);
-            if (value.length < 80 && accepts(ch, key))
+            if (key >= 32 && key !== 127 && value.length < COLNO && accepts(ch, key)) {
                 value += ch;
+                if (cursorColumn === width) {
+                    cursorColumn = 0;
+                    cursorRow++;
+                }
+                cursorColumn++;
+            }
         }
         game._pending_message = `${prompt} ${value}`;
-        await flush_screen(1);
         clearSuppressedStatus();
         renderEditor();
     }
 }
-function placeToplinePromptCursor(position) {
+function renderChoicePrompt(message) {
     const display = game.nhDisplay;
-    const columns = display?.cols ?? COLNO;
-    if (position > columns - 1)
-        display?.setCursor(position - (columns - 1), 1);
-    else
-        display?.setCursor(position, 0);
+    if (!display)
+        return;
+    const width = display.cols - 1;
+    for (let row = 0; row * width < message.length; row++) {
+        display.clearRow(row);
+        display.putstr(0, row, message.slice(row * width, (row + 1) * width), NO_COLOR);
+    }
+    const length = message.length;
+    display.setCursor(length ? (length - 1) % width + 1 : 0, length ? Math.floor((length - 1) / width) : 0);
 }
 // C tty_yn_function(): Escape prefers quit, then no; whitespace chooses
 // the displayed default. Invalid keys leave the same question active.
-export async function promptChoice(message, choices, defaultAnswer, cursorOffset) {
+export async function promptChoice(query, choices, defaultAnswer, { visibleChoices = choices.join('') } = {}) {
+    // cmd.c:yn_function() reserves the last three query characters for an
+    // ellipsis when the caller exceeds the native question buffer.
+    const question = query.length >= QBUFSZ
+        ? `${query.slice(0, QBUFSZ - 4)}...` : query;
+    const message = `${question} [${visibleChoices}] (${defaultAnswer}) `;
+    const preserveCase = choices.some(choice => /[A-Z]/.test(choice));
     game._suppressMessagesUntilInput = false;
     await flushPendingTopline();
     await pline(message);
     await flush_screen(1);
-    placeToplinePromptCursor(message.length + cursorOffset);
+    renderChoicePrompt(message);
     const wrapped = (game.nhDisplay?.cursorRow ?? 0) > 0;
     for (;;) {
         const key = await nhgetch();
-        const character = String.fromCharCode(key).toLowerCase();
+        const character = preserveCase ? String.fromCharCode(key) : String.fromCharCode(key).toLowerCase();
         let answer;
         if (key === 27) {
             answer = choices.find(choice => choice === 'q')
@@ -107,6 +164,8 @@ export async function promptChoice(message, choices, defaultAnswer, cursorOffset
             answer = choices.find(choice => choice === character);
         if (answer === undefined)
             continue;
+        if (game.nhDisplay)
+            game.nhDisplay.toplines = message + answer;
         // nhgetch marks the question as seen. tty_yn_function keeps a
         // one-line question visible and clears only prompts covering the map.
         if (wrapped)
@@ -114,21 +173,21 @@ export async function promptChoice(message, choices, defaultAnswer, cursorOffset
         return answer;
     }
 }
-export function promptYesNo(message, defaultAnswer = 'n', cursorOffset = 0) {
-    return promptChoice(message, ['y', 'n'], defaultAnswer, cursorOffset);
+export function promptYesNo(message, defaultAnswer = 'n') {
+    return promptChoice(message, ['y', 'n'], defaultAnswer);
 }
-export function promptYesNoQuit(message, defaultAnswer = 'q', cursorOffset = 0) {
-    return promptChoice(message, ['y', 'n', 'q'], defaultAnswer, cursorOffset);
+export function promptYesNoQuit(message, defaultAnswer = 'q') {
+    return promptChoice(message, ['y', 'n', 'q'], defaultAnswer);
 }
-export function promptYesNoAllQuit(message, defaultAnswer = 'y', cursorOffset = 0) {
-    return promptChoice(message, ['y', 'n', 'a', 'q'], defaultAnswer, cursorOffset);
+export function promptYesNoAllQuit(message, defaultAnswer = 'y') {
+    return promptChoice(message, ['y', 'n', 'a', 'q'], defaultAnswer);
 }
 // A per-question paranoia bit changes affirmative input from `y` to the full
 // line `yes`.  PARANOID_CONFIRM additionally removes the default and requires
 // `no` (or Escape) to reject, retrying other committed lines up to six times.
 export async function paranoidQuery(beParanoid, prompt, paranoiaBits = game.flags?.paranoia_bits ?? 0) {
     if (!beParanoid)
-        return await promptYesNo(`${prompt} [yn] (n) `) === 'y';
+        return await promptYesNo(prompt) === 'y';
     const confirmAll = !!(paranoiaBits & PARANOID_CONFIRM);
     const responseType = confirmAll ? '[yes|no]' : '[yes|n] (n)';
     let prefix = '';

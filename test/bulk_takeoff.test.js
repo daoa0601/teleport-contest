@@ -552,6 +552,24 @@ void test('traditional takeoff can select a class and accept all its worn items'
     await work(1);
     assert.equal(game.uarms, null);
 });
+void test('traditional takeoff displays one choice suffix and defaults to keeping the item', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL } });
+    const shield = await addInventoryObject(SMALL_SHIELD);
+    wearHeroArmor(shield);
+    const input = resetInputState();
+    const removal = takeOff('[\n');
+    try {
+        await input.waitUntilBlocked();
+        const question = game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd();
+        assert.match(question ?? '', /^[a-zA-Z] - [^?]*\? \[ynaq\] \(n\)$/);
+    }
+    finally {
+        input.feed('\n');
+        await removal;
+    }
+    await work(1);
+    assert.equal(game.uarms, shield, 'Return chooses no and keeps the shield worn');
+});
 void test('combination takeoff selects classes by prompt then objects by menu', async () => {
     freshObjectRoom({ flags: { menu_style: 1 } });
     const shield = await addInventoryObject(SMALL_SHIELD);

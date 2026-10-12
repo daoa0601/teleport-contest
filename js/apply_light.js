@@ -158,7 +158,7 @@ export async function useCandle(object, { state = game } = {}) {
     const candelabrum = state.inventory.find(item => item.otyp === CANDELABRUM_OF_INVOCATION);
     if (!candelabrum || candelabrum.spe === 7)
         return useLamp(object, { state });
-    const answer = await promptYesNo(`Attach ${ownedObjectName(object, state, { capitalized: false })} to ${ownedObjectName(candelabrum, state, { capitalized: false })}? [yn] (n) `);
+    const answer = await promptYesNo(`Attach ${ownedObjectName(object, state, { capitalized: false })} to ${ownedObjectName(candelabrum, state, { capitalized: false })}?`);
     if (answer !== 'y')
         return useLamp(object, { state });
     const remainder = candelabrum.spe + objectQuantity(object) > 7 ? object : null;

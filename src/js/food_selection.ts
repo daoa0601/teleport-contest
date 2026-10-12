@@ -150,7 +150,7 @@ function canSelectFloorFood(state: PlayingGameState): boolean {
 }
 
 function askFloorFood(prompt: string): Promise<'y' | 'n' | 'q'> {
-    return promptYesNoQuit(`${prompt} [ynq] (n) `, 'n');
+    return promptYesNoQuit(`${prompt}`, 'n');
 }
 
 function objectIsFlammable(object: GameObject, material: number): boolean {

@@ -56,6 +56,7 @@ export interface InterfaceFlags {
     in_lava_effects?: number;
     menu_requested?: boolean;
     menu_headings?: { attr: number; color: number };
+    menuinvertmode?: 0 | 1 | 2;
     menu_tab_sep?: boolean;
     nofollowers?: boolean;
     num_pad?: boolean;

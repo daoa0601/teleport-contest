@@ -360,7 +360,7 @@ void test('a female hero is addressed as a minx when asked to pay', async () => 
     addShopDamage(9, 10, SHOP_DOOR_COST);
     initRng(61n);
     const question = await answerDamageQuestion('y');
-    assert.match(question, /^"Minx!  You did 400 zorkmids worth of damage!"  Pay\?$/);
+    assert.match(question, /^"Minx!  You did 400 zorkmids worth of damage!"  Pay\? \[yn\] \(n\) $/);
 });
 void test('a neuter polymorphed hero is addressed as a beast', async () => {
     await damageShop();
@@ -370,7 +370,7 @@ void test('a neuter polymorphed hero is addressed as a beast', async () => {
     addShopDamage(9, 10, SHOP_DOOR_COST);
     initRng(61n);
     const question = await answerDamageQuestion('y');
-    assert.match(question, /^"Beast!  You did 400 zorkmids worth of damage!"  Pay\?$/);
+    assert.match(question, /^"Beast!  You did 400 zorkmids worth of damage!"  Pay\? \[yn\] \(n\) $/);
 });
 // Supply the payment answer only after its actual input boundary. In
 // particular, a pending arrival message must not consume the y/n response.

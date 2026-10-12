@@ -31,7 +31,7 @@ export async function checkFoodEdibility(object: FoodSelection, { state = game }
     const warning = edibilityWarning(object, state);
     if (!warning) return true;
     const quantity = objectQuantity(object);
-    const answer = await promptYesNo(`${warning}  Eat ${quantity === 1 ? 'it' : 'one'} anyway? [yn] (n) `);
+    const answer = await promptYesNo(`${warning}  Eat ${quantity === 1 ? 'it' : 'one'} anyway?`);
     await pline(`Your ${heroNoseName(state)} stops tingling and your sense of smell returns to normal.`);
     state.u.uedibility = 0;
     return answer === 'y';

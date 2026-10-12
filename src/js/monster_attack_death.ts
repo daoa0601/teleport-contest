@@ -142,7 +142,7 @@ export async function finishMonsterAttackDeath(monster: Monster, {
     }
     if (game.flags?.debug || game.flags?.explore) {
         delete game._statusHpOverride;
-        const die = await promptYesNo('Die? [yn] (n) ');
+        const die = await promptYesNo('Die?');
         if (die !== 'y') {
             await plineWithContinuation("OK, so you don't die.");
             await restoreHeroAfterDeath();

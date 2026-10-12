@@ -443,10 +443,9 @@ function hasContents(object: GameObject): boolean {
     return !!(object.contents?.length);
 }
 
-// C sellobj's ynaq: the shared query owner displays [ynaq] (y) as part of
-// the caller's message.
+// C sellobj() uses the shared ynaq confirmation with default yes.
 function askSell(question: string, { query }: { query: SaleQuery }): SellAnswer | Promise<SellAnswer> {
-    return query(`${question} [ynaq] (y) `);
+    return query(question);
 }
 
 // ---- the owner: C shk.c:3927 sellobj() -----------------------------------

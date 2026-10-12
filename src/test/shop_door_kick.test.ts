@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_CON, A_DEX, A_STR, D_BROKEN, D_CLOSED, D_NODOOR, D_TRAPPED, DOOR, SHARED, SHOP_DOOR_COST, VWALL, W_ARMF } from '../js/const.js';
 import { canSpotMonster } from '../js/display.js';
-import { game } from '../js/gstate.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { KICKING_BOOTS } from '../js/object_data.js';
@@ -71,8 +71,12 @@ for (const trapped of [false, true]) {
             const messages: string[] = [];
             const input = resetInputState();
             input.beforeRead = () => {
-                messages.push(game._pending_message);
-                if (/Pay\?$/.test(game._pending_message)) input.feed('n');
+                const row = requireGameDisplay().grid[0];
+                assert.ok(row, 'The shop interaction needs its message row.');
+                const message = row.map(cell => cell.ch).join('').trimEnd();
+                messages.push(message);
+                // tty_yn_function() adds the choices and default to y_n().
+                if (/Pay\? \[yn\] \(n\)$/.test(message)) input.feed('n');
             };
             installPagerInput(input, { expected: /door|booby-trapped|stagger|Ada/, limit: 10 });
 
@@ -80,9 +84,11 @@ for (const trapped of [false, true]) {
 
             const prose = messages.join('\n');
             assert.match(prose, hidden
-                ? /Ada appears next to you!/
-                : /Ada vanishes and reappears next to you\./);
+                ? /Ada appears next to you!--More--/
+                : /Ada vanishes and reappears next to you\.--More--/);
             if (hidden) assert.doesNotMatch(prose, /vanishes/);
+            assert.match(prose, /Pay\? \[yn\] \(n\)/,
+                'The payment question must show the native choices after the arrival pager.');
             assert.equal(shopkeeper.mx, 11);
             assert.equal(shopkeeper.my, 10);
             assert.equal(canSpotMonster(shopkeeper), true);

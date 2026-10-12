@@ -43,6 +43,18 @@ void test('More moves to its own row when it would reach the final terminal colu
         await paging;
     }
 });
+void test('Escape at More erases the message and returns its cursor to the first column', async () => {
+    freshPlayableRoom();
+    const input = resetInputState();
+    await plineWithContinuation('A distant bell rings.');
+    const paging = flushPendingTopline();
+    await input.waitUntilBlocked();
+    input.feed('\x1b');
+    await paging;
+    assert.equal(requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd(), '');
+    assert.equal(requireGameDisplay().cursorCol, 0);
+    assert.equal(requireGameDisplay().cursorRow, 0);
+});
 void test('an explicit newline owns a message acknowledgment even when the text is short', async () => {
     freshPlayableRoom();
     requirePlayingGame(game);

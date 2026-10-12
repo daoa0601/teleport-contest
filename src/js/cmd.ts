@@ -2644,7 +2644,7 @@ async function wizGenesis() {
     if (substituteName !== undefined) {
         const requestedName = MONSTER_NAME[mnum];
         const force = await promptYesNo(
-            `Creating ${substituteName} instead; force ${requestedName}? [yn] (n) `,
+            `Creating ${substituteName} instead; force ${requestedName}?`,
         );
         if (force !== 'y') mnum = nameToMonster(substituteName);
     }
@@ -2949,7 +2949,6 @@ export async function chooseWizardLevelDestination() {
     const { rows, choices } = wizardLevelMenu();
     const destination = await showPagedPickOneMenu({ rows, choices });
     if (!destination) return null;
-    await docrt();
     const preArrivalPager = await endgamePrerequisite(destination);
     return { destination, preArrivalPager };
 }
@@ -3063,10 +3062,8 @@ async function doloot() {
         // it can install the prompt.
         await promptKey(`${lockedMessage}--More--`);
         const toolName = lockToolPresentation(tool);
-        const answer = await promptKey(
-            `Unlock it with your ${toolName}? [ynq] (q) `,
-        );
-        if (String.fromCharCode(answer).toLowerCase() === 'y') {
+        const answer = await promptYesNoQuit(`Unlock it with your ${toolName}?`);
+        if (answer === 'y') {
             game._occupation = {
                 key: 'pick-lock',
                 text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD
@@ -3109,12 +3106,11 @@ async function dotip() {
         && !exceedsActionCapacity(game)) {
         observeObjectForNaming(container);
         const prompt = `There is ${floorObjectDescription(container)} here, `
-            + 'tip it? [ynq] (q) ';
-        const answer = await promptYnq(prompt);
+            + 'tip it?';
+        const answer = await promptYesNoQuit(prompt);
         if (answer === 'q') {
             // tty leaves the resolved query physically painted until the
             // following command read, but it is no longer continuation-owned.
-            game._retained_message = prompt;
             game.context.move = 0;
             return;
         }
@@ -3846,17 +3842,12 @@ async function dodip() {
     const loc = game.level?.at(game.u?.ux, game.u?.uy);
     if (loc?.typ === FOUNTAIN) {
         const description = dipTargetDescription(object);
-        const prompt = `Dip ${description} into the fountain? [yn] (n)`;
+        const prompt = `Dip ${description} into the fountain?`;
         const answer = await promptYesNo(
-            prompt, 'n', 1,
+            prompt, 'n',
         );
         if (answer === 'y') {
             await dipFountain(object, loc);
-            // tty removes the answered query from continuation ownership but
-            // leaves its physical row painted when dipfountain() produces no
-            // replacement line (for example, cursing an already-cursed item).
-            if (!game._pending_message && !game._retained_message)
-                game._retained_message = prompt;
             game.context.move = 1;
             return;
         }
@@ -4117,7 +4108,6 @@ async function wizIdentify(): Promise<void> {
         titleAttr: ATR_NONE,
     });
     game._pending_message = '';
-    await docrt();
     for (const item of selected) {
         const learnedType = !objectTypeKnown(item);
         fullyIdentifyObject(item);
@@ -4656,23 +4646,6 @@ async function dohelp(): Promise<void> {
     game.context.move = 0;
 }
 
-async function promptYnq(message: string, defaultAnswer: 'y' | 'n' | 'q' = 'q'): Promise<'y' | 'n' | 'q'> {
-    game._suppressMessagesUntilInput = false;
-    await pline(message);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(message.length, 0);
-    for (;;) {
-        const key = await nhgetch();
-        const answer = String.fromCharCode(key).toLowerCase();
-        if (!['y', 'n', 'q'].includes(answer)
-            && ![27, 32, 10, 13].includes(key)) continue;
-        game._pending_message = '';
-        game._retained_message = '';
-        return answer === 'y' || answer === 'n' || answer === 'q'
-            ? answer : defaultAnswer;
-    }
-}
-
 async function doputon(): Promise<void> {
     const accessories = (game.inventory || []).filter(object =>
         (object.class === 'Rings' || object.oclass === 4
@@ -4975,8 +4948,8 @@ async function dowield(cannedInvlet: string | null = null): Promise<void> {
                 String(right.invlet || ''),
             ));
     const letters = weapons.map(object => object.invlet).join('');
-    const prompt = `What do you want to wield? [- ${
-        compactInventoryLetters(letters)} or ?*] `;
+    const choices = ['-', compactInventoryLetters(letters)].filter(Boolean).join(' ');
+    const prompt = `What do you want to wield? [${choices} or ?*] `;
     const selection = cannedInvlet === null
         ? await promptInventoryObject(
             prompt, game.inventory || [], {
@@ -5996,7 +5969,7 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
                 : `${wasTwoweap ? 'You are dual wielding'
                     : 'Your alternate weapon is'} ${quantity} ${plural}.`;
             const partial = await promptYesNoQuit(
-                `${slotDescription}  Ready ${quantity - 1} of them? [ynq] (q) `,
+                `${slotDescription}  Ready ${quantity - 1} of them?`,
             );
             if (partial === 'q') {
                 game.context.move = 0;
@@ -6009,7 +5982,7 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
         }
         if (readyAll) {
             const answer = await promptYesNoQuit(
-                `Ready ${quantity > 1 ? 'all of them' : 'it'} instead? [ynq] (q) `,
+                `Ready ${quantity > 1 ? 'all of them' : 'it'} instead?`,
             );
             if (answer !== 'y') {
                 game.context.move = 0;
@@ -7403,10 +7376,8 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             }
             await promptKey('This door is locked.--More--');
             const toolName = lockToolPresentation(tool);
-            const answer = await promptKey(
-                `Unlock it with your ${toolName}? [ynq] (q) `,
-            );
-            if (String.fromCharCode(answer).toLowerCase() === 'y') {
+            const answer = await promptYesNoQuit(`Unlock it with your ${toolName}?`);
+            if (answer === 'y') {
                 game._occupation = {
                     key: 'pick-lock',
                     text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD

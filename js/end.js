@@ -160,7 +160,7 @@ export async function finishHeroDeath({ killer, beforeFinalDeath = null, deathCa
         }
     }
     if (game.flags?.debug || game.flags?.explore) {
-        const answer = await promptYesNo('Die? [yn] (n) ');
+        const answer = await promptYesNo('Die?');
         if (answer !== 'y') {
             await plineWithContinuation("OK, so you don't die.");
             await restoreHeroAfterDeath({ deathType });
@@ -189,12 +189,6 @@ export function recordHeroKillConduct(state = game) {
     conduct.killer = (conduct.killer || 0) + 1;
     if (firstKill)
         recordGameLogEvent('killed for the first time', { state });
-}
-async function promptDeathQuestion(message) {
-    await pline(message);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(message.length + 1, 0);
-    return String.fromCharCode(await nhgetch()).toLowerCase();
 }
 // C insight.c:list_vanquished()/vanqsort_cmp().  The order comes from
 // flags.vanq_sortmode, chosen through the tty sort menu below; the default
@@ -943,7 +937,7 @@ async function setVanqOrder(forVanquished) {
                 && (mode === VANQ_COUNT_H_L || mode === VANQ_COUNT_L_H)))
             continue;
         items.push({
-            text: `${letter} - ${vanqOrderDescription(mode, forVanquished)}`,
+            text: vanqOrderDescription(mode, forVanquished),
             key: letter, value: mode,
         });
         if (mode === current)
@@ -967,7 +961,7 @@ async function setVanqOrder(forVanquished) {
 // behind ESC (the single-vanquished-species 'a') stay acceptable.
 async function ynQuestion(question, visible, defquery, { hiddenAll = false } = {}) {
     const choices = visible === 'ynaq' || hiddenAll ? ['y', 'n', 'a', 'q'] : ['y', 'n', 'q'];
-    return await promptChoice(`${question} [${visible}] (${defquery}) `, choices, defquery, 0);
+    return await promptChoice(question, choices, defquery, { visibleChoices: visible });
 }
 // C end.c:disclose().  Shared by death, quitting, escape, and ascension.
 // Each category consults the end_disclose option first: it either fixes
@@ -1081,7 +1075,7 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
             : defquery;
         if (overview === 'y') {
             await showDisclosureOverlay(overviewLines(killer, deathVerb, deathCause), {
-                marker: '(end)', minWidth: game._tutorialActive ? 38 : 39,
+                marker: '(end)',
                 // C show_overview() builds the window with add_menu(),
                 // so its paged layout keeps the selector column and
                 // "(x of y)" page markers.
@@ -1133,7 +1127,7 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
     // removes the inventory. Repossessed gold has already left the hero.
     const summary = gameSummaryValues('died');
     game.u.urexp = summary.score;
-    await createBonesFromDeath(deathCause || deathCauseRecord(killer, deathVerb), promptDeathQuestion);
+    await createBonesFromDeath(deathCause || deathCauseRecord(killer, deathVerb), promptYesNo);
     if (showSummary) {
         game._preserveLeadingStyledBlanks = false;
         await showTextWindow(deathSummaryLines(killer, summary, { deathVerb, deathCause, deathType }));
@@ -1144,7 +1138,7 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
     game.context.move = 0;
 }
 export async function doquit() {
-    const answer = await promptYesNo('Really quit without saving? [yn] (n) ');
+    const answer = await promptYesNo('Really quit without saving?');
     if (answer !== 'y') {
         // C end.c:done2() clears the answered question without a docrt,
         // cancels voluntary repetition, and releases prayer/sleep only

@@ -60,7 +60,7 @@ export async function doforce(state = game) {
         if (reportedOpenBox)
             await flushPendingTopline();
         const answer = await promptYesNoQuit(`There is ${boxDescription(box, true)} here; `
-            + 'force its lock? [ynq] (q) ');
+            + 'force its lock?');
         box.lknown = true;
         if (answer === 'q') {
             state.context.move = 0;
