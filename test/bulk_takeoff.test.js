@@ -8,7 +8,7 @@ import { MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NO_MINVENT, PIT, POOL, ROOM,
 import { glyphAt, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, CORPSE, DAGGER, GAUNTLETS_OF_POWER, GOLD_PIECE, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD, WATER_WALKING_BOOTS, } from '../js/object_data.js';
+import { AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, CORPSE, DAGGER, GAUNTLETS_OF_POWER, GOLD_PIECE, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD, WATER_WALKING_BOOTS, } from '../js/object_data.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { grantIntrinsicProperty, propertyIsActive, revokeIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { inventoryItemDescription } from '../js/invent.js';
@@ -114,6 +114,38 @@ void test('a welded two-handed weapon blocks suit removal and reveals its curse'
     assert.equal(sword.bknown, true);
     assert.equal(game._occupation ?? null, null);
 });
+for (const armorType of [RING_MAIL, T_SHIRT]) {
+    void test(`selecting ${OBJECT_NAMES[armorType]} reveals a welded one-handed weapon's curse without blocking removal`, async () => {
+        freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+        const armor = await addInventoryObject(armorType);
+        const dagger = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
+        wearHeroArmor(armor);
+        await setPrimaryWeapon(dagger);
+        await takeOff(`${armor.invlet}\n`);
+        assert.equal(dagger.bknown, true, 'checking the welded weapon reveals its curse during selection');
+        await work(armorType === RING_MAIL ? 5 : 1);
+        assert.equal(armor.worn, false, 'a one-handed weapon allows disrobing');
+        assert.equal(game.uwep, dagger);
+        assert.ok(game.inventory.includes(armor));
+    });
+}
+for (const wearingGloves of [false, true]) {
+    void test(`trying to unwield an unknown cursed weapon with slippery ${wearingGloves ? 'gloves' : 'fingers'} reveals its curse before the refusal`, async () => {
+        freshObjectRoom({ flags: { menu_style: MENU_PARTIAL }, hero: { glibTurns: 5 } });
+        if (wearingGloves) {
+            const gloves = await addInventoryObject(GAUNTLETS_OF_POWER);
+            wearHeroArmor(gloves);
+        }
+        const dagger = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
+        await setPrimaryWeapon(dagger);
+        await takeOff(`${dagger.invlet}\n`);
+        assert.equal(game._pending_message, `Despite your slippery ${wearingGloves ? 'gauntlets' : 'fingers'}, you can't.`);
+        assert.equal(dagger.bknown, true);
+        assert.equal(game.uwep, dagger);
+        assert.equal(game._occupation ?? null, null);
+        assert.equal(game.context.move, 0);
+    });
+}
 void test('a bear trap blocks taking off boots without spending a turn', async () => {
     freshObjectRoom({ flags: { menu_style: MENU_PARTIAL }, hero: { utrap: 5, utraptype: TT_BEARTRAP } });
     const boots = await addInventoryObject(LOW_BOOTS);
@@ -483,6 +515,35 @@ void test('bulk amulet removal ends strangulation and keeps the amulet in invent
     assert.equal(game.u.strangledTurns, 0);
     assert.ok(game.inventory.includes(amulet));
     assert.ok(game._knownObjectTypes?.has(AMULET_OF_STRANGULATION));
+});
+void test('guarding amulet removal keeps its previous armor class through the removal message pagers', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    const amulet = await addInventoryObject(AMULET_OF_GUARDING);
+    await wearHeroAccessory(amulet, 'uamul');
+    assert.equal(game.u.uac, 8);
+    await takeOff(`${amulet.invlet}\n`);
+    const pagedRemovals = [];
+    resetInputState().display = {
+        async readKey() {
+            if (/You were wearing .*amulet of guarding/.test(game._pending_message)) {
+                pagedRemovals.push({ armorClass: game.u.uac, stillWorn: !!game.uamul });
+            }
+            return 32;
+        },
+    };
+    await continueCountedCommand();
+    assert.ok(pagedRemovals.length > 0, 'the removal message must reach a pager');
+    for (const removal of pagedRemovals) {
+        assert.equal(removal.stillWorn, false, 'the amulet is already removed at its message');
+        assert.equal(removal.armorClass, 8, 'the message retains the AC calculated before removal');
+    }
+    assert.equal(game.uamul, null);
+    assert.ok(game.inventory.includes(amulet));
+    resetInputState().feed('\x1b');
+    await moveloop_core();
+    assert.equal(game.u.uac, 10, 'the next input uses the AC without the amulet');
 });
 void test('bulk ESP amulet removal redraws a stationary monster that telepathy had revealed', async () => {
     freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });

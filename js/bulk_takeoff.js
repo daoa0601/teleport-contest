@@ -6,7 +6,7 @@ import { Is_airlevel, TT_BEARTRAP, TT_INFLOOR, P_LONG_SWORD, P_SHORT_SWORD, P_BR
 import { displayLiquidName, plineWithContinuation as pline, see_monsters } from './display.js';
 import { removeEyewear } from './eyewear.js';
 import { game } from './gstate.js';
-import { AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, BATTLE_AXE, CORPSE, LENSES, OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_NAMES, OBJECT_SUBTYPE, } from './object_data.js';
+import { AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, BATTLE_AXE, CORPSE, LENSES, OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_NAMES, OBJECT_SUBTYPE, } from './object_data.js';
 import { MONSTER_NAME, monsterIsHumanoid } from './monster_data.js';
 import { heroIsBreathless, heroSpecies } from './hero_species.js';
 import { heroIsStrangled } from './hero_strangulation.js';
@@ -149,8 +149,13 @@ async function removeSelectedSlot(slot, state) {
 async function removeAmulet(object, state) {
     const strangled = heroIsStrangled(state);
     const flying = propertyIsActive('flying', state);
+    const guarding = object.otyp === AMULET_OF_GUARDING;
+    // C Amulet_off() calculates guarding AC while the amulet is still worn.
+    if (guarding)
+        findArmorClass(state);
     await removeHeroAccessory(object, state);
-    findArmorClass(state);
+    if (guarding)
+        state._armorClassDirty = true;
     await offMessage(object, state);
     if (object.otyp === AMULET_OF_ESP)
         await see_monsters();
@@ -200,15 +205,12 @@ async function canSelectOff(object, slot) {
     const cloak = takeoffSlotObject('uarmc');
     const suit = takeoffSlotObject('uarm');
     const slippery = !!game.u.glib || (game.u.glibTurns ?? 0) > 0;
-    const welded = isWeldedPrimary(weapon);
     if (slot === 'uleft' || slot === 'uright') {
         if (heroHasNoLimbs(game)) {
             await pline('The ring is stuck.');
             return false;
         }
-        // C welded() reveals the curse even when the other hand is free.
-        if (welded && weapon)
-            weapon.bknown = true;
+        const welded = checkWeldedWeapon(weapon);
         const primary = game.u.rightHanded === false ? 'uleft' : 'uright';
         if (welded && (slot === primary || !!weapon && !!OBJECT_BIMANUAL[weapon.otyp])) {
             await pline(`You cannot free a weapon ${heroHandName(game)} to remove the ring.`);
@@ -222,10 +224,8 @@ async function canSelectOff(object, slot) {
         }
     }
     if (slot === 'uarmg') {
-        if (welded) {
+        if (checkWeldedWeapon(weapon)) {
             await pline(`You are unable to take off your gloves while wielding that ${weaponNoun(weapon) === 'sword' ? 'sword' : 'weapon'}.`);
-            if (weapon)
-                weapon.bknown = true;
             return false;
         }
         if (slippery) {
@@ -248,7 +248,7 @@ async function canSelectOff(object, slot) {
     }
     if (slot === 'uarm' || slot === 'uarmu') {
         const obstacle = cloak?.cursed ? cloak : slot === 'uarmu' && suit?.cursed ? suit
-            : welded && weapon && OBJECT_BIMANUAL[weapon.otyp] ? weapon : null;
+            : checkWeldedWeapon(weapon) && weapon && OBJECT_BIMANUAL[weapon.otyp] ? weapon : null;
         if (obstacle) {
             const action = obstacle === cloak ? `remove your ${armorSimpleName(obstacle)}`
                 : obstacle === suit ? 'remove your suit' : `release your ${weaponNoun(obstacle)}`;
@@ -266,8 +266,15 @@ function weaponNoun(object) {
     return skill !== undefined && [P_SHORT_SWORD, P_BROAD_SWORD, P_LONG_SWORD, P_TWO_HANDED_SWORD, P_SABER].includes(skill)
         ? 'sword' : object?.otyp === BATTLE_AXE ? 'axe' : 'weapon';
 }
+// C welded() reveals the curse even when the weapon does not block removal.
+function checkWeldedWeapon(object, state = game) {
+    if (!object || !isWeldedPrimary(object, state))
+        return false;
+    object.bknown = true;
+    return true;
+}
 async function unremovableCurse(object, slot, state) {
-    if (!(slot === 'uwep' ? isWeldedPrimary(object, state) : object.cursed))
+    if (!(slot === 'uwep' ? checkWeldedWeapon(object, state) : object.cursed))
         return false;
     const slippery = !!state.u.glib || (state.u.glibTurns ?? 0) > 0;
     const gloves = takeoffSlotObject('uarmg', state);
