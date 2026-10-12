@@ -48,7 +48,9 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), { su
     };
     // tty_getlin() acknowledges unread prose before replacing it with its
     // special prompt; the first key must still belong to that prose's pager.
-    await flushPendingTopline();
+    if (!game._suppressMessagesUntilInput)
+        await flushPendingTopline();
+    game._suppressMessagesUntilInput = false;
     await pline(prompt);
     await flush_screen(1);
     clearSuppressedStatus();

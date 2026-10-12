@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { nhgetch, pushKeys, resetInputState } from '../js/input.js';
 import { getLine, promptChoice, promptYesNo, promptYesNoAllQuit, promptYesNoQuit } from '../js/query.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { flush_screen, pline, plineWithContinuation } from '../js/display.js';
+import { flushPendingTopline, flush_screen, pline, plineWithContinuation } from '../js/display.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';
@@ -171,4 +171,16 @@ void test('uppercase hidden choices preserve case while only visible choices ent
     assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(), 'Continue? [yq] (q)');
     input.feed('Y');
     assert.equal(await answer, 'Y');
+});
+
+void test('a line question resumes ordinary messages after Escape stopped a More prompt', async () => {
+    freshPlayableRoom();
+    await plineWithContinuation('A distant bell rings.');
+    resetInputState().feed('\x1b');
+    await flushPendingTopline();
+    pushKeys('hello\n');
+    assert.equal(await getLine('Write what?', () => true), 'hello');
+    await plineWithContinuation('The inscription is complete.');
+    await flush_screen(1);
+    assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(), 'The inscription is complete.');
 });
