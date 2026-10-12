@@ -167,6 +167,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
                         await relocateObjectRandomly(boulder, { state, publish, random });
                     else {
                         const location = levelAtDepth(newDepth, { state });
+                        boulder.no_charge = false;
                         boulder.where = 'migrating';
                         boulder.ox = location.dnum;
                         boulder.oy = location.dlevel;
@@ -289,7 +290,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
             }
         }
         if (!monster.dead && monster.mhp > 0 && !state.context.mon_moving)
-            await angerMonster(monster);
+            await angerMonster(monster, { attacked: true });
         if (await shipObject(object, position.x, position.y, { state, publish, random }))
             return true;
         const occupant = monsterAtPosition(level, position.x, position.y);
