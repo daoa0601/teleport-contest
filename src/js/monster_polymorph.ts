@@ -35,6 +35,7 @@ import { monsterSelfTouchAfterPolymorph } from './monster_stoning.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { finishMonsterEating } from './monster_eating.js';
 import { setMimicAppearance } from './mklev.js';
+import { smellUnseenMonster } from './monster_smell.js';
 import { isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { adjustRiderAfterSteedPolymorph } from './steed.js';
@@ -630,13 +631,20 @@ export async function changeMonsterForm(
     if (showMessage) {
         const newName = monsterTypeName(monster.mnum, !!monster.female);
         const nowSpotted = canSpotMonster(monster);
-        if (wasSpotted && nowSpotted)
-            message = `${oldSubject} turns into a ${newName}!`;
-        else if (wasSpotted)
-            message = `${oldSubject} disappears!`;
-        else if (nowSpotted)
-            message = `${monster.mtame ? 'Your' : 'A'} ${newName} appears!`;
-        if (message) await publish(message);
+        if (nowSpotted) {
+            if (wasSpotted)
+                message = `${oldSubject} turns into a ${newName}!`;
+            else
+                message = `${monster.mtame ? 'Your' : 'A'} ${newName} appears!`;
+            await publish(message);
+        } else {
+            if (wasSpotted) {
+                message = `${oldSubject} disappears!`;
+                await publish(message);
+            }
+            // C newcham(): a form the hero cannot spot may still reach the nose.
+            await smellUnseenMonster(targetMnum, state, publish);
+        }
     }
     if (baseMnum < 0 && MONSTER_SYMBOL[targetMnum] === S_VAMPIRE
         && naturalShapechanger(targetMnum)
