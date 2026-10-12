@@ -65,7 +65,6 @@ async function storeTutorialState(state) {
         inventory: inventory.reverse(),
         spells: structuredClone(state.spells || []),
         mvitals: structuredClone(state.mvitals || []),
-        genocided: structuredClone(state._genocidedMonsters),
         discoveryOrder: structuredClone(state._objectDiscoveryOrder),
         encountered: structuredClone(state._encounteredObjectTypes),
     };
@@ -112,10 +111,6 @@ async function restoreTutorialState(state) {
     for (const [slot] of WORN_SLOTS)
         state.u[slot] = state[slot] || null;
     state.mvitals = saved.mvitals;
-    if (saved.genocided === undefined)
-        delete state._genocidedMonsters;
-    else
-        state._genocidedMonsters = saved.genocided;
     if (saved.discoveryOrder === undefined)
         delete state._objectDiscoveryOrder;
     else

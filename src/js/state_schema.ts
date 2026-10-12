@@ -3,14 +3,14 @@
 
 import type { GameState } from './game_state.js';
 
-export const SAVE_VERSION = 23;
+export const SAVE_VERSION = 24;
 
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
     '_artifactExists', '_artifactFound', '_artifactRuntime', '_bonesEncountered',
     '_bonesSaved', '_bubbleTraversalUp', '_characterPickerUsed',
     '_deathKiller', '_digestedMonsterSpecies', '_encounteredObjectTypes',
-    '_encumbranceLevel', '_farMonsterNoise', '_fobjSerial', '_genocidedMonsters',
+    '_encumbranceLevel', '_farMonsterNoise', '_fobjSerial',
     '_helplessAfter', '_helplessDoneMessage', '_helplessReason', '_helplessTurns',
     '_heroActionSeq', '_heroTrack', '_initialGoldCount', '_initialPwBonus',
     '_knownObjectTypes', '_lastBoulderPushMove', '_lastDemigodAggravation',

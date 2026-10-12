@@ -181,7 +181,7 @@ import { detachHeroGold, heroGoldAmount, heroGoldObject, setHeroGoldAmount } fro
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow, } from './gold_throw.js';
 import { heroIsBlind, heroIsHallucinating, } from './senses.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
-import { doquit, finishHeroDeath, vanquishedLines, } from './end.js';
+import { doquit, finishHeroDeath, vanquishedLines, listGenocided, } from './end.js';
 import { hasRecordedMonsterDeaths } from './monster_vitals.js';
 import { applyHeroContactPassive, } from './monster_passive.js';
 import { heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, heroIsVerySmall, heroCanChangeVampireShape, polymorphHero, returnHeroToHumanForm, } from './polyself.js';
@@ -3771,14 +3771,7 @@ async function doVanquished() {
     game.context.move = 0;
 }
 async function doGenocided() {
-    const genocided = [...(game._genocidedMonsters || [])];
-    if (!genocided.length) {
-        await pline('No creatures have been genocided.');
-    }
-    else {
-        const lines = ['Genocided species:', '', ...genocided];
-        await showDisclosureOverlay(lines, { restoreUnderlay: true });
-    }
+    await listGenocided(game.iflags.menu_requested ? 'a' : 'y');
     game.context.move = 0;
 }
 function inventoryCommandLetter(item) {

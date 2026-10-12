@@ -54,7 +54,6 @@ function validPersistentState(value, entities) {
         _encumbranceLevel: optional(integer),
         _farMonsterNoise: optional(boolean),
         _fobjSerial: optional(integer),
-        _genocidedMonsters: optional(arrayOf(string)),
         _helplessAfter: optional(nullable(oneOf('end-mimic-meal', 'hear-again', 'unfaint', 'finish-digestion'))),
         _helplessDoneMessage: optional(nullable(string)),
         _helplessReason: optional(nullable(string)),

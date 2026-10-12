@@ -328,7 +328,7 @@ import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from '.
 import {
     doquit,
     finishHeroDeath,
-    vanquishedLines,
+    vanquishedLines, listGenocided,
 } from './end.js';
 import { hasRecordedMonsterDeaths } from './monster_vitals.js';
 import {
@@ -4069,13 +4069,7 @@ async function doVanquished() {
 }
 
 async function doGenocided() {
-    const genocided = [...(game._genocidedMonsters || [])];
-    if (!genocided.length) {
-        await pline('No creatures have been genocided.');
-    } else {
-        const lines = ['Genocided species:', '', ...genocided];
-        await showDisclosureOverlay(lines, { restoreUnderlay: true });
-    }
+    await listGenocided(game.iflags.menu_requested ? 'a' : 'y');
     game.context.move = 0;
 }
 
