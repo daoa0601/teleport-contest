@@ -65,7 +65,7 @@ import { nhgetch } from './input.js';
 import { canSeeMonster, canSenseMonster, flush_screen, newsym, pline, } from './display.js';
 import { premap_detect } from './detect.js';
 import { TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS, } from './random_text_data.js';
-import { makeEngravingAt, wipeoutText } from './engrave.js';
+import { makeEngravingAt, wipeEngravingAt, wipeoutText } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -9694,15 +9694,9 @@ async function makeniche(trap_type) {
                     : (actualTrap === TELEP_TRAP || actualTrap === LEVEL_TELEP)
                         ? 'ad aerarium' : null;
                 if (trapEngraving) {
-                    // C creates the niche warning first, then immediately ages
-                    // it by five wipeout attempts.  Keep both the RNG ownership
-                    // and the resulting engraving identity: monsters can erode
-                    // this same text much later when they cross the square.
-                    const wornText = wipeoutText(trapEngraving, 5)
-                        .replace(/^ +/, '');
-                    if (wornText) {
-                        makeEngravingAt(xx, yy - dy, wornText, null, 0, DUST);
-                    }
+                    // Creation preserves the original punctuation before wear.
+                    makeEngravingAt(xx, yy - dy, trapEngraving, null, 0, DUST);
+                    wipeEngravingAt(xx, yy - dy, 5);
                 }
             }
             await dosdoor(xx, yy, aroom, SDOOR);
