@@ -259,6 +259,7 @@ import {
     AD_STON,
     AD_STUN,
     AD_WRAP,
+    AD_PLYS,
     AD_WERE,
     AD_RUST,
     AT_BOOM,
@@ -5895,7 +5896,7 @@ async function beginHeroAttackSlot(
             oldFormMnum,
         };
     } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
-        || damageType === AD_POLY || damageType === AD_TLPT)) {
+        || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS)) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const negated = damageType === AD_POLY
