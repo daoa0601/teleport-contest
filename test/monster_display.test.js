@@ -127,6 +127,28 @@ void test('a map flush without changed glyphs preserves the existing cursor', as
     await flush_screen(0);
     assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
 });
+void test('restoring a glyph before flushing still redraws it and advances the cursor', async () => {
+    freshObjectRoom();
+    newsym(9, 10);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+    show_glyph_cell(9, 10, '*', NO_COLOR);
+    newsym(9, 10);
+    await flush_screen(0);
+    assert.equal(requireScreenCell(8, 11).ch, '.');
+    assert.deepEqual([display.cursorCol, display.cursorRow], [9, 11]);
+});
+void test('showing the same buffered glyph does not move the cursor', async () => {
+    freshObjectRoom();
+    newsym(9, 10);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+    newsym(9, 10);
+    await flush_screen(0);
+    assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
+});
 for (const { name, typ, mask, ch, color } of [
     { name: 'ice', typ: ICE, mask: 0, ch: '·', color: CLR_CYAN },
     { name: 'raised bridge over water', typ: DRAWBRIDGE_UP, mask: DB_MOAT, ch: '◆', color: CLR_BLUE },

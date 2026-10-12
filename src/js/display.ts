@@ -1220,42 +1220,28 @@ export function show_glyph_cell(
         color = NO_COLOR;
         decgfx = false;
     }
+    // show_glyph() compares with the buffered appearance, not the terminal.
+    // Once queued, a cell still needs printing if a later update restores it.
+    if (loc.disp_ch !== ch || loc.disp_color !== color
+        || loc.disp_decgfx !== decgfx || loc.disp_attr !== (attr | 0)) {
+        loc.gnew = 1;
+    }
     loc.disp_glyph = glyph || { kind: 'effect' };
     loc.disp_ch = ch;
     loc.disp_color = color;
     loc.disp_decgfx = !!decgfx;
     loc.disp_attr = attr | 0;
-    loc.gnew = 1;
 }
 
-// tty cursor ownership for transient map animation follows the last cell whose
-// pending map projection differs from the physical terminal grid.  A tmp_at()
-// call whose glyph already matches the underlying floor leaves the cursor at
-// an earlier dirty cell, so the projectile coordinate itself is insufficient.
+// flush_screen() prints queued glyphs in row order. tty_print_glyph() leaves
+// the cursor one column after the last printed cell, even when it was restored
+// to the glyph already on the terminal before the flush.
 export function lastDirtyMapCursor(g: GameState = game): [number, number] | null {
-    const grid = g.nhDisplay?.grid;
-    if (!grid) return null;
+    if (!g.nhDisplay) return null;
     let cursor: [number, number] | null = null;
     for (let y = 0; y < ROWNO; y++) {
         for (let x = 1; x < COLNO; x++) {
-            const loc = g.level?.at(x, y);
-            const rawColor = loc?.disp_color ?? NO_COLOR;
-            const omittedBlank = loc?.disp_ch === ' '
-                && !((loc.disp_attr ?? 0) & 5)
-                && (rawColor === NO_COLOR || rawColor === CLR_GRAY);
-            const desiredCh = loc?.disp_ch && !omittedBlank
-                ? loc.disp_decgfx
-                    ? DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch
-                    : loc.disp_ch
-                : ' ';
-            const desiredColor = loc?.disp_ch && !omittedBlank
-                ? rawColor : CLR_GRAY;
-            const desiredAttr = loc?.disp_ch && !omittedBlank
-                ? loc.disp_attr ?? 0 : 0;
-            const actual = grid[y + 1]?.[x - 1];
-            if (!actual || actual.ch !== desiredCh
-                || actual.color !== desiredColor
-                || actual.attr !== desiredAttr) {
+            if (g.level?.at(x, y)?.gnew) {
                 cursor = [x, y + 1];
             }
         }
@@ -2122,6 +2108,13 @@ export async function flush_screen(mode?: number) {
     const mapCursor: [number, number] | null = mode === 0 && display
         ? lastDirtyMapCursor() ?? [display.cursorCol, display.cursorRow] : null;
     _buildScreenOutput();
+    if (!display || game.program_state.saving || game._suppressMapStatusForFlush) return;
+    for (let y = 0; y < ROWNO; y++) {
+        for (let x = 1; x < COLNO; x++) {
+            const loc = game.level?.at(x, y);
+            if (loc) loc.gnew = 0;
+        }
+    }
     // print_glyph() advances the tty cursor; only a requested curs_on_u()
     // subsequently moves it back to the hero.
     if (mapCursor) display?.setCursor(...mapCursor);
