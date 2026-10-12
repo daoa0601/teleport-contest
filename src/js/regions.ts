@@ -7,7 +7,7 @@ import {
     ACCESSIBLE, PLNMSG_ENVELOPED_IN_GAS, Upolyd, isok,
 } from './const.js';
 import {
-    canSeeMonster, plineWithContinuation,
+    canSeeMonster, newsym, plineWithContinuation,
 } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -236,8 +236,7 @@ export async function rescueHeroFromRegion(state: GameState = game): Promise<voi
             await plineWithContinuation('You feel able to breathe.');
         }
     } else if (cloud) {
-        level.regions = level.regions.filter(region => region !== cloud);
-        for (const cell of cloud.cells) vision_note_blocker_change(cell.x, cell.y);
+        removeGasCloud(cloud, state);
         await plineWithContinuation('The gas cloud enveloping you dissipates.');
     } else {
         await plineWithContinuation('The gas cloud has dissipated.');
@@ -403,37 +402,53 @@ async function affectMonsterWithGas(
     return event;
 }
 
+// C region.c:remove_region(). Unlink before rebuilding the blocker table so
+// this cloud no longer hides the terrain, while overlapping clouds still do.
+function removeGasCloud(region: GasCloud, state: GameState): void {
+    const level = requireGameLevel(state);
+    const index = level.regions.indexOf(region);
+    if (index < 0) return;
+    const last = level.regions.pop();
+    if (last && last !== region) level.regions[index] = last;
+    region.ttl = -2;
+    if (!region.visible || state.level !== game.level) return;
+
+    for (const cell of region.cells)
+        vision_note_blocker_change(cell.x, cell.y);
+    if (heroIsBlind(state)) return;
+    for (const cell of region.cells)
+        if (cansee(cell.x, cell.y)) newsym(cell.x, cell.y);
+}
+
 async function expireRegions(state: GameState, publish: MessagePublisher): Promise<void> {
     let dissipatedAroundHero = false;
     let dissipatedInSight = 0;
-    const survivors: GasCloud[] = [];
     const level = requireGameLevel(state);
-    for (const region of level.regions) {
-        if (region.ttl !== 0) {
-            survivors.push(region);
-            continue;
-        }
+    // Native expiry scans backward; removal fills the hole with the last
+    // surviving region, which has already had its expiry check.
+    for (const region of [...level.regions].reverse()) {
+        if (region.ttl !== 0) continue;
         if (region.kind === 'gas-cloud' && region.damage >= 5) {
             region.damage = Math.trunc(region.damage / 2);
             region.ttl = 2;
-            survivors.push(region);
             continue;
         }
-        if (regionContains(region, state.u.ux, state.u.uy))
-            dissipatedAroundHero = true;
-        else if (!heroIsBlind(state) && state === game
-            && region.cells?.some(cell => cansee(cell.x, cell.y))) {
-            dissipatedInSight++;
+        // expire_gas_cloud() counts visible spots before remove_region()
+        // changes their display; blindness and swallowing suppress notice.
+        if (!heroIsBlind(state) && !state.u.uswallow && state === game) {
+            for (const cell of region.cells) {
+                if (cell.x === state.u.ux && cell.y === state.u.uy)
+                    dissipatedAroundHero = true;
+                else if (cansee(cell.x, cell.y)) dissipatedInSight++;
+            }
         }
-        if (state.level === game.level) {
-            for (const cell of region.cells || [])
-                vision_note_blocker_change(cell.x, cell.y);
-        }
+        removeGasCloud(region, state);
     }
-    level.regions = survivors;
-    if (dissipatedAroundHero)
+    if (dissipatedAroundHero) {
         await publish('The gas cloud around you dissipates.');
-    else if (dissipatedInSight === 1)
+        if ((state.u.xray_range ?? -1) <= 1) dissipatedInSight = 0;
+    }
+    if (dissipatedInSight === 1)
         await publish('You see a gas cloud dissipate.');
     else if (dissipatedInSight > 1)
         await publish('You see some gas clouds dissipate.');

@@ -68,7 +68,7 @@ void test('successfully picking a trapped door lock detonates it', async () => {
     assert.equal(game._occupation, null);
     assert.match([...messages, game._pending_message].join(" "), /You succeed in picking the lock\..*KABOOM!!/);
 });
-void test('picking a trapped lock leaves a hidden sleeper beyond the blast asleep until the following turn', async () => {
+void test('picking a trapped lock refreshes sight before the next monster acts', async () => {
     const door = trappedDoor(D_LOCKED);
     requireFixtureGame(game);
     for (const y of [8, 9, 11, 12])
@@ -90,14 +90,13 @@ void test('picking a trapped lock leaves a hidden sleeper beyond the blast aslee
     installPagerInput(input, { expected: /door|booby-trapped|stagger|picking the lock|gnome/, limit: 10 });
     game._moveloopStarted = true;
     await continueCountedCommand();
+    assert.equal(gnome.msleeping, 1, 'The distant blast must not wake the gnome.');
+    assert.equal(cansee(16, 10), false, 'unblock_point defers sight until vision_recalc.');
     game._heroTimePending = true;
     game.u.umovement = 0;
     await finishAtCommandInput(input, moveloop_core, /door|booby-trapped|stagger|picking the lock|gnome|^$/);
-    assert.equal(gnome.msleeping, 1, 'The monster phase must use sight from before the door exploded.');
-    assert.equal(cansee(16, 10), true, 'The next command must see through the destroyed door.');
-    game._heroTimePending = true;
-    game.u.umovement = 0;
-    await finishAtCommandInput(input, moveloop_core, /gnome|^$/);
-    assert.equal(gnome.msleeping, 0, 'The gnome must wake on the next monster phase.');
+    // C mon.c:movemon_singlemon() recalculates pending sight before dochugw().
+    assert.equal(gnome.msleeping, 0, 'The gnome must wake once the monster phase sees through the doorway.');
+    assert.equal(cansee(16, 10), true, 'The destroyed door must no longer hide the gnome.');
 });
 //# sourceMappingURL=door_booby_trap.test.js.map

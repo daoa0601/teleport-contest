@@ -34,8 +34,7 @@ export function monsterEmitsLight(mnum) {
     return MONSTER_SYMBOL[mnum] === 25 // S_LIGHT
         || LIGHT_EMITTING_MONSTERS.has(mnum);
 }
-function mobileLightMap(level, couldSee) {
-    const lit = Array.from({ length: ROWNO }, () => new Uint8Array(COLNO));
+function mobileLightSources(level) {
     const monsters = [...(level?.monsters || [])];
     const sources = monsters.filter(monster => !monster.dead && monster.mx > 0 && monsterEmitsLight(monster.mnum))
         .map(monster => ({ x: monster.mx, y: monster.my, range: 1 }));
@@ -62,7 +61,24 @@ function mobileLightMap(level, couldSee) {
             addObjectLight(object, monster.mx, monster.my);
     }
     sources.push(...(game._transientLights || []));
-    for (const source of sources) {
+    return sources;
+}
+// C light.c:any_light_source(). The monster pass must request a refresh even
+// when the hero stays still: a monster can move its own light or a lit object.
+export function hasLightSources() {
+    if (game.level && mobileLightSources(game.level).length > 0)
+        return true;
+    // C retains buried oil and migrating sources in light_base, but
+    // do_light_sources() cannot locate them. They still require movemon's refresh.
+    return (game.level?.buriedObjects || []).some(object => objectLightRadius(object) > 0)
+        || (game._migratingMonsters || []).some(monster => !monster.dead
+            && (monsterEmitsLight(monster.mnum)
+                || (monster.minvent || monster.inventory || []).some(object => objectLightRadius(object) > 0)))
+        || (game.migratingObjects || []).some(object => objectLightRadius(object) > 0);
+}
+function mobileLightMap(level, couldSee) {
+    const lit = Array.from({ length: ROWNO }, () => new Uint8Array(COLNO));
+    for (const source of mobileLightSources(level)) {
         const limits = visionValue(circle_start, source.range);
         for (let y = Math.max(0, source.y - source.range); y <= Math.min(ROWNO - 1, source.y + source.range); y++) {
             const offset = visionValue(circle_data, limits + Math.abs(y - source.y));
