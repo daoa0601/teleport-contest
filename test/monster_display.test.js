@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { BEAR_TRAP, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DBWALL, DRAWBRIDGE_DOWN, CORPSTAT_FEMALE, CORPSTAT_MALE, DOOR, D_CLOSED, DRAWBRIDGE_UP, ICE, MAGIC_TRAP, MM_NOGRP, NO_MINVENT, PIT, SPIKED_PIT, WEB, } from '../js/const.js';
+import { BEAR_TRAP, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DBWALL, DRAWBRIDGE_DOWN, ALTAR, AM_LAWFUL, AM_NEUTRAL, AM_SHRINE, CORPSTAT_FEMALE, CORPSTAT_MALE, DOOR, D_CLOSED, DRAWBRIDGE_UP, ICE, MAGIC_TRAP, MM_NOGRP, NO_MINVENT, PIT, SPIKED_PIT, WEB, } from '../js/const.js';
 import { displayMessageWindow, flush_screen, map_invisible, newsym, plineWithContinuation, show_glyph_cell, } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { nameToMonster } from '../js/mondata.js';
 import { setMonsterSpecies } from '../js/monster_species.js';
-import { CORPSE, STATUE } from '../js/object_data.js';
+import { CORPSE, POT_HEALING, POT_SPEED, STATUE } from '../js/object_data.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { makeBlinded } from '../js/sight_change.js';
-import { CLR_BLUE, CLR_BROWN, CLR_CYAN, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { CLR_BLUE, CLR_BROWN, CLR_CYAN, CLR_GRAY, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import { cansee } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addTrap } from './support/level-state.js';
@@ -276,6 +276,90 @@ void test('rotating a closed door redraws its unchanged map symbol', async () =>
     await flush_screen(0);
     assert.equal(requireScreenCell(10, 11).ch, '+');
     assert.deepEqual([display.cursorCol, display.cursorRow], [11, 11]);
+});
+void test('recognizing a gray potion redraws its unchanged map symbol', async () => {
+    freshObjectRoom();
+    assert.ok(game.objectColors);
+    game.objectColors[POT_HEALING] = CLR_GRAY;
+    const potion = await floorObject(POT_HEALING, 14, 10, {
+        dknown: false, initialize: false,
+    });
+    newsym(14, 10);
+    await flush_screen(1);
+    assert.equal(potion.dknown, false);
+    assert.equal(requireScreenCell(13, 11).color, CLR_GRAY);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+    game.u.ux = 12;
+    newsym(14, 10);
+    await flush_screen(0);
+    assert.equal(potion.dknown, true);
+    assert.equal(requireScreenCell(13, 11).ch, '!');
+    assert.equal(requireScreenCell(13, 11).color, CLR_GRAY);
+    assert.deepEqual([display.cursorCol, display.cursorRow], [14, 11]);
+});
+void test('different unobserved potions share one generic map glyph', async () => {
+    freshObjectRoom();
+    const potion = await floorObject(POT_HEALING, 14, 10, {
+        dknown: false, initialize: false,
+    });
+    newsym(14, 10);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+    potion.otyp = POT_SPEED;
+    newsym(14, 10);
+    await flush_screen(0);
+    assert.equal(potion.dknown, false);
+    assert.equal(requireScreenCell(13, 11).ch, '!');
+    assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
+});
+void test('converting an altar redraws its unchanged map symbol', async () => {
+    const level = freshObjectRoom();
+    const altar = level.requireAt(11, 10);
+    altar.typ = ALTAR;
+    altar.flags = AM_NEUTRAL;
+    newsym(11, 10);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+    altar.flags = AM_LAWFUL;
+    newsym(11, 10);
+    await flush_screen(0);
+    assert.equal(requireScreenCell(10, 11).ch, '_');
+    assert.equal(requireScreenCell(10, 11).color, NO_COLOR);
+    assert.deepEqual([display.cursorCol, display.cursorRow], [11, 11]);
+});
+void test('shrine status does not change an altar glyph', async () => {
+    const level = freshObjectRoom();
+    const altar = level.requireAt(11, 10);
+    altar.typ = ALTAR;
+    altar.flags = AM_LAWFUL;
+    newsym(11, 10);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+    altar.flags |= AM_SHRINE;
+    newsym(11, 10);
+    await flush_screen(0);
+    assert.equal(requireScreenCell(10, 11).ch, '_');
+    assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
+});
+void test('replacing a raised bridge with its exposed ice preserves the cursor', async () => {
+    const level = freshObjectRoom();
+    const bridge = level.requireAt(11, 10);
+    bridge.typ = DRAWBRIDGE_UP;
+    bridge.drawbridgemask = DB_ICE;
+    newsym(11, 10);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+    bridge.typ = ICE;
+    newsym(11, 10);
+    await flush_screen(0);
+    assert.equal(requireScreenCell(10, 11).ch, '.');
+    assert.equal(requireScreenCell(10, 11).color, CLR_CYAN);
+    assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
 });
 for (const { name, typ, mask, ch, color } of [
     { name: 'ice', typ: ICE, mask: 0, ch: '·', color: CLR_CYAN },

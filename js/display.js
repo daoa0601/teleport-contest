@@ -4,6 +4,7 @@ import { game, requireGameLevel } from './gstate.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { redrawMonsterWormSegments } from './monster_worm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
+import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph } from './glyph_numbers.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { heroWarnsOfMonster } from './hero_species.js';
@@ -12,7 +13,7 @@ import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
 import { cansee, couldsee, vision_recalc } from './vision.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, Is_rogue_level, Is_waterlevel, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
@@ -614,25 +615,62 @@ function terrainGlyphName(loc, x, y, glyph) {
     return TERRAIN_NAMES.get(loc.typ) || 'stone';
 }
 export function terrain_glyph(loc, x, y) {
-    const glyph = terrainGlyphAppearance(loc, x, y);
+    const appearance = terrainGlyphAppearance(loc, x, y);
     const typ = projectedTerrainType(loc);
-    // back_to_glyph() distinguishes wall angles and door/bridge orientation
-    // even when the selected character set gives them the same appearance.
-    const wallShape = terrainWallShape(loc, typ, glyph);
-    const oriented = typ === DBWALL || typ === DRAWBRIDGE_DOWN
-        || (typ === DOOR && !!(loc.doormask & (D_ISOPEN | D_CLOSED | D_LOCKED)));
+    const symbol = terrainSymbolIndex(loc, x, y, typ, appearance);
+    const branch = game.dungeons[game.u.uz?.dnum ?? 0];
+    const wallOffset = branch?.dname === 'The Gnomish Mines' ? GlyphOffset.cmapMines
+        : branch?.flags.hellish ? GlyphOffset.cmapGehennom
+            : Is_knox_level(game.u.uz) ? GlyphOffset.cmapKnox
+                : In_sokoban(game.u.uz) ? GlyphOffset.cmapSokoban : GlyphOffset.cmapMain;
     return {
-        ...glyph, kind: 'terrain', terrainName: terrainGlyphName(loc, x, y, glyph),
-        ...(wallShape === undefined ? {} : { wallShape }),
-        ...(oriented ? { horizontal: loc.horizontal } : {}),
+        ...appearance, kind: 'terrain', terrainName: terrainGlyphName(loc, x, y, appearance),
+        glyph: typ === ALTAR ? altarToGlyph(loc.flags) : cmapToGlyph(symbol, wallOffset),
     };
 }
-function terrainWallShape(loc, typ, glyph) {
-    if ((!IS_WALL(typ) && typ !== SDOOR) || glyph.ch === ' ')
-        return undefined;
-    if (typ === SDOOR)
-        return loc.horizontal ? HWALL : VWALL;
-    return typ;
+function terrainSymbolIndex(loc, x, y, typ, appearance) {
+    if ((IS_WALL(typ) && typ !== DBWALL) || typ === SDOOR) {
+        if (appearance.ch === ' ')
+            return CmapSymbol.stone;
+        if (typ === SDOOR)
+            return loc.horizontal ? CmapSymbol.hwall : CmapSymbol.vwall;
+        return typ;
+    }
+    if (typ === DOOR) {
+        if (!loc.doormask || (loc.doormask & D_BROKEN))
+            return CmapSymbol.ndoor;
+        if (loc.doormask & D_ISOPEN)
+            return loc.horizontal ? CmapSymbol.hodoor : CmapSymbol.vodoor;
+        return loc.horizontal ? CmapSymbol.hcdoor : CmapSymbol.vcdoor;
+    }
+    if (typ === STAIRS || typ === LADDER)
+        return stairGlyphIndex(loc, x, y);
+    if (typ === CORR)
+        return (cansee(x, y) ? loc.lit : loc.waslit) || game.flags.lit_corridor
+            ? CmapSymbol.litcorr : CmapSymbol.corr;
+    if (typ === DBWALL)
+        return loc.horizontal ? CmapSymbol.hcdbridge : CmapSymbol.vcdbridge;
+    if (typ === DRAWBRIDGE_DOWN)
+        return loc.horizontal ? CmapSymbol.hodbridge : CmapSymbol.vodbridge;
+    switch (typ) {
+        case ROOM: return CmapSymbol.room;
+        case TREE: return CmapSymbol.tree;
+        case IRONBARS: return CmapSymbol.bars;
+        case POOL:
+        case MOAT: return CmapSymbol.pool;
+        case WATER: return CmapSymbol.water;
+        case LAVAPOOL: return CmapSymbol.lava;
+        case LAVAWALL: return CmapSymbol.lavawall;
+        case FOUNTAIN: return CmapSymbol.fountain;
+        case THRONE: return CmapSymbol.throne;
+        case SINK: return CmapSymbol.sink;
+        case GRAVE: return CmapSymbol.grave;
+        case ALTAR: return CmapSymbol.altar;
+        case ICE: return CmapSymbol.ice;
+        case AIR: return CmapSymbol.air;
+        case CLOUD: return CmapSymbol.cloud;
+        default: return CmapSymbol.stone;
+    }
 }
 function projectedTerrainType(loc) {
     // back_to_glyph() shows the exposed surface under a raised bridge.
@@ -805,8 +843,14 @@ function displayMonsterGlyph(mnum, female = false, monsterState = 'normal') {
         // default foreground rather than retaining an explicit color code.
         color: rawColor === CLR_BLACK || rawColor === CLR_GRAY
             ? NO_COLOR : rawColor,
-        decgfx: false, kind: 'monster', mnum, female, monsterState, piletop: false,
+        decgfx: false, kind: 'monster', mnum, piletop: false,
+        glyph: monsterGlyphNumber(mnum, female, monsterState),
     };
+}
+function monsterGlyphNumber(mnum, female, state) {
+    const offset = state === 'pet' ? GlyphOffset.petMale
+        : state === 'detected' ? GlyphOffset.detectMale : GlyphOffset.monMale;
+    return offset + mnum + (female ? MONSTER_COLOR.length : 0);
 }
 function heroDisplayGlyph() {
     if (game.u?.m_ap_type === M_AP_OBJECT)
@@ -848,6 +892,7 @@ function randomHallucinatedObjectGlyph() {
             ch: activeObjectSymbols()[7] || '?',
             color: MONSTER_COLOR[mnum] ?? CLR_GRAY,
             decgfx: false, kind: 'object', otyp, corpsenm: mnum, piletop: false,
+            glyph: GlyphOffset.body + mnum,
         };
     }
     const oclass = objectClassForType(otyp);
@@ -859,6 +904,7 @@ function randomHallucinatedObjectGlyph() {
         // generated compile-time color table here.
         color: game.objectColors?.[otyp] ?? OBJECT_COLOR[otyp] ?? CLR_GRAY,
         decgfx: false, kind: 'object', otyp, piletop: false,
+        glyph: GlyphOffset.object + otyp,
     };
 }
 function objectGlyph(object) {
@@ -877,20 +923,34 @@ function objectGlyph(object) {
         : null;
     const species = (object.otyp === CORPSE || object.otyp === STATUE)
         && object.corpsenm !== undefined ? { corpsenm: object.corpsenm } : {};
-    const gender = object.otyp === STATUE
-        ? { female: ((object.spe ?? 0) & CORPSTAT_GENDER) === CORPSTAT_FEMALE } : {};
+    const glyph = objectGlyphNumber(object, piletop);
     return statueSymbol
         ? {
             ch: statueSymbol, color: CLR_WHITE, decgfx: false,
-            kind: 'object', otyp: object.otyp, ...species, ...gender,
+            kind: 'object', otyp: object.otyp, ...species, glyph,
             statueGlyph: true, piletop,
         }
         : {
             ch: activeObjectSymbols()[object.oclass] || '?',
             color: objectColor(object), decgfx: false,
-            kind: 'object', otyp: object.otyp, ...species, ...gender,
+            kind: 'object', otyp: object.otyp, ...species, glyph,
             statueGlyph: object.otyp === STATUE, piletop,
         };
+}
+// display.h:obj_to_glyph() selects a species range or an object number.
+// An unobserved potion uses its class number in the same object range.
+function objectGlyphNumber(object, piletop) {
+    if (object.otyp === STATUE) {
+        const female = ((object.spe ?? 0) & CORPSTAT_GENDER) === CORPSTAT_FEMALE;
+        const offset = female
+            ? (piletop ? GlyphOffset.statueFemalePiletop : GlyphOffset.statueFemale)
+            : (piletop ? GlyphOffset.statueMalePiletop : GlyphOffset.statueMale);
+        return offset + (object.corpsenm ?? 0);
+    }
+    if (object.otyp === CORPSE)
+        return (piletop ? GlyphOffset.bodyPiletop : GlyphOffset.body) + (object.corpsenm ?? 0);
+    return (piletop ? GlyphOffset.objectPiletop : GlyphOffset.object)
+        + (objectUsesGenericGlyph(object) ? object.oclass : object.otyp);
 }
 // C display.h:mon_to_glyph(). Ignore disguises for a revelation flash.
 export function transientMonsterGlyph(monster) {
@@ -967,16 +1027,16 @@ export function magic_map_background(x, y, show = true) {
             if ((game.flags.dark_room ?? true) && game.flags.color !== false) {
                 glyph = Is_rogue_level(game.u.uz)
                     ? { ch: ' ', color: NO_COLOR, dec: false,
-                        kind: 'terrain', terrainName: 'stone' }
-                    : { ...glyph, color: CLR_BLACK,
+                        kind: 'terrain', terrainName: 'stone', glyph: GlyphOffset.cmapStone }
+                    : { ...glyph, color: CLR_BLACK, glyph: cmapToGlyph(CmapSymbol.darkroom),
                         terrainName: 'dark part of a room' };
             }
             else {
-                glyph = { ch: ' ', color: NO_COLOR, dec: false, kind: 'nothing' };
+                glyph = { ch: ' ', color: NO_COLOR, dec: false, kind: 'nothing', glyph: GlyphOffset.nothing };
             }
         }
         else if (location.typ === CORR) {
-            glyph = { ...glyph, color: NO_COLOR };
+            glyph = { ...glyph, color: NO_COLOR, glyph: cmapToGlyph(CmapSymbol.corr) };
         }
     }
     const remembered = location.remembered_glyph;
@@ -1018,6 +1078,7 @@ export function transientTrapGlyph(trap) {
         ch: trap.ttyp === WEB ? '"' : trap.ttyp === VIBRATING_SQUARE ? '~' : '^',
         color: TRAP_COLOR[trap.ttyp] ?? NO_COLOR, decgfx: false,
         kind: 'trap', trapType: trap.ttyp,
+        glyph: cmapToGlyph(CmapSymbol.arrowTrap + trap.ttyp - 1),
     };
 }
 // C display.c:flash_glyph_at(). Finish with the remembered background,
@@ -1025,7 +1086,8 @@ export function transientTrapGlyph(trap) {
 export async function flashGlyphAt(x, y, glyph, repeats) {
     const location = requireDisplayLocation(x, y);
     const previous = requireGameLevel().flags.hero_memory
-        ? location.remembered_glyph || { ch: ' ', color: NO_COLOR, decgfx: false, kind: 'nothing' }
+        ? location.remembered_glyph || { ch: ' ', color: NO_COLOR, decgfx: false,
+            kind: 'nothing', glyph: GlyphOffset.nothing }
         : terrain_glyph(location, x, y);
     for (let frame = 0; frame < repeats * 2; frame++) {
         const shown = frame % 2 ? previous : glyph;
@@ -1038,14 +1100,12 @@ export function map_trap(trap, show = true) {
     if (!trap)
         return;
     trap.tseen = true;
-    const ch = trap.ttyp === WEB ? '"'
-        : trap.ttyp === VIBRATING_SQUARE ? '~' : '^';
-    const color = TRAP_COLOR[trap.ttyp] ?? NO_COLOR;
+    const glyph = transientTrapGlyph(trap);
     const loc = game.level?.at(trap.tx, trap.ty);
     if (loc && game.level?.flags?.hero_memory)
-        loc.remembered_glyph = { ch, color, decgfx: false, kind: 'trap', trapType: trap.ttyp };
+        loc.remembered_glyph = glyph;
     if (show)
-        show_glyph_cell(trap.tx, trap.ty, ch, color, false, 0, { kind: 'trap', trapType: trap.ttyp });
+        show_glyph_cell(trap.tx, trap.ty, glyph.ch, glyph.color, false, 0, glyph);
 }
 export function map_engraving(engraving, show = true) {
     if (!engraving)
@@ -1056,6 +1116,7 @@ export function map_engraving(engraving, show = true) {
     const ch = loc.typ === CORR ? '#' : '`';
     const glyph = {
         ch, color: CLR_BRIGHT_BLUE, decgfx: false, kind: 'engraving',
+        glyph: cmapToGlyph(loc.typ === CORR ? CmapSymbol.engrcorr : CmapSymbol.engroom),
     };
     if (game.level?.flags?.hero_memory)
         loc.remembered_glyph = glyph;
@@ -1191,7 +1252,7 @@ export function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false, attr
     // show_glyph() compares glyph identity as well as buffered appearance.
     // Different species can share the same character and color.
     // Once queued, a cell still needs printing if a later update restores it.
-    if (!sameGlyphIdentity(loc.disp_glyph, nextGlyph)
+    if (loc.disp_glyph?.glyph !== nextGlyph.glyph
         || loc.disp_ch !== ch || loc.disp_color !== color
         || loc.disp_decgfx !== decgfx || loc.disp_attr !== (attr | 0)) {
         loc.gnew = 1;
@@ -1201,35 +1262,6 @@ export function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false, attr
     loc.disp_color = color;
     loc.disp_decgfx = !!decgfx;
     loc.disp_attr = attr | 0;
-}
-function sameGlyphIdentity(previous, next) {
-    if (!previous || previous.kind !== next.kind)
-        return false;
-    switch (next.kind) {
-        case 'monster':
-            return previous.kind === 'monster' && previous.mnum === next.mnum
-                && !!previous.female === !!next.female
-                && (previous.monsterState ?? 'normal') === (next.monsterState ?? 'normal');
-        case 'object':
-            return previous.kind === 'object' && previous.otyp === next.otyp
-                && previous.corpsenm === next.corpsenm
-                && !!previous.female === !!next.female
-                && !!previous.statueGlyph === !!next.statueGlyph
-                && !!previous.piletop === !!next.piletop;
-        case 'terrain':
-            return previous.kind === 'terrain' && previous.terrainName === next.terrainName
-                && previous.wallShape === next.wallShape
-                && previous.horizontal === next.horizontal;
-        case 'trap':
-            return previous.kind === 'trap' && previous.trapType === next.trapType;
-        case 'nothing':
-        case 'engraving':
-        case 'invisible':
-        case 'effect':
-        case 'warning':
-        case 'unexplored':
-            return true;
-    }
 }
 // flush_screen() prints queued glyphs in row order. tty_print_glyph() leaves
 // the cursor one column after the last printed cell, even when it was restored
@@ -1282,10 +1314,10 @@ export function map_invisible(x, y) {
         return;
     if (game.level?.flags?.hero_memory) {
         loc.remembered_glyph = {
-            ch: 'I', color: NO_COLOR, decgfx: false, kind: 'invisible',
+            ch: 'I', color: NO_COLOR, decgfx: false, kind: 'invisible', glyph: GlyphOffset.invisible,
         };
     }
-    show_glyph_cell(x, y, 'I', NO_COLOR, false, 0, { kind: 'invisible' });
+    show_glyph_cell(x, y, 'I', NO_COLOR, false, 0, { kind: 'invisible', glyph: GlyphOffset.invisible });
 }
 // C display.c:unmap_object(). Clearing stale object or invisible-creature
 // memory restores a known trap, engraving, or background without revealing
@@ -1312,12 +1344,12 @@ export function unmapObject(x, y) {
             map_background(x, y, false);
             if (!loc.waslit && loc.typ === ROOM)
                 loc.remembered_glyph = { ch: ' ', color: NO_COLOR,
-                    decgfx: false, kind: 'terrain', terrainName: 'stone' };
+                    decgfx: false, kind: 'terrain', terrainName: 'stone', glyph: GlyphOffset.cmapStone };
         }
     }
     else {
         loc.remembered_glyph = { ch: ' ', color: NO_COLOR,
-            decgfx: false, kind: 'terrain', terrainName: 'stone' };
+            decgfx: false, kind: 'terrain', terrainName: 'stone', glyph: GlyphOffset.cmapStone };
     }
 }
 export function unmap_invisible(x, y, show = true) {
@@ -1357,7 +1389,7 @@ function visibleMapRegionAt(x, y) {
         && region.ttl !== -2 && region.cells?.some(cell => cell.x === x && cell.y === y)) || null;
 }
 function showMapRegion(x, y) {
-    show_glyph_cell(x, y, '#', NO_COLOR, false, 0, { kind: 'terrain', terrainName: 'cloud' });
+    show_glyph_cell(x, y, '#', NO_COLOR, false, 0, { kind: 'terrain', terrainName: 'cloud', glyph: cmapToGlyph(CmapSymbol.poisoncloud) });
 }
 function monsterOverridesMapRegion(monster, x, y) {
     if (game.level?.at(x, y)?.remembered_glyph?.kind === 'invisible')
@@ -1462,6 +1494,7 @@ export function newsym(x, y) {
                     const glyph = {
                         ch: symbol.ch, color: symbol.color, decgfx: false,
                         kind: 'terrain', terrainName: symbol.name,
+                        glyph: cmapToGlyph(mimicAppearance(monster)),
                     };
                     loc.remembered_glyph = glyph;
                     if (!sensed) {
@@ -1499,7 +1532,7 @@ export function newsym(x, y) {
                                 ?? monster.color ?? CLR_GRAY),
                 decgfx: false, kind: 'monster',
                 mnum: projection.wormTail ? PM_LONG_WORM_TAIL : monster.mnum,
-                female: !!monster.female, monsterState,
+                glyph: monsterGlyphNumber(projection.wormTail ? PM_LONG_WORM_TAIL : monster.mnum, !!monster.female, monsterState),
             }, monsterDisplayAttribute(monster));
         }
         monster.meverseen = 1;
@@ -1507,7 +1540,8 @@ export function newsym(x, y) {
     }
     const warning = isWormTail(monster, x, y) ? null : warningProjection(monster);
     if (warning) {
-        showMonsterOrWarning(x, y, { ...warning, decgfx: false, kind: 'warning' });
+        showMonsterOrWarning(x, y, { ...warning, decgfx: false, kind: 'warning',
+            glyph: GlyphOffset.warning + Number(warning.ch) });
         return;
     }
     if (loc.remembered_glyph?.kind === 'invisible') {
@@ -1526,7 +1560,7 @@ export function newsym(x, y) {
         // A living glyph is only an overlay.  When its actor vacates an
         // unseen, never-mapped square, restore unexplored space rather than
         // leaving a presentation-only duplicate behind.
-        show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'terrain', terrainName: 'stone' });
+        show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'terrain', terrainName: 'stone', glyph: GlyphOffset.cmapStone });
     }
 }
 // C ref: display.c:see_monsters().  Warning, telepathy, and visible regions
@@ -1731,7 +1765,7 @@ function underwaterTerrain(x, y) {
 function redrawRestrictedMap(full) {
     for (let y = 0; y < ROWNO; y++)
         for (let x = 1; x < COLNO; x++)
-            show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'unexplored' });
+            show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'unexplored', glyph: GlyphOffset.unexplored });
     if (!restrictedUnderwaterView()) {
         if (!full)
             newsym(game.u.ux, game.u.uy);
