@@ -1616,7 +1616,7 @@ async function advanceWorldTurn(): Promise<void> {
     // Native find_ac() follows the elapsed-turn loop.  setworn() is already
     // live for effects, but the first donning cadence frame still shows the
     // prior AC; the next automatic core observes the recomputed value.
-    if (game._armorClassDirtyAfterDelayedFrame) {
+    if (game._armorClassDirtyAfterDelayedFrame && !game._delayedAction?.ready) {
         findArmorClass(game);
         game._armorClassDirty = false;
         delete game._armorClassDirtyAfterDelayedFrame;
@@ -3808,10 +3808,9 @@ export async function moveloop_core() {
         const delayed = g._delayedAction;
         g._delayedAction = null;
         if (delayed.kind === 'wear') {
-            if (!delayed.object._armorApplied) {
-                findArmorClass(g);
-                delayed.object._armorApplied = true;
-            }
+            // unmul() prints nomovemsg before Armor_on() and find_ac().
+            // An earlier attack can hold that message at a pager while AC
+            // still belongs to the turn before the dressing finished.
             if (delayed.finishMessage)
                 await plineWithContinuation(delayed.finishMessage);
             const effectMessages = await applyArmorOnEffects(delayed.object, g);
@@ -3837,6 +3836,10 @@ export async function moveloop_core() {
                 recordObjectKnowledge(delayed.object.otyp);
                 await exerciseAttribute(A_WIS, true);
             }
+            findArmorClass(g);
+            g._armorClassDirty = false;
+            delete g._armorClassDirtyAfterDelayedFrame;
+            delete g._statusProjectedAc;
         } else if (delayed.kind === 'remove') {
             // C allmain.c:unmul() emits nomovemsg before calling afternmv.
             // If an earlier monster-combat line already owns tty, this await
