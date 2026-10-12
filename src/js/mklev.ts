@@ -4799,7 +4799,7 @@ async function specialMonsterClassAt(
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
     let mndx = mkclass(monsterClass, 0x0200);
-    if (mndx == null) return null;
+    // A null class choice asks makemon() for a random species.
     mndx = applyMinesSameRaceMonsterGate(mndx);
     const absoluteX = context.xstart + x, absoluteY = context.ystart + y;
     const occupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, game) && candidate.mhp > 0
@@ -4920,7 +4920,7 @@ async function specialMonsterOfClass(
     let mndx = mkclass(monsterClass, 0x0200);
     mndx = applyMinesSameRaceMonsterGate(mndx);
     const point = await specialMonsterRandomLocation(context, mndx);
-    if (!point || mndx == null) return null;
+    if (!point) return null;
     const occupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, game) && candidate.mhp > 0
         && candidate.mx === point.x && candidate.my === point.y);
     const monster = occupied
@@ -4936,20 +4936,19 @@ async function specialMonsterOfClass(
     return resolved;
 }
 
-async function finishSpecialTrapConstruction(
+async function finishLevelTrapConstruction(
     trap: Trap | null, { spiderOnWeb = true, seen = false, victim = true }: SpecialTrapOptions = {},
 ): Promise<Trap | null> {
     if (!trap) return null;
     const kind = trap.ttyp;
-    if (seen) trap.tseen = true;
-    if (kind === MAGIC_PORTAL && !trap.dst) {
-        if (!game.u.ucamefrom) throw new Error('Portal creation requires the previous dungeon location.');
-        trap.dst = { ...game.u.ucamefrom };
-    }
     // mklev.c:mktrap() owns the web's resident spider before evaluating the
     // shallow-level dead-predecessor gate.
     if (kind === WEB && spiderOnWeb)
         await makemon(PM_GIANT_SPIDER, trap.tx, trap.ty, 0);
+    if (seen) trap.tseen = true;
+    const cameFrom = game.u.ucamefrom;
+    if (kind === MAGIC_PORTAL && cameFrom && (cameFrom.dnum || cameFrom.dlevel))
+        trap.dst = { ...cameFrom };
 
     if (!game.in_mklev || kind === NO_TRAP || !victim) return trap;
     const predecessorRoll = rnd(4);
@@ -5000,57 +4999,7 @@ async function specialTrapOfType(
 ): Promise<Trap | null> {
     const point = await specialTrapLocation(context, coordinate);
     if (!point) return null;
-    const trap = await maketrap(point.x, point.y, typ);
-    return finishSpecialTrapConstruction(trap, options);
-}
-
-function specialRandomTrapType(inHell = false): number {
-    const level = level_difficulty();
-    const noTeleport = !!game.level?.flags?.noteleport;
-    const singleLevelBranch = game.dungeons?.[
-        game.u?.uz?.dnum ?? 0
-    ]?.dname === 'Fort Ludios';
-    for (;;) {
-        let type = rnd(TRAPNUM - 1);
-        if (type === TRAPPED_DOOR || type === TRAPPED_CHEST
-            || type === MAGIC_PORTAL || type === VIBRATING_SQUARE) {
-            type = NO_TRAP;
-        } else if ((type === ROLLING_BOULDER_TRAP || type === SLP_GAS_TRAP)
-            && level < 2) {
-            type = NO_TRAP;
-        } else if (type === LEVEL_TELEP
-            && (level < 5 || noTeleport || singleLevelBranch)) {
-            type = NO_TRAP;
-        } else if (type === SPIKED_PIT && level < 5) {
-            type = NO_TRAP;
-        } else if (type === LANDMINE && level < 6) {
-            type = NO_TRAP;
-        } else if (type === WEB && level < 7) {
-            type = NO_TRAP;
-        } else if ((type === STATUE_TRAP || type === POLY_TRAP) && level < 8) {
-            type = NO_TRAP;
-        } else if (type === FIRE_TRAP && !inHell) {
-            type = NO_TRAP;
-        } else if (type === TELEP_TRAP && noTeleport) {
-            type = NO_TRAP;
-        } else if (type === HOLE && rn2(7)) {
-            type = NO_TRAP;
-        }
-        if (type !== NO_TRAP) return type;
-    }
-}
-
-async function specialTrap(
-    context: SpecialLevelContext, options: SpecialTrapOptions, coordinate: Position | null,
-): Promise<void> {
-    const point = await specialTrapLocation(context, coordinate);
-    if (!point) return;
-    const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
-    let type = inHell && !rn2(5)
-        ? FIRE_TRAP : specialRandomTrapType(inHell);
-    if (is_hole(type) && !canFallThrough()) type = ROCKTRAP;
-    const trap = await maketrap(point.x, point.y, type);
-    await finishSpecialTrapConstruction(trap, options);
+    return await mktrap(typ, options, null, point);
 }
 
 async function specialMonster(context: SpecialLevelContext, {
@@ -6189,12 +6138,7 @@ async function createLuaTrap(context: SpecialLevelContext, options: Parameters<D
         victim: options.victim !== false,
         spiderOnWeb: options.spider_on_web !== false,
     };
-    let trap: Trap | null | void;
-    if (trapType == null) {
-        trap = await specialTrap(context, construction, point);
-    } else {
-        trap = await specialTrapOfType(context, trapType, construction, point);
-    }
+    const trap = await specialTrapOfType(context, trapType ?? NO_TRAP, construction, point);
     const teleportDestination = luaCoordinate({ coord: options.teledest });
     if (trap && teleportDestination) {
         trap.teledest = {
@@ -7492,7 +7436,7 @@ async function populateRandomMaze(): Promise<void> {
         await mkgold(0, point.x, point.y);
     }
     for (let count = rn1(6, 7); count > 0; count--)
-        await createRandomLevelTrap();
+        await mktrap(NO_TRAP, {}, null, null);
 }
 
 async function generateDungeonMazeFile(prototype: string): Promise<void> {
@@ -10002,7 +9946,7 @@ export function wallifyMap(x1: number, y1: number, x2: number, y2: number): void
 // Fill ordinary room
 // ============================================================
 
-function traptype_rnd(): number {
+function traptype_rnd({ spiderOnWeb = true }: SpecialTrapOptions): number {
     const lvl = level_difficulty();
     let kind = rnd(TRAPNUM - 1);
     switch (kind) {
@@ -10018,7 +9962,7 @@ function traptype_rnd(): number {
     case LANDMINE:
         if (lvl < 6) kind = NO_TRAP; break;
     case WEB:
-        if (lvl < 7) kind = NO_TRAP; break;
+        if (lvl < 7 && spiderOnWeb) kind = NO_TRAP; break;
     case STATUE_TRAP: case POLY_TRAP:
         if (lvl < 8) kind = NO_TRAP; break;
     case FIRE_TRAP:
@@ -10130,47 +10074,44 @@ function trapVictimObjectBreaks(object: GameObject): boolean {
 
 // C mktrap(): the room and maze callers share type selection, collision
 // checks, web residents, and shallow-level victims.
-async function createRandomLevelTrap(croom: Room | null = null): Promise<void> {
+async function mktrap(
+    num: number, options: SpecialTrapOptions, croom: Room | null, coordinate: Position | null,
+): Promise<Trap | null> {
     const level = requireGameLevel();
+    // Explicit locations are screened before type selection. Room and maze
+    // callers select the type first, then search for an unoccupied square.
+    if (coordinate && (isPoolAt(coordinate.x, coordinate.y)
+        || isLavaAt(coordinate.x, coordinate.y))) return null;
     let kind;
-    if (Is_rogue_level(game.u.uz)) {
+    if (num > NO_TRAP && num < TRAPNUM) {
+        kind = num;
+    } else if (Is_rogue_level(game.u.uz)) {
         kind = [BEAR_TRAP, ARROW_TRAP, DART_TRAP, TRAPDOOR,
             PIT, SLP_GAS_TRAP, RUST_TRAP][rn2(7)];
     } else if (In_hell(game.u.uz)
         && !rn2(5)) kind = FIRE_TRAP;
-    else do { kind = traptype_rnd(); } while (kind === NO_TRAP);
+    else do { kind = traptype_rnd(options); } while (kind === NO_TRAP);
     if (kind === undefined) throw new RangeError('Rogue trap selection is out of range.');
     if (is_hole(kind) && !canFallThrough()) kind = ROCKTRAP;
-    const pos = { x: 0, y: 0 };
-    const avoidBoulder = is_pit(kind) || is_hole(kind);
-    let attempts = 0;
-    do {
-        if (++attempts > 200) return;
-        if (croom) {
-            if (!somexyspace(croom, pos)) return;
-        } else {
-            const point = mazeFloorPoint();
-            pos.x = point.x;
-            pos.y = point.y;
-        }
-    } while (occupied(pos.x, pos.y)
-        || (avoidBoulder && level.objects[pos.x]?.[pos.y]
-            ?.some(object => object.otyp === BOULDER)));
-    const trap = await maketrap(pos.x, pos.y, kind);
-    kind = trap ? trap.ttyp : NO_TRAP;
-    // C mktrap(), not maketrap(), owns the web's resident spider.  Its
-    // constructor runs before the shallow trap-victim rnd(4) gate.
-    if (kind === WEB)
-        await makemon(PM_GIANT_SPIDER, pos.x, pos.y, 0);
-    const lvl = level_difficulty();
-    if (game.in_mklev && trap && kind !== NO_TRAP
-        && lvl <= rnd(4)
-        && kind !== SQKY_BOARD && kind !== RUST_TRAP
-        && !(kind === ROLLING_BOULDER_TRAP && trap.launch?.x === trap.tx && trap.launch?.y === trap.ty)
-        && !is_pit(kind) && (kind < HOLE || kind === MAGIC_TRAP)) {
-        if (kind === LANDMINE) { trap.ttyp = PIT; trap.tseen = true; }
-        await mktrap_victim(trap);
+    const pos = coordinate ? { ...coordinate } : { x: 0, y: 0 };
+    if (!coordinate) {
+        const avoidBoulder = is_pit(kind) || is_hole(kind);
+        let attempts = 0;
+        do {
+            if (++attempts > 200) return null;
+            if (croom) {
+                if (!somexyspace(croom, pos)) return null;
+            } else {
+                const point = mazeFloorPoint();
+                pos.x = point.x;
+                pos.y = point.y;
+            }
+        } while (occupied(pos.x, pos.y)
+            || (avoidBoulder && level.objects[pos.x]?.[pos.y]
+                ?.some(object => object.otyp === BOULDER)));
     }
+    const trap = await maketrap(pos.x, pos.y, kind);
+    return await finishLevelTrapConstruction(trap, options);
 }
 
 function mkfount(croom: Room): void {
@@ -10257,7 +10198,7 @@ export async function fill_ordinary_room(croom: Room | null | undefined, bonus_i
     if (x <= 1) x = 2;
     let trycnt = 0;
     while (!rn2(x) && ++trycnt < 1000) {
-        await createRandomLevelTrap(croom);
+        await mktrap(NO_TRAP, {}, croom, null);
     }
     // Gold
     if (!rn2(3) && somexyspace(croom, pos)) {
