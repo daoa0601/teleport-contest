@@ -4814,8 +4814,8 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             deferredFireNegation: true,
         };
     }
-    else if (hit && attackType === AT_TUCH && damageType === AD_COLD && dice > 0 && sides > 0) {
-        // hmon() rolls base damage before mhitm_ad_cold(), but the latter
+    else if (hit && attackType !== AT_ENGL && damageType === AD_COLD) {
+        // hitmu() rolls base damage before mhitm_ad_cold(), but the latter
         // projects hitmsg() before checking magic cancellation.  Leave that
         // check deferred so an already-full tty topline can suspend between
         // d() and rn2(10).
