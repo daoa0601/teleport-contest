@@ -10,6 +10,7 @@ import { objectTypeKnown } from '../js/shk.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
+import { createSaddledSteed } from './support/monsters.js';
 const RIN_STEALTH = OBJECT_NAMES.indexOf('stealth');
 void test('putting on a stealth ring acknowledges quiet movement before its inventory description', async () => {
     freshObjectRoom();
@@ -64,4 +65,20 @@ void test('intrinsic stealth suppresses ring feedback and discovery', async () =
     assert.equal(game.u.stealth, true);
     assert.equal(objectTypeKnown(ring), false);
 });
+for (const hallucinationTurns of [0, 20]) {
+    void test(`removing stealth describes an invisible flying steed with${hallucinationTurns ? '' : 'out'} hallucination`, async () => {
+        freshObjectRoom({ hero: { hallucinationTurns } });
+        const steed = await createSaddledSteed('ki-rin');
+        steed.minvis = true;
+        game.u.usteed = steed;
+        const ring = await addInventoryObject(RIN_STEALTH);
+        await wearHeroAccessory(ring, 'uright');
+        assert.equal(game.u.stealth, true);
+        const input = resetInputState();
+        input.feed(' ');
+        await removeHeroAccessory(ring);
+        assert.equal(game.u.stealth, false);
+        assert.match(game._pending_message, /You and your invisible ki-rin are noisy\./);
+    });
+}
 //# sourceMappingURL=stealth_ring.test.js.map

@@ -189,7 +189,9 @@ export async function removeHeroAccessory(object, state = game) {
         learnRing(object, true, state);
         const steed = state.u.usteed;
         await plineWithContinuation(steed
-            ? `You and ${monsterName(steed, { state, article: 'your', exact: true })} are noisy.`
+            ? `You and ${monsterName(steed, {
+                state, article: 'your', suppressSaddle: true, suppressHallucination: true,
+            })} are noisy.`
             : 'You sure are noisy.');
     }
     if (property === 'protectionFromShapeChangers'
