@@ -9,9 +9,8 @@ import {
 } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { landFloorObject } from './floor_effects.js';
-import {
-    detachFloorObjectUnit, remove_object,
-} from './floor_object.js';
+import { remove_object } from './floor_object.js';
+import { splitObjectStack } from './object_stack.js';
 import { game } from './gstate.js';
 import type { MessagePublisher } from './display.js';
 import type { GameState } from './game_state.js';
@@ -165,15 +164,16 @@ export async function kickFloorObject(x: number, y: number, {
         }
     }
 
-    const moving = object.oclass === 12
-        ? remove_object(object, state)
-        : detachFloorObjectUnit(object, state);
+    const moving = object.oclass !== 12 && quantity(object) > 1
+        ? splitObjectStack(object, 1, state)
+        : object;
     if (!moving) throw new Error('A kicked stack must yield an object.');
     if (slide && !heroIsBlind(state)) {
         const name = inventoryItemDescription(moving);
         await publish(`Whee!  ${name.charAt(0).toUpperCase() + name.slice(1)} ${
             quantity(moving) === 1 ? 'slides' : 'slide'} across the ${surfaceName(x, y, state)}.`);
     }
+    remove_object(moving, state);
     state._kickedObject = moving;
     try {
         newsym(x, y);

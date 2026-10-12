@@ -13,8 +13,8 @@ import { initRng } from '../js/rng.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { kickDirection } from './support/commands.js';
-import { knownObject } from './support/game-objects.js';
-import { floorObjects } from './support/level-state.js';
+import { floorObject, knownObject } from './support/game-objects.js';
+import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 void test('kicking a loose object moves its existing identity', async () => {
@@ -89,6 +89,28 @@ void test('a kicked object slides across ice and grease with visible feedback', 
     assert.ok(messages.some(message => /^Whee!  .* slides across the ice\.$/.test(message)));
     assert.equal(club.ox, 25);
 });
+for (const count of [1, 3]) {
+    void test(`a sliding kick preserves a floor stack of ${count} during its announcement`, async () => {
+        const level = freshGameplayRoom({ role: 'tourist' });
+        requirePlayingGame(game);
+        level.requireAt(11, 10).typ = ICE;
+        await floorObject(CLUB, 11, 10, { quantity: count });
+        let announced = false;
+        await kickFloorObject(11, 10, { dx: 1, dy: 0, rollOne: () => 1,
+            publish: message => {
+                if (!message.startsWith('Whee!'))
+                    return;
+                announced = true;
+                assert.equal(floorObjectsAt(level, 11, 10)
+                    .reduce((total, object) => total + object.quan, 0), count, 'The slide announcement must precede removal from the floor.');
+            } });
+        assert.equal(announced, true);
+        assert.equal(floorObjectsAt(level, 11, 10)
+            .reduce((total, object) => total + object.quan, 0), count - 1);
+        assert.equal(floorObjects(level)
+            .reduce((total, object) => total + object.quan, 0), count);
+    });
+}
 void test('kicking a pile of coins scatters that pile and leaves other objects alone', async () => {
     const level = freshGameplayRoom({ role: 'tourist', hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);

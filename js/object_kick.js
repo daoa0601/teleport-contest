@@ -5,7 +5,8 @@ import { currentAttribute } from './attrib.js';
 import { A_STR, DOOR, D_CLOSED, D_LOCKED, ICE, IS_POOL, Is_airlevel, Is_waterlevel, WEB, ZAP_POS, is_pit, isok, } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { landFloorObject } from './floor_effects.js';
-import { detachFloorObjectUnit, remove_object, } from './floor_object.js';
+import { remove_object } from './floor_object.js';
+import { splitObjectStack } from './object_stack.js';
 import { game } from './gstate.js';
 import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
 import { breakFloorObject } from './object_breakage.js';
@@ -128,15 +129,16 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
             return random(3) === 0 || martial;
         }
     }
-    const moving = object.oclass === 12
-        ? remove_object(object, state)
-        : detachFloorObjectUnit(object, state);
+    const moving = object.oclass !== 12 && quantity(object) > 1
+        ? splitObjectStack(object, 1, state)
+        : object;
     if (!moving)
         throw new Error('A kicked stack must yield an object.');
     if (slide && !heroIsBlind(state)) {
         const name = inventoryItemDescription(moving);
         await publish(`Whee!  ${name.charAt(0).toUpperCase() + name.slice(1)} ${quantity(moving) === 1 ? 'slides' : 'slide'} across the ${surfaceName(x, y, state)}.`);
     }
+    remove_object(moving, state);
     state._kickedObject = moving;
     try {
         newsym(x, y);
