@@ -4406,7 +4406,7 @@ async function putOnAccessoryObject(object) {
     // Sink effects can remove the ring inside Ring_on().
     if (game.uleft === object || game.uright === object) {
         observeObjectForNaming(object);
-        await pline(`${object.invlet} - ${inventoryItemDescription(object)}.`);
+        await plineWithContinuation(`${object.invlet} - ${inventoryItemDescription(object)}.`);
     }
     game.context.move = 1;
 }
