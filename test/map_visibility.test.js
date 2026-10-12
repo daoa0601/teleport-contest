@@ -5,14 +5,17 @@ import { rhack } from '../js/cmd.js';
 import { NO_MINVENT } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requirePlayingGame, resetGame } from '../js/gstate.js';
+import { dropInventoryObjectAtHero } from '../js/hero_drop.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { migrateMonsterOffLevel } from '../js/monster_migration.js';
 import { OIL_LAMP } from '../js/object_data.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { cansee, couldsee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
-import { knownObject } from './support/game-objects.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { freshConnectedLevels } from './support/connected-levels.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -49,6 +52,59 @@ for (const lightSource of ['yellow light', 'carried lamp']) {
         assert.equal(game.level.requireAt(floorX, 10).disp_ch, '.');
     });
 }
+for (const lightSource of ['yellow light', 'carried lamp']) {
+    void test(`waiting clears the light after the last ${lightSource} migrates`, async () => {
+        freshTurnRoom({ left: 8, right: 20, top: 10, bottom: 10 });
+        requirePlayingGame(game);
+        for (let x = 8; x <= 20; x++) {
+            const location = game.level.requireAt(x, 10);
+            location.lit = false;
+            location.waslit = false;
+            location.seenv = 0;
+        }
+        const source = await createMonsterAt(lightSource === 'yellow light' ? 'yellow light' : 'goblin', 17, 10, NO_MINVENT);
+        if (lightSource === 'carried lamp') {
+            const lamp = await knownObject(OIL_LAMP, { age: 1000 });
+            await addObjectToMonsterInventory(source, lamp);
+            assert.equal(beginObjectBurn(lamp), true);
+        }
+        vision_reset_new_level();
+        vision_recalc(0);
+        assert.equal(cansee(17, 10), true);
+        await migrateMonsterOffLevel(source, game, {
+            dst: { dnum: 0, dlevel: 2 },
+        });
+        pushKeys('.\x1b');
+        await moveloop_core();
+        await moveloop_core();
+        assert.equal(cansee(17, 10), false, 'a migrating source cannot illuminate its old square');
+        assert.equal(couldsee(17, 10), true, 'migration does not block the line of sight');
+    });
+}
+void test('waiting clears the light after the last lamp falls down a ladder', async () => {
+    const { source } = freshConnectedLevels({ ladder: true });
+    game._moveloopStarted = true;
+    for (let x = 8; x <= 18; x++) {
+        for (let y = 8; y <= 12; y++) {
+            const location = source.requireAt(x, y);
+            location.lit = false;
+            location.waslit = false;
+            location.seenv = 0;
+        }
+    }
+    const lamp = await addInventoryObject(OIL_LAMP, { age: 1000 });
+    assert.equal(beginObjectBurn(lamp), true);
+    vision_reset_new_level();
+    vision_recalc(0);
+    assert.equal(cansee(13, 10), true);
+    await dropInventoryObjectAtHero(lamp);
+    assert.equal(lamp.where, 'migrating');
+    pushKeys('.\x1b');
+    await moveloop_core();
+    await moveloop_core();
+    assert.equal(cansee(13, 10), false, 'a migrating lamp cannot illuminate the departed level');
+    assert.equal(couldsee(13, 10), true, 'the ladder does not block the line of sight');
+});
 void test('expired gas clears the view beyond it while overlapping gas still blocks', async () => {
     freshObjectRoom({ left: 8, right: 18, top: 10, bottom: 10 });
     requirePlayingGame(game);

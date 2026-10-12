@@ -81,7 +81,14 @@ function mobileLightSources(level: GameMap): (Position & { range: number })[] {
 // C light.c:any_light_source(). The monster pass must request a refresh even
 // when the hero stays still: a monster can move its own light or a lit object.
 export function hasLightSources(): boolean {
-    return !!game.level && mobileLightSources(game.level).length > 0;
+    if (game.level && mobileLightSources(game.level).length > 0) return true;
+    // C retains migrating sources in light_base, but do_light_sources()
+    // cannot locate them on this level. They still require movemon's refresh.
+    return (game._migratingMonsters || []).some(monster => !monster.dead
+        && (monsterEmitsLight(monster.mnum)
+            || (monster.minvent || monster.inventory || []).some(object =>
+                objectLightRadius(object) > 0)))
+        || (game.migratingObjects || []).some(object => objectLightRadius(object) > 0);
 }
 
 function mobileLightMap(level: GameMap, couldSee: Uint8Array[]): Uint8Array[] {
