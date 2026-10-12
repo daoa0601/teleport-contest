@@ -49,6 +49,21 @@ void test('acknowledging a wrapped welcome opens the tutorial choice without rep
     assert.doesNotMatch(screen, /welcome to NetHack|--More--/);
     assert.equal(engine.state.moves, 1);
 });
+void test('declining the tutorial erases the acknowledged welcome before command input', async () => {
+    const engine = await runSegment({
+        seed: 381,
+        datetime: '20260801120000',
+        nethackrc: 'OPTIONS=name:Iris,role:Rogue,race:human,gender:female,align:chaotic,!legacy,!autopickup,pettype:none',
+        moves: '', storage: memoryStorage(),
+    });
+    engine.inputGate.feed(' ');
+    await engine.runUntilInputNeeded();
+    assert.match(visibleRows(engine).join('\n'), /Do you want a tutorial\?/);
+    engine.inputGate.feed('n');
+    await engine.runUntilInputNeeded();
+    assert.doesNotMatch(visibleRows(engine).join('\n'), /welcome to NetHack|--More--/);
+    assert.equal(engine.state.moves, 1);
+});
 void test('explore startup announces its mode after the wrapped welcome', async () => {
     const engine = await startWithLongWelcome({ explore: true });
     assert.match(visibleRows(engine)[1] ?? '', /Archeologist\.--More--$/);
