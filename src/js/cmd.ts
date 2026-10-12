@@ -4754,6 +4754,7 @@ export async function finishArmorRemoval(
     object: GameObject, { silent = false }: { silent?: boolean } = {},
 ): Promise<string> {
     await removeHeroArmor(object, game);
+    await announceDisplacementLoss(object, game);
     if (silent || game.flags?.verbose === false) return '';
     return armorOffMessage(object, game);
 }
@@ -4861,16 +4862,15 @@ async function removeWornItem(action: 'remove' | 'take off'): Promise<void> {
     }
 
     const previousArmorClass = game.u?.uac ?? 10;
-    const removalMessage = await finishArmorRemoval(object);
-    if (removalMessage && game.u?.uac !== previousArmorClass)
-        game._statusAcOverride = previousArmorClass;
     // do_wear.c:off_msg() is conditional on flags.verbose.  When disabled,
     // immediate zero-delay armor removal leaves getobj's selector as the
     // physical topline even though the timed state change has committed.
     game._pending_message = '';
-    if (!removalMessage && game.flags?.verbose === false && inventoryPrompt)
+    if (game.flags?.verbose === false && inventoryPrompt)
         game._retained_message = inventoryPrompt.trimEnd();
-    await announceDisplacementLoss(object, game);
+    const removalMessage = await finishArmorRemoval(object);
+    if (removalMessage && game.u?.uac !== previousArmorClass)
+        game._statusAcOverride = previousArmorClass;
     if (removalMessage)
         await plineWithContinuation(removalMessage);
     game.context.move = 1;
