@@ -2029,25 +2029,7 @@ function _buildScreenOutput(updateStatus = true) {
             display.setCell(c, 0, msg.charAt(c), NO_COLOR, 0);
         if (!blankMainWindow) {
             // Map — write characters to grid (DEC → Unicode for browser display)
-            for (let y = 0; y < ROWNO; y++) {
-                for (let x = 1; x < COLNO; x++) {
-                    const loc = game.level?.at(x, y);
-                    if (!loc?.disp_ch) continue;
-                    const color = loc.disp_color ?? NO_COLOR;
-                    const attr = loc.disp_attr ?? 0;
-                    // Plane-of-Air AIR is a cyan space.  Although it paints
-                    // no glyph, the C tty records its foreground SGR state
-                    // between neighboring cloud glyphs.  Preserve such
-                    // semantic spaces in the terminal grid; ordinary
-                    // default/gray blanks may remain sparse.
-                    if (loc.disp_ch === ' ' && !(attr & 5)
-                        && (color === NO_COLOR || color === CLR_GRAY)) {
-                        continue;
-                    }
-                    const ch = loc.disp_decgfx ? (DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch) : loc.disp_ch;
-                    display.setCell(x - 1, y + 1, ch, color, attr);
-                }
-            }
+            for (let y = 0; y < ROWNO; y++) writeMapRow(display, y);
             // Status lines
             writeStatusLines(display, status);
             const cursorOverride = game._cursorOverride;
@@ -2057,6 +2039,21 @@ function _buildScreenOutput(updateStatus = true) {
                 display.setCursor(game.u.ux - 1, game.u.uy + 1);
             }
         }
+    }
+}
+
+function writeMapRow(display: GameDisplay, y: number): void {
+    for (let x = 1; x < COLNO; x++) {
+        const loc = game.level?.at(x, y);
+        if (!loc?.disp_ch) continue;
+        const color = loc.disp_color ?? NO_COLOR;
+        const attr = loc.disp_attr ?? 0;
+        // Plane-of-Air AIR is a cyan space. Preserve its foreground color
+        // between cloud glyphs; ordinary default/gray blanks stay sparse.
+        if (loc.disp_ch === ' ' && !(attr & 5)
+            && (color === NO_COLOR || color === CLR_GRAY)) continue;
+        const ch = loc.disp_decgfx ? (DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch) : loc.disp_ch;
+        display.setCell(x - 1, y + 1, ch, color, attr);
     }
 }
 
@@ -2087,17 +2084,21 @@ export async function cls() {
 // physical message row; clearing it is separate from acknowledging input.
 export function clearMessageWindow(coveredRows = 0) {
     const text = game._pending_message || game._retained_message || '';
-    const wrapped = coveredRows > 1 || toplineRows(text, game.nhDisplay?.cols ?? COLNO).length > 1;
+    const display = game.nhDisplay;
+    const rows = Math.max(coveredRows, toplineRows(text, display?.cols ?? COLNO).length);
     game._pending_message = '';
     game._retained_message = '';
-    if (wrapped) {
-        // Wrapped text covered map rows. Restore their buffered display,
-        // without a vision update or the message pager of a screen reset.
-        _buildScreenOutput(false);
-    } else {
-        game.nhDisplay?.clearRow(0);
-        game.nhDisplay?.setCursor(0, 0);
+    if (!display) return;
+    display.clearRow(0);
+    // tty_clear_nhwindow(WIN_MESSAGE) calls docorner() only for rows the
+    // message covered. Menus and text windows below those rows stay visible.
+    for (let row = 1; row < Math.min(rows, display.rows); row++) {
+        display.clearRow(row);
+        if (row <= ROWNO && !game._suppressMapStatusForFlush) writeMapRow(display, row - 1);
     }
+    if (rows > ROWNO + 1 && !game._suppressMapStatusForFlush)
+        writeStatusLines(display, statusLines(false));
+    display.setCursor(0, 0);
 }
 
 // ── bot ──

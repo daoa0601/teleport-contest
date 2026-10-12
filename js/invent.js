@@ -535,7 +535,7 @@ export async function selectInventoryObject({ items, includeGold = true, title =
     if (extraChoice && !wizardIdentification)
         sections.unshift({
             heading: game.flags.sortpack === false ? null : 'Miscellaneous',
-            items: [{ text: `- - ${extraChoice}`, key: '-' }],
+            items: [{ text: extraChoice, key: '-' }],
         });
     if (menuOptions.length)
         sections.push({

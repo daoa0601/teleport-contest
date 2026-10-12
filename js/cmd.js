@@ -2643,7 +2643,6 @@ export async function chooseWizardLevelDestination() {
     const destination = await showPagedPickOneMenu({ rows, choices });
     if (!destination)
         return null;
-    await docrt();
     const preArrivalPager = await endgamePrerequisite(destination);
     return { destination, preArrivalPager };
 }

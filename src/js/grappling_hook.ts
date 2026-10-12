@@ -5,7 +5,7 @@ import { monsterHasMapPosition } from './monster_location.js';
 import {
     IS_AIR, IS_POOL, P_BASIC, P_SKILLED, isok,
 } from './const.js';
-import { docrt, newsym, pline } from './display.js';
+import { newsym, pline } from './display.js';
 import { wipeHeroEngraving } from './engrave.js';
 import {
     detachFloorObjectUnit, placeObject, stack_object,
@@ -110,11 +110,9 @@ async function chooseAim(x: number, y: number, state: GameState) {
         `c - the ${surface}`,
     ];
     const choices = new Map([['a', 1], ['b', 2], ['c', 3]]);
-    const selection = await showPagedPickOneMenu({
+    return showPagedPickOneMenu({
         rows, choices,
     });
-    await docrt();
-    return selection;
 }
 
 async function snagObject(x: number, y: number, holdObject: HoldHookedObject, state: GameState) {

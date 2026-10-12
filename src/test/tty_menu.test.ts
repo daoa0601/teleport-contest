@@ -7,6 +7,41 @@ import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_se
     tty_destroy_nhwindow } from '../js/tty_menu.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
+for (const overlay of [true, false]) {
+    for (const { name, keys, selected } of [
+        { name: 'no match', keys: 'nomatch\n', selected: false },
+        { name: 'a match', keys: 'dagger\n', selected: true },
+        { name: 'empty input', keys: '\n', selected: false },
+        { name: 'cancellation', keys: '\x1b', selected: false },
+        { name: 'wrapped input', keys: 'x'.repeat(72) + '\n', selected: false },
+    ]) {
+        void test(`${overlay ? 'corner' : 'full-screen'} menu remains visible after search with ${name}`, async () => {
+            freshPlayableRoom({ flags: { menu_overlay: overlay } });
+            const window = tty_create_nhwindow<string>(NHW_MENU);
+            await tty_start_menu(window);
+            tty_add_menu(window, { identifier: 'dagger', selector: 'a', text: 'a dagger' });
+            tty_end_menu(window, 'Choose a weapon');
+            const input = resetInputState();
+            const selection = tty_select_menu(window, PICK_ANY);
+            try {
+                await input.waitUntilBlocked();
+                input.feed(':' + keys);
+                await input.waitUntilBlocked();
+
+                const d = requireGameDisplay();
+                const entry = d.grid[2]?.map(cell => cell.ch).join('') ?? '';
+                assert.match(entry, selected ? /a \+ a dagger/ : /a - a dagger/);
+                assert.match(d.grid[3]?.map(cell => cell.ch).join('') ?? '', /\(end\)/);
+                assert.equal(d.cursorRow, 3, 'search returns input to the menu pager');
+            } finally {
+                input.feed('\n');
+                await selection;
+                await tty_destroy_nhwindow(window);
+            }
+        });
+    }
+}
+
 void test('menu search selects visible descriptions but ignores clipped suffixes', async () => {
     freshPlayableRoom();
     const window = tty_create_nhwindow<string>(NHW_MENU);

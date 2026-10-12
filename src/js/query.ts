@@ -10,7 +10,7 @@ import { NO_COLOR } from './terminal.js';
 export async function getLine(
     prompt: string,
     accepts: (character: string, key: number) => boolean = ch => /^[0-9+-]$/.test(ch),
-    { suppressStatus = false }: { suppressStatus?: boolean } = {},
+    { suppressStatus = false, inMenu = false }: { suppressStatus?: boolean; inMenu?: boolean } = {},
 ): Promise<string | null> {
     let value = '';
     let renderedRows = 1;
@@ -57,8 +57,15 @@ export async function getLine(
     // special prompt; the first key must still belong to that prose's pager.
     if (!game._suppressMessagesUntilInput) await flushPendingTopline();
     game._suppressMessagesUntilInput = false;
-    await pline(prompt);
-    await flush_screen(1);
+    if (inMenu) {
+        // hooked_tty_getlin() writes to WIN_MESSAGE while the menu stays
+        // active. A full screen flush here would replace it with the map.
+        game._pending_message = prompt;
+        game._retained_message = '';
+    } else {
+        await pline(prompt);
+        await flush_screen(1);
+    }
     clearSuppressedStatus();
     renderEditor();
     for (;;) {

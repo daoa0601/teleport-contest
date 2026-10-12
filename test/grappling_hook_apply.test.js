@@ -1,10 +1,12 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DUST, P_BASIC, P_FLAIL, W_WEP } from '../js/const.js';
+import { DUST, P_BASIC, P_EXPERT, P_FLAIL, W_WEP } from '../js/const.js';
+import { flush_screen } from '../js/display.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { GRAPPLING_HOOK, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
@@ -13,6 +15,7 @@ import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenCell } from './support/screen.js';
 async function installHook({ wielded = true, enchantment = 0 } = {}) {
     const hook = await addInventoryObject(GRAPPLING_HOOK, {
         spe: enchantment,
@@ -24,6 +27,33 @@ async function installHook({ wielded = true, enchantment = 0 } = {}) {
     installHeroWeaponSkills({ [P_FLAIL]: P_BASIC });
     return hook;
 }
+void test('dismissing the grappling aim corner leaves an uncovered hallucinated monster unchanged', async () => {
+    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    const hook = await installHook();
+    installHeroWeaponSkills({ [P_FLAIL]: P_EXPERT });
+    await createMonsterAt('jackal', 8, 10);
+    game._travelTipShown = true;
+    initRng(1n);
+    const input = resetInputState();
+    const action = applyInventoryObject(hook, 'll.');
+    try {
+        await input.waitUntilBlocked();
+        const text = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
+        assert.match(text, /Aim for what\?/);
+        const glyph = requireScreenCell(7, 11).ch;
+        const color = requireScreenCell(7, 11).color;
+        assert.notEqual(glyph, ' ', 'the monster is visible outside the menu');
+        input.feed('a');
+        await action;
+        await flush_screen(1);
+        assert.equal(requireScreenCell(7, 11).ch, glyph, 'closing a corner menu must not reroll an uncovered hallucinated monster');
+        assert.equal(requireScreenCell(7, 11).color, color, 'closing a corner menu must also preserve the monster color');
+    }
+    finally {
+        input.feed('\x1b');
+        await action;
+    }
+});
 void test('applying an unwielded grappling hook wields it before targeting', async () => {
     freshObjectRoom();
     requireFixtureGame(game);

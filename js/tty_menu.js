@@ -313,7 +313,7 @@ async function process_menu_window(d, rows, layout, how, underlay) {
             continue;
         }
         if (letter === ':' && how !== PICK_NONE) {
-            const query = await getLine('Search for:', (_ch, code) => code >= 32 && code < 127);
+            const query = await getLine('Search for:', (_ch, code) => code >= 32 && code < 127, { inMenu: true });
             if (!query)
                 continue;
             for (const row of rows) {

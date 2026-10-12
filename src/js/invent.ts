@@ -561,7 +561,7 @@ export async function selectInventoryObject({
     const sections = inventorySections(visible, true);
     if (extraChoice && !wizardIdentification) sections.unshift({
         heading: game.flags.sortpack === false ? null : 'Miscellaneous',
-        items: [{ text: `- - ${extraChoice}`, key: '-' }],
+        items: [{ text: extraChoice, key: '-' }],
     });
     if (menuOptions.length) sections.push({
         heading: 'Special', items: menuOptions.map(option => ({
