@@ -2510,12 +2510,14 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                 if (heroAttack.deferredLegEffect)
                     await resumeDeferredHeroLegs(action, game, { publish: publishEquipmentMessage });
                 if (heroAttack.deferredPostHit) {
-                    const publishContactMessage = async (message) => {
-                        const dismissal = await plineWithContinuation(message);
+                    const publishContactMessage = async (message, options) => {
+                        const dismissal = await plineWithContinuation(message, options);
                         if (dismissal !== null && dismissal !== undefined)
                             paging.pagerOwned = true;
+                        return dismissal;
                     };
                     const contactOptions = {
+                        random, rollDice, rollOne,
                         publish: publishContactMessage,
                         die: finishHeroDeathAfterMonsterMessage,
                     };

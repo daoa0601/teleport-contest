@@ -255,6 +255,7 @@ import {
     AD_STON,
     AD_STUN,
     AD_WRAP,
+    AD_WERE,
     AD_RUST,
     AT_BOOM,
     AT_BREA,
@@ -340,7 +341,8 @@ import {
     wormCrossesBetween,
 } from './monster_worm.js';
 import { displaceMonster, monsterDisplacementFlags } from './monster_displacement.js';
-import { returnHeroToHumanForm } from './polyself.js';
+import { retouchEquipment } from './hero_retouch.js';
+import { returnHeroToHumanForm, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
 import {
     cansee,
@@ -448,7 +450,7 @@ import {
     monsterTeleportRestricted,
 } from './teleport_rules.js';
 import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
-import { wereChange } from './were.js';
+import { wereChange, setHeroLycanthropy } from './were.js';
 import { aggravateMonsters, angerMonster, angerWatchGuards } from './monster_anger.js';
 import { stopHeroOccupation } from './occupation.js';
 import { rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';
@@ -459,6 +461,7 @@ import {
     A_CHA,
     A_DEX,
     A_STR,
+    A_CON,
     ALLOW_ALL,
     ALLOW_BARS,
     ALLOW_DIG,
@@ -6179,6 +6182,13 @@ async function beginHeroAttackSlot(
             deferredSlimeEffect: true,
             oldFormMnum,
         };
+    } else if (hit && damageType === AD_WERE) {
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        return {
+            kind: 'hero-attack', roll, threshold, hit, damage, attackType, damageType,
+            deferredPostHit: true, oldFormMnum,
+        };
     } else if (hit && damageType === AD_STON) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
@@ -6765,6 +6775,27 @@ export async function resumeDeferredHeroContact(
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredPostHit) return action;
     const calls = action.calls;
+    // C uhitm.c:mhitm_ad_were(): even a protected hero gets the infection roll.
+    if (attack.damageType === AD_WERE && recordRandom(random, calls, 4) === 0
+        && state.u.ulycn === -1 && !heroHasProtectionFromShapeChangers(state)
+        && artifactById((state.uwep || state.u.uwep)?.oartifact, state)?.defense !== 'lycanthropy') {
+        const negated = specialAttackNegated(action.monster, state.u, {
+            state, random: sides => recordRandom(random, calls, sides),
+        });
+        if (negated) {
+            if (!action.monster.mcan) await publish('You avoid harm.');
+        } else {
+            await publish('You feel feverish.', { urgent: true });
+            await exerciseAttribute(A_CON, false, state);
+            setHeroLycanthropy(action.monster.mnum, state);
+            const retouch = await retouchEquipment(2, { state, publish, ...(die ? { die } : {}) });
+            if (retouch.died) {
+                attack.heroDied = true;
+                attack.deferredPostHit = false;
+                return action;
+            }
+        }
+    }
     if (
         attack.damageType === AD_STON &&
         (await applyMonsterStoningAttack(action.monster, { state, random, publish }))
