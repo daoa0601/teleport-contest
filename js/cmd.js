@@ -48,6 +48,9 @@ import { propertyIsActive } from './properties.js';
 import { addPickedInventoryObject, pickupAtHero, pickupObjectClass, pickupClassOrder, } from './pickup.js';
 import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
+import { confirmHeroStep } from './hero_step_confirmation.js';
+import { monsterPassesBars } from './monster_movement_traits.js';
+import { wormCrossesBetween } from './monster_worm.js';
 import { floorObjectDescription, } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
@@ -274,6 +277,33 @@ async function rejectTightHeroDiagonal(dx, dy) {
         await pline('You cannot pass that way.');
     game.context.move = 0;
     return true;
+}
+// C test_move(TEST_MOVE): confirmation tests obstacles without performing
+// auto-open, boulder pushing, or the hero's eventual movement.
+function heroCanConfirmStep(x, y) {
+    const hero = game.u;
+    const location = game.level?.at(x, y);
+    if (!location || (blocksMove(x, y) && !heroCanPassWallAt(game, x, y)))
+        return false;
+    const passesWalls = heroPassesWalls(game);
+    if (location.typ === IRONBARS && !passesWalls
+        && !monsterPassesBars({ mnum: heroSpecies(game) }))
+        return false;
+    const dx = x - hero.ux, dy = y - hero.uy;
+    if (dx && dy) {
+        if (!passesWalls && blocksDiagonalDoor(game.level?.at(hero.ux, hero.uy), location))
+            return false;
+        if (heroBadRock(game, hero.ux, y) && heroBadRock(game, x, hero.uy)) {
+            if (heroTightDiagonalReason(game))
+                return false;
+        }
+        else if (wormCrossesBetween(hero.ux, hero.uy, x, y, game))
+            return false;
+    }
+    const boulder = game.level?.objects[x]?.[y]?.some(object => object.otyp === BOULDER);
+    return !(boulder && (!passesWalls || game.level?.flags.sokoban_rules)
+        && (game._runState?.mode ?? 0) >= 2 && !heroIsBlind(game)
+        && !heroIsHallucinating(game) && !heroCouldMoveOntoBoulder(x, y));
 }
 function runDist2(x1, y1, x2, y2) {
     const dx = x1 - x2;
@@ -6826,6 +6856,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
         stopRun(game);
         return true;
     }
+    if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy))
+        return false;
     if (!await heroCanMoveFromTrap(newx, newy))
         return true;
     if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))
