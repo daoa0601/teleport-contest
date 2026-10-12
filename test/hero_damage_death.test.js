@@ -9,8 +9,9 @@ import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { pushKeys } from '../js/input.js';
-import { BAG_OF_HOLDING, BOULDER } from '../js/object_data.js';
+import { BAG_OF_HOLDING, BOULDER, CLUB } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { scatterFloorObjects } from '../js/scatter.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { dosit } from '../js/sit.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
@@ -77,6 +78,17 @@ void test('a rolling boulder that hits the hero kills with the boulder', async (
     initRng(1n); // the boulder hits rather than misses
     await dieWith(() => triggerHeroTrap(trap), 'killed by a boulder');
 });
+for (const [count, cause] of [[1, 'a club'], [3, 'clubs']]) {
+    void test(`a fatal scattered object records ${cause} as its killer`, async () => {
+        lowHitPointRoom();
+        await floorObject(CLUB, 11, 10, { quantity: count, spe: 0 });
+        await dieWith(() => scatterFloorObjects(11, 10, 2, {
+            mayDestroy: false, mayFracture: false,
+            random: () => 0,
+            rollOne: sides => sides === 20 ? 1 : sides,
+        }), `killed by ${cause}`);
+    });
+}
 void test('putting a bag of holding into another can kill with the explosion', async () => {
     lowHitPointRoom();
     for (const invlet of ['a', 'b']) {

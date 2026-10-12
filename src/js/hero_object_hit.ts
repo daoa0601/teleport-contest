@@ -28,6 +28,7 @@ export interface HeroObjectHitOptions {
     die?: DeathHandler;
     name?: string;
     killer?: string;
+    deathCause?: string;
 }
 
 export interface HeroObjectHitResult {
@@ -49,6 +50,7 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
     die = finishHeroDeath,
     name: requestedName,
     killer: requestedKiller,
+    deathCause,
 }: HeroObjectHitOptions = {}): Promise<HeroObjectHitResult> {
     requirePlayingGame(state);
     const name = requestedName ?? (artifactById(object.oartifact, state)?.name
@@ -92,7 +94,9 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
             await publish('It burns!');
             monstersObserveHeroResistance(seenResistanceForDamage(AD_ACID), state);
         }
-        if (await loseHeroHp(damage, killer, { state, publish, die }))
+        if (await loseHeroHp(damage, killer, {
+            state, publish, die, deathCause: deathCause ?? null,
+        }))
             return { hit: true, died: true };
         await exerciseAttribute(A_STR, false, state);
     }
