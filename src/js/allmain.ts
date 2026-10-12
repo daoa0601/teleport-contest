@@ -982,7 +982,7 @@ async function finishInitialTurnMaintenanceAfterRegions({
 
     if (game.u?.searching && !game.level?.flags?.noautosearch
         && !heroHasInvoluntaryDelay(game)) {
-        const search = automaticSearch();
+        const search = await automaticSearch();
         if (typeof search === 'object' && search.statueTrap) {
             const { x, y } = search.statueTrap;
             return {

@@ -156,55 +156,18 @@ export function revealSecretCorridor(x: number, y: number) {
     return true;
 }
 
-// C detect.c:dosearch0(1), invoked once per global turn by intrinsic
-// Searching. This function owns the search roll. Statue animation resumes in
-// the async turn loop because creating the monster can write to the terminal.
-export function automaticSearch(): AutomaticSearchResult {
-    const u = game.u;
-    for (let x = u.ux - 1; x <= u.ux + 1; x++) {
-        for (let y = u.uy - 1; y <= u.uy + 1; y++) {
-            if (x === u.ux && y === u.uy) continue;
-            const loc = game.level?.at(x, y);
-            if (!loc) continue;
-            if (loc.typ === SDOOR) {
-                if (rnl(7)) continue;
-                revealSecretDoor(x, y);
-                exerciseWisdom();
-                newsym(x, y);
-                game._pending_message = 'You find a hidden door.';
-                return true;
-            }
-            if (loc.typ === SCORR) {
-                if (rnl(7)) continue;
-                revealSecretCorridor(x, y);
-                exerciseWisdom();
-                newsym(x, y);
-                game._pending_message = 'You find a hidden passage.';
-                return true;
-            }
-            const trap = game.level?.traps?.find(candidate =>
-                candidate.tx === x && candidate.ty === y);
-            if (trap && !trap.tseen && !rnl(8)) {
-                if (trap.ttyp === STATUE_TRAP)
-                    return { statueTrap: { x, y } };
-                // detect.c:find_trap() marks the trap and exercises Wisdom
-                // before repainting it, for both intrinsic and explicit
-                // search callers.
-                exerciseWisdom();
-                map_trap(trap, true);
-                game._pending_message = foundTrapMessage(trap);
-                return true;
-            }
-        }
-    }
-    return false;
+// Intrinsic searching uses the same rolls and messages as an explicit
+// search, but leaves concealed monsters alone.
+export async function automaticSearch(): Promise<AutomaticSearchResult> {
+    if (game.u.uswallow) return false;
+    return searchAdjacentSecrets(true);
 }
 
 // C ref: detect.c:dosearch0().  Coordinate order is x-major, then y; each
 // secret square owns its Luck-adjusted roll before later neighbours are
 // examined.  Finding one cancels an active count-prefixed occupation via
 // nomul(0), but the successful search still consumes the current action.
-async function searchAdjacentSecrets() {
+async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearchResult> {
     const u = game.u;
     const weapon = game.uwep;
     let bonus = artifactById(weapon?.oartifact)?.flags.includes('SPFX_SEARCH')
@@ -218,14 +181,14 @@ async function searchAdjacentSecrets() {
             if (x === u.ux && y === u.uy) continue;
             const loc = game.level?.at(x, y);
             if (!loc) continue;
-            if (blind) feel_location(x, y);
+            if (!automatic && blind) feel_location(x, y);
             if (loc.typ === SDOOR) {
                 if (rnl(7 - bonus)) continue;
                 revealSecretDoor(x, y);
                 exerciseWisdom();
                 endVoluntaryMultiTurn(game);
                 newsym(x, y);
-                await pline('You find a hidden door.');
+                await plineWithContinuation('You find a hidden door.');
                 found = true;
                 continue;
             }
@@ -235,7 +198,7 @@ async function searchAdjacentSecrets() {
                 exerciseWisdom();
                 endVoluntaryMultiTurn(game);
                 newsym(x, y);
-                await pline('You find a hidden passage.');
+                await plineWithContinuation('You find a hidden passage.');
                 found = true;
                 continue;
             }
@@ -244,7 +207,7 @@ async function searchAdjacentSecrets() {
             // its disguise/concealment is distinct from being able to spot it:
             // a blind hero records an invisible-memory glyph and gets tactile
             // feedback after the Wisdom exercise draw.
-            const monster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
+            const monster = automatic ? undefined : game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
                 !candidate.dead && (candidate.mhp ?? 1) > 0
                 && candidate.mx === x && candidate.my === y);
             if (monster) {
@@ -281,6 +244,7 @@ async function searchAdjacentSecrets() {
                 if (rnl(8)) continue;
                 endVoluntaryMultiTurn(game);
                 if (trap.ttyp === STATUE_TRAP) {
+                    if (automatic) return { statueTrap: { x, y } };
                     const monster = await activateStatueTrapAt(x, y);
                     if (monster) exerciseWisdom();
                     return true;
@@ -288,7 +252,7 @@ async function searchAdjacentSecrets() {
                 trap.tseen = true;
                 exerciseWisdom();
                 map_trap(trap, true);
-                await pline(foundTrapMessage(trap));
+                await plineWithContinuation(foundTrapMessage(trap));
                 found = true;
             }
         }
