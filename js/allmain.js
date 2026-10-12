@@ -79,7 +79,7 @@ import { discoverReflectingShield } from './ray.js';
 import { addObjectToMonsterInventory, } from './monster_inventory.js';
 import { claimNextDueObjectTimer, peekNextDueObjectTimer, } from './object_timers.js';
 import { roles } from './roles.js';
-import { initializeSourceStartup } from './startup.js';
+import { initializeRoleQuestGenders, initializeSourceStartup } from './startup.js';
 import { initialDungeonEntryText, recordGameLogEvent, } from './gamelog.js';
 import { allocateMonsterMovement, applyHeroSpellDamage, beginDeferredHeroCloneWizard, completeHeroAttackSlot, resumeDeferredHeroColdSpecial, resumeDeferredHeroContact, resumeDeferredHeroFireSpecial, resumeDeferredHeroElectricSpecial, resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroSticking, resumeDeferredHeroEngulf, resumeDeferredHeroBlindness, resumeDeferredHeroLegs, resumeDeferredHeroReveal, rollDeferredHeroSpellDamage, resumeDeferredHeroSpell, resolveDeferredHeroSummonMonsters, resolveDeferredHeroHasteSelf, resolveDeferredHeroAggravation, finishDeferredMonsterMiscItem, finishDeferredHeroCloneWizard, resumeDeferredCovetousRelocation, resumeDeferredRestrictedTenguTeleport, resumeDeferredMovementSpell, resumeDeferredSpecialAttack, resumeDeferredMonsterTrap, resumeDeferredMonsterHideUnder, completeMonsterOffensiveAction, resumeDeferredPetAttack, resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance, resolveDeferredMonsterBreath, fumaroles, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterHeroAttack, runMonsterAction, monstersInFmonOrder, monsterDistressEvents, commitPetPickup, } from './monmove.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, } from './monster_death.js';
@@ -271,6 +271,7 @@ async function applyCalendarMessages() {
 export async function restoregamePreamble() {
     const game = requireInitializedGame();
     delete game._pendingHeroShapeChange;
+    initializeRoleQuestGenders();
     await l_nhcore_init();
     game._moveloopStarted = false;
     // pickup.c's oldcap is process-local (decl.c), not restored save state.

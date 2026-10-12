@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { moveloop_core, restoregamePreamble } from '../js/allmain.js';
+import { ensureQuestStatus } from '../js/quest.js';
 import { removeHeroArmor, wearHeroArmor } from '../js/armor.js';
 import { DUST } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
@@ -197,6 +198,17 @@ void test('restore skips initial pickup and preserves movement, pursuit track, a
     assert.equal(engraving.eread, true);
     assert.equal(game._encumbranceLevel, 0);
     assert.equal(game.context.move, 0);
+});
+
+void test('restore chooses the Wizard quest nemesis gender again', async () => {
+    freshPlayableRoom({ role: 'wizard', flags: { verbose: true } });
+    const quest = ensureQuestStatus();
+    quest.nemgend = 2;
+
+    await restoregamePreamble();
+
+    assert.ok(quest.nemgend === 0 || quest.nemgend === 1,
+        'the Dark One has a random male or female gender even on restore');
 });
 
 for (const restoring of [false, true]) {

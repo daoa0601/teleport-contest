@@ -148,7 +148,7 @@ import {
     peekNextDueObjectTimer,
 } from './object_timers.js';
 import { roles } from './roles.js';
-import { initializeSourceStartup } from './startup.js';
+import { initializeRoleQuestGenders, initializeSourceStartup } from './startup.js';
 import {
     initialDungeonEntryText, recordGameLogEvent,
 } from './gamelog.js';
@@ -452,6 +452,7 @@ async function applyCalendarMessages() {
 export async function restoregamePreamble() {
     const game = requireInitializedGame();
     delete game._pendingHeroShapeChange;
+    initializeRoleQuestGenders();
     await l_nhcore_init();
     game._moveloopStarted = false;
     // pickup.c's oldcap is process-local (decl.c), not restored save state.
