@@ -2625,6 +2625,9 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     if (mndx === PM_SHOPKEEPER) {
         monster.mpeaceful = 1;
     }
+    // makemon.c:set_malign() records the finalized birth attitude, before
+    // later changes to the hero's alignment can affect kill credit.
+    setMonsterMalign(monster);
     if (generatedGhostName != null)
         setMonsterGivenName(monster, generatedGhostName);
     registerQuestLeader(monster);
@@ -2754,7 +2757,7 @@ export async function splitHeroMonsterForm(state = game) {
     clone.edog = edog;
     clone.mextra ??= {};
     clone.mextra.edog = edog;
-    delete clone.malign;
+    setMonsterMalign(clone, state);
     clone.mhpmax = u.mhmax;
     clone.mhp = Math.trunc(u.mh / 2);
     u.mh -= clone.mhp;

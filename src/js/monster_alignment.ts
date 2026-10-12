@@ -4,13 +4,14 @@
 import { A_NONE } from './const.js';
 import { game } from './gstate.js';
 import {
-    MONSTER_ALIGNMENT, MONSTER_FLAGS2, requireMonsterData,
+    MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SOUND, requireMonsterData,
 } from './monster_data.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 
 const M2_HOSTILE = 0x00100000;
 const M2_PEACEFUL = 0x00200000;
+const MS_LEADER = 36;
 
 type MonsterAlignmentSubject = Pick<Monster, 'mnum'> & Partial<Pick<Monster,
     'm_id' | 'ispriest' | 'epri' | 'isminion' | 'emin'>>;
@@ -43,7 +44,7 @@ export function setMonsterMalign(monster: Monster, state: GameState = game): voi
     const absoluteAlignment = Math.abs(alignment);
     const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
 
-    if (monster?.mnum === state.urole?.ldrnum) {
+    if (MONSTER_SOUND[monster.mnum] === MS_LEADER) {
         monster.malign = -20;
     } else if (alignment === A_NONE) {
         monster.malign = peaceful ? 0 : 20;
