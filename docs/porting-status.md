@@ -130,56 +130,65 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–2 (`3280bae`)
+## Parallel batches 1–4 (`109bd35`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
-by Codex against the C source before merge). Merged:
-- **rank-title**, **levelgen-rng**, **rng-tail-2**, **engrave-command**,
-  **special-level-display** (batch 1, `fee2284`).
-- **small-messages**: smell hints, poisoned orcish arrows, hide-under reveal,
-  quest text pronoun substitution (`convert_line()`).
-- **end-of-game**: disclosure and goodbye sequence.
-- **rng-tail-3**: `muse.c` defensive and miscellaneous item use, monster spell
-  timing, gas-cloud trails, teleport and level-teleport feedback.
-- **extra-boulder**: the extra Gehennom floor boulder.
-- **object-naming**: Samurai Japanese object names, gold listing.
-- **save-luck**: `dosave0()` undoes full-moon and Friday-13th luck before
-  saving, so a restore on the same date does not apply it twice.
-- **suite-fixes**: six tests broken by rng-tail-3 pinned one seed's outcome or
-  expected non-C behavior (`paralyze_monst()` keeps a borrowed appearance);
-  they now state the C rule over a range of seeds.
+by Codex against the C source, then merged only if the full suite adds no
+failure). Batches 1–2 (`3280bae`): rank-title, levelgen-rng, rng-tail-2/3,
+engrave-command, special-level-display, small-messages, end-of-game,
+extra-boulder, object-naming, save-luck (`dosave0()` luck undo), suite-fixes.
+Batch 3:
+- **levelgen-gaps**: `mktrap()` kind rejection order; `create_monster()`
+  explicit-alignment roamers through `mk_roamer()`.
+- **rng-tail-4**: `distfleeck`, `hitmu` and other batch-1 random-call tails;
+  monster contact effects (`mhitm_ad_were`, sleep, polymorph), trapped doors.
+- **extcmds**: missing extended commands, bulk take-off. Open review findings
+  went to wear-gaps.
+- **hero-status**: status-line refresh, HP regeneration and AC timing.
+- **messages-2**: booby-trapped doors, `An` articles, Tourist `Aloha`, corpse
+  rot naming, rock traps, gnome wake-up.
+- **hearing**: heard, smelled, and felt messages with their native conditions.
+- **messages-3**: pickup merge feedback, special-damage hits, paranoid
+  confirmations, Warning reveals, stealth rings, level-teleport message order.
+
+Batch 4: **tty-menus** (`wintty.c` menus, prompts, choice suffixes, message
+suppression; it also fixed the long-failing shapechanger intrinsic-menu test),
+**birth-attitude** (`makemon()` species switch: co-aligned unicorns peaceful,
+orcs hostile to elves), **wear-gaps** (`do_wear.c` review findings),
+**map-memory** (remembered floor and walls, light-source vision refresh).
 
 ## Verification
 
-`npm test` at `3280bae`: **7,253/7,254**. `wizard_intrinsics` "shapechanger
-protection" predates these batches. Merges now run the full suite and reject
-any failure outside `.cache/agents/suite-known-failures.txt`.
+`npm test` at `109bd35`: **7,587/7,587**. Merges now require a fully green
+suite.
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
-| Public | 21/44 | 7,633/11,405 | 547,827/792,838 | 0 |
-| Native eval sample | 185/300 | 39,085/50,586 | 2,991,551/3,616,669 | 0 |
+| Public | 21/44 | 8,548/11,405 | 608,975/792,838 | 0 |
+| Native eval sample | 220/300 | 41,533/50,586 | 3,102,719/3,616,669 | 0 |
 
-Runs: `.cache/generalization/batch2b-3280bae-{eval,public}` in the verify
-worktree (baseline `base-06d7e73`: 143/300 and 20/44; batch 1: 165/300).
-No verified call was lost; the ledgers grew to 79 (eval) and 91 (public) fully
-verified functions. The state oracle finds 217 sessions matching C state
-throughout and no hidden-state session. Newly exposed random-call blame:
-`m_move`, `collect_coords`, `distfleeck`, `obj_resists`, `regen_hp`,
-`set_apparxy`.
+Runs: `.cache/generalization/batch4-109bd35-{eval,public}` in the verify
+worktree (baseline `base-06d7e73`: 143/300; batch 3: 206/300). No verified
+random call was lost; the ledgers hold 98 (eval) and 112 (public) functions.
+Open regression: tty-menus moved three public sessions' first screen
+difference earlier (seed0013-friday13-save-then-fullmoon-restore, which fully
+passed; seed0007-rogue-snake-swamp; seed0383-wizard-hallucinate): the port
+keeps a message on row 0 that C has cleared. A fix unit is running. The state
+oracle finds 234 sessions matching C state throughout; one hidden-state session
+(b3210ed8) lacks a xorn that C has at step 78.
 
 ## Next work
 
-In flight: rng-tail-4 (`distfleeck`, `hitmu`, and the batch-1 random-call
-tail), tty-menus (`wintty.c` menus and prompts), extcmds (missing extended
-commands and bulk take-off), levelgen-gaps (`mktrap()` rejection order,
-`create_monster` class fallback). Queued: `Boots_off()` terrain effects,
-`lift_object()` for grappling hook and bullwhip, kick "Whee!" and gold
-scatter, fall killers, `maybe_wail()`, headstone engravings, `#genocided`
-from `mvitals`. Coverage shows that `read.c`, `potion.c`, and `pray.c` are
-barely exercised; add scenario recipes there.
+In flight: tty-menus (`wintty.c` menus, prompts, message suppression),
+map-memory (remembered floor and walls, vision timing), monster-display
+(monster glyphs, `I` markers, cursor), wear-gaps (`do_wear.c` review
+findings), object-gaps (grapple and whip pickup, kick feedback, fall killers,
+`maybe_wail()`, headstones, `#genocided`). Most remaining eval failures now
+start with a screen difference; `.cache/agents/batch2-screen-firsts.tsv`
+groups them. Coverage shows that `read.c`, `potion.c`, and `pray.c` are barely
+exercised; add scenario recipes there.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,

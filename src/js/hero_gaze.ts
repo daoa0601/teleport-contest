@@ -185,7 +185,7 @@ async function applyFieryGaze({
 async function confirmPeacefulGaze(monster: Monster, damageType: DamageType) {
     const action = damageType === AD_CONF ? 'confuse' : 'attack';
     return await promptYesNo(
-        `Really ${action} ${monsterObject(monster)}? [yn] (n) `,
+        `Really ${action} ${monsterObject(monster)}?`,
     ) === 'y';
 }
 

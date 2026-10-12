@@ -422,7 +422,7 @@ export async function controlMonsterTeleport(monster, defaultPoint, { state = ga
             : goodPosition(x, y, { kind: 'monster', monster }, { state, gpflags: flags, random });
         if (valid)
             return destination;
-        if (!state.flags.debug_fuzzer && await promptYesNo(`<${monster.mx},${monster.my}> is not considered viable; force anyway? [yn] (n) `) === 'y')
+        if (!state.flags.debug_fuzzer && await promptYesNo(`<${monster.mx},${monster.my}> is not considered viable; force anyway?`) === 'y')
             return destination;
     }
     await plineWithContinuation(`${mode === 'random' ? 'Picking random' : 'Using derived'} destination.`);

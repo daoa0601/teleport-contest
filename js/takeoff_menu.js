@@ -160,6 +160,7 @@ async function traditionalCategories(combo, selectOff) {
     }
     const categories = [];
     const classChoices = [];
+    let requireUnpaid = false;
     const all = response.includes('a');
     const menu = response.includes('m');
     for (const character of response) {
@@ -167,6 +168,9 @@ async function traditionalCategories(combo, selectOff) {
             continue;
         if (character === 'u' || character === 'B' || character === 'C'
             || character === 'U' || character === 'X' || character === 'P') {
+            // C ggetobj(): the last status selector chooses ckfn. askchain()
+            // runs that predicate before allow_category()'s coin exception.
+            requireUnpaid = character === 'u';
             categories.push(character);
             continue;
         }
@@ -207,6 +211,7 @@ async function traditionalCategories(combo, selectOff) {
     for (const oclass of passes)
         for (const [index, object] of sorted.entries()) {
             if (!worn.includes(object) || (oclass !== null && object.oclass !== oclass)
+                || (requireUnpaid && !hasUnpaid(object))
                 || !matchesCategories(object, categories))
                 continue;
             questioned = true;
@@ -214,7 +219,7 @@ async function traditionalCategories(combo, selectOff) {
             const position = index - (sorted[0]?.oclass === 12 ? 1 : 0);
             const letter = game.flags.fixinv !== false ? object.invlet
                 : object.oclass === 12 ? '$' : 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.charAt(position) || '#';
-            const answer = acceptAll ? 'y' : await promptYesNoAllQuit(`${letter} - ${inventoryItemDescription(object)}? [ynaq] (n) `, 'n');
+            const answer = acceptAll ? 'y' : await promptYesNoAllQuit(`${letter} - ${inventoryItemDescription(object)}?`, 'n');
             if (answer === 'q')
                 return null;
             if (answer === 'n')

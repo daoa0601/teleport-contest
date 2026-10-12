@@ -39,7 +39,7 @@ export async function dryFountainAt(x, y, { causedByHero = true, random = rn2, s
         return false;
     }
     if (causedByHero && state.flags.debug
-        && await promptYesNo('Dry up fountain? [yn] (n) ') === 'n')
+        && await promptYesNo('Dry up fountain?') === 'n')
         return false;
     if (cansee(x, y)) {
         const glyph = glyphAt(x, y, state);

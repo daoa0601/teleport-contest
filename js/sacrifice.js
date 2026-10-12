@@ -99,7 +99,7 @@ async function chooseOffering() {
             }
             const single = objectQuantity(corpse) === 1;
             observeObjectForNaming(corpse);
-            const answer = await promptYesNoQuit(`There ${single ? 'is' : 'are'} ${floorObjectDescription(corpse)} here; sacrifice ${single ? 'it' : 'one'}? [ynq] (n) `, 'n');
+            const answer = await promptYesNoQuit(`There ${single ? 'is' : 'are'} ${floorObjectDescription(corpse)} here; sacrifice ${single ? 'it' : 'one'}?`, 'n');
             if (answer === 'y')
                 return corpse;
             if (answer === 'q')
@@ -454,7 +454,7 @@ async function bestowArtifact(value) {
         return false;
     const count = artifactExistCount();
     const selected = game.flags.debug
-        ? await promptYesNo('Gift an artifact? [yn] (n) ') === 'y'
+        ? await promptYesNo('Gift an artifact?') === 'y'
         : rn2(6 + 2 * (hero.ugifts || 0) * count) === 0;
     if (!selected)
         return false;

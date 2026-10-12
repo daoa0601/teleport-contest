@@ -5,10 +5,11 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { rhack } from '../js/cmd.js';
-import { game } from '../js/gstate.js';
+import { chooseWizardLevelDestination, rhack } from '../js/cmd.js';
+import { docrt, flush_screen } from '../js/display.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
 import { SCORE_RECORD_STORAGE_KEY } from '../js/end.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { levelDepthByName, levelTeleport, randomTeleportDepth } from '../js/level_teleport.js';
 import { AMULET_OF_LIFE_SAVING, DIAMOND, SCR_TELEPORTATION } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -18,6 +19,8 @@ import { freshConnectedLevels } from './support/connected-levels.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { createMonsterAt } from './support/monsters.js';
+import { requireScreenCell } from './support/screen.js';
 void test('blessed teleportation grants destination control and applies arrival pickup', async () => {
     freshObjectRoom({ flags: { tips: false, pickup: true } });
     requirePlayingGame(game);
@@ -253,4 +256,41 @@ void test('the wizard destination menu bypasses confused numeric input', async (
     assert.equal(game.level, destination);
     assert.deepEqual(game.u.uz, { dnum: 0, dlevel: 2 });
 });
+for (const overlay of [true, false]) {
+    void test(`choosing a wizard destination ${overlay ? 'preserves uncovered' : 'redraws once for'} hallucinated monsters`, async () => {
+        freshObjectRoom({ flags: { menu_overlay: overlay }, hero: { hallucinationTurns: 20 } });
+        game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
+        game.specialLevels = new Map([['oracle', createSpecialLevel({ dnum: 0, dlevel: 5 })]]);
+        await createMonsterAt('jackal', 8, 10);
+        await docrt();
+        await flush_screen(1);
+        if (!overlay) {
+            // Full-screen dismissal must show the result of one native redraw.
+            initRng(1n);
+            await docrt();
+            await flush_screen(1);
+        }
+        const glyph = requireScreenCell(7, 11).ch;
+        const color = requireScreenCell(7, 11).color;
+        assert.notEqual(glyph, ' ', 'the monster is visible on the map');
+        if (!overlay)
+            initRng(1n);
+        const input = resetInputState();
+        const selection = chooseWizardLevelDestination();
+        try {
+            await input.waitUntilBlocked();
+            const text = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+            assert.match(text, /Level teleport to where:/);
+            input.feed('a');
+            assert.equal((await selection)?.destination.dlevel, 5);
+            await flush_screen(1);
+            assert.equal(requireScreenCell(7, 11).ch, glyph, 'the caller must leave map restoration to the tty window');
+            assert.equal(requireScreenCell(7, 11).color, color, 'the caller must also leave the restored monster color alone');
+        }
+        finally {
+            input.feed('\x1b');
+            await selection;
+        }
+    });
+}
 //# sourceMappingURL=scroll_teleport.test.js.map

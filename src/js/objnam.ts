@@ -1148,7 +1148,7 @@ async function applyWishQuantity(
             const limit = Math.min(rn2(5) + 2, 6 - parsed.globSize);
             if (count > limit) {
                 const override = wizardWish && !game.program_state?.wizkit_wishing
-                    && await promptYesNo('Override glob weight limit? [yn] (n) ') === 'y';
+                    && await promptYesNo('Override glob weight limit?') === 'y';
                 if (!override) count = limit;
             }
             object.owt *= count;

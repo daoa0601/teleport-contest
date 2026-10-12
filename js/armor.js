@@ -17,6 +17,8 @@ import { setSlipperyHands } from './towel.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
 import { surfaceName } from './terrain_name.js';
 import { magicNegation } from './magic_negation.js';
+import { heroFormClings } from './polyself.js';
+import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { cancelSlotTakeoff, takeoffSlotObject } from './takeoff_state.js';
 import { learnObjectType } from './object_knowledge.js';
@@ -215,7 +217,7 @@ export function wearHeroArmor(object, state = game) {
     return slot;
 }
 export async function removeHeroArmor(object, state = game, options = {}) {
-    if (object?.otyp === LEVITATION_BOOTS)
+    if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS)
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
     const cancelledDon = options.cancelledDon
@@ -234,6 +236,15 @@ export async function removeHeroArmor(object, state = game, options = {}) {
         await loseGloveProtection(object, state);
         if (state.program_state?.gameover)
             return removed;
+    }
+    // C Boots_off(): identify before spoteffects(), which can kill the hero.
+    if (removed && object.otyp === WATER_WALKING_BOOTS
+        && (isPoolAt(state.u.ux, state.u.uy, state) || isLavaAt(state.u.ux, state.u.uy, state))
+        && !propertyIsActive('levitation', state) && !propertyIsActive('flying', state)
+        && !(heroFormClings(state) && levelHasCeiling(state))
+        && !cancelledDon && !state.iflags.in_lava_effects) {
+        learnObjectType(object.otyp, state);
+        await applyHeroLocationEffects();
     }
     if (removed && object.otyp === LEVITATION_BOOTS) {
         const remaining = captureLevitationState(state);
@@ -259,8 +270,9 @@ export async function announceDisplacementLoss(object, state = game) {
         || hero.displacementBlocked || hero.displacedBlocked)
         return;
     const blind = heroIsBlind(state);
+    const unseen = propertyIsActive('invisible', state) && !propertyIsActive('seeInvisible', state);
     const visibleSelf = !blind && !hero.uswallow
-        && !(state.invisible || hero.invisible || hero.invis);
+        && !unseen;
     const unblindTelepathy = hasWornProperty('telepathy', state)
         || hero.unblindTelepathy || (hero.unblind_telepat_range ?? -1) >= 0;
     const blindTelepathy = blind

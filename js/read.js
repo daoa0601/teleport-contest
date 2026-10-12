@@ -44,7 +44,7 @@ export async function doread(options = {}) {
     }
     const confused = type !== SCR_MAIL && (game.u.confusionTurns ?? 0) > 0;
     if (type === SCR_MAIL && !game.u.uconduct?.literate && !source.spe) {
-        const answer = await promptYesNo('Reading mail will violate "illiterate" conduct.  Read anyway? [yn] (n)', 'n', 1);
+        const answer = await promptYesNo('Reading mail will violate "illiterate" conduct.  Read anyway?', 'n');
         if (answer !== 'y')
             return finishRead(false);
     }

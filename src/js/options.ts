@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, cls, docrt, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
+import { bot, clearMessageWindow, cls, docrt, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
 import { vision_recalc } from './vision.js';
 import { nhgetch } from './input.js';
 import { getLine } from './query.js';
@@ -875,8 +875,10 @@ function renderPickupTypes(selected: ReadonlySet<string>): void {
 
 async function editPickupTypes(preserveStatus = false): Promise<void> {
     const selected = new Set<string>(game.flags?.pickup_types || '');
-    // tty displays an unread message before its next compound-option menu.
-    await flushPendingTopline();
+    // tty_display_nhwindow(NHW_MENU) pages unread prose, then clears the
+    // entire message window before painting the menu's corner rectangle.
+    if (!game._suppressMessagesUntilInput) await flushPendingTopline();
+    clearMessageWindow();
     await flush_screen(1);
     const underlay = snapshotMenuUnderlay();
     if (!preserveStatus) {
@@ -969,7 +971,7 @@ async function editMenuStyle(): Promise<void> {
     const previous = game.flags.menu_style ?? MENU_FULL;
     const separator = game.iflags.menu_tab_sep ? '\t' : ' ';
     const items = MENU_STYLES.flatMap(([name, first, second]) => [
-        { key: name.charAt(0), text: `${name.charAt(0)} - ${name.padEnd(12)}${separator}${first}` },
+        { key: name.charAt(0), text: `${name.padEnd(12)}${separator}${first}` },
         { text: `${' '.repeat(16)}${separator}${second}` },
     ]);
     const selection = await showInventoryWindow([{ items }], {
@@ -1006,7 +1008,7 @@ const SORT_LOOT_NAMES = { n: 'none', l: 'loot', f: 'full' };
 async function editSortLoot(): Promise<void> {
     const previous = game.flags.sortloot ?? 'l';
     const selection = await showInventoryWindow([{ items:
-        Object.entries(SORT_LOOT_NAMES).map(([key, name]) => ({ key, text: `${key} - ${name}` })),
+        Object.entries(SORT_LOOT_NAMES).map(([key, name]) => ({ key, text: name })),
     }], { title: 'Select loot sorting type:', pickMode: PICK_ONE, preselectedKey: previous });
     const mode = String.fromCharCode(selection.key);
     if (isLootSortMode(mode)) game.flags.sortloot = mode;

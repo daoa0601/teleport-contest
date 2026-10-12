@@ -44,6 +44,7 @@ void test('acknowledges the death message before leaving bones when disclosure i
     await input.waitUntilBlocked();
 
     assert.match(visibleText(), /Save bones\?/);
+    assert.equal(requireGameDisplay().cursorCol, 'Save bones? [yn] (n) '.length);
     input.feed('y');
     await input.waitUntilBlocked();
 

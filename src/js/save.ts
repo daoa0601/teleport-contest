@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
 import { clearMessageWindow, docrt, pline, plineWithContinuation, rawPrint } from './display.js';
 import { doneObjectCleanup } from './object_cleanup.js';
-import { promptYesNo, promptYesNoQuit } from './query.js';
+import { promptChoice, promptYesNo } from './query.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { GameMap } from './game.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -20,6 +20,7 @@ import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.
 import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
 import { FULL_MOON, LUCKMAX, LUCKMIN } from './const.js';
+import { vision_reset_new_level } from './vision.js';
 
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
@@ -58,7 +59,7 @@ export async function dosave(): Promise<void> {
     // C save.c:dosave() clears WIN_MESSAGE before asking and after either
     // answer. Acknowledgment alone leaves the seen question on tty.
     clearMessageWindow();
-    const answer = await promptYesNo('Really save? [yn] (n) ');
+    const answer = await promptYesNo('Really save?');
     clearMessageWindow();
     if (answer !== 'y') {
         if (game.multi > 0) endVoluntaryMultiTurn(game);
@@ -115,8 +116,8 @@ export function hasErrorSave(
 export async function askAboutPanicSave(): Promise<boolean> {
     await plineWithContinuation('There is no regular save file but there is a panic one.');
     await plineWithContinuation('It might be recoverable with demi-divine intervention.');
-    const question = 'Start a new game instead? [yn] (n) ';
-    return await promptYesNoQuit(question, 'n') === 'y';
+    const question = 'Start a new game instead?';
+    return await promptChoice(question, ['y', 'n', 'q'], 'n', { visibleChoices: 'yn' }) === 'y';
 }
 
 async function prepareGameForSave(): Promise<void> {
@@ -203,6 +204,10 @@ export function restoreGame(
         game._shopFollowMessageTurn = 0;
         game.program_state = { something_worth_saving: true };
         game.fmon = game.level?.monsters[0] ?? null;
+        // C restore.c:dorecover() rebuilds transient vision after loading the
+        // level. No old sight bits may suppress its first terrain repaint.
+        vision_reset_new_level();
+        game.vision_full_recalc = 1;
         storage.removeItem?.(key);
         return true;
     } catch (error) {

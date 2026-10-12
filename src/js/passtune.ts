@@ -48,7 +48,7 @@ function normalizeTune(tune: string): string {
 export async function askForTune() {
     if (game.u?.uevent?.uheard_tune === 2) {
         const answer = await promptYesNoQuit(
-            'Play the passtune? [ynq] (q) ', 'q',
+            'Play the passtune?', 'q',
         );
         if (answer === 'q') return null;
         if (answer === 'y') return game.castleTune || '';

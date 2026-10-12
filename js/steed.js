@@ -90,7 +90,7 @@ export async function doride() {
         return;
     }
     const force = !!game.flags.debug
-        && await promptYesNo('Force the mount to succeed? [yn] (n) ') === 'y';
+        && await promptYesNo('Force the mount to succeed?') === 'y';
     const steed = game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) &&
         (monster.mx === x && monster.my === y)
         || monster.wormSegments?.some(segment => segment.x === x && segment.y === y));
@@ -190,7 +190,7 @@ async function mountSteed(steed, force, [dx, dy]) {
             : `${hero._woundedLegSide} ${heroLegName()}`;
         await pline(`Your ${leg} ${both ? 'are' : 'is'} in no shape for riding.`);
         if (force && game.flags.debug
-            && await promptYesNo(`Heal your leg${both ? 's' : ''}? [yn] (n) `) === 'y') {
+            && await promptYesNo(`Heal your leg${both ? 's' : ''}?`) === 'y') {
             await healHeroLegs();
         }
         else
