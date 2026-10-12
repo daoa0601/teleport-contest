@@ -67,6 +67,8 @@ import { watchDigging } from './digging_watch.js';
 
 import { heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
+import { useMonsterMindBlast } from './monster_mind_blast.js';
+import { monsterIsMindFlayer } from './monster_data.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame } from './gstate.js';
@@ -8438,7 +8440,7 @@ export async function takeMonsterTurn(
         if (monsterIsCovetous(monster))
             setMonsterApparentHeroPosition(monster, state, random, calls);
     }
-    const range = await checkMonsterHeroRange(monster, { state, random, rollOne });
+    let range = await checkMonsterHeroRange(monster, { state, random, rollOne });
     dochugContext.range = range;
     if (range.heroDied)
         return {
@@ -8485,6 +8487,26 @@ export async function takeMonsterTurn(
         };
     }
     await watchOnDuty(monster, state, random, calls);
+    if (monsterIsMindFlayer(dochugContext.entryMnum) && recordRandom(random, calls, 20) === 0) {
+        const heroDied = await useMonsterMindBlast(monster, state, {
+            random: limit => recordRandom(random, calls, limit),
+            rollOne: sides => {
+                calls.push(`rnd(${sides})`);
+                return rollOne(sides);
+            },
+            resistsConflict: () => resistConflict(monster, state, rollOne, calls),
+        });
+        if (heroDied) return {
+            calls, dochugContext,
+            movement: {
+                oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                moved: false, heroDied: true,
+            },
+        };
+        setMonsterApparentHeroPosition(monster, state, random, calls);
+        range = await checkMonsterHeroRange(monster, { state, random, rollOne });
+        dochugContext.range = range;
+    }
     if (await readyCloseMonsterWeapon(monster, state)) {
         return {
             calls,
