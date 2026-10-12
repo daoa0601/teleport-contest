@@ -165,7 +165,24 @@ void test('an extinct-only ending asks about extinct species instead', async () 
     await declineRemainingPrompts(input, ending);
 });
 
-for (const [description, mvflags] of [['genocided', G_GENOD], ['extinct', G_EXTINCT]] as const) {
+for (const { description, question, heading, nextQuestion, count, mvflags } of [
+    {
+        description: 'vanquished', question: /creatures vanquished/, heading: /Vanquished creatures:/,
+        nextQuestion: /your conduct/, count: 1, mvflags: 0,
+    },
+    {
+        description: 'genocided', question: /species/, heading: /species:/,
+        nextQuestion: /your conduct/, count: 0, mvflags: G_GENOD,
+    },
+    {
+        description: 'extinct', question: /species/, heading: /species:/,
+        nextQuestion: /your conduct/, count: 0, mvflags: G_EXTINCT,
+    },
+    {
+        description: 'conduct', question: /your conduct/, heading: /Voluntary challenges:/,
+        nextQuestion: /dungeon overview/, count: 0, mvflags: 0,
+    },
+]) {
     void test(`dismissing full-screen ${description} disclosure restores hallucinated monsters before the next question`, async () => {
         freshPlayableRoom({ seed: 61023n });
         requirePlayingGame(game);
@@ -173,22 +190,22 @@ for (const [description, mvflags] of [['genocided', G_GENOD], ['extinct', G_EXTI
         game.u.hallucinationTurns = 20;
         await docrt();
         await flush_screen(1);
-        recordSpecies('gnome', 0, mvflags);
+        recordSpecies('gnome', count, mvflags);
         game.flags.menu_overlay = false;
         const input = resetInputState();
         const ending = deathWithPrompts();
         try {
-            await advanceToQuestion(input, /species/);
+            await advanceToQuestion(input, question);
             const oldGlyph = game.nhDisplay?.grid[11]?.[11];
             assert.ok(oldGlyph, 'the visible monster has a terminal cell');
             const oldAppearance = { ch: oldGlyph.ch, color: oldGlyph.color };
             input.feed('y');
             await input.waitUntilBlocked();
-            assert.match(screenText(), /species:/);
+            assert.match(screenText(), heading);
             input.feed(' ');
             await input.waitUntilBlocked();
 
-            assert.match(visibleRow(), /Do you want to see your conduct/);
+            assert.match(visibleRow(), nextQuestion);
             const monsterGlyph = game.nhDisplay?.grid[11]?.[11];
             assert.ok(monsterGlyph, 'the visible monster has a terminal cell');
             assert.ok(monsterGlyph.ch !== oldAppearance.ch || monsterGlyph.color !== oldAppearance.color,

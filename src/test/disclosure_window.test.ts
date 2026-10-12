@@ -82,6 +82,57 @@ void test('Enter dismisses a paged overview from its first page', async () => {
     }
 });
 
+void test('Escape cancels an overview count before it can dismiss the window', async () => {
+    freshPlayableRoom();
+    const input = resetInputState();
+    const overview = showDisclosureOverlay(Array.from({ length: 28 }, (_, n) => `Level ${n + 1}`), {
+        pagerStyle: 'menu', marker: '(end)',
+    });
+    try {
+        await input.waitUntilBlocked();
+        input.feed('1');
+        await input.waitUntilBlocked();
+        input.feed(27);
+        const state = await Promise.race([
+            overview.then(() => 'dismissed'),
+            input.waitUntilBlocked().then(() => 'waiting'),
+        ]);
+        assert.equal(state, 'waiting', 'Escape cancels the count and leaves the overview open');
+        assert.equal(rowText(0).trim(), 'Level 1');
+        input.feed(27);
+        assert.equal(await overview, 27, 'Escape with no count dismisses the overview');
+    } finally {
+        input.feed('\x1b\x1b');
+        await overview;
+    }
+});
+
+for (const prefix of ['0', '1>', '1x', '9223372036854775808']) {
+    void test(`an overview dismisses on Escape after ${JSON.stringify(prefix)} leaves no active count`, async () => {
+        freshPlayableRoom();
+        const input = resetInputState();
+        const overview = showDisclosureOverlay(Array.from({ length: 28 }, (_, n) => `Level ${n + 1}`), {
+            pagerStyle: 'menu', marker: '(end)',
+        });
+        try {
+            await input.waitUntilBlocked();
+            for (const key of prefix) {
+                input.feed(key);
+                await input.waitUntilBlocked();
+            }
+            input.feed(27);
+            const state = await Promise.race([
+                overview.then(() => 'dismissed'),
+                input.waitUntilBlocked().then(() => 'waiting'),
+            ]);
+            assert.equal(state, 'dismissed', 'there is no count for Escape to cancel');
+        } finally {
+            input.feed('\x1b\x1b');
+            await overview;
+        }
+    });
+}
+
 void test('a paged overview goes back and keeps its marker beside the final content', async () => {
     freshPlayableRoom();
     const display = requireGameDisplay();
@@ -123,8 +174,8 @@ void test('a short last disclosure page places the cursor after its marker', asy
     }
 });
 
-for (const width of [68, 72, 90]) {
-    void test(`a ${width}-column disclosure line switches from corner to full screen`, async () => {
+for (const width of [68, 72]) {
+    void test(`a ${width}-column disclosure line keeps the map visible outside its corner`, async () => {
         freshPlayableRoom();
         const display = requireGameDisplay();
         display.setCell(5, 10, '@', NO_COLOR);
@@ -132,9 +183,9 @@ for (const width of [68, 72, 90]) {
         const disclosure = showDisclosureOverlay(['x'.repeat(width)]);
         try {
             await input.waitUntilBlocked();
-            assert.equal(rowText(0).indexOf('x'), 0);
+            assert.equal(rowText(0).indexOf('x'), display.cols - width - 1);
             assert.equal(rowText(1).trim(), '--More--');
-            assert.equal(display.grid[10]?.[5]?.ch, ' ', 'the full window hides the uncovered map rows');
+            assert.equal(display.grid[10]?.[5]?.ch, '@', 'the corner leaves uncovered map rows visible');
         } finally {
             input.feed(' ');
             await disclosure;
@@ -142,28 +193,51 @@ for (const width of [68, 72, 90]) {
     });
 }
 
-void test('closing full-screen in-game disclosure redraws hallucinated monsters', async () => {
-    freshPlayableRoom({ seed: 61023n });
-    requirePlayingGame(game);
-    await createMonsterAt('newt', 12, 10);
-    game.u.hallucinationTurns = 20;
-    await docrt();
-    await flush_screen(1);
+void test('a disclosure wider than the terminal uses the full screen', async () => {
+    freshPlayableRoom();
     const display = requireGameDisplay();
-    const oldGlyph = display.grid[11]?.[11];
-    assert.ok(oldGlyph, 'the visible monster has a glyph');
-    // A full-screen dismissal must replace stale terminal cells from the
-    // live map. '?' cannot be a monster glyph, hallucinated or otherwise.
-    display.setCell(11, 11, '?', NO_COLOR);
+    display.setCell(5, 10, '@', NO_COLOR);
     const input = resetInputState();
-    game.flags.menu_overlay = false;
-    const disclosure = showDisclosureOverlay(['Vanquished creatures:'], { restoreUnderlay: true });
-    await input.waitUntilBlocked();
-    input.feed(' ');
-    await disclosure;
-    const newGlyph = display.grid[11]?.[11];
-    assert.ok(newGlyph);
-    assert.notEqual(newGlyph.ch, '?', 'the monster glyph is rebuilt from the live map');
-    assert.equal(display.cursorCol, game.u.ux - 1);
-    assert.equal(display.cursorRow, game.u.uy + 1);
+    const disclosure = showDisclosureOverlay(['x'.repeat(90)]);
+    try {
+        await input.waitUntilBlocked();
+        assert.equal(rowText(0).indexOf('x'), 0);
+        assert.equal(rowText(1).trim(), '--More--');
+        assert.equal(display.grid[10]?.[5]?.ch, ' ', 'the full window covers the map');
+    } finally {
+        input.feed(' ');
+        await disclosure;
+    }
 });
+
+for (const pagerStyle of ['text', 'menu'] as const) {
+    void test(`closing a full-screen ${pagerStyle} disclosure redraws hallucinated monsters`, async () => {
+        freshPlayableRoom({ seed: 61023n });
+        requirePlayingGame(game);
+        await createMonsterAt('newt', 12, 10);
+        game.u.hallucinationTurns = 20;
+        await docrt();
+        await flush_screen(1);
+        const display = requireGameDisplay();
+        const oldGlyph = display.grid[11]?.[11];
+        assert.ok(oldGlyph, 'the visible monster has a glyph');
+        const oldAppearance = { ch: oldGlyph.ch, color: oldGlyph.color };
+        // A full-screen dismissal must replace stale terminal cells from the
+        // live map. '?' cannot be a monster glyph, hallucinated or otherwise.
+        display.setCell(11, 11, '?', NO_COLOR);
+        const input = resetInputState();
+        game.flags.menu_overlay = false;
+        const disclosure = showDisclosureOverlay(['Final disclosure'], { pagerStyle });
+        await input.waitUntilBlocked();
+        input.feed(' ');
+        await disclosure;
+        const newGlyph = display.grid[11]?.[11];
+        assert.ok(newGlyph);
+        assert.notEqual(newGlyph.ch, ' ', 'the visible monster is drawn again');
+        assert.notEqual(newGlyph.ch, '?', 'the monster glyph is rebuilt from the live map');
+        assert.ok(newGlyph.ch !== oldAppearance.ch || newGlyph.color !== oldAppearance.color,
+            'dismissal gives the monster a fresh hallucinated appearance');
+        assert.equal(display.cursorCol, game.u.ux - 1);
+        assert.equal(display.cursorRow, game.u.uy + 1);
+    });
+}

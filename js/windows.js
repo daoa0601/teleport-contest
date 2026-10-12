@@ -279,17 +279,16 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', minWid
     const content = pagerStyle === 'text'
         ? entries.flatMap(line => textWindowRows(line.text, d.cols)
             .map(text => ({ ...line, text }))) : entries;
-    // Native tty_display_nhwindow(): a putstr-built menu keeps its corner
-    // placement only while it fits the screen and leaves the corner past
-    // its minimum offset; taller (or menu-overlay-disabled) windows switch
-    // to the full-screen paged layout of process_text_window().
-    const cornerOffset = Math.max(10, Math.min(82, Math.floor(d.cols / 2), d.cols - dataWidth - 2));
+    // The pinned H2344_BROKEN path permits corners narrower than ten
+    // columns. A zero offset, excess height, or disabled overlay uses
+    // the full-screen renderer instead.
+    const cornerOffset = Math.max(0, Math.min(82, Math.floor(d.cols / 2), d.cols - dataWidth - 2));
     // tty_end_menu() counts its pager in maxrow; tty_putstr() only counts
     // stored content rows.
     const windowRows = content.length + (pagerStyle === 'menu' ? 1 : 0);
-    if (windowRows >= d.rows || cornerOffset === 10
+    if (windowRows >= d.rows || cornerOffset === 0
         || game.flags.menu_overlay === false) {
-        return await pageDisclosureWindow(d, content, { marker, pagerStyle, restoreUnderlay });
+        return await pageDisclosureWindow(d, content, { marker, pagerStyle });
     }
     const widest = Math.max(marker.length, dataWidth);
     // process_menu_window() leaves one terminal column to the right of a
@@ -335,11 +334,12 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', minWid
  * between pages.  Menu-style windows page their items the same way and
  * label every page but the single-page case with "(x of y)".
  */
-async function pageDisclosureWindow(d, lines, { marker, pagerStyle, restoreUnderlay }) {
+async function pageDisclosureWindow(d, lines, { marker, pagerStyle }) {
     const rowColumn = pagerStyle === 'menu' ? 1 : 0;
     const pageSize = d.rows - 1;
     const pageCount = Math.max(1, Math.ceil(lines.length / pageSize));
     let page = 0;
+    let count = null;
     try {
         for (;;) {
             const content = lines.slice(page * pageSize, (page + 1) * pageSize);
@@ -353,12 +353,24 @@ async function pageDisclosureWindow(d, lines, { marker, pagerStyle, restoreUnder
             const markerLength = markerText === '(end)' ? 6 : markerText.length;
             d.setCursor(1 + markerLength, content.length);
             const key = await nhgetch();
-            if (key === 27)
-                return key;
             if (pagerStyle === 'menu') {
+                // Counts are accepted even by PICK_NONE menus. Escape
+                // cancels an active count before it can close the window.
+                if (key >= 48 && key <= 57) {
+                    const nextCount = (count ?? 0n) * 10n + BigInt(key - 48);
+                    count = nextCount > 9223372036854775807n ? null : nextCount || null;
+                    continue;
+                }
+                const wasCounting = count !== null;
+                count = null;
+                if (key === 27) {
+                    if (wasCounting)
+                        continue;
+                    return key;
+                }
                 // process_menu_window(): Return commits on any page;
                 // Space advances, or commits on the last page.
-                if (key === 10 || key === 13)
+                if (key === 0 || key === 10 || key === 13)
                     return key;
                 const letter = String.fromCharCode(key);
                 if (key === 32 && page === pageCount - 1)
@@ -372,6 +384,8 @@ async function pageDisclosureWindow(d, lines, { marker, pagerStyle, restoreUnder
                 else if (letter === '|')
                     page = pageCount - 1;
             }
+            else if (key === 27)
+                return key;
             else if (key === 32 || key === 10 || key === 13) {
                 if (page === pageCount - 1)
                     return key;
@@ -382,10 +396,8 @@ async function pageDisclosureWindow(d, lines, { marker, pagerStyle, restoreUnder
     finally {
         // erase_menu_or_text(): a full-screen window rebuilds vision and
         // glyphs; docorner()'s saved cells only apply to corner windows.
-        if (restoreUnderlay) {
-            await docrt();
-            await flush_screen(1);
-        }
+        await docrt();
+        await flush_screen(1);
     }
 }
 /**
