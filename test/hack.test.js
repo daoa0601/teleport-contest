@@ -122,6 +122,38 @@ void test('an unprotected hero burns in lava', async () => {
     assert.equal(messages.includes('You fall into the molten lava!'), true);
     assert.equal(messages.includes('You burn to a crisp...'), true);
 });
+void test('lethal lava marks the doomed inventory before announcing the fall', async () => {
+    liquidAtHero(LAVAPOOL);
+    const armor = await addInventoryObject(LEATHER_ARMOR);
+    let announced = false;
+    await heroLiquidEffects({
+        ...noDisplay,
+        publish: async (message) => {
+            if (!message.includes('fall into'))
+                return;
+            announced = true;
+            assert.equal(armor.in_use, true, 'a save at this message must retain the pending destruction');
+        },
+        die: async () => { game.program_state.gameover = true; },
+    });
+    assert.equal(announced, true);
+    assert.equal(armor.where, 'gone');
+});
+void test('lava removes but preserves boots already in use by another action', async () => {
+    liquidAtHero(LAVAPOOL);
+    requireFixtureGame(game);
+    const boots = await addInventoryObject(WATER_WALKING_BOOTS, { worn: true, in_use: true });
+    game.uarmf = game.u.uarmf = boots;
+    await heroLiquidEffects({
+        ...noDisplay,
+        rollDice: () => 36,
+        publish: async () => { },
+        die: async () => { game.program_state.gameover = true; },
+    });
+    assert.equal(game.inventory.includes(boots), true);
+    assert.equal(game.uarmf, null);
+    assert.equal(boots.in_use, true);
+});
 void test('a trapped fire-resistant hero eventually dissolves in lava', async () => {
     liquidAtHero(LAVAPOOL);
     requireFixtureGame(game);

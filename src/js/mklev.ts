@@ -28,6 +28,8 @@ import { nameObjectFromTopten } from './topten.js';
 import { normalDemon } from './minion.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { sendMonsterToLimbo } from './monster_migration.js';
+import { monsterHasStoneResistance } from './monster_resistance.js';
+import { monsterPolymorphsWhenStoned } from './monster_stoning.js';
 
 import { relocateObjectRandomly } from './object_teleport.js';
 import { discardMonsterInventory, dropSpecialMonsterObjects } from './monster_drop.js';
@@ -6828,7 +6830,6 @@ async function putGeneratedMonsterInventoryInStatue(monster: Monster, statue: Ga
 }
 
 async function medusaEmptyStatue(context: SpecialLevelContext, fixedPoint: Position | null = null): Promise<GameObject | null> {
-    const level = requireGameLevel();
     const point = fixedPoint
         ? {
             x: context.xstart + fixedPoint.x,
@@ -6843,25 +6844,18 @@ async function medusaEmptyStatue(context: SpecialLevelContext, fixedPoint: Posit
 
     let mndx = statue.corpsenm ?? null;
     for (let attempt = 0; attempt < 1000; attempt++, mndx = rndmonnum()) {
-        let monsterPoint = null;
-        for (let locations = 0; locations < 100; locations++) {
-            const x = rn2(COLNO - 3) + 2;
-            const y = rn2(ROWNO);
-            if (goodPosition(x, y, mndx == null ? null : { kind: 'species', mnum: mndx })) {
-                monsterPoint = { x, y };
-                break;
-            }
-        }
-        if (!monsterPoint) continue;
-        const was = await makemon(mndx, monsterPoint.x, monsterPoint.y,
+        const was = await makemon(mndx, 0, 0,
             MM_NOCOUNTBIRTH | MM_NOMSG);
         if (!was) continue;
-        level.monsters = level.monsters.filter(monster => monster !== was);
-        if (!medusaPetrifiable(mndx)) continue;
+        if (monsterHasStoneResistance(was) || monsterPolymorphsWhenStoned(was)) {
+            await removeMonsterFromGame(was);
+            continue;
+        }
         if (mndx === null) throw new Error('Medusa statue monster has no species.');
         propagateMonsterSpecies(mndx, true, false);
         statue.corpsenm = mndx;
         await putGeneratedMonsterInventoryInStatue(was, statue);
+        await removeMonsterFromGame(was);
         break;
     }
     return statue;

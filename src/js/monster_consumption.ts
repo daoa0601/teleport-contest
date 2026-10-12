@@ -16,7 +16,9 @@ import { grantMonsterCorpseIntrinsic } from './monster_corpse_intrinsic.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME } from './monster_data.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { finishMonsterGrowth, growMonster } from './monster_growth.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { addObjectToMonsterInventory, removeObjectFromMonsterInventory } from './monster_inventory.js';
+import { isLevelPrize } from './level_prize.js';
+import { objectMaterial } from './object_material.js';
 import { beginMonsterMealMimicry } from './monster_meal_mimicry.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { changeMonsterForm } from './monster_polymorph.js';
@@ -47,6 +49,24 @@ export interface MonsterConsumptionOptions {
     random?: typeof rn2;
     rollOne?: typeof rnd;
     rollDice?: typeof d;
+}
+
+// C monmove.c:gelcube_digests(). Engulfed organic inventory costs a later
+// action to digest, even when the cube resisted eating it off the floor.
+export async function digestGelatinousCubeInventory(
+    monster: Monster, state: GameState, options: MonsterConsumptionOptions = {},
+): Promise<boolean> {
+    if (monster.meating) return false;
+    const object = monster.minvent?.find(candidate => objectMaterial(candidate, state) <= 8
+        && !candidate.oartifact && !isLevelPrize(candidate, state));
+    if (!object) return false;
+    // eaten_stat(0, object) always returns at least one turn.
+    monster.meating = 1;
+    if (!await removeObjectFromMonsterInventory(monster, object, state,
+        { publish: options.publish ?? plineWithContinuation }))
+        throw new Error(`Cube could not release its meal ${object.o_id}`);
+    await consumeMonsterObject(monster, object, state, options);
+    return true;
 }
 
 function polymorphFood(object: GameObject): boolean {
