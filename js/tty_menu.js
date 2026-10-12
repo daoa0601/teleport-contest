@@ -1,8 +1,8 @@
 // Native tty menu window ownership (win/tty/wintty.c).
-import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT } from './const.js';
+import { BUFSZ, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT } from './const.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
-import { clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
+import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
 import { getLine } from './query.js';
 import { NO_COLOR } from './terminal.js';
 const ATR_NONE = 0;
@@ -116,7 +116,7 @@ export async function tty_clear_nhwindow(window) {
         if (window.offx === 0)
             display()?.clearScreen();
         else
-            restoreMenuUnderlay(window.underlay);
+            await restoreMenuCorner(window);
     }
     window.entries = [];
     window.layout = null;
@@ -204,8 +204,28 @@ export async function tty_dismiss_nhwindow(window) {
         await flush_screen(1);
     }
     else
-        restoreMenuUnderlay(window.underlay);
+        await restoreMenuCorner(window);
     window.underlay = null;
+}
+async function restoreMenuCorner(window) {
+    const d = display();
+    if (!d || !window.underlay)
+        return;
+    // erase_menu_or_text() calls docorner(offx, maxrow + 1, 0).
+    // A prior full-screen clear must stay blank outside that rectangle.
+    const left = Math.max(0, window.offx - 1);
+    const bottom = Math.min(d.rows, (window.layout?.maxRows ?? 0) + 1);
+    for (let row = 0; row < bottom; row++) {
+        for (let col = left; col < d.cols; col++) {
+            const cell = window.underlay[row]?.[col];
+            if (cell)
+                d.setCell(col, row, cell.ch, cell.color, cell.attr);
+        }
+    }
+    d.clearRow(0);
+    // docorner() redraws both status lines when the erased area reaches them.
+    if (bottom >= Math.min(d.rows - 2, ROWNO + 1))
+        await bot();
 }
 export async function tty_destroy_nhwindow(window) {
     requireWindow(window);

@@ -71,6 +71,58 @@ void test('redisplaying an active corner menu restores the map after dismissal',
     assert.doesNotMatch(d.grid[2]?.map(cell => cell.ch).join('') ?? '', /map 2/);
     await tty_destroy_nhwindow(window);
 });
+void test('dismissing a corner rebuilt from a cleared full-screen menu redraws only the corner', async () => {
+    freshPlayableRoom({ left: 8, right: 60, bottom: 16, flags: { menu_overlay: false } });
+    await docrt();
+    await flush_screen(1);
+    const d = requireGameDisplay();
+    assert.equal(d.getChar(9, 11), '.');
+    assert.equal(d.getChar(49, 11), '.');
+    assert.equal(d.getChar(49, 16), '.');
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    tty_add_menu(window, { identifier: 0, text: 'a dagger' });
+    tty_end_menu(window);
+    resetInputState().feed('\n');
+    await tty_display_nhwindow(window, PICK_ANY);
+    await tty_start_menu(window);
+    game.flags.menu_overlay = true;
+    for (let index = 0; index < 12; index++)
+        tty_add_menu(window, { identifier: index, text: `map ${index}` });
+    tty_end_menu(window);
+    resetInputState().feed('\n');
+    await tty_display_nhwindow(window, PICK_ANY);
+    await tty_dismiss_nhwindow(window);
+    assert.equal(d.getChar(49, 11), '.', 'dismissal redraws the covered map');
+    assert.equal(d.getChar(9, 11), ' ', 'map cells left of the corner stay erased');
+    assert.equal(d.getChar(49, 16), ' ', 'map cells below the corner stay erased');
+    assert.equal(d.grid[23]?.map(cell => cell.ch).join('').trim(), '', 'status outside the corner stays erased');
+    await tty_destroy_nhwindow(window);
+});
+void test('dismissing a rebuilt corner that reaches status redraws both whole status lines', async () => {
+    freshPlayableRoom({ left: 8, right: 60, flags: { menu_overlay: false } });
+    await docrt();
+    await flush_screen(1);
+    const d = requireGameDisplay();
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    tty_add_menu(window, { identifier: 0, text: 'a dagger' });
+    tty_end_menu(window);
+    resetInputState().feed('\n');
+    await tty_display_nhwindow(window, PICK_ANY);
+    await tty_start_menu(window);
+    game.flags.menu_overlay = true;
+    for (let index = 0; index < 21; index++)
+        tty_add_menu(window, { identifier: index, text: `map ${index}` });
+    tty_end_menu(window);
+    resetInputState().feed('\n');
+    await tty_display_nhwindow(window, PICK_ANY);
+    await tty_dismiss_nhwindow(window);
+    assert.equal(d.getChar(9, 11), ' ', 'status redraw must not redraw the uncovered map');
+    assert.match(d.grid[22]?.map(cell => cell.ch).join('') ?? '', /St:/);
+    assert.match(d.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dlvl:1.*HP:/);
+    await tty_destroy_nhwindow(window);
+});
 for (const overlay of [true, false]) {
     void test(`${overlay ? 'corner' : 'full-screen'} menu search clears only rows rendered by the line editor`, async () => {
         freshPlayableRoom({ flags: { menu_overlay: overlay } });
