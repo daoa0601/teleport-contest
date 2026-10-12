@@ -138,6 +138,16 @@ export async function hideMonsterUnder(monster: Monster, state: GameState = game
     return concealment.undetected;
 }
 
+// C mon.c:hideunder(&youmonst) reassesses cover without announcing hero hiding.
+export function hideHeroUnder(state: GameState = game): boolean {
+    requireLiveGame(state);
+    const oldUndetected = !!state.u.uundetected;
+    const { undetected } = hidingPlace(heroHidingActor(state), state);
+    state.u.uundetected = undetected ? 1 : 0;
+    if (undetected !== oldUndetected) newsym(state.u.ux, state.u.uy);
+    return undetected;
+}
+
 export function canMonsterHideUnderObjectAt(state: GameState, x: number, y: number): boolean {
     const pile = state.level?.objects[x]?.[y] ?? [];
     if (pile[0]?.where !== 'floor') return false;
@@ -158,10 +168,7 @@ export function maybeUnhideAt(x: number, y: number, state: GameState = game): vo
     const isHero = !monster && state.u.ux === x && state.u.uy === y;
     if (!monster && !isHero) return;
     if (!(monster ? monster.mundetected : state.u.uundetected)) return;
-    const actor = monster ? monsterHidingActor(monster, state) : {
-        species: heroSpecies(state), x, y, held: false, trapped: !!state.u.utrap,
-        tame: false, stoneResistant: heroResistsStoning(state),
-    };
+    const actor = monster ? monsterHidingActor(monster, state) : heroHidingActor(state);
     const hidesUnder = !!((MONSTER_FLAGS1[actor.species] ?? 0) & M1_CONCEAL);
     const eel = MONSTER_SYMBOL[actor.species] === S_EEL;
     const exposed = hidesUnder && (actor.trapped || !canMonsterHideUnderObjectAt(state, x, y))
@@ -171,6 +178,14 @@ export function maybeUnhideAt(x: number, y: number, state: GameState = game): vo
     if (monster) monster.mundetected = hidden ? 1 : 0;
     else state.u.uundetected = hidden ? 1 : 0;
     if (!hidden) newsym(x, y);
+}
+
+function heroHidingActor(state: GameState): HidingActor {
+    return {
+        species: heroSpecies(state), x: state.u.ux, y: state.u.uy,
+        held: false, trapped: !!state.u.utrap, tame: false,
+        stoneResistant: heroResistsStoning(state),
+    };
 }
 
 function monsterHidingActor(monster: Monster, state: GameState): HidingActor {

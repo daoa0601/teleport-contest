@@ -460,7 +460,7 @@ export async function restoregamePreamble() {
     const race = game.urace?.adj || game.urace?.noun || 'human';
     const role = game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
-    const greeting = `Hello ${game.displayName || game.plname}, the ${race} ${role}, welcome back to NetHack!`;
+    const greeting = `${game.urole.greeting} ${game.displayName || game.plname}, the ${race} ${role}, welcome back to NetHack!`;
     // The first flush paints the display state restored with the level.
     await bot();
     await plineWithContinuation(greeting);
@@ -1911,7 +1911,7 @@ function covetousRelocationMessage(
     if (actorWasSpotted)
         return `${visibleMonsterSubject(monster)} vanishes!`;
     if (relocation.appearMessage) {
-        const subject = blind ? 'It' : `A ${quietMonsterName(monster)}`;
+        const subject = monsterName(monster, { article: 'a', capitalized: true });
         return `${subject} suddenly ${blind ? 'arrives' : 'appears'}${
             suffix
         }!`;
@@ -2877,12 +2877,14 @@ async function presentMonsterAttackEffects(
                 if (heroAttack.deferredLegEffect)
                     await resumeDeferredHeroLegs(action, game, { publish: publishEquipmentMessage });
                 if (heroAttack.deferredPostHit) {
-                    const publishContactMessage = async (message: string): Promise<void> => {
-                        const dismissal = await plineWithContinuation(message);
+                    const publishContactMessage: typeof plineWithContinuation = async (message, options) => {
+                        const dismissal = await plineWithContinuation(message, options);
                         if (dismissal !== null && dismissal !== undefined)
                             paging.pagerOwned = true;
+                        return dismissal;
                     };
                     const contactOptions = {
+                        random, rollDice, rollOne,
                         publish: publishContactMessage,
                         die: finishHeroDeathAfterMonsterMessage,
                     };
@@ -3738,6 +3740,8 @@ export async function moveloop_core() {
         }
         g._heroTimePending = false;
         g._heroActionSeq = (g._heroActionSeq ?? 0) + 1;
+        // C moveloop_core() checks again after nh_timeout() can remove weight.
+        await reportHeroEncumbrance(g);
         if (!g.program_state?.gameover)
             finishOrDeferHeroTookTimeRng(g.moves || 1);
     }

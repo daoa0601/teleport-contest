@@ -1,3 +1,4 @@
+import { rotCorpse } from './corpse_rot.js';
 // mklev.js — Level generation.
 // C ref: mklev.c — makelevel, makerooms, makecorridors, generate_stairs.
 // Also includes parts of sp_lev.c (create_room) and mkmap.c (litstate_rnd).
@@ -3256,7 +3257,8 @@ export async function runClaimedObjectRotTimer(claimed: DueObjectTimer | null | 
         }
     }
     const { where, ox: x, oy: y } = object;
-    await deleteObject(object, state);
+    if (kind === OBJECT_TIMER_KIND.ROT_CORPSE) await rotCorpse(object, state);
+    else await deleteObject(object, state);
     return { kind, object, where, x, y };
 }
 
