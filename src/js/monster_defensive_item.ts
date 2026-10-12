@@ -8,6 +8,7 @@ import {
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { levelAtDepth, levelIsWizardTower } from './dungeon.js';
 import { dist2, depth } from './hacklib.js';
+import { formatHeardMessage } from './hero_speech.js';
 import { inventoryItemDescription } from './invent.js';
 import { artifactById } from './artifacts.js';
 import { randomTeleportDepth } from './level_teleport.js';
@@ -261,8 +262,10 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         if (seen) {
             observeObjectForNaming(choice.object, { state });
             await publish(`${subject()} plays ${inventoryItemDescription(choice.object)}!`);
+        } else if (!heroIsDeaf(state)) {
+            const message = formatHeardMessage('a bugle playing reveille!', state);
+            if (message) await publish(message);
         }
-        else if (!heroIsDeaf(state)) await publish('You hear a bugle playing reveille!');
         await awakenSoldiers((MONSTER_LEVEL[monster.mnum] ?? 0) * 30, monster);
         return spent();
     case 'teleport-self':

@@ -3298,11 +3298,11 @@ async function executeMonsterTurns(messageContext) {
             return false;
         movement = action.movement;
         // monmove.c:dochug() performs the vile-monster emotional attack only
-        // after the complete standard attack set.  Even a nonzero result is
-        // RNG-visible before ambient/global maintenance.
+        // after the complete standard attack set. Item use returns earlier,
+        // including items whose effects await their messages below.
         const offensive = movement.heroAttackSequence?.offensive;
         const attackReturnedDeath = offensive?.status === 'completed' && offensive.result.nativeResult === 1;
-        if (!attackReturnedDeath && action.dochugContext?.range?.inRange
+        if (!movement.usedMisc && !attackReturnedDeath && action.dochugContext?.range?.inRange
             && !monster.dead && monster.mhp > 0 && monster.mx !== 0
             && MONSTER_SOUND[monster.mnum] === 34 && !monster.mpeaceful
             && couldsee(monster.mx, monster.my) && !monster.minvis) {

@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { moveloop_core } from '../js/allmain.js';
-import { MM_ANGRY, MM_NOWAIT, NO_MINVENT, POLY_TRAP, TELEP_TRAP } from '../js/const.js';
+import { moveloop_core, moveMonsterForHeroAttack } from '../js/allmain.js';
+import { LEVEL_TELEP, MFAST, MM_ANGRY, MM_NOWAIT, NO_MINVENT, POLY_TRAP, TELEP_TRAP } from '../js/const.js';
 import { flush_screen, pline } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { useMonsterDefensiveItem } from '../js/monster_defensive_item.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { finishDeferredMonsterMiscItem, takeMonsterTurn } from '../js/monmove.js';
-import { POT_FULL_HEALING } from '../js/object_data.js';
+import { POT_FULL_HEALING, WAN_MAKE_INVISIBLE, WAN_SPEED_MONSTER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { monsterKnowsTrap } from '../js/trap_knowledge.js';
 import { knownObject } from './support/game-objects.js';
@@ -16,6 +16,63 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
+import { createDungeon } from './support/topology.js';
+
+for (const { wandType, effect } of [
+    { wandType: WAN_MAKE_INVISIBLE, effect: 'invisibility' },
+    { wandType: WAN_SPEED_MONSTER, effect: 'speed' },
+]) {
+    void test(`the Wizard spends its ${effect} wand turn without insulting the hero`, async () => {
+        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        requirePlayingGame(game);
+        level.flags.noteleport = true;
+        const wizard = await createMonsterAt('Wizard of Yendor', 10, 10, MM_ANGRY | MM_NOWAIT | NO_MINVENT);
+        wizard.minvis = wizard.perminvis = false;
+        wizard.mspeed = wizard.permspeed = 0;
+        wizard.movement = 12;
+        wizard.mspec_used = 20;
+        const wand = await addObjectToMonsterInventory(wizard, await knownObject(wandType, { spe: 3 }), game);
+        assert.ok(wand);
+        game._moveloopStarted = true;
+        game._heroTimePending = true;
+        game.u.umovement = 12;
+        initRng(8n);
+        const input = resetInputState();
+        installPagerInput(input, { expected: /zaps|cannot see|moving faster/, limit: 4 });
+
+        await finishAtCommandInput(input, moveloop_core, /cannot see|moving faster/);
+
+        assert.equal(wand.spe, 2);
+        assert.equal(wizard.mx, 10);
+        assert.equal(wizard.my, 10);
+        assert.equal(game.u.uhp, 40);
+        if (wandType === WAN_MAKE_INVISIBLE) assert.equal(!!wizard.minvis, true);
+        else assert.equal(wizard.permspeed, MFAST);
+    });
+}
+
+void test('a monster stepping onto a level teleport trap disappears without falling', async () => {
+    const level = freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10, heroX: 14, heroY: 10 });
+    requirePlayingGame(game);
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
+    const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
+    monster.mux = game.u.ux;
+    monster.muy = game.u.uy;
+    const trap = addTrap(level, LEVEL_TELEP, 11, 10);
+    initRng(8n);
+    installPagerInput(resetInputState(), { expected: /disappears out of sight/, limit: 2 });
+
+    await moveMonsterForHeroAttack(monster, game);
+
+    assert.equal(level.monsters.includes(monster), false);
+    assert.ok(monster.migrationDestination);
+    assert.notEqual(monster.migrationDestination.dlevel, game.u.uz.dlevel);
+    assert.equal(trap.tseen, true);
+    await flush_screen();
+    const message = requireGameDisplay(game).grid[0]?.map(cell => cell.ch).join('') ?? '';
+    assert.match(message, /disappears out of sight/);
+    assert.doesNotMatch(message, /falls/);
+});
 
 void test('the Wizard spends its healing turn without adding an insult', async () => {
     for (let seed = 1; seed <= 12; seed++) {

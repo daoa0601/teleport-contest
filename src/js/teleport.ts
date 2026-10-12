@@ -1053,5 +1053,6 @@ export async function teleportMonsterToRandomLevel(monster: Monster, trap: Trap,
         trap.tseen = true;
     }
     if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT_CNTRL)) monster.mconf = 1;
-    return migrateMonsterOffLevel(monster, state, { ...trap, dst: levelAtDepth(destination, { state }) });
+    return migrateMonsterOffLevel(monster, state, { ...trap, dst: levelAtDepth(destination, { state }) },
+        { kind: 'level-migration' });
 }

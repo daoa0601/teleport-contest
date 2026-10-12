@@ -90,12 +90,13 @@ export async function prepareMonsterItemUse(monster: Monster, object: GameObject
             } else {
                 if (visible) await publish(`In a cloud of smoke, ${monsterName(occupant, { state, article: 'a' })} emerges!`);
                 await publish(`${visible ? monsterName(occupant, { state, capitalized: true }) : 'Something'} speaks.`);
+                // Native precheck() verbalizes bottle occupants even for a deaf hero.
                 if (random(2)) {
-                    if (!heroIsDeaf(state)) await publish('"You freed me!"');
+                    await publish('"You freed me!"');
                     occupant.mpeaceful = 1;
                     setMonsterMalign(occupant, state);
                 } else {
-                    if (!heroIsDeaf(state)) await publish('"It is about time."');
+                    await publish('"It is about time."');
                     if (visible) await publish(`${monsterName(occupant, { state, capitalized: true })} vanishes.`);
                     await removeMonsterFromGame(occupant);
                 }
