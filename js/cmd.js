@@ -160,7 +160,10 @@ import { isWetTowel, willWeld } from './weapon_type.js';
 import { announceWeaponWeld, explainTwoWeaponEnd, refuseWeldedPrimary } from './weapon_feedback.js';
 import { dropCursedSecondaryWeapon, toggleTwoWeaponCombat } from './two_weapon.js';
 import { dist2, distmin, dungeonDepth } from './hacklib.js';
-import { roomForRoomno } from './room.js';
+import { triggerBoobyTrap } from './booby_trap.js';
+import { addShopDamage, payForShopDamage } from './shop_damage.js';
+import { convertSecretDoor } from './detect.js';
+import { roomForRoomno, roomsAt } from './room.js';
 import { learnObjectType, objectClassForType, recordObjectCall, recordObjectEncounter, recordObjectKnowledge, } from './object_knowledge.js';
 import { encumbranceLabel, encumbranceMessage, exceedsActionCapacity, nearCapacity, invWeight, OVERLOADED, SLT_ENCUMBER, } from './weight.js';
 import { hiddenGold } from './gold.js';
@@ -205,7 +208,7 @@ import { kickWithMonsterForm } from './hero_form_kick.js';
 import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, safeTeleportDestination, } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
-import { RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
+import { RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 // object.h enum value; object_data currently exposes the two other tools.
@@ -768,6 +771,14 @@ async function continueOccupation(g) {
             if (occupation.container) {
                 occupation.container.olocked = !occupation.container.olocked;
                 occupation.container.lknown = true;
+            }
+            else if (occupation.door && (occupation.door.doormask & D_TRAPPED)) {
+                await triggerBoobyTrap('door', { bodypart: true, state: g });
+                occupation.door.doormask = D_NODOOR;
+                if (roomsAt(g.level, occupation.x, occupation.y, SHOPBASE).length)
+                    addShopDamage(occupation.x, occupation.y, SHOP_DOOR_COST, g);
+                vision_reset();
+                vision_recalc(0);
             }
             else if (occupation.door && (occupation.door.doormask & D_LOCKED)) {
                 occupation.door.doormask &= ~D_LOCKED;
@@ -1862,19 +1873,57 @@ async function dokick() {
                     && (roomForRoomno(game.level, roomno)?.rtype
                         ?? 0) >= SHOPBASE;
             });
-            const shatters = strength > 18 && rn2(5) === 0 && !touchesShop;
-            location.doormask = shatters ? D_NODOOR : D_BROKEN;
-            await pline(shatters
-                ? 'As you kick the door, it shatters to pieces!'
-                : 'As you kick the door, it crashes open!');
-            await exerciseAttribute(A_STR, true);
+            if (location.doormask & D_TRAPPED) {
+                if (game.flags.verbose)
+                    await pline('You kick the door.');
+                await exerciseAttribute(A_STR, false);
+                location.doormask = D_NODOOR;
+                await triggerBoobyTrap('door', { bodypart: true });
+            }
+            else {
+                const shatters = strength > 18 && rn2(5) === 0 && !touchesShop;
+                location.doormask = shatters ? D_NODOOR : D_BROKEN;
+                await pline(shatters
+                    ? 'As you kick the door, it shatters to pieces!'
+                    : 'As you kick the door, it crashes open!');
+                await exerciseAttribute(A_STR, true);
+            }
             vision_reset();
             vision_recalc(0);
             newsym(x, y);
+            if (touchesShop) {
+                addShopDamage(x, y, SHOP_DOOR_COST);
+                await payForShopDamage('break');
+            }
         }
         else {
             await exerciseAttribute(A_STR, true);
             await pline(rn2(3) === 0 ? 'Thwack!!' : 'Whammm!!');
+        }
+        game.context.move = 1;
+        return;
+    }
+    if (location.typ === SDOOR) {
+        const average = Math.trunc((currentStrength()
+            + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);
+        if (!game.u.levitating && rn2(30) < average) {
+            convertSecretDoor(location);
+            const uncover = (location.doormask & (D_LOCKED | D_TRAPPED)) === D_LOCKED;
+            await pline(`Crash!  ${uncover ? 'Your kick uncovers' : 'You kick open'} a secret door!`);
+            await exerciseAttribute(A_DEX, true);
+            if (location.doormask & D_TRAPPED) {
+                location.doormask = D_NODOOR;
+                await triggerBoobyTrap('door', { bodypart: true });
+            }
+            else if (location.doormask !== D_NODOOR && !(location.doormask & D_LOCKED)) {
+                location.doormask = D_ISOPEN;
+            }
+            newsym(x, y);
+            vision_reset();
+            vision_recalc(0);
+        }
+        else {
+            await kickOuch(x, y);
         }
         game.context.move = 1;
         return;
@@ -5040,17 +5089,29 @@ async function doopen() {
     if (rnl(20) < Math.trunc((currentStrength()
         + currentAttribute(A_DEX)
         + currentAttribute(A_CON)) / 3)) {
-        loc.doormask = D_ISOPEN;
-        newsym(x, y);
-        vision_reset();
-        vision_recalc(0);
-        await pline('The door opens.');
+        await openClosedDoor(loc, x, y);
     }
     else {
         await exerciseAttribute(A_STR, true);
         await pline('The door resists!');
     }
     game.context.move = 1;
+}
+// C lock.c:doopen_indir(): announce the opening before detonating its trap.
+async function openClosedDoor(door, x, y) {
+    await pline('The door opens.');
+    if (door.doormask & D_TRAPPED) {
+        await triggerBoobyTrap('door', { bodypart: true });
+        door.doormask = D_NODOOR;
+        if (roomsAt(game.level, x, y, SHOPBASE).length)
+            addShopDamage(x, y, SHOP_DOOR_COST);
+    }
+    else {
+        door.doormask = D_ISOPEN;
+    }
+    newsym(x, y);
+    vision_reset();
+    vision_recalc(0);
 }
 // C refs: write.c dowrite()/write_ok(); invent.c getobj().  The object picker
 // retains ownership after an absent inventory letter and reopens the same
@@ -6867,12 +6928,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
             await pline('The door resists!');
             return false;
         }
-        loc.doormask &= ~(D_CLOSED | D_LOCKED);
-        loc.doormask |= 2; // D_ISOPEN
-        await pline('The door opens.');
-        vision_reset();
-        vision_recalc(1);
-        newsym(newx, newy);
+        await openClosedDoor(loc, newx, newy);
         return false;
     }
     // C test_move() rejects an obstructed destination before it evaluates

@@ -3,6 +3,10 @@
 
 import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
+import { vision_note_blocker_change } from './vision.js';
+import { addShopDamage } from './shop_damage.js';
+import { roomsAt } from './room.js';
+import { SHOPBASE } from './const.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { artifactById } from './artifacts.js';
@@ -909,7 +913,9 @@ async function handleDoor(x: number, y: number, {
 async function triggerDoorTrap(door: MapLocation, x: number, y: number, { state, publish, rollOne }: Pick<BoxTrapOptions, 'state' | 'publish' | 'rollOne'>): Promise<void> {
     await triggerBoobyTrap('door', { bodypart: true, state, publish, rollOne });
     door.doormask = D_NODOOR;
+    vision_note_blocker_change(x, y);
     newsym(x, y);
+    if (roomsAt(state.level, x, y, SHOPBASE).length) addShopDamage(x, y, 0, state);
 }
 
 async function awardExperience(experience: number, scoreBonus: number, state: GameState, publish: MessagePublisher): Promise<void> {
