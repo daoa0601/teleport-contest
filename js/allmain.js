@@ -275,7 +275,7 @@ export async function restoregamePreamble() {
     const race = game.urace?.adj || game.urace?.noun || 'human';
     const role = game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
-    const greeting = `Hello ${game.displayName || game.plname}, the ${race} ${role}, welcome back to NetHack!`;
+    const greeting = `${game.urole.greeting} ${game.displayName || game.plname}, the ${race} ${role}, welcome back to NetHack!`;
     // The first flush paints the display state restored with the level.
     await bot();
     await plineWithContinuation(greeting);
