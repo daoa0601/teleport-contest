@@ -7,7 +7,7 @@ import { rhack } from '../js/cmd.js';
 import { W_QUIVER } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import {
-    heroGoldAmount, heroGoldObject,
+    detachHeroGold, heroGoldAmount, heroGoldObject,
 } from '../js/hero_gold.js';
 import { pushKey } from '../js/input.js';
 import { mkgold } from '../js/mklev.js';
@@ -175,3 +175,23 @@ void test('partial shop payment preserves the purse identity and exact remainder
         assert.equal(merchandise.unpaid, false);
         assert.equal(resident.eshk.bill.length, 0);
     });
+
+
+void test('splitting carried gold gives the detached coins their own name storage', async () => {
+    freshGameplayRoom();
+    requireFixtureGame(game);
+    const purse = await carriedGold(12, 28500);
+    purse.oextra = { oname: 'lucky coins' };
+    purse.pickup_prev = true;
+
+    const coins = detachHeroGold(game, 3);
+    assert.ok(coins);
+    assert.ok(coins.oextra);
+    coins.oextra.oname = 'offering';
+
+    assert.equal(purse.oextra.oname, 'lucky coins');
+    assert.equal(coins.pickup_prev, false);
+    assert.equal(coins.where, 'free');
+    assert.equal(purse.quan, 9);
+    assert.equal(heroGoldObject(game), purse);
+});
