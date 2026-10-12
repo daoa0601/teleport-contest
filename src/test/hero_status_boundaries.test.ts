@@ -11,6 +11,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 
+const POTION_CLASS = 8, SCROLL_CLASS = 9, WAND_CLASS = 11;
+
 function statusText() {
     return requireScreenRow(23).map(cell => cell.ch).join('');
 }
@@ -34,19 +36,24 @@ for (const name of ['gnome queen', 'ogre king']) {
     });
 }
 
-void test('lawful minions receive sound, uncursed, erosion-proof equipment', async () => {
+void test('lawful minions receive uncursed, sound, erosion-proof magical supplies', async () => {
+    let suppliedBirths = 0;
     for (let seed = 1n; seed <= 12n; seed++) {
         freshObjectRoom({ gameplaySeed: seed });
         const archon = await createMonsterAt('Archon', 12, 10, MM_NOGRP | MM_NOMSG);
-        const gear = (archon.minvent ?? []).filter(object => [2, 3].includes(object.oclass));
+        // Archon weapons and shields bypass mongets(); magical supplies do not.
+        const supplies = (archon.minvent ?? []).filter(object =>
+            [POTION_CLASS, SCROLL_CLASS, WAND_CLASS].includes(object.oclass));
 
-        assert.ok(gear.length > 0, `Archon needs equipment at seed ${seed}`);
-        for (const object of gear) {
-            assert.equal(object.cursed, false, `Cursed Archon equipment at seed ${seed}`);
-            assert.ok(object.spe >= 0, `Negative Archon enchantment at seed ${seed}`);
-            assert.equal(object.oerodeproof, true, `Rustable Archon equipment at seed ${seed}`);
+        if (supplies.length) suppliedBirths++;
+        for (const object of supplies) {
+            const item = `Archon supply ${object.otyp} at seed ${seed}`;
+            assert.equal(object.cursed, false, `${item} must be uncursed`);
+            assert.ok(object.spe >= 0, `${item} has negative charges: ${object.spe}`);
+            assert.equal(object.oerodeproof, true, `${item} must be erosion-proof`);
         }
     }
+    assert.ok(suppliedBirths > 0, 'Archons must receive magical supplies in these births');
 });
 
 void test('Vlad receives an empty, unlit, uncursed candelabrum', async () => {
