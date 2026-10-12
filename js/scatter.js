@@ -2,23 +2,27 @@
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
 import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
-import { A_STR, DOOR, D_CLOSED, D_LOCKED, SINK, STATUE_TRAP, Upolyd, ZAP_POS, isok, } from './const.js';
-import { exerciseAttribute } from './attrib.js';
+import { DOOR, D_CLOSED, D_LOCKED, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS, isok, } from './const.js';
 import { newsym } from './display.js';
-import { finishHeroDeath } from './end.js';
-import { landFloorObject } from './floor_effects.js';
+import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { placeObject, remove_object, stack_object, } from './floor_object.js';
 import { game, requireLiveGame } from './gstate.js';
 import { unlinkObject } from './object_location.js';
 import { wakeMonster } from './monster_anger.js';
 import { wakeMonstersNear } from './monster_wake.js';
-import { MONSTER_NAME } from './monster_data.js';
+import { heroSpecies } from './hero_species.js';
+import { hitHeroWithObject } from './hero_object_hit.js';
+import { killerObjectName } from './objnam.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
+import { stopHeroOccupation } from './occupation.js';
+import { addShopObjectToBill, costlySpot } from './shk.js';
+import { roomsAt } from './room.js';
+import { MONSTER_SIZE, MONSTER_NAME } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { BOULDER, EGG, OBJECT_MATERIAL, OBJECT_NAMES, ROCK, STATUE, } from './object_data.js';
+import { BOULDER, EGG, GOLD_PIECE, OBJECT_MATERIAL, OBJECT_NAMES, ROCK, STATUE, } from './object_data.js';
 import { breakFloorObject, } from './object_breakage.js';
 import { splitObjectStack } from './object_stack.js';
 import { hitMonsterWithSupportedPotion } from './potion_hit.js';
-import { returnHeroToHumanForm } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { objectWeight } from './weight.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, } from './weapon_damage.js';
@@ -186,34 +190,30 @@ async function hitHero(node, state, options) {
     const object = node.object;
     if (!object)
         return false;
-    const attack = 8 + (object.spe ?? 0);
-    if ((state.u?.uac ?? 10) + attack < options.rollOne(20))
+    const attack = 8 + (object.spe ?? 0)
+        + ((MONSTER_SIZE[heroSpecies(state)] ?? 2) >= 3 ? 1 : 0);
+    if (state.multi)
+        endVoluntaryMultiTurn(state);
+    if (object.oclass !== POTION_CLASS) {
+        let damage = rollPhysicalWeaponDamageAgainstHero(object, state, { rollOne: options.rollOne });
+        if (state.u.halfPhysicalDamage)
+            damage = Math.trunc((damage + 1) / 2);
+        const result = await hitHeroWithObject(object, damage, attack, {
+            state, publish: options.publish, rollOne: options.rollOne,
+            killer: killerObjectName(object, state),
+        });
+        if (result.hit) {
+            node.range -= 3;
+            await stopHeroOccupation(state, options.publish);
+        }
+        return result.hit;
+    }
+    if ((state.u.uac ?? 10) + attack <= options.rollOne(20))
         return false;
     await options.publish(`You are hit by ${objectName(object)}.`);
-    if (object.oclass === POTION_CLASS) {
-        await breakAtRest(object, state, {
-            ...options,
-            x: node.x,
-            y: node.y,
-        });
-        node.object = null;
-        node.stopped = true;
-        return true;
-    }
-    let damage = rollPhysicalWeaponDamageAgainstHero(object, state, { rollOne: options.rollOne });
-    if (state.u.halfPhysicalDamage)
-        damage = Math.ceil(damage / 2);
-    await exerciseAttribute(A_STR, false, state);
-    const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';
-    const remainingHitPoints = Math.max(0, (state.u[hitPoints] ?? 1) - damage);
-    state.u[hitPoints] = remainingHitPoints;
-    if (remainingHitPoints <= 0) {
-        if (Upolyd(state.u))
-            await returnHeroToHumanForm(state, { publish: options.publish });
-        else
-            await finishHeroDeath({ killer: 'flying debris' });
-    }
-    node.range -= 3;
+    await breakAtRest(object, state, { ...options, x: node.x, y: node.y });
+    node.object = null;
+    node.stopped = true;
     return true;
 }
 async function fractureObject(object, x, y, state, options) {
@@ -302,16 +302,6 @@ function nextObjectFromPile(pile, state, options) {
         throw new Error(`Cannot split scattered object ${object.o_id}.`);
     return { object: part, lastPiece: false };
 }
-async function landObject(node, state, options) {
-    const { object, x, y } = node;
-    if (!object)
-        return;
-    await landFloorObject(object, x, y, {
-        state,
-        publish: options.publish,
-        random: options.random,
-    });
-}
 export async function scatterFloorObjects(x, y, force, { state = game, onlyObject = null, mayDestroy = true, mayFracture = true, mayHitHero = true, mayHitMonsters = true, heroCaused = false, publish = async () => { }, random = rn2, rollOne = rnd, rollDice = d, finishMonsterDeath = null, finishMonsterKill = null, } = {}) {
     requireLiveGame(state);
     const options = {
@@ -319,6 +309,11 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
         mayHitHero, mayHitMonsters, heroCaused, publish,
         random, rollOne, rollDice, finishMonsterDeath, finishMonsterKill,
     };
+    const shop = costlySpot(x, y, state)?.resident;
+    const creditBefore = shop?.eshk.credit ?? 0;
+    const debitBefore = shop?.eshk.debit ?? 0;
+    const loanBefore = shop?.eshk.loan ?? 0;
+    let lostGoods = false;
     const nodes = [];
     const pile = floorPile(state, x, y);
     while (pile.length) {
@@ -364,12 +359,34 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
         if (!node.object)
             continue;
         const quantity = node.object.quan ?? node.object.quantity ?? 1;
-        await landObject(node, state, options);
+        const object = node.object;
+        const effect = await applyFloorEffects(object, node.x, node.y, {
+            state, publish, random, verb: 'land',
+        });
+        if (!effect.finished) {
+            const heroRoom = roomsAt(state.level, state.u.ux, state.u.uy, SHOPBASE)[0];
+            if (shop && object.otyp === GOLD_PIECE && !costlySpot(node.x, node.y, state)
+                && heroRoom !== undefined && state.u.urooms?.includes(heroRoom)) {
+                await addShopObjectToBill(object, state, { ininv: false, silent: true, publish });
+                lostGoods = true;
+            }
+            await placeObject(object, node.x, node.y, state);
+            await stack_object(object, state);
+        }
         if (node.x !== x || node.y !== y)
             moved += quantity;
         newsym(node.x, node.y);
     }
     newsym(x, y);
+    if (lostGoods && shop) {
+        const creditUsed = creditBefore - (shop.eshk.credit ?? 0);
+        const debitAdded = (shop.eshk.debit ?? 0) - debitBefore;
+        const loanAdded = (shop.eshk.loan ?? 0) - loanBefore;
+        const amount = creditUsed > 0 ? creditUsed : debitAdded > 0 ? debitAdded : loanAdded;
+        if (amount > 0)
+            await publish(`Your ${creditUsed > 0
+                ? 'credit has been reduced' : 'debt has increased'} by ${amount} ${amount === 1 ? 'zorkmid' : 'zorkmids'}.`);
+    }
     return moved;
 }
 //# sourceMappingURL=scatter.js.map

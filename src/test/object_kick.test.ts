@@ -1,3 +1,4 @@
+import { createStaffedShop } from './support/shop.js';
 import { resetInputState } from '../js/input.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
@@ -125,4 +126,37 @@ void test('kicking a pile of coins scatters that pile and leaves other objects a
     assert.ok(coins.some(object => object.oy !== 10));
     assert.equal(club.ox, 11);
     assert.equal(club.oy, 10);
+});
+
+void test('scattered coins only hit the hero when their accuracy exceeds the armor roll', async () => {
+    freshGameplayRoom({ role: 'tourist' });
+    requirePlayingGame(game);
+    game.u.uac = 10;
+    placeCreatedObject(await knownObject(GOLD_PIECE, { quantity: 5 }), 11, 10);
+    const messages: string[] = [];
+
+    await kickFloorObject(11, 10, { dx: 1, dy: 0,
+        random: limit => limit === 8 ? 0 : 1,
+        rollOne: sides => sides === 20 ? 18 : sides,
+        publish: message => { messages.push(message); } });
+
+    assert.equal(messages.some(message => /You are hit by/.test(message)), false);
+    assert.ok(messages.some(message => /almost hit|misses you/.test(message)));
+});
+
+
+void test('coins scattered out of a shop are charged and reported together', async () => {
+    freshGameplayRoom({ role: 'tourist' });
+    requirePlayingGame(game);
+    const { shopkeeper } = await createStaffedShop({ left: 9, right: 11, keeperX: 10, keeperY: 9 });
+    placeCreatedObject(await knownObject(GOLD_PIECE, { quantity: 20 }), 11, 10);
+    const messages: string[] = [];
+
+    await kickFloorObject(11, 10, { dx: 1, dy: 0,
+        random: limit => limit === 8 ? 4 : 1,
+        rollOne: sides => sides,
+        publish: message => { messages.push(message); } });
+
+    assert.equal(shopkeeper.eshk.debit, 20);
+    assert.ok(messages.includes('Your debt has increased by 20 zorkmids.'));
 });
