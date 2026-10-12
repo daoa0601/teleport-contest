@@ -190,12 +190,6 @@ export function recordHeroKillConduct(state = game) {
     if (firstKill)
         recordGameLogEvent('killed for the first time', { state });
 }
-async function promptDeathQuestion(message) {
-    await pline(message);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(message.length + 1, 0);
-    return String.fromCharCode(await nhgetch()).toLowerCase();
-}
 // C insight.c:list_vanquished()/vanqsort_cmp().  The order comes from
 // flags.vanq_sortmode, chosen through the tty sort menu below; the default
 // "traditional" order is monster level high to low, then internal index.
@@ -1133,7 +1127,7 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
     // removes the inventory. Repossessed gold has already left the hero.
     const summary = gameSummaryValues('died');
     game.u.urexp = summary.score;
-    await createBonesFromDeath(deathCause || deathCauseRecord(killer, deathVerb), promptDeathQuestion);
+    await createBonesFromDeath(deathCause || deathCauseRecord(killer, deathVerb), promptYesNo);
     if (showSummary) {
         game._preserveLeadingStyledBlanks = false;
         await showTextWindow(deathSummaryLines(killer, summary, { deathVerb, deathCause, deathType }));

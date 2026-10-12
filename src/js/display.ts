@@ -2255,20 +2255,19 @@ async function pageTopline(
         display?.setCursor(0, 0);
         return key;
     }
-    // tty ESC at more() sets WIN_STOP.  The message which requested this
-    // pager is discarded, but tty's first old topline remains physically
-    // visible when it occupied one row.  A wrapped topline takes the
-    // docorner() path instead and restores all of its map-covered rows.
-    // Keep either result out of continuation ownership so later ordinary
-    // plines are still suppressed until the next command read. Urgent output
-    // holds WIN_NOSTOP through this pager, so Escape cannot suppress it.
-    if (key === 27 && !urgent) {
-        game._retained_message = lines.length > 1
-            ? '' : message.split('  ')[0] ?? '';
-        game._suppressMessagesUntilInput = true;
+    // more() repairs covered map rows after any dismissal. Escape also
+    // erases a one-line message; WIN_NOSTOP only prevents output suppression.
+    game._retained_message = '';
+    if (lines.length > 1) {
+        _buildScreenOutput(false);
+        display?.setCursor(0, 0);
+    } else if (key === 27) {
+        display?.clearRow(0);
+        display?.setCursor(0, 0);
     } else {
-        game._retained_message = '';
+        game._retained_message = message + '--More--';
     }
+    if (key === 27 && !urgent) game._suppressMessagesUntilInput = true;
     return key;
 }
 
