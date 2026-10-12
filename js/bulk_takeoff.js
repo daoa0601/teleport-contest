@@ -25,9 +25,9 @@ import { surfaceName } from './terrain_name.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
 import { TAKEOFF_ORDER, resetBulkTakeoff, takeoffSlotObject } from './takeoff_state.js';
 import { selectBulkTakeoff } from './takeoff_menu.js';
-const AMULET_OF_ESP = OBJECT_NAMES.indexOf('ESP');
-const AMULET_OF_FLYING = OBJECT_NAMES.indexOf('flying');
-const AMULET_OF_MAGICAL_BREATHING = OBJECT_NAMES.indexOf('magical breathing');
+const AMULET_OF_ESP = OBJECT_NAMES.indexOf('amulet of ESP');
+const AMULET_OF_FLYING = OBJECT_NAMES.indexOf('amulet of flying');
+const AMULET_OF_MAGICAL_BREATHING = OBJECT_NAMES.indexOf('amulet of magical breathing');
 const M1_AMPHIBIOUS = 0x00000200;
 export async function takeOffAll() {
     game.context.move = 0;
@@ -67,9 +67,9 @@ export async function continueBulkTakeoff(state = game) {
             return true;
         }
         const slot = progress.current;
-        progress.current = null;
-        progress.pending = progress.pending.filter(candidate => candidate !== slot);
         await removeSelectedSlot(slot, state);
+        progress.pending = progress.pending.filter(candidate => candidate !== slot);
+        progress.current = null;
         if (state.program_state.gameover)
             return false;
     }

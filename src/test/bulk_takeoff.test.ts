@@ -4,17 +4,19 @@ import { removeHeroArmor, wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { moveloop_core } from '../js/allmain.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
-import { MENU_PARTIAL, TT_BEARTRAP } from '../js/const.js';
+import { MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NO_MINVENT, POOL, TT_BEARTRAP } from '../js/const.js';
+import { glyphAt, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import {
     AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, CORPSE,
-    DAGGER, GAUNTLETS_OF_POWER, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION,
+    DAGGER, GAUNTLETS_OF_POWER, GOLD_PIECE, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION,
     RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { stopHeroOccupation } from '../js/occupation.js';
-import { grantIntrinsicProperty, propertyIsActive, setPropertyTimeout } from '../js/properties.js';
+import { grantIntrinsicProperty, propertyIsActive, revokeIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { inventoryItemDescription } from '../js/invent.js';
+import { objectTypeKnown } from '../js/shk.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/weapon_slots.js';
@@ -23,9 +25,14 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { createMonsterAt } from './support/monsters.js';
+import { createPoisonGasCloud } from '../js/regions.js';
 
 const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 const T_SHIRT = OBJECT_NAMES.indexOf('T-shirt');
+const AMULET_OF_ESP = OBJECT_NAMES.indexOf('amulet of ESP');
+const AMULET_OF_FLYING = OBJECT_NAMES.indexOf('amulet of flying');
+const AMULET_OF_MAGICAL_BREATHING = OBJECT_NAMES.indexOf('amulet of magical breathing');
 
 async function takeOff(answers: string) {
     pushKeys(answers);
@@ -187,6 +194,63 @@ void test('full-menu class and curse filters intersect rather than selecting eit
     assert.equal(game.uleft, ring);
 });
 
+void test('the armor class symbol selects only armor in the full takeoff category menu', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_FULL } });
+    const shield = await addInventoryObject(SMALL_SHIELD);
+    const ring = await addInventoryObject(RIN_PROTECTION);
+    wearHeroArmor(shield);
+    await wearHeroAccessory(ring, 'uleft');
+
+    await takeOff(`[\n${shield.invlet}\n`);
+    await work(1);
+
+    assert.equal(game.uarms, null);
+    assert.equal(game.uleft, ring);
+});
+
+for (const style of [MENU_FULL, MENU_TRADITIONAL] as const) {
+    void test(`a priest learns carried BUC states before cancelling takeoff with menu style ${style}`, async () => {
+        freshObjectRoom({ role: 'priest', flags: { menu_style: style } });
+        const shield = await addInventoryObject(SMALL_SHIELD);
+        const dagger = await addInventoryObject(DAGGER, { cursed: true });
+        const gold = await addInventoryObject(GOLD_PIECE);
+        wearHeroArmor(shield);
+        shield.bknown = false;
+        dagger.bknown = false;
+        gold.bknown = true;
+
+        await takeOff('\x1b');
+
+        assert.equal(dagger.bknown, true, 'BUC counting includes unworn carried items');
+        assert.equal(gold.bknown, false, 'coins have no known BUC state');
+        assert.equal(game.uarms, shield);
+        assert.equal(game.context.move, 0);
+    });
+}
+
+void test('armor cursed during bulk removal remains described as being doffed in its off message', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
+    const suit = await addInventoryObject(RING_MAIL);
+    wearHeroArmor(suit);
+    await takeOff(`${suit.invlet}\n`);
+    suit.cursed = true;
+
+    await work(4);
+    const messages: string[] = [];
+    resetInputState().display = {
+        async readKey() {
+            messages.push(game._pending_message);
+            return 32;
+        },
+    };
+    await continueCountedCommand();
+
+    assert.ok(messages.some(message => /You were wearing .*ring mail \(being doffed\)\./.test(message)),
+        `Expected the doffing annotation in the removal message: ${messages.join('; ')}`);
+    assert.equal(game.uarm, suit);
+    assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+});
+
 void test('traditional takeoff can select a class and accept all its worn items', async () => {
     freshObjectRoom({ flags: { menu_style: 0 } });
     const shield = await addInventoryObject(SMALL_SHIELD);
@@ -289,6 +353,75 @@ void test('bulk amulet removal ends strangulation and keeps the amulet in invent
     assert.equal(game.u.strangledTurns, 0);
     assert.ok(game.inventory.includes(amulet));
     assert.ok(game._knownObjectTypes?.has(AMULET_OF_STRANGULATION));
+});
+
+void test('bulk ESP amulet removal redraws a stationary monster that telepathy had revealed', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const monster = await createMonsterAt('jackal', 12, 10, NO_MINVENT);
+    monster.minvis = 1;
+    const amulet = await addInventoryObject(AMULET_OF_ESP);
+    await wearHeroAccessory(amulet, 'uamul');
+    newsym(monster.mx, monster.my);
+    assert.equal(glyphAt(monster.mx, monster.my)?.kind, 'monster');
+
+    await takeOff(`${amulet.invlet}\n`);
+    await work(1);
+
+    assert.notEqual(glyphAt(monster.mx, monster.my)?.kind, 'monster');
+    assert.equal(game.uamul, null);
+});
+
+void test('bulk flying amulet removal announces landing and identifies the amulet', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    grantIntrinsicProperty('flying', 'outside');
+    const amulet = await addInventoryObject(AMULET_OF_FLYING, { typeKnown: false });
+    await wearHeroAccessory(amulet, 'uamul');
+    revokeIntrinsicProperty('flying', 'outside');
+    game._pending_message = '';
+    assert.equal(propertyIsActive('flying'), true);
+    assert.equal(objectTypeKnown(amulet), false);
+
+    await takeOff(`${amulet.invlet}\n`);
+    await work(1);
+
+    assert.match(game._pending_message, /You land\./);
+    assert.equal(propertyIsActive('flying'), false);
+    assert.equal(objectTypeKnown(amulet), true);
+});
+
+void test('bulk magical-breathing amulet removal warns about poison gas and identifies the amulet', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const amulet = await addInventoryObject(AMULET_OF_MAGICAL_BREATHING, { typeKnown: false });
+    await wearHeroAccessory(amulet, 'uamul');
+    await createPoisonGasCloud(game, game.u.ux, game.u.uy, 1, 8);
+    game._pending_message = '';
+    assert.equal(objectTypeKnown(amulet), false);
+
+    await takeOff(`${amulet.invlet}\n`);
+    await work(1);
+
+    assert.match(game._pending_message, /You are breathing poison gas!/);
+    assert.equal(propertyIsActive('magicalBreathing'), false);
+    assert.equal(objectTypeKnown(amulet), true);
+});
+
+void test('bulk magical-breathing amulet removal forces an underwater hero to escape drowning', async () => {
+    const level = freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const amulet = await addInventoryObject(AMULET_OF_MAGICAL_BREATHING, { typeKnown: false });
+    await wearHeroAccessory(amulet, 'uamul');
+    const { ux, uy } = game.u;
+    level.requireAt(ux, uy).typ = POOL;
+    game.u.uinwater = 1;
+    game.underwater = true;
+    game._pending_message = '';
+    assert.equal(objectTypeKnown(amulet), false);
+
+    await takeOff(`${amulet.invlet}\n`);
+    await work(1);
+
+    assert.ok(game.u.ux !== ux || game.u.uy !== uy, 'the hero crawls to adjacent dry ground');
+    assert.equal(!!game.program_state.gameover, false);
+    assert.equal(objectTypeKnown(amulet), true);
 });
 
 void test('removing a restful-sleep amulet clears its timeout but retains permanent sleepiness', async () => {

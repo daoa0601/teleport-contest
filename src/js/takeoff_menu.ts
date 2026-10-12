@@ -68,9 +68,15 @@ function wornInventory(): GameObject[] {
 }
 
 function bucCategory(object: GameObject): BucCategory {
-    if (game.urole?.key === 'priest') object.bknown = object.oclass !== 12;
     if (object.oclass === 12) return game.flags.goldX ? 'X' : 'U';
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
+}
+
+function wornBucCategories(worn: readonly GameObject[]): Set<BucCategory> {
+    // Native count_buc() grants priest knowledge before applying is_worn().
+    if (game.urole?.key === 'priest')
+        for (const object of game.inventory) object.bknown = object.oclass !== 12;
+    return new Set(worn.map(bucCategory));
 }
 
 function hasUnpaid(object: GameObject): boolean {
@@ -92,7 +98,7 @@ function matchesCategories(object: GameObject, categories: readonly Category[]):
 async function categoryMenu(): Promise<Category[]> {
     const worn = wornInventory();
     const classes = inventoryClassOrder().filter(oclass => worn.some(object => object.oclass === oclass));
-    const statuses = new Set(worn.map(bucCategory));
+    const statuses = wornBucCategories(worn);
     const unpaid = game.inventory.some(hasUnpaid);
     if (classes.length === 1 && !unpaid && statuses.size <= 1) {
         const only = classes[0];
@@ -105,7 +111,8 @@ async function categoryMenu(): Promise<Category[]> {
         letter++;
     }
     for (const oclass of classes) items.push({
-        key: String.fromCharCode(letter++), text: objectClassHeading(oclass), value: oclass,
+        key: String.fromCharCode(letter++), groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '',
+        text: objectClassHeading(oclass), value: oclass,
     });
     if (unpaid || statuses.size) items.push({ text: '', selectable: false });
     if (unpaid) items.push({ key: 'u', text: 'Unpaid items', value: 'u' });
@@ -128,7 +135,7 @@ async function categoryMenu(): Promise<Category[]> {
 async function traditionalCategories(combo: boolean, selectOff: SelectOff): Promise<Category[] | null> {
     const worn = wornInventory();
     const classes = [...new Set(worn.map(object => object.oclass))];
-    const statuses = new Set(worn.map(bucCategory));
+    const statuses = wornBucCategories(worn);
     const promptClasses = classes.map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('');
     const unpaid = game.inventory.some(hasUnpaid);
     const picked = game.inventory.some(object => object.pickup_prev);

@@ -17,7 +17,8 @@ for (const keys of ['\x06', '#wizmap\n', '!', 'm\x06', 'F\x06']) {
         pushKeys(keys);
         await rhack(0);
         assert.equal(game.context.move, 0);
-        assert.equal(game._pending_message, "Unavailable command 'wizmap'.");
+        assert.equal(game._pending_message, keys === '#wizmap\n'
+            ? '#wizmap: unknown extended command.' : "Unavailable command 'wizmap'.");
         assert.equal(level.requireAt(30, 10).typ, SCORR);
     });
 }

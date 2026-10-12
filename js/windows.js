@@ -521,7 +521,11 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
     for (;;) {
         const { pageCount, pageItems, pageKeys } = render();
         const key = await nhgetch();
-        if (returnCounts && key >= 48 && key <= 57) {
+        const letter = String.fromCharCode(key);
+        const group = allItems.filter(item => item.groupAccelerator === letter);
+        const isGroup = group.some(item => item.key !== letter || letter === '$')
+            && (!pickOne || group.length === 1);
+        if (returnCounts && key >= 48 && key <= 57 && (!isGroup || pendingCount !== null)) {
             const digit = key - 48;
             const next = Math.min(Number.MAX_SAFE_INTEGER, (pendingCount ?? 0) * 10 + digit);
             if (next > 0)
@@ -540,7 +544,24 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
         if (key === 10 || key === 13) {
             return selectedValues();
         }
-        const letter = String.fromCharCode(key);
+        // C tty process_menu_window(): group accelerators invert matching
+        // entries across pages; PICK_ONE accepts only a single match.
+        if (isGroup) {
+            for (const item of group) {
+                if (selected.has(item)) {
+                    selected.delete(item);
+                    selectedCounts.delete(item);
+                }
+                else {
+                    selected.add(item);
+                    if (count !== null)
+                        selectedCounts.set(item, count);
+                }
+            }
+            if (pickOne)
+                return selectedValues();
+            continue;
+        }
         if (letter === ' ') {
             if (pageCount > 1 && page < pageCount - 1) {
                 page++;
