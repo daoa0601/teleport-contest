@@ -3880,15 +3880,6 @@ export async function newgame() {
 export async function moveloop_core() {
     const g = requireInitializedGame();
 
-    if (g._saveExitPending) {
-        const display = g.nhDisplay;
-        display?.clearScreen();
-        putLine(0, 0, 'Be seeing you...');
-        display?.setCursor(0, 1);
-        await nhgetch();
-        return;
-    }
-
     if (g.program_state?.gameover) {
         await nhgetch();
         return;

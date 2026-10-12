@@ -85,7 +85,7 @@ function placeToplinePromptCursor(position) {
 }
 // C tty_yn_function(): Escape prefers quit, then no; whitespace chooses
 // the displayed default. Invalid keys leave the same question active.
-async function promptChoice(message, choices, defaultAnswer, cursorOffset) {
+export async function promptChoice(message, choices, defaultAnswer, cursorOffset) {
     game._suppressMessagesUntilInput = false;
     await flushPendingTopline();
     await pline(message);

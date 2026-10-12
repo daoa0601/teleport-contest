@@ -178,6 +178,7 @@ export function validSavedGameFlags(value: unknown): value is GameFlags {
         runmode: optional(string),
         sortloot: optional(oneOf('n', 'l', 'f')),
         suppress_alert: optional(string),
+        vanqSortmode: optional(integer),
     });
 }
 

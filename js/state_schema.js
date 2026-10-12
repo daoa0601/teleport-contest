@@ -88,7 +88,6 @@ const transientFields = {
     _queuedHelplessRecoveryMessage: true,
     _retained_message: true,
     _runState: true,
-    _saveExitPending: true,
     _screen_output: true,
     _shopFollowMessageTurn: true,
     _shopRepossession: true,

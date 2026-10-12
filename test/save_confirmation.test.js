@@ -47,17 +47,23 @@ for (const [name, answer] of [
         assert.equal(game.moves, 40);
     });
 }
-void test('confirming save writes the game and replaces its question with Saving', async () => {
+void test('confirming save writes the game and exits with the native goodbye', async () => {
     const input = freshConfirmation();
     requirePlayingGame(game);
     input.feed('y');
     await rhack('S'.charCodeAt(0));
-    await flush_screen(1);
     assert.ok(game.storage != null, 'Expected game.storage to be initialized');
     assert.ok(game.storage.getItem('teleport-save:confirmation'));
     assert.equal(game.program_state.gameover, true);
     assert.equal(game.u.uhp, -1);
-    assert.equal(messageRow(), 'Saving...');
+    // C save.c:dosave() shows "Saving...", then exit_nhwindows("Be seeing
+    // you...") clears the screen and raw-prints the goodbye line; the
+    // newline of that puts() leaves the cursor on the following row.
+    assert.equal(game.program_state.windows_exited, true);
+    assert.equal(messageRow(), 'Be seeing you...');
+    const display = requireGameDisplay();
+    assert.equal(requireScreenRow(1).map(cell => cell.ch).join('').trimEnd(), '');
+    assert.deepEqual([display.cursorCol, display.cursorRow], [0, 1]);
 });
 void test('declining a counted save stops voluntary repetition without spending a turn', async () => {
     const input = freshConfirmation();
