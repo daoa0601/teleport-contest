@@ -407,6 +407,29 @@ void test('a sighted invisible hero cannot notice displacement loss through intr
     assert.equal(objectTypeKnown(cloak), false);
 });
 
+void test('an invisible hero who sees invisible notices bulk displacement cloak removal', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
+    wearHeroArmor(cloak);
+    grantIntrinsicProperty('invisible', 'outside');
+    grantIntrinsicProperty('seeInvisible', 'outside');
+    await takeOff(`${cloak.invlet}\n`);
+    const messages: string[] = [];
+    resetInputState().display = {
+        async readKey() {
+            messages.push(game._pending_message);
+            return 32;
+        },
+    };
+
+    await continueCountedCommand();
+
+    assert.ok(messages.some(message => /no longer have difficulty pinpointing/.test(message)),
+        `Expected visible displacement-loss feedback, received: ${messages.join('; ')}`);
+    assert.equal(game.uarmc, null);
+    assert.equal(objectTypeKnown(cloak), true);
+});
+
 void test('single displacement cloak removal uses the same feedback and discovery', async () => {
     freshObjectRoom({ flags: { verbose: false } });
     const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
@@ -418,6 +441,19 @@ void test('single displacement cloak removal uses the same feedback and discover
         'You feel that monsters no longer have difficulty pinpointing your location.');
     assert.equal(game.uarmc, null);
     assert.equal(objectTypeKnown(cloak), true);
+});
+
+void test('single displacement cloak removal identifies the cloak before naming it in verbose feedback', async () => {
+    freshObjectRoom();
+    const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
+    wearHeroArmor(cloak);
+    pushKeys(' '.repeat(10));
+
+    await rhack('T'.charCodeAt(0));
+
+    assert.equal(game.uarmc, null);
+    assert.equal(objectTypeKnown(cloak), true);
+    assert.match(game._lastPlineMessage ?? '', /You were wearing .*cloak of displacement\./);
 });
 
 for (const armorType of [SMALL_SHIELD, GAUNTLETS_OF_POWER]) {
@@ -657,6 +693,23 @@ void test('traditional takeoff displays one choice suffix and defaults to keepin
     await work(1);
     assert.equal(game.uarms, shield, 'Return chooses no and keeps the shield worn');
 });
+
+for (const categories of ['$u', 'u$', '$uU', 'uU$']) {
+    void test(`traditional takeoff ${categories} ${categories.includes('U') ? 'admits' : 'preserves'} paid quivered gold`, async () => {
+        freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
+        const gold = await addInventoryObject(GOLD_PIECE, { quan: 20 });
+        await addInventoryObject(SMALL_SHIELD, { unpaid: true });
+        await setQuiverObject(gold);
+
+        await takeOff(`${categories}\ny`);
+        await work(1);
+
+        assert.equal(game.uquiver, categories.includes('U') ? null : gold,
+            'the last status category chooses the predicate applied before coin category admission');
+        assert.ok(game.inventory.includes(gold));
+        assert.equal(gold.quan, 20);
+    });
+}
 
 void test('combination takeoff selects classes by prompt then objects by menu', async () => {
     freshObjectRoom({ flags: { menu_style: 1 } });
