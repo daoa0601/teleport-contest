@@ -1452,6 +1452,7 @@ const M2_DWARF = 0x00000020;
 const M2_GNOME = 0x00000040;
 const M2_ORC = 0x00000080;
 const M2_DEMON = 0x00000100;
+const M2_JEWELS = 0x20000000;
 const M2_LORD = 0x00000400;
 const M2_PRINCE = 0x00000800;
 const M2_MINION = 0x00001000;
@@ -1747,7 +1748,17 @@ async function makemon(
     // makemon.c honors MM_ANGRY before consulting peace_minded().  This is
     // RNG-visible for co-aligned neutral species such as fallback garter
     // snakes; hostile ant summons happened to short-circuit the same helper.
-    const peaceful = (mmflags & MM_ANGRY) ? false : peaceMinded(mndx);
+    let peaceful = (mmflags & MM_ANGRY) ? false : peaceMinded(mndx);
+    // makemon.c species switch: elves meet orcs hostile, and a unicorn
+    // sharing the sign of the hero's alignment is peaceful.
+    if (MONSTER_SYMBOL[mndx] === 15 && game.urace?.name === 'elf') { // S_ORC
+        peaceful = false;
+    } else if (MONSTER_SYMBOL[mndx] === 21 // S_UNICORN
+        && (genderFlags & M2_JEWELS) !== 0
+        && Math.sign(game.u?.ualign?.type ?? 0)
+            === Math.sign(MONSTER_ALIGNMENT[mndx] ?? 0)) {
+        peaceful = true;
+    }
     let monsterSleeping = initialMonsterSleepState(
         mndx, !!(mmflags & MM_ASLEEP),
     );
