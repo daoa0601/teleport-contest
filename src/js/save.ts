@@ -20,6 +20,7 @@ import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.
 import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
 import { FULL_MOON, LUCKMAX, LUCKMIN } from './const.js';
+import { vision_reset_new_level } from './vision.js';
 
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
@@ -203,6 +204,10 @@ export function restoreGame(
         game._shopFollowMessageTurn = 0;
         game.program_state = { something_worth_saving: true };
         game.fmon = game.level?.monsters[0] ?? null;
+        // C restore.c:dorecover() rebuilds transient vision after loading the
+        // level. No old sight bits may suppress its first terrain repaint.
+        vision_reset_new_level();
+        game.vision_full_recalc = 1;
         storage.removeItem?.(key);
         return true;
     } catch (error) {

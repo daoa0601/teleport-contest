@@ -48,8 +48,7 @@ export function monsterEmitsLight(mnum: number | undefined): boolean {
         || LIGHT_EMITTING_MONSTERS.has(mnum);
 }
 
-function mobileLightMap(level: GameMap, couldSee: Uint8Array[]): Uint8Array[] {
-    const lit = Array.from({ length: ROWNO }, () => new Uint8Array(COLNO));
+function mobileLightSources(level: GameMap): (Position & { range: number })[] {
     const monsters = [...(level?.monsters || [])];
     const sources = monsters.filter(monster =>
         !monster.dead && monster.mx > 0 && monsterEmitsLight(monster.mnum))
@@ -76,8 +75,18 @@ function mobileLightMap(level: GameMap, couldSee: Uint8Array[]): Uint8Array[] {
     }
 
     sources.push(...(game._transientLights || []));
+    return sources;
+}
 
-    for (const source of sources) {
+// C light.c:any_light_source(). The monster pass must request a refresh even
+// when the hero stays still: a monster can move its own light or a lit object.
+export function hasLightSources(): boolean {
+    return !!game.level && mobileLightSources(game.level).length > 0;
+}
+
+function mobileLightMap(level: GameMap, couldSee: Uint8Array[]): Uint8Array[] {
+    const lit = Array.from({ length: ROWNO }, () => new Uint8Array(COLNO));
+    for (const source of mobileLightSources(level)) {
         const limits = visionValue(circle_start, source.range);
         for (let y = Math.max(0, source.y - source.range);
             y <= Math.min(ROWNO - 1, source.y + source.range); y++) {

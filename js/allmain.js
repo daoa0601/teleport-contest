@@ -61,7 +61,7 @@ import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
 import { canSpotMonster, docrt, redrawMap, bot, flush_screen, flushPendingTopline, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, transientObjectGlyph, _statusLine1, _statusLine2, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
-import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset, init_vision_globals, } from './vision.js';
+import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset, hasLightSources, init_vision_globals, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import { ACID_VENOM, CORPSE, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_NAMES, SHIELD_OF_REFLECTION, } from './object_data.js';
@@ -2911,6 +2911,10 @@ async function executeMonsterTurns(messageContext) {
         actor.movement -= NORMAL_SPEED;
         if (actor.movement >= NORMAL_SPEED)
             somebodyCanMove = true;
+        // C mon.c:movemon_singlemon() settles deferred visibility before the
+        // actor's liquid checks, equipment changes, and movement decisions.
+        if (game.vision_full_recalc)
+            vision_recalc(0);
         const actorWasOpticallySeen = canSeeMonster(actor);
         const actorWasSpotted = canSpotMonster(actor);
         const actorWasCouldSee = couldsee(actor.mx, actor.my);
@@ -3202,7 +3206,11 @@ async function moveMonsters() {
     game.context.mon_moving = true;
     game._monsterMessageContext = messageContext;
     try {
-        return await executeMonsterTurns(messageContext);
+        const somebodyCanMove = await executeMonsterTurns(messageContext);
+        // C mon.c:movemon() refreshes moving light sources after the pass.
+        if (hasLightSources())
+            game.vision_full_recalc = 1;
+        return somebodyCanMove;
     }
     finally {
         game.context.mon_moving = previousMonsterMoving;
