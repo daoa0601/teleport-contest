@@ -89,7 +89,9 @@ function trapIsClearlyHarmless(type: number, state: GameState): boolean {
             return !!(flags & 0x00000400); // breathless body
         case LEVEL_TELEP:
         case TELEP_TRAP:
-            return In_endgame(state.u.uz) || !!state.u.uhave?.amulet;
+            // Native mon_has_amulet(&youmonst) checks its empty monster
+            // inventory, not the hero's carried Amulet.
+            return In_endgame(state.u.uz);
         case WEB:
             return monsterIsAmorphous(body) || monsterIsWhirly(body) || monsterIsUnsolid(body)
                 || ['cave spider', 'giant spider', 'gelatinous cube', 'fire vortex',

@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { PARANOID_CONFIRM, PARANOID_TRAP, PIT, TT_WEB, WEB } from '../js/const.js';
+import { LEVEL_TELEP, PARANOID_CONFIRM, PARANOID_TRAP, PIT, TELEP_TRAP, TT_WEB, WEB } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { AMULET_OF_YENDOR } from '../js/object_data.js';
 import { parseNethackrc } from '../js/options.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { addTrap } from './support/level-state.js';
@@ -27,6 +29,20 @@ void test('declining a known web consumes no turn and leaves the hero outside it
     assert.equal(game.u.utrap ?? 0, 0);
     assert.equal(game.context.move, 0);
 });
+for (const [type, name] of [[TELEP_TRAP, 'teleportation trap'], [LEVEL_TELEP, 'level teleporter']]) {
+    void test(`carrying the Amulet still requires confirmation for a known ${name}`, async () => {
+        const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
+        requirePlayingGame(game);
+        await addInventoryObject(AMULET_OF_YENDOR);
+        addTrap(level, type, 11, 10, { tseen: true });
+        const input = resetInputState();
+        await answerPrompts(rhack('l'.charCodeAt(0)), input, [
+            { prompt: new RegExp(`Really step into that ${name}\\? \\[yn\\] \\(n\\)`), keys: 'n' },
+        ]);
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.context.move, 0);
+    });
+}
 void test('accepting a known web enters it and spends the movement turn', async () => {
     const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
     requirePlayingGame(game);
