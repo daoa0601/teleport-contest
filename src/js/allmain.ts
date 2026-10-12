@@ -3696,6 +3696,7 @@ async function executeMonsterTurns(messageContext: MonsterMessageContext): Promi
             }
             await resumeTrappedMonster(action);
             movement = action.movement;
+            if (movement?.usedDefense) continue;
         }
         await presentPetMovementPrelude(action, game, actorWasOpticallySeen);
         movement = action.movement;

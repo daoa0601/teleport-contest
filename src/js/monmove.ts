@@ -7552,8 +7552,10 @@ function monsterHasteSelfEffect(monster: Monster, state: PlayingGameState) {
     const inSight = !blind && !!((state?.viz_array?.[monster.my]?.[monster.mx] ?? 0) & 0x2);
     const canSeeInvisible = !!state?.u?.seeInvisible;
     const visible = inSight && !monster.mundetected && (!monster.minvis || canSeeInvisible);
-    const subject = canonicalMonsterName(monster, { state, capitalized: true });
-    const message = visible && monster.mcanmove !== 0 ? monsterSpeedMessage(speed, subject) : null;
+    const message = speed.changed && speed.canDescribe && !state.in_mklev
+        && visible && monster.mcanmove !== 0
+        ? monsterSpeedMessage(speed, canonicalMonsterName(monster, { state, capitalized: true }))
+        : null;
     return { message, oldSpeed: speed.oldSpeed, speed: speed.speed };
 }
 
