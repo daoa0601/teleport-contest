@@ -111,7 +111,7 @@ async function chooseAim(x: number, y: number, state: GameState) {
     ];
     const choices = new Map([['a', 1], ['b', 2], ['c', 3]]);
     const selection = await showPagedPickOneMenu({
-        rows, choices, returnCancels: true,
+        rows, choices,
     });
     await docrt();
     return selection;

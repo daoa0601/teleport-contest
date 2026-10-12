@@ -132,10 +132,10 @@ async function showSpellMenu(title, { state, order = null, view = false, presele
         if (debug)
             text += `${separator}${String(currentSpellKnowledge(spellAt(state, position), state)).padStart(6)}`;
         const key = spellLetter(index);
-        return { key, text: `${key} - ${text}` };
+        return { key, text };
     });
     if (view && items.length > 1)
-        items.push({ key: '+', text: '+ - [sort spells]' });
+        items.push({ key: '+', text: '[sort spells]' });
     const selection = await showInventoryWindow([{ heading, items }], {
         title,
         pickMode: view && items.length === 1 ? PICK_NONE : PICK_ONE,
@@ -153,7 +153,7 @@ async function showSpellMenu(title, { state, order = null, view = false, presele
 async function selectSpellSort(sortMode) {
     const items = SORT_CHOICES.flatMap((text, index) => {
         const key = index === RETAIN_ORDER ? 'z' : spellLetter(index);
-        const row = { key, text: `${key} - ${text}` };
+        const row = { key, text };
         return index === RETAIN_ORDER ? [{ text: '' }, row] : [row];
     });
     const selection = await showInventoryWindow([{ items }], {

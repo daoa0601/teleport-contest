@@ -937,7 +937,7 @@ async function setVanqOrder(forVanquished) {
                 && (mode === VANQ_COUNT_H_L || mode === VANQ_COUNT_L_H)))
             continue;
         items.push({
-            text: `${letter} - ${vanqOrderDescription(mode, forVanquished)}`,
+            text: vanqOrderDescription(mode, forVanquished),
             key: letter, value: mode,
         });
         if (mode === current)

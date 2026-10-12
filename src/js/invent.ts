@@ -450,10 +450,10 @@ function inventorySections(items: readonly GameObject[] = game.inventory || [], 
         section.push({
             ...(item.invlet == null ? {} : { key: item.invlet }),
             text: item.oclass === COIN_CLASS
-                ? `$ - ${item.quan} gold piece${item.quan === 1 ? '' : 's'}`
-                : `${item.invlet} - ${inventoryItemDescription(item, {
+                ? `${item.quan} gold piece${item.quan === 1 ? '' : 's'}`
+                : inventoryItemDescription(item, {
                     primaryHandDetail: inventoryPrimaryHandDetail(item),
-                })}`,
+                }),
         });
     }
     return [...grouped].map(([heading, items]) => ({ heading, items }));
@@ -577,7 +577,7 @@ export async function selectInventoryObject({
     });
     if (menuOptions.length) sections.push({
         heading: 'Special', items: menuOptions.map(option => ({
-            text: `${option.key} - ${option.text}`, key: option.key,
+            text: option.text, key: option.key,
         })),
     });
     return showInventoryWindow(sections, {

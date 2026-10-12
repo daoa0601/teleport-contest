@@ -982,7 +982,7 @@ async function editMenuStyle() {
     const previous = game.flags.menu_style ?? MENU_FULL;
     const separator = game.iflags.menu_tab_sep ? '\t' : ' ';
     const items = MENU_STYLES.flatMap(([name, first, second]) => [
-        { key: name.charAt(0), text: `${name.charAt(0)} - ${name.padEnd(12)}${separator}${first}` },
+        { key: name.charAt(0), text: `${name.padEnd(12)}${separator}${first}` },
         { text: `${' '.repeat(16)}${separator}${second}` },
     ]);
     const selection = await showInventoryWindow([{ items }], {
@@ -1015,7 +1015,7 @@ function isLootSortMode(mode) {
 const SORT_LOOT_NAMES = { n: 'none', l: 'loot', f: 'full' };
 async function editSortLoot() {
     const previous = game.flags.sortloot ?? 'l';
-    const selection = await showInventoryWindow([{ items: Object.entries(SORT_LOOT_NAMES).map(([key, name]) => ({ key, text: `${key} - ${name}` })),
+    const selection = await showInventoryWindow([{ items: Object.entries(SORT_LOOT_NAMES).map(([key, name]) => ({ key, text: name })),
         }], { title: 'Select loot sorting type:', pickMode: PICK_ONE, preselectedKey: previous });
     const mode = String.fromCharCode(selection.key);
     if (isLootSortMode(mode))
