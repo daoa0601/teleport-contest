@@ -5398,15 +5398,18 @@ export function resumeDeferredHeroElectricSpecial(action, state, random = rn2) {
 }
 // Resume mhitm_ad_drli() after hitmsg().  A selected level loss and its
 // message precede shared knockback and the touch's ordinary HP damage.
-export function resumeDeferredHeroLifeDrain(action, state, random = rn2) {
+export async function resumeDeferredHeroLifeDrain(action, state, random = rn2, publish = plineWithContinuation) {
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredLifeDrainGate)
         return action;
     const selected = recordRandom(random, action.calls, 3) === 0;
     const drainResistant = heroHasDrainResistance(state);
     if (selected && !drainResistant) {
-        const armorProtection = state.u?._magicNegation ?? 0;
-        const negated = !!action.monster?.mcan || recordRandom(random, action.calls, 10) < 3 * armorProtection;
+        const negated = specialAttackNegated(action.monster, state.u, {
+            state, random: limit => recordRandom(random, action.calls, limit),
+        });
+        if (negated && !action.monster.mcan)
+            await publish('You avoid harm.');
         attack.deferredLifeDrain = !negated;
     }
     attack.deferredLifeDrainGate = false;
