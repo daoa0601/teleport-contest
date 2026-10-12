@@ -1640,7 +1640,7 @@ function covetousRelocationMessage(monster, movement, actorWasSpotted) {
     if (actorWasSpotted)
         return `${visibleMonsterSubject(monster)} vanishes!`;
     if (relocation.appearMessage) {
-        const subject = blind ? 'It' : `A ${quietMonsterName(monster)}`;
+        const subject = monsterName(monster, { article: 'a', capitalized: true });
         return `${subject} suddenly ${blind ? 'arrives' : 'appears'}${suffix}!`;
     }
     if (nowSeen) {
