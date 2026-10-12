@@ -228,7 +228,7 @@ export async function removeHeroArmor(object, state = game, options = {}) {
     }
     if (object?.otyp === FEDORA && state.urole?.key === 'archeologist')
         state.u.uluck = Math.max(LUCKMIN, (state.u.uluck ?? 0) - 1);
-    const removed = await clearHeroArmor(object, state, { cancelledDon });
+    const removed = await clearHeroArmor(object, state, { ...options, cancelledDon });
     if (losingGloves) {
         setSlipperyHands(0, state);
         await loseGloveProtection(object, state);
@@ -294,7 +294,7 @@ async function loseGloveProtection(gloves, state) {
 }
 // Slot/source removal without the Boots_off() transition.
 export async function clearHeroArmor(object, state = game, { cancelledDon = state._delayedAction?.kind === 'wear'
-    && state._delayedAction.object === object, } = {}) {
+    && state._delayedAction.object === object, deferArmorClass = false, } = {}) {
     const slot = armorSlotFor(object?.otyp);
     if (!slot)
         return false;
@@ -332,7 +332,10 @@ export async function clearHeroArmor(object, state = game, { cancelledDon = stat
         hero.fumbling = !!hero.fumblingIntrinsic
             || (hero.fumblingTurns ?? 0) > 0;
     }
-    findArmorClass(state);
+    if (deferArmorClass)
+        state._armorClassDirty = true;
+    else
+        findArmorClass(state);
     return true;
 }
 export function objectIsHardHelmet(object) {

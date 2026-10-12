@@ -347,7 +347,7 @@ function heroStaysAboveWater(state: GameState, location: MapLocation | null) {
 function heroCanLiveUnderwater(state: GameState) {
     const u = state.u;
     const flags = heroFormFlags(state);
-    return !!(u.amphibious || u.swimming || u.breathless
+    return !!(u.amphibious || u.swimming || u.breathless || u.magicalBreathing
         || (flags & (M1_SWIM | M1_AMPHIBIOUS | M1_BREATHLESS)));
 }
 
@@ -625,7 +625,7 @@ export async function sinkHeroIntoLava({
 function heroDoesNotNeedAir(state: GameState) {
     const u = state.u;
     const flags = heroFormFlags(state);
-    return !!(u.amphibious || u.breathless
+    return !!(u.amphibious || u.breathless || u.magicalBreathing
         || (flags & (M1_AMPHIBIOUS | M1_BREATHLESS)));
 }
 

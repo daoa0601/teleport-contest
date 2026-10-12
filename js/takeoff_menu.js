@@ -80,7 +80,8 @@ function hasUnpaid(object) {
 function matchesCategories(object, categories) {
     const classes = categories.filter(category => typeof category === 'number');
     const statuses = categories.filter(category => category === 'B' || category === 'C' || category === 'U' || category === 'X');
-    const filters = categories.includes('u') || statuses.length > 0 || categories.includes('P');
+    // C menu_remarm(): P alone does not disable the all-worn menu.
+    const filters = categories.includes('u') || statuses.length > 0;
     if (categories.includes('all') && !filters)
         return true;
     if (object.oclass === 12 && classes.length > 0)

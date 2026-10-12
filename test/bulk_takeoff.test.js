@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { removeHeroArmor, stopDonning, wearHeroArmor } from '../js/armor.js';
+import { findArmorClass, removeHeroArmor, stopDonning, wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { moveloop_core } from '../js/allmain.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NO_MINVENT, PIT, POOL, ROOM, TT_BEARTRAP, TT_PIT } from '../js/const.js';
-import { glyphAt, newsym } from '../js/display.js';
+import { glyphAt, newsym, plineWithContinuation } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, CLOAK_OF_DISPLACEMENT, CORPSE, DAGGER, GAUNTLETS_OF_POWER, GOLD_PIECE, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD, WATER_WALKING_BOOTS, } from '../js/object_data.js';
+import { AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, CLOAK_OF_DISPLACEMENT, CORPSE, DAGGER, GAUNTLETS_OF_POWER, GOLD_PIECE, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TOWEL, TWO_HANDED_SWORD, WATER_WALKING_BOOTS, } from '../js/object_data.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { grantIntrinsicProperty, propertyIsActive, revokeIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { inventoryItemDescription } from '../js/invent.js';
@@ -59,6 +59,34 @@ void test('bulk removal starts without a turn and removes a zero-delay shield on
     assert.equal(shield.worn, false);
     assert.ok(game.inventory.includes(shield));
     assert.match(game._pending_message, /You finish disrobing\./);
+});
+void test('bulk shield removal retains its armor class through the removal pager until the next input', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    const shield = await addInventoryObject(SMALL_SHIELD);
+    wearHeroArmor(shield);
+    findArmorClass();
+    assert.equal(game.u.uac, 9);
+    await takeOff(`${shield.invlet}\n`);
+    await plineWithContinuation('You rest.');
+    const removals = [];
+    resetInputState().display = {
+        async readKey() {
+            if (/You were wearing .*shield/.test(game._pending_message))
+                removals.push({ armorClass: game.u.uac, worn: !!game.uarms });
+            return 32;
+        },
+    };
+    await continueCountedCommand();
+    assert.ok(removals.length > 0, 'shield removal must reach a message pager');
+    for (const removal of removals) {
+        assert.equal(removal.worn, false, 'the shield is removed before its message');
+        assert.equal(removal.armorClass, 9, 'the pager retains AC from before removal');
+    }
+    resetInputState().feed('\x1b');
+    await moveloop_core();
+    assert.equal(game.u.uac, 10, 'the next input reflects the removed shield');
 });
 void test('bulk removal follows the outer-layer order even when inventory letters put the suit first', async () => {
     freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
@@ -535,6 +563,19 @@ void test('combination takeoff selects classes by prompt then objects by menu', 
     assert.equal(game.uarms, null);
     assert.equal(game.uleft, ring);
 });
+for (const categories of ['maP', 'mP', 'maPU']) {
+    void test(`traditional takeoff ${categories} ${categories === 'maP' ? 'offers all worn equipment' : 'filters recently picked equipment'}`, async () => {
+        freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
+        const cloak = await addInventoryObject(LEATHER_CLOAK, { pickup_prev: true });
+        const shield = await addInventoryObject(SMALL_SHIELD, { pickup_prev: false });
+        wearHeroArmor(cloak);
+        wearHeroArmor(shield);
+        await takeOff(`${categories}\n.\n`);
+        await work(2);
+        assert.equal(game.uarmc, null, 'the recently picked cloak can be selected');
+        assert.equal(game.uarms, categories === 'maP' ? null : shield, 'P alone does not narrow all-worn selection; a BUC filter does');
+    });
+}
 void test('changing location discards interrupted bulk removal', async () => {
     freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const suit = await addInventoryObject(RING_MAIL);
@@ -546,6 +587,31 @@ void test('changing location discards interrupted bulk removal', async () => {
     await rhack('l'.charCodeAt(0));
     assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
     assert.equal(game.uarm, suit);
+});
+void test('a peaceful monster refusing to swap onto a trap discards interrupted bulk removal', async () => {
+    const level = freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const suit = await addInventoryObject(RING_MAIL);
+    wearHeroArmor(suit);
+    const { ux, uy } = game.u;
+    const monster = await createMonsterAt('jackal', ux + 1, uy, NO_MINVENT);
+    monster.mpeaceful = true;
+    addTrap(level, PIT, ux, uy);
+    await takeOff(`${suit.invlet}\n`);
+    await work(1);
+    await stopHeroOccupation(game, async () => { });
+    resetInputState();
+    initRng(1n);
+    pushKeys('  ');
+    await rhack('l'.charCodeAt(0));
+    assert.match(game._pending_message, /doesn't want to swap places/);
+    assert.equal(game.u.ux, ux);
+    assert.equal(game.u.uy, uy);
+    assert.equal(monster.mx, ux + 1);
+    assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+    resetInputState();
+    await takeOff('\x1b');
+    await work(6);
+    assert.equal(game.uarm, suit, 'cancelling a fresh selection keeps the suit worn');
 });
 void test('losing the current armor cancels its delay while remaining selected equipment still comes off', async () => {
     freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
@@ -743,6 +809,37 @@ void test('bulk magical-breathing amulet removal checks the hero in-water state 
     await takeOff(`${amulet.invlet}\n`);
     await work(1);
     assert.ok(game.u.ux !== ux || game.u.uy !== uy, 'the hero crawls to adjacent dry ground');
+    assert.equal(!!game.program_state.gameover, false);
+    assert.equal(objectTypeKnown(amulet), true);
+});
+void test('removing a submerged breathing amulet warns and wets inventory while timed breathing keeps the hero safe', async () => {
+    const level = freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const amulet = await addInventoryObject(AMULET_OF_MAGICAL_BREATHING, { typeKnown: false });
+    const towel = await addInventoryObject(TOWEL, { spe: 0 });
+    await wearHeroAccessory(amulet, 'uamul');
+    setPropertyTimeout('magicalBreathing', 15);
+    const { ux, uy } = game.u;
+    level.requireAt(ux, uy).typ = POOL;
+    game.u.uinwater = 1;
+    game.u.ux0 = ux - 1;
+    game.u.dx = 1;
+    game._pending_message = '';
+    await takeOff(`${amulet.invlet}\n`);
+    const messages = [];
+    resetInputState().display = {
+        async readKey() {
+            messages.push(game._pending_message);
+            return 32;
+        },
+    };
+    await continueCountedCommand();
+    messages.push(game._pending_message);
+    assert.match(messages.join(' '), /You suddenly inhale an unhealthy amount of water!/);
+    assert.ok(towel.spe > 0, 'drown() wets carried objects even while magical breathing remains');
+    assert.equal(game.u.ux, ux, 'remaining magical breathing avoids crawling out');
+    assert.equal(game.u.uy, uy);
+    assert.equal(game.u.uinwater, 1);
+    assert.equal(game.u.magicalBreathingTurns, 15);
     assert.equal(!!game.program_state.gameover, false);
     assert.equal(objectTypeKnown(amulet), true);
 });

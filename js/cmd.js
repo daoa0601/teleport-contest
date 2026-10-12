@@ -6765,6 +6765,9 @@ async function domoveCore(dx, dy, explicitAttempt) {
                     u.usteed.mx = oldx;
                     u.usteed.my = oldy;
                 }
+                // C domove_core() resets occupations after restoring the
+                // hero's position, even when a peaceful refuses the swap.
+                resetBulkTakeoff();
                 await finishBallAndChainMove(ballChainMove);
                 if (ballChainMove?.causeDelay)
                     await delayAfterDraggingBall();

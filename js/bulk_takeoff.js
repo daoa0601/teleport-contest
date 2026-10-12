@@ -29,6 +29,7 @@ const AMULET_OF_ESP = OBJECT_NAMES.indexOf('amulet of ESP');
 const AMULET_OF_FLYING = OBJECT_NAMES.indexOf('amulet of flying');
 const AMULET_OF_MAGICAL_BREATHING = OBJECT_NAMES.indexOf('amulet of magical breathing');
 const M1_AMPHIBIOUS = 0x00000200;
+const M1_BREATHLESS = 0x00000400;
 export async function takeOffAll() {
     game.context.move = 0;
     const progress = game.context.takeoff;
@@ -141,7 +142,9 @@ async function removeSelectedSlot(slot, state) {
             await offMessage(object, state);
     }
     else {
-        await removeHeroArmor(object, state);
+        // Native armor-off functions leave AC for allmain.c:find_ac(),
+        // after the removal messages and the elapsed monster turns.
+        await removeHeroArmor(object, state, { deferArmorClass: true });
         if (!state.program_state.gameover) {
             await announceDisplacementLoss(object, state);
             await offMessage(object, state);
@@ -173,8 +176,10 @@ async function removeAmulet(object, state) {
         learnObjectType(object.otyp, state);
     }
     else if (object.otyp === AMULET_OF_MAGICAL_BREATHING) {
-        if (state.u.uinwater && !heroIsBreathless(state) && !state.u.amphibious
-            && !(heroFormFlags(state) & M1_AMPHIBIOUS) && !heroCanSwim(state)) {
+        // C cant_drown() tests the form, not remaining magical breathing.
+        // drown() still runs for the warning and inventory water damage.
+        if (state.u.uinwater && !(heroFormFlags(state) & (M1_AMPHIBIOUS | M1_BREATHLESS))
+            && !heroCanSwim(state)) {
             await pline(`You suddenly inhale an unhealthy amount of ${displayLiquidName('water')}!`);
             await applyHeroLiquidEffects(undefined, { entry: 'drown' });
             if (state.program_state.gameover)
