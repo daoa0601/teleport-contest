@@ -107,7 +107,7 @@ import {
     DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA,
     DB_UNDER, DB_FLOOR, SHOP_HOLE_COST,
     TREE, AIR, CLOUD,
-    A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL,
+    A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, P_SHORT_SWORD, P_SABER,
     AM_SHRINE, AM_SANCTUM, Align2amask,
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE,
     M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE,
@@ -124,7 +124,7 @@ import {
     getObjectClassBounds, getObjectDefinition, requireObjectData,
     OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL,
     OBJECT_SPELL_LEVEL,
-    OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST,
+    OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, OBJECT_SUBTYPE,
     WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT,
     GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS,
     AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE,
@@ -138,7 +138,7 @@ import {
     DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING,
     GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND,
     SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR,
-    TIN, GOLD_PIECE, SPE_NOVEL,
+    TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD,
     DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE,
     ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE,
     QUARTERSTAFF,
@@ -164,7 +164,7 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3,
     MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS,
-    SPECIAL_PM, monsterClassSymbol, requireMonsterData,
+    SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData,
 } from './monster_data.js';
 import {
     isReviver, isRider, ZOMBIE_FORM_BY_LIVING_CORPSE,
@@ -178,7 +178,7 @@ import {
 import {
     initializeMonsterWormBody, restoreMonsterWormHeads, validMonsterWormBodies,
 } from './monster_worm.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { saveMonsterTraits } from './monster_traits.js';
 
 import { nhgetch } from './input.js';
@@ -1841,17 +1841,48 @@ async function makemon(
     let hasMonsterInventory = false;
     const allowMonsterInventory = !(mmflags & NO_MINVENT);
     let skipCommonMonsterInventory = Is_rogue_level(game.u?.uz);
-    const mongets = async (otyp: number): Promise<GameObject> => {
+    // C makemon.c:mongets(). Normalize birth equipment before mpickobj().
+    const mongets = async (otyp: number): Promise<GameObject | null> => {
+        if (!otyp) return null;
         const object = await mksobj(otyp, true, false);
-        // makemon.c:mongets(): demons never retain blessed objects; a raw
-        // blessing becomes a curse before the identity enters minvent.
-        if (MONSTER_SYMBOL[mndx] === 56 && object.blessed) {
+        if (MONSTER_SYMBOL[mndx] === 56) {
+            if (object.blessed) {
+                object.blessed = false;
+                object.cursed = true;
+            }
+        } else if ((genderFlags & M2_MINION)
+            && (clericMinion?.min_align ?? monsterAlignmentType(pendingMonster)) === A_LAWFUL) {
+            object.cursed = false;
+            object.spe = Math.max(0, object.spe);
+            object.oerodeproof = true;
+            object.oeroded = object.oeroded2 = 0;
+        } else if (monsterIsPlayerMonster(mndx)
+            && object.oclass === WEAPON_CLASS
+            && (OBJECT_SUBTYPE[otyp] ?? 0) >= P_SHORT_SWORD
+            && (OBJECT_SUBTYPE[otyp] ?? 0) <= P_SABER) {
+            object.spe = 3 + rn2(4);
+        }
+
+        if (otyp === CANDELABRUM_OF_INVOCATION) {
+            object.spe = 0;
+            object.age = 0;
+            object.lamplit = false;
+            object.blessed = object.cursed = false;
+        } else if (otyp === BELL_OF_OPENING) {
+            object.blessed = object.cursed = false;
+        } else if (otyp === SPE_BOOK_OF_THE_DEAD) {
             object.blessed = false;
             object.cursed = true;
         }
+
+        if (genderFlags & M2_PRINCE) {
+            if (object.oclass === WEAPON_CLASS) object.spe = Math.max(1, object.spe);
+            else if (object.oclass === ARMOR_CLASS) object.spe = Math.max(0, object.spe);
+        }
+
         await addCreatedObjectToMonsterInventory(pendingMonster, object, game);
         hasMonsterInventory = true;
-        return object;
+        return object.where === 'gone' ? null : object;
     };
     // C makemon.c:m_initthrow(). Throwing stacks bypass mongets(): the raw
     // mksobj() result goes straight into the inventory, so demons keep any
@@ -2426,12 +2457,11 @@ async function makemon(
             && dungeonName === 'The Gnomish Mines' ? 20 : 60;
         if (!rn2(candleChance)) {
             const candle = await mongets(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE);
-            candle.quan = 1;
-            candle.quantity = 1;
-            // levl is addressed by map coordinates; Level.at() is the shared
-            // accessor for ordinary and Lua-special maps, whose backing
-            // storage need not expose a column at map[x].
-            candle.lamplit = !level.at(x, y)?.lit;
+            if (candle) {
+                candle.quan = 1;
+                candle.quantity = 1;
+                candle.lamplit = !level.at(x, y)?.lit;
+            }
         }
     }
     if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 43) { // S_QUANTMECH
