@@ -34,13 +34,13 @@ export interface MonsterNameOptions {
     suppressSaddle?: boolean;
     augmentIt?: boolean;
     suppressInvisible?: boolean;
+    suppressHallucination?: boolean;
     exact?: boolean;
 }
 
 interface NameFormatOptions extends Omit<MonsterNameOptions, 'state' | 'capitalized' | 'exact'> {
     suppressName?: boolean;
     suppressShopkeeper?: boolean;
-    suppressHallucination?: boolean;
     suppressAppearance?: boolean;
 }
 
@@ -125,14 +125,14 @@ export function quietMonsterName(monster: Pick<Monster, 'mnum' | 'female' | 'sad
 export function monsterName(monster: Monster, {
     capitalized = false, state = game, article = 'the', adjective = '',
     suppressIt = false, suppressSaddle = !!MGIVENNAME(monster), augmentIt = false,
-    suppressInvisible = false, exact = false,
+    suppressInvisible = false, suppressHallucination = false, exact = false,
 }: MonsterNameOptions = {}): string {
     requireLiveGame(state);
     const name = formatMonsterName(monster, state, {
         article, adjective, suppressIt: suppressIt || exact,
         suppressSaddle: suppressSaddle || exact, augmentIt,
         suppressInvisible: suppressInvisible || exact,
-        suppressHallucination: exact, suppressAppearance: exact,
+        suppressHallucination: suppressHallucination || exact, suppressAppearance: exact,
     });
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }

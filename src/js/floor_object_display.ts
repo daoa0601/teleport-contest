@@ -23,7 +23,7 @@ import {
 export async function readFloorEngraving(x: number, y: number): Promise<void> {
     const read = await readEngravingAt(x, y, {
         showMore: async (message: string) => {
-            await pline(message);
+            await plineWithContinuation(message);
             return flushPendingTopline();
         },
         showLine: plineWithContinuation,

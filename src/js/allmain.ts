@@ -242,7 +242,7 @@ import {
     observeObject, recordObjectEncounter,
     recordObjectKnowledge, learnObjectType,
 } from './object_knowledge.js';
-import { automaticSearch } from './detect.js';
+import { automaticSearch, revealWarnedMonsters } from './detect.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
 import {
@@ -910,6 +910,7 @@ function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
 async function finishInitialTurnMaintenanceAfterAutomaticSearch({
     sourceTurn, moveAmount,
 }: Pick<TurnMaintenance, 'sourceTurn' | 'moveAmount'>): Promise<MaintenancePhase> {
+    if (game.u.warning) await revealWarnedMonsters();
     // Each sound keeps its native message wait before later feature rolls.
     await dosounds();
     return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount });
@@ -984,7 +985,7 @@ async function finishInitialTurnMaintenanceAfterRegions({
 
     if (game.u?.searching && !game.level?.flags?.noautosearch
         && !heroHasInvoluntaryDelay(game)) {
-        const search = automaticSearch();
+        const search = await automaticSearch();
         if (typeof search === 'object' && search.statueTrap) {
             const { x, y } = search.statueTrap;
             return {
@@ -2814,7 +2815,7 @@ async function presentMonsterAttackEffects(
                     }
                 }
                 if (heroAttack.deferredLifeDrainGate)
-                    resumeDeferredHeroLifeDrain(action, game);
+                    await resumeDeferredHeroLifeDrain(action, game, random, publishSlotMessage);
                 if (heroAttack.deferredLifeDrain) {
                     heroAttack.deferredLifeDrain = false;
                     const died = await loseHeroExperience('life drainage', {

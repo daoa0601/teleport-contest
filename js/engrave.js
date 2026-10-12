@@ -5,7 +5,8 @@ import { game } from './gstate.js';
 import { exerciseWisdom } from './attrib.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { rn2, rnd } from './rng.js';
-import { DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, ICE, N_ENGRAVE } from './const.js';
+import { BUFSZ, DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, ICE, N_ENGRAVE } from './const.js';
+import { surfaceName } from './terrain_name.js';
 const RUBOUTS = new Map([
     ['A', '^'],
     ['B', 'Pb['],
@@ -165,7 +166,12 @@ export function wipeEngravingAt(x, y, count, magical = false, level = game.level
         const range = 1 + Math.trunc(50 / (count + 1));
         count = rn2(range) ? 0 : 1;
     }
-    engraving.text = wipeoutText(engraving.text || '', count).replace(/^ +/, '');
+    const wornText = wipeoutText(engraving.text || '', count);
+    const leadingSpaces = wornText.length - wornText.replace(/^ +/, '').length;
+    engraving.text = wornText.slice(leadingSpaces);
+    // Native advances the actual-text pointer past leading spaces. Keep the
+    // pristine text aligned so reading compares the same character position.
+    engraving.pristine = engraving.pristine.slice(leadingSpaces);
     if (!engraving.text) {
         level.engravings = level.engravings.filter((candidate) => candidate !== engraving);
     }
@@ -194,6 +200,7 @@ export function maybeSmudgeEngravings(x1, y1, x2, y2) {
 function readingMessages(engraving, x, y) {
     const blind = !!game.blind;
     const canFeel = heroCanReachFloor(game, { checkPit: true });
+    const surface = surfaceName(x, y, game);
     let first = null;
     switch (engraving.engr_type) {
         case DUST:
@@ -203,15 +210,15 @@ function readingMessages(engraving, x, y) {
         case ENGRAVE:
         case HEADSTONE:
             if (!blind || canFeel)
-                first = 'Something is engraved here on the floor.';
+                first = `Something is engraved here on the ${surface}.`;
             break;
         case BURN:
             if (!blind || canFeel)
-                first = `Some text has been ${game.level?.at?.(x, y)?.typ === ICE ? 'melted' : 'burned'} into the floor here.`;
+                first = `Some text has been ${game.level?.at?.(x, y)?.typ === ICE ? 'melted' : 'burned'} into the ${surface} here.`;
             break;
         case MARK:
             if (!blind)
-                first = `There's some graffiti on the floor here.`;
+                first = `There's some graffiti on the ${surface} here.`;
             break;
         case ENGR_BLOOD:
             if (!blind)
@@ -223,10 +230,10 @@ function readingMessages(engraving, x, y) {
     }
     if (!first)
         return null;
-    const text = engraving.text || '';
+    const text = engraving.text.slice(0, BUFSZ - 'You feel the words: "".'.length - 1);
     const punctuation = text.length >= 2 &&
         /[.!?]$/.test(text) &&
-        (!engraving.pristine || engraving.pristine.endsWith(text.slice(-1)))
+        engraving.pristine[text.length - 1] === text[text.length - 1]
         ? ''
         : '.';
     const second = blind

@@ -91,7 +91,7 @@ import { artifactById } from './artifacts.js';
 import { respondMedusa } from './monster_gaze.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, randomDisplayMonsterName, randomDisplayMonsterSubject, plineWithContinuation, } from './display.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
-import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
+import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
 import { AMULET_OF_YENDOR, APPLE, BANANA, BELL_OF_OPENING, BULLWHIP, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_MATERIAL, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
 import { unlinkObject } from './object_location.js';
@@ -4764,7 +4764,8 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             oldFormMnum,
         };
     }
-    else if (hit && (damageType === AD_WERE || damageType === AD_SLEE || damageType === AD_POLY)) {
+    else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
+        || damageType === AD_POLY || damageType === AD_TLPT)) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const negated = damageType === AD_POLY
@@ -5354,15 +5355,18 @@ export function resumeDeferredHeroElectricSpecial(action, state, random = rn2) {
 }
 // Resume mhitm_ad_drli() after hitmsg().  A selected level loss and its
 // message precede shared knockback and the touch's ordinary HP damage.
-export function resumeDeferredHeroLifeDrain(action, state, random = rn2) {
+export async function resumeDeferredHeroLifeDrain(action, state, random = rn2, publish = plineWithContinuation) {
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredLifeDrainGate)
         return action;
     const selected = recordRandom(random, action.calls, 3) === 0;
     const drainResistant = heroHasDrainResistance(state);
     if (selected && !drainResistant) {
-        const armorProtection = state.u?._magicNegation ?? 0;
-        const negated = !!action.monster?.mcan || recordRandom(random, action.calls, 10) < 3 * armorProtection;
+        const negated = specialAttackNegated(action.monster, state.u, {
+            state, random: limit => recordRandom(random, action.calls, limit),
+        });
+        if (negated && !action.monster.mcan)
+            await publish('You avoid harm.');
         attack.deferredLifeDrain = !negated;
     }
     attack.deferredLifeDrainGate = false;

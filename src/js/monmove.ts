@@ -4,6 +4,7 @@ import type { MonsterDeathOptions } from './monster_death.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { PlayingGameState } from './game_state.js';
+import type { MessagePublisher } from './display.js';
 import type { Position, MapLocation, Trap } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type {
@@ -243,6 +244,7 @@ import {
     AD_LEGS,
     AD_PHYS,
     AD_POLY,
+    AD_TLPT,
     AD_DISE,
     AD_PEST,
     AD_FAMN,
@@ -5892,7 +5894,8 @@ async function beginHeroAttackSlot(
             deferredPostHit: true,
             oldFormMnum,
         };
-    } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE || damageType === AD_POLY)) {
+    } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
+        || damageType === AD_POLY || damageType === AD_TLPT)) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const negated = damageType === AD_POLY
@@ -6509,19 +6512,21 @@ export function resumeDeferredHeroElectricSpecial(
 
 // Resume mhitm_ad_drli() after hitmsg().  A selected level loss and its
 // message precede shared knockback and the touch's ordinary HP damage.
-export function resumeDeferredHeroLifeDrain(
+export async function resumeDeferredHeroLifeDrain(
     action: MonsterMovementAction,
     state: PlayingGameState,
     random: RandomBelow = rn2,
+    publish: MessagePublisher = plineWithContinuation,
 ) {
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredLifeDrainGate) return action;
     const selected = recordRandom(random, action.calls, 3) === 0;
     const drainResistant = heroHasDrainResistance(state);
     if (selected && !drainResistant) {
-        const armorProtection = state.u?._magicNegation ?? 0;
-        const negated =
-            !!action.monster?.mcan || recordRandom(random, action.calls, 10) < 3 * armorProtection;
+        const negated = specialAttackNegated(action.monster, state.u, {
+            state, random: limit => recordRandom(random, action.calls, limit),
+        });
+        if (negated && !action.monster.mcan) await publish('You avoid harm.');
         attack.deferredLifeDrain = !negated;
     }
     attack.deferredLifeDrainGate = false;

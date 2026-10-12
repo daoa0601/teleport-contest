@@ -107,7 +107,7 @@ import { finishHeroDeath, } from './end.js';
 import { runLevelRegions } from './regions.js';
 import { maintainVaultResidence, continueVaultGuardArrival, } from './vault.js';
 import { observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType, } from './object_knowledge.js';
-import { automaticSearch } from './detect.js';
+import { automaticSearch, revealWarnedMonsters } from './detect.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
 import { getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness, } from './hunger.js';
@@ -716,6 +716,8 @@ function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
         || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
 }
 async function finishInitialTurnMaintenanceAfterAutomaticSearch({ sourceTurn, moveAmount, }) {
+    if (game.u.warning)
+        await revealWarnedMonsters();
     // Each sound keeps its native message wait before later feature rolls.
     await dosounds();
     return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount });
@@ -777,7 +779,7 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
     }
     if (game.u?.searching && !game.level?.flags?.noautosearch
         && !heroHasInvoluntaryDelay(game)) {
-        const search = automaticSearch();
+        const search = await automaticSearch();
         if (typeof search === 'object' && search.statueTrap) {
             const { x, y } = search.statueTrap;
             return {
@@ -2465,7 +2467,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     }
                 }
                 if (heroAttack.deferredLifeDrainGate)
-                    resumeDeferredHeroLifeDrain(action, game);
+                    await resumeDeferredHeroLifeDrain(action, game, random, publishSlotMessage);
                 if (heroAttack.deferredLifeDrain) {
                     heroAttack.deferredLifeDrain = false;
                     const died = await loseHeroExperience('life drainage', {

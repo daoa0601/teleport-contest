@@ -1,4 +1,4 @@
-// C uhitm.c:mhitm_ad_were(), mhitm_ad_slee(), and mhitm_ad_poly().
+// C uhitm.c:mhitm_ad_were(), mhitm_ad_slee(), mhitm_ad_poly(), and mhitm_ad_tlpt().
 // These effects resume after hitmsg(); polymorph negation precedes hitmsg().
 import { artifactById } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
@@ -7,10 +7,12 @@ import { A_CON, M_SEEN_SLEEP, Upolyd } from './const.js';
 import { shieldeff, type MessagePublisher } from './display.js';
 import type { PlayingGameState } from './game_state.js';
 import { heroIsBlind } from './senses.js';
-import { putHeroToSleep } from './hero_sleep.js';
+import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_POLY, AD_SLEE, AD_WERE } from './monster_attack_types.js';
+import { AD_POLY, AD_SLEE, AD_TLPT, AD_WERE } from './monster_attack_types.js';
+import { askTeleportDestination } from './cmd.js';
+import { heroControlsTeleport, teleportHero } from './teleport.js';
 import type { HeroContactAttack } from './monster_action_types.js';
 import { monsterName } from './monster_name.js';
 import type { Monster } from './monster_types.js';
@@ -42,8 +44,36 @@ export async function resolveMonsterContactEffect(
         await sleepHero(monster, state, publish, random, rollOne);
     else if (attack.damageType === AD_POLY)
         await polymorphHeroOnContact(monster, attack, state, publish, rollOne);
+    else if (attack.damageType === AD_TLPT)
+        await teleportHeroOnContact(monster, attack, state, publish, random);
     else throw new Error(`Damage type ${attack.damageType} has no deferred contact effect`);
     attack.deferredPostHit = true;
+}
+
+async function teleportHeroOnContact(
+    monster: Monster, attack: HeroContactAttack, state: PlayingGameState,
+    publish: MessagePublisher, random: typeof rn2,
+): Promise<void> {
+    if (specialAttackNegated(monster, state.u, { state, random })) {
+        await publish('You are not affected.');
+        return;
+    }
+    if (state.flags.verbose) {
+        const controlled = heroControlsTeleport(state)
+            && !state.u.stunned && !(state.u.stunnedTurns ?? 0)
+            && !heroIsUnconscious(state);
+        await publish(`Your position suddenly seems ${controlled ? '' : 'very '}uncertain!`);
+    }
+    await teleportHero({ chooseDestination: askTeleportDestination });
+    const hp = Upolyd(state.u) ? 'mh' : 'uhp';
+    const damage = attack.damage ?? 0;
+    const half = !!state.u.halfPhysicalDamage;
+    if ((half ? Math.trunc((damage - 1) / 2) : damage) < state.u[hp]) return;
+    attack.damage = (state.u[hp] - 1) * (half ? 2 : 1);
+    if (attack.damage < 1) {
+        attack.damage = 1;
+        if (state.u[hp] === 1) state.u[hp]++;
+    }
 }
 
 async function magicPreventsContact(
