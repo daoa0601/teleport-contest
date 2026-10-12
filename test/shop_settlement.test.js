@@ -2,6 +2,8 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
+import { cls } from '../js/display.js';
+import { pushKey } from '../js/input.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { setHeroGoldAmount, heroGoldAmount } from '../js/hero_gold.js';
 import { deleteObject } from '../js/object_delete.js';
@@ -45,6 +47,10 @@ async function billStock(shop, type = POT_HEALING) {
     game.u.uy = 10;
     try {
         await checkSpecialRoom();
+        // Finish the shop-entry greeting before the next shop transition.
+        if (game._pending_message)
+            pushKey(' ');
+        await cls();
     }
     finally {
         for (const { keeper, x, y } of absentKeepers)
