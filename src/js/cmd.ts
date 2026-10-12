@@ -102,7 +102,7 @@ export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import {
     objectTypeCallNoun,
 } from './object_call.js';
-import { displayLiquidName,
+import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
     bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster,
     monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed,
@@ -1770,12 +1770,14 @@ async function doTerrainOverview() {
             browseMessage = farlookLocationDescription(cursor.x, cursor.y);
             continue;
         }
-        await moreUntilDismissed('Done.');
+        await plineWithContinuation('Done.');
         break;
     }
 
+    // C map_redisplay() reaches cls(), which displays WIN_MESSAGE before
+    // redrawing the map. Bare more() would leave an acknowledged Done line.
+    await displayMessageWindow();
     restoreMapDisplay(displaySnapshot);
-    game._pending_message = '';
     await flush_screen(1);
     game.context.move = 0;
 }

@@ -3,7 +3,7 @@
 import { game } from './gstate.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, cls, docrt, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
+import { bot, clearMessageWindow, cls, docrt, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
 import { vision_recalc } from './vision.js';
 import { nhgetch } from './input.js';
 import { getLine } from './query.js';
@@ -878,8 +878,11 @@ function renderPickupTypes(selected) {
 }
 async function editPickupTypes(preserveStatus = false) {
     const selected = new Set(game.flags?.pickup_types || '');
-    // tty displays an unread message before its next compound-option menu.
-    await flushPendingTopline();
+    // tty_display_nhwindow(NHW_MENU) pages unread prose, then clears the
+    // entire message window before painting the menu's corner rectangle.
+    if (!game._suppressMessagesUntilInput)
+        await flushPendingTopline();
+    clearMessageWindow();
     await flush_screen(1);
     const underlay = snapshotMenuUnderlay();
     if (!preserveStatus) {

@@ -2301,10 +2301,11 @@ export async function flushPendingTopline() {
 
 // C tty_display_nhwindow(WIN_MESSAGE): unlike a direct more(), the window
 // display honors Escape's WIN_STOP/WIN_CANCELLED flag before acknowledging.
-export async function displayMessageWindow(): Promise<void> {
-    if (game._suppressMessagesUntilInput) return;
-    await flushPendingTopline();
+export async function displayMessageWindow(): Promise<number | null> {
+    if (game._suppressMessagesUntilInput) return null;
+    const dismissal = await flushPendingTopline();
     clearMessageWindow();
+    return dismissal;
 }
 
 // C tty topl.c:update_topl().  A later pline either appends to the pending

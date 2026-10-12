@@ -85,7 +85,7 @@ import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
 import {
-    canSpotMonster, docrt, redrawMap,
+    canSpotMonster, displayMessageWindow, docrt, redrawMap,
     bot,
     flush_screen, flushPendingTopline,
     pline,
@@ -2700,7 +2700,7 @@ async function presentMonsterAttackEffects(
                             earlierActorPager: earlierActorPagerInScan,
                         }),
                         flushMessages: async () => {
-                            const dismissal = await flushPendingTopline();
+                            const dismissal = await displayMessageWindow();
                             if (dismissal != null) paging.pagerOwned = true;
                             paging.messageAfterPager = !!game._pending_message;
                         },
