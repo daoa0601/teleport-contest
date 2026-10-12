@@ -108,7 +108,7 @@ import { finishHeroDeath, } from './end.js';
 import { runLevelRegions } from './regions.js';
 import { maintainVaultResidence, continueVaultGuardArrival, } from './vault.js';
 import { observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType, } from './object_knowledge.js';
-import { automaticSearch } from './detect.js';
+import { automaticSearch, revealWarnedMonsters } from './detect.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
 import { getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness, } from './hunger.js';
@@ -712,6 +712,8 @@ function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
         || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
 }
 async function finishInitialTurnMaintenanceAfterAutomaticSearch({ sourceTurn, moveAmount, }) {
+    if (game.u.warning)
+        await revealWarnedMonsters();
     // Each sound keeps its native message wait before later feature rolls.
     await dosounds();
     return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount });

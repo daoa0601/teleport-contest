@@ -246,7 +246,7 @@ import {
     observeObject, recordObjectEncounter,
     recordObjectKnowledge, learnObjectType,
 } from './object_knowledge.js';
-import { automaticSearch } from './detect.js';
+import { automaticSearch, revealWarnedMonsters } from './detect.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
 import {
@@ -908,6 +908,7 @@ function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
 async function finishInitialTurnMaintenanceAfterAutomaticSearch({
     sourceTurn, moveAmount,
 }: Pick<TurnMaintenance, 'sourceTurn' | 'moveAmount'>): Promise<MaintenancePhase> {
+    if (game.u.warning) await revealWarnedMonsters();
     // Each sound keeps its native message wait before later feature rolls.
     await dosounds();
     return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount });

@@ -8,7 +8,7 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { artifactById } from './artifacts.js';
 import { heroIsBlind } from './senses.js';
 import { exerciseWisdom } from './attrib.js';
-import { canSpotMonster, feel_location, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell, unmap_invisible, plineWithContinuation, flashGlyphAt, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, } from './display.js';
+import { canSpotMonster, canSenseMonster, monsterHasWarningProjection, flushPendingTopline, feel_location, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell, unmap_invisible, plineWithContinuation, flashGlyphAt, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, } from './display.js';
 import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, M_AP_TYPE, Is_airlevel, Is_waterlevel, IS_FURNITURE, D_CLOSED, D_LOCKED, D_TRAPPED, STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR, TRAP_EXPLANATIONS, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, } from './const.js';
 import { BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES, OBJECT_MERGE, OBJECT_NAMES } from './object_data.js';
 import { objectClassForType, observeObject } from './object_knowledge.js';
@@ -19,6 +19,7 @@ import { clearAreaCells, vision_note_blocker_change } from './vision.js';
 import { recordDiscoveredRoom, recordMappedOverviewState } from './dungeon.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
 export function premap_detect() {
@@ -194,36 +195,14 @@ async function searchAdjacentSecrets(automatic = false) {
                 !candidate.dead && (candidate.mhp ?? 1) > 0
                 && candidate.mx === x && candidate.my === y);
             if (monster) {
-                let foundSomething = false;
-                if (monster.m_ap_type) {
-                    monster.m_ap_type = 0;
-                    monster.mappearance = 0;
-                    foundSomething = true;
-                }
-                else {
-                    foundSomething = !canSpotMonster(monster);
-                    if (monster.mundetected) {
-                        monster.mundetected = 0;
-                        foundSomething = true;
-                    }
-                }
-                newsym(x, y);
-                if (foundSomething) {
-                    const alreadyMarked = game.level?.at(x, y)
-                        ?.remembered_glyph?.kind === 'invisible';
-                    if (!canSpotMonster(monster) && alreadyMarked)
-                        continue;
-                    exerciseWisdom();
-                    if (!canSpotMonster(monster)) {
-                        map_invisible(x, y);
-                        await pline('You feel an unseen monster!');
-                    }
-                    else {
-                        await pline(`You find a monster.`);
-                    }
+                const result = await findHiddenMonster(monster, false);
+                if (result === -1)
+                    continue;
+                if (result > 0)
                     return true;
-                }
             }
+            else if (!automatic && !blind)
+                unmap_invisible(x, y);
             const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
             if (trap && !trap.tseen) {
                 if (rnl(8))
@@ -246,6 +225,60 @@ async function searchAdjacentSecrets(automatic = false) {
         }
     }
     return found;
+}
+// C detect.c:warnreveal(). Ordinary Warning can expose a nearby hider
+// without identifying distant monsters or peaceful neighbours.
+export async function revealWarnedMonsters() {
+    for (let x = game.u.ux - 1; x <= game.u.ux + 1; x++) {
+        for (let y = game.u.uy - 1; y <= game.u.uy + 1; y++) {
+            if (x === game.u.ux && y === game.u.uy)
+                continue;
+            const monster = game.level?.monsters.find(candidate => monsterHasMapPosition(candidate, game) && !candidate.dead
+                && candidate.mhp > 0 && candidate.mx === x && candidate.my === y);
+            if (monster?.mundetected && monsterHasWarningProjection(monster)
+                && (monster.m_lev ?? 0) >= 4)
+                await findHiddenMonster(monster, true);
+        }
+    }
+}
+// C detect.c:mfind0(). Searching and Warning share reveal, Wisdom exercise,
+// invisible-memory handling, and the description after concealment is gone.
+async function findHiddenMonster(monster, viaWarning) {
+    let found;
+    if (monster.m_ap_type) {
+        revealMonsterAppearance(monster);
+        found = true;
+    }
+    else {
+        found = !canSpotMonster(monster);
+        const hides = ((MONSTER_FLAGS1[monster.mnum] ?? 0) & (M1_CONCEAL | M1_HIDE))
+            || MONSTER_SYMBOL[monster.mnum] === 57;
+        if (monster.mundetected && hides) {
+            if (viaWarning && found) {
+                await plineWithContinuation(`Your danger sense causes you to take a second ${heroIsBlind(game) ? 'to check nearby' : 'look close by'}.`);
+                await flushPendingTopline();
+            }
+            monster.mundetected = 0;
+            found = true;
+        }
+        newsym(monster.mx, monster.my);
+    }
+    if (!found)
+        return 0;
+    if (!canSpotMonster(monster)
+        && game.level?.at(monster.mx, monster.my)?.remembered_glyph?.kind === 'invisible')
+        return -1;
+    exerciseWisdom();
+    if (!canSpotMonster(monster)) {
+        map_invisible(monster.mx, monster.my);
+        await plineWithContinuation('You feel an unseen monster!');
+    }
+    else if (!canSenseMonster(monster)) {
+        await plineWithContinuation(`You find ${monsterName(monster, {
+            article: monster.mtame ? 'your' : 'a',
+        })}.`);
+    }
+    return 1;
 }
 // C detect.c:sense_trap(). A hallucinating hero remembers a fabricated
 // object glyph, while the real trap remains discovered and unchanged.
