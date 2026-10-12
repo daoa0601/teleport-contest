@@ -1,0 +1,31 @@
+// C sp_lev.c:map_cleanup(), after Lua construction and before wallification.
+import {
+    COLNO, ROWNO, IS_LAVA, IS_POOL, MAGIC_PORTAL, VIBRATING_SQUARE,
+} from './const.js';
+import { deleteEngraving, engravingAt } from './engrave.js';
+import type { GameState } from './game_state.js';
+import { game, requireGameLevel } from './gstate.js';
+import { BOULDER } from './object_data.js';
+import { deleteObject } from './object_delete.js';
+import { deleteTrap } from './trap_lifecycle.js';
+
+export async function cleanupSpecialLevelMap(state: GameState = game): Promise<void> {
+    const level = requireGameLevel(state);
+    for (let x = 0; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const terrain = level.requireAt(x, y).typ;
+            if (!IS_LAVA(terrain) && !IS_POOL(terrain)) continue;
+
+            // This is construction cleanup, so boulders are freed without
+            // settling, changing terrain, messages, or destruction rolls.
+            for (const object of [...(level.objects[x]?.[y] ?? [])]) {
+                if (object.otyp === BOULDER) await deleteObject(object, state);
+            }
+            const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+            if (trap && trap.ttyp !== MAGIC_PORTAL && trap.ttyp !== VIBRATING_SQUARE)
+                deleteTrap(trap, state);
+            const engraving = engravingAt(x, y, level);
+            if (engraving) deleteEngraving(engraving, level);
+        }
+    }
+}

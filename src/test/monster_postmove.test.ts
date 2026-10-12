@@ -168,17 +168,19 @@ void test('polymorphing on a door keeps the opening ability from before the trap
     door.typ = DOOR;
     door.doormask = D_CLOSED;
     await maketrap(10, 10, POLY_TRAP);
-    const kobold = await createMonsterAt('kobold', 11, 10, MM_ANGRY | NO_MINVENT);
-    kobold.movement = 12;
-    const originalForm = kobold.mnum;
+    // Weak monsters deliberately use this trap in find_misc(), returning
+    // before m_move() and its door handling. The captain moves onto it.
+    const monster = await createMonsterAt('orc-captain', 11, 10, MM_ANGRY | NO_MINVENT);
+    monster.movement = 12;
+    const originalForm = monster.mnum;
     initRng(1n);
     pushKeys('m.' + ' '.repeat(100) + 'm.');
 
     await moveloop_core();
     await moveloop_core();
 
-    assert.notEqual(kobold.mnum, originalForm);
-    const form = requireMonsterData(MONSTER_FLAGS1, kobold.mnum);
+    assert.notEqual(monster.mnum, originalForm);
+    const form = requireMonsterData(MONSTER_FLAGS1, monster.mnum);
     assert.ok(form & 0x2000, 'the new form has no hands');
     assert.equal(form & 0x0c, 0, 'the new form cannot bypass the door by phasing or oozing');
     assert.equal(door.doormask, D_ISOPEN);

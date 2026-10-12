@@ -32,10 +32,8 @@ export function validSavedRole(value: unknown): value is Role {
         ldrnum: integer,
         guardnum: integer,
         neminum: optional(integer),
-        leaderName: optional(string),
         guardianName: optional(string),
         guardianPlural: optional(string),
-        nemesisName: optional(string),
         artifactName: string,
         enemy1num: optional(nullable(integer)),
         enemy1sym: optional(integer),
@@ -180,6 +178,7 @@ export function validSavedGameFlags(value: unknown): value is GameFlags {
         runmode: optional(string),
         sortloot: optional(oneOf('n', 'l', 'f')),
         suppress_alert: optional(string),
+        vanqSortmode: optional(integer),
     });
 }
 

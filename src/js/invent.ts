@@ -449,11 +449,9 @@ function inventorySections(items: readonly GameObject[] = game.inventory || [], 
         }
         section.push({
             ...(item.invlet == null ? {} : { key: item.invlet }),
-            text: item.oclass === COIN_CLASS
-                ? `$ - ${item.quan} gold piece${item.quan === 1 ? '' : 's'}`
-                : `${item.invlet} - ${inventoryItemDescription(item, {
-                    primaryHandDetail: inventoryPrimaryHandDetail(item),
-                })}`,
+            text: `${item.invlet} - ${inventoryItemDescription(item, {
+                primaryHandDetail: inventoryPrimaryHandDetail(item),
+            })}`,
         });
     }
     return [...grouped].map(([heading, items]) => ({ heading, items }));

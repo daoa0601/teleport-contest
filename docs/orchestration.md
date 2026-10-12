@@ -92,12 +92,13 @@ unit's run.
   lock rather than go faster.
 - Do not edit `src/` files that a running unit is likely to touch.
 - Before merging, run a read-only Codex review in the unit's worktree:
-  `codex exec -s read-only -o .cache/agents/UNIT/review.md - < .cache/agents/review-prompt.md`.
+  `codex exec -s read-only -o .cache/agents/UNIT/review.md - < .cache/agents/review-prompt.md`,
+  which diffs against the integration branch merge base.
   (`codex exec review --base` does not accept custom instructions.) Send
   back real findings in lines the branch changed; do not fix them in the
   main checkout. Findings in unchanged code go to the queue instead.
-- Merge finished branches one at a time: compile and run the unit's
-  focused tests after each merge. Resolve conflicts by reading both sides
+- Merge finished branches one at a time: compile and run the full suite
+  after each merge; reject any failing test outside the known-failure list. Resolve conflicts by reading both sides
   against the C source, not by preferring either branch.
 - After a batch of merges, rerun the gates yourself: one full suite, eval
   and public runs, both ledgers, and the state oracle (no new hidden-state

@@ -299,9 +299,10 @@ export async function usePolearm(
 
     if (monster) {
         // C attack_checks(): a declined attack or a hidden-monster reveal
-        // aborts without reaching thitmonst().
-        const verdict = await prepareAppliedWeaponAttack(monster, object);
-        if (!verdict?.proceed) return { spentTime: !!verdict?.spentTime };
+        // aborts without reaching thitmonst(). C gb.bhitpos is cc.
+        const verdict = await prepareAppliedWeaponAttack(
+            monster, object, { state, struckAt: cc });
+        if (!verdict.proceed) return { spentTime: verdict.spentTime };
         if (await checkHeroAttackOverexertion()) return { spentTime: true };
         rememberPolearmTarget(monster, state);
 
