@@ -5,6 +5,20 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from '../js/tty_menu.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+void test('menu search selects visible descriptions but ignores clipped suffixes', async () => {
+    freshPlayableRoom();
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    const description = 'a club named ';
+    const filler = 'x'.repeat(requireGameDisplay().cols - 2 - 4 - description.length);
+    tty_add_menu(window, { identifier: 'club', selector: 'a', text: description + filler + 'HiddenName' });
+    tty_add_menu(window, { identifier: 'dagger', selector: 'b', text: 'a dagger named VisibleName' });
+    tty_end_menu(window);
+    resetInputState().feed(':HiddenName\n:visible*\n\n');
+    const result = await tty_select_menu(window, PICK_ANY);
+    assert.deepEqual(result.selections.map(item => item.identifier), ['dagger'], 'search should match only text retained in the menu');
+    await tty_destroy_nhwindow(window);
+});
 void test('a group accelerator toggles every matching item with the supplied count', async () => {
     freshPlayableRoom();
     const window = tty_create_nhwindow(NHW_MENU);

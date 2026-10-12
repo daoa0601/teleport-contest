@@ -5,7 +5,7 @@ import { objectBlessingDescription, objectDescription } from './object_descripti
 import { primaryHandDescriptionDetail } from './object_equipment_description.js';
 import { ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
 import { bot, clearMessageWindow, consumeHallucinatedMenuObjectGlyph, docrt, flushPendingTopline, flush_screen, formatStrength, pline, plineWithContinuation, showMessageMenu, } from './display.js';
-import { restoreMenuUnderlay, snapshotMenuUnderlay, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, } from './windows.js';
+import { showChoiceWindow, showInventoryWindow, showMultiSelectWindow, } from './windows.js';
 import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
@@ -228,27 +228,13 @@ async function identificationMenu(candidates, first) {
             const object = candidates.find(candidate => candidate.invlet === item.key);
             if (!object)
                 throw new Error(`No inventory object for identification letter ${item.key}`);
-            return { ...item, key: item.key, text: item.text.slice(4), value: object };
+            return { ...item, key: item.key, value: object };
         }),
     }));
-    const rowCount = 2 + sections.reduce((total, section) => total + section.items.length + 1, 0);
-    const fullPage = rowCount + 1 > 23;
-    const underlay = fullPage ? null : snapshotMenuUnderlay();
-    try {
-        return await showMultiSelectWindow({
-            title: `What would you like to identify ${first ? 'first' : 'next'}?`,
-            sections, signalEscape: true,
-        });
-    }
-    finally {
-        if (fullPage) {
-            await docrt();
-            await flush_screen(1);
-        }
-        else {
-            restoreMenuUnderlay(underlay);
-        }
-    }
+    return await showMultiSelectWindow({
+        title: `What would you like to identify ${first ? 'first' : 'next'}?`,
+        sections, signalEscape: true,
+    });
 }
 async function identifyAndDescribe(object) {
     fullyIdentifyObject(object);

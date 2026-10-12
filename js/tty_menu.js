@@ -150,6 +150,8 @@ export function tty_end_menu(window, prompt = null) {
             row.key = menuSelector(selector++);
             row.text = row.key + row.text.slice(1);
         }
+        // Native stores the clipped text, so search sees only the displayed description.
+        row.text = row.text.slice(0, d.cols - 2);
     }
     window.layout = menuLayout(window.entries, d.cols, d.rows, game.flags.menu_overlay !== false);
 }
