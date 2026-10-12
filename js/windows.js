@@ -262,42 +262,37 @@ function inventorySearchMatches(query, text) {
     return new RegExp(pattern, 'i').test(text);
 }
 /**
- * Display a blocking tty text/menu window over the right side of the map.
- * NetHack reserves at least 39 columns for these windows; wider content
- * pushes their left edge farther west.  Unlike a choice menu, disclosure
- * windows finish with either `--More--` or `(end)` and accept one dismissal
- * key before returning to their caller.
+ * Display a blocking disclosure window. Text windows wrap prose and use
+ * `--More--`; menu-built overviews retain their rows and use the native
+ * menu layout and page controls.
  */
 export async function showDisclosureOverlay(lines, { marker = '--More--', minWidth = 38, restoreUnderlay = false, pagerStyle = 'text', } = {}) {
     const d = display();
     if (!d)
         return 27;
     const entries = lines.map(line => typeof line === 'string' ? { text: line } : line);
+    if (pagerStyle === 'menu') {
+        return await pageDisclosureWindow(d, entries, { marker, pagerStyle, restoreUnderlay });
+    }
     const dataWidth = entries.reduce((widest, line) => Math.max(widest, line.text.length), 0);
-    // putstr-built windows wrap prose; add_menu-built overviews keep their
-    // menu rows. Native retains the original width when deciding placement.
-    const content = pagerStyle === 'text'
-        ? entries.flatMap(line => textWindowRows(line.text, d.cols)
-            .map(text => ({ ...line, text }))) : entries;
+    // putstr-built windows wrap prose but retain their original width
+    // when deciding placement.
+    const content = entries.flatMap(line => textWindowRows(line.text, d.cols)
+        .map(text => ({ ...line, text })));
     // The pinned H2344_BROKEN path permits corners narrower than ten
     // columns. A zero offset, excess height, or disabled overlay uses
     // the full-screen renderer instead.
     const cornerOffset = Math.max(0, Math.min(82, Math.floor(d.cols / 2), d.cols - dataWidth - 2));
-    // tty_end_menu() counts its pager in maxrow; tty_putstr() only counts
-    // stored content rows.
-    const windowRows = content.length + (pagerStyle === 'menu' ? 1 : 0);
-    if (windowRows >= d.rows || cornerOffset === 0
+    if (content.length >= d.rows || cornerOffset === 0
         || game.flags.menu_overlay === false) {
-        return await pageDisclosureWindow(d, content, { marker, pagerStyle });
+        return await pageDisclosureWindow(d, content, { marker, pagerStyle, restoreUnderlay });
     }
     const widest = Math.max(marker.length, dataWidth);
-    // process_menu_window() leaves one terminal column to the right of a
-    // PICK_NONE disclosure.  (Choice/inventory windows use a distinct
-    // two-column corner margin.)
+    // process_text_window() leaves one terminal column to the right of
+    // corner-window prose.
     const left = Math.max(0, d.cols - Math.max(minWidth, widest) - 1);
     const rows = [...content, { text: marker }];
-    // NHW_MENU replaces the message row rather than leaving the preceding
-    // yn_function prompt visible to the west of a narrow overlay.
+    // Replace the preceding question across the whole message row.
     d.clearRow(0);
     // A dismissed corner window restores the already-painted map rather
     // than recomputing vision. Callers may retain a final page after exit.
@@ -327,35 +322,36 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', minWid
     return key;
 }
 /**
- * Full-screen paged rendering for an oversized disclosure window.
- * C wintty.c process_text_window(): one page per screen minus its marker
- * row, rows at the left edge (menu-built windows keep their selector
- * column), pager markers one column in, and the whole screen cleared
- * between pages.  Menu-style windows page their items the same way and
- * label every page but the single-page case with "(x of y)".
+ * Text windows use the full screen minus a pager row. Menu windows share
+ * tty_end_menu()'s margins, corner placement, and 52-entry page limit with
+ * inventory windows, including when a tall terminal permits corner paging.
  */
-async function pageDisclosureWindow(d, lines, { marker, pagerStyle }) {
-    const rowColumn = pagerStyle === 'menu' ? 1 : 0;
-    const pageSize = d.rows - 1;
-    const pageCount = Math.max(1, Math.ceil(lines.length / pageSize));
+async function pageDisclosureWindow(d, lines, { marker, pagerStyle, restoreUnderlay }) {
+    const menu = pagerStyle === 'menu'
+        ? menuLayout(lines, d.cols, d.rows, game.flags.menu_overlay !== false) : null;
+    const pageSize = menu?.pageSize ?? d.rows - 1;
+    const pageCount = menu?.pageCount ?? Math.max(1, Math.ceil(lines.length / pageSize));
+    if (menu)
+        d.clearRow(0);
+    const underlay = menu && menu.boundary > 0 ? snapshotMenuUnderlay() : null;
+    const underlayCursor = { col: d.cursorCol, row: d.cursorRow, visible: d.cursorVisible };
     let page = 0;
     let count = null;
     try {
         for (;;) {
-            const content = lines.slice(page * pageSize, (page + 1) * pageSize);
-            const markerText = pagerStyle === 'menu' && pageCount > 1
-                ? `(${page + 1} of ${pageCount})` : marker;
-            d.clearScreen();
-            for (const [row, line] of content.entries()) {
-                // tty_end_menu() leaves room for the leading blank and
-                // the terminal's final blank column.
-                const text = pagerStyle === 'menu' ? line.text.slice(0, d.cols - 2) : line.text;
-                putLine(rowColumn, row, text, line.attr);
+            if (menu) {
+                const content = menu.rows.slice(page * pageSize, (page + 1) * pageSize);
+                paintMenuPage(d, menu, page, content, underlay);
             }
-            putLine(1, content.length, markerText);
-            // tty_end_menu() retains a trailing blank in "(end) ".
-            const markerLength = markerText === '(end)' ? 6 : markerText.length;
-            d.setCursor(1 + markerLength, content.length);
+            else {
+                const content = lines.slice(page * pageSize, (page + 1) * pageSize);
+                d.clearScreen();
+                for (const [row, line] of content.entries()) {
+                    putLine(0, row, line.text, line.attr);
+                }
+                putLine(1, content.length, marker);
+                d.setCursor(1 + marker.length, content.length);
+            }
             const key = await nhgetch();
             if (pagerStyle === 'menu') {
                 // Counts are accepted even by PICK_NONE menus. Escape
@@ -402,10 +398,19 @@ async function pageDisclosureWindow(d, lines, { marker, pagerStyle }) {
         }
     }
     finally {
-        // erase_menu_or_text(): a full-screen window rebuilds vision and
-        // glyphs; docorner()'s saved cells only apply to corner windows.
-        await docrt();
-        await flush_screen(1);
+        if (menu && menu.boundary > 0) {
+            if (restoreUnderlay) {
+                restoreMenuUnderlay(underlay);
+                d.setCursor(underlayCursor.col, underlayCursor.row);
+                d.cursorVisible = underlayCursor.visible;
+            }
+        }
+        else {
+            // erase_menu_or_text(): a full-screen window rebuilds vision
+            // and glyphs; saved cells only apply to corner windows.
+            await docrt();
+            await flush_screen(1);
+        }
     }
 }
 /**

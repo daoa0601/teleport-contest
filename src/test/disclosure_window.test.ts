@@ -1,15 +1,74 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { docrt, flush_screen } from '../js/display.js';
+import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { ATR_INVERSE, NO_COLOR } from '../js/terminal.js';
+import { ATR_INVERSE, NO_COLOR, Terminal } from '../js/terminal.js';
 import { showDisclosureOverlay } from '../js/windows.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
 
 function rowText(row: number): string {
     return requireGameDisplay().grid[row]?.map(cell => cell.ch).join('').trimEnd() ?? '';
+}
+
+for (const { width, firstColumn, mapVisible } of [
+    { width: 76, firstColumn: 2, mapVisible: true },
+    { width: 77, firstColumn: 1, mapVisible: false },
+]) {
+    void test(`a ${width}-character overview row includes both menu margins when choosing its placement`, async () => {
+        freshPlayableRoom();
+        const display = requireGameDisplay();
+        display.setCell(5, 10, '@', NO_COLOR);
+        const input = resetInputState();
+        const overview = showDisclosureOverlay(['x'.repeat(width)], {
+            pagerStyle: 'menu', marker: '(end)',
+        });
+        try {
+            await input.waitUntilBlocked();
+            assert.equal(rowText(0).indexOf('x'), firstColumn, 'the menu retains its leading blank');
+            assert.equal(display.grid[0]?.[79]?.ch, ' ', 'the right margin stays blank');
+            assert.equal(display.grid[10]?.[5]?.ch, mapVisible ? '@' : ' ', 'placement determines whether the map is covered');
+        } finally {
+            input.feed(27);
+            await overview;
+        }
+    });
+}
+
+for (const overlay of [true, false]) {
+    for (const entries of [53, 60]) {
+        void test(`a ${entries}-row overview on a tall terminal pages after 52 entries with overlays ${overlay ? 'enabled' : 'disabled'}`, async () => {
+            freshPlayableRoom({ flags: { menu_overlay: overlay } });
+            const display = new GameDisplay(new Terminal(null, { cols: 80, rows: 60 }));
+            game.nhDisplay = display;
+            display.setCell(5, 55, '@', NO_COLOR);
+            display.setCell(70, 20, '.', NO_COLOR);
+            const input = resetInputState();
+            const overview = showDisclosureOverlay(
+                Array.from({ length: entries }, (_, n) => `Level ${n + 1}`),
+                { pagerStyle: 'menu', marker: '(end)' },
+            );
+            try {
+                await input.waitUntilBlocked();
+                assert.equal(rowText(51).trim(), 'Level 52');
+                assert.equal(rowText(52).trim(), '(1 of 2)', 'the pager follows the 52nd entry');
+                assert.equal(display.grid[55]?.[5]?.ch, overlay ? '@' : ' ', 'a tall corner menu leaves the map visible');
+                input.feed('>');
+                await input.waitUntilBlocked();
+                assert.equal(rowText(0).trim(), 'Level 53', 'the next entry begins the second page');
+                assert.equal(rowText(entries - 52).trim(), '(2 of 2)');
+                if (overlay) assert.equal(display.grid[20]?.[70]?.ch, '.', 'the shorter corner page exposes the map');
+                input.feed('<');
+                await input.waitUntilBlocked();
+                assert.equal(rowText(0).trim(), 'Level 1', 'the previous-page key returns to the first entry');
+            } finally {
+                input.feed(27);
+                await overview;
+            }
+        });
+    }
 }
 
 void test('an overview filling all content rows uses the full screen for its pager', async () => {
