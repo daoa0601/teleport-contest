@@ -14,7 +14,7 @@ import { nhgetch } from './input.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { objectClassForType } from './object_knowledge.js';
+import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
 import { liftObject } from './lift_object.js';
 import { endObjectBurn } from './light.js';
@@ -31,13 +31,14 @@ import { OBJECT_TIMER_KIND, stopObjectTimer, } from './object_timers.js';
 import { heroHasNoHands } from './polyself.js';
 import { observeQuantumCat } from './quantum_cat.js';
 import { d, rn2 } from './rng.js';
+import { getLine, promptChoice } from './query.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { NO_COLOR } from './terminal.js';
 import { assignInventoryLetter } from './u_init.js';
 import { objectWeight } from './weight.js';
 import { heroHasFreeHand } from './weapon_type.js';
 import { restoreMenuUnderlay, showChoiceWindow, showMultiSelectWindow, } from './windows.js';
-import { W_ACCESSORY, W_ARMOR } from './const.js';
+import { MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM, W_ACCESSORY, W_ARMOR, } from './const.js';
 export const CONTAINER_TYPES = new Set([
     LARGE_BOX, CHEST, ICE_BOX, SACK, BAG_OF_HOLDING, OILSKIN_SACK,
 ]);
@@ -94,58 +95,136 @@ function bucCategory(object) {
         return 'C';
     return 'U';
 }
+// C pickup.c:query_category(), for menu_loot's ALL_TYPES/UNPAID/BUCX/
+// CHOOSE_ALL/JUSTPICKED flags. Special filters stay out of menu inversion.
 function categoryChoices(objects) {
     const groups = objectsByClass(objects);
-    const choices = [
-        {
-            key: 'a', text: 'All types',
-            value: { matches: () => true },
-        },
-        ...groups.map((group, index) => ({
-            key: String.fromCharCode(98 + index),
-            text: group.name,
-            value: {
-                matches: (object) => className(object) === group.name,
-            },
-        })),
-    ];
+    const showAll = groups.length > 1;
+    const verifyAll = !!((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL);
+    const choices = [{
+            key: 'A', text: 'Auto-select every relevant item',
+            itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+            value: { matches: () => false, filter: 'auto' },
+        }];
+    if (!verifyAll || showAll) {
+        const firstHint = verifyAll ? !game._autoAllImpliedHintShown : !game._autoAllHintShown;
+        if (firstHint || game.flags.cmdassist !== false)
+            choices.push({ selectable: false, text: verifyAll
+                    ? "    (if no other choices are picked, 'a' is implied)"
+                    : '    (ignored unless some other choices are also picked)' });
+        if (verifyAll)
+            game._autoAllImpliedHintShown = true;
+        else
+            game._autoAllHintShown = true;
+    }
+    choices.push({ selectable: false, text: '' });
+    if (showAll)
+        choices.push({
+            key: 'a', text: 'All types', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+            value: { matches: () => true, filter: 'all' },
+        });
+    choices.push(...groups.map((group, index) => ({
+        key: String.fromCharCode((showAll ? 98 : 97) + index),
+        text: group.name,
+        groupAccelerator: OBJECT_CLASS_SYMBOLS[group.members[0]?.oclass ?? 0] || '',
+        value: { matches: (object) => className(object) === group.name, filter: 'class' },
+    })));
+    const special = [];
+    if (objects.some(hasUnpaidContents))
+        special.push({
+            key: 'u', text: 'Unpaid items', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+            value: { matches: hasUnpaidContents, filter: 'unpaid' },
+        });
     const bucNames = {
-        B: 'Items known to be Blessed',
-        C: 'Items known to be Cursed',
-        U: 'Items known to be Uncursed',
-        X: 'Items of unknown Bless/Curse status',
+        B: 'Items known to be Blessed', C: 'Items known to be Cursed',
+        U: 'Items known to be Uncursed', X: 'Items of unknown Bless/Curse status',
     };
     for (const category of ['B', 'C', 'U', 'X']) {
-        if (!objects.some(object => bucCategory(object) === category))
-            continue;
-        choices.push({
-            key: category,
-            text: bucNames[category],
-            value: {
-                matches: (object) => bucCategory(object) === category,
-            },
-        });
+        if (objects.some(object => bucCategory(object) === category))
+            special.push({
+                key: category, text: bucNames[category], itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+                value: { matches: object => bucCategory(object) === category, filter: 'buc' },
+            });
     }
-    if (objects.some(object => object.pickup_prev)) {
-        choices.push({
-            key: 'P', text: 'Items you just picked up',
-            value: { matches: (object) => !!object.pickup_prev },
+    const justPicked = objects.filter(object => object.pickup_prev);
+    const onePicked = justPicked.length === 1 ? justPicked[0] : null;
+    if (justPicked.length)
+        special.push({
+            key: 'P', text: onePicked ? `Just picked up: ${objectDescription(onePicked, inventoryPrimaryHandDetail(onePicked))}`
+                : 'Items you just picked up', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+            value: { matches: object => !!object.pickup_prev, filter: 'picked' },
         });
-    }
+    if (special.length)
+        choices.push({ selectable: false, text: '' }, ...special);
     return choices;
 }
+function hasUnpaidContents(object) {
+    return !!object.unpaid || !!object.contents?.some(hasUnpaidContents);
+}
+// allow_category(): match one selection in every active filter group.
+// Selecting coins by class takes precedence over the other filters.
+function categoryMatcher(filters) {
+    if (filters.some(filter => filter.filter === 'all'))
+        return () => true;
+    const classes = filters.filter(filter => filter.filter === 'class');
+    const groups = ['class', 'buc', 'unpaid', 'picked'];
+    return object => {
+        if (object.otyp === GOLD_PIECE && classes.length)
+            return classes.some(filter => filter.matches(object));
+        return groups.every(group => {
+            const members = filters.filter(filter => filter.filter === group);
+            return !members.length || members.some(filter => filter.matches(object));
+        });
+    };
+}
+async function confirmAutoSelection() {
+    if (!((game.flags.paranoia_bits ?? 0) & PARANOID_CONFIRM))
+        return promptChoice('Really autoselect All?', ['y', 'n', 'q'], 'n');
+    let prefix = '';
+    for (let tries = 0; tries < 6; tries++) {
+        const answer = (await getLine(`${prefix}Really autoselect All? [yes|no|quit]`, (_character, key) => key >= 32 && key < 127))?.trim().toLowerCase();
+        if (answer === 'yes')
+            return 'y';
+        if (answer === 'no')
+            return 'n';
+        if (answer === undefined || answer === 'quit')
+            return 'q';
+        prefix = '"Yes" or "No": ';
+    }
+    return 'n';
+}
 async function chooseCategories(title, objects) {
+    if (game.flags.menu_style !== undefined && game.flags.menu_style !== MENU_FULL)
+        return { matchers: [() => true], autoSelect: false };
     const groups = objectsByClass(objects);
     const knownBuc = new Set(objects.map(bucCategory));
     const onlyGroup = groups[0];
-    if (groups.length === 1 && onlyGroup && knownBuc.size <= 1)
-        return [object => className(object) === onlyGroup.name];
+    if (groups.length === 1 && onlyGroup && knownBuc.size <= 1
+        && !objects.some(hasUnpaidContents))
+        return { matchers: [object => className(object) === onlyGroup.name], autoSelect: false };
     const selected = await showMultiSelectWindow({
-        title,
-        sections: [{ heading: '', items: categoryChoices(objects) }],
-        omitHeadings: true,
+        title, sections: [{ heading: '', items: categoryChoices(objects) }], omitHeadings: true,
+        returnCounts: true,
     });
-    return selected.map(choice => choice.matches);
+    let autoSelect = selected.some(choice => choice.value.filter === 'auto');
+    const filters = selected.filter(choice => choice.value.filter !== 'auto').map(choice => choice.value);
+    const picked = selected.find(choice => choice.value.filter === 'picked');
+    const matchers = filters.length ? [categoryMatcher(filters)] : [];
+    if (autoSelect) {
+        if ((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL) {
+            const answer = await confirmAutoSelection();
+            if (answer === 'q')
+                return { matchers: [], autoSelect: false };
+            autoSelect = answer === 'y';
+            if (!matchers.length)
+                matchers.push(() => true);
+        }
+        else if (!matchers.length) {
+            await plineWithContinuation('No relevant items selected.');
+            autoSelect = false;
+        }
+    }
+    return { matchers, autoSelect, ...(picked ? { justPickedCount: Math.max(0, picked.count) } : {}) };
 }
 function matchingObjects(objects, matchers) {
     if (!matchers.length)
@@ -453,9 +532,11 @@ export async function takeFromContainer(container, object, state = game, count =
 async function takeSelectedObjects(container) {
     if (!container.contents?.length)
         return [];
-    const matchers = await chooseCategories('Take out what type of objects?', container.contents);
-    const eligible = matchingObjects(container.contents, matchers);
-    const selected = await chooseObjects('Take out what?', eligible, false);
+    const categories = await chooseCategories('Take out what type of objects?', container.contents);
+    const eligible = matchingObjects(container.contents, categories.matchers);
+    const selected = categories.autoSelect
+        ? eligible.map(value => ({ value, count: -1 }))
+        : await chooseObjects('Take out what?', eligible, false);
     const results = [];
     let resetJustPicked = true;
     for (const selection of selected) {
@@ -471,19 +552,38 @@ async function takeSelectedObjects(container) {
     return results;
 }
 async function putSelectedObjects(container, stashOne = false) {
-    const candidates = (game.inventory || [])
-        .filter(object => object !== container);
-    if (!candidates.length)
-        return [];
+    // menu_loot queries the whole inventory; only stash-one uses ck_bag.
+    const candidates = stashOne
+        ? game.inventory.filter(object => object !== container) : game.inventory;
+    if (!candidates.some(object => object !== container))
+        return { results: [], spentTime: false };
     let selected;
+    let spentTime = false;
     if (stashOne) {
         selected = await chooseObjects('What do you want to stash?', candidates, true);
         selected = selected.slice(0, 1);
     }
     else {
-        const matchers = await chooseCategories('Put in what type of objects?', candidates);
-        const eligible = matchingObjects(candidates, matchers);
-        selected = await chooseObjects('Put in what?', eligible, true);
+        const categories = await chooseCategories('Put in what type of objects?', candidates);
+        const eligible = matchingObjects(candidates, categories.matchers);
+        const onePicked = categories.justPickedCount !== undefined
+            && candidates.filter(object => object.pickup_prev).length === 1
+            ? candidates.find(object => object.pickup_prev) : null;
+        if (!categories.autoSelect && onePicked) {
+            // menu_loot's single just-picked path keeps a rejected split
+            // and charges a turn regardless of in_container's result.
+            const transfer = splitForTransfer(onePicked, categories.justPickedCount ?? -1, game);
+            const result = await putIntoContainer(container, transfer.object);
+            if (result.message)
+                await plineWithContinuation(result.message);
+            return { results: [result], spentTime: true };
+        }
+        selected = categories.autoSelect
+            ? eligible.map(value => ({ value, count: -1 }))
+            : await chooseObjects('Put in what?', eligible, true);
+        // The ordinary menu path also charges a turn for a selected item,
+        // including a rejection; auto-selection counts successful transfers.
+        spentTime = !categories.autoSelect && selected.length > 0;
     }
     const results = [];
     for (const selection of selected) {
@@ -491,10 +591,13 @@ async function putSelectedObjects(container, stashOne = false) {
         results.push(result);
         if (result.message)
             await plineWithContinuation(result.message);
+        // Stashing one item costs a turn even when it destroys the bag.
+        if (stashOne && result.destroyedContainer)
+            spentTime = true;
         if (result.destroyedContainer || result.stop)
             break;
     }
-    return results;
+    return { results, spentTime: spentTime || results.some(result => result.moved) };
 }
 function contentLines(container) {
     return sortObjects(container.contents || [], { mode: lootSortMode() })
@@ -634,12 +737,13 @@ export async function useContainer(container, { held = false, moreContainers = f
             await pline(`You don't have anything else to ${action === keys.stash ? 'stash' : 'put in'}.`);
         }
         else {
-            const results = await putSelectedObjects(container, action === keys.stash);
-            if (results.some(result => result.moved))
+            const transfer = await putSelectedObjects(container, action === keys.stash);
+            const results = transfer.results;
+            if (transfer.spentTime)
                 spentTime = true;
             stopped = results.some(result => result.stop);
             if (results.some(result => result.destroyedContainer)) {
-                return { spentTime: true, container: null };
+                return { spentTime, container: null };
             }
         }
     }

@@ -5,7 +5,7 @@ import type { PromptAnswer } from './support/input-boundaries.js';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
-import { moveloop_core } from '../js/allmain.js';
+import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
 import { A_INT, A_WIS, NO_MINVENT, STRAT_WAITFORU } from '../js/const.js';
 import { createMonsterAt } from './support/monsters.js';
 import { resetInputState } from '../js/input.js';
@@ -32,6 +32,20 @@ import { createStaffedShop } from './support/shop.js';
 
 
 function occupationKey() { return game._occupation?.key; }
+
+void test('a failed spellbook reading announces that the reader can move again', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const source = await book(SPE_LIGHT, { blessed: false, cursed: true });
+    const input = resetInputState();
+    input.feed(' '.repeat(4));
+
+    await studyBook(source);
+    await finishHeroHelplessness();
+
+    assert.match(game._lastPlineMessage, /You can move again\.$/);
+    assert.equal(game._helplessTurns, 0);
+});
 
 async function book(type = SPE_LIGHT, properties: KnownObjectOverrides = {}) {
     const object = await addInventoryObject(type, { initialize: false, blessed: true, ...properties });
@@ -423,7 +437,6 @@ void test('confused first reading tears the real book only after its warning is 
     assert.equal(source.where, 'gone');
     assert.ok(!game._occupation);
     assert.equal(game._helplessTurns, OBJECT_DELAY[SPE_LIGHT]);
-    assert.equal(game._helplessDoneMessage, '');
     assert.equal((game.spells || []).length, 0);
 });
 
@@ -442,7 +455,6 @@ void test('confusion during study repeats the next line and spends the uninterru
     ]);
     assert.equal(await continueSpellbookStudy(), false);
     assert.equal(game._helplessTurns, -remaining);
-    assert.equal(game._helplessDoneMessage, '');
     assert.match(game._pending_message, /reading the next line over and over/);
     assert.equal(game.context.spbook.book, null);
     assert.equal(game.context.spbook.o_id, 0);

@@ -39,6 +39,7 @@ export interface ProgramState {
     beyond_savefile_load?: boolean | number;
     gameover?: boolean;
     in_docrt?: boolean | number;
+    in_moveloop?: boolean;
     in_getlev?: boolean;
     in_impossible?: boolean;
     in_paniclog?: boolean;
@@ -173,6 +174,8 @@ export interface GameState {
     initAlignment: Alignment | null;
     context: GameContext;
     program_state: ProgramState;
+    _autoAllHintShown?: boolean;
+    _autoAllImpliedHintShown?: boolean;
     flags: GameFlags;
     iflags: InterfaceFlags;
     last_hider?: number;

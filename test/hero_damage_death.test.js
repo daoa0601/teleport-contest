@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 // C hack.c:losehp() lets hit points fall below one and then dies with the
 // caller's killer and format. Each case starts the hero at one hit point.
-import { LAVAPOOL, MAGIC_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, SPIKED_PIT, TT_LAVA, TT_PIT, } from '../js/const.js';
+import { LAVAPOOL, MAGIC_TRAP, PIT, ROCKTRAP, ROLLING_BOULDER_TRAP, SPIKED_PIT, TT_LAVA, TT_PIT, } from '../js/const.js';
 import { gotoLevel } from '../js/level_change.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { rhack } from '../js/cmd.js';
@@ -57,6 +57,17 @@ void test('sitting down on a spike can be the last point of damage', async () =>
     initRng(1n);
     await dieWith(() => dosit(), 'killed by sitting on an iron spike');
 });
+for (const { type, death } of [
+    { type: PIT, death: 'fell into a pit' },
+    { type: SPIKED_PIT, death: 'fell into a pit of iron spikes' },
+]) {
+    void test(`a fatal ${type === PIT ? 'pit' : 'spiked pit'} fall retains its native death description`, async () => {
+        const level = lowHitPointRoom();
+        const trap = addTrap(level, type, game.u.ux, game.u.uy);
+        initRng(1n);
+        await dieWith(() => triggerHeroTrap(trap), death);
+    });
+}
 void test('a falling rock trap kills with the falling rock', async () => {
     const level = lowHitPointRoom();
     const trap = addTrap(level, ROCKTRAP, game.u.ux, game.u.uy);

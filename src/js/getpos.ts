@@ -6,7 +6,8 @@ import {
     LOOK_TRADITIONAL, LOOK_VERBOSE, ROWNO,
 } from './const.js';
 import {
-    bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, newsym, pline, show_glyph_cell, terrain_glyph,
+    bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor,
+    newsym_force, pline, show_glyph_cell, terrain_glyph,
 } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
@@ -20,7 +21,7 @@ import type { Position } from './map_types.js';
 
 export type MapPositionPickType = typeof LOOK_TRADITIONAL | typeof LOOK_QUICK
     | typeof LOOK_ONCE | typeof LOOK_VERBOSE;
-export type PositionDescription = (x: number, y: number) => string | null | undefined;
+export type PositionDescription = (x: number, y: number) => string | null | undefined | Promise<string | null | undefined>;
 export type ValidLocation = (x: number, y: number) => boolean;
 export interface MapPositionSelection extends Position {
     pickType: MapPositionPickType;
@@ -32,6 +33,8 @@ export interface MapPositionOptions {
     describe?: PositionDescription | null;
     afterPaint?: ((cursor: Position, firstPaint: boolean) => void | Promise<void>) | null;
     isValidLocation?: ValidLocation | null;
+    // Spell and cloud targeting admit the hero but omit its '$' overlay.
+    highlightHero?: boolean;
     preserveMap?: boolean;
     force?: boolean;
 }
@@ -250,8 +253,20 @@ export async function getposHelpUntilDismissed(
     return key;
 }
 
-function describeSelectedPosition(describe: PositionDescription | null | undefined, cursor: Position, fallback: string): string {
-    return describe?.(cursor.x, cursor.y) || fallback;
+async function describeSelectedPosition(describe: PositionDescription | null | undefined, cursor: Position, fallback: string): Promise<string> {
+    return await describe?.(cursor.x, cursor.y) || fallback;
+}
+
+// selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
+// consume display randomness in that order, independently of target cycling.
+function validMapSquares(isValidLocation: ValidLocation): Position[] {
+    const spots = [];
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            if (isValidLocation(x, y)) spots.push({ x, y });
+        }
+    }
+    return spots;
 }
 
 // C getpos.c:gather_locs()/gather_locs_interesting() with GLOC_VALID minus
@@ -260,12 +275,7 @@ function describeSelectedPosition(describe: PositionDescription | null | undefin
 // squares stay eligible for cycling; only the '$' marking is gated.
 function gatherValidLocations(isValidLocation: ValidLocation, state: GameState = game): Position[] {
     const ux = state.u.ux, uy = state.u.uy;
-    const spots = [];
-    for (let x = 1; x < COLNO; x++) {
-        for (let y = 0; y < ROWNO; y++) {
-            if (isValidLocation(x, y)) spots.push({ x, y });
-        }
-    }
+    const spots = validMapSquares(isValidLocation);
     spots.sort((a, b) => {
         const distA = Math.max(Math.abs(ux - a.x), Math.abs(uy - a.y));
         const distB = Math.max(Math.abs(ux - b.x), Math.abs(uy - b.y));
@@ -274,6 +284,12 @@ function gatherValidLocations(isValidLocation: ValidLocation, state: GameState =
         return a.x - b.x;
     });
     return spots;
+}
+
+// C getpos.c:getpos_sethilite(). Install after the caller's question and
+// before getpos's tutorial or instructions can flush these forced redraws.
+export function prepareMapPositionHighlights(isValidLocation: ValidLocation): void {
+    for (const { x, y } of validMapSquares(isValidLocation)) newsym_force(x, y);
 }
 
 function getposCycleKind(key: number): { kind: GetposCycleKind; step: -1 | 1 } | null {
@@ -319,6 +335,7 @@ export async function selectMapPosition({
     describe,
     afterPaint = null,
     isValidLocation = null,
+    highlightHero = true,
     preserveMap = false,
     force = true,
 }: MapPositionOptions): Promise<MapPositionSelection | null> {
@@ -331,7 +348,6 @@ export async function selectMapPosition({
     // getpos_sethilite(NULL, NULL) resets them at its exit.
     const validity: { cycle: ValidLocationCycle | null } = { cycle: null };
     let markValid = false;
-    let paintedSpots: Position[] | null = null;
     const targetCycles = new Map<GetposCycleKind, LocationCycle>();
 
     const validLocations = (): ValidLocationCycle => {
@@ -353,14 +369,18 @@ export async function selectMapPosition({
     };
 
     try {
+        const initialMapCursor = isValidLocation && !game.flags.verbose
+            ? lastDirtyMapCursor() : null;
         for (;;) {
             // bgcolors off (this port's default): '$' alternates between no
             // marking and the S_goodpos overlay.  The cycle-only hero
             // injection never paints unless the predicate accepts the hero.
-            paintedSpots = isValidLocation && markValid
-                ? validLocations().marked.filter(({ x, y }) => cansee(x, y))
+            const paintedSpots = isValidLocation && markValid
+                ? validLocations().marked.filter(({ x, y }) => cansee(x, y)
+                    && (highlightHero || x !== game.u.ux || y !== game.u.uy))
                 : null;
             await paintGetposCursor(cursor, message, paintedSpots, preserveMap);
+            if (firstPaint && initialMapCursor) game.nhDisplay?.setCursor(...initialMapCursor);
             if (afterPaint) await afterPaint(cursor, firstPaint);
             firstPaint = false;
 
@@ -384,7 +404,7 @@ export async function selectMapPosition({
                 game.u.dy = movement.dy;
                 const distance = fast || movement.mode !== 0 ? 8 : 1;
                 moveGetposCursor(cursor, movement.dx * distance, movement.dy * distance);
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
 
@@ -409,7 +429,7 @@ export async function selectMapPosition({
                 return null;
             }
             if (ch === ' ') {
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
@@ -423,7 +443,7 @@ export async function selectMapPosition({
                 // NHKF_GETPOS_SELF resets every gather index.
                 if (validity.cycle) validity.cycle.index = 0;
                 for (const cycle of targetCycles.values()) cycle.index = 0;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             if (isValidLocation && (key === game.commandBindings.specialKey('getpos.valid.next')
@@ -439,7 +459,7 @@ export async function selectMapPosition({
                 if (!spot) throw new Error('The selected valid location is missing');
                 cursor.x = spot.x;
                 cursor.y = spot.y;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             const target = getposCycleKind(key);
@@ -460,14 +480,14 @@ export async function selectMapPosition({
                 if (!spot) throw new Error('The selected target location is missing');
                 cursor.x = spot.x;
                 cursor.y = spot.y;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             const feature = nextGetposFeature(cursor, ch);
             if (feature) {
                 cursor.x = feature.x;
                 cursor.y = feature.y;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             message = getposFeatureMissMessage(ch);
@@ -485,13 +505,10 @@ export async function selectMapPosition({
         else hero.dy = savedDirection.dy;
         if (savedDirection.dz === undefined) delete hero.dz;
         else hero.dz = savedDirection.dz;
-        // exitgetpos(): getpos_sethilite(NULL, NULL) force-newsyms the old
-        // valid selection; tmp_at(DISP_END) newsyms only squares it drew.
-        if (paintedSpots) {
-            for (const { x, y } of paintedSpots) newsym(x, y);
-            await flush_screen(1);
-            // exitgetpos() leaves the tty cursor at the last selection spot.
-            game.nhDisplay?.setCursor(cursor.x - 1, cursor.y + 1);
+        // exitgetpos() clears the validity callbacks and force-redraws their
+        // old selection once, also replacing any active '$' marks.
+        if (isValidLocation) {
+            for (const { x, y } of validMapSquares(isValidLocation)) newsym_force(x, y);
         }
     }
 }

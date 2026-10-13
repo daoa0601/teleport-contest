@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { A_CON, A_STR, Upolyd } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
-import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
+import { resetInputState, pushKeys } from '../js/input.js';
+import { AMULET_OF_LIFE_SAVING, LONG_SWORD } from '../js/object_data.js';
+import { nearCapacity, weightCapacity } from '../js/weight.js';
+import { requireScreenRow } from './support/screen.js';
 import { poisonHero } from '../js/poison.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -97,5 +99,25 @@ void test('severe poison can trigger life saving through low human health while 
     assert.ok(game.u.uhp > 0);
     assert.ok(game.u.mh > 0);
     assert.equal(game.inventory.includes(amulet), false);
+});
+void test('poison reports a newly burdensome load before the attribute-loss message', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.program_state.in_moveloop = true;
+    const capacity = weightCapacity(game);
+    await addInventoryObject(LONG_SWORD, { quantity: Math.floor(capacity / 40) });
+    assert.equal(nearCapacity(game), 0);
+    game._encumbranceLevel = 0;
+    const input = resetInputState();
+    const poisoning = poisonHero({
+        reason: "The soldier ant's sting", killer: 'soldier ant', attribute: A_STR,
+        random: () => 1, rollDice: () => 3,
+    });
+    await input.waitUntilBlocked();
+    const row = requireScreenRow(0).map(cell => cell.ch).join('').trimEnd();
+    input.feed(' '.repeat(4));
+    await poisoning;
+    assert.equal(row, "The soldier ant's sting was poisoned!--More--");
+    assert.equal(nearCapacity(game), 1);
 });
 //# sourceMappingURL=poison.test.js.map

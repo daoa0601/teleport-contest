@@ -62,7 +62,7 @@ export function mapDetectedMonster(monster, showTail, state = game) {
         show_glyph_cell(segment.x, segment.y, tail.ch, tail.color, false, attribute, tail);
     }
 }
-function detectionDescription(x, y, terrainMode, objects, state) {
+async function detectionDescription(x, y, terrainMode, objects, state) {
     const glyph = glyphAt(x, y, state);
     if (glyph?.kind === 'invisible')
         return 'unseen creature';

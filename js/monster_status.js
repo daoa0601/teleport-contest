@@ -53,7 +53,7 @@ export async function monsterStatusLine(monster, { state = game, x = monster.mx,
         conditions.push('shapechanger');
     if (monster.meating)
         conditions.push('eating');
-    conditions.push(...await hiddenConditions(monster, state));
+    conditions.push(...await monsterHiddenConditions(monster, state));
     if (monster.mcan)
         conditions.push('cancelled');
     if (monster.mconf)
@@ -103,7 +103,9 @@ export async function monsterStatusLine(monster, { state = game, x = monster.mx,
     const health = `Level ${monster.m_lev ?? 0}  HP ${monster.mhp}(${monster.mhpmax})`;
     return `Status of ${identity}:  ${health}  AC ${armorClass}${conditionText}.`;
 }
-async function hiddenConditions(monster, state) {
+// C pager.c:mhidden_description(). Probing reveals an alternate monster
+// identity; farlook only describes furniture, objects, hiding, and regions.
+export async function monsterHiddenConditions(monster, state, { showAlternateMonster = true } = {}) {
     const conditions = [];
     const appearance = M_AP_TYPE(monster);
     const x = monster.mx, y = monster.my;
@@ -116,13 +118,13 @@ async function hiddenConditions(monster, state) {
     else if (appearance === M_AP_OBJECT) {
         conditions.push(`mimicking ${await objectAtMonsterDescription(monster, state)}`);
     }
-    else if (appearance === M_AP_MONSTER) {
+    else if (appearance === M_AP_MONSTER && showAlternateMonster) {
         if (monster.mappearance === undefined)
             throw new Error(`Monster ${monster.m_id} has no disguise species`);
         const form = monsterTypeName(monster.mappearance, monster.female);
         conditions.push(`masquerading as ${withIndefiniteArticle(form)}`);
     }
-    else if (monster.mundetected) {
+    else if (!appearance && monster.mundetected) {
         const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
         if (flags & 0x80) {
             conditions.push(`hiding under ${await objectAtMonsterDescription(monster, state)}`);

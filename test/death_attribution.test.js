@@ -128,7 +128,7 @@ for (const restored of [false, true]) {
             }
             const fatalGhoul = requireGameLevel().monsters.find(monster => monster.m_id === killerId);
             assert.ok(fatalGhoul, 'The ghoul killer must remain on the level after restoring');
-            installPagerInput(input, { expected: /claws|frozen|die|Goodbye|points|You were/i, limit: 8 });
+            installPagerInput(input, { expected: /hits|frozen|die|Goodbye|points|You were|Your body rises from the dead as a ghoul/i, limit: 8 });
             await finishMonsterAttackDeath(fatalGhoul);
             assert.equal(loadScoreRecords()[0]?.death, `killed by a ghoul, while paralyzed${sameKiller ? '' : ' by a ghoul'}`);
         });

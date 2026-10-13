@@ -66,7 +66,7 @@ export async function monsterStatusLine(monster: Monster, {
     if (monster.cham !== undefined && monster.cham >= 0 && monster.cham !== monster.mnum)
         conditions.push('shapechanger');
     if (monster.meating) conditions.push('eating');
-    conditions.push(...await hiddenConditions(monster, state));
+    conditions.push(...await monsterHiddenConditions(monster, state));
     if (monster.mcan) conditions.push('cancelled');
     if (monster.mconf) conditions.push('confused');
     if (monster.mblinded || monster.mcansee === 0) conditions.push('blind');
@@ -103,7 +103,12 @@ export async function monsterStatusLine(monster: Monster, {
     return `Status of ${identity}:  ${health}  AC ${armorClass}${conditionText}.`;
 }
 
-async function hiddenConditions(monster: Monster, state: GameState): Promise<string[]> {
+// C pager.c:mhidden_description(). Probing reveals an alternate monster
+// identity; farlook only describes furniture, objects, hiding, and regions.
+export async function monsterHiddenConditions(
+    monster: Monster, state: GameState,
+    { showAlternateMonster = true }: { showAlternateMonster?: boolean } = {},
+): Promise<string[]> {
     const conditions: string[] = [];
     const appearance = M_AP_TYPE(monster);
     const x = monster.mx, y = monster.my;
@@ -113,12 +118,12 @@ async function hiddenConditions(monster: Monster, state: GameState): Promise<str
         conditions.push(`mimicking ${withIndefiniteArticle(symbol.name)}`);
     } else if (appearance === M_AP_OBJECT) {
         conditions.push(`mimicking ${await objectAtMonsterDescription(monster, state)}`);
-    } else if (appearance === M_AP_MONSTER) {
+    } else if (appearance === M_AP_MONSTER && showAlternateMonster) {
         if (monster.mappearance === undefined)
             throw new Error(`Monster ${monster.m_id} has no disguise species`);
         const form = monsterTypeName(monster.mappearance, monster.female);
         conditions.push(`masquerading as ${withIndefiniteArticle(form)}`);
-    } else if (monster.mundetected) {
+    } else if (!appearance && monster.mundetected) {
         const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
         if (flags & 0x80) {
             conditions.push(`hiding under ${await objectAtMonsterDescription(monster, state)}`);
@@ -132,6 +137,7 @@ async function hiddenConditions(monster: Monster, state: GameState): Promise<str
         }
     }
     const region = visibleRegionAt(state, x, y);
-    if (region) conditions.push(`in a cloud of ${region.damage ? 'poison gas' : 'vapor'}`);
+    if (region)
+        conditions.push(`in a cloud of ${region.damage ? 'poison gas' : 'vapor'}`);
     return conditions;
 }

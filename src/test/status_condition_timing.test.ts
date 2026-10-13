@@ -29,4 +29,3 @@ void test('a Hungry transition changes status after its announcement is acknowle
     assert.equal(game.u.uhs, HUNGRY);
     assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /Hungry/);
 });
-

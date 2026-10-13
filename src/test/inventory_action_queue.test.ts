@@ -57,4 +57,3 @@ void test('an unread end-turn message does not consume an inventory drop choice'
     assert.equal(game.inventory.includes(dagger), false);
     assert.equal(dagger.where, 'floor');
 });
-

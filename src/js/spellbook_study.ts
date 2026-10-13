@@ -318,7 +318,7 @@ function delayReading(delay: number, state: GameState) {
         state._helplessTurns = turns;
     }
     state._helplessReason = 'reading a book';
-    state._helplessDoneMessage = '';
+    state._helplessDoneMessage = null;
 }
 
 function outcome(spentTime: boolean, state: GameState) {
