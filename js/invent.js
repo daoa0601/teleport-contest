@@ -33,9 +33,21 @@ import { readFloorEngraving, showFloorPile } from './floor_object_display.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
 import { dungeonFeatureSentenceAt } from './dungeon_feature.js';
+import { impossible } from './diagnostics.js';
 const COIN_CLASS = 12;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
+// C check_invent_gold(): only malformed purses may be reorganized.
+export async function checkInventoryGold(why, state = game) {
+    const gold = state.inventory.filter(object => object.oclass === COIN_CLASS);
+    const wrongSlots = gold.filter(object => object.invlet !== '$').length;
+    if (gold.length <= 1 && wrongSlots === 0)
+        return false;
+    const wrongSlotMessage = wrongSlots > 1 ? 'gold in wrong slots'
+        : wrongSlots === 1 ? 'gold in wrong slot' : '';
+    await impossible(`${why}: ${wrongSlotMessage}${wrongSlots && gold.length > 1 ? ' and ' : ''}${gold.length > 1 ? 'multiple gold stacks' : ''}`, { state });
+    return true;
+}
 function objectNeedsFullIdentification(object) {
     if (!object || object.oclass === COIN_CLASS)
         return false;
@@ -416,13 +428,14 @@ function inventorySections(items = game.inventory || [], includeGold = true) {
     return [...grouped].map(([heading, items]) => ({ heading, items }));
 }
 async function showItemActionMenu(item) {
+    const repairGold = item.oclass === COIN_CLASS && await checkInventoryGold('item-action');
     return showChoiceWindow({
         title: `Do what with ${definiteName(objectCombatName(item))}?`,
-        entries: itemActionEntries(item, game),
+        entries: itemActionEntries(item, game, repairGold),
         validKeys: [27, 32, 10, 13],
     });
 }
-function itemActionEntries(item, state) {
+function itemActionEntries(item, state, repairGold) {
     const itemName = simpleObjectName(item, state);
     const entries = [];
     const alreadyWorn = !!((item.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY));
@@ -456,7 +469,8 @@ function itemActionEntries(item, state) {
             ? ` with your wielded ${simpleObjectName(state.uwep, state)}` : '';
         entries.push({ key: 'f', text: `${shoot ? 'Shoot' : 'Throw'} ${stack ? 'one of these' : 'this'}${launcher}` });
     }
-    entries.push({ key: 'i', text: 'Adjust inventory by assigning new letter' });
+    if (item.oclass !== COIN_CLASS || repairGold)
+        entries.push({ key: 'i', text: 'Adjust inventory by assigning new letter' });
     if (item.oclass === 4 && !alreadyWorn)
         entries.push({ key: 'P', text: 'Put this ring on' });
     if ([2, 13].includes(item.oclass) && item !== state.uquiver)

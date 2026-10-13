@@ -73,7 +73,7 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
-import { chooseInventoryObject, compactInventoryLetters, promptInventoryObject, } from './inventory_prompt.js';
+import { chooseInventoryObject, compactInventoryLetters, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
 import { directionAssistPage, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
@@ -83,7 +83,8 @@ import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPend
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
 import { dozap, } from './zap.js';
-import { bucAdjectiveForName, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, } from './invent.js';
+import { bucAdjectiveForName, checkInventoryGold, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, } from './invent.js';
+import { mergeObjectStacks } from './object_merge.js';
 import { castSpell, docast, dovspell, } from './spell.js';
 import { vomitHero, } from './hero_illness.js';
 import { heroBreathAttack } from './hero_breath.js';
@@ -3525,8 +3526,7 @@ async function domonability() {
     game.context.move = 0;
 }
 // C ref: invent.c:doorganize()/doorganize_core().
-// TODO: add splitting, collecting, merging, swapping, gold repair, and the
-// used-letter menu.
+// TODO: add ordinary stack splitting, collecting, merging, and the used-letter menu.
 async function doadjust() {
     const inventory = (game.inventory || [])
         .filter((object) => typeof object.invlet === 'string' && object.invlet.length > 0)
@@ -3536,13 +3536,57 @@ async function doadjust() {
         game.context.move = 0;
         return;
     }
-    const sourceLetters = compactInventoryLetters(inventory.map(object => object.invlet).join(''));
-    const selection = await promptInventoryObject(`What do you want to adjust? [${sourceLetters} or ?*] `, inventory, { allowMenu: true });
-    if (selection.cancelled || !selection.object) {
+    if (inventory.length === 1 && inventory[0]?.oclass === 12 && inventory[0].invlet === '$') {
+        await pline("You aren't carrying anything adjustable.");
         game.context.move = 0;
         return;
     }
-    const object = selection.object;
+    if (game.flags.fixinv === false)
+        reassignInventoryLetters();
+    const repairGold = await checkInventoryGold('adjust');
+    const object = await chooseInventoryObject('adjust', candidate => candidate.oclass === 12 && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST, { forcePrompt: true });
+    if (!object) {
+        game.context.move = 0;
+        return;
+    }
+    const source = object.invlet;
+    if (!source)
+        throw new Error('Adjusting inventory requires a lettered object.');
+    // C doorganize_core() chooses '$' itself when repairing gold. A purse
+    // already in '$' collects other stacks; one elsewhere merges into '$'.
+    if (object.oclass === 12) {
+        const collect = object.invlet === '$';
+        let purse = object;
+        let action = collect ? 'Collecting' : 'Moving';
+        for (const candidate of inventory) {
+            if (candidate === purse || candidate === object)
+                continue;
+            if (!collect && candidate.invlet !== '$')
+                continue;
+            const candidateName = candidate.oextra?.oname ?? candidate.oname;
+            const purseName = purse.oextra?.oname ?? purse.oname;
+            const merged = (!candidateName || candidateName === purseName)
+                ? await mergeObjectStacks(candidate, purse) : null;
+            if (merged) {
+                purse = merged;
+                if (collect)
+                    continue;
+                action = 'Merging';
+            }
+            else if (!collect) {
+                candidate.invlet = source;
+                action = 'Swapping';
+            }
+            if (!collect)
+                break;
+        }
+        purse.invlet = '$';
+        game.inventory.sort((a, b) => String(a.invlet).localeCompare(String(b.invlet)));
+        observeObjectForNaming(purse);
+        await pline(`${action}: $ - ${inventoryItemDescription(purse)}.`);
+        game.context.move = 0;
+        return;
+    }
     const occupied = new Set(inventory.filter(candidate => candidate !== object)
         .map(candidate => candidate.invlet));
     const recommended = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -3570,9 +3614,6 @@ async function doadjust() {
         return;
     }
     const displaced = inventory.find(candidate => candidate !== object && candidate.invlet === destination);
-    const source = object.invlet;
-    if (!source)
-        throw new Error('Adjusting inventory requires a lettered object.');
     if (displaced)
         displaced.invlet = source;
     object.invlet = destination;
