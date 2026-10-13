@@ -1017,7 +1017,13 @@ async function runCommandHandler(binding, { cannedCommand = null, previousMessag
         return;
     }
     if (cannedCommand?.kind === 'wield') {
-        await dowield(cannedCommand.invlet);
+        queueCommandKeys(cannedCommand.invlet);
+        try {
+            await dowield();
+        }
+        finally {
+            clearCommandKeys();
+        }
         return;
     }
     if (cannedCommand?.kind === 'fire') {
@@ -2351,8 +2357,10 @@ async function runInventoryAction({ key, item }) {
     }
     switch (key) {
         case '-':
-            if (item === game.uwep)
-                await dowield('-');
+            if (item === game.uwep) {
+                queueCommandKeys('-');
+                await dowield();
+            }
             else if (item === game.uswapwep) {
                 resetBulkTakeoff();
                 const twoweap = game.u.twoweap;
@@ -2401,7 +2409,8 @@ async function runInventoryAction({ key, item }) {
             await dothrow(item);
             return;
         case 'w':
-            await dowield(letter);
+            queueCommandKeys(letter);
+            await dowield();
             return;
         case 'x':
             await doswapweapon();
@@ -4798,7 +4807,7 @@ async function putOnArmorObject(object) {
 // C refs: wield.c:dowield(), ready_weapon(), invent.c:getobj().  The prompt
 // advertises weapons and weapon-tools but still permits the full inventory
 // through ?/*; '-' represents the synthetic empty-hands object.
-async function dowield(cannedInvlet = null) {
+async function dowield() {
     game.multi = 0;
     if (heroHasNoHands(game) || heroIsVerySmall(game)) {
         await pline("Don't be ridiculous!");
@@ -4811,22 +4820,15 @@ async function dowield(cannedInvlet = null) {
     const letters = weapons.map(object => object.invlet).join('');
     const choices = ['-', compactInventoryLetters(letters)].filter(Boolean).join(' ');
     const prompt = `What do you want to wield? [${choices} or ?*] `;
-    const selection = cannedInvlet === null
-        ? await promptInventoryObject(prompt, game.inventory || [], {
-            allowNone: true, allowMenu: true,
-            menuItems: weapons.length ? weapons : game.inventory.filter(item => item.oclass !== 12),
-            noneDescription: `your ${game.uarmg ? 'gloved' : 'bare'} ${makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
-        })
-        : {
-            cancelled: false,
-            none: cannedInvlet === '-',
-            object: (game.inventory || []).find(candidate => candidate.invlet === cannedInvlet),
-        };
+    const selection = await promptInventoryObject(prompt, game.inventory || [], {
+        allowNone: true, allowMenu: true,
+        menuItems: weapons.length ? weapons : game.inventory.filter(item => item.oclass !== 12),
+        noneDescription: `your ${game.uarmg ? 'gloved' : 'bare'} ${makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
+    });
     if (selection.cancelled) {
         game.context.move = 0;
         return;
     }
-    game._pending_message = '';
     const object = selection.object;
     if (!selection.none && !object) {
         game.context.move = 0;

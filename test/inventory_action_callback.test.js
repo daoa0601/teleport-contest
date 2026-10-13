@@ -31,4 +31,31 @@ void test('an accepting command callback keeps its prose before an inventory act
     assert.match(game._pending_message, /You drop/);
     assert.equal(game.inventory.includes(dagger), false);
 });
+for (const action of ['wield', 'unwield']) {
+    void test(`an accepting command callback keeps its prose before inventory ${action}`, async (t) => {
+        freshObjectRoom();
+        const dagger = await addInventoryObject(DAGGER);
+        if (action === 'unwield')
+            game.uwep = dagger;
+        const input = resetInputState();
+        const core = await startLuaCore(t);
+        core.execute(`
+            function prepare_wield(command)
+                if command == "wield" then
+                    nh.pline("You steady your hand.")
+                end
+                return true
+            end
+            nh.callback("cmd_before", "prepare_wield")
+        `);
+        await answerPrompts(rhack('i'.charCodeAt(0)), input, [
+            { prompt: /Weapons/, keys: dagger.invlet },
+            { prompt: /Do what with the dagger\?/, keys: action === 'wield' ? 'w' : '-' },
+        ]);
+        await answerPrompts(rhack(0), input, []);
+        assert.match(game._pending_message, /You steady your hand\./);
+        assert.match(game._pending_message, action === 'wield' ? /dagger/ : /You are bare handed\./);
+        assert.equal(game.uwep, action === 'wield' ? dagger : null);
+    });
+}
 //# sourceMappingURL=inventory_action_callback.test.js.map
