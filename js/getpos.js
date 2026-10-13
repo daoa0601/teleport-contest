@@ -28,10 +28,11 @@ const DEFAULT_GETPOS_FEATURE_SYMBOLS = new Set([
 ]);
 // DECgraphics changes the active showsyms for eligible cmap entries.  C
 // accepts both each entry's defsym and its active showsym.  These are the
-// additional low-seven-bit input characters introduced by the DEC set; all
-// of its other eligible projections are already in the default set above.
+// additional input bytes introduced by the DEC set. The high bit belongs to
+// showsyms: an ordinary letter such as 's' is not the bottom-edge glyph.
 const DEC_GETPOS_FEATURE_SYMBOLS = new Set([
-    'g', 'y', 'z', 'x', 'q', 'o', 's',
+    '\xe7', '\xf9', '\xfa', '\xfb', '\xe0', '\xfe',
+    '\xf8', '\xf1', '\xef', '\xf3',
 ]);
 export function isGetposFeatureSymbol(ch, symset = '') {
     if (typeof ch !== 'string' || ch.length !== 1)
