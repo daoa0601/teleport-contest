@@ -2396,8 +2396,7 @@ function refreshStatusLines() {
 // C botl.c:stat_update_time() notifies only BL_TIME. Other fields keep the
 // values from the last bot(), even if game state changed during an occupation.
 export function timebot() {
-    if (game._statusUpdatesDisabled || game.program_state.saving
-        || game.program_state.windows_exited || game._suppressMapStatusForFlush)
+    if (game._statusUpdatesDisabled)
         return;
     game.context.time_botl = false;
     const display = game.nhDisplay;
