@@ -12,8 +12,10 @@ import { loseHeroHp } from '../js/hero_damage.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState, pushKey, pushKeys } from '../js/input.js';
 import { removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
+import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, LEATHER_ARMOR, OBJECT_NAMES } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
+import { dopray } from '../js/pray.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -137,6 +139,74 @@ void test('later sleep keeps delayed armor theft pending until the hero wakes', 
     assert.equal(game.moves - started, 8, 'The theft waits for all eight turns of sleep');
     assert.ok(thief.minvent.includes(suit));
     assert.match(messages.join('\n'), /You wake up\.[\s\S]*The water nymph steals/);
+});
+
+void test('a Seer update does not change where the armor thief teleports on recovery', async () => {
+    const destinations: { x: number; y: number }[] = [];
+    for (const seerDue of [false, true]) {
+        freshObjectRoom({ gameplaySeed: 17, flags: { female: true } });
+        requirePlayingGame(game);
+        const suit = await addInventoryObject(LEATHER_ARMOR);
+        wearHeroArmor(suit);
+        const thief = await nearbyThief();
+        installPagerInput(resetInputState(), { expected: /nymph/, limit: 12 });
+        await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+        thief.movement = -100;
+        game.seer_turn = game.moves + (seerDue ? 3 : 100);
+
+        await finishRemoval([]);
+
+        assert.ok(thief.minvent.includes(suit));
+        assert.ok(thief.mx !== 11 || thief.my !== 10, 'The thief teleports after stealing the suit');
+        destinations.push({ x: thief.mx, y: thief.my });
+    }
+    const [ordinary, seer] = destinations;
+    assert.ok(ordinary && seer);
+    assert.equal(seer.x, ordinary.x, 'Relocation precedes the Seer update');
+    assert.equal(seer.y, ordinary.y, 'Relocation precedes the Seer update');
+});
+
+void test('an armor thief dying during sleep replaces wake-up feedback with restored movement', async () => {
+    freshObjectRoom({ flags: { female: true } });
+    requirePlayingGame(game);
+    const suit = await addInventoryObject(LEATHER_ARMOR);
+    wearHeroArmor(suit);
+    const thief = await nearbyThief();
+    installPagerInput(resetInputState(), { expected: /nymph/, limit: 12 });
+    await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+    const messages: string[] = [];
+    putHeroToSleep(8);
+
+    await finishEnvironmentalMonsterDeath(thief, game);
+    await finishRemoval(messages);
+
+    assert.ok(game.inventory.includes(suit), 'The unworn suit stays with the hero');
+    assert.match(messages.join('\n'), /You can move again\.[\s\S]*You finish taking off your suit\./);
+    assert.doesNotMatch(messages.join('\n'), /You wake up\./);
+});
+
+void test('armor seduction replaces an unprotected prayer without punishing the hero', async () => {
+    freshObjectRoom({ flags: { female: true, paranoia_bits: 0, debug: false },
+        hero: { ublesscnt: 500, uluck: 0 } });
+    requirePlayingGame(game);
+    const boots = await addInventoryObject(LOW_BOOTS);
+    wearHeroArmor(boots);
+    const thief = await nearbyThief();
+    installPagerInput(resetInputState(), { expected: /praying|nymph/, limit: 16 });
+    await dopray();
+    assert.equal(game.u.invulnerable, false);
+    const started = game.moves;
+    const messages: string[] = [];
+
+    await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+    thief.movement = -100;
+    await finishRemoval(messages);
+
+    assert.equal(game.moves - started, 3, 'The shorter boot removal preserves the prayer delay');
+    assert.ok(thief.minvent.includes(boots));
+    assert.equal(game.u.uluck, 0, 'The replaced prayer cannot upset the gods');
+    assert.equal(game.u.ublesscnt, 497);
+    assert.doesNotMatch(messages.join('\n'), /You finish your prayer\./);
 });
 
 void test('life saving shortens delayed armor theft to the single recovery turn', async () => {

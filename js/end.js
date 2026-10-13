@@ -22,7 +22,6 @@ import { deleteObject } from './object_delete.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { objectName } from './objnam.js';
 import { objectClassForType, recordObjectKnowledge } from './object_knowledge.js';
-import { rebasePrayerAfterLifeSaving } from './pray.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './hacklib.js';
 import { recordGameLogEvent } from './gamelog.js';
@@ -114,11 +113,10 @@ export async function restoreHeroAfterDeath({ deathType = null } = {}) {
     endVoluntaryMultiTurn(game);
     game._helplessTurns = 1;
     game._helplessReason = 'attempting to cheat Death';
-    game._helplessDoneMessage = '';
+    game._helplessDoneMessage = 'You survived that attempt on your life.';
     game.context.botl = true;
     clearHeroRemains(game);
     await flush_screen(1);
-    rebasePrayerAfterLifeSaving(game);
     const holder = game.u.ustuck;
     if (game.u.uswallow) {
         if (!holder)

@@ -3,6 +3,7 @@ import { hasShopkeeperData } from './shop_types.js';
 // C refs: mon.c monkilled(), mondead(), mondied(), corpse_chance(), and make_corpse().
 
 import { prepareVaultGuardDeath } from './vault_guard.js';
+import { armorThiefGone } from './command_state.js';
 import {
     ACCESSIBLE, CORPSTAT_FEMALE, CORPSTAT_INIT, CORPSTAT_MALE,
     DISMOUNT_GENERIC, G_NOCORPSE, Is_rogue_level, IS_POOL,
@@ -438,6 +439,7 @@ export async function detachDeadMonster(
     markQuestNemesisDead(monster, state);
     await releaseMonsterInventory(monster, state, { publish, random });
     if (state.program_state.gameover) return true;
+    armorThiefGone(monster, state);
     if (monster.isshk) {
         if (!hasShopkeeperData(monster)) throw new Error('shopkeeper lacks shop history');
         finishShopkeeperDeparture(monster, state);

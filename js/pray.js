@@ -87,10 +87,12 @@ export async function dopray() {
     game._prayerAlignment = alignment;
     game._prayerTrouble = trouble;
     game._prayerOutcome = outcome;
-    game._prayerCompletionMessage = 'You finish your prayer.';
     endVoluntaryMultiTurn(game);
-    game._prayerTurnsRemaining = 3;
-    game._prayerLastTickMove = game.moves;
+    game._helplessTurns = Math.max(3, game._helplessTurns ?? 0, -game.multi);
+    game.multi = -game._helplessTurns;
+    game._helplessReason = 'praying';
+    game._helplessDoneMessage = 'You finish your prayer.';
+    game._helplessAfter = 'finish-prayer';
     if (outcome === 'pleased' && !inHell()) {
         if (!heroIsBlind(game))
             await pline('You are surrounded by a shimmering light.');
@@ -120,22 +122,12 @@ function prayerOutcome(alignment, trouble) {
         outcome = 'undead';
     return outcome;
 }
-// C end.c:savelife() leaves prayer_done installed, but shortens the delay.
-export function rebasePrayerAfterLifeSaving(state = game) {
-    if (!((state._prayerTurnsRemaining ?? 0) > 0))
-        return false;
-    state._prayerTurnsRemaining = 1;
-    state._prayerCompletionMessage = 'You survived that attempt on your life.';
-    return true;
-}
 export async function finishPrayerOccupation(state = game) {
     requirePlayingGame(state);
     const alignment = state._prayerAlignment;
     const outcome = state._prayerOutcome;
-    const message = state._prayerCompletionMessage;
-    if (alignment === undefined || outcome === undefined || message === undefined)
-        throw new Error('Prayer completion requires its retained alignment, outcome, and message');
-    await pline(message);
+    if (alignment === undefined || outcome === undefined)
+        throw new Error('Prayer completion requires its retained alignment and outcome');
     state.u.invulnerable = false;
     try {
         if (outcome === 'moloch') {
@@ -188,12 +180,9 @@ export async function finishPrayerOccupation(state = game) {
         return { outcome };
     }
     finally {
-        state._prayerTurnsRemaining = 0;
         delete state._prayerOutcome;
         delete state._prayerAlignment;
         delete state._prayerTrouble;
-        delete state._prayerCompletionMessage;
-        delete state._prayerLastTickMove;
     }
 }
 async function punishEarlyPrayer() {

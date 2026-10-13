@@ -2,6 +2,7 @@ import { hasShopkeeperData } from './shop_types.js';
 // Remove a monster which leaves the game without dying.
 // C mon.c:mongone().
 import { prepareVaultGuardDeath } from './vault_guard.js';
+import { armorThiefGone } from './command_state.js';
 import { game, requireLiveGame } from './gstate.js';
 import { finishShopkeeperDeparture } from './shop_damage.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
@@ -32,6 +33,7 @@ export async function removeMonsterFromGame(monster) {
         return { removed: true, dropped, discarded, x, y };
     if (monster.iswiz)
         wizardDeadOrGone();
+    armorThiefGone(monster);
     if (monster.isshk) {
         if (!hasShopkeeperData(monster))
             throw new Error('shopkeeper lacks shop history');

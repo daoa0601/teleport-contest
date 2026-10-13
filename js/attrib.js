@@ -300,7 +300,7 @@ export async function checkAttributeExercise(sourceTurn, state = game) {
 }
 function exerciseCheckIsDeferred(state) {
     if ((state.multi ?? 0) !== 0 || state._runState || state._delayedAction
-        || (state._helplessTurns ?? 0) > 0 || (state._prayerTurnsRemaining ?? 0) > 0)
+        || (state._helplessTurns ?? 0) > 0)
         return true;
     // Study uses positive multi; eating and lock picking use occupation with
     // multi zero and therefore still allow C's exercise check.

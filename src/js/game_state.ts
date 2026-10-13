@@ -353,7 +353,8 @@ export interface GameState {
     _helplessTurns?: number;
     _helplessReason?: string | MonsterHelplessnessReason | null;
     _helplessDoneMessage?: string | null;
-    _helplessAfter?: 'end-mimic-meal' | 'hear-again' | 'unfaint' | 'finish-digestion' | null;
+    _helplessAfter?: 'end-mimic-meal' | 'hear-again' | 'unfaint' | 'finish-digestion'
+        | 'steal-armor' | 'unstolen-armor' | 'finish-prayer' | null;
     _digestedMonsterSpecies?: number | null;
     _mimicMealMessage?: string | null;
     _queuedHelplessRecoveryMessage?: string | null;
@@ -364,10 +365,6 @@ export interface GameState {
     _prayerAlignment?: number;
     _prayerTrouble?: PrayerTrouble;
     _prayerOutcome?: PrayerOutcome;
-    _prayerTurnsRemaining?: number;
-    _prayerLastTickMove?: number;
-    _prayerCompletionMessage?: string;
-    _prayerHeroTookTimePending?: number | null;
     _pendingDemigodIntervention?: { kind: 2 | 4 | 5; sourceTurn: number } | null;
     _unresolvedDemigodIntervention?: number;
     _lastDemigodAggravation?: number[];

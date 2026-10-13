@@ -1331,8 +1331,7 @@ async function finishHeroContactDamage(monster, damage, attackType, oldForm, sta
 }
 function heroHasNegativeMulti(state) {
     return (!!state?._delayedAction ||
-        (state?._helplessTurns ?? 0) > 0 ||
-        (state?._prayerTurnsRemaining ?? 0) > 0);
+        (state?._helplessTurns ?? 0) > 0);
 }
 function lineBlockingTerrain(state, x, y) {
     if (!isok(x, y))

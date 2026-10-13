@@ -1903,8 +1903,7 @@ async function finishHeroContactDamage(
 function heroHasNegativeMulti(state: PlayingGameState) {
     return (
         !!state?._delayedAction ||
-        (state?._helplessTurns ?? 0) > 0 ||
-        (state?._prayerTurnsRemaining ?? 0) > 0
+        (state?._helplessTurns ?? 0) > 0
     );
 }
 

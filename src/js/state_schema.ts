@@ -3,7 +3,7 @@
 
 import type { GameState } from './game_state.js';
 
-export const SAVE_VERSION = 27;
+export const SAVE_VERSION = 28;
 
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
@@ -19,8 +19,7 @@ const persistentNames = [
     '_mimicMealMessage', '_monsterNoiseTime', '_moveloopStarted', '_nextAttribCheck',
     '_nextIdent', '_nextObjectTimerId', '_objectCallNames', '_objectDiscoveryOrder',
     '_objectPriceQuotes', '_optionsInitialized', '_overviewRecords', '_polymorphGenocideCause', '_prayerAlignment',
-    '_prayerCompletionMessage', '_prayerOutcome', '_prayerTrouble', '_prayerLastTickMove',
-    '_prayerTurnsRemaining', '_preserveLeadingStyledBlanks', '_prevDecorType',
+    '_prayerOutcome', '_prayerTrouble', '_preserveLeadingStyledBlanks', '_prevDecorType',
     '_priestPantheonIndex', '_questExpulsionPending', '_restoredBones', '_rndmonstAlignment',
     '_rndmonstAlignmentMove', '_runtimeVersionInfoInitialized', '_specialLevelPrototype',
     '_startingEffectsApplied', '_stethoscopeSeq', '_tipSwimShown',
@@ -93,7 +92,6 @@ const transientFields = {
     _pendingDemigodIntervention: true,
     _pendingHeroShapeChange: true,
     _pending_message: true,
-    _prayerHeroTookTimePending: true,
     _queuedHelplessRecoveryMessage: true,
     _retained_message: true,
     _runState: true,

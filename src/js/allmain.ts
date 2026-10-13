@@ -684,14 +684,6 @@ function finishOrDeferHeroTookTimeRng(sourceTurn: number): void {
         game._deathSurvivalHeroTookTimePending = sourceTurn;
         return;
     }
-    // The final negative-multi prayer action invokes prayer_done() before
-    // moveloop reaches this once-per-hero-took-time tail.  prayer_done's
-    // completion pline can suspend at tty, so the Seer reschedule belongs to
-    // the acknowledgement input after that callback has fully returned.
-    if (game._prayerTurnsRemaining === 1) {
-        game._prayerHeroTookTimePending = sourceTurn;
-        return;
-    }
     finishHeroTookTimeRng(sourceTurn);
 }
 
@@ -720,7 +712,7 @@ async function finishInitialTurnMaintenanceAfterIntervention(
         if (!game._deathSurvivedMessagePending)
             game._helplessRunmodeDelayPending = sourceTurn;
         game._helplessTurns--;
-        if (delayedAction?.kind === 'steal') game.multi = -game._helplessTurns;
+        game.multi = -game._helplessTurns;
         if (game._helplessTurns === 0) {
             const doneMessage = game._helplessDoneMessage
                 ?? 'You can move again.';
@@ -1638,6 +1630,8 @@ async function drainQueuedHelplessRecoveryMessage() {
     if (game._queuedHelplessRecoveryMessage == null) return;
     const message = game._queuedHelplessRecoveryMessage;
     await finishHeroHelplessness(message);
+    // allmain.c takes travel caused by unmul() before the Seer update.
+    await finishScheduledLevelChange();
 }
 
 // Native hack.c:unmul(). The after-handler is cleared before invocation so
@@ -1650,18 +1644,16 @@ export async function finishHeroHelplessness(
     state._helplessTurns = 0;
     state._queuedHelplessRecoveryMessage = null;
     const message = messageOverride ?? state._helplessDoneMessage ?? 'You can move again.';
+    state._deathSurvivedMessagePending = false;
     if (message) await plineWithContinuation(message);
     state.u.usleep = 0;
     state._helplessReason = null;
     state._helplessDoneMessage = null;
     const after = state._helplessAfter;
     state._helplessAfter = null;
-    // stealarm is an afternmv callback, so sleep and life saving change
-    // when it runs. A later after-handler replaces it, just as in C.
-    if (state._delayedAction?.kind === 'steal') {
-        if (after) state._delayedAction = null;
-        else state._delayedAction.ready = true;
-    }
+    const armorTheft = state._delayedAction?.kind === 'steal'
+        ? state._delayedAction : null;
+    if (armorTheft) state._delayedAction = null;
     // C eat.c:Hear_again() runs after unmul() has delivered nomovemsg.
     // Keep it after the awaited tty continuation: if the rotten-food
     // message fills the topline, the acknowledgement resumes here before
@@ -1678,6 +1670,16 @@ export async function finishHeroHelplessness(
         break;
     case 'finish-digestion':
         await finishHeroDigestion(state);
+        break;
+    case 'steal-armor':
+        if (armorTheft) await finishDelayedArmorTheft(armorTheft.thief, armorTheft.object, state);
+        break;
+    case 'unstolen-armor':
+        if (armorTheft && state.inventory.includes(armorTheft.object))
+            await plineWithContinuation(`You finish taking off your ${armorSimpleName(armorTheft.object, state)}.`);
+        break;
+    case 'finish-prayer':
+        await finishPrayerOccupation(state);
         break;
     case null:
     case undefined:
@@ -1917,7 +1919,7 @@ async function resolveDeferredHeroItemTheft(
             if ((game._helplessTurns ?? 0) > 0) {
                 game._delayedAction = { kind: 'steal', thief: monster, object,
                     ready: false };
-                game._helplessAfter = null;
+                game._helplessAfter = 'steal-armor';
                 return false;
             }
         }
@@ -1976,16 +1978,11 @@ async function resolveDeferredHeroItemTheft(
     return true;
 }
 
-// C steal.c:stealarm()/unstolenarm(). The armor is already unworn; transfer
+// C steal.c:stealarm(). The armor is already unworn; transfer
 // waits until the removal delay finishes and requires the same nearby thief.
-async function finishDelayedArmorTheft(thief: Monster, object: GameObject): Promise<void> {
-    const state = requireInitializedGame();
+async function finishDelayedArmorTheft(thief: Monster, object: GameObject, state: GameState): Promise<void> {
     if (!state.inventory.includes(object)) return;
-    if (thief.dead || thief.mhp <= 0) {
-        await plineWithContinuation(`You finish taking off your ${armorSimpleName(object, state)}.`);
-        return;
-    }
-    if (!state.level?.monsters.includes(thief)
+    if (thief.dead || thief.mhp <= 0 || !state.level?.monsters.includes(thief)
         || dist2(thief.mx, thief.my, state.u.ux, state.u.uy) > 2
         || !MONSTER_ATTACKS[thief.mnum]?.some(attack => attack[1] === AD_SITM)) return;
     if (object.unpaid)
@@ -1994,9 +1991,9 @@ async function finishDelayedArmorTheft(thief: Monster, object: GameObject): Prom
     await finishInventoryRemoval(object, state);
     await plineWithContinuation(`${monsterName(thief, { state, capitalized: true })} steals ${inventoryItemDescription(object)}!`);
     await addObjectToMonsterInventory(thief, object, state);
-    await makeMonsterFlee(thief, { announce: false });
+    await makeMonsterFlee(thief, { state, announce: false });
     if (!await reportMonsterTeleportRestriction(thief, { state }))
-        await randomMonsterRelocation(thief, { flags: RLOC_MSG });
+        await randomMonsterRelocation(thief, { state, flags: RLOC_MSG });
 }
 
 function visibleMonsterSubject(monster: Monster): string {
@@ -3760,35 +3757,6 @@ export async function moveloop_core() {
         g._armorClassDirty = false;
     }
 
-    if (g._prayerTurnsRemaining !== undefined && g._prayerTurnsRemaining > 0) {
-        const prayerTurn = g.moves || 1;
-        // C advances negative multi only in the newly allocated global-turn
-        // block.  A Fast hero can retain another full action in that same
-        // turn; prayer consumes that ration but must not shorten its nominal
-        // three-turn duration a second time.
-        if (g._prayerLastTickMove !== prayerTurn) {
-            await captureRunmodeDelay(
-                g, true, prayerTurn,
-                { preservePhysicalTopline: true },
-            );
-            g._prayerLastTickMove = prayerTurn;
-            g._prayerTurnsRemaining--;
-        }
-        g.context.move = 0;
-        if (g._prayerTurnsRemaining > 0) {
-            g.u.umoved = false;
-            g.u.umovement = (g.u.umovement ?? 12) - 12;
-            g._heroTimePending = true;
-            await currentLuaLifecycle().runCallbacks(g, 'end_turn');
-            return;
-        }
-        await finishPrayerOccupation(g);
-        if (g._prayerHeroTookTimePending != null) {
-            finishHeroTookTimeRng(g._prayerHeroTookTimePending);
-            g._prayerHeroTookTimePending = null;
-        }
-    }
-
     // C allmain.c increments negative `multi` after the complete monster and
     // global maintenance round, then invokes do_wear.c's afternmv callback.
     // Keep this separate from counted occupations: no extra hero action is
@@ -3828,8 +3796,6 @@ export async function moveloop_core() {
             findArmorClass(g);
             g._armorClassDirty = false;
             delete g._armorClassDirtyAfterDelayedFrame;
-        } else if (delayed.kind === 'steal') {
-            await finishDelayedArmorTheft(delayed.thief, delayed.object);
         } else if (delayed.kind === 'remove') {
             // C allmain.c:unmul() emits nomovemsg before calling afternmv.
             // If an earlier monster-combat line already owns tty, this await
