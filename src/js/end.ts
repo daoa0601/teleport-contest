@@ -36,6 +36,7 @@ import { recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
+import { currency } from './currency.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
     A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, STARVING, STONING,
@@ -1270,7 +1271,7 @@ async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promis
     await doneObjectCleanup();
     if (outcome === 'died' && game.moves <= 1
         && deathType < PANICKED && !game.program_state.stopprint)
-        await plineWithContinuation('Do not pass Go.  Do not collect 200 zorkmids.');
+        await plineWithContinuation(`Do not pass Go.  Do not collect 200 ${currency(200)}.`);
     game._canMakeBones = outcome === 'died' && deathType < GENOCIDED
         && canMakeBones();
 }
