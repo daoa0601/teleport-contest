@@ -112,10 +112,10 @@ void test('a modest prayer cures petrification before hunger', async () => {
     assert.equal(game.u.uhunger, 10);
 });
 void test('#pray names the whole stack when releasing cursed loadstones', async () => {
-    prayerRoom({ hero: { uluck: 13 } });
+    prayerRoom({ hero: { uluck: 10 } });
     requirePlayingGame(game);
     const stones = await addInventoryObject(LOADSTONE, { cursed: true, quan: 2, quantity: 2 });
-    initRng(2n);
+    initRng(1n);
     installPagerInput(resetInputState(), {
         expected: /pray|prayer|shimmering light|pleased|loadstones/, limit: 6,
     });
@@ -135,11 +135,11 @@ void test('#pray rescues a hero whose only exit requires a forbidden diagonal bo
     assert.ok(game.u.ux !== 10 || game.u.uy !== 10, 'the diagonal boulder leaves no pushable exit');
 });
 void test('#pray restores the carried luck bonus when it uncurses a luckstone', async () => {
-    prayerRoom({ hero: { uluck: 13 } });
+    prayerRoom({ hero: { uluck: 10 } });
     requirePlayingGame(game);
     const stone = await addInventoryObject(LUCKSTONE, { cursed: true });
     assert.equal(game.u.moreluck, -3);
-    initRng(1n);
+    initRng(2n);
     await resolvePrayer();
     assert.equal(stone.cursed, false);
     assert.equal(game.u.moreluck, 3);
@@ -174,11 +174,12 @@ void test('Moloch\'s laughter during #pray visibly wakes a nearby sleeping monst
     assert.equal(goblin.msleeping, 0);
 });
 void test('#pray stops a cursed figurine\'s transformation when granting an inventory cleansing', async () => {
-    prayerRoom({ hero: { uluck: 13, ualign: { type: 0, record: 20 } } });
+    prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
     requirePlayingGame(game);
     const figurine = await addInventoryObject(FIGURINE, {
         cursed: true, corpsenm: MONSTER_NAME.indexOf('wumpus'),
     });
+    await addInventoryObject(LUCKSTONE);
     assert.equal(objectTimers(figurine).length, 1);
     initRng(5n);
     await resolvePrayer();
@@ -235,22 +236,23 @@ void test('divine lightning from #pray names the monster swallowing the hero', a
     assert.ok(!game.program_state.gameover);
 });
 void test('a blind hero feels the deity\'s blessing over the weapon during #pray', async () => {
-    prayerRoom({ hero: { permaBlind: true, uluck: 13, ualign: { type: 0, record: 20 } } });
+    prayerRoom({ hero: { permaBlind: true, uluck: 10, ualign: { type: 0, record: 20 } } });
     requirePlayingGame(game);
     const dagger = await addInventoryObject(DAGGER);
     await setPrimaryWeapon(dagger);
+    await addInventoryObject(LUCKSTONE);
     initRng(9n);
     const messages = await prayAndReadMessages();
     assert.equal(dagger.blessed, true);
     assert.ok(messages.some(message => message.includes('You feel the blessing of Ishtar over your dagger.')));
 });
 void test('#pray names known gauntlets when curing slippery fingers before uncursing them', async () => {
-    prayerRoom({ hero: { uluck: 13 } });
+    prayerRoom({ hero: { uluck: 10 } });
     requirePlayingGame(game);
     const gloves = await addInventoryObject(GAUNTLETS_OF_FUMBLING, { cursed: true });
     wearHeroArmor(gloves);
     setPropertyTimeout('glib', 10);
-    initRng(2n);
+    initRng(1n);
     const messages = await prayAndReadMessages();
     assert.equal(game.u.glibTurns, 0);
     assert.equal(gloves.cursed, false);
