@@ -11,6 +11,8 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { runExtendedCommand } from './support/commands.js';
 import { initRng } from '../js/rng.js';
+import { gameLogEvents } from '../js/gamelog.js';
+import { setPropertyTimeout } from '../js/properties.js';
 
 const PM_HUMAN_MUMMY = 192;
 const PM_HUMAN_ZOMBIE = 244;
@@ -102,4 +104,23 @@ void test('a hallucinating priest calls upon different imagined deities with #tu
         invocations.add(game._pending_message);
     }
     assert.ok(invocations.size > 1, 'hallucination must change the deity named by the invocation');
+});
+
+void test('an attempted #turn breaks atheism even when strangulation prevents chanting', async () => {
+    freshPriest(1);
+    requirePlayingGame(game);
+    setPropertyTimeout('strangled', 6);
+
+    await runExtendedCommand('turn');
+
+    assert.equal(game.u.uconduct.gnostic, 1);
+    assert.equal(game.context.move, 1);
+    assert.match(game._pending_message, /You are not able to call upon Athena to turn aside evilness\./);
+    assert.ok(gameLogEvents().some(event => event.text === 'rejected atheism by turning undead'));
+
+    await runExtendedCommand('turn', '\x1b');
+
+    assert.equal(game.u.uconduct.gnostic, 2);
+    assert.equal(game.context.move, 0);
+    assert.equal(gameLogEvents().filter(event => event.text === 'rejected atheism by turning undead').length, 1);
 });

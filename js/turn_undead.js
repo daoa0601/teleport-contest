@@ -8,6 +8,7 @@ import { A_WIS, BOLT_LIM, MAXULEV, } from './const.js';
 import { pline, shieldeff, } from './display.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { game } from './gstate.js';
+import { recordGameLogEvent } from './gamelog.js';
 import { monsterName } from './monster_name.js';
 import { cansee } from './vision.js';
 import { heroCanChant } from './hero_speech.js';
@@ -84,12 +85,14 @@ export async function turnUndeadByCallingOnDeity(state = game, { finishMonsterKi
         state.u.uconduct = {};
     const priorCalls = state.u.uconduct.gnostic ?? 0;
     state.u.uconduct.gnostic = priorCalls + 1;
+    if (!priorCalls)
+        recordGameLogEvent('rejected atheism by turning undead', { state });
     const deity = hallucinatedDeityName(state.u.ualign.type, state);
     if (!heroCanChant(state)) {
         const strangled = state.u?.strangled
             || (state.u?.strangledTurns ?? 0) > 0;
-        const ability = strangled ? 'not able' : 'incapable';
-        await pline(`You are ${ability} of calling upon ${deity} to turn aside evilness.`);
+        const ability = strangled ? 'not able to call' : 'incapable of calling';
+        await pline(`You are ${ability} upon ${deity} to turn aside evilness.`);
         state.context.move = priorCalls === 0 ? 1 : 0;
         return [];
     }
