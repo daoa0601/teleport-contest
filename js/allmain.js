@@ -1646,9 +1646,9 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
                     capitalized: true, adjective: 'beautiful' }) : 'She'} seduces you and ${cursed
                     ? 'helps you to take' : !slowly ? 'you take' : wasDoffing
                     ? 'you continue taking' : 'you start taking'} off your ${name}.`;
-            await plineWithContinuation(removalMessage, { urgent: true });
             object.cursed = false;
             try {
+                await plineWithContinuation(removalMessage, { urgent: true });
                 await removeWornHeroItem(object, game);
             }
             finally {

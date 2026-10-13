@@ -4,7 +4,7 @@ import { moveloop_core, performMonsterHeroAttack } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { rhack } from '../js/cmd.js';
 import { LOST_NONE, LOST_STOLEN, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline, plineWithContinuation } from '../js/display.js';
 import { placeObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState, pushKey } from '../js/input.js';
@@ -276,4 +276,30 @@ void test('a visible delayed armor thief reports that teleportation is prevented
     assert.match(messages.join('\n'), /steals[\s\S]*A mysterious force prevents the water nymph from teleporting!/);
     assert.equal(thief.mx, 11);
     assert.equal(thief.my, 10);
+});
+
+void test('seduction temporarily uncurses armor before its message pager and restores the curse after removal', async () => {
+    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    requirePlayingGame(game);
+    const suit = await addInventoryObject(LEATHER_ARMOR, { cursed: true });
+    wearHeroArmor(suit);
+    const thief = await nearbyThief();
+    const priorMessage = 'You examine the worn suit carefully before the water nymph approaches you.';
+    await plineWithContinuation(priorMessage);
+    const input = resetInputState();
+    installPagerInput(input, { expected: /suit|nymph/, limit: 12 });
+    let inspectedPager = false;
+    input.beforeRead = () => {
+        if (game._pending_message !== priorMessage) return;
+        inspectedPager = true;
+        assert.equal(suit.cursed, false, 'The seduction message publishes with the armor temporarily uncursed');
+        assert.ok(game.uarm === suit, 'Armor remains worn until the seduction message is acknowledged');
+    };
+
+    await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+
+    assert.ok(inspectedPager, 'Seduction must acknowledge the previous message before removing the suit');
+    assert.equal(suit.cursed, true, 'Removal restores the original curse');
+    assert.equal(game.uarm, null);
+    assert.match(game._pending_message, /You gladly let her take your suit\./);
 });
