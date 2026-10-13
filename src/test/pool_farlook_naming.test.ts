@@ -5,7 +5,9 @@ import { farlookLocationDescription, askTeleportDestination } from '../js/cmd.js
 import { feel_location, glyphAt, newsym } from '../js/display.js';
 import { NO_MINVENT, ROOM } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { races } from '../js/roles.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -30,6 +32,29 @@ void test('automatic position descriptions identify a warning glyph', async () =
 
     assert.equal(description, 'unknown creature causing you concern');
 });
+
+for (const [female, name] of [[true, 'elf-lady'], [false, 'elf-lord']] as const) {
+    void test(`automatic self descriptions use the polymorphed gender for ${name}`, async () => {
+        freshObjectRoom({
+            flags: { tips: false, verbose: false, female: !female },
+            hero: { mfemale: female },
+        });
+        setHeroSpecies(MONSTER_NAME.indexOf('elf-noble'));
+        game.plname = 'Aster';
+        const input = resetInputState();
+        const choosing = askTeleportDestination();
+        await input.waitUntilBlocked();
+        input.feed('l');
+        await input.waitUntilBlocked();
+        input.feed('h');
+        await input.waitUntilBlocked();
+        const description = game._pending_message;
+        input.feed('\x1b');
+        await choosing;
+
+        assert.equal(description, `${name} called Aster`);
+    });
+}
 
 void test('farlook describes a blind-touch darkroom glyph even when the room was lit', () => {
     const level = freshObjectRoom();

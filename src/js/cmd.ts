@@ -4285,7 +4285,7 @@ function wizardPositionDescription(x: number, y: number): string {
     if (x === game.u?.ux && y === game.u?.uy) {
         const species = game.u.umonnum;
         const polymorphName = heroIsPolymorphed(game) && species !== undefined
-            ? monsterTypeName(species, !!game.flags.female) : '';
+            ? monsterTypeName(species, !!game.u.mfemale) : '';
         const race = game.urace?.adj || game.urace?.name || 'human';
         const role = game.urole?.name;
         const roleName = game.flags.female && role?.f ? role.f : role?.m;
