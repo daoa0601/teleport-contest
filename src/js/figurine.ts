@@ -3,7 +3,7 @@
 
 import { makeFamiliar } from './familiar.js';
 import {
-    IS_OBSTRUCTED, IS_POOL, W_NONPASSWALL, isok,
+    IS_OBSTRUCTED, IS_POOL, TREE, W_NONPASSWALL, isok,
 } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { remove_object } from './floor_object.js';
@@ -101,10 +101,16 @@ function figurineLocomotion(mnum: number, fallback = 'drop') {
 }
 
 function figurineMayTransformAt(figurine: GameObject, x: number, y: number, state: GameState) {
-    if (figurine.where === 'inventory' && state.u?.uswallow) return false;
-    if (!isok(x, y)) return false;
+    return figurinePlacementFailure(figurine, x, y, state) === null;
+}
+
+// C figurine_location_checks(): timers use the same rules silently.
+export function figurinePlacementFailure(figurine: GameObject, x: number, y: number, state: GameState): string | null {
+    if (figurine.where === 'inventory' && state.u.uswallow)
+        return "You don't have enough room in here.";
+    if (!isok(x, y)) return 'You cannot put the figurine there.';
     const location = state.level?.at?.(x, y);
-    if (!location) return false;
+    if (!location) return 'You cannot put the figurine there.';
     const species = figurine.corpsenm;
     if (species === undefined) throw new TypeError('A figurine requires a monster species.');
     const flags1 = MONSTER_FLAGS1[species] ?? 0;
@@ -112,12 +118,14 @@ function figurineMayTransformAt(figurine: GameObject, x: number, y: number, stat
     const passesWalls = !!(flags1 & M1_WALLWALK);
     const mayPassWall = passesWalls
         && !(location.wall_info & W_NONPASSWALL);
-    if (IS_OBSTRUCTED(location.typ) && !mayPassWall) return false;
+    if (IS_OBSTRUCTED(location.typ) && !mayPassWall)
+        return `You cannot place a figurine in ${location.typ === TREE ? 'a tree' : 'solid rock'}!`;
     const boulder = state.level?.objects?.[x]?.[y]?.some(
         object => object !== figurine && object.otyp === BOULDER,
     );
-    if (boulder && !passesWalls && !(flags2 & M2_ROCKTHROW)) return false;
-    return true;
+    if (boulder && !passesWalls && !(flags2 & M2_ROCKTHROW))
+        return 'You cannot fit the figurine on the boulder.';
+    return null;
 }
 
 function monsterCarryingFigurine(figurine: GameObject, state: GameState) {
