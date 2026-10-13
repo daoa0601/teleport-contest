@@ -376,7 +376,6 @@ export interface HeroSpellAttack extends HeroAttackProgress {
     rehumanize?: boolean;
     deathTouchDamage?: number;
     deathTouchDrain?: number;
-    destroyedArmor?: Array<{ armor: GameObject; destroyed: boolean }>;
     cursedInventory?: Awaited<ReturnType<typeof rndcurse>>;
     confusedHero?: boolean;
     paralyzed?: boolean;

@@ -76,7 +76,7 @@ import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import { ACID_VENOM, CORPSE, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_NAMES, SHIELD_OF_REFLECTION, } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { observeDistantObjectForNaming, observeObjectForNaming, } from './objnam.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, STONE, ZAP_POS, STRAT_CLOSE, STRAT_WAITFORU, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_LAVA, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR, STONE, ZAP_POS, STRAT_CLOSE, STRAT_WAITFORU, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_LAVA, } from './const.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries, } from './u_init.js';
 import { makeDeaf } from './hero_hearing.js';
 import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
@@ -110,7 +110,7 @@ import { advanceHeroStrangulation } from './hero_strangulation.js';
 import { initTrack, setTrack } from './track.js';
 import { autopickupAtHero } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
-import { applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, destroyWornArmor, objectErosionKind, objectErosionMessage, projectedArmorClass, wornArmorInDestroyOrder, } from './armor.js';
+import { applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, erodeWornArmor, projectedArmorClass, } from './armor.js';
 import { nearCapacity, } from './weight.js';
 import { dist2, dungeonDepth } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName, } from './monster_data.js';
@@ -1911,44 +1911,22 @@ async function resolveDeferredHeroDeathTouch(action, heroAttack, publish) {
     heroAttack.deathTouchDrain = drain;
     heroAttack.deferredDeathTouch = false;
 }
-async function resolveDeferredHeroDestroyArmor(action, heroAttack) {
+async function resolveDeferredHeroDestroyArmor(heroAttack) {
     const game = requireInitializedGame();
     if (!heroAttack?.deferredDestroyArmor)
         return;
     const antimagic = !!game.u?.antimagic;
     if (antimagic) {
+        await shieldeff(game.u.ux, game.u.uy, game);
+        monstersObserveHeroResistance(M_SEEN_MAGR, game);
         await plineWithContinuation('A field of force surrounds you!');
         heroAttack.deferredDestroyArmor = false;
         return;
     }
-    const armors = wornArmorInDestroyOrder();
-    const hitRoll = rn2(4);
-    action.calls.push('rn2(4)');
-    const hits = hitRoll + 1;
-    const changed = [];
-    for (let hit = 0; hit < hits && armors.length; hit++) {
-        const index = rn2(armors.length);
-        action.calls.push('rn2(' + armors.length + ')');
-        const armor = armors[index];
-        if (!armor)
-            throw new RangeError(`Armor selection ${index} is outside the ${armors.length} worn pieces.`);
-        const kind = objectErosionKind(armor);
-        if (!kind || armor.oerodeproof)
-            continue;
-        const message = objectErosionMessage(armor, kind);
-        await plineWithContinuation(message);
-        if ((armor[kind.field] || 0) >= 3) {
-            await destroyWornArmor(armor);
-            changed.push({ armor, destroyed: true });
-            break;
-        }
-        armor[kind.field] = (armor[kind.field] || 0) + 1;
-        changed.push({ armor, destroyed: false });
-    }
-    if (!changed.length)
+    if (!await erodeWornArmor(game))
         await plineWithContinuation('Your skin itches.');
-    findArmorClass(game);
-    heroAttack.destroyedArmor = changed;
+    else
+        monstersForgetHeroResistance(M_SEEN_MAGR, game);
     heroAttack.deferredDestroyArmor = false;
 }
 async function resolveDeferredHeroCurseItems(heroAttack) {
@@ -2293,7 +2271,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     if (heroAttack.deferredDeathTouch)
                         await resolveDeferredHeroDeathTouch(action, heroAttack, publishSpellMessage);
                     if (heroAttack.deferredDestroyArmor)
-                        await resolveDeferredHeroDestroyArmor(action, heroAttack);
+                        await resolveDeferredHeroDestroyArmor(heroAttack);
                     if (heroAttack.deferredGeyserSpell)
                         resolveDeferredHeroGeyser(action, heroAttack);
                     if (heroAttack.paralyzed)

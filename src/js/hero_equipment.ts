@@ -2,7 +2,7 @@
 // C worn.c:setnotworn(). Command messages belong to the caller.
 
 import { clearHeroAccessory, removeHeroAccessory } from './accessory.js';
-import { armorSlotFor, clearHeroArmor, removeHeroArmor } from './armor.js';
+import { announceDisplacementLoss, armorSlotFor, clearHeroArmor, removeHeroArmor } from './armor.js';
 import { I_SPECIAL } from './const.js';
 import { removeEyewear, unequipEyewear } from './eyewear.js';
 import { game } from './gstate.js';
@@ -37,8 +37,14 @@ export async function removeWornHeroItem(object: GameObject, state: GameState = 
     object.in_use = true;
     try {
         const slot = armorSlotFor(object.otyp);
-        if (slot && (state[slot] === object || state.u?.[slot] === object))
-            await removeHeroArmor(object, state);
+        if (slot && (state[slot] === object || state.u?.[slot] === object)) {
+            const cancelledDon = state._delayedAction?.kind === 'wear'
+                && state._delayedAction.object === object;
+            const removed = await removeHeroArmor(object, state, {
+                deferArmorClass: !!state.context.mon_moving,
+            });
+            if (removed && !cancelledDon) await announceDisplacementLoss(object, state);
+        }
         await removeHeroAccessory(object, state);
         if (state.ublindf === object || state.u?.ublindf === object) {
             await removeEyewear(object, { state });

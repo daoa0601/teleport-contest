@@ -133,7 +133,7 @@ import {
 } from './objnam.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
-    BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE,
+    BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR,
     STONE, ZAP_POS,
     STRAT_CLOSE, STRAT_WAITFORU,
     UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS,
@@ -234,8 +234,7 @@ import { autopickupAtHero } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
 import {
     applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass,
-    destroyWornArmor, objectErosionKind,
-    objectErosionMessage, projectedArmorClass, wornArmorInDestroyOrder,
+    erodeWornArmor, projectedArmorClass,
 } from './armor.js';
 import {
     nearCapacity,
@@ -2210,44 +2209,22 @@ async function resolveDeferredHeroDeathTouch(
 }
 
 async function resolveDeferredHeroDestroyArmor(
-    action: MonsterAction, heroAttack: HeroSpellAttack,
+    heroAttack: HeroSpellAttack,
 ): Promise<void> {
     const game = requireInitializedGame();
     if (!heroAttack?.deferredDestroyArmor) return;
     const antimagic = !!game.u?.antimagic;
     if (antimagic) {
+        await shieldeff(game.u.ux, game.u.uy, game);
+        monstersObserveHeroResistance(M_SEEN_MAGR, game);
         await plineWithContinuation('A field of force surrounds you!');
         heroAttack.deferredDestroyArmor = false;
         return;
     }
 
-    const armors = wornArmorInDestroyOrder();
-    const hitRoll = rn2(4);
-    action.calls.push('rn2(4)');
-    const hits = hitRoll + 1;
-    const changed = [];
-    for (let hit = 0; hit < hits && armors.length; hit++) {
-        const index = rn2(armors.length);
-        action.calls.push('rn2(' + armors.length + ')');
-        const armor = armors[index];
-        if (!armor)
-            throw new RangeError(`Armor selection ${index} is outside the ${armors.length} worn pieces.`);
-        const kind = objectErosionKind(armor);
-        if (!kind || armor.oerodeproof) continue;
-        const message = objectErosionMessage(armor, kind);
-        await plineWithContinuation(message);
-        if ((armor[kind.field] || 0) >= 3) {
-            await destroyWornArmor(armor);
-            changed.push({ armor, destroyed: true });
-            break;
-        }
-        armor[kind.field] = (armor[kind.field] || 0) + 1;
-        changed.push({ armor, destroyed: false });
-    }
-    if (!changed.length)
+    if (!await erodeWornArmor(game))
         await plineWithContinuation('Your skin itches.');
-    findArmorClass(game);
-    heroAttack.destroyedArmor = changed;
+    else monstersForgetHeroResistance(M_SEEN_MAGR, game);
     heroAttack.deferredDestroyArmor = false;
 }
 
@@ -2618,7 +2595,7 @@ async function presentMonsterAttackEffects(
                             );
                         if (heroAttack.deferredDestroyArmor)
                             await resolveDeferredHeroDestroyArmor(
-                                action, heroAttack,
+                                heroAttack,
                             );
                         if (heroAttack.deferredGeyserSpell)
                             resolveDeferredHeroGeyser(action, heroAttack);
