@@ -412,7 +412,7 @@ import {
     bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport,
     randomMonsterRelocation, safeTeleportDestination,
 } from './teleport.js';
-import { monsterTeleportRestricted } from './teleport_rules.js';
+import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import {
     RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM,
@@ -7639,8 +7639,9 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             await moveSteedWithHero();
             // C drag_ball() can pull the hero back before the swap check.
             // A refused swap still completes ball placement and its delay.
-            if (monster.mpeaceful && game.level.traps.some(trap =>
-                trap.tx === oldx && trap.ty === oldy)) {
+            if (monster.mpeaceful && (!goodPosition(oldx, oldy,
+                { kind: 'monster', monster }, { state: game })
+                || game.level.traps.some(trap => trap.tx === oldx && trap.ty === oldy))) {
                 const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
                 await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
                 u.ux = oldx; u.uy = oldy;
