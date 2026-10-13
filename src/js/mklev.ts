@@ -8477,7 +8477,7 @@ async function fillBarracksRoom(room: Room): Promise<void> {
 // killer bee, followed by that square's independent royal-jelly probe.
 async function fillBeehiveRoom(croom: Room): Promise<void> {
     const level = requireGameLevel();
-    const roomNumber = level.rooms.indexOf(croom) + ROOMOFFSET;
+    const roomNumber = croom.roomnoidx + ROOMOFFSET;
     let centerX = croom.lx + Math.trunc((croom.hx - croom.lx + 1) / 2);
     let centerY = croom.ly + Math.trunc((croom.hy - croom.ly + 1) / 2);
     const center = level.requireAt(centerX, centerY);

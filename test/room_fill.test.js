@@ -1,16 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ALTAR, BEEHIVE, FILL_NORMAL, FOUNTAIN, GRAVE, OROOM, ROOM, ROOMOFFSET, SINK, } from '../js/const.js';
+import { ALTAR, BEEHIVE, FILL_NORMAL, FOUNTAIN, GRAVE, HWALL, MAXNROFROOMS, OROOM, ROOM, ROOMOFFSET, SHARED, SINK, VWALL, } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { fill_ordinary_room, fillSpecialRoom, mksobj, } from '../js/mklev.js';
 import { level_difficulty } from '../js/dungeon.js';
-import { CHEST, DART, LARGE_BOX, } from '../js/object_data.js';
+import { CHEST, DART, LARGE_BOX, LUMP_OF_ROYAL_JELLY, } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { objectWeight } from '../js/weight.js';
 import { floorObjects } from './support/level-state.js';
 import { freshGame } from './support/game-state.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { createRoom } from './support/topology.js';
 function roomState({ seed, depth = 1, amulet = false, rogue = false }) {
     freshGame({
         hero: {
@@ -83,6 +84,62 @@ void test('an irregular beehive stocks its own floor and keeps the queen inside 
     assert.equal(level.monsters.filter(monster => monster.mnum === MONSTER_NAME.indexOf('queen bee')).length, 1);
     assert.ok(level.monsters.every(monster => monster.msleeping));
     assert.ok(floorObjects(level).every(object => floor.some(point => point.x === object.ox && point.y === object.oy)));
+});
+void test('a beehive subroom stocks around its nested child and relocates the queen', async () => {
+    const parent = roomState({ seed: 7, depth: 12 });
+    const level = requireGameLevel();
+    const child = createRoom({
+        lx: 14, hx: 16, ly: 7, hy: 9, roomnoidx: MAXNROFROOMS + 2,
+    });
+    const hive = createRoom({
+        lx: 10, hx: 19, ly: 5, hy: 12, rtype: BEEHIVE,
+        roomnoidx: MAXNROFROOMS + 1, needfill: FILL_NORMAL,
+        irregular: true, nsubrooms: 1, sbrooms: [child],
+    });
+    parent.lx = 8;
+    parent.hx = 21;
+    parent.ly = 3;
+    parent.hy = 14;
+    parent.irregular = true;
+    parent.nsubrooms = 1;
+    parent.sbrooms = [hive];
+    level.subrooms = [hive, child];
+    level.nsubroom = 2;
+    const hiveRoomNumber = hive.roomnoidx + ROOMOFFSET;
+    for (let x = hive.lx; x <= hive.hx; x++) {
+        for (let y = hive.ly; y <= hive.hy; y++) {
+            const loc = level.requireAt(x, y);
+            loc.typ = ROOM;
+            loc.roomno = hiveRoomNumber;
+        }
+    }
+    // The nested child's walls and floor replace the hive's center.
+    for (let x = child.lx - 1; x <= child.hx + 1; x++) {
+        for (let y = child.ly - 1; y <= child.hy + 1; y++) {
+            const loc = level.requireAt(x, y);
+            loc.edge = x < child.lx || x > child.hx || y < child.ly || y > child.hy;
+            loc.typ = y < child.ly || y > child.hy ? HWALL
+                : x < child.lx || x > child.hx ? VWALL : ROOM;
+            loc.roomno = loc.edge ? SHARED : child.roomnoidx + ROOMOFFSET;
+        }
+    }
+    await fillSpecialRoom(parent);
+    assert.equal(level.monsters.length, 55, 'each hive square outside the child receives a bee');
+    for (const bee of level.monsters) {
+        const loc = level.requireAt(bee.mx, bee.my);
+        assert.equal(loc.roomno, hiveRoomNumber, `bee at ${bee.mx},${bee.my} must stay in the hive`);
+        assert.equal(loc.edge, false, 'bees must avoid the nested child boundary');
+        assert.ok(bee.msleeping, 'stocked bees start asleep');
+    }
+    assert.equal(level.monsters.filter(bee => MONSTER_NAME[bee.mnum] === 'queen bee').length, 1, 'the queen moves off the occupied center');
+    assert.equal(level.monsters.filter(bee => MONSTER_NAME[bee.mnum] === 'killer bee').length, 54);
+    const jelly = floorObjects(level);
+    assert.ok(jelly.length > 0, 'the hive receives royal jelly');
+    for (const object of jelly) {
+        assert.equal(object.otyp, LUMP_OF_ROYAL_JELLY);
+        assert.equal(level.requireAt(object.ox, object.oy).roomno, hiveRoomNumber, `jelly at ${object.ox},${object.oy} must stay in the hive`);
+    }
+    assert.equal(level.flags.has_beehive, true);
 });
 void test('mksobj finalizes stack weight after type-specific initialization', async () => {
     roomState({ seed: 17 });
