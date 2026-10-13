@@ -250,9 +250,9 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
             continue;
         }
         // C tty_yn_function() marks an answered prompt as already read.
-        // The command's result must not pause to acknowledge it again.
+        // nhgetch() retains its visible text. A silent action leaves it
+        // painted; a result message replaces it without acknowledgment.
         game._pending_message = '';
-        game._retained_message = '';
         const letter = String.fromCharCode(key);
         const object = eligible.find(candidate => candidate.invlet === letter);
         if (object) {
