@@ -5,7 +5,7 @@ import { newsym, plineWithContinuation } from './display.js';
 import { specialLevelAt } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
 import { MONSTER_SIZE, requireMonsterData } from './monster_data.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { breakFloorObject } from './object_breakage.js';
 import { BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, CORPSE, CREDIT_CARD, ENORMOUS_MEATBALL, EUCALYPTUS_LEAF, FORTUNE_COOKIE, HEAVY_IRON_BALL, KELP_FROND, LENSES, LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES, OBJECT_SUBTYPE, OILSKIN_SACK, PANCAKE, POT_ACID, SACK, SKELETON_KEY, SLING, SPRIG_OF_WOLFSBANE, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, requireObjectData, } from './object_data.js';
 import { objectMaterial } from './object_material.js';
@@ -83,7 +83,7 @@ export async function projectileHitsIronBars(object, { x, y, barsX, barsY, force
         }
     }
     if (noise)
-        wakeMonstersNear(barsX, barsY, noise, state);
+        await wakeMonstersNearWithMessages(barsX, barsY, noise, state, publish);
     return { blocked: true, destroyed: false, heroDied: !!state.program_state.gameover };
 }
 function objectHitsBars(object) {
