@@ -7,7 +7,7 @@ import { rhack } from '../js/cmd.js';
 import { W_AMUL } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { takeFromContainer } from '../js/container.js';
 import { addInventoryItem } from '../js/u_init.js';
 import {
@@ -33,6 +33,7 @@ import {
     unopenedCatBox,
 } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { answerPrompts } from './support/input-boundaries.js';
 
 async function unlockedContainer(
     otyp: number,
@@ -377,10 +378,16 @@ void test('opening a quantum box resolves its cat once', async () => {
     assert.ok(corpse);
     game.moves = 40;
     initRng(1n);
+    const input = resetInputState();
 
-    await applyInventoryObject('a', 'q');
+    await answerPrompts(applyInventoryObject(box), input, [
+        { prompt: /inside the box is dead![\s\S]*--More--/, keys: ' ' },
+        { prompt: /Do what with/, keys: 'q' },
+    ]);
     assert.equal(game.context.move, 1);
-    await applyInventoryObject('a', 'q');
+    await answerPrompts(applyInventoryObject(box), input, [
+        { prompt: /Do what with/, keys: 'q' },
+    ]);
 
     assert.equal(box.spe, 0);
     assert.ok(objectTimers(corpse).some((timer) => timer.kind === OBJECT_TIMER_KIND.ROT_CORPSE));
@@ -399,8 +406,12 @@ void test('opening a living cat box releases a peaceful cat beside the hero', as
     const box = await addInventoryItem(await unopenedCatBox({ invlet: 'a' }));
     game.u.ulevel = 8;
     initRng(4n);
+    const input = resetInputState();
 
-    await applyInventoryObject('a', 'q');
+    await answerPrompts(applyInventoryObject(box), input, [
+        { prompt: /inside the box is still alive![\s\S]*--More--/, keys: ' ' },
+        { prompt: /Do what with/, keys: 'q' },
+    ]);
 
     const cat = requireGameLevel().monsters.find(
         (monster) => monster.name === "Schroedinger's Cat",

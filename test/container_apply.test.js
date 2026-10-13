@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { W_AMUL } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { takeFromContainer } from '../js/container.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BAG_OF_HOLDING, CHEST, CLUB, CORPSE, DART, ICE_BOX, LEATHER_GLOVES, LOADSTONE, } from '../js/object_data.js';
@@ -14,6 +14,7 @@ import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject, unopenedCatBox, } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { answerPrompts } from './support/input-boundaries.js';
 async function unlockedContainer(otyp, invlet, overrides = {}) {
     const container = await addInventoryObject(otyp, {
         invlet,
@@ -301,9 +302,15 @@ void test('opening a quantum box resolves its cat once', async () => {
     assert.ok(corpse);
     game.moves = 40;
     initRng(1n);
-    await applyInventoryObject('a', 'q');
+    const input = resetInputState();
+    await answerPrompts(applyInventoryObject(box), input, [
+        { prompt: /inside the box is dead![\s\S]*--More--/, keys: ' ' },
+        { prompt: /Do what with/, keys: 'q' },
+    ]);
     assert.equal(game.context.move, 1);
-    await applyInventoryObject('a', 'q');
+    await answerPrompts(applyInventoryObject(box), input, [
+        { prompt: /Do what with/, keys: 'q' },
+    ]);
     assert.equal(box.spe, 0);
     assert.ok(objectTimers(corpse).some((timer) => timer.kind === OBJECT_TIMER_KIND.ROT_CORPSE));
     assert.equal(game.u.uexp, 20);
@@ -319,7 +326,11 @@ void test('opening a living cat box releases a peaceful cat beside the hero', as
     const box = await addInventoryItem(await unopenedCatBox({ invlet: 'a' }));
     game.u.ulevel = 8;
     initRng(4n);
-    await applyInventoryObject('a', 'q');
+    const input = resetInputState();
+    await answerPrompts(applyInventoryObject(box), input, [
+        { prompt: /inside the box is still alive![\s\S]*--More--/, keys: ' ' },
+        { prompt: /Do what with/, keys: 'q' },
+    ]);
     const cat = requireGameLevel().monsters.find((monster) => monster.name === "Schroedinger's Cat");
     assert.ok(cat, 'the box did not release its living cat');
     assert.equal(cat.mpeaceful, 1);
