@@ -3,6 +3,7 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { DUST, LEVEL_TELEP, NO_MINVENT } from '../js/const.js';
+import { newsym, plineWithContinuation } from '../js/display.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
@@ -18,6 +19,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { requireScreenCell } from './support/screen.js';
 void test('taking off levitation boots completes trap travel before the next command', async () => {
     const { source, destination } = freshConnectedLevels();
     requirePlayingGame(game);
@@ -220,6 +222,23 @@ for (const acceptDeath of [true, false]) {
         }
     });
 }
+void test('discovering a level teleport trap displays it beneath an invisible hero before acknowledgment', async () => {
+    const level = freshObjectRoom({ flags: { debug: true } });
+    grantIntrinsicProperty('invisible', 'outside');
+    const trap = addTrap(level, LEVEL_TELEP, 10, 10);
+    newsym(10, 10);
+    await plineWithContinuation('You hear footsteps approaching along the corridor.');
+    const input = resetInputState();
+    const operation = triggerHeroTrap(trap);
+    await input.waitUntilBlocked();
+    const displayedSquare = requireScreenCell(9, 11).ch;
+    await answerPrompts(operation, input, [
+        { prompt: /You hear footsteps approaching along the corridor\.--More--/, keys: ' ' },
+        { prompt: /You step onto a level teleport trap!--More--/, keys: ' ' },
+        { prompt: /To what level do you want to teleport\?/, keys: '\x1b' },
+    ]);
+    assert.equal(displayedSquare, '^', 'discovering the trap replaces the floor while the unread message waits');
+});
 void test('a level teleport trap pages its announcement before asking for a level', async () => {
     const level = freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
