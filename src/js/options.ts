@@ -1076,6 +1076,7 @@ export async function doOptions(menuRequested = false): Promise<void> {
         game._optionsInitialized = true;
     }
     let page: 1 | 2 = 1;
+    let needsRedraw = false;
     for (;;) {
         renderOptionsPage(page);
         const key = await nhgetch();
@@ -1114,8 +1115,10 @@ export async function doOptions(menuRequested = false): Promise<void> {
             flags.pushweapon = !flags.pushweapon;
         } else if (page === 2 && input === 'e') {
             flags.hilite_pet = !flags.hilite_pet;
+            needsRedraw = true;
         } else if (page === 2 && input === 'f') {
             flags.hilite_pile = !flags.hilite_pile;
+            needsRedraw = true;
         } else if (page === 2 && input === 'l') {
             flags.showexp = !flags.showexp;
         } else if (page === 2 && input === 'p') {
@@ -1126,7 +1129,7 @@ export async function doOptions(menuRequested = false): Promise<void> {
         page = 1;
     }
     game._pending_message = '';
-    reglyph_darkroom();
+    if (needsRedraw) reglyph_darkroom();
     await docrt();
     await bot();
     game.context.move = 0;
