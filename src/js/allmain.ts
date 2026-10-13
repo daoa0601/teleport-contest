@@ -1751,7 +1751,8 @@ async function monsterAttackMessage(
                             : `pricks your ${side} leg`;
         return `${subject} ${contact}!`;
     }
-    const verb = attack.attackType === 2 ? 'bites'
+    const verb = attack.attackType === 16 ? 'tentacles suck your brain'
+        : attack.attackType === 2 ? 'bites'
         : attack.attackType === 3 ? 'kicks'
             : attack.attackType === 4 ? 'butts'
                 : attack.attackType === 5 ? 'touches you'
@@ -1761,7 +1762,7 @@ async function monsterAttackMessage(
     // crosses tty's reserved --More-- budget and suspends the hit transaction.
     const again = previousAttack?.hit
         && previousAttack.attackType === attack.attackType ? ' again' : '';
-    return `${subject} ${verb}${again}!`;
+    return `${attack.attackType === 16 ? possessiveName(subject) : subject} ${verb}${again}!`;
 }
 
 

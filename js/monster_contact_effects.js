@@ -20,9 +20,13 @@ import { stopHeroOccupation } from './occupation.js';
 import { heroIsUnchanging, heroHasProtectionFromShapeChangers, polymorphHero, } from './polyself.js';
 import { applyHeroWereChange, revertHeroWereForm, setHeroLycanthropy } from './were.js';
 import { rn2, rnd } from './rng.js';
+import { drainHeroBrain } from './monster_hero_brain.js';
+import { AD_DRIN } from './monster_attack_types.js';
 export async function resolveMonsterContactEffect(monster, attack, { state, publish, random = rn2, rollOne = rnd }) {
     attack.deferredSpecialContact = false;
-    if (attack.damageType === AD_WERE)
+    if (attack.damageType === AD_DRIN)
+        await drainHeroBrain(monster, attack, state, publish, random, rollOne);
+    else if (attack.damageType === AD_WERE)
         await infectHero(monster, state, publish, random);
     else if (attack.damageType === AD_SLEE)
         await sleepHero(monster, state, publish, random, rollOne);

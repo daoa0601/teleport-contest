@@ -3042,6 +3042,7 @@ export async function beginMonsterHeroAttack(monster, state, random, rollOne, ro
         paging: { pagerOwned: false, messageAfterPager: false },
         offensive: offensive ? { status: 'selected', choice: offensive } : null,
         skipNonMagic: false,
+        skipBrainDrain: false,
         done: false,
     };
     if (!offensive)
@@ -3096,6 +3097,8 @@ async function advanceHeroAttackSequence(sequence, state, random, rollOne, rollD
                 continue;
         }
         const effectiveAttack = selectAttack(monster, state.u, attackIndex, sequence.results, state);
+        if (sequence.skipBrainDrain && effectiveAttack[0] === AT_TENT && effectiveAttack[1] === AD_DRIN)
+            continue;
         const slot = {
             attackIndex,
             effectiveAttack,
@@ -4801,7 +4804,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
     }
     else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
-        || damageType === AD_WRAP)) {
+        || damageType === AD_WRAP || damageType === AD_DRIN)) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const negated = damageType === AD_POLY
@@ -5783,6 +5786,8 @@ export async function completeHeroAttackSlot(action, state, random = rn2, rollDi
             result |= M_ATTK_AGR_DONE;
     }
     sequence.results[attack.attackIndex] = result;
+    if (attack.kind === 'hero-attack' && attack.skipBrainDrain)
+        sequence.skipBrainDrain = true;
     if (result === M_ATTK_HIT &&
         state.u.usleep &&
         state.u.usleep < state.moves &&
