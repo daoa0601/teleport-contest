@@ -231,6 +231,13 @@ export interface SpecialLevelContext {
     readonly _room?: Room;
 }
 
+export interface LevelRegion {
+    type: 'stair-up' | 'stair-down' | 'branch' | 'portal';
+    area: Rectangle;
+    exclude: Rectangle | null;
+    destination?: string;
+}
+
 export interface ActiveSpecialLevel {
     prototype: string;
     file: string;
@@ -249,17 +256,11 @@ export interface ActiveSpecialLevel {
     baalzFixupArea?: { x1: number; y1: number; x2: number; y2: number };
     baalzPoolMarkers?: Position[];
     specialMessages?: string[];
-    portalDestinationName?: string;
+    levelRegions?: LevelRegion[];
     upTeleportRegion?: Rectangle;
     upTeleportExclude?: Rectangle | null;
     downTeleportRegion?: Rectangle;
     downTeleportExclude?: Rectangle | null;
-    explicitBranchRegion?: Rectangle;
-    explicitBranchExclude?: Rectangle | null;
-    explicitPortalRegion?: Rectangle;
-    explicitPortalExclude?: Rectangle | null;
-    explicitUpStairRegion?: StairRegion;
-    explicitDownStairRegion?: StairRegion;
 }
 
 export interface CachedLevelState {

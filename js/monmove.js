@@ -21,6 +21,7 @@ import { useMonsterOffensiveItem } from './monster_offensive_item.js';
 import { searchMonsterItems } from './monster_item_search.js';
 import { monsterCouldReachItem } from './monster_item_reach.js';
 import { consumeMonsterFloorObjects } from './monster_floor_consumption.js';
+import { digestGelatinousCubeInventory } from './monster_consumption.js';
 import { pickUpMonsterFloorObject } from './monster_pickup.js';
 import { digMonsterTunnel } from './monster_tunnel.js';
 import { monsterMovementBaseFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterCorrodesBars, } from './monster_movement_traits.js';
@@ -111,6 +112,7 @@ import { displaceMonster, monsterDisplacementFlags } from './monster_displacemen
 import { retouchEquipment } from './hero_retouch.js';
 import { returnHeroToHumanForm, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
+import { resolvePhysicalHeroHug } from './monster_hug.js';
 import { cansee, clearPath, couldsee, visibleCellsFrom, vision_note_blocker_change, } from './vision.js';
 import { wipeEngravingAt } from './engrave.js';
 import { moveVaultGuard } from './vault.js';
@@ -5168,7 +5170,12 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         sides > 0) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
-        const physicalEffect = attackType === AT_WEAP ? 'physical-unarmed-weapon' : 'physical-natural';
+        const physicalHug = attackType === AT_HUGS && !heroFormSticks(state);
+        if (physicalHug) {
+            damage = await resolvePhysicalHeroHug(monster, damage, state, range => recordRandom(random, calls, range), monsterAttackMessagePublisher(sequence.paging));
+        }
+        const physicalEffect = physicalHug ? 'physical-hug'
+            : attackType === AT_WEAP ? 'physical-unarmed-weapon' : 'physical-natural';
         // hitmu() rolls ordinary physical damage before pline() announces the
         // hit, but knockback and HP subtraction happen after that message.
         // The tty can suspend inside pline() for --More--, so the live actor
@@ -7007,6 +7014,19 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
         };
     }
     const entryMnum = dochugContext.entryMnum;
+    if (entryMnum === MONSTER_NAME.indexOf('gelatinous cube')
+        && await digestGelatinousCubeInventory(monster, state, { random, rollOne, rollDice })) {
+        return {
+            calls, dochugContext,
+            movement: {
+                oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                moved: false, actionCompleted: true, digestedInventory: true,
+                postMoveStatus: MMOVE_NOTHING,
+                actorDied: !!monster.dead || monster.mhp <= 0,
+                heroDied: !!state.program_state.gameover,
+            },
+        };
+    }
     const entersMovement = !range.nearby ||
         monster.mflee ||
         range.scared ||

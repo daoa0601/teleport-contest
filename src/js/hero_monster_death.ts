@@ -94,44 +94,15 @@ export interface HeroLiquidMonsterDeathOutcome {
     heroDied: boolean;
 }
 
-const M2_ALWAYS_PEACEFUL = 0x00200000;
 const M2_COLLECT = 0x40000000;
 const FOOD_CLASS = 7;
 const MZ_HUMAN = 2;
-
-function monsterDeathMalign(monster: Monster) {
-    if (typeof monster.malign === 'number' && Number.isInteger(monster.malign))
-        return monster.malign;
-    if (monster?.mnum === game.urole?.ldrnum) return -20;
-
-    const mnum = monster?.mnum ?? -1;
-    const speciesAlignment = MONSTER_ALIGNMENT[mnum] ?? 0;
-    const flags = MONSTER_FLAGS2[mnum] ?? 0;
-    const peaceful = !!monster?.mpeaceful;
-    const coaligned = Math.sign(speciesAlignment)
-        === Math.sign(game.u?.ualign?.type ?? 0);
-    const absoluteAlignment = Math.abs(speciesAlignment);
-
-    if (speciesAlignment === A_NONE) return peaceful ? 0 : 20;
-    if (flags & M2_ALWAYS_PEACEFUL) {
-        return (peaceful ? -3 : 3) * Math.max(5, absoluteAlignment);
-    }
-    if (monsterIsAlwaysHostile(mnum)) {
-        return coaligned ? 0 : Math.max(5, absoluteAlignment);
-    }
-    if (coaligned) {
-        return peaceful
-            ? -3 * Math.max(3, absoluteAlignment)
-            : Math.max(3, absoluteAlignment);
-    }
-    return absoluteAlignment;
-}
 
 function killingIsMurder(monster: Monster) {
     const mnum = monster?.mnum ?? -1;
     return monsterIsHuman(mnum)
         && !monsterIsAlwaysHostile(mnum)
-        && monsterDeathMalign(monster) <= 0
+        && monster.malign <= 0
         && !monsterIsPlayerMonster(mnum)
         && !monsterIsPlainHuman(mnum)
         && (game.u?.ualign?.type ?? 0) !== A_CHAOTIC;
@@ -412,7 +383,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     } else if (monster.mpeaceful) {
         adjustHeroAlignment(-5);
     }
-    adjustHeroAlignment(monsterDeathMalign(monster));
+    adjustHeroAlignment(monster.malign);
     return { killed: true, heroDied: false };
 }
 

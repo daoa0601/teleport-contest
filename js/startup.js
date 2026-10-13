@@ -7,21 +7,43 @@ import { init_dungeons } from './dungeon.js';
 import { initializeArtifacts } from './artifacts.js';
 import { initializeMonsterVitals } from './monster_population.js';
 import { rn2, rnd } from './rng.js';
+import { MONSTER_FLAGS2 } from './monster_data.js';
+import { ensureQuestStatus } from './quest.js';
+const M2_MALE = 0x00010000;
+const M2_FEMALE = 0x00020000;
+const M2_NEUTER = 0x00040000;
+// C role.c:role_init() recomputes these genders on both newgame and restore.
+export function initializeRoleQuestGenders() {
+    const role = game.urole;
+    if (!role)
+        throw new Error('Quest gender initialization requires a selected role');
+    const quest = ensureQuestStatus();
+    quest.ldrgend = questMonsterGender(role.ldrnum);
+    if (role.neminum !== undefined)
+        quest.nemgend = questMonsterGender(role.neminum);
+}
+function questMonsterGender(species) {
+    const flags = MONSTER_FLAGS2[species] ?? 0;
+    if (flags & M2_NEUTER)
+        return 2;
+    if (flags & M2_FEMALE)
+        return 1;
+    if (flags & M2_MALE)
+        return 0;
+    return rn2(100) < 50 ? 1 : 0;
+}
 // This is the part of newgame() that runs before level creation. Role
 // inventory and starting attributes run from u_init.js after mklev().
 export async function initializeSourceStartup() {
     initializeMonsterVitals(game);
     init_objects();
+    initializeRoleQuestGenders();
     // role_init(): Priests borrow a pantheon from a random non-Priest role.
     if (game.urole?.key === 'priest') {
         do
             game._priestPantheonIndex = rn2(13);
         while (game._priestPantheonIndex === 6);
     }
-    // role_init(): these quest nemeses have random gender.
-    if (game.urole?.key === 'wizard' || game.urole?.key === 'archeologist')
-        rn2(100);
-    // role_init() random gender/alignment initialization before dungeon.lua.
     await init_dungeons();
     initializeArtifacts(game);
     // newpw() precedes the human racial point applied by u_init_misc().

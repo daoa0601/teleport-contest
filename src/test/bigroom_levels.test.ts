@@ -117,7 +117,7 @@ void test('the fog maze keeps arrivals and its up stair outside the fog', async 
     game.u.ux0 = 1;
     game.u.uy0 = 1;
     initRng(4n);
-    const placed = placeHeroAtRandomArrival({
+    const placed = await placeHeroAtRandomArrival({
         lx: 10,
         ly: 5,
         hx: 12,

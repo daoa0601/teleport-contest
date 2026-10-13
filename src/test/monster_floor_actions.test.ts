@@ -8,11 +8,13 @@ import { makeHallucinated } from '../js/hero_mental_status.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { pickUpMonsterFloorObject } from '../js/monster_pickup.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { takeMonsterTurn } from '../js/monmove.js';
 import { CORPSE, DAGGER, GOLD_PIECE, SACK, SCR_BLANK_PAPER, WAN_STRIKING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { objectTypeKnown } from '../js/shk.js';
-import { floorObject } from './support/game-objects.js';
+import { floorObject, knownObject } from './support/game-objects.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -72,6 +74,21 @@ void test('a cube eats a scroll while completing its underfoot object-search act
     assert.equal(monster.minvent?.includes(scroll) ?? false, false);
     assert.equal(monster.meating ?? 0, 0);
     assert.match(text(), /gelatinous cube eats/);
+});
+
+void test('a cube spends its next action digesting an organic object it engulfed', async () => {
+    const { monster } = await floorActionRoom('gelatinous cube');
+    const scroll = await knownObject(SCR_BLANK_PAPER);
+    await addObjectToMonsterInventory(monster, scroll);
+    const position = { x: monster.mx, y: monster.my };
+
+    requirePlayingGame(game);
+    await takeMonsterTurn(monster, game);
+
+    assert.equal(scroll.where, 'gone');
+    assert.equal(monster.minvent?.includes(scroll), false);
+    assert.deepEqual({ x: monster.mx, y: monster.my }, position);
+    assert.equal(monster.meating, 1);
 });
 
 void test('a paused pickup leaves its object on the floor until the message resumes', async () => {

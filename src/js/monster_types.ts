@@ -201,7 +201,7 @@ export interface Monster extends MonsterPosition {
     questLeader?: boolean;
     waiting?: boolean;
     gold?: number;
-    malign?: number;
+    malign: number;
     maligntyp?: number;
     edog?: PetData;
     emin?: MinionData;

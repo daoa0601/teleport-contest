@@ -18,6 +18,7 @@ import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish } from './potion_occupants.js';
 import { quaff } from './quaff.js';
 import { tameMonster } from './monster_taming.js';
+import { setMonsterMalign } from './monster_alignment.js';
 import { jumpHero } from './jumping.js';
 import { feel_location } from './display.js';
 // cmd.js — Command dispatch and movement.
@@ -2695,21 +2696,14 @@ async function wizGenesis() {
             mnum, game.u.ux, game.u.uy, MM_NOEXCLAM,
         );
         if (!monster) break;
-        // create_particular_creation() applies disposition before its later
-        // requested state flags.  Deleting a constructor-provided malign lets
-        // the shared death-alignment fallback derive it from forced peace.
+        // Native creation records kill alignment again after forcing attitude.
         if (tame) {
             await tameMonster(monster);
-        } else if (peaceful) {
+        } else if (peaceful || hostile) {
             monster.mtame = 0;
             monster.pet = false;
-            monster.mpeaceful = 1;
-            delete monster.malign;
-        } else if (hostile) {
-            monster.mtame = 0;
-            monster.pet = false;
-            monster.mpeaceful = 0;
-            delete monster.malign;
+            monster.mpeaceful = peaceful ? 1 : 0;
+            setMonsterMalign(monster);
         }
         // create_particular_creation() applies requested sleep after makemon
         // announces the actor.
@@ -3369,6 +3363,7 @@ async function djinniFromLamp(object: GameObject) {
     case 2:
         await plineWithContinuation('"You freed me!"');
         djinni.mpeaceful = 1;
+        setMonsterMalign(djinni);
         break;
     case 3:
         await plineWithContinuation('"It is about time!"');
@@ -3381,6 +3376,7 @@ async function djinniFromLamp(object: GameObject) {
         djinni.mpeaceful = 0;
         djinni.mtame = 0;
         djinni.pet = false;
+        setMonsterMalign(djinni);
         break;
     }
 }
@@ -7320,6 +7316,10 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                 return true;
             }
             monster.mx = oldx; monster.my = oldy;
+            // C domove_swap_with_pet() redraws both actors before the swap
+            // announcement can flush the map or pause for acknowledgment.
+            newsym(newx, newy);
+            newsym(oldx, oldy);
             const swapName = tame ? tameName
                 : monster.name ? `peaceful ${speciesName}`
                     : `the peaceful ${speciesName}`;
