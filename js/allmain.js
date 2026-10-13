@@ -3094,7 +3094,7 @@ async function executeMonsterTurns() {
         }
         if (movement?.usedMisc?.kind === 'potion-invisibility' || movement?.usedMisc?.kind === 'wand-invisibility') {
             const misc = movement.usedMisc;
-            const monsterName = quietMonsterName(monster);
+            const nameBeforeInvisibility = monsterName(monster, { state: game });
             let sawDrinking;
             if (misc.kind === 'wand-invisibility') {
                 sawDrinking = canSeeMonster(monster);
@@ -3107,10 +3107,10 @@ async function executeMonsterTurns() {
             const stillSeen = canSpotMonster(monster);
             if (sawDrinking && monster.minvis) {
                 if (stillSeen) {
-                    await plineWithContinuation(`The ${monsterName}'s body takes on a strange transparency.`);
+                    await plineWithContinuation(`${possessiveName(nameBeforeInvisibility).replace(/^./, letter => letter.toUpperCase())} body takes on a ${heroIsHallucinating(game) ? 'normal' : 'strange'} transparency.`);
                 }
                 else {
-                    await plineWithContinuation(`Suddenly you cannot see the ${monsterName}.`);
+                    await plineWithContinuation(`Suddenly you cannot see ${nameBeforeInvisibility}.`);
                     if (cansee(monster.mx, monster.my))
                         map_invisible(monster.mx, monster.my);
                 }
