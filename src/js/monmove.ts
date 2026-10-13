@@ -595,7 +595,8 @@ import {
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
 import { monsterIsScaredAt } from './monster_fear.js';
-import { monsterInAir, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { monsterInAir, monsterFliesOrFloats, levelHasCeiling, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { disturbBuriedZombies } from './object_impact.js';
 
 export const NORMAL_SPEED = 12;
 export const MSLOW = 1;
@@ -7826,6 +7827,10 @@ async function finishDochugAfterMovement(
         || movement.postMoveStatus === MMOVE_DONE || movement.postMoveStatus === MMOVE_NOMOVES))
         newsym(monster.mx, monster.my);
     if (movement.postMoveStatus === MMOVE_MOVED) {
+        const flags = MONSTER_FLAGS1[dochugContext.entryMnum] ?? 0;
+        if (!monsterFliesOrFloats({ mnum: dochugContext.entryMnum })
+            && (!(flags & M1_CLING) || !levelHasCeiling(state)))
+            disturbBuriedZombies(monster.mx, monster.my, state);
         if (monsterIsHelpless(monster)) return;
         const canContinue =
             !range.nearby &&
