@@ -1577,7 +1577,10 @@ async function advanceWorldTurn(): Promise<void> {
         { preservePhysicalTopline: true },
     );
     await drainQueuedHelplessRecoveryMessage();
-    const delayedAction = game._delayedAction;
+    // Armor theft completes through unmul(), so its display delay belongs
+    // to the helplessness counter above rather than the dressing action.
+    const delayedAction = game._delayedAction?.kind === 'steal'
+        ? null : game._delayedAction;
     if (delayedAction) {
         if (game._pending_message) {
             delete delayedAction._runmodeRetainedTopline;
@@ -3814,7 +3817,7 @@ export async function moveloop_core() {
             findArmorClass(g);
             g._armorClassDirty = false;
         }
-    } else if (g._delayedAction) {
+    } else if (g._delayedAction && g._delayedAction.kind !== 'steal') {
         // A delayed action spends movement without reading another command.
         g.u.umoved = false;
         g.context.move = 1;
