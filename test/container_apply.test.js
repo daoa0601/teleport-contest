@@ -30,7 +30,7 @@ void test('applying a carried chest can put an ordinary item inside', async () =
     requirePlayingGame(game);
     const chest = await unlockedContainer(CHEST, 'a', { cknown: false });
     const club = await addInventoryObject(CLUB, { invlet: 'b' });
-    await applyInventoryObject('a', 'ib\n');
+    await applyInventoryObject('a', 'i)\nb\n');
     assert.deepEqual(game.inventory, [chest]);
     assert.deepEqual(chest.contents, [club]);
     assert.equal(club.where, 'contained');
@@ -66,7 +66,7 @@ void test('a container menu can move part of a carried stack', async () => {
         invlet: 'b',
         quantity: 5,
     });
-    await applyInventoryObject('a', 'i2b\n');
+    await applyInventoryObject('a', 'i)\n2b\n');
     assert.equal(darts.quan, 3);
     assert.equal(game.inventory.includes(darts), true);
     assert.ok(chest.contents, 'the chest must retain its contents list');
@@ -102,7 +102,7 @@ void test('a rejected partial transfer restores the carried stack', async () => 
         cursed: true,
         quantity: 5,
     });
-    await applyInventoryObject('a', 'i2b\n');
+    await applyInventoryObject('a', 'i*\n2b\n');
     assert.equal(loadstones.quan, 5);
     assert.deepEqual(game.inventory, [chest, loadstones]);
     assert.equal(chest.contents?.length ?? 0, 0);
@@ -112,7 +112,7 @@ void test('moving some gold keeps the purse and container amounts separate', asy
     const chest = await unlockedContainer(CHEST, 'a', { cknown: true });
     const gold = setHeroGoldAmount(game, 5);
     assert.ok(gold);
-    await applyInventoryObject('a', 'i2$\n');
+    await applyInventoryObject('a', 'i$\n2$\n');
     assert.equal(gold.quan, 3);
     assert.equal(heroGoldAmount(game), 3);
     assert.ok(chest.contents, 'the chest must retain its contents list');
@@ -135,7 +135,7 @@ void test('touching one cockatrice corpse restores its stack and stops transfer'
         owornmask: W_AMUL,
     });
     game.uamul = game.u.uamul = amulet;
-    await applyInventoryObject('a', `ic\n1b\n${' '.repeat(10)}`);
+    await applyInventoryObject('a', `i%\n1b\n${' '.repeat(10)}`);
     assert.equal(game.inventory.includes(corpse), true);
     assert.equal(corpse.quan, 2);
     assert.deepEqual(chest.contents, []);
@@ -154,7 +154,7 @@ void test('gloves make a cockatrice corpse safe to put away', async () => {
         worn: true,
     });
     game.uarmg = game.u.uarmg = gloves;
-    await applyInventoryObject('a', 'ic\nb\n');
+    await applyInventoryObject('a', 'i%\nb\n');
     assert.deepEqual(chest.contents, [corpse]);
     assert.ok(game.u.uhp > 0);
 });
@@ -203,7 +203,7 @@ void test('invocation items cannot be hidden in a container', async () => {
     requirePlayingGame(game);
     const chest = await unlockedContainer(CHEST, 'a', { cknown: true });
     const amulet = await addInventoryObject(AMULET_OF_YENDOR, { invlet: 'b' });
-    await applyInventoryObject('a', 'ib\n');
+    await applyInventoryObject('a', 'i"\nb\n');
     assert.deepEqual(game.inventory, [chest, amulet]);
     assert.deepEqual(chest.contents, []);
     assert.equal(amulet.where, 'inventory');
@@ -220,7 +220,7 @@ void test('an ice box pauses and resumes corpse decay', async () => {
     });
     game.moves = 40;
     scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ROT_CORPSE, 80, game);
-    await applyInventoryObject('a', 'ib\n');
+    await applyInventoryObject('a', 'i%\nb\n');
     assert.equal(corpse.ageRelative, true);
     assert.deepEqual(objectTimers(corpse), []);
     await applyInventoryObject('a', 'oa\n');

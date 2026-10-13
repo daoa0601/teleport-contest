@@ -617,9 +617,11 @@ async function putSelectedObjects(container: GameObject, stashOne = false): Prom
     results: ContainerTransferResult[];
     spentTime: boolean;
 }> {
-    const candidates = (game.inventory || [])
-        .filter(object => object !== container);
-    if (!candidates.length) return { results: [], spentTime: false };
+    // menu_loot queries the whole inventory; only stash-one uses ck_bag.
+    const candidates = stashOne
+        ? game.inventory.filter(object => object !== container) : game.inventory;
+    if (!candidates.some(object => object !== container))
+        return { results: [], spentTime: false };
     let selected: CountedSelection<GameObject>[];
     let spentTime = false;
     if (stashOne) {

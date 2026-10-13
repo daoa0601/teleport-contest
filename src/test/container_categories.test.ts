@@ -94,6 +94,31 @@ void test('a count on a single just-picked stack stashes that many items directl
     assert.equal(stored?.reduce((total, object) => total + object.quan, 0), 3);
 });
 
+void test('a just-picked held container and another item still require an item selection', async () => {
+    freshObjectRoom();
+    const chest = await addInventoryObject(CHEST, {
+        olocked: false, otrapped: false, cknown: true, pickup_prev: true,
+    });
+    const club = await addInventoryObject(CLUB, { pickup_prev: true });
+    await addInventoryObject(POT_HEALING);
+    const input = resetInputState();
+    input.feed('iP\n');
+    const looting = useContainer(chest, { held: true });
+    const boundary = await Promise.race([
+        looting.then(() => 'finished' as const),
+        input.waitUntilBlocked().then(() => 'input' as const),
+    ]);
+    const rows = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')) || [];
+    input.feed('\x1b');
+    const result = await looting;
+
+    assert.equal(boundary, 'input', 'Two just-picked inventory items require the Put in what? menu.');
+    assert.ok(rows.some(row => row.includes('Put in what?')));
+    assert.ok(game.inventory.includes(club), 'Cancelling leaves the club in inventory.');
+    assert.equal(chest.contents?.includes(club) ?? false, false);
+    assert.equal(result.spentTime, false);
+});
+
 void test('a rejected counted just-picked selection keeps both stacks and spends a turn', async () => {
     const { chest } = await filledChest();
     await addInventoryObject(POT_HEALING);

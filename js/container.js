@@ -552,9 +552,10 @@ async function takeSelectedObjects(container) {
     return results;
 }
 async function putSelectedObjects(container, stashOne = false) {
-    const candidates = (game.inventory || [])
-        .filter(object => object !== container);
-    if (!candidates.length)
+    // menu_loot queries the whole inventory; only stash-one uses ck_bag.
+    const candidates = stashOne
+        ? game.inventory.filter(object => object !== container) : game.inventory;
+    if (!candidates.some(object => object !== container))
         return { results: [], spentTime: false };
     let selected;
     let spentTime = false;
