@@ -6122,6 +6122,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
                 continue;
             }
             selectedItem = game.inventory?.find(candidate => candidate.invlet === String.fromCharCode(key)) ?? null;
+            game.context.botl = true;
             if (selectedItem)
                 break;
             // invent.c:getobj() retains the picker after an absent letter.
