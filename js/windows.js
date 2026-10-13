@@ -8,7 +8,7 @@
 // pagination, cursor position, and input boundaries.
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
-import { clearMessageWindow, docrt, flush_screen } from './display.js';
+import { clearMessageWindow, displayMessageWindow, docrt, flush_screen } from './display.js';
 import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED } from './const.js';
 import { NO_COLOR } from './terminal.js';
 import { menuLayout, windowOrigin, selectableMenuText, paintMenuPage, snapshotMenuUnderlay, restoreMenuUnderlay, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from './tty_menu.js';
@@ -265,8 +265,10 @@ export async function showChoiceWindow({ title, entries, validKeys = null, }) {
     const d = display();
     if (!d)
         return 27;
+    // tty_display_nhwindow() acknowledges unread prose before painting a menu.
+    await displayMessageWindow();
     const underlayCursor = { col: d.cursorCol, row: d.cursorRow, visible: d.cursorVisible };
-    // tty_display_nhwindow() clears WIN_MESSAGE before painting a menu.
+    // Clear WIN_MESSAGE even when its display was suppressed by Escape.
     // Save the map after that erasure so dismissal cannot revive old prose.
     clearMessageWindow();
     const underlay = snapshotMenuUnderlay();

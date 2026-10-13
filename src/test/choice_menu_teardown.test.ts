@@ -35,14 +35,27 @@ for (const overlay of [true, false]) {
         await flush_screen(1);
         await plineWithContinuation('You hear footsteps.');
         await flush_screen(1);
-        resetInputState().feed('a');
-
-        await showChoiceWindow({
+        const input = resetInputState();
+        const choice = showChoiceWindow({
             title: 'Choose an action:',
             entries: [{ key: 'a', text: 'inspect the chest' }],
         });
 
         const display = requireGameDisplay();
+        try {
+            await input.waitUntilBlocked();
+            assert.equal(display.grid[0]?.map(cell => cell.ch).join('').trim(),
+                'You hear footsteps.--More--');
+            input.feed('a');
+            await input.waitUntilBlocked();
+            assert.equal(display.grid[0]?.map(cell => cell.ch).join('').trim(),
+                'You hear footsteps.--More--', 'A menu selector cannot acknowledge unread prose');
+        } finally {
+            input.feed(' a');
+            await choice;
+        }
+
+        assert.equal(await choice, 'a'.charCodeAt(0));
         assert.equal(display.grid[0]?.map(cell => cell.ch).join('').trim(), '');
         await plineWithContinuation('The corridor is quiet.');
         await flush_screen(1);
