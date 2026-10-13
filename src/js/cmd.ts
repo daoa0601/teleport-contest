@@ -29,6 +29,8 @@ import { requireInitializedHero } from './hero_types.js';
 
 import { fruitName } from './fruit.js';
 import { waterbodyName } from './terrain_name.js';
+import { def_warnsyms } from './const.js';
+import { GlyphOffset } from './glyph_numbers.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
 import { flipThroughBook } from './book_flip.js';
@@ -248,7 +250,7 @@ import {
 } from './terminal.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData,
+    MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, monsterTypeName,
 } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
 import { nameToMonster } from './mondata.js';
@@ -4283,11 +4285,10 @@ function wizardPositionDescription(x: number, y: number): string {
     if (x === game.u?.ux && y === game.u?.uy) {
         const species = game.u.umonnum;
         const polymorphName = heroIsPolymorphed(game) && species !== undefined
-            ? MONSTER_NAME[species] : '';
-        const race = game.urace?.noun || game.urace?.name || 'human';
+            ? monsterTypeName(species, !!game.flags.female) : '';
+        const race = game.urace?.adj || game.urace?.name || 'human';
         const role = game.urole?.name;
-        const roleName = typeof role === 'string' ? role
-            : game.flags?.female ? role?.f : role?.m;
+        const roleName = game.flags.female && role?.f ? role.f : role?.m;
         const form = polymorphName
             || `${race} ${(roleName || 'adventurer').toLowerCase()}`;
         const punishment = heroIsPunished()
@@ -4296,6 +4297,9 @@ function wizardPositionDescription(x: number, y: number): string {
     }
     const loc = game.level?.at(x, y);
     if (!loc) return 'unexplored area';
+    const glyph = glyphAt(x, y);
+    if (glyph?.kind === 'warning' || glyph?.kind === 'nothing')
+        return farlookLocationDescription(x, y);
     if (loc.typ === TREE && loc.remembered_glyph) return 'tree';
     if (!loc.remembered_glyph && !cansee(x, y)) return 'unexplored area';
     // C pager.c:do_screen_description() describes the displayed glyph, not
@@ -4436,8 +4440,17 @@ function travelPositionDescription(x: number, y: number): string {
 }
 
 export function farlookLocationDescription(x: number, y: number): string {
+    const glyph = glyphAt(x, y);
+    if (glyph?.kind === 'warning') {
+        const index = glyph.glyph === undefined ? -1 : glyph.glyph - GlyphOffset.warning;
+        const warning = def_warnsyms[index];
+        if (!warning) throw new RangeError(`Unknown warning glyph ${glyph.glyph}`);
+        return warning.desc;
+    }
+    if (glyph?.kind === 'nothing' || glyph?.kind === 'terrain'
+        && glyph.terrainName === 'dark part of a room') return 'dark part of a room';
     const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
-    if (monster && glyphAt(x, y)?.kind === 'monster') {
+    if (monster && glyph?.kind === 'monster') {
         const hallucinating = heroIsHallucinating(game);
         const prefix = hallucinating ? ''
             : monster.mtame ? 'tame '
@@ -4463,7 +4476,6 @@ export function farlookLocationDescription(x: number, y: number): string {
     if (trap?.ttyp === BEAR_TRAP) return 'bear trap';
     const loc = game.level?.at(x, y);
     if (!loc) return '';
-    if (loc.disp_glyph?.kind === 'nothing') return 'dark part of a room';
     // pager.c:do_screen_description() recognizes the concrete S_cloud glyph
     // before the generic '#' ambiguity list.  Moving elemental bubbles can
     // therefore be "fog/vapor cloud" even though their tty character is the

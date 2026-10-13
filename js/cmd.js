@@ -13,6 +13,8 @@ import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } fr
 import { requireInitializedHero } from './hero_types.js';
 import { fruitName } from './fruit.js';
 import { waterbodyName } from './terrain_name.js';
+import { def_warnsyms } from './const.js';
+import { GlyphOffset } from './glyph_numbers.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
 import { flipThroughBook } from './book_flip.js';
@@ -135,7 +137,7 @@ import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
-import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, } from './monster_data.js';
+import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, monsterTypeName, } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
 import { nameToMonster } from './mondata.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
@@ -3965,11 +3967,10 @@ function wizardPositionDescription(x, y) {
     if (x === game.u?.ux && y === game.u?.uy) {
         const species = game.u.umonnum;
         const polymorphName = heroIsPolymorphed(game) && species !== undefined
-            ? MONSTER_NAME[species] : '';
-        const race = game.urace?.noun || game.urace?.name || 'human';
+            ? monsterTypeName(species, !!game.flags.female) : '';
+        const race = game.urace?.adj || game.urace?.name || 'human';
         const role = game.urole?.name;
-        const roleName = typeof role === 'string' ? role
-            : game.flags?.female ? role?.f : role?.m;
+        const roleName = game.flags.female && role?.f ? role.f : role?.m;
         const form = polymorphName
             || `${race} ${(roleName || 'adventurer').toLowerCase()}`;
         const punishment = heroIsPunished()
@@ -3979,6 +3980,9 @@ function wizardPositionDescription(x, y) {
     const loc = game.level?.at(x, y);
     if (!loc)
         return 'unexplored area';
+    const glyph = glyphAt(x, y);
+    if (glyph?.kind === 'warning' || glyph?.kind === 'nothing')
+        return farlookLocationDescription(x, y);
     if (loc.typ === TREE && loc.remembered_glyph)
         return 'tree';
     if (!loc.remembered_glyph && !cansee(x, y))
@@ -4116,8 +4120,19 @@ function travelPositionDescription(x, y) {
     return valid ? description : `${description} (no travel path)`;
 }
 export function farlookLocationDescription(x, y) {
+    const glyph = glyphAt(x, y);
+    if (glyph?.kind === 'warning') {
+        const index = glyph.glyph === undefined ? -1 : glyph.glyph - GlyphOffset.warning;
+        const warning = def_warnsyms[index];
+        if (!warning)
+            throw new RangeError(`Unknown warning glyph ${glyph.glyph}`);
+        return warning.desc;
+    }
+    if (glyph?.kind === 'nothing' || glyph?.kind === 'terrain'
+        && glyph.terrainName === 'dark part of a room')
+        return 'dark part of a room';
     const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
-    if (monster && glyphAt(x, y)?.kind === 'monster') {
+    if (monster && glyph?.kind === 'monster') {
         const hallucinating = heroIsHallucinating(game);
         const prefix = hallucinating ? ''
             : monster.mtame ? 'tame '
@@ -4144,8 +4159,6 @@ export function farlookLocationDescription(x, y) {
     const loc = game.level?.at(x, y);
     if (!loc)
         return '';
-    if (loc.disp_glyph?.kind === 'nothing')
-        return 'dark part of a room';
     // pager.c:do_screen_description() recognizes the concrete S_cloud glyph
     // before the generic '#' ambiguity list.  Moving elemental bubbles can
     // therefore be "fog/vapor cloud" even though their tty character is the
