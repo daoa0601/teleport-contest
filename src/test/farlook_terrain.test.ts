@@ -20,7 +20,7 @@ for (const remembered of [false, true]) {
             vision_recalc(0);
         }
 
-        const description = farlookLocationDescription(11, 10);
+        const description = await farlookLocationDescription(11, 10);
 
         assert.equal(description, 'molten lava');
     });
@@ -35,7 +35,7 @@ void test('a remembered liquid glyph uses the current surface description', asyn
     vision_recalc(0);
     location.typ = ROOM;
 
-    assert.equal(farlookLocationDescription(11, 10), 'water');
+    assert.equal(await farlookLocationDescription(11, 10), 'water');
 });
 
 for (const remembered of [false, true]) {
@@ -60,10 +60,10 @@ for (const remembered of [false, true]) {
             vision_recalc(0);
         }
 
-        assert.equal(farlookLocationDescription(11, 10), 'blocked staircase down');
+        assert.equal(await farlookLocationDescription(11, 10), 'blocked staircase down');
         assert.ok(game.quest_status);
         game.quest_status.killed_leader = true;
-        assert.equal(farlookLocationDescription(11, 10), 'staircase down');
+        assert.equal(await farlookLocationDescription(11, 10), 'staircase down');
     });
 }
 
@@ -71,16 +71,16 @@ for (const [terrain, description] of [
     [POOL, 'pool of water'], [MOAT, 'moat'], [WATER, 'wall of water'],
     [LAVAWALL, 'wall of lava'], [ICE, 'solid ice'],
 ] as const) {
-    void test(`farlook describes ${description}`, () => {
+    void test(`farlook describes ${description}`, async () => {
         const level = freshObjectRoom();
         level.requireAt(11, 10).typ = terrain;
         newsym(11, 10);
 
-        assert.equal(farlookLocationDescription(11, 10), description);
+        assert.equal(await farlookLocationDescription(11, 10), description);
     });
 }
 
-void test('farlook describes nearby melting ice by its remaining strength', () => {
+void test('farlook describes nearby melting ice by its remaining strength', async () => {
     const level = freshObjectRoom({ moves: 0 });
     level.requireAt(11, 10).typ = ICE;
     newsym(11, 10);
@@ -91,7 +91,7 @@ void test('farlook describes nearby melting ice by its remaining strength', () =
         [986, 'thin ice'], [987, 'slushy ice'],
     ] as const) {
         game.moves = elapsed;
-        assert.equal(farlookLocationDescription(11, 10), description);
+        assert.equal(await farlookLocationDescription(11, 10), description);
     }
 });
 
@@ -103,30 +103,30 @@ void test('farlook leaves distant or unseen remembered ice strength unknown', as
         scheduleLevelTimer(x, 10, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves + 20);
     }
 
-    assert.equal(farlookLocationDescription(13, 10), 'ice');
+    assert.equal(await farlookLocationDescription(13, 10), 'ice');
     game.u.xray_range = 3;
-    assert.equal(farlookLocationDescription(13, 10), 'thin ice');
+    assert.equal(await farlookLocationDescription(13, 10), 'thin ice');
     await makeBlinded(10, { talk: false });
     vision_recalc(0);
-    assert.equal(farlookLocationDescription(11, 10), 'ice');
+    assert.equal(await farlookLocationDescription(11, 10), 'ice');
 });
 
-void test('farlook describes Medusa moat as a shallow sea', () => {
+void test('farlook describes Medusa moat as a shallow sea', async () => {
     const level = freshObjectRoom();
     game.medusa_level = { dnum: 0, dlevel: 8, flags: { town: false }, alignment: null };
     level.requireAt(11, 10).typ = MOAT;
     newsym(11, 10);
 
-    assert.equal(farlookLocationDescription(11, 10), 'shallow sea');
+    assert.equal(await farlookLocationDescription(11, 10), 'shallow sea');
 });
 
-void test('farlook hallucinates the liquid in visible lava', () => {
+void test('farlook hallucinates the liquid in visible lava', async () => {
     const level = freshObjectRoom({ hero: { hallucinationTurns: 30 } });
     level.requireAt(11, 10).typ = LAVAPOOL;
     newsym(11, 10);
 
-    const descriptions = new Set(Array.from({ length: 20 }, () =>
-        farlookLocationDescription(11, 10)));
+    const descriptions = new Set<string>();
+    for (let i = 0; i < 20; i++) descriptions.add(await farlookLocationDescription(11, 10));
 
     assert.ok(descriptions.size > 1, 'hallucination changes the perceived liquid');
     for (const description of descriptions) assert.match(description, /^molten /);
