@@ -9,7 +9,7 @@ import { maybeDestroyWeb } from './web_trap.js';
 import {
     currentAttribute, exerciseAttribute,
 } from './attrib.js';
-import { objectIsHardHelmet } from './armor.js';
+import { armorSimpleName, objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroFootName, heroHeadName, monsterFootName } from './body_parts.js';
 import {
     A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
@@ -1064,6 +1064,7 @@ async function triggerBearTrap(trap: Trap, {
 }
 
 function rustTargetName(object: GameObject | null | undefined, fallback: string): string {
+    if (object && object.oclass === 3) return armorSimpleName(object, game);
     return object?.name || OBJECT_NAMES[object?.otyp ?? -1] || fallback;
 }
 

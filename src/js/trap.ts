@@ -6,7 +6,8 @@ import {
     IS_POOL, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
     W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok,
 } from './const.js';
-import { heroHasWaterWalking } from './armor.js';
+import { armorSimpleName, heroHasWaterWalking } from './armor.js';
+import { objectName } from './objnam.js';
 import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
@@ -21,7 +22,7 @@ import { splitMonster } from './monster_clone.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, ICE_BOX,
-    LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES, OILSKIN_SACK,
+    LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OILSKIN_SACK,
     POT_ACID, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES,
     RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER,
     SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, TOWEL,
@@ -661,17 +662,17 @@ export async function burnArmorByFire(
         let torso = false;
         if (slot === 0) {
             object = armorAt(monster, state, W_ARMH);
-            description = 'helmet';
+            description = object
+                ? `${OBJECT_MATERIAL_NAMES[objectMaterial(object, state)]} ${armorSimpleName(object, state)}`
+                : 'helmet';
         } else if (slot === 1) {
             torso = true;
             object = armorAt(monster, state, W_ARMC)
                 || armorAt(monster, state, W_ARM)
                 || armorAt(monster, state, W_ARMU);
-            description = object === armorAt(
-                monster, state, W_ARMC,
-            ) ? 'cloak' : object === armorAt(
-                monster, state, W_ARMU,
-            ) ? 'shirt' : object?.name || 'armor';
+            description = !object ? 'armor'
+                : object === armorAt(monster, state, W_ARM)
+                    ? objectName(object, state) : armorSimpleName(object, state);
         } else if (slot === 2) {
             object = armorAt(monster, state, W_ARMS);
             description = 'wooden shield';
@@ -717,7 +718,7 @@ export async function applyMonsterRustTrap(
         event.target = 'head';
         const helmet = wornObject(monster, W_ARMH);
         addWaterEffect(event, rustObject(
-            helmet, objectDescription(helmet, 'helmet'),
+            helmet, helmet ? armorSimpleName(helmet, state) : 'helm',
             monster, state, roll, luckRoll,
         ));
     } else if (targetRoll === 1) {
@@ -736,7 +737,7 @@ export async function applyMonsterRustTrap(
             }
             const gloves = wornObject(monster, W_ARMG);
             addWaterEffect(event, rustObject(
-                gloves, objectDescription(gloves, 'gloves'),
+                gloves, gloves ? armorSimpleName(gloves, state) : 'gloves',
                 monster, state, roll, luckRoll,
             ));
         }
@@ -749,7 +750,7 @@ export async function applyMonsterRustTrap(
         ));
         const gloves = wornObject(monster, W_ARMG);
         addWaterEffect(event, rustObject(
-            gloves, objectDescription(gloves, 'gloves'),
+            gloves, gloves ? armorSimpleName(gloves, state) : 'gloves',
             monster, state, roll, luckRoll,
         ));
     } else {
@@ -765,10 +766,8 @@ export async function applyMonsterRustTrap(
         const torso = wornObject(monster, W_ARMC)
             || wornObject(monster, W_ARM)
             || wornObject(monster, W_ARMU);
-        const fallback = ((torso?.owornmask ?? 0) & W_ARMC) ? 'cloak'
-            : ((torso?.owornmask ?? 0) & W_ARMU) ? 'shirt' : 'armor';
         addWaterEffect(event, rustObject(
-            torso, objectDescription(torso, fallback),
+            torso, torso ? armorSimpleName(torso, state) : 'suit',
             monster, state, roll, luckRoll,
         ));
     }

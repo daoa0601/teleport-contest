@@ -6,7 +6,7 @@ import { launchRollingBoulder } from './rolling_boulder.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { maybeDestroyWeb } from './web_trap.js';
 import { currentAttribute, exerciseAttribute, } from './attrib.js';
-import { objectIsHardHelmet } from './armor.js';
+import { armorSimpleName, objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroFootName, heroHeadName, monsterFootName } from './body_parts.js';
 import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_quest, is_pit, HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP, LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
 import { flush_screen, lastDirtyMapCursor, map_trap, newsym, pline, plineWithContinuation, shieldeff, show_glyph_cell, } from './display.js';
@@ -933,6 +933,8 @@ async function triggerBearTrap(trap, { failedUntrap = false, forceTrap = false, 
     return false;
 }
 function rustTargetName(object, fallback) {
+    if (object && object.oclass === 3)
+        return armorSimpleName(object, game);
     return object?.name || OBJECT_NAMES[object?.otyp ?? -1] || fallback;
 }
 async function wetHeroObject(object, description) {
