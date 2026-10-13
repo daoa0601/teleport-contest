@@ -1458,7 +1458,12 @@ function visibleMapRegionAt(x, y) {
         && region.ttl !== -2 && region.cells?.some(cell => cell.x === x && cell.y === y)) || null;
 }
 function showMapRegion(x, y) {
-    show_glyph_cell(x, y, '#', NO_COLOR, false, 0, { kind: 'terrain', terrainName: 'cloud', glyph: cmapToGlyph(CmapSymbol.poisoncloud) });
+    const region = visibleMapRegionAt(x, y);
+    if (!region)
+        return;
+    const poisonous = region.damage > 0;
+    show_glyph_cell(x, y, '#', poisonous ? CLR_BRIGHT_GREEN : NO_COLOR, false, 0, { kind: 'terrain', terrainName: poisonous ? 'poison cloud' : 'cloud',
+        glyph: cmapToGlyph(poisonous ? CmapSymbol.poisoncloud : CmapSymbol.cloud) });
 }
 function monsterOverridesMapRegion(monster, x, y) {
     if (game.level?.at(x, y)?.remembered_glyph?.kind === 'invisible')
