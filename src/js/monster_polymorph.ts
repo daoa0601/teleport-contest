@@ -635,13 +635,12 @@ export async function changeMonsterForm(
     newsym(monster.mx, monster.my);
     let message: string | null = null;
     if (showMessage) {
-        const newName = monsterTypeName(monster.mnum, !!monster.female);
         const nowSpotted = canSpotMonster(monster);
         if (nowSpotted) {
             if (wasSpotted)
-                message = `${oldSubject} turns into a ${newName}!`;
+                message = `${oldSubject} turns into ${namelessMonsterName(monster, { state, article: 'a' })}!`;
             else
-                message = `${monster.mtame ? 'Your' : 'A'} ${newName} appears!`;
+                message = `${monsterName(monster, { state, capitalized: true, article: monster.mtame ? 'your' : 'a' })} appears!`;
             await publish(message);
         } else {
             if (wasSpotted) {
