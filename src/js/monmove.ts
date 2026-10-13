@@ -857,10 +857,10 @@ async function readyMonsterDiggingWeapon(
 }
 
 function monsterHasLauncherAndAmmo(monster: Monster) {
+    const launcher = monsterWieldedWeapon(monster);
+    if (!launcher) return false;
     const inventory = monster.minvent || monster.inventory || [];
-    return inventory.some((ammo) =>
-        inventory.some((launcher) => ammunitionMatchesLauncher(ammo, launcher)),
-    );
+    return inventory.some(ammo => ammunitionMatchesLauncher(ammo, launcher));
 }
 
 function monsterHasAvailableDistanceAttack(monster: Monster) {

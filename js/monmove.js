@@ -436,8 +436,11 @@ async function readyMonsterDiggingWeapon(monster, state, x, y) {
         : false;
 }
 function monsterHasLauncherAndAmmo(monster) {
+    const launcher = monsterWieldedWeapon(monster);
+    if (!launcher)
+        return false;
     const inventory = monster.minvent || monster.inventory || [];
-    return inventory.some((ammo) => inventory.some((launcher) => ammunitionMatchesLauncher(ammo, launcher)));
+    return inventory.some(ammo => ammunitionMatchesLauncher(ammo, launcher));
 }
 function monsterHasAvailableDistanceAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || []).some(([attackType]) => attackType === AT_SPIT ||
