@@ -55,6 +55,7 @@ import {
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
 import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.js';
 import { heroGoldAmount } from './hero_gold.js';
+import { encumbranceLabel, nearCapacity } from './weight.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -2209,6 +2210,7 @@ export async function flush_screen(mode?: number) {
     // still write their own rows while the old map remains on screen.
     if (mode === -1) game._mapFlushPaused = !game._mapFlushPaused;
     if (game._mapFlushPaused) return;
+    if (game.context.botl) refreshStatusLines();
     const display = game.nhDisplay;
     const mapCursor: [number, number] | null = mode === 0 && display
         ? lastDirtyMapCursor() ?? [display.cursorCol, display.cursorRow] : null;
@@ -2271,6 +2273,8 @@ function refreshStatusLines(): void {
     const display = game.nhDisplay;
     if (!display || game._statusUpdatesDisabled || game.u.uhp === -1 || game.program_state.saving
         || game.program_state.windows_exited || game._suppressMapStatusForFlush) return;
+    game.u._encumbrance = encumbranceLabel(nearCapacity(game));
+    game.context.botl = false;
     writeStatusLines(display, statusLines(true));
 }
 

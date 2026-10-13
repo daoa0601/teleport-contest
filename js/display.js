@@ -22,6 +22,7 @@ import { BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE, } from './random_text_data.js'
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
 import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.js';
 import { heroGoldAmount } from './hero_gold.js';
+import { encumbranceLabel, nearCapacity } from './weight.js';
 import { heroCanReachFloor } from './floor_reach.js';
 const HALLUCINATED_LIQUIDS = [
     'yoghurt', 'oobleck', 'clotted blood', 'diluted water',
@@ -2190,6 +2191,8 @@ export async function flush_screen(mode) {
         game._mapFlushPaused = !game._mapFlushPaused;
     if (game._mapFlushPaused)
         return;
+    if (game.context.botl)
+        refreshStatusLines();
     const display = game.nhDisplay;
     const mapCursor = mode === 0 && display
         ? lastDirtyMapCursor() ?? [display.cursorCol, display.cursorRow] : null;
@@ -2256,6 +2259,8 @@ function refreshStatusLines() {
     if (!display || game._statusUpdatesDisabled || game.u.uhp === -1 || game.program_state.saving
         || game.program_state.windows_exited || game._suppressMapStatusForFlush)
         return;
+    game.u._encumbrance = encumbranceLabel(nearCapacity(game));
+    game.context.botl = false;
     writeStatusLines(display, statusLines(true));
 }
 // ── pline ──

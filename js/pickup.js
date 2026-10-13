@@ -5,7 +5,7 @@ import { objectName, observeObjectForNaming } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { floorObjectDescription, readFloorEngraving, showFloorPile, } from './floor_object_display.js';
 import { tryCallObjectType } from './object_call.js';
-import { newsym, flush_screen, pline, plineWithContinuation, bot, map_object, } from './display.js';
+import { newsym, flush_screen, pline, plineWithContinuation, map_object, } from './display.js';
 import { dungeonFeatureSentenceAt } from './dungeon_feature.js';
 import { showMultiSelectWindow } from './windows.js';
 import { addInventoryItem } from './u_init.js';
@@ -207,6 +207,8 @@ async function takeSelectedObjects(source, selected, telekinesis = false, batch 
             break;
         if (lift.decision !== 'lift')
             continue;
+        if (object.oclass === 12)
+            game.context.botl = true;
         if (object.otyp !== LOADSTONE)
             object = splitPickupStack(object, lift.count);
         if (source.monster) {
@@ -257,7 +259,6 @@ async function takeSelectedObjects(source, selected, telekinesis = false, batch 
     if (batch && picked && !game.program_state?.gameover) {
         if (!source.monster)
             newsym(source.x, source.y);
-        await bot();
     }
     return { picked, attempted };
 }
