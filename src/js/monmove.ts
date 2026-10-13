@@ -222,6 +222,8 @@ import {
     MONSTER_SIZE,
     MONSTER_SYMBOL,
     monsterIsCovetous,
+    monsterIsNoncorporeal,
+    monsterIsWhirly,
     monsterIsShade,
     monsterIsUnsolid,
     monsterIsThickSkinned,
@@ -1576,9 +1578,9 @@ function monsterCannotSqueezeThrough(monster: Monster, state: PlayingGameState) 
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     if (flags & M1_WALLWALK) return false;
     const flexible =
-        !!(flags & (M1_AMORPHOUS | M1_SLITHY | M1_UNSOLID)) ||
-        MONSTER_SYMBOL[monster?.mnum] === S_VORTEX ||
-        monster?.mnum === PM_AIR_ELEMENTAL ||
+        !!(flags & (M1_AMORPHOUS | M1_SLITHY)) ||
+        monsterIsWhirly(monster) ||
+        monsterIsNoncorporeal(monster) ||
         monsterCanFog(monster, state);
     if ((MONSTER_SIZE[monster?.mnum] ?? 0) >= 3 && !flexible) return true;
     return currentMonsterLoad(monster) > WT_TOOMUCH_DIAGONAL;
