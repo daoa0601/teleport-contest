@@ -15,7 +15,7 @@ import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
 import { objectCombatName, objectHasPersonalName, killerObjectName, observeObjectForNaming } from './objnam.js';
 import { AD_ACID } from './monster_attack_types.js';
-import { monstersObserveHeroResistance, seenResistanceForDamage } from './monster_perception.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './monster_perception.js';
 const SILVER = 14;
 const GEMSTONE = 20;
 const MINERAL = 21;
@@ -77,7 +77,7 @@ export async function hitHeroWithObject(object, damage, accuracy, { state = game
         }
         if (object.otyp === ACID_VENOM) {
             await publish('It burns!');
-            monstersObserveHeroResistance(seenResistanceForDamage(AD_ACID), state);
+            monstersForgetHeroResistance(seenResistanceForDamage(AD_ACID), state);
         }
         if (await loseHeroHp(damage, killer, {
             state, publish, die, deathCause: `killed by ${killer}`,
