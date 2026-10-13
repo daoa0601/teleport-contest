@@ -1839,7 +1839,6 @@ async function resolveDeferredHeroItemTheft(
         || !monsterCanCarryObject(monster, object, game, draw))) return refuse();
     const previousDelay = game._delayedAction;
     const wasDoffing = previousDelay?.kind === 'remove' && previousDelay.object === object;
-    const oldDelay = previousDelay?.object === object ? previousDelay.remainingGlobalTurns : 0;
     await stopDonning(object, game);
     await stopHeroOccupation(game);
     // stop_donning() makes interrupted dressing armor unworn before steal()
@@ -1850,14 +1849,15 @@ async function resolveDeferredHeroItemTheft(
     let removalMessage = null;
     let charmed = false;
     if (equipmentSlots.some(slot => slot.startsWith('uarm') && game[slot] === object)) {
-        const delay = Math.min(OBJECT_DELAY[object.otyp] ?? 0,
-            oldDelay > 0 ? oldDelay : Infinity);
+        // Pinned stop_donning() clears multi before returning olddelay, so
+        // interrupted removal keeps the full armor delay and refusal chance.
+        const delay = OBJECT_DELAY[object.otyp] ?? 0;
         const helplessReason = game._helplessReason;
         const reason = typeof helplessReason === 'string' ? helplessReason : helplessReason?.text;
         const unresponsive = heroIsUnaware(game) || (heroHasInvoluntaryDelay(game)
             && !!reason && /^(?:frozen|paralyzed)/.test(reason));
         if (animal || unresponsive) {
-            if (delay >= 1 && !oldDelay && draw(10)) return refuse();
+            if (delay >= 1 && draw(10)) return refuse();
         } else {
             charmed = true;
             const cursed = object.cursed;
