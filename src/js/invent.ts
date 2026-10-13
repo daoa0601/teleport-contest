@@ -457,7 +457,7 @@ async function showItemActionMenu(item: GameObject) {
 }
 
 function itemActionEntries(item: GameObject, state: GameState) {
-    const itemName = objectName(item, state);
+    const itemName = simpleObjectName(item, state);
     const entries: { key: InventoryActionKey; text: string }[] = [];
     const alreadyWorn = !!((item.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY));
     const stack = item.quan > 1;

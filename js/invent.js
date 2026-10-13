@@ -421,7 +421,7 @@ async function showItemActionMenu(item) {
     });
 }
 function itemActionEntries(item, state) {
-    const itemName = objectName(item, state);
+    const itemName = simpleObjectName(item, state);
     const entries = [];
     const alreadyWorn = !!((item.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY));
     const stack = item.quan > 1;
