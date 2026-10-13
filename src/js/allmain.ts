@@ -1,3 +1,4 @@
+import { rewindEngravingsForSave } from './engrave.js';
 import { finishMonsterHideUnder } from './monster_hiding.js';
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
@@ -3703,6 +3704,7 @@ export async function newgame() {
     // maintenance pass.  Compatibility paths historically hid this by
     // skipping the generic maintenance block altogether.
 
+    if (g.flags.checkpoint ?? true) rewindEngravingsForSave(g.level);
     // welcome() can wrap and wait before moveloop_preamble(). unixmain's
     // discovery-mode notice follows it, also before calendar effects.
     await plineWithContinuation(welcomeText());

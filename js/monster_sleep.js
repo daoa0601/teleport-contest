@@ -14,7 +14,7 @@ export function monsterIsBreathless(monster) {
 }
 export function monsterIsHelpless(monster) {
     return !!(monster.msleeping
-        || monster?.mcanmove === 0 || (monster?.mfrozen ?? 0) > 0);
+        || !monster.mcanmove || (monster.mfrozen ?? 0) > 0);
 }
 export function putMonsterToSleep(monster, turns) {
     if (!monster.mcanmove)

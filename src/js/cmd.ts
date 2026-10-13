@@ -49,6 +49,8 @@ import { senseBuriedObjects } from './buried_object.js';
 import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
+import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
+import { stumbleOntoMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
@@ -106,7 +108,7 @@ import {
 } from './object_call.js';
 import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
-    bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster,
+    bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster,
     monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
     see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject,
@@ -362,6 +364,7 @@ import {
 import {
     chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown,
     payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage,
+    tendedShop,
 } from './shk.js';
 import {
     visiblePriestName,
@@ -7193,6 +7196,26 @@ async function moveOutOfBounds(x: number, y: number): Promise<boolean> {
     return false;
 }
 
+// C hack.c:domove_bump_mon(). The m-prefix spends the step before the
+// destination monster can choose displacement or receive an attack.
+async function bumpIntoMonster(monster: Monster, x: number, y: number): Promise<boolean> {
+    if (!game.context.nopick || game.context.travel) return false;
+    const glyph = glyphAt(x, y);
+    if (!canSpotMonster(monster)
+        && glyph?.kind !== 'invisible' && glyph?.kind !== 'warning') return false;
+
+    if (M_AP_TYPE(monster)
+        && !(game.u.protectionFromShapeChangers || game.protectionFromShapeChangers)
+        && !canSenseMonster(monster)) {
+        await stumbleOntoMimic(monster);
+    } else if (monster.mpeaceful && !heroIsHallucinating(game)) {
+        await plineWithContinuation(`Pardon me, ${monsterName(monster, { article: 'none', exact: true })}.`);
+    } else {
+        await plineWithContinuation(`You move right into ${monsterName(monster)}.`);
+    }
+    return true;
+}
+
 async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Promise<boolean> {
     requirePlayingGame(game);
     const u = game.u;
@@ -7294,8 +7317,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         // after impaired_movement() has changed u.dx/u.dy; a Shift-run which
         // is redirected into the pet therefore stops before do_attack() and
         // its one-in-seven displacement refusal roll.
-        const safeMonster = game.flags.safe_dog !== false
-            && !!monster.mpeaceful
+        const safeMonster = (game.flags.safe_dog ?? true) && !!monster.mpeaceful
             && canSpotMonster(monster)
             && !game.context?.forcefight
             && !confused
@@ -7321,13 +7343,39 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         // step in attack_checks() while preventing another automatic run
         // step after the intervening monster phase.
         if (!safeMonster && game._runState) stopRun(game);
-        if (safeMonster) {
+        if (await bumpIntoMonster(monster, newx, newy)) return true;
+        if (beastChoosesHeroDisplacement(monster, game, newx, newy)) {
+            const ballChainMove = await beginBallAndChainMove(newx, newy);
+            if (ballChainMove?.blocked) {
+                if (ballChainMove.blockedMessage) await pline(ballChainMove.blockedMessage);
+                game.context.move = Number(ballChainMove.consumedTurn);
+                return ballChainMove.consumedTurn;
+            }
+            const oldx = u.ux, oldy = u.uy;
+            u.ux = newx;
+            u.uy = newy;
+            await settleBeastHeroDisplacement(monster, game);
+            if (game.program_state.gameover) return true;
+            return finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove });
+        }
+        if (safeMonster && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
             // C ref: hack.c do_attack()/domove(): a tame monster normally
             // yields to the hero, and ordinary peacefuls share the same
             // displacement path.  Only tame actors flee after refusal.
             const tame = !!(monster.pet || monster.mtame);
-            const yields = rn2(7) !== 0;
-            if (!yields && tame) {
+            const blocked = heroIsPunished() || rn2(7) === 0
+                || (!!monster.wormno && ['baby long worm', 'long worm', 'long worm tail']
+                    .includes(MONSTER_NAME[monster.mnum] ?? ''))
+                || (IS_OBSTRUCTED(game.level.requireAt(u.ux, u.uy).typ)
+                    && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000008));
+            const inShop = !blocked && roomsAt(game.level, monster.mx, monster.my, SHOPBASE)
+                .some(roomno => tendedShop(roomForRoomno(game.level, roomno), game));
+            if ((blocked || inShop) && monster.isshk
+                && !game.context.travel && !game.context.run) {
+                await dopay();
+                return true;
+            }
+            if ((blocked || inShop) && tame) {
                 const flight = await makeMonsterFlee(monster, {
                     turns: rnd(6), announce: false,
                 });
@@ -7339,15 +7387,16 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             const speciesName = monsterInstanceDisplayName(monster);
             const subject = tame ? tameName
                 : monster.name ? speciesName : `the ${speciesName}`;
-            if (!yields) {
+            if (blocked || inShop) {
                 const displayName = subject.charAt(0).toUpperCase()
                     + subject.slice(1);
-                await pline(`You stop.  ${displayName} is in the way!`);
+                await plineWithContinuation(`You stop.  ${displayName} is in the way!`);
+                stopRun(game);
                 return true;
             }
-            if (monster.mfrozen || !monster.mcanmove || monster.msleeping
-                || (MONSTER_MOVE[monster.mnum] === 0 && rn2(6))) {
-                await pline(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
+            if (monster.mfrozen || monster.msleeping || !monster.mcanmove
+                || ((MONSTER_MOVE[monster.mnum] ?? 0) === 0 && rn2(6))) {
+                await plineWithContinuation(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
                 stopRun(game);
                 return true;
             }

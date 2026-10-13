@@ -1,5 +1,6 @@
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 
+import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
@@ -162,6 +163,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         && In_endgame(destinationDepth))) discardMigrations(game);
     else updateMonsterLastMove(game);
     if (!game._levelCache) game._levelCache = new Map();
+    rewindEngravingsForSave(oldLevel);
     game._levelCache.set(
         levelCacheKey(oldDepth), cachedLevelState(oldLevel, oldStairs),
     );
@@ -191,6 +193,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         game.program_state.in_getlev = true;
         try {
             game.level = cached.level;
+            restoreEngravingPointers(cached.level);
             game.stairs = cached.stairs;
             restoreCachedLevelMetadata(cached);
             await restoreCachedMonsterState(cached);
@@ -327,6 +330,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         }
     }
     if (!cached) await creditTouristNewLevel();
+    if (game.flags.checkpoint ?? true) rewindEngravingsForSave(game.level);
     const levelAnnotation = game._levelAnnotations?.get?.(
         `${newDepth.dnum}:${newDepth.dlevel}`,
     );
