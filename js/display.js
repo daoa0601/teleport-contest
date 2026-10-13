@@ -2115,39 +2115,39 @@ export function _statusLine2(refreshLoad = true) {
     }
     if (game.flags?.time)
         line += ` T:${game.moves ?? 1}`;
-    if (heroIsPetrifying(game))
-        line += ' Stone';
-    if (heroIsSliming(game))
-        line += ' Slime';
-    if (u.strangled || (u.strangledTurns ?? 0) > 0)
-        line += ' Strngl';
-    if (heroIsSick(game)) {
-        if ((u.sickType ?? 0) & SICK_VOMITABLE)
-            line += ' FoodPois';
-        if ((u.sickType ?? 0) & SICK_NONVOMITABLE)
-            line += ' TermIll';
-    }
     const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? currentHungerState(game)];
     if (hungerLabel)
         line += ` ${hungerLabel}`;
     const load = refreshLoad ? encumbranceLabel(nearCapacity(game)) : u._encumbrance;
     if (load)
         line += ` ${load}`;
+    // TTY places conditions after hunger and load, sorted by severity and name.
+    if (u.strangled || (u.strangledTurns ?? 0) > 0)
+        line += ' Strngl';
+    const sick = heroIsSick(game);
+    if (sick && ((u.sickType ?? 0) & SICK_VOMITABLE))
+        line += ' FoodPois';
+    if (heroIsSliming(game))
+        line += ' Slime';
+    if (heroIsPetrifying(game))
+        line += ' Stone';
+    if (sick && ((u.sickType ?? 0) & SICK_NONVOMITABLE))
+        line += ' TermIll';
     if (game.blind)
         line += ' Blind';
-    if ((game._statusDeafOverride ?? game.deaf))
-        line += ' Deaf';
-    if (u.stunned || (u.stunnedTurns ?? 0) > 0)
-        line += ' Stun';
     if ((u.confusionTurns ?? 0) > 0)
         line += ' Conf';
-    if (heroIsHallucinating(game))
-        line += ' Hallu';
+    if ((game._statusDeafOverride ?? game.deaf))
+        line += ' Deaf';
     if (polymorphed
         && ((MONSTER_FLAGS1[u.umonnum ?? -1] ?? 0) & M1_FLY))
         line += ' Fly';
+    if (heroIsHallucinating(game))
+        line += ' Hallu';
     if (u.usteed)
         line += ' Ride';
+    if (u.stunned || (u.stunnedTurns ?? 0) > 0)
+        line += ' Stun';
     return line;
 }
 // ── Serialize terminal grid for screen comparison ──

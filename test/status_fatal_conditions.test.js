@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { SICK_NONVOMITABLE, SICK_VOMITABLE } from '../js/const.js';
+import { HUNGRY, SICK_NONVOMITABLE, SICK_VOMITABLE } from '../js/const.js';
 import { bot, flush_screen, plineWithContinuation } from '../js/display.js';
 import { cureHeroSickness, startHeroSickness } from '../js/hero_illness.js';
+import { makeConfused, makeStunned } from '../js/hero_mental_status.js';
 import { setHeroSlimingTimeout } from '../js/slime.js';
 import { fixHeroPetrification, setHeroPetrificationTimeout } from '../js/stoning.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -34,17 +35,24 @@ for (const [type, label] of [
         assert.doesNotMatch(status(), new RegExp(`\\b${label}\\b`));
     });
 }
-void test('simultaneous fatal conditions follow native severity order', async () => {
-    freshObjectRoom();
+void test('fatal conditions follow hunger in native severity order', async () => {
+    freshObjectRoom({ hero: { uhs: HUNGRY } });
     await startHeroSickness({ turns: 20, type: SICK_VOMITABLE | SICK_NONVOMITABLE });
     await setHeroSlimingTimeout(10);
     await setHeroPetrificationTimeout(5);
     await flush_screen(1);
-    assert.match(status(), /Stone Slime FoodPois TermIll/);
+    assert.match(status(), /Hungry FoodPois Slime Stone TermIll/);
     await setHeroPetrificationTimeout(0);
     await setHeroSlimingTimeout(0);
     await flush_screen(1);
     assert.doesNotMatch(status(), /Stone|Slime/);
     assert.match(status(), /FoodPois TermIll/);
+});
+void test('conditions of equal severity use native alphabetical order', async () => {
+    freshObjectRoom();
+    await makeStunned(5, { talk: false });
+    await makeConfused(5, { talk: false });
+    await flush_screen(1);
+    assert.match(status(), /\bConf Stun\b/);
 });
 //# sourceMappingURL=status_fatal_conditions.test.js.map
