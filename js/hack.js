@@ -283,7 +283,6 @@ async function burnLavaBoots(state, publish, protectedObject) {
     boots.wornSlot = null;
     boots.owornmask = 0;
     boots.where = 'gone';
-    findArmorClass(state);
     return true;
 }
 export async function burnAwayHeroSlime(state, publish) {
