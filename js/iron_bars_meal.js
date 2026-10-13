@@ -23,7 +23,7 @@ export async function heroCanEnterIronBars(x, y, state) {
         feel_location(x, y);
     if (heroPassesWalls(state))
         return true;
-    if (state.u.underwater || state.underwater) {
+    if (state.u.uinwater) {
         await pline('There is an obstacle there.');
         return false;
     }

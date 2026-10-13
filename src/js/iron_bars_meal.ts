@@ -24,7 +24,7 @@ export async function heroCanEnterIronBars(x: number, y: number, state: PlayingG
     if (state.level.at(x, y)?.typ !== IRONBARS) return true;
     if (state.blind) feel_location(x, y);
     if (heroPassesWalls(state)) return true;
-    if (state.u.underwater || state.underwater) {
+    if (state.u.uinwater) {
         await pline('There is an obstacle there.');
         return false;
     }

@@ -26,6 +26,24 @@ for (const form of ['human', 'garter snake', 'ghost', 'python', 'brown pudding']
     });
 }
 
+for (const form of ['garter snake', 'rust monster', 'ghost']) {
+    void test(`underwater iron bars ${form === 'ghost' ? 'admit' : 'block'} a ${form}`, async () => {
+        const level = freshObjectRoom({ hero: { uinwater: true } });
+        requirePlayingGame(game);
+        installPolymorphedHero(form);
+        level.requireAt(11, 10).typ = IRONBARS;
+
+        await rhack('l'.charCodeAt(0));
+
+        const admitted = form === 'ghost';
+        assert.equal(game.u.ux, admitted ? 11 : 10);
+        assert.equal(game.context.move, admitted ? 1 : 0);
+        assert.equal(level.requireAt(11, 10).typ, IRONBARS);
+        assert.ok(!game.context.digging?.chew, 'an underwater obstacle cannot be chewed');
+        if (!admitted) assert.equal(game._pending_message, 'There is an obstacle there.');
+    });
+}
+
 for (const form of ['rock mole', 'rust monster', 'black pudding']) {
     void test(`a ${form} must chew through iron bars before moving into them`, async () => {
         const level = freshObjectRoom({ flags: { verbose: true } });
