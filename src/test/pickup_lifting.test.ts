@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { PIT, POOL, TT_PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { pushKey, pushKeys } from '../js/input.js';
+import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_LIFE_SAVING, BOW, CHEST, CLUB, CORPSE, DART, FOOD_RATION,
@@ -20,6 +20,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { answerPrompts } from './support/input-boundaries.js';
 
 function freshPickupGame() {
     freshPlayableRoom({ seed: 32001n });
@@ -393,7 +394,10 @@ void test('an unliftable scare scroll remains unchanged', async () => {
         spe: 0,
     });
 
-    await rhack(','.charCodeAt(0));
+    const input = resetInputState();
+    await answerPrompts(rhack(','.charCodeAt(0)), input, [
+        { prompt: /scare monster[\s\S]*--More--/, keys: ' ' },
+    ]);
 
     assert.equal(scroll.spe, 0);
     assert.equal(floorObjectsAt(requireGameLevel(), 10, 10).includes(scroll), true);
