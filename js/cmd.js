@@ -6304,11 +6304,12 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     const launcher = game.uwep;
     const wieldingSling = !!launcher
         && OBJECT_SUBTYPE[launcher.otyp] === OBJECT_SUBTYPE[SLING];
-    const throwables = (game.inventory || []).filter(item => (item.oclass || objectClassForType(item.otyp))
-        === (wieldingSling ? 13 : 2)
-        && !(item === game.uwep && (item.quantity ?? item.quan ?? 1) === 1));
-    const inventoryLetters = throwables.map(item => item.invlet).join('');
-    const letters = `${heroGoldAmount(game) > 0 ? '$' : ''}${inventoryLetters}`;
+    const throwables = (game.inventory || []).filter(item => {
+        const objectClass = item.oclass || objectClassForType(item.otyp);
+        return (objectClass === 12 || objectClass === (wieldingSling ? 13 : 2))
+            && !(item === game.uwep && (item.quantity ?? item.quan ?? 1) === 1);
+    });
+    const letters = throwables.map(item => item.invlet).join('');
     const prompt = letters
         ? `What do you want to throw? [${letters} or ?*] `
         : 'What do you want to throw? [*] ';
