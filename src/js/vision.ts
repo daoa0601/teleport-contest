@@ -204,6 +204,11 @@ function seenVector(dx: number, dy: number): number {
     return seenv_matrix[dy < 0 ? 0 : dy > 0 ? 2 : 1][dx < 0 ? 0 : dx > 0 ? 2 : 1];
 }
 
+// C display.c:set_seenv(). Touch records the same angle as physical sight.
+export function set_seenv(location: MapLocation, fromX: number, fromY: number, x: number, y: number): void {
+    location.seenv |= seenVector(Math.sign(x - fromX), Math.sign(fromY - y));
+}
+
 function mark_visible_range(output: VisionOutput, row: number, left: number, right: number): void {
     if (left > right) return;
     if (output.kind === 'callback') {

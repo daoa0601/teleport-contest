@@ -12,8 +12,8 @@ import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
-import { cansee, couldsee, vision_recalc } from './vision.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
+import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
@@ -1198,17 +1198,21 @@ export function feel_newsym(x, y) {
 // why a felt floor object can remain in hero memory after a later invisible
 // actor marker is installed elsewhere during the same search.
 export function feel_location(x, y) {
+    if (game.program_state.saving)
+        return;
     const loc = game.level?.at(x, y);
     if (!loc)
         return;
-    const monster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
-        !candidate.dead && (candidate.mhp ?? 1) > 0
-        && candidate.mx === x && candidate.my === y);
+    const monster = monsterAtMapCell(x, y);
     if (loc.remembered_glyph?.kind === 'invisible' && monster)
         return;
     if (restrictedUnderwaterView() && !underwaterTerrain(x, y))
         return;
+    set_seenv(loc, game.u.ux, game.u.uy, x, y);
     if (heroCanReachFloor(game)) {
+        const engraving = engravingAt(x, y);
+        if (engraving && [ENGRAVE, BURN, HEADSTONE].includes(engraving.engr_type))
+            engraving.erevealed = true;
         map_location(x, y, true);
         const ball = game.uball || game.u?.uball;
         const chain = game.uchain || game.u?.uchain;
@@ -1225,18 +1229,62 @@ export function feel_location(x, y) {
             else
                 game.u.bc_felt = (game.u.bc_felt ?? 0) & ~BC_BALL;
         }
-        return;
+        darkenFeltFloor(x, y, loc);
     }
-    // An unreachable floor still permits feeling walls, doors, and boulders, but
-    // leaves smaller floor contents unknown.
-    const boulder = game.level?.objects?.[x]?.[y]?.find(object => object.otyp === BOULDER);
-    if (IS_OBSTRUCTED(loc.typ)
-        || loc.typ === DOOR
-        || boulder) {
-        if (boulder && !IS_OBSTRUCTED(loc.typ))
-            map_object(boulder, true);
-        else
+    else {
+        const boulder = game.level?.objects[x]?.[y]?.find(object => object.otyp === BOULDER);
+        const closedDoor = loc.typ === DOOR && !!(loc.doormask & (D_CLOSED | D_LOCKED));
+        if (IS_OBSTRUCTED(loc.typ) || closedDoor)
             map_background(x, y, true);
+        else if (boulder)
+            map_object(boulder, true);
+        else if (loc.typ === DOOR)
+            map_background(x, y, true);
+        else if (IS_ROOM(loc.typ) || IS_POOL(loc.typ)) {
+            const glyph = loc.remembered_glyph;
+            const forgottenBoulder = glyph?.kind === 'object' && glyph.otyp === BOULDER
+                || glyph?.kind === 'invisible';
+            if (forgottenBoulder && loc.typ !== ROOM)
+                map_background(x, y, true);
+            else if (forgottenBoulder || glyph?.kind === 'terrain'
+                && glyph.glyph !== undefined && glyph.glyph >= cmapToGlyph(CmapSymbol.stone)
+                && glyph.glyph < cmapToGlyph(CmapSymbol.darkroom)) {
+                rememberFeltRoom(x, y, loc);
+            }
+        }
+        else {
+            map_background(x, y, true);
+            darkenFeltFloor(x, y, loc);
+        }
+    }
+    if (monster && (x !== game.u.ux || y !== game.u.uy) && canSenseMonster(monster))
+        newsym(x, y);
+}
+function rememberFeltRoom(x, y, location) {
+    const dark = (game.flags.dark_room ?? true) && game.flags.color !== false
+        && !Is_rogue_level(game.u.uz);
+    const floor = dark || location.waslit;
+    const glyph = {
+        ch: floor ? /^DECgraphics$/i.test(game.symset || '') ? '~' : '.' : ' ',
+        color: dark ? 16 : NO_COLOR,
+        decgfx: floor && /^DECgraphics$/i.test(game.symset || '') && !Is_rogue_level(game.u.uz),
+        kind: 'terrain', terrainName: floor ? 'floor of a room' : 'stone',
+        glyph: cmapToGlyph(dark ? CmapSymbol.darkroom : floor ? CmapSymbol.room : CmapSymbol.stone),
+    };
+    location.remembered_glyph = glyph;
+    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
+}
+function darkenFeltFloor(x, y, location) {
+    const glyph = location.remembered_glyph;
+    if (location.typ === ROOM && glyph?.glyph === cmapToGlyph(CmapSymbol.room)
+        && (!location.waslit || (game.flags.dark_room ?? true) && game.flags.color !== false)) {
+        rememberFeltRoom(x, y, location);
+    }
+    else if (location.typ === CORR && glyph?.glyph === cmapToGlyph(CmapSymbol.litcorr)
+        && !location.waslit) {
+        const corridor = { ...glyph, color: NO_COLOR, glyph: cmapToGlyph(CmapSymbol.corr) };
+        location.remembered_glyph = corridor;
+        show_glyph_cell(x, y, corridor.ch, corridor.color, corridor.decgfx, 0, corridor);
     }
 }
 // ── show_glyph_cell ──

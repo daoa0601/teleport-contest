@@ -158,6 +158,10 @@ function seenVector(dx, dy) {
         throw new RangeError(`Seen direction (${dx}, ${dy}) must be adjacent.`);
     return seenv_matrix[dy < 0 ? 0 : dy > 0 ? 2 : 1][dx < 0 ? 0 : dx > 0 ? 2 : 1];
 }
+// C display.c:set_seenv(). Touch records the same angle as physical sight.
+export function set_seenv(location, fromX, fromY, x, y) {
+    location.seenv |= seenVector(Math.sign(x - fromX), Math.sign(fromY - y));
+}
 function mark_visible_range(output, row, left, right) {
     if (left > right)
         return;

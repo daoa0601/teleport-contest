@@ -6907,6 +6907,14 @@ async function domoveCore(dx, dy, explicitAttempt) {
         return false;
     if (!await heroCanMoveFromTrap(newx, newy))
         return true;
+    // C test_move(DO_MOVE) learns obstructed terrain by touch before trying
+    // to pass through it, open a door, or reject a diagonal doorway entry.
+    if (loc && heroIsBlind(game) && (IS_OBSTRUCTED(loc.typ) || loc.typ === IRONBARS
+        || loc.typ === DOOR && (!!(loc.doormask & (D_CLOSED | D_LOCKED))
+            || !!(dx && dy) && !heroPassesWalls(game)
+                && blocksDiagonalDoor(game.level.at(u.ux, u.uy), loc)))) {
+        feel_location(newx, newy);
+    }
     if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))
         && !heroCanPassWallAt(game, newx, newy)) {
         const fumbling = !!(u?.fumbling || (u?.fumblingTurns || 0) > 0);
