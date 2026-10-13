@@ -1257,8 +1257,13 @@ export function feel_location(x, y) {
             darkenFeltFloor(x, y, loc);
         }
     }
-    if (monster && (x !== game.u.ux || y !== game.u.uy) && canSenseMonster(monster))
-        newsym(x, y);
+    if (monster && (x !== game.u.ux || y !== game.u.uy) && canSenseMonster(monster)) {
+        const located = senseWithTelepathy(monster) || heroWarnsOfMonster(monster);
+        displayMonsterAtCell(monster, x, y, {
+            wormTail: isWormTail(monster, x, y),
+            showAppearance: located, detected: !located,
+        });
+    }
 }
 function rememberFeltRoom(x, y, location) {
     const dark = (game.flags.dark_room ?? true) && game.flags.color !== false
@@ -1551,71 +1556,7 @@ export function newsym(x, y) {
                 trap.tseen = true;
             map_location(x, y, false);
         }
-        // A visible disguise enters memory even when a sense exposes its
-        // owner. Reading glyphAt() must not reroll this display-only choice.
-        const sensed = canSenseMonster(monster)
-            || game.u?.protectionFromShapeChangers
-            || game.protectionFromShapeChangers;
-        if (projection.showAppearance) {
-            if (M_AP_TYPE(monster) === M_AP_OBJECT) {
-                map_object({
-                    ox: x, oy: y,
-                    otyp: mimicAppearance(monster),
-                    oclass: objectClassForType(mimicAppearance(monster)),
-                    corpsenm: monster.mcorpsenm ?? MONSTER_NAME.indexOf('tengu'),
-                    dknown: false,
-                }, !sensed);
-                if (!sensed)
-                    return;
-            }
-            else if (M_AP_TYPE(monster) === M_AP_FURNITURE) {
-                const symbol = MAP_SYMBOLS[mimicAppearance(monster)];
-                if (symbol) {
-                    const glyph = {
-                        ch: symbol.ch, color: symbol.color, decgfx: false,
-                        kind: 'terrain', terrainName: symbol.name,
-                        glyph: cmapToGlyph(mimicAppearance(monster)),
-                    };
-                    loc.remembered_glyph = glyph;
-                    if (!sensed) {
-                        show_glyph_cell(x, y, glyph.ch, glyph.color, false, 0, glyph);
-                        return;
-                    }
-                }
-            }
-            else if (M_AP_TYPE(monster) === M_AP_MONSTER
-                && Number.isInteger(monster.mappearance)) {
-                const mnum = heroIsHallucinating()
-                    ? rn2Display(MONSTER_COLOR.length) : mimicAppearance(monster);
-                const glyph = displayMonsterGlyph(mnum, !!monster.female);
-                show_glyph_cell(x, y, glyph.ch, glyph.color, false, (monster.pet || (monster.mtame ?? 0) > 0)
-                    && game.flags?.hilite_pet ? 1 : 0, glyph);
-                if (!sensed)
-                    return;
-            }
-        }
-        const monsterState = (monster.pet || (monster.mtame ?? 0) > 0) && !heroIsHallucinating()
-            ? 'pet' : projection.detected ? 'detected' : 'normal';
-        if (heroIsHallucinating()) {
-            const displayMnum = rn2Display(MONSTER_COLOR.length);
-            const glyph = displayMonsterGlyph(displayMnum, !!monster.female, monsterState);
-            showMonsterOrWarning(x, y, glyph, monsterDisplayAttribute(monster));
-        }
-        else {
-            const tailGlyph = projection.wormTail ? displayMonsterGlyph(PM_LONG_WORM_TAIL) : null;
-            showMonsterOrWarning(x, y, {
-                ch: tailGlyph?.ch || monster.symbol || '?',
-                color: tailGlyph ? tailGlyph.color
-                    : monster.mnum === 102 ? NO_COLOR
-                        : monster.mnum === 100 || monster.mnum === 239 ? CLR_BROWN
-                            : (MONSTER_COLOR[monster.mnum]
-                                ?? monster.color ?? CLR_GRAY),
-                decgfx: false, kind: 'monster',
-                mnum: projection.wormTail ? PM_LONG_WORM_TAIL : monster.mnum,
-                glyph: monsterGlyphNumber(projection.wormTail ? PM_LONG_WORM_TAIL : monster.mnum, !!monster.female, monsterState),
-            }, monsterDisplayAttribute(monster));
-        }
-        monster.meverseen = 1;
+        displayMonsterAtCell(monster, x, y, projection);
         return;
     }
     const warning = isWormTail(monster, x, y) ? null : warningProjection(monster);
@@ -1650,7 +1591,77 @@ export function newsym(x, y) {
         show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'terrain', terrainName: 'stone', glyph: GlyphOffset.cmapStone });
     }
 }
-// C ref: display.c:see_monsters().  Warning, telepathy, and visible regions
+// C display.c:display_monster(). Sight updates and touch share this renderer,
+// while their callers choose independently which monsters can be projected.
+function displayMonsterAtCell(monster, x, y, projection) {
+    const loc = requireDisplayLocation(x, y);
+    // A visible disguise enters memory even when a sense exposes its
+    // owner. Reading glyphAt() must not reroll this display-only choice.
+    const sensed = canSenseMonster(monster)
+        || game.u?.protectionFromShapeChangers
+        || game.protectionFromShapeChangers;
+    if (projection.showAppearance) {
+        if (M_AP_TYPE(monster) === M_AP_OBJECT) {
+            map_object({
+                ox: x, oy: y,
+                otyp: mimicAppearance(monster),
+                oclass: objectClassForType(mimicAppearance(monster)),
+                corpsenm: monster.mcorpsenm ?? MONSTER_NAME.indexOf('tengu'),
+                dknown: false,
+            }, !sensed);
+            if (!sensed)
+                return;
+        }
+        else if (M_AP_TYPE(monster) === M_AP_FURNITURE) {
+            const symbol = MAP_SYMBOLS[mimicAppearance(monster)];
+            if (symbol) {
+                const glyph = {
+                    ch: symbol.ch, color: symbol.color, decgfx: false,
+                    kind: 'terrain', terrainName: symbol.name,
+                    glyph: cmapToGlyph(mimicAppearance(monster)),
+                };
+                loc.remembered_glyph = glyph;
+                if (!sensed) {
+                    show_glyph_cell(x, y, glyph.ch, glyph.color, false, 0, glyph);
+                    return;
+                }
+            }
+        }
+        else if (M_AP_TYPE(monster) === M_AP_MONSTER
+            && Number.isInteger(monster.mappearance)) {
+            const mnum = heroIsHallucinating()
+                ? rn2Display(MONSTER_COLOR.length) : mimicAppearance(monster);
+            const glyph = displayMonsterGlyph(mnum, !!monster.female);
+            show_glyph_cell(x, y, glyph.ch, glyph.color, false, (monster.pet || (monster.mtame ?? 0) > 0)
+                && game.flags?.hilite_pet ? 1 : 0, glyph);
+            if (!sensed)
+                return;
+        }
+    }
+    const monsterState = (monster.pet || (monster.mtame ?? 0) > 0) && !heroIsHallucinating()
+        ? 'pet' : projection.detected ? 'detected' : 'normal';
+    if (heroIsHallucinating()) {
+        const displayMnum = rn2Display(MONSTER_COLOR.length);
+        const glyph = displayMonsterGlyph(displayMnum, !!monster.female, monsterState);
+        showMonsterOrWarning(x, y, glyph, monsterDisplayAttribute(monster));
+    }
+    else {
+        const tailGlyph = projection.wormTail ? displayMonsterGlyph(PM_LONG_WORM_TAIL) : null;
+        showMonsterOrWarning(x, y, {
+            ch: tailGlyph?.ch || monster.symbol || '?',
+            color: tailGlyph ? tailGlyph.color
+                : monster.mnum === 102 ? NO_COLOR
+                    : monster.mnum === 100 || monster.mnum === 239 ? CLR_BROWN
+                        : (MONSTER_COLOR[monster.mnum]
+                            ?? monster.color ?? CLR_GRAY),
+            decgfx: false, kind: 'monster',
+            mnum: projection.wormTail ? PM_LONG_WORM_TAIL : monster.mnum,
+            glyph: monsterGlyphNumber(projection.wormTail ? PM_LONG_WORM_TAIL : monster.mnum, !!monster.female, monsterState),
+        }, monsterDisplayAttribute(monster));
+    }
+    monster.meverseen = 1;
+}
+// C ref: display.c:see_monsters(). Warning, telepathy, and visible regions
 // can change how a stationary monster is projected when only the hero moves;
 // repainting solely on actor movement leaves stale warning numerals behind.
 export async function see_monsters({ beforeGlow = null } = {}) {
