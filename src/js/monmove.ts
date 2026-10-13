@@ -7173,6 +7173,7 @@ export function resumeDeferredHeroSpell(
         syncBlindness(state);
         state.vision_full_recalc = 1;
         attack.toggledBlindness = !wasBlind;
+        if (!wasBlind && state.blind) state.context.botl = true;
         attack.appliedDamage = 0;
         return attack;
     }
