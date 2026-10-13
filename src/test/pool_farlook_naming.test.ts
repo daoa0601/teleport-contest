@@ -8,10 +8,39 @@ import { game } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { STATUE } from '../js/object_data.js';
 import { races } from '../js/roles.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { createMonsterAt } from './support/monsters.js';
+import { floorObject } from './support/game-objects.js';
+import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+void test('farlook describes the saddle on a tame pony', async () => {
+    freshObjectRoom();
+    await createSaddledSteed('pony', { x: 11, y: 10 });
+    newsym(11, 10);
+
+    assert.equal(await farlookLocationDescription(11, 10), 'tame saddled pony');
+});
+
+void test('automatic farlook describes a hallucinated statue as a creature', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false },
+        hero: { hallucination: true, hallucinationTurns: 10 } });
+    await floorObject(STATUE, 11, 10, { corpsenm: MONSTER_NAME.indexOf('vampire bat') });
+    newsym(11, 10);
+    assert.equal(glyphAt(11, 10)?.kind, 'monster');
+    const input = resetInputState();
+    const choosing = askTeleportDestination();
+    await input.waitUntilBlocked();
+    input.feed('l');
+    await input.waitUntilBlocked();
+    const description = game._pending_message;
+    input.feed('\x1b');
+    await choosing;
+
+    assert.ok(description.length > 0);
+    assert.doesNotMatch(description, /statue/);
+});
 
 void test('automatic position descriptions identify a warning glyph', async () => {
     freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { warning: true } });

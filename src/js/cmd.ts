@@ -4384,7 +4384,7 @@ async function wizardPositionDescription(x: number, y: number): Promise<string> 
     const loc = game.level?.at(x, y);
     if (!loc) return 'unexplored area';
     const glyph = glyphAt(x, y);
-    if (glyph?.kind === 'warning' || glyph?.kind === 'nothing')
+    if (glyph?.kind === 'warning' || glyph?.kind === 'nothing' || glyph?.kind === 'monster')
         return farlookLocationDescription(x, y);
     if (loc.typ === TREE && loc.remembered_glyph) return 'tree';
     if (!loc.remembered_glyph && !cansee(x, y)) return 'unexplored area';
@@ -4541,8 +4541,9 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
         const prefix = hallucinating ? ''
             : monster.mtame ? 'tame '
                 : monster.mpeaceful ? 'peaceful ' : '';
-        const name = hallucinating
-            ? randomDisplayMonsterName() : monsterInstanceDisplayName(monster);
+        const name = monsterName(monster, {
+            state: game, article: 'none', suppressIt: true, suppressSaddle: false,
+        });
         let condition = '';
         if (!hallucinating) {
             if ((monster.mfrozen ?? 0) > 0)
@@ -4561,6 +4562,9 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
         const hiddenText = hidden.length ? `, ${hidden.join(', ')}` : '';
         return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}${hiddenText}`;
     }
+    // Hallucinated statues project monster glyphs without a live monster.
+    if (glyph?.kind === 'monster' && heroIsHallucinating(game))
+        return randomDisplayMonsterName();
 
     const trap = game.level?.traps?.find(candidate =>
         candidate.tx === x && candidate.ty === y && candidate.tseen);
