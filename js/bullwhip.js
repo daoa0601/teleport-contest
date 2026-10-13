@@ -1,6 +1,6 @@
 // Applying a bullwhip.
 // C ref: apply.c use_whip().
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterAtPosition } from './monster_location.js';
 import { currentAttribute } from './attrib.js';
 import { observeObjectForNaming } from './objnam.js';
 import { heroFootName, heroHandName, monsterHandName, } from './body_parts.js';
@@ -98,9 +98,7 @@ function applyImpairedDirection(direction, state) {
     return { ...direction, ...redirected };
 }
 function monsterAt(x, y, state) {
-    return (state.level?.monsters || []).find(monster => monsterHasMapPosition(monster, state) &&
-        !monster.dead && (monster.mhp ?? 1) > 0
-        && monster.mx === x && monster.my === y) || null;
+    return state.level ? monsterAtPosition(state.level, x, y) : null;
 }
 function isHorseCorpse(object) {
     if (object?.otyp !== CORPSE)
