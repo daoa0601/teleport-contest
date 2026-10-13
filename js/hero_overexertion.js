@@ -25,6 +25,7 @@ export async function checkHeroAttackOverexertion(state = game) {
         const hitPoints = state.u?.[field] ?? 0;
         if (hitPoints > 1) {
             state.u[field] = hitPoints - 1;
+            state.context.botl = true;
         }
         else {
             await pline('You pass out from exertion!');
