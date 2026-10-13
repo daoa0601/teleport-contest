@@ -226,7 +226,12 @@ async function requestGenocideSpecies(really: boolean): Promise<number | null> {
                 ? "Type the name of a type of monster or 'none'." : 'No type of monster specified.');
             continue;
         }
-        if (declinedGenocide(response)) return really ? null : rndmonstAdj();
+        if (declinedGenocide(response)) {
+            const species = really ? null : rndmonstAdj();
+            if (species !== null) return species;
+            recordGameLogEvent('declined to perform genocide', { state });
+            return null;
+        }
         if (response === '?' || response === "'?'") {
             await listGenocided('g');
             attempt--;
@@ -270,7 +275,10 @@ async function requestGenocideClass(): Promise<number | null> {
                 : 'No class of monsters specified.');
             continue;
         }
-        if (declinedGenocide(response)) return null;
+        if (declinedGenocide(response)) {
+            recordGameLogEvent('declined to perform class genocide', { state });
+            return null;
+        }
         if (response === '?' || response === "'?'") {
             await listGenocided('g');
             attempt--;

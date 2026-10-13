@@ -16,6 +16,7 @@ import { cansee, vision_recalc } from './vision.js';
 import { heroIsDeaf } from './senses.js';
 import { surfaceName } from './terrain_name.js';
 import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterName } from './monster_name.js';
 import { dismountHero, heroCanRideSteed } from './steed.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { rnl } from './rng.js';
@@ -214,6 +215,9 @@ function bestForSlot(monster: Monster, slot: MonsterArmorSlot, creation: boolean
 
 async function wearSlot(monster: Monster, slot: MonsterArmorSlot, creation: boolean, state: GameState, publish: MessagePublisher): Promise<MonsterArmorChange | null> {
     if (monster.mfrozen) return null;
+    // m_dowear_type() saves a name before checking the slot, even when
+    // creation suppresses dressing messages. Hallucination advances here.
+    if (creation) monsterName(monster, { state });
     if (!slotAllowed(monster, slot)) return null;
     if (slot === 'uarmu' && ((monster.misc_worn_check ?? 0) & W_ARM))
         return null;
@@ -291,21 +295,11 @@ export async function initializeMonsterArmor(monster: Monster, state: GameState 
     if (!monsterCanDress(monster, true)) return [];
     monster.misc_worn_check ??= 0;
     const changes = [];
-    for (const slot of WEAR_ORDER) {
+    for (const slot of monsterCreationWearSlots(monster)) {
         const change = await wearSlot(monster, slot, true, state, plineWithContinuation);
         if (change) changes.push(change);
     }
     return changes;
-}
-
-// m_dowear_type() reads the monster's name before every armor check, even
-// during creation when it prints no dressing message. Hallucinated names use
-// the display RNG, so creation must make the same reads.
-export function nameMonsterForCreationArmorChecks(monster: Monster, nameMonster: ((monster: Monster, slot: MonsterArmorSlot) => unknown) | null | undefined): number {
-    if (typeof nameMonster !== 'function') return 0;
-    const slots = monsterCreationWearSlots(monster);
-    for (const slot of slots) nameMonster(monster, slot);
-    return slots.length;
 }
 
 export async function adjustMonsterClothingAfterPolymorph(

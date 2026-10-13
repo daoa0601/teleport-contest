@@ -7,18 +7,19 @@ export const PM_HUMAN_ZOMBIE = 244;
 export const PM_DOPPELGANGER = 270;
 const PM_ANGEL = 123;
 const PM_GUARD = 272;
+const PM_SHOPKEEPER = 271;
 const PM_ALIGNED_CLERIC = 275;
 const PM_HIGH_CLERIC = 276;
 const PM_LONG_WORM = 114;
 const PM_LONG_WORM_TAIL = 330;
-export function revivalReplacement(mnum, body) {
+export function revivalReplacement(mnum, body, revival = true) {
     if ([PM_GUARD, PM_HIGH_CLERIC, PM_ALIGNED_CLERIC, PM_ANGEL]
-        .includes(mnum))
+        .includes(mnum) || mnum === PM_SHOPKEEPER && !revival)
         return PM_HUMAN_ZOMBIE;
     if (mnum === PM_LONG_WORM_TAIL)
         return PM_LONG_WORM;
     if ((MONSTER_GENO[mnum] ?? 0) & G_UNIQ
-        && !body.oextra?.omonst)
+        && !body?.oextra?.omonst)
         return PM_DOPPELGANGER;
     return null;
 }

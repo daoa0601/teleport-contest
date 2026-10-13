@@ -212,7 +212,6 @@ import {
     canSpotMonster,
     map_invisible,
     newsym,
-    randomDisplayMonsterName,
     randomDisplayMonsterSubject,
     plineWithContinuation,
 } from './display.js';
@@ -377,10 +376,7 @@ import { wipeEngravingAt } from './engrave.js';
 import { moveVaultGuard } from './vault.js';
 import { afterShopkeeperMove, checkSpecialRoom, shopGreeting, shopkeeperInOwnShop } from './shk.js';
 import { shopkeeperIsMuted } from './shop_loss.js';
-import {
-    findMonsterArmorClass,
-    nameMonsterForCreationArmorChecks,
-} from './monworn.js';
+import { findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 import {
@@ -7570,9 +7566,6 @@ async function createWizardClone(state: PlayingGameState) {
     if (!clone) return null;
     newsym(clone.mx, clone.my);
     const hallucinating = heroIsHallucinating(state);
-    if (hallucinating) {
-        nameMonsterForCreationArmorChecks(clone, () => randomDisplayMonsterName());
-    }
     // makemon() repaints after the complete creation wear pass, then formats
     // its visible announcement.  clonewiz() performs another repaint later,
     // after fake-Amulet and wizapp state have been installed.
