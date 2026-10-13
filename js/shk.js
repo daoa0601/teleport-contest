@@ -926,19 +926,23 @@ export function updateUnpaidObjectPrice(object, state = game) {
         return;
     billed.entry.price = Math.max(billed.entry.price, shopObjectUnitCost(object, billed.resident, state));
 }
-// C shk.c:Shk_Your(). The returned prefix includes its separator; a corpse
+// C shk.c:shk_your()/Shk_Your(). The returned prefix includes its separator; a corpse
 // of a personally named monster has no prefix or separator at all.
-export function objectOwnershipPrefix(object, state = game) {
+export function objectOwnershipPrefix(object, state = game, { capitalized = true } = {}) {
     const species = object.corpsenm;
     if (object.otyp === CORPSE && species !== undefined && MONSTER_NAME[species] !== undefined) {
         if ((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME)
             return '';
         if (((MONSTER_GENO[species] ?? 0) & G_UNIQ)
             && !['high cleric', 'long worm tail'].includes(MONSTER_NAME[species]))
-            return 'The ';
+            return capitalized ? 'The ' : 'the ';
     }
-    const owner = carriedObjectOwner(object, state);
-    return `${owner.charAt(0).toUpperCase()}${owner.slice(1)} `;
+    let owner = carriedObjectOwner(object, state);
+    if (capitalized)
+        owner = owner.charAt(0).toUpperCase() + owner.slice(1);
+    else if (owner === 'Your' || owner === 'The')
+        owner = owner.toLowerCase();
+    return `${owner} `;
 }
 // C shk.c:shk_owns() and mon_owns(). Shop ownership takes
 // precedence over the carrier, using the object's location rather than ours.

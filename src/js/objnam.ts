@@ -6,7 +6,7 @@ import type { GameState, Fruit } from './game_state.js';
 import type { GameObject, ObjectBlessing } from './object_types.js';
 import type { Artifact } from './artifacts.js';
 import { fruitFromIndex, fruitFromName, matchWishedFruit } from './fruit.js';
-import { carriedObjectOwner, objectTypeKnown } from './shk.js';
+import { carriedObjectOwner, objectOwnershipPrefix, objectTypeKnown } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { mkobj, mksobj, rndClass } from './mklev.js';
 import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, SPE_LIM } from './const.js';
@@ -546,13 +546,11 @@ export function simpleObjectNameWithArticle(object: ObjectNameView, state: GameS
 export function ownedObjectName(
     object: GameObject, state: GameState = game, { capitalized = true } = {},
 ): string {
-    let owner = carriedObjectOwner(object, state);
-    if (!capitalized && (owner === 'Your' || owner === 'The'))
-        owner = owner.toLowerCase();
+    const prefix = objectOwnershipPrefix(object, state, { capitalized });
     const quantity = object.quan ?? object.quantity ?? 1;
     // yname() uses cxname(): corpses retain their species and plural suffix.
     const noun = object.otyp === CORPSE ? corpseName(object) : objectName(object, state);
-    const name = `${owner} ${quantity === 1 || object.otyp === CORPSE
+    const name = `${prefix}${quantity === 1 || object.otyp === CORPSE
         ? noun : pluralizeObjectNoun(object, noun)}`;
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }

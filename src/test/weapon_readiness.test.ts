@@ -90,6 +90,26 @@ for (const quantity of [1, 2]) {
     });
 }
 
+for (const species of ['Medusa', 'Oracle', 'Wizard of Yendor']) {
+    void test(`bashing with a partly eaten ${species} corpse omits hero ownership`, async () => {
+        const messages = await combatRoom();
+        // A partly eaten human-sized corpse is light enough to fight with.
+        const corpse = await addInventoryObject(CORPSE, {
+            corpsenm: MONSTER_NAME.indexOf(species), oeaten: 100,
+        });
+        await wield(corpse);
+        await text(messages);
+
+        await rhack('l'.charCodeAt(0));
+
+        // Native yname() keeps the articles from both shk_your() and cxname().
+        const name = species === 'Medusa' ? species : `the the ${species}`;
+        const announcement = `You begin bashing monsters with ${name}'s corpse.`;
+        const output = await text(messages);
+        assert.ok(output.includes(announcement), `Expected: ${announcement}\nReceived: ${output}`);
+    });
+}
+
 for (const [name, type] of [['bow', BOW], ['unmounted halberd', OBJECT_NAMES.indexOf('halberd')]] as const) {
     void test(`using a ${name} in melee announces bashing once`, async () => {
         const messages = await combatRoom();
