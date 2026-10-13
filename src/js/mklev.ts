@@ -3773,7 +3773,6 @@ export async function mklev(): Promise<void> {
     g.in_mklev = true;
     await makelevel();
     await currentLuaLifecycle().runCallbacks(g, 'level_enter');
-    countLevelFeatures();
     await level_finalize_topology();
     g.in_mklev = false;
 }
@@ -3971,12 +3970,16 @@ function setLevelTerrainType(x: number, y: number, typ: number): boolean {
         loc.arboreal_sdoor = 1;
         return true;
     }
+    const oldType = loc.typ;
     loc.typ = typ;
     if (IS_LAVA(typ)) loc.lit = true;
     if (typ === ICE && game._activeSpecialLevel?.levelInitialized) {
         loc.icedpool = game._activeSpecialLevel.icedPools
             ? ICED_POOL : ICED_MOAT;
     }
+    // C mkmaze.c:set_levltyp() recounts when fountain or sink membership changes.
+    if ((oldType === FOUNTAIN) !== (typ === FOUNTAIN)
+        || (oldType === SINK) !== (typ === SINK)) countLevelFeatures();
     return true;
 }
 
@@ -5740,17 +5743,13 @@ async function createLuaFeature(
         const loc = level.at(
             context.xstart + point.x, context.ystart + point.y,
         );
-        if (loc) {
+        if (loc && !IS_FURNITURE(loc.typ)) {
             loc.typ = featureType;
-            if (featureType === FOUNTAIN) level.flags.nfountains++;
-            else if (featureType === SINK) level.flags.nsinks++;
         }
         return;
     }
-    if (await specialFeatureOfType(context, featureType)) {
-        if (featureType === FOUNTAIN) level.flags.nfountains++;
-        else if (featureType === SINK) level.flags.nsinks++;
-    }
+    // C sp_lev.c:sel_set_feature() writes terrain without updating counters.
+    await specialFeatureOfType(context, featureType);
 }
 
 function noncoalignedSpecialAlignment() {
@@ -6813,6 +6812,7 @@ function createLuaLevelSession() {
             const allowedFlips = currentLevel().allowFlips;
             if (allowedFlips === undefined) throw new Error('Lua level flip flags are uninitialized');
             flipSpecialLevelRandom(allowedFlips);
+            countLevelFeatures();
             if (currentLevel().solidify) solidifyLuaMap(mappedCells);
             flipLuaRegions(currentLevel());
         },
@@ -10228,7 +10228,7 @@ function mkfount(croom: Room): void {
     if (!find_okay_roompos(croom, pos)) return;
     const loc = level.at(pos.x, pos.y);
     if (loc) {
-        loc.typ = FOUNTAIN;
+        if (!setLevelTerrainType(pos.x, pos.y, FOUNTAIN)) return;
         if (!rn2(7)) loc.blessedftn = 1;
         level.flags.nfountains++;
     }
@@ -10324,7 +10324,7 @@ export async function fill_ordinary_room(croom: Room | null | undefined, bonus_i
     if (!rn2(60)) {
         if (find_okay_roompos(croom, pos)) {
             const loc = level.at(pos.x, pos.y);
-            if (loc) { loc.typ = SINK; level.flags.nsinks = (level.flags.nsinks || 0) + 1; }
+            if (loc && setLevelTerrainType(pos.x, pos.y, SINK)) level.flags.nsinks++;
         }
     }
     // Altar

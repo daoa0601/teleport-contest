@@ -3696,7 +3696,6 @@ export async function mklev() {
     g.in_mklev = true;
     await makelevel();
     await currentLuaLifecycle().runCallbacks(g, 'level_enter');
-    countLevelFeatures();
     await level_finalize_topology();
     g.in_mklev = false;
 }
@@ -3897,6 +3896,7 @@ function setLevelTerrainType(x, y, typ) {
         loc.arboreal_sdoor = 1;
         return true;
     }
+    const oldType = loc.typ;
     loc.typ = typ;
     if (IS_LAVA(typ))
         loc.lit = true;
@@ -3904,6 +3904,10 @@ function setLevelTerrainType(x, y, typ) {
         loc.icedpool = game._activeSpecialLevel.icedPools
             ? ICED_POOL : ICED_MOAT;
     }
+    // C mkmaze.c:set_levltyp() recounts when fountain or sink membership changes.
+    if ((oldType === FOUNTAIN) !== (typ === FOUNTAIN)
+        || (oldType === SINK) !== (typ === SINK))
+        countLevelFeatures();
     return true;
 }
 function setLevelTerrainLit(x, y, typ, lit = -2) {
@@ -5605,21 +5609,13 @@ async function createLuaFeature(context, { type, point }) {
         throw new Error(`unknown Lua feature ${type}`);
     if (point) {
         const loc = level.at(context.xstart + point.x, context.ystart + point.y);
-        if (loc) {
+        if (loc && !IS_FURNITURE(loc.typ)) {
             loc.typ = featureType;
-            if (featureType === FOUNTAIN)
-                level.flags.nfountains++;
-            else if (featureType === SINK)
-                level.flags.nsinks++;
         }
         return;
     }
-    if (await specialFeatureOfType(context, featureType)) {
-        if (featureType === FOUNTAIN)
-            level.flags.nfountains++;
-        else if (featureType === SINK)
-            level.flags.nsinks++;
-    }
+    // C sp_lev.c:sel_set_feature() writes terrain without updating counters.
+    await specialFeatureOfType(context, featureType);
 }
 function noncoalignedSpecialAlignment() {
     const original = game.u?.ualignbase?.[1]
@@ -6653,6 +6649,7 @@ function createLuaLevelSession() {
             if (allowedFlips === undefined)
                 throw new Error('Lua level flip flags are uninitialized');
             flipSpecialLevelRandom(allowedFlips);
+            countLevelFeatures();
             if (currentLevel().solidify)
                 solidifyLuaMap(mappedCells);
             flipLuaRegions(currentLevel());
@@ -10254,7 +10251,8 @@ function mkfount(croom) {
         return;
     const loc = level.at(pos.x, pos.y);
     if (loc) {
-        loc.typ = FOUNTAIN;
+        if (!setLevelTerrainType(pos.x, pos.y, FOUNTAIN))
+            return;
         if (!rn2(7))
             loc.blessedftn = 1;
         level.flags.nfountains++;
@@ -10357,10 +10355,8 @@ export async function fill_ordinary_room(croom, bonus_items) {
     if (!rn2(60)) {
         if (find_okay_roompos(croom, pos)) {
             const loc = level.at(pos.x, pos.y);
-            if (loc) {
-                loc.typ = SINK;
-                level.flags.nsinks = (level.flags.nsinks || 0) + 1;
-            }
+            if (loc && setLevelTerrainType(pos.x, pos.y, SINK))
+                level.flags.nsinks++;
         }
     }
     // Altar
