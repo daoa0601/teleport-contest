@@ -703,6 +703,10 @@ async function finishInitialTurnMaintenanceAfterIntervention(
     const delayedAction = game._delayedAction;
     if (delayedAction && delayedAction.remainingGlobalTurns > 0) {
         delayedAction.remainingGlobalTurns--;
+        // A later theft uses nomul() to preserve the remaining delay.
+        // Keep its negative multi current as each global turn elapses.
+        if (delayedAction.kind === 'steal')
+            game.multi = -delayedAction.remainingGlobalTurns;
         if (delayedAction.remainingGlobalTurns === 0)
             delayedAction.ready = true;
     }
