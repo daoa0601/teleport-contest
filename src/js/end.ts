@@ -194,9 +194,10 @@ export async function restoreHeroAfterDeath({ deathType = null }: RevivalOptions
     // end.c:savelife() replaces any earlier negative multi (including a
     // monster paralysis spell) with exactly -1.  The interrupted actor can
     // finish its remaining attack slots, but no older helpless interval may
-    // allocate another autonomous monster turn afterward.  Its visible
-    // nomovemsg is projected by allmain's debug-death continuation.
+    // allocate another autonomous monster turn afterward. The shared
+    // helplessness recovery publishes nomovemsg when that turn ends.
     endVoluntaryMultiTurn(game);
+    game.multi = -1;
     game._helplessTurns = 1;
     game._helplessReason = 'attempting to cheat Death';
     game._helplessDoneMessage = 'You survived that attempt on your life.';
@@ -247,7 +248,6 @@ export async function finishHeroDeath({
         if (deathType === GENOCIDED) {
             await plineWithContinuation('Unfortunately you are still genocided...');
         } else {
-            game._deathSurvivedMessagePending = true;
             return false;
         }
     }
@@ -258,7 +258,6 @@ export async function finishHeroDeath({
             await plineWithContinuation("OK, so you don't die.");
             await restoreHeroAfterDeath({ deathType });
             if (game.program_state.gameover) return true;
-            game._deathSurvivedMessagePending = true;
             return false;
         }
     }

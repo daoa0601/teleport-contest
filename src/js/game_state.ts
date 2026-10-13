@@ -359,9 +359,6 @@ export interface GameState {
     _mimicMealMessage?: string | null;
     _queuedHelplessRecoveryMessage?: string | null;
     _helplessRunmodeDelayPending?: number | null;
-    _deathSurvivalHeroTookTimePending?: number | null;
-    _deathSurvivalRunmodeDelayPending?: boolean;
-    _deathSurvivedMessagePending?: boolean;
     _prayerAlignment?: number;
     _prayerTrouble?: PrayerTrouble;
     _prayerOutcome?: PrayerOutcome;

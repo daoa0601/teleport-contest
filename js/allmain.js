@@ -492,10 +492,6 @@ function finishOrDeferHeroTookTimeRng(sourceTurn) {
         game._vaultHeroTookTimePending = sourceTurn;
         return;
     }
-    if (game._deathSurvivedMessagePending) {
-        game._deathSurvivalHeroTookTimePending = sourceTurn;
-        return;
-    }
     finishHeroTookTimeRng(sourceTurn);
 }
 async function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
@@ -519,8 +515,7 @@ async function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
     // helplessness so fast heroes and multi-round movement rations retain the
     // same boundary.
     if (game._helplessTurns !== undefined && game._helplessTurns > 0) {
-        if (!game._deathSurvivedMessagePending)
-            game._helplessRunmodeDelayPending = sourceTurn;
+        game._helplessRunmodeDelayPending = sourceTurn;
         game._helplessTurns--;
         game.multi = -game._helplessTurns;
         if (game._helplessTurns === 0) {
@@ -1418,7 +1413,6 @@ export async function finishHeroHelplessness(messageOverride, state = game) {
     state._helplessTurns = 0;
     state._queuedHelplessRecoveryMessage = null;
     const message = messageOverride ?? state._helplessDoneMessage ?? 'You can move again.';
-    state._deathSurvivedMessagePending = false;
     if (message)
         await plineWithContinuation(message);
     state.u.usleep = 0;
@@ -2078,21 +2072,6 @@ function resolveDeferredHeroGeyser(action, heroAttack) {
         ? Math.trunc((originalDamage + 1) / 2) : originalDamage;
     applyHeroSpellDamage(heroAttack, appliedDamage, game);
     heroAttack.deferredGeyserSpell = false;
-}
-async function finishDeathSurvivalMessage(g = game) {
-    if (!g._deathSurvivedMessagePending
-        || g._heroTimePending
-        || g.program_state?.gameover)
-        return;
-    const runmodeDelayPending = !!g._deathSurvivalRunmodeDelayPending;
-    delete g._deathSurvivalRunmodeDelayPending;
-    await captureRunmodeDelay(g, runmodeDelayPending);
-    g._deathSurvivedMessagePending = false;
-    await plineWithContinuation('You survived that attempt on your life.');
-    if (g._deathSurvivalHeroTookTimePending != null) {
-        finishHeroTookTimeRng(g._deathSurvivalHeroTookTimePending);
-        g._deathSurvivalHeroTookTimePending = null;
-    }
 }
 async function finishHeroDeathAfterMonsterMessage(options) {
     // losehp() enters urgent_pline(), whose map flush precedes paging the
@@ -3376,12 +3355,6 @@ export async function moveloop_core() {
         if (g.program_state?.gameover)
             return;
     }
-    // C end.c installs the declined-debug-death recovery text as nomovemsg.
-    // The interrupted monster finishes every remaining attack slot, then
-    // moveloop completes the actor scan and any required global allocation
-    // before unmul() tries to append that text.  Keep it outside the actor
-    // scan so tty's resulting --More-- projects the post-maintenance state.
-    await finishDeathSurvivalMessage(g);
     // allmain.c's once-per-player-input Amulet check follows all elapsed
     // monster/global work and precedes find_ac()/vision/input.  A level
     // teleport can finish several arrival pagers before returning here; the
