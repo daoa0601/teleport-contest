@@ -1,4 +1,5 @@
 import { monsterFireDescription } from './monster_fire_description.js';
+import { bot } from './display.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { recorderLocalHour } from './calendar.js';
 // Monster movement-ration state, movement, and combat.
@@ -5810,6 +5811,9 @@ export async function completeHeroAttackSlot(action, state, random = rn2, rollDi
             result |= M_ATTK_AGR_DONE;
     }
     sequence.results[attack.attackIndex] = result;
+    // C mattacku() commits pending status before the next attack slot.
+    if (state === game && state.context.botl)
+        await bot();
     if (attack.kind === 'hero-attack' && attack.skipBrainDrain)
         sequence.skipBrainDrain = true;
     if (result === M_ATTK_HIT &&
