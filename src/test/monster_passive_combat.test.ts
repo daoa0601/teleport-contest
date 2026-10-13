@@ -5,7 +5,7 @@ import { MSLOW, NO_MINVENT, W_ARMS, W_WEP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { runMonsterAction } from '../js/monmove.js';
+import { attackMonsterWithMonster, runMonsterAction } from '../js/monmove.js';
 import { DAGGER, SHIELD_OF_REFLECTION } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
@@ -48,11 +48,13 @@ void test('an acid passive can corrode a weapon even when the attacker misses', 
 
 for (const reflected of [false, true]) {
     void test(`a floating eye ${reflected ? 'cannot paralyze a reflecting attacker' : 'paralyzes its attacker'}`, async () => {
-        const { attacker } = await freshFight('floating eye');
+        const { attacker, defender } = await freshFight('floating eye');
         requirePlayingGame(game);
         if (reflected) await equipMonsterObject(attacker, await knownObject(SHIELD_OF_REFLECTION), W_ARMS);
 
-        await runMonsterAction(attacker, game, () => 1, count => count, () => 1);
+        await attackMonsterWithMonster(attacker, defender, {
+            state: game, random: () => 1, rollDice: count => count, rollOne: () => 1,
+        });
 
         assert.equal(!!attacker.mcanmove, reflected);
         assert.equal((attacker.mfrozen ?? 0) > 0, !reflected);

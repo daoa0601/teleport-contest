@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, M_SEEN_MAGR, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, FOUNTAIN, GRAVE, HOLE, ICE, LADDER, MOAT, PIT, POOL, ROOM, STAIRS, STONE, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, } from '../js/const.js';
 import { digCheck, digCheckFailMessage, digHole, digUpGrave, liquidFlow, spotChecks, } from '../js/digging_terrain.js';
 import { game } from '../js/gstate.js';
+import { placeMonsterAt } from '../js/monster_location.js';
 import { pushKeys } from '../js/input.js';
 import { BOULDER, CORPSE, LEASH } from '../js/object_data.js';
 import { LEVEL_TIMER_KIND, scheduleLevelTimer, } from '../js/object_timers.js';
@@ -193,7 +194,8 @@ void test('a magical trap explodes inside the engulfer only', async () => {
     const level = heroRoom();
     requireFixtureGame(game);
     game.u.uhp = game.u.uhpmax = 1000;
-    const engulfer = await createMonsterAt('purple worm', 10, 10);
+    const engulfer = await createMonsterAt('purple worm', 11, 10);
+    placeMonsterAt(engulfer, game.u.ux, game.u.uy);
     engulfer.mhp = engulfer.mhpmax = 1000;
     const bystander = await createMonsterAt('giant ant', 9, 10);
     bystander.mhp = bystander.mhpmax = 1000;

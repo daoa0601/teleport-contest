@@ -202,6 +202,7 @@ void test('bashing with a mirror can break it and reduce luck', async () => {
 void test('bashing with a camera can release a demon without hurting the monster', async () => {
     const { level, monster: jackal } = await installMeleeArena('tourist', 'jackal', { heroHitBonus: 100, msleeping: 1 });
     requireFixtureGame(game);
+    level.requireAt(9, 10).typ = ROOM;
     const camera = await equipWeapon('expensive camera');
     game.u.acurr.a[A_STR] = 18;
     game.u.udaminc = 5;

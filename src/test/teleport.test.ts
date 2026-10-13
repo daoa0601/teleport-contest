@@ -8,6 +8,7 @@ import {
     NO_MINVENT, PIT, ROOM, TELEP_TRAP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { placeMonsterAt } from '../js/monster_location.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
@@ -129,6 +130,7 @@ void test('monster relocation searches the map after random attempts fail', asyn
     state.level.requireAt(10, 10).typ = ROOM;
     state.level.requireAt(40, 10).typ = ROOM;
     const monster = await createMonsterAt('little dog', 10, 10);
+    placeMonsterAt(monster, 10, 10);
 
     const relocation = await randomMonsterRelocation(monster, { state, calls: [], random: () => 0, rollOne: () => 1 });
 

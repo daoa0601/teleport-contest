@@ -19,6 +19,7 @@ import {
     spotChecks,
 } from '../js/digging_terrain.js';
 import { game } from '../js/gstate.js';
+import { placeMonsterAt } from '../js/monster_location.js';
 import { pushKeys } from '../js/input.js';
 import { BOULDER, CORPSE, LEASH } from '../js/object_data.js';
 import {
@@ -252,7 +253,8 @@ void test('a magical trap explodes inside the engulfer only', async () => {
     const level = heroRoom();
     requireFixtureGame(game);
     game.u.uhp = game.u.uhpmax = 1000;
-    const engulfer = await createMonsterAt('purple worm', 10, 10);
+    const engulfer = await createMonsterAt('purple worm', 11, 10);
+    placeMonsterAt(engulfer, game.u.ux, game.u.uy);
     engulfer.mhp = engulfer.mhpmax = 1000;
     const bystander = await createMonsterAt('giant ant', 9, 10);
     bystander.mhp = bystander.mhpmax = 1000;
