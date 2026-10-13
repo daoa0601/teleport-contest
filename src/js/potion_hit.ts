@@ -455,8 +455,14 @@ function monsterHasSleepDefense(monster: Monster) {
 }
 
 async function installPotionHelplessness(state: GameState, duration: number, reason: string) {
-    endVoluntaryMultiTurn(state);
-    state._helplessTurns = duration;
+    // nomul() keeps a longer involuntary delay. The caller still replaces
+    // its reason and recovery message, even when nomul() returns early.
+    if ((state._helplessTurns ?? 0) <= duration) {
+        endVoluntaryMultiTurn(state);
+        state.u.invulnerable = false;
+        state.u.usleep = 0;
+        state._helplessTurns = duration;
+    }
     state._helplessReason = reason;
     state._helplessDoneMessage = 'You can move again.';
     await exerciseAttribute(A_DEX, false, state);
