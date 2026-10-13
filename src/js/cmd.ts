@@ -1,4 +1,5 @@
 import { monsterHiddenConditions } from './monster_status.js';
+import { visibleRegionAt } from './regions.js';
 import type { ChoiceMenuItem } from './windows.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
 import type { GameState } from './game_state.js';
@@ -4452,9 +4453,11 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
                 condition = ', meditating';
         }
         const tail = monster.mx !== x || monster.my !== y;
-        const hidden = await monsterHiddenConditions(monster, game, {
-            showAlternateMonster: false,
-        });
+        // look_at_monster() gates hidden details on the selected square,
+        // which can be a worm tail outside the head's cloud.
+        const hidden = monster.mundetected || M_AP_TYPE(monster) || visibleRegionAt(game, x, y)
+            ? await monsterHiddenConditions(monster, game, { showAlternateMonster: false })
+            : [];
         const hiddenText = hidden.length ? `, ${hidden.join(', ')}` : '';
         return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}${hiddenText}`;
     }

@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { M_AP_FURNITURE, M_AP_OBJECT, MM_NOGRP, NO_MINVENT } from '../js/const.js';
+import { M_AP_FURNITURE, M_AP_OBJECT, MM_NOGRP, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { farlookLocationDescription } from '../js/cmd.js';
 import { newsym } from '../js/display.js';
+import { game } from '../js/gstate.js';
 import { CHEST } from '../js/object_data.js';
 import { MAP_SYMBOLS } from '../js/map_symbols.js';
+import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -30,4 +32,17 @@ void test('farlook names a sensed furniture disguise', async () => {
     newsym(11, 10);
 
     assert.equal(await farlookLocationDescription(11, 10), 'small mimic, mimicking a staircase down');
+});
+
+void test('farlook at a clear worm tail does not report the cloud around its head', async () => {
+    freshObjectRoom();
+    const worm = await createMonsterAt('long worm', 11, 10, MM_NOGRP | MM_NOTAIL | NO_MINVENT);
+    worm.mpeaceful = false;
+    worm.wormSegments = [{ x: 12, y: 10 }];
+    createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
+    newsym(11, 10);
+    newsym(12, 10);
+
+    assert.equal(await farlookLocationDescription(11, 10), 'long worm, in a cloud of vapor');
+    assert.equal(await farlookLocationDescription(12, 10), 'tail of a long worm');
 });
