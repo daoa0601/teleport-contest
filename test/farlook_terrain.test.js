@@ -4,6 +4,7 @@ import { farlookLocationDescription } from '../js/cmd.js';
 import { ICE, LA_DOWN, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, STAIRS, WATER } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { newsym } from '../js/display.js';
+import { LEVEL_TIMER_KIND, scheduleLevelTimer } from '../js/object_timers.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -60,7 +61,7 @@ for (const remembered of [false, true]) {
 }
 for (const [terrain, description] of [
     [POOL, 'pool of water'], [MOAT, 'moat'], [WATER, 'wall of water'],
-    [LAVAWALL, 'wall of lava'], [ICE, 'ice'],
+    [LAVAWALL, 'wall of lava'], [ICE, 'solid ice'],
 ]) {
     void test(`farlook describes ${description}`, () => {
         const level = freshObjectRoom();
@@ -69,6 +70,34 @@ for (const [terrain, description] of [
         assert.equal(farlookLocationDescription(11, 10), description);
     });
 }
+void test('farlook describes nearby melting ice by its remaining strength', () => {
+    const level = freshObjectRoom({ moves: 0 });
+    level.requireAt(11, 10).typ = ICE;
+    newsym(11, 10);
+    scheduleLevelTimer(11, 10, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves + 1001);
+    for (const [elapsed, description] of [
+        [0, 'sturdy ice'], [1, 'steady ice'], [900, 'steady ice'],
+        [901, 'unsteady ice'], [950, 'unsteady ice'], [951, 'thin ice'],
+        [986, 'thin ice'], [987, 'slushy ice'],
+    ]) {
+        game.moves = elapsed;
+        assert.equal(farlookLocationDescription(11, 10), description);
+    }
+});
+void test('farlook leaves distant or unseen remembered ice strength unknown', async () => {
+    const level = freshObjectRoom();
+    for (const x of [11, 13]) {
+        level.requireAt(x, 10).typ = ICE;
+        newsym(x, 10);
+        scheduleLevelTimer(x, 10, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves + 20);
+    }
+    assert.equal(farlookLocationDescription(13, 10), 'ice');
+    game.u.xray_range = 3;
+    assert.equal(farlookLocationDescription(13, 10), 'thin ice');
+    await makeBlinded(10, { talk: false });
+    vision_recalc(0);
+    assert.equal(farlookLocationDescription(11, 10), 'ice');
+});
 void test('farlook describes Medusa moat as a shallow sea', () => {
     const level = freshObjectRoom();
     game.medusa_level = { dnum: 0, dlevel: 8, flags: { town: false }, alignment: null };

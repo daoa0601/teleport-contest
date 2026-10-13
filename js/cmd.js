@@ -14,6 +14,7 @@ import { requireInitializedHero } from './hero_types.js';
 import { fruitName } from './fruit.js';
 import { encyclopediaEntries } from './encyclopedia.js';
 import { waterbodyName } from './terrain_name.js';
+import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
@@ -4262,8 +4263,12 @@ export function farlookLocationDescription(x, y) {
     if (glyph?.kind === 'terrain' && [
         CmapSymbol.pool, CmapSymbol.water, CmapSymbol.lava,
         CmapSymbol.lavawall, CmapSymbol.ice,
-    ].some(symbol => glyph.glyph === cmapToGlyph(symbol)))
-        return waterbodyName(x, y);
+    ].some(symbol => glyph.glyph === cmapToGlyph(symbol))) {
+        const description = waterbodyName(x, y);
+        // do_screen_description() adds strength only to plain "ice";
+        // hallucinated frozen liquids retain their waterbody_name().
+        return description === 'ice' ? iceDescriptionAt(x, y) : description;
+    }
     // do_screen_description() applies the Quest gate to the glyph's stair
     // description, whether the stair is visible now or remembered.
     if (glyph?.kind === 'terrain' && glyph.terrainName === 'staircase down'
