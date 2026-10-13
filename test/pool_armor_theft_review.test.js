@@ -9,7 +9,7 @@ import { placeObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState, pushKey } from '../js/input.js';
 import { removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
-import { LEATHER_ARMOR, OBJECT_NAMES } from '../js/object_data.js';
+import { DAGGER, LEATHER_ARMOR, OBJECT_NAMES } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -103,6 +103,24 @@ void test('a second armor theft does not restart an elapsed turn of removal', as
     assert.equal(game.moves - started, 3, 'The boots take the two remaining turns, not three new turns');
     assert.ok(second.minvent.includes(boots));
     assert.ok(game.inventory.includes(suit));
+});
+void test('a nymph stealing another item stays nearby until delayed suit theft finishes', async () => {
+    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
+    requirePlayingGame(game);
+    const suit = await addInventoryObject(LEATHER_ARMOR);
+    const dagger = await addInventoryObject(DAGGER);
+    wearHeroArmor(suit);
+    const thief = await nearbyThief();
+    installPagerInput(resetInputState(), { expected: /nymph|She/, limit: 12 });
+    await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+    await performMonsterHeroAttack(thief, game, { random: limit => limit - 1, rollOne: () => 1 });
+    assert.ok(thief.minvent.includes(dagger), 'The extra item is stolen immediately');
+    assert.equal(thief.mx, 11, 'The thief stays next to the suit she is waiting for');
+    assert.equal(thief.my, 10);
+    assert.equal(thief.mflee ?? 0, 0);
+    thief.movement = -100;
+    await finishRemoval([]);
+    assert.ok(thief.minvent.includes(suit), 'The pending suit is still stolen after removal');
 });
 void test('a nymph steals interrupted donning armor immediately after it becomes unworn', async () => {
     freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });

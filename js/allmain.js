@@ -1699,6 +1699,11 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
     await plineWithContinuation(`${thief} stole ${stolenObjectDescription}.`);
     object.how_lost = LOST_STOLEN;
     await addObjectToMonsterInventory(monster, object, game);
+    // steal() returns zero while an involuntary delay is still active.
+    // The thief can keep attacking and must stay for any pending armor.
+    attack.theftResolved = true;
+    if (heroHasInvoluntaryDelay(game))
+        return true;
     if (animal) {
         if (canSeeMonster(monster))
             await plineWithContinuation(`${subject} tries to run away with ${stolenName}.`);
@@ -1713,7 +1718,6 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
     const flight = await makeMonsterFlee(monster, { announce: false });
     if (flight.heroDied)
         return true;
-    attack.theftResolved = true;
     attack.attackerDone = true;
     return true;
 }
