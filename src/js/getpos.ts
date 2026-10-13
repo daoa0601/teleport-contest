@@ -3,7 +3,7 @@
 
 import {
     COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK,
-    LOOK_TRADITIONAL, LOOK_VERBOSE, ROWNO,
+    LOOK_TRADITIONAL, LOOK_VERBOSE, ROWNO, VIBRATING_SQUARE, WEB,
 } from './const.js';
 import {
     bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor,
@@ -14,6 +14,8 @@ import { nhgetch, readchar } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
+import { CmapSymbol, GlyphOffset } from './glyph_numbers.js';
+import { MAP_SYMBOLS } from './map_symbols.js';
 import { NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import type { GameState } from './game_state.js';
@@ -74,7 +76,7 @@ const DEFAULT_GETPOS_FEATURE_SYMBOLS = new Set([
 // showsyms: an ordinary letter such as 's' is not the bottom-edge glyph.
 const DEC_GETPOS_FEATURE_SYMBOLS = new Set([
     '\xe7', '\xf9', '\xfa', '\xfb', '\xe0', '\xfe',
-    '\xf8', '\xf1', '\xef', '\xf3',
+    '\xf8', '\xf1', '\xef', '\xf3', '\xfc',
 ]);
 
 export function isGetposFeatureSymbol(ch: string, symset: string | null | undefined = ''): boolean {
@@ -117,34 +119,78 @@ export async function showGetposTip(state = game) {
     return true;
 }
 
-function getposFeatureMatches(x: number, y: number, symbol: string, state: GameState): boolean {
+// C uses cmap identities, not the terminal character of a remembered glyph.
+// In particular, DEC's pi altar must still match the default '_' key.
+const DEC_FEATURE_SYMBOLS = new Map<number, string>([
+    [CmapSymbol.bars, '\xfc'], [CmapSymbol.tree, '\xe7'],
+    [CmapSymbol.upladder, '\xf9'], [CmapSymbol.dnladder, '\xfa'],
+    [CmapSymbol.brupladder, '\xf9'], [CmapSymbol.brdnladder, '\xfa'],
+    [CmapSymbol.altar, '\xfb'], [CmapSymbol.pool, '\xe0'],
+    [CmapSymbol.ice, '\xfe'], [CmapSymbol.lava, '\xe0'],
+    [CmapSymbol.lavawall, '\xe0'], [CmapSymbol.vodbridge, '\xfe'],
+    [CmapSymbol.hodbridge, '\xfe'], [CmapSymbol.water, '\xe0'],
+    [74, '\xf8'], [75, '\xf1'],
+]);
+const EFFECT_FEATURE_SYMBOLS = ['|', '-', '\\', '/', '*', '!', ')', '(', '0', '#', '@', '*', '#', '$'];
+
+function matchingGetposSymbols(key: string, state: GameState): ReadonlySet<number> {
+    const matching = new Set<number>();
+    const dec = /^DECgraphics$/i.test(state.symset ?? '');
+    for (let index = CmapSymbol.bars; index <= CmapSymbol.goodpos; index++) {
+        if (index === CmapSymbol.room || index === CmapSymbol.darkroom
+            || index === CmapSymbol.corr || index === CmapSymbol.litcorr) continue;
+        const trap = index >= CmapSymbol.arrowTrap && index < 74;
+        const defaultSymbol = MAP_SYMBOLS[index]?.ch ?? (trap
+            ? index === CmapSymbol.arrowTrap + WEB - 1 ? '"'
+                : index === CmapSymbol.arrowTrap + VIBRATING_SQUARE - 1 ? '~' : '^'
+            : EFFECT_FEATURE_SYMBOLS[index - 74]);
+        const activeSymbol = dec ? DEC_FEATURE_SYMBOLS.get(index) ?? defaultSymbol : defaultSymbol;
+        if (key === defaultSymbol || key === activeSymbol || key === '^' && trap
+            || key === '`' && (index === CmapSymbol.engroom || index === CmapSymbol.engrcorr))
+            matching.add(index);
+    }
+    return matching;
+}
+
+// C glyphs.c:glyph_to_cmap(), restricted to the eligible getpos features.
+function getposGlyphSymbol(glyph: number | undefined): number | null {
+    if (glyph === undefined) return null;
+    if (glyph >= GlyphOffset.cmapA && glyph < GlyphOffset.altar)
+        return glyph - GlyphOffset.cmapA + CmapSymbol.ndoor;
+    if (glyph >= GlyphOffset.altar && glyph < GlyphOffset.cmapB) return CmapSymbol.altar;
+    if (glyph >= GlyphOffset.cmapB && glyph < GlyphOffset.zap)
+        return glyph - GlyphOffset.cmapB + CmapSymbol.grave;
+    if (glyph >= GlyphOffset.zap && glyph < GlyphOffset.cmapC)
+        return (glyph - GlyphOffset.zap) % 4 + 74;
+    if (glyph >= GlyphOffset.cmapC && glyph < GlyphOffset.swallow)
+        return glyph - GlyphOffset.cmapC + CmapSymbol.digbeam;
+    return null;
+}
+
+function getposFeatureMatches(
+    x: number, y: number, key: string, matching: ReadonlySet<number>, state: GameState,
+): boolean {
     const loc = state.level?.at?.(x, y);
     if (!loc) return false;
-    if (state.iflags?.terrainmode) {
-        const glyph = glyphAt(x, y, state);
-        if (glyph?.kind === 'trap') return symbol === '^' || loc.disp_ch === symbol;
-        if (glyph?.kind === 'engraving') return symbol === '`' || loc.disp_ch === symbol;
-        return glyph?.kind === 'terrain' && loc.disp_ch === symbol;
+    const current = getposGlyphSymbol(glyphAt(x, y, state)?.glyph);
+    if (current !== null && matching.has(current)) return true;
+    if (state.level?.flags.hero_memory !== false && !state.iflags.terrainmode) {
+        const remembered = getposGlyphSymbol(loc.remembered_glyph?.glyph);
+        if (remembered !== null && matching.has(remembered)) return true;
     }
-
-    // `D` means an open door even when the active graphics set draws that
-    // door with another character.
-    if (symbol === 'D') {
-        return loc.typ === DOOR && loc.doormask === D_ISOPEN
-            && !!loc.remembered_glyph;
-    }
-
-    if (loc.remembered_glyph?.kind === 'terrain'
-        && loc.remembered_glyph.ch === symbol) return true;
+    if (key === '~' && state.level?.traps.some(trap =>
+        trap.tx === x && trap.ty === y && trap.ttyp === VIBRATING_SQUARE && trap.tseen))
+        return true;
     if (loc.seenv) {
-        const background = terrain_glyph(loc, x, y);
-        if (background.ch === symbol) return true;
+        const background = getposGlyphSymbol(terrain_glyph(loc, x, y).glyph);
+        if (background !== null && matching.has(background)) return true;
     }
     return false;
 }
 
 // Search from the cursor to the bottom-right of the map, then wrap around.
 export function nextGetposFeature(cursor: Position, symbol: string, state: GameState = game): Position | null {
+    const matching = matchingGetposSymbols(symbol, state);
     for (let pass = 0; pass <= 1; pass++) {
         const lowY = pass === 0 ? cursor.y : 0;
         const highY = pass === 0 ? ROWNO - 1 : cursor.y;
@@ -153,7 +199,7 @@ export function nextGetposFeature(cursor: Position, symbol: string, state: GameS
             const highX = pass === 1 && y === highY
                 ? cursor.x : COLNO - 1;
             for (let x = lowX; x <= highX; x++) {
-                if (getposFeatureMatches(x, y, symbol, state))
+                if (getposFeatureMatches(x, y, symbol, matching, state))
                     return { x, y };
             }
         }
