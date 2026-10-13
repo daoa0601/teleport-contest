@@ -23,6 +23,7 @@ import { d } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { chargeAlteredUnpaidObject, chargeUnpaidUsage, updateUnpaidObjectPrice } from './shk.js';
 import { waterDamageObject } from './trap.js';
+import { mixPotions, neutralizePotion } from './potion_mixing.js';
 export async function treatDippedObject(object, potion) {
     requirePlayingGame(game);
     if (object === potion && objectQuantity(potion) === 1) {
@@ -39,6 +40,10 @@ export async function treatDippedObject(object, potion) {
     }
     else if (object.otyp === POT_POLYMORPH || potion.otyp === POT_POLYMORPH) {
         await dipInPolymorph(object, potion);
+        return true;
+    }
+    else if (object.oclass === 8 && object.otyp !== potion.otyp) {
+        await mixPotions(object, potion);
         return true;
     }
     if (potion.otyp === POT_ACID && object.otyp === CORPSE
@@ -85,6 +90,8 @@ export async function treatDippedObject(object, potion) {
         }
     }
     potion.in_use = false;
+    if (await neutralizePotion(object, potion))
+        return true;
     await pline('Interesting...');
     return true;
 }
