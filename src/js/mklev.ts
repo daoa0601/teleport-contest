@@ -8989,6 +8989,8 @@ function create_room(
             const lowx = { v: xabs }, ddx = { v: wtmp };
             const lowy = { v: yabs }, ddy = { v: htmp };
             if (r1 && !check_room(lowx, ddx, lowy, ddy, vault)) r1 = null;
+            xabs = lowx.v;
+            yabs = lowy.v;
         }
     } while (++trycnt <= 100 && !r1);
     if (!r1) return false;
