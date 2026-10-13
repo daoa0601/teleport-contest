@@ -540,6 +540,7 @@ export interface MonsterTeleportTrapEvent {
 
 export interface MonsterAttackInitiation {
     heroAttackSequence?: HeroAttackSequence;
+    heroAttackResult?: 0 | 1;
 }
 
 // Native postmov retains these decisions across input pauses. Its species

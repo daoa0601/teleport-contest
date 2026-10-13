@@ -3256,7 +3256,8 @@ export async function performMonsterHeroAttack(
         { random, rollDice, rollOne });
     if (messageContext) messageContext.earlierActorPager = effects.earlierActorPager;
     const offensive = action.movement.heroAttackSequence?.offensive;
-    const returnedDeath = offensive?.status === 'completed' && offensive.result.nativeResult === 1;
+    const returnedDeath = action.movement.heroAttackResult === 1
+        || (offensive?.status === 'completed' && offensive.result.nativeResult === 1);
     return {
         nativeResult: returnedDeath || monster.dead || monster.mhp <= 0 ? 1 : 0,
         heroDied: effects.heroDied || !!state.program_state.gameover,

@@ -8,7 +8,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { AMULET_OF_LIFE_SAVING, SADDLE } from '../js/object_data.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { W_AMUL } from '../js/const.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { ensureHeroSkills } from '../js/skills.js';
 import { putSaddleOnMonster } from '../js/steed.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
@@ -23,6 +23,32 @@ import { removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { NO_MINVENT } from '../js/const.js';
 import { initRng } from '../js/rng.js';
+import { installPagerInput } from './support/pager-input.js';
+
+void test('a steed does not retaliate after an elemental attacker explodes and is life saved', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30, uhp: 500, uhpmax: 500 } });
+    requirePlayingGame(game);
+    const horse = await createSaddledSteed('horse');
+    await runExtendedCommand('ride', 'l');
+    horse.mhp = horse.mhpmax = 500;
+    horse.m_lev = 30;
+    const sphere = await createMonsterAt('flaming sphere', 12, 10, NO_MINVENT);
+    sphere.mhp = sphere.mhpmax = 100;
+    const amulet = await equipMonsterObject(sphere, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
+    installPagerInput(resetInputState(), {
+        expected: /sphere|medallion|caught in the|Boom!|horse|But wait|looks much better/,
+        limit: 8,
+    });
+    initRng(5n);
+
+    const result = await performMonsterHeroAttack(sphere, game);
+
+    assert.equal(amulet.where, 'gone', 'the explosion must consume the attacker\'s life saving');
+    assert.equal(game.u.usteed, horse);
+    assert.ok(horse.mhp > 0 && horse.mhp < 500, 'the steed survives the blast');
+    assert.equal(sphere.mhp, sphere.mhpmax, 'the revived attacker receives no retaliation damage');
+    assert.equal(result.nativeResult, 1, 'mattacku preserves the explosion\'s attacker-death result');
+});
 
 void test('a nearby orc can attack the steed and receive its immediate retaliation', async () => {
     let steedFight = false;

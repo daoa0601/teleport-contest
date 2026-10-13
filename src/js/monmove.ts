@@ -3892,16 +3892,19 @@ export async function beginMonsterHeroAttack(
             const attack = await attackMonsterWithMonster(monster, steed, {
                 state, random, rollDice, rollOne, calls,
             });
+            if (monsterAttackStopsAggressor(attack)) return { heroAttackResult: 1 };
             if (attack.heroDied || monster.dead || monster.mhp <= 0
                 || steed.dead || steed.mhp <= 0 || !state.u.usteed
                 || dist2(monster.mx, monster.my, state.u.ux, state.u.uy) > 2)
                 return {};
             // A surviving steed retaliates immediately, including after a
             // miss, without spending a movement ration or a chance roll.
-            await attackMonsterWithMonster(state.u.usteed, monster, {
+            const retaliation = await attackMonsterWithMonster(state.u.usteed, monster, {
                 state, random, rollDice, rollOne, calls,
             });
-            return {};
+            const attackerDied = retaliation.kind === 'monster-attack'
+                && !!((retaliation.nativeResult ?? 0) & M_ATTK_DEF_DIED);
+            return { heroAttackResult: attackerDied ? 1 : 0 };
         }
     }
     if (await disturbMealMimicry(monster, { state })) return {};
@@ -7936,6 +7939,8 @@ async function beginStandardMonsterAttack(
 function attachMonsterAttack(movement: MonsterMovement, attack: MonsterAttackInitiation): void {
     if (attack.heroAttackSequence !== undefined)
         movement.heroAttackSequence = attack.heroAttackSequence;
+    if (attack.heroAttackResult !== undefined)
+        movement.heroAttackResult = attack.heroAttackResult;
 }
 
 // C postmov() has separate gates for movement effects and the floor tail.
