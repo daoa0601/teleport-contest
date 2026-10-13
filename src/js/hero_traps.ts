@@ -124,6 +124,8 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { trapTriggeredByFloor } from './monmove.js';
 import { monsterLocomotion } from './monster_locomotion.js';
+import { askTeleportDestination } from './cmd.js';
+import { teleportHero } from './teleport.js';
 import { observeObject } from './object_knowledge.js';
 import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
 
@@ -675,7 +677,6 @@ async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['
                         vaultSquare.x, vaultSquare.y,
                     )) destination = vaultSquare;
             }
-            destination ||= safeTeleportDestination();
         } else if (trap.teledest
             && isok(trap.teledest.x, trap.teledest.y)) {
             setTrack(game);
@@ -692,10 +693,15 @@ async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['
             }
             destination = trap.teledest;
         } else {
-            destination = safeTeleportDestination();
+            await teleportHero({ chooseDestination: askTeleportDestination });
+            return true;
         }
 
-        if (!destination) return true;
+        if (!destination) {
+            // vault_tele() falls back to tele(), including teleport control.
+            await teleportHero({ chooseDestination: askTeleportDestination });
+            return true;
+        }
         const movement = await moveHeroByTeleport(destination.x, destination.y);
         await finishTeleport(movement);
         return true;
