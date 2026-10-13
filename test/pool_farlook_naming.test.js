@@ -3,7 +3,7 @@ import test from 'node:test';
 import { farlookLocationDescription, askTeleportDestination } from '../js/cmd.js';
 import { feel_location, glyphAt, newsym } from '../js/display.js';
 import { NO_MINVENT, POOL, ROOM } from '../js/const.js';
-import { game } from '../js/gstate.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -20,6 +20,34 @@ void test('farlook describes the saddle on a tame pony', async () => {
     newsym(11, 10);
     assert.equal(await farlookLocationDescription(11, 10), 'tame saddled pony');
 });
+for (const [female, title] of [[false, 'high priest'], [true, 'high priestess']]) {
+    void test(`farlook conceals an invisible Astral ${title}'s identity at a distance`, async () => {
+        freshObjectRoom({ hero: { detectMonsters: true } });
+        requirePlayingGame(game);
+        game.astral_level = { ...game.u.uz, dlevel: 1,
+            flags: { town: false }, alignment: null };
+        game.u.uz.dlevel = 1;
+        const priest = await createMonsterAt('high cleric', 14, 10, NO_MINVENT);
+        priest.female = female;
+        priest.minvis = true;
+        priest.mpeaceful = true;
+        priest.ispriest = 1;
+        priest.epri = {
+            shroom: 0, shralign: 0, shrpos: { x: 15, y: 10 },
+            shrlevel: { ...game.u.uz }, parentmid: priest.m_id,
+            intone_time: 0, enter_time: 0, peaceful_time: 0, hostile_time: 0,
+        };
+        newsym(14, 10);
+        assert.equal(await farlookLocationDescription(14, 10), `peaceful ${title}`);
+        game.u.ux = 13;
+        newsym(14, 10);
+        assert.match(await farlookLocationDescription(14, 10), new RegExp(`^peaceful invisible ${title} of .+$`));
+        game.u.ux = 10;
+        delete game.astral_level;
+        newsym(14, 10);
+        assert.match(await farlookLocationDescription(14, 10), new RegExp(`^peaceful invisible ${title} of .+$`));
+    });
+}
 void test('automatic farlook describes a hallucinated statue as a creature', async () => {
     freshObjectRoom({ flags: { tips: false, verbose: false },
         hero: { hallucination: true, hallucinationTurns: 10 } });

@@ -52,7 +52,7 @@ import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
-import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
+import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
@@ -4555,9 +4555,7 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
         const prefix = hallucinating ? ''
             : monster.mtame ? 'tame '
                 : monster.mpeaceful ? 'peaceful ' : '';
-        const name = monsterName(monster, {
-            state: game, article: 'none', suppressIt: true, suppressSaddle: false,
-        });
+        const name = distantMonsterName(monster);
         let condition = '';
         if (!hallucinating) {
             if ((monster.mfrozen ?? 0) > 0)

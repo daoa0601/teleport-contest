@@ -137,6 +137,24 @@ export function monsterName(monster: Monster, {
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
 
+// C do_name.c:distant_monnam(). Conceal the Astral altar's identity until
+// the hero is adjacent, including adjectives on the attending high priest.
+export function distantMonsterName(monster: Monster, {
+    state = game, article = 'none',
+}: { state?: GameState; article?: 'none' | 'the' } = {}): string {
+    requireLiveGame(state);
+    const nearby = Math.abs(monster.mx - state.u.ux) <= 1
+        && Math.abs(monster.my - state.u.uy) <= 1;
+    if (monster.mnum === PM_HIGH_CLERIC && !heroIsHallucinating(state)
+        && Is_astralevel(state.u.uz) && !nearby) {
+        const title = monster.female ? 'high priestess' : 'high priest';
+        return article === 'the' ? `the ${title}` : title;
+    }
+    return monsterName(monster, {
+        state, article, suppressIt: true, suppressSaddle: false,
+    });
+}
+
 // C newcham(): YMonnam with the saddle always suppressed.
 export function monsterFormChangeName(monster: Monster, { state = game }: { state?: GameState } = {}): string {
     requireLiveGame(state);
