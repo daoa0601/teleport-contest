@@ -171,7 +171,9 @@ async function searchAdjacentSecrets(automatic = false) {
                 revealSecretDoor(x, y);
                 exerciseWisdom();
                 endVoluntaryMultiTurn(game);
-                newsym(x, y);
+                // C dosearch0() maps the discovered door by touch even when
+                // its former wall position remains outside line of sight.
+                feel_location(x, y);
                 await plineWithContinuation('You find a hidden door.');
                 found = true;
                 continue;
