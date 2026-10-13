@@ -101,7 +101,7 @@ for (const [name, hero, message] of [
 
 for (const [stoneType, expected] of [
     [TOUCHSTONE, /You see white streaks on the stone/],
-    [FLINT, /You make white scratch marks on the stone/],
+    [FLINT, /You make scratch marks on the stone/],
 ] as const) {
     void test(`diamond rubbing ${stoneType === TOUCHSTONE ? 'streaks a touchstone' : 'scratches flint'}`, async () => {
         freshObjectRoom();
