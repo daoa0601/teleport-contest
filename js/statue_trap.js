@@ -34,7 +34,7 @@ const MS_GUARDIAN = 38;
 const PM_FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
 const S_GOLEM = MONSTER_SYMBOL[PM_FLESH_GOLEM];
 function statueReplacement(statue, state) {
-    const replacement = revivalReplacement(statue.corpsenm, statue, false);
+    const replacement = revivalReplacement(statue.corpsenm, statue, true);
     if (replacement != null)
         return replacement;
     if ((MONSTER_SOUND[statue.corpsenm] ?? 0) === MS_GUARDIAN
