@@ -16,6 +16,7 @@ import { heroIsHallucinating } from './senses.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { makeConfused } from './hero_mental_status.js';
 import { makeBlinded } from './sight_change.js';
+import { makeDeaf } from './hero_hearing.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
@@ -70,7 +71,7 @@ import {
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { d, rnd, rn2, rnl } from './rng.js';
 import {
-    heroIsBlind, syncBlindness, syncDeafness,
+    heroIsBlind,
 } from './senses.js';
 import {
     chargeUnpaidObjectAsDebt, objectTypeKnown,
@@ -573,11 +574,8 @@ export async function applySupportedPotionVapor({
             : potion.otyp === POT_EXTRA_HEALING ? 2 : 1;
         for (let point = 0; point < points; point++) healHeroOnePoint(state);
         if (healingCuresBlindness(potion)) {
-            if (state.blind || state.deaf) state.context.botl = true;
-            state.u.blindTurns = 0;
-            state.u.deafTurns = 0;
-            syncBlindness(state);
-            syncDeafness(state);
+            await makeBlinded(0, { state, talk: !state.u.ucreamed, publish });
+            await makeDeaf(0, { state, publish });
         }
         await exerciseAttribute(A_CON, true, state);
     } else if (potion.otyp === POT_SICKNESS

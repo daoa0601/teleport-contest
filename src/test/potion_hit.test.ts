@@ -893,14 +893,14 @@ void test('uncursed restore-ability vapor repairs only the first reduced attribu
 
 void test('full-healing vapor heals both HP pools without exercising a temporary body',
     async () => {
-        freshPotionState({
+        freshObjectRoom({ hero: {
             uhp: 20,
             uhpmax: 30,
             blindTurns: 4,
             deafTurns: 5,
             acurr: { a: [12, 12, 12, 12, 12, 12] },
             amax: { a: [12, 12, 12, 12, 12, 12] },
-        });
+        } });
         requirePlayingGame(game);
         installPolymorphedHero('wolf', { turns: 10, hitPoints: 1, maxHitPoints: 10 });
         const potion = await potionObject(POT_FULL_HEALING);
