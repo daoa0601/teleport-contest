@@ -906,6 +906,19 @@ function monsterGlyphNumber(mnum: number, female: boolean, state: 'normal' | 'pe
 function heroDisplayGlyph(): DisplayGlyph {
     if (game.u?.m_ap_type === M_AP_OBJECT)
         return apparentObjectGlyph(game.u);
+    if (game.u.m_ap_type === M_AP_MONSTER) {
+        const appearance = game.u.mappearance;
+        if (!ismnum(appearance)) throw new Error('Hero monster disguise requires a valid species');
+        return displayMonsterGlyph(appearance,
+            Upolyd(game.u) ? !!game.u.mfemale : !!game.flags.female);
+    }
+    if (game.u.m_ap_type === M_AP_FURNITURE) {
+        const appearance = game.u.mappearance;
+        const symbol = appearance === undefined ? undefined : MAP_SYMBOLS[appearance];
+        if (appearance === undefined || !symbol) throw new Error('Hero furniture disguise requires a valid map symbol');
+        return { ch: symbol.ch, color: symbol.color, decgfx: false,
+            kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance) };
+    }
     // display.h:hero_glyph and you.h:Ugender select the current body's sex.
     // Hero glyph identity still changes when the tty symbol remains '@'.
     const polymorphed = Upolyd(game.u);
