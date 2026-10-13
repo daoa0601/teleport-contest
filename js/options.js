@@ -274,7 +274,9 @@ function parseConfiguration(rc, result) {
             const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trim().toLowerCase();
             const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
             if (bindingOption === 'dogname' || bindingOption === 'catname' || bindingOption === 'horsename') {
-                if (negated || optionValue === 'none' || optionValue === '(none)')
+                if (negated)
+                    continue;
+                if (optionValue === 'none' || optionValue === '(none)')
                     result.flags[bindingOption] = '';
                 else if (optionValue)
                     result.flags[bindingOption] = configuredPetName(optionValue, !!result.iflags.wc_eight_bit_input);

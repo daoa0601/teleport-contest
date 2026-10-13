@@ -162,3 +162,21 @@ void test('a configured dog name overrides the role default and preserves its ca
     assert.ok(pet);
     assert.equal(pet.mgivenname, 'Sir Wags');
 });
+
+for (const option of ['dogname', 'catname', 'horsename'] as const) {
+    for (const suffix of ['', ':Replacement']) {
+        void test(`negating ${option}${suffix ? ' with a value' : ''} preserves its configured name`, () => {
+            const settings = parseNethackrc(`OPTIONS=${option}:Sirius\nOPTIONS=!${option}${suffix}`);
+
+            assert.equal(settings.flags[option], 'Sirius');
+        });
+    }
+
+    for (const value of ['none', '(none)']) {
+        void test(`${option}:${value} explicitly clears a configured name`, () => {
+            const settings = parseNethackrc(`OPTIONS=${option}:Sirius\nOPTIONS=${option}:${value}`);
+
+            assert.equal(settings.flags[option], '');
+        });
+    }
+}
