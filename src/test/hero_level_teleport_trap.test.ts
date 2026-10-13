@@ -19,6 +19,53 @@ import { createMonsterAt } from './support/monsters.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { addInventoryObject } from './support/game-objects.js';
 
+void test('taking off levitation boots completes trap travel before the next command', async () => {
+    const { source, destination } = freshConnectedLevels();
+    requirePlayingGame(game);
+    game.flags.debug = true;
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    destination.downTeleportRegion = { lx: 13, ly: 10, hx: 13, hy: 10 };
+    const boots = await addInventoryObject(LEVITATION_BOOTS);
+    wearHeroArmor(boots);
+    grantIntrinsicProperty('teleportControl', 'outside');
+    addTrap(source, LEVEL_TELEP, 10, 10);
+    const input = resetInputState();
+    input.feed('T');
+
+    await moveloop_core();
+    assert.equal(boots.worn, true, 'the boots stay worn during delayed removal');
+    let nextCommandRead = false;
+    let acknowledgements = 0;
+    input.display = {
+        async readKey() {
+            const topline = game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('') ?? '';
+            if (game._pending_message && /--More--/.test(topline)) {
+                assert.ok(++acknowledgements <= 8, 'boot removal and travel must finish their pagers');
+                assert.match(topline, /taking off|float gently|level teleport trap|centered|materialize/);
+                return 32;
+            }
+            if (/To what level do you want to teleport\?/.test(topline)) {
+                input.feed('\r');
+                return '2'.charCodeAt(0);
+            }
+            assert.ok(game.level === destination, 'delayed removal must finish travel before reading a command');
+            assert.equal(nextCommandRead, false, 'the next movement reads one command');
+            nextCommandRead = true;
+            return 'l'.charCodeAt(0);
+        },
+    };
+
+    for (let turns = 0; turns < 4 && !nextCommandRead; turns++)
+        await moveloop_core();
+
+    assert.equal(nextCommandRead, true, 'removal and travel must reach the next command');
+    assert.equal(boots.worn, false);
+    assert.equal(game.level, destination);
+    assert.equal(game.u.ux, 14, 'the next movement runs from the arrival square');
+    assert.equal(game.u.uy, 10);
+});
+
 for (const laterMonster of [false, true]) {
     void test(`boots theft completes level teleport before command input${laterMonster ? ' and stops the next monster' : ''}`, async () => {
         const { source, destination } = freshConnectedLevels();

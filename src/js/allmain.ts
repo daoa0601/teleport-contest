@@ -3745,6 +3745,9 @@ export async function moveloop_core() {
             g._armorClassDirty = false;
         }
         g._delayedAction = null;
+        // C moveloop_core() takes travel caused by unmul() before command input.
+        await finishScheduledLevelChange();
+        if (g.program_state.gameover) return;
     } else if (g._delayedAction) {
         // A delayed action spends movement without reading another command.
         g.u.umoved = false;
