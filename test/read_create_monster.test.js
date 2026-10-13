@@ -84,17 +84,17 @@ void test('a create-monster scroll keeps imposed invisibility through a chameleo
     assert.equal(scroll.where, 'gone');
     assert.equal(game.context.move, 1);
 });
-for (const { request, female, surprised } of [
-    { request: 'female elf lord', female: true, surprised: true },
-    { request: 'male elf lady', female: false, surprised: true },
-    { request: 'female incubi', female: true, surprised: true },
-    { request: 'male succubi', female: false, surprised: true },
-    { request: 'female cavemen', female: true, surprised: true },
-    { request: 'male cavewomen', female: false, surprised: true },
-    { request: 'elf lord', female: false, surprised: false },
-    { request: 'elf lady', female: true, surprised: false },
-    { request: 'incubi', female: false, surprised: false },
-    { request: 'succubi', female: true, surprised: false },
+for (const { request, species, female, surprised } of [
+    { request: 'female elf lord', species: 'elf-noble', female: true, surprised: true },
+    { request: 'male elf lady', species: 'elf-noble', female: false, surprised: true },
+    { request: 'female incubi', species: 'amorous demon', female: true, surprised: true },
+    { request: 'male succubi', species: 'amorous demon', female: false, surprised: true },
+    { request: 'female cavemen', species: 'cave dweller', female: true, surprised: true },
+    { request: 'male cavewomen', species: 'cave dweller', female: false, surprised: true },
+    { request: 'elf lord', species: 'elf-noble', female: false, surprised: false },
+    { request: 'elf lady', species: 'elf-noble', female: true, surprised: false },
+    { request: 'incubi', species: 'amorous demon', female: false, surprised: false },
+    { request: 'succubi', species: 'amorous demon', female: true, surprised: false },
 ]) {
     void test(`a create-monster scroll honors the gender hint in "${request}"`, async () => {
         const { level, input, messages } = creationRoom();
@@ -105,6 +105,7 @@ for (const { request, female, surprised } of [
         };
         await readInventoryObject(scroll);
         assert.equal(level.monsters.length, 1);
+        assert.equal(MONSTER_NAME[level.monsters[0]?.mnum ?? -1], species, `Creation must retain the species requested by "${request}"`);
         assert.equal(level.monsters[0]?.female, female);
         const appearance = [...messages, game._pending_message].find(message => / appears next to you/.test(message));
         assert.ok(appearance, 'Creation must announce the monster');
