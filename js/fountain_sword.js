@@ -12,6 +12,7 @@ import { inTown } from './room.js';
 import { rn2 } from './rng.js';
 import { updateUnpaidObjectPrice } from './shk.js';
 import { setTwoWeaponCombat } from './weapon_slots.js';
+import { dropCursedSecondaryWeapon } from './two_weapon.js';
 export async function dipFountainSword(object, location) {
     requirePlayingGame(game);
     if (object.otyp !== LONG_SWORD || game.u.ulevel < 5
@@ -27,6 +28,7 @@ export async function dipFountainSword(object, location) {
         await pline(`A freezing mist rises from the ${displayLiquidName('water')} and envelopes the sword.`);
         await pline('The fountain disappears!');
         await curseObject(object);
+        await dropCursedSecondaryWeapon(object);
         if (object.spe > -6 && !rn2(3)) {
             object.spe--;
             object.enchantment = object.spe;

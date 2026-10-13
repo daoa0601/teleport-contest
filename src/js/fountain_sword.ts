@@ -15,6 +15,7 @@ import { inTown } from './room.js';
 import { rn2 } from './rng.js';
 import { updateUnpaidObjectPrice } from './shk.js';
 import { setTwoWeaponCombat } from './weapon_slots.js';
+import { dropCursedSecondaryWeapon } from './two_weapon.js';
 
 export async function dipFountainSword(object: GameObject, location: MapLocation): Promise<boolean> {
     requirePlayingGame(game);
@@ -28,6 +29,7 @@ export async function dipFountainSword(object: GameObject, location: MapLocation
         await pline(`A freezing mist rises from the ${displayLiquidName('water')} and envelopes the sword.`);
         await pline('The fountain disappears!');
         await curseObject(object);
+        await dropCursedSecondaryWeapon(object);
         if (object.spe > -6 && !rn2(3)) { object.spe--; object.enchantment = object.spe; }
         object.oerodeproof = false;
         await exerciseAttribute(A_WIS, false);

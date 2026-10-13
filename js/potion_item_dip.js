@@ -1,6 +1,6 @@
 import { exerciseAttribute } from './attrib.js';
 import { heroFingerName } from './body_parts.js';
-import { A_WIS, EXPL_FIERY } from './const.js';
+import { A_WIS, EXPL_FIERY, PLNMSG_OBJ_GLOWS } from './const.js';
 import { displayColorName, plineWithContinuation as pline } from './display.js';
 import { explode } from './explosion.js';
 import { fireDamageObject } from './fire_damage.js';
@@ -22,6 +22,7 @@ import { d } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsHallucinating } from './senses.js';
 import { chargeAlteredUnpaidObject, chargeUnpaidUsage, updateUnpaidObjectPrice } from './shk.js';
 import { waterDamageObject } from './trap.js';
+import { dropCursedSecondaryWeapon } from './two_weapon.js';
 import { mixPotions, neutralizePotion } from './potion_mixing.js';
 export async function treatDippedObject(object, potion) {
     requirePlayingGame(game);
@@ -135,6 +136,7 @@ async function dipInWater(object, potion) {
         const suffix = action === 'bless' || action === 'curse'
             ? `with ${withIndefiniteArticle(glow)} aura` : glow;
         await pline(`${ownedObjectAction(object, 'glow')} ${suffix}.`);
+        game._lastPlineKind = PLNMSG_OBJ_GLOWS;
         object.bknown = !heroIsHallucinating();
     }
     else if (!potion.bknown || !potion.dknown)
@@ -151,8 +153,10 @@ async function dipInWater(object, potion) {
         uncurseObjectState(object);
     else if (action === 'unbless')
         unblessObjectState(object);
-    else
+    else {
         await curseObject(object);
+        await dropCursedSecondaryWeapon(object);
+    }
     return true;
 }
 async function dipInPolymorph(object, potion) {
