@@ -554,18 +554,17 @@ function catchesFire(object, random) {
     return !([OIL_LAMP, MAGIC_LAMP].includes(object.otyp)
         && object.cursed && random(2) === 0);
 }
-function lightSourceName(object) {
-    const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
-    const qualified = object.oclass === 8 ? `potion of ${name}` : name;
+function lightSourceName(object, state) {
+    const name = objectName(object, state);
     const quantity = object.quan ?? object.quantity ?? 1;
-    return quantity > 1 ? makePlural(qualified) : qualified;
+    return quantity > 1 ? makePlural(name) : name;
 }
 export async function igniteItems(objects, { carrier = null, state = game, publish = async () => { }, random = rn2, visible = true, } = {}) {
     const ignited = [];
     for (const object of objects || []) {
         if (!catchesFire(object, random))
             continue;
-        const name = lightSourceName(object);
+        const name = lightSourceName(object, state);
         const plural = (object.quan ?? object.quantity ?? 1) > 1;
         const blind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
         if (visible) {
