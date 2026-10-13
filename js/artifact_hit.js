@@ -255,5 +255,6 @@ function healHeroFromDrain(state, amount) {
     if (currentHitPoints === undefined || maximumHitPoints === undefined)
         throw new Error('Life drain requires initialized hero hit points.');
     state.u[hitPoints] = Math.min(maximumHitPoints, currentHitPoints + amount);
+    state.context.botl = true;
 }
 //# sourceMappingURL=artifact_hit.js.map
