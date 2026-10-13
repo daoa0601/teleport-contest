@@ -920,9 +920,11 @@ function heroDisplayGlyph(): DisplayGlyph {
         const appearance = game.u.mappearance;
         const symbol = appearance === undefined ? undefined : MAP_SYMBOLS[appearance];
         if (appearance === undefined || !symbol) throw new Error('Hero furniture disguise requires a valid map symbol');
-        const decSymbol = !Is_rogue_level(game.u.uz) && /^DECgraphics$/i.test(game.symset || '')
+        const rogue = Is_rogue_level(game.u.uz);
+        const decSymbol = !rogue && /^DECgraphics$/i.test(game.symset || '')
             ? decFurnitureSymbols.get(appearance) : undefined;
-        return { ch: decSymbol ?? symbol.ch, color: symbol.color, decgfx: decSymbol !== undefined,
+        const ch = rogue ? rogueFurnitureSymbols.get(appearance) ?? symbol.ch : decSymbol ?? symbol.ch;
+        return { ch, color: symbol.color, decgfx: decSymbol !== undefined,
             kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, currentWallGlyphOffset()) };
     }
     // display.h:hero_glyph and you.h:Ugender select the current body's sex.
@@ -936,6 +938,13 @@ function heroDisplayGlyph(): DisplayGlyph {
     return polymorphed ? glyph
         : { ...glyph, ch: game.flags.showrace ? glyph.ch : '@', color: CLR_WHITE };
 }
+
+// symbols.c:init_rogue_symbols() changes ordinary stairs and open doorways.
+// Branch stairs retain their default symbols.
+const rogueFurnitureSymbols = new Map<number, string>([
+    [CmapSymbol.ndoor, '+'], [CmapSymbol.vodoor, '+'], [CmapSymbol.hodoor, '+'],
+    [CmapSymbol.upstair, '%'], [CmapSymbol.dnstair, '%'],
+]);
 
 // dat/symbols:DECgraphics overrides dungeon symbols independently of the
 // terrain type at the hero's location. Furniture mimicry uses these symbols.
