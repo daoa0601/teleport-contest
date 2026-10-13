@@ -2,7 +2,7 @@
 // C uhitm.c:mhitm_knockback() and m_is_steadfast().
 import { heroIsHallucinating } from './senses.js';
 import { artifactById } from './artifacts.js';
-import { D_BROKEN, DISMOUNT_KNOCKED, DOOR, IS_POOL, Is_airlevel, Is_waterlevel, W_SADDLE, isok, } from './const.js';
+import { D_BROKEN, DISMOUNT_KNOCKED, DOOR, IS_POOL, Is_airlevel, Is_waterlevel, MM_IGNORELAVA, MM_IGNOREWATER, W_SADDLE, isok, } from './const.js';
 import { canSeeMonster, canSpotMonster, plineWithContinuation, randomDisplayMonsterSubject, } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -12,12 +12,14 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL } from '.
 import { hurtleMonster, staggerVerb, willMonsterHurtle } from './monster_hurtle.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterName } from './monster_name.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { LOADSTONE } from './object_data.js';
 import { isBluntWeapon, isFlimsyObject } from './object_properties.js';
 import { rn2 } from './rng.js';
 import { dismountHero } from './steed.js';
 import { heroIsUnaware } from './hero_sleep.js';
+import { goodPosition } from './teleport_rules.js';
 const M1_FLY = 0x00000001;
 const M1_UNSOLID = 0x00100000;
 const S_EYE = 5;
@@ -135,7 +137,11 @@ export async function tryKnockback(attacker, defender, attack, { state = game, r
         }
         return { knocked: false };
     }
-    const openPath = movingHero || (target && willMonsterHurtle(target, state, x + dx, y + dy));
+    const openPath = movingHero
+        ? defenderSize < 4 && goodPosition(x + dx, y + dy, { kind: 'hero' }, {
+            state, gpflags: MM_IGNOREWATER | MM_IGNORELAVA, random,
+        })
+        : target && willMonsterHurtle(target, state, x + dx, y + dy);
     const how = dismount ? 'out of your saddle' : openPath ? 'backward' : 'back';
     if (movingHero || (target && canSeeMonster(target))) {
         const subject = attackerMonster ? monsterSubject(attackerMonster) : 'You';
@@ -147,7 +153,7 @@ export async function tryKnockback(attacker, defender, attack, { state = game, r
         await publish(`${subject} ${heroAttacks ? 'knock' : 'knocks'} ${object} ${how} with a ${strength} ${blow}!`);
     }
     else if (heroAttacks && target) {
-        await publish(`You feel ${nameMonster(target)} be knocked ${how}!`);
+        await publish(`You feel ${monsterName(target, { state, augmentIt: true })} be knocked ${how}!`);
     }
     if (heroAttacks || movingHero)
         state.u.ustuck = null;

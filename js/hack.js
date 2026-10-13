@@ -2,13 +2,13 @@
 // C ref: hack.c pooleffects() and trap.c drown().
 import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsHallucinating } from './senses.js';
-import { BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DOOR, DROWNING, ICE, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, } from './const.js';
-import { feel_newsym, newsym, plineWithContinuation } from './display.js';
+import { BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, ICE, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, } from './const.js';
+import { displayLiquidName, feel_newsym, newsym, plineWithContinuation, updateLastSeenTerrain } from './display.js';
 import { heroPassesWalls, heroFormSticks } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { monsterName } from './monster_name.js';
-import { beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath, } from './end.js';
+import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, } from './end.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { heroIsUnaware } from './hero_sleep.js';
@@ -35,8 +35,10 @@ import { inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED, } from './we
 import { destroyWornArmor, findArmorClass, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, } from './armor.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './terrain_properties.js';
-import { waterbodyName } from './terrain_name.js';
+import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
+import { surfaceName, waterbodyName } from './terrain_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { iceDescriptionAt } from './dungeon_feature.js';
 // C hack.c:escape_from_sticky_mon(). True means this attempt was spent
 // struggling; release clears the grip directly, without unstuck's cooldown.
 export async function escapeFromStickyMonster(x, y) {
@@ -290,7 +292,7 @@ export async function burnAwayHeroSlime(state, publish) {
     await publish('The slime that covers you is burned away!');
     return true;
 }
-async function reviveHeroFromLava(state, publish, random) {
+async function reviveHeroFromLiquid(state, publish, random) {
     const lifeSaving = state === game ? beginHeroLifeSaving(random) : null;
     if (!lifeSaving)
         return false;
@@ -299,6 +301,11 @@ async function reviveHeroFromLava(state, publish, random) {
     await publish('The medallion crumbles to dust!');
     await completeHeroLifeSaving(lifeSaving);
     return true;
+}
+async function finishLiquidDeath(options) {
+    // The liquid effect has already announced the death. done() still owns
+    // life saving and the wizard/explore recovery question.
+    return await finishHeroDeath({ ...options, deathLineShown: true });
 }
 async function teleportHeroOutOfLiquid({ state, random, rollOne, repaint, resetVision, recalculateVision, applyLandingEffects, }) {
     const destination = safeTeleportDestination(state, random, rollOne);
@@ -316,17 +323,16 @@ async function teleportHeroOutOfLiquid({ state, random, rollOne, repaint, resetV
 async function finishLavaLifeSaving({ state, publish, random, rollOne, repaint, resetVision, recalculateVision, applyLandingEffects, die, }) {
     for (let attempt = 0; attempt < 2; attempt++) {
         state.u.uhp = -1;
-        await publish('You burn to a crisp...');
-        if (!await reviveHeroFromLava(state, publish, random)) {
+        await publish('You burn to a crisp...', { urgent: true });
+        if (!await reviveHeroFromLiquid(state, publish, random)) {
             await die({
                 killer: 'molten lava',
                 possessionAnswer: 'n',
                 deathVerb: 'burned',
                 deathType: BURNING,
             });
-            if (state.context)
-                state.context.move = 0;
-            return { entered: true, moved: false, died: true };
+            if (state.program_state.gameover)
+                return { entered: true, moved: false, died: true };
         }
         if (state.program_state?.gameover)
             return { entered: true, moved: false, died: true };
@@ -338,7 +344,13 @@ async function finishLavaLifeSaving({ state, publish, random, rollOne, repaint, 
             return escape;
         await publish("You're still burning.");
     }
-    return { entered: true, moved: false, died: true };
+    // C lava_effects(): two recoveries without a landing give the hero
+    // five turns to find another way out before the lava becomes fatal again.
+    if (!heroResistsFire(state))
+        setPropertyTimeout('fireResistance', 5, state);
+    if (!heroHasWaterWalking(state))
+        setPropertyTimeout('waterWalking', 5, state);
+    return { entered: true, moved: false, died: false };
 }
 // C lava_effects() brackets its boots- and inventory-burning stages with
 // iflags.in_lava_effects so nested Boots_off()/float_down()/spoteffects()
@@ -426,10 +438,19 @@ async function finishLavaEffects({ state, location, publish, random, rollDice, r
         });
         if (state.program_state?.gameover)
             return { entered: true, moved: false, died: true };
-        return finishLavaLifeSaving({
+        const rescue = await finishLavaLifeSaving({
             state, publish, random, rollOne, repaint, resetVision,
             recalculateVision, applyLandingEffects, die,
         });
+        if (rescue.died || rescue.moved)
+            return rescue;
+        const items = await destroyFireInventory(damage, {
+            state, publish, random, rollOne, die: finishDamageDeath,
+        });
+        if (items.heroDied)
+            return { ...rescue, died: true };
+        await igniteItems(state.inventory, { state, publish, random });
+        return rescue;
     }
     let sank = false;
     if (!waterWalking
@@ -451,7 +472,7 @@ async function finishLavaEffects({ state, location, publish, random, rollDice, r
     await igniteItems(state.inventory, { state, publish, random });
     return { entered: true, moved: false, died: false, sank };
 }
-export async function sinkHeroIntoLava({ state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, repaint = newsym, resetVision = vision_reset, recalculateVision = vision_recalc, applyLandingEffects = async () => { }, die = finishOrdinaryDeath, } = {}) {
+export async function sinkHeroIntoLava({ state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, repaint = newsym, resetVision = vision_reset, recalculateVision = vision_recalc, applyLandingEffects = async () => { }, die = finishLiquidDeath, } = {}) {
     requirePlayingGame(state);
     const hero = state.u;
     if (!hero?.utrap || hero.utraptype !== TT_LAVA)
@@ -471,21 +492,19 @@ export async function sinkHeroIntoLava({ state = game, publish = plineWithContin
         await publish('You sink below the surface and die.');
         await burnAwayHeroSlime(state, publish);
         hero.uhp = -1;
-        if (!await reviveHeroFromLava(state, publish, random)) {
+        if (!await reviveHeroFromLiquid(state, publish, random)) {
             await die({
                 killer: 'molten lava',
                 possessionAnswer: 'n',
                 deathVerb: 'dissolved',
                 deathType: DISSOLVED,
             });
-            if (state.context)
-                state.context.move = 0;
-            return { sank: true, died: true };
         }
-        if (state.program_state?.gameover)
+        if (state.program_state.gameover)
             return { sank: true, died: true };
         hero.utrap = 0;
         hero.utraptype = 0;
+        refreshMovementProperties(state);
         const airborne = hero.levitating || hero.levitation
             || hero.flying;
         if (!airborne) {
@@ -706,7 +725,7 @@ async function leaveWater({ state, location, publish, resetVision, recalculateVi
 // their terrain-entry guards: a submerged hero still drowns while held
 // by a monster or wearing water-walking boots (C Amulet_off()).
 export async function heroLiquidEffects(options = {}) {
-    const { state = game, publish = plineWithContinuation, random = rn2, recalculateVision = vision_recalc, resetVision = vision_reset, repaint = newsym, rollDice = d, rollOne = rnd, chooseTeleportDestination = null, applyLandingEffects = async () => { }, die = finishOrdinaryDeath, entry = 'spot-effects', } = options;
+    const { state = game, publish = plineWithContinuation, random = rn2, recalculateVision = vision_recalc, resetVision = vision_reset, repaint = newsym, rollDice = d, rollOne = rnd, chooseTeleportDestination = null, applyLandingEffects = async () => { }, die = finishLiquidDeath, entry = 'spot-effects', } = options;
     const fromFloatDown = entry === 'float-down';
     if (!state.level)
         return null;
@@ -860,8 +879,7 @@ export async function heroLiquidEffects(options = {}) {
         const description = liquid === 'water' || liquid === 'limitless water'
             ? killer : withIndefiniteArticle(killer);
         u.uhp = 0;
-        const lifeSaving = state === game ? beginHeroLifeSaving(random) : null;
-        if (!lifeSaving) {
+        if (!await reviveHeroFromLiquid(state, publish, random)) {
             await die({
                 killer,
                 deathCause: `drowned in ${description}`,
@@ -869,15 +887,8 @@ export async function heroLiquidEffects(options = {}) {
                 possessionAnswer: 'n',
                 deathVerb: 'drowned',
             });
-            if (state.context)
-                state.context.move = 0;
-            return { entered: true, moved: false, died: true };
         }
-        await publish('But wait...  Your medallion begins to glow!');
-        await publish('You feel much better!');
-        await publish('The medallion crumbles to dust!');
-        await completeHeroLifeSaving(lifeSaving);
-        if (state.program_state?.gameover)
+        if (state.program_state.gameover)
             return { entered: true, moved: false, died: true };
         const destination = safeTeleportDestination(state, random, rollOne);
         if (destination) {
@@ -885,20 +896,66 @@ export async function heroLiquidEffects(options = {}) {
             if (state.flags?.verbose !== false) {
                 await publish('You materialize in a different location!');
             }
-            return finishLiquidTeleport(movement, {
+            const escape = await finishLiquidTeleport(movement, {
                 state,
                 repaint,
                 resetVision,
                 recalculateVision,
                 applyLandingEffects,
             });
+            if (!escape.died)
+                await announceDrowningRescue(state, publish);
+            return escape;
         }
-        if (attempt === 0)
-            await publish("You're still drowning.");
+        await publish("You're still drowning.");
     }
-    if (state.context)
-        state.context.move = 0;
-    return { entered: true, moved: false, died: true };
+    u.uinwater = 0;
+    state.underwater = false;
+    await announceDrowningRescue(state, publish);
+    // C drown() returns TRUE after rescue even when no safe landing exists.
+    return { entered: true, moved: true, died: false };
+}
+// C trap.c:rescued_from_terrain(DROWNING)/back_on_ground(TRUE).
+async function announceDrowningRescue(state, publish) {
+    const { ux, uy } = state.u;
+    const location = state.level.requireAt(ux, uy);
+    if (isPoolAt(ux, uy, state)) {
+        const position = heroIsOnWaterLevel(state) || IS_WATERWALL(location.typ)
+            ? 'in the midst' : 'on top';
+        await publish(`You find yourself ${position} of ${displayLiquidName('water', state)}.`);
+    }
+    else if (IS_AIR(location.typ)) {
+        await publish(`You find yourself in ${heroIsOnWaterLevel(state) ? 'an air bubble' : 'mid air'}.`);
+    }
+    else {
+        let surface = surfaceName(ux, uy, state);
+        let preposition = state.u.levitating || state.u.levitation || state.u.flying ? 'over' : 'on';
+        switch (surface) {
+            case 'floor':
+            case 'ground':
+                surface = 'solid ground';
+                break;
+            case 'ice':
+                surface = iceDescriptionAt(ux, uy, { state });
+                break;
+            case 'bridge':
+            case 'altar':
+            case 'headstone':
+                surface = withIndefiniteArticle(surface);
+                break;
+            case 'stairs':
+            case 'lava':
+            case 'bottom':
+                surface = `the ${surface}`;
+                break;
+            default:
+                surface = withIndefiniteArticle(surface);
+                preposition = 'in';
+        }
+        await publish(`You find yourself ${preposition} ${surface}.`);
+    }
+    if (state === game)
+        updateLastSeenTerrain(ux, uy);
 }
 // Terrain that blocks ordinary movement. C hack.c.
 export function blocksMove(x, y) {

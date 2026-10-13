@@ -53,7 +53,7 @@ export function surfaceName(x, y, state = game) {
     if (type === ICE)
         return 'ice';
     if (IS_LAVA(type))
-        return 'lava';
+        return displayLiquidName('lava', state);
     if (type === DRAWBRIDGE_DOWN)
         return 'bridge';
     if (type === ALTAR)

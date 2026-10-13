@@ -1409,6 +1409,7 @@ function rndmonstReservoir(minAdjustment = 0, maxAdjustment = 0): number | null 
         const difficulty = requireMonsterData(MONSTER_DIFFICULTY, mndx);
         const geno = requireMonsterData(MONSTER_GENO, mndx);
         if (difficulty < minDifficulty || difficulty > maxDifficulty) continue;
+        if (Is_rogue_level(game.u.uz) && !/^[A-Z]$/.test(monsterClassSymbol(mndx))) continue;
         if (geno & (0x0200 | 0x1000)) continue; // G_NOGEN | G_UNIQ
         if ((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GONE) continue;
         if (inHell) {
@@ -6255,18 +6256,17 @@ async function createLuaMonster(context: SpecialLevelContext, options: DesMonste
                 peaceful, asleep, ...creation,
             });
     }
-    applyLuaMonsterAppearance(monster, options.appearance);
+    // sp_lev.c:lspo_monster() defaults class and random requests to male.
+    // create_monster() restores the requested sex after any initial shape.
     if (monster) {
-        // lspo_monster() resolves the request's gender before makemon();
-        // create_monster() restores it after birth and appearance changes.
-        const requestedFemale = options.female === undefined || options.female === -1
-            ? null : !!options.female;
-        if (monsterType === null) {
-            monster.female = requestedFemale ?? false;
-        } else if (requestedFemale !== null
-            && !((MONSTER_FLAGS2[monsterType] ?? 0) & (M2_MALE | M2_FEMALE))) {
-            monster.female = requestedFemale;
-        }
+        const explicitFemale = options.female === true || options.female === 1
+            ? true : options.female === false || options.female === 0 ? false : null;
+        const fixedSex = monsterType == null ? 0 : MONSTER_FLAGS2[monsterType] ?? 0;
+        const requestedFemale = fixedSex & M2_FEMALE ? true
+            : fixedSex & M2_MALE ? false
+                : explicitFemale ?? (monsterType == null ? false : !!monster.female);
+        applyLuaMonsterAppearance(monster, options.appearance);
+        monster.female = requestedFemale;
     }
     if (monster && options.name != null)
         setMonsterGivenName(monster, options.name);

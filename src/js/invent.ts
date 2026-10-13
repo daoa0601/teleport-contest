@@ -2,6 +2,7 @@
 // C ref: invent.c — ddoinv(), display_inventory(), dolook().
 
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { encyclopediaEntries } from './encyclopedia.js';
 import { objectBlessingDescription, objectDescription } from './object_description.js';
 import { primaryHandDescriptionDetail } from './object_equipment_description.js';
 import { ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
@@ -17,16 +18,18 @@ import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import {
-    MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, is_pit,
+    MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_ARMOR, is_pit,
 } from './const.js';
 import {
-    ARROW as FIRST_OBJECT, EGG, CHEST, LARGE_BOX, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, STATUE, TIN,
+    ARROW as FIRST_OBJECT, EGG, CHEST, GOLD_PIECE, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, STATUE, TIN,
 } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
-import { objectName, observeObjectForNaming } from './objnam.js';
+import { objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isWeaponTool, objectUsesCharges } from './object_properties.js';
+import { ammunitionMatchesLauncher, isBlade, isTwoWeaponObject } from './weapon_type.js';
+import { heroCanUseTwoWeapons } from './two_weapon.js';
 import { objectIsVulnerableToErosion } from './object_erosion.js';
 import { discoverArtifact } from './artifacts.js';
 import { isContainer } from './container.js';
@@ -59,7 +62,7 @@ export interface InventoryDescriptionOptions {
     projectPrimaryHand?: boolean;
 }
 
-export type InventoryActionKey = 'c' | 'd' | 'E' | 'i' | 'P' | 'r' | 't' | 'w' | '/'
+export type InventoryActionKey = '-' | 'c' | 'd' | 'E' | 'f' | 'i' | 'P' | 'Q' | 'r' | 't' | 'w' | 'x' | 'X' | '/'
     | '\x1b' | ' ' | '\n' | '\r';
 export interface InventoryAction { key: InventoryActionKey; item: GameObject }
 type IdentificationBeatitude = 'B' | 'U' | 'C' | 'X';
@@ -445,33 +448,72 @@ function inventorySections(items: readonly GameObject[] = game.inventory || [], 
 }
 
 async function showItemActionMenu(item: GameObject) {
-    const itemName = objectName(item);
-    const entries = [
-        { key: 'c', text: `Name this specific ${itemName}` },
-    ];
-    if (!item.worn) entries.push({ key: 'd', text: 'Drop this item' });
+    return showChoiceWindow({
+        title: `Do what with the ${objectName(item)}?`,
+        entries: itemActionEntries(item, game),
+        validKeys: [27, 32, 10, 13],
+    });
+}
+
+function itemActionEntries(item: GameObject, state: GameState) {
+    const itemName = simpleObjectName(item, state);
+    const entries: { key: InventoryActionKey; text: string }[] = [];
+    const alreadyWorn = !!((item.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY));
+    const stack = item.quan > 1;
+    const shoot = ammunitionMatchesLauncher(item, state.uwep);
+    if (item === state.uwep || item === state.uswapwep || item === state.uquiver) {
+        const quivered = item === state.uquiver;
+        const verb = quivered ? 'Quiver' : 'Wield';
+        const action = quivered ? 'un-ready' : 'un-wield';
+        const noun = item.oclass === 2 || isWeaponTool(item) ? 'weapon' : 'item';
+        entries.push({ key: '-', text: `${verb} '-' to ${action} ${stack ? `these ${noun}s` : `this ${noun}`}` });
+    }
+    entries.push({ key: 'c', text: `Name ${stack ? 'this stack of' : 'this specific'} ${itemName}` });
+    if (!alreadyWorn) entries.push({ key: 'd', text: `Drop this ${stack ? 'stack' : 'item'}` });
     if ([2, 4, 11, 13].includes(item.oclass)
         || [239, 245].includes(item.otyp)) {
-        entries.push({ key: 'E', text: 'Write on the floor with this item' });
+        const verb = isBlade(item) || item.oclass === 11 ? 'Engrave' : 'Write';
+        const surface = surfaceName(state.u.ux, state.u.uy, state);
+        entries.push({ key: 'E', text: `${verb} on the ${surface} with ${stack ? 'one of these items' : 'this item'}` });
+    }
+    if (item === state.uquiver) {
+        const launcher = shoot && state.uwep
+            ? ` with your wielded ${simpleObjectName(state.uwep, state)}` : '';
+        entries.push({ key: 'f', text: `${shoot ? 'Shoot' : 'Throw'} ${stack ? 'one of these' : 'this'}${launcher}` });
     }
     entries.push({ key: 'i', text: 'Adjust inventory by assigning new letter' });
     if (item.oclass === 4) entries.push({ key: 'P', text: 'Put this ring on' });
+    if ([2, 13].includes(item.oclass) && item !== state.uquiver)
+        entries.push({ key: 'Q', text: `Quiver this ${stack ? 'stack' : 'item'} for easy ${shoot ? 'shooting' : 'throwing'} with 'f'ire` });
     if (item.oclass === 10)
         entries.push({ key: 'r', text: 'Study this spellbook' });
-    entries.push({ key: 't', text: 'Throw this item' });
-    entries.push({ key: 'w', text: `Wield this item${item.oclass !== 2 ? ' in your hands' : ''}` });
-    entries.push({ key: '/', text: 'Look up information about this' });
-    return showChoiceWindow({
-        title: `Do what with the ${itemName}?`, entries,
-        validKeys: [27, 32, 10, 13],
-    });
+    if (!alreadyWorn) {
+        const goldStack = stack && item.otyp === GOLD_PIECE;
+        const quantity = stack ? goldStack ? 'them' : 'one of these' : 'this item';
+        const fireAlias = item === state.uquiver && !goldStack ? " (same as 'f')" : '';
+        entries.push({ key: 't', text: `${shoot ? 'Shoot' : 'Throw'} ${quantity}${fireAlias}` });
+    }
+    if (item !== state.uwep)
+        entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'}${item.oclass === 2 || isWeaponTool(item) ? ' as your weapon' : ' in your hands'}` });
+    if (item === state.uwep) entries.push({ key: 'x', text: state.uswapwep
+        ? 'Swap this with your alternate weapon' : 'Ready this as an alternate weapon' });
+    else if (item === state.uswapwep)
+        entries.push({ key: 'x', text: 'Swap this with your main weapon' });
+    if ((item === state.uwep || item === state.uswapwep)
+        && (state.u.twoweap || heroCanUseTwoWeapons(state) && !state.uarms
+            && isTwoWeaponObject(state.uwep) && state.uwep && !OBJECT_BIMANUAL[state.uwep.otyp]
+            && isTwoWeaponObject(state.uswapwep) && state.uswapwep && !OBJECT_BIMANUAL[state.uswapwep.otyp]))
+        entries.push({ key: 'X', text: `Toggle two-weapon combat ${state.u.twoweap ? 'off' : 'on'}` });
+    if (encyclopediaEntries(singularObjectName(item, state), state).length)
+        entries.push({ key: '/', text: 'Look up information about this' });
+    return entries;
 }
 
 function inventoryActionKey(code: number): InventoryActionKey {
     const key = String.fromCharCode(code);
     switch (key) {
-    case 'c': case 'd': case 'E': case 'i': case 'P': case 'r':
-    case 't': case 'w': case '/': case '\x1b': case ' ': case '\n': case '\r':
+    case '-': case 'c': case 'd': case 'E': case 'f': case 'i': case 'P': case 'Q': case 'r':
+    case 't': case 'w': case 'x': case 'X': case '/': case '\x1b': case ' ': case '\n': case '\r':
         return key;
     default:
         throw new RangeError(`Unexpected inventory action key ${code}`);

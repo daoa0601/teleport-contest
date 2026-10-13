@@ -4,19 +4,19 @@
 import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsHallucinating } from './senses.js';
 import {
-    BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED,
-    DOOR, DROWNING, ICE, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL,
+    BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING,
+    DOOR, ICE, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL,
     Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE,
     FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
-import { feel_newsym, newsym, plineWithContinuation } from './display.js';
+import { displayLiquidName, feel_newsym, newsym, plineWithContinuation, updateLastSeenTerrain } from './display.js';
 import { heroPassesWalls, heroFormSticks } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { monsterName } from './monster_name.js';
 import {
-    beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
+    beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath,
 } from './end.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
@@ -60,15 +60,17 @@ import {
 
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './terrain_properties.js';
-import { waterbodyName } from './terrain_name.js';
+import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
+import { surfaceName, waterbodyName } from './terrain_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { iceDescriptionAt } from './dungeon_feature.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Position } from './map_types.js';
 import type { MessagePublisher } from './display.js';
-import type { DeathHandler, OrdinaryDeathHandler } from './end.js';
+import type { DeathHandler, OrdinaryDeathHandler, OrdinaryDeathOptions } from './end.js';
 
 type RandomBelow = (limit: number) => number;
 type RollDice = (count: number, sides: number) => number;
@@ -393,7 +395,7 @@ export async function burnAwayHeroSlime(state: GameState, publish: MessagePublis
     return true;
 }
 
-async function reviveHeroFromLava(state: PlayingGameState, publish: MessagePublisher, random: RandomBelow) {
+async function reviveHeroFromLiquid(state: PlayingGameState, publish: MessagePublisher, random: RandomBelow) {
     const lifeSaving = state === game ? beginHeroLifeSaving(random) : null;
     if (!lifeSaving) return false;
     await publish('But wait...  Your medallion begins to glow!');
@@ -401,6 +403,12 @@ async function reviveHeroFromLava(state: PlayingGameState, publish: MessagePubli
     await publish('The medallion crumbles to dust!');
     await completeHeroLifeSaving(lifeSaving);
     return true;
+}
+
+async function finishLiquidDeath(options: OrdinaryDeathOptions): Promise<boolean> {
+    // The liquid effect has already announced the death. done() still owns
+    // life saving and the wizard/explore recovery question.
+    return await finishHeroDeath({ ...options, deathLineShown: true });
 }
 
 async function teleportHeroOutOfLiquid({
@@ -425,16 +433,16 @@ async function finishLavaLifeSaving({
 }: LavaSurvivalContext): Promise<EnteredLiquid> {
     for (let attempt = 0; attempt < 2; attempt++) {
         state.u.uhp = -1;
-        await publish('You burn to a crisp...');
-        if (!await reviveHeroFromLava(state, publish, random)) {
+        await publish('You burn to a crisp...', { urgent: true });
+        if (!await reviveHeroFromLiquid(state, publish, random)) {
             await die({
                 killer: 'molten lava',
                 possessionAnswer: 'n',
                 deathVerb: 'burned',
                 deathType: BURNING,
             });
-            if (state.context) state.context.move = 0;
-            return { entered: true, moved: false, died: true };
+            if (state.program_state.gameover)
+                return { entered: true, moved: false, died: true };
         }
 
         if (state.program_state?.gameover)
@@ -446,7 +454,11 @@ async function finishLavaLifeSaving({
         if (escape) return escape;
         await publish("You're still burning.");
     }
-    return { entered: true, moved: false, died: true };
+    // C lava_effects(): two recoveries without a landing give the hero
+    // five turns to find another way out before the lava becomes fatal again.
+    if (!heroResistsFire(state)) setPropertyTimeout('fireResistance', 5, state);
+    if (!heroHasWaterWalking(state)) setPropertyTimeout('waterWalking', 5, state);
+    return { entered: true, moved: false, died: false };
 }
 
 // C lava_effects() brackets its boots- and inventory-burning stages with
@@ -535,10 +547,17 @@ async function finishLavaEffects({
             previouslyAnnounced: bootsBurned ? 1 : 0,
         });
         if (state.program_state?.gameover) return { entered: true, moved: false, died: true };
-        return finishLavaLifeSaving({
+        const rescue = await finishLavaLifeSaving({
             state, publish, random, rollOne, repaint, resetVision,
             recalculateVision, applyLandingEffects, die,
         });
+        if (rescue.died || rescue.moved) return rescue;
+        const items = await destroyFireInventory(damage, {
+            state, publish, random, rollOne, die: finishDamageDeath,
+        });
+        if (items.heroDied) return { ...rescue, died: true };
+        await igniteItems(state.inventory, { state, publish, random });
+        return rescue;
     }
 
     let sank = false;
@@ -572,7 +591,7 @@ export async function sinkHeroIntoLava({
     resetVision = vision_reset,
     recalculateVision = vision_recalc,
     applyLandingEffects = async () => {},
-    die = finishOrdinaryDeath,
+    die = finishLiquidDeath,
 }: Omit<HeroLiquidOptions, 'rollDice' | 'chooseTeleportDestination' | 'entry'> = {}): Promise<LavaSinkingResult | null> {
     requirePlayingGame(state);
     const hero = state.u;
@@ -593,20 +612,19 @@ export async function sinkHeroIntoLava({
         await publish('You sink below the surface and die.');
         await burnAwayHeroSlime(state, publish);
         hero.uhp = -1;
-        if (!await reviveHeroFromLava(state, publish, random)) {
+        if (!await reviveHeroFromLiquid(state, publish, random)) {
             await die({
                 killer: 'molten lava',
                 possessionAnswer: 'n',
                 deathVerb: 'dissolved',
                 deathType: DISSOLVED,
             });
-            if (state.context) state.context.move = 0;
-            return { sank: true, died: true };
         }
 
-        if (state.program_state?.gameover) return { sank: true, died: true };
+        if (state.program_state.gameover) return { sank: true, died: true };
         hero.utrap = 0;
         hero.utraptype = 0;
+        refreshMovementProperties(state);
         const airborne = hero.levitating || hero.levitation
             || hero.flying;
         if (!airborne) {
@@ -836,7 +854,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
         rollOne = rnd,
         chooseTeleportDestination = null,
         applyLandingEffects = async () => {},
-        die = finishOrdinaryDeath,
+        die = finishLiquidDeath,
         entry = 'spot-effects',
     } = options;
     const fromFloatDown = entry === 'float-down';
@@ -998,8 +1016,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
         const description = liquid === 'water' || liquid === 'limitless water'
             ? killer : withIndefiniteArticle(killer);
         u.uhp = 0;
-        const lifeSaving = state === game ? beginHeroLifeSaving(random) : null;
-        if (!lifeSaving) {
+        if (!await reviveHeroFromLiquid(state, publish, random)) {
             await die({
                 killer,
                 deathCause: `drowned in ${description}`,
@@ -1007,15 +1024,8 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
                 possessionAnswer: 'n',
                 deathVerb: 'drowned',
             });
-            if (state.context) state.context.move = 0;
-            return { entered: true, moved: false, died: true };
         }
-
-        await publish('But wait...  Your medallion begins to glow!');
-        await publish('You feel much better!');
-        await publish('The medallion crumbles to dust!');
-        await completeHeroLifeSaving(lifeSaving);
-        if (state.program_state?.gameover)
+        if (state.program_state.gameover)
             return { entered: true, moved: false, died: true };
 
         const destination = safeTeleportDestination(state, random, rollOne);
@@ -1026,19 +1036,59 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
             if (state.flags?.verbose !== false) {
                 await publish('You materialize in a different location!');
             }
-            return finishLiquidTeleport(movement, {
+            const escape = await finishLiquidTeleport(movement, {
                 state,
                 repaint,
                 resetVision,
                 recalculateVision,
                 applyLandingEffects,
             });
+            if (!escape.died) await announceDrowningRescue(state, publish);
+            return escape;
         }
-        if (attempt === 0) await publish("You're still drowning.");
+        await publish("You're still drowning.");
     }
 
-    if (state.context) state.context.move = 0;
-    return { entered: true, moved: false, died: true };
+    u.uinwater = 0;
+    state.underwater = false;
+    await announceDrowningRescue(state, publish);
+    // C drown() returns TRUE after rescue even when no safe landing exists.
+    return { entered: true, moved: true, died: false };
+}
+
+// C trap.c:rescued_from_terrain(DROWNING)/back_on_ground(TRUE).
+async function announceDrowningRescue(state: PlayingGameState, publish: MessagePublisher) {
+    const { ux, uy } = state.u;
+    const location = state.level.requireAt(ux, uy);
+    if (isPoolAt(ux, uy, state)) {
+        const position = heroIsOnWaterLevel(state) || IS_WATERWALL(location.typ)
+            ? 'in the midst' : 'on top';
+        await publish(`You find yourself ${position} of ${displayLiquidName('water', state)}.`);
+    } else if (IS_AIR(location.typ)) {
+        await publish(`You find yourself in ${heroIsOnWaterLevel(state) ? 'an air bubble' : 'mid air'}.`);
+    } else {
+        let surface = surfaceName(ux, uy, state);
+        let preposition = state.u.levitating || state.u.levitation || state.u.flying ? 'over' : 'on';
+        switch (surface) {
+        case 'floor': case 'ground':
+            surface = 'solid ground';
+            break;
+        case 'ice':
+            surface = iceDescriptionAt(ux, uy, { state });
+            break;
+        case 'bridge': case 'altar': case 'headstone':
+            surface = withIndefiniteArticle(surface);
+            break;
+        case 'stairs': case 'lava': case 'bottom':
+            surface = `the ${surface}`;
+            break;
+        default:
+            surface = withIndefiniteArticle(surface);
+            preposition = 'in';
+        }
+        await publish(`You find yourself ${preposition} ${surface}.`);
+    }
+    if (state === game) updateLastSeenTerrain(ux, uy);
 }
 
 // Terrain that blocks ordinary movement. C hack.c.

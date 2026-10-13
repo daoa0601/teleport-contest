@@ -6,11 +6,40 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { useMonsterDefensiveItem } from '../js/monster_defensive_item.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { prepareMonsterItemUse } from '../js/monster_item_use.js';
+import { prepareMonsterItemUse, presentMonsterQuaff } from '../js/monster_item_use.js';
 import { BUGLE, POT_HEALING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+for (const { condition, expected } of [
+    { condition: 'awake', expected: 'You hear a chugging sound.' },
+    { condition: 'acoustics disabled', expected: undefined },
+    { condition: 'underwater', expected: 'You barely hear a chugging sound.' },
+    { condition: 'asleep', expected: 'You dream that you hear a chugging sound.' },
+    { condition: 'deaf and asleep', expected: undefined },
+]) {
+    void test(`unseen potion drinking respects a hero who is ${condition}`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const drinker = await createMonsterAt('orc', 11, 10, NO_MINVENT);
+        drinker.minvis = true;
+        const potion = await knownObject(POT_HEALING);
+        if (condition === 'acoustics disabled') game.flags.acoustics = false;
+        if (condition === 'underwater') game.underwater = true;
+        if (condition.includes('asleep')) putHeroToSleep(10, { state: game });
+        if (condition.includes('deaf')) game.u.deafTurns = 10;
+        const messages: string[] = [];
+
+        const seen = await presentMonsterQuaff(drinker, potion, {
+            state: game, publish: message => { messages.push(message); },
+        });
+
+        assert.equal(seen, false);
+        assert.equal(messages[0], expected);
+        assert.equal(messages.length, expected === undefined ? 0 : 1);
+    });
+}
 
 for (const freed of [true, false]) {
     void test(`a bottle djinni speaks to a deaf hero before ${freed ? 'staying peacefully' : 'vanishing'}`, async () => {
