@@ -390,7 +390,7 @@ function weaponForCurrentAction(monster: Monster, state: GameState): GameObject 
 function namedWeapon(weapon: GameObject, state: GameState): string {
     const artifact = artifactById(weapon.oartifact, state);
     if (artifact) return artifact.name;
-    const name = requireObjectData(OBJECT_NAMES, weapon.otyp);
+    const name = objectName(weapon, state);
     return `The ${(weapon.quan ?? weapon.quantity ?? 1) > 1 ? makePlural(name) : name}`;
 }
 
