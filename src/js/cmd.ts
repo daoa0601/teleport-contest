@@ -102,7 +102,8 @@ import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
 import {
-    chooseInventoryObject, compactInventoryLetters, promptInventoryObject, reassignInventoryLetters,
+    chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder,
+    promptInventoryObject, reassignInventoryLetters,
 } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
 import {
@@ -6613,11 +6614,13 @@ async function dothrow(
     const launcher = game.uwep;
     const wieldingSling = !!launcher
         && OBJECT_SUBTYPE[launcher.otyp] === OBJECT_SUBTYPE[SLING];
+    if (!selectedItem && game.flags.fixinv === false) reassignInventoryLetters();
+    // C getobj() sorts its candidates independently of the carried chain.
     const throwables = (game.inventory || []).filter(item => {
         const objectClass = item.oclass || objectClassForType(item.otyp);
         return (objectClass === 12 || objectClass === (wieldingSling ? 13 : 2))
             && !(item === game.uwep && (item.quantity ?? item.quan ?? 1) === 1);
-    });
+    }).sort((left, right) => inventoryLetterOrder(left.invlet) - inventoryLetterOrder(right.invlet));
     const letters = throwables.map(item => item.invlet).join('');
     const prompt = letters
         ? `What do you want to throw? [${letters} or ?*] `
