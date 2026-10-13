@@ -11,6 +11,7 @@ import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { objectQuantity } from './object_stack.js';
 import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectName } from './objnam.js';
 import { promptYesNo } from './query.js';
+import { objectOwnershipPrefix } from './shk.js';
 import { dipSink } from './sink_dipping.js';
 import { isPoolAt } from './terrain_properties.js';
 import { waterbodyName } from './terrain_name.js';
@@ -136,11 +137,16 @@ function coveringEquipment(object) {
 }
 async function reportCoveredEquipment(object) {
     const covering = coveringEquipment(object);
-    if (!covering.length)
+    const first = covering[0];
+    if (!first)
         return false;
+    const second = covering[1];
+    const sameOwner = second !== undefined
+        && objectOwnershipPrefix(first, game, { capitalized: false })
+            === objectOwnershipPrefix(second, game, { capitalized: false });
     const name = covering.map((item, index) => {
-        const owned = ownedObjectName(item, game, { capitalized: false });
-        return index && owned.startsWith('your ') ? objectName(item) : owned;
+        return index > 0 && sameOwner ? objectName(item)
+            : ownedObjectName(item, game, { capitalized: false });
     }).join(' and ');
     await pline(`You need to take off ${name} to dip ${ownedObjectName(object, game, { capitalized: false })}.`);
     return true;
