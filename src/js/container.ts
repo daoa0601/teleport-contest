@@ -199,7 +199,9 @@ function categoryChoices(objects: readonly GameObject[]): MultiSelectItem<Contai
     const justPicked = objects.filter(object => object.pickup_prev);
     const onePicked = justPicked.length === 1 ? justPicked[0] : null;
     if (justPicked.length) special.push({
-        key: 'P', text: onePicked ? `Just picked up: ${objectDescription(onePicked)}`
+        key: 'P', text: onePicked ? `Just picked up: ${objectDescription(
+            onePicked, inventoryPrimaryHandDetail(onePicked),
+        )}`
             : 'Items you just picked up', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
         value: { matches: object => !!object.pickup_prev, filter: 'picked' },
     });

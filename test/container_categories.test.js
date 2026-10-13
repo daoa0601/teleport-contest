@@ -1,12 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { PARANOID_AUTOALL, PARANOID_CONFIRM } from '../js/const.js';
+import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, PARANOID_AUTOALL, PARANOID_CONFIRM } from '../js/const.js';
 import { useContainer } from '../js/container.js';
+import { flushPendingTopline } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { fullyIdentifyObject } from '../js/invent.js';
+import { beginObjectBurn } from '../js/light.js';
 import { CHEST, CLUB, LOADSTONE, POT_HEALING } from '../js/object_data.js';
-import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { setHeroBlindnessTurns } from '../js/senses.js';
+import { addInventoryItem } from '../js/u_init.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 async function filledChest() {
     freshObjectRoom();
@@ -82,6 +90,41 @@ void test('a count on a single just-picked stack stashes that many items directl
     const stored = chest.contents?.filter(object => object.otyp === CLUB);
     assert.equal(stored?.reduce((total, object) => total + object.quan, 0), 3);
 });
+for (const { artifact, sight, expected } of [
+    { artifact: 'Sunsword', sight: 'normal', expected: /Sunsword.*\(weapon in right hand, brightly lit\)$/ },
+    { artifact: 'Sunsword', sight: 'blind', expected: /Sunsword.*\(weapon in right hand\)$/ },
+    { artifact: 'Sting', sight: 'normal', expected: /Sting.*\(weapon in right hand, flickering light blue\)$/ },
+    { artifact: 'Sting', sight: 'blind', expected: /Sting.*\(weapon in right hand\)$/ },
+    { artifact: 'Sting', sight: 'hallucinating', expected: /Sting.*\(weapon in right hand, flickering [a-z -]+/ },
+]) {
+    void test(`the just-picked ${artifact} hint reflects ${sight} vision`, async () => {
+        const { chest } = await filledChest();
+        installPagerInput(resetInputState(), { expected: /Sting flickers light blue!/, limit: 2 });
+        const weapon = await addInventoryItem(await artifactObject(artifact, { pickup_prev: true }));
+        fullyIdentifyObject(weapon);
+        if (artifact === 'Sting')
+            await createMonsterAt('goblin', 14, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
+        await setPrimaryWeapon(weapon);
+        if (artifact === 'Sunsword')
+            beginObjectBurn(weapon);
+        await flushPendingTopline();
+        if (sight === 'blind')
+            setHeroBlindnessTurns(10);
+        if (sight === 'hallucinating')
+            game.u.hallucinationTurns = 100;
+        const input = resetInputState();
+        input.feed('i');
+        const looting = useContainer(chest, { held: true });
+        await input.waitUntilBlocked();
+        const rows = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('').trim()) || [];
+        const hint = rows.find(row => row.includes('Just picked up:')) || '';
+        input.feed('\x1b');
+        await looting;
+        assert.match(hint, expected);
+        if (sight === 'hallucinating')
+            assert.doesNotMatch(hint, /light blue/);
+    });
+}
 void test('a just-picked held container and another item still require an item selection', async () => {
     freshObjectRoom();
     const chest = await addInventoryObject(CHEST, {

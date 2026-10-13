@@ -150,7 +150,7 @@ function categoryChoices(objects) {
     const onePicked = justPicked.length === 1 ? justPicked[0] : null;
     if (justPicked.length)
         special.push({
-            key: 'P', text: onePicked ? `Just picked up: ${objectDescription(onePicked)}`
+            key: 'P', text: onePicked ? `Just picked up: ${objectDescription(onePicked, inventoryPrimaryHandDetail(onePicked))}`
                 : 'Items you just picked up', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
             value: { matches: object => !!object.pickup_prev, filter: 'picked' },
         });
