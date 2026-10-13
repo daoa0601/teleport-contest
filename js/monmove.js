@@ -4299,14 +4299,18 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         AT_ENGL,
     ].includes(attackType))
         return null;
-    if (attackType === AT_MAGC && (damageType === AD_SPEL || damageType === AD_CLRC)) {
+    if (attackType === AT_MAGC) {
         // mhitu.c:mattacku() enters castmu() without a to-hit die.  Spell
         // choice and fumble precede the casting line.  Base spell damage is
         // rolled only after that line returns from tty; a long actor name can
         // therefore move d() to the acknowledgement input.
-        let spell = monster.m_lev ? chooseMonsterSpell(monster, damageType, state, random, calls)
-            : MONSTER_WIZARD_SPELLS[0];
-        if (!spell)
+        const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
+        const choosesSpell = damageType === AD_SPEL || damageType === AD_CLRC;
+        let spell = choosesSpell
+            ? monsterLevel ? chooseMonsterSpell(monster, damageType, state, random, calls)
+                : MONSTER_WIZARD_SPELLS[0]
+            : undefined;
+        if (choosesSpell && !spell)
             return {
                 kind: 'hero-spell',
                 threshold,
@@ -4315,10 +4319,11 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
                 attackIndex,
                 cast: false,
             };
-        if (!monster.m_lev)
+        if (!monsterLevel)
             return {
                 kind: 'hero-spell', threshold, attackType, damageType, attackIndex,
-                cast: false, blocked: true, curseKind: monsterCurseKind(monster, spell, state, random, calls),
+                cast: false, blocked: true,
+                curseKind: monsterCurseKind(monster, !!(spell && (spell.flags & MCF_INDIRECT)), state, random, calls),
             };
         // C castmu() starts cnt at 40.  choose_monster_spell() already tests
         // usefulness while walking the spell table; the do/while condition
@@ -4326,7 +4331,8 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // after the loop.  Stateful usefulness checks such as geyser's
         // rn2(5) make that exact call count observable.
         let attempts = 39;
-        while (attempts-- > 0 && monsterSpellUseless(monster, spell, state, random, calls)) {
+        while (spell && (damageType === AD_SPEL || damageType === AD_CLRC)
+            && attempts-- > 0 && monsterSpellUseless(monster, spell, state, random, calls)) {
             spell = chooseMonsterSpell(monster, damageType, state, random, calls);
         }
         if (attempts < 0) {
@@ -4336,32 +4342,33 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
                 attackType,
                 damageType,
                 attackIndex,
-                spell: spell.key,
+                ...(spell ? { spell: spell.key } : {}),
                 cast: false,
             };
         }
         if (monster.mcan ||
             monster.mspec_used ||
-            !(monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0)) {
-            const curseKind = monsterCurseKind(monster, spell, state, random, calls);
+            ((monster.seen_resistance ?? 0) & seenResistanceForDamage(damageType))) {
+            const curseKind = monsterCurseKind(monster, !!(spell && (spell.flags & MCF_INDIRECT)), state, random, calls);
             return {
                 kind: 'hero-spell',
                 threshold,
                 attackType,
                 damageType,
                 attackIndex,
-                spell: spell.key,
+                ...(spell ? { spell: spell.key } : {}),
                 cast: false,
                 blocked: true,
                 curseKind,
             };
         }
-        const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
-        monster.mspec_used = monsterLevel < 8 ? 10 - monsterLevel : 2;
-        if (!foundHero && !(spell.flags & MCF_INDIRECT))
+        if (choosesSpell)
+            monster.mspec_used = monsterLevel < 8 ? 10 - monsterLevel : 2;
+        const directed = !(spell && (spell.flags & MCF_INDIRECT));
+        if (!foundHero && directed)
             return {
                 kind: 'hero-spell', threshold, attackType, damageType, attackIndex,
-                spell: spell.key, cast: false, misdirected: true,
+                ...(spell ? { spell: spell.key } : {}), cast: false, misdirected: true,
             };
         endVoluntaryMultiTurn(state);
         const fumble = recordRandom(random, calls, Math.max(1, monsterLevel * 10)) <
@@ -4373,7 +4380,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
                 attackType,
                 damageType,
                 attackIndex,
-                spell: spell.key,
+                ...(spell ? { spell: spell.key } : {}),
                 cast: false,
                 fumbled: true,
             };
@@ -4388,12 +4395,12 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             attackType,
             damageType,
             attackIndex,
-            spell: spell.key,
+            ...(spell ? { spell: spell.key } : {}),
             cast: true,
             spellDice: foundHero ? spellDice : 0,
             spellSides,
             deferredSpellDamage: true,
-            directed: !(spell.flags & MCF_INDIRECT),
+            directed,
             deferredSpellEffect: true,
         };
     }
@@ -5793,14 +5800,20 @@ export function rollDeferredHeroSpellDamage(action, state, rollDice = d) {
     }
     if (heroHasHalfSpellDamage(state))
         damage = Math.trunc((damage + 1) / 2);
+    attack.damage = damage;
+    attack.deferredSpellDamage = false;
+    if (attack.damageType === AD_FIRE || attack.damageType === AD_COLD || attack.damageType === AD_MAGM) {
+        attack.spellEffectMessage = attack.damageType === AD_FIRE ? "You're enveloped in flames."
+            : attack.damageType === AD_COLD ? "You're covered in frost."
+                : 'You are hit by a shower of missiles!';
+        return attack;
+    }
     const spell = (attack.damageType === AD_CLRC ? MONSTER_CLERIC_SPELLS : MONSTER_WIZARD_SPELLS).find((candidate) => candidate.key === attack.spell);
     if (!spell)
         throw new Error('A deferred spell must retain its selected native spell');
     const preview = monsterSpellEffectPreview(spell, damage, state);
-    attack.damage = damage;
     attack.effectDamage = preview.effectDamage;
     attack.spellEffectMessage = preview.effectMessage;
-    attack.deferredSpellDamage = false;
     return attack;
 }
 // mdamageu() subtracts from the active body. Keep raw HP for tty's -1
@@ -5809,7 +5822,8 @@ export function applyHeroSpellDamage(attack, damage, state) {
     const hpKey = Upolyd(state.u) ? 'mh' : 'uhp';
     const hpBefore = state.u[hpKey];
     attack.fatalDamage = { hpKey, hpBefore, damage };
-    state.u[hpKey] = Math.max(0, hpBefore - damage);
+    const hpMax = hpKey === 'mh' ? state.u.mhmax : state.u.uhpmax;
+    state.u[hpKey] = Math.min(hpMax, hpBefore - damage);
     attack.appliedDamage = damage;
     attack.rehumanize = hpKey === 'mh' && state.u.mh < 1;
     attack.heroDied = hpKey === 'uhp' && state.u.uhp < 1;
@@ -6035,9 +6049,9 @@ function chooseMonsterSpell(monster, damageType, state, random, calls) {
     }
     return list[0];
 }
-function monsterCurseKind(monster, spell, state, random, calls) {
+function monsterCurseKind(monster, undirected, state, random, calls) {
     if (canSeeMonster(monster) && couldsee(monster.mx, monster.my)) {
-        if (spell.flags & MCF_INDIRECT)
+        if (undirected)
             return 'visible-undirected';
         const wrongTarget = monster.mux !== state.u.ux || monster.muy !== state.u.uy;
         if (state.u.invisible && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS) && wrongTarget
@@ -6052,7 +6066,7 @@ function monsterCurseKind(monster, spell, state, random, calls) {
     return null;
 }
 async function publishMonsterSpellFailure(monster, spell, state, random, calls) {
-    const kind = monsterCurseKind(monster, spell, state, random, calls);
+    const kind = monsterCurseKind(monster, !!(spell.flags & MCF_INDIRECT), state, random, calls);
     if (kind === 'audible')
         await plineWithContinuation('You hear a mumbled curse.', { noRepeat: true });
     else if (kind) {
