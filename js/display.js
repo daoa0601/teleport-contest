@@ -2299,6 +2299,8 @@ function writeMapRow(display, y) {
 }
 // ── flush_screen ──
 export async function flush_screen(mode) {
+    if (game.program_state.saving || game._suppressMapStatusForFlush)
+        return;
     if (game.program_state?.windows_exited)
         return;
     // C display.c pauses map updates during level arrival. Message windows
@@ -2378,12 +2380,12 @@ export async function bot() {
 }
 function refreshStatusLines() {
     const display = game.nhDisplay;
-    if (!display || game._statusUpdatesDisabled)
+    if (!display || game._statusUpdatesDisabled || game.program_state.saving
+        || game.program_state.windows_exited || game._suppressMapStatusForFlush)
         return;
     game.context.botl = false;
     game.context.time_botl = false;
-    if (game.u.uhp === -1 || game.program_state.saving
-        || game.program_state.windows_exited || game._suppressMapStatusForFlush)
+    if (game.u.uhp === -1)
         return;
     game.u._encumbrance = encumbranceLabel(nearCapacity(game));
     display.statusLines = [_statusLine1(), _statusLine2(false)];
@@ -2393,7 +2395,8 @@ function refreshStatusLines() {
 // C botl.c:stat_update_time() notifies only BL_TIME. Other fields keep the
 // values from the last bot(), even if game state changed during an occupation.
 export function timebot() {
-    if (game._statusUpdatesDisabled)
+    if (game._statusUpdatesDisabled || game.program_state.saving
+        || game.program_state.windows_exited || game._suppressMapStatusForFlush)
         return;
     game.context.time_botl = false;
     const display = game.nhDisplay;
