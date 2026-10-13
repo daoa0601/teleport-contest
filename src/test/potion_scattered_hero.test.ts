@@ -5,6 +5,7 @@ import { POT_FRUIT_JUICE } from '../js/object_data.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createMonsterAt } from './support/monsters.js';
 
 void test('a scattered potion that hits the hero deals bottle damage before it evaporates', async () => {
     freshObjectRoom();
@@ -21,4 +22,18 @@ void test('a scattered potion that hits the hero deals bottle damage before it e
     assert.equal(game.u.uhp, 39);
     assert.equal(potion.where, 'gone');
     assert.ok(messages.some(message => /crashes on your head/.test(message)), messages.join(' | '));
+});
+
+void test('an environmental potion impact leaves the monster eating its meal', async () => {
+    freshObjectRoom();
+    const { ux, uy } = game.u;
+    const dog = await createMonsterAt('dog', ux + 1, uy);
+    dog.meating = 7;
+    await floorObject(POT_FRUIT_JUICE, ux + 2, uy);
+
+    await scatterFloorObjects(ux + 2, uy, 2, {
+        mayDestroy: false, random: () => 0, rollOne: () => 1,
+    });
+
+    assert.equal(dog.meating, 7);
 });

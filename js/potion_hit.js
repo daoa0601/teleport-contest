@@ -514,7 +514,11 @@ async function applyPotionVaporEffect({ state = game, potion, publish = plineWit
         typeCall,
     };
 }
-async function applySupportedDirectEffect({ state, monster, potion, targetVisible, targetSpotted, wakeMonster, publish, showShield, spotMonster, repaintMonster, rememberInvisible, wakeNearby, splitMonster, transformWere, finishKill, heroCaused, }) {
+async function applySupportedDirectEffect({ state, monster, potion, targetVisible, targetSpotted, wakeMonster: wakeAttackedTarget, publish, showShield, spotMonster, repaintMonster, rememberInvisible, wakeNearby, splitMonster, transformWere, finishKill, heroCaused, }) {
+    // Most effects inherit potionhit's your_fault flag. Invisibility has
+    // its own anger rule; polymorph delegates its contact to bhitm().
+    const wakeMonster = heroCaused || potion.otyp === POT_INVISIBILITY || potion.otyp === POT_POLYMORPH
+        ? wakeAttackedTarget : (target) => { target.msleeping = 0; };
     if (potion.otyp === POT_POLYMORPH) {
         const result = await polymorphMonsterFromMagic(monster, {
             state,
@@ -525,7 +529,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
             finishDeath: finishKill,
         });
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             ...result,
@@ -547,7 +551,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if (!killed && (await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             explosionDamage,
@@ -583,7 +587,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if (!killed && (await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             acidResistant,
@@ -595,7 +599,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     if (potion.otyp === POT_WATER) {
         const affectedByHoliness = monsterHatesBlessings(monster)
             || monsterIsWere(monster);
-        let angered = true;
+        let angered = heroCaused;
         let waterDamage = 0;
         let waterHealing = 0;
         let transformedWere = false;
@@ -746,7 +750,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             paralyzed,
@@ -778,7 +782,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             resisted,
@@ -825,7 +829,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             resisted,
@@ -841,7 +845,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             resisted,
@@ -862,7 +866,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: monster.mhp - oldHp,
             curedBlindness: false,
         };
@@ -873,7 +877,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     if (!healsMonster) {
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
-        return { angered: true, healed: 0, curedBlindness: false };
+        return { angered: heroCaused, healed: 0, curedBlindness: false };
     }
     // Healing potions invert against Pestilence; gain/restore ability do not.
     if (monster.mnum === PM_PESTILENCE
@@ -887,7 +891,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: monster.mhp - oldHp,
             curedBlindness: false,
         };
