@@ -1856,7 +1856,10 @@ async function makemon(
         hasInventory: false,
     };
     const monsterIndex = level.monsters.push(pendingMonster) - 1;
-    if (mmflags & MM_MINVIS) setMonsterPermanentInvisibility(pendingMonster);
+    if (mmflags & MM_MINVIS) {
+        setMonsterPermanentInvisibility(pendingMonster);
+        newsym(pendingMonster.mx, pendingMonster.my);
+    }
     const isMimic = MONSTER_SYMBOL[mndx] === S_MIMIC;
     if (isMimic) await setMimicAppearance(pendingMonster);
 
