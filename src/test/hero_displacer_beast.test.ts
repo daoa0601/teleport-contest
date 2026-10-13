@@ -5,6 +5,7 @@ import { MM_ANGRY, NO_MINVENT, PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';
 import { pushKeys } from '../js/input.js';
+import type { MonsterFlag } from '../js/monster_types.js';
 import { initRng } from '../js/rng.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -89,6 +90,27 @@ void test('an alert displacer beast sometimes swaps places with an approaching h
     }
     assert.ok(swaps > 0, 'the beast must sometimes choose its native displacement');
 });
+
+for (const canMove of [false, 0] satisfies readonly MonsterFlag[]) {
+    void test(`a beast with mcanmove=${canMove} cannot swap with an approaching hero`, async () => {
+        for (let seed = 1; seed <= 16; seed++) {
+            freshObjectRoom({ hero: { uhitinc: -100 } });
+            requirePlayingGame(game);
+            const beast = await createMonsterAt('displacer beast', 11, 10, MM_ANGRY | NO_MINVENT);
+            beast.mux = game.u.ux;
+            beast.muy = game.u.uy;
+            beast.mcanmove = canMove;
+            pushKeys(' '.repeat(20));
+            initRng(BigInt(seed));
+
+            await rhack('l'.charCodeAt(0));
+
+            assert.equal(game.u.ux, 10, `the immobilized beast must not swap for seed ${seed}`);
+            assert.equal(beast.mx, 11);
+            assert.equal(game.context.move, 1);
+        }
+    });
+}
 
 void test('a beast choosing to displace the hero lands in the trap at the old hero square', async () => {
     let trapped = false;
