@@ -412,16 +412,17 @@ export async function waterDamageObject(
         object.spe = wetness;
         return 'nothing';
     }
-    let described = false;
     if (object.greased) {
         if (random(2) !== 0) return 'greased';
         object.greased = false;
         if (carried) {
             observeObjectForNaming(object, { state });
             await emit(`The grease on ${ownedObjectName(object, state, { capitalized: false })} washes off.`);
-            described = true;
         }
-        if (object.otyp !== POT_ACID) return 'greased';
+        // C water_damage(): washed-off acid bypasses luck protection.
+        if (object.otyp === POT_ACID)
+            return await destroyWetAcidPotion(object, carried, emit, state);
+        return 'greased';
     }
     if (object.otyp >= LARGE_BOX && object.otyp <= BAG_OF_TRICKS) {
         const waterproof = [OILSKIN_SACK, ICE_BOX, LARGE_BOX, CHEST].includes(object.otyp);
@@ -440,7 +441,7 @@ export async function waterDamageObject(
         }
         return 'damaged';
     }
-    if (!force && !described && (state.u.uluck ?? 0) + 5 > random(20)) return 'nothing';
+    if (!force && (state.u.uluck ?? 0) + 5 > random(20)) return 'nothing';
     if (object.oclass === 9) {
         if (object.otyp === SCR_BLANK_PAPER) return 'nothing';
         if (carried) await emit(`Your ${name} ${plural ? 'fade' : 'fades'}.`);
@@ -474,11 +475,7 @@ export async function waterDamageObject(
     }
     if (object.oclass === 8) {
         if (object.otyp === POT_ACID) {
-            await emit(described ? `The potion${plural ? 's explode' : ' explodes'}!`
-                : explodingPotionMessage(object, state));
-            await removeHeroEquipment(object, state);
-            await delobj(object, state);
-            return 'destroyed';
+            return await destroyWetAcidPotion(object, false, emit, state);
         }
         if (object.odiluted) {
             if (carried) await emit(`Your ${name} ${plural ? 'dilute' : 'dilutes'} further.`);
@@ -497,6 +494,18 @@ export async function waterDamageObject(
     }
     return erodeObject(object, 'rust', { state, publish: emit, random, luckRandom: luckRoll,
         grease: false, displayName: name });
+}
+
+// C pot_acid_damage(): water destroys the bottle without impact or vapors.
+async function destroyWetAcidPotion(
+    object: GameObject, described: boolean, emit: MessagePublisher, state: GameState,
+): Promise<'destroyed'> {
+    const plural = waterObjectIsPlural(object);
+    await emit(described ? `The potion${plural ? 's explode' : ' explodes'}!`
+        : explodingPotionMessage(object, state));
+    await removeHeroEquipment(object, state);
+    await delobj(object, state);
+    return 'destroyed';
 }
 
 export async function waterDamageChain(
