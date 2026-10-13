@@ -98,26 +98,31 @@ void test('a levitating wand user acknowledges the gesture before disturbing a g
     assert.equal(wand.spe, 3);
     assert.equal(game._occupation ?? null, null);
 });
-void test('blind polymorph replaces a carving with unknown pristine text', async () => {
-    freshObjectRoom();
-    requireFixtureGame(game);
-    await makeBlinded(20, { talk: false });
-    makeEngravingAt(game.u.ux, game.u.uy, 'old carving', null, game.moves, ENGRAVE);
-    const wand = await addInventoryObject(WAN_POLYMORPH, { spe: 3 });
-    const input = resetInputState();
-    input.feed(wand.invlet);
-    await rhack('E'.charCodeAt(0));
-    const engraving = engravingAt(game.u.ux, game.u.uy, game.level);
-    assert.ok(engraving, 'polymorph must leave a replacement carving');
-    assert.notEqual(engraving.text, 'old carving');
-    assert.notEqual(engraving.text, '');
-    assert.equal(engraving.pristine, '');
-    assert.equal(engraving.engr_type, ENGRAVE);
-    assert.equal(engraving.eread, false);
-    assert.equal(engraving.erevealed, false);
-    assert.equal(wand.spe, 2);
-    assert.equal(game._occupation ?? null, null);
-});
+for (const levitating of [false, true]) {
+    void test(`blind polymorph leaves a replacement carving unread${levitating ? ' and out of reach' : ' but felt'}`, async () => {
+        freshObjectRoom({ hero: { levitation: levitating } });
+        requireFixtureGame(game);
+        await makeBlinded(20, { talk: false });
+        makeEngravingAt(game.u.ux, game.u.uy, 'old carving', null, game.moves, ENGRAVE);
+        const wand = await addInventoryObject(WAN_POLYMORPH, { spe: 3 });
+        const input = resetInputState();
+        input.feed(wand.invlet);
+        installPagerInput(input, { expected: /gesture|reach the floor/, limit: 3 });
+        await rhack('E'.charCodeAt(0));
+        const engraving = engravingAt(game.u.ux, game.u.uy, game.level);
+        assert.ok(engraving, 'polymorph must leave a replacement carving');
+        assert.notEqual(engraving.text, 'old carving');
+        assert.notEqual(engraving.text, '');
+        assert.equal(engraving.pristine, '');
+        assert.equal(engraving.engr_type, ENGRAVE);
+        assert.equal(engraving.eread, false);
+        // Native doengrave() refreshes after deletion; feel_location() can reveal
+        // the replacement's presence without reading its words.
+        assert.equal(engraving.erevealed, !levitating);
+        assert.equal(wand.spe, 2);
+        assert.equal(game._occupation ?? null, null);
+    });
+}
 void test('carving with a stack names the daggers before dulling one', async () => {
     const input = freshTurnRoom();
     requireFixtureGame(game);
