@@ -10,19 +10,21 @@ import { makePetWary } from './dog.js';
 import { game, requireGameLevel } from './gstate.js';
 import { updateHeroHunger } from './hunger.js';
 import { stopHeroOccupation } from './occupation.js';
+import { deleteObject, delobjCore } from './object_delete.js';
+import { splitObjectStack } from './object_stack.js';
+import { useUpInventoryStack } from './hero_inventory.js';
 import { findMonsterNearPosition, makemonAt, makemonNear, maketrap, riderRevivalTime, set_corpsenm, } from './mklev.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDisplacer, monsterTypeName, } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import { restoreMonsterTraits } from './monster_traits.js';
 import { changeMonsterForm, restoreMonsterShape } from './monster_polymorph.js';
-import { linkObjectToMonsterInventory, removeObjectFromMonsterInventory, unlinkMonsterObject, } from './monster_inventory.js';
+import { destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, unlinkMonsterObject, } from './monster_inventory.js';
 import { BAG_OF_HOLDING, OBJECT_NAMES, STATUE } from './object_data.js';
 import { OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers, } from './object_timers.js';
 import { d, rn2 } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { cansee } from './vision.js';
-import { objectWeight } from './weight.js';
 import { markQuestLeaderAlive } from './quest.js';
 import { bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE, revivalReplacement, } from './revival_species.js';
 function requireCorpseSpecies(corpse) {
@@ -172,73 +174,22 @@ function revivalMessage(corpse, monster, location, originalWhere, state) {
     }
     return null;
 }
-function clearHeroEquipment(corpse, state) {
-    for (const slot of [
-        'uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmc', 'uarmh',
-        'uarms', 'uarmg', 'uarmf', 'uarmu', 'uleft', 'uright',
-        'uamul', 'ublindf',
-    ]) {
-        if (state[slot] === corpse)
-            state[slot] = null;
-    }
-    corpse.owornmask = 0;
-    corpse.worn = false;
-    corpse.wielded = false;
-}
-function updateContainerWeights(container, state) {
-    const seen = new Set();
-    let current = container;
-    while (current && !seen.has(current)) {
-        seen.add(current);
-        current.owt = objectWeight(current);
-        current = current.where === 'contained'
-            ? parentContainer(current, state) : null;
-    }
-}
-async function removeCorpse(corpse, location, state, entireStack = false) {
-    const quantity = corpse.quan ?? corpse.quantity ?? 1;
-    if (quantity > 1 && !entireStack) {
-        corpse.quan = quantity - 1;
-        corpse.quantity = quantity - 1;
-        corpse.owt = objectWeight(corpse);
-        return;
-    }
+async function consumeRevivedCorpse(corpse, location, state) {
     if (corpse.where === 'floor') {
-        const pile = state.level?.objects?.[corpse.ox]?.[corpse.oy];
-        const index = pile?.indexOf(corpse) ?? -1;
-        if (pile && index >= 0)
-            pile.splice(index, 1);
-    }
-    else if (corpse.where === 'buried') {
-        const objects = state.level?.buriedObjects;
-        const index = objects?.indexOf(corpse) ?? -1;
-        if (objects && index >= 0)
-            objects.splice(index, 1);
+        await delobjCore(corpse, true, state);
     }
     else if (corpse.where === 'inventory') {
-        clearHeroEquipment(corpse, state);
-        const index = state.inventory?.indexOf(corpse) ?? -1;
-        if (index >= 0)
-            state.inventory.splice(index, 1);
+        await useUpInventoryStack(corpse, state);
     }
     else if (corpse.where === 'minvent') {
-        const carrier = location?.monsterCarrier || carryingMonster(corpse, state);
-        if (carrier)
-            await removeObjectFromMonsterInventory(carrier, corpse, state);
+        const carrier = location.monsterCarrier || carryingMonster(corpse, state);
+        if (!carrier)
+            throw new Error('A reviving monster-carried corpse has no carrier');
+        await destroyObjectFromMonsterInventory(carrier, corpse, state);
     }
-    else if (corpse.where === 'contained') {
-        const container = location && isContainerLocation(location)
-            ? location.directContainer : parentContainer(corpse, state);
-        const index = container?.contents?.indexOf(corpse) ?? -1;
-        if (container?.contents && index >= 0)
-            container.contents.splice(index, 1);
-        updateContainerWeights(container, state);
+    else {
+        await deleteObject(corpse, state);
     }
-    stopAllObjectTimers(corpse);
-    corpse.where = 'gone';
-    corpse.buried = false;
-    corpse.ox = corpse.oy = 0;
-    delete corpse.container;
 }
 function restoreCorpseNameAndHealth(monster, corpse) {
     const name = corpse.oextra?.oname || corpse.oname;
@@ -433,15 +384,20 @@ async function reviveCorpse(corpse, state, { announce = true } = {}) {
         return { monster: null, messages, originalWhere, location };
     }
     const monster = creation.monster;
-    await mergeGhostIntoBody(monster, corpse, state);
-    restoreCorpseNameAndHealth(monster, corpse);
+    const revivedCorpse = corpse.quan > 1
+        ? splitObjectStack(corpse, 1, state) : corpse;
+    if (!revivedCorpse)
+        throw new Error('A successful revival could not split its corpse stack');
+    requireCorpseSpecies(revivedCorpse);
+    await mergeGhostIntoBody(monster, revivedCorpse, state);
+    restoreCorpseNameAndHealth(monster, revivedCorpse);
     monster.mrevived = 1;
     if (announce) {
         const message = revivalMessage(corpse, monster, location, originalWhere, state);
         if (message)
             messages.push(message);
     }
-    await removeCorpse(corpse, location, state);
+    await consumeRevivedCorpse(revivedCorpse, location, state);
     newsym(monster.mx, monster.my);
     let trap = null;
     if (digsOut)

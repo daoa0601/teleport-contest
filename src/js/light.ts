@@ -9,6 +9,7 @@ import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import type { MonsterDeathResult } from './monster_death.js';
 import type { HeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './hero_species.js';
+import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
 import { minimalObjectName } from './objnam.js';
 import { game, requireGameLevel } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -25,10 +26,10 @@ import {
 } from './const.js';
 import {
     canSeeMonster, canSpotMonster, map_invisible, newsym,
-    plineWithContinuation,
+    plineWithContinuation, displayColorName,
 } from './display.js';
 import { initializePet } from './dog.js';
-import { makemonNear } from './mklev.js';
+import { makemonNear, mksobj } from './mklev.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import {
     monsterDigests, monsterIsWhirly, monsterTypeName,
@@ -36,7 +37,7 @@ import {
 import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL,
     GOLD_DRAGON_SCALES, MAGIC_LAMP, OBJECT_NAMES,
-    OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE,
+    OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
 import {
     OBJECT_TIMER_KIND, scheduleObjectTimer,
@@ -50,11 +51,14 @@ import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { objectWeight } from './weight.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { carriedObjectOwner } from './shk.js';
-import { objectName, observeObjectForNaming } from './objnam.js';
+import { objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { getObjectLocation } from './object_location.js';
 import { useUpInventoryStack } from './hero_inventory.js';
-import { deleteObject } from './object_delete.js';
+import { deallocateObject, deleteObject } from './object_delete.js';
+import { blessObjectState, curseObjectState, objectResistsDestruction,
+    unblessObjectState, uncurseObjectState } from './object_state.js';
+import { ownedObjectAction } from './objnam.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 
 // Only message delivery is observed; display callbacks may return input status.
@@ -66,6 +70,7 @@ type FinishMonsterKill = (monster: Monster, x: number, y: number) =>
 
 export interface RoomLightOptions {
     radius?: number;
+    source?: GameObject;
     finishMonsterKill?: FinishMonsterKill;
 }
 
@@ -189,13 +194,64 @@ function snuffLightsAt(x: number, y: number): void {
     }
 }
 
-function darkenCarriedLights() {
+async function affectCarriedLights(worsen: boolean) {
     let stillLit = 0;
-    for (const object of game.inventory || []) {
+    for (const object of [...game.inventory]) {
         if (!object.lamplit) continue;
-        if (!snuffOrdinaryLight(object)) stillLit++;
+        if (artifactEmitsLight(object)) await impactArtifactLight(object, worsen);
+        else if (worsen) await snuffCarriedLight(object);
+        if (object.lamplit) stillLit++;
     }
     return stillLit;
+}
+
+async function snuffCarriedLight(object: GameObject): Promise<void> {
+    if (!LIGHT_TYPES.has(object.otyp)) return;
+    if (!heroIsBlind()) {
+        if (CANDLE_TYPES.has(object.otyp)) {
+            const candelabrum = object.otyp === CANDELABRUM_OF_INVOCATION;
+            const many = candelabrum ? object.spe > 1 : object.quan > 1;
+            await plineWithContinuation(`${carriedObjectOwner(object, game)} ${
+                candelabrum ? "candelabrum's " : ''}candle${
+                many ? "s' flames are" : "'s flame is"} extinguished.`);
+        } else {
+            await plineWithContinuation(`${ownedObjectName(object)} ${objectNameIsPlural(object) ? 'go' : 'goes'} out!`);
+        }
+    }
+    snuffOrdinaryLight(object);
+}
+
+// C potion.c:impact_arti_light()/H2Opotion_dip(). The temporary water
+// object is part of the native effect, including its construction draws.
+async function impactArtifactLight(object: GameObject, worsen: boolean): Promise<void> {
+    if ((worsen ? object.cursed : object.blessed)
+        || objectResistsDestruction(object, 25, 75)) return;
+    const water = await mksobj(POT_WATER, true, false);
+    if (worsen) curseObjectState(water);
+    else blessObjectState(water);
+    const oldRadius = objectLightRadius(object);
+    const removeBlessing = worsen && object.blessed;
+    const removeCurse = !worsen && object.cursed;
+    const blind = heroIsBlind();
+    if (!blind) {
+        const phrase = ownedObjectAction(object, 'glow');
+        const color = displayColorName(removeBlessing ? 'brown' : removeCurse ? 'amber'
+            : worsen ? 'black' : 'light blue');
+        await plineWithContinuation(`${phrase}${
+            removeBlessing || removeCurse ? ` ${color}` : ` with ${withIndefiniteArticle(color)} aura`}.`);
+        object.bknown = !heroIsHallucinating();
+    } else if (!water.bknown || !water.dknown) object.bknown = false;
+    if (removeBlessing) unblessObjectState(object);
+    else if (removeCurse) uncurseObjectState(object);
+    else if (worsen) curseObjectState(object);
+    else blessObjectState(object);
+    const delta = objectLightRadius(object) - oldRadius;
+    if (delta) {
+        game.vision_full_recalc = 1;
+        if (!blind) await plineWithContinuation(`${object.quan === 1 ? 'It shines' : 'They shine'} `
+            + `${Math.abs(delta) > 1 ? 'much ' : ''}${delta > 0 ? 'brighter' : 'less brightly'}.`);
+    }
+    deallocateObject(water);
 }
 
 export function lightHitsGremlin(
@@ -233,7 +289,7 @@ export async function lightHitsGremlin(
 }
 
 export async function lightRoom(
-    lit: boolean, { radius = 5, finishMonsterKill }: RoomLightOptions = {},
+    lit: boolean, { radius = 5, source, finishMonsterKill }: RoomLightOptions = {},
 ): Promise<boolean> {
     const blind = heroIsBlind();
     const swallowed = !!game.u?.uswallow;
@@ -241,7 +297,7 @@ export async function lightRoom(
         || Is_waterlevel(game.u?.uz);
 
     if (!lit) {
-        const stillLit = darkenCarriedLights();
+        const stillLit = await affectCarriedLights(true);
         if (!blind) {
             const message = stillLit
                 ? 'The ambient light seems dimmer.'
@@ -250,16 +306,22 @@ export async function lightRoom(
                     : 'You are surrounded by darkness!';
             await plineWithContinuation(message);
         }
-    } else if (swallowed) {
-        const message = swallowedLightMessage();
-        if (!blind && message) await plineWithContinuation(message);
-    } else if (!blind && (!Is_rogue_level(game.u?.uz)
-        || game.level?.at?.(game.u.ux, game.u.uy)?.typ !== CORR)) {
-        await plineWithContinuation(
-            `A lit field ${noEffect ? 'briefly ' : ''}surrounds you!`,
-        );
+    } else {
+        if (source?.oclass === SCROLL_CLASS && source.blessed)
+            await affectCarriedLights(false);
+        if (swallowed) {
+            const message = swallowedLightMessage();
+            if (!blind && message) await plineWithContinuation(message);
+        } else if (!blind && (!Is_rogue_level(game.u?.uz)
+            || game.level?.at?.(game.u.ux, game.u.uy)?.typ !== CORR)) {
+            await plineWithContinuation(
+                `A lit field ${noEffect ? 'briefly ' : ''}surrounds you!`,
+            );
+        }
     }
     if (noEffect) return false;
+
+    const ballAndChain = !lit && !blind ? await beginBallAndChainRedraw() : null;
 
     const gremlins = [];
     for (const { x, y } of roomEffectCells(radius, lit)) {
@@ -276,7 +338,10 @@ export async function lightRoom(
             && !candidate.dead && (candidate.mhp ?? 1) > 0);
         if (monster) gremlins.push(monster);
     }
-    if (!blind) vision_recalc(2);
+    if (!blind) {
+        vision_recalc(2);
+        await finishBallAndChainMove(ballAndChain);
+    }
     game.vision_full_recalc = 1;
     if (lit && gremlins.length) {
         vision_recalc(0);
@@ -355,6 +420,7 @@ export async function applyLightScrollEffect(
         const lit = !scroll.cursed;
         await lightRoom(lit, {
             radius: scroll.blessed ? 9 : 5,
+            source: scroll,
             finishMonsterKill: finishMonsterKill || finishHeroMonsterKillOutcome,
         });
         if (game.program_state.gameover) return { known, consumed: false, heroDied: true };
@@ -645,6 +711,8 @@ export async function igniteItems(
 ): Promise<GameObject[]> {
     const ignited = [];
     for (const object of objects || []) {
+        // catch_lit() requires a current location, even during floor effects.
+        if (!getObjectLocation(object, state)) continue;
         if (!catchesFire(object, random)) continue;
         const plural = (object.quan ?? object.quantity ?? 1) > 1;
         const blind = heroIsBlind(state);

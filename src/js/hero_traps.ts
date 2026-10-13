@@ -67,7 +67,6 @@ import {
 import { deleteObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
 import { impactDrop } from './object_migration.js';
-import { recordObjectEncounter } from './object_knowledge.js';
 import { heroPassesWalls } from './hero_species.js';
 import { d, rn2, rnd } from './rng.js';
 import { artifactById } from './artifacts.js';
@@ -781,7 +780,7 @@ async function triggerProjectileTrap(trap: Trap) {
     }
 
     placeCreatedObject(missile, trap.tx, trap.ty);
-    if (!blind) recordObjectEncounter(objectType, game);
+    if (!blind) observeObject(missile, game);
     await stack_object(missile, game);
     newsym(trap.tx, trap.ty);
 }
@@ -903,7 +902,7 @@ async function triggerFallingRockTrap(trap: Trap) {
     }
 
     if (!(game.blind || heroIsBlind(game)))
-        recordObjectEncounter(ROCK, game);
+        observeObject(rock, game);
     await stack_object(rock, game);
     newsym(hero.ux, hero.uy);
     if (!harmless) {

@@ -3,7 +3,7 @@ import { planInput } from './support/planned-input.js';
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { G_GENOD, NO_MINVENT, W_RINGL } from '../js/const.js';
+import { CORPSTAT_INIT, G_GENOD, NO_MINVENT, W_RINGL } from '../js/const.js';
 import { game, requireGameLevel, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
@@ -16,6 +16,8 @@ import {
     SPE_FORCE_BOLT, STATUE, WAN_POLYMORPH,
 } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { createCorpstatAt } from '../js/mklev.js';
+import { removeMonsterFromGame } from '../js/monster_departure.js';
 import {
     createPolymorphMonsterFromPile, do_osshock, obj_unpolyable,
     poly_obj, polymorphFloorObject, stone_to_flesh_obj,
@@ -317,6 +319,26 @@ void test('a carried golem statue animates as flesh and removes the inventory st
     assert.equal(dagger.where, 'minvent');
     assert.equal(statue.where, 'gone');
     assert.ok(!game.inventory.includes(statue));
+});
+
+void test('stone-to-flesh restores a petrified shopkeeper with its saved name and debt', async () => {
+    const level = freshObjectRoom();
+    const { shopkeeper } = await createStaffedShop();
+    shopkeeper.name = 'Manlobbi';
+    shopkeeper.eshk.debit = 37;
+    const statue = await createCorpstatAt(STATUE, shopkeeper, shopkeeper.mnum,
+        shopkeeper.mx, shopkeeper.my, CORPSTAT_INIT);
+    await removeMonsterFromGame(shopkeeper);
+    installPagerInput(resetInputState(), { expected: /statue|comes to life/, limit: 3 });
+
+    assert.equal(await stone_to_flesh_obj(statue), 1);
+
+    const restored = level.monsters.find(monster => monster.mnum === MONSTER_NAME.indexOf('shopkeeper'));
+    assert.ok(restored, 'The statue must restore a shopkeeper rather than a human zombie');
+    assert.equal(restored.name, 'Manlobbi');
+    assert.equal(!!restored.isshk, true);
+    assert.equal(restored.eshk?.debit, 37);
+    assert.equal(statue.where, 'gone');
 });
 
 void test('a transformed worn amulet changes sex, is identified, and disintegrates', async () => {

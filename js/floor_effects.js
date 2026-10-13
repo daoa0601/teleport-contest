@@ -120,6 +120,7 @@ export async function applyFloorEffects(object, x, y, { state = game, publish = 
     if (isLavaAt(x, y, state)) {
         const landed = [object];
         await destroyLavaFloorObjects(landed, {
+            state, x, y,
             publish,
             random,
             visible: squareIsVisible(state, x, y),

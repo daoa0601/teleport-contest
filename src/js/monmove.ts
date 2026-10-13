@@ -214,7 +214,6 @@ import {
     canSpotMonster,
     map_invisible,
     newsym,
-    randomDisplayMonsterName,
     randomDisplayMonsterSubject,
     plineWithContinuation,
 } from './display.js';
@@ -349,7 +348,7 @@ import { unlinkObject } from './object_location.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { dropObjectAtHero } from './object_drop.js';
-import { canFallThrough, makemonNear, mksobj, summonNastyMonsters } from './mklev.js';
+import { canFallThrough, makemonNear, maketrap, mksobj, summonNastyMonsters } from './mklev.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack, hasTrack } from './track.js';
@@ -379,10 +378,7 @@ import { wipeEngravingAt } from './engrave.js';
 import { moveVaultGuard } from './vault.js';
 import { afterShopkeeperMove, checkSpecialRoom, shopGreeting, shopkeeperInOwnShop } from './shk.js';
 import { shopkeeperIsMuted } from './shop_loss.js';
-import {
-    findMonsterArmorClass,
-    nameMonsterForCreationArmorChecks,
-} from './monworn.js';
+import { findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 import {
@@ -7572,9 +7568,6 @@ async function createWizardClone(state: PlayingGameState) {
     if (!clone) return null;
     newsym(clone.mx, clone.my);
     const hallucinating = heroIsHallucinating(state);
-    if (hallucinating) {
-        nameMonsterForCreationArmorChecks(clone, () => randomDisplayMonsterName());
-    }
     // makemon() repaints after the complete creation wear pass, then formats
     // its visible announcement.  clonewiz() performs another repaint later,
     // after fake-Amulet and wizapp state have been installed.
@@ -7791,16 +7784,8 @@ async function maybeSpinMonsterWeb(
     const roll = recordRandom(random, calls, 1000);
     if (roll >= probability) return { roll, probability, created: false };
 
-    const trap = {
-        ttyp: WEB,
-        tx: monster.mx,
-        ty: monster.my,
-        tseen: false,
-        once: false,
-        launch: { x: 0, y: 0 },
-    };
-    if (!state.level.traps) state.level.traps = [];
-    state.level.traps.push(trap);
+    const trap = await maketrap(monster.mx, monster.my, WEB);
+    if (!trap) return { roll, probability, created: false };
     monster.mspec_used = rollDice(4, 4);
     calls.push('d(4,4)');
     if (cansee(monster.mx, monster.my)) {

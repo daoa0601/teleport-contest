@@ -671,6 +671,23 @@ async function unplaceMovingBallAndChain(plan, state) {
         newsym(plan.ball.ox, plan.ball.oy);
     }
 }
+// C litroom() calls move_bc() around its vision refresh without moving
+// either object. Preserve their pile order while removing their old glyphs.
+export async function beginBallAndChainRedraw(state = game) {
+    requireLiveGame(state);
+    const ball = state.uball || state.u.uball;
+    if (!ball || heroIsBlind(state))
+        return null;
+    const chain = state.uchain || state.u.uchain;
+    if (!chain)
+        throw new Error('A punished hero needs its attached chain');
+    const plan = {
+        blocked: false, ball, chain, control: 0, causeDelay: false,
+        ballx: ball.ox, bally: ball.oy, chainx: chain.ox, chainy: chain.oy,
+    };
+    await unplaceMovingBallAndChain(plan, state);
+    return plan;
+}
 export async function finishBallAndChainMove(plan, state = game) {
     requireLiveGame(state);
     if (!plan || plan.blocked)

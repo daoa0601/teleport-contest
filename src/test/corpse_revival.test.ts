@@ -9,6 +9,7 @@ import { pline } from '../js/display.js';
 import { doeat } from '../js/eat.js';
 import { initializePet } from '../js/dog.js';
 import { placeCreatedObject } from '../js/floor_object.js';
+import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import type { GameObject } from '../js/object_types.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -27,7 +28,8 @@ import {
 import { initRng } from '../js/rng.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { vision_recalc } from '../js/vision.js';
-import { untimedCorpse } from './support/game-objects.js';
+import { objectWeight } from '../js/weight.js';
+import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -100,6 +102,28 @@ void test('a troll corpse on the floor rises as a live troll', async () => {
     assert.equal(event.monster.mrevived, 1);
     assert.equal(event.messages.at(-1), 'The troll rises from the dead!');
     assert.equal(corpse.where, 'gone');
+});
+
+void test('reviving one corpse from a sack reduces its load and keeps the remaining stack', async () => {
+    freshState();
+    requirePlayingGame(game);
+    const sack = await knownObject(SACK, { initialize: false });
+    placeCreatedObject(sack, 12, 10);
+    const corpses = await untimedCorpse(PM_TROLL, { quan: 3 });
+    await addCreatedObjectToContainer(sack, corpses, game);
+    sack.owt = objectWeight(sack);
+    const initialWeight = sack.owt;
+    const weightOfOneCorpse = corpses.owt / corpses.quan;
+
+    const event = await reviveCorpseImmediately(corpses, game);
+
+    assert.ok(event?.monster);
+    assert.equal(corpses.quan, 2);
+    assert.equal(corpses.where, 'contained');
+    assert.equal(corpses.container, sack);
+    assert.deepEqual(sack.contents, [corpses]);
+    assert.equal(sack.owt, initialWeight - weightOfOneCorpse);
+    assert.equal(game.level.monsters.filter(monster => monster.mnum === PM_TROLL).length, 1);
 });
 
 void test('explicit revival magic overrides a corpse no-revive flag', async () => {

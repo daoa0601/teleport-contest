@@ -6,7 +6,8 @@ import { game } from './gstate.js';
 import { heroIsBlind } from './senses.js';
 import { igniteItems } from './light.js';
 import { destroyLavaFloorObjects } from './trap.js';
-import { deleteObject } from './object_delete.js';
+import { delobj } from './object_delete.js';
+import { objectResistsDestruction } from './object_state.js';
 import { erodeObject } from './object_erosion.js';
 import { objectClassForType } from './object_knowledge.js';
 import { makePlural } from './object_grammar.js';
@@ -14,7 +15,7 @@ import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import { monsterTypeName } from './monster_data.js';
 import { BAG_OF_TRICKS, CHEST, ICE_BOX, LARGE_BOX, OBJECT_NAMES, POT_OIL, SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, STATUE, } from './object_data.js';
 import { rnl, rn2 } from './rng.js';
-import { couldsee } from './vision.js';
+import { cansee, couldsee } from './vision.js';
 const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
@@ -44,11 +45,16 @@ function objectSubject(object, carrier) {
     const owner = carrier ? `The ${monsterName(carrier)}'s` : 'The';
     return `${owner} ${objectName(object)}`;
 }
-async function removeObject(object, carrier, state) {
+async function removeObject(object, context) {
+    const { carrier, state, random } = context;
     const inventory = carrier?.minvent || carrier?.inventory || [];
-    if (carrier && inventory.includes(object))
+    if (carrier && inventory.includes(object)) {
+        if (objectResistsDestruction(object, 0, 0, random))
+            return false;
         return destroyObjectFromMonsterInventory(carrier, object, state);
-    return await deleteObject(object, state);
+    }
+    await delobj(object, state, random);
+    return true;
 }
 async function dropContents(container, context) {
     const contents = [...(container.contents || [])];
@@ -60,9 +66,12 @@ async function dropContents(container, context) {
         if (location && IS_LAVA(location.typ)) {
             const landed = [object];
             await destroyLavaFloorObjects(landed, {
+                state: context.state,
+                x: context.x,
+                y: context.y,
                 publish: context.publish,
                 random: context.random,
-                visible: context.squareVisible,
+                visible: context.state === game && cansee(context.x, context.y),
             });
             if (!landed.length)
                 continue;
@@ -89,7 +98,7 @@ async function burnContainer(object, context) {
             await context.publish('Its contents fall out.');
         await dropContents(object, context);
     }
-    await removeObject(object, context.carrier, context.state);
+    await removeObject(object, context);
     return true;
 }
 async function burnPaperOrPotion(object, context) {
@@ -121,7 +130,7 @@ async function burnPaperOrPotion(object, context) {
     else {
         return false;
     }
-    await removeObject(object, context.carrier, context.state);
+    await removeObject(object, context);
     return true;
 }
 // C fire_damage(): unlike the chain owner, this has no smoke epilogue.
