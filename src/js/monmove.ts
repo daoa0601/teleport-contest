@@ -8270,7 +8270,6 @@ export async function resumeDeferredMonsterTrap(
             await finishMonsterRustTrap(action.monster, event, state, {
                 publish,
                 random,
-                ...(describeMonster ? { describeMonster } : {}),
             });
             break;
         case 'projectile-trap':
@@ -8344,7 +8343,6 @@ export async function resumeDeferredMonsterTrap(
         case 'squeaky-board':
             await finishMonsterSqueakyBoard(action.monster, event, state, {
                 publish,
-                ...(describeMonster ? { describeMonster } : {}),
             });
             break;
         case 'vibrating-square':

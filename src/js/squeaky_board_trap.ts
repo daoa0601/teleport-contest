@@ -29,7 +29,6 @@ export interface MonsterSqueakyBoardEvent {
 
 interface FinishTrapOptions {
     publish?: MessagePublisher;
-    describeMonster?: (monster: Monster) => string;
 }
 
 function canAlmostSee(state: GameState, x: number, y: number) {
@@ -66,7 +65,6 @@ export async function finishMonsterSqueakyBoard(
     state: GameState = game,
     {
         publish = async () => {},
-        describeMonster = monster => monsterName(monster, { state, capitalized: true }),
     }: FinishTrapOptions = {},
 ) {
     if (!event || event.finished) return event;
@@ -74,11 +72,11 @@ export async function finishMonsterSqueakyBoard(
     if (event.inSight) {
         if (!event.deaf) {
             await publish(
-                `A board beneath ${describeMonster(monster).replace(/^The /, 'the ')} squeaks ${event.note} loudly.`,
+                `A board beneath ${monsterName(monster, { state })} squeaks ${event.note} loudly.`,
             );
             event.trap.tseen = true;
         } else if (!event.mindless) {
-            await publish(`${describeMonster(monster)} stops momentarily and appears to cringe.`);
+            await publish(`${monsterName(monster, { state, capitalized: true })} stops momentarily and appears to cringe.`);
         }
     } else if (!event.deaf) {
         await publish(

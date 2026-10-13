@@ -30,16 +30,16 @@ export function beginMonsterSqueakyBoard(monster, trap, state = game) {
         ...visibility,
     };
 }
-export async function finishMonsterSqueakyBoard(monster, event, state = game, { publish = async () => { }, describeMonster = monster => monsterName(monster, { state, capitalized: true }), } = {}) {
+export async function finishMonsterSqueakyBoard(monster, event, state = game, { publish = async () => { }, } = {}) {
     if (!event || event.finished)
         return event;
     if (event.inSight) {
         if (!event.deaf) {
-            await publish(`A board beneath ${describeMonster(monster).replace(/^The /, 'the ')} squeaks ${event.note} loudly.`);
+            await publish(`A board beneath ${monsterName(monster, { state })} squeaks ${event.note} loudly.`);
             event.trap.tseen = true;
         }
         else if (!event.mindless) {
-            await publish(`${describeMonster(monster)} stops momentarily and appears to cringe.`);
+            await publish(`${monsterName(monster, { state, capitalized: true })} stops momentarily and appears to cringe.`);
         }
     }
     else if (!event.deaf) {

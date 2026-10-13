@@ -1,14 +1,46 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { moveloop_core } from '../js/allmain.js';
 import { PL_PSIZ, RUST_TRAP, SQKY_BOARD } from '../js/const.js';
+import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { triggerImmediateMonsterTrap, resumeDeferredMonsterTrap } from '../js/monmove.js';
 import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/rust_trap.js';
 import { applyNethackrc, parseNethackrc } from '../js/options.js';
 import { makedog } from '../js/u_init.js';
+import { initRng } from '../js/rng.js';
+import { addTrap } from './support/level-state.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { freshTurnRoom } from './support/playable-room.js';
+for (const [trapType, label, deaf, message] of [
+    [SQKY_BOARD, 'squeaky board', false, 'A board beneath spot squeaks a C note loudly.'],
+    [SQKY_BOARD, 'squeaky board', true, 'Spot stops momentarily and appears to cringe.'],
+    [RUST_TRAP, 'rust trap', false, 'A gush of water hits spot'],
+]) {
+    void test(`a ${label} ${deaf ? 'capitalizes' : 'preserves'} a pet's lowercase name${deaf ? ' at the start of the cringe message' : ' within its message'}`, async () => {
+        const input = freshTurnRoom({ left: 10, right: 14, top: 10, bottom: 10 });
+        requirePlayingGame(game);
+        const pet = await createMonsterAt('little dog', 12, 10);
+        initializePet(pet);
+        setMonsterGivenName(pet, 'spot');
+        pet.msleeping = 0;
+        pet.movement = 12;
+        const trap = addTrap(game.level, trapType, 11, 10, { tnote: 0 });
+        game.deaf = deaf;
+        const messages = [];
+        input.beforeRead = () => { messages.push(game._screen_output.split('\n')[0] ?? ''); };
+        initRng(1n);
+        pushKeys('.' + ' '.repeat(20) + '\x1b');
+        await moveloop_core();
+        await moveloop_core();
+        assert.ok(messages.some(text => text.includes(message)), `Expected ${JSON.stringify(message)} after the pet entered the trap; saw ${messages.join(' | ')}`);
+        assert.equal(trap.tseen ?? false, !deaf);
+    });
+}
 for (const [target, message] of [
     [3, 'A gush of water hits Sirius!'],
     [1, "A gush of water hits Sirius's left foreleg!"],
