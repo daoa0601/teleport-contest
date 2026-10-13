@@ -385,7 +385,6 @@ async function burnLavaBoots(
     boots.wornSlot = null;
     boots.owornmask = 0;
     boots.where = 'gone';
-    findArmorClass(state);
     return true;
 }
 

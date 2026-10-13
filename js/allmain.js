@@ -1,3 +1,4 @@
+import { recorderLocalEpochSeconds } from './calendar.js';
 import { slipOrTrip } from './fumbling.js';
 import { invWeight } from './weight.js';
 import { rewindEngravingsForSave } from './engrave.js';
@@ -54,7 +55,7 @@ import { reassessMonsterArmor } from './monworn.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { readEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { d, rn2, rnd } from './rng.js';
-import { mklev, l_nhcore_init, makemonAt, recorderLocalEpochSeconds, summonNastyMonsters, u_on_upstairs, } from './mklev.js';
+import { mklev, l_nhcore_init, makemonAt, summonNastyMonsters, u_on_upstairs, } from './mklev.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
 import { applyHeroLiquidEffects, continueCountedCommand, continueRun, finishArmorRemoval, getLine, promptYesNo, rhack, } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';

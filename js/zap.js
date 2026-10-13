@@ -313,7 +313,7 @@ async function freezeLiquidAt(x, y, state, publish) {
             ? 'The lava cools and solidifies.'
             : wasMoat ? 'The moat is bridged with ice!'
                 : 'The water freezes.';
-        await publish(message);
+        await publish(message, { noRepeat: true });
         newsym(x, y);
     }
     else if (!lava && !deaf) {
