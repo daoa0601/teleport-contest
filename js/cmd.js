@@ -41,7 +41,7 @@ import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeper
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
-import { stumbleOntoMimic } from './mimic.js';
+import { stumbleOnDoorMimic, stumbleOntoMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
@@ -5456,6 +5456,10 @@ async function doclose() {
     const x = game.u.ux + DIR_DX[direction];
     const y = game.u.uy + DIR_DY[direction];
     const loc = game.level?.at(x, y);
+    if (await stumbleOnDoorMimic(x, y)) {
+        game.context.move = 1;
+        return;
+    }
     if (loc?.typ !== DOOR)
         await pline('You see no door there.');
     else if (loc.doormask === D_NODOOR)
@@ -5510,6 +5514,10 @@ async function doopen() {
     const x = game.u.ux + DIR_DX[direction];
     const y = game.u.uy + DIR_DY[direction];
     const loc = game.level?.at(x, y);
+    if (await stumbleOnDoorMimic(x, y)) {
+        game.context.move = 1;
+        return;
+    }
     if (loc?.typ !== DOOR) {
         await pline('You see no door there.');
         game.context.move = 0;
