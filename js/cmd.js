@@ -3567,7 +3567,7 @@ async function readInventorySplitCount() {
     let showZero = key === 48;
     for (;;) {
         clearMessageWindow();
-        key = await promptKey(`Count: ${count > 0 || showZero ? count : ''}`, 1);
+        key = await promptKey(`Count: ${count > 0 || showZero ? count : ''}`);
         if (key >= 48 && key <= 57) {
             count = Math.min(Number.MAX_SAFE_INTEGER, count * 10 + key - 48);
             showZero = key === 48;
