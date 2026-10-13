@@ -93,7 +93,7 @@ export async function levelTeleport({ state = game, gotoLevel = changeLevel, men
     if (!destination || sameLevel(destination, hero.uz))
         return;
     await gotoLevel({ dnum: destination.dnum, dlevel: destination.dlevel }, {
-        arrival: 'random', preArrivalPager: request.preArrivalPager || '',
+        arrival: 'random',
         postMessage: state.flags.verbose ? 'You materialize on a different level!' : '',
     });
 }

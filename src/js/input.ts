@@ -25,6 +25,7 @@ export class InputGate {
     beforeRead: (() => void | Promise<void>) | null;
     display: KeyReader | null;
     private readonly queue: number[];
+    private readonly commandKeys: number[];
     private pendingRead: ((code: number) => void) | null;
     private blockedWaiters: (() => void)[];
 
@@ -32,6 +33,7 @@ export class InputGate {
         this.beforeRead = beforeRead;
         this.display = display;
         this.queue = [];
+        this.commandKeys = [];
         this.pendingRead = null;
         this.blockedWaiters = [];
     }
@@ -55,7 +57,21 @@ export class InputGate {
         resolve(code);
     }
 
+    queueCommandKeys(keys: string): void {
+        this.commandKeys.push(...[...keys].map(keyCode));
+    }
+
+    clearCommandKeys(): void {
+        this.commandKeys.length = 0;
+    }
+
+    takeCommandKey(): number | undefined {
+        return this.commandKeys.shift();
+    }
+
     async readKey(): Promise<number> {
+        // tty input belongs to the player. Command owners consume canned
+        // choices explicitly so message pagers cannot steal item letters.
         await this.beforeRead?.();
         const queued = this.queue.shift();
         if (queued !== undefined) return queued;
@@ -84,6 +100,7 @@ export class InputGate {
 
     clear() {
         this.queue.length = 0;
+        this.commandKeys.length = 0;
     }
 
     get isBlocked() {
@@ -105,6 +122,18 @@ export function pushKey(key: KeyInput): void {
 
 export function pushKeys(keys: KeyInput | readonly KeyInput[]): void {
     activeInputGate.feed(keys);
+}
+
+export function queueCommandKeys(keys: string): void {
+    activeInputGate.queueCommandKeys(keys);
+}
+
+export function clearCommandKeys(): void {
+    activeInputGate.clearCommandKeys();
+}
+
+export function takeCommandKey(): number | undefined {
+    return activeInputGate.takeCommandKey();
 }
 
 export async function nhgetch() {

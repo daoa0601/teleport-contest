@@ -260,6 +260,7 @@ export interface HeroContactAttack extends HeroAttackProgress {
     negated?: boolean;
     deferredPostHit?: boolean;
     deferredSpecialContact?: boolean;
+    skipBrainDrain?: boolean;
     contactDone?: boolean;
     deferredRevealUnder?: boolean;
     revealUnderMessage?: string;
@@ -459,6 +460,7 @@ export interface HeroAttackSequence {
     paging: MonsterAttackPaging;
     offensive: MonsterOffensivePhase | null;
     skipNonMagic: boolean;
+    skipBrainDrain: boolean;
     done: boolean;
 }
 
@@ -540,6 +542,7 @@ export interface MonsterTeleportTrapEvent {
 
 export interface MonsterAttackInitiation {
     heroAttackSequence?: HeroAttackSequence;
+    heroAttackResult?: 0 | 1;
 }
 
 // Native postmov retains these decisions across input pauses. Its species

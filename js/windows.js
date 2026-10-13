@@ -91,6 +91,7 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     const d = display();
     if (!d)
         return 27;
+    await displayMessageWindow();
     const entries = lines.map(line => typeof line === 'string' ? { text: line } : line);
     if (pagerStyle === 'menu') {
         return await pageDisclosureWindow(d, entries, { marker, pagerStyle, restoreUnderlay });

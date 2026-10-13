@@ -89,6 +89,7 @@ export function validSavedHero(value, entities) {
         intrinsicDisplacement: optional(boolean),
         displacedIntrinsic: optional(boolean),
         fumblingIntrinsic: optional(boolean),
+        fumblingFromIce: optional(boolean),
         halfPhysicalDamageFromArtifact: optional(boolean),
         halfGasDamage: optional(boolean),
         fixedAbilities: optional(boolean),

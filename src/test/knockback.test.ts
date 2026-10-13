@@ -115,6 +115,27 @@ void test('a cursed saddle makes the mount and rider move together when struck',
     assert.equal(pony.my, game.u.uy);
 });
 
+void test('a blow aimed toward an occupied square says back and leaves the hero in place', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    installPolymorphedHero('kobold');
+    const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
+    await createMonsterAt('kitten', 9, 10, NO_MINVENT);
+    const messages: string[] = [];
+    pushKeys(' '.repeat(8));
+
+    const result = await tryKnockback(giant, game.u,
+        { attackType: AT_WEAP, damageType: AD_PHYS }, {
+            random: () => 0,
+            publish: message => { messages.push(message); },
+        });
+
+    assert.equal(result.knocked, true);
+    assert.equal(result.moved, false);
+    assert.equal(game.u.ux, 10);
+    assert.equal(messages[0], 'The hill giant knocks you back with a powerful strike!');
+});
+
 void test('a monster landing in a lethal pit survives through its worn life-saving amulet', async () => {
     freshObjectRoom();
     requireFixtureGame(game);

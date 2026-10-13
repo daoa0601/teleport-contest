@@ -405,13 +405,15 @@ const ANSI_COLOR = [
 ];
 
 function rememberedColor(glyph: DisplayGlyph, loc: MapLocation, x: number, y: number): number {
-    // display.c maps an unlit corridor with S_litcorr only while it is in
-    // sight.  When that live projection becomes hero memory, retain the lit
-    // identity only for a location whose own waslit bit supports it.
+    // newsym() darkens unseen corridors with dark_room and color enabled,
+    // even when the terrain remains lit. Without those options, waslit
+    // determines whether memory retains the bright corridor glyph.
     if (glyph?.kind === 'terrain' && glyph.ch === '#'
-        && loc?.typ === CORR && !loc.waslit && !cansee(x, y)
+        && loc?.typ === CORR && !cansee(x, y)
+        && (!loc.waslit || ((game.flags.dark_room ?? true) && game.flags.color !== false))
         && glyph.color === CLR_WHITE) {
         glyph.color = NO_COLOR;
+        glyph.glyph = cmapToGlyph(CmapSymbol.corr);
     }
     // Preserve the port's established blind-memory behavior on ordinary
     // levels.  Premapped levels distinguish background from mapped objects
@@ -2125,7 +2127,7 @@ export function formatStrength(value: number | null | undefined) {
     return `18/${String(value - 18).padStart(2, '0')}`;
 }
 
-export function _statusLine2() {
+export function _statusLine2(refreshLoad = true) {
     const u = game.u;
     if (!u) return '';
     const dungeonName = game.dungeons?.[u.uz?.dnum ?? 0]?.dname;
@@ -2158,9 +2160,10 @@ export function _statusLine2() {
     if (game.flags?.time)
         line += ` T:${game.moves ?? 1}`;
     if (u.usteed) line += ' Ride';
-    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][game._statusHungerOverride ?? currentHungerState(game)];
+    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][game._statusHungerOverride ?? u.uhs ?? currentHungerState(game)];
     if (hungerLabel) line += ` ${hungerLabel}`;
-    if (u._encumbrance) line += ` ${u._encumbrance}`;
+    const load = refreshLoad ? encumbranceLabel(nearCapacity(game)) : u._encumbrance;
+    if (load) line += ` ${load}`;
     if (u.strangled || (u.strangledTurns ?? 0) > 0) line += ' Strngl';
     if (game.blind) line += ' Blind';
     if (polymorphed
@@ -2213,7 +2216,12 @@ function statusLines(update: boolean): readonly [string, string] {
             ?.map(cell => cell.ch).join('').trimEnd() ?? '';
         return [row(22), row(23)];
     }
-    return [_statusLine1(), _statusLine2()];
+    // A map flush retains the displayed load until native code requests bot().
+    if (game.context.botl) {
+        game.u._encumbrance = encumbranceLabel(nearCapacity(game));
+        game.context.botl = false;
+    }
+    return [_statusLine1(), _statusLine2(false)];
 }
 
 function writeStatusLines(display: GameDisplay, lines: readonly [string, string]): void {

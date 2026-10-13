@@ -1235,7 +1235,7 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
     recursiveTrap = false,
 }: HeroTrapOptions = {}): Promise<HeroTrapResult> {
     if (!trap) return { died: false, shortCircuited: false };
-    stopRun();
+    endVoluntaryMultiTurn();
     let died = false;
     let shortCircuited = false;
     switch (trap.ttyp) {

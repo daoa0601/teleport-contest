@@ -35,8 +35,11 @@ export async function presentMonsterQuaff(monster, object, { state, publish = pl
         const name = inventoryItemDescription({ ...object, quan: 1, quantity: 1 });
         await publish(`${monsterName(monster, { state, capitalized: true })} drinks ${name}!`);
     }
-    else if (!heroIsDeaf(state))
-        await publish('You hear a chugging sound.');
+    else if (!heroIsDeaf(state)) {
+        const message = formatHeardMessage('a chugging sound.', state);
+        if (message)
+            await publish(message);
+    }
     return seen;
 }
 // Return null when the selected item can still be used. An exploded wand

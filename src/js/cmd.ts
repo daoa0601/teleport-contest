@@ -30,7 +30,10 @@ import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } fr
 import { requireInitializedHero } from './hero_types.js';
 
 import { fruitName } from './fruit.js';
+import { encyclopediaEntries } from './encyclopedia.js';
 import { waterbodyName } from './terrain_name.js';
+import { iceDescriptionAt } from './dungeon_feature.js';
+import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
 import { flipThroughBook } from './book_flip.js';
@@ -46,7 +49,7 @@ import { speakArtifact } from './artifact_speech.js';
 import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light.js';
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
 import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
@@ -94,7 +97,7 @@ import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
 import { resetBulkTakeoff } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
-import { nhgetch } from './input.js';
+import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
 import {
     chooseInventoryObject, compactInventoryLetters, promptInventoryObject,
@@ -130,6 +133,7 @@ import {
     bucAdjectiveForName, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject,
     inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject,
 } from './invent.js';
+import type { InventoryAction } from './invent.js';
 import {
     castSpell, docast, dovspell,
 } from './spell.js';
@@ -221,7 +225,7 @@ import {
     captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding,
 } from './thrown_object.js';
 import {
-    objectName, unseenObjectNoun,
+    objectName, singularObjectName, unseenObjectNoun,
 } from './objnam.js';
 import {
     artifactById,
@@ -239,7 +243,7 @@ import {
     BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF,
     BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER,
     TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL,
-    RIN_CONFLICT,
+    RIN_CONFLICT, MEAT_RING,
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN,
     SHIELD_OF_REFLECTION, AMULET_OF_YENDOR,
     AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY,
@@ -262,6 +266,9 @@ import {
 } from './accessory.js';
 import { heroIsStrangled } from './hero_strangulation.js';
 import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { disturbBuriedZombies } from './object_impact.js';
+import { checkSlipperyIce } from './fumbling.js';
+import { MONSTER_BODY_META } from './monster_data.js';
 import { heroCanOoze } from './monster_perception.js';
 import { isPoolAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
@@ -1113,10 +1120,12 @@ export async function rhack(key: number): Promise<void> {
     const inputKey = key;
     const configured = configuredCommand(key);
 
-    // The input boundary displayed the previous command's message.  Clear it
-    // now; any message produced below remains visible at the next boundary.
-    game._pending_message = '';
-    game._retained_message = '';
+    // A player command acknowledges the previous topline. A canned command
+    // bypasses parse(), so unread prose and cmd_before output remain pending.
+    if (!cannedCommand) {
+        game._pending_message = '';
+        game._retained_message = '';
+    }
 
     if (!cannedCommand && !configured.command) {
         game.multi = 0;
@@ -1128,9 +1137,11 @@ export async function rhack(key: number): Promise<void> {
 
     const cannedName = cannedCommand?.kind === 'swap-weapon'
         ? 'swap' : cannedCommand?.kind;
-    const command = cannedCommand
-        ? NATIVE_COMMANDS.find(entry => entry.name === cannedName) ?? null
-        : configured.command;
+    const command = cannedCommand?.kind === 'inventory-action'
+        ? inventoryActionCommand(cannedCommand.action)
+        : cannedCommand
+            ? NATIVE_COMMANDS.find(entry => entry.name === cannedName) ?? null
+            : configured.command;
     if (!await commandAllowed(command)) {
         resetCommandVariables(true);
         return;
@@ -1180,28 +1191,32 @@ async function runCommandHandler(binding: CommandBinding, {
     // byte.  Tool commands use this to resume the original operation after
     // wield_tool() has spent one action installing the selected object.
     if (cannedCommand?.kind === 'rub') {
-        game._pending_message = previousMessage;
         await dorub(cannedCommand.invlet);
         return;
     }
     if (cannedCommand?.kind === 'apply') {
-        game._pending_message = previousMessage;
         await doapply(cannedCommand.invlet);
         return;
     }
     if (cannedCommand?.kind === 'swap-weapon') {
-        game._pending_message = previousMessage;
         await doswapweapon();
         return;
     }
     if (cannedCommand?.kind === 'wield') {
-        game._pending_message = previousMessage;
-        await dowield(cannedCommand.invlet);
+        queueCommandKeys(cannedCommand.invlet);
+        try {
+            await dowield();
+        } finally {
+            clearCommandKeys();
+        }
         return;
     }
     if (cannedCommand?.kind === 'fire') {
-        game._pending_message = previousMessage;
         await dofire(cannedCommand.shotLimit ?? 0);
+        return;
+    }
+    if (cannedCommand?.kind === 'inventory-action') {
+        await executeInventoryAction(cannedCommand.action);
         return;
     }
 
@@ -1297,7 +1312,10 @@ async function runCommandHandler(binding: CommandBinding, {
         }
     } else if (ch === 'i') {
         const action = await ddoinv();
-        if (action?.key === 't') await dothrow(action.item);
+        if (action && !['\x1b', ' ', '\n', '\r'].includes(action.key)) {
+            game._cannedCommands ??= [];
+            game._cannedCommands.push({ kind: 'inventory-action', action });
+        }
     } else if (ch === 'O') {
         await doOptions();
     } else if (ch === 'Z') {
@@ -2312,27 +2330,25 @@ async function doherecmdmenu() {
 }
 
 async function doname() {
-    const display = game.nhDisplay;
-    if (!display) throw new Error('This command requires an initialized display.');
-    const left = 32;
-    game._pending_message = '';
-    display.clearRow(0);
-    for (let row = 0; row <= 8; row++) {
-        for (let col = left - 1; col < display.cols; col++)
-            display.setCell(col, row, ' ', NO_COLOR, 0);
-    }
-    putCommandLine(left, 0, 'What do you want to name?', ATR_INVERSE);
-    putCommandLine(left, 2, 'm - a monster');
-    putCommandLine(left, 3, 'i - a particular object in inventory');
-    putCommandLine(left, 4, 'o - the type of an object in inventory');
-    putCommandLine(left, 5, 'f - the type of an object upon the floor');
-    putCommandLine(left, 6, 'd - the type of an object on discoveries list');
-    putCommandLine(left, 7, 'a - record an annotation for the current level');
-    putCommandLine(left, 8, '(end)');
-    display.setCursor(left + 6, 8);
-    const choice = String.fromCharCode(await nhgetch()).toLowerCase();
-    game._pending_message = '';
-    await restoreCommandMap();
+    // docallcmd() consumes a canned category before creating its menu.
+    // Unread callback prose then belongs to the later naming prompt.
+    const queuedChoice = takeCommandKey();
+    const key = queuedChoice ?? await showChoiceWindow({
+        title: 'What do you want to name?',
+        entries: [
+            { key: 'm', text: 'a monster' },
+            ...(game.inventory.length ? [
+                { key: 'i', text: 'a particular object in inventory' },
+                { key: 'o', text: 'the type of an object in inventory' },
+            ] : []),
+            { key: 'f', text: 'the type of an object upon the floor' },
+            { key: 'd', text: 'the type of an object on discoveries list' },
+            { key: 'a', text: 'record an annotation for the current level' },
+        ],
+        validKeys: [27, 32, 10, 13, ...'miofda'.split('').map(char => char.charCodeAt(0))],
+    });
+    const choice = String.fromCharCode(key).toLowerCase();
+    if (queuedChoice === undefined) await restoreCommandMap();
 
     // C refs: do_name.c:docallcmd()/do_oname() and
     // dungeon.c:donamelevel()/query_annotation().  The menu owns only the
@@ -2364,7 +2380,6 @@ async function doname() {
         );
         if (!selection.cancelled && selection.object) {
             const object = selection.object;
-            game._pending_message = '';
             const value = await getLine(
                 `What do you want to name this ${object.name}?`,
                 (_ch, key) => key >= 32 && key < 127,
@@ -2410,7 +2425,6 @@ async function doname() {
         );
         if (!selection.cancelled && selection.object) {
             const object = selection.object;
-            game._pending_message = '';
             if (object.dknown === false) {
                 await pline('You would never recognize another one.');
             } else {
@@ -2500,6 +2514,73 @@ async function getAdjacentLocation(prompt: string, errorMessage: string | null, 
 async function dotwoweapon() {
     const spentTime = await toggleTwoWeaponCombat();
     if (!game.program_state.gameover) game.context.move = spentTime ? 1 : 0;
+}
+
+// C iactions.c:itemactions_pushkeys(). The menu closes before the queued
+// command runs; its object letter answers the later inventory prompt.
+function inventoryActionCommand({ key, item }: InventoryAction): NativeCommand | null {
+    const handlers: Record<InventoryAction['key'], string | null> = {
+        '-': item === game.uwep ? 'dowield'
+            : item === game.uswapwep ? 'remarm_swapwep'
+                : item === game.uquiver ? 'dowieldquiver' : 'donull',
+        'c': 'docallcmd', 'd': 'dodrop', 'E': 'doengrave', 'f': 'dofire',
+        'i': 'doorganize', 'P': 'dowear', 'Q': 'dowieldquiver', 'r': 'doread',
+        't': 'dothrow', 'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
+        '/': 'dowhatis', '\x1b': null, ' ': null, '\n': null, '\r': null,
+    };
+    return NATIVE_COMMANDS.find(command => command.handler === handlers[key]) ?? null;
+}
+
+async function executeInventoryAction({ key, item }: InventoryAction): Promise<void> {
+    try {
+        await runInventoryAction({ key, item });
+    } finally {
+        // These keys belong to this item's prompts. Native rhack discards
+        // them if the command fails before it asks for the selected item.
+        clearCommandKeys();
+    }
+}
+
+async function runInventoryAction({ key, item }: InventoryAction): Promise<void> {
+    const letter = item.invlet;
+    if (!letter || !game.inventory.includes(item)) {
+        game.context.move = 0;
+        return;
+    }
+    switch (key) {
+    case '-':
+        if (item === game.uwep) {
+            queueCommandKeys('-');
+            await dowield();
+        } else if (item === game.uswapwep) {
+            resetBulkTakeoff();
+            const twoweap = game.u.twoweap;
+            await setSecondaryWeapon(null, game);
+            await plineWithContinuation(twoweap ? 'You are no longer wielding two weapons at once.'
+                : 'You no longer have a second weapon readied.');
+            game.context.move = 1;
+        } else if (item === game.uquiver) {
+            queueCommandKeys('-');
+            await doready();
+        }
+        return;
+    case 'c': queueCommandKeys(`i${letter}`); await doname(); return;
+    case 'd': queueCommandKeys(letter); await dodrop(); return;
+    case 'E': queueCommandKeys(letter); await doengrave(); return;
+    case 'f': await dofire(); return;
+    case 'i': queueCommandKeys(letter); await doadjust(); return;
+    case 'P': queueCommandKeys(letter); await dowear(); return;
+    case 'Q': queueCommandKeys(letter); await doready(); return;
+    case 'r': queueCommandKeys(letter); await doread({ gotoLevel }); return;
+    case 't': await dothrow(item); return;
+    case 'w': queueCommandKeys(letter); await dowield(); return;
+    case 'x': await doswapweapon(); return;
+    case 'X': await dotwoweapon(); return;
+    case '/': queueCommandKeys(`i${letter}`); await dowhatis(); return;
+    case '\x1b': case ' ': case '\n': case '\r':
+        game.context.move = 0;
+        return;
+    }
 }
 
 // C ref: wield.c:doswapweapon()/ready_weapon().  Clearing the old secondary
@@ -2898,12 +2979,11 @@ function specialLevelReachable(event: SpecialLayoutEvent) {
 
 // C ref: teleport.c level_tele().  Wizard-menu entry into the Elemental
 // Planes grants the real Amulet before deferred_goto() starts.  Object
-// construction and inventory identity therefore precede getbones()/mklev(),
-// while tty does not expose prinv() until the destination transaction yields
-// at its pre-arrival acknowledgement.
+// construction, inventory identity, and prinv() precede getbones()/mklev().
+// Destination placement finishes before tty asks for acknowledgement.
 async function endgamePrerequisite(destination: DungeonLocation) {
     if (!In_endgame(destination) || In_endgame(game.u?.uz)
-        || game.u?.uhave?.amulet) return '';
+        || game.u?.uhave?.amulet) return;
     const amulet = await addInventoryItem(
         await mksobj(AMULET_OF_YENDOR, true, false),
     );
@@ -2913,9 +2993,10 @@ async function endgamePrerequisite(destination: DungeonLocation) {
     recordObjectEncounter(amulet.otyp);
     if (!game.u.uhave) game.u.uhave = {};
     game.u.uhave.amulet = 1;
-    return `Endgame prerequisite: ${
+    const message = `Endgame prerequisite: ${
         amulet.invlet
-    } - the Amulet of Yendor.--More--`;
+    } - the Amulet of Yendor.`;
+    await pline(message);
 }
 
 // C ref: dungeon.c print_dungeon(TRUE). Build one source-ordered menu stream;
@@ -3016,8 +3097,8 @@ export async function chooseWizardLevelDestination() {
     const { rows, choices } = wizardLevelMenu();
     const destination = await showPagedPickOneMenu({ rows, choices });
     if (!destination) return null;
-    const preArrivalPager = await endgamePrerequisite(destination);
-    return { destination, preArrivalPager };
+    await endgamePrerequisite(destination);
+    return { destination };
 }
 
 async function wizLevelTeleport({ menuRequested = false } = {}) {
@@ -3706,7 +3787,9 @@ async function doadjust() {
         .join('');
     const destinationPrompt = `Adjust letter to what [${
         compactInventoryLetters(recommended)}] (? see used letters)?`;
-    game._pending_message = '';
+    // The source item's queued letter bypasses getobj's prompt, but the
+    // destination uses tty_yn_function(), which acknowledges unread prose.
+    await flushPendingTopline();
     const key = await promptKey(destinationPrompt, 1);
     const destination = String.fromCharCode(key);
     if (key === 27 || key === 32 || key === 10 || key === 13) {
@@ -4468,6 +4551,23 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
     if (trap?.ttyp === BEAR_TRAP) return 'bear trap';
     const loc = game.level?.at(x, y);
     if (!loc) return '';
+    const glyph = glyphAt(x, y);
+    // pager.c:lookat() recognizes liquid cmap glyphs, including memory,
+    // then waterbody_name() describes the current surface at that square.
+    if (glyph?.kind === 'terrain' && [
+        CmapSymbol.pool, CmapSymbol.water, CmapSymbol.lava,
+        CmapSymbol.lavawall, CmapSymbol.ice,
+    ].some(symbol => glyph.glyph === cmapToGlyph(symbol))) {
+        const description = waterbodyName(x, y);
+        // do_screen_description() adds strength only to plain "ice";
+        // hallucinated frozen liquids retain their waterbody_name().
+        return description === 'ice' ? iceDescriptionAt(x, y) : description;
+    }
+    // do_screen_description() applies the Quest gate to the glyph's stair
+    // description, whether the stair is visible now or remembered.
+    if (glyph?.kind === 'terrain' && glyph.terrainName === 'staircase down'
+        && onQuestStart(game) && !okToQuest(game))
+        return 'blocked staircase down';
     if (loc.disp_glyph?.kind === 'nothing') return 'dark part of a room';
     // pager.c:do_screen_description() recognizes the concrete S_cloud glyph
     // before the generic '#' ambiguity list.  Moving elemental bubbles can
@@ -4497,17 +4597,17 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
             return loc.typ === DOOR && loc.doormask === D_ISOPEN
                 ? 'open door' : 'closed door';
         }
+        return loc.remembered_glyph.terrainName;
     }
     if (loc.typ === FOUNTAIN) return 'fountain';
     if (loc.typ === SINK) return 'sink';
-    if (loc.typ === MOAT) return 'moat';
     if (loc.typ === STONE) return 'stone';
     if (IS_WALL(loc.typ)) return 'wall';
     if (loc.typ === DOOR)
         return loc.doormask === D_ISOPEN ? 'open door' : 'closed door';
     if (loc.typ === ROOM) return 'floor of a room';
     if (loc.typ === CORR) return 'corridor';
-    return travelLocationDescription(x, y);
+    return glyph?.kind === 'terrain' ? glyph.terrainName : travelLocationDescription(x, y);
 }
 
 // C apply.c:dojump(): the physical command shares the spell's jump owner.
@@ -4665,17 +4765,35 @@ async function dowhatis(): Promise<void> {
         27, 32, 10, 13,
         ...'/i?mMoOtTeE'.split('').map(char => char.charCodeAt(0)),
     ];
-    const key = await showChoiceWindow({
+    const queuedKey = takeCommandKey();
+    const key = queuedKey ?? await showChoiceWindow({
         title: 'What do you want to look at:',
         entries,
         validKeys,
     });
-    await restoreHelpMap();
-    if (String.fromCharCode(key) === '/') {
+    if (queuedKey === undefined) await restoreHelpMap();
+    const choice = String.fromCharCode(key);
+    if (choice === '/') {
         await doFarlook(false);
         return;
     }
+    if (choice === 'i') {
+        const queuedLetter = takeCommandKey();
+        const letter = queuedLetter ?? (await selectInventoryObject()).key;
+        const item = game.inventory.find(item => item.invlet === String.fromCharCode(letter));
+        if (item) await showEncyclopediaInformation(singularObjectName(item));
+        else if (queuedLetter !== undefined) clearCommandKeys();
+    }
     game.context.move = 0;
+}
+
+async function showEncyclopediaInformation(name: string): Promise<void> {
+    const entries = encyclopediaEntries(name);
+    // checkfile() fills an NHW_MENU with putstr(), so tty treats its rows
+    // as prose and accepts only the --More-- responses, even across pages.
+    for (const entry of entries)
+        await showDisclosureOverlay(entry.lines, { restoreUnderlay: true });
+    if (!entries.length) await pline("You don't have any information on those things.");
 }
 
 // C pager.c:dohelp().
@@ -5002,7 +5120,7 @@ async function putOnArmorObject(object: GameObject): Promise<void> {
 // C refs: wield.c:dowield(), ready_weapon(), invent.c:getobj().  The prompt
 // advertises weapons and weapon-tools but still permits the full inventory
 // through ?/*; '-' represents the synthetic empty-hands object.
-async function dowield(cannedInvlet: string | null = null): Promise<void> {
+async function dowield(): Promise<void> {
     game.multi = 0;
     if (heroHasNoHands(game) || heroIsVerySmall(game)) {
         await pline("Don't be ridiculous!");
@@ -5019,27 +5137,22 @@ async function dowield(cannedInvlet: string | null = null): Promise<void> {
     const letters = weapons.map(object => object.invlet).join('');
     const choices = ['-', compactInventoryLetters(letters)].filter(Boolean).join(' ');
     const prompt = `What do you want to wield? [${choices} or ?*] `;
-    const selection = cannedInvlet === null
-        ? await promptInventoryObject(
-            prompt, game.inventory || [], {
-                allowNone: true, allowMenu: true,
-                menuItems: weapons.length ? weapons : game.inventory.filter(item => item.oclass !== 12),
-                noneDescription: `your ${game.uarmg ? 'gloved' : 'bare'} ${
-                    makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
-            },
-        )
-        : {
-            cancelled: false,
-            none: false,
-            object: (game.inventory || []).find(candidate =>
-                candidate.invlet === cannedInvlet),
-        };
+    const selection = await promptInventoryObject(
+        prompt, game.inventory || [], {
+            verb: 'wield',
+            classify: object => object.oclass === 12 ? GETOBJ_EXCLUDE
+                : object.oclass === 2 || isWeaponTool(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY,
+            allowNone: true, allowMenu: true,
+            menuItems: weapons.length ? weapons : game.inventory.filter(item => item.oclass !== 12),
+            noneDescription: `your ${game.uarmg ? 'gloved' : 'bare'} ${
+                makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
+        },
+    );
     if (selection.cancelled) {
         game.context.move = 0;
         return;
     }
 
-    game._pending_message = '';
     const object = selection.object;
     if (!selection.none && !object) {
         game.context.move = 0;
@@ -5131,41 +5244,23 @@ async function dowear(): Promise<void> {
         return;
     }
 
-    const armor = (game.inventory || []).filter(object =>
-        object.class === 'Armor' || object.oclass === 3);
-    if (!armor.length) {
-        await pline("You don't have anything appropriate to wear.");
+    // wear_ok() downplays accessories but accepts them through the same
+    // getobj transaction, including a queued inventory action.
+    const object = await chooseInventoryObject('wear', candidate => {
+        if ((candidate.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))
+            return GETOBJ_EXCLUDE_INACCESS;
+        if (candidate.oclass === 3) return GETOBJ_SUGGEST;
+        if (candidate.oclass === 4 || candidate.oclass === 5
+            || isEyewear(candidate) || candidate.otyp === MEAT_RING)
+            return GETOBJ_DOWNPLAY;
+        return GETOBJ_EXCLUDE;
+    });
+    if (!object) {
         game.context.move = 0;
         return;
     }
-
-    const letters = armor.filter(object => !object.worn)
-        .map(object => object.invlet).join('');
-    const choices = letters ? `${letters} or ?*` : '*';
-    const selection = String.fromCharCode(await promptKey(
-        `What do you want to wear? [${choices}] `,
-    ));
-    game._pending_message = '';
-    const inventoryObject = (game.inventory || []).find(candidate =>
-        candidate.invlet === selection);
-    const object = armor.find(candidate => candidate === inventoryObject);
-    if (object) {
-        await putOnArmorObject(object);
-        return;
-    }
-    const accessory = inventoryObject
-        && (inventoryObject.class === 'Rings' || inventoryObject.oclass === 4
-            || inventoryObject.class === 'Amulets'
-            || inventoryObject.oclass === 5
-            || inventoryObject.otyp === RIN_CONFLICT
-            || inventoryObject.otyp === BLINDFOLD
-            || inventoryObject.otyp === TOWEL)
-        ? inventoryObject : null;
-    if (!accessory) {
-        game.context.move = 0;
-        return;
-    }
-    await putOnAccessoryObject(accessory);
+    if (object.oclass === 3) await putOnArmorObject(object);
+    else await putOnAccessoryObject(object);
 }
 
 // C refs: shk.c:dopay(), menu_pick_pay_items(), pay(), and update_bill().
@@ -5363,7 +5458,6 @@ async function dodrop(): Promise<void> {
                 object = splitCarriedStack(object, selection.count);
             }
         }
-        game._pending_message = '';
         const spentTime = await dropHeroObject(object, {
             state: game, publish: plineWithContinuation,
         });
@@ -7163,6 +7257,13 @@ async function finishMovedHero({
         || IS_OBSTRUCTED(loc?.typ ?? STONE)
         || IS_FURNITURE(loc?.typ ?? STONE))) stopRun();
 
+    // C trap.c:move_into_trap() skips domove_core()'s footstep disturbance.
+    if (!trapOptions.failedUntrap
+        && !propertyIsActive('levitation', game) && !propertyIsActive('flying', game)
+        && !propertyIsActive('stealth', game)
+        && (MONSTER_BODY_META[heroSpecies(game)]?.[0] ?? 0) >= 400)
+        disturbBuriedZombies(u.ux, u.uy);
+
     newsym(oldx, oldy);
     vision_recalc(1);
     await announceInvocationSquare();
@@ -7290,6 +7391,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         u.uy = monster.my;
         return attackHostileMonster(monster, monster.mx, monster.my);
     }
+    checkSlipperyIce();
     // C hack.c:impaired_movement() always checks Confusion before deriving
     // the destination.  A nonzero rn2(5) keeps the requested direction; on
     // impairment, confdir(TRUE) chooses cardinals first and retries only an

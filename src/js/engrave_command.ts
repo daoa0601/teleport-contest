@@ -5,6 +5,7 @@
 // invent.c getobj()'s "write with" flow.
 
 import { plineWithContinuation as pline, newsym } from './display.js';
+import { clearCommandKeys, takeCommandKey } from './input.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import {
     compactInventoryLetters, inventoryLetterOrder, promptInventoryObject,
@@ -170,6 +171,16 @@ function stylusClass(object: GameObject): number {
 // stylus_ok(NULL) is GETOBJ_SUGGEST, so '-' leads the displayed choices and
 // stays selectable even with an otherwise empty suggestion set.
 async function chooseStylus(state: GameState): Promise<GameObject | 'hands' | null> {
+    // getobj() consumes canned choices before reassigning letters or
+    // opening a menu. stylus_ok() admits every carried object and hands.
+    const queuedKey = takeCommandKey();
+    if (queuedKey !== undefined) {
+        if (queuedKey === '-'.charCodeAt(0)) return 'hands';
+        const object = state.inventory.find(candidate =>
+            candidate.invlet === String.fromCharCode(queuedKey));
+        if (!object) clearCommandKeys();
+        return object ?? null;
+    }
     if (state.flags?.fixinv === false) reassignInventoryLetters();
     const inventory = [...(state.inventory || [])]
         .sort((left, right) => inventoryLetterOrder(left.invlet)
