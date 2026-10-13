@@ -6,6 +6,14 @@ import {
 } from './monster_data.js';
 import { roles } from './roles.js';
 
+// Native MALE, FEMALE, and NEUTRAL name indices.
+export type MonsterNameGender = 0 | 1 | 2;
+
+export interface MonsterNameMatch {
+    readonly mnum: number;
+    readonly gender: MonsterNameGender;
+}
+
 export const MONSTER_CLASS_SYMBOLS: readonly string[] = [
     '', ...'abcdefghijklmnopqrstuvwxyz', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
     '@', ' ', "'", '&', ';', ':', '~', ']',
@@ -35,7 +43,7 @@ function canonicalMonsterNumber(name: string) {
         candidate?.toLowerCase() === name.toLowerCase());
 }
 
-const MONSTER_NAME_ALIASES = new Map<string, number>(([
+const MONSTER_NAME_ALIAS_ENTRIES: readonly (readonly [string, string | number, MonsterNameGender?])[] = [
     ['grey dragon', 'gray dragon'],
     ['baby grey dragon', 'baby gray dragon'],
     ['grey unicorn', 'gray unicorn'],
@@ -69,27 +77,29 @@ const MONSTER_NAME_ALIASES = new Map<string, number>(([
     ['green elf', 'Green-elf'],
     ['grey elf', 'Grey-elf'],
     ['gray elf', 'Grey-elf'],
-    ['elf lady', 'elf-noble'],
-    ['elf lord', 'elf-noble'],
+    ['elf lady', 'elf-noble', 1],
+    ['elf lord', 'elf-noble', 0],
     ['elf noble', 'elf-noble'],
     ['olog hai', 'Olog-hai'],
     ['arch lich', 'arch-lich'],
     ['archlich', 'arch-lich'],
-    ['incubi', 'amorous demon'],
-    ['succubi', 'amorous demon'],
+    ['incubi', 'amorous demon', 0],
+    ['succubi', 'amorous demon', 1],
     ['violet fungi', 'violet fungus'],
     ['homunculi', 'homunculus'],
     ['baluchitheria', 'baluchitherium'],
     ['lurkers above', 'lurker above'],
-    ['cavemen', 'cave dweller'],
-    ['cavewomen', 'cave dweller'],
+    ['cavemen', 'cave dweller', 0],
+    ['cavewomen', 'cave dweller', 1],
     ['watchmen', 'watchman'],
     ['djinn', 'djinni'],
     ['mumakil', 'mumak'],
     ['erinyes', 'erinys'],
-] satisfies readonly (readonly [string, string | number])[]).map(([alias, target]) => [
+];
+
+const MONSTER_NAME_ALIASES = new Map<string, MonsterNameMatch>(MONSTER_NAME_ALIAS_ENTRIES.map(([alias, target, gender = 2]) => [
     alias,
-    typeof target === 'number' ? target : canonicalMonsterNumber(target),
+    { mnum: typeof target === 'number' ? target : canonicalMonsterNumber(target), gender },
 ]));
 
 function normalizeMonsterName(value: string) {
@@ -109,11 +119,16 @@ function acceptedNameRemainder(remainder: string) {
 }
 
 function monsterNames(mnum: number) {
-    return new Set([
-        MONSTER_NAME[mnum],
-        monsterTypeName(mnum, false),
-        monsterTypeName(mnum, true),
-    ].filter((name): name is string => typeof name === 'string' && name.length > 0).map(name => name.toLowerCase()));
+    const neutral = MONSTER_NAME[mnum]?.toLowerCase() ?? '';
+    const male = monsterTypeName(mnum, false).toLowerCase();
+    const female = monsterTypeName(mnum, true).toLowerCase();
+    const names: { name: string; gender: MonsterNameGender }[] = [
+        { name: neutral, gender: 2 },
+    ];
+    if (male !== female) {
+        names.push({ name: male, gender: 0 }, { name: female, gender: 1 });
+    }
+    return names.filter(candidate => candidate.name.length > 0);
 }
 
 function roleTitleMonster(name: string) {
@@ -139,27 +154,33 @@ function roleTitleMonster(name: string) {
 }
 
 export function nameToMonster(value: string) {
+    return resolveMonsterName(value)?.mnum ?? -1;
+}
+
+export function resolveMonsterName(value: string): MonsterNameMatch | null {
     const requested = normalizeMonsterName(value);
-    if (!requested) return -1;
-    for (const [alias, mnum] of MONSTER_NAME_ALIASES) {
+    if (!requested) return null;
+    for (const [alias, match] of MONSTER_NAME_ALIASES) {
         if (requested.startsWith(alias)
             && acceptedNameRemainder(requested.slice(alias.length))) {
-            return mnum;
+            return match;
         }
     }
 
-    let best: { length: number; mnum: number } | null = null;
+    let best: (MonsterNameMatch & { length: number }) | null = null;
     for (let mnum = 0; mnum < MONSTER_NAME.length; mnum++) {
-        for (const name of monsterNames(mnum)) {
+        for (const { name, gender } of monsterNames(mnum)) {
             if (!requested.startsWith(name)
                 || !acceptedNameRemainder(requested.slice(name.length))) {
                 continue;
             }
             if (!best || name.length > best.length)
-                best = { length: name.length, mnum };
+                best = { length: name.length, mnum, gender };
         }
     }
-    return best?.mnum ?? roleTitleMonster(requested);
+    if (best) return { mnum: best.mnum, gender: best.gender };
+    const mnum = roleTitleMonster(requested);
+    return mnum < 0 ? null : { mnum, gender: 2 };
 }
 
 function singularClassName(value: string) {

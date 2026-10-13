@@ -84,4 +84,33 @@ void test('a create-monster scroll keeps imposed invisibility through a chameleo
     assert.equal(scroll.where, 'gone');
     assert.equal(game.context.move, 1);
 });
+for (const { request, female, surprised } of [
+    { request: 'female elf lord', female: true, surprised: true },
+    { request: 'male elf lady', female: false, surprised: true },
+    { request: 'female incubi', female: true, surprised: true },
+    { request: 'male succubi', female: false, surprised: true },
+    { request: 'female cavemen', female: true, surprised: true },
+    { request: 'male cavewomen', female: false, surprised: true },
+    { request: 'elf lord', female: false, surprised: false },
+    { request: 'elf lady', female: true, surprised: false },
+    { request: 'incubi', female: false, surprised: false },
+    { request: 'succubi', female: true, surprised: false },
+]) {
+    void test(`a create-monster scroll honors the gender hint in "${request}"`, async () => {
+        const { level, input, messages } = creationRoom();
+        const scroll = await addInventoryObject(SCR_CREATE_MONSTER, { blessed: true, typeKnown: true });
+        input.beforeRead = () => {
+            messages.push(game._pending_message);
+            input.feed(/Create what kind/.test(game._pending_message) ? `${request}\n` : ' ');
+        };
+        await readInventoryObject(scroll);
+        assert.equal(level.monsters.length, 1);
+        assert.equal(level.monsters[0]?.female, female);
+        const appearance = [...messages, game._pending_message].find(message => / appears next to you/.test(message));
+        assert.ok(appearance, 'Creation must announce the monster');
+        assert.match(appearance, surprised ? / suddenly appears next to you!$/ : / appears next to you\.$/);
+        assert.equal(scroll.where, 'gone');
+        assert.equal(game.context.move, 1);
+    });
+}
 //# sourceMappingURL=read_create_monster.test.js.map

@@ -4,8 +4,8 @@ import { COLNO, MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, ROWNO } from './cons
 import { canSpotMonster, flashGlyphAt, newsym, plineWithContinuation, transientMonsterGlyph } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { mkclassAligned, makemonNear, rndmonstAdj } from './mklev.js';
-import { nameToMonster, nameToMonsterClass } from './mondata.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { nameToMonsterClass, resolveMonsterName } from './mondata.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { tameMonster } from './monster_taming.js';
 import { setMonsterMalign } from './monster_alignment.js';
@@ -67,7 +67,7 @@ function parseCreationRequest(text) {
     const choice = monsterChoice(name);
     if (!choice)
         return null;
-    const namedGender = choice.kind === 'species' ? genderInMonsterName(name, choice.species) : -1;
+    const namedGender = choice.kind === 'species' ? choice.gender : -1;
     const explicitGender = modifiers.has('male') ? 0 : modifiers.has('female') ? 1 : null;
     return {
         quantity, choice, disposition,
@@ -81,31 +81,19 @@ function parseCreationRequest(text) {
 function monsterChoice(name) {
     if (game.flags.debug && (name === '*' || name === 'random'))
         return { kind: 'random' };
-    const species = nameToMonster(name);
-    if (species >= 0)
-        return { kind: 'species', species };
+    const match = resolveMonsterName(name);
+    if (match)
+        return { kind: 'species', species: match.mnum, gender: match.gender };
     if (name === '~')
-        return { kind: 'species', species: 114 }; // long worm
+        return { kind: 'species', species: 114, gender: 2 }; // long worm
     if (name === 'I')
-        return { kind: 'species', species: 43 }; // stalker
+        return { kind: 'species', species: 43, gender: 2 }; // stalker
     const monsterClass = nameToMonsterClass(name);
     if (monsterClass === 35)
-        return { kind: 'species', species: 43 };
+        return { kind: 'species', species: 43, gender: 2 };
     if (monsterClass === 59)
-        return { kind: 'species', species: 114 };
+        return { kind: 'species', species: 114, gender: 2 };
     return monsterClass > 0 ? { kind: 'class', monsterClass } : null;
-}
-function genderInMonsterName(name, species) {
-    const male = monsterTypeName(species, false).toLowerCase();
-    const female = monsterTypeName(species, true).toLowerCase();
-    if (male === female)
-        return 2;
-    const requested = name.toLowerCase().replace(/^(?:a|an|the) /, '');
-    if (requested.startsWith(female))
-        return 1;
-    if (requested.startsWith(male))
-        return 0;
-    return 2;
 }
 async function createRequestedMonsters(request) {
     requirePlayingGame(game);
