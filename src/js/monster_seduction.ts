@@ -2,7 +2,7 @@
 import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, stopDonning } from './armor.js';
-import { adjustAttribute, currentAttribute, exerciseAttribute } from './attrib.js';
+import { adjustAttribute, currentAttribute, exerciseAttribute, reportHeroEncumbrance } from './attrib.js';
 import { heroHairName, heroHandName } from './body_parts.js';
 import { heroHasInvoluntaryDelay } from './command_state.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, LARGEST_INT, M_ATTK_AGR_DONE, QBUFSZ, RLOC_MSG, Upolyd } from './const.js';
@@ -258,7 +258,9 @@ async function seductionOutcome(context: SeductionContext): Promise<void> {
         } else if (outcome === 1 || outcome === 2) {
             await publish(outcome === 1 ? 'You are down in the dumps.' : 'Your senses are dulled.');
             const attribute = outcome === 1 ? A_CON : A_WIS;
-            adjustAttribute(attribute, -1, state);
+            const change = adjustAttribute(attribute, -1, state);
+            if (change.changed && attribute === A_CON && state._moveloopStarted)
+                await reportHeroEncumbrance(state);
             await exerciseAttribute(attribute, false, state);
             state.context.botl = true;
         } else if (outcome === 3) {
@@ -290,7 +292,9 @@ async function seductionOutcome(context: SeductionContext): Promise<void> {
         await publish(outcome === 1 ? 'You feel good enough to do it again.'
             : `You will always remember ${monsterName(monster, { state, article: 'your', suppressIt: true })}...`);
         const attribute = outcome === 1 ? A_CON : A_WIS;
-        adjustAttribute(attribute, 1, state);
+        const change = adjustAttribute(attribute, 1, state);
+        if (change.changed && attribute === A_CON && state._moveloopStarted)
+            await reportHeroEncumbrance(state);
         await exerciseAttribute(attribute, true, state);
         state.context.botl = true;
     } else if (outcome === 3) {
