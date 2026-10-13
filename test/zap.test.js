@@ -113,6 +113,7 @@ void test('a wrested final charge consumes the wand', async () => {
     game.inventory = [wand];
     initRng(49n);
     pushKey('a');
+    pushKey(' '); // Acknowledge wresting the charge before choosing a direction.
     pushKey('.');
     await rhack('z'.charCodeAt(0));
     assert.equal(game.inventory.includes(wand), false);
