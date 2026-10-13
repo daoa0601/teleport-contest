@@ -3314,6 +3314,7 @@ export async function newgame() {
 // C ref: allmain.c moveloop_core()
 export async function moveloop_core() {
     const g = requireInitializedGame();
+    g.program_state.in_moveloop = true;
     if (g.program_state?.gameover) {
         await nhgetch();
         return;

@@ -39,6 +39,7 @@ export interface ProgramState {
     beyond_savefile_load?: boolean | number;
     gameover?: boolean;
     in_docrt?: boolean | number;
+    in_moveloop?: boolean;
     in_getlev?: boolean;
     in_impossible?: boolean;
     in_paniclog?: boolean;
