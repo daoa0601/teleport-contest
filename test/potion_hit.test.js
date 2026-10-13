@@ -15,6 +15,7 @@ import { installHumanWerewolfHero, installPolymorphedHero, wearPolymorphControlR
 import { freshGame } from './support/game-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 const PM_ENERGY_VORTEX = 109;
 const PM_PURPLE_WORM = 115;
 async function potionObject(otyp) {
@@ -1086,7 +1087,7 @@ void test('speed vapor saturates the timed very-fast counter', async () => {
     assert.equal(game.u._exercise?.[A_DEX], 1);
 });
 void test('blindness vapor darkens sight immediately and extends the live timeout', async () => {
-    freshPotionState({ blindTurns: 0 });
+    freshObjectRoom({ hero: { blindTurns: 0 } });
     requirePlayingGame(game);
     game.blind = false;
     const messages = [];
@@ -1096,17 +1097,15 @@ void test('blindness vapor darkens sight immediately and extends the live timeou
         state: game,
         potion,
         publish: async (message) => messages.push(message),
-        recalculateVision: () => { },
     });
     assert.deepEqual(messages, ['It suddenly gets dark.']);
     assert.equal(game.u.blindTurns, 4);
     assert.equal(game.blind, true);
-    assert.equal(game.vision_full_recalc, 1);
     assert.equal(result?.blindnessDuration, 4);
     assert.equal(result?.sightToggled, true);
 });
 void test('Eyes-blocked blindness vapor brackets the timeout with vision prose', async () => {
-    freshPotionState({ blindTurns: 0 });
+    freshObjectRoom({ hero: { blindTurns: 0 } });
     requirePlayingGame(game);
     game.ublindf = await artifactObject('The Eyes of the Overworld');
     const messages = [];
@@ -1116,7 +1115,6 @@ void test('Eyes-blocked blindness vapor brackets the timeout with vision prose',
         state: game,
         potion,
         publish: async (message) => messages.push(message),
-        recalculateVision: () => { },
     });
     assert.deepEqual(messages, [
         'It suddenly gets dark.', 'Your vision clears.',
@@ -1126,7 +1124,7 @@ void test('Eyes-blocked blindness vapor brackets the timeout with vision prose',
     assert.equal(result?.sightToggled, false);
 });
 void test('blindness vapor saturates an already-blind timeout without repaint', async () => {
-    freshPotionState({ blindTurns: 0x00fffffe });
+    freshObjectRoom({ hero: { blindTurns: 0x00fffffe } });
     requirePlayingGame(game);
     game.blind = true;
     const potion = await potionObject(POT_BLINDNESS);
@@ -1135,7 +1133,6 @@ void test('blindness vapor saturates an already-blind timeout without repaint', 
         state: game,
         potion,
         publish: async () => assert.fail('active blindness announced'),
-        recalculateVision: () => { },
     });
     assert.equal(game.u.blindTurns, 0x00ffffff);
     assert.equal(game.blind, true);

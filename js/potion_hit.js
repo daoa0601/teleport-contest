@@ -4,6 +4,7 @@ import { requirePlayingGame } from './gstate.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { makeConfused } from './hero_mental_status.js';
+import { makeBlinded } from './sight_change.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
@@ -30,7 +31,7 @@ import { chargeUnpaidObjectAsDebt, objectTypeKnown, } from './shk.js';
 import { monsterSaddle } from './steed.js';
 import { monsterName } from './monster_name.js';
 import { deleteObject } from './object_delete.js';
-import { cansee, vision_recalc } from './vision.js';
+import { cansee } from './vision.js';
 import { applyHeroWaterVaporChange, transformWereMonster, } from './were.js';
 import { heroHasProtectionFromShapeChangers, } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
@@ -330,7 +331,7 @@ async function finishPotionVaporKnowledge(state, potion, identifiesType) {
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Its final knowledge transaction either identifies an unambiguous effect or
 // asks for a type-wide call name before the caller frees the potion identity.
-export async function applySupportedPotionVapor({ state = game, potion, publish = plineWithContinuation, monsterCanSeeHero = null, recalculateVision, }) {
+export async function applySupportedPotionVapor({ state = game, potion, publish = plineWithContinuation, monsterCanSeeHero = null, }) {
     if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp))
         return null;
     requirePlayingGame(state);
@@ -440,16 +441,11 @@ export async function applySupportedPotionVapor({ state = game, potion, publish 
         if (!wasBlind && !unaware)
             await publish('It suddenly gets dark.');
         blindnessDuration = rnd(5);
-        hero.blindTurns = Math.min(TIMEOUT, Math.max(0, hero.blindTurns ?? 0) + blindnessDuration);
-        const blindNow = syncBlindness(state);
+        await makeBlinded((hero.blindTurns ?? 0) + blindnessDuration, {
+            state, talk: false, publish,
+        });
+        const blindNow = heroIsBlind(state);
         sightToggled = wasBlind !== blindNow;
-        if (sightToggled) {
-            state.vision_full_recalc = 1;
-            if (recalculateVision)
-                recalculateVision();
-            else if (state === game)
-                vision_recalc(0);
-        }
         if (!blindNow && !unaware)
             await publish('Your vision clears.');
     }

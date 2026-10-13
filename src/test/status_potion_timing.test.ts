@@ -5,7 +5,7 @@ import { NOT_HUNGRY } from '../js/const.js';
 import { bot, flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { makeConfused } from '../js/hero_mental_status.js';
-import { POT_CONFUSION } from '../js/object_data.js';
+import { POT_BLINDNESS, POT_CONFUSION } from '../js/object_data.js';
 import { applySupportedPotionVapor } from '../js/potion_hit.js';
 import { uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -22,6 +22,18 @@ void test('potion vapor requests a confusion status update after its dizziness m
 
     assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /Conf\b/);
     assert.ok((game.u.confusionTurns ?? 0) > 0);
+});
+
+void test('blindness vapor displays Blind on the next message flush', async () => {
+    freshObjectRoom({ hero: { uhs: NOT_HUNGRY } });
+    const potion = await uninitializedObject(POT_BLINDNESS, { dknown: false });
+    await bot();
+
+    await applySupportedPotionVapor({ potion });
+    await flush_screen(1);
+
+    assert.equal(game.blind, true);
+    assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /\bBlind\b/);
 });
 
 void test('the last confusion tick clears the status condition before the next command', async () => {
