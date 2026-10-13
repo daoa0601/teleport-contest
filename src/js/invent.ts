@@ -23,7 +23,8 @@ import {
 } from './const.js';
 import {
     ARROW as FIRST_OBJECT, EGG, CHEST, GOLD_PIECE, LARGE_BOX, MAGIC_MARKER,
-    OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OBJECT_TOUGH, STATUE, TIN, TOWEL,
+    HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OBJECT_TOUGH,
+    STATUE, TIN, TIN_OPENER, TOWEL,
 } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
@@ -32,6 +33,9 @@ import { getLine, promptYesNoAllQuit } from './query.js';
 import { isWeaponTool, objectUsesCharges } from './object_properties.js';
 import { ammunitionMatchesLauncher, isBlade, isTwoWeaponObject } from './weapon_type.js';
 import { heroCanUseTwoWeapons } from './two_weapon.js';
+import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
+import { heroHandName } from './body_parts.js';
+import { makePlural } from './object_grammar.js';
 import { objectIsVulnerableToErosion } from './object_erosion.js';
 import { discoverArtifact } from './artifacts.js';
 import { isContainer } from './container.js';
@@ -508,8 +512,17 @@ function itemActionEntries(item: GameObject, state: GameState) {
     }
     if ((item.owornmask ?? 0) & W_ARMOR)
         entries.push({ key: 'T', text: 'Take off this armor' });
-    if (item !== state.uwep && !alreadyWorn)
-        entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'}${item.oclass === 2 || isWeaponTool(item) ? ' as your weapon' : ' in your hands'}` });
+    if (item !== state.uwep && !heroHasNoHands(state) && !heroIsVerySmall(state)) {
+        const weapon = item.oclass === 2 || isWeaponTool(item)
+            || item.otyp === TOWEL && item.spe > 0 || item.otyp === HEAVY_IRON_BALL;
+        if (weapon) {
+            entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'} as your weapon` });
+        } else if (item.otyp === TIN_OPENER) {
+            entries.push({ key: 'w', text: 'Wield the tin opener to easily open tins' });
+        } else if (!alreadyWorn) {
+            entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'} in your ${makePlural(heroHandName(state))}` });
+        }
+    }
     if (item === state.uwep) entries.push({ key: 'x', text: state.uswapwep
         ? 'Swap this with your alternate weapon' : 'Ready this as an alternate weapon' });
     else if (item === state.uswapwep)
