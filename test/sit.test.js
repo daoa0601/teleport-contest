@@ -6,12 +6,14 @@ import { rhack } from '../js/cmd.js';
 import { discoverArtifact } from '../js/artifacts.js';
 import { ALTAR, Align2amask, BEAR_TRAP, FOUNTAIN, LANDMINE, PIT, TELEP_TRAP, THRONE, TT_BEARTRAP, TT_PIT, TT_WEB, WEB, } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
-import { CLUB, CORPSE, CREAM_PIE, WHITE_DRAGON_SCALE_MAIL, } from '../js/object_data.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { requireScreenRow } from './support/screen.js';
+import { CLUB, CORPSE, CREAM_PIE, SLIME_MOLD, WHITE_DRAGON_SCALE_MAIL, } from '../js/object_data.js';
 import { attrcurse, rndcurse } from '../js/throne.js';
 import { applyArmorOnEffects } from '../js/armor.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
+import { addFruit } from '../js/fruit.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { addInventoryObject, floorArtifact, floorObject, } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -38,6 +40,35 @@ for (const [artifact, seat] of [
         pushKeys('sit\n');
         await rhack('#'.charCodeAt(0));
         assert.equal(game._pending_message, `You sit on ${seat}.  It's not very comfortable...`);
+        assert.equal(game.context.move, 1);
+    });
+}
+void test('sitting on the Platinum card supplies its article before the discomfort pager', async () => {
+    freshGameplayRoom();
+    const card = await floorArtifact('The Platinum Yendorian Express Card', 10, 10, { rknown: true });
+    assert.ok(card.oartifact);
+    discoverArtifact(card.oartifact);
+    const input = resetInputState();
+    input.feed('sit\n');
+    const sitting = rhack('#'.charCodeAt(0));
+    try {
+        await input.waitUntilBlocked();
+        assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trim(), 'You sit on the Platinum Yendorian Express Card.--More--');
+    }
+    finally {
+        input.feed(' ');
+        await sitting;
+    }
+    assert.equal(game._pending_message, 'It\'s not very comfortable...');
+    assert.equal(game.context.move, 1);
+});
+for (const fruit of ['Mango', 'Ex-Cali-Bur']) {
+    void test(`sitting on ${fruit} treats the fruit name as an ordinary noun`, async () => {
+        freshGameplayRoom();
+        await floorObject(SLIME_MOLD, 10, 10, { spe: addFruit(fruit) });
+        pushKeys('sit\n');
+        await rhack('#'.charCodeAt(0));
+        assert.equal(game._pending_message, `You sit on the ${fruit}.  It's not very comfortable...`);
         assert.equal(game.context.move, 1);
     });
 }
