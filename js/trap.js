@@ -3,6 +3,7 @@
 // water_damage(), and erode_obj().
 import { IS_POOL, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok, } from './const.js';
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
+import { objectCombatName, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
@@ -267,6 +268,7 @@ export async function waterDamageObject(object, messages = [], state = game, { f
         return 'nothing';
     if (splashLitObject(object, messages, state))
         return 'damaged';
+    const name = description ?? objectCombatName(object, { state });
     const spe = object.spe ?? 0;
     if (object.otyp === CAN_OF_GREASE && spe > 0)
         return 'nothing';
@@ -278,7 +280,8 @@ export async function waterDamageObject(object, messages = [], state = game, { f
         if (random(2) === 0) {
             object.greased = false;
             if (carriedByHero(object, state)) {
-                messages.push(`The grease on your ${waterObjectName(object, description)} washes off.`);
+                observeObjectForNaming(object, { state });
+                messages.push(`The grease on ${ownedObjectName(object, state, { capitalized: false })} washes off.`);
             }
             if (object.otyp === POT_ACID) {
                 messages.push(explodingPotionMessage(object, state));
@@ -297,21 +300,20 @@ export async function waterDamageObject(object, messages = [], state = game, { f
         const leaks = !waterproof || (object.cursed && random(3) === 0);
         if (leaks) {
             if (carriedByHero(object, state)) {
-                messages.push(`Some water gets into your ${waterObjectName(object, description)}!`);
+                messages.push(`Some water gets into your ${name}!`);
             }
             await waterDamageChain(objectContents(object), messages, state);
             return 'damaged';
         }
         if (carriedByHero(object, state)
             && !heroIsBlind(state) && !state.underwater) {
-            messages.push(`The water cannot get into your ${waterObjectName(object, description)}.`);
+            messages.push(`The water cannot get into your ${name}.`);
         }
         return 'damaged';
     }
     if (!force && ((state.u?.uluck ?? 0) + 5) > random(20))
         return 'nothing';
-    const name = waterObjectName(object, description);
-    const plural = waterObjectIsPlural(object, description);
+    const plural = waterObjectIsPlural(object, name);
     const carried = carriedByHero(object, state);
     if (object.oclass === 9) {
         if (object.otyp !== SCR_BLANK_PAPER) {
@@ -421,10 +423,8 @@ function rustObject(object, description, monster, state, roll, luckRoll) {
         const greaseWashedOff = roll(2) === 0;
         if (greaseWashedOff)
             object.greased = false;
-        return {
-            outcome: 'greased', kind: 'grease-protected', object,
-            description,
-        };
+        // C water_damage(): monster-carried grease washes off without feedback.
+        return { outcome: 'greased' };
     }
     return rustMetalObject(object, description, luckRoll);
 }
@@ -515,7 +515,9 @@ export async function burnArmorByFire(victim, state, emitMessage, calls = [], ra
             object = armorAt(monster, state, W_ARMC)
                 || armorAt(monster, state, W_ARM)
                 || armorAt(monster, state, W_ARMU);
-            description = object === armorAt(monster, state, W_ARMC) ? 'cloak' : object === armorAt(monster, state, W_ARMU) ? 'shirt' : object?.name || 'armor';
+            description = !object ? 'armor'
+                : object === armorAt(monster, state, W_ARM)
+                    ? objectCombatName(object, { state }) : armorSimpleName(object, state);
         }
         else if (slot === 2) {
             object = armorAt(monster, state, W_ARMS);
@@ -550,7 +552,7 @@ export async function applyMonsterRustTrap(monster, state, { roll = rn2, luckRol
     if (targetRoll === 0) {
         event.target = 'head';
         const helmet = wornObject(monster, W_ARMH);
-        addWaterEffect(event, rustObject(helmet, objectDescription(helmet, 'helmet'), monster, state, roll, luckRoll));
+        addWaterEffect(event, rustObject(helmet, helmet ? armorSimpleName(helmet, state) : 'helm', monster, state, roll, luckRoll));
     }
     else if (targetRoll === 1) {
         event.target = 'left-arm';
@@ -562,7 +564,7 @@ export async function applyMonsterRustTrap(monster, state, { roll = rn2, luckRol
                 addWaterEffect(event, rustObject(weapon, objectDescription(weapon, 'weapon'), monster, state, roll, luckRoll));
             }
             const gloves = wornObject(monster, W_ARMG);
-            addWaterEffect(event, rustObject(gloves, objectDescription(gloves, 'gloves'), monster, state, roll, luckRoll));
+            addWaterEffect(event, rustObject(gloves, gloves ? armorSimpleName(gloves, state) : 'gloves', monster, state, roll, luckRoll));
         }
     }
     else if (targetRoll === 2) {
@@ -570,7 +572,7 @@ export async function applyMonsterRustTrap(monster, state, { roll = rn2, luckRol
         const weapon = monsterWieldedWeapon(monster);
         addWaterEffect(event, rustObject(weapon, objectDescription(weapon, 'weapon'), monster, state, roll, luckRoll));
         const gloves = wornObject(monster, W_ARMG);
-        addWaterEffect(event, rustObject(gloves, objectDescription(gloves, 'gloves'), monster, state, roll, luckRoll));
+        addWaterEffect(event, rustObject(gloves, gloves ? armorSimpleName(gloves, state) : 'gloves', monster, state, roll, luckRoll));
     }
     else {
         event.target = 'body';
@@ -586,9 +588,7 @@ export async function applyMonsterRustTrap(monster, state, { roll = rn2, luckRol
         const torso = wornObject(monster, W_ARMC)
             || wornObject(monster, W_ARM)
             || wornObject(monster, W_ARMU);
-        const fallback = ((torso?.owornmask ?? 0) & W_ARMC) ? 'cloak'
-            : ((torso?.owornmask ?? 0) & W_ARMU) ? 'shirt' : 'armor';
-        addWaterEffect(event, rustObject(torso, objectDescription(torso, fallback), monster, state, roll, luckRoll));
+        addWaterEffect(event, rustObject(torso, torso ? armorSimpleName(torso, state) : 'suit', monster, state, roll, luckRoll));
     }
     if (monster.mnum === PM_IRON_GOLEM) {
         event.completelyRusted = true;

@@ -4,16 +4,11 @@ import { BOLT_LIM, COULD_SEE, squeakyBoardNoteWithArticle } from './const.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { wakeMonstersNear } from './monster_wake.js';
-import { monsterIsMindless, monsterTypeName } from './monster_data.js';
+import { monsterIsMindless } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import { heroIsDeaf } from './senses.js';
 import { monsterTrapVisibility } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
-function ordinaryMonsterName(monster) {
-    return monster?.name || monsterTypeName(monster?.mnum, !!monster?.female);
-}
-function ordinaryMonsterSubject(monster) {
-    return monster?.name || `The ${ordinaryMonsterName(monster)}`;
-}
 function canAlmostSee(state, x, y) {
     return !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
 }
@@ -35,16 +30,16 @@ export function beginMonsterSqueakyBoard(monster, trap, state = game) {
         ...visibility,
     };
 }
-export async function finishMonsterSqueakyBoard(monster, event, state = game, { publish = async () => { }, monsterName = ordinaryMonsterName, describeMonster = ordinaryMonsterSubject, } = {}) {
+export async function finishMonsterSqueakyBoard(monster, event, state = game, { publish = async () => { }, } = {}) {
     if (!event || event.finished)
         return event;
     if (event.inSight) {
         if (!event.deaf) {
-            await publish(`A board beneath the ${monsterName(monster)} squeaks ${event.note} loudly.`);
+            await publish(`A board beneath ${monsterName(monster, { state })} squeaks ${event.note} loudly.`);
             event.trap.tseen = true;
         }
         else if (!event.mindless) {
-            await publish(`${describeMonster(monster)} stops momentarily and appears to cringe.`);
+            await publish(`${monsterName(monster, { state, capitalized: true })} stops momentarily and appears to cringe.`);
         }
     }
     else if (!event.deaf) {

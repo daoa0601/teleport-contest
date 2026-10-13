@@ -481,6 +481,7 @@ function exposeSpecialLevels(loaded) {
     game.specialLevels = all;
     game.oracle_level = all.get('oracle');
     game.medusa_level = all.get('medusa');
+    game.juiblex_level = all.get('juiblex');
     game.knox_level = all.get('knox');
     game.stronghold_level = all.get('castle');
     game.valley_level = all.get('valley');

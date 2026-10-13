@@ -90,7 +90,6 @@ export function validSavedGameFlags(value: unknown): value is GameFlags {
         customsymbols: optional(boolean),
         dark_room: optional(boolean),
         dropped_nopick: optional(boolean),
-        eight_bit_tty: optional(boolean),
         extmenu: optional(boolean),
         fireassist: optional(boolean),
         fixinv: optional(boolean),
@@ -170,6 +169,9 @@ export function validSavedGameFlags(value: unknown): value is GameFlags {
         moonphase: optional(nullable(integer)),
         paranoia_bits: optional(integer),
         pettype: optional(string),
+        dogname: optional(string),
+        catname: optional(string),
+        horsename: optional(string),
         pickup_burden: optional((entry): entry is string | number =>
             string(entry) || integer(entry)),
         pickup_types: optional(string),

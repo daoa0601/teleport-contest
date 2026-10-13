@@ -762,10 +762,11 @@ export async function makedog(): Promise<Monster | null> {
     g.startingPet = pet;
     g.context.startingpet_mid = pet.m_id;
     await seeMonsterCloseup(pet, { photo: g.inventory.some(object => object.otyp === EXPENSIVE_CAMERA) });
-    if (pettype === MONSTER_NAME.indexOf('little dog')) {
-        const name = DEFAULT_DOG_NAMES[role];
-        if (name) setMonsterGivenName(pet, name);
-    }
+    const name = pettype === MONSTER_NAME.indexOf('little dog')
+        ? g.flags.dogname || DEFAULT_DOG_NAMES[role]
+        : pettype === MONSTER_NAME.indexOf('kitten') ? g.flags.catname
+            : pettype === MONSTER_NAME.indexOf('pony') ? g.flags.horsename : null;
+    if (name) setMonsterGivenName(pet, name);
     // dog.c:initedog() assigns kill credit after making the pet peaceful.
     setMonsterMalign(pet, g);
     if (!g.u.uconduct) g.u.uconduct = {};

@@ -16,6 +16,7 @@ import {
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, plineWithContinuation } from './display.js';
 import { wakeMonster as awakenMonster } from './monster_anger.js';
 import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterName } from './monster_name.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE,
     MONSTER_SIZE, MONSTER_SYMBOL,
@@ -161,8 +162,7 @@ async function hurtleOneSquare(monster: Monster, dx: number, dy: number, {
         if (occupant) {
             if (canSeeMonster(monster)
                 || canSeeMonster(occupant)) {
-                const name = nameMonster(occupant).replace(/^(?:the|The|your) /u, '');
-                await announce(`${monsterSentenceSubject(monster)} bumps into ${/^[aeiou]/iu.test(name) ? 'an' : 'a'} ${name}.`);
+                await announce(`${monsterSentenceSubject(monster)} bumps into ${monsterName(occupant, { state, article: 'a' })}.`);
             }
             await awakenMonster(occupant, { attacked: !monsterMoving });
             const contact = { publish: announce, finishDeath: finishMonsterDeath, creditHero: !monsterMoving };

@@ -36,7 +36,7 @@ import { destroyWornArmor, findArmorClass, heroHasWaterWalking, heroKnowsLavaWal
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './terrain_properties.js';
 import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
-import { surfaceName } from './terrain_name.js';
+import { surfaceName, waterbodyName } from './terrain_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 // C hack.c:escape_from_sticky_mon(). True means this attempt was spent
@@ -784,9 +784,7 @@ export async function heroLiquidEffects(options = {}) {
         stayingInPool = true;
     }
     if (!u.uinwater) {
-        await publish(waterWall
-            ? 'You plunge into the wall of water!'
-            : 'You fall into the pool of water!');
+        await publish(`You ${waterWall ? 'plunge' : 'fall'} into the ${waterbodyName(x, y, state)}${canLiveUnderwater ? '.' : '!'}`);
         if (!heroCanSwim(state) && !waterWall)
             await publish(heroIsHallucinating(state)
                 ? 'You sink like the Titanic.' : 'You sink like a rock.');
@@ -875,13 +873,18 @@ export async function heroLiquidEffects(options = {}) {
     u.uinwater = 1;
     await publish('You drown.');
     for (let attempt = 0; attempt < 2; attempt++) {
+        const liquid = waterbodyName(u.ux, u.uy, state);
+        const killer = liquid === 'water' ? 'deep water' : liquid;
+        const description = liquid === 'water' || liquid === 'limitless water'
+            ? killer : withIndefiniteArticle(killer);
         u.uhp = 0;
         if (!await reviveHeroFromLiquid(state, publish, random)) {
             await die({
-                killer: 'deep water',
+                killer,
+                deathCause: `drowned in ${description}`,
+                deathType: DROWNING,
                 possessionAnswer: 'n',
                 deathVerb: 'drowned',
-                deathType: DROWNING,
             });
         }
         if (state.program_state.gameover)

@@ -7,7 +7,7 @@ import { launchRollingBoulder } from './rolling_boulder.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { maybeDestroyWeb } from './web_trap.js';
 import { currentAttribute, exerciseAttribute, } from './attrib.js';
-import { objectIsHardHelmet } from './armor.js';
+import { armorSimpleName, objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroFootName, heroHeadName, monsterFootName } from './body_parts.js';
 import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_quest, is_pit, HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP, LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
 import { flush_screen, lastDirtyMapCursor, map_trap, newsym, pline, plineWithContinuation, shieldeff, show_glyph_cell, } from './display.js';
@@ -873,10 +873,7 @@ async function triggerBearTrap(trap, { failedUntrap = false, forceTrap = false, 
     await exerciseAttribute(A_DEX, false);
     return false;
 }
-function rustTargetName(object, fallback) {
-    return object?.name || OBJECT_NAMES[object?.otyp ?? -1] || fallback;
-}
-async function wetHeroObject(object, description) {
+async function wetHeroObject(object, description = null) {
     const messages = [];
     const result = await waterDamageObject(object, messages, game, {
         force: true,
@@ -906,7 +903,7 @@ async function triggerRustTrap(trap) {
     if (target === 0) {
         await plineWithContinuation(`A gush of water hits you on the ${heroHeadName(game)}!`);
         const helmet = heroObject('uarmh');
-        await wetHeroObject(helmet, rustTargetName(helmet, 'helmet'));
+        await wetHeroObject(helmet, helmet ? armorSimpleName(helmet, game) : 'helmet');
     }
     else if (target === 1) {
         await plineWithContinuation(`A gush of water hits your left ${heroArmName(game)}!`);
@@ -920,17 +917,17 @@ async function triggerRustTrap(trap) {
                 weapon = secondary;
             else if (primary && OBJECT_BIMANUAL[primary.otyp])
                 weapon = primary;
-            await wetHeroObject(weapon, rustTargetName(weapon, 'weapon'));
+            await wetHeroObject(weapon);
             const gloves = heroObject('uarmg');
-            await wetHeroObject(gloves, rustTargetName(gloves, 'gloves'));
+            await wetHeroObject(gloves, gloves ? armorSimpleName(gloves, game) : 'gloves');
         }
     }
     else if (target === 2) {
         await plineWithContinuation(`A gush of water hits your right ${heroArmName(game)}!`);
         const weapon = heroObject('uwep');
-        await wetHeroObject(weapon, rustTargetName(weapon, 'weapon'));
+        await wetHeroObject(weapon);
         const gloves = heroObject('uarmg');
-        await wetHeroObject(gloves, rustTargetName(gloves, 'gloves'));
+        await wetHeroObject(gloves, gloves ? armorSimpleName(gloves, game) : 'gloves');
     }
     else {
         await plineWithContinuation('A gush of water hits you!');
@@ -947,9 +944,12 @@ async function triggerRustTrap(trap) {
         const cloak = heroObject('uarmc');
         const suit = heroObject('uarm');
         const shirt = heroObject('uarmu');
-        const torso = cloak || suit || shirt;
-        const fallback = cloak ? 'cloak' : shirt ? 'shirt' : 'armor';
-        await wetHeroObject(torso, rustTargetName(torso, fallback));
+        if (cloak)
+            await wetHeroObject(cloak, armorSimpleName(cloak, game));
+        else if (suit)
+            await wetHeroObject(suit, armorSimpleName(suit, game));
+        else
+            await wetHeroObject(shirt, 'shirt');
     }
     if (heroIsPolymorphed(game) && hero.umonnum === PM_IRON_GOLEM) {
         await rustIronGolemHero();

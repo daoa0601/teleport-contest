@@ -5,7 +5,7 @@ import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { AlignmentValue, Role } from './roles.js';
 import { rn2Display } from './rng.js';
-import { roles } from './roles.js';
+import { nativeRoleAt, roles } from './roles.js';
 import { heroIsHallucinating } from './senses.js';
 import { A_NONE } from './const.js';
 import { plineWithContinuation } from './display.js';
@@ -35,7 +35,7 @@ export function hallucinatedDeityName(
     if (!state.urole) throw new Error('Hallucinated deity names require a selected hero role');
     let gods: Role['gods'];
     do {
-        const role = roles[rn2Display(roles.length)];
+        const role = nativeRoleAt(rn2Display(roles.length));
         if (!role) throw new Error('No hallucinated deity role was selected');
         // C installs the current Priest's borrowed pantheon in roles[].
         // JS keeps it on the live role instead of mutating the shared table.

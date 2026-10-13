@@ -15,7 +15,7 @@ import { advanceDisplacementTimeout } from './hero_displacement.js';
 import { finishMealMimicry } from './meal_mimic.js';
 import { finishHeroDigestion } from './hero_combat_engulf.js';
 import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
-import { game, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
+import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { clearImmediateZapBypasses } from './immediate_zap.js';
 import { MON_FLOOR, PICK_ONE } from './const.js';
@@ -26,9 +26,10 @@ import { regenerateHeroHp } from './hero_regeneration.js';
 import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
 import { monsterGainLevelRiseDestination } from './monmove.js';
-import { WATER } from './const.js';
+import { RLOC_NOMSG, WATER } from './const.js';
 import { presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse } from './monster_item_use.js';
-import { randomMonsterRelocation } from './teleport.js';
+import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
+import { monsterAtPosition } from './monster_location.js';
 import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
 import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
@@ -87,7 +88,7 @@ import { applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, 
 import { discoverReflectingShield } from './ray.js';
 import { addObjectToMonsterInventory, } from './monster_inventory.js';
 import { claimNextDueObjectTimer, peekNextDueObjectTimer, } from './object_timers.js';
-import { roles } from './roles.js';
+import { nativeRoleAt } from './roles.js';
 import { initializeRoleQuestGenders, initializeSourceStartup } from './startup.js';
 import { initialDungeonEntryText, recordGameLogEvent, } from './gamelog.js';
 import { allocateMonsterMovement, applyHeroSpellDamage, beginDeferredHeroCloneWizard, completeHeroAttackSlot, resumeDeferredHeroColdSpecial, resumeDeferredHeroContact, resumeDeferredHeroFireSpecial, resumeDeferredHeroElectricSpecial, resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroSticking, resumeDeferredHeroEngulf, resumeDeferredHeroBlindness, resumeDeferredHeroLegs, resumeDeferredHeroReveal, rollDeferredHeroSpellDamage, resumeDeferredHeroSpell, resolveDeferredHeroSummonMonsters, resolveDeferredHeroHasteSelf, resolveDeferredHeroAggravation, finishDeferredMonsterMiscItem, finishDeferredHeroCloneWizard, resumeDeferredCovetousRelocation, resumeDeferredRestrictedTenguTeleport, resumeDeferredMovementSpell, resumeDeferredSpecialAttack, resumeDeferredMonsterTrap, resumeDeferredMonsterHideUnder, completeMonsterOffensiveAction, resumeDeferredPetAttack, resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance, resolveDeferredMonsterBreath, fumaroles, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterHeroAttack, runMonsterAction, monstersInFmonOrder, monsterDistressEvents, commitPetPickup, } from './monmove.js';
@@ -1447,7 +1448,7 @@ function reluctantPetMessage(monster, movement) {
     const top = pile[0];
     const objectName = top ? distantMonsterObjectName(top) : 'something';
     const airborne = !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & 0x1);
-    return `Your ${quietMonsterName(monster)} ${airborne ? 'flies reluctantly over' : 'steps reluctantly onto'} ${objectName}.`;
+    return `${monsterName(monster, { state: game, capitalized: true, article: 'your', suppressIt: true })} ${airborne ? 'flies reluctantly over' : 'steps reluctantly onto'} ${objectName}.`;
 }
 async function monsterAttackMessage(monster, attack, previousAttack = null, random = rn2) {
     const game = requireInitializedGame();
@@ -3193,7 +3194,7 @@ export async function newgame() {
     const g = game;
     const handednessRoll = await initializeSourceStartup();
     if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
-        const pantheon = roles.find(role => role.mnum === g._priestPantheonIndex);
+        const pantheon = nativeRoleAt(g._priestPantheonIndex ?? -1);
         if (pantheon?.gods) {
             g.urole = {
                 ...g.urole,
@@ -3222,6 +3223,9 @@ export async function newgame() {
     init_vision_globals();
     vision_reset();
     await checkSpecialRoom();
+    const occupant = monsterAtPosition(requireGameLevel(g), g.u.ux, g.u.uy);
+    if (occupant)
+        await moveMonsterNextToHero(occupant, g, { flags: RLOC_NOMSG });
     await makedog();
     await uInitInventoryAttrs();
     // Initial display
