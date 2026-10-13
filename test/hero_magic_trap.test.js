@@ -11,6 +11,27 @@ import { addInventoryObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { installPolymorphedHero } from './support/hero-state.js';
+import { createDungeon } from './support/topology.js';
+for (const hero of [
+    { form: 'yellow mold', female: false, oddly: true },
+    { form: 'vampire', female: false, oddly: false },
+    { form: 'vampire', female: true, oddly: true },
+]) {
+    void test(`a ${hero.female ? 'female' : 'male'} hero in ${hero.form} form feels ${hero.oddly ? 'oddly ' : ''}like the prodigal son`, async () => {
+        const trap = magicTrapRoom();
+        requirePlayingGame(game);
+        game.dungeons = [createDungeon({ dname: 'The Quest' })];
+        game._activeSpecialLevel = {
+            prototype: 'Val-strt', file: 'Val-strt.lua',
+        };
+        game.flags.female = hero.female;
+        installPolymorphedHero(hero.form);
+        initRng(1n);
+        await triggerHeroTrap(trap, { forceTrap: true });
+        assert.equal(game._last_message, `You feel ${hero.oddly ? 'oddly ' : ''}like the prodigal son.`);
+    });
+}
 function magicTrapRoom() {
     freshObjectRoom();
     requirePlayingGame(game);

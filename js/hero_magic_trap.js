@@ -21,6 +21,7 @@ import { rn1, rnd } from './rng.js';
 import { applyRemoveCurseSpell } from './scroll_effects.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
+const M2_NEUTER = 0x00040000;
 export async function triggerHeroMagicTrapEffect() {
     requirePlayingGame(game);
     const currentLevel = game.u.uz;
@@ -67,7 +68,7 @@ export async function triggerHeroMagicTrapEffect() {
         case 15:
             if (onQuestStart(game)) {
                 const neuter = Upolyd(game.u)
-                    && !!((MONSTER_FLAGS2[heroSpecies(game)] ?? 0) & 0x01000000);
+                    && !!((MONSTER_FLAGS2[heroSpecies(game)] ?? 0) & M2_NEUTER);
                 await plineWithContinuation(`You feel ${game.flags.female || neuter ? 'oddly ' : ''}like the prodigal son.`);
             }
             else {
