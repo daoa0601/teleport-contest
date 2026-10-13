@@ -57,6 +57,47 @@ void test('a court with a throne is announced as a throne room', async () => {
     assert.equal(game._last_message, 'You enter an opulent throne room!');
 });
 
+for (const entry of [
+    { description: 'includes a throne in its subroom', irregular: false,
+        throneX: 13, throneRoomno: ROOMOFFSET + MAXNROFROOMS, edge: false, hasThrone: true },
+    { description: 'excludes another room from its irregular shape', irregular: true,
+        throneX: 13, throneRoomno: ROOMOFFSET + MAXNROFROOMS, edge: false, hasThrone: false },
+    { description: 'excludes an edge square from its irregular shape', irregular: true,
+        throneX: 13, throneRoomno: ROOMOFFSET, edge: true, hasThrone: false },
+    { description: 'excludes a throne beyond its bounds', irregular: false,
+        throneX: 19, throneRoomno: ROOMOFFSET, edge: false, hasThrone: false },
+]) {
+    void test(`a court ${entry.description} when announcing its furniture`, async () => {
+        const level = freshObjectRoom();
+        const room: Room = {
+            lx: 8, hx: 18, ly: 8, hy: 12, rtype: COURT,
+            needfill: 0, rlit: 1, doorct: 0, fdoor: 0, irregular: entry.irregular,
+            needjoining: false, sbrooms: [], nsubrooms: 1, roomnoidx: 0,
+        };
+        const subroom: Room = {
+            ...room, lx: 12, hx: 14, ly: 9, hy: 11, rtype: OROOM,
+            irregular: false, sbrooms: [], nsubrooms: 0, roomnoidx: MAXNROFROOMS,
+        };
+        room.sbrooms = [subroom];
+        level.rooms = [room];
+        level.nroom = 1;
+        level.subrooms = [subroom];
+        level.nsubroom = 1;
+        level.requireAt(game.u.ux, game.u.uy).roomno = ROOMOFFSET;
+        const throne = level.requireAt(entry.throneX, 10);
+        throne.typ = THRONE;
+        throne.roomno = entry.throneRoomno;
+        throne.edge = entry.edge;
+        game.u.urooms = [];
+        game.u.ushops = [];
+
+        await checkSpecialRoom();
+
+        assert.equal(game._last_message, entry.hasThrone
+            ? 'You enter an opulent throne room!' : 'You enter an opulent room!');
+    });
+}
+
 for (const [type, flag] of [
     [COURT, 'has_court'], [SWAMP, 'has_swamp'], [MORGUE, 'has_morgue'],
     [ZOO, 'has_zoo'], [BARRACKS, 'has_barracks'], [BEEHIVE, 'has_beehive'],

@@ -41,7 +41,7 @@ import {
     LEPREHALL, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM,
     ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO,
 } from './const.js';
-import { inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
+import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
 import { intemple } from './priest.js';
 import { recordDiscoveredRoom } from './dungeon.js';
 import {
@@ -1329,8 +1329,7 @@ function specialRoomEntryMessage(room: Room, roomno: number): string | null {
     case ZOO: return "Welcome to David's treasure zoo!";
     case SWAMP: return heroIsBlind(game) ? 'It feels rather humid down here.' : 'It looks rather muddy down here.';
     case COURT: {
-        const throne = game.level?.locations.some(column => column.some(location =>
-            location.typ === THRONE && location.roomno === roomno));
+        const throne = furniturePresent(room, THRONE);
         return `You enter an opulent${throne ? ' throne' : ''} room!`;
     }
     case LEPREHALL: return 'You enter a leprechaun hall!';
@@ -1348,4 +1347,18 @@ function specialRoomEntryMessage(room: Room, roomno: number): string | null {
     }
     default: return null;
     }
+}
+
+// C hack.c:furniture_present() scans the interior bounds, then checks the
+// actual shape. Rectangular courts include furniture in their subrooms.
+function furniturePresent(room: Room, furniture: number): boolean {
+    const level = game.level;
+    if (!level) return false;
+    for (let y = room.ly; y <= room.hy; y++) {
+        for (let x = room.lx; x <= room.hx; x++) {
+            if (level.at(x, y)?.typ === furniture && insideRoom(level, room, x, y))
+                return true;
+        }
+    }
+    return false;
 }

@@ -20,7 +20,7 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
 import { publishMonsterWake } from './monster_wake.js';
 import { A_CHA, A_WIS, ANTHOLE, BARRACKS, BEEHIVE, COCKNEST, COURT, DELPHI, In_mines, LEPREHALL, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM, ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO, } from './const.js';
-import { inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
+import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
 import { intemple } from './priest.js';
 import { recordDiscoveredRoom } from './dungeon.js';
 import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
@@ -1281,7 +1281,7 @@ function specialRoomEntryMessage(room, roomno) {
         case ZOO: return "Welcome to David's treasure zoo!";
         case SWAMP: return heroIsBlind(game) ? 'It feels rather humid down here.' : 'It looks rather muddy down here.';
         case COURT: {
-            const throne = game.level?.locations.some(column => column.some(location => location.typ === THRONE && location.roomno === roomno));
+            const throne = furniturePresent(room, THRONE);
             return `You enter an opulent${throne ? ' throne' : ''} room!`;
         }
         case LEPREHALL: return 'You enter a leprechaun hall!';
@@ -1299,5 +1299,19 @@ function specialRoomEntryMessage(room, roomno) {
         }
         default: return null;
     }
+}
+// C hack.c:furniture_present() scans the interior bounds, then checks the
+// actual shape. Rectangular courts include furniture in their subrooms.
+function furniturePresent(room, furniture) {
+    const level = game.level;
+    if (!level)
+        return false;
+    for (let y = room.ly; y <= room.hy; y++) {
+        for (let x = room.lx; x <= room.hx; x++) {
+            if (level.at(x, y)?.typ === furniture && insideRoom(level, room, x, y))
+                return true;
+        }
+    }
+    return false;
 }
 //# sourceMappingURL=shk.js.map
