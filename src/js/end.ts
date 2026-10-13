@@ -19,7 +19,7 @@ import {
 import { artifactById } from './artifacts.js';
 import {
     MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_GENO,
-    MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
@@ -1310,6 +1310,14 @@ async function completeOrdinaryDeath({
     // removes the inventory. Repossessed gold has already left the hero.
     const summary = gameSummaryValues('died');
     game.u.urexp = summary.score;
+    const arise = game.u.ugrave_arise;
+    if (arise !== undefined && arise >= 0 && !game.program_state.stopprint) {
+        const revenant = MONSTER_NAME[arise] === 'green slime'
+            ? 'revenant persists' : 'body rises from the dead';
+        await plineWithContinuation(`Your ${revenant} as ${
+            withIndefiniteArticle(monsterTypeName(arise, !!game.flags.female))}...`);
+        await displayMessageWindow();
+    }
     await createBonesFromDeath(
         deathCause || deathCauseRecord(killer, deathVerb), promptYesNo,
     );
