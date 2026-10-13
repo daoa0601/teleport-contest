@@ -69,6 +69,7 @@ async function fillMineHoleWithLiquid(
     const pile = state.level?.objects?.[x]?.[y] || [];
     if (liquid === LAVAPOOL) {
         await destroyLavaFloorObjects(pile, {
+            state, x, y,
             publish: options.publish,
             random: options.random,
             visible: options.seeSquare,

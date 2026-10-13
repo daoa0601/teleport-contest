@@ -116,6 +116,7 @@ async function flowLiquidIntoChasm(x: number, y: number, trap: Trap, liquid: num
         await destroyLavaFloorObjects(
             game.level?.objects?.[x]?.[y] || [],
             {
+                state: game, x, y,
                 publish: plineWithContinuation,
                 visible: cansee(x, y),
             },

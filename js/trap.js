@@ -3,6 +3,9 @@
 // water_damage(), and erode_obj().
 import { IS_POOL, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok, } from './const.js';
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
+import { fireDamageObject } from './fire_damage.js';
+import { delobj } from './object_delete.js';
+import { objectDescription as fullObjectDescription } from './object_description.js';
 import { objectCombatName, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
@@ -16,7 +19,7 @@ import { heroIsFlying } from './polyself.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
-import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, ICE_BOX, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OILSKIN_SACK, POT_ACID, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, TOWEL, } from './object_data.js';
+import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK, POT_ACID, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, TOWEL, WAN_FIRE, } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
 import { objectMaterial } from './object_material.js';
 import { impossible } from './diagnostics.js';
@@ -36,6 +39,9 @@ const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
 const M1_HUMANOID = 0x00020000;
 const POTION_CLASS = 8;
+const SCROLL_CLASS = 9;
+const SPBOOK_CLASS = 10;
+const DRAGON_HIDE = 9;
 const FIRE_RESISTANT_OBJECTS = new Set([
     RED_DRAGON_SCALE_MAIL,
     RED_DRAGON_SCALES,
@@ -115,31 +121,42 @@ export async function destroyLavaInventory({ state = game, publish = async () =>
     }
     return named + unnamed - previouslyAnnounced;
 }
-export async function destroyLavaFloorObjects(objects, { publish = async () => { }, random = rn2, visible = false, } = {}) {
+export async function destroyLavaFloorObjects(objects, { state = game, publish = async () => { }, random = rn2, visible = false, x, y, } = {}) {
     if (!objects)
         return 0;
     let destroyed = 0;
     for (const object of [...objects]) {
-        if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
+        // lava_damage() screens every object before checking its material.
+        // A destroyed object also passes through delobj() independently.
+        if (objectResistsDestruction(object, 0, 0, random)
+            && object.otyp !== SPE_BOOK_OF_THE_DEAD)
+            continue;
+        const burnDirectly = objectMaterial(object, state) < DRAGON_HIDE
+            && object.oclass !== SCROLL_CLASS && object.oclass !== SPBOOK_CLASS
+            && OBJECT_PROPERTY[object.otyp] !== 'fireResistance'
+            && object.otyp !== WAN_FIRE && object.otyp !== FIRE_HORN
+            && !object.oerodeproof && !object.contents?.length;
+        const landingX = x ?? object.ox;
+        const landingY = y ?? object.oy;
+        if (burnDirectly) {
             if (visible) {
-                await publish('The Book of the Dead glows a strange dark red, but remains intact.');
+                if (object === state._thrownObject || object === state._kickedObject) {
+                    await publish(object.quan === 1 ? 'It burns up!' : 'They burn up!');
+                }
+                else {
+                    await publish(`You see ${fullObjectDescription(object, { state })} hit lava and burn up!`);
+                }
             }
-            continue;
+            await delobj(object, state, random);
         }
-        if (!lavaCanBurnObject(object, random))
+        else if (!await fireDamageObject(object, {
+            force: true, state, publish, random, x: landingX, y: landingY,
+        })) {
             continue;
-        if (visible) {
-            const name = object.name || OBJECT_NAMES[object.otyp] || 'item';
-            await publish(`The ${name} burns up!`);
         }
         const index = objects.indexOf(object);
         if (index >= 0)
             objects.splice(index, 1);
-        stopAllObjectTimers(object);
-        object.lamplit = false;
-        object.where = 'gone';
-        object.ox = 0;
-        object.oy = 0;
         destroyed++;
     }
     return destroyed;

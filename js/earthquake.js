@@ -81,6 +81,7 @@ async function flowLiquidIntoChasm(x, y, trap, liquid, monster) {
     location.flags = 0;
     if (liquid === LAVAPOOL) {
         await destroyLavaFloorObjects(game.level?.objects?.[x]?.[y] || [], {
+            state: game, x, y,
             publish: plineWithContinuation,
             visible: cansee(x, y),
         });

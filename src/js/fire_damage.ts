@@ -11,7 +11,8 @@ import type { MessagePublisher } from './display.js';
 import { heroIsBlind } from './senses.js';
 import { igniteItems } from './light.js';
 import { destroyLavaFloorObjects } from './trap.js';
-import { deleteObject } from './object_delete.js';
+import { delobj } from './object_delete.js';
+import { objectResistsDestruction } from './object_state.js';
 import { erodeObject } from './object_erosion.js';
 import { objectClassForType } from './object_knowledge.js';
 import { makePlural } from './object_grammar.js';
@@ -79,11 +80,15 @@ function objectSubject(object: GameObject, carrier: Monster | null) {
     return `${owner} ${objectName(object)}`;
 }
 
-async function removeObject(object: GameObject, carrier: Monster | null, state: GameState) {
+async function removeObject(object: GameObject, context: FireDamageContext) {
+    const { carrier, state, random } = context;
     const inventory = carrier?.minvent || carrier?.inventory || [];
-    if (carrier && inventory.includes(object))
+    if (carrier && inventory.includes(object)) {
+        if (objectResistsDestruction(object, 0, 0, random)) return false;
         return destroyObjectFromMonsterInventory(carrier, object, state);
-    return await deleteObject(object, state);
+    }
+    await delobj(object, state, random);
+    return true;
 }
 
 async function dropContents(container: GameObject, context: FireDamageContext): Promise<void> {
@@ -96,6 +101,9 @@ async function dropContents(container: GameObject, context: FireDamageContext): 
         if (location && IS_LAVA(location.typ)) {
             const landed = [object];
             await destroyLavaFloorObjects(landed, {
+                state: context.state,
+                x: context.x,
+                y: context.y,
                 publish: context.publish,
                 random: context.random,
                 visible: context.squareVisible,
@@ -126,7 +134,7 @@ async function burnContainer(object: GameObject, context: FireDamageContext): Pr
             await context.publish('Its contents fall out.');
         await dropContents(object, context);
     }
-    await removeObject(object, context.carrier, context.state);
+    await removeObject(object, context);
     return true;
 }
 
@@ -161,7 +169,7 @@ async function burnPaperOrPotion(object: GameObject, context: FireDamageContext)
     } else {
         return false;
     }
-    await removeObject(object, context.carrier, context.state);
+    await removeObject(object, context);
     return true;
 }
 

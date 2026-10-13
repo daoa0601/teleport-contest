@@ -598,6 +598,7 @@ export async function liquidFlow(x, y, typ, trap, fillMessage, { state = game } 
     if (pile.length) {
         if (typ === LAVAPOOL) {
             await destroyLavaFloorObjects(pile, {
+                state, x, y,
                 publish: plineWithContinuation,
                 visible: cansee(x, y),
             });
