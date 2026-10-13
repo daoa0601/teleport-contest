@@ -4,6 +4,7 @@ import { ICE, LAVAPOOL, POOL, TIMEOUT, TT_LAVA } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
 import { resetInputState } from '../js/input.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { floatHeroDown } from '../js/terrain_movement.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -135,3 +136,39 @@ void test('drowning recovery describes the ice at its landing square', async () 
     assert.equal(level.requireAt(game.u.ux, game.u.uy).typ, ICE);
     assert.match(game._pending_message ?? '', /You find yourself on solid ice\./);
 });
+
+for (const hallucinating of [false, true]) {
+    void test(`drowning rescue onto lava describes the surface ${hallucinating ? 'with' : 'without'} hallucination`, async () => {
+        const level = freshObjectRoom({
+            gameplaySeed: 42,
+            flags: { explore: true, bones: false },
+            hero: {
+                umonnum: MONSTER_NAME.indexOf('salamander'),
+                mtimedone: 100,
+                mh: 40,
+                mhmax: 40,
+                hallucinationTurns: hallucinating ? 100 : 0,
+            },
+        });
+        for (let x = 7; x <= 16; x++) {
+            for (let y = 6; y <= 14; y++) level.requireAt(x, y).typ = LAVAPOOL;
+        }
+        level.requireAt(game.u.ux, game.u.uy).typ = POOL;
+        const messages: string[] = [];
+        const refusals = refuseLiquidDeaths();
+
+        const result = await heroLiquidEffects({
+            publish: async message => { messages.push(message); },
+        });
+
+        assert.equal(result?.died, false);
+        assert.equal(refusals(), 1);
+        assert.equal(level.requireAt(game.u.ux, game.u.uy).typ, LAVAPOOL);
+        const rescue = messages.find(message => message.startsWith('You find yourself'));
+        assert.ok(rescue, 'The rescue must describe its landing square');
+        if (hallucinating)
+            assert.match(rescue, /^You find yourself in (a|an) .+\.$/);
+        else
+            assert.equal(rescue, 'You find yourself on the lava.');
+    });
+}

@@ -51,7 +51,7 @@ export function surfaceName(x: number, y: number, state: GameState = game): stri
     if (IS_POOL(type))
         return state.underwater || state.u?.uinwater ? 'bottom' : 'water';
     if (type === ICE) return 'ice';
-    if (IS_LAVA(type)) return 'lava';
+    if (IS_LAVA(type)) return displayLiquidName('lava', state);
     if (type === DRAWBRIDGE_DOWN) return 'bridge';
     if (type === ALTAR) return 'altar';
     if (type === GRAVE) return 'headstone';
