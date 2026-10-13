@@ -26,6 +26,7 @@ import { wakeMonster } from './monster_anger.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { heroSpecies } from './hero_species.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
+import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
@@ -276,7 +277,10 @@ async function hitHero(node: ScatterNode, state: GameState, options: ScatterSett
     if ((state.u.uac ?? 10) + attack <= options.rollOne(20)) return false;
 
     await options.publish(`You are hit by ${objectName(object)}.`);
-    await breakAtRest(object, state, { ...options, x: node.x, y: node.y });
+    await hitHeroWithThrownPotion(object, {
+        state, publish: options.publish, random: options.random,
+        rollOne: options.rollOne, rollDice: options.rollDice, source: 'propelled',
+    });
     node.object = null;
     node.stopped = true;
     return true;
