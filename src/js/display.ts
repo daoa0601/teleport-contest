@@ -2069,7 +2069,7 @@ export function _statusLine2() {
     if (game.flags?.time)
         line += ` T:${game.moves ?? 1}`;
     if (u.usteed) line += ' Ride';
-    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][currentHungerState(game)];
+    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][game._statusHungerOverride ?? currentHungerState(game)];
     if (hungerLabel) line += ` ${hungerLabel}`;
     if (u._encumbrance) line += ` ${u._encumbrance}`;
     if (u.strangled || (u.strangledTurns ?? 0) > 0) line += ' Strngl';
@@ -2274,6 +2274,7 @@ function refreshStatusLines(): void {
     if (!display || game._statusUpdatesDisabled || game.u.uhp === -1 || game.program_state.saving
         || game.program_state.windows_exited || game._suppressMapStatusForFlush) return;
     game.u._encumbrance = encumbranceLabel(nearCapacity(game));
+    delete game._statusHungerOverride;
     game.context.botl = false;
     writeStatusLines(display, statusLines(true));
 }

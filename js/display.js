@@ -2028,7 +2028,7 @@ export function _statusLine2() {
         line += ` T:${game.moves ?? 1}`;
     if (u.usteed)
         line += ' Ride';
-    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][currentHungerState(game)];
+    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][game._statusHungerOverride ?? currentHungerState(game)];
     if (hungerLabel)
         line += ` ${hungerLabel}`;
     if (u._encumbrance)
@@ -2260,6 +2260,7 @@ function refreshStatusLines() {
         || game.program_state.windows_exited || game._suppressMapStatusForFlush)
         return;
     game.u._encumbrance = encumbranceLabel(nearCapacity(game));
+    delete game._statusHungerOverride;
     game.context.botl = false;
     writeStatusLines(display, statusLines(true));
 }
