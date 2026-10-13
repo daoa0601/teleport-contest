@@ -3,47 +3,29 @@
 import { heroIsHallucinating } from './senses.js';
 import { pline, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
-import { nextIdent } from './ident.js';
 import { CREAM_PIE } from './object_data.js';
 import { heroHasEyes } from './body_parts.js';
-import { rnd, rn2 } from './rng.js';
-import { blindfolded, heroIsBlind, syncBlindness, } from './senses.js';
+import { rnd } from './rng.js';
+import { blindfolded, heroIsBlind, } from './senses.js';
 import { chargeAlteredUnpaidObject, } from './shk.js';
-import { redrawSight, rememberVisibleTerrain } from './sight_change.js';
+import { makeBlinded } from './sight_change.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
-import { objectWeight } from './weight.js';
+import { splitObjectStack } from './object_stack.js';
+import { unlinkObject } from './object_location.js';
+import { delobj } from './object_delete.js';
 function splitOnePie(stack) {
     const quantity = stack.quan ?? stack.quantity ?? 1;
     if (quantity <= 1)
         return { pie: stack, several: false };
-    const pie = {
-        ...stack,
-        o_id: nextIdent(game),
-        quan: 1,
-        quantity: 1,
-        owt: 0,
-        owornmask: 0,
-        worn: false,
-        wielded: false,
-        alternate: false,
-        ready: false,
-        timed: 0,
-        lamplit: false,
-        where: 'inventory',
-    };
-    pie.owt = objectWeight(pie);
-    stack.quan = stack.quantity = quantity - 1;
-    stack.owt = objectWeight(stack);
+    const pie = splitObjectStack(stack, 1, game);
+    if (!pie)
+        throw new Error('A stack of cream pies must yield one pie.');
     return { pie, several: true };
 }
 async function deletePie(pie) {
     await releaseWeaponSlots(pie);
-    pie.owornmask = 0;
-    pie.worn = false;
-    const index = game.inventory?.indexOf(pie) ?? -1;
-    if (index >= 0)
-        game.inventory.splice(index, 1);
-    pie.where = 'gone';
+    unlinkObject(pie, game);
+    await delobj(pie, game);
     game._capacityDirty = true;
 }
 export async function useCreamPie(stack) {
@@ -64,21 +46,16 @@ export async function useCreamPie(stack) {
     if (heroHasEyes(game) && !blindfolded(game)) {
         const blindIncrement = rnd(25);
         game.u.ucreamed = (game.u.ucreamed ?? 0) + blindIncrement;
-        game.u.blindTurns = (game.u.blindTurns ?? 0) + blindIncrement;
-        const blind = syncBlindness(game);
-        if (blind && !wasBlind)
-            rememberVisibleTerrain();
+        await makeBlinded((game.u.blindTurns ?? 0) + blindIncrement, { talk: false });
+        const blind = heroIsBlind(game);
         if (!blind || wasBlind) {
             await plineWithContinuation(`There's ${wasCreamed ? 'more ' : ''}sticky goop all over your face.`);
         }
         else {
             await plineWithContinuation("You can't see through all the sticky goop on your face.");
         }
-        if (blind !== wasBlind)
-            await redrawSight();
     }
     await chargeAlteredUnpaidObject(pie, 'splatter');
-    rn2(100);
     await deletePie(pie);
     return true;
 }
