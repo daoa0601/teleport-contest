@@ -29,7 +29,6 @@ import { useCamera } from './camera.js';
 import { useTowel } from './towel.js';
 import { useBell } from './apply_bell.js';
 import { breakWand } from './wand_break.js';
-import { heroStatusLine } from './hero_status.js';
 import { speakArtifact } from './artifact_speech.js';
 import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light.js';
 import { useWhistle } from './whistle.js';
@@ -147,7 +146,6 @@ import { touchArtifactByHero } from './artifact_touch.js';
 import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, } from './monster_data.js';
-import { monsterStatusLine } from './monster_status.js';
 import { createParticularMonster } from './read_creation.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
 import { removeHeroAccessory, wearHeroAccessory, } from './accessory.js';
@@ -209,6 +207,7 @@ import { useCreamPie } from './cream_pie.js';
 import { useFigurine } from './figurine_apply.js';
 import { checkHeroLeashes, useLeash } from './leash_apply.js';
 import { useGrease } from './grease_apply.js';
+import { useStethoscope } from './stethoscope.js';
 import { useSaddle } from './steed.js';
 import { isRoyalJelly, useRoyalJelly, } from './royal_jelly.js';
 import { useBullwhip } from './bullwhip.js';
@@ -5396,42 +5395,6 @@ async function dodrop() {
             setSellDisposition(SELL_NORMAL);
     }
 }
-async function useStethoscope(item) {
-    const direction = promptedDirectionKey(await readDirectionKey(), game.commandBindings);
-    if (!isMovementKey(direction) && direction !== '.') {
-        game.context.move = 0;
-        return;
-    }
-    const heroActionSeq = game._heroActionSeq ?? 0;
-    const usedTime = game._stethoscopeSeq === heroActionSeq;
-    game._stethoscopeSeq = heroActionSeq;
-    if (direction === '.') {
-        await plineWithContinuation(heroStatusLine(game));
-        game.context.move = usedTime ? 1 : 0;
-        return;
-    }
-    const x = game.u.ux + DIR_DX[direction];
-    const y = game.u.uy + DIR_DY[direction];
-    const monster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
-        (candidate.mhp ?? 1) > 0 && candidate.mx === x && candidate.my === y);
-    if (monster?.mappearance) {
-        const appearance = M_AP_TYPE(monster) === M_AP_OBJECT
-            ? (OBJECT_NAMES[monster.mappearance] || 'thing') : 'thing';
-        const monsterName = MONSTER_NAME[monster.mnum] || 'monster';
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
-        newsym(x, y);
-        await pline(`That ${appearance} is really ${withIndefiniteArticle(monsterName)}.`);
-        await plineWithContinuation(await monsterStatusLine(monster));
-    }
-    else if (!monster) {
-        await pline('You hear nothing special.');
-    }
-    else {
-        await plineWithContinuation(await monsterStatusLine(monster));
-    }
-    game.context.move = usedTime ? 1 : 0;
-}
 // C refs: lock.c doclose(); cmd.c getdir()/help_dir().  Invalid direction
 // help is a modal text window: bytes typed before a real More dismissal must
 // not leak back into the top-level command dispatcher.
@@ -5850,7 +5813,7 @@ async function applyTool(item, underlay) {
         return result.container;
     }
     if (item.otyp === STETHOSCOPE) {
-        await useStethoscope(item);
+        game.context.move = await useStethoscope(item) ? 1 : 0;
         return item;
     }
     if (item.otyp === TIN_OPENER) {

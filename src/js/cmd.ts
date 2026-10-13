@@ -45,7 +45,6 @@ import { useCamera } from './camera.js';
 import { useTowel } from './towel.js';
 import { useBell } from './apply_bell.js';
 import { breakWand } from './wand_break.js';
-import { heroStatusLine } from './hero_status.js';
 import { speakArtifact } from './artifact_speech.js';
 import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light.js';
 import { useWhistle } from './whistle.js';
@@ -265,7 +264,6 @@ import {
     MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN,
     requireMonsterData, monsterTypeName, monsterClassSymbol,
 } from './monster_data.js';
-import { monsterStatusLine } from './monster_status.js';
 import { createParticularMonster } from './read_creation.js';
 import {
     addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience,
@@ -370,6 +368,7 @@ import { useCreamPie } from './cream_pie.js';
 import { useFigurine } from './figurine_apply.js';
 import { checkHeroLeashes, useLeash } from './leash_apply.js';
 import { useGrease } from './grease_apply.js';
+import { useStethoscope } from './stethoscope.js';
 import { useSaddle } from './steed.js';
 import {
     isRoyalJelly, useRoyalJelly,
@@ -5652,47 +5651,6 @@ async function dodrop(): Promise<void> {
     }
 }
 
-async function useStethoscope(item: GameObject): Promise<void> {
-    const direction = promptedDirectionKey(
-        await readDirectionKey(), game.commandBindings,
-    );
-    if (!isMovementKey(direction) && direction !== '.') {
-        game.context.move = 0;
-        return;
-    }
-
-    const heroActionSeq = game._heroActionSeq ?? 0;
-    const usedTime = game._stethoscopeSeq === heroActionSeq;
-    game._stethoscopeSeq = heroActionSeq;
-
-    if (direction === '.') {
-        await plineWithContinuation(heroStatusLine(game));
-        game.context.move = usedTime ? 1 : 0;
-        return;
-    }
-
-    const x = game.u.ux + DIR_DX[direction];
-    const y = game.u.uy + DIR_DY[direction];
-    const monster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
-        (candidate.mhp ?? 1) > 0 && candidate.mx === x && candidate.my === y);
-    if (monster?.mappearance) {
-        const appearance = M_AP_TYPE(monster) === M_AP_OBJECT
-            ? (OBJECT_NAMES[monster.mappearance] || 'thing') : 'thing';
-        const monsterName = MONSTER_NAME[monster.mnum] || 'monster';
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
-        newsym(x, y);
-        await pline(`That ${appearance} is really ${withIndefiniteArticle(monsterName)}.`);
-        await plineWithContinuation(await monsterStatusLine(monster));
-    } else if (!monster) {
-        await pline('You hear nothing special.');
-    } else {
-        await plineWithContinuation(await monsterStatusLine(monster));
-    }
-
-    game.context.move = usedTime ? 1 : 0;
-}
-
 // C refs: lock.c doclose(); cmd.c getdir()/help_dir().  Invalid direction
 // help is a modal text window: bytes typed before a real More dismissal must
 // not leak back into the top-level command dispatcher.
@@ -6123,7 +6081,7 @@ async function applyTool(
         return result.container;
     }
     if (item.otyp === STETHOSCOPE) {
-        await useStethoscope(item);
+        game.context.move = await useStethoscope(item) ? 1 : 0;
         return item;
     }
     if (item.otyp === TIN_OPENER) {

@@ -132,7 +132,7 @@ async function promptClickDirection(): Promise<DirectionSelection | null> {
 }
 
 // C getdir() calls confdir(FALSE) even for self, but never for up/down.
-function confusePromptDirection(hero: Hero): void {
+export function confusePromptDirection(hero: Hero): void {
     const stunned = hero.stunned || (hero.stunnedTurns ?? 0) > 0;
     const confused = hero.confused || (hero.confusionTurns ?? 0) > 0;
     if (!stunned && !(confused && !rn2(5))) return;
