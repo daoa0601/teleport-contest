@@ -1130,8 +1130,11 @@ async function startGameExit(outcome, deathType = DIED) {
     game.program_state.something_worth_saving = false;
     await doneObjectCleanup();
     if (outcome === 'died' && deathType < PANICKED
-        && game.moves <= 1 && !game.program_state.stopprint)
+        && game.moves <= 1 && !game.program_state.stopprint) {
+        // done() has committed zero HP; this pline refreshes that status.
+        delete game._statusHpOverride;
         await plineWithContinuation(`Do not pass Go.  Do not collect 200 ${currency(200)}.`);
+    }
     game._canMakeBones = outcome === 'died' && deathType < GENOCIDED
         && canMakeBones();
 }
