@@ -1076,7 +1076,7 @@ export async function prepareHoleFall(trap, { tookPlunge = false } = {}) {
 export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel = null, viaSitting = false, failedUntrap = false, forceTrap = false, forceBungle = false, noWebMessage = false, tookPlunge = false, recursiveTrap = false, } = {}) {
     if (!trap)
         return { died: false, shortCircuited: false };
-    stopRun();
+    endVoluntaryMultiTurn();
     let died = false;
     let shortCircuited = false;
     switch (trap.ttyp) {

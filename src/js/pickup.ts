@@ -10,7 +10,7 @@ import {
 import { tryCallObjectType } from './object_call.js';
 import {
     newsym, flush_screen, pline, plineWithContinuation,
-    bot, map_object,
+    map_object,
 } from './display.js';
 import { dungeonFeatureSentenceAt } from './dungeon_feature.js';
 import { showMultiSelectWindow } from './windows.js';
@@ -268,7 +268,6 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
     }
     if (batch && picked && !game.program_state?.gameover) {
         if (!source.monster) newsym(source.x, source.y);
-        await bot();
     }
     return { picked, attempted };
 }

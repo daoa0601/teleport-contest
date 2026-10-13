@@ -21,6 +21,7 @@ export function resetCommandVariables(clearQueues: boolean): void {
 // still need its final callback after the remaining multi becomes zero.
 export function endVoluntaryMultiTurn(state: GameState = game): void {
     if (heroHasInvoluntaryDelay(state)) return;
+    state.context.botl = true;
     const hero = state.u;
     hero.invulnerable = false; // u.uinvulnerable, not the timed property
     hero.usleep = 0;
