@@ -6079,9 +6079,9 @@ async function beginHeroAttackSlot(
             effect: 'electric-natural',
             deferredElectricNegation: true,
         };
-    } else if (hit && damageType === AD_SITM) {
+    } else if (hit && (damageType === AD_SITM || damageType === AD_SEDU)) {
         // hitmu() records the attack's declared zero dice before dispatching
-        // AD_SITM through mhitm_ad_sedu().  A successful nymph theft ends the
+        // both theft claws through mhitm_ad_sedu(). A successful theft ends the
         // aggressor's attack sequence, so do not retain its second claw slot.
         return {
             kind: 'hero-attack',

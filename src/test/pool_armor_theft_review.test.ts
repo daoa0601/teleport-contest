@@ -11,7 +11,6 @@ import { resetInputState, pushKey } from '../js/input.js';
 import { removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
 import { LEATHER_ARMOR, OBJECT_NAMES } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
-import { initRng, rn2 } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -43,7 +42,7 @@ async function finishRemoval(messages: string[]) {
 }
 
 for (const species of ['water nymph', 'monkey']) {
-    void test(`${species} attempting delayed armor theft preserves the following bite damage`, async () => {
+    void test(`${species} attempting delayed armor theft leaves later bite attacks active`, async () => {
         freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         wearHeroArmor(await addInventoryObject(LEATHER_ARMOR));
@@ -52,19 +51,15 @@ for (const species of ['water nymph', 'monkey']) {
         lizard.mux = game.u.ux;
         lizard.muy = game.u.uy;
         installPagerInput(resetInputState(), { expected: /nymph|monkey|iguana/, limit: 12 });
-        initRng(1n);
-
-        // Keep selection and refusal deterministic. The monkey still bites
-        // after giving up; the nymph's second claw misses.
         await performMonsterHeroAttack(thief, game, {
-            random: limit => [3, 6].includes(limit) ? rn2(limit) : limit - 1,
-            rollOne: limit => species === 'monkey' || limit === 20 ? 1 : limit,
-            rollDice: () => 0,
+            random: limit => limit - 1,
+            rollOne: () => 1,
+            rollDice: count => count,
         });
-        await performMonsterHeroAttack(lizard, game, { rollOne: () => 1 });
+        await performMonsterHeroAttack(lizard, game, { rollOne: () => 1, rollDice: count => count });
 
-        assert.equal(game.u.uhp, species === 'monkey' ? 96 : 99,
-            'The following bite damage includes the native thief hit tails');
+        assert.equal(game.u.uhp, species === 'monkey' ? 98 : 99,
+            'The monkey can still bite after refusal, and the iguana bites after either thief');
     });
 }
 
@@ -163,6 +158,81 @@ void test('a monkey can give up stealing boots even after removal has started', 
     assert.equal(game._delayedAction, null, 'The theft attempt still cancels armor removal');
     assert.match(messages.join('\n'), /The monkey tries to take your shoes but gives up\./);
 });
+
+for (const female of [true, false]) {
+    void test(`a cancelled nymph reports failed ${female ? 'charm' : 'seduction'} and ends her attack when retreat is blocked`, async () => {
+        const level = freshObjectRoom({ flags: { female }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        level.flags.noteleport = true;
+        requirePlayingGame(game);
+        const suit = await addInventoryObject(LEATHER_ARMOR);
+        wearHeroArmor(suit);
+        const thief = await nearbyThief();
+        thief.mcan = true;
+        const input = resetInputState();
+        installPagerInput(input, { expected: /nymph/, limit: 12 });
+        const messages: string[] = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+
+        await performMonsterHeroAttack(thief, game, { random: () => 1, rollOne: () => 1 });
+        await flushPendingTopline();
+
+        const feedback = messages.join('\n');
+        assert.match(feedback, female
+            ? /The plain water nymph tries to charm you, but you seem unaffected\./
+            : /The plain water nymph tries to seduce you, but you seem uninterested\./);
+        assert.equal(feedback.match(/tries to (?:charm|seduce)/g)?.length, 1,
+            'Attempting retreat ends the attack before the second claw, even when teleportation is blocked');
+        assert.match(feedback, /A mysterious force prevents the water nymph from teleporting!/);
+        assert.ok(game.uarm === suit);
+        assert.equal(thief.mflee ?? 0, 0, 'Cancelled seduction does not set fleeing');
+    });
+}
+
+void test('a cancelled nymph can continue with her second claw when she does not retreat', async () => {
+    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    requirePlayingGame(game);
+    const suit = await addInventoryObject(LEATHER_ARMOR);
+    wearHeroArmor(suit);
+    const thief = await nearbyThief();
+    thief.mcan = true;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /nymph/, limit: 12 });
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+
+    await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+    await flushPendingTopline();
+
+    assert.equal(messages.join('\n').match(/tries to charm you/g)?.length, 2);
+    assert.ok(game.uarm === suit);
+    assert.equal(thief.mx, 11);
+    assert.equal(thief.my, 10);
+    assert.equal(thief.mflee ?? 0, 0);
+});
+
+for (const blind of [false, true]) {
+    void test(`a cancelled nymph teleports away${blind ? ' without seduction feedback to a blind hero' : ' after failed seduction'}`, async () => {
+        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10, blindTurns: blind ? 10 : 0 } });
+        requirePlayingGame(game);
+        const suit = await addInventoryObject(LEATHER_ARMOR);
+        wearHeroArmor(suit);
+        const thief = await nearbyThief();
+        thief.mcan = true;
+        const input = resetInputState();
+        installPagerInput(input, { expected: /nymph/, limit: 12 });
+        const messages: string[] = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+
+        await performMonsterHeroAttack(thief, game, { random: () => 1, rollOne: () => 1 });
+        await flushPendingTopline();
+
+        assert.ok(thief.mx !== 11 || thief.my !== 10, 'The cancelled nymph relocates instead of stealing');
+        assert.ok(game.uarm === suit);
+        if (blind) assert.doesNotMatch(messages.join('\n'), /tries to (?:charm|seduce)/);
+        else assert.equal(messages.join('\n').match(/tries to seduce/g)?.length, 1);
+        assert.equal(thief.mflee ?? 0, 0);
+    });
+}
 
 for (const previousLoss of [LOST_NONE, LOST_STOLEN] as const) {
     void test(`delayed theft ${previousLoss === LOST_STOLEN ? 'keeps the stolen suit pickup override' : 'respects the ordinary suit pickup filter'}`, async () => {

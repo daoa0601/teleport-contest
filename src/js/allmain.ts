@@ -1797,7 +1797,26 @@ async function resolveDeferredHeroItemTheft(
     if (!attack?.deferredItemTheft) return false;
     attack.deferredItemTheft = false;
     const animal = monsterIsAnimal(monster);
-    if (monster.mcan) return false;
+    const draw = (limit: number): number => {
+        action.calls.push(`rn2(${limit})`);
+        return random(limit);
+    };
+    if (monster.mcan) {
+        if (animal) return false;
+        if (!heroIsBlind(game)) {
+            const subject = monsterName(monster, { state: game,
+                capitalized: true, adjective: 'plain' });
+            await plineWithContinuation(`${subject} tries to ${game.flags.female
+                ? 'charm' : 'seduce'} you, but you seem ${game.flags.female
+                ? 'unaffected' : 'uninterested'}.`);
+        }
+        if (draw(3)) {
+            if (!await reportMonsterTeleportRestriction(monster, { state: game }))
+                await randomMonsterRelocation(monster, { calls: action.calls, flags: RLOC_MSG });
+            attack.attackerDone = true;
+        }
+        return false;
+    }
     const object = selectHeroItemForTheft(game, random, action.calls);
     if (!object || !(game.inventory || []).includes(object)) return false;
     if (game._delayedAction?.kind === 'steal' && game._delayedAction.object === object)
@@ -1819,10 +1838,6 @@ async function resolveDeferredHeroItemTheft(
         ? monsterName(monster, { state: game, capitalized: true })
         : animal ? 'Something' : 'Someone';
     const wornArmor = occupiedSlots.some(slot => slot.startsWith('uarm'));
-    const draw = (limit: number): number => {
-        action.calls.push(`rn2(${limit})`);
-        return random(limit);
-    };
     const refuse = async (): Promise<boolean> => {
         const verbs = ['steal', 'snatch', 'grab', 'take'];
         const name = wornArmor ? `your ${armorSimpleName(object, game)}`
