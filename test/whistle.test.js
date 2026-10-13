@@ -21,6 +21,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
 async function petAt(name, x, y) {
     const pet = await createMonsterAt(name, x, y, NO_MINVENT);
     initializePet(pet);
@@ -272,12 +273,16 @@ void test('a pet killed by its summoned destination trap costs one luck and deta
     addTrap(game.level, FIRE_TRAP, 11, 10);
     const whistle = await addInventoryObject(MAGIC_WHISTLE);
     const luck = game.u.uluck || 0;
-    resetInputState().feed(' ');
+    installPagerInput(resetInputState(), {
+        expected: /^You produce a strange whistling sound\.$|^A tower of flame erupts from the floor under the dog!$/,
+        limit: 2,
+    });
     const result = await useWhistle(whistle);
     assert.equal(result.heroDied, false);
     assert.ok(!game.level.monsters.includes(pet));
     assert.equal(game.u.uluck, luck - 1);
     assert.equal(leash.leashmon, 0);
+    assert.equal(game._pending_message, 'The dog is killed!');
     assert.doesNotMatch(game._pending_message, /shifts location/);
 });
 void test('a leashed pet retains its real leash when summoned beside the hero', async () => {

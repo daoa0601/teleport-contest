@@ -22,6 +22,7 @@ import { BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE, } from './random_text_data.js'
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
 import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.js';
 import { heroGoldAmount } from './hero_gold.js';
+import { encumbranceLabel, nearCapacity } from './weight.js';
 import { heroCanReachFloor } from './floor_reach.js';
 const HALLUCINATED_LIQUIDS = [
     'yoghurt', 'oobleck', 'clotted blood', 'diluted water',
@@ -66,7 +67,7 @@ function unblindTelepathyRange() {
     const storedRange = game.u?.unblind_telepat_range ?? -1;
     return Math.max(liveRange || -1, storedRange);
 }
-function senseWithTelepathy(monster) {
+export function senseWithTelepathy(monster) {
     if (!monster
         || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS))
         return false;
@@ -2027,7 +2028,7 @@ export function _statusLine2() {
         line += ` T:${game.moves ?? 1}`;
     if (u.usteed)
         line += ' Ride';
-    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][currentHungerState(game)];
+    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][game._statusHungerOverride ?? currentHungerState(game)];
     if (hungerLabel)
         line += ` ${hungerLabel}`;
     if (u._encumbrance)
@@ -2190,6 +2191,8 @@ export async function flush_screen(mode) {
         game._mapFlushPaused = !game._mapFlushPaused;
     if (game._mapFlushPaused)
         return;
+    if (game.context.botl)
+        refreshStatusLines();
     const display = game.nhDisplay;
     const mapCursor = mode === 0 && display
         ? lastDirtyMapCursor() ?? [display.cursorCol, display.cursorRow] : null;
@@ -2256,6 +2259,9 @@ function refreshStatusLines() {
     if (!display || game._statusUpdatesDisabled || game.u.uhp === -1 || game.program_state.saving
         || game.program_state.windows_exited || game._suppressMapStatusForFlush)
         return;
+    game.u._encumbrance = encumbranceLabel(nearCapacity(game));
+    delete game._statusHungerOverride;
+    game.context.botl = false;
     writeStatusLines(display, statusLines(true));
 }
 // ── pline ──

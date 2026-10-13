@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { AIR, ROOM, TT_BEARTRAP, TT_INFLOOR } from '../js/const.js';
+import { AIR, ROOM, STAIRS, TT_BEARTRAP, TT_INFLOOR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { terrain_glyph } from '../js/display.js';
@@ -139,13 +139,13 @@ void test('descending from an invoked artifact cools it down for a long while', 
     assert.equal(game.u.levitating, false);
 });
 
-void test('a blind hero only names stairs the screen glyph confirms', async () => {
+void test('a blind levitating hero names the stair surface even when its glyph is covered', async () => {
     freshConnectedLevels();
     requirePlayingGame(game);
     game.u.blindTurns = 5;
     uncontrolledLevitation();
     const location = game.level.requireAt(game.u.ux, game.u.uy);
-    assert.equal(location.typ, 26); // STAIRS with a real down stairway
+    assert.equal(location.typ, STAIRS);
 
     location.remembered_glyph = terrain_glyph(location, game.u.ux, game.u.uy);
     let log = collector();
@@ -153,14 +153,15 @@ void test('a blind hero only names stairs the screen glyph confirms', async () =
     assert.deepEqual(result, { handled: true, spentTurn: false });
     assert.ok(log.messages.some(text => /above the stairs/.test(text)));
 
-    // A remembered floor glyph hides the staircase from a blind hero.
+    // C dodown() rejects the covered stair glyph, then surface() still
+    // returns "stairs" because a stairway occupies the hero's square.
     location.remembered_glyph = {
         kind: 'terrain', ch: '.', color: 7, terrainName: 'floor of a room',
     };
     log = collector();
     result = await descendFromLevitation(game, { publish: log.publish });
-    assert.ok(log.messages.some(text => /above the floor/.test(text)));
-    assert.ok(!log.messages.some(text => /above the stairs/.test(text)));
+    assert.deepEqual(result, { handled: true, spentTurn: false });
+    assert.deepEqual(log.messages, ['You are floating high above the stairs.']);
 });
 
 void test('a sighted hero names the ladder beneath without glyph help', async () => {

@@ -62,6 +62,10 @@ export function surfaceName(x, y, state = game) {
         return 'headstone';
     if (type === FOUNTAIN)
         return 'fountain';
+    for (let stair = state.stairs; stair; stair = stair.next) {
+        if (stair.sx === x && stair.sy === y)
+            return 'stairs';
+    }
     if (IS_WALL(type) || type === SDOOR)
         return 'wall';
     if (type === DOOR)

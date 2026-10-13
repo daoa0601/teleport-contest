@@ -93,7 +93,7 @@ function maskedBlindnessMessage(clearing: boolean, state: GameState) {
 export async function toggleBlindness(state = game) {
     requireLiveGame(state);
     const stinging = wieldedArtifactWarns(state);
-    // Status is rebuilt at each JS screen flush; vision needs an immediate update.
+    state.context.botl = true;
     state.vision_full_recalc = 1;
     vision_recalc(0);
     if (propertyIsActive('telepathy', state)
