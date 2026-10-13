@@ -1545,10 +1545,11 @@ async function monsterAttackMessage(monster, attack, previousAttack = null, rand
             : attack.attackType === 4 ? 'butts'
                 : attack.attackType === 5 ? 'touches you'
                     : attack.attackType === 6 ? 'stings' : 'hits';
-    // mhitu.c:hitmsg() calls adjacent attacks of the same method "again".
-    // Besides prose, those six cells can decide whether the following pline
-    // crosses tty's reserved --More-- budget and suspends the hit transaction.
+    // getmattk() substitutes into a separate native attack buffer. Only
+    // consecutive original slots can continue hitmsg()'s repeated-hit chain.
     const again = previousAttack?.hit
+        && attack.sourceAttackIndex != null
+        && previousAttack.sourceAttackIndex === attack.sourceAttackIndex - 1
         && previousAttack.attackType === attack.attackType ? ' again' : '';
     return `${subject} ${verb}${again}!`;
 }

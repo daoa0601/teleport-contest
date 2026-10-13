@@ -3979,6 +3979,8 @@ async function advanceHeroAttackSequence(
         const effectiveAttack = selectAttack(monster, state.u, attackIndex, sequence.results, state);
         const slot: HeroAttackSlot = {
             attackIndex,
+            sourceAttackIndex: effectiveAttack === MONSTER_ATTACKS[monster.mnum]?.[attackIndex]
+                ? attackIndex : null,
             effectiveAttack,
             oldFormMnum: state.u.umonnum,
         };
