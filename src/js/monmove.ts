@@ -339,7 +339,7 @@ import { unlinkObject } from './object_location.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { dropObjectAtHero } from './object_drop.js';
-import { makemonNear, mksobj, summonNastyMonsters } from './mklev.js';
+import { canFallThrough, makemonNear, mksobj, summonNastyMonsters } from './mklev.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack, hasTrack } from './track.js';
@@ -4705,6 +4705,7 @@ async function triggerMonsterTrap(
         return event;
     }
     if (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) {
+        if (!canFallThrough(state.u.uz)) return null;
         // trap.c:trapeffect_hole()->mlevel_tele_trap().  A grounded,
         // non-huge ordinary actor migrates to the trap's fixed destination.
         // migrate_to_level() unlinks it from fmon, so postmov() terminates
