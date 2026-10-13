@@ -1661,6 +1661,7 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
                 game._delayedAction = { kind: 'steal', thief: monster, object,
                     remainingGlobalTurns: remaining, ready: false, finishMessage: '' };
                 game.multi = -remaining;
+                game._helplessDoneMessage = null;
                 return false;
             }
         }
@@ -3441,7 +3442,7 @@ export async function moveloop_core() {
             delete g._armorClassDirtyAfterDelayedFrame;
         }
         else if (delayed.kind === 'steal') {
-            g.multi = 0;
+            await finishHeroHelplessness();
             await finishDelayedArmorTheft(delayed.thief, delayed.object);
         }
         else if (delayed.kind === 'remove') {

@@ -278,6 +278,23 @@ void test('a visible delayed armor thief reports that teleportation is prevented
     assert.equal(thief.my, 10);
 });
 
+void test('the hero can move again before the nymph announces delayed armor theft', async () => {
+    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
+    requirePlayingGame(game);
+    const suit = await addInventoryObject(LEATHER_ARMOR);
+    wearHeroArmor(suit);
+    const thief = await nearbyThief();
+    installPagerInput(resetInputState(), { expected: /nymph/, limit: 12 });
+
+    await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+    thief.movement = -100;
+    const messages: string[] = [];
+    await finishRemoval(messages);
+
+    assert.match(messages.join('\n'), /You can move again\.[\s\S]*The water nymph steals/);
+    assert.ok(thief.minvent.includes(suit));
+});
+
 void test('seduction temporarily uncurses armor before its message pager and restores the curse after removal', async () => {
     freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
