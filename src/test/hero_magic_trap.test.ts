@@ -61,6 +61,21 @@ void test('a magic-trap flash blinds and deafens the hero, summons monsters, and
     assert.equal(sleeper.msleeping, 0);
 });
 
+void test('a hero in Archon form sees a nearby sleeper wake after resisting a magic-trap flash', async () => {
+    const trap = magicTrapRoom();
+    const sleeper = await createMonsterAt('goblin', 12, 10);
+    sleeper.msleeping = 1;
+    installPolymorphedHero('Archon');
+    initRng(16n);
+
+    await triggerHeroTrap(trap, { forceTrap: true });
+
+    assert.equal(game.u.blindTurns, 0);
+    assert.ok((game.u.deafTurns ?? 0) >= 30 && (game.u.deafTurns ?? 0) <= 49);
+    assert.equal(sleeper.msleeping, 0);
+    assert.match(game._last_message, /The goblin wakes up\.$/);
+});
+
 void test('a deaf hero resists the flash and gains a shorter deafness extension', async () => {
     const trap = magicTrapRoom();
     game.u.blindResistance = true;

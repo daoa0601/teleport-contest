@@ -14,7 +14,7 @@ import { makemonAt } from './mklev.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
 import { tameMonster } from './monster_taming.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import {
     grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty,
     hasInvokedProperty, hasWornProperty, removeIntrinsicProperty,
@@ -49,7 +49,7 @@ export async function triggerHeroMagicTrapEffect(): Promise<void> {
         }
         for (let i = 0; i < count; i++)
             await makemonAt(null, game.u.ux, game.u.uy);
-        wakeMonstersNear(game.u.ux, game.u.uy, 49, game);
+        await wakeMonstersNearWithMessages(game.u.ux, game.u.uy, 49, game);
         return;
     }
 
