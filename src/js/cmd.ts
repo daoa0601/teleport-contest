@@ -360,6 +360,7 @@ import {
 import {
     chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown,
     payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage,
+    shopResident, shopkeeperInOwnShop,
 } from './shk.js';
 import {
     visiblePriestName,
@@ -7230,8 +7231,8 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         // after impaired_movement() has changed u.dx/u.dy; a Shift-run which
         // is redirected into the pet therefore stops before do_attack() and
         // its one-in-seven displacement refusal roll.
-        const safeMonster = !!(monster.pet || monster.mtame
-            || monster.mpeaceful)
+        const safeMonster = (game.flags.safe_dog ?? true) && !!monster.mpeaceful
+            && canSpotMonster(monster)
             && !game.context?.forcefight
             && !confused
             && !heroIsHallucinating(game)
@@ -7256,13 +7257,26 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         // step in attack_checks() while preventing another automatic run
         // step after the intervening monster phase.
         if (!safeMonster && game._runState) stopRun(game);
-        if (safeMonster) {
+        if (safeMonster && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
             // C ref: hack.c do_attack()/domove(): a tame monster normally
             // yields to the hero, and ordinary peacefuls share the same
             // displacement path.  Only tame actors flee after refusal.
             const tame = !!(monster.pet || monster.mtame);
-            const yields = rn2(7) !== 0;
-            if (!yields && tame) {
+            const blocked = heroIsPunished() || rn2(7) === 0
+                || (!!monster.wormno && ['baby long worm', 'long worm', 'long worm tail']
+                    .includes(MONSTER_NAME[monster.mnum] ?? ''))
+                || (IS_OBSTRUCTED(game.level.requireAt(u.ux, u.uy).typ)
+                    && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000008));
+            const inShop = !blocked && roomsAt(game.level, monster.mx, monster.my, SHOPBASE)
+                .some(roomno => {
+                    const keeper = shopResident(roomno, game);
+                    return !!keeper && shopkeeperInOwnShop(keeper, game);
+                });
+            if ((blocked || inShop) && monster.isshk && !game._runState) {
+                await dopay();
+                return true;
+            }
+            if ((blocked || inShop) && tame) {
                 const flight = await makeMonsterFlee(monster, {
                     turns: rnd(6), announce: false,
                 });
@@ -7274,10 +7288,17 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             const speciesName = monsterInstanceDisplayName(monster);
             const subject = tame ? tameName
                 : monster.name ? speciesName : `the ${speciesName}`;
-            if (!yields) {
+            if (blocked || inShop) {
                 const displayName = subject.charAt(0).toUpperCase()
                     + subject.slice(1);
-                await pline(`You stop.  ${displayName} is in the way!`);
+                await plineWithContinuation(`You stop.  ${displayName} is in the way!`);
+                stopRun(game);
+                return true;
+            }
+            if (monster.mfrozen || monster.msleeping || monster.mcanmove === 0
+                || ((MONSTER_MOVE[monster.mnum] ?? 0) === 0 && rn2(6))) {
+                await plineWithContinuation(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
+                stopRun(game);
                 return true;
             }
             // C domove_core() confirms a yielded step before either actor
