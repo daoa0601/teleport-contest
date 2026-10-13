@@ -6900,6 +6900,13 @@ function lockPickChance(tool: GameObject, g: GameState = game, container: GameOb
 // C ref: hack.c:dopush().  Move a floor boulder before committing the hero
 // into its old square; the first push owns Strength exercise and its message.
 async function pushBoulder(boulder: GameObject, x: number, y: number, dx: number, dy: number): Promise<boolean> {
+    const glyph = glyphAt(x, y);
+    if (heroIsBlind(game) && !(glyph?.kind === 'object' && glyph.otyp === BOULDER)) {
+        await pline('That feels like a boulder.');
+        map_object(boulder, true);
+        endVoluntaryMultiTurn(game);
+        return false;
+    }
     const targetX = x + dx;
     const targetY = y + dy;
     const targetObjects = game.level?.objects?.[targetX]?.[targetY] || [];
