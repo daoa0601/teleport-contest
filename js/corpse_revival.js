@@ -3,7 +3,7 @@ import { rotCorpse } from './corpse_rot.js';
 // C refs: do.c revive_corpse()/revive_mon()/zombify_mon() and zap.c revive().
 import { tameMonster } from './monster_taming.js';
 import { setMonsterGivenName } from './monster_given_name.js';
-import { RLOC_NOMSG, CORR, G_GENOD, GRAVE, IS_POOL, MFAST, MM_NOCOUNTBIRTH, MM_NOTAIL, MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, ROOM, } from './const.js';
+import { RLOC_NOMSG, CORR, G_GENOD, GRAVE, IS_POOL, MFAST, MM_NOCOUNTBIRTH, MM_NOTAIL, MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, PLNMSG_OBJ_GLOWS, ROOM, } from './const.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { makePetWary } from './dog.js';
@@ -17,6 +17,9 @@ import { findMonsterNearPosition, makemonAt, makemonNear, maketrap, riderRevival
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDisplacer, monsterTypeName, } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
+import { ownedObjectName } from './objnam.js';
+import { costlySpot } from './shk.js';
+import { stolenValue } from './shop_loss.js';
 import { restoreMonsterTraits } from './monster_traits.js';
 import { changeMonsterForm, restoreMonsterShape } from './monster_polymorph.js';
 import { destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, unlinkMonsterObject, } from './monster_inventory.js';
@@ -208,6 +211,8 @@ async function mergeGhostIntoBody(monster, corpse, state) {
         return;
     const ghost = (state.level?.monsters || []).find(candidate => candidate.m_id === ghostId && candidate.mnum === PM_GHOST);
     if (ghost) {
+        if (canSeeMonster(ghost))
+            await plineWithContinuation(`${monsterName(ghost, { state, capitalized: true })} is suddenly drawn into its former body!`);
         for (;;) {
             const object = (ghost.minvent || ghost.inventory)?.[0];
             if (!object)
@@ -361,7 +366,7 @@ async function stopCorpseMeal(corpse, state) {
     await stopHeroOccupation(state, plineWithContinuation, { finishMeal: false });
     await updateHeroHunger(false, { state });
 }
-async function reviveCorpse(corpse, state, { announce = true } = {}) {
+async function reviveCorpse(corpse, state, { announce = true, byHero = false } = {}) {
     requireCorpseSpecies(corpse);
     const originalWhere = corpse.where;
     await stopCorpseMeal(corpse, state);
@@ -384,11 +389,14 @@ async function reviveCorpse(corpse, state, { announce = true } = {}) {
         return { monster: null, messages, originalWhere, location };
     }
     const monster = creation.monster;
-    const revivedCorpse = corpse.quan > 1
+    const oneOf = corpse.quan > 1;
+    const revivedCorpse = oneOf
         ? splitObjectStack(corpse, 1, state) : corpse;
     if (!revivedCorpse)
         throw new Error('A successful revival could not split its corpse stack');
     requireCorpseSpecies(revivedCorpse);
+    if (byHero)
+        await announceHeroRevival(revivedCorpse, monster, oneOf, state);
     await mergeGhostIntoBody(monster, revivedCorpse, state);
     restoreCorpseNameAndHealth(monster, revivedCorpse);
     monster.mrevived = 1;
@@ -407,22 +415,41 @@ async function reviveCorpse(corpse, state, { announce = true } = {}) {
         buried: digsOut, originalWhere, location, messages,
     };
 }
+async function announceHeroRevival(corpse, monster, oneOf, state) {
+    const { ox: x, oy: y } = corpse;
+    const keeper = costlySpot(x, y, state)?.resident;
+    const charge = keeper && (corpse.where === 'inventory' ? corpse.unpaid : !corpse.no_charge);
+    if (cansee(x, y)) {
+        const name = oneOf
+            ? `One of ${ownedObjectName({ ...corpse, quan: 2, quantity: 2 }, state, { capitalized: false })}`
+            : ownedObjectName(corpse, state);
+        await plineWithContinuation(`${name} glows iridescently.`);
+        state._lastPlineKind = PLNMSG_OBJ_GLOWS;
+    }
+    else if (charge) {
+        await plineWithContinuation('A corpse is resuscitated.');
+    }
+    if (charge && keeper !== monster)
+        await stolenValue(corpse, x, y, keeper.mpeaceful, { silent: false, state });
+}
 export async function reviveCorpseImmediately(corpse, state = game, { announce = true } = {}) {
     if (!corpse)
         return null;
     return reviveCorpse(corpse, state, { announce });
 }
-export async function reviveCorpseByMagic(corpse, state = game) {
+export async function reviveCorpseByMagic(corpse, state = game, { byHero = true } = {}) {
     if (!corpse)
         return null;
     const noRevive = corpse.norevive;
     corpse.norevive = false;
-    const event = await reviveCorpse(corpse, state, { announce: false });
+    const event = await reviveCorpse(corpse, state, { announce: false, byHero });
     if (event.kind !== 'revived') {
         if (noRevive === undefined)
             delete corpse.norevive;
         else
             corpse.norevive = noRevive;
+        for (const message of event.messages)
+            await plineWithContinuation(message);
     }
     return event;
 }

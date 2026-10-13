@@ -188,7 +188,9 @@ for (const bodyType of [CORPSE, STATUE]) {
         const input = resetInputState();
 
         const restored = bodyType === CORPSE
-            ? await answerPrompts(reviveCorpseByMagic(body), input, [])
+            ? await answerPrompts(reviveCorpseByMagic(body), input, [
+                { prompt: /The little dog turns into a chameleon![\s\S]*--More--/, keys: ' ' },
+            ])
             : await answerPrompts(animateStatue(body, 11, 10, { magic: true }), input, [
                 { prompt: /The little dog turns into a chameleon![\s\S]*--More--/, keys: ' ' },
             ]);
@@ -200,7 +202,7 @@ for (const bodyType of [CORPSE, STATUE]) {
         if (bodyType === CORPSE) {
             await flush_screen(1);
             assert.match(requireScreenRow(0).map(cell => cell.ch).join(''),
-                /The little dog turns into a chameleon!/);
+                /corpse glows iridescently\./);
         }
     });
 }
