@@ -504,16 +504,22 @@ export async function heroCanMoveFromTrap(targetX, targetY) {
         return true;
     requirePlayingGame(game);
     switch (hero.utraptype) {
-        case TT_BEARTRAP:
-            if (game.flags?.verbose !== false)
-                await repeatableTrapMessage('You are caught in a bear trap.');
+        case TT_BEARTRAP: {
+            const steed = hero.usteed;
+            const subject = steed
+                ? monsterName(steed, { article: 'your', capitalized: true, suppressSaddle: true })
+                : 'You';
+            if (game.flags?.verbose !== false) {
+                await plineWithContinuation(`${subject} ${steed ? 'is' : 'are'} caught in a bear trap.`, { noRepeat: true });
+            }
             if ((hero.dx && hero.dy) || rn2(5) === 0)
                 hero.utrap--;
             if (hero.utrap <= 0) {
+                await plineWithContinuation(`${subject} finally ${steed ? 'lurches' : 'wriggle'} free.`);
                 clearHeroTrap();
-                await pline('You finally wriggle free.');
             }
             return false;
+        }
         case TT_PIT: {
             const target = game.level.traps.find(trap => trap.tx === targetX && trap.ty === targetY);
             if (target?.tseen && (target.ttyp === PIT || target.ttyp === SPIKED_PIT))

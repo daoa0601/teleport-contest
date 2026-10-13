@@ -3495,7 +3495,8 @@ function resetBonesObjectsForSave(level: GameMap): void {
 // container back-pointers; getbones() restores the GameMap prototype.
 export function saveBonesLevel(): boolean {
     const storage = game.storage;
-    if (!storage || !game.level) return false;
+    if (!storage || !game.level || !game.urole || !game.urace
+        || !game.u.ualign) return false;
 
     let payload: BonesPayload;
     try {
@@ -3511,6 +3512,18 @@ export function saveBonesLevel(): boolean {
     } catch (_error) {
         return false;
     }
+
+    // savebones() records the final role, race, gender, and alignment in
+    // cemetery.who. These suffixes also participate in bones_include_name().
+    const alignment = game.u.ualign.type === 1 ? 'Law'
+        : game.u.ualign.type === -1 ? 'Cha' : 'Neu';
+    const who = [
+        game.plname || 'player', game.urole.filecode.slice(0, 3),
+        game.urace.filecode.slice(0, 3), game.flags.female ? 'Fem' : 'Mal', alignment,
+    ].join('-');
+    payload.level.bonesNames = [
+        who, ...(payload.level.bonesNames ?? []),
+    ];
 
     for (const monster of payload.level.monsters || []) {
         monster.mlstmv = 0;
@@ -4230,14 +4243,10 @@ function specialDoorAt(context: SpecialLevelContext, mask: number, x: number, y:
 }
 
 function specialRandomDoorAt(context: SpecialLevelContext, x: number, y: number): Position | null {
-    rn2(5);
-    let mask = D_NODOOR;
-    if (rn2(3) === 0) {
-        if (rn2(5) === 0) mask = D_ISOPEN;
-        else if (rn2(6) === 0) mask = D_LOCKED;
-        else mask = D_CLOSED;
-        if (mask !== D_ISOPEN && rn2(25) === 0) mask |= D_TRAPPED;
-    }
+    // lspo_door() uses rnddoor() directly for an explicit coordinate.
+    const states = [D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED];
+    const mask = states[rn2(states.length)];
+    if (mask === undefined) throw new Error('Missing random door state');
     return specialDoorAt(context, mask, x, y);
 }
 
@@ -5313,7 +5322,7 @@ function createSpecialRoomDoor(
     room: Room, state: string, wall: string, position = -1,
 ): void {
     const level = requireGameLevel();
-    const wantedDirection = wall === 'all' ? null
+    const wantedDirection = wall === 'all' || wall === 'random' ? null
         : wall === 'north' ? 0
             : wall === 'south' ? 1
                 : wall === 'west' ? 2 : 3;

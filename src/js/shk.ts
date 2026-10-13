@@ -17,7 +17,7 @@ import type {
     Shopkeeper, ShopRoom, ShopTransaction,
 } from './shop_types.js';
 import { SHOP_TYPES } from './shop_data.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsHuman, monsterIsVampire } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire } from './monster_data.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterName, possessiveName, shopkeeperName } from './monster_name.js';
 import { containedGold } from './gold.js';
@@ -35,15 +35,17 @@ import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
+import { publishMonsterWake } from './monster_wake.js';
 import {
-    A_CHA, A_WIS, DELPHI, In_mines, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM,
-    ROOMOFFSET, SHOPBASE, TEMPLE, Upolyd, MGIVENNAME,
+    A_CHA, A_WIS, ANTHOLE, BARRACKS, BEEHIVE, COCKNEST, COURT, DELPHI, In_mines,
+    LEPREHALL, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM,
+    ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO,
 } from './const.js';
-import { inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
+import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
 import { intemple } from './priest.js';
 import { recordDiscoveredRoom } from './dungeon.js';
 import {
-    BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CRYSTAL_BALL,
+    BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CORPSE, CRYSTAL_BALL,
     DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX,
     MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST,
     OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT,
@@ -63,6 +65,8 @@ const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const GLASS = 19;
 const BILLSZ = 200; // C include/mextra.h
+const G_UNIQ = 0x1000;
+const M2_PNAME = 0x00080000;
 
 
 function sameLevel(a: DungeonLocation | null | undefined, b: DungeonLocation | null | undefined): boolean {
@@ -942,7 +946,21 @@ export function updateUnpaidObjectPrice(object: GameObject, state: GameState = g
     );
 }
 
-// C shk.c:shk_your(), shk_owns(), and mon_owns(). Shop ownership takes
+// C shk.c:Shk_Your(). The returned prefix includes its separator; a corpse
+// of a personally named monster has no prefix or separator at all.
+export function objectOwnershipPrefix(object: GameObject, state: GameState = game): string {
+    const species = object.corpsenm;
+    if (object.otyp === CORPSE && species !== undefined && MONSTER_NAME[species] !== undefined) {
+        if ((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME) return '';
+        if (((MONSTER_GENO[species] ?? 0) & G_UNIQ)
+            && !['high cleric', 'long worm tail'].includes(MONSTER_NAME[species]))
+            return 'The ';
+    }
+    const owner = carriedObjectOwner(object, state);
+    return `${owner.charAt(0).toUpperCase()}${owner.slice(1)} `;
+}
+
+// C shk.c:shk_owns() and mon_owns(). Shop ownership takes
 // precedence over the carrier, using the object's location rather than ours.
 export function carriedObjectOwner(object: GameObject, state: GameState = game): string {
     const location = getObjectLocation(object, state);
@@ -1272,12 +1290,14 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
     for (const roomno of game.u.uentered) {
         const room = roomForRoomno(game.level, roomno);
         if (!room) throw new Error(`Entered room ${roomno} does not exist`);
-        if (room.rtype === MORGUE) {
-            await plineWithContinuation(Number(String(game.datetime || '').slice(8, 10)) === 0
-                ? 'Run away!  Run away!' : 'You have an uncanny feeling...');
+        const type = room.rtype;
+        const message = specialRoomEntryMessage(room, roomno);
+        if (message) {
+            await plineWithContinuation(message);
+            recordDiscoveredRoom(roomno - ROOMOFFSET);
             room.rtype = OROOM;
             result = room;
-        } else if (room.rtype === DELPHI) {
+        } else if (type === DELPHI) {
             const oracle = [...game.level.monsters].reverse().find(monster =>
                 !monster.dead && monster.mhp > 0
                 && monster.mnum === MONSTER_NAME.indexOf('Oracle')
@@ -1291,9 +1311,75 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
             }
             room.rtype = OROOM;
             result = room;
-        } else if (room.rtype === TEMPLE) {
+        } else if (type === TEMPLE) {
             result = await intemple(roomno);
+            recordDiscoveredRoom(roomno - ROOMOFFSET);
+        } else if (type >= SHOPBASE) {
+            recordDiscoveredRoom(roomno - ROOMOFFSET);
+        }
+        if (room.rtype !== OROOM || type === OROOM) continue;
+        const remainingRooms = [...game.level.rooms, ...(game.level.subrooms ?? [])];
+        if (!remainingRooms.some(candidate => 'rtype' in candidate && candidate.rtype === type)) {
+            switch (type) {
+            case COURT: game.level.flags.has_court = false; break;
+            case SWAMP: game.level.flags.has_swamp = false; break;
+            case MORGUE: game.level.flags.has_morgue = false; break;
+            case ZOO: game.level.flags.has_zoo = false; break;
+            case BARRACKS: game.level.flags.has_barracks = false; break;
+            case BEEHIVE: game.level.flags.has_beehive = false; break;
+            }
+        }
+        if ([COURT, SWAMP, MORGUE, ZOO].includes(type)) {
+            for (const monster of [...game.level.monsters].reverse()) {
+                // Native compares the stored room number to its room index here.
+                if (monster.dead || monster.mhp <= 0
+                    || game.level.at(monster.mx, monster.my)?.roomno !== roomno - ROOMOFFSET)
+                    continue;
+                if (!propertyIsActive('stealth', game) && !rn2(3)) {
+                    await publishMonsterWake(monster);
+                    monster.msleeping = 0;
+                }
+            }
         }
     }
     return result;
+}
+
+function specialRoomEntryMessage(room: Room, roomno: number): string | null {
+    switch (room.rtype) {
+    case ZOO: return "Welcome to David's treasure zoo!";
+    case SWAMP: return heroIsBlind(game) ? 'It feels rather humid down here.' : 'It looks rather muddy down here.';
+    case COURT: {
+        const throne = furniturePresent(room, THRONE);
+        return `You enter an opulent${throne ? ' throne' : ''} room!`;
+    }
+    case LEPREHALL: return 'You enter a leprechaun hall!';
+    case MORGUE: return Number(String(game.datetime || '').slice(8, 10)) === 0
+        ? 'Run away!  Run away!' : 'You have an uncanny feeling...';
+    case BEEHIVE: return 'You enter a giant beehive!';
+    case COCKNEST: return 'You enter a disgusting nest!';
+    case ANTHOLE: return 'You enter an anthole!';
+    case BARRACKS: {
+        const soldiers = ['soldier', 'sergeant', 'lieutenant', 'captain'].map(name => MONSTER_NAME.indexOf(name));
+        const occupied = game.level?.monsters.some(monster => !monster.dead && monster.mhp > 0
+            && soldiers.includes(monster.mnum)
+            && roomsAt(game.level, monster.mx, monster.my).includes(roomno));
+        return occupied ? 'You enter a military barracks!' : 'You enter an abandoned barracks.';
+    }
+    default: return null;
+    }
+}
+
+// C hack.c:furniture_present() scans the interior bounds, then checks the
+// actual shape. Rectangular courts include furniture in their subrooms.
+function furniturePresent(room: Room, furniture: number): boolean {
+    const level = game.level;
+    if (!level) return false;
+    for (let y = room.ly; y <= room.hy; y++) {
+        for (let x = room.lx; x <= room.hx; x++) {
+            if (level.at(x, y)?.typ === furniture && insideRoom(level, room, x, y))
+                return true;
+        }
+    }
+    return false;
 }

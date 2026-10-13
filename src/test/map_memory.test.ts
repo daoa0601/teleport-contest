@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { FOUNTAIN, ROOM, SINK, STONE } from '../js/const.js';
+import { CORR, FOUNTAIN, ROOM, SINK, STONE } from '../js/const.js';
+import { CLR_WHITE, NO_COLOR } from '../js/terminal.js';
 import { rhack } from '../js/cmd.js';
 import { mapLevel, premap_detect } from '../js/detect.js';
-import { map_invisible, map_location, unmap_invisible } from '../js/display.js';
+import { flush_screen, map_invisible, map_location, newsym, unmap_invisible } from '../js/display.js';
 import { recordMappedOverviewState } from '../js/dungeon.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
@@ -15,6 +16,30 @@ import { cansee, vision_recalc } from '../js/vision.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenCell } from './support/screen.js';
+
+for (const darkRoom of [true, false]) {
+    void test(`remembered lit corridors ${darkRoom ? 'darken' : 'stay bright'} with dark_room ${darkRoom}`, async () => {
+        const level = freshObjectRoom();
+        game.flags.dark_room = darkRoom;
+        game.flags.color = true;
+        const corridor = level.requireAt(11, 10);
+        corridor.typ = CORR;
+        corridor.lit = true;
+        newsym(11, 10);
+        await flush_screen(1);
+        assert.equal(requireScreenCell(10, 11).color, CLR_WHITE);
+
+        game.u.ux = 30;
+        level.requireAt(30, 10).typ = ROOM;
+        vision_recalc(0);
+        newsym(11, 10);
+        await flush_screen(1);
+
+        assert.equal(cansee(11, 10), false);
+        assert.equal(requireScreenCell(10, 11).color, darkRoom ? NO_COLOR : CLR_WHITE);
+    });
+}
 
 function currentFeatures() {
     requirePlayingGame(game);

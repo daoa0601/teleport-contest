@@ -53,6 +53,7 @@ export class GameMap {
     declare levelTimers: LevelTimer[];
     declare exclusionZones: ExclusionZone[];
     declare flags: LevelFlags;
+    declare bonesNames?: string[];
     declare upstair?: Position;
     declare dnstair?: Position;
     declare upTeleportRegion?: ArrivalRegion | null;

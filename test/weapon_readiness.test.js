@@ -86,7 +86,7 @@ for (const explicitlyWield of [false, true]) {
         const messages = await combatRoom();
         requirePlayingGame(game);
         const pick = await addInventoryObject(PICK_AXE);
-        await applyInventoryObject(pick, '.');
+        await applyInventoryObject(pick, ' .');
         await rhack(0);
         assert.equal(game.uwep, pick);
         if (explicitlyWield)

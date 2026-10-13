@@ -277,9 +277,9 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
             continue;
         }
         // C tty_yn_function() marks an answered prompt as already read.
-        // The command's result must not pause to acknowledge it again.
+        // A one-line query stays painted through a silent action. Wrapped
+        // queries have already been erased by promptKey()'s tty cleanup.
         game._pending_message = '';
-        game._retained_message = '';
         const letter = String.fromCharCode(key);
         const object = eligible.find(candidate => candidate.invlet === letter);
         if (object) {

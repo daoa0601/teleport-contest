@@ -1,8 +1,12 @@
+import type { MessagePublisher } from './display.js';
+import { slipOrTrip } from './fumbling.js';
+import { invWeight } from './weight.js';
 import { rewindEngravingsForSave } from './engrave.js';
 import { finishMonsterHideUnder } from './monster_hiding.js';
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 import { heroIsHallucinating } from './senses.js';
+import { mcalcmove } from './monster_speed.js';
 import { makeBlinded } from './sight_change.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
@@ -296,7 +300,7 @@ type MaintenancePhase =
     | (TurnMaintenance & { kind: 'object-timers' })
     | (TimeoutMaintenance & {
         kind: 'timeout-message';
-        timeoutKind: 'stun' | 'confusion' | 'fumbling';
+        timeoutKind: 'stun' | 'confusion';
         message: string;
     })
     | (TurnMaintenance & { kind: 'regions' })
@@ -637,36 +641,6 @@ function appendTurnMessage(message: string): void {
     game._last_message = game._pending_message;
 }
 
-// C ref: timeout.c:slip_or_trip(), empty-square/on-foot branch.  The object,
-// ice, and mounted branches have distinct naming, direction, and dismount
-// owners; keep this helper bounded to the branch exercised by ordinary
-// fumble boots on clear floor.
-function slipOrTripOnClearFloor({ deferMessage = false } = {}) {
-    const game = requireInitializedGame();
-    const hallucinating = heroIsHallucinating(game);
-    let message;
-    switch (rn2(4)) {
-    case 1:
-        message = `You trip over your own ${
-            hallucinating ? 'elbows' : 'feet'
-        }.`;
-        break;
-    case 2:
-        message = `You slip ${
-            hallucinating ? 'on a banana peel' : 'and nearly fall'
-        }.`;
-        break;
-    case 3:
-        message = 'You flounder.';
-        break;
-    default:
-        message = 'You stumble.';
-        break;
-    }
-    if (!deferMessage) appendTurnMessage(message);
-    return message;
-}
-
 // C ref: allmain.c:interrupt_multi().  Count-prefixed ordinary commands use
 // positive `multi`; full HP or power recovery cancels that voluntary repeat,
 // but must not stop independent occupations such as eating, lock-picking, or
@@ -889,7 +863,7 @@ async function finishInitialTurnMaintenanceAfterAmbient({
     return { kind: 'complete', moveAmount };
 }
 
-function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
+async function finishFumblingExpiryAfterMessage(fumbled: boolean, publish: MessagePublisher) {
     const game = requireInitializedGame();
     if (fumbled) {
         // timeout.c reaches this through nomul(-2), which always calls
@@ -898,11 +872,18 @@ function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
         endVoluntaryMultiTurn(game);
         game._helplessTurns = 2;
         game._helplessDoneMessage = '';
+        game._helplessReason = 'fumbling';
+        if (invWeight(game) > -500) {
+            if (!heroIsDeaf(game)) await publish('You make a lot of noise!');
+            await wakeMonstersNearWithMessages(game.u.ux, game.u.uy, game.u.ulevel * 20, game, publish);
+        }
     }
-    if (game.u?.fumblingFromArmor || game.u?.fumblingIntrinsic)
+    game.u.fumblingFromIce = false;
+    if (game.u?.fumblingFromArmor || game.u?.fumblingIntrinsic || propertyIsActive('fumbling', game))
         game.u.fumblingTurns = (game.u.fumblingTurns ?? 0) + rnd(20);
     game.u.fumbling = !!(game.u?.fumblingFromArmor
         || game.u?.fumblingIntrinsic
+        || propertyIsActive('fumbling', game)
         || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
 }
 
@@ -1108,13 +1089,17 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(
     if (rn2(generationRate) === 0) await makemonAt(null, 0, 0);
     const polymorphed = (game.u.mtimedone !== undefined && game.u.mtimedone > 0)
         && Number.isInteger(game.u?.umonnum);
-    let moveAmount = polymorphed
-        ? (MONSTER_MOVE[game.u.umonnum] ?? 0)
-        : 12;
-    if (game.u?.veryFast) {
-        if (rn2(3) !== 0) moveAmount += 12;
-    } else if (game.u?.fast && rn2(3) === 0) {
-        moveAmount += 12;
+    let moveAmount;
+    if (game.u.usteed && game.u.umoved) {
+        moveAmount = mcalcmove(game.u.usteed, true, rn2, game);
+    } else {
+        moveAmount = polymorphed
+            ? (MONSTER_MOVE[game.u.umonnum] ?? 0) : 12;
+        if (game.u.veryFast) {
+            if (rn2(3) !== 0) moveAmount += 12;
+        } else if (game.u.fast && rn2(3) === 0) {
+            moveAmount += 12;
+        }
     }
     // allmain.c:u_calc_moveamt() applies current carrying capacity after the
     // current form's natural speed and Fast/Very_fast bonus.  OVERLOADED is
@@ -1345,23 +1330,13 @@ async function finishInitialTurnMaintenanceAfterConfusion({
                 || game.u?.levitation || game.levitating);
             const flying = !!(game.u?.flying || game.flying);
             if (game.u?.umoved && !levitating && !flying) {
-                const message = slipOrTripOnClearFloor({
-                    deferMessage: deferAmbientMessage,
-                });
-                // `You(...)` can suspend inside tty before nomul(), renewal,
-                // regeneration, or any later global-turn work.
-                if (deferAmbientMessage) {
-                    return {
-                        kind: 'timeout-message',
-                        timeoutKind: 'fumbling',
-                        message, sourceTurn, moveAmount,
-                        deferAmbientMessage, polymorphed,
-                        prayerTimeoutFreeze,
-                    };
-                }
-                finishFumblingExpiryAfterMessage({ fumbled: true });
+                const publish: MessagePublisher = deferAmbientMessage
+                    ? plineWithContinuation : async message => appendTurnMessage(message);
+                await slipOrTrip(publish);
+                if (game.program_state.gameover) return { kind: 'complete', moveAmount };
+                await finishFumblingExpiryAfterMessage(true, publish);
             } else {
-                finishFumblingExpiryAfterMessage();
+                await finishFumblingExpiryAfterMessage(false, plineWithContinuation);
             }
         }
     }
@@ -1560,13 +1535,10 @@ async function advanceWorldTurn(): Promise<void> {
             game.u.stunnedTurns = 0;
             refreshProperty('stunned', game);
             phase = await finishInitialTurnMaintenanceAfterStun(phase);
-        } else if (phase.timeoutKind === 'confusion') {
+        } else {
             game.u.confusionTurns = 0;
             refreshProperty('confusion', game);
             phase = await finishInitialTurnMaintenanceAfterConfusion(phase);
-        } else {
-            finishFumblingExpiryAfterMessage({ fumbled: true });
-            phase = await finishInitialTurnMaintenanceAfterFumbling(phase);
         }
     }
     if (game.program_state?.gameover) return;
@@ -1785,7 +1757,8 @@ async function monsterAttackMessage(
                             : `pricks your ${side} leg`;
         return `${subject} ${contact}!`;
     }
-    const verb = attack.attackType === 2 ? 'bites'
+    const verb = attack.attackType === 16 ? 'tentacles suck your brain'
+        : attack.attackType === 2 ? 'bites'
         : attack.attackType === 3 ? 'kicks'
             : attack.attackType === 4 ? 'butts'
                 : attack.attackType === 5 ? 'touches you'
@@ -1798,7 +1771,7 @@ async function monsterAttackMessage(
         && previousAttack.effectiveAttack === MONSTER_ATTACKS[monster.mnum]?.[previousAttack.attackIndex]
         && attack.effectiveAttack === MONSTER_ATTACKS[monster.mnum]?.[attack.attackIndex]
         ? ' again' : '';
-    return `${subject} ${verb}${again}!`;
+    return `${attack.attackType === 16 ? possessiveName(subject) : subject} ${verb}${again}!`;
 }
 
 
@@ -3113,24 +3086,6 @@ async function presentMonsterPostMove(
         if ('seeSquare' in event && event.seeSquare && event.kind !== 'vibrating-square')
             newsym(event.trap.tx, event.trap.ty);
     }
-    if (movement?.trap?.kind === 'magic-portal-migration'
-        && movement.trap.visible) {
-        movement.trap.trap.tseen = true;
-        await plineWithContinuation(
-            `Suddenly, the ${quietMonsterName(
-                monster,
-            )} disappears out of sight.`,
-        );
-    }
-    if (movement?.trap?.kind === 'level-fall-migration'
-        && movement.trap.visible) {
-        movement.trap.trap.tseen = true;
-        const fall = movement.trap.trap.ttyp === HOLE
-            ? 'falls into a hole' : 'falls through a trap door';
-        await plineWithContinuation(
-            `Suddenly, the ${quietMonsterName(monster)} ${fall}.`,
-        );
-    }
     if (deferredTrapDestination && !movement.postMoveDestinationPainted)
         newsym(movement.x, movement.y);
     await presentMonsterHiding(action);
@@ -3255,7 +3210,8 @@ export async function performMonsterHeroAttack(
         { random, rollDice, rollOne });
     if (messageContext) messageContext.earlierActorPager = effects.earlierActorPager;
     const offensive = action.movement.heroAttackSequence?.offensive;
-    const returnedDeath = offensive?.status === 'completed' && offensive.result.nativeResult === 1;
+    const returnedDeath = action.movement.heroAttackResult === 1
+        || (offensive?.status === 'completed' && offensive.result.nativeResult === 1);
     return {
         nativeResult: returnedDeath || monster.dead || monster.mhp <= 0 ? 1 : 0,
         heroDied: effects.heroDied || !!state.program_state.gameover,
@@ -3968,11 +3924,6 @@ export async function moveloop_core() {
         if (moved) await currentLuaLifecycle().runCallbacks(g, 'end_turn');
         return;
     }
-
-    // tty ESC at --More-- suppresses later plines until the next real
-    // command read.  Preserve the overflow message already installed while
-    // reopening output for the command rhack() is about to request.
-    g._suppressMessagesUntilInput = false;
 
     // Read and execute one command
     g.u.umoved = false;

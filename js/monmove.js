@@ -104,7 +104,7 @@ import { unlinkObject } from './object_location.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { dropObjectAtHero } from './object_drop.js';
-import { makemonNear, mksobj, summonNastyMonsters } from './mklev.js';
+import { canFallThrough, makemonNear, mksobj, summonNastyMonsters } from './mklev.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack, hasTrack } from './track.js';
@@ -187,7 +187,8 @@ import { diggingTimeToHole } from './hero_digging.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
 import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, MIGR_RANDOM, MIGR_PORTAL, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_APPEARMSG, STRAT_WAITFORU, STRAT_WAITMASK, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
 import { monsterIsScaredAt } from './monster_fear.js';
-import { monsterInAir, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { monsterInAir, monsterFliesOrFloats, levelHasCeiling, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { disturbBuriedZombies } from './object_impact.js';
 export const NORMAL_SPEED = 12;
 export const MSLOW = 1;
 export const MFAST = 2;
@@ -3005,6 +3006,32 @@ export async function beginMonsterHeroAttack(monster, state, random, rollOne, ro
         endVoluntaryMultiTurn(state);
     if (monster === state.u.usteed)
         return {};
+    if (!state.u.uswallow && state.u.usteed) {
+        const steed = state.u.usteed;
+        const orc = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ORC);
+        // mattacku() chooses the steed before testing adjacency. Orcs
+        // choose it half the time; other monsters choose it one in four.
+        if (recordRandom(random, calls, orc ? 2 : 4) === 0
+            && dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 2) {
+            const attack = await attackMonsterWithMonster(monster, steed, {
+                state, random, rollDice, rollOne, calls,
+            });
+            if (monsterAttackStopsAggressor(attack))
+                return { heroAttackResult: 1 };
+            if (attack.heroDied || monster.dead || monster.mhp <= 0
+                || steed.dead || steed.mhp <= 0 || !state.u.usteed
+                || dist2(monster.mx, monster.my, state.u.ux, state.u.uy) > 2)
+                return {};
+            // A surviving steed retaliates immediately, including after a
+            // miss, without spending a movement ration or a chance roll.
+            const retaliation = await attackMonsterWithMonster(state.u.usteed, monster, {
+                state, random, rollDice, rollOne, calls,
+            });
+            const attackerDied = retaliation.kind === 'monster-attack'
+                && !!((retaliation.nativeResult ?? 0) & M_ATTK_DEF_DIED);
+            return { heroAttackResult: attackerDied ? 1 : 0 };
+        }
+    }
     if (await disturbMealMimicry(monster, { state }))
         return {};
     const threshold = monsterAttackThreshold(monster, state, rollOne, calls);
@@ -3041,6 +3068,7 @@ export async function beginMonsterHeroAttack(monster, state, random, rollOne, ro
         paging: { pagerOwned: false, messageAfterPager: false },
         offensive: offensive ? { status: 'selected', choice: offensive } : null,
         skipNonMagic: false,
+        skipBrainDrain: false,
         done: false,
     };
     if (!offensive)
@@ -3095,6 +3123,8 @@ async function advanceHeroAttackSequence(sequence, state, random, rollOne, rollD
                 continue;
         }
         const effectiveAttack = selectAttack(monster, state.u, attackIndex, sequence.results, state);
+        if (sequence.skipBrainDrain && effectiveAttack[0] === AT_TENT && effectiveAttack[1] === AD_DRIN)
+            continue;
         const slot = {
             attackIndex,
             effectiveAttack,
@@ -3547,6 +3577,17 @@ async function placeAndStackTrapMissile(object, state, x, y) {
     placeObjectSynchronously(object, x, y, state);
     return await stack_object(object, state);
 }
+// C teleport.c:mlevel_tele_trap() announces the exit while the monster
+// still occupies its square. The acknowledgement precedes seetrap() and
+// migrate_to_level(), so input observers must retain that monster too.
+async function announceTrapLevelDeparture(monster, trap, state, publish) {
+    if (!canSeeMonster(monster) && monster !== state.u.usteed)
+        return;
+    const effect = trap.ttyp === HOLE ? 'falls into a hole'
+        : trap.ttyp === TRAPDOOR ? 'falls through a trap door' : 'disappears out of sight';
+    await publish(`Suddenly, ${canonicalMonsterName(monster, { state })} ${effect}.`);
+    trap.tseen = true;
+}
 async function triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls, publish = plineWithContinuation) {
     const trap = trapAtMonster(monster, state);
     if (!trap || monster.mtrapped)
@@ -3569,6 +3610,7 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
             return null;
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
+        await announceTrapLevelDeparture(monster, trap, state, publish);
         const event = await migrateMonsterOffLevel(monster, state, trap, {
             kind: 'magic-portal-migration',
             mode: MIGR_PORTAL,
@@ -3667,16 +3709,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) {
-        // trap.c:trapeffect_hole()->mlevel_tele_trap().  A grounded,
-        // non-huge ordinary actor migrates to the trap's fixed destination.
-        // migrate_to_level() unlinks it from fmon, so postmov() terminates
-        // before dochug()'s trailing distfleeck and the allocation loop no
-        // longer sees it.  Flight and huge-monster behavior remain the
-        // harmless trap eligibility already shared with mfndpos().
-        const airborne = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY);
-        const tooLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 4;
-        if (airborne || tooLarge || !trap.dst)
-            return null;
         // mintrap() grants thinking monsters implicit knowledge of holes
         // (but not trap doors) even before mtrapseen records the type.  The
         // destination remains legal to mfndpos(); this later gate usually
@@ -3689,11 +3721,20 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
             movement.trap = event;
             return event;
         }
+        monsterLearnsTrap(monster, trap);
+        monstersSeeTrap(state, trap);
+        // mintrap() handles avoidance and learning before trapeffect_hole()
+        // discovers that this level has nowhere to fall.
+        if (!canFallThrough(state.u.uz))
+            return null;
+        const airborne = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY);
+        const tooLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 4;
+        if (airborne || tooLarge || !trap.dst)
+            return null;
         // TODO: offer to release an uncursed leash before migration.
         if (monster.mleashed)
             return null;
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
+        await announceTrapLevelDeparture(monster, trap, state, publish);
         const event = await migrateMonsterOffLevel(monster, state, trap, {
             kind: 'level-fall-migration',
             mode: MIGR_RANDOM,
@@ -4798,7 +4839,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
     }
     else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
-        || damageType === AD_WRAP)) {
+        || damageType === AD_WRAP || damageType === AD_DRIN)) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const negated = damageType === AD_POLY
@@ -5780,6 +5821,8 @@ export async function completeHeroAttackSlot(action, state, random = rn2, rollDi
             result |= M_ATTK_AGR_DONE;
     }
     sequence.results[attack.attackIndex] = result;
+    if (attack.kind === 'hero-attack' && attack.skipBrainDrain)
+        sequence.skipBrainDrain = true;
     if (result === M_ATTK_HIT &&
         state.u.usleep &&
         state.u.usleep < state.moves &&
@@ -6480,6 +6523,10 @@ async function finishDochugAfterMovement(monster, movement, state, random, rollO
         || movement.postMoveStatus === MMOVE_DONE || movement.postMoveStatus === MMOVE_NOMOVES))
         newsym(monster.mx, monster.my);
     if (movement.postMoveStatus === MMOVE_MOVED) {
+        const flags = MONSTER_FLAGS1[dochugContext.entryMnum] ?? 0;
+        if (!monsterFliesOrFloats({ mnum: dochugContext.entryMnum })
+            && (!(flags & M1_CLING) || !levelHasCeiling(state)))
+            disturbBuriedZombies(monster.mx, monster.my, state);
         if (monsterIsHelpless(monster))
             return;
         const canContinue = !range.nearby &&
@@ -6530,6 +6577,8 @@ async function beginStandardMonsterAttack(monster, movement, state, random, roll
 function attachMonsterAttack(movement, attack) {
     if (attack.heroAttackSequence !== undefined)
         movement.heroAttackSequence = attack.heroAttackSequence;
+    if (attack.heroAttackResult !== undefined)
+        movement.heroAttackResult = attack.heroAttackResult;
 }
 // C postmov() has separate gates for movement effects and the floor tail.
 // Whether the coordinates changed does not select either gate.
