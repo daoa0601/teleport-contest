@@ -8,7 +8,7 @@ import { intemple } from '../js/priest.js';
 import { vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { installPagerInput } from './support/pager-input.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { createRoom } from './support/topology.js';
 void test('a priest seen by infravision names her deity when the hero enters a dark temple', async () => {
     const level = freshObjectRoom({ hero: { infravision: true } });
@@ -39,8 +39,10 @@ void test('a priest seen by infravision names her deity when the hero enters a d
     vision_recalc(0);
     assert.equal(canSeeMonster(priest), true);
     const input = resetInputState();
-    installPagerInput(input, { expected: /The priestess of .* intones:|Pilgrim/, limit: 2 });
-    await intemple(ROOMOFFSET);
+    await answerPrompts(intemple(ROOMOFFSET), input, [
+        { prompt: /The priestess of .+ intones:\s*--More--/, keys: ' ' },
+        { prompt: /"Pilgrim, you enter a desecrated place!"\s*--More--/, keys: ' ' },
+    ]);
     assert.ok(priest.epri);
     assert.ok(priest.epri.intone_time > game.moves);
 });
