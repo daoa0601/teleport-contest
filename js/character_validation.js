@@ -78,7 +78,6 @@ export function validSavedGameFlags(value) {
         customsymbols: optional(boolean),
         dark_room: optional(boolean),
         dropped_nopick: optional(boolean),
-        eight_bit_tty: optional(boolean),
         extmenu: optional(boolean),
         fireassist: optional(boolean),
         fixinv: optional(boolean),

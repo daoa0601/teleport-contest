@@ -4,7 +4,7 @@ export type GameBooleanFlag =
     | 'accessiblemsg' | 'acoustics' | 'armorstatus' | 'autodescribe'
     | 'autodig' | 'autoopen' | 'pickup' | 'autoquiver' | 'checkpoint'
     | 'cmdassist' | 'color' | 'confirm' | 'customcolors' | 'customsymbols'
-    | 'dark_room' | 'dropped_nopick' | 'eight_bit_tty' | 'extmenu'
+    | 'dark_room' | 'dropped_nopick' | 'extmenu'
     | 'fireassist' | 'fixinv' | 'force_invmenu' | 'goldX' | 'help'
     | 'herecmd_menu' | 'hilite_pet' | 'hilite_pile' | 'hitpointbar'
     | 'ignintr' | 'implicit_uncursed' | 'lit_corridor' | 'lootabc' | 'mail'

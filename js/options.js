@@ -277,7 +277,7 @@ function parseConfiguration(rc, result) {
                 if (negated || optionValue === 'none' || optionValue === '(none)')
                     result.flags[bindingOption] = '';
                 else if (optionValue)
-                    result.flags[bindingOption] = configuredPetName(optionValue);
+                    result.flags[bindingOption] = configuredPetName(optionValue, !!result.iflags.wc_eight_bit_input);
                 continue;
             }
             if (bindingOption === 'number_pad') {
@@ -464,21 +464,21 @@ function parseConfiguration(rc, result) {
         result.flags.paranoia_bits = paranoiaBits;
     return result;
 }
-// C options.c:nmcpy() copies bytes; bones.c:sanitize_name() then applies
-// the default tty's seven-bit display rules to each byte separately.
-function configuredPetName(value) {
+// C options.c:nmcpy() copies bytes; bones.c:sanitize_name() replaces control
+// bytes and strips printable high bytes only when eight-bit input is disabled.
+function configuredPetName(value, eightBitInput) {
     const bytes = new TextEncoder().encode(value).subarray(0, PL_PSIZ - 1);
-    let name = '';
+    const nameBytes = [];
     for (const byte of bytes) {
         if (byte === 0 || byte === 44)
             break;
         const character = byte & 0x7f;
         if (character < 32 || character === 127)
-            name += '.';
+            nameBytes.push('.'.charCodeAt(0));
         else
-            name += byte > 127 ? '_' : String.fromCharCode(character);
+            nameBytes.push(byte > 127 && !eightBitInput ? '_'.charCodeAt(0) : byte);
     }
-    return name;
+    return new TextDecoder().decode(new Uint8Array(nameBytes));
 }
 const NUMBER_PAD_CHOICES = [
     ' 0 (off)', ' 1 (on)', ' 2 (on, MSDOS compatible)',
@@ -587,7 +587,7 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['customsymbols', 'customsymbols', true],
     ['dark_room', 'dark_room', true],
     ['dropped_nopick', 'dropped_nopick', true],
-    ['eight_bit_tty', 'eight_bit_tty', false],
+    ['eight_bit_tty', 'wc_eight_bit_input', false],
     ['extmenu', 'extmenu', false],
     ['fireassist', 'fireassist', true],
     ['fixinv', 'fixinv', true],
@@ -650,7 +650,8 @@ function requestBooleanValue(name) {
     const [, property, fallback] = option;
     if (property === '_monTelecontrol')
         return game._monTelecontrol ?? fallback;
-    if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep')
+    if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
+        || property === 'wc_eight_bit_input')
         return game.iflags[property] ?? fallback;
     return game.flags[property] ?? fallback;
 }
@@ -658,7 +659,8 @@ function setConfigurationBoolean(settings, option, value) {
     const [, property] = option;
     if (property === '_monTelecontrol')
         settings.monTelecontrol = value;
-    else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep')
+    else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
+        || property === 'wc_eight_bit_input')
         settings.iflags[property] = value;
     else
         settings.flags[property] = value;
@@ -667,7 +669,8 @@ function setRequestBoolean(option, value) {
     const [, property] = option;
     if (property === '_monTelecontrol')
         game._monTelecontrol = value;
-    else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep')
+    else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
+        || property === 'wc_eight_bit_input')
         game.iflags[property] = value;
     else
         game.flags[property] = value;

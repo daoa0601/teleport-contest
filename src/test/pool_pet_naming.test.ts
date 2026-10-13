@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { triggerImmediateMonsterTrap, resumeDeferredMonsterTrap } from '../js/monmove.js';
 import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/rust_trap.js';
-import { parseNethackrc } from '../js/options.js';
+import { applyNethackrc, parseNethackrc } from '../js/options.js';
 import { makedog } from '../js/u_init.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -49,6 +49,38 @@ void test('configured pet names sanitize each UTF-8 byte for the tty', () => {
     assert.equal(settings.flags.dogname, '_.');
     assert.equal(settings.flags.catname, 'M__lusine');
     assert.equal(settings.flags.horsename, '_._');
+});
+
+void test('eight-bit tty input preserves printable bytes in each configured pet name', () => {
+    const settings = parseNethackrc('OPTIONS=dogname:Mélusine,catname:Señor,horsename:Björk,eight_bit_tty');
+
+    assert.equal(settings.flags.dogname, 'Mélusine');
+    assert.equal(settings.flags.catname, 'Señor');
+    assert.equal(settings.flags.horsename, 'Björk');
+});
+
+void test('a configured pet uses the existing eight-bit input setting and replaces control bytes', async () => {
+    freshObjectRoom({ role: 'ranger' });
+    game.iflags.wc_eight_bit_input = true;
+    game.preferred_pet = 'd';
+    applyNethackrc('OPTIONS=dogname:M\x01élusine\x7f');
+
+    const pet = await makedog();
+
+    assert.ok(pet);
+    assert.equal(pet.mgivenname, 'M.élusine.');
+});
+
+void test('disabling eight-bit tty input strips high bytes from later pet names', () => {
+    const settings = parseNethackrc('OPTIONS=eight_bit_tty\nOPTIONS=!eight_bit_tty\nOPTIONS=dogname:Mélusine');
+
+    assert.equal(settings.flags.dogname, 'M__lusine');
+});
+
+void test('eight-bit tty input only affects pet names parsed after it', () => {
+    const settings = parseNethackrc('OPTIONS=eight_bit_tty,dogname:Mélusine');
+
+    assert.equal(settings.flags.dogname, 'M__lusine');
 });
 
 void test('configured pet names truncate at the native byte limit', () => {
