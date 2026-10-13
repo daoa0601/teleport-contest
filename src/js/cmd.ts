@@ -2321,27 +2321,25 @@ async function doherecmdmenu() {
 }
 
 async function doname() {
-    const display = game.nhDisplay;
-    if (!display) throw new Error('This command requires an initialized display.');
-    const left = 32;
-    game._pending_message = '';
-    display.clearRow(0);
-    for (let row = 0; row <= 8; row++) {
-        for (let col = left - 1; col < display.cols; col++)
-            display.setCell(col, row, ' ', NO_COLOR, 0);
-    }
-    putCommandLine(left, 0, 'What do you want to name?', ATR_INVERSE);
-    putCommandLine(left, 2, 'm - a monster');
-    putCommandLine(left, 3, 'i - a particular object in inventory');
-    putCommandLine(left, 4, 'o - the type of an object in inventory');
-    putCommandLine(left, 5, 'f - the type of an object upon the floor');
-    putCommandLine(left, 6, 'd - the type of an object on discoveries list');
-    putCommandLine(left, 7, 'a - record an annotation for the current level');
-    putCommandLine(left, 8, '(end)');
-    display.setCursor(left + 6, 8);
-    const choice = String.fromCharCode(takeCommandKey() ?? await nhgetch()).toLowerCase();
-    game._pending_message = '';
-    await restoreCommandMap();
+    // docallcmd() consumes a canned category before creating its menu.
+    // Unread callback prose then belongs to the later naming prompt.
+    const queuedChoice = takeCommandKey();
+    const key = queuedChoice ?? await showChoiceWindow({
+        title: 'What do you want to name?',
+        entries: [
+            { key: 'm', text: 'a monster' },
+            ...(game.inventory.length ? [
+                { key: 'i', text: 'a particular object in inventory' },
+                { key: 'o', text: 'the type of an object in inventory' },
+            ] : []),
+            { key: 'f', text: 'the type of an object upon the floor' },
+            { key: 'd', text: 'the type of an object on discoveries list' },
+            { key: 'a', text: 'record an annotation for the current level' },
+        ],
+        validKeys: [27, 32, 10, 13, ...'miofda'.split('').map(char => char.charCodeAt(0))],
+    });
+    const choice = String.fromCharCode(key).toLowerCase();
+    if (queuedChoice === undefined) await restoreCommandMap();
 
     // C refs: do_name.c:docallcmd()/do_oname() and
     // dungeon.c:donamelevel()/query_annotation().  The menu owns only the
@@ -2373,7 +2371,6 @@ async function doname() {
         );
         if (!selection.cancelled && selection.object) {
             const object = selection.object;
-            game._pending_message = '';
             const value = await getLine(
                 `What do you want to name this ${object.name}?`,
                 (_ch, key) => key >= 32 && key < 127,
@@ -2419,7 +2416,6 @@ async function doname() {
         );
         if (!selection.cancelled && selection.object) {
             const object = selection.object;
-            game._pending_message = '';
             if (object.dknown === false) {
                 await pline('You would never recognize another one.');
             } else {
@@ -2551,7 +2547,7 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
             resetBulkTakeoff();
             const twoweap = game.u.twoweap;
             await setSecondaryWeapon(null, game);
-            await pline(twoweap ? 'You are no longer wielding two weapons at once.'
+            await plineWithContinuation(twoweap ? 'You are no longer wielding two weapons at once.'
                 : 'You no longer have a second weapon readied.');
             game.context.move = 1;
         } else if (item === game.uquiver) {

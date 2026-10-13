@@ -8,7 +8,7 @@
 // pagination, cursor position, and input boundaries.
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
-import { docrt, flush_screen } from './display.js';
+import { displayMessageWindow, docrt, flush_screen } from './display.js';
 import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED } from './const.js';
 import { NO_COLOR } from './terminal.js';
 import { menuLayout, windowOrigin, selectableMenuText, paintMenuPage, snapshotMenuUnderlay, restoreMenuUnderlay, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from './tty_menu.js';
@@ -91,6 +91,7 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     const d = display();
     if (!d)
         return 27;
+    await displayMessageWindow();
     const entries = lines.map(line => typeof line === 'string' ? { text: line } : line);
     if (pagerStyle === 'menu') {
         return await pageDisclosureWindow(d, entries, { marker, pagerStyle, restoreUnderlay });
@@ -265,6 +266,7 @@ export async function showChoiceWindow({ title, entries, validKeys = null, resto
     const d = display();
     if (!d)
         return 27;
+    await displayMessageWindow();
     const underlay = snapshotMenuUnderlay();
     const underlayCursor = restoreUnderlay
         ? { col: d.cursorCol, row: d.cursorRow, visible: d.cursorVisible } : null;
