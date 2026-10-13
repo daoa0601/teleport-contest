@@ -14,7 +14,7 @@ import { isAmmunition } from './weapon_type.js';
 const CLASS_NAMES = [
     'strange object', 'strange object', 'weapon', 'armor', 'ring', 'amulet',
     'tool', 'food', 'potion', 'scroll', 'spellbook', 'wand', 'coin', 'gem',
-    'large rock', 'iron ball', 'iron chain', 'venom',
+    'large rock', 'iron ball', 'chain', 'venom',
 ];
 
 export function weaponDescription(object: GameObject): string {
