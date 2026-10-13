@@ -16,7 +16,7 @@ import {
 } from './windows.js';
 import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
-import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
+import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import {
     MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE,
     W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit,
@@ -444,9 +444,12 @@ export async function rerollMenu() {
 }
 
 function inventorySections(items: readonly GameObject[] = game.inventory || [], includeGold = true): InventorySection[] {
+    return inventorySectionsInOrder(sortObjects(items, { mode: inventorySortMode() }), includeGold);
+}
+
+function inventorySectionsInOrder(items: readonly GameObject[], includeGold = true): InventorySection[] {
     const grouped = new Map<string | null, InventoryMenuItem[]>();
-    const sorted: GameObject[] = sortObjects(items, { mode: inventorySortMode() });
-    for (const item of sorted) {
+    for (const item of items) {
         if (!includeGold && item.oclass === COIN_CLASS) continue;
         observeObjectForNaming(item);
         consumeHallucinatedMenuObjectGlyph(item);
@@ -621,7 +624,11 @@ export async function ddoinv(): Promise<InventoryAction | null> {
 // all remaining carried slots, including gold, stay visible.
 export async function selectUsedInventoryLetter(avoidLetter: string | null): Promise<number> {
     const items = game.inventory.filter(item => item.invlet !== avoidLetter);
-    const result = await showInventoryWindow(inventorySections(items), {
+    // This menu walks the carried chain once per pack class; sortloot does
+    // not reorder items within a class, even when it sorts other menus.
+    const ordered = game.flags.sortpack === false ? items
+        : inventoryClassOrder().flatMap(oclass => items.filter(item => item.oclass === oclass));
+    const result = await showInventoryWindow(inventorySectionsInOrder(ordered), {
         title: 'Inventory letters used:', pickMode: PICK_ONE,
     });
     return result.key;

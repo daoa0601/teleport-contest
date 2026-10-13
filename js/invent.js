@@ -9,7 +9,7 @@ import { bot, clearMessageWindow, consumeHallucinatedMenuObjectGlyph, docrt, flu
 import { showChoiceWindow, showInventoryWindow, showMultiSelectWindow, } from './windows.js';
 import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
-import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
+import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
 import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
@@ -406,9 +406,11 @@ export async function rerollMenu() {
     return reroll;
 }
 function inventorySections(items = game.inventory || [], includeGold = true) {
+    return inventorySectionsInOrder(sortObjects(items, { mode: inventorySortMode() }), includeGold);
+}
+function inventorySectionsInOrder(items, includeGold = true) {
     const grouped = new Map();
-    const sorted = sortObjects(items, { mode: inventorySortMode() });
-    for (const item of sorted) {
+    for (const item of items) {
         if (!includeGold && item.oclass === COIN_CLASS)
             continue;
         observeObjectForNaming(item);
@@ -614,7 +616,11 @@ export async function ddoinv() {
 // all remaining carried slots, including gold, stay visible.
 export async function selectUsedInventoryLetter(avoidLetter) {
     const items = game.inventory.filter(item => item.invlet !== avoidLetter);
-    const result = await showInventoryWindow(inventorySections(items), {
+    // This menu walks the carried chain once per pack class; sortloot does
+    // not reorder items within a class, even when it sorts other menus.
+    const ordered = game.flags.sortpack === false ? items
+        : inventoryClassOrder().flatMap(oclass => items.filter(item => item.oclass === oclass));
+    const result = await showInventoryWindow(inventorySectionsInOrder(ordered), {
         title: 'Inventory letters used:', pickMode: PICK_ONE,
     });
     return result.key;
