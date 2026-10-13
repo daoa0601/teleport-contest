@@ -8,7 +8,7 @@ import {
     AD_ACID, AD_COLD, AD_ELEC, AD_ENCH, AD_FIRE, AD_PLYS, AD_STUN,
 } from './monster_attack_types.js';
 import { splitMonster } from './monster_clone.js';
-import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { staggerVerb } from './monster_hurtle.js';
 import { passiveAttack, passiveDamage } from './monster_passive.js';
@@ -56,7 +56,7 @@ export async function applyMonsterContactPassive(attacker: Monster, defender: Mo
     const passive = passiveAttack(defender);
     if (!passive) return { stopped: false, hit };
     const type = passive[1];
-    let damage = passiveDamage(defender.mnum, passive, rollDice);
+    let damage = passiveDamage(requireMonsterData(MONSTER_LEVEL, defender.mnum), passive, rollDice);
     const visible = canSeeMonster(attacker);
 
     if (type === AD_ACID) {

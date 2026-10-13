@@ -4,6 +4,7 @@ import type { GameState } from './game_state.js';
 // C ref: sounds.c domonnoise().
 
 import { game, requireLiveGame } from './gstate.js';
+import { recorderLocalEpochSeconds } from './calendar.js';
 import { canSpotMonster, glyphAt, map_invisible, plineWithContinuation } from './display.js';
 import { monsterName, monsterObjectPronoun, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
 import { wakeMonstersNear } from './monster_wake.js';
@@ -53,8 +54,11 @@ export function monsterSentenceSubject(monster: Pick<Monster, 'mnum' | 'female' 
 }
 
 export function sessionIsNight(datetime: string | null | undefined): boolean {
-    const hour = Number(String(datetime || '').slice(8, 10));
-    return Number.isInteger(hour) && (hour < 6 || hour > 21);
+    const epoch = recorderLocalEpochSeconds(datetime) || Date.now() / 1000;
+    const hour = Number(new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York', hourCycle: 'h23', hour: '2-digit',
+    }).format(new Date(epoch * 1000)));
+    return hour < 6 || hour > 21;
 }
 
 // C sounds.c:growl_sound(). Summoning uses the same noise while unseen.

@@ -3,13 +3,14 @@
 // tele_trap().
 
 import { heroIsHallucinating } from './senses.js';
+import { triggerHeroMagicTrapEffect } from './hero_magic_trap.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { maybeDestroyWeb } from './web_trap.js';
 import {
     currentAttribute, exerciseAttribute,
 } from './attrib.js';
-import { objectIsHardHelmet } from './armor.js';
+import { armorSimpleName, objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroFootName, heroHeadName, monsterFootName } from './body_parts.js';
 import {
     A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
@@ -40,9 +41,6 @@ import { loseHeroHp } from './hero_damage.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { refreshMovementProperties } from './properties.js';
 import { heroLiquidEffects } from './hack.js';
-import {
-    hasInternalInvisibility, syncHeroInvisibility,
-} from './hero_invisibility.js';
 import { dungeonDepth } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { explodeLandMine } from './landmine_explosion.js';
@@ -91,10 +89,6 @@ import {
 import { CLR_GREEN } from './terminal.js';
 import { cansee } from './vision.js';
 import { revealVibratingSquare } from './invocation.js';
-import {
-    grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty,
-    hasInvokedProperty, hasWornProperty, removeIntrinsicProperty,
-} from './properties.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { activateMagicPortal } from './magic_portal.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -724,58 +718,7 @@ async function triggerMagicTrap(trap: Trap) {
         return;
     }
 
-    const fate = rnd(20);
-    if (fate === 11) {
-        await plineWithContinuation('You hear a low hum.');
-        const intrinsicInvisible = hasInternalInvisibility(game);
-        const otherInvisible = !!(
-            hasIntrinsicProperty('invisible', 'form', game)
-            || hasWornProperty('invisible', game)
-            || hasCarriedProperty('invisible', null, game)
-            || hasInvokedProperty('invisible', game)
-        );
-        const currentlyInvisible = intrinsicInvisible || otherInvisible;
-        if (!currentlyInvisible) {
-            if (!game.blind) {
-                await plineWithContinuation(
-                    game.u?.seeInvisible
-                        ? 'Gee!  All of a sudden, you can see right through yourself.'
-                        : "Gee!  All of a sudden, you can't see yourself.",
-                );
-            }
-        } else if (!otherInvisible) {
-            if (!game.blind) {
-                await plineWithContinuation(
-                    game.u?.seeInvisible
-                        ? "You can't see through yourself anymore."
-                        : 'You can see yourself again!',
-                );
-            }
-        } else {
-            await plineWithContinuation(
-                `You feel a little more ${
-                    intrinsicInvisible ? 'obvious' : 'hidden'
-                } now.`,
-            );
-        }
-        const nextIntrinsic = !intrinsicInvisible;
-        if (nextIntrinsic) grantIntrinsicProperty('invisible', 'outside', game);
-        else {
-            removeIntrinsicProperty('invisible', game);
-            game.u.invisibleTurns = 0;
-        }
-        syncHeroInvisibility(game);
-        newsym(game.u.ux, game.u.uy);
-        return;
-    }
-    const message = fate === 13
-        ? 'A shiver runs up and down your spine!'
-        : fate === 14 ? 'You hear distant howling.'
-            : fate === 15 ? 'You suddenly yearn for your distant homeland.'
-                : fate === 16 ? 'Your pack shakes violently!'
-                    : fate === 17 ? 'You smell charred flesh.'
-                        : fate === 18 ? 'You feel tired.' : null;
-    if (message) await pline(message);
+    await triggerHeroMagicTrapEffect();
 }
 
 async function triggerProjectileTrap(trap: Trap) {
@@ -1054,11 +997,7 @@ async function triggerBearTrap(trap: Trap, {
     return false;
 }
 
-function rustTargetName(object: GameObject | null | undefined, fallback: string): string {
-    return object?.name || OBJECT_NAMES[object?.otyp ?? -1] || fallback;
-}
-
-async function wetHeroObject(object: GameObject | null, description: string) {
+async function wetHeroObject(object: GameObject | null, description: string | null = null) {
     const messages: string[] = [];
     const result = await waterDamageObject(object, messages, game, {
         force: true,
@@ -1092,7 +1031,7 @@ async function triggerRustTrap(trap: Trap) {
         );
         const helmet = heroObject('uarmh');
         await wetHeroObject(
-            helmet, rustTargetName(helmet, 'helmet'),
+            helmet, helmet ? armorSimpleName(helmet, game) : 'helmet',
         );
     } else if (target === 1) {
         await plineWithContinuation(
@@ -1107,12 +1046,10 @@ async function triggerRustTrap(trap: Trap) {
             if (hero.twoweap) weapon = secondary;
             else if (primary && OBJECT_BIMANUAL[primary.otyp])
                 weapon = primary;
-            await wetHeroObject(
-                weapon, rustTargetName(weapon, 'weapon'),
-            );
+            await wetHeroObject(weapon);
             const gloves = heroObject('uarmg');
             await wetHeroObject(
-                gloves, rustTargetName(gloves, 'gloves'),
+                gloves, gloves ? armorSimpleName(gloves, game) : 'gloves',
             );
         }
     } else if (target === 2) {
@@ -1120,12 +1057,10 @@ async function triggerRustTrap(trap: Trap) {
             `A gush of water hits your right ${heroArmName(game)}!`,
         );
         const weapon = heroObject('uwep');
-        await wetHeroObject(
-            weapon, rustTargetName(weapon, 'weapon'),
-        );
+        await wetHeroObject(weapon);
         const gloves = heroObject('uarmg');
         await wetHeroObject(
-            gloves, rustTargetName(gloves, 'gloves'),
+            gloves, gloves ? armorSimpleName(gloves, game) : 'gloves',
         );
     } else {
         await plineWithContinuation('A gush of water hits you!');
@@ -1140,11 +1075,9 @@ async function triggerRustTrap(trap: Trap) {
         const cloak = heroObject('uarmc');
         const suit = heroObject('uarm');
         const shirt = heroObject('uarmu');
-        const torso = cloak || suit || shirt;
-        const fallback = cloak ? 'cloak' : shirt ? 'shirt' : 'armor';
-        await wetHeroObject(
-            torso, rustTargetName(torso, fallback),
-        );
+        if (cloak) await wetHeroObject(cloak, armorSimpleName(cloak, game));
+        else if (suit) await wetHeroObject(suit, armorSimpleName(suit, game));
+        else await wetHeroObject(shirt, 'shirt');
     }
 
     if (heroIsPolymorphed(game) && hero.umonnum === PM_IRON_GOLEM) {

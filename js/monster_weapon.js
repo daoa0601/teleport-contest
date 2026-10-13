@@ -2,7 +2,7 @@
 // C refs: weapon.c select_hwep(), oselect(), setmnotwielded(),
 // mwepgone(), and possibly_unwield().
 import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARMG, W_ARMS, W_WEP, } from './const.js';
-import { objectName, observeObjectForNaming, observeDistantObjectForNaming, } from './objnam.js';
+import { objectName, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName, } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
 import { canSeeMonster, newsym, plineWithContinuation } from './display.js';
@@ -273,7 +273,8 @@ export async function wieldMonsterWeapon(monster, state = game, { publish = plin
                 observeObjectForNaming(weapon, { state });
                 const description = inventoryItemDescription(weapon);
                 await publish(`${monsterSentenceSubject(monster)} tries to wield ${description}.`);
-                await publish(`${namedWeapon(previous, state)} ${welded}!`);
+                observeObjectForNaming(previous, { state });
+                await publish(`${ownedObjectName(previous, state)} ${welded}!`);
             }
             previous.bknown = true;
         }
@@ -340,7 +341,7 @@ function namedWeapon(weapon, state) {
     const artifact = artifactById(weapon.oartifact, state);
     if (artifact)
         return artifact.name;
-    const name = requireObjectData(OBJECT_NAMES, weapon.otyp);
+    const name = objectName(weapon, state);
     return `The ${(weapon.quan ?? weapon.quantity ?? 1) > 1 ? makePlural(name) : name}`;
 }
 function wieldingHand(monster, weapon) {

@@ -456,7 +456,8 @@ void test('a cursed loadstone can keep the hero from crawling out', async () => 
     ]);
     const death = deaths[0];
     assert.ok(death !== undefined);
-    assert.equal(death.killer, 'deep water');
+    assert.equal(death.killer, 'pool of water');
+    assert.equal(death.deathCause, 'drowned in a pool of water');
 });
 
 void test('life saving moves a drowned hero to dry land', async () => {
@@ -591,5 +592,5 @@ void test('water walking does not protect against a wall of water', async () => 
     assert.ok(result !== null && result !== undefined);
     assert.equal(result.entered, true);
     assert.equal(game.u.uinwater, 1);
-    assert.equal(messages[0], 'You plunge into the wall of water!');
+    assert.equal(messages[0], 'You plunge into the wall of water.');
 });

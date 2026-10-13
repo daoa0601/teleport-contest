@@ -11,7 +11,7 @@ import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { healMonster } from './mon.js';
 import { erodeArmor, erodeObject } from './object_erosion.js';
-import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName, requireMonsterData, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName, requireMonsterData, } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { AD_ACID, AD_COLD, AD_CORR, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_STON, AD_STUN, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
@@ -33,7 +33,7 @@ export async function applyHeroContactPassive(monster, { hit, defenderSurvived =
     if (!attack)
         return { handled: false, heroDied: false };
     const damageType = attack[1];
-    const damage = passiveDamage(monster.mnum, attack, rollDice);
+    const damage = passiveDamage(monster.m_lev, attack, rollDice);
     const context = {
         monster,
         damageType,
@@ -385,12 +385,12 @@ export function passiveAttack(monster) {
         return null;
     return (MONSTER_ATTACKS[monster.mnum] || []).find(([attackType]) => attackType === AT_NONE) || null;
 }
-export function passiveDamage(species, attack, rollDice) {
+export function passiveDamage(level, attack, rollDice) {
     const [, , dice, sides] = attack;
     if (dice > 0)
         return rollDice(dice, sides);
     if (sides > 0)
-        return rollDice(requireMonsterData(MONSTER_LEVEL, species) + 1, sides);
+        return rollDice(level + 1, sides);
     return 0;
 }
 function monsterName(monster) {

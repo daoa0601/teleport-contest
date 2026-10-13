@@ -9,7 +9,7 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { splitHeroMonsterForm } from './mklev.js';
 import { applyMonsterGolemEffects, paralyzeMonster } from './mon.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BOOM, AT_NONE, AT_WEAP, } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { staggerVerb } from './monster_hurtle.js';
 import { passiveDamage } from './monster_passive.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, } from './monster_resistance.js';
@@ -33,7 +33,7 @@ export async function applyHeroFormPassive(monster, oldForm, attackType, { state
     if (!passive)
         return { attackerStopped: false };
     const type = passive[1];
-    let damage = passiveDamage(oldForm, passive, rollDice);
+    let damage = passiveDamage(requireMonsterData(MONSTER_LEVEL, oldForm), passive, rollDice);
     const weapon = monsterWieldedWeapon(monster);
     if (type === AD_ACID) {
         if (random(2) === 0) {

@@ -19,7 +19,7 @@ import { game } from './gstate.js';
 import { healMonster } from './mon.js';
 import { erodeArmor, erodeObject } from './object_erosion.js';
 import {
-    MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName,
     requireMonsterData,
 } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
@@ -119,7 +119,7 @@ export async function applyHeroContactPassive(monster: Monster, {
     if (!attack) return { handled: false, heroDied: false };
 
     const damageType = attack[1];
-    const damage = passiveDamage(monster.mnum, attack, rollDice);
+    const damage = passiveDamage(monster.m_lev, attack, rollDice);
     const context: PassiveContext = {
         monster,
         damageType,
@@ -535,10 +535,10 @@ export function passiveAttack(monster: Pick<Monster, 'mnum'> | null | undefined)
     ) || null;
 }
 
-export function passiveDamage(species: number, attack: MonsterAttack, rollDice: (count: number, sides: number) => number): number {
+export function passiveDamage(level: number, attack: MonsterAttack, rollDice: (count: number, sides: number) => number): number {
     const [, , dice, sides] = attack;
     if (dice > 0) return rollDice(dice, sides);
-    if (sides > 0) return rollDice(requireMonsterData(MONSTER_LEVEL, species) + 1, sides);
+    if (sides > 0) return rollDice(level + 1, sides);
     return 0;
 }
 

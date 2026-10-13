@@ -24,7 +24,7 @@ import {
     AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE,
     AD_WRAP, AT_BOOM, AT_NONE, AT_WEAP,
 } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { staggerVerb } from './monster_hurtle.js';
 import { passiveDamage } from './monster_passive.js';
 import {
@@ -75,7 +75,7 @@ export async function applyHeroFormPassive(monster: Monster, oldForm: number, at
     );
     if (!passive) return { attackerStopped: false };
     const type = passive[1];
-    let damage = passiveDamage(oldForm, passive, rollDice);
+    let damage = passiveDamage(requireMonsterData(MONSTER_LEVEL, oldForm), passive, rollDice);
     const weapon = monsterWieldedWeapon(monster);
 
     if (type === AD_ACID) {

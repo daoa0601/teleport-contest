@@ -665,11 +665,12 @@ export async function makedog() {
     g.startingPet = pet;
     g.context.startingpet_mid = pet.m_id;
     await seeMonsterCloseup(pet, { photo: g.inventory.some(object => object.otyp === EXPENSIVE_CAMERA) });
-    if (pettype === MONSTER_NAME.indexOf('little dog')) {
-        const name = DEFAULT_DOG_NAMES[role];
-        if (name)
-            setMonsterGivenName(pet, name);
-    }
+    const name = pettype === MONSTER_NAME.indexOf('little dog')
+        ? g.flags.dogname || DEFAULT_DOG_NAMES[role]
+        : pettype === MONSTER_NAME.indexOf('kitten') ? g.flags.catname
+            : pettype === MONSTER_NAME.indexOf('pony') ? g.flags.horsename : null;
+    if (name)
+        setMonsterGivenName(pet, name);
     // dog.c:initedog() assigns kill credit after making the pet peaceful.
     setMonsterMalign(pet, g);
     if (!g.u.uconduct)
@@ -972,7 +973,15 @@ function linkInventoryItem(item) {
     assignInventoryLetter(item);
     item.where = 'inventory';
     game.inventory.push(item);
+    // C invent.c:addinv_core0()/reorder_invent(): fixed letters order the
+    // carried chain, including gold before letters and lowercase before uppercase.
+    if (game.flags.fixinv !== false) {
+        game.inventory.sort((left, right) => inventoryLetterRank(left) - inventoryLetterRank(right));
+    }
     return item;
+}
+function inventoryLetterRank(item) {
+    return (item.invlet?.charCodeAt(0) ?? 0) ^ 0x20;
 }
 async function finishAddedInventoryItem(item) {
     await finishInventoryAddition(item, game);

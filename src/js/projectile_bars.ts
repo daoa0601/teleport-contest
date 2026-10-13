@@ -11,7 +11,7 @@ import { specialLevelAt } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { MONSTER_SIZE, requireMonsterData } from './monster_data.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { breakFloorObject } from './object_breakage.js';
 import {
     BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, CORPSE, CREDIT_CARD,
@@ -120,7 +120,7 @@ export async function projectileHitsIronBars(object: GameObject, {
             noise *= 2;
         }
     }
-    if (noise) wakeMonstersNear(barsX, barsY, noise, state);
+    if (noise) await wakeMonstersNearWithMessages(barsX, barsY, noise, state, publish);
     return { blocked: true, destroyed: false, heroDied: !!state.program_state.gameover };
 }
 

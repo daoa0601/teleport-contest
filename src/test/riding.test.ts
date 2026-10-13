@@ -309,7 +309,8 @@ void test('a mount becoming too small drops its saddle and throws the rider', as
     assert.equal(saddle.where, 'floor');
     assert.ok(game.u.uhp <= health - 10 && game.u.uhp >= health - 19);
     assert.ok((game.u._woundedLegTurns ?? 0) > 0);
-    assert.match(messages[0] ?? '', /pony turns into a grid bug/);
+    // C newcham() announces the new form before mon_break_armor() drops the saddle.
+    assert.equal(messages[0], 'Your pony turns into a saddled grid bug!');
 });
 
 void test('a mount becoming a horse keeps its rider and saddle', async () => {

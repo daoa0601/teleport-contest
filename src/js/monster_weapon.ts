@@ -8,7 +8,7 @@ import {
     W_ARMG, W_ARMS, W_WEP,
 } from './const.js';
 import {
-    objectName, observeObjectForNaming, observeDistantObjectForNaming,
+    objectName, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName,
 } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
@@ -322,7 +322,8 @@ export async function wieldMonsterWeapon(monster: Monster, state: GameState = ga
                 observeObjectForNaming(weapon, { state });
                 const description = inventoryItemDescription(weapon);
                 await publish(`${monsterSentenceSubject(monster)} tries to wield ${description}.`);
-                await publish(`${namedWeapon(previous, state)} ${welded}!`);
+                observeObjectForNaming(previous, { state });
+                await publish(`${ownedObjectName(previous, state)} ${welded}!`);
             }
             previous.bknown = true;
         }
@@ -390,7 +391,7 @@ function weaponForCurrentAction(monster: Monster, state: GameState): GameObject 
 function namedWeapon(weapon: GameObject, state: GameState): string {
     const artifact = artifactById(weapon.oartifact, state);
     if (artifact) return artifact.name;
-    const name = requireObjectData(OBJECT_NAMES, weapon.otyp);
+    const name = objectName(weapon, state);
     return `The ${(weapon.quan ?? weapon.quantity ?? 1) > 1 ? makePlural(name) : name}`;
 }
 

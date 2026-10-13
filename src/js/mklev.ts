@@ -206,7 +206,7 @@ import {
 } from './monster_inventory.js';
 import { setupElementalBubbles } from './elemental.js';
 import { maybeGiveDomesticSaddle, putSaddleOnMonster } from './steed.js';
-import { inTown, roomForIndex, roomsAt } from './room.js';
+import { insideRoom, inTown, roomForIndex, roomsAt } from './room.js';
 import { insideShopRoomAt } from './shk.js';
 import { convertSecretDoor } from './detect.js';
 import {
@@ -2548,10 +2548,11 @@ async function makemon(
             const box = await mksobj(LARGE_BOX, false, false);
             const cat = await mksobj(CORPSE, true, false);
             box.spe = 1;
-            cat.corpsenm = 33; // PM_HOUSECAT
+            set_corpsenm(cat, 33); // PM_HOUSECAT
             stopObjectTimer(cat, OBJECT_TIMER_KIND.ROT_CORPSE);
             cat.otrapped = false;
-            box.contents = [cat];
+            await addCreatedObjectToContainer(box, cat);
+            box.owt = objectWeight(box);
             await addCreatedObjectToMonsterInventory(pendingMonster, box, game);
             hasMonsterInventory = true;
         }
@@ -3776,7 +3777,6 @@ export async function mklev(): Promise<void> {
     g.in_mklev = true;
     await makelevel();
     await currentLuaLifecycle().runCallbacks(g, 'level_enter');
-    countLevelFeatures();
     await level_finalize_topology();
     g.in_mklev = false;
 }
@@ -3974,12 +3974,16 @@ function setLevelTerrainType(x: number, y: number, typ: number): boolean {
         loc.arboreal_sdoor = 1;
         return true;
     }
+    const oldType = loc.typ;
     loc.typ = typ;
     if (IS_LAVA(typ)) loc.lit = true;
     if (typ === ICE && game._activeSpecialLevel?.levelInitialized) {
         loc.icedpool = game._activeSpecialLevel.icedPools
             ? ICED_POOL : ICED_MOAT;
     }
+    // C mkmaze.c:set_levltyp() recounts when fountain or sink membership changes.
+    if ((oldType === FOUNTAIN) !== (typ === FOUNTAIN)
+        || (oldType === SINK) !== (typ === SINK)) countLevelFeatures();
     return true;
 }
 
@@ -4858,6 +4862,22 @@ interface SpecialTrapOptions {
     victim?: boolean;
 }
 
+// sp_lev.c:create_monster() searches before construction, including when
+// a worm's tail occupies the requested square. The result must stay in croom.
+async function createSpecialMonster(
+    context: SpecialLevelContext, mndx: number | null, x: number, y: number,
+    mmflags: number,
+): Promise<MonsterBirthState | null> {
+    const level = requireGameLevel();
+    if (monsterAtPosition(level, x, y)) {
+        const nearby = findMonsterNearPosition(mndx, x, y);
+        if (nearby) { x = nearby.x; y = nearby.y; }
+    }
+    const room = context._room;
+    if (room && !insideRoom(level, room, x, y)) return null;
+    return await makemon(mndx, x, y, mmflags);
+}
+
 async function specialMonsterAt(
     context: SpecialLevelContext, mndx: number | null, x: number, y: number,
     {
@@ -4878,8 +4898,8 @@ async function specialMonsterAt(
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
     mndx = applyMinesSameRaceMonsterGate(mndx);
-    const monster = await makemon(
-        mndx, context.xstart + x, context.ystart + y, mmflags,
+    const monster = await createSpecialMonster(
+        context, mndx, context.xstart + x, context.ystart + y, mmflags,
     );
     if (monster && requestedFemale !== null) monster.female = requestedFemale;
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
@@ -4900,7 +4920,6 @@ async function specialMonsterClassAt(
         roamerAlignment = null,
     }: SpecialMonsterOptions = {},
 ): Promise<Monster | null> {
-    const level = requireGameLevel();
     // A class request resolves random alignment and mkclass(), but unlike a
     // named species it has no separate find_montype() gender draw.  Explicit
     // coordinates also bypass get_location()'s two-axis sampling.
@@ -4911,11 +4930,7 @@ async function specialMonsterClassAt(
     // A null class choice asks makemon() for a random species.
     mndx = applyMinesSameRaceMonsterGate(mndx);
     const absoluteX = context.xstart + x, absoluteY = context.ystart + y;
-    const occupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, game) && candidate.mhp > 0
-        && candidate.mx === absoluteX && candidate.my === absoluteY);
-    const monster = occupied
-        ? await makemonNear(mndx, absoluteX, absoluteY, mmflags)
-        : await makemon(mndx, absoluteX, absoluteY, mmflags);
+    const monster = await createSpecialMonster(context, mndx, absoluteX, absoluteY, mmflags);
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
     if (monster && alignment != null)
@@ -4974,7 +4989,6 @@ async function specialExplicitMonster(
         roamerAlignment = null,
     }: SpecialMonsterOptions = {},
 ): Promise<Monster | null> {
-    const level = requireGameLevel();
     // sp_lev.c find_montype() resolves a legal gender while parsing the Lua
     // table.  makemon() independently initializes gender, then
     // create_monster() restores this explicit value after construction.
@@ -4989,11 +5003,7 @@ async function specialExplicitMonster(
     const selectedSpecies = applyMinesSameRaceMonsterGate(mndx);
     const point = await specialMonsterRandomLocation(context, selectedSpecies);
     if (!point) return null;
-    const occupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, game) && candidate.mhp > 0
-        && candidate.mx === point.x && candidate.my === point.y);
-    const monster = occupied
-        ? await makemonNear(selectedSpecies, point.x, point.y, mmflags)
-        : await makemon(selectedSpecies, point.x, point.y, mmflags);
+    const monster = await createSpecialMonster(context, selectedSpecies, point.x, point.y, mmflags);
     if (!monster) return null;
     if (requestedFemale != null) monster.female = requestedFemale;
     if (peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
@@ -5017,7 +5027,6 @@ async function specialMonsterOfClass(
         roamerAlignment = null,
     }: SpecialMonsterOptions = {},
 ): Promise<Monster | null> {
-    const level = requireGameLevel();
     // create_monster() resolves its random alignment before a one-character
     // monster id is expanded through mkclass_aligned().
     if (randomAlignment) consumeSpecialMonsterAlignment();
@@ -5030,12 +5039,7 @@ async function specialMonsterOfClass(
     mndx = applyMinesSameRaceMonsterGate(mndx);
     const point = await specialMonsterRandomLocation(context, mndx);
     if (!point) return null;
-    const occupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, game) && candidate.mhp > 0
-        && candidate.mx === point.x && candidate.my === point.y);
-    const monster = occupied
-        ? makemonNear(mndx, point.x, point.y, mmflags)
-        : makemon(mndx, point.x, point.y, mmflags);
-    const resolved = await monster;
+    const resolved = await createSpecialMonster(context, mndx, point.x, point.y, mmflags);
     if (resolved && peaceful != null)
         resolved.mpeaceful = peaceful ? 1 : 0;
     if (resolved && asleep != null)
@@ -5111,6 +5115,12 @@ async function specialTrapOfType(
     context: SpecialLevelContext, typ: number, options: SpecialTrapOptions,
     coordinate: Position | null,
 ): Promise<Trap | null> {
+    // C sp_lev.c:create_trap(): invocation placement owns its coordinates,
+    // including when Lua supplies an explicit location or a room.
+    if (typ === VIBRATING_SQUARE) {
+        const square = vibratingSquarePoint();
+        return await maketrap(square.x, square.y, VIBRATING_SQUARE);
+    }
     const point = await specialTrapLocation(context, coordinate);
     if (!point) return null;
     return await mktrap(typ, options, null, point);
@@ -5123,17 +5133,12 @@ async function specialMonster(context: SpecialLevelContext, {
     mmflags = 0,
     roamerAlignment = null,
 }: SpecialMonsterOptions = {}): Promise<Monster | null | undefined> {
-    const level = requireGameLevel();
     if (randomAlignment) consumeSpecialMonsterAlignment();
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
     const point = await specialRandomLocation(context);
     if (!point) return;
-    const occupiedPoint = level.monsters.some(monster => monsterHasMapPosition(monster, game) && monster.mhp > 0
-        && monster.mx === point.x && monster.my === point.y);
-    const monster = occupiedPoint
-        ? await makemonNear(null, point.x, point.y, mmflags)
-        : await makemon(null, point.x, point.y, mmflags);
+    const monster = await createSpecialMonster(context, null, point.x, point.y, mmflags);
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
     if (monster && alignment != null)
@@ -5737,17 +5742,13 @@ async function createLuaFeature(
         const loc = level.at(
             context.xstart + point.x, context.ystart + point.y,
         );
-        if (loc) {
+        if (loc && !IS_FURNITURE(loc.typ)) {
             loc.typ = featureType;
-            if (featureType === FOUNTAIN) level.flags.nfountains++;
-            else if (featureType === SINK) level.flags.nsinks++;
         }
         return;
     }
-    if (await specialFeatureOfType(context, featureType)) {
-        if (featureType === FOUNTAIN) level.flags.nfountains++;
-        else if (featureType === SINK) level.flags.nsinks++;
-    }
+    // C sp_lev.c:sel_set_feature() writes terrain without updating counters.
+    await specialFeatureOfType(context, featureType);
 }
 
 function noncoalignedSpecialAlignment() {
@@ -6121,7 +6122,7 @@ async function createLuaObject(
     if (options.trapped && Object.hasOwn(options, 'tknown'))
         object.tknown = !!options.tknown;
     object.greased = !!options.greased;
-    if (object.otyp === STATUE || object.otyp === CORPSE) {
+    if (objectType === STATUE || objectType === CORPSE) {
         object.spe = (options.historic ? CORPSTAT_HISTORIC : 0)
             | (options.male ? CORPSTAT_MALE : 0)
             | (options.female ? CORPSTAT_FEMALE : 0);
@@ -6808,6 +6809,7 @@ function createLuaLevelSession() {
             const allowedFlips = currentLevel().allowFlips;
             if (allowedFlips === undefined) throw new Error('Lua level flip flags are uninitialized');
             flipSpecialLevelRandom(allowedFlips);
+            countLevelFeatures();
             if (currentLevel().solidify) solidifyLuaMap(mappedCells);
             flipLuaRegions(currentLevel());
         },
@@ -6866,7 +6868,6 @@ async function specialRandomMonsterAt(context: SpecialLevelContext, x: number, y
     mmflags = 0,
     roamerAlignment = null,
 }: SpecialMonsterOptions = {}): Promise<Monster | null> {
-    const level = requireGameLevel();
     // A coordinate-only des.monster() resolves random alignment before
     // makemon(NULL, x, y).  Unlike a named species, it has no find_montype()
     // gender draw and unlike des.monster() without coordinates it performs no
@@ -6876,11 +6877,7 @@ async function specialRandomMonsterAt(context: SpecialLevelContext, x: number, y
         ? roamerAlignment() : roamerAlignment;
     const absoluteX = context.xstart + x;
     const absoluteY = context.ystart + y;
-    const occupied = level.monsters.some(monster => monsterHasMapPosition(monster, game) && monster.mhp > 0
-        && monster.mx === absoluteX && monster.my === absoluteY);
-    const monster = occupied
-        ? await makemonNear(null, absoluteX, absoluteY, mmflags)
-        : await makemon(null, absoluteX, absoluteY, mmflags);
+    const monster = await createSpecialMonster(context, null, absoluteX, absoluteY, mmflags);
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
     if (monster && alignment != null)
@@ -8169,43 +8166,6 @@ function stockRoomGoodPos(sroom: Room, shopDoor: ShopDoor, x: number, y: number)
         || (y === sroom.hy && shopDoor.door.y === y + 1));
 }
 
-export function recorderLocalEpochSeconds(datetime: string | null | undefined): number {
-    if (!datetime || !/^\d{14}$/.test(datetime)) return 0;
-    const values = [
-        Number(datetime.slice(0, 4)), Number(datetime.slice(4, 6)),
-        Number(datetime.slice(6, 8)), Number(datetime.slice(8, 10)),
-        Number(datetime.slice(10, 12)), Number(datetime.slice(12, 14)),
-    ] as const;
-    const target = Date.UTC(values[0], values[1] - 1, values[2],
-        values[3], values[4], values[5]);
-    const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/New_York', hourCycle: 'h23',
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-    });
-    // The deterministic-recorder patch copies localtime(now) into struct tm
-    // and then overwrites the fixed calendar fields without resetting
-    // tm_isdst.  Preserve that inherited current New York offset rather than
-    // applying the fixed date's historically correct DST offset.
-    const currentEpoch = Math.trunc(Date.now() / 1000) * 1000;
-    const currentParts = new Map<string, number>(
-        formatter.formatToParts(new Date(currentEpoch))
-            .filter(part => part.type !== 'literal')
-            .map(part => [part.type, Number(part.value)]),
-    );
-    const part = (name: string): number => {
-        const value = currentParts.get(name);
-        if (value === undefined) throw new Error(`Local time formatter omitted ${name}`);
-        return value;
-    };
-    const currentLocalProjection = Date.UTC(
-        part('year'), part('month') - 1, part('day'),
-        part('hour'), part('minute'), part('second'),
-    );
-    const inheritedOffset = currentLocalProjection - currentEpoch;
-    return Math.trunc((target - inheritedOffset) / 1000);
-}
-
 // C shknam.c:nameshk(). Store the prefixed identity; presentation strips it.
 function assignShopkeeperIdentity(monster: Monster, shopIndex: number): void {
     const level = requireGameLevel();
@@ -8792,7 +8752,7 @@ async function makerogueghost(): Promise<void> {
     const ghost = await makemon(287, x, y, 0); // PM_GHOST
     if (!ghost) return;
     ghost.msleeping = 1;
-    ghost.name = roguename();
+    setMonsterGivenName(ghost, roguename());
 
     let ghostobj;
     if (rn2(4)) {
@@ -10223,7 +10183,7 @@ function mkfount(croom: Room): void {
     if (!find_okay_roompos(croom, pos)) return;
     const loc = level.at(pos.x, pos.y);
     if (loc) {
-        loc.typ = FOUNTAIN;
+        if (!setLevelTerrainType(pos.x, pos.y, FOUNTAIN)) return;
         if (!rn2(7)) loc.blessedftn = 1;
         level.flags.nfountains++;
     }
@@ -10319,7 +10279,7 @@ export async function fill_ordinary_room(croom: Room | null | undefined, bonus_i
     if (!rn2(60)) {
         if (find_okay_roompos(croom, pos)) {
             const loc = level.at(pos.x, pos.y);
-            if (loc) { loc.typ = SINK; level.flags.nsinks = (level.flags.nsinks || 0) + 1; }
+            if (loc && setLevelTerrainType(pos.x, pos.y, SINK)) level.flags.nsinks++;
         }
     }
     // Altar
