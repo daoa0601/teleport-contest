@@ -47,7 +47,8 @@ export async function useMonsterMindBlast(
             if (await loseHeroHp(damage, 'psychic blast', { state, publish })) return true;
         }
     }
-    for (const target of Array.from(state.level.monsters)) {
+    // makemon() prepends to fmon; level.monsters appends new monsters.
+    for (const target of Array.from(state.level.monsters).reverse()) {
         if (target.dead || target.mhp <= 0 || target === monster
             || !!target.mpeaceful === !!monster.mpeaceful || monsterIsMindless(target.mnum)) continue;
         if (!((monsterIsTelepathic(target.mnum) && (random(2) !== 0 || target.mblinded))

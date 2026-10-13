@@ -66,6 +66,34 @@ void test('a psychic blast wakes and hurts opposing minds anywhere on the level'
     assert.equal(ally.mhp, 20);
 });
 
+void test('a psychic blast hits newer monsters first, assigning damage and messages in that order', async () => {
+    freshObjectRoom({ right: 24, hero: { invulnerable: true } });
+    requirePlayingGame(game);
+    const flayer = await createMonsterAt('mind flayer', 13, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    const older = await createMonsterAt('floating eye', 14, 10, MM_NOGRP | NO_MINVENT);
+    older.mpeaceful = 1;
+    older.mhp = older.mhpmax = 20;
+    const newer = await createMonsterAt('master mind flayer', 15, 10, MM_NOGRP | NO_MINVENT);
+    newer.mpeaceful = 1;
+    newer.mhp = newer.mhpmax = 20;
+    const messages: string[] = [];
+    let damage = 0;
+
+    await useMonsterMindBlast(flayer, game, {
+        resistsConflict: () => true,
+        random: limit => limit - 1,
+        rollOne: () => { damage += 3; return damage; },
+        publish: async message => { messages.push(message); },
+    });
+
+    assert.equal(newer.mhp, 17, 'the newest opposing mind receives the first damage roll');
+    assert.equal(older.mhp, 14, 'the older opposing mind receives the second damage roll');
+    assert.deepEqual(messages.filter(message => message.startsWith('It locks on to ')), [
+        'It locks on to the master mind flayer.',
+        'It locks on to the floating eye.',
+    ]);
+});
+
 void test('a distant psychic blast is faint and does not attack any minds', async () => {
     freshObjectRoom({ right: 30, hero: { uhp: 100, uhpmax: 100, telepathy: true } });
     requirePlayingGame(game);
