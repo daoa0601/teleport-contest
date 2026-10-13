@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core, performMonsterHeroAttack } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
-import { rhack } from '../js/cmd.js';
-import { LOST_NONE, LOST_STOLEN, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
+import { continueCountedCommand, rhack } from '../js/cmd.js';
+import { LOST_NONE, LOST_STOLEN, MENU_PARTIAL, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flushPendingTopline, plineWithContinuation } from '../js/display.js';
 import { placeObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resetInputState, pushKey } from '../js/input.js';
+import { resetInputState, pushKey, pushKeys } from '../js/input.js';
 import { removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
 import { DAGGER, LEATHER_ARMOR, OBJECT_NAMES } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
@@ -179,6 +179,33 @@ void test('a monkey can give up stealing boots even after removal has started', 
     assert.equal(game._delayedAction, null, 'The theft attempt still cancels armor removal');
     assert.match(messages.join('\n'), /The monkey tries to take your shoes but gives up\./);
 });
+
+for (const female of [true, false]) {
+    void test(`a nymph continues ${female ? 'removing' : 'taking off'} the suit already being removed with A`, async () => {
+        freshObjectRoom({ flags: { female, menu_style: MENU_PARTIAL }, hero: { uhp: 100, uhpmax: 100 } });
+        requirePlayingGame(game);
+        const suit = await addInventoryObject(LEATHER_ARMOR);
+        wearHeroArmor(suit);
+        pushKeys(`${suit.invlet}\n`);
+        await rhack('A'.charCodeAt(0));
+        await continueCountedCommand();
+        assert.ok(game.uarm === suit, 'Bulk removal leaves the suit worn during its delay');
+        const thief = await nearbyThief();
+        const input = resetInputState();
+        installPagerInput(input, { expected: /nymph|suit|disrobing/, limit: 12 });
+        const messages: string[] = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+
+        await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+        await flushPendingTopline();
+
+        assert.match(messages.join('\n'), female
+            ? /You gladly continue removing your suit\./
+            : /you continue taking off your suit\./);
+        assert.equal(game.uarm, null);
+        assert.ok(game.inventory.includes(suit), 'The charmed suit waits for its theft delay');
+    });
+}
 
 for (const restricted of [false, true]) {
     void test(`a nymph refusing a paralyzed hero's armor ${restricted ? 'reports blocked teleportation' : 'teleports before fleeing'}`, async () => {

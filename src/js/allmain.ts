@@ -48,6 +48,7 @@ import { monsterMissMessage } from './monster_miss.js';
 import { monsterIsAnimal } from './monster_data.js';
 import { monsterCanCarryObject } from './monster_carry.js';
 import { armorSimpleName, stopDonning } from './armor.js';
+import { isBeingTakenOff } from './takeoff_state.js';
 import { OBJECT_DELAY } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import type { MonsterAttackDeathOptions } from './monster_attack_death.js';
@@ -1855,7 +1856,8 @@ async function resolveDeferredHeroItemTheft(
         && object !== game.uquiver && !(object === game.uswapwep && !game.u.twoweap))
         || !monsterCanCarryObject(monster, object, game, draw))) return refuse();
     const previousDelay = game._delayedAction;
-    const wasDoffing = previousDelay?.kind === 'remove' && previousDelay.object === object;
+    const wasDoffing = (previousDelay?.kind === 'remove' && previousDelay.object === object)
+        || isBeingTakenOff(object, game);
     await stopDonning(object, game);
     await stopHeroOccupation(game);
     // stop_donning() makes interrupted dressing armor unworn before steal()
