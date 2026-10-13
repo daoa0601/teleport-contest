@@ -6997,6 +6997,12 @@ async function pushBoulder(boulder: GameObject, x: number, y: number, dx: number
     // honor `I` and cannot reveal the boulder which now occupies the square.
     unmap_invisible(targetX, targetY, false);
     await moveObject(boulder, targetX, targetY, game);
+    if (heroIsBlind(game)) {
+        feel_location(targetX, targetY);
+        feel_location(x, y);
+    } else {
+        newsym(x, y);
+    }
     return true;
 }
 
