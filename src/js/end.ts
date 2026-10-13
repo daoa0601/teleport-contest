@@ -39,7 +39,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
-    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, STARVING, STONING,
+    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, POISONING, STARVING, STONING,
     Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd,
 } from './const.js';
 import {
@@ -1309,6 +1309,8 @@ async function completeOrdinaryDeath({
     killer, possessionAnswer = null, deathVerb = 'died', deathCause = null,
     deathType = null,
 }: OrdinaryDeathOptions): Promise<void> {
+    // end.c:ends[POISONING] is used for disclosure and the final summary.
+    if (deathType === POISONING) deathVerb = 'were poisoned';
     game._deathKiller = killer;
     const taken = await settleGameExit('died');
 

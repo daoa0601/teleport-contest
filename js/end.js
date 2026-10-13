@@ -30,7 +30,7 @@ import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
-import { A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, STARVING, STONING, Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd, } from './const.js';
+import { A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, POISONING, STARVING, STONING, Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd, } from './const.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
@@ -1163,6 +1163,9 @@ export async function finishOrdinaryDeath(options) {
     await completeOrdinaryDeath(options);
 }
 async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVerb = 'died', deathCause = null, deathType = null, }) {
+    // end.c:ends[POISONING] is used for disclosure and the final summary.
+    if (deathType === POISONING)
+        deathVerb = 'were poisoned';
     game._deathKiller = killer;
     const taken = await settleGameExit('died');
     const showSummary = await discloseGame({ killer, deathVerb, deathCause, possessionAnswer, taken });
