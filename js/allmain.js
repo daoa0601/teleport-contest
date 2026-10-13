@@ -2,6 +2,7 @@ import { finishMonsterHideUnder } from './monster_hiding.js';
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 import { heroIsHallucinating } from './senses.js';
+import { mcalcmove } from './monster_speed.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { advanceSpellProtection } from './spell_misc_effects.js';
@@ -884,15 +885,20 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(deferAmbientMess
         await makemonAt(null, 0, 0);
     const polymorphed = (game.u.mtimedone !== undefined && game.u.mtimedone > 0)
         && Number.isInteger(game.u?.umonnum);
-    let moveAmount = polymorphed
-        ? (MONSTER_MOVE[game.u.umonnum] ?? 0)
-        : 12;
-    if (game.u?.veryFast) {
-        if (rn2(3) !== 0)
-            moveAmount += 12;
+    let moveAmount;
+    if (game.u.usteed && game.u.umoved) {
+        moveAmount = mcalcmove(game.u.usteed, true, rn2, game);
     }
-    else if (game.u?.fast && rn2(3) === 0) {
-        moveAmount += 12;
+    else {
+        moveAmount = polymorphed
+            ? (MONSTER_MOVE[game.u.umonnum] ?? 0) : 12;
+        if (game.u.veryFast) {
+            if (rn2(3) !== 0)
+                moveAmount += 12;
+        }
+        else if (game.u.fast && rn2(3) === 0) {
+            moveAmount += 12;
+        }
     }
     // allmain.c:u_calc_moveamt() applies current carrying capacity after the
     // current form's natural speed and Fast/Very_fast bonus.  OVERLOADED is
