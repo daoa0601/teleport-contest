@@ -35,7 +35,7 @@ export async function dipSink(object: DipTarget): Promise<void> {
     }
     if (hands) { await washHands(); return; }
     if (object.oclass !== 8) {
-        await pline(`You hold the ${objectCombatName(object)} under the tap.`);
+        await pline(`You hold the ${objectCombatName(object, { includeCorpseSpecies: false })} under the tap.`);
         if (await waterDamageObject(object, [], game, { force: true, publish: pline }) === 'nothing')
             await pline('Nothing seems to happen.');
         return;

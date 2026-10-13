@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { POOL, SINK } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { POT_ACID, POT_WATER, SCR_BLANK_PAPER, SCR_IDENTIFY, TOWEL } from '../js/object_data.js';
+import { CORPSE, POT_ACID, POT_WATER, SCR_BLANK_PAPER, SCR_IDENTIFY, TOWEL } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -59,6 +60,22 @@ void test('dipping acid into a sink pours away one bottle', async () => {
     assert.equal(game.context.move, 1);
     assert.match(game._pending_message, /drain seems less clogged/);
 });
+for (const quantity of [1, 2]) {
+    void test(`holding ${quantity} lichen ${quantity === 1 ? 'corpse' : 'corpses'} under a tap omits the species`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        game.level.requireAt(game.u.ux, game.u.uy).typ = SINK;
+        const corpse = await addInventoryObject(CORPSE, {
+            corpsenm: MONSTER_NAME.indexOf('lichen'), quan: quantity,
+        });
+        resetInputState();
+        initRng(123n);
+        await runExtendedCommand('dip', corpse.invlet + 'y' + ' '.repeat(20));
+        assert.match(game._pending_message, new RegExp(`You hold the ${quantity === 1 ? 'corpse' : 'corpses'} under the tap\\.`));
+        assert.equal(corpse.quan, quantity);
+        assert.equal(game.inventory.includes(corpse), true);
+    });
+}
 void test('dipping a towel in water wets it before the potion is consumed', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
