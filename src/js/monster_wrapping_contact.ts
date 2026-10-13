@@ -43,7 +43,7 @@ export async function resolveMonsterWrapping(
         }
         hero.ustuck = monster;
         state.context.botl = true;
-        await publish(`${monsterName(monster, { state, capitalized: true })} ${coils ? 'coils' : 'swings'} itself around you!`, { urgent: true });
+        await publish(`${monsterName(monster, { state, capitalized: true, augmentIt: true })} ${coils ? 'coils' : 'swings'} itself around you!`, { urgent: true });
         return;
     }
     if (hero.ustuck !== monster) {

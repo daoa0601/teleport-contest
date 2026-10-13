@@ -4,7 +4,7 @@ import { performMonsterHeroAttack } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, POOL } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { canSpotMonster, flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, LEATHER_CLOAK } from '../js/object_data.js';
@@ -69,6 +69,57 @@ void test('a missed bite prevents a couatl from starting its automatic hug', asy
 
     assert.equal(game.u.uhp, 99, 'only the second bite hits');
     assert.ok(!game.u.ustuck);
+});
+
+void test('an unseen couatl is described as something when it starts a hold', async () => {
+    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    requirePlayingGame(game);
+    const couatl = await createMonsterAt('couatl', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    couatl.minvis = true;
+    couatl.mux = game.u.ux;
+    couatl.muy = game.u.uy;
+    assert.equal(canSpotMonster(couatl), false);
+    const messages: string[] = [];
+    const input = resetInputState();
+    installPagerInput(input, { expected: /It|Something/, limit: 5 });
+    input.beforeRead = () => { messages.push(game._pending_message); };
+
+    await performMonsterHeroAttack(couatl, game, {
+        random: limit => limit === 10 ? 0 : limit - 1,
+        rollOne: () => 1, rollDice: count => count,
+    });
+    await flushPendingTopline();
+
+    assert.equal(game.u.ustuck, couatl);
+    assert.match(messages.join('\n'), /Something swings itself around you!/);
+});
+
+void test('hallucination can describe an unseen wrapping animal as someone or something', async () => {
+    freshObjectRoom({ hero: { uhp: 1000, uhpmax: 1000, uac: 10, hallucinationTurns: 20 } });
+    requirePlayingGame(game);
+    const couatl = await createMonsterAt('couatl', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    couatl.minvis = true;
+    couatl.mux = game.u.ux;
+    couatl.muy = game.u.uy;
+    assert.equal(canSpotMonster(couatl), false);
+    const messages: string[] = [];
+    const input = resetInputState();
+    installPagerInput(input, { expected: /It|Something|Someone/, limit: 64 });
+    input.beforeRead = () => { messages.push(game._pending_message); };
+
+    for (let attempt = 0; attempt < 16; attempt++) {
+        game.u.ustuck = null;
+        await performMonsterHeroAttack(couatl, game, {
+            random: limit => limit === 10 ? 0 : limit - 1,
+            rollOne: () => 1, rollDice: count => count,
+        });
+        await flushPendingTopline();
+        assert.equal(game.u.ustuck, couatl);
+    }
+
+    const text = messages.join('\n');
+    assert.match(text, /Someone swings itself around you!/);
+    assert.match(text, /Something swings itself around you!/);
 });
 
 void test('an eel holding a breathing hero underwater triggers life saving', async () => {
