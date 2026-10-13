@@ -36,7 +36,7 @@ for (const quantity of [1, 2]) {
         };
         await answerPrompts(rhack('i'.charCodeAt(0)), input, [
             { prompt: /Weapons/, keys: arrows.invlet },
-            { prompt: /Do what with the arrow\?/, keys: '\x1b' },
+            { prompt: /Do what with the arrows\?/, keys: '\x1b' },
         ]);
 
         assert.match(fireLabel, quantity === 1
