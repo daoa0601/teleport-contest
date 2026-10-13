@@ -1,7 +1,7 @@
 // C uhitm.c:mhitm_ad_heal(), against the hero.
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_STR, M_ATTK_DEF_DIED, M_ATTK_HIT, RLOC_MSG, Upolyd } from './const.js';
-import { cureHeroSicknessWithMessages, heroIsSick } from './hero_illness.js';
+import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { heroSpecies } from './hero_species.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { makeMonsterFlee } from './monster_flee.js';
@@ -59,7 +59,7 @@ export async function resolveNurseContact(monster, attack, state, publish, rando
     if (random(3) === 0)
         await exerciseAttribute(A_CON, true, state);
     if (heroIsSick(state))
-        await cureHeroSicknessWithMessages(state);
+        cureHeroSickness(state);
     state.context.botl = true;
     if (goAway) {
         await removeMonsterFromGame(monster);
