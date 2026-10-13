@@ -1,5 +1,6 @@
 // C hack.c:slippery_ice_fumbling() and timeout.c:slip_or_trip().
 import { currentAttribute } from './attrib.js';
+import { heroHasArtifactDefense } from './artifacts.js';
 import { heroFootName } from './body_parts.js';
 import { A_DEX, DISMOUNT_FELL, PLNMSG_ONE_ITEM_HERE, W_SADDLE } from './const.js';
 import { plineWithContinuation } from './display.js';
@@ -29,7 +30,9 @@ export function checkSlipperyIce() {
         const appearance = boots && (game.objectDescriptions?.[boots.otyp] ?? OBJECT_DESCRIPTIONS[boots.otyp]);
         const flags = MONSTER_FLAGS1[skater.mnum] ?? 0;
         const symbol = MONSTER_SYMBOL[skater.mnum];
-        if (appearance === 'snow boots' || monsterHasColdResistance(skater)
+        const coldSkater = hero.usteed ? monsterHasColdResistance(hero.usteed)
+            : propertyIsActive('coldResistance', game) || heroHasArtifactDefense('cold', game);
+        if (appearance === 'snow boots' || coldSkater
             || propertyIsActive('flying', game) || symbol === 5 || symbol === 25
             || flags & 0x10 || monsterIsWhirly(skater)) {
             onIce = false;

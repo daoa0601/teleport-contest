@@ -39,4 +39,17 @@ for (const property of ['levitation', 'flying']) {
         assert.equal(game.u.fumblingTurns ?? 0, 0);
     });
 }
+void test('cold resistance prevents an unmounted hero from slipping on ice', async () => {
+    for (let seed = 1; seed <= 12; seed++) {
+        const input = freshTurnRoom({ role: 'caveman' });
+        const square = game.level?.at(game.u.ux, game.u.uy);
+        assert.ok(square);
+        square.typ = ICE;
+        grantIntrinsicProperty('coldResistance', 'outside');
+        initRng(BigInt(seed));
+        input.feed('l');
+        await moveloop_core();
+        assert.equal(game.u.fumblingTurns ?? 0, 0, `cold resistance protects the hero for seed ${seed}`);
+    }
+});
 //# sourceMappingURL=slippery_ice.test.js.map
