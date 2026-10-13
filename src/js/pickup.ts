@@ -376,6 +376,7 @@ async function checkHere(source: PickupSource, pickedSome: boolean): Promise<{ d
         return { died: false };
     }
     stopRun();
+    await flush_screen(1);
     const feature = skipFeature ? '' : dungeonFeatureSentenceAt(x, y);
     if (heroIsBlind(game)) {
         const first = source.objects[0];
