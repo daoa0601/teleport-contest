@@ -19,6 +19,8 @@ import { freshTurnRoom } from './support/playable-room.js';
 function freshExerciseTurns() {
     const input = freshTurnRoom({ role: 'knight', heroLevel: 30 });
     requirePlayingGame(game);
+    // Keep periodic attribute exercise independent of random arrivals and combat.
+    game.level.flags.rndmongen = false;
     input.beforeRead = () => {
         const display = requireGameDisplay();
         const text = display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
