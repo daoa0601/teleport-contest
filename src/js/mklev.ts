@@ -2721,8 +2721,8 @@ async function makemon(
             (game.context.no_of_wizards || 0) + 1;
     }
     restoreMonsterInventoryOwnership(monster);
-    await initializeMonsterArmor(monster);
     if (allowMonsterInventory) {
+        await initializeMonsterArmor(monster);
         await maybeGiveDomesticSaddle(monster);
         monster.hasInventory = monsterInventory.length > 0;
     }

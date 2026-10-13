@@ -69,6 +69,21 @@ void test('imposed invisibility redraws a hallucinated birth before its final ap
     assert.equal(glyph.mnum, finalAppearance);
 });
 
+void test('a human created without inventory skips hallucinated armor names', async () => {
+    freshObjectRoom({ hero: { hallucinationTurns: 20 }, gameplaySeed: 17n });
+    const finalAppearance = rn2Display(MONSTER_NAME.length);
+    initRng(17n);
+
+    const human = await makemonAt(species('human'), 11, 10, NO_MINVENT | MM_NOMSG);
+
+    assert.ok(human);
+    assert.equal(human.minvent.length, 0);
+    const glyph = glyphAt(11, 10);
+    assert.ok(glyph?.kind === 'monster');
+    assert.equal(glyph.mnum, finalAppearance);
+    assert.equal(game._pending_message || '', '');
+});
+
 void test('an unseen birth does not announce its arrival', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

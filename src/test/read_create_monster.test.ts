@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { glyphAt, randomDisplayMonsterIdentity } from '../js/display.js';
+import { glyphAt, randomDisplayMonsterIdentity, randomDisplayMonsterName } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from '../js/monster_data.js';
@@ -90,6 +90,44 @@ void test('hallucinated wizard creation displays the newborn before its final ap
         `${subject.charAt(0).toUpperCase()}${subject.slice(1)} appears next to you.`);
     assert.equal(game.context.move, 0);
 });
+
+for (const useScroll of [false, true]) {
+    void test(`hallucinated ${useScroll ? 'scroll' : 'wizard'} creation names each armor slot before displaying a human`, async () => {
+        const { level, input, messages } = creationRoom();
+        const scroll = useScroll
+            ? await addInventoryObject(SCR_CREATE_MONSTER, { blessed: true, typeKnown: true })
+            : null;
+        game.u.hallucinationTurns = 20;
+        initRng(17n);
+        rn2Display(MONSTER_NAME.length); // makemon()'s initial by-hero redraw
+        // worn.c:m_dowear_type() names the human for all eight armor slots,
+        // including slots for which it has no item to wear.
+        for (let slot = 0; slot < 8; slot++) randomDisplayMonsterName();
+        const finalAppearance = rn2Display(MONSTER_NAME.length);
+        const identity = randomDisplayMonsterIdentity();
+        const subject = identity.personal ? identity.name : withIndefiniteArticle(identity.name);
+        const appearance = `${subject.charAt(0).toUpperCase()}${subject.slice(1)} appears next to you.`;
+        initRng(17n);
+        input.beforeRead = () => {
+            messages.push(game._pending_message);
+            input.feed(/Create what kind/.test(game._pending_message) ? 'human\n' : ' ');
+        };
+
+        if (scroll) await readInventoryObject(scroll);
+        else await rhack(7);
+
+        assert.equal(level.monsters.length, 1);
+        const human = level.monsters[0];
+        assert.ok(human);
+        assert.equal(MONSTER_NAME[human.mnum], 'human');
+        const glyph = glyphAt(human.mx, human.my);
+        assert.ok(glyph?.kind === 'monster');
+        assert.equal(glyph.mnum, finalAppearance);
+        assert.ok([...messages, game._pending_message].includes(appearance),
+            `Creation must announce "${appearance}": ${messages.join(' | ')} | ${game._pending_message}`);
+        assert.equal(game.context.move, useScroll ? 1 : 0);
+    });
+}
 
 for (const request of ['I', 'invisible monster']) {
     void test(`wizard creation resolves "${request}" to a permanently invisible stalker`, async () => {

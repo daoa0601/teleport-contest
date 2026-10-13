@@ -96,7 +96,7 @@ import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf, } from './her
 import { splitObjectStack } from './object_stack.js';
 import { artifactById } from './artifacts.js';
 import { respondMedusa } from './monster_gaze.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, randomDisplayMonsterName, randomDisplayMonsterSubject, plineWithContinuation, } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, randomDisplayMonsterSubject, plineWithContinuation, } from './display.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
 import { AMULET_OF_YENDOR, APPLE, BANANA, BELL_OF_OPENING, BULLWHIP, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_MATERIAL, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
@@ -124,7 +124,7 @@ import { wipeEngravingAt } from './engrave.js';
 import { moveVaultGuard } from './vault.js';
 import { afterShopkeeperMove, checkSpecialRoom, shopGreeting, shopkeeperInOwnShop } from './shk.js';
 import { shopkeeperIsMuted } from './shop_loss.js';
-import { findMonsterArmorClass, nameMonsterForCreationArmorChecks, } from './monworn.js';
+import { findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 import { createHarmlessGasCloudSelection, createPoisonGasCloud, createSteamCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
@@ -6286,9 +6286,6 @@ async function createWizardClone(state) {
         return null;
     newsym(clone.mx, clone.my);
     const hallucinating = heroIsHallucinating(state);
-    if (hallucinating) {
-        nameMonsterForCreationArmorChecks(clone, () => randomDisplayMonsterName());
-    }
     // makemon() repaints after the complete creation wear pass, then formats
     // its visible announcement.  clonewiz() performs another repaint later,
     // after fake-Amulet and wizapp state have been installed.
