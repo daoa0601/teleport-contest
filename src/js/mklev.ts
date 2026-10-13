@@ -3489,7 +3489,8 @@ function resetBonesObjectsForSave(level: GameMap): void {
 // container back-pointers; getbones() restores the GameMap prototype.
 export function saveBonesLevel(): boolean {
     const storage = game.storage;
-    if (!storage || !game.level) return false;
+    if (!storage || !game.level || !game.urole || !game.urace
+        || !game.u.ualign) return false;
 
     let payload: BonesPayload;
     try {
@@ -3506,10 +3507,16 @@ export function saveBonesLevel(): boolean {
         return false;
     }
 
-    // savebones() adds this hero to the level's cemetery while retaining
-    // earlier ancestors. Recognition on arrival uses the complete name.
+    // savebones() records the final role, race, gender, and alignment in
+    // cemetery.who. These suffixes also participate in bones_include_name().
+    const alignment = game.u.ualign.type === 1 ? 'Law'
+        : game.u.ualign.type === -1 ? 'Cha' : 'Neu';
+    const who = [
+        game.plname || 'player', game.urole.filecode.slice(0, 3),
+        game.urace.filecode.slice(0, 3), game.flags.female ? 'Fem' : 'Mal', alignment,
+    ].join('-');
     payload.level.bonesNames = [
-        game.plname || 'player', ...(payload.level.bonesNames ?? []),
+        who, ...(payload.level.bonesNames ?? []),
     ];
 
     for (const monster of payload.level.monsters || []) {

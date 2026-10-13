@@ -34,6 +34,33 @@ import { createStaffedShop } from './support/shop.js';
 const PM_GHOST = 287;
 const LEVEL = { dnum: 0, dlevel: 7 };
 
+for (const hero of ['Ada-Cav', 'Ada-Cav-Hum', 'Ada-Cav-Hum-Fem', 'Ada-Cav-Hum-Fem-Cha']) {
+    void test(`bones familiarity includes cemetery suffixes for ${hero}`, async () => {
+        const storage = memoryStorage();
+        freshBonesRoom(storage);
+        requirePlayingGame(game);
+        game.plname = 'Ada';
+        game.flags.female = true;
+        game.u.ualign.type = -1;
+        requireGameLevel().requireAt(15, 10).typ = FOUNTAIN;
+        assert.ok(saveBonesLevel());
+        freshConnectedLevels({ destinationDepth: 7, generateDestination: true });
+        game.plname = hero;
+        game.storage = storage;
+        game.flags.debug = true;
+        initRng(3n);
+        pushKeys('yn');
+
+        await gotoLevel({ dlevel: 7 });
+
+        assert.equal(requireGameLevel().requireAt(15, 10).typ, FOUNTAIN);
+        const familiarity = /sense of deja vu|been here before|place .*familiar/;
+        // bones_include_name() also requires a hyphen after the matched name.
+        if (hero === 'Ada-Cav-Hum-Fem-Cha') assert.doesNotMatch(game._pending_message, familiarity);
+        else assert.match(game._pending_message, familiarity);
+    });
+}
+
 for (const hero of ['Ada', 'Ad']) {
     void test(`bones from Ada-Lovelace ${hero === 'Ada' ? 'are familiar to Ada' : 'are unfamiliar to Ad'}`, async () => {
         const storage = memoryStorage();

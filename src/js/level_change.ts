@@ -238,8 +238,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         }
         let familiarMessage = '';
         // bones_include_name() matches through the hero name's trailing hyphen.
-        if (game.level.bonesNames?.some(name => name === game.plname
-            || name.startsWith(`${game.plname}-`))) {
+        if (game.level.bonesNames?.some(name => name.startsWith(`${game.plname}-`))) {
             const perception = heroIsBlind(game) ? 'seems' : 'looks';
             const familiarMessages = heroIsHallucinating(game) ? [
                 `Whoa!  Everything ${perception} different.`,
