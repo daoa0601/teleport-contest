@@ -158,7 +158,7 @@ import {
     HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE,
     CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE,
     LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES,
-    MIRROR, POT_OBJECT_DETECTION, SHIELD_OF_REFLECTION,
+    MIRROR, POT_OBJECT_DETECTION, RIN_INVISIBILITY, SHIELD_OF_REFLECTION,
     SADDLE,
     WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING,
 } from './object_data.js';
@@ -2491,6 +2491,13 @@ async function makemon(
     }
     if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 12) { // S_LEPRECHAUN
         await mkmonmoney(d(level_difficulty(), 30));
+    }
+    if (allowMonsterInventory && !Is_rogue_level(game.u.uz)
+        && mndx === MONSTER_NAME.indexOf('Nazgul')) {
+        const ring = await mksobj(RIN_INVISIBILITY, false, false);
+        ring.cursed = true;
+        await addCreatedObjectToMonsterInventory(pendingMonster, ring, game);
+        hasMonsterInventory = true;
     }
     if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 39) { // S_MUMMY
         if (rn2(7)) await mongets(MUMMY_WRAPPING);
