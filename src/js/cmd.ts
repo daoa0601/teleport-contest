@@ -4756,7 +4756,9 @@ async function dowhatis(): Promise<void> {
 
 async function showEncyclopediaInformation(name: string): Promise<void> {
     const entries = encyclopediaEntries(name);
-    for (const entry of entries) await showTextMenuOverlay(entry.lines);
+    // checkfile() fills an NHW_MENU with putstr(), so tty treats its rows
+    // as prose and accepts only the --More-- responses, even across pages.
+    for (const entry of entries) await showDisclosureOverlay(entry.lines);
     if (entries.length) await restoreHelpMap();
     else await pline("You don't have any information on those things.");
 }
