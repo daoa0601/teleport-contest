@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import { DOOR, D_CLOSED, D_LOCKED, TT_PIT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { artifactByName } from '../js/artifacts.js';
+import { placeMonsterAt } from '../js/monster_location.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { CREDIT_CARD } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('opening a locked door offers the carried unlock tool after acknowledging the lock', async () => {
     for (const answer of ['y', 'q']) {
@@ -44,6 +46,55 @@ for (const doorState of [D_CLOSED, D_LOCKED]) {
         assert.equal(game.u.utrap, 3);
     });
 }
+void test('autounlock refuses a visible xorn on the door before asking to unlock', async () => {
+    const level = freshObjectRoom();
+    const door = level.requireAt(11, 10);
+    door.typ = DOOR;
+    door.doormask = D_LOCKED;
+    await createMonsterAt('xorn', 11, 10);
+    await addInventoryObject(CREDIT_CARD);
+    const input = resetInputState();
+    pushKeys('l');
+    await answerPrompts(rhack('o'.charCodeAt(0)), input, []);
+    assert.match(game._pending_message, /I don't think the xorn would appreciate that\./);
+    assert.equal(game.context.move, 1, 'learning that the monster blocks the lock spends a turn');
+    assert.equal(Boolean(game._occupation), false);
+    assert.equal(door.doormask, D_LOCKED);
+});
+void test('an unseen xorn on the door does not prevent autounlock', async () => {
+    const level = freshObjectRoom();
+    const door = level.requireAt(11, 10);
+    door.typ = DOOR;
+    door.doormask = D_LOCKED;
+    const xorn = await createMonsterAt('xorn', 11, 10);
+    xorn.minvis = true;
+    await addInventoryObject(CREDIT_CARD);
+    const input = resetInputState();
+    pushKeys('l');
+    await answerPrompts(rhack('o'.charCodeAt(0)), input, [
+        { prompt: /This door is locked\.--More--/, keys: ' ' },
+        { prompt: /Unlock it with your credit card\?/, keys: 'y' },
+    ]);
+    assert.equal(game.context.move, 1);
+    assert.equal(Boolean(game._occupation), true);
+    assert.equal(door.doormask, D_LOCKED);
+});
+void test('the Oracle refuses a credit card at the door without an unlock prompt', async () => {
+    const level = freshObjectRoom();
+    const oracle = await createMonsterAt('Oracle', 12, 10);
+    placeMonsterAt(oracle, 11, 10);
+    const door = level.requireAt(11, 10);
+    door.typ = DOOR;
+    door.doormask = D_LOCKED;
+    await addInventoryObject(CREDIT_CARD);
+    const input = resetInputState();
+    pushKeys('l');
+    await answerPrompts(rhack('o'.charCodeAt(0)), input, []);
+    assert.match(game._pending_message, /"No checks, no credit, no problem\."/);
+    assert.equal(game.context.move, 1);
+    assert.equal(Boolean(game._occupation), false);
+    assert.equal(door.doormask, D_LOCKED);
+});
 const keyTouchAlignments = [0, -1];
 for (const alignment of keyTouchAlignments) {
     void test(`autounlock touches a foreign quest key before ${alignment === 0 ? 'rejecting it' : 'starting to unlock'}`, async () => {

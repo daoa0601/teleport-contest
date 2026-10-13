@@ -401,7 +401,7 @@ import {
     D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE,
     IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT,
     SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
-    ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
+    ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
     STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
     Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD,
     WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
@@ -6865,6 +6865,16 @@ async function openLockedDoor(door: MapLocation, x: number, y: number): Promise<
     const tool = autoUnlockTool(game);
     if (!tool) return false;
     game.u.dz = 0;
+    const monster = monsterAtPosition(requireGameLevel(), x, y);
+    if (monster && canSeeMonster(monster)
+        && M_AP_TYPE(monster) !== M_AP_FURNITURE
+        && M_AP_TYPE(monster) !== M_AP_OBJECT) {
+        if (tool.otyp === CREDIT_CARD
+            && (monster.isshk || MONSTER_NAME[monster.mnum] === 'Oracle'))
+            await pline('"No checks, no credit, no problem."');
+        else await pline(`I don't think ${monsterName(monster)} would appreciate that.`);
+        return true;
+    }
     await flushPendingTopline();
     const answer = await promptYesNoQuit(`Unlock it with your ${lockToolPresentation(tool)}?`);
     if (answer !== 'y') return false;
