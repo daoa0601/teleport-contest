@@ -6112,6 +6112,19 @@ async function createLuaMonster(context, options) {
             });
     }
     applyLuaMonsterAppearance(monster, options.appearance);
+    if (monster) {
+        // lspo_monster() resolves the request's gender before makemon();
+        // create_monster() restores it after birth and appearance changes.
+        const requestedFemale = options.female === undefined || options.female === -1
+            ? null : !!options.female;
+        if (monsterType === null) {
+            monster.female = requestedFemale ?? false;
+        }
+        else if (requestedFemale !== null
+            && !((MONSTER_FLAGS2[monsterType] ?? 0) & (M2_MALE | M2_FEMALE))) {
+            monster.female = requestedFemale;
+        }
+    }
     if (monster && options.name != null)
         setMonsterGivenName(monster, options.name);
     if (monster && peaceful != null) {
