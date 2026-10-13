@@ -248,7 +248,7 @@ import {
     LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
     BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION,
     BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF,
-    BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT,
+    BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP,
     TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL,
     RIN_CONFLICT, MEAT_RING,
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN,
@@ -372,6 +372,7 @@ import { useStethoscope } from './stethoscope.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
 import { useHornOfPlenty } from './horn_of_plenty.js';
 import { useTinningKit } from './tinning_kit.js';
+import { continueTrapSetting, useSettableTrap } from './trap_setting.js';
 import { useSaddle } from './steed.js';
 import {
     isRoyalJelly, useRoyalJelly,
@@ -1014,6 +1015,12 @@ async function continueOccupation(g: GameState): Promise<boolean> {
         const continuing = await continueBulkTakeoff(g);
         if (!continuing) g._occupation = null;
         return continuing;
+    }
+    if (occupation.key === 'set-trap') {
+        const continuing = await continueTrapSetting(g);
+        if (!continuing) g._occupation = null;
+        g.context.move = 1;
+        return true;
     }
     if ('remaining' in occupation && occupation.remaining <= 0) {
         g._occupation = null;
@@ -5947,6 +5954,11 @@ async function doapply(cannedInvlet: string | null = null): Promise<void> {
 async function applyTool(
     item: GameObject, underlay: ReturnType<typeof snapshotMenuUnderlay>,
 ): Promise<GameObject | null> {
+    if (item.otyp === LAND_MINE || item.otyp === BEARTRAP) {
+        const object = await useSettableTrap(item);
+        game.context.move = 1;
+        return object;
+    }
     if (item.otyp === TINNING_KIT) {
         await useTinningKit(item);
         game.context.move = 1;

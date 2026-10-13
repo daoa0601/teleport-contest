@@ -82,6 +82,7 @@ const transientFields = {
     _monsterSwallower: true,
     _monsterEngulf: true,
     _occupation: true,
+    _trapSetting: true,
     _pendingDemigodIntervention: true,
     _pendingHeroShapeChange: true,
     _pending_message: true,

@@ -1,0 +1,91 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { continueCountedCommand } from '../js/cmd.js';
+import { BEAR_TRAP, LANDMINE } from '../js/const.js';
+import { game } from '../js/gstate.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { BEARTRAP, LAND_MINE } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
+import { stopHeroOccupation } from '../js/occupation.js';
+import { applyInventoryObject } from './support/commands.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { freshPlayableRoom } from './support/playable-room.js';
+import { createSaddledSteed } from './support/monsters.js';
+const trapTools = [[LAND_MINE, LANDMINE], [BEARTRAP, BEAR_TRAP]];
+for (const [objectType, trapType] of trapTools) {
+    void test(`apply arms a carried ${objectType === LAND_MINE ? 'land mine' : 'bear trap'} through its occupation`, async () => {
+        const level = freshPlayableRoom({ hero: { acurr: { a: [18, 10, 10, 18, 10, 10] } } });
+        const object = await addInventoryObject(objectType, { quan: 2 });
+        await applyInventoryObject(object);
+        assert.equal(game.context.move, 1);
+        assert.match(game._pending_message, /begin setting/);
+        pushKeys('     ');
+        for (let turn = 0; turn < 8 && game._occupation; turn++)
+            await continueCountedCommand();
+        const trap = level.traps.find(candidate => candidate.tx === game.u.ux && candidate.ty === game.u.uy);
+        assert.ok(trap);
+        assert.equal(trap.ttyp, trapType);
+        assert.equal(trap.madeby_u, true);
+        assert.equal(trap.tseen, true);
+        assert.equal(object.quan, 1);
+        assert.equal(game._occupation, null);
+    });
+}
+void test('trap setting can resume after an interruption on the same square', async () => {
+    freshPlayableRoom();
+    const mine = await addInventoryObject(LAND_MINE);
+    await applyInventoryObject(mine);
+    await stopHeroOccupation();
+    resetInputState();
+    await applyInventoryObject(mine, ' ');
+    assert.match(game._pending_message, /resume setting/);
+    assert.ok(game._occupation);
+    assert.equal(mine.where, 'inventory');
+});
+void test('a stunned hero cannot set a trap but the attempt still takes a turn', async () => {
+    freshPlayableRoom({ hero: { stunned: true, stunnedTurns: 12 } });
+    const mine = await addInventoryObject(LAND_MINE);
+    await applyInventoryObject(mine);
+    assert.equal(game._pending_message, "You can't set a trap while stunned!");
+    assert.equal(game.context.move, 1);
+    assert.equal(game._occupation ?? null, null);
+    assert.equal(mine.where, 'inventory');
+});
+void test('blindness doubles the time needed to arm a land mine', async () => {
+    const durations = [];
+    for (const blind of [false, true]) {
+        freshPlayableRoom({ hero: { permaBlind: blind, acurr: { a: [18, 10, 10, 18, 10, 10] } } });
+        const mine = await addInventoryObject(LAND_MINE);
+        await applyInventoryObject(mine);
+        pushKeys('     ');
+        let turns = 0;
+        while (game._occupation && turns < 12) {
+            await continueCountedCommand();
+            turns++;
+        }
+        durations.push(turns);
+    }
+    const ordinary = durations[0];
+    assert.ok(ordinary && ordinary > 0, 'arming a mine must take time');
+    assert.equal(durations[1], 2 * ordinary);
+});
+void test('an unskilled rider drops a beartrap when the setting attempt bungles', async () => {
+    freshPlayableRoom();
+    const pony = await createSaddledSteed();
+    game.u.usteed = pony;
+    pony.mx = game.u.ux;
+    pony.my = game.u.uy;
+    const beartrap = await addInventoryObject(BEARTRAP, { cursed: true });
+    const input = resetInputState();
+    let reads = 0;
+    input.display = { async readKey() {
+            assert.ok(++reads < 12, `Trap setting did not finish: ${game._pending_message}`);
+            return (game._pending_message.includes('Continue your attempt') ? 'y' : ' ').charCodeAt(0);
+        } };
+    initRng(4n);
+    await applyInventoryObject(beartrap);
+    assert.equal(beartrap.where, 'floor');
+    assert.equal(game._occupation ?? null, null);
+    assert.equal(game.context.move, 1);
+});
+//# sourceMappingURL=trap_setting_apply.test.js.map
