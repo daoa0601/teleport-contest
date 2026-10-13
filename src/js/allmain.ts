@@ -157,7 +157,7 @@ import {
     claimNextDueObjectTimer,
     peekNextDueObjectTimer,
 } from './object_timers.js';
-import { roles } from './roles.js';
+import { nativeRoleAt } from './roles.js';
 import { initializeRoleQuestGenders, initializeSourceStartup } from './startup.js';
 import {
     initialDungeonEntryText, recordGameLogEvent,
@@ -3596,7 +3596,7 @@ export async function newgame() {
     const handednessRoll = await initializeSourceStartup();
 
     if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
-        const pantheon = roles.find(role => role.mnum === g._priestPantheonIndex);
+        const pantheon = nativeRoleAt(g._priestPantheonIndex ?? -1);
         if (pantheon?.gods) {
             g.urole = {
                 ...g.urole,

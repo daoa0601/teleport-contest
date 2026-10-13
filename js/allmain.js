@@ -85,7 +85,7 @@ import { applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, 
 import { discoverReflectingShield } from './ray.js';
 import { addObjectToMonsterInventory, } from './monster_inventory.js';
 import { claimNextDueObjectTimer, peekNextDueObjectTimer, } from './object_timers.js';
-import { roles } from './roles.js';
+import { nativeRoleAt } from './roles.js';
 import { initializeRoleQuestGenders, initializeSourceStartup } from './startup.js';
 import { initialDungeonEntryText, recordGameLogEvent, } from './gamelog.js';
 import { allocateMonsterMovement, applyHeroSpellDamage, beginDeferredHeroCloneWizard, completeHeroAttackSlot, resumeDeferredHeroColdSpecial, resumeDeferredHeroContact, resumeDeferredHeroFireSpecial, resumeDeferredHeroElectricSpecial, resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroSticking, resumeDeferredHeroEngulf, resumeDeferredHeroBlindness, resumeDeferredHeroLegs, resumeDeferredHeroReveal, rollDeferredHeroSpellDamage, resumeDeferredHeroSpell, resolveDeferredHeroSummonMonsters, resolveDeferredHeroHasteSelf, resolveDeferredHeroAggravation, finishDeferredMonsterMiscItem, finishDeferredHeroCloneWizard, resumeDeferredCovetousRelocation, resumeDeferredRestrictedTenguTeleport, resumeDeferredMovementSpell, resumeDeferredSpecialAttack, resumeDeferredMonsterTrap, resumeDeferredMonsterHideUnder, completeMonsterOffensiveAction, resumeDeferredPetAttack, resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance, resolveDeferredMonsterBreath, fumaroles, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterHeroAttack, runMonsterAction, monstersInFmonOrder, monsterDistressEvents, commitPetPickup, } from './monmove.js';
@@ -3214,7 +3214,7 @@ export async function newgame() {
     const g = game;
     const handednessRoll = await initializeSourceStartup();
     if (g.urole?.key === 'priest' && Number.isInteger(g._priestPantheonIndex)) {
-        const pantheon = roles.find(role => role.mnum === g._priestPantheonIndex);
+        const pantheon = nativeRoleAt(g._priestPantheonIndex ?? -1);
         if (pantheon?.gods) {
             g.urole = {
                 ...g.urole,

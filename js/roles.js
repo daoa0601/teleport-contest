@@ -443,6 +443,12 @@ const roleRecords = [
         enemy2sym: 39,
         greeting: 'Hello', goodbye: 'Goodbye' },
 ];
+// role.c orders Rogue before Ranger; the player-monster indices do the reverse.
+// Native random role choices must use the role table's order.
+export function nativeRoleAt(index) {
+    const playerIndex = index === 7 ? 8 : index === 8 ? 7 : index;
+    return roles.find(role => role.mnum === playerIndex);
+}
 // C ref: role.c roles[] spell statistics.  These fields feed the shared
 // spell.c percent_success() calculation; they are live mechanics, not
 // presentation defaults stored on individual spell records.

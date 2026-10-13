@@ -2,7 +2,7 @@
 // C ref: attrib.c adjalign().
 import { game, requireLiveGame } from './gstate.js';
 import { rn2Display } from './rng.js';
-import { roles } from './roles.js';
+import { nativeRoleAt, roles } from './roles.js';
 import { heroIsHallucinating } from './senses.js';
 import { A_NONE } from './const.js';
 import { plineWithContinuation } from './display.js';
@@ -30,7 +30,7 @@ export function hallucinatedDeityName(alignment, state = game, hallucinating = h
         throw new Error('Hallucinated deity names require a selected hero role');
     let gods;
     do {
-        const role = roles[rn2Display(roles.length)];
+        const role = nativeRoleAt(rn2Display(roles.length));
         if (!role)
             throw new Error('No hallucinated deity role was selected');
         // C installs the current Priest's borrowed pantheon in roles[].
