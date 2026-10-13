@@ -546,7 +546,11 @@ export function simpleObjectNameWithArticle(object: ObjectNameView, state: GameS
 export function ownedObjectName(
     object: GameObject, state: GameState = game, { capitalized = true } = {},
 ): string {
-    const prefix = objectOwnershipPrefix(object, state, { capitalized });
+    // yname() omits ownership for most personal artifacts; quest artifacts retain it.
+    const omitOwner = object.where === 'inventory'
+        && objectHasPersonalName(object, state)
+        && (object.oartifact ?? 0) < requiredArtifact('The Orb of Detection', state).id;
+    const prefix = omitOwner ? '' : objectOwnershipPrefix(object, state, { capitalized });
     const quantity = object.quan ?? object.quantity ?? 1;
     // yname() uses cxname(): corpses retain their species and plural suffix.
     const noun = object.otyp === CORPSE ? corpseName(object) : objectName(object, state);

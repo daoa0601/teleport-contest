@@ -35,6 +35,7 @@ import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { syncBlindness } from '../js/senses.js';
 import { beginObjectBurn, objectLightRadius } from '../js/light.js';
+import { fullyIdentifyObject } from '../js/invent.js';
 function prayerRoom({ hero = {}, flags = {}, ...room } = {}) {
     freshObjectRoom({
         ...room,
@@ -304,6 +305,24 @@ void test('#pray brightens a lit artifact when blessing the wielded weapon', asy
     const messages = await prayAndReadMessages();
     assert.equal(objectLightRadius(sword), 3);
     assert.ok(messages.some(message => message.includes('It shines brighter.')));
+});
+void test('#pray crowns a lawful hero with Sunsword shining under its identified name', async () => {
+    prayerRoom({ role: 'valkyrie', hero: { uluck: 10, ualign: { type: 1, record: 20 } } });
+    requirePlayingGame(game);
+    initializeArtifacts();
+    const sunsword = artifactByName('Sunsword');
+    assert.ok(sunsword);
+    const sword = await addInventoryObject(LONG_SWORD);
+    assert.equal(nameArtifact(sword, sunsword), true);
+    fullyIdentifyObject(sword);
+    await setPrimaryWeapon(sword);
+    beginObjectBurn(sword);
+    await addInventoryObject(LUCKSTONE);
+    initRng(2n);
+    const messages = await prayAndReadMessages();
+    assert.equal(game.u.uevent?.uhand_of_elbereth, 1);
+    assert.equal(objectLightRadius(sword), 3);
+    assert.ok(messages.some(message => /(?:^|\n)Sunsword shines brighter\./.test(message)), `Expected Sunsword's light announcement in prayer messages: ${messages.join('\n')}`);
 });
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {
     prayerRoom();
