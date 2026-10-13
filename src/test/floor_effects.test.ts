@@ -8,7 +8,10 @@ import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { unlinkObject } from '../js/object_location.js';
 import { learnObjectType } from '../js/object_knowledge.js';
-import { CHEST, FIRE_HORN, GLOB_OF_BLACK_PUDDING, GOLD_PIECE, POT_HEALING, SPE_BOOK_OF_THE_DEAD, TOOLED_HORN, UNICORN_HORN } from '../js/object_data.js';
+import {
+    CHEST, FIRE_HORN, GLOB_OF_BLACK_PUDDING, GOLD_PIECE, POT_HEALING,
+    POT_OIL, SPE_BOOK_OF_THE_DEAD, TOOLED_HORN, UNICORN_HORN,
+} from '../js/object_data.js';
 import { LAVAPOOL } from '../js/const.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys } from '../js/input.js';
@@ -71,6 +74,41 @@ void test('a chest burning in lava spills surviving contents onto its square', a
     assert.equal(gold.container, null);
     assert.ok(floorObjectsAt(game.level, 12, 10).includes(gold));
     assert.ok(messages.includes('Its contents fall out.'));
+});
+
+void test('an unlit oil potion landing in lava ignites and explodes', async () => {
+    const level = freshObjectRoom();
+    level.requireAt(12, 10).typ = LAVAPOOL;
+    const potion = await knownObject(POT_OIL, { lamplit: false });
+    const messages: string[] = [];
+
+    await landFloorObject(potion, 12, 10, {
+        publish: message => { messages.push(message); },
+    });
+
+    assert.equal(potion.where, 'gone');
+    assert.equal(potion.lamplit, false);
+    assert.equal(floorObjectsAt(level, 12, 10).includes(potion), false);
+    assert.ok(messages.includes('The potion of oil ignites and explodes.'));
+});
+
+void test('oil spilled from a burning chest explodes in the lava below', async () => {
+    const level = freshObjectRoom();
+    level.requireAt(12, 10).typ = LAVAPOOL;
+    const chest = await knownObject(CHEST, { initialize: false });
+    const potion = await knownObject(POT_OIL, { lamplit: false });
+    await addCreatedObjectToContainer(chest, potion, game);
+    const messages: string[] = [];
+
+    await landFloorObject(chest, 12, 10, {
+        publish: message => { messages.push(message); },
+    });
+
+    assert.equal(chest.where, 'gone');
+    assert.equal(potion.where, 'gone');
+    assert.equal(floorObjectsAt(level, 12, 10).includes(potion), false);
+    assert.ok(messages.includes('Its contents fall out.'));
+    assert.ok(messages.includes('The potion of oil ignites and explodes.'));
 });
 
 void test('a potion broken by hot ground affects the hero near its landing, not its old position', async () => {
