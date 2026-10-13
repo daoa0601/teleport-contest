@@ -35,9 +35,11 @@ import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
+import { publishMonsterWake } from './monster_wake.js';
 import {
-    A_CHA, A_WIS, DELPHI, In_mines, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM,
-    ROOMOFFSET, SHOPBASE, TEMPLE, Upolyd, MGIVENNAME,
+    A_CHA, A_WIS, ANTHOLE, BARRACKS, BEEHIVE, COCKNEST, COURT, DELPHI, In_mines,
+    LEPREHALL, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM,
+    ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO,
 } from './const.js';
 import { inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
 import { intemple } from './priest.js';
@@ -1267,12 +1269,14 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
     for (const roomno of game.u.uentered) {
         const room = roomForRoomno(game.level, roomno);
         if (!room) throw new Error(`Entered room ${roomno} does not exist`);
-        if (room.rtype === MORGUE) {
-            await plineWithContinuation(Number(String(game.datetime || '').slice(8, 10)) === 0
-                ? 'Run away!  Run away!' : 'You have an uncanny feeling...');
+        const type = room.rtype;
+        const message = specialRoomEntryMessage(room, roomno);
+        if (message) {
+            await plineWithContinuation(message);
+            recordDiscoveredRoom(roomno - ROOMOFFSET);
             room.rtype = OROOM;
             result = room;
-        } else if (room.rtype === DELPHI) {
+        } else if (type === DELPHI) {
             const oracle = [...game.level.monsters].reverse().find(monster =>
                 !monster.dead && monster.mhp > 0
                 && monster.mnum === MONSTER_NAME.indexOf('Oracle')
@@ -1286,9 +1290,61 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
             }
             room.rtype = OROOM;
             result = room;
-        } else if (room.rtype === TEMPLE) {
+        } else if (type === TEMPLE) {
             result = await intemple(roomno);
+            recordDiscoveredRoom(roomno - ROOMOFFSET);
+        } else if (type >= SHOPBASE) {
+            recordDiscoveredRoom(roomno - ROOMOFFSET);
+        }
+        if (room.rtype !== OROOM || type === OROOM) continue;
+        if (!game.level.rooms.some(candidate => 'rtype' in candidate && candidate.rtype === type)) {
+            switch (type) {
+            case COURT: game.level.flags.has_court = false; break;
+            case SWAMP: game.level.flags.has_swamp = false; break;
+            case MORGUE: game.level.flags.has_morgue = false; break;
+            case ZOO: game.level.flags.has_zoo = false; break;
+            case BARRACKS: game.level.flags.has_barracks = false; break;
+            case BEEHIVE: game.level.flags.has_beehive = false; break;
+            }
+        }
+        if ([COURT, SWAMP, MORGUE, ZOO].includes(type)) {
+            for (const monster of [...game.level.monsters].reverse()) {
+                // Native compares the stored room number to its room index here.
+                if (monster.dead || monster.mhp <= 0
+                    || game.level.at(monster.mx, monster.my)?.roomno !== roomno - ROOMOFFSET)
+                    continue;
+                if (!propertyIsActive('stealth', game) && !rn2(3)) {
+                    await publishMonsterWake(monster);
+                    monster.msleeping = 0;
+                }
+            }
         }
     }
     return result;
+}
+
+function specialRoomEntryMessage(room: Room, roomno: number): string | null {
+    switch (room.rtype) {
+    case ZOO: return "Welcome to David's treasure zoo!";
+    case SWAMP: return heroIsBlind(game) ? 'It feels rather humid down here.' : 'It looks rather muddy down here.';
+    case COURT: {
+        const throne = game.level?.locations.some(column => column.some(location =>
+            location.typ === THRONE && location.roomno === roomno));
+        return `You enter an opulent${throne ? ' throne' : ''} room!`;
+    }
+    case LEPREHALL: return 'You enter a leprechaun hall!';
+    case MORGUE: return Number(String(game.datetime || '').slice(8, 10)) === 0
+        ? 'Run away!  Run away!' : 'You have an uncanny feeling...';
+    case BEEHIVE: return 'You enter a giant beehive!';
+    case COCKNEST: return 'You enter a disgusting nest!';
+    case ANTHOLE: return 'You enter an anthole!';
+    case BARRACKS: {
+        const soldiers = ['soldier', 'sergeant', 'lieutenant', 'captain'].map(name => MONSTER_NAME.indexOf(name));
+        const occupied = game.level?.monsters.some(monster => !monster.dead && monster.mhp > 0
+            && soldiers.includes(monster.mnum)
+            && roomsAt(game.level, monster.mx, monster.my).includes(roomno));
+        return occupied ? 'You enter a military barracks!' : 'You enter an abandoned barracks.';
+    }
+    default: return null;
+    }
 }
