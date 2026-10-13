@@ -4967,20 +4967,8 @@ async function finishLevelTrapConstruction(trap, { spiderOnWeb = true, seen = fa
 async function specialTrapLocation(context, coordinate) {
     const level = requireGameLevel();
     const room = context._room;
-    if (room) {
-        const point = await getLocationCoord(context, coordinate, DRY);
-        if (level.at(point.x, point.y)?.typ === ROOM)
-            return point;
-        // get_free_room_loc() falls back to room floor, including when
-        // an explicit coordinate names furniture or other terrain.
-        for (let attempt = 0; attempt <= 100; attempt++) {
-            if (!somexy(room, point))
-                throw new Error("get_room_loc: can't find a place!");
-            if (level.at(point.x, point.y)?.typ === ROOM)
-                return point;
-        }
-        throw new Error("get_free_room_loc: can't find a place!");
-    }
+    if (room)
+        return await getFreeRoomLocation(context, coordinate, room);
     for (let attempt = 0; attempt <= 100; attempt++) {
         const point = await getLocationCoord(context, coordinate, DRY);
         const terrain = level.at(point.x, point.y)?.typ;
@@ -4988,6 +4976,21 @@ async function specialTrapLocation(context, coordinate) {
             return point;
     }
     return null;
+}
+// sp_lev.c:get_free_room_loc(). Furniture can satisfy DRY placement;
+// room features retry on ordinary floor instead of replacing each other.
+async function getFreeRoomLocation(context, coordinate, room) {
+    const level = requireGameLevel();
+    const point = await getLocationCoord(context, coordinate, DRY);
+    if (level.at(point.x, point.y)?.typ === ROOM)
+        return point;
+    for (let attempt = 0; attempt <= 100; attempt++) {
+        if (!somexy(room, point))
+            throw new Error("get_room_loc: can't find a place!");
+        if (level.at(point.x, point.y)?.typ === ROOM)
+            return point;
+    }
+    throw new Error("get_free_room_loc: can't find a place!");
 }
 async function specialTrapOfType(context, typ, options, coordinate) {
     const point = await specialTrapLocation(context, coordinate);
@@ -5601,19 +5604,15 @@ function luaCoordinate(options) {
 async function createLuaAltar(context, options) {
     const level = requireGameLevel();
     const coordinate = luaCoordinate(options);
-    const point = coordinate
-        ? {
-            x: context.xstart + coordinate.x,
-            y: context.ystart + coordinate.y,
-        }
-        : await specialRandomLocation(context);
-    if (!point)
-        return;
+    const point = context._room
+        ? await getFreeRoomLocation(context, coordinate, context._room)
+        : await getLocationCoord(context, coordinate, DRY);
     const altar = level.at(point.x, point.y);
-    if (!altar || IS_FURNITURE(altar.typ))
+    if (!altar || altar.typ === STAIRS || altar.typ === LADDER)
+        return;
+    if (!setLevelTerrainType(point.x, point.y, ALTAR))
         return;
     const alignment = luaSpecialAlignment(options.align);
-    altar.typ = ALTAR;
     altar.flags = Align2amask(alignment);
     const altarType = options.type ?? 'altar';
     if (!['altar', 'shrine', 'sanctum'].includes(altarType))
