@@ -6,8 +6,9 @@ import { POT_PARALYSIS, POT_SLEEPING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-for (const type of [POT_PARALYSIS, POT_SLEEPING]) {
-    void test(`potion ${type} vapors preserve an existing longer paralysis`, async () => {
+for (const { type, name } of [{ type: POT_PARALYSIS, name: 'paralysis' },
+    { type: POT_SLEEPING, name: 'sleeping' }]) {
+    void test(`potion of ${name} vapors preserve an existing longer paralysis`, async () => {
         freshObjectRoom();
         requirePlayingGame(game);
         game._helplessTurns = 30;

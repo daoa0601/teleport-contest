@@ -11,7 +11,7 @@ import { plineWithContinuation as pline } from './display.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, promptInventoryObject } from './inventory_prompt.js';
-import { inventoryItemDescription } from './invent.js';
+import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { objectQuantity } from './object_stack.js';
 import { objectName, observeObjectForNaming, ownedObjectName, simpleObjectName } from './objnam.js';
 import { promptYesNo } from './query.js';
@@ -19,7 +19,6 @@ import { dipSink } from './sink_dipping.js';
 import { isPoolAt } from './terrain_properties.js';
 import { waterbodyName } from './terrain_name.js';
 import { waterDamageObject } from './trap.js';
-import { consumeInventoryItem } from './invent.js';
 import { POT_ACID } from './object_data.js';
 import { treatDippedObject } from './potion_item_dip.js';
 

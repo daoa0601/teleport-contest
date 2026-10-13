@@ -48,6 +48,7 @@ const M1_NOEYES = 0x00001000;
 const M1_NOHEAD = 0x00008000;
 const M2_WERE = 0x00000004;
 const MR_SLEEP = 0x04;
+const S_MIMIC = 13;
 export const INERT_MONSTER_POTION_TYPES = new Set([
     POT_GAIN_LEVEL,
     POT_ENLIGHTENMENT,
@@ -755,7 +756,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     if (potion.otyp === POT_SLEEPING) {
         const duration = rnd(12);
         const appearance = M_AP_TYPE(monster);
-        if (!monster.msleeping && !monster.mfrozen && MONSTER_SYMBOL[monster.mnum] === 13
+        if (!monster.msleeping && !monster.mfrozen && MONSTER_SYMBOL[monster.mnum] === S_MIMIC
             && (appearance === M_AP_FURNITURE || appearance === M_AP_OBJECT))
             revealMonsterAppearance(monster);
         const inherentOrDefended = monsterHasSleepDefense(monster);

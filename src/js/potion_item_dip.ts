@@ -92,7 +92,7 @@ export async function treatDippedObject(object: GameObject, potion: GameObject):
     return true;
 }
 
-export async function poof(potion: GameObject): Promise<void> {
+async function poof(potion: GameObject): Promise<void> {
     if (potion.dknown) await tryCallObjectType(potion);
     await consumeInventoryItem(potion);
 }

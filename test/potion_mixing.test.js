@@ -8,10 +8,13 @@ import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 const AMETHYST = OBJECT_NAMES.indexOf('amethyst');
-for (const [dippedType, sourceType] of [[POT_HEALING, POT_SPEED], [POT_SPEED, POT_HEALING],
-    [POT_HEALING, POT_GAIN_ENERGY], [POT_GAIN_ENERGY, POT_HEALING]]) {
-    void test(`mixing ${dippedType} into ${sourceType} makes diluted extra healing`, async () => {
-        assert.ok(dippedType !== undefined && sourceType !== undefined);
+for (const { dippedType, sourceType } of [
+    { dippedType: POT_HEALING, sourceType: POT_SPEED },
+    { dippedType: POT_SPEED, sourceType: POT_HEALING },
+    { dippedType: POT_HEALING, sourceType: POT_GAIN_ENERGY },
+    { dippedType: POT_GAIN_ENERGY, sourceType: POT_HEALING },
+]) {
+    void test(`mixing ${OBJECT_NAMES[dippedType]} into ${OBJECT_NAMES[sourceType]} makes diluted extra healing`, async () => {
         freshObjectRoom();
         requirePlayingGame(game);
         const dipped = await addInventoryObject(dippedType);

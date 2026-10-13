@@ -95,7 +95,7 @@ export async function treatDippedObject(object, potion) {
     await pline('Interesting...');
     return true;
 }
-export async function poof(potion) {
+async function poof(potion) {
     if (potion.dknown)
         await tryCallObjectType(potion);
     await consumeInventoryItem(potion);
