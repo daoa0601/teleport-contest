@@ -301,7 +301,8 @@ void test('opening a quantum box resolves its cat once', async () => {
     assert.ok(corpse);
     game.moves = 40;
     initRng(1n);
-    await applyInventoryObject('a', 'q');
+    // Acknowledge the cat announcement before choosing the container action.
+    await applyInventoryObject('a', ' q');
     assert.equal(game.context.move, 1);
     await applyInventoryObject('a', 'q');
     assert.equal(box.spe, 0);
@@ -319,7 +320,7 @@ void test('opening a living cat box releases a peaceful cat beside the hero', as
     const box = await addInventoryItem(await unopenedCatBox({ invlet: 'a' }));
     game.u.ulevel = 8;
     initRng(4n);
-    await applyInventoryObject('a', 'q');
+    await applyInventoryObject('a', ' q');
     const cat = requireGameLevel().monsters.find((monster) => monster.name === "Schroedinger's Cat");
     assert.ok(cat, 'the box did not release its living cat');
     assert.equal(cat.mpeaceful, 1);

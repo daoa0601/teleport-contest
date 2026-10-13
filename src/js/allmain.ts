@@ -1,8 +1,10 @@
+import { rewindEngravingsForSave } from './engrave.js';
 import { finishMonsterHideUnder } from './monster_hiding.js';
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 import { heroIsHallucinating } from './senses.js';
 import { mcalcmove } from './monster_speed.js';
+import { makeBlinded } from './sight_change.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { advanceSpellProtection } from './spell_misc_effects.js';
@@ -1308,15 +1310,14 @@ async function finishInitialTurnMaintenanceAfterConfusion({
     const game = requireInitializedGame();
     if (!prayerTimeoutFreeze
         && game.u.blindTurns !== undefined && game.u.blindTurns > 0) {
-        const wasBlind = !!game.blind;
         game.u.blindTurns--;
         if (game.u.blindTurns === 0) {
-            syncBlindness(game);
-            if (wasBlind && !game.blind) {
-                appendTurnMessage('You can see again.');
-                game.vision_full_recalc = 1;
-                if (game._occupation) game._occupation = null;
-            }
+            // C nh_timeout() samples Blind after decrementing, then restores
+            // one tick for make_blinded()'s recovery message and redraws.
+            const wasBlind = heroIsBlind(game);
+            game.u.blindTurns = 1;
+            await makeBlinded(0);
+            if (wasBlind && !heroIsBlind(game)) await stopHeroOccupation(game);
         }
     }
 
@@ -3709,6 +3710,7 @@ export async function newgame() {
     // maintenance pass.  Compatibility paths historically hid this by
     // skipping the generic maintenance block altogether.
 
+    if (g.flags.checkpoint ?? true) rewindEngravingsForSave(g.level);
     // welcome() can wrap and wait before moveloop_preamble(). unixmain's
     // discovery-mode notice follows it, also before calendar effects.
     await plineWithContinuation(welcomeText());
@@ -3969,11 +3971,6 @@ export async function moveloop_core() {
         if (moved) await currentLuaLifecycle().runCallbacks(g, 'end_turn');
         return;
     }
-
-    // tty ESC at --More-- suppresses later plines until the next real
-    // command read.  Preserve the overflow message already installed while
-    // reopening output for the command rhack() is about to request.
-    g._suppressMessagesUntilInput = false;
 
     // Read and execute one command
     g.u.umoved = false;

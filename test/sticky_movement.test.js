@@ -5,6 +5,7 @@ import { NO_MINVENT, WEB } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -55,6 +56,28 @@ void test('a sticky polymorphed hero releases its captive when moving away', asy
     assert.equal(game.u.ustuck, null);
     assert.match(await topline(), /You release the owlbear/);
 });
+for (const grip of ['release', 'escape']) {
+    for (const peaceful of [true, false]) {
+        void test(`${grip} prose stays visible when move-without-pickup bumps into a ${peaceful ? 'peaceful' : 'hostile'} monster`, async () => {
+            const holder = await heldHero();
+            if (grip === 'release')
+                installPolymorphedHero('large mimic');
+            else
+                holder.mtame = 10;
+            const target = await createMonsterAt('jackal', 11, 10, NO_MINVENT);
+            target.mpeaceful = peaceful;
+            pushKeys('l' + ' '.repeat(20));
+            await rhack('m'.charCodeAt(0));
+            const line = await topline();
+            assert.match(line, grip === 'release' ? /You release the owlbear\./ : /You pull free from your owlbear\./);
+            assert.match(line, peaceful ? /Pardon me, jackal\./ : /You move right into the jackal\./);
+            assert.equal(game.u.ustuck, null);
+            assert.equal(game.u.ux, 10);
+            assert.equal(target.mx, 11);
+            assert.equal(game.context.move, 1);
+        });
+    }
+}
 void test('struggling can wake a frozen holder without escaping its grasp', async () => {
     const holder = await heldHero();
     holder.mcanmove = 0;

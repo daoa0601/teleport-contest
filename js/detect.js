@@ -500,6 +500,11 @@ async function preventUnsafeSearch(force = false) {
 export async function dosearch(force = false) {
     if (await preventUnsafeSearch(force))
         return false;
+    if (game.u.uswallow) {
+        await plineWithContinuation('What are you looking for?  The exit?', { noRepeat: true });
+        game.context.move = 1;
+        return true;
+    }
     const found = await searchAdjacentSecrets();
     game.context.move = 1;
     return found;

@@ -14,11 +14,10 @@ import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { ACID_VENOM, OBJECT_MATERIAL } from './object_data.js';
 import { rnd } from './rng.js';
-import { definiteName } from './ray_hit_message.js';
 import { heroIsBlind } from './senses.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
-import { objectCombatName, objectHasPersonalName, killerObjectName, observeObjectForNaming } from './objnam.js';
+import { definiteName, objectCombatName, objectHasPersonalName, killerObjectName, observeObjectForNaming } from './objnam.js';
 import { AD_ACID } from './monster_attack_types.js';
 import { monstersObserveHeroResistance, seenResistanceForDamage } from './monster_perception.js';
 

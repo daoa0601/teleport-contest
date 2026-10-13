@@ -68,7 +68,7 @@ void test('cancelling a horn direction spends a charge without discovering its t
     requirePlayingGame(game);
     const horn = await addInventoryObject(FIRE_HORN, { spe: 2, typeKnown: false });
     acknowledgeMessages();
-    pushKeys('y\x1b');
+    pushKeys('y \x1b'); // Acknowledge the horn announcement before cancelling its direction.
     await playInstrument(horn);
     assert.equal(horn.spe, 1);
     assert.ok(!game._knownObjectTypes?.has(FIRE_HORN));
@@ -101,7 +101,7 @@ void test('a charged shop wand accrues usage debt even when its direction is can
     const { shopkeeper } = await createStaffedShop();
     const wand = await addInventoryObject(WAN_SLEEP, { spe: 2, unpaid: true });
     acknowledgeMessages();
-    pushKeys(`${wand.invlet}\x1b`);
+    pushKeys(`${wand.invlet} \x1b`);
     await rhack('z'.charCodeAt(0));
     assert.ok(shopkeeper.eshk.debit > 0);
     assert.equal(wand.spe, 1);
@@ -133,7 +133,7 @@ void test('physical protection halves self-wand damage but leaves magical horn d
         acknowledgeMessages();
         initRng(8345n);
         if (type === FIRE_HORN) {
-            pushKeys('y.');
+            pushKeys('y .');
             await playInstrument(object);
         }
         else {

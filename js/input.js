@@ -88,6 +88,9 @@ export function pushKeys(keys) {
     activeInputGate.feed(keys);
 }
 export async function nhgetch() {
+    // tty_nhgetch() clears WIN_STOP before reading any key, including a
+    // target selection made by an action resumed from the command queue.
+    game._suppressMessagesUntilInput = false;
     const key = await activeInputGate.readKey();
     // tty_nhgetch() marks the displayed topline as seen after any key.
     // Keep its text visible, but a later screen reset must not page it again.

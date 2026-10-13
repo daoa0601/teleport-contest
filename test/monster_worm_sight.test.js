@@ -2,7 +2,7 @@ import { assertWormBody } from './support/worms.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
-import { canSpotMonster, glyphAt, newsym } from '../js/display.js';
+import { canSpotMonster, feel_location, glyphAt, newsym } from '../js/display.js';
 import { createElementalMonsterExplosion } from '../js/explosion.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -77,6 +77,19 @@ void test('monster detection shows an invisible worm head but not its visible-sq
     newsym(tail.x, tail.y);
     assert.equal(glyphAt(worm.mx, worm.my)?.kind, 'monster');
     assert.notEqual(glyphAt(tail.x, tail.y)?.kind, 'monster');
+});
+void test('blind touch draws a detected worm tail above the remembered floor', async () => {
+    const { worm, tail } = await wormWithOnlyTailVisible();
+    requirePlayingGame(game);
+    grantIntrinsicProperty('detectMonsters', 'potion');
+    await makeBlinded(10, { talk: false });
+    newsym(tail.x, tail.y);
+    assert.notEqual(glyphAt(tail.x, tail.y)?.kind, 'monster');
+    feel_location(tail.x, tail.y);
+    assert.equal(game.level.requireAt(tail.x, tail.y).disp_ch, '~');
+    assert.equal(glyphAt(tail.x, tail.y)?.kind, 'monster');
+    assert.equal(game.level.requireAt(tail.x, tail.y).remembered_glyph?.kind, 'terrain');
+    assert.equal(worm.meverseen, 1);
 });
 void test('blind telepathy draws the out-of-sight worm tail under the Native dark-square rule', async () => {
     const { worm, tail } = await wormWithOnlyTailVisible();

@@ -10,7 +10,7 @@ import {
     FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { feel_newsym, newsym, plineWithContinuation } from './display.js';
 import { heroPassesWalls, heroFormSticks } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -490,6 +490,8 @@ async function finishLavaEffects({
     };
     const hero = state.u;
     const damage = rollDice(6, 6);
+    // C lava_effects() maps the liquid by touch before its first message.
+    if (state === game) feel_newsym(hero.ux, hero.uy);
     await burnAwayHeroSlime(state, publish);
     if (heroLikesLava(state))
         return { entered: true, moved: false, died: false };

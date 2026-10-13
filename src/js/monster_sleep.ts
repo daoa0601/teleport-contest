@@ -20,7 +20,7 @@ export function monsterIsBreathless(monster: Monster): boolean {
 
 export function monsterIsHelpless(monster: Monster): boolean {
     return !!(monster.msleeping
-        || monster?.mcanmove === 0 || (monster?.mfrozen ?? 0) > 0);
+        || !monster.mcanmove || (monster.mfrozen ?? 0) > 0);
 }
 
 export function putMonsterToSleep(monster: Monster, turns: number): boolean {

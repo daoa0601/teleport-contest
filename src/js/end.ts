@@ -38,7 +38,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
-    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED,
+    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, STARVING, STONING,
     Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd,
 } from './const.js';
 import {
@@ -103,6 +103,7 @@ interface DisclosureOptions extends DeathDescription {
 interface ScoreOptions extends DeathDescription {
     outcome?: ScoreOutcome;
     killer?: string;
+    deathType?: number | null;
 }
 interface ScoreUpdate {
     records: ScoreRecord[];
@@ -665,7 +666,7 @@ function deathSummaryLines(killer: string, { gold, score, depth, moves }: GameSu
     const deathDungeon = game._tutorialActive
         ? 'The Tutorial' : currentDungeonName();
     const causeRows = tombstoneDeathRows(
-        deathCause || deathCauseRecord(killer, deathVerb),
+        sanitizeDeathCause(deathCause || deathCauseRecord(killer, deathVerb)),
     );
     const stone: ReadonlyArray<readonly [number, string]> = [
         [23, '----------'],
@@ -748,12 +749,35 @@ function deathCauseRecord(killer: string, deathVerb = 'died') {
     if (/^(?:an?|the) /i.test(raw)
         || /^(?:Mr|Mrs|Ms|Miss|Sir|Lady|Lord)\.?\s/.test(raw))
         return `killed by ${raw}`;
-    const article = /^[aeiou]/i.test(raw) ? 'an' : 'a';
-    return `killed by ${article} ${raw}`;
+    return `killed by ${withIndefiniteArticle(raw)}`;
+}
+
+// C topten.c:formatkiller() sanitizes killer names for every caller, including rip.c.
+function sanitizeDeathCause(cause: string): string {
+    return cause.replaceAll(',', ';').replaceAll('=', '_').replaceAll('\t', ' ');
+}
+
+// C topten.c:formatkiller(TRUE). Score records include involuntary delay;
+// the tombstone, bones epitaph, and overview use the cause without it.
+function scoreDeathCause(cause: string, deathType: number | null): string {
+    const scoreDeathSize = 100; // C topten.c:DTHSZ, excluding the terminator.
+    const cleanCause = sanitizeDeathCause(cause).slice(0, scoreDeathSize);
+    if ((game._helplessTurns ?? 0) <= 0 && game.multi >= 0) return cleanCause;
+    const helplessness = game._helplessReason;
+    let reason = (typeof helplessness === 'string' ? helplessness : helplessness?.text) || 'helpless';
+    if (deathType === STONING && reason === 'getting stoned') return cleanCause;
+    if (deathType === STARVING && reason === 'fainted from lack of food') reason = 'fainted';
+    // formatkiller() consumes a byte while reading the cause terminator,
+    // then requires room for the suffix's own terminator too.
+    const remaining = scoreDeathSize - cleanCause.length;
+    const suffix = `, while ${reason}`;
+    return suffix.length + 1 <= remaining ? cleanCause + suffix
+        : ', while helpless'.length + 1 <= remaining
+            ? `${cleanCause}, while helpless` : cleanCause;
 }
 
 function currentScoreRecord(summary: GameSummary, {
-    outcome = 'died', killer = '', deathVerb = 'died', deathCause = null,
+    outcome = 'died', killer = '', deathVerb = 'died', deathCause = null, deathType = null,
 }: ScoreOptions = {}): ScoreRecord {
     return {
         points: summary.score,
@@ -766,7 +790,7 @@ function currentScoreRecord(summary: GameSummary, {
         dungeon: currentDungeonName(),
         outcome,
         death: outcome === 'quit' ? 'quit'
-            : deathCause || deathCauseRecord(killer, deathVerb),
+            : scoreDeathCause(deathCause || deathCauseRecord(killer, deathVerb), deathType),
     };
 }
 
@@ -1292,7 +1316,7 @@ async function completeOrdinaryDeath({
         await showTextWindow(deathSummaryLines(killer, summary, { deathVerb, deathCause, deathType }));
     }
     await finishScoreDisplay(currentScoreRecord(summary, {
-        killer, deathVerb, deathCause,
+        killer, deathVerb, deathCause, deathType,
     }), { stopPrinting: !showSummary });
     game.context.move = 0;
 }

@@ -626,7 +626,7 @@ void test('a charged unpaid camera adds real shop usage debt before taking its p
     await rhack(','.charCodeAt(0));
     assert.equal(object.unpaid, true);
     const bill = shopkeeper.eshk.bill.find((entry) => entry.bo_id === object.o_id);
-    await aim(object, '>');
+    await aim(object, ' >'); // Acknowledge the pickup message before aiming.
     assert.ok(shopkeeper.eshk.debit > 0);
     assert.equal(object.spe, 2);
     assert.ok(bill);

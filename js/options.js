@@ -480,7 +480,6 @@ async function editNumberPad() {
             key: String.fromCharCode(97 + index), text,
         })),
         validKeys: [...'abcdef012345'].map(key => key.charCodeAt(0)).concat([27, 32, 10, 13]),
-        restoreUnderlay: true,
     });
     const index = key >= 97 && key <= 102 ? key - 97 : key >= 48 && key <= 53 ? key - 48 : -1;
     if (index >= 0)

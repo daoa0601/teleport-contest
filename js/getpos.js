@@ -1,7 +1,7 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
 import { COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, ROWNO, } from './const.js';
-import { bot, redrawMap, flush_screen, glyphAt, newsym, pline, show_glyph_cell, terrain_glyph, } from './display.js';
+import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, newsym, pline, show_glyph_cell, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -318,7 +318,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             }
             const ch = String.fromCharCode(key);
             if (key === 27) {
-                game._pending_message = '';
+                clearMessageWindow();
                 return null;
             }
             const pickType = mapPositionPickType(key);
