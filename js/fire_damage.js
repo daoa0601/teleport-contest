@@ -15,7 +15,7 @@ import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import { monsterTypeName } from './monster_data.js';
 import { BAG_OF_TRICKS, CHEST, ICE_BOX, LARGE_BOX, OBJECT_NAMES, POT_OIL, SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, STATUE, } from './object_data.js';
 import { rnl, rn2 } from './rng.js';
-import { couldsee } from './vision.js';
+import { cansee, couldsee } from './vision.js';
 const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
@@ -71,7 +71,7 @@ async function dropContents(container, context) {
                 y: context.y,
                 publish: context.publish,
                 random: context.random,
-                visible: context.squareVisible,
+                visible: context.state === game && cansee(context.x, context.y),
             });
             if (!landed.length)
                 continue;

@@ -24,7 +24,7 @@ import {
     SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, STATUE,
 } from './object_data.js';
 import { rnl, rn2 } from './rng.js';
-import { couldsee } from './vision.js';
+import { cansee, couldsee } from './vision.js';
 
 export interface FireDamageOptions {
     carrier?: Monster | null;
@@ -106,7 +106,7 @@ async function dropContents(container: GameObject, context: FireDamageContext): 
                 y: context.y,
                 publish: context.publish,
                 random: context.random,
-                visible: context.squareVisible,
+                visible: context.state === game && cansee(context.x, context.y),
             });
             if (!landed.length) continue;
         }

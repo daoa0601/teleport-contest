@@ -18,7 +18,7 @@ import { pushKeys } from '../js/input.js';
 import { plineWithContinuation } from '../js/display.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { waterDamageObject } from '../js/trap.js';
-import { cansee } from '../js/vision.js';
+import { cansee, couldsee, vision_recalc } from '../js/vision.js';
 import { meldNearbyFloorGlobs } from '../js/glob.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -77,7 +77,7 @@ void test('a chest burning in lava spills surviving contents onto its square', a
 });
 
 for (const role of ['ranger', 'priest'] as const) {
-    void test(`a ${role} observes an unseen horn spilling from a chest into lava`, async () => {
+    void test(`a ${role} observes a horn spilling from a chest into visible lava`, async () => {
         const level = freshObjectRoom({ role });
         level.requireAt(12, 10).typ = LAVAPOOL;
         const chest = await knownObject(CHEST, { initialize: false });
@@ -100,6 +100,36 @@ for (const role of ['ranger', 'priest'] as const) {
         assert.equal(horn.bknown, role === 'priest');
         assert.equal(game._encounteredObjectTypes?.has(TOOLED_HORN), true);
         assert.equal(horn.where, 'gone');
+    });
+
+    void test(`a ${role} does not observe a horn spilling from a chest into dark lava`, async () => {
+        const level = freshObjectRoom({ role });
+        const lava = level.requireAt(12, 10);
+        lava.typ = LAVAPOOL;
+        lava.lit = false;
+        vision_recalc(0);
+        assert.equal(cansee(12, 10), false, 'The lava must be outside the hero\'s sight.');
+        assert.equal(couldsee(12, 10), true, 'The hero must have a clear line to the lava.');
+        const chest = await knownObject(CHEST, { initialize: false });
+        const horn = await knownObject(TOOLED_HORN, {
+            initialize: false, blessed: true,
+            dknown: false, bknown: false, known: false, typeKnown: false,
+        });
+        await addCreatedObjectToContainer(chest, horn, game);
+        const messages: string[] = [];
+
+        await landFloorObject(chest, 12, 10, {
+            publish: message => { messages.push(message); },
+        });
+
+        assert.equal(horn.dknown, false, 'Burning an unseen horn must not reveal its appearance.');
+        assert.equal(horn.bknown, false, 'Burning an unseen horn must not reveal its blessing.');
+        assert.equal(game._encounteredObjectTypes?.has(TOOLED_HORN) ?? false, false);
+        assert.equal(horn.where, 'gone');
+        assert.equal(chest.where, 'gone');
+        assert.ok(messages.includes('The chest catches fire and burns.'));
+        assert.ok(messages.includes('Its contents fall out.'));
+        assert.equal(messages.some(message => message.includes('hit lava and burn up')), false);
     });
 }
 
