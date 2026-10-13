@@ -3167,7 +3167,7 @@ async function attackHeroWithRangedWeapon(monster, state, random, rollOne, calls
     const previousDistance = distmin(monster.mx, monster.my, state?.u?.ux0 ?? heroX, state?.u?.uy0 ?? heroY);
     if (distance > previousDistance &&
         !returning &&
-        recordRandom(random, calls, Math.max(1, BOLT_LIM - distance)) !== 0)
+        recordRandom(random, calls, BOLT_LIM - distmin(monster.mx, monster.my, monster.mux, monster.muy)) !== 0)
         return;
     return await throwMonsterWeaponAtHero(monster, state, weapon, {
         random: (range) => recordRandom(random, calls, range),

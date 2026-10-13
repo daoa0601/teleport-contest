@@ -4071,7 +4071,8 @@ async function attackHeroWithRangedWeapon(
     if (
         distance > previousDistance &&
         !returning &&
-        recordRandom(random, calls, Math.max(1, BOLT_LIM - distance)) !== 0
+        recordRandom(random, calls,
+            BOLT_LIM - distmin(monster.mx, monster.my, monster.mux, monster.muy)) !== 0
     )
         return;
 
