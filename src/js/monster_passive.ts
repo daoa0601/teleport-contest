@@ -439,6 +439,7 @@ async function applyElectricPassive({ monster, damage, state, publish, die }: Pa
 }
 
 async function damageHero(monster: Monster, amount: number, { state, publish, die }: Pick<PassiveContext, 'state' | 'publish' | 'die'>): Promise<boolean> {
+    state.context.botl = true;
     if (amount <= 0) return false;
     const hero = state.u;
     if (Upolyd(hero)) {

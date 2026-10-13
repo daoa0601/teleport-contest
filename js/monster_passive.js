@@ -296,6 +296,7 @@ async function applyElectricPassive({ monster, damage, state, publish, die }) {
     return { appliedDamage: damage, heroDied };
 }
 async function damageHero(monster, amount, { state, publish, die }) {
+    state.context.botl = true;
     if (amount <= 0)
         return false;
     const hero = state.u;
