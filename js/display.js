@@ -1198,7 +1198,7 @@ export function feel_newsym(x, y) {
 // why a felt floor object can remain in hero memory after a later invisible
 // actor marker is installed elsewhere during the same search.
 export function feel_location(x, y) {
-    if (game.program_state.saving)
+    if (game.in_mklev || game.program_state.saving)
         return;
     const loc = game.level?.at(x, y);
     if (!loc)
@@ -1491,7 +1491,7 @@ function monsterOverridesMapRegion(monster, x, y) {
     return ordinaryVisible && dx * dx + dy * dy <= range * (range + 1);
 }
 export function newsym(x, y) {
-    if (game.program_state?.saving)
+    if (game.in_mklev || game.program_state.saving)
         return;
     const loc = game.level?.at(x, y);
     if (!loc)

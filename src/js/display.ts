@@ -1256,7 +1256,7 @@ export function feel_newsym(x: number, y: number) {
 // why a felt floor object can remain in hero memory after a later invisible
 // actor marker is installed elsewhere during the same search.
 export function feel_location(x: number, y: number) {
-    if (game.program_state.saving) return;
+    if (game.in_mklev || game.program_state.saving) return;
     const loc = game.level?.at(x, y);
     if (!loc) return;
     const monster = monsterAtMapCell(x, y);
@@ -1546,7 +1546,7 @@ function monsterOverridesMapRegion(monster: Monster | null | undefined, x: numbe
 }
 
 export function newsym(x: number, y: number) {
-    if (game.program_state?.saving) return;
+    if (game.in_mklev || game.program_state.saving) return;
     const loc = game.level?.at(x, y);
     if (!loc) return;
     // C newsym() permits only the hero cell while swallowed.  The stomach
