@@ -182,6 +182,7 @@ export interface Engraving extends Position {
     erasedPrefix?: string;
     pristine: string;
     rememberedText: string;
+    rememberedPrefix?: string;
     epoch: number;
     engr_type: number;
     nowipeout: boolean;

@@ -177,11 +177,14 @@ export function wipeEngravingAt(x, y, count, magical = false, level = game.level
     return true;
 }
 // C engrave.c:save_engravings(). Writing resets the live pointer, including
-// checkpoint writes which leave the hero on the same level.
+// checkpoint writes which leave the hero on the same level. Both actual
+// and remembered text return to their separate buffer starts.
 export function rewindEngravingsForSave(level) {
     for (const engraving of level?.engravings ?? []) {
         engraving.text = (engraving.erasedPrefix ?? '') + engraving.text;
         delete engraving.erasedPrefix;
+        engraving.rememberedText = (engraving.rememberedPrefix ?? '') + engraving.rememberedText;
+        delete engraving.rememberedPrefix;
     }
 }
 // C engrave.c:rest_engravings(). The three text buffers are saved separately.
@@ -191,7 +194,10 @@ export function restoreEngravingPointers(level) {
         engraving.erasedPrefix = (engraving.erasedPrefix ?? '')
             + engraving.text.slice(0, engraving.text.length - text.length);
         engraving.text = text;
-        engraving.rememberedText = engraving.rememberedText.replace(/^ +/, '');
+        const rememberedText = engraving.rememberedText.replace(/^ +/, '');
+        engraving.rememberedPrefix = (engraving.rememberedPrefix ?? '')
+            + engraving.rememberedText.slice(0, engraving.rememberedText.length - rememberedText.length);
+        engraving.rememberedText = rememberedText;
     }
 }
 // C engrave.c:u_wipe_engr().

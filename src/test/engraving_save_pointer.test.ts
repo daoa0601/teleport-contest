@@ -23,3 +23,23 @@ void test('saving rewinds the worn engraving pointer, and restoring skips its er
     assert.equal(engravingAt(12, 10)?.text, 'a warning!');
     assert.equal(engravingAt(12, 10)?.pristine, '   a warning!');
 });
+
+void test('restoring and saving again preserves the remembered engraving buffer prefix', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const engraving = makeEngravingAt(12, 10, '   a warning!', null, 0, DUST);
+    assert.ok(engraving);
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+
+    for (let cycle = 1; cycle <= 2; cycle++) {
+        assert.equal(restoreGame(game.plname, storage), true);
+        const restored = engravingAt(12, 10);
+        assert.ok(restored);
+        assert.equal(restored.rememberedText, 'a warning!');
+
+        assert.equal(await saveGame(storage), true);
+
+        assert.equal(restored.rememberedText, '   a warning!', `save cycle ${cycle} must rewind the remembered pointer`);
+    }
+});
