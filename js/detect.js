@@ -224,15 +224,15 @@ async function searchAdjacentSecrets(automatic = false) {
     }
     return found;
 }
-// C detect.c:find_trap(). A covered trap gets a separate map display so
-// the discovery is visible even when an object or monster occupies it.
+// C detect.c:find_trap(). Only clutter in the remembered layer needs a
+// separate trap display; a visible monster overlays that layer.
 async function findTrap(trap) {
     trap.tseen = true;
     exerciseWisdom();
     feel_newsym(trap.tx, trap.ty);
-    const projected = glyphAt(trap.tx, trap.ty);
+    const remembered = game.level?.at(trap.tx, trap.ty)?.remembered_glyph;
     const cleared = heroIsHallucinating(game)
-        || projected?.kind !== 'trap' || projected.trapType !== trap.ttyp;
+        || remembered?.kind !== 'trap' || remembered.trapType !== trap.ttyp;
     if (cleared) {
         await cls();
         for (let x = 1; x < COLNO; x++) {
