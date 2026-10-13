@@ -1697,7 +1697,7 @@ async function monsterAttackMessage(
 ): Promise<string | null> {
     const game = requireInitializedGame();
     if (attack.effect === 'petrifying-corpse' || attack.effect === 'wrapping-natural') return null;
-    if (attack.effect === 'physical-hug') return null;
+    if (attack.effect === 'physical-hug' || attack.effect === 'silent-physical-touch') return null;
     if (attack.effect === 'engulf' || attack.effect === 'engulf-tick'
         || attack.effect === 'engulf-refused' || attack.effect === 'item-theft') return null;
     if (attack.effect === 'blind-natural' && !attack.blindMessage) return null;

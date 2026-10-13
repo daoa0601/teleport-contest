@@ -96,7 +96,7 @@ import { splitObjectStack } from './object_stack.js';
 import { artifactById } from './artifacts.js';
 import { respondMedusa } from './monster_gaze.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, randomDisplayMonsterName, randomDisplayMonsterSubject, plineWithContinuation, } from './display.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsWhirly, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
 import { AMULET_OF_YENDOR, APPLE, BANANA, BELL_OF_OPENING, BULLWHIP, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_MATERIAL, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
@@ -4567,7 +4567,19 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             newsym(monster.mx, monster.my);
         }
     }
+    // gulpmu() has its own roll; every successful contact enters hitmu()
+    // once, including harmless touches and unsupported special effects.
     let damage = 0;
+    if (hit) {
+        damage = rollDice(dice, sides);
+        calls.push(`d(${dice},${sides})`);
+        if (attackType !== AT_ENGL
+            && (monsterIsUndead(monster.mnum) || monsterIsVampireShifter(monster))
+            && Number(String(state.datetime || '').slice(8, 10)) === 0) {
+            damage += rollDice(dice, sides);
+            calls.push(`d(${dice},${sides})`);
+        }
+    }
     const poisonAttribute = poisonAttackAttribute(damageType);
     // mhitu.c:hitmu() rolls the AT_WEAP slot's declared base damage, then
     // weapon.c:dmgval() rolls the wielded weapon's small-target die.  The
@@ -4575,8 +4587,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
     const contactWeapon = attackType === AT_WEAP ? monsterWieldedWeapon(monster) : null;
     if (hit && attackType === AT_ENGL) {
         // gulpmu() rolls before silent admission and failed-grab checks.
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         if (alreadyEngulfing) {
             return {
                 kind: 'hero-attack',
@@ -4643,8 +4653,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             (contactWeapon.opoisoned || isPermanentlyPoisonedObject(contactWeapon))
             ? { attribute: A_STR, fatal: 10 }
             : null;
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         if (contactWeapon.otyp === CORPSE && touchPetrifies(contactWeapon.corpsenm)) {
             const subject = canSpotMonster(monster) ? monsterSentenceSubject(monster) : 'It';
             await plineWithContinuation(`${subject} hits you with the ${MONSTER_NAME[contactWeapon.corpsenm ?? -1]} corpse.`);
@@ -4771,8 +4779,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // uhitm.c:mhitm_ad_drst() family.  Poisonous natural attacks roll
         // their physical damage first, then magic cancellation; only a
         // non-negated attack reaches the one-in-eight attribute-poison gate.
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         const negated = specialAttackNegated(monster, state.u, { state, random });
         const poison = negated ? null : { attribute: poisonAttribute, chance: 8 };
         if (deferVisibleContact) {
@@ -4834,8 +4840,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // uhitm.c:mhitm_ad_samu() retains ordinary claw damage.  After
         // hitmsg(), it always spends the one-in-twenty theft gate; a hero
         // without quest/invocation objects simply has nothing to steal.
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         return {
             kind: 'hero-attack',
             roll,
@@ -4853,8 +4857,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
     else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
         || damageType === AD_WRAP || damageType === AD_DRIN)) {
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         const negated = damageType === AD_POLY
             && (specialAttackNegated(monster, state.u, { state, random }) || !!monster.mspec_used);
         return {
@@ -4864,8 +4866,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         };
     }
     else if (hit && damageType === AD_STCK) {
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         const armorProtection = state?.u?._magicNegation ?? 0;
         const negated = !!monster.mcan || recordRandom(random, calls, 10) < 3 * armorProtection;
         return {
@@ -4888,8 +4888,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         damageType === AD_FIRE &&
         dice > 0 &&
         sides > 0) {
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         return {
             kind: 'hero-attack',
             roll,
@@ -4907,8 +4905,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // projects hitmsg() before checking magic cancellation.  Leave that
         // check deferred so an already-full tty topline can suspend between
         // d() and rn2(10).
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         return {
             kind: 'hero-attack',
             roll,
@@ -4927,8 +4923,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         damageType === AD_ELEC &&
         dice > 0 &&
         sides > 0) {
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         return {
             kind: 'hero-attack',
             roll,
@@ -4945,8 +4939,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // hitmu() records the attack's declared zero dice before dispatching
         // AD_SITM through mhitm_ad_sedu().  A successful nymph theft ends the
         // aggressor's attack sequence, so do not retain its second claw slot.
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         const theft = selectHeroItemForTheft(state, random, calls);
         return {
             kind: 'hero-attack',
@@ -4968,8 +4960,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // side precede the special contact line.  Wound duration, attribute
         // exercise, knockback, and HP damage all remain after that pline, so
         // a tty pager can suspend one xan slot at the same source boundary.
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         const legSide = recordRandom(random, calls, 2) ? 'right' : 'left';
         const boots = state?.uarmf || state?.u?.uarmf;
         const airborneHero = !!(state?.u?.usteed ||
@@ -5025,8 +5015,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // claw converts that amount into blindness duration, prints its
         // special line before toggling sight, then still enters the shared
         // knockback tail with zero HP damage.
-        const blindIncrement = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
+        const blindIncrement = damage;
         const blindfolded = !!(state?.ublindf || state?.u?.ublindf);
         const noEyes = !heroHasEyes(state);
         const helmet = state?.uarmh || state?.u?.uarmh;
@@ -5053,8 +5042,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // precede cancellation and the one-in-four stun gate.  A selected
         // effect adds the full damage to HStun, then halves only the HP
         // damage before entering the common knockback/contact tail.
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         return {
             kind: 'hero-attack',
             roll,
@@ -5069,8 +5056,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         };
     }
     else if (hit && damageType === AD_SLIM) {
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         const armorProtection = state?.u?._magicNegation ?? 0;
         const cancelled = !!monster.mcan;
         const negated = cancelled || recordRandom(random, calls, 10) < 3 * armorProtection;
@@ -5090,16 +5075,12 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         };
     }
     else if (hit && damageType === AD_WERE) {
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         return {
             kind: 'hero-attack', roll, threshold, hit, damage, attackType, damageType,
             deferredPostHit: true, oldFormMnum,
         };
     }
     else if (hit && damageType === AD_STON) {
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         return {
             kind: 'hero-attack',
             roll,
@@ -5117,8 +5098,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // damage and publishes hitmsg() before cancellation or erode_armor().
         // Armor erosion is a separately resumable message owner; shared
         // knockback gates follow it before mattacku() advances attack slots.
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         const completelyRustableForm = Upolyd(state?.u) && state.u.umonnum === 259;
         return {
             kind: 'hero-attack',
@@ -5140,8 +5119,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // hitmsg() and erode_armor(ERODE_CORRODE) both precede the common
         // knockback and HP-damage tail.  Keep armor erosion resumable across
         // tty exactly as for rust without conflating primary/secondary state.
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         return {
             kind: 'hero-attack',
             roll,
@@ -5160,8 +5137,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // uhitm.c:mhitm_ad_dcay() follows the same hitmsg/cancellation/armor
         // continuation shape as rust, but erodes secondary rot state and
         // deliberately disables grease protection.
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         const completelyRottableForm = Upolyd(state?.u) && [PM_LEATHER_GOLEM, 254].includes(state.u.umonnum);
         return {
             kind: 'hero-attack',
@@ -5183,8 +5158,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // hitmsg(); some_armor(), drain resistance, and the state mutation
         // precede the optional "less effective" pline which can force the
         // earlier hit line through tty.
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         const armorProtection = state?.u?._magicNegation ?? 0;
         const negated = !!monster.mcan || recordRandom(random, calls, 10) < 3 * armorProtection;
         let drainedObject = null;
@@ -5222,8 +5195,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         };
     }
     else if (hit && damageType === AD_DRLI) {
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
         return {
             kind: 'hero-attack',
             roll,
@@ -5239,17 +5210,15 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
     }
     else if (hit &&
         (attackType !== AT_WEAP || !monsterWieldedWeapon(monster)) &&
-        damageType === AD_PHYS &&
-        dice > 0 &&
-        sides > 0) {
-        damage = rollDice(dice, sides);
-        calls.push(`d(${dice},${sides})`);
+        damageType === AD_PHYS) {
         const physicalHug = attackType === AT_HUGS && !heroFormSticks(state);
         if (physicalHug) {
             damage = await resolvePhysicalHeroHug(monster, damage, state, range => recordRandom(random, calls, range), monsterAttackMessagePublisher(sequence.paging));
         }
         const physicalEffect = physicalHug ? 'physical-hug'
-            : attackType === AT_WEAP ? 'physical-unarmed-weapon' : 'physical-natural';
+            : attackType === AT_TUCH && damage === 0 && state.u.ustuck === monster
+                ? 'silent-physical-touch'
+                : attackType === AT_WEAP ? 'physical-unarmed-weapon' : 'physical-natural';
         // hitmu() rolls ordinary physical damage before pline() announces the
         // hit, but knockback and HP subtraction happen after that message.
         // The tty can suspend inside pline() for --More--, so the live actor
