@@ -158,7 +158,7 @@ import { isPoolAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
-import { announceDisplacementLoss, applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor, armorSimpleName, armorOffMessage, findArmorClass, heroIsDisplaced, objectErosionKind, objectErosionMessage, removeHeroArmor, wearHeroArmor, } from './armor.js';
+import { applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor, armorSimpleName, armorOffMessage, findArmorClass, heroIsDisplaced, objectErosionKind, objectErosionMessage, removeHeroArmor, wearHeroArmor, } from './armor.js';
 import { findMonsterArmorClass, nameMonsterForCreationArmorChecks, } from './monworn.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { wakeMonstersNear } from './monster_wake.js';
@@ -4862,7 +4862,6 @@ async function putOnAccessoryObject(object) {
 // the same state owner immediately.
 export async function finishArmorRemoval(object, { silent = false } = {}) {
     await removeHeroArmor(object, game, { deferArmorClass: true });
-    await announceDisplacementLoss(object, game);
     if (silent || game.flags?.verbose === false)
         return '';
     return armorOffMessage(object, game);
