@@ -711,7 +711,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     if (potion.otyp === POT_PARALYSIS) {
         let paralyzed = false;
         let duration = 0;
-        if (monster.mcanmove !== 0) {
+        if (!!monster.mcanmove) {
             duration = rnd(25);
             monster.mcanmove = 0;
             monster.mfrozen = Math.min(duration, 127);
@@ -738,7 +738,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if (resisted) {
             await showShield?.(monster);
         }
-        else if (monster.mcanmove !== 0) {
+        else if (!!monster.mcanmove) {
             monster.mcanmove = 0;
             monster.mfrozen = Math.min(duration + (monster.mfrozen ?? 0), 127);
             monster.meating = 0;
