@@ -1,6 +1,7 @@
 import type { CommandDefinition } from './command_data.js';
 import type { GameObject } from './object_types.js';
 import type { TerminalCell } from './terminal.js';
+import type { InventoryAction } from './invent.js';
 
 export type NativeCommand = CommandDefinition;
 
@@ -14,6 +15,7 @@ export interface CommandBinding {
 export type CannedCommand =
     | { kind: 'rub' | 'apply' | 'wield'; invlet: string }
     | { kind: 'swap-weapon' }
+    | { kind: 'inventory-action'; action: InventoryAction }
     | { kind: 'fire'; shotLimit: number };
 
 export type DirectionalRunMode = 0 | 1 | 2 | 3;

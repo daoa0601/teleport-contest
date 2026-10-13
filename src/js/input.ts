@@ -25,6 +25,7 @@ export class InputGate {
     beforeRead: (() => void | Promise<void>) | null;
     display: KeyReader | null;
     private readonly queue: number[];
+    private readonly commandKeys: number[];
     private pendingRead: ((code: number) => void) | null;
     private blockedWaiters: (() => void)[];
 
@@ -32,6 +33,7 @@ export class InputGate {
         this.beforeRead = beforeRead;
         this.display = display;
         this.queue = [];
+        this.commandKeys = [];
         this.pendingRead = null;
         this.blockedWaiters = [];
     }
@@ -55,7 +57,15 @@ export class InputGate {
         resolve(code);
     }
 
+    queueCommandKeys(keys: string): void {
+        this.commandKeys.push(...[...keys].map(keyCode));
+    }
+
     async readKey(): Promise<number> {
+        // C cmdq keys answer a command's prompts without asking tty or
+        // consuming input the player already entered for the next command.
+        const commandKey = this.commandKeys.shift();
+        if (commandKey !== undefined) return commandKey;
         await this.beforeRead?.();
         const queued = this.queue.shift();
         if (queued !== undefined) return queued;
@@ -84,6 +94,7 @@ export class InputGate {
 
     clear() {
         this.queue.length = 0;
+        this.commandKeys.length = 0;
     }
 
     get isBlocked() {
@@ -105,6 +116,10 @@ export function pushKey(key: KeyInput): void {
 
 export function pushKeys(keys: KeyInput | readonly KeyInput[]): void {
     activeInputGate.feed(keys);
+}
+
+export function queueCommandKeys(keys: string): void {
+    activeInputGate.queueCommandKeys(keys);
 }
 
 export async function nhgetch() {

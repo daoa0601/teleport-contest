@@ -87,7 +87,7 @@ import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
 import { resetBulkTakeoff } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
-import { nhgetch } from './input.js';
+import { nhgetch, queueCommandKeys } from './input.js';
 import { readCommandInput } from './command_input.js';
 import {
     chooseInventoryObject, compactInventoryLetters, promptInventoryObject,
@@ -123,6 +123,7 @@ import {
     bucAdjectiveForName, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject,
     inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject,
 } from './invent.js';
+import type { InventoryAction } from './invent.js';
 import {
     castSpell, docast, dovspell,
 } from './spell.js';
@@ -1195,6 +1196,11 @@ async function runCommandHandler(binding: CommandBinding, {
         await dofire(cannedCommand.shotLimit ?? 0);
         return;
     }
+    if (cannedCommand?.kind === 'inventory-action') {
+        game._pending_message = previousMessage;
+        await executeInventoryAction(cannedCommand.action);
+        return;
+    }
 
     if (key === 22 && game.flags?.debug) { // Ctrl-V: wiz_level_tele()
         await wizLevelTeleport();
@@ -1288,7 +1294,10 @@ async function runCommandHandler(binding: CommandBinding, {
         }
     } else if (ch === 'i') {
         const action = await ddoinv();
-        if (action?.key === 't') await dothrow(action.item);
+        if (action && !['\x1b', ' ', '\n', '\r'].includes(action.key)) {
+            game._cannedCommands ??= [];
+            game._cannedCommands.push({ kind: 'inventory-action', action });
+        }
     } else if (ch === 'O') {
         await doOptions();
     } else if (ch === 'Z') {
@@ -2491,6 +2500,48 @@ async function getAdjacentLocation(prompt: string, errorMessage: string | null, 
 async function dotwoweapon() {
     const spentTime = await toggleTwoWeaponCombat();
     if (!game.program_state.gameover) game.context.move = spentTime ? 1 : 0;
+}
+
+// C iactions.c:itemactions_pushkeys(). The menu closes before the queued
+// command runs; its object letter answers the later inventory prompt.
+async function executeInventoryAction({ key, item }: InventoryAction): Promise<void> {
+    const letter = item.invlet;
+    if (!letter || !game.inventory.includes(item)) {
+        game.context.move = 0;
+        return;
+    }
+    switch (key) {
+    case '-':
+        if (item === game.uwep) await dowield('-');
+        else if (item === game.uswapwep) {
+            resetBulkTakeoff();
+            const twoweap = game.u.twoweap;
+            await setSecondaryWeapon(null, game);
+            await pline(twoweap ? 'You are no longer wielding two weapons at once.'
+                : 'You no longer have a second weapon readied.');
+            game.context.move = 1;
+        } else if (item === game.uquiver) {
+            queueCommandKeys('-');
+            await doready();
+        }
+        return;
+    case 'c': queueCommandKeys(`i${letter}`); await doname(); return;
+    case 'd': queueCommandKeys(letter); await dodrop(); return;
+    case 'E': queueCommandKeys(letter); await doengrave(); return;
+    case 'f': await dofire(); return;
+    case 'i': queueCommandKeys(letter); await doadjust(); return;
+    case 'P': queueCommandKeys(letter); await doputon(); return;
+    case 'Q': queueCommandKeys(letter); await doready(); return;
+    case 'r': queueCommandKeys(letter); await doread({ gotoLevel }); return;
+    case 't': await dothrow(item); return;
+    case 'w': await dowield(letter); return;
+    case 'x': await doswapweapon(); return;
+    case 'X': await dotwoweapon(); return;
+    case '/': queueCommandKeys(`i${letter}`); await dowhatis(); return;
+    case '\x1b': case ' ': case '\n': case '\r':
+        game.context.move = 0;
+        return;
+    }
 }
 
 // C ref: wield.c:doswapweapon()/ready_weapon().  Clearing the old secondary
