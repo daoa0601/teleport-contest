@@ -3,7 +3,7 @@
 // water_damage(), and erode_obj().
 import { IS_POOL, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok, } from './const.js';
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
-import { objectName } from './objnam.js';
+import { objectCombatName } from './objnam.js';
 import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
@@ -507,7 +507,7 @@ export async function burnArmorByFire(victim, state, emitMessage, calls = [], ra
                 || armorAt(monster, state, W_ARMU);
             description = !object ? 'armor'
                 : object === armorAt(monster, state, W_ARM)
-                    ? objectName(object, state) : armorSimpleName(object, state);
+                    ? objectCombatName(object, { state }) : armorSimpleName(object, state);
         }
         else if (slot === 2) {
             object = armorAt(monster, state, W_ARMS);

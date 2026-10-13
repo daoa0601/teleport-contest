@@ -7,7 +7,7 @@ import {
     W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok,
 } from './const.js';
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
-import { objectName } from './objnam.js';
+import { objectCombatName } from './objnam.js';
 import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
@@ -663,7 +663,7 @@ export async function burnArmorByFire(
                 || armorAt(monster, state, W_ARMU);
             description = !object ? 'armor'
                 : object === armorAt(monster, state, W_ARM)
-                    ? objectName(object, state) : armorSimpleName(object, state);
+                    ? objectCombatName(object, { state }) : armorSimpleName(object, state);
         } else if (slot === 2) {
             object = armorAt(monster, state, W_ARMS);
             description = 'wooden shield';

@@ -2,16 +2,18 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { wearHeroArmor } from '../js/armor.js';
-import { RUST_TRAP } from '../js/const.js';
+import { NO_MINVENT, RUST_TRAP, W_ARM } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { pushKeys } from '../js/input.js';
-import { ROBE, MUMMY_WRAPPING, RING_MAIL } from '../js/object_data.js';
+import { ROBE, MUMMY_WRAPPING, RING_MAIL, LEATHER_ARMOR } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { burnHeroArmorByFire } from '../js/trap.js';
+import { setHeroBlindnessTurns } from '../js/senses.js';
+import { burnArmorByFire, burnHeroArmorByFire } from '../js/trap.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 for (const [type, name] of [[ROBE, 'robe'], [MUMMY_WRAPPING, 'wrapping']] as const) {
@@ -27,6 +29,41 @@ for (const [type, name] of [[ROBE, 'robe'], [MUMMY_WRAPPING, 'wrapping']] as con
         assert.equal(cloak.oeroded, 1);
     });
 }
+
+for (const role of ['ranger', 'priest'] as const) {
+    void test(`a ${role} observes a monster's named suit when fire hits it`, async () => {
+        freshObjectRoom({ role });
+        const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+        const suit = await equipMonsterObject(goblin, await knownObject(LEATHER_ARMOR, {
+            oname: 'Patchwork', dknown: false, bknown: false,
+        }), W_ARM);
+        const messages: string[] = [];
+
+        await burnArmorByFire(goblin, game, text => { messages.push(text); }, [], () => 1, { visible: true });
+
+        assert.equal(messages[0], "The goblin's leather armor named Patchwork smoulders!");
+        assert.equal(suit.dknown, true);
+        assert.equal(suit.bknown, role === 'priest');
+        assert.equal(suit.oeroded, 1);
+    });
+}
+
+void test('a blind priest learns a burned suit\'s beatitude without seeing its name', async () => {
+    freshObjectRoom({ role: 'priest' });
+    const suit = await addInventoryObject(LEATHER_ARMOR);
+    await wearHeroArmor(suit);
+    suit.oname = 'Patchwork';
+    suit.dknown = false;
+    suit.bknown = false;
+    setHeroBlindnessTurns(10);
+    const messages: string[] = [];
+
+    await burnHeroArmorByFire(game, text => { messages.push(text); }, [], () => 1);
+
+    assert.equal(messages[0], 'Your leather armor smoulders!');
+    assert.equal(suit.dknown, false);
+    assert.equal(suit.bknown, true);
+});
 
 void test('a rust trap calls a worn ring mail suit mail', async () => {
     const level = freshObjectRoom();
