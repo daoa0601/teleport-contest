@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 const TARGETS = [{ x: 9, y: 8 }, { x: 9, y: 12 }, { x: 11, y: 11 }];
 
-async function highlightedSpecies(heroY: number, phase: 'install' | 'exit') {
+async function highlightedSpecies(heroY: number, phase: 'install' | 'exit', marked = false) {
     freshObjectRoom({ heroY, hero: { hallucinationTurns: 20 } });
     for (const { x, y } of TARGETS)
         await createMonsterAt('jackal', x, y, MM_NOGRP | NO_MINVENT);
@@ -23,7 +23,7 @@ async function highlightedSpecies(heroY: number, phase: 'install' | 'exit') {
         prepareMapPositionHighlights(isValidLocation);
     } else {
         const input = resetInputState();
-        input.feed('.');
+        input.feed(marked ? '$.' : '.');
         await selectMapPosition({
             start: { x: game.u.ux, y: game.u.uy },
             prompt: 'Where do you want to hit?', goal: 'the spot to hit',
@@ -37,6 +37,16 @@ async function highlightedSpecies(heroY: number, phase: 'install' | 'exit') {
         return glyph.mnum;
     });
 }
+
+void test('exiting marked targeting restores the same hallucinations as exiting unmarked targeting', async () => {
+    const unmarked = await highlightedSpecies(10, 'exit');
+    const marked = await highlightedSpecies(10, 'exit', true);
+
+    for (const [index, spot] of TARGETS.entries()) {
+        assert.equal(marked[index], unmarked[index],
+            `Removing marks must not reroll the restored monster at ${spot.x},${spot.y}.`);
+    }
+});
 
 for (const phase of ['install', 'exit'] as const) {
     void test(`valid-square ${phase} redraws give the same hallucinations regardless of distance from the hero`, async () => {

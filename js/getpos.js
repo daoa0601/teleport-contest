@@ -1,7 +1,7 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
 import { COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, ROWNO, } from './const.js';
-import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor, newsym, newsym_force, pline, show_glyph_cell, terrain_glyph, } from './display.js';
+import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, show_glyph_cell, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -457,12 +457,8 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             delete hero.dz;
         else
             hero.dz = savedDirection.dz;
-        // exitgetpos(): getpos_sethilite(NULL, NULL) force-newsyms the old
-        // valid selection; tmp_at(DISP_END) newsyms only squares it drew.
-        if (paintedSpots) {
-            for (const { x, y } of paintedSpots)
-                newsym(x, y);
-        }
+        // exitgetpos() clears the validity callbacks and force-redraws their
+        // old selection once, also replacing any active '$' marks.
         if (isValidLocation) {
             for (const { x, y } of validMapSquares(isValidLocation))
                 newsym_force(x, y);

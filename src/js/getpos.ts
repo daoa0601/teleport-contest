@@ -7,7 +7,7 @@ import {
 } from './const.js';
 import {
     bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor,
-    newsym, newsym_force, pline, show_glyph_cell, terrain_glyph,
+    newsym_force, pline, show_glyph_cell, terrain_glyph,
 } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
@@ -502,11 +502,8 @@ export async function selectMapPosition({
         else hero.dy = savedDirection.dy;
         if (savedDirection.dz === undefined) delete hero.dz;
         else hero.dz = savedDirection.dz;
-        // exitgetpos(): getpos_sethilite(NULL, NULL) force-newsyms the old
-        // valid selection; tmp_at(DISP_END) newsyms only squares it drew.
-        if (paintedSpots) {
-            for (const { x, y } of paintedSpots) newsym(x, y);
-        }
+        // exitgetpos() clears the validity callbacks and force-redraws their
+        // old selection once, also replacing any active '$' marks.
         if (isValidLocation) {
             for (const { x, y } of validMapSquares(isValidLocation)) newsym_force(x, y);
         }
