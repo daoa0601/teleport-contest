@@ -18,7 +18,7 @@ import { adjustAttribute, attributeChangeMessage, exerciseAttribute } from './at
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { loseHeroHp } from './hero_damage.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { CORPSE, OBJECT_NAMES, STATUE } from './object_data.js';
 import { blessObjectState, curseObject } from './object_state.js';
 import { returnHeroToHumanForm } from './polyself.js';
@@ -145,7 +145,7 @@ export async function finishPrayerOccupation(state: GameState = game) {
     try {
         if (outcome === 'moloch') {
             await pline(`You ${heroIsDeaf(state) ? 'intuit' : 'hear'} diabolical laughter all around you...`);
-            wakeMonstersNear(state.u.ux, state.u.uy, state.u.ulevel * 20, state);
+            await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, state.u.ulevel * 20, state);
             adjustHeroAlignment(-2, state);
             await exerciseAttribute(A_WIS, false, state);
             if (!inHell()) {

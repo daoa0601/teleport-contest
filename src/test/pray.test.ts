@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { angryGodMaximum } from '../js/divine_wrath.js';
 import { finishPrayerOccupation } from '../js/pray.js';
 import { moveloop_core } from '../js/allmain.js';
-import { ALTAR, Align2amask, LAVAPOOL, PARANOID_PRAY, ROOM, STONE, TT_LAVA, W_NONPASSWALL } from '../js/const.js';
+import { A_NONE, ALTAR, Align2amask, LAVAPOOL, PARANOID_PRAY, ROOM, STONE, TT_LAVA, W_NONPASSWALL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
@@ -26,6 +26,8 @@ import { floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { createMonsterAt } from './support/monsters.js';
+import { answerPrompts } from './support/input-boundaries.js';
 
 function prayerRoom({ hero = {}, flags = {}, ...room }: ObjectRoomOptions = {}) {
     freshObjectRoom({
@@ -146,6 +148,25 @@ void test('#pray announces the safe ground reached after rescuing a hero from la
 
     assert.equal(game.u.utrap, 0);
     assert.match(game._pending_message, /You find yourself on solid ground\./);
+});
+
+void test('Moloch\'s laughter during #pray visibly wakes a nearby sleeping monster', async () => {
+    prayerRoom();
+    requirePlayingGame(game);
+    const altar = game.level.requireAt(10, 10);
+    altar.typ = ALTAR;
+    altar.flags = Align2amask(A_NONE);
+    const goblin = await createMonsterAt('goblin', 11, 10);
+    goblin.msleeping = 1;
+    const input = resetInputState();
+
+    await runExtendedCommand('pray', 'y');
+    await answerPrompts(finishPrayerOccupation(), input, [
+        { prompt: /You finish your prayer\.[\s\S]*--More--/, keys: ' ' },
+        { prompt: /The goblin wakes up\.[\s\S]*--More--/, keys: ' ' },
+    ]);
+
+    assert.equal(goblin.msleeping, 0);
 });
 
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {
