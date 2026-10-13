@@ -5297,7 +5297,6 @@ export async function generateMinetown(active) {
         throw new RangeError(`unknown Minetown layout ${active?.variant}`);
     }
     active.file = `minetn-${active.variant}.lua`;
-    level.flags.is_maze_lev = true;
     level.flags.has_town = true;
     await generateSpecialAndFixup(generateLuaSpecialLevel, active);
     for (const room of level.rooms.slice(0, level.nroom))

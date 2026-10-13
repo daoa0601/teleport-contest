@@ -33,6 +33,16 @@ for (const variant of [2, 3, 4, 7]) {
         assert.equal(priest.mpeaceful, 1);
     });
 }
+void test('College Town retains ordinary room placement rules', async () => {
+    await buildMinetown(4);
+    requirePlayingGame(game);
+    assert.equal(game.level.flags.is_maze_lev, false);
+});
+void test('Grotto Town uses the maze placement rules declared by its Lua level', async () => {
+    await buildMinetown(5);
+    requirePlayingGame(game);
+    assert.equal(game.level.flags.is_maze_lev, true);
+});
 function liveMonsterCount(name) {
     requirePlayingGame(game);
     const type = MONSTER_NAME.indexOf(name);
