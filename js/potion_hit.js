@@ -11,7 +11,7 @@ import { heroEyeCount, heroEyeName } from './body_parts.js';
 import { makePlural, verbForSubject } from './object_grammar.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
-import { A_CON, A_DEX, A_WIS, M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd, } from './const.js';
+import { A_CON, A_DEX, A_WIS, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd, } from './const.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation, shieldeff, } from './display.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -19,7 +19,7 @@ import { splitMonster as splitMonsterActor } from './monster_clone.js';
 import { tryCallObjectType } from './object_call.js';
 import { recordObjectEncounter, recordObjectKnowledge, } from './object_knowledge.js';
 import { OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_HALLUCINATION, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_POLYMORPH, POT_OIL, POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER, TOWEL, } from './object_data.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, } from './monster_data.js';
 import { polymorphMonsterFromMagic } from './monster_polymorph_attack.js';
 import { AD_DISE, AD_PEST, } from './monster_attack_types.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, } from './monster_resistance.js';
@@ -38,6 +38,8 @@ import { cansee } from './vision.js';
 import { applyHeroWaterVaporChange, transformWereMonster, } from './were.js';
 import { heroHasProtectionFromShapeChangers, } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
+import { putMonsterToSleep } from './monster_sleep.js';
 const PM_PESTILENCE = 312;
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
@@ -752,6 +754,10 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     }
     if (potion.otyp === POT_SLEEPING) {
         const duration = rnd(12);
+        const appearance = M_AP_TYPE(monster);
+        if (!monster.msleeping && !monster.mfrozen && MONSTER_SYMBOL[monster.mnum] === 13
+            && (appearance === M_AP_FURNITURE || appearance === M_AP_OBJECT))
+            revealMonsterAppearance(monster);
         const inherentOrDefended = monsterHasSleepDefense(monster);
         const resisted = inherentOrDefended
             || monsterResistsPotion(monster, state);
@@ -759,14 +765,9 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if (resisted) {
             await showShield?.(monster);
         }
-        else if (!!monster.mcanmove) {
-            monster.mcanmove = 0;
-            monster.mfrozen = Math.min(duration + (monster.mfrozen ?? 0), 127);
-            monster.meating = 0;
+        else if (putMonsterToSleep(monster, duration)) {
             slept = true;
-            await publish(targetVisible
-                ? `${sentenceSubject(monster)} falls asleep.`
-                : 'It falls asleep.');
+            await publish(`${sentenceSubject(monster)} falls asleep.`);
             if (monster === state.u?.ustuck && !state.u?.uswallow
                 && !heroFormSticks(state)) {
                 await publish(`${possessive(sentenceSubject(monster))} grip relaxes.`);

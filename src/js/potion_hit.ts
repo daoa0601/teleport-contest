@@ -23,7 +23,8 @@ import { makePlural, verbForSubject } from './object_grammar.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import {
-    A_CON, A_DEX, A_WIS, M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd,
+    A_CON, A_DEX, A_WIS, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
+    M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd,
 } from './const.js';
 import {
     canSeeMonster, canSpotMonster, map_invisible, newsym,
@@ -49,7 +50,7 @@ import {
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
-    MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND,
+    MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL,
     monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster,
 } from './monster_data.js';
 import { polymorphMonsterFromMagic } from './monster_polymorph_attack.js';
@@ -89,6 +90,8 @@ import {
     heroHasProtectionFromShapeChangers,
 } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
+import { putMonsterToSleep } from './monster_sleep.js';
 
 export type PotionWakeResult = { heroDied?: boolean } | void;
 export type PotionWakeMonster = (monster: Monster) => PotionWakeResult | Promise<PotionWakeResult>;
@@ -966,22 +969,19 @@ async function applySupportedDirectEffect({
 
     if (potion.otyp === POT_SLEEPING) {
         const duration = rnd(12);
+        const appearance = M_AP_TYPE(monster);
+        if (!monster.msleeping && !monster.mfrozen && MONSTER_SYMBOL[monster.mnum] === 13
+            && (appearance === M_AP_FURNITURE || appearance === M_AP_OBJECT))
+            revealMonsterAppearance(monster);
         const inherentOrDefended = monsterHasSleepDefense(monster);
         const resisted = inherentOrDefended
             || monsterResistsPotion(monster, state);
         let slept = false;
         if (resisted) {
             await showShield?.(monster);
-        } else if (!!monster.mcanmove) {
-            monster.mcanmove = 0;
-            monster.mfrozen = Math.min(
-                duration + (monster.mfrozen ?? 0), 127,
-            );
-            monster.meating = 0;
+        } else if (putMonsterToSleep(monster, duration)) {
             slept = true;
-            await publish(targetVisible
-                ? `${sentenceSubject(monster)} falls asleep.`
-                : 'It falls asleep.');
+            await publish(`${sentenceSubject(monster)} falls asleep.`);
             if (monster === state.u?.ustuck && !state.u?.uswallow
                 && !heroFormSticks(state)) {
                 await publish(`${possessive(sentenceSubject(monster))} grip relaxes.`);
