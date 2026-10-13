@@ -1273,6 +1273,8 @@ function rndmonstReservoir(minAdjustment = 0, maxAdjustment = 0) {
         const geno = requireMonsterData(MONSTER_GENO, mndx);
         if (difficulty < minDifficulty || difficulty > maxDifficulty)
             continue;
+        if (Is_rogue_level(game.u.uz) && !/^[A-Z]$/.test(monsterClassSymbol(mndx)))
+            continue;
         if (geno & (0x0200 | 0x1000))
             continue; // G_NOGEN | G_UNIQ
         if ((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GONE)
