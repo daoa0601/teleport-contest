@@ -37,6 +37,7 @@ import {
     MONSTER_ALIGNMENT, MONSTER_BODY_META, MONSTER_DIFFICULTY,
     MONSTER_FLAGS2, MONSTER_NAME, monsterIsUnicorn,
 } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import {
     AMULET_OF_YENDOR, CORPSE, FAKE_AMULET_OF_YENDOR, OBJECT_SUBTYPE,
 } from './object_data.js';
@@ -361,8 +362,9 @@ async function offerOwnRace(corpse: CorpseOffering, highAltar: boolean, alignmen
         const type = demonLord(alignment);
         const demon = type == null ? null : await makemonNear(type, hero.ux, hero.uy, MM_NOMSG);
         if (demon && type !== null) {
-            demon.mstrategy = (demon.mstrategy ?? 0) & ~STRAT_APPEARMSG;
-            await pline(`You have summoned ${MONSTER_NAME[type]}!`);
+            const name = monsterName(demon, { article: 'a' });
+            if (name !== 'it') demon.mstrategy = (demon.mstrategy ?? 0) & ~STRAT_APPEARMSG;
+            await pline(`You have summoned ${name === 'it' ? 'something dreadful' : name}!`);
             if (Math.sign(hero.ualign.type) === Math.sign(MONSTER_ALIGNMENT[type] ?? 0)) demon.mpeaceful = true;
             await pline('You are terrified, and unable to move.');
             endVoluntaryMultiTurn(game);
