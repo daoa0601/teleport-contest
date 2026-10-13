@@ -3031,8 +3031,7 @@ export async function maketrap(x, y, typ) {
         let bottom = dungeon?.num_dunlevs
             ?? (game.u?.uz?.dlevel ?? 1);
         if (In_quest(game.u.uz)) {
-            const role = game.urole?.filecode;
-            const locate = role ? game.specialLevels?.get(`${role}-loca`) : undefined;
+            const locate = game.specialLevels?.get('x-loca');
             if (locate && (dungeon?.dunlev_ureached ?? 0) < locate.dlevel)
                 bottom = locate.dlevel;
         }
