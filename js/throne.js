@@ -106,6 +106,7 @@ async function healHeroCompletely() {
     syncBlindness(game);
     cureHeroSickness(game);
     await healHeroLegs(game);
+    game.context.botl = true;
 }
 async function summonCourt(x, y) {
     let count = rnd(10);

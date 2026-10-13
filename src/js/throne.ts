@@ -130,6 +130,7 @@ async function healHeroCompletely(): Promise<void> {
     syncBlindness(game);
     cureHeroSickness(game);
     await healHeroLegs(game);
+    game.context.botl = true;
 }
 
 async function summonCourt(x: number, y: number): Promise<void> {
