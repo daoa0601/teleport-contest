@@ -7,6 +7,7 @@ import { D_CLOSED, D_LOCKED, DOOR, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_WATERW
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, plineWithContinuation } from './display.js';
 import { wakeMonster as awakenMonster } from './monster_anger.js';
 import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterName } from './monster_name.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, } from './monster_data.js';
 import { monsterPassesBars } from './monster_movement_traits.js';
 import { BOULDER } from './object_data.js';
@@ -87,8 +88,7 @@ async function hurtleOneSquare(monster, dx, dy, { state, announce, nameMonster, 
         if (occupant) {
             if (canSeeMonster(monster)
                 || canSeeMonster(occupant)) {
-                const name = nameMonster(occupant).replace(/^(?:the|The|your) /u, '');
-                await announce(`${monsterSentenceSubject(monster)} bumps into ${/^[aeiou]/iu.test(name) ? 'an' : 'a'} ${name}.`);
+                await announce(`${monsterSentenceSubject(monster)} bumps into ${monsterName(occupant, { state, article: 'a' })}.`);
             }
             await awakenMonster(occupant, { attacked: !monsterMoving });
             const contact = { publish: announce, finishDeath: finishMonsterDeath, creditHero: !monsterMoving };
