@@ -64,8 +64,8 @@ import { blocksDiagonalDoor, blocksMove, escapeFromStickyMonster, heroBadRock, h
 import { commandExecutionKey, controlRushDirection, promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
-import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
-import { resetBulkTakeoff } from './takeoff_state.js';
+import { canSelectOff, continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
+import { resetBulkTakeoff, TAKEOFF_ORDER, takeoffSlotObject } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
@@ -2337,7 +2337,8 @@ function inventoryActionCommand({ key, item }) {
                 : item === game.uquiver ? 'dowieldquiver' : 'donull',
         'c': 'docallcmd', 'd': 'dodrop', 'E': 'doengrave', 'f': 'dofire',
         'i': 'doorganize', 'P': 'dowear', 'Q': 'dowieldquiver', 'r': 'doread',
-        't': 'dothrow', 'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
+        'R': 'ia_dotakeoff', 't': 'dothrow', 'T': 'ia_dotakeoff',
+        'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
         '/': 'dowhatis', '\x1b': null, ' ': null, '\n': null, '\r': null,
     };
     return NATIVE_COMMANDS.find(command => command.handler === handlers[key]) ?? null;
@@ -2407,6 +2408,11 @@ async function runInventoryAction({ key, item }) {
         case 'r':
             queueCommandKeys(letter);
             await doread({ gotoLevel });
+            return;
+        case 'R':
+        case 'T':
+            queueCommandKeys(letter);
+            await removeWornItem('take off', true);
             return;
         case 't':
             await dothrow(item);
@@ -4648,7 +4654,7 @@ export async function finishArmorRemoval(object, { silent = false } = {}) {
 }
 // C do_wear.c:dotakeoff()/doremring() share armor_or_accessory_off().
 // T suggests armor and R suggests accessories; either accepts the other kind.
-async function removeWornItem(action) {
+async function removeWornItem(action, itemAction = false) {
     const worn = (game.inventory || []).filter(object => object.worn);
     if (!worn.length) {
         await pline(action === 'remove'
@@ -4662,7 +4668,9 @@ async function removeWornItem(action) {
     const preferred = worn.filter(candidate => action === 'remove'
         ? candidate.oclass === 4 || candidate.oclass === 5 || isEyewear(candidate)
         : candidate.class === 'Armor' || candidate.oclass === 3);
-    if (preferred.length === 1) {
+    // C ia_dotakeoff() forces getobj() to consume the queued item letter,
+    // even if another accessible piece is the only normal suggestion.
+    if (preferred.length === 1 && !itemAction) {
         [object] = preferred;
     }
     else {
@@ -4680,16 +4688,24 @@ async function removeWornItem(action) {
         game.context.move = 0;
         return;
     }
-    resetBulkTakeoff();
-    if (object.cursed) {
-        object.bknown = true;
-        const plural = /gloves|boots|shoes|lenses/.test(object.name || '')
-            || objectQuantity(object) > 1;
-        game._pending_message = '';
-        await pline(`You can't.  ${plural ? 'They are' : 'It is'} cursed.`);
+    const cloak = game.uarmc;
+    const suit = game.uarm;
+    if (object === game.uskin || object === suit && cloak
+        || object === game.uarmu && (cloak || suit)) {
+        const coverings = [cloak, object === game.uarmu ? suit : null]
+            .filter(covering => covering != null).map(covering => armorSimpleName(covering));
+        await pline(object === game.uskin ? "You can't take that off; it's embedded."
+            : `You can't take that off without taking off your ${coverings.join(' and ')} first.`);
         game.context.move = 0;
         return;
     }
+    resetBulkTakeoff();
+    const slot = TAKEOFF_ORDER.find(candidate => takeoffSlotObject(candidate) === object);
+    if (!slot || !await canSelectOff(object, slot)) {
+        game.context.move = 0;
+        return;
+    }
+    resetBulkTakeoff();
     if (object === game.ublindf) {
         game._pending_message = '';
         const removed = await removeEyewear(object);

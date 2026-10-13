@@ -10,7 +10,7 @@ import { showChoiceWindow, showInventoryWindow, showMultiSelectWindow, } from '.
 import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_ARMOR, is_pit, } from './const.js';
+import { MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
 import { ARROW as FIRST_OBJECT, EGG, CHEST, GOLD_PIECE, LARGE_BOX, MAGIC_MARKER, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OBJECT_TOUGH, STATUE, TIN, TOWEL, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
@@ -454,19 +454,27 @@ function itemActionEntries(item, state) {
         entries.push({ key: 'f', text: `${shoot ? 'Shoot' : 'Throw'} ${stack ? 'one of these' : 'this'}${launcher}` });
     }
     entries.push({ key: 'i', text: 'Adjust inventory by assigning new letter' });
-    if (item.oclass === 4)
+    if (item.oclass === 4 && !alreadyWorn)
         entries.push({ key: 'P', text: 'Put this ring on' });
     if ([2, 13].includes(item.oclass) && item !== state.uquiver)
         entries.push({ key: 'Q', text: `Quiver this ${stack ? 'stack' : 'item'} for easy ${shoot ? 'shooting' : 'throwing'} with 'f'ire` });
     if (item.oclass === 10)
         entries.push({ key: 'r', text: 'Study this spellbook' });
+    if ((item.owornmask ?? 0) & W_ACCESSORY) {
+        const accessory = (item.owornmask ?? 0) & W_AMUL ? 'amulet'
+            : (item.owornmask ?? 0) & W_RING ? 'ring'
+                : (item.owornmask ?? 0) & W_TOOL ? 'eyewear' : 'accessory';
+        entries.push({ key: 'R', text: `Remove this ${accessory}` });
+    }
     if (!alreadyWorn) {
         const goldStack = stack && item.otyp === GOLD_PIECE;
         const quantity = stack ? goldStack ? 'them' : 'one of these' : 'this item';
         const fireAlias = item === state.uquiver && !goldStack ? " (same as 'f')" : '';
         entries.push({ key: 't', text: `${shoot ? 'Shoot' : 'Throw'} ${quantity}${fireAlias}` });
     }
-    if (item !== state.uwep)
+    if ((item.owornmask ?? 0) & W_ARMOR)
+        entries.push({ key: 'T', text: 'Take off this armor' });
+    if (item !== state.uwep && !alreadyWorn)
         entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'}${item.oclass === 2 || isWeaponTool(item) ? ' as your weapon' : ' in your hands'}` });
     if (item === state.uwep)
         entries.push({ key: 'x', text: state.uswapwep
@@ -494,7 +502,9 @@ function inventoryActionKey(code) {
         case 'P':
         case 'Q':
         case 'r':
+        case 'R':
         case 't':
+        case 'T':
         case 'w':
         case 'x':
         case 'X':
