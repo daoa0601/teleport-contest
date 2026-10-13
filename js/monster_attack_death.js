@@ -50,7 +50,8 @@ function fatalMonsterDescription(monster) {
         if (apparentSpecies === undefined || !ismnum(apparentSpecies))
             throw new Error('A monster killer has an invalid monster disguise.');
         const real = monsterTypeName(champion, monster.female);
-        const apparent = vampire && current === MONSTER_NAME.indexOf('vampire bat')
+        const apparent = !mimicker && vampire && real.toLowerCase().includes('vampire')
+            && current === MONSTER_NAME.indexOf('vampire bat')
             ? 'bat' : monsterTypeName(apparentSpecies, monster.female);
         const shape = vampire || personal(apparentSpecies) ? apparent
             : unique(apparentSpecies) && apparentSpecies !== MONSTER_NAME.indexOf('high cleric')

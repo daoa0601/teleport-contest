@@ -4,6 +4,7 @@ import { finishOrdinaryDeath } from '../js/end.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishMonsterAttackDeath } from '../js/monster_attack_death.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -52,6 +53,26 @@ void test('a named monster death sanitizes punctuation on the tombstone and scor
     assert.match(tombstone, /Bob;_Joe/);
     assert.equal(loadScoreRecords()[0]?.death, 'killed by a xorn called Bob;_Joe');
 });
+for (const { species, female, killer } of [
+    { species: 'Vlad the Impaler', female: false, killer: 'a Vlad the Impaler in vampire bat form' },
+    { species: 'vampire', female: false, killer: 'a vampire in bat form' },
+    { species: 'vampire leader', female: true, killer: 'a vampire lady in bat form' },
+]) {
+    void test(`death in vampire bat form attributes the killer to ${species}`, async () => {
+        freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
+        requirePlayingGame(game);
+        const bat = await createMonsterAt('vampire bat', 11, 10);
+        bat.cham = MONSTER_NAME.indexOf(species);
+        bat.female = female;
+        game.storage = memoryStorage();
+        game.u.urexp = 100;
+        game.iflags.toptenwin = false;
+        const input = resetInputState();
+        installPagerInput(input, { expected: /die|Goodbye|points|You were/i, limit: 8 });
+        await finishMonsterAttackDeath(bat);
+        assert.equal(loadScoreRecords()[0]?.death, `killed by ${killer}`);
+    });
+}
 void test('a death while fainted includes helplessness in the score but leaves the tombstone cause concise', async () => {
     freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
     requirePlayingGame(game);
