@@ -58,3 +58,29 @@ void test('a death while fainted includes helplessness in the score but leaves t
     assert.doesNotMatch(tombstone, /fainted/);
     assert.equal(loadScoreRecords()[0]?.death, 'killed by a fox, while fainted from lack of food');
 });
+
+for (const { causeLength, expectedSuffix } of [
+    { causeLength: 64, expectedSuffix: ', while paralyzed by a floating eye' },
+    { causeLength: 65, expectedSuffix: ', while helpless' },
+    { causeLength: 83, expectedSuffix: ', while helpless' },
+    { causeLength: 84, expectedSuffix: '' },
+    { causeLength: 110, expectedSuffix: '' },
+]) {
+    void test(`a helpless death with a ${causeLength}-character cause fits the native score field`, async () => {
+        freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
+        requirePlayingGame(game);
+        game.storage = memoryStorage();
+        game.u.urexp = 100;
+        game.iflags.toptenwin = false;
+        game._helplessTurns = 7;
+        game._helplessReason = 'paralyzed by a floating eye';
+        const prefix = 'killed by an orc called ';
+        const cause = prefix + 'O'.repeat(causeLength - prefix.length);
+        const input = resetInputState();
+        installPagerInput(input, { expected: /Goodbye|points|You were/i, limit: 8 });
+
+        await finishOrdinaryDeath({ killer: 'orc', deathCause: cause });
+
+        assert.equal(loadScoreRecords()[0]?.death, cause.slice(0, 100) + expectedSuffix);
+    });
+}

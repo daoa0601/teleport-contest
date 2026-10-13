@@ -38,7 +38,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
-    A_CON, A_WIS, BUFSZ, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, STARVING, STONING,
+    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, STARVING, STONING,
     Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd,
 } from './const.js';
 import {
@@ -755,16 +755,19 @@ function deathCauseRecord(killer: string, deathVerb = 'died') {
 // C topten.c:formatkiller(TRUE). Score records include involuntary delay;
 // the tombstone, bones epitaph, and overview use the cause without it.
 function scoreDeathCause(cause: string, deathType: number | null): string {
-    const cleanCause = cause.replaceAll(',', ';').replaceAll('=', '_').replaceAll('\t', ' ');
+    const scoreDeathSize = 100; // C topten.c:DTHSZ, excluding the terminator.
+    const cleanCause = cause.replaceAll(',', ';').replaceAll('=', '_').replaceAll('\t', ' ')
+        .slice(0, scoreDeathSize);
     if ((game._helplessTurns ?? 0) <= 0 && game.multi >= 0) return cleanCause;
     let reason = game._helplessReason || 'helpless';
     if (deathType === STONING && reason === 'getting stoned') return cleanCause;
     if (deathType === STARVING && reason === 'fainted from lack of food') reason = 'fainted';
-    // Native BUFSZ includes the terminator; a long reason falls back to
-    // "helpless" when that fits rather than truncating the explanation.
+    // formatkiller() consumes a byte while reading the cause terminator,
+    // then requires room for the suffix's own terminator too.
+    const remaining = scoreDeathSize - cleanCause.length;
     const suffix = `, while ${reason}`;
-    return cleanCause.length + suffix.length < BUFSZ ? cleanCause + suffix
-        : cleanCause.length + ', while helpless'.length < BUFSZ
+    return suffix.length + 1 <= remaining ? cleanCause + suffix
+        : ', while helpless'.length + 1 <= remaining
             ? `${cleanCause}, while helpless` : cleanCause;
 }
 
