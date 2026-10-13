@@ -6,7 +6,8 @@ import { drainHeroEnergy } from '../js/hero_energy.js';
 import { useHeroBreath } from '../js/hero_breath_command.js';
 import { useHeroMindBlast } from '../js/hero_mind_blast.js';
 import { resetInputState } from '../js/input.js';
-import { POT_GAIN_ENERGY } from '../js/object_data.js';
+import { OBJECT_NAMES, POT_GAIN_ENERGY } from '../js/object_data.js';
+import { applyScrollEffects } from '../js/scroll_effects.js';
 import { applyPotionEffect } from '../js/potion_effects.js';
 import { knownObject } from './support/game-objects.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
@@ -75,6 +76,34 @@ for (const blessing of ['blessed', 'uncursed', 'cursed'] as const) {
         await flush_screen(1);
 
         assert.ok(blessing === 'cursed' ? game.u.uenmax < 30 : game.u.uenmax > 30);
+        assert.match(requireScreenRow(23).map(cell => cell.ch).join(''),
+            new RegExp(`Pw:${game.u.uen}\\(${game.u.uenmax}\\)`));
+    });
+}
+
+for (const blessing of ['blessed', 'uncursed', 'cursed'] as const) {
+    void test(`a ${blessing} charging scroll read while confused displays its changed power on the next screen flush`, async () => {
+        freshObjectRoom({ hero: {
+            uen: blessing === 'uncursed' ? 1 : 30,
+            uenmax: 30,
+            confusionTurns: 10,
+        } });
+        requirePlayingGame(game);
+        const scroll = await knownObject(OBJECT_NAMES.indexOf('charging'), {
+            blessed: blessing === 'blessed', cursed: blessing === 'cursed',
+        });
+        await bot();
+
+        await applyScrollEffects(scroll);
+        await flush_screen(1);
+
+        if (blessing === 'blessed') {
+            assert.ok(game.u.uenmax > 30);
+            assert.equal(game.u.uen, game.u.uenmax);
+        } else {
+            assert.equal(game.u.uen, blessing === 'cursed' ? 0 : 30);
+            assert.equal(game.u.uenmax, 30);
+        }
         assert.match(requireScreenRow(23).map(cell => cell.ch).join(''),
             new RegExp(`Pw:${game.u.uen}\\(${game.u.uenmax}\\)`));
     });
