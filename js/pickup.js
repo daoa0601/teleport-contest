@@ -361,6 +361,9 @@ async function checkHere(source, pickedSome) {
         return { died: false };
     }
     stopRun();
+    // Native check_here() prints queued movement glyphs before look_here()
+    // can ask the player to acknowledge an older message.
+    await flush_screen(1);
     const feature = skipFeature ? '' : dungeonFeatureSentenceAt(x, y);
     if (heroIsBlind(game)) {
         const first = source.objects[0];
