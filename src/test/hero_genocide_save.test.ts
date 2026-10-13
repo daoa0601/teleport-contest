@@ -114,7 +114,9 @@ void test('an amulet cannot rescue a saved hero whose original species was genoc
     assert.equal(restoredAmulet.where, 'gone');
     assert.equal(game.inventory.includes(restoredAmulet), false);
     assert.equal(game.u.umortality, 1);
-    assert.equal(loadScoreRecords()[0]?.death, 'killed by a scroll of genocide');
+    // Native savelife() sets the recovery delay even when genocide stays fatal.
+    assert.equal(loadScoreRecords()[0]?.death,
+        'killed by a scroll of genocide, while attempting to cheat Death');
 });
 
 void test('saving after refused genocide does not revive an old cause on restore', async () => {
@@ -167,7 +169,8 @@ void test('saving after refused genocide does not revive an old cause on restore
 
     assert.equal(game.program_state.gameover, true);
     assert.equal(game.u.umortality, 2);
-    assert.equal(loadScoreRecords()[0]?.death, 'killed by self-genocide');
+    assert.equal(loadScoreRecords()[0]?.death,
+        'killed by self-genocide, while attempting to cheat Death');
 });
 
 void test('restore rejects an unknown delayed genocide cause before replacing live state', async () => {
