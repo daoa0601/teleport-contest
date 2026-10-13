@@ -59,7 +59,8 @@ export async function resolveHeroSeduction(monster, attack, state, publish, rand
     if (state.uarm || state.uarmc) {
         if (!heroIsDeaf(state)) {
             if (state.datetime?.slice(4, 8) === '0229' && female) {
-                const gloves = state.inventory.find(object => armorSlotFor(object.otyp) === 'uarmg');
+                const gloves = state.uarmg
+                    ?? state.inventory.find(object => armorSlotFor(object.otyp) === 'uarmg');
                 // The succubus reveals the gloves even when the hero is blind.
                 if (gloves)
                     observeObject(gloves, state);

@@ -8,7 +8,7 @@ import { AD_SSEX, AT_BITE } from '../js/monster_attack_types.js';
 import type { HeroContactAttack } from '../js/monster_action_types.js';
 import { resolveMonsterContactEffect } from '../js/monster_contact_effects.js';
 import { monsterName } from '../js/monster_name.js';
-import { GAUNTLETS_OF_POWER, LEATHER_ARMOR, OBJECT_NAMES } from '../js/object_data.js';
+import { GAUNTLETS_OF_POWER, LEATHER_ARMOR, LEATHER_GLOVES, OBJECT_NAMES } from '../js/object_data.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -74,6 +74,34 @@ void test('a leap-day demand reveals a blind hero\'s carried gloves', async () =
     assert.equal(gloves.dknown, true);
     assert.ok(game._encounteredObjectTypes?.has(GAUNTLETS_OF_POWER));
     assert.match(messages.join('\n'), /named winter mittens and eleven more pairs of gloves/);
+});
+
+void test('a leap-day demand names worn gloves before other carried gloves', async () => {
+    const level = freshObjectRoom({ flags: { female: false } });
+    requirePlayingGame(game);
+    level.flags.noteleport = true;
+    game.datetime = '20000229120000';
+    await addInventoryObject(LEATHER_GLOVES, { oextra: { oname: 'spare mittens' } });
+    const wornGloves = await addInventoryObject(GAUNTLETS_OF_POWER, { oextra: { oname: 'working mittens' } });
+    wearHeroArmor(wornGloves);
+    const suit = await addInventoryObject(LEATHER_ARMOR);
+    wearHeroArmor(suit);
+    const succubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    succubus.female = true;
+    const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_BITE,
+        damageType: AD_SSEX, hit: true, damage: 0 };
+    const messages: string[] = [];
+    const input = resetInputState();
+
+    await answerPrompts(resolveMonsterContactEffect(succubus, attack, { state: game,
+        publish: async message => { messages.push(message); }, random: () => 0 }), input, [
+        { prompt: /Shall I remove your suit, lover/, keys: 'n' },
+        { prompt: /Shall I remove your gloves, lover/, keys: 'n' },
+    ]);
+
+    assert.equal(game.uarmg, wornGloves);
+    assert.match(messages.join('\n'), /named working mittens and eleven more pairs of gloves/);
+    assert.doesNotMatch(messages.join('\n'), /spare mittens/);
 });
 
 for (const female of [false, true]) {
