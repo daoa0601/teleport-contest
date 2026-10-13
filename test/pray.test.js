@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { angryGodMaximum } from '../js/divine_wrath.js';
-import { finishPrayerOccupation } from '../js/pray.js';
-import { moveloop_core } from '../js/allmain.js';
+import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
 import { ALTAR, Align2amask, PARANOID_PRAY, STONE, W_NONPASSWALL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
@@ -33,7 +32,7 @@ function prayerRoom({ hero = {}, flags = {}, ...room } = {}) {
 }
 async function resolvePrayer(answers = 'y\x1b') {
     await runExtendedCommand('pray', answers);
-    await finishPrayerOccupation();
+    await finishHeroHelplessness();
 }
 void test('a successful ordinary prayer protects an injured hero while praying', async () => {
     freshObjectRoom({
@@ -122,7 +121,7 @@ void test('praying too soon brings a penalty without granting protection', async
     requirePlayingGame(game);
     await runExtendedCommand('pray', 'y\x1b');
     assert.ok(!game.u.invulnerable);
-    await finishPrayerOccupation();
+    await finishHeroHelplessness();
     assert.ok(game.u.ublesscnt > 500);
     assert.equal(game.u.uluck, -3);
 });

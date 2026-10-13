@@ -14,7 +14,7 @@ import { addInventoryItem } from '../js/u_init.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { createDungeon } from './support/topology.js';
-const MAGIC_PROSE = /zaps you|hits you|bounces?|curses|medallion|You die|But wait|feel much better|killed|Goodbye|points|Welcome|experience/i;
+const MAGIC_PROSE = /zaps you|hits you|bounces?|curses|medallion|You die|But wait|feel much better|You survived that attempt on your life|killed|Goodbye|points|Welcome|experience/i;
 function magicRoom(role = 'barbarian') {
     const input = freshTurnRoom({ role, left: 1, right: 18, top: 1, bottom: 18 });
     requirePlayingGame(game);
@@ -39,7 +39,7 @@ async function waitOneTurn(input, { heroDies = false } = {}) {
     if (heroDies)
         await takeTurn();
     else
-        await finishAtCommandInput(input, takeTurn, /^(?:$)|zaps|hits|bounce|curses|medallion|die|killed|Goodbye|experience/i);
+        await finishAtCommandInput(input, takeTurn, /^(?:$)|zaps|hits|bounce|curses|medallion|die|You survived that attempt on your life|killed|Goodbye|experience/i);
 }
 for (const [species, castingName, rayName, seed] of [
     ['Angel', 'magic missile', 'magic missile', 2n],

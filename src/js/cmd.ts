@@ -284,7 +284,7 @@ import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
 import {
-    announceDisplacementLoss, applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
+    applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
     armorSimpleName, armorOffMessage,
     findArmorClass, heroIsDisplaced,
     objectErosionKind, objectErosionMessage, removeHeroArmor, wearHeroArmor,
@@ -5048,7 +5048,6 @@ export async function finishArmorRemoval(
     object: GameObject, { silent = false }: { silent?: boolean } = {},
 ): Promise<string> {
     await removeHeroArmor(object, game, { deferArmorClass: true });
-    await announceDisplacementLoss(object, game);
     if (silent || game.flags?.verbose === false) return '';
     return armorOffMessage(object, game);
 }

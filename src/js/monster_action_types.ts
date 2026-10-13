@@ -272,9 +272,6 @@ export interface HeroContactAttack extends HeroAttackProgress {
     effectMessage?: string | null;
     theftResolved?: boolean;
     deferredItemTheft?: boolean;
-    stolenObject?: GameObject | null;
-    theftWeight?: number;
-    theftTicket?: number | null;
     monsterDisappeared?: boolean;
     deferredEngulf?: 'capture' | 'effect' | false;
     engulfDamage?: number;

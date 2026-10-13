@@ -4,7 +4,7 @@ import { MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import type { AttackMethod } from './monster_attack_types.js';
 import type { Monster } from './monster_types.js';
 
-export function monsterFireDescription(monster: Monster, method: AttackMethod): string {
+export function monsterFireDescription(monster: Pick<Monster, 'mnum'>, method: AttackMethod): string {
     const species = requireMonsterData(MONSTER_NAME, monster.mnum);
     switch (species) {
     case 'flaming sphere': case 'fire vortex': case 'fire elemental': case 'salamander':
