@@ -442,11 +442,16 @@ function monsterHasLauncherAndAmmo(monster) {
     const inventory = monster.minvent || monster.inventory || [];
     return inventory.some(ammo => ammunitionMatchesLauncher(ammo, launcher));
 }
-function monsterHasAvailableDistanceAttack(monster) {
-    return (MONSTER_ATTACKS[monster?.mnum] || []).some(([attackType]) => attackType === AT_SPIT ||
-        attackType === AT_BREA ||
-        attackType === AT_MAGC ||
-        attackType === AT_GAZE);
+// mhitu.c:ranged_attk_available() excludes effects the hero has resisted.
+function monsterHasAvailableDistanceAttack(monster, random) {
+    for (const [method, damage] of MONSTER_ATTACKS[monster.mnum] ?? []) {
+        if (![AT_SPIT, AT_BREA, AT_MAGC, AT_GAZE].includes(method))
+            continue;
+        const damageType = damage === AD_RBRE ? AD_MAGM + random(8) : damage;
+        if (damageType >= 0 && !((monster.seen_resistance ?? 0) & seenResistanceForDamage(damageType)))
+            return true;
+    }
+    return false;
 }
 // C monmove.c:dochug() phase two.  A close weapon attacker may spend its
 // whole action readying carried equipment before phase-three movement.  This
@@ -2584,7 +2589,7 @@ async function movePet(monster, state, random, rollDice, rollOne, calls, resumeA
 // use a ranged attack does not blindly close to melee range.  Ordinary
 // launchers, polearms, breath/spit/gaze, and spells back away; an aklys tries
 // to stay inside its squared-distance return band.
-function monsterApproachPolicy(monster, state, oldPolicy, targetX, targetY) {
+function monsterApproachPolicy(monster, state, oldPolicy, targetX, targetY, random) {
     const distance = dist2(monster.mx, monster.my, targetX, targetY);
     const heroInvisible = !!(state?.u?.invisible ||
         state?.u?.invis ||
@@ -2605,7 +2610,7 @@ function monsterApproachPolicy(monster, state, oldPolicy, targetX, targetY) {
     if (wieldedName === 'aklys')
         return { policy: -2, min: 4, max: 16 };
     const badlyHurt = (monster.mhp ?? 0) < Math.trunc(((monster.mhpmax ?? 0) + 1) / 3);
-    if (monsterHasAvailableDistanceAttack(monster) && (badlyHurt || !(monster.mspec_used ?? 0)))
+    if (monsterHasAvailableDistanceAttack(monster, random) && (badlyHurt || !(monster.mspec_used ?? 0)))
         return { policy: -1, min: 0, max: 0 };
     return { policy: oldPolicy, min: 0, max: 0 };
 }
@@ -2779,7 +2784,7 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
         if (carriedGold && carriedGold.quan > (heroGold?.quan ?? 0))
             appr = -1;
     }
-    const approach = monsterApproachPolicy(monster, state, appr, monster.mux ?? gx, monster.muy ?? gy);
+    const approach = monsterApproachPolicy(monster, state, appr, monster.mux ?? gx, monster.muy ?? gy, limit => recordRandom(random, calls, limit));
     appr = approach.policy;
     // Native lined_up() is evaluated for every admitted search, including
     // peaceful actors, before approach determines whether combat forbids it.
@@ -6547,7 +6552,7 @@ async function finishDochugAfterMovement(monster, movement, state, random, rollO
         if (monsterIsHelpless(monster))
             return;
         const canContinue = !range.nearby &&
-            (monsterHasAvailableDistanceAttack(monster) ||
+            (monsterHasAvailableDistanceAttack(monster, limit => recordRandom(random, calls, limit)) ||
                 speciesHasWeaponAttack(dochugContext.entryMnum) ||
                 selectMonsterOffensiveItem(monster, state, {
                     random: limit => recordRandom(random, calls, limit),
