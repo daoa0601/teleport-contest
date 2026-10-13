@@ -322,6 +322,7 @@ export async function wieldMonsterWeapon(monster: Monster, state: GameState = ga
                 observeObjectForNaming(weapon, { state });
                 const description = inventoryItemDescription(weapon);
                 await publish(`${monsterSentenceSubject(monster)} tries to wield ${description}.`);
+                observeObjectForNaming(previous, { state });
                 await publish(`${namedWeapon(previous, state)} ${welded}!`);
             }
             previous.bknown = true;
