@@ -4,6 +4,7 @@ import { finishOrdinaryDeath } from '../js/end.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishMonsterAttackDeath } from '../js/monster_attack_death.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -31,6 +32,25 @@ void test('an invisible monster keeps its invisibility in the tombstone and scor
     assert.match(tombstone, /killed by an/);
     assert.match(tombstone, /invisible xorn/);
     assert.equal(loadScoreRecords()[0]?.death, 'killed by an invisible xorn');
+});
+void test('a named monster death sanitizes punctuation on the tombstone and score entry', async () => {
+    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+    requirePlayingGame(game);
+    const xorn = await createMonsterAt('xorn', 11, 10);
+    setMonsterGivenName(xorn, 'Bob,=Joe');
+    game.storage = memoryStorage();
+    game.u.urexp = 100;
+    game.iflags.toptenwin = false;
+    const input = resetInputState();
+    let tombstone = '';
+    input.beforeRead = () => {
+        if (visibleText().includes('REST'))
+            tombstone = visibleText();
+    };
+    installPagerInput(input, { expected: /die|Goodbye|points|You were/i, limit: 8 });
+    await finishMonsterAttackDeath(xorn);
+    assert.match(tombstone, /Bob;_Joe/);
+    assert.equal(loadScoreRecords()[0]?.death, 'killed by a xorn called Bob;_Joe');
 });
 void test('a death while fainted includes helplessness in the score but leaves the tombstone cause concise', async () => {
     freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });

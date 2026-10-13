@@ -556,7 +556,7 @@ function deathSummaryLines(killer, { gold, score, depth, moves }, { deathVerb = 
     const goodbye = game.urole?.goodbye || 'Goodbye';
     const deathDungeon = game._tutorialActive
         ? 'The Tutorial' : currentDungeonName();
-    const causeRows = tombstoneDeathRows(deathCause || deathCauseRecord(killer, deathVerb));
+    const causeRows = tombstoneDeathRows(sanitizeDeathCause(deathCause || deathCauseRecord(killer, deathVerb)));
     const stone = [
         [23, '----------'],
         [22, '/          \\'],
@@ -625,12 +625,15 @@ function deathCauseRecord(killer, deathVerb = 'died') {
         return `killed by ${raw}`;
     return `killed by ${withIndefiniteArticle(raw)}`;
 }
+// C topten.c:formatkiller() sanitizes killer names for every caller, including rip.c.
+function sanitizeDeathCause(cause) {
+    return cause.replaceAll(',', ';').replaceAll('=', '_').replaceAll('\t', ' ');
+}
 // C topten.c:formatkiller(TRUE). Score records include involuntary delay;
 // the tombstone, bones epitaph, and overview use the cause without it.
 function scoreDeathCause(cause, deathType) {
     const scoreDeathSize = 100; // C topten.c:DTHSZ, excluding the terminator.
-    const cleanCause = cause.replaceAll(',', ';').replaceAll('=', '_').replaceAll('\t', ' ')
-        .slice(0, scoreDeathSize);
+    const cleanCause = sanitizeDeathCause(cause).slice(0, scoreDeathSize);
     if ((game._helplessTurns ?? 0) <= 0 && game.multi >= 0)
         return cleanCause;
     let reason = game._helplessReason || 'helpless';
