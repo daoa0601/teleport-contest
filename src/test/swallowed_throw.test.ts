@@ -1563,23 +1563,31 @@ void test('a killing swallowed weapon remains on the death square without autopi
         assert.match(game._pending_message, /You see here a \+0 dagger\./);
     });
 
-void test('a killing projectile releases prior minvent ahead of itself into autopickup',
-    async () => {
+for (const { name, fixedLetters } of [
+    { name: 'a killing projectile releases prior minvent ahead of itself into autopickup', fixedLetters: false },
+    { name: 'a recovered killing projectile keeps its earlier letter after prior minvent is autopicked', fixedLetters: true },
+]) {
+    void test(name, async () => {
         const engulfer = await freshSwallowedState(PM_TRAPPER);
         requirePlayingGame(game);
         engulfer.mhp = 1;
         game.flags.pickup = true;
+        game.flags.fixinv = fixedLetters;
 
         const prior = await knownObject(SCR_BLANK_PAPER);
         await linkObjectToMonsterInventory(engulfer, prior);
 
         const dart = await addInventoryWeapon(DART);
+        const originalLetter = dart.invlet;
         setBasicWeaponSkill(dart);
 
         initRng(2312n);
         await throwInventoryObject(dart, 'h', [' ']);
 
-        assert.deepEqual(game.inventory, [prior, dart]);
+        assert.equal(game.inventory.length, 2);
+        assert.equal(game.inventory[0], fixedLetters ? dart : prior);
+        assert.equal(game.inventory[1], fixedLetters ? prior : dart);
+        assert.equal(dart.invlet, originalLetter);
         assert.equal(prior.where, 'inventory');
         assert.equal(dart.where, 'inventory');
         assert.equal(prior.how_lost, 0);
@@ -1589,6 +1597,7 @@ void test('a killing projectile releases prior minvent ahead of itself into auto
         assert.deepEqual(engulfer.minvent, []);
         assert.equal(floorObjects(game.level).length, 0);
     });
+}
 
 void test('a killing projectile merges in minvent before the survivor is released',
     async () => {
