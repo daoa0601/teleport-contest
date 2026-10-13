@@ -347,7 +347,7 @@ import { unlinkObject } from './object_location.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { dropObjectAtHero } from './object_drop.js';
-import { canFallThrough, makemonNear, mksobj, summonNastyMonsters } from './mklev.js';
+import { canFallThrough, makemonNear, maketrap, mksobj, summonNastyMonsters } from './mklev.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack, hasTrack } from './track.js';
@@ -7789,16 +7789,8 @@ async function maybeSpinMonsterWeb(
     const roll = recordRandom(random, calls, 1000);
     if (roll >= probability) return { roll, probability, created: false };
 
-    const trap = {
-        ttyp: WEB,
-        tx: monster.mx,
-        ty: monster.my,
-        tseen: false,
-        once: false,
-        launch: { x: 0, y: 0 },
-    };
-    if (!state.level.traps) state.level.traps = [];
-    state.level.traps.push(trap);
+    const trap = await maketrap(monster.mx, monster.my, WEB);
+    if (!trap) return { roll, probability, created: false };
     monster.mspec_used = rollDice(4, 4);
     calls.push('d(4,4)');
     if (cansee(monster.mx, monster.my)) {
