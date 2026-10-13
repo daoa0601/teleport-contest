@@ -3683,15 +3683,16 @@ async function doadjust(selected = null, splitting = null) {
         }
         if (/^[a-zA-Z]$/.test(destination) || destination === '#' && occupied.has('#'))
             break;
-        await plineWithContinuation('Select an inventory slot letter.');
-        await flushPendingTopline();
         if (attempt === 4) {
             if (splitting)
                 await rejoinObjectStack(splitting, object, game);
+            clearMessageWindow();
             await pline('Never mind.');
             game.context.move = 0;
             return;
         }
+        await plineWithContinuation('Select an inventory slot letter.');
+        await flushPendingTopline();
     }
     let action = splitting ? 'Splitting:' : destination === source ? 'Collecting:' : 'Moving:';
     let bumped = null;
