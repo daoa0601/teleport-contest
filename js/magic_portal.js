@@ -34,10 +34,11 @@ export async function activateMagicPortal(trap, gotoLevel) {
         throw new Error('Magic portal has no destination.');
     const leavingTutorial = isTutorialLevel(game.u?.uz)
         && !isTutorialLevel(trap.dst);
+    // domagicportal() schedules this as deferred_goto()'s pre-message. Its
+    // pline flushes the activation before any destination generation.
+    await plineWithContinuation(leavingTutorial ? 'Resuming regular play.' : addPortalStun());
     await gotoLevel(trap.dst, {
         arrival: leavingTutorial ? 'stairs' : 'portal',
-        postMessage: leavingTutorial
-            ? 'Resuming regular play.' : addPortalStun(),
     });
     game.context.move = 1;
     return true;
