@@ -1991,6 +1991,9 @@ async function finishDeathSurvivalMessage(g = game) {
     }
 }
 async function finishHeroDeathAfterMonsterMessage(options) {
+    // losehp() enters urgent_pline(), whose map flush precedes paging the
+    // previous message. Its pending HP request must reach that pager.
+    await flush_screen(1);
     await waitForCurrentMonsterMore();
     return finishHeroDeath(options);
 }
