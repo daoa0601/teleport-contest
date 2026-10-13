@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DOOR, D_CLOSED, D_LOCKED, TT_PIT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { artifactByName } from '../js/artifacts.js';
+import { artifactByName, discoverArtifact } from '../js/artifacts.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -114,7 +114,7 @@ for (const alignment of keyTouchAlignments) {
         pushKeys('l');
         await answerPrompts(rhack('o'.charCodeAt(0)), input, [
             { prompt: /This door is locked\.--More--/, keys: ' ' },
-            { prompt: /Unlock it with your skeleton key\?/, keys: 'y' },
+            { prompt: /Unlock it with your skeleton key named the Master Key of Thievery\?/, keys: 'y' },
             ...(alignment === 0 ? [{
                     prompt: /You are blasted by The Master Key of Thievery's power!--More--/, keys: ' ',
                 }] : []),
@@ -130,4 +130,25 @@ for (const alignment of keyTouchAlignments) {
             : /You are blasted by The Master Key of Thievery's power!/);
     });
 }
+void test('autounlock names a fully identified quest key without inventory annotations', async () => {
+    const level = freshObjectRoom();
+    const door = level.requireAt(11, 10);
+    door.typ = DOOR;
+    door.doormask = D_LOCKED;
+    const artifact = artifactByName('The Master Key of Thievery');
+    assert.ok(artifact);
+    await addInventoryObject(artifact.baseType, {
+        oartifact: artifact.id, oextra: { oname: artifact.name },
+    });
+    discoverArtifact(artifact.id);
+    const input = resetInputState();
+    pushKeys('l');
+    await answerPrompts(rhack('o'.charCodeAt(0)), input, [
+        { prompt: /This door is locked\.--More--/, keys: ' ' },
+        { prompt: /Unlock it with your Master Key of Thievery\?/, keys: 'q' },
+    ]);
+    assert.equal(game.context.move, 0);
+    assert.equal(Boolean(game._occupation), false);
+    assert.equal(door.doormask, D_LOCKED);
+});
 //# sourceMappingURL=open_autounlock.test.js.map

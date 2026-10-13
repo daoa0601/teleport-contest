@@ -51,7 +51,7 @@ import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
-import { observeDistantObjectForNaming, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
+import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { descendFromLevitation } from './levitation_commands.js';
@@ -3102,8 +3102,7 @@ async function doloot() {
         // its ynq question. tty update_topl() pages the former message before
         // it can install the prompt.
         await promptKey(`${lockedMessage}--More--`);
-        const toolName = lockToolPresentation(tool);
-        const answer = await promptYesNoQuit(`Unlock it with your ${toolName}?`);
+        const answer = await promptYesNoQuit(`Unlock it with ${lockToolName(tool)}?`);
         if (answer === 'y') {
             game._occupation = {
                 key: 'pick-lock',
@@ -6876,7 +6875,7 @@ async function openLockedDoor(door: MapLocation, x: number, y: number): Promise<
         return true;
     }
     await flushPendingTopline();
-    const answer = await promptYesNoQuit(`Unlock it with your ${lockToolPresentation(tool)}?`);
+    const answer = await promptYesNoQuit(`Unlock it with ${lockToolName(tool)}?`);
     if (answer !== 'y') return false;
     const touch = await touchArtifactByHero(tool);
     if (!touch.allowed || touch.died) return true;
@@ -6890,10 +6889,9 @@ async function openLockedDoor(door: MapLocation, x: number, y: number): Promise<
     return true;
 }
 
-function lockToolPresentation(tool: GameObject): string {
-    if (tool.otyp === SKELETON_KEY) return 'skeleton key';
-    if (tool.otyp === CREDIT_CARD) return 'credit card';
-    return 'lock pick';
+function lockToolName(tool: GameObject): string {
+    observeObjectForNaming(tool);
+    return ownedObjectName(tool, game, { capitalized: false });
 }
 
 function lockPickChance(tool: GameObject, g: GameState = game, container: GameObject | null = null): number {
