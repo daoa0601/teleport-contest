@@ -15,7 +15,6 @@ import { attackHeroInMonsterForm } from './hero_form_combat.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { heroSpecies } from './hero_species.js';
 import { resolveHeroWeaponHit } from './hero_weapon_hit.js';
-import { inventoryItemDescription } from './invent.js';
 import { AT_WEAP } from './monster_attack_types.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterHasNoAttacks, monsterHasNoHands,
@@ -25,7 +24,7 @@ import { monsterAtPosition } from './monster_location.js';
 import { applyHeroContactPassive } from './monster_passive.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { makePlural } from './object_grammar.js';
-import { observeObjectForNaming } from './objnam.js';
+import { observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { canBeginTwoWeaponCombat, stopTwoWeaponCombat } from './two_weapon.js';
 import { exceedsActionCapacity } from './weight.js';
@@ -92,7 +91,7 @@ async function announceImprovisedAttack(): Promise<void> {
     const weapon = primaryWeapon();
     if (weapon) {
         observeObjectForNaming(weapon);
-        await pline(`You begin bashing monsters with ${inventoryItemDescription(weapon)}.`);
+        await pline(`You begin bashing monsters with ${ownedObjectName(weapon, game, { capitalized: false })}.`);
     } else if (!monsterHasNoHands(heroSpecies(game)) && !monsterIsVerySmall(heroSpecies(game))) {
         const action = game.urole?.key === 'monk' ? 'striking' : 'bashing';
         const covered = game.uarmg || game.u.uarmg ? 'gloved' : 'bare';

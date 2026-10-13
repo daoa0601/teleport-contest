@@ -409,6 +409,9 @@ async function answerDamageQuestion(answer) {
 }
 void test('a crowded doorway resident is displaced to limbo and re-arrives', async () => {
     await damageShop();
+    // Leave the shop before filling its walkable squares with residents.
+    game.u.ux = 5;
+    game.u.uy = 5;
     // The keeper's home square becomes a pool, so the square it vacates is
     // unusable for the displaced kobold; with every other walkable square
     // filled, the resident truly has nowhere to go.
@@ -424,9 +427,6 @@ void test('a crowded doorway resident is displaced to limbo and re-arrives', asy
         }
     }
     const blocker = await createMonsterAt('kobold', 9, 10);
-    // The hero stands outside the shop when the damage is charged.
-    game.u.ux = 5;
-    game.u.uy = 5;
     setHeroGoldAmount(game, 500);
     addShopDamage(9, 10, SHOP_DOOR_COST);
     initRng(7n);

@@ -3,7 +3,7 @@
 import { game } from './gstate.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, clearMessageWindow, cls, docrt, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
+import { bot, clearMessageWindow, cls, docrt, flushPendingTopline, flush_screen, plineWithContinuation, reglyph_darkroom } from './display.js';
 import { vision_recalc } from './vision.js';
 import { nhgetch } from './input.js';
 import { getLine } from './query.js';
@@ -1005,8 +1005,10 @@ async function doRequestMenuOptions() {
         await editPickupTypes(true);
     if (selected.has('sortloot'))
         await editSortLoot();
-    if (needsRedraw)
+    if (needsRedraw) {
+        reglyph_darkroom();
         await docrt();
+    }
     await bot();
     game.context.move = 0;
 }
@@ -1086,6 +1088,7 @@ export async function doOptions(menuRequested = false) {
         game._optionsInitialized = true;
     }
     let page = 1;
+    let needsRedraw = false;
     for (;;) {
         renderOptionsPage(page);
         const key = await nhgetch();
@@ -1133,9 +1136,11 @@ export async function doOptions(menuRequested = false) {
         }
         else if (page === 2 && input === 'e') {
             flags.hilite_pet = !flags.hilite_pet;
+            needsRedraw = true;
         }
         else if (page === 2 && input === 'f') {
             flags.hilite_pile = !flags.hilite_pile;
+            needsRedraw = true;
         }
         else if (page === 2 && input === 'l') {
             flags.showexp = !flags.showexp;
@@ -1149,6 +1154,8 @@ export async function doOptions(menuRequested = false) {
         page = 1;
     }
     game._pending_message = '';
+    if (needsRedraw)
+        reglyph_darkroom();
     await docrt();
     await bot();
     game.context.move = 0;

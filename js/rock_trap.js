@@ -7,6 +7,8 @@ import { game, requireGameLevel } from './gstate.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { ROCK } from './object_data.js';
+import { inventoryItemDescription } from './invent.js';
+import { observeObjectForNaming } from './objnam.js';
 import { d, rn2 } from './rng.js';
 import { monsterTrapVisibility } from './trap.js';
 import { makeTrapMissile } from './trap_missile.js';
@@ -78,7 +80,10 @@ export async function finishMonsterRockTrap(monster, event, state = game, { publ
     }
     const subject = describeMonster(monster);
     if (event.seeSquare) {
-        await publish(`${subject} is hit by a rock${event.harmless ? ' but is not harmed.' : '!'}`);
+        // thitm() names the missile before stackobj(); seeing it makes it
+        // eligible to join an already observed pile.
+        observeObjectForNaming(event.rock, { state });
+        await publish(`${subject} is hit by ${inventoryItemDescription(event.rock)}${event.harmless ? ' but is not harmed.' : '!'}`);
     }
     if (!event.harmless) {
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - event.damage);

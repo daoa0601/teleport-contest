@@ -1,7 +1,7 @@
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NO_MINVENT, W_ARMG, W_ARMS, W_WEP } from '../js/const.js';
+import { NEED_HTH_WEAPON, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NO_MINVENT, W_ARMG, W_ARMS, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import { monsterCanCarryObject, monsterCanTouchObject } from '../js/monster_carry.js';
@@ -13,6 +13,26 @@ import { artifactObject, knownObject, untimedCorpse } from './support/game-objec
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
+void test('wielding identifies a visible invisible monster by its current appearance', async () => {
+    freshObjectRoom({ hero: { seeInvisible: true } });
+    const hobbit = await createMonsterAt('hobbit', 11, 10, NO_MINVENT);
+    hobbit.minvis = true;
+    await addObjectToMonsterInventory(hobbit, await knownObject(DAGGER));
+    hobbit.weaponCheck = NEED_HTH_WEAPON;
+    const messages = [];
+    await wieldMonsterWeapon(hobbit, game, { publish: async (message) => { messages.push(message); } });
+    assert.match(messages[0] ?? '', /^The invisible hobbit wields /);
+});
+void test('a hallucinating hero sees a hallucinated monster wield the weapon', async () => {
+    freshObjectRoom({ hero: { hallucination: true, hallucinationTurns: 10 } });
+    const hobbit = await createMonsterAt('hobbit', 11, 10, NO_MINVENT);
+    await addObjectToMonsterInventory(hobbit, await knownObject(DAGGER));
+    hobbit.weaponCheck = NEED_HTH_WEAPON;
+    const messages = [];
+    await wieldMonsterWeapon(hobbit, game, { publish: async (message) => { messages.push(message); } });
+    assert.match(messages[0] ?? '', / wields /);
+    assert.doesNotMatch(messages[0] ?? '', /hobbit/);
+});
 void test('a visible monster names an unidentified tethered weapon by its appearance', async () => {
     freshObjectRoom();
     const gnome = await createMonsterAt('gnome', 11, 10, NO_MINVENT);

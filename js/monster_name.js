@@ -88,6 +88,21 @@ export function monsterName(monster, { capitalized = false, state = game, articl
     });
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
+// C do_name.c:distant_monnam(). Conceal the Astral altar's identity until
+// the hero is adjacent, including adjectives on the attending high priest.
+export function distantMonsterName(monster, { state = game, article = 'none', } = {}) {
+    requireLiveGame(state);
+    const nearby = Math.abs(monster.mx - state.u.ux) <= 1
+        && Math.abs(monster.my - state.u.uy) <= 1;
+    if (monster.mnum === PM_HIGH_CLERIC && !heroIsHallucinating(state)
+        && Is_astralevel(state.u.uz) && !nearby) {
+        const title = monster.female ? 'high priestess' : 'high priest';
+        return article === 'the' ? `the ${title}` : title;
+    }
+    return formatMonsterName(monster, state, {
+        article, called: true, suppressSaddle: false,
+    });
+}
 // C newcham(): YMonnam with the saddle always suppressed.
 export function monsterFormChangeName(monster, { state = game } = {}) {
     requireLiveGame(state);
@@ -103,7 +118,7 @@ export function namelessMonsterName(monster, { state = game, article = 'none', s
         article, suppressName: true, suppressSaddle, suppressIt, suppressInvisible, suppressHallucination,
     });
 }
-function formatMonsterName(monster, state, { adjective = '', article = 'the', suppressName = false, suppressSaddle = !!MGIVENNAME(monster), suppressIt = false, suppressShopkeeper = false, augmentIt = false, suppressInvisible = false, suppressHallucination = false, suppressAppearance = false, } = {}) {
+function formatMonsterName(monster, state, { adjective = '', article = 'the', called = false, suppressName = false, suppressSaddle = !!MGIVENNAME(monster), suppressIt = false, suppressShopkeeper = false, augmentIt = false, suppressInvisible = false, suppressHallucination = false, suppressAppearance = false, } = {}) {
     const gameover = !!state.program_state?.gameover;
     const engulfing = state.u.uswallow && state.u.ustuck === monster;
     if (article === 'your' && !monster.mtame)
@@ -159,6 +174,10 @@ function formatMonsterName(monster, state, { adjective = '', article = 'the', su
         personal = true;
         if (monster.mnum === PM_GHOST) {
             name = `${possessiveName(givenName)} ghost`;
+        }
+        else if (called) {
+            name = `${typeName} called ${givenName}`;
+            personal = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME);
         }
         else if (monsterIsPlayerMonster(monster.mnum)
             && / the /i.test(givenName)) {

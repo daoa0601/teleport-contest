@@ -111,7 +111,7 @@ export function beginPetEating(
         && (!!((state.mvitals?.[PM_QUEEN_BEE]?.mvflags ?? 0) & G_GENOD)
             || !state.level?.monsters.some(candidate => candidate.mnum === PM_QUEEN_BEE
                 && !candidate.dead && candidate.mhp > 0));
-    return { object: splitMealObject(object, state), from, devour, royalJelly };
+    return { object: royalJelly ? object : splitMealObject(object, state), from, devour, royalJelly };
 }
 
 function splitMealObject(object: GameObject, state: GameState): GameObject {
@@ -149,8 +149,7 @@ export async function finishPetEating(
         newsym(monster.mx, monster.my);
     }
     const object = meal.object;
-    if (meal.royalJelly) {
-        await feedBeeRoyalJelly(monster, object, state);
+    if (meal.royalJelly && await feedBeeRoyalJelly(monster, object, state)) {
         return;
     }
     await describePetMeal(monster, meal, state);

@@ -13,6 +13,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
 import { performPetRangedAttack, takeMonsterTurn } from '../js/monmove.js';
+import { placeMonsterAt } from '../js/monster_location.js';
 import { initRng, rn2, rnd } from '../js/rng.js';
 const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT
     | NO_MINVENT;
@@ -50,6 +51,7 @@ void test('a rider in normal form can use a red dragon mount breath', async () =
     requirePlayingGame(game);
     const steed = await redDragon();
     game.u.usteed = steed;
+    placeMonsterAt(steed, game.u.ux, game.u.uy);
     const target = await breathTarget();
     target.mpeaceful = 1;
     assert.ok(steed.edog);
@@ -68,6 +70,7 @@ void test('a mounted dragon with no target snarls and spends the turn', async ()
     freshPlayableRoom({ right: 20, role: 'knight', seed: 46003n });
     requirePlayingGame(game);
     game.u.usteed = await redDragon();
+    placeMonsterAt(game.u.usteed, game.u.ux, game.u.uy);
     await runMonsterAbilityCommand();
     assert.equal(game.context.move, 1);
     assert.match(game._pending_message, /red dragon snarls/i);

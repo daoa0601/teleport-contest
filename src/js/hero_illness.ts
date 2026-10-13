@@ -19,11 +19,13 @@ import {
 import { pline, plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { definiteName } from './objnam.js';
+import { nameToMonster } from './mondata.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { currentHungerState, spendHeroNutrition } from './hunger.js';
 import { meltIce } from './ice.js';
 import {
-    MONSTER_FLAGS1, MONSTER_SYMBOL,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { heroMonsterForm } from './polyself.js';
 import { altarWrath } from './pray.js';
@@ -350,10 +352,16 @@ export async function advanceHeroSickness({
     }
 
     await publish('You die from your illness.');
-    const killer = hero.sickCause || 'illness';
+    let killer = hero.sickCause || 'illness';
+    const species = nameToMonster(killer);
+    const personal = species >= 0 && !!((MONSTER_FLAGS2[species] ?? 0) & 0x00080000);
+    const unique = species >= 0 && !!((MONSTER_GENO[species] ?? 0) & 0x1000);
+    // nh_timeout() resolves personal and unique monster names when the
+    // delayed illness becomes fatal, before formatkiller() adds an article.
+    if (unique && !personal) killer = definiteName(killer);
     const died = await die({
         killer,
-        deathCause: `poisoned by ${killer === '#wizintrinsic'
+        deathCause: `poisoned by ${personal || unique || killer === '#wizintrinsic'
             ? killer : withIndefiniteArticle(killer)}`,
         deathLineShown: true,
         deathType: POISONING,

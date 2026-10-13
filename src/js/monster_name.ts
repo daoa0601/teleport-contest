@@ -39,6 +39,7 @@ export interface MonsterNameOptions {
 }
 
 interface NameFormatOptions extends Omit<MonsterNameOptions, 'state' | 'capitalized' | 'exact'> {
+    called?: boolean;
     suppressName?: boolean;
     suppressShopkeeper?: boolean;
     suppressAppearance?: boolean;
@@ -137,6 +138,24 @@ export function monsterName(monster: Monster, {
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
 
+// C do_name.c:distant_monnam(). Conceal the Astral altar's identity until
+// the hero is adjacent, including adjectives on the attending high priest.
+export function distantMonsterName(monster: Monster, {
+    state = game, article = 'none',
+}: { state?: GameState; article?: 'none' | 'the' } = {}): string {
+    requireLiveGame(state);
+    const nearby = Math.abs(monster.mx - state.u.ux) <= 1
+        && Math.abs(monster.my - state.u.uy) <= 1;
+    if (monster.mnum === PM_HIGH_CLERIC && !heroIsHallucinating(state)
+        && Is_astralevel(state.u.uz) && !nearby) {
+        const title = monster.female ? 'high priestess' : 'high priest';
+        return article === 'the' ? `the ${title}` : title;
+    }
+    return formatMonsterName(monster, state, {
+        article, called: true, suppressSaddle: false,
+    });
+}
+
 // C newcham(): YMonnam with the saddle always suppressed.
 export function monsterFormChangeName(monster: Monster, { state = game }: { state?: GameState } = {}): string {
     requireLiveGame(state);
@@ -159,7 +178,7 @@ export function namelessMonsterName(monster: Monster, {
 }
 
 function formatMonsterName(monster: Monster, state: GameState, {
-    adjective = '', article = 'the', suppressName = false,
+    adjective = '', article = 'the', called = false, suppressName = false,
     suppressSaddle = !!MGIVENNAME(monster), suppressIt = false,
     suppressShopkeeper = false, augmentIt = false, suppressInvisible = false,
     suppressHallucination = false, suppressAppearance = false,
@@ -217,6 +236,9 @@ function formatMonsterName(monster: Monster, state: GameState, {
         personal = true;
         if (monster.mnum === PM_GHOST) {
             name = `${possessiveName(givenName)} ghost`;
+        } else if (called) {
+            name = `${typeName} called ${givenName}`;
+            personal = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME);
         } else if (monsterIsPlayerMonster(monster.mnum)
             && / the /i.test(givenName)) {
             // A player monster's adjectives belong after its own "the".

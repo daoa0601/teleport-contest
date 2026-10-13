@@ -3,8 +3,9 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { DAGGER } from '../js/object_data.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { CLUB, DAGGER } from '../js/object_data.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('the queued inventory adjustment asks only for the selected item destination', async () => {
@@ -38,4 +39,27 @@ void test('the queued inventory adjustment asks only for the selected item desti
         input.feed('\x1b');
         await adjusting;
     }
+});
+
+void test('collecting a later inventory stack keeps all compatible items in the selected slot', async () => {
+    freshObjectRoom();
+    await addInventoryObject(DAGGER, { quan: 2, spe: 0 });
+    const selected = await knownObject(DAGGER, { quan: 3, spe: 0, where: 'inventory', invlet: 'b' });
+    const later = await knownObject(DAGGER, { quan: 4, spe: 0, where: 'inventory', invlet: 'c' });
+    game.inventory.push(selected, later);
+    const club = await addInventoryObject(CLUB);
+    const input = resetInputState();
+    await answerPrompts(rhack('i'.charCodeAt(0)), input, [
+        { prompt: /Weapons/, keys: 'b' },
+        { prompt: /Adjust inventory by assigning new letter/, keys: 'i' },
+    ]);
+
+    await answerPrompts(rhack(0), input, [{ prompt: /Adjust letter to what/, keys: 'b' }]);
+
+    const collected = game.inventory.find(object => object.invlet === 'b');
+    assert.equal(collected?.otyp, DAGGER);
+    assert.equal(collected?.quan, 9);
+    assert.equal(game.inventory.length, 2);
+    assert.equal(game.inventory.includes(club), true);
+    assert.equal(game.context.move, 0);
 });

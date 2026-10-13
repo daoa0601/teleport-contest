@@ -907,6 +907,8 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
             return leftWater ? { left: true } : null;
     }
 
+    // drown() maps the water by touch before any entry message can page.
+    if (state === game) feel_newsym(x, y);
     const waterWall = location.typ === WATER;
     let canLiveUnderwater = heroCanLiveUnderwater(state);
     let stayingInPool = false;

@@ -27,7 +27,7 @@ import { useMonsterOffensiveItem } from './monster_offensive_item.js';
 import { searchMonsterItems } from './monster_item_search.js';
 import { monsterCouldReachItem } from './monster_item_reach.js';
 import { consumeMonsterFloorObjects } from './monster_floor_consumption.js';
-import { digestGelatinousCubeInventory } from './monster_consumption.js';
+import { digestGelatinousCubeInventory, feedBeeRoyalJelly } from './monster_consumption.js';
 import { pickUpMonsterFloorObject } from './monster_pickup.js';
 import { digMonsterTunnel } from './monster_tunnel.js';
 import { monsterMovementBaseFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterCorrodesBars, } from './monster_movement_traits.js';
@@ -130,7 +130,8 @@ import { addShopDamage } from './shop_damage.js';
 import { createHarmlessGasCloudSelection, createPoisonGasCloud, createSteamCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
 import { heroIsDeaf, syncBlindness } from './senses.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
-import { monsterHasFireResistance } from './monster_resistance.js';
+import { monsterHasFireResistance, monsterHasStoneResistance } from './monster_resistance.js';
+import { monsterReflectsRay } from './ray.js';
 import { clearHeroSliming } from './slime.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero, } from './weapon_damage.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
@@ -170,7 +171,7 @@ import { learnObjectType } from './object_knowledge.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { rndmonstAdj } from './mklev.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
-import { BAG_OF_TRICKS, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH } from './object_data.js';
+import { BAG_OF_TRICKS, LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH } from './object_data.js';
 import { lootMonsterContainer } from './monster_container_loot.js';
 import { isContainer } from './container.js';
 import { isQuantumBox } from './quantum_cat.js';
@@ -2428,6 +2429,21 @@ async function movePet(monster, state, random, rollDice, rollOne, calls, resumeA
             if (target.mtame && monster.mtame && !heroHasConflict(state))
                 continue;
             if (maxPassiveMonsterDamage(target, monster) >= (monster.mhp ?? 1))
+                continue;
+            // dog_move() usually avoids paralysis and petrifying contact even
+            // when the expected passive HP damage would be survivable.
+            const avoidsEye = target.mnum === MONSTER_NAME.indexOf('floating eye')
+                && recordRandom(random, calls, 10) !== 0
+                && !!monster.mcansee
+                && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
+                && !!target.mcansee
+                && (!target.minvis || !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS))
+                && !monsterReflectsRay(monster, state);
+            const avoidsCube = target.mnum === MONSTER_NAME.indexOf('gelatinous cube')
+                && recordRandom(random, calls, 10) !== 0;
+            const avoidsPetrification = touchPetrifies(target.mnum)
+                && !monsterHasStoneResistance(monster);
+            if (avoidsEye || avoidsCube || avoidsPetrification)
                 continue;
             const attack = await petAttacksMonster(monster, target, state, random, rollDice, rollOne, calls, { x: nx, y: ny });
             return {
@@ -5555,7 +5571,7 @@ function covetousSeeksHealing(monster, state) {
         return true;
     return health < 3 && !covetousTargetMasks(state).some(mask => covetousExternalTargetExists(monster, state, mask));
 }
-function runCovetousHarassTactics(monster, state, random, calls, afterRetreat = false) {
+async function runCovetousHarassTactics(monster, state, random, calls, rollOne, afterRetreat = false) {
     if (!afterRetreat && !covetousUsesHarassStrategy(monster, state))
         return null;
     // tactics() replaces the previous strategy while retaining the two
@@ -5575,13 +5591,9 @@ function runCovetousHarassTactics(monster, state, random, calls, afterRetreat = 
         return null;
     const oldx = monster.mx;
     const oldy = monster.my;
-    const strategy = monster.mstrategy ?? 0;
-    const appearMessage = !!(strategy & STRAT_APPEARMSG);
-    monster.mstrategy = strategy & ~STRAT_APPEARMSG;
-    monster.mx = destination.x;
-    monster.my = destination.y;
-    updateMonsterRegions(monster, state);
-    monster.mtrack = [];
+    await relocateMonsterTo(monster, destination.x, destination.y, {
+        state, random, rollOne, calls, flags: RLOC_MSG,
+    });
     return {
         oldx,
         oldy,
@@ -5589,7 +5601,6 @@ function runCovetousHarassTactics(monster, state, random, calls, afterRetreat = 
         y: monster.my,
         moved: oldx !== monster.mx || oldy !== monster.my,
         deferredCovetousRelocation: true,
-        covetousRelocation: { appearMessage },
     };
 }
 async function knockHeroFromMonster(monster, attack, state, random, publish = plineWithContinuation) {
@@ -6200,7 +6211,8 @@ async function monsterSummonSpellEffect(monster, state) {
     const summoned = await summonNastyMonsters(monster);
     effect = {
         ...effect,
-        ...(summoned.deferredDemonSummon ? await msummon(monster) : summoned),
+        // nasty() delegates to msummon(NULL), using the Wizard's demon choices.
+        ...(summoned.deferredDemonSummon ? await msummon() : summoned),
     };
     for (const created of effect.created || []) {
         const hostileState = created.mpeaceful;
@@ -6999,18 +7011,18 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
             monster.mflee = 0;
         }
     }
-    setMonsterApparentHeroPosition(monster, state, random, calls);
     if (!options.afterCovetousRelocation) {
+        setMonsterApparentHeroPosition(monster, state, random, calls);
         let tacticsMovement = null;
         if (covetousSeeksHealing(monster, state)) {
             const retreat = await retreatCovetousMonster(monster, state, random, rollOne);
             if (retreat === 'harass')
-                tacticsMovement = runCovetousHarassTactics(monster, state, random, calls, true);
+                tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls, rollOne, true);
         }
         else {
             const pickedTarget = await covetousPicksUpTargetUnderfoot(monster, state);
             if (!pickedTarget)
-                tacticsMovement = runCovetousHarassTactics(monster, state, random, calls);
+                tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls, rollOne);
         }
         if (state.program_state.gameover) {
             return {
@@ -7023,9 +7035,11 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
         }
         if (tacticsMovement)
             return { calls, dochugContext, movement: tacticsMovement };
-        if (monsterIsCovetous(monster))
-            setMonsterApparentHeroPosition(monster, state, random, calls);
     }
+    // dochug() refreshes perception after tactics, including when relocation
+    // feedback pauses the turn before it checks distance and attacks.
+    if (monsterIsCovetous(monster))
+        setMonsterApparentHeroPosition(monster, state, random, calls);
     let range = await checkMonsterHeroRange(monster, { state, random, rollOne });
     dochugContext.range = range;
     if (range.heroDied)
@@ -7110,6 +7124,21 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
         };
     }
     const entryMnum = dochugContext.entryMnum;
+    // dochug() gives royal jelly priority over movement and attacks.
+    const royalJelly = entryMnum === MONSTER_NAME.indexOf('killer bee')
+        ? state.level.objects[monster.mx]?.[monster.my]?.find(object => object.otyp === LUMP_OF_ROYAL_JELLY)
+        : null;
+    if (royalJelly && await feedBeeRoyalJelly(monster, royalJelly, state)) {
+        return {
+            calls, dochugContext,
+            movement: {
+                oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                moved: false, actionCompleted: true,
+                actorDied: !!monster.dead || monster.mhp <= 0,
+                heroDied: !!state.program_state.gameover,
+            },
+        };
+    }
     if (entryMnum === MONSTER_NAME.indexOf('gelatinous cube')
         && await digestGelatinousCubeInventory(monster, state, { random, rollOne, rollDice })) {
         return {

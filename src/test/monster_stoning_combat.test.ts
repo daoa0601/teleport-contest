@@ -7,7 +7,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { runMonsterAction } from '../js/monmove.js';
+import { attackMonsterWithMonster, runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, LEATHER_GLOVES, STATUE } from '../js/object_data.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -79,7 +79,9 @@ for (const gloves of [false, true]) {
         const health = cockatrice.mhp;
         pushKeys(' '.repeat(40));
 
-        await runMonsterAction(soldier, game, () => 0, count => count, () => 1);
+        await attackMonsterWithMonster(soldier, cockatrice, {
+            state: game, random: () => 0, rollDice: count => count, rollOne: () => 1,
+        });
 
         assert.equal(game.level.monsters.includes(soldier), gloves);
         if (gloves) assert.ok(cockatrice.mhp < health);
@@ -124,7 +126,9 @@ void test('life saving protects an attacker without passing its interrupted hit 
     const health = cockatrice.mhp;
     pushKeys(' '.repeat(40));
 
-    await runMonsterAction(soldier, game, () => 0, count => count, () => 1);
+    await attackMonsterWithMonster(soldier, cockatrice, {
+        state: game, random: () => 0, rollDice: count => count, rollOne: () => 1,
+    });
 
     assert.ok(game.level.monsters.includes(soldier));
     assert.equal(soldier.mhp, soldier.mhpmax);

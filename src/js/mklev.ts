@@ -1754,11 +1754,25 @@ async function makemon(
         if (!point) return null;
         x = point.x;
         y = point.y;
+    } else if (!game.in_mklev && x === game.u.ux && y === game.u.uy) {
+        const point = findMonsterNearPosition(mdat, x, y, {
+            ignoreWater: !!(mmflags & MM_IGNOREWATER), gpflags: GP_AVOID_MONPOS,
+        });
+        if (!point) return null;
+        x = point.x;
+        y = point.y;
+        requestedByHero = true;
     }
-    // C makemon() rejects an occupied explicit coordinate before choosing a
-    // species or allocating an id.  Callers which permit displacement choose
-    // the adjacent square before entering this constructor.
-    if (levelMonsterAt(x, y)) return null;
+    if (levelMonsterAt(x, y)) {
+        if (!(mmflags & MM_ADJACENTOK)) return null;
+        // The occupied-square branch has only the scary-square-aware search.
+        const flags = GP_AVOID_MONPOS | GP_CHECKSCARY
+            | (mmflags & MM_IGNOREWATER);
+        const point = findMonsterNearPositionCore(mdat, x, y, flags, game);
+        if (!point) return null;
+        x = point.x;
+        y = point.y;
+    }
     let mndx = mdat;
     if (mndx == null) {
         // C accepts the 51st result even if every preceding type was
@@ -2770,13 +2784,12 @@ function collectShuffledMonsterCoordinates(centerX: number, centerY: number, max
 }
 
 function findMonsterNearPositionCore(
-    mnum: number | null, centerX: number, centerY: number, checkScary: boolean,
-    ignoreWater: boolean, state: GameState,
+    mnum: number | null, centerX: number, centerY: number, gpflags: number,
+    state: GameState,
 ): Position | null {
     const species = mnum ?? state.u.umonster;
     if (species === undefined) throw new Error('monster placement requires a species or initialized hero body');
     const subject = { kind: 'species' as const, mnum: species };
-    const gpflags = (checkScary ? GP_CHECKSCARY : 0) | (ignoreWater ? MM_IGNOREWATER : 0);
     const nearby = collectShuffledMonsterCoordinates(centerX, centerY, 3);
     for (const pos of nearby) {
         if (goodPosition(pos.x, pos.y, subject, { state, gpflags }))
@@ -2799,12 +2812,15 @@ function findMonsterNearPositionCore(
 // from a later makemon()/make_familiar() construction failure.
 export function findMonsterNearPosition(
     mnum: number | null, centerX: number, centerY: number,
-    { ignoreWater = false, state = game }: { ignoreWater?: boolean; state?: GameState } = {},
+    { ignoreWater = false, gpflags = 0, state = game }: {
+        ignoreWater?: boolean; gpflags?: number; state?: GameState;
+    } = {},
 ): Position | null {
+    const flags = gpflags | (ignoreWater ? MM_IGNOREWATER : 0);
     return findMonsterNearPositionCore(
-        mnum, centerX, centerY, true, ignoreWater, state,
+        mnum, centerX, centerY, flags | GP_CHECKSCARY, state,
     ) || findMonsterNearPositionCore(
-        mnum, centerX, centerY, false, ignoreWater, state,
+        mnum, centerX, centerY, flags & ~GP_CHECKSCARY, state,
     );
 }
 
