@@ -376,6 +376,9 @@ async function checkHere(source: PickupSource, pickedSome: boolean): Promise<{ d
         return { died: false };
     }
     stopRun();
+    // C check_here() flushes movement before look_here() can page a prior
+    // message. The pager itself leaves pending map changes untouched.
+    await flush_screen(1);
     const feature = skipFeature ? '' : dungeonFeatureSentenceAt(x, y);
     if (heroIsBlind(game)) {
         const first = source.objects[0];
