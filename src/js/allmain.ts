@@ -219,8 +219,7 @@ import { applyHeroWereChange, presentWereChange } from './were.js';
 import { sessionIsNight } from './monster_sound.js';
 import { burnHeroArmorByFire } from './trap.js';
 import { sinkHeroIntoLava } from './hack.js';
-import { monsterTeleportRestricted,
-} from './teleport_rules.js';
+import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { healHeroLegs } from './hero_legs.js';
 import {
@@ -1839,10 +1838,14 @@ async function resolveDeferredHeroItemTheft(
     const oldDelay = previousDelay?.object === object ? previousDelay.remainingGlobalTurns : 0;
     await stopDonning(object, game);
     await stopHeroOccupation(game);
+    // stop_donning() makes interrupted dressing armor unworn before steal()
+    // decides whether this item still needs armor-removal time or feedback.
+    const stillWorn = equipmentSlots.some(slot => game[slot] === object)
+        || object.worn || (object.owornmask ?? 0) !== 0;
 
     let removalMessage = null;
     let charmed = false;
-    if (wornArmor) {
+    if (equipmentSlots.some(slot => slot.startsWith('uarm') && game[slot] === object)) {
         const delay = Math.min(OBJECT_DELAY[object.otyp] ?? 0,
             oldDelay > 0 ? oldDelay : Infinity);
         const helplessReason = game._helplessReason;
@@ -1871,15 +1874,18 @@ async function resolveDeferredHeroItemTheft(
             } finally {
                 object.cursed = cursed;
             }
-            if (delay > 0) {
+            // nomul() refuses to shorten an existing negative multi, even
+            // when this theft replaces the armor being removed.
+            const remaining = Math.max(delay, -game.multi, game._helplessTurns ?? 0);
+            if (remaining > 0) {
                 game._delayedAction = { kind: 'steal', thief: monster, object,
-                    remainingGlobalTurns: delay, ready: false, finishMessage: '' };
-                game.multi = -delay;
+                    remainingGlobalTurns: remaining, ready: false, finishMessage: '' };
+                game.multi = -remaining;
                 return false;
             }
         }
     }
-    if (!charmed && (wasWeapon || wasWorn)) {
+    if (!charmed && (wasWeapon || stillWorn)) {
         observeObjectForNaming(object);
         const description = wornTheftObjectDescription(object);
         const verb = wasWeapon ? 'disarms' : wasAccessory ? 'removes' : 'takes off';
@@ -1917,11 +1923,7 @@ async function resolveDeferredHeroItemTheft(
     if (animal) {
         if (canSeeMonster(monster))
             await plineWithContinuation(`${subject} tries to run away with ${stolenName}.`);
-    } else if (monsterTeleportRestricted(monster, game)) {
-        await plineWithContinuation(
-            `A mysterious force prevents the ${quietMonsterName(monster)} from teleporting!`,
-        );
-    } else {
+    } else if (!await reportMonsterTeleportRestriction(monster, { state: game })) {
         const relocation = await randomMonsterRelocation(monster, {
             calls: action.calls, flags: RLOC_MSG,
         });
@@ -1929,14 +1931,6 @@ async function resolveDeferredHeroItemTheft(
     }
     const flight = await makeMonsterFlee(monster, { announce: false });
     if (flight.heroDied) return true;
-    // hitmu() enters this shared tail even when mhitm_ad_sedu() marked the
-    // aggressor done.  A zero-damage claw still probes both knockback gates
-    // after steal() has finished its messages and fleeing transition.
-    await tryKnockback(monster, game.u, attack, {
-        hit: attack.hit,
-        weaponUsed: !!monsterWieldedWeapon(monster),
-        publish: plineWithContinuation,
-    });
     attack.theftResolved = true;
     attack.attackerDone = true;
     return true;
@@ -1959,10 +1953,9 @@ async function finishDelayedArmorTheft(thief: Monster, object: GameObject): Prom
     unlinkObject(object, state);
     await finishInventoryRemoval(object, state);
     await plineWithContinuation(`${monsterName(thief, { state, capitalized: true })} steals ${inventoryItemDescription(object)}!`);
-    object.how_lost = LOST_STOLEN;
     await addObjectToMonsterInventory(thief, object, state);
     await makeMonsterFlee(thief, { announce: false });
-    if (!monsterTeleportRestricted(thief, state))
+    if (!await reportMonsterTeleportRestriction(thief, { state }))
         await randomMonsterRelocation(thief, { flags: RLOC_MSG });
 }
 
@@ -2777,6 +2770,13 @@ async function presentMonsterAttackEffects(
                     );
                     if (game.program_state.gameover) return { heroDied: true };
                     paging.pagerOwned ||= theftPager;
+                    // hitmu() reaches knockback after every steal() result,
+                    // including refusal and armor removal still in progress.
+                    await tryKnockback(monster, game.u, heroAttack, {
+                        state: game, random, hit: heroAttack.hit,
+                        weaponUsed: !!monsterWieldedWeapon(monster),
+                        publish: publishEquipmentMessage,
+                    });
                 }
                 if (heroAttack.deferredEngulf) {
                     const engulf = await resumeDeferredHeroEngulf(action, game, {
