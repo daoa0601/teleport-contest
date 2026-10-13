@@ -44,6 +44,9 @@ export function setHeroSpecies(mnum, state = game) {
     if (hero.umovement && newSpeed < oldSpeed && oldSpeed > 0)
         hero.umovement = Math.trunc(hero.umovement * newSpeed / oldSpeed);
     hero.umonnum = mnum;
+    // Native set_uasmon() calls float_vs_flight(), which requests bot().
+    if (!state.program_state.restoring)
+        state.context.botl = true;
     if (hero.protectionFromShapeChangers || state.protectionFromShapeChangers)
         hero.mcham = -1;
     else if (monsterIsVampire(mnum))
