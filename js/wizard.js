@@ -1,6 +1,6 @@
 // C wizard.c:wizdeadorgone() and resurrect().
 import { game } from './gstate.js';
-import { newsym, plineWithContinuation, canSpotMonster } from './display.js';
+import { plineWithContinuation } from './display.js';
 import { makemonNear } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { STRAT_WAITMASK, MM_NOWAIT } from './const.js';
@@ -91,11 +91,6 @@ export async function resurrectWizard() {
         wizard.mtame = 0;
         wizard.mpeaceful = 0;
         setMonsterMalign(wizard);
-        if (wizard.mrevived)
-            newsym(wizard.mx, wizard.my);
-        if (wizard.mrevived && canSpotMonster(wizard)) {
-            await plineWithContinuation('The Wizard of Yendor suddenly appears next to you!');
-        }
         if (!game.deaf && !game.u?.deaf) {
             await plineWithContinuation(`A voice booms out...  "So thou thought thou couldst ${verb} me, fool."`);
         }
