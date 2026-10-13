@@ -6424,6 +6424,9 @@ async function openLockedDoor(door, x, y) {
     const answer = await promptYesNoQuit(`Unlock it with your ${lockToolPresentation(tool)}?`);
     if (answer !== 'y')
         return false;
+    const touch = await touchArtifactByHero(tool);
+    if (!touch.allowed || touch.died)
+        return true;
     game._occupation = {
         key: 'pick-lock',
         text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD

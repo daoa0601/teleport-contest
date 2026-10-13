@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DOOR, D_LOCKED } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { game } from '../js/gstate.js';
+import { artifactByName } from '../js/artifacts.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { CREDIT_CARD } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -26,4 +27,39 @@ void test('opening a locked door offers the carried unlock tool after acknowledg
         assert.equal(game.context.move, answer === 'y' ? 1 : 0);
     }
 });
+const keyTouchAlignments = [0, -1];
+for (const alignment of keyTouchAlignments) {
+    void test(`autounlock touches a foreign quest key before ${alignment === 0 ? 'rejecting it' : 'starting to unlock'}`, async () => {
+        const level = freshObjectRoom({
+            hero: { uhp: 100, uhpmax: 100, ualign: { type: alignment, record: 10 } },
+        });
+        requirePlayingGame(game);
+        const door = level.requireAt(11, 10);
+        door.typ = DOOR;
+        door.doormask = D_LOCKED;
+        const artifact = artifactByName('The Master Key of Thievery');
+        assert.ok(artifact);
+        const key = await addInventoryObject(artifact.baseType, {
+            oartifact: artifact.id, oextra: { oname: artifact.name },
+        });
+        const input = resetInputState();
+        pushKeys('l');
+        await answerPrompts(rhack('o'.charCodeAt(0)), input, [
+            { prompt: /This door is locked\.--More--/, keys: ' ' },
+            { prompt: /Unlock it with your skeleton key\?/, keys: 'y' },
+            ...(alignment === 0 ? [{
+                    prompt: /You are blasted by The Master Key of Thievery's power!--More--/, keys: ' ',
+                }] : []),
+        ]);
+        assert.ok(game.u.uhp < 100, 'the artifact blast damages the hero');
+        assert.ok(game.u.uhp >= 60, 'a self-willed artifact blast deals at most four ten-sided dice');
+        assert.equal(Boolean(game._occupation), alignment === -1);
+        assert.equal(game.context.move, 1, 'even a rejected touch spends the opening turn');
+        assert.equal(door.doormask, D_LOCKED);
+        assert.ok(game.inventory.includes(key), 'the rejected key remains carried');
+        assert.match(game._pending_message, alignment === 0
+            ? /The Master Key of Thievery is beyond your control!/
+            : /You are blasted by The Master Key of Thievery's power!/);
+    });
+}
 //# sourceMappingURL=open_autounlock.test.js.map
