@@ -28,6 +28,7 @@ import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } fr
 import { requireInitializedHero } from './hero_types.js';
 
 import { fruitName } from './fruit.js';
+import { encyclopediaEntries } from './encyclopedia.js';
 import { waterbodyName } from './terrain_name.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
@@ -87,7 +88,7 @@ import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
 import { resetBulkTakeoff } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
-import { clearCommandKeys, nhgetch, queueCommandKeys } from './input.js';
+import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
 import {
     chooseInventoryObject, compactInventoryLetters, promptInventoryObject,
@@ -4728,17 +4729,33 @@ async function dowhatis(): Promise<void> {
         27, 32, 10, 13,
         ...'/i?mMoOtTeE'.split('').map(char => char.charCodeAt(0)),
     ];
-    const key = await showChoiceWindow({
+    const queuedKey = takeCommandKey();
+    const key = queuedKey ?? await showChoiceWindow({
         title: 'What do you want to look at:',
         entries,
         validKeys,
     });
-    await restoreHelpMap();
-    if (String.fromCharCode(key) === '/') {
+    if (queuedKey === undefined) await restoreHelpMap();
+    const choice = String.fromCharCode(key);
+    if (choice === '/') {
         await doFarlook();
         return;
     }
+    if (choice === 'i') {
+        const queuedLetter = takeCommandKey();
+        const letter = queuedLetter ?? (await selectInventoryObject()).key;
+        const item = game.inventory.find(item => item.invlet === String.fromCharCode(letter));
+        if (item) await showEncyclopediaInformation(objectName({ ...item, quan: 1, quantity: 1 }));
+        else if (queuedLetter !== undefined) clearCommandKeys();
+    }
     game.context.move = 0;
+}
+
+async function showEncyclopediaInformation(name: string): Promise<void> {
+    const entries = encyclopediaEntries(name);
+    for (const entry of entries) await showTextMenuOverlay(entry.lines);
+    if (entries.length) await restoreHelpMap();
+    else await pline("You don't have any information on those things.");
 }
 
 // C pager.c:dohelp().

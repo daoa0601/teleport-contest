@@ -50,10 +50,13 @@ export class InputGate {
     clearCommandKeys() {
         this.commandKeys.length = 0;
     }
+    takeCommandKey() {
+        return this.commandKeys.shift();
+    }
     async readKey() {
         // C cmdq keys answer a command's prompts without asking tty or
         // consuming input the player already entered for the next command.
-        const commandKey = this.commandKeys.shift();
+        const commandKey = this.takeCommandKey();
         if (commandKey !== undefined)
             return commandKey;
         await this.beforeRead?.();
@@ -106,6 +109,9 @@ export function queueCommandKeys(keys) {
 }
 export function clearCommandKeys() {
     activeInputGate.clearCommandKeys();
+}
+export function takeCommandKey() {
+    return activeInputGate.takeCommandKey();
 }
 export async function nhgetch() {
     const key = await activeInputGate.readKey();

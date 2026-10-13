@@ -1,6 +1,7 @@
 // invent.js — Inventory display and look-here commands.
 // C ref: invent.c — ddoinv(), display_inventory(), dolook().
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { encyclopediaEntries } from './encyclopedia.js';
 import { objectBlessingDescription, objectDescription } from './object_description.js';
 import { primaryHandDescriptionDetail } from './object_equipment_description.js';
 import { ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
@@ -469,7 +470,8 @@ function itemActionEntries(item, state) {
             && isTwoWeaponObject(state.uwep) && state.uwep && !OBJECT_BIMANUAL[state.uwep.otyp]
             && isTwoWeaponObject(state.uswapwep) && state.uswapwep && !OBJECT_BIMANUAL[state.uswapwep.otyp]))
         entries.push({ key: 'X', text: `Toggle two-weapon combat ${state.u.twoweap ? 'off' : 'on'}` });
-    entries.push({ key: '/', text: 'Look up information about this' });
+    if (encyclopediaEntries(objectName({ ...item, quan: 1, quantity: 1 }, state), state).length)
+        entries.push({ key: '/', text: 'Look up information about this' });
     return entries;
 }
 function inventoryActionKey(code) {
