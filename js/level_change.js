@@ -38,6 +38,7 @@ import { moveElementalBubbles } from './elemental.js';
 import { COLNO, ROWNO, CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, IS_POOL, IS_LAVA, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, } from './const.js';
 import { blocksMove } from './hack.js';
 import { resurrectWizard } from './wizard.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 export async function gotoLevel(targetDepth, { arrival = 'random', ladder = false, postMessage = '', preArrivalPager = '', } = {}) {
     requirePlayingGame(game);
     const oldDepth = { ...game.u.uz };
@@ -195,21 +196,28 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         && newDepth.dnum === game.valley_level.dnum
         && newDepth.dlevel === game.valley_level.dlevel;
     if (game._restoredBones) {
-        // do.c marks a loaded bones level as familiar.  tty can suspend the
-        // deferred level-teleport message before familiar_level_msg() is
-        // delivered, leaving the latter pending at the hero cursor for the
-        // next input boundary.
-        const familiarMessages = [
-            'You have a sense of deja vu.',
-            "You feel like you've been here before.",
-            'This place looks familiar...',
-            '',
-        ];
-        const familiarMessage = familiarMessages[rn2(4)];
         if (postMessage) {
             await plineWithContinuation(postMessage);
-            await flushPendingTopline();
         }
+        let familiarMessage = '';
+        // bones_include_name() recognizes only this hero's ancestors.
+        if (game.level.bonesNames?.includes(game.plname)) {
+            const perception = heroIsBlind(game) ? 'seems' : 'looks';
+            const familiarMessages = heroIsHallucinating(game) ? [
+                `Whoa!  Everything ${perception} different.`,
+                'You are surrounded by twisty little passages, all alike.',
+                `Gee, this ${perception} like uncle Conan's place...`,
+                '',
+            ] : [
+                'You have a sense of deja vu.',
+                "You feel like you've been here before.",
+                `This place ${perception} familiar...`,
+                '',
+            ];
+            familiarMessage = familiarMessages[rn2(4)] ?? '';
+        }
+        if (postMessage)
+            await flushPendingTopline();
         if (familiarMessage)
             await pline(familiarMessage);
         game._restoredBones = false;

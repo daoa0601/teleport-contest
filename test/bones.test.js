@@ -6,6 +6,9 @@ import { map_location, map_object } from '../js/display.js';
 import { mapLevel } from '../js/detect.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
+import { gotoLevel } from '../js/level_change.js';
+import { initRng } from '../js/rng.js';
+import { freshConnectedLevels } from './support/connected-levels.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { mklev, saveBonesLevel } from '../js/mklev.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
@@ -22,6 +25,43 @@ import { freshPlayableRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
 const PM_GHOST = 287;
 const LEVEL = { dnum: 0, dlevel: 7 };
+void test('bones from another hero do not make a newly entered level familiar', async () => {
+    const storage = memoryStorage();
+    freshBonesRoom(storage);
+    game.plname = 'Ancestor';
+    requireGameLevel().requireAt(15, 10).typ = FOUNTAIN;
+    assert.ok(saveBonesLevel());
+    for (let seed = 1; seed <= 4; seed++) {
+        freshConnectedLevels({ destinationDepth: 7, generateDestination: true });
+        game.plname = 'Newcomer';
+        game.storage = storage;
+        game.flags.debug = true;
+        initRng(BigInt(seed));
+        pushKeys('yn');
+        await gotoLevel({ dlevel: 7 });
+        assert.equal(requireGameLevel().requireAt(15, 10).typ, FOUNTAIN, 'the destination must contain the restored bones');
+        assert.doesNotMatch(game._pending_message, /sense of deja vu|been here before|place .*familiar/, 'a different hero must not recognize the ancestor level');
+    }
+});
+void test('a hero recognizes their bones after a later ancestor has died on the level', async () => {
+    const storage = memoryStorage();
+    freshBonesRoom(storage);
+    game.plname = 'First';
+    assert.ok(saveBonesLevel());
+    freshBonesRoom(storage);
+    game.plname = 'Second';
+    pushKeys('yn');
+    await mklev();
+    assert.ok(saveBonesLevel());
+    freshConnectedLevels({ destinationDepth: 7, generateDestination: true });
+    game.plname = 'First';
+    game.storage = storage;
+    game.flags.debug = true;
+    initRng(3n);
+    pushKeys('yn');
+    await gotoLevel({ dlevel: 7 });
+    assert.match(game._pending_message, /sense of deja vu|been here before|place .*familiar/);
+});
 function freshBonesRoom(storage) {
     freshPlayableRoom({
         seed: 8701n,

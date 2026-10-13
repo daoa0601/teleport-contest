@@ -3424,6 +3424,11 @@ export function saveBonesLevel() {
     catch (_error) {
         return false;
     }
+    // savebones() adds this hero to the level's cemetery while retaining
+    // earlier ancestors. Recognition on arrival uses the complete name.
+    payload.level.bonesNames = [
+        game.plname || 'player', ...(payload.level.bonesNames ?? []),
+    ];
     for (const monster of payload.level.monsters || []) {
         monster.mlstmv = 0;
         if (!Number.isFinite(monster.mux))
