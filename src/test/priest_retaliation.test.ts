@@ -328,24 +328,41 @@ for (const lifesaving of [false, true]) {
     });
 }
 
-for (const prefix of ['', 'm']) {
-    for (const lifesaving of [false, true]) {
-        void test(`${prefix || 'ordinary'} movement ${lifesaving ? 'spends the turn after life saving' : 'preserves final death turn state'} when a hallucinating hero attacks a priest`, async () => {
-            await temple({ hero: { uhp: 1, uhitinc: -100, hallucinationTurns: 50 } });
-            requirePlayingGame(game);
-            if (lifesaving)
-                await wearHeroAccessory(await addInventoryObject(AMULET_OF_LIFE_SAVING), 'uamul');
-            resetInputState();
-            pushKeys(`${prefix ? 'l' : ''}${' '.repeat(100)}`);
-            initRng(1n);
+for (const lifesaving of [false, true]) {
+    void test(`ordinary movement ${lifesaving ? 'spends the turn after life saving' : 'preserves final death turn state'} when a hallucinating hero attacks a priest`, async () => {
+        await temple({ hero: { uhp: 1, uhitinc: -100, hallucinationTurns: 50 } });
+        requirePlayingGame(game);
+        if (lifesaving)
+            await wearHeroAccessory(await addInventoryObject(AMULET_OF_LIFE_SAVING), 'uamul');
+        resetInputState();
+        pushKeys(' '.repeat(100));
+        initRng(1n);
 
-            await rhack((prefix || 'l').charCodeAt(0));
+        await rhack('l'.charCodeAt(0));
 
-            assert.equal(!!game.program_state.gameover, !lifesaving);
-            assert.equal(game.context.move, lifesaving ? 1 : 0);
-        });
-    }
+        assert.equal(!!game.program_state.gameover, !lifesaving);
+        assert.equal(game.context.move, lifesaving ? 1 : 0);
+    });
 }
+
+void test('m movement bumps into a visible priest during hallucination without provoking shrine lightning', async () => {
+    const { priest } = await temple({ hero: { uhp: 1, hallucinationTurns: 50 } });
+    requirePlayingGame(game);
+    resetInputState();
+    pushKeys(`l${' '.repeat(100)}`);
+    initRng(1n);
+
+    await rhack('m'.charCodeAt(0));
+
+    assert.equal(!!game.program_state.gameover, false);
+    assert.equal(game.u.uhp, 1);
+    assert.equal(game.u.blindTurns, 0);
+    assert.equal(priest.mpeaceful, 1);
+    assert.equal(game.u.ux, 10);
+    assert.equal(priest.mx, 11);
+    assert.equal(game.context.move, 1);
+    assert.match(game._pending_message, /You move right into /);
+});
 
 for (const lifesaving of [false, true]) {
     void test(`a public priest attack ${lifesaving ? 'resumes the lightning flash after ring-explosion life saving' : 'stops at a fatal ring explosion despite shock resistance'}`, async () => {

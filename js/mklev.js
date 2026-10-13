@@ -74,6 +74,8 @@ import { addCreatedObjectToMonsterInventory, addObjectToMonsterInventory, linkCr
 import { setupElementalBubbles } from './elemental.js';
 import { maybeGiveDomesticSaddle, putSaddleOnMonster } from './steed.js';
 import { inTown, roomForIndex, roomsAt } from './room.js';
+import { insideShopRoomAt } from './shk.js';
+import { convertSecretDoor } from './detect.js';
 import { occupied, somex, somey, somexy, somexyspace, } from './mkroom.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
 import { beginObjectBurn } from './light.js';
@@ -1709,6 +1711,9 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         mux: 0, muy: 0,
         msleeping: monsterSleeping, mpeaceful: peaceful ? 1 : 0,
         malign: 0,
+        mwandexp: Is_stronghold(game.u.uz) || Is_knox_level(game.u.uz)
+            || In_endgame(game.u.uz) || In_hell(game.u.uz)
+            || In_V_tower(game.u.uz) || In_quest(game.u.uz),
         minvent: monsterInventory,
         inventory: monsterInventory,
         hasInventory: false,
@@ -1777,7 +1782,8 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     }
     let hasMonsterInventory = false;
     const allowMonsterInventory = !(mmflags & NO_MINVENT);
-    let skipCommonMonsterInventory = Is_rogue_level(game.u?.uz);
+    const initializeMonsterEquipment = allowMonsterInventory && !Is_rogue_level(game.u.uz);
+    let skipCommonMonsterInventory = false;
     // C makemon.c:mongets(). Normalize birth equipment before mpickobj().
     const mongets = async (otyp) => {
         if (!otyp)
@@ -1904,10 +1910,10 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             monsterSleeping = 1;
         }
     }
-    // C makemon.c's allow_minvent gate surrounds m_initweap() but not birth
-    // state such as mimic appearance, sleep, peacefulness, or shapechanging.
-    if (!allowMonsterInventory) {
-        // The caller requires an empty initial inventory.
+    // C m_initweap() and m_initinv() both return on Rogue levels. Fixed
+    // possessions from makemon() above and its saddle probe below are separate.
+    if (!initializeMonsterEquipment) {
+        // NO_MINVENT and Rogue levels bypass ordinary equipment creation.
     }
     else if (mndx === PM_VLAD_THE_IMPALER) {
         // Vlad is a vampire prince and extra-nasty, reducing the ordinary
@@ -1919,7 +1925,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         // C ref: makemon.c m_initweap(), S_KOBOLD.
         if (!rn2(4))
             await mInitthrow(DART, 12);
-        rn2(75); // final m_initweap() offensive-item check
+        await giveOffensiveMonsterItem();
     }
     else if (mndx >= 70 && mndx <= 73) {
         // C ref: makemon.c m_initweap(), S_ORC.  Goblins, hobgoblins,
@@ -1972,7 +1978,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             await mongets(ELVEN_MITHRIL_COAT);
         if (!rn2(10))
             await mongets(DWARVISH_CLOAK);
-        rn2(75);
+        await giveOffensiveMonsterItem();
     }
     else if (MONSTER_SYMBOL[mndx] === 8
         && (genderFlags & M2_DWARF)) {
@@ -2147,7 +2153,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             secondaryWeapon = KNIFE;
         if (secondaryWeapon)
             await mongets(secondaryWeapon);
-        rn2(75);
+        await giveOffensiveMonsterItem();
         if (rn2(5))
             await mongets(rn2(3) ? SPLINT_MAIL : BANDED_MAIL);
         else
@@ -2429,7 +2435,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     // m_initinv(), m_dowear(), and the domestic-saddle probe share the same
     // allow_minvent gate.  NO_MINVENT must consume none of their RNG and must
     // leave an empty minvent even for species with fixed starting objects.
-    if (allowMonsterInventory
+    if (initializeMonsterEquipment
         && (mndx === PM_ARCH_PRIEST || mndx === PM_ALIGNED_CLERIC
             || mndx === PM_HIGH_CLERIC)) {
         // C ref: makemon.c m_initinv(), Priest/Cleric quest-leader branch.
@@ -2438,21 +2444,21 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         await mongets(SMALL_SHIELD);
         await mkmonmoney(rn1(10, 20));
     }
-    if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 14) { // S_NYMPH
+    if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 14) { // S_NYMPH
         // C ref: makemon.c m_initinv(), S_NYMPH.
         if (!rn2(2))
             await mongets(MIRROR);
         if (!rn2(2))
             await mongets(POT_OBJECT_DETECTION);
     }
-    if (allowMonsterInventory && mndx === PM_MINOTAUR) {
+    if (initializeMonsterEquipment && mndx === PM_MINOTAUR) {
         // C ref: makemon.c:m_initinv(), S_GIANT.  This probe belongs to the
         // explicit minotaur constructor, before the common defensive and
         // miscellaneous inventory reservoirs.
         if (!rn2(8) || (game.in_mklev && Is_earthlevel(game.u?.uz)))
             await mongets(WAN_DIGGING);
     }
-    else if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 34
+    else if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 34
         && (genderFlags & M2_GIANT)) {
         // C ref: makemon.c m_initinv(), is_giant().  Each iteration chooses
         // one weighted gem/glass type, creates it without ordinary object
@@ -2466,21 +2472,20 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             hasMonsterInventory = true;
         }
     }
-    if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 12) { // S_LEPRECHAUN
+    if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 12) { // S_LEPRECHAUN
         await mkmonmoney(d(level_difficulty(), 30));
     }
-    if (allowMonsterInventory && !Is_rogue_level(game.u.uz)
-        && mndx === MONSTER_NAME.indexOf('Nazgul')) {
+    if (initializeMonsterEquipment && mndx === MONSTER_NAME.indexOf('Nazgul')) {
         const ring = await mksobj(RIN_INVISIBILITY, false, false);
         ring.cursed = true;
         await addCreatedObjectToMonsterInventory(pendingMonster, ring, game);
         hasMonsterInventory = true;
     }
-    if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 39) { // S_MUMMY
+    if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 39) { // S_MUMMY
         if (rn2(7))
             await mongets(MUMMY_WRAPPING);
     }
-    if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 38) { // S_LICH
+    if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 38) { // S_LICH
         if (mndx === 185 && !rn2(13)) { // PM_MASTER_LICH
             await mongets(rn2(7) ? ATHAME : WAN_NOTHING);
         }
@@ -2494,7 +2499,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             hasMonsterInventory = true;
         }
     }
-    if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 33) { // S_GNOME
+    if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 33) { // S_GNOME
         // C ref: makemon.c m_initinv(), S_GNOME.  During Mines generation
         // the candle chance is 1/20 (1/60 elsewhere).
         const dungeonName = game.dungeons?.[game.u?.uz?.dnum ?? 0]?.dname;
@@ -2509,7 +2514,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             }
         }
     }
-    if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 43) { // S_QUANTMECH
+    if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 43) { // S_QUANTMECH
         // C ref: makemon.c m_initinv().  The class switch evaluates the rare
         // Schrödinger-box probe before its PM_QUANTUM_MECHANIC species test,
         // so genetic engineers consume the same rn2(20) even though they can
@@ -2527,9 +2532,9 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             hasMonsterInventory = true;
         }
     }
-    if (allowMonsterInventory && mndx === 298 && !rn2(4))
+    if (initializeMonsterEquipment && mndx === 298 && !rn2(4))
         await mongets(SPEAR); // PM_ICE_DEVIL
-    if (allowMonsterInventory && mndx === PM_ASMODEUS) {
+    if (initializeMonsterEquipment && mndx === PM_ASMODEUS) {
         // C makemon.c:m_initinv(), S_DEMON.  Asmodeus has no weapon attack,
         // so his fixed cold/fire wands are inventory declarations rather
         // than m_initweap() gear and precede both common magic reservoirs.
@@ -2538,7 +2543,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     }
     // m_initinv() finishes with level-gated defensive and miscellaneous item
     // choices for every monster.
-    if (allowMonsterInventory && !skipCommonMonsterInventory) {
+    if (initializeMonsterEquipment && !skipCommonMonsterInventory) {
         const defensiveRoll = rn2(50);
         if (baseLevel > defensiveRoll) {
             const defensiveItem = randomDefensiveMonsterItem(pendingMonster);
@@ -2555,7 +2560,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     // C ref: makemon.c m_initinv().  Greedy monsters get a final gold gate
     // after the defensive and miscellaneous reservoirs.  Amount dice depend
     // on whether class-specific equipment already populated the inventory.
-    if (allowMonsterInventory && (genderFlags & M2_GREEDY)
+    if (initializeMonsterEquipment && (genderFlags & M2_GREEDY)
         && !monsterInventory.some(object => object.otyp === GOLD_PIECE)
         && !rn2(5)) {
         const amount = d(level_difficulty(), hasMonsterInventory ? 5 : 10);
@@ -2615,6 +2620,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         mnum: mndx, cham: pendingMonster.cham ?? -1,
         mx: x, my: y, mhp: hp, mhpmax: hp,
         m_lev: baseLevel, female: monsterFemale,
+        mwandexp: pendingMonster.mwandexp ?? false,
         msleeping: monsterSleeping,
         mpeaceful: roamingMinion?.mpeaceful ?? (birthPeaceful ? 1 : 0),
         malign: 0,
@@ -8152,13 +8158,35 @@ async function stockShopRoom(sroom) {
         || (shopIndex === 0 && rn2(5)))
         await addObjectToMonsterInventory(shopkeeper, await mksobj(SCR_CHARGING, true, false), game, { atFront: true });
     assignShopkeeperIdentity(shopkeeper, shopIndex);
-    const doorLoc = level.at(shopDoor.door.x, shopDoor.door.y);
-    if (doorLoc?.doormask === D_NODOOR)
+    const entrance = level.doors[sroom.fdoor];
+    if (!entrance)
+        throw new Error('A stocked shop has no entrance door.');
+    const doorLoc = level.requireAt(entrance.x, entrance.y);
+    if (doorLoc.doormask === D_NODOOR) {
         doorLoc.doormask = D_ISOPEN;
-    if (doorLoc?.typ === SDOOR)
-        doorLoc.typ = DOOR;
-    if (doorLoc && (doorLoc.doormask & D_TRAPPED))
+        newsym(entrance.x, entrance.y);
+    }
+    if (doorLoc.typ === SDOOR) {
+        convertSecretDoor(doorLoc);
+        newsym(entrance.x, entrance.y);
+    }
+    if (doorLoc.doormask & D_TRAPPED)
         doorLoc.doormask = D_LOCKED;
+    if (doorLoc.doormask === D_LOCKED) {
+        let x = entrance.x, y = entrance.y;
+        if (insideShopRoomAt(game, x + 1, y))
+            x--;
+        else if (insideShopRoomAt(game, x - 1, y))
+            x++;
+        if (insideShopRoomAt(game, entrance.x, y + 1))
+            y--;
+        else if (insideShopRoomAt(game, entrance.x, y - 1))
+            y++;
+        makeEngravingAt(x, y, 'Closed for inventory', null, 0, DUST);
+        const noticeLocation = level.requireAt(x, y);
+        if (noticeLocation.typ !== CORR && noticeLocation.typ !== ROOM)
+            noticeLocation.typ = specialLevelAt() || roomsAt(level, x, y, 0).length ? ROOM : CORR;
+    }
     const stockPositions = [];
     for (let x = sroom.lx; x <= sroom.hx; x++)
         for (let y = sroom.ly; y <= sroom.hy; y++)
@@ -9124,13 +9152,11 @@ function topologize(croom) {
         return;
     if ((game.level.at(lowx, lowy)?.roomno ?? 0) === roomno)
         return;
-    const interiorRoomno = Is_rogue_level(game.u?.uz)
-        && croom.rtype === OROOM ? 0 : roomno;
     for (let x = lowx; x <= hix; x++)
         for (let y = lowy; y <= hiy; y++) {
             const loc = game.level.at(x, y);
             if (loc)
-                loc.roomno = interiorRoomno;
+                loc.roomno = roomno;
         }
     for (let x = lowx - 1; x <= hix + 1; x++)
         for (let y = lowy - 1; y <= hiy + 1; y += (hiy - lowy + 2)) {

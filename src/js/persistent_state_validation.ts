@@ -5,7 +5,7 @@ import type { Artifact } from './artifacts.js';
 import type { ArtifactTarget } from './data_types.js';
 import type { GameMap } from './game.js';
 import type {
-    Fruit, MemorizedSpell, QuestStatus,
+    Fruit, MemorizedSpell, MonsterHelplessnessReason, QuestStatus,
 } from './game_state.js';
 import type { CachedLevelState } from './map_types.js';
 import type { MonsterVital } from './monster_types.js';
@@ -68,6 +68,12 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
     function activeSpecial(candidate: unknown): candidate is NonNullable<PersistentState['_activeSpecialLevel']> {
         return validSavedActiveSpecialLevel(candidate, entities);
     }
+    function helplessReason(candidate: unknown): candidate is string | MonsterHelplessnessReason {
+        return string(candidate) || closedFieldsMatch<MonsterHelplessnessReason>(candidate, {
+            monsterId: (id): id is number => integer(id) && id >= 0,
+            text: string,
+        });
+    }
     const fields: Fields<PersistentState> = {
         Luck: optional(integer),
         _activeSpecialLevel: optional(nullable(activeSpecial)),
@@ -90,7 +96,7 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         _fobjSerial: optional(integer),
         _helplessAfter: optional(nullable(oneOf('end-mimic-meal', 'hear-again', 'unfaint', 'finish-digestion'))),
         _helplessDoneMessage: optional(nullable(string)),
-        _helplessReason: optional(nullable(string)),
+        _helplessReason: optional(nullable(helplessReason)),
         _helplessTurns: optional(integer),
         _heroActionSeq: optional(integer),
         _heroTrack: optional(arrayOf(validSavedPosition)),

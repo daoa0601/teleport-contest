@@ -145,7 +145,7 @@ void test('refusing delayed genocide resumes sight and strangulation, and consum
     await polymonHero(MONSTER_NAME.indexOf('black pudding'));
     await flushPendingTopline();
     assert.equal((await returnHeroToHumanForm()).died, true);
-    assert.equal(loadScoreRecords()[0]?.death, 'killed by self-genocide');
+    assert.equal(loadScoreRecords()[0]?.death, 'killed by self-genocide, while attempting to cheat Death');
 });
 void test('returning to human form ends a mimic meal without its delayed recovery message', async () => {
     const { text } = formTransitionRoom();

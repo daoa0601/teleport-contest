@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { moveloop_core, restoregamePreamble } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
-import { LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT, W_AMUL } from '../js/const.js';
+import { LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT, TT_PIT, W_AMUL } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import type { Monster } from '../js/monster_types.js';
@@ -14,6 +14,7 @@ import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { initRng } from '../js/rng.js';
+import { cansee } from '../js/vision.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
@@ -236,12 +237,16 @@ for (const { seed, lifeSavedInside, holderHp } of [
             const holder: Monster | undefined = requireGameLevel(game).monsters.find(monster => monster.m_id === vortex.m_id);
             assert.ok(holder, 'The released vortex remains on the level.');
             const holderHp: number | undefined = holder?.mhp;
+            assert.ok((game.u.utrap ?? 0) > 0, 'the landing mine leaves the hero in a pit');
+            assert.equal(game.u.utraptype, TT_PIT);
+            assert.equal(cansee(laterSpore.mx, laterSpore.my), false,
+                'pit vision does not reach the later explosion');
             await finishEnvironmentalMonsterDeath(laterSpore, game);
             await flushPendingTopline();
             assert.equal(laterSpore.dead, true);
             assert.equal(holder?.mhp, holderHp);
             assert.equal(game.u.uconduct?.killer, 1);
-            assert.match(messages.join('\n'), /Boom!/);
+            assert.match(messages.join('\n'), /You hear a blast\./);
             assert.doesNotMatch(messages.join('\n'), /indigestion/);
         }
     });

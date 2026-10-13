@@ -35,6 +35,21 @@ void test('relocating an engulfer carries its swallowed hero without releasing t
     assert.equal(game.u.uswldtim, 8);
     assert.deepEqual([game.u.ux0, game.u.uy0], [10, 10]);
 });
+void test('a swallowed hero sees the shared teleport message and stomach at the destination', async () => {
+    freshObjectRoom({ right: 24 });
+    requirePlayingGame(game);
+    const worm = await createMonsterAt('purple worm', 11, 10);
+    game.u.ux = worm.mx;
+    game.u.uy = worm.my;
+    game.u.ustuck = worm;
+    game.u.uswallow = 1;
+    game.u.uswldtim = 8;
+    await relocateMonsterTo(worm, 18, 10, { flags: RLOC_MSG });
+    assert.equal(await topline(), 'You and the purple worm teleport together.');
+    assert.equal(requireScreenRow(11)[17]?.ch, '@');
+    assert.equal(requireScreenRow(10)[16]?.ch, '/');
+    assert.equal(requireScreenRow(11)[10]?.ch, ' ', 'the old hero position is cleared');
+});
 void test('a relocated holder keeps an adjacent grip but releases a distant hero', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

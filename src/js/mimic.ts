@@ -9,12 +9,13 @@ import {
     plineWithContinuation as pline,
 } from './display.js';
 import { game } from './gstate.js';
+import { AD_STCK } from './monster_attack_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './display.js';
 import { objectAtMonsterDescription } from './monster_birth.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { wakeMonster } from './monster_anger.js';
 import { heroIsBlind } from './senses.js';
@@ -24,14 +25,6 @@ const S_HORIZONTAL_CLOSED_DOOR = 16;
 const CLOSED_DOOR_APPEARANCES = new Set([
     S_VERTICAL_CLOSED_DOOR,
     S_HORIZONTAL_CLOSED_DOOR,
-]);
-const PM_SMALL_MIMIC = 64;
-const PM_LARGE_MIMIC = 65;
-const PM_GIANT_MIMIC = 66;
-const STICKY_MIMICS = new Set([
-    PM_SMALL_MIMIC,
-    PM_LARGE_MIMIC,
-    PM_GIANT_MIMIC,
 ]);
 
 // C that_is_a_mimic(): revelation alone neither wakes nor creates a hold.
@@ -97,14 +90,22 @@ export async function revealMimic(
 ): Promise<boolean> {
     if (!isObjectOrFurnitureMimic(monster, state)) return false;
 
+    await stumbleOntoMimic(monster, state, publish);
+    return true;
+}
+
+// C stumble_onto_mimic(): callers establish the unrevealed appearance.
+export async function stumbleOntoMimic(
+    monster: Monster, state: GameState = game, publish: MessagePublisher = pline,
+): Promise<void> {
     await revealMimicIdentity(monster, { state, publish });
     if (!state.u?.ustuck && !monster.mflee
-        && STICKY_MIMICS.has(monster.mnum)
+        && requireMonsterData(MONSTER_ATTACKS, monster.mnum)
+            .some(attack => attack[1] === AD_STCK)
         && Math.abs(monster.mx - state.u.ux) <= 1
         && Math.abs(monster.my - state.u.uy) <= 1) {
         state.u.ustuck = monster;
     }
     await wakeMonster(monster, { attacked: false });
     if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
-    return true;
 }

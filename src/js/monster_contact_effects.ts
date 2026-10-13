@@ -73,10 +73,13 @@ async function paralyzeHero(
     endVoluntaryMultiTurn(state);
     state._helplessTurns = rollOne(10);
     state._helplessDoneMessage = 'You can move again.';
-    state._helplessReason = `paralyzed by ${namelessMonsterName(monster, {
-        state, article: 'a', suppressIt: true, suppressInvisible: true,
-        suppressHallucination: true, suppressSaddle: true,
-    })}`;
+    state._helplessReason = {
+        monsterId: monster.m_id,
+        text: `paralyzed by ${namelessMonsterName(monster, {
+            state, article: 'a', suppressIt: true, suppressInvisible: true,
+            suppressHallucination: true, suppressSaddle: true,
+        })}`,
+    };
     await exerciseAttribute(A_DEX, false, state);
 }
 

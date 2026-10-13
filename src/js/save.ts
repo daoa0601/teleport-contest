@@ -21,6 +21,7 @@ import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
 import { FULL_MOON, LUCKMAX, LUCKMIN } from './const.js';
 import { vision_reset_new_level } from './vision.js';
+import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js';
 
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
@@ -41,6 +42,7 @@ function snapshotState(): SavedGame {
 }
 
 function restoreLevelMonsters(level: GameMap): void {
+    restoreEngravingPointers(level);
     if (!validMonsterWormBodies(level)) throw new Error('Invalid saved worm bodies');
     restoreMonsterWormHeads(level);
     for (const monster of level.monsters) restoreMonsterInventoryOwnership(monster);
@@ -147,6 +149,9 @@ async function writeSave(
             currentLuaLifecycle().syncVariables(game);
             const luck = undoDateLuck();
             try {
+                rewindEngravingsForSave(game.level);
+                for (const cached of game._levelCache?.values() ?? [])
+                    rewindEngravingsForSave(cached.level);
                 storage.setItem(key, encodeSavedGraph(snapshotState()));
             } catch (error) {
                 // The port keeps playing after a failed save; C has exited.
