@@ -133,16 +133,20 @@ async function exchangeAdornmentRings(context: SeductionContext): Promise<boolea
         if (!heroIsDeaf(state) && random(20) < currentAttribute(A_CHA, state)) {
             const suffix = female ? ' looks pretty.  May I have it?"'
                 : ' looks pretty.  Would you wear it for me?"';
+            observeObjectForNaming(ring, { state });
             let name = objectName(ring, state);
             if (name.length + suffix.length + 6 >= 128) name = simpleObjectName(ring, state);
             if (name.length + suffix.length + 6 >= 128) name = 'ring';
             learnObjectType(RIN_ADORNMENT, state);
             if (await promptYesNo(`"That ${name}${suffix}`) === 'n') continue;
-        } else if (female) {
-            await publish(`${who} decides she'd like ${ownedObjectName(ring, state, { capitalized: false })}, and takes it.`);
         } else {
-            await publish(`${who} decides you'd look prettier wearing ${ownedObjectName(ring, state, { capitalized: false })},`);
-            await publish('and puts it on your finger.');
+            observeObjectForNaming(ring, { state });
+            if (female) {
+                await publish(`${who} decides she'd like ${ownedObjectName(ring, state, { capitalized: false })}, and takes it.`);
+            } else {
+                await publish(`${who} decides you'd look prettier wearing ${ownedObjectName(ring, state, { capitalized: false })},`);
+                await publish('and puts it on your finger.');
+            }
         }
         learnObjectType(RIN_ADORNMENT, state);
         if (female) {
@@ -155,6 +159,7 @@ async function exchangeAdornmentRings(context: SeductionContext): Promise<boolea
             : state.uright.otyp !== RIN_ADORNMENT ? 'uright' : 'uleft';
         const previous = state[slot];
         if (previous) {
+            observeObjectForNaming(previous, { state });
             await publish(`${who} replaces ${ownedObjectName(previous, state, { capitalized: false })} with ${ownedObjectName(ring, state, { capitalized: false })}.`);
             await removeHeroAccessory(previous, state);
             if (!stillTogether(context)) return triedGloves;

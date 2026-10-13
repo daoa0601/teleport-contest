@@ -18,6 +18,37 @@ import { freshObjectRoom } from './support/object-room.js';
 
 const RIN_ADORNMENT = OBJECT_NAMES.indexOf('adornment');
 
+for (const blind of [false, true]) {
+    void test(`a ${blind ? 'blind' : 'sighted'} hero ${blind ? 'does not learn' : 'learns'} an unseen adornment ring's appearance from the seduction prompt`, async () => {
+        const level = freshObjectRoom({ flags: { female: true }, hero: { blindTurns: blind ? 20 : 0 } });
+        requirePlayingGame(game);
+        level.flags.noteleport = true;
+        assert.ok(game.objectDescriptions);
+        game.objectDescriptions[RIN_ADORNMENT] = 'jade';
+        const ring = await addInventoryObject(RIN_ADORNMENT, {
+            observed: false, dknown: false, typeKnown: false,
+        });
+        const suit = await addInventoryObject(LEATHER_ARMOR);
+        wearHeroArmor(suit);
+        const incubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+        incubus.female = false;
+        const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_BITE,
+            damageType: AD_SSEX, hit: true, damage: 0 };
+        const input = resetInputState();
+
+        await answerPrompts(resolveMonsterContactEffect(incubus, attack, { state: game,
+            publish: async () => {}, random: () => 0 }), input, [
+            { prompt: blind ? /"That ring looks pretty/ : /"That jade ring looks pretty/, keys: 'n' },
+            { prompt: /Shall I remove your suit, lover/, keys: 'n' },
+        ]);
+
+        assert.equal(ring.dknown, !blind);
+        assert.equal(game.inventory.includes(ring), true);
+        assert.notEqual(game.uright, ring);
+        assert.notEqual(game.uleft, ring);
+    });
+}
+
 for (const female of [false, true]) {
     for (const goodOutcome of [false, true]) {
         const species = female ? 'succubus' : 'incubus';
