@@ -1,6 +1,6 @@
 // Cancellation changes an actual object, including worn bonuses and timers.
 // C ref: zap.c cancel_item() and blank_novel().
-import { A_STR, A_CON, A_CHA, A_DEX, A_INT, A_WIS, W_RING, W_ARMG, W_ARMH } from './const.js';
+import { A_STR, A_CON, A_CHA, A_DEX, A_INT, A_WIS, W_RING, W_ARMG, W_ARMH, W_ARMOR } from './const.js';
 import { game } from './gstate.js';
 import { CANDELABRUM_OF_INVOCATION, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_MAGIC, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, } from './object_data.js';
 import { monsterIsRider } from './monster_data.js';
@@ -86,11 +86,14 @@ function removeWornBonuses(object, state) {
     ]);
     const bonus = name ? attributes.get(name) : undefined;
     if (bonus && (worn & bonus[1])) {
+        state.context.botl = true;
         state.u.abon ||= { a: [0, 0, 0, 0, 0, 0] };
         state.u.abon.a[bonus[0]] = (state.u.abon.a[bonus[0]] ?? 0) - amount;
         if (name === 'helm of brilliance')
             state.u.abon.a[A_WIS] = (state.u.abon.a[A_WIS] ?? 0) - amount;
     }
+    if ((worn & W_ARMOR) || (name === 'protection' && (worn & W_RING)))
+        state.context.botl = true;
     if (!(worn & W_RING))
         return;
     if (name === 'increase accuracy')
