@@ -8212,7 +8212,6 @@ export async function resumeDeferredMonsterTrap(
                 publish,
                 random,
                 rollOne,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;

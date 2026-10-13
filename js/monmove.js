@@ -6727,7 +6727,6 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
                 publish,
                 random,
                 rollOne,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;
