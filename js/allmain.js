@@ -26,7 +26,7 @@ import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
 import { monsterGainLevelRiseDestination } from './monmove.js';
 import { RLOC_NOMSG, WATER } from './const.js';
-import { presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse } from './monster_item_use.js';
+import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster } from './monster_item_use.js';
 import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
@@ -3078,6 +3078,11 @@ async function executeMonsterTurns(messageContext) {
             }
             else if (sawDrinking && !monster.minvis) {
                 await plineWithContinuation(`${visibleMonsterSubject(monster)} briefly seems to be transparent.`);
+            }
+            if (misc.kind === 'potion-invisibility') {
+                if (misc.object.cursed)
+                    await revealAggravatingMonster(monster, game);
+                await consumeMonsterItem(monster, misc.object, game);
             }
         }
         if (movement?.usedMisc?.kind === 'bullwhip-disarm') {

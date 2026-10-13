@@ -699,8 +699,6 @@ export async function finishDeferredMonsterMiscItem(action, state = requireIniti
     }
     if (misc.kind === 'potion-invisibility' || misc.kind === 'wand-invisibility') {
         setMonsterPermanentInvisibility(monster, !misc.object.cursed);
-        if (misc.kind === 'potion-invisibility')
-            await consumeMonsterItem(monster, misc.object, state);
         misc.effectApplied = true;
         return misc;
     }

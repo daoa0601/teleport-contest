@@ -2,10 +2,12 @@
 import { BOLT_LIM, G_GONE, MM_NOMSG, QBUFSZ, WAND_BACKFIRE_CHANCE } from './const.js';
 import { impossible } from './diagnostics.js';
 import {
-    canSeeMonster, canSenseMonster, flashGlyphAt, map_invisible, newsym,
-    plineWithContinuation, randomDisplayMonsterName, transientMonsterGlyph,
+    canSeeMonster, canSenseMonster, canSpotMonster, cls, displayMessageWindow,
+    displaySelf, docrt, flashGlyphAt, map_invisible, newsym,
+    plineWithContinuation, randomDisplayMonsterName, show_glyph_cell, transientMonsterGlyph,
 } from './display.js';
 import { heroSpecies } from './hero_species.js';
+import { heroIsUnconscious } from './hero_sleep.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { inventoryItemDescription } from './invent.js';
 import { AD_RBRE } from './monster_attack_types.js';
@@ -62,6 +64,27 @@ export async function presentMonsterQuaff(monster: Monster, object: GameObject, 
         if (message) await publish(message);
     }
     return seen;
+}
+
+// C muse.c:you_aggravate(). The temporary revelation is acknowledged before
+// the potion is consumed or another monster can act.
+export async function revealAggravatingMonster(monster: Monster, state: PlayingGameState): Promise<void> {
+    const name = () => monsterName(monster, { state, suppressIt: true });
+    const presence = name();
+    await plineWithContinuation(`For some reason, ${presence}${presence.endsWith('s') ? "'" : "'s"} presence is known to you.`);
+    await cls();
+    const glyph = transientMonsterGlyph(monster);
+    show_glyph_cell(monster.mx, monster.my, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
+    displaySelf();
+    await plineWithContinuation(`You feel aggravated at ${name()}.`);
+    await displayMessageWindow();
+    await docrt();
+    if (heroIsUnconscious(state)) {
+        state._helplessTurns = 1;
+        state._helplessDoneMessage = 'Aggravated, you are jolted into full consciousness.';
+    }
+    newsym(monster.mx, monster.my);
+    if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
 }
 
 // Return null when the selected item can still be used. An exploded wand
