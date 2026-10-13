@@ -404,13 +404,15 @@ const ANSI_COLOR = [
 ];
 
 function rememberedColor(glyph: DisplayGlyph, loc: MapLocation, x: number, y: number): number {
-    // display.c maps an unlit corridor with S_litcorr only while it is in
-    // sight.  When that live projection becomes hero memory, retain the lit
-    // identity only for a location whose own waslit bit supports it.
+    // newsym() darkens unseen corridors with dark_room and color enabled,
+    // even when the terrain remains lit. Without those options, waslit
+    // determines whether memory retains the bright corridor glyph.
     if (glyph?.kind === 'terrain' && glyph.ch === '#'
-        && loc?.typ === CORR && !loc.waslit && !cansee(x, y)
+        && loc?.typ === CORR && !cansee(x, y)
+        && (!loc.waslit || ((game.flags.dark_room ?? true) && game.flags.color !== false))
         && glyph.color === CLR_WHITE) {
         glyph.color = NO_COLOR;
+        glyph.glyph = cmapToGlyph(CmapSymbol.corr);
     }
     // Preserve the port's established blind-memory behavior on ordinary
     // levels.  Premapped levels distinguish background from mapped objects
