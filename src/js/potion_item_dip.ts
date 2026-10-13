@@ -1,0 +1,202 @@
+// C potion.c:potion_dip(): item treatment, before and after potion mixing.
+import type { GameObject } from './object_types.js';
+import { exerciseAttribute } from './attrib.js';
+import { heroFingerName } from './body_parts.js';
+import { A_WIS, EXPL_FIERY } from './const.js';
+import { displayColorName, plineWithContinuation as pline } from './display.js';
+import { explode } from './explosion.js';
+import { fireDamageObject } from './fire_damage.js';
+import { game, requirePlayingGame } from './gstate.js';
+import { useUpInventoryStack } from './hero_inventory.js';
+import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { tryCallObjectType } from './object_call.js';
+import { erodeObject, objectIsVulnerableToErosion } from './object_erosion.js';
+import { learnObjectType } from './object_knowledge.js';
+import { obj_unpolyable, poly_obj } from './object_polymorph.js';
+import { isLauncherAmmunition, isPermanentlyPoisonedObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
+import { objectQuantity } from './object_stack.js';
+import { blessObjectState, curseObject, unblessObjectState, uncurseObjectState } from './object_state.js';
+import { CORPSE, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_EXTRA_HEALING, POT_FULL_HEALING,
+    POT_HEALING, POT_OIL, POT_POLYMORPH, POT_SICKNESS, POT_WATER, TOWEL } from './object_data.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { objectName, objectNameIsPlural, ownedObjectAction, ownedObjectName } from './objnam.js';
+import { setPropertyTimeout } from './properties.js';
+import { d } from './rng.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { chargeAlteredUnpaidObject, chargeUnpaidUsage, updateUnpaidObjectPrice } from './shk.js';
+import { waterDamageObject } from './trap.js';
+
+export async function treatDippedObject(object: GameObject, potion: GameObject): Promise<boolean> {
+    requirePlayingGame(game);
+    if (object === potion && objectQuantity(potion) === 1) {
+        await pline('That is a potion bottle, not a Klein bottle!');
+        return false;
+    }
+    object.pickup_prev = false;
+    potion.in_use = true;
+    if (potion.otyp === POT_WATER) {
+        if (await dipInWater(object, potion)) { await poof(potion); return true; }
+    } else if (object.otyp === POT_POLYMORPH || potion.otyp === POT_POLYMORPH) {
+        await dipInPolymorph(object, potion);
+        return true;
+    }
+    if (potion.otyp === POT_ACID && object.otyp === CORPSE
+        && object.corpsenm === MONSTER_NAME.indexOf('lichen')) {
+        const color = heroIsBlind() ? 'wrinkled' : displayColorName(potion.odiluted ? 'orange' : 'red');
+        await pline(`The ${objectName(object)} ${objectNameIsPlural(object) ? 'turn' : 'turns'} ${color} around the edges.`);
+        potion.in_use = false;
+        if (potion.dknown) await tryCallObjectType(potion);
+        return true;
+    }
+    if (potion.otyp === POT_WATER && object.otyp === TOWEL) {
+        await pline('The towel soaks it up!');
+        await poof(potion);
+        return true;
+    }
+    if (isPoisonableObject(object)) {
+        if (potion.otyp === POT_SICKNESS && !object.opoisoned) {
+            const source = objectQuantity(potion) > 1 ? `One of the ${objectName(potion)}`
+                : `The ${objectName(potion)}`;
+            await pline(`${source} forms a coating on the ${objectName(object)}.`);
+            object.opoisoned = true;
+            await poof(potion);
+            return true;
+        }
+        if (object.opoisoned && !isPermanentlyPoisonedObject(object)
+            && [POT_HEALING, POT_EXTRA_HEALING, POT_FULL_HEALING].includes(potion.otyp)) {
+            await pline(`A coating wears off the ${objectName(object)}.`);
+            object.opoisoned = false;
+            await poof(potion);
+            return true;
+        }
+    }
+    if (potion.otyp === POT_ACID && await erodeObject(object, 'corrosion') !== 'nothing') {
+        await poof(potion);
+        return true;
+    }
+    if (potion.otyp === POT_OIL) {
+        if (await dipInOil(object, potion)) return true;
+        if (object.otyp === OIL_LAMP || object.otyp === MAGIC_LAMP) {
+            await fillLamp(object, potion);
+            return true;
+        }
+    }
+    potion.in_use = false;
+    await pline('Interesting...');
+    return true;
+}
+
+export async function poof(potion: GameObject): Promise<void> {
+    if (potion.dknown) await tryCallObjectType(potion);
+    await consumeInventoryItem(potion);
+}
+
+async function dipInWater(object: GameObject, potion: GameObject): Promise<boolean> {
+    let action: 'uncurse' | 'bless' | 'unbless' | 'curse' | null = null;
+    let color = '';
+    if (potion.blessed && object.cursed) { action = 'uncurse'; color = 'amber'; }
+    else if (potion.blessed && !object.blessed) { action = 'bless'; color = 'light blue'; }
+    else if (potion.cursed && object.blessed) { action = 'unbless'; color = 'brown'; }
+    else if (potion.cursed && !object.cursed) { action = 'curse'; color = 'black'; }
+    if (!potion.blessed && !potion.cursed) {
+        const messages: string[] = [];
+        const result = await waterDamageObject(object, messages, game, { force: true });
+        for (const message of messages) await pline(message);
+        if (result === 'destroyed') {
+            // Native pot_acid_damage() destroys the dipped stack.
+            await useUpInventoryStack(object);
+        }
+        if (!heroIsHallucinating() && messages.some(message => /water/.test(message)))
+            learnObjectType(POT_WATER);
+        return result !== 'nothing';
+    }
+    if (!action) return false;
+    const seen = !heroIsBlind();
+    if (seen) {
+        const glow = displayColorName(color);
+        const suffix = action === 'bless' || action === 'curse'
+            ? `with ${withIndefiniteArticle(glow)} aura` : glow;
+        await pline(`${ownedObjectAction(object, 'glow')} ${suffix}.`);
+        object.bknown = !heroIsHallucinating();
+    } else if (!potion.bknown || !potion.dknown) object.bknown = false;
+    if (object.unpaid && object.otyp === POT_WATER) {
+        if (action === 'bless' || action === 'curse') updateUnpaidObjectPrice(object);
+        else await chargeAlteredUnpaidObject(object, action);
+    }
+    if (action === 'bless') blessObjectState(object);
+    else if (action === 'uncurse') uncurseObjectState(object);
+    else if (action === 'unbless') unblessObjectState(object);
+    else await curseObject(object);
+    return true;
+}
+
+async function dipInPolymorph(object: GameObject, potion: GameObject): Promise<void> {
+    if (obj_unpolyable(object.otyp === POT_POLYMORPH ? potion : object)) {
+        await pline('Nothing happens.');
+        potion.in_use = false;
+        return;
+    }
+    game.u.uconduct ??= {};
+    game.u.uconduct.polypiles = (game.u.uconduct.polypiles ?? 0) + 1;
+    const oldType = object.otyp;
+    const replacement = await poly_obj(object);
+    if (!replacement) { learnObjectType(POT_POLYMORPH); return; }
+    if (replacement.otyp !== oldType) {
+        learnObjectType(POT_POLYMORPH);
+        await consumeInventoryItem(potion);
+        await pline(`${replacement.invlet} - ${inventoryItemDescription(replacement)}.`);
+    } else {
+        await pline('Nothing seems to happen.');
+        await poof(potion);
+    }
+}
+
+async function dipInOil(object: GameObject, potion: GameObject): Promise<boolean> {
+    let wisdom = false;
+    if (potion.lamplit) {
+        await fireDamageObject(object, { force: true, x: game.u.ux, y: game.u.uy, publish: pline });
+    } else if (potion.cursed) {
+        const hands = game.uarmg ? 'gloves' : makePlural(heroFingerName());
+        await pline(`The potion spills and covers your ${hands} with oil.`);
+        setPropertyTimeout('glib', (game.u.glibTurns ?? 0) + d(2, 10));
+    } else if (object.oclass !== 2 && !isWeaponTool(object)) return false;
+    else if ((!objectIsVulnerableToErosion(object, 'rust') && !objectIsVulnerableToErosion(object, 'corrosion'))
+        || isLauncherAmmunition(object) || !(object.oeroded || object.oeroded2)) {
+        await pline(heroIsBlind() ? `${ownedObjectAction(object, 'feel')} oily.`
+            : `${ownedObjectAction(object, 'gleam')} with an oily sheen.`);
+    } else {
+        const damage = object.oeroded && object.oeroded2 ? 'corroded and rusty'
+            : object.oeroded ? 'rusty' : 'corroded';
+        await pline(`${ownedObjectAction(object, heroIsBlind() ? 'feel' : 'are')} less ${damage}.`);
+        object.oeroded = Math.max(0, (object.oeroded ?? 0) - 1);
+        object.oeroded2 = Math.max(0, (object.oeroded2 ?? 0) - 1);
+        wisdom = true;
+    }
+    await exerciseAttribute(A_WIS, wisdom);
+    if (potion.dknown) learnObjectType(POT_OIL);
+    await consumeInventoryItem(potion);
+    return true;
+}
+
+async function fillLamp(lamp: GameObject, potion: GameObject): Promise<void> {
+    if (lamp.lamplit || potion.lamplit) {
+        await consumeInventoryItem(potion);
+        await explode(game.u.ux, game.u.uy, 11, d(6, 6), 0, EXPL_FIERY);
+        await exerciseAttribute(A_WIS, false);
+        return;
+    }
+    if (lamp.otyp === MAGIC_LAMP && !lamp.spe) { lamp.otyp = OIL_LAMP; lamp.age = 0; }
+    if (lamp.age > 1000) {
+        await pline(`${ownedObjectAction(lamp, 'are')} full.`);
+        potion.in_use = false;
+    } else {
+        await pline(`You fill ${ownedObjectName(lamp, game, { capitalized: false })} with oil.`);
+        await chargeUnpaidUsage(potion);
+        lamp.age = Math.min(1500, lamp.age + Math.trunc((potion.odiluted ? 3 : 4) * potion.age / 2));
+        await consumeInventoryItem(potion);
+        await exerciseAttribute(A_WIS, true);
+    }
+    if (potion.dknown) learnObjectType(POT_OIL);
+    lamp.spe = 1;
+}

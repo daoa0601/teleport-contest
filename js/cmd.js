@@ -1,3 +1,4 @@
+import { dip, dipInto } from './potion_dip.js';
 import { monsterHiddenConditions } from './monster_status.js';
 import { visibleRegionAt } from './regions.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
@@ -3145,6 +3146,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['overview', doDungeonOverview],
     ['offer', dosacrifice],
     ['dip', dodip],
+    ['altdip', dipInto],
     ['turn', doturn],
     ['engrave', doengrave],
     // C extcmdlist[] maps both "call" and "name" to docallcmd().
@@ -3904,50 +3906,8 @@ async function dipFountain(object, loc) {
         await plineWithContinuation(eventMessage);
     await dryFountainAt(game.u.ux, game.u.uy);
 }
-function dipTargetDescription(object) {
-    observeObjectForNaming(object);
-    const full = inventoryItemDescription(object);
-    if (full.length <= 49)
-        return full;
-    // objnam.c:short_oname() strips these lengthening properties on a
-    // temporary copy before falling back to its minimal formatter.
-    const shortened = {
-        ...object,
-        bknown: false,
-        rknown: false,
-        greased: false,
-        oeroded: 0,
-        oeroded2: 0,
-    };
-    delete shortened.buc;
-    return inventoryItemDescription(shortened);
-}
-// C ref: potion.c dodip()/invent.c getobj().  Object selection, terrain
-// confirmation, and the committed dip are one nested command transaction.
 async function dodip() {
-    const items = (game.inventory || []).filter((item) => typeof item.invlet === 'string' && item.invlet.length > 0)
-        .sort((a, b) => a.invlet.localeCompare(b.invlet));
-    const letters = compactInventoryLetters(items.map(item => item.invlet).join(''));
-    const selection = await promptInventoryObject(`What do you want to dip? [${letters} or ?*] `, items, { allowMenu: true, retainPromptOnCancel: true });
-    if (selection.cancelled || !selection.object) {
-        game.context.move = 0;
-        return;
-    }
-    const object = selection.object;
-    const loc = game.level?.at(game.u?.ux, game.u?.uy);
-    if (loc?.typ === FOUNTAIN) {
-        const description = dipTargetDescription(object);
-        const prompt = `Dip ${description} into the fountain?`;
-        const answer = await promptYesNo(prompt, 'n');
-        if (answer === 'y') {
-            await dipFountain(object, loc);
-            game.context.move = 1;
-            return;
-        }
-    }
-    // Potion, sink, pool, and declined-fountain second selectors remain
-    // distinct source transactions.
-    game.context.move = 0;
+    await dip({ fountain: dipFountain });
 }
 function visitedDungeonLevels() {
     const byDungeon = new Map();
