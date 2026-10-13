@@ -31,11 +31,20 @@ export function endVoluntaryMultiTurn(state = game) {
     state._cannedCommands = [];
 }
 // Native multi < 0 includes sleep, paralysis, prayer, and delayed actions.
-// Their remaining turns have separate owners in this runtime.
 export function heroHasInvoluntaryDelay(state = game) {
+    const dressing = state._delayedAction;
     return (state.multi ?? 0) < 0
         || (state._helplessTurns ?? 0) > 0
-        || (state._prayerTurnsRemaining ?? 0) > 0
-        || (state._delayedAction?.remainingGlobalTurns ?? 0) > 0;
+        || !!(dressing && dressing.kind !== 'steal' && dressing.remainingGlobalTurns > 0);
+}
+// C steal.c:thiefdead(), called by mon.c:m_detach() for death or removal.
+// Keep the armor-removal delay, but replace the theft and recovery message.
+export function armorThiefGone(monster, state = game) {
+    const theft = state._delayedAction;
+    if (theft?.kind !== 'steal' || theft.thief !== monster
+        || state._helplessAfter !== 'steal-armor')
+        return;
+    state._helplessAfter = 'unstolen-armor';
+    state._helplessDoneMessage = null;
 }
 //# sourceMappingURL=command_state.js.map

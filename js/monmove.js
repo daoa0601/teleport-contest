@@ -1,3 +1,5 @@
+import { monsterFireDescription } from './monster_fire_description.js';
+import { bot } from './display.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { recorderLocalHour } from './calendar.js';
 // Monster movement-ration state, movement, and combat.
@@ -105,7 +107,7 @@ import { unlinkObject } from './object_location.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { dropObjectAtHero } from './object_drop.js';
-import { canFallThrough, makemonNear, mksobj, summonNastyMonsters } from './mklev.js';
+import { canFallThrough, makemonNear, maketrap, mksobj, summonNastyMonsters } from './mklev.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack, hasTrack } from './track.js';
@@ -1329,8 +1331,7 @@ async function finishHeroContactDamage(monster, damage, attackType, oldForm, sta
 }
 function heroHasNegativeMulti(state) {
     return (!!state?._delayedAction ||
-        (state?._helplessTurns ?? 0) > 0 ||
-        (state?._prayerTurnsRemaining ?? 0) > 0);
+        (state?._helplessTurns ?? 0) > 0);
 }
 function lineBlockingTerrain(state, x, y) {
     if (!isok(x, y))
@@ -4163,9 +4164,8 @@ export async function finishImmediateMonsterTrap(action, state = requireInitiali
 // C steal.c:steal().  Inventory stacks are candidates as objects rather than
 // by quantity.  Worn armor and accessories receive five tickets; weapons
 // (including the primary and alternate weapon) still receive one.  Keep
-// selection in the synchronous hitmu() slice so its rn2() stays before any
-// removal prose can suspend on tty --More--.
-function selectHeroItemForTheft(state, random, calls) {
+// selection after an animal's hit message and before removal prose.
+export function selectHeroItemForTheft(state, random, calls) {
     const inventory = state?.inventory || [];
     const wornObjects = new Set([
         state?.uarm,
@@ -4199,20 +4199,26 @@ function selectHeroItemForTheft(state, random, calls) {
         total += weight;
     }
     if (!total)
-        return { object: null, total: 0, ticket: null };
+        return null;
     let ticket = recordRandom(random, calls, total);
-    const initialTicket = ticket;
     for (const candidate of candidates) {
         ticket -= candidate.weight;
         if (ticket < 0) {
-            return {
-                object: candidate.object,
-                total,
-                ticket: initialTicket,
-            };
+            return theftEquipmentTarget(candidate.object, state);
         }
     }
-    return { object: null, total, ticket: initialTicket };
+    return null;
+}
+function theftEquipmentTarget(object, state) {
+    if ((object === state.uleft || object === state.uright) && state.uarmg)
+        object = state.uarmg;
+    if (object === state.uarmg && state.uwep)
+        return state.uwep;
+    if (object === state.uarm && state.uarmc)
+        return state.uarmc;
+    if (object === state.uarmu)
+        return state.uarmc || state.uarm || object;
+    return object;
 }
 // C do_wear.c:some_armor().  Torso priority is deterministic; each later
 // occupied slot gets an independent one-in-four replacement opportunity.
@@ -4959,11 +4965,10 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             deferredElectricNegation: true,
         };
     }
-    else if (hit && damageType === AD_SITM) {
+    else if (hit && (damageType === AD_SITM || damageType === AD_SEDU)) {
         // hitmu() records the attack's declared zero dice before dispatching
-        // AD_SITM through mhitm_ad_sedu().  A successful nymph theft ends the
+        // both theft claws through mhitm_ad_sedu(). A successful theft ends the
         // aggressor's attack sequence, so do not retain its second claw slot.
-        const theft = selectHeroItemForTheft(state, random, calls);
         return {
             kind: 'hero-attack',
             roll,
@@ -4974,9 +4979,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             damageType,
             effect: 'item-theft',
             deferredItemTheft: true,
-            stolenObject: theft.object,
-            theftWeight: theft.total,
-            theftTicket: theft.ticket,
         };
     }
     else if (hit && damageType === AD_LEGS) {
@@ -5391,7 +5393,7 @@ export function resumeDeferredHeroFireSpecial(action, state, random = rn2) {
         attack.fireEffectMessage = 'You avoid harm.';
     }
     else {
-        attack.fireEffectMessage = "You're on fire!";
+        attack.fireEffectMessage = `You're ${monsterFireDescription({ mnum: heroSpecies(state) }, attack.attackType)}!`;
         if (state.u.fireResistance) {
             attack.damage = 0;
             attack.fireResistanceMessage = "The fire doesn't feel hot!";
@@ -5827,6 +5829,9 @@ export async function completeHeroAttackSlot(action, state, random = rn2, rollDi
             result |= M_ATTK_AGR_DONE;
     }
     sequence.results[attack.attackIndex] = result;
+    // C mattacku() commits pending status before the next attack slot.
+    if (state === game && state.context.botl)
+        await bot();
     if (attack.kind === 'hero-attack' && attack.skipBrainDrain)
         sequence.skipBrainDrain = true;
     if (result === M_ATTK_HIT &&
@@ -6455,17 +6460,9 @@ async function maybeSpinMonsterWeb(monster, movement, state, random, rollDice, c
     const roll = recordRandom(random, calls, 1000);
     if (roll >= probability)
         return { roll, probability, created: false };
-    const trap = {
-        ttyp: WEB,
-        tx: monster.mx,
-        ty: monster.my,
-        tseen: false,
-        once: false,
-        launch: { x: 0, y: 0 },
-    };
-    if (!state.level.traps)
-        state.level.traps = [];
-    state.level.traps.push(trap);
+    const trap = await maketrap(monster.mx, monster.my, WEB);
+    if (!trap)
+        return { roll, probability, created: false };
     monster.mspec_used = rollDice(4, 4);
     calls.push('d(4,4)');
     if (cansee(monster.mx, monster.my)) {

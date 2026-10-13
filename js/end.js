@@ -22,7 +22,6 @@ import { deleteObject } from './object_delete.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { objectName } from './objnam.js';
 import { objectClassForType, recordObjectKnowledge } from './object_knowledge.js';
-import { rebasePrayerAfterLifeSaving } from './pray.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './hacklib.js';
 import { recordGameLogEvent } from './gamelog.js';
@@ -109,16 +108,16 @@ export async function restoreHeroAfterDeath({ deathType = null } = {}) {
     // end.c:savelife() replaces any earlier negative multi (including a
     // monster paralysis spell) with exactly -1.  The interrupted actor can
     // finish its remaining attack slots, but no older helpless interval may
-    // allocate another autonomous monster turn afterward.  Its visible
-    // nomovemsg is projected by allmain's debug-death continuation.
+    // allocate another autonomous monster turn afterward. The shared
+    // helplessness recovery publishes nomovemsg when that turn ends.
     endVoluntaryMultiTurn(game);
+    game.multi = -1;
     game._helplessTurns = 1;
     game._helplessReason = 'attempting to cheat Death';
-    game._helplessDoneMessage = '';
+    game._helplessDoneMessage = 'You survived that attempt on your life.';
     game.context.botl = true;
     clearHeroRemains(game);
     await flush_screen(1);
-    rebasePrayerAfterLifeSaving(game);
     const holder = game.u.ustuck;
     if (game.u.uswallow) {
         if (!holder)
@@ -160,7 +159,6 @@ export async function finishHeroDeath({ killer, beforeFinalDeath = null, deathCa
             await plineWithContinuation('Unfortunately you are still genocided...');
         }
         else {
-            game._deathSurvivedMessagePending = true;
             return false;
         }
     }
@@ -171,7 +169,6 @@ export async function finishHeroDeath({ killer, beforeFinalDeath = null, deathCa
             await restoreHeroAfterDeath({ deathType });
             if (game.program_state.gameover)
                 return true;
-            game._deathSurvivedMessagePending = true;
             return false;
         }
     }

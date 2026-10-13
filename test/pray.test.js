@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { angryGodMaximum } from '../js/divine_wrath.js';
-import { finishPrayerOccupation } from '../js/pray.js';
-import { moveloop_core } from '../js/allmain.js';
+import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
 import { A_NONE, ALTAR, Align2amask, LAVAPOOL, PARANOID_PRAY, ROOM, STONE, TT_LAVA, W_NONPASSWALL, W_TOOL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
@@ -47,11 +46,11 @@ function prayerRoom({ hero = {}, flags = {}, ...room } = {}) {
 }
 async function resolvePrayer(answers = 'y\x1b') {
     await runExtendedCommand('pray', answers);
-    await finishPrayerOccupation();
+    await finishHeroHelplessness();
 }
 async function prayAndReadMessages() {
     const input = resetInputState();
-    const prayer = runExtendedCommand('pray', 'y').then(() => finishPrayerOccupation());
+    const prayer = runExtendedCommand('pray', 'y').then(() => finishHeroHelplessness());
     const messages = [];
     try {
         for (;;) {
@@ -121,7 +120,7 @@ void test('#pray names the whole stack when releasing cursed loadstones', async 
         expected: /pray|prayer|shimmering light|pleased|loadstones/, limit: 6,
     });
     await runExtendedCommand('pray', 'y');
-    await finishPrayerOccupation();
+    await finishHeroHelplessness();
     assert.equal(stones.cursed, false);
     assert.match(game._pending_message, /Your 2 loadstones softly glow amber\./);
 });
@@ -154,7 +153,7 @@ void test('#pray announces the safe ground reached after rescuing a hero from la
         expected: /pray|prayer|shimmering light|satisfied|solid ground/, limit: 6,
     });
     await runExtendedCommand('pray', 'y');
-    await finishPrayerOccupation();
+    await finishHeroHelplessness();
     assert.equal(game.u.utrap, 0);
     assert.match(game._pending_message, /You find yourself on solid ground\./);
 });
@@ -168,7 +167,7 @@ void test('Moloch\'s laughter during #pray visibly wakes a nearby sleeping monst
     goblin.msleeping = 1;
     const input = resetInputState();
     await runExtendedCommand('pray', 'y');
-    await answerPrompts(finishPrayerOccupation(), input, [
+    await answerPrompts(finishHeroHelplessness(), input, [
         { prompt: /You finish your prayer\.[\s\S]*--More--/, keys: ' ' },
         { prompt: /The goblin wakes up\.[\s\S]*--More--/, keys: ' ' },
     ]);
@@ -231,7 +230,7 @@ void test('#pray makes a former pet\'s corpse glow when reviving it on an altar'
     });
     const input = resetInputState();
     await runExtendedCommand('pray', 'y ');
-    await answerPrompts(finishPrayerOccupation(), input, [
+    await answerPrompts(finishHeroHelplessness(), input, [
         { prompt: /You finish your prayer\.[\s\S]*--More--/, keys: ' ' },
         { prompt: /little dog corpse glows iridescently\.[\s\S]*--More--/, keys: ' ' },
     ]);
@@ -384,7 +383,7 @@ void test('praying too soon brings a penalty without granting protection', async
     requirePlayingGame(game);
     await runExtendedCommand('pray', 'y\x1b');
     assert.ok(!game.u.invulnerable);
-    await finishPrayerOccupation();
+    await finishHeroHelplessness();
     assert.ok(game.u.ublesscnt > 500);
     assert.equal(game.u.uluck, -3);
 });

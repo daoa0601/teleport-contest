@@ -69,7 +69,7 @@ void test('taking off levitation boots completes trap travel before the next com
 });
 
 for (const laterMonster of [false, true]) {
-    void test(`boots theft completes level teleport before command input${laterMonster ? ' and stops the next monster' : ''}`, async () => {
+    void test(`seduced boots removal completes level teleport before command input${laterMonster ? ' and stops the next monster' : ''}`, async () => {
         const { source, destination } = freshConnectedLevels();
         requirePlayingGame(game);
         game.flags.debug = true;
@@ -101,7 +101,7 @@ for (const laterMonster of [false, true]) {
         await moveloop_core();
         const response = moveloop_core();
         await input.waitUntilBlocked();
-        assert.match(game._pending_message, /nymph takes off your.*boots/);
+        assert.match(game._pending_message, /wood nymph seduces you and you start taking off your boots/);
         input.feed(' ');
         await input.waitUntilBlocked();
         assert.match(game._pending_message, /float gently to the stairs.*level teleport trap/);
@@ -111,7 +111,7 @@ for (const laterMonster of [false, true]) {
             /To what level do you want to teleport\?/);
         input.feed('2\r');
         installPagerInput(input, {
-            expected: /disoriented|stole|nymph|materialize/, limit: 12,
+            expected: /disoriented|nymph|materialize|You can move again/, limit: 12,
         });
         const pager = input.display;
         assert.ok(pager);
@@ -124,8 +124,14 @@ for (const laterMonster of [false, true]) {
             },
         };
         await response;
+        for (let turns = 0; game._delayedAction; turns++) {
+            assert.ok(turns < 4, 'Boots removal did not finish after level travel');
+            await moveloop_core();
+        }
 
-        assert.equal(game.inventory.includes(boots), false, 'the nymph completes her theft');
+        // stealarm() needs the thief on this level and beside the hero.
+        assert.ok(game.inventory.includes(boots), 'travel leaves the nymph unable to take the boots');
+        assert.equal(boots.worn, false, 'the seduced hero has already removed the boots');
         assert.ok(game.level === destination, 'travel finishes before another command');
         assert.equal(game.u.uhp, 100, 'departure monsters stop moving when travel is scheduled');
         if (giant) assert.equal(giant.movement, 12, 'the later monster keeps its unused movement');

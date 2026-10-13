@@ -230,6 +230,8 @@ export async function removeHeroArmor(object, state = game, options = {}) {
     if (object?.otyp === FEDORA && state.urole?.key === 'archeologist')
         state.u.uluck = Math.max(LUCKMIN, (state.u.uluck ?? 0) - 1);
     const removed = await clearHeroArmor(object, state, { ...options, cancelledDon });
+    if (removed && !cancelledDon)
+        await announceDisplacementLoss(object, state);
     if (losingGloves) {
         setSlipperyHands(0, state);
         await loseGloveProtection(object, state);
@@ -260,7 +262,7 @@ export async function removeHeroArmor(object, state = game, options = {}) {
     return removed;
 }
 // C Cloak_off(): toggle_displacement() runs after the cloak's source is removed.
-export async function announceDisplacementLoss(object, state = game) {
+async function announceDisplacementLoss(object, state = game) {
     if (object.otyp !== CLOAK_OF_DISPLACEMENT)
         return;
     const hero = state.u;
@@ -877,6 +879,8 @@ export function armorOffMessage(object, state = game) {
 // interrupted removal leaves the item worn.
 export async function stopDonning(stolenObject = null, state = game) {
     const delayed = state._delayedAction;
+    if (delayed?.kind === 'steal')
+        return false;
     if (!delayed) {
         const progress = state.context.takeoff;
         const slot = progress?.current;

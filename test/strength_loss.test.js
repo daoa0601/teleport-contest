@@ -56,12 +56,12 @@ for (const lifeSaving of [false, true]) {
         input.feed('m.');
         // One lich attack sequence and one death/life-saving transaction.
         installPagerInput(input, {
-            expected: /arch-lich|suddenly feel weaker|You die|But wait|medallion|feel much better|Goodbye|frailty|Points.*Name/,
+            expected: /arch-lich|suddenly feel weaker|You die|But wait|medallion|feel much better|You survived that attempt on your life|Goodbye|frailty|Points.*Name/,
             limit: 6 + 8,
         });
         await moveloop_core();
         if (lifeSaving)
-            await finishAtCommandInput(input, () => moveloop_core(), /arch-lich|weaker|medallion/);
+            await finishAtCommandInput(input, () => moveloop_core(), /arch-lich|weaker|medallion|You survived that attempt on your life/);
         else
             await moveloop_core();
         const text = messages.join('\n');

@@ -1,5 +1,6 @@
 import type { CommandDefinition } from './command_data.js';
 import type { GameObject } from './object_types.js';
+import type { Monster } from './monster_types.js';
 import type { TerminalCell } from './terminal.js';
 import type { InventoryAction } from './invent.js';
 
@@ -36,14 +37,12 @@ export interface TravelRunState {
 
 export type RunState = DirectionalRunState | TravelRunState;
 
-export interface DelayedArmorAction {
-    kind: 'wear' | 'remove';
+export type DelayedArmorAction = {
     object: GameObject;
-    remainingGlobalTurns: number;
     ready: boolean;
-    finishMessage: string;
     _runmodeRetainedTopline?: TerminalCell[] | undefined;
-}
+} & ({ kind: 'wear' | 'remove'; remainingGlobalTurns: number; finishMessage: string }
+    | { kind: 'steal'; thief: Monster });
 
 export interface CommandInput {
     key: number;

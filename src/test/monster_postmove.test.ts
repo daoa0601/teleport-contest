@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ARROW_TRAP, D_CLOSED, D_ISOPEN, DOOR, MM_ANGRY, NO_MINVENT, POLY_TRAP, ROOM, W_AMUL, WEB } from '../js/const.js';
+import { ARROW_TRAP, D_CLOSED, D_ISOPEN, DOOR, MM_ANGRY, NO_MINVENT, POLY_TRAP, ROOM, STAIRS, W_AMUL, WEB } from '../js/const.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { moveloop_core } from '../js/allmain.js';
 import { initializePet } from '../js/dog.js';
@@ -58,6 +58,23 @@ void test('a stationary pet spider can spin a web after a melee attack', async (
         if (web) assert.equal(web.tseen, true, 'a visible new web must be revealed');
     }
     assert.ok(spunWeb, "an attack does not suppress the spider's web-spinning chance");
+});
+
+void test('a spider attacking from stairs cannot cover them with a web', async () => {
+    let attacked = false;
+    for (let seed = 1; seed <= 80; seed++) {
+        const { pet, target } = await stationaryPetAttack('giant spider', seed);
+        requirePlayingGame(game);
+        game.level.requireAt(pet.mx, pet.my).typ = STAIRS;
+
+        await takeMonsterTurn(pet, game);
+
+        attacked ||= target.mhp < 200;
+        assert.equal(game.level.traps.some(trap =>
+            trap.tx === pet.mx && trap.ty === pet.my && trap.ttyp === WEB), false);
+        assert.equal(pet.mspec_used ?? 0, 0, 'failed web placement does not start a cooldown');
+    }
+    assert.ok(attacked, 'the spider completed an attack from the stairs');
 });
 
 void test('a Tengu still encounters its floor trap when teleporting leaves it in place', async () => {

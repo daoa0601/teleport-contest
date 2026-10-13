@@ -728,6 +728,8 @@ export async function igniteItems(
 ): Promise<GameObject[]> {
     const ignited = [];
     for (const object of objects || []) {
+        // catch_lit() requires a current location, even during floor effects.
+        if (!getObjectLocation(object, state)) continue;
         if (!catchesFire(object, random)) continue;
         const plural = (object.quan ?? object.quantity ?? 1) > 1;
         const blind = heroIsBlind(state);

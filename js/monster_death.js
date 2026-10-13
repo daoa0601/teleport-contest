@@ -2,6 +2,7 @@ import { hasShopkeeperData } from './shop_types.js';
 // Ordinary monster death and corpse rules.
 // C refs: mon.c monkilled(), mondead(), mondied(), corpse_chance(), and make_corpse().
 import { prepareVaultGuardDeath } from './vault_guard.js';
+import { armorThiefGone } from './command_state.js';
 import { ACCESSIBLE, CORPSTAT_FEMALE, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, G_NOCORPSE, Is_rogue_level, IS_POOL, } from './const.js';
 import { buryObject } from './buried_object.js';
 import { canSeeMonster, monsterKillLineVisible, newsym, plineWithContinuation, unmap_invisible, } from './display.js';
@@ -328,6 +329,7 @@ export async function detachDeadMonster(monster, state, random, publish) {
     await releaseMonsterInventory(monster, state, { publish, random });
     if (state.program_state.gameover)
         return true;
+    armorThiefGone(monster, state);
     if (monster.isshk) {
         if (!hasShopkeeperData(monster))
             throw new Error('shopkeeper lacks shop history');
