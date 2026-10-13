@@ -2351,6 +2351,22 @@ function toplineRows(message, columns) {
     }
     return lines;
 }
+// C update_topl()/topl_putsym(): key queries wrap without a More prompt.
+// Return the rows covered so tty_yn_function's cleanup can restore the map.
+export function renderKeyPrompt(message, cursorOffset = 0) {
+    const display = game.nhDisplay;
+    const lines = toplineRows(message, display?.cols ?? COLNO);
+    if (!display)
+        return lines.length;
+    for (const [row, line] of lines.entries()) {
+        display.clearRow(row);
+        for (const [column, cell] of line.entries())
+            display.setCell(column, row, cell.ch, NO_COLOR, 0);
+    }
+    const lastLine = lines.at(-1) ?? lines[0];
+    display.setCursor(lastLine.length + cursorOffset, lines.length - 1);
+    return lines.length;
+}
 export async function moreUntilDismissed(message, { urgent = false } = {}) {
     await pline(message);
     return pageTopline(message, { urgent });

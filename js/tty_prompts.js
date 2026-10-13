@@ -1,6 +1,6 @@
 // Top-line key prompts used by commands which can pause for input.
 // C refs: win/tty/topl.c more() and win/tty/wintty.c tty_nhgetch().
-import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, pline } from './display.js';
+import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, pline, renderKeyPrompt } from './display.js';
 import { CLICK_1, CLICK_2, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK } from './const.js';
 import { game } from './gstate.js';
 import { selectMapPosition } from './getpos.js';
@@ -17,11 +17,15 @@ const impairedDirections = [
 async function paintKeyPrompt(message, cursorOffset = 0) {
     await pline(message);
     await flush_screen(1);
-    game.nhDisplay?.setCursor(message.length + cursorOffset, 0);
+    return renderKeyPrompt(message, cursorOffset);
 }
 export async function promptKey(message, cursorOffset = 0) {
-    await paintKeyPrompt(message, cursorOffset);
-    return nhgetch();
+    const coveredRows = await paintKeyPrompt(message, cursorOffset);
+    const key = await nhgetch();
+    // C tty_yn_function() retains a one-line query, but clears wrapped ones.
+    if (coveredRows > 1)
+        clearMessageWindow(coveredRows);
+    return key;
 }
 // C cmd.c:getdir() removes its query immediately after receiving a key,
 // before interpreting that key as a direction, cancellation, or help.

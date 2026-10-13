@@ -205,8 +205,8 @@ export async function promptInventoryObject(prompt, eligible, { allowGold = fals
             continue;
         }
         // C tty_yn_function() marks an answered prompt as already read.
-        // nhgetch() retains its visible text. A silent action leaves it
-        // painted; a result message replaces it without acknowledgment.
+        // A one-line query stays painted through a silent action. Wrapped
+        // queries have already been erased by promptKey()'s tty cleanup.
         game._pending_message = '';
         const letter = String.fromCharCode(key);
         const object = eligible.find(candidate => candidate.invlet === letter);
