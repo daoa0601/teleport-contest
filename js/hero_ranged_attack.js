@@ -204,9 +204,9 @@ async function missRangedObject(monster, object, state, target, applied, volley)
         return { heroDied: true };
     return { hit: false, consumed: false };
 }
-export async function hitMonsterWithAppliedWeapon(monster, weapon, { state = game, checkCaitiff = true } = {}) {
+export async function hitMonsterWithAppliedWeapon(monster, weapon, { state = game, checkCaitiff = true, target } = {}) {
     requirePlayingGame(state);
-    return hitMonsterWithRangedObject(monster, weapon, state, 'applied', { checkCaitiff });
+    return hitMonsterWithRangedObject(monster, weapon, state, 'applied', { checkCaitiff, ...(target ? { target } : {}) });
 }
 export async function hitMonsterWithKickedObject(monster, object, { state = game, target = { x: monster.mx, y: monster.my } } = {}) {
     requirePlayingGame(state);

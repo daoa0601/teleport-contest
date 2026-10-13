@@ -244,10 +244,10 @@ async function missRangedObject(
 
 export async function hitMonsterWithAppliedWeapon(
     monster: Monster, weapon: GameObject,
-    { state = game, checkCaitiff = true }: Pick<RangedObjectHitOptions, 'state' | 'checkCaitiff'> = {},
+    { state = game, checkCaitiff = true, target }: Pick<RangedObjectHitOptions, 'state' | 'checkCaitiff' | 'target'> = {},
 ): Promise<RangedObjectHitResult> {
     requirePlayingGame(state);
-    return hitMonsterWithRangedObject(monster, weapon, state, 'applied', { checkCaitiff });
+    return hitMonsterWithRangedObject(monster, weapon, state, 'applied', { checkCaitiff, ...(target ? { target } : {}) });
 }
 
 export async function hitMonsterWithKickedObject(

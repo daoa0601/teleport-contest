@@ -1,0 +1,46 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { P_BASIC, P_FLAIL, PIT, STRAT_WAITFORU, W_WEP } from '../js/const.js';
+import { game } from '../js/gstate.js';
+import { GRAPPLING_HOOK } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
+import { applyInventoryObject } from './support/commands.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { installHeroWeaponSkills } from './support/hero-state.js';
+import { addTrap } from './support/level-state.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+void test('pulling a tiny creature out of a pit releases its trap and updates its view of the hero', async () => {
+    freshObjectRoom();
+    const hook = await addInventoryObject(GRAPPLING_HOOK, { wielded: true, owornmask: W_WEP });
+    game.uwep = game.u.uwep = hook;
+    installHeroWeaponSkills({ [P_FLAIL]: P_BASIC });
+    const ant = await createMonsterAt('giant ant', 12, 10);
+    assert.ok(game.level);
+    addTrap(game.level, PIT, ant.mx, ant.my);
+    ant.mtrapped = 1;
+    ant.mux = 20;
+    ant.muy = 14;
+    game._travelTipShown = true;
+    initRng(113n);
+    await applyInventoryObject(hook, 'll.    ');
+    assert.equal(ant.mtrapped, 0);
+    assert.equal(ant.mux, game.u.ux);
+    assert.equal(ant.muy, game.u.uy);
+    assert.equal(game.context.move, 1);
+});
+void test('a hook alerts a waiting invisible creature before pulling it in', async () => {
+    freshObjectRoom();
+    const hook = await addInventoryObject(GRAPPLING_HOOK, { wielded: true, owornmask: W_WEP });
+    game.uwep = game.u.uwep = hook;
+    installHeroWeaponSkills({ [P_FLAIL]: P_BASIC });
+    const ant = await createMonsterAt('giant ant', 12, 10);
+    ant.minvis = 1;
+    ant.mstrategy = STRAT_WAITFORU;
+    game._travelTipShown = true;
+    initRng(113n);
+    await applyInventoryObject(hook, 'll.    ');
+    assert.equal((ant.mstrategy ?? 0) & STRAT_WAITFORU, 0);
+    assert.equal(game.context.move, 1);
+});
+//# sourceMappingURL=grapple_monster_state.test.js.map
