@@ -2,6 +2,7 @@
 // C refs: dokick.c:kick_monster() and kickdmg().
 
 import { makeMonsterFlee } from './monster_flee.js';
+import { updateMonsterRegions } from './regions.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -285,6 +286,7 @@ export async function tryKickReel(monster: Monster, dx: number, dy: number, {
     await announce(`${nameMonster(monster)} reels from the blow.`);
     const oldx = monster.mx;
     const oldy = monster.my;
+    updateMonsterRegions(monster, state, { x, y });
     monster.mx = x;
     monster.my = y;
     newsym(oldx, oldy);

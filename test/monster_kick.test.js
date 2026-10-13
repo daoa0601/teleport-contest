@@ -14,6 +14,7 @@ import { addInventoryObject, uninitializedObject } from './support/game-objects.
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
 const PM_JACKAL = 12;
 function freshKickArena(role = 'tourist') {
     const level = freshPlayableRoom({
@@ -199,6 +200,27 @@ void test('a martial kick can push a monster into a web', async () => {
     }
     assert.ok(reeled, 'a kick pushed the goblin onto the web');
 });
+for (const startsInside of [false, true]) {
+    void test(`a martial kick ${startsInside ? 'out of' : 'into'} gas changes the monster's exposure`, async () => {
+        let reeled = false;
+        for (let seed = 1; seed <= 30 && !reeled; seed++) {
+            const monster = await installKickArena('goblin', 'monk');
+            monster.mhp = 100;
+            const cloud = createHarmlessGasCloudSelection(game, [{ x: startsInside ? 11 : 12, y: 10 }], { ttl: 10 });
+            assert.ok(cloud);
+            cloud.damage = 8;
+            initRng(BigInt(seed));
+            await kickDirection('l', ' '.repeat(20));
+            reeled = monster.mx === 12;
+            if (reeled) {
+                const hpAfterKick = monster.mhp;
+                await runLevelRegions(game, { publish: async () => { } });
+                assert.equal(monster.mhp < hpAfterKick, !startsInside, 'Only a monster kicked into the cloud takes gas damage');
+            }
+        }
+        assert.ok(reeled, 'A martial kick must push the goblin to the next square');
+    });
+}
 for (const lifesaving of [false, true]) {
     void test(`a kicked monster resolves a fatal bear trap${lifesaving ? ' with life saving' : ''}`, async () => {
         let fatalTrap = false;

@@ -1,6 +1,7 @@
 // Ordinary humanoid kicks against monsters.
 // C refs: dokick.c:kick_monster() and kickdmg().
 import { makeMonsterFlee } from './monster_flee.js';
+import { updateMonsterRegions } from './regions.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { abusePet } from './dog.js';
 import { A_CON, A_DEX, A_STR } from './const.js';
@@ -216,6 +217,7 @@ export async function tryKickReel(monster, dx, dy, { martial = false, state = ga
     await announce(`${nameMonster(monster)} reels from the blow.`);
     const oldx = monster.mx;
     const oldy = monster.my;
+    updateMonsterRegions(monster, state, { x, y });
     monster.mx = x;
     monster.my = y;
     newsym(oldx, oldy);
