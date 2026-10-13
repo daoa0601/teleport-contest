@@ -41,9 +41,11 @@ void test('sickness poisons a stack of arrows and healing removes its coating', 
     assert.equal(arrows.opoisoned, true);
     assert.equal(arrows.quan, 12);
     assert.equal(game.inventory.includes(sickness), false);
+    assert.match(game._pending_message, /forms a coating on the arrows\./);
     await runExtendedCommand('dip', arrows.invlet + healing.invlet + ' '.repeat(20));
     assert.equal(arrows.opoisoned, false);
     assert.equal(game.inventory.includes(healing), false);
+    assert.match(game._pending_message, /wears off the poisoned arrows\./);
 });
 void test('oil repairs one degree of rust and corrosion on a weapon', async () => {
     freshObjectRoom();

@@ -16,7 +16,7 @@ import { objectQuantity } from './object_stack.js';
 import { blessObjectState, curseObject, unblessObjectState, uncurseObjectState } from './object_state.js';
 import { CORPSE, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_HEALING, POT_OIL, POT_POLYMORPH, POT_SICKNESS, POT_WATER, TOWEL } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import { objectName, objectNameIsPlural, ownedObjectAction, ownedObjectName } from './objnam.js';
+import { objectCombatName, objectNameIsPlural, ownedObjectAction, ownedObjectName } from './objnam.js';
 import { setPropertyTimeout } from './properties.js';
 import { d } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsHallucinating } from './senses.js';
@@ -49,7 +49,7 @@ export async function treatDippedObject(object, potion) {
     if (potion.otyp === POT_ACID && object.otyp === CORPSE
         && object.corpsenm === MONSTER_NAME.indexOf('lichen')) {
         const color = heroIsBlind() ? 'wrinkled' : displayColorName(potion.odiluted ? 'orange' : 'red');
-        await pline(`The ${objectName(object)} ${objectNameIsPlural(object) ? 'turn' : 'turns'} ${color} around the edges.`);
+        await pline(`The ${objectCombatName(object)} ${objectNameIsPlural(object) ? 'turn' : 'turns'} ${color} around the edges.`);
         potion.in_use = false;
         if (potion.dknown)
             await tryCallObjectType(potion);
@@ -62,16 +62,16 @@ export async function treatDippedObject(object, potion) {
     }
     if (isPoisonableObject(object)) {
         if (potion.otyp === POT_SICKNESS && !object.opoisoned) {
-            const source = objectQuantity(potion) > 1 ? `One of the ${objectName(potion)}`
-                : `The ${objectName(potion)}`;
-            await pline(`${source} forms a coating on the ${objectName(object)}.`);
+            const source = objectQuantity(potion) > 1 ? `One of the ${objectCombatName(potion)}`
+                : `The ${objectCombatName(potion)}`;
+            await pline(`${source} forms a coating on the ${objectCombatName(object)}.`);
             object.opoisoned = true;
             await poof(potion);
             return true;
         }
         if (object.opoisoned && !isPermanentlyPoisonedObject(object)
             && [POT_HEALING, POT_EXTRA_HEALING, POT_FULL_HEALING].includes(potion.otyp)) {
-            await pline(`A coating wears off the ${objectName(object)}.`);
+            await pline(`A coating wears off the ${objectCombatName(object)}.`);
             object.opoisoned = false;
             await poof(potion);
             return true;
