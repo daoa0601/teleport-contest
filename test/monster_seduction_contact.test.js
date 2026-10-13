@@ -6,13 +6,36 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_SSEX, AT_BITE } from '../js/monster_attack_types.js';
 import { resolveMonsterContactEffect } from '../js/monster_contact_effects.js';
+import { monsterName } from '../js/monster_name.js';
 import { LEATHER_ARMOR, OBJECT_NAMES } from '../js/object_data.js';
 import { setPropertyTimeout } from '../js/properties.js';
+import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 const RIN_ADORNMENT = OBJECT_NAMES.indexOf('adornment');
+void test('a bad seduction outcome displays the next hallucinated demon identity', async () => {
+    const level = freshObjectRoom({ flags: { female: true },
+        hero: { hallucinationTurns: 20 } });
+    requirePlayingGame(game);
+    level.flags.noteleport = true;
+    const incubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    incubus.female = false;
+    incubus.minvis = true;
+    const attack = { kind: 'hero-attack', attackType: AT_BITE,
+        damageType: AD_SSEX, hit: true, damage: 0 };
+    initRng(2n);
+    const partner = monsterName(incubus, { suppressIt: true });
+    const satisfiedDemon = monsterName(incubus, { suppressIt: true, capitalized: true });
+    initRng(2n);
+    const messages = [];
+    await resolveMonsterContactEffect(incubus, attack, { state: game,
+        publish: async (message) => { messages.push(message); },
+        random: range => range === 35 ? 34 : 1 });
+    assert.ok(messages.includes(`Time stands still while you and ${partner} lie in each other's arms...`), messages.join('\n'));
+    assert.ok(messages.includes(`${satisfiedDemon} seems to have enjoyed it more than you...`), messages.join('\n'));
+});
 void test('declining an incubus armor-removal prompt keeps the suit and ends seduction', async () => {
     const level = freshObjectRoom({ flags: { female: true } });
     requirePlayingGame(game);
