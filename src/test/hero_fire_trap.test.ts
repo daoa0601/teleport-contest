@@ -85,13 +85,14 @@ void test('a carried fire trap melts ice even though it does not burn floor obje
     assert.ok(game.u.levitation);
 });
 
-void test('seeing fire resistance granted by Fire Brand updates monster knowledge', async () => {
+void test('fire traps teach and clear Fire Brand resistance for sighted and blinded monsters', async () => {
     freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requireFixtureGame(game);
     const watcher = await createMonsterAt('jackal', 12, 10);
     const blindWatcher = await createMonsterAt('jackal', 13, 10);
     blindWatcher.mcansee = 0;
     watcher.seen_resistance = M_SEEN_COLD;
+    blindWatcher.seen_resistance = M_SEEN_COLD;
     const artifact = artifactByName('Fire Brand');
     assert.ok(artifact !== null && artifact !== undefined);
     const sword = await addInventoryObject(artifact.baseType);
@@ -105,12 +106,13 @@ void test('seeing fire resistance granted by Fire Brand updates monster knowledg
     assert.ok(game.u.uhp >= 99);
     assert.equal(game.u.uhpmax, 100);
     assert.equal(watcher.seen_resistance, M_SEEN_COLD | M_SEEN_FIRE);
-    assert.equal((blindWatcher.seen_resistance || 0) & M_SEEN_FIRE, 0);
+    assert.equal(blindWatcher.seen_resistance, M_SEEN_COLD | M_SEEN_FIRE);
 
     await setPrimaryWeapon(null);
     await triggerHeroFireTrap();
 
     assert.equal(watcher.seen_resistance, M_SEEN_COLD);
+    assert.equal(blindWatcher.seen_resistance, M_SEEN_COLD);
     assert.ok(game.u.uhpmax < 100);
 });
 

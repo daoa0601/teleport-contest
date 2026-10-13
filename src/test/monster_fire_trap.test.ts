@@ -11,6 +11,7 @@ import {
 } from '../js/monmove.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { initializeMonsterArmor } from '../js/monworn.js';
+import { quietMonsterName } from '../js/monster_name.js';
 import {
     AMULET_OF_LIFE_SAVING, CORPSE, POT_OIL, RED_DRAGON_SCALE_MAIL,
     SCR_IDENTIFY, TOWEL,
@@ -46,6 +47,21 @@ async function freshMonsterFireTrap({
 function quietFireRandom(range: number) {
     return range === 5 ? 1 : 0;
 }
+
+void test('a visible fire trap names the monster standing in its flames', async () => {
+    const { monster } = await freshMonsterFireTrap({ species: 'minotaur', hitPoints: 100 });
+    requirePlayingGame(game);
+    const messages: string[] = [];
+    const action = await triggerImmediateMonsterTrap(monster, game);
+
+    await resumeDeferredMonsterTrap(action, game, {
+        random: quietFireRandom,
+        monsterName: quietMonsterName,
+        publish: async message => { messages.push(message); },
+    });
+
+    assert.equal(messages[0], 'A tower of flame erupts from the floor under the minotaur!');
+});
 
 void test('a fire trap burns a vulnerable monster', async () => {
     const { monster, trap } = await freshMonsterFireTrap();

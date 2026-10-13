@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import { GETOBJ_SUGGEST } from '../js/const.js';
-import { pline } from '../js/display.js';
+import { bot, pline } from '../js/display.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { selectInventoryObject, showIdentifiedInventory } from '../js/invent.js';
@@ -197,10 +197,28 @@ void test('selecting an item on a later inventory page restores the map before i
     await answerMenu(input, pack.laterLetter);
     assert.match(menuText(), /Do what with the/);
     assert.equal(requireGameDisplay(game).grid[11]?.[9]?.ch, '@');
+    assert.equal(requireGameDisplay().grid[22]?.map(cell => cell.ch).join('').trim(), '');
+    assert.equal(requireGameDisplay().grid[23]?.map(cell => cell.ch).join('').trim(), '');
     input.feed('\x1b');
     await action;
 
     assert.equal(game.context.move, 0);
     assert.equal(game.inventory.length, 36);
     assert.equal(requireGameDisplay(game).grid[11]?.[9]?.ch, '@');
+});
+
+void test('a short inventory retains the status lines when its item action menu opens', async () => {
+    freshObjectRoom();
+    const item = await addInventoryObject(DAGGER);
+    await bot();
+    const input = resetInputState();
+    const action = rhack('i'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    await answerMenu(input, item.invlet);
+
+    assert.match(menuText(), /Do what with the/);
+    assert.match(requireGameDisplay(game).grid[22]?.map(cell => cell.ch).join('') ?? '', /St:12/);
+    assert.match(requireGameDisplay(game).grid[23]?.map(cell => cell.ch).join('') ?? '', /HP:40\(40\)/);
+    input.feed('\x1b');
+    await action;
 });

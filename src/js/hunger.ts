@@ -160,6 +160,8 @@ export async function updateHeroHunger(increasing: boolean, { state = game }: Hu
     let next = nutritionState(hero.uhunger ?? 900);
     const context = state.context;
     if (state._occupation?.key === 'eat-food' || context.forceSaveHungerState) {
+        // newuhs() changes uhs here without requesting a status redraw.
+        state._statusHungerOverride ??= hero.uhs ?? NOT_HUNGRY;
         context.hungerStateBeforeMeal ??= hero.uhs ?? NOT_HUNGRY;
         hero.uhs = next;
         return;

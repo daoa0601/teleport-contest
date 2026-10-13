@@ -12,14 +12,17 @@ import { gotoLevel } from '../js/level_change.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { hitHeroWithObject } from '../js/hero_object_hit.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
-import { pushKeys } from '../js/input.js';
-import { BAG_OF_HOLDING, BOULDER, CLUB } from '../js/object_data.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { ARROW, BAG_OF_HOLDING, BOULDER, CLUB, CORPSE, DART } from '../js/object_data.js';
+import { killerObjectName } from '../js/objnam.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { dosit } from '../js/sit.js';
-import { addInventoryObject, floorObject } from './support/game-objects.js';
+import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { carriedGold, readyGold } from './support/gold-arena.js';
 import { addTrap } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -108,6 +111,61 @@ for (const [count, cause] of [[1, 'a club'], [3, 'clubs']] as const) {
         }), `killed by ${cause}`);
     });
 }
+
+for (const [count, cause] of [[1, 'a club'], [3, 'clubs']] as const) {
+    void test(`a fatal object hit preserves ${cause} as its killer`, async () => {
+        lowHitPointRoom();
+        const clubs = await knownObject(CLUB, { quantity: count, spe: 0 });
+
+        await dieWith(() => hitHeroWithObject(clubs, 1, 8, { rollOne: () => 1 }),
+            `killed by ${cause}`);
+    });
+}
+
+void test('a fatal Medusa corpse hit preserves the possessive killer name', async () => {
+    lowHitPointRoom();
+    const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('Medusa') });
+
+    await dieWith(() => hitHeroWithObject(corpse, 1, 8, { rollOne: () => 1 }),
+        "killed by Medusa's corpse");
+});
+
+void test('a fatal projectile preserves its formatted killer when the hit name is supplied', async () => {
+    lowHitPointRoom();
+    const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('Medusa') });
+
+    await dieWith(() => hitHeroWithObject(corpse, 1, 8, {
+        name: 'corpse', killer: killerObjectName(corpse), rollOne: () => 1,
+    }), "killed by Medusa's corpse");
+});
+
+for (const [type, name, killer] of [
+    [DART, 'little dart', 'a little dart'],
+    [DART, 'a little dart', 'a little dart'],
+    [DART, 'the little dart', 'the little dart'],
+    [ARROW, 'an arrow', 'an arrow'],
+] as const) {
+    void test(`a fatal object hit named ${name} uses the supplied name as its killer`, async () => {
+        lowHitPointRoom();
+        const missile = await knownObject(type, { spe: 0 });
+
+        await dieWith(() => hitHeroWithObject(missile, 1, 8, { name, rollOne: () => 1 }),
+            `killed by ${killer}`);
+    });
+}
+
+void test('a fatal single corpse hit uses a generic hit name and a species-specific killer', async () => {
+    lowHitPointRoom();
+    const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('newt') });
+    const messages: string[] = [];
+    resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+
+    await dieWith(() => hitHeroWithObject(corpse, 1, 8, { rollOne: () => 1 }),
+        'killed by a newt corpse');
+
+    assert.ok(messages.includes('You are hit by a corpse.'),
+        `The hit should say a corpse; received: ${messages.join(' | ')}`);
+});
 
 void test('putting a bag of holding into another can kill with the explosion', async () => {
     lowHitPointRoom();

@@ -8,7 +8,7 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { artifactById } from './artifacts.js';
 import { heroIsBlind } from './senses.js';
 import { exerciseWisdom } from './attrib.js';
-import { canSpotMonster, canSenseMonster, monsterHasWarningProjection, flushPendingTopline, feel_location, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell, unmap_invisible, plineWithContinuation, flashGlyphAt, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, } from './display.js';
+import { canSpotMonster, canSenseMonster, monsterHasWarningProjection, flushPendingTopline, feel_location, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell, unmap_invisible, plineWithContinuation, flashGlyphAt, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, cls, displaySelf, docrt, feel_newsym, } from './display.js';
 import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, M_AP_TYPE, Is_airlevel, Is_waterlevel, IS_FURNITURE, D_CLOSED, D_LOCKED, D_TRAPPED, STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR, TRAP_EXPLANATIONS, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, } from './const.js';
 import { BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES, OBJECT_MERGE, OBJECT_NAMES } from './object_data.js';
 import { objectClassForType, observeObject } from './object_knowledge.js';
@@ -20,6 +20,7 @@ import { recordDiscoveredRoom, recordMappedOverviewState } from './dungeon.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './monster_name.js';
+import { NO_COLOR } from './terminal.js';
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
 export function premap_detect() {
@@ -216,15 +217,37 @@ async function searchAdjacentSecrets(automatic = false) {
                         exerciseWisdom();
                     return true;
                 }
-                trap.tseen = true;
-                exerciseWisdom();
-                map_trap(trap, true);
-                await plineWithContinuation(foundTrapMessage(trap));
+                await findTrap(trap);
                 found = true;
             }
         }
     }
     return found;
+}
+// C detect.c:find_trap(). Only clutter in the remembered layer needs a
+// separate trap display; a visible monster overlays that layer.
+async function findTrap(trap) {
+    trap.tseen = true;
+    exerciseWisdom();
+    feel_newsym(trap.tx, trap.ty);
+    const remembered = game.level?.at(trap.tx, trap.ty)?.remembered_glyph;
+    const cleared = heroIsHallucinating(game)
+        || remembered?.kind !== 'trap' || remembered.trapType !== trap.ttyp;
+    if (cleared) {
+        await cls();
+        for (let x = 1; x < COLNO; x++) {
+            for (let y = 0; y < ROWNO; y++) {
+                show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'nothing' });
+            }
+        }
+        map_trap(trap, true);
+        displaySelf();
+    }
+    await plineWithContinuation(foundTrapMessage(trap));
+    if (cleared) {
+        await flushPendingTopline();
+        await docrt();
+    }
 }
 // C detect.c:warnreveal(). Ordinary Warning can expose a nearby hider
 // without identifying distant monsters or peaceful neighbours.

@@ -149,10 +149,12 @@ export function monsterFormChangeName(monster: Monster, { state = game }: { stat
 // C noname_monnam(monster, ARTICLE_NONE).
 export function namelessMonsterName(monster: Monster, {
     state = game, article = 'none', suppressIt = false, suppressInvisible = false,
-}: Pick<MonsterNameOptions, 'state' | 'article' | 'suppressIt' | 'suppressInvisible'> = {}): string {
+    suppressHallucination = false, suppressSaddle = false,
+}: Pick<MonsterNameOptions, 'state' | 'article' | 'suppressIt' | 'suppressInvisible'
+    | 'suppressHallucination' | 'suppressSaddle'> = {}): string {
     requireLiveGame(state);
     return formatMonsterName(monster, state, {
-        article, suppressName: true, suppressSaddle: false, suppressIt, suppressInvisible,
+        article, suppressName: true, suppressSaddle, suppressIt, suppressInvisible, suppressHallucination,
     });
 }
 

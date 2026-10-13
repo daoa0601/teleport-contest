@@ -54,7 +54,7 @@ import { stumbleOntoMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
-import { observeDistantObjectForNaming, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
+import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { descendFromLevitation } from './levitation_commands.js';
@@ -67,6 +67,7 @@ import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { confirmHeroStep } from './hero_step_confirmation.js';
 import { monsterPassesBars } from './monster_movement_traits.js';
+import { heroCanEnterIronBars } from './iron_bars_meal.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import {
     floorObjectDescription,
@@ -256,6 +257,7 @@ import {
 } from './accessory.js';
 import { heroIsStrangled } from './hero_strangulation.js';
 import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroCanOoze } from './monster_perception.js';
 import { isPoolAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
@@ -404,8 +406,8 @@ import {
     ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR,
     D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE,
     IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT,
-    SPIKED_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
-    ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
+    SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
+    ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
     STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
     Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD,
     WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
@@ -478,18 +480,39 @@ async function rejectTightHeroDiagonal(dx: number, dy: number): Promise<boolean>
     return true;
 }
 
+function heroOozesUnderDoor(destination: MapLocation | null): boolean {
+    return destination?.typ === DOOR
+        && !!(destination.doormask & (D_CLOSED | D_LOCKED))
+        && !heroPassesWalls(game) && heroCanOoze(game);
+}
+
+// C test_move(DO_MOVE): oozing bypasses only the doorway entry check.
+async function rejectHeroDiagonalDoorway(dx: number, dy: number, destination: MapLocation | null): Promise<boolean> {
+    const entryDoor = heroOozesUnderDoor(destination) ? null : destination;
+    if (!dx || !dy || heroPassesWalls(game)
+        || !blocksDiagonalDoor(game.level?.at(game.u.ux, game.u.uy), entryDoor)) return false;
+    const entering = blocksDiagonalDoor(null, entryDoor);
+    if (game.flags.mention_walls || entering && (game.u.uinwater || game.underwater)) {
+        await plineWithContinuation(`You can't move diagonally ${entering ? 'into' : 'out of'} an intact doorway.`);
+    }
+    game.context.move = 0;
+    return true;
+}
+
 // C test_move(TEST_MOVE): confirmation tests obstacles without performing
 // auto-open, boulder pushing, or the hero's eventual movement.
 function heroCanConfirmStep(x: number, y: number): boolean {
     const hero = game.u;
     const location = game.level?.at(x, y);
-    if (!location || (blocksMove(x, y) && !heroCanPassWallAt(game, x, y))) return false;
+    if (!location) return false;
+    const oozing = heroOozesUnderDoor(location);
+    if (blocksMove(x, y) && !heroCanPassWallAt(game, x, y) && !oozing) return false;
     const passesWalls = heroPassesWalls(game);
     if (location.typ === IRONBARS && !passesWalls
         && !monsterPassesBars({ mnum: heroSpecies(game) })) return false;
     const dx = x - hero.ux, dy = y - hero.uy;
     if (dx && dy) {
-        if (!passesWalls && blocksDiagonalDoor(game.level?.at(hero.ux, hero.uy), location)) return false;
+        if (!passesWalls && blocksDiagonalDoor(game.level?.at(hero.ux, hero.uy), oozing ? null : location)) return false;
         if (heroBadRock(game, hero.ux, y) && heroBadRock(game, x, hero.uy)) {
             if (heroTightDiagonalReason(game)) return false;
         } else if (wormCrossesBetween(hero.ux, hero.uy, x, y, game)) return false;
@@ -3099,8 +3122,7 @@ async function doloot() {
         // its ynq question. tty update_topl() pages the former message before
         // it can install the prompt.
         await promptKey(`${lockedMessage}--More--`);
-        const toolName = lockToolPresentation(tool);
-        const answer = await promptYesNoQuit(`Unlock it with your ${toolName}?`);
+        const answer = await promptYesNoQuit(`Unlock it with ${lockToolName(tool)}?`);
         if (answer === 'y') {
             game._occupation = {
                 key: 'pick-lock',
@@ -5458,6 +5480,12 @@ async function doopen(): Promise<void> {
         return;
     }
 
+    if (game.u.utrap && game.u.utraptype === TT_PIT) {
+        await pline("You can't reach over the edge of the pit.");
+        game.context.move = 0;
+        return;
+    }
+
     const x = game.u.ux + DIR_DX[direction];
     const y = game.u.uy + DIR_DY[direction];
     const loc = game.level?.at(x, y);
@@ -5482,8 +5510,7 @@ async function doopen(): Promise<void> {
         return;
     }
     if (loc.doormask & D_LOCKED) {
-        await pline('This door is locked.');
-        game.context.move = 0;
+        game.context.move = Number(await openLockedDoor(loc, x, y));
         return;
     }
 
@@ -6854,10 +6881,40 @@ function autoUnlockTool(g: GameState = game): GameObject | null {
     return null;
 }
 
-function lockToolPresentation(tool: GameObject): string {
-    if (tool.otyp === SKELETON_KEY) return 'skeleton key';
-    if (tool.otyp === CREDIT_CARD) return 'credit card';
-    return 'lock pick';
+async function openLockedDoor(door: MapLocation, x: number, y: number): Promise<boolean> {
+    await pline('This door is locked.');
+    const tool = autoUnlockTool(game);
+    if (!tool) return false;
+    game.u.dz = 0;
+    const monster = monsterAtPosition(requireGameLevel(), x, y);
+    if (monster && canSeeMonster(monster)
+        && M_AP_TYPE(monster) !== M_AP_FURNITURE
+        && M_AP_TYPE(monster) !== M_AP_OBJECT) {
+        if (tool.otyp === CREDIT_CARD
+            && (monster.isshk || MONSTER_NAME[monster.mnum] === 'Oracle'))
+            await plineWithContinuation('"No checks, no credit, no problem."');
+        else
+            await plineWithContinuation(`I don't think ${monsterName(monster)} would appreciate that.`);
+        return true;
+    }
+    await flushPendingTopline();
+    const answer = await promptYesNoQuit(`Unlock it with ${lockToolName(tool)}?`);
+    if (answer !== 'y') return false;
+    const touch = await touchArtifactByHero(tool);
+    if (!touch.allowed || touch.died) return true;
+    game._occupation = {
+        key: 'pick-lock',
+        text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD
+            ? 'picking the lock' : 'unlocking the door',
+        remaining: 51, usedtime: 0, door, x, y, tool,
+        chance: lockPickChance(tool, game),
+    };
+    return true;
+}
+
+function lockToolName(tool: GameObject): string {
+    observeObjectForNaming(tool);
+    return ownedObjectName(tool, game, { capitalized: false });
 }
 
 function lockPickChance(tool: GameObject, g: GameState = game, container: GameObject | null = null): number {
@@ -6882,6 +6939,13 @@ function lockPickChance(tool: GameObject, g: GameState = game, container: GameOb
 // C ref: hack.c:dopush().  Move a floor boulder before committing the hero
 // into its old square; the first push owns Strength exercise and its message.
 async function pushBoulder(boulder: GameObject, x: number, y: number, dx: number, dy: number): Promise<boolean> {
+    const glyph = glyphAt(x, y);
+    if (heroIsBlind(game) && !(glyph?.kind === 'object' && glyph.otyp === BOULDER)) {
+        await pline('That feels like a boulder.');
+        map_object(boulder, true);
+        endVoluntaryMultiTurn(game);
+        return false;
+    }
     const targetX = x + dx;
     const targetY = y + dy;
     const targetObjects = game.level?.objects?.[targetX]?.[targetY] || [];
@@ -7341,6 +7405,9 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy)) return false;
             if (u.utrap
                 && !await heroCanMoveFromTrap(newx, newy)) return true;
+            if (!await heroCanEnterIronBars(newx, newy, game)) return false;
+            if (heroOozesUnderDoor(loc)) await pline('You ooze under the door.');
+            if (await rejectHeroDiagonalDoorway(dx, dy, loc)) return false;
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
                 if (ballChainMove.blockedMessage) await pline(ballChainMove.blockedMessage);
@@ -7379,7 +7446,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             const swapName = tame ? tameName
                 : monster.name ? `peaceful ${speciesName}`
                     : `the peaceful ${speciesName}`;
-            await pline(`You swap places with ${swapName}.`);
+            await plineWithContinuation(`You swap places with ${swapName}.`);
             return finishMovedHero({
                 oldx, oldy, newx, newy, loc, explicitAttempt,
                 ballChainMove,
@@ -7415,8 +7482,12 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
 
     if (!await heroCanMoveFromTrap(newx, newy)) return true;
 
+    if (!await heroCanEnterIronBars(newx, newy, game)) return false;
+
+    const oozingUnderDoor = heroOozesUnderDoor(loc);
+    if (oozingUnderDoor) await pline('You ooze under the door.');
     if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))
-        && !heroCanPassWallAt(game, newx, newy)) {
+        && !heroCanPassWallAt(game, newx, newy) && !oozingUnderDoor) {
         const fumbling = !!(u?.fumbling || (u?.fumblingTurns || 0) > 0);
         const blind = !!(u?.blind || (u?.blindTurns || 0) > 0);
         const dexterity = currentAttribute(A_DEX);
@@ -7455,28 +7526,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         // later diagonal-door restriction, so a diagonal attempt still owns
         // this zero-time message.
         if (loc.doormask & D_LOCKED) {
-            const tool = autoUnlockTool(game);
-            if (!tool) {
-                await pline('This door is locked.');
-                return false;
-            }
-            await promptKey('This door is locked.--More--');
-            const toolName = lockToolPresentation(tool);
-            const answer = await promptYesNoQuit(`Unlock it with your ${toolName}?`);
-            if (answer === 'y') {
-                game._occupation = {
-                    key: 'pick-lock',
-                    text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD
-                        ? 'picking the lock' : 'unlocking the door',
-                    remaining: 51,
-                    usedtime: 0,
-                    door: loc,
-                    x: newx,
-                    y: newy,
-                    tool,
-                    chance: lockPickChance(tool, game),
-                };
-            }
+            await openLockedDoor(loc, newx, newy);
             game.context.move = 0;
             return false;
         }
@@ -7498,7 +7548,8 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
     // tight-diagonal shoulders.  A boulder on ordinary floor is not terrain
     // obstruction, so that case still reaches cant_squeeze_thru() below
     // before moverock().
-    if (blocksMove(newx, newy) && !heroCanPassWallAt(game, newx, newy)) {
+    if (blocksMove(newx, newy) && !heroCanPassWallAt(game, newx, newy)
+        && !oozingUnderDoor) {
         const weapon = game.uwep || game.u.uwep;
         if (loc && IS_OBSTRUCTED(loc.typ) && game.flags?.autodig
             && !game._runState && !game.context.nopick && weapon && isPick(weapon)
@@ -7530,12 +7581,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
     // C ref: hack.c test_move().  Once the closed-door/autoopen path has had
     // its opportunity, intact open and doorless doorways only allow
     // orthogonal entry/exit.
-    if (dx && dy && !heroPassesWalls(game) && blocksDiagonalDoor(
-        game.level?.at(u.ux, u.uy), loc,
-    )) {
-        game.context.move = 0;
-        return false;
-    }
+    if (await rejectHeroDiagonalDoorway(dx, dy, loc)) return false;
 
     if (await rejectTightHeroDiagonal(dx, dy)) return false;
 

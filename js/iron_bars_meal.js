@@ -1,17 +1,42 @@
-// The eat command's iron-bars branch of C hack.c:still_chewing().
+// C hack.c:test_move() and still_chewing(), for iron bars.
 import { IRONBARS, W_NONDIGGABLE } from './const.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
-import { newsym, plineWithContinuation as pline } from './display.js';
+import { feel_location, newsym, plineWithContinuation as pline } from './display.js';
 import { watchDigging } from './digging_watch.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { clearDiggingContext, ensureDiggingContext } from './hero_digging.js';
 import { spendHeroNutrition } from './hunger.js';
+import { heroPassesWalls, heroSpecies } from './hero_species.js';
+import { MONSTER_FLAGS1 } from './monster_data.js';
+import { monsterCorrodesBars, monsterPassesBars } from './monster_movement_traits.js';
 import { BOULDER, HEAVY_IRON_BALL, OBJECT_WEIGHT, requireObjectData } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { dissolveBars } from './projectile_bars.js';
 import { rnd } from './rng.js';
 import { vision_note_blocker_change } from './vision.js';
+const M1_METALLIVORE = 0x80000000;
+export async function heroCanEnterIronBars(x, y, state) {
+    if (state.level.at(x, y)?.typ !== IRONBARS)
+        return true;
+    if (state.blind)
+        feel_location(x, y);
+    if (heroPassesWalls(state))
+        return true;
+    if (state.u.uinwater) {
+        await pline('There is an obstacle there.');
+        return false;
+    }
+    const body = { mnum: heroSpecies(state) };
+    const eatsMetal = !!((MONSTER_FLAGS1[body.mnum] ?? 0) & M1_METALLIVORE);
+    if ((eatsMetal || monsterCorrodesBars(body)) && await continueChewingBars(x, y, state))
+        return false;
+    if (monsterPassesBars(body))
+        return true;
+    if (state.flags.mention_walls)
+        await pline('You cannot pass through the bars.');
+    return false;
+}
 export async function chewIronBars({ state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -23,7 +48,7 @@ export async function chewIronBars({ state = game } = {}) {
 async function continueChewingBars(x, y, state) {
     const location = state.level.at(x, y);
     if (!location)
-        throw new Error('Chewing bars requires a map cell at the hero position.');
+        throw new Error('Chewing bars requires a map cell.');
     const boulder = state.level.objects[x]?.[y]?.find(object => object.otyp === BOULDER);
     const digging = ensureDiggingContext(state);
     if (digging.down)
@@ -33,7 +58,8 @@ async function continueChewingBars(x, y, state) {
         endVoluntaryMultiTurn(state);
         return true;
     }
-    if (state.u.uhunger > 1500) {
+    const eatsMetal = !!((MONSTER_FLAGS1[heroSpecies(state)] ?? 0) & M1_METALLIVORE);
+    if (eatsMetal && state.u.uhunger > 1500) {
         await pline('You are too full to eat the bars.');
         endVoluntaryMultiTurn(state);
         return true;
@@ -72,11 +98,13 @@ async function continueChewingBars(x, y, state) {
         clearDiggingContext(state);
         return !!anotherBoulder;
     }
-    await spendHeroNutrition(-requireObjectData(OBJECT_WEIGHT, HEAVY_IRON_BALL), { state });
+    if (eatsMetal)
+        await spendHeroNutrition(-requireObjectData(OBJECT_WEIGHT, HEAVY_IRON_BALL), { state });
     await dissolveBars(x, y, state);
     vision_note_blocker_change(x, y);
     newsym(x, y);
-    await pline('You devour the iron bars.');
+    await pline(state.u.ux === x && state.u.uy === y
+        ? 'You devour the iron bars.' : 'You eat through the bars.');
     clearDiggingContext(state);
     return false;
 }
