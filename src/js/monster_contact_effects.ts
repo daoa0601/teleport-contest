@@ -4,14 +4,23 @@ import { artifactById } from './artifacts.js';
 import { heroHasFreeAction } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
-import { A_CON, A_DEX, M_SEEN_SLEEP, Upolyd } from './const.js';
-import { shieldeff, type MessagePublisher } from './display.js';
+import { A_CON, A_DEX, A_STR, M_SEEN_ACID, M_SEEN_SLEEP, Upolyd } from './const.js';
+import { displayLiquidName, shieldeff, type MessagePublisher } from './display.js';
 import type { PlayingGameState } from './game_state.js';
 import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_PLYS, AD_POLY, AD_SLEE, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { AD_ACID, AD_CURS, AD_HEAL, AD_PLYS, AD_POLY, AD_SGLD, AD_SLEE, AD_SLOW, AD_SSEX, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { resolveHeroSeduction } from './monster_seduction.js';
+import { stealHeroGold } from './monster_gold_theft.js';
+import { heroHasRemovableSpeed, slowHero } from './hero_speed.js';
+import { resolveNurseContact } from './monster_nurse_contact.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { grantMonsterIntrinsic } from './monster_corpse_intrinsic.js';
+import { sessionIsNight } from './monster_sound.js';
+import { attrcurse } from './throne.js';
+import { heroIsDeaf } from './senses.js';
 import { resolveMonsterWrapping } from './monster_wrapping_contact.js';
 import { askTeleportDestination } from './cmd.js';
 import { heroControlsTeleport, teleportHero } from './teleport.js';
@@ -23,10 +32,10 @@ import {
 } from './monster_perception.js';
 import { stopHeroOccupation } from './occupation.js';
 import {
-    heroIsUnchanging, heroHasProtectionFromShapeChangers, polymorphHero,
+    heroIsUnchanging, heroHasProtectionFromShapeChangers, polymorphHero, returnHeroToHumanForm,
 } from './polyself.js';
 import { applyHeroWereChange, revertHeroWereForm, setHeroLycanthropy } from './were.js';
-import { rn2, rnd } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 import { drainHeroBrain } from './monster_hero_brain.js';
 import { AD_DRIN } from './monster_attack_types.js';
 
@@ -35,11 +44,12 @@ interface ContactEffectOptions {
     publish: MessagePublisher;
     random?: typeof rn2;
     rollOne?: typeof rnd;
+    rollDice?: typeof d;
 }
 
 export async function resolveMonsterContactEffect(
     monster: Monster, attack: HeroContactAttack,
-    { state, publish, random = rn2, rollOne = rnd }: ContactEffectOptions,
+    { state, publish, random = rn2, rollOne = rnd, rollDice = d }: ContactEffectOptions,
 ): Promise<void> {
     attack.deferredSpecialContact = false;
     if (attack.damageType === AD_DRIN)
@@ -56,8 +66,63 @@ export async function resolveMonsterContactEffect(
         await paralyzeHero(monster, state, publish, random, rollOne);
     else if (attack.damageType === AD_WRAP)
         await resolveMonsterWrapping(monster, attack, state, publish, random);
+    else if (attack.damageType === AD_CURS)
+        await curseHero(monster, state, publish, random);
+    else if (attack.damageType === AD_HEAL)
+        await resolveNurseContact(monster, attack, state, publish, random, rollOne, rollDice);
+    else if (attack.damageType === AD_ACID)
+        await splashHeroWithAcid(monster, attack, state, publish, random);
+    else if (attack.damageType === AD_SLOW) {
+        if (!attack.negated && heroHasRemovableSpeed(state) && random(4) === 0)
+            await slowHero(state, publish);
+    }
+    else if (attack.damageType === AD_SGLD)
+        await stealHeroGold(monster, state, publish, random, rollOne);
+    else if (attack.damageType === AD_SSEX)
+        await resolveHeroSeduction(monster, attack, state, publish, random, rollOne);
     else throw new Error(`Damage type ${attack.damageType} has no deferred contact effect`);
     attack.deferredPostHit = true;
+}
+
+async function splashHeroWithAcid(
+    monster: Monster, attack: HeroContactAttack, state: PlayingGameState,
+    publish: MessagePublisher, random: typeof rn2,
+): Promise<void> {
+    if (monster.mcan || random(3) !== 0) {
+        attack.damage = 0;
+        return;
+    }
+    const liquid = displayLiquidName('acid', state);
+    const seesHero = (observer: Monster) => monsterHasLineOfSightToHero(observer, state);
+    if (state.u.acidResistance) {
+        await publish(`You're covered in ${liquid}, but it seems harmless.`);
+        monstersObserveHeroResistance(M_SEEN_ACID, state, seesHero);
+        attack.damage = 0;
+    } else {
+        await publish(`You're covered in ${liquid}!  It burns!`);
+        await exerciseAttribute(A_STR, false, state);
+        monstersForgetHeroResistance(M_SEEN_ACID, state, seesHero);
+    }
+}
+
+// C uhitm.c:mhitm_ad_curs(). A daytime gremlin still makes contact, but
+// only its nighttime curse can remove and retain a hero's intrinsic.
+async function curseHero(
+    monster: Monster, state: PlayingGameState,
+    publish: MessagePublisher, random: typeof rn2,
+): Promise<void> {
+    if (monster.mnum === MONSTER_NAME.indexOf('gremlin') && !sessionIsNight(state.datetime)) return;
+    if (monster.mcan || random(10) !== 0) return;
+    if (!heroIsDeaf(state)) {
+        await publish(heroIsBlind(state) ? 'You hear laughter.'
+            : `${monsterName(monster, { state, capitalized: true })} chuckles.`);
+    }
+    if (state.u.umonnum === MONSTER_NAME.indexOf('clay golem')) {
+        await publish('Some writing vanishes from your head!');
+        await returnHeroToHumanForm(state, { publish });
+        return;
+    }
+    await grantMonsterIntrinsic(monster, await attrcurse({ publish }), state, publish);
 }
 
 // C uhitm.c:mhitm_ad_plys(). Existing helplessness skips the paralysis

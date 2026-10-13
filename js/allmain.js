@@ -1456,7 +1456,11 @@ async function monsterAttackMessage(monster, attack, previousAttack = null, rand
     const game = requireInitializedGame();
     if (attack.effect === 'petrifying-corpse' || attack.effect === 'wrapping-natural')
         return null;
-    if (attack.effect === 'physical-hug')
+    if (attack.effect === 'physical-hug' || attack.effect === 'silent-physical-touch')
+        return null;
+    if (attack.effect === 'nurse-heal' || attack.effect === 'nurse-cooperate')
+        return null;
+    if (attack.effect === 'seduction-contact')
         return null;
     if (attack.effect === 'engulf' || attack.effect === 'engulf-tick'
         || attack.effect === 'engulf-refused' || attack.effect === 'item-theft')
@@ -2338,7 +2342,7 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                 }
                 if (heroAttack.deferredSpecialContact)
                     await resolveMonsterContactEffect(monster, heroAttack, {
-                        state: game, publish: publishEquipmentMessage, random, rollOne,
+                        state: game, publish: publishEquipmentMessage, random, rollOne, rollDice,
                     });
                 if (game.program_state.gameover)
                     return { heroDied: true };
