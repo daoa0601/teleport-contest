@@ -108,11 +108,18 @@ export async function buyShopBillItem(resident, item, state = game) {
             await impossible(`Buying ${simpleObjectName(item.object, state)} contents failed unexpectedly (#${object.o_id} 0).`, { state });
             continue;
         }
-        await payBillPrice(resident, price, state);
-        // dopayobj() finishes its feedback before pay_billed_items() updates
-        // the bill. Grouped contents are bought unseen before their summary.
-        if (!container)
-            await plineWithContinuation(feedback);
+        // dopayobj() retains the purchased count through payment and feedback,
+        // then restores the intact count before update_bill().
+        const originalQuantity = object.quan;
+        object.quan = quantity;
+        try {
+            await payBillPrice(resident, price, state);
+            if (!container)
+                await plineWithContinuation(feedback);
+        }
+        finally {
+            object.quan = originalQuantity;
+        }
         if (item.kind === 'used' && object.where !== 'onbill' && object.quan > 0) {
             entry.bquan = object.quan;
         }

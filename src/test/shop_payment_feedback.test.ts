@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
 for (const portion of ['partly used', 'intact', 'fully used'] as const) {
-    void test(`paying for ${portion} goods updates the bill after wrapped purchase feedback`, async () => {
+    void test(`paying for ${portion} goods keeps the payment quantity until wrapped feedback finishes`, async () => {
         freshObjectRoom();
         const daggers = await addInventoryObject(DAGGER, {
             quan: 2, oextra: { oname: 'the long and winding road through the northern mountains to the distant sea' },
@@ -33,6 +33,7 @@ for (const portion of ['partly used', 'intact', 'fully used'] as const) {
         await input.waitUntilBlocked();
         try {
             assert.match(game._pending_message, /You (?:paid for|bought).*gold pieces\./);
+            assert.equal(daggers.quan, purchase.quantity, 'Feedback refers to the quantity being paid for');
             assert.equal(heroGoldAmount(game), 20 - purchase.price, 'Gold transfers before purchase feedback');
             assert.equal(bill.bquan, billedQuantity, 'The bill retains its prior quantity during feedback');
             assert.equal(shopkeeper.eshk.billct, 1, 'The bill entry remains until feedback returns');
@@ -43,6 +44,7 @@ for (const portion of ['partly used', 'intact', 'fully used'] as const) {
             await buying;
         }
 
+        assert.equal(daggers.quan, 2, 'The original quantity returns after feedback');
         if (portion === 'partly used') {
             assert.equal(bill.bquan, 2);
             assert.equal(shopkeeper.eshk.billct, 1);
