@@ -24,6 +24,7 @@ import {
 import { roomForRoomno, roomsAt } from './room.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { removeMonsterFromGame } from './monster_departure.js';
+import { monsterName } from './monster_name.js';
 
 const M2_MINION = 0x00001000;
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;
@@ -221,10 +222,6 @@ export function priestAlignment(priest: Monster | null | undefined): number {
     return Math.sign(alignment);
 }
 
-function priestDeityName(priest: Monster, state: GameState = game): string {
-    return deityName(priestAlignment(priest), state);
-}
-
 export function priestIsCoaligned(priest: Monster, state: GameState = game): boolean {
     return (state.u?.ualign?.type ?? A_NONE) === priestAlignment(priest);
 }
@@ -232,13 +229,7 @@ export function priestIsCoaligned(priest: Monster, state: GameState = game): boo
 export function visiblePriestName(priest: Monster, state: GameState = game): string {
     if (!canSeeMonster(priest))
         return 'A nearby voice';
-    const roamingMinion = !!priest.isminion && !priest.ispriest;
-    const title = `${priest.mnum === 276 && !roamingMinion ? 'high ' : ''}${
-        priest.female ? 'priestess' : 'priest'
-    }`;
-    const renegade = roamingMinion && minionData(priest)?.renegade
-        ? 'renegade ' : '';
-    return `The ${renegade}${title} of ${priestDeityName(priest, state)}`;
+    return monsterName(priest, { state, capitalized: true });
 }
 
 function priestCanSpeak(priest: Monster, state: GameState = game): boolean {
