@@ -442,7 +442,9 @@ function configuredPetName(value: string, eightBitInput: boolean): string {
         if (character < 32 || character === 127) nameBytes.push('.'.charCodeAt(0));
         else nameBytes.push(byte > 127 && !eightBitInput ? '_'.charCodeAt(0) : byte);
     }
-    return new TextDecoder().decode(new Uint8Array(nameBytes));
+    // The tty consumes individual characters, even when these bytes no
+    // longer form UTF-8 after sanitizing or reaching the name limit.
+    return String.fromCharCode(...nameBytes);
 }
 
 const NUMBER_PAD_CHOICES = [

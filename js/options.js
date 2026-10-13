@@ -478,7 +478,9 @@ function configuredPetName(value, eightBitInput) {
         else
             nameBytes.push(byte > 127 && !eightBitInput ? '_'.charCodeAt(0) : byte);
     }
-    return new TextDecoder().decode(new Uint8Array(nameBytes));
+    // The tty consumes individual characters, even when these bytes no
+    // longer form UTF-8 after sanitizing or reaching the name limit.
+    return String.fromCharCode(...nameBytes);
 }
 const NUMBER_PAD_CHOICES = [
     ' 0 (off)', ' 1 (on)', ' 2 (on, MSDOS compatible)',

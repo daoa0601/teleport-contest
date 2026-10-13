@@ -90,9 +90,9 @@ void test('configured pet names sanitize each UTF-8 byte for the tty', () => {
 void test('eight-bit tty input preserves printable bytes in each configured pet name', () => {
     const settings = parseNethackrc('OPTIONS=dogname:Mélusine,catname:Señor,horsename:Björk,eight_bit_tty');
 
-    assert.equal(settings.flags.dogname, 'Mélusine');
-    assert.equal(settings.flags.catname, 'Señor');
-    assert.equal(settings.flags.horsename, 'Björk');
+    assert.equal(settings.flags.dogname, 'MÃ©lusine');
+    assert.equal(settings.flags.catname, 'SeÃ±or');
+    assert.equal(settings.flags.horsename, 'BjÃ¶rk');
 });
 
 void test('a configured pet uses the existing eight-bit input setting and replaces control bytes', async () => {
@@ -104,7 +104,26 @@ void test('a configured pet uses the existing eight-bit input setting and replac
     const pet = await makedog();
 
     assert.ok(pet);
-    assert.equal(pet.mgivenname, 'M.élusine.');
+    assert.equal(pet.mgivenname, 'M.Ã©lusine.');
+});
+
+void test('eight-bit pet names retain printable characters beside sanitized controls', () => {
+    const settings = parseNethackrc('OPTIONS=dogname:Ā,catname:€,eight_bit_tty');
+
+    assert.equal(settings.flags.dogname, 'Ä.');
+    assert.equal(settings.flags.catname, 'â.¬');
+});
+
+void test('eight-bit pet names retain the last character at the native name limit', async () => {
+    freshObjectRoom({ role: 'ranger' });
+    game.preferred_pet = 'd';
+    const prefix = 'a'.repeat(PL_PSIZ - 2);
+    applyNethackrc(`OPTIONS=dogname:${prefix}ĀZ,eight_bit_tty`);
+
+    const pet = await makedog();
+
+    assert.ok(pet);
+    assert.equal(pet.mgivenname, `${prefix}Ä`);
 });
 
 void test('disabling eight-bit tty input strips high bytes from later pet names', () => {
