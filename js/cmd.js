@@ -144,7 +144,7 @@ import { objectName, singularObjectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
+import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
@@ -5532,7 +5532,13 @@ async function doopen() {
     }
     game.context.move = Number(spentTime);
     if (loc?.typ !== DOOR) {
-        await pline('You see no door there.');
+        const floorPile = game.level?.objects[x]?.[y] ?? [];
+        // Native Is_container includes a bag of tricks for this hint.
+        const hasContainer = floorPile.some(object => object.otyp >= LARGE_BOX && object.otyp <= BAG_OF_TRICKS);
+        const blind = heroIsBlind(game);
+        await pline(hasContainer
+            ? `${blind ? 'Feels' : 'Seems'} like something lootable over there.`
+            : `You ${blind ? 'feel' : 'see'} no door there.`);
         return;
     }
     if (loc.doormask === D_BROKEN) {

@@ -247,7 +247,7 @@ import {
     SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK,
     CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL,
     LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
-    BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION,
+    BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION,
     BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF,
     BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER,
     TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL,
@@ -5794,7 +5794,14 @@ async function doopen(): Promise<void> {
     }
     game.context.move = Number(spentTime);
     if (loc?.typ !== DOOR) {
-        await pline('You see no door there.');
+        const floorPile = game.level?.objects[x]?.[y] ?? [];
+        // Native Is_container includes a bag of tricks for this hint.
+        const hasContainer = floorPile.some(object =>
+            object.otyp >= LARGE_BOX && object.otyp <= BAG_OF_TRICKS);
+        const blind = heroIsBlind(game);
+        await pline(hasContainer
+            ? `${blind ? 'Feels' : 'Seems'} like something lootable over there.`
+            : `You ${blind ? 'feel' : 'see'} no door there.`);
         return;
     }
     if (loc.doormask === D_BROKEN) {
