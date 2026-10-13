@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { angryGodMaximum } from '../js/divine_wrath.js';
 import { finishPrayerOccupation } from '../js/pray.js';
 import { moveloop_core } from '../js/allmain.js';
-import { ALTAR, Align2amask, PARANOID_PRAY, ROOM, STONE, W_NONPASSWALL } from '../js/const.js';
+import { ALTAR, Align2amask, LAVAPOOL, PARANOID_PRAY, ROOM, STONE, TT_LAVA, W_NONPASSWALL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
@@ -108,6 +108,19 @@ void test('#pray restores the carried luck bonus when it uncurses a luckstone', 
     await resolvePrayer();
     assert.equal(stone.cursed, false);
     assert.equal(game.u.moreluck, 3);
+});
+void test('#pray announces the safe ground reached after rescuing a hero from lava', async () => {
+    prayerRoom({ hero: { utrap: 5, utraptype: TT_LAVA, ualign: { type: 0, record: 1 } } });
+    requirePlayingGame(game);
+    game.level.requireAt(10, 10).typ = LAVAPOOL;
+    grantIntrinsicProperty('fireResistance', 'outside');
+    installPagerInput(resetInputState(), {
+        expected: /pray|prayer|shimmering light|satisfied|solid ground/, limit: 6,
+    });
+    await runExtendedCommand('pray', 'y');
+    await finishPrayerOccupation();
+    assert.equal(game.u.utrap, 0);
+    assert.match(game._pending_message, /You find yourself on solid ground\./);
 });
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {
     prayerRoom();

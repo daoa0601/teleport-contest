@@ -2,10 +2,11 @@
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { ringRemovalObstacle } from './accessory.js';
 import { heroEyeCount, heroEyeName, heroStomachName } from './body_parts.js';
-import { A_STR, EXT_ENCUMBER, HUNGRY, HVY_ENCUMBER, IS_LAVA, IS_OBSTRUCTED, IS_POOL, SCORR, SDOOR, TT_BURIEDBALL, TT_LAVA, Upolyd, WEAK, W_SADDLE, isok, } from './const.js';
+import { A_STR, DISSOLVED, EXT_ENCUMBER, HUNGRY, HVY_ENCUMBER, IS_LAVA, IS_OBSTRUCTED, IS_POOL, SCORR, SDOOR, TT_BURIEDBALL, TT_LAVA, Upolyd, WEAK, W_SADDLE, isok, } from './const.js';
 import { displayColorName, docrt, plineWithContinuation as pline } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { confersLuck } from './hero_inventory.js';
+import { announceTerrainRescue } from './hack.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { healHeroLegs } from './hero_legs.js';
 import { clearHeroStrangulation, heroIsStrangled } from './hero_strangulation.js';
@@ -242,6 +243,7 @@ export async function fixPrayerTrouble(trouble, state = game) {
         case Trouble.LAVA:
             if (!await teleportHeroSafely())
                 clearHeroTrap(state);
+            await announceTerrainRescue(DISSOLVED, state);
             return;
         case Trouble.STARVING:
         case Trouble.HUNGRY:
