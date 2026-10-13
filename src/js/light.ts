@@ -9,6 +9,7 @@ import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import type { MonsterDeathResult } from './monster_death.js';
 import type { HeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './hero_species.js';
+import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
 import { minimalObjectName } from './objnam.js';
 import { game, requireGameLevel } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -319,6 +320,8 @@ export async function lightRoom(
     }
     if (noEffect) return false;
 
+    const ballAndChain = !lit && !blind ? await beginBallAndChainRedraw() : null;
+
     const gremlins = [];
     for (const { x, y } of roomEffectCells(radius, lit)) {
         const location = game.level?.at?.(x, y);
@@ -334,7 +337,10 @@ export async function lightRoom(
             && !candidate.dead && (candidate.mhp ?? 1) > 0);
         if (monster) gremlins.push(monster);
     }
-    if (!blind) vision_recalc(2);
+    if (!blind) {
+        vision_recalc(2);
+        await finishBallAndChainMove(ballAndChain);
+    }
     game.vision_full_recalc = 1;
     if (lit && gremlins.length) {
         vision_recalc(0);
