@@ -208,7 +208,7 @@ import { continueHeroDigging, diggingTarget } from './hero_digging.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { wieldTool } from './wield_tool.js';
 import { doenhance, useHeroSkill, } from './skills.js';
-import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, tendedShop, } from './shk.js';
+import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, minimumShopPurchase, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, tendedShop, } from './shk.js';
 import { visiblePriestName, } from './priest.js';
 import { gameLogEvents } from './gamelog.js';
 import { killerObjectName } from './objnam.js';
@@ -5024,6 +5024,20 @@ async function dopay() {
             await plineWithContinuation(shopThankYouMessage(resident));
         game.context.move = paid ? 1 : 0;
         return;
+    }
+    if (resident === shopkeeperForHero()) {
+        const purchase = minimumShopPurchase(resident);
+        if (purchase && heroGoldAmount(game) + (resident.eshk?.credit ?? 0) < purchase.price) {
+            const items = purchase.multipleItems ? ' any of the items' : ' the item';
+            const bill = (resident.eshk?.billct ?? 0) > 1 ? "you've picked" : 'on your bill';
+            await plineWithContinuation(`You don't have enough gold to buy${items} ${bill}.`);
+            if (hiddenGold(game, true))
+                await plineWithContinuation('Maybe you have some gold stashed away?');
+            if (paid && resident.mpeaceful)
+                await plineWithContinuation(shopThankYouMessage(resident));
+            game.context.move = paid ? 1 : 0;
+            return;
+        }
     }
     const billed = carriedShopBill(resident);
     if (!billed.length) {

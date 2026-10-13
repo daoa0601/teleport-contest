@@ -372,7 +372,7 @@ import {
     doenhance, useHeroSkill,
 } from './skills.js';
 import {
-    objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown,
+    objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, minimumShopPurchase, objectTypeKnown,
     payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage,
     tendedShop,
 } from './shk.js';
@@ -5336,6 +5336,21 @@ async function dopay(): Promise<void> {
             await plineWithContinuation(shopThankYouMessage(resident));
         game.context.move = paid ? 1 : 0;
         return;
+    }
+
+    if (resident === shopkeeperForHero()) {
+        const purchase = minimumShopPurchase(resident);
+        if (purchase && heroGoldAmount(game) + (resident.eshk?.credit ?? 0) < purchase.price) {
+            const items = purchase.multipleItems ? ' any of the items' : ' the item';
+            const bill = (resident.eshk?.billct ?? 0) > 1 ? "you've picked" : 'on your bill';
+            await plineWithContinuation(`You don't have enough gold to buy${items} ${bill}.`);
+            if (hiddenGold(game, true))
+                await plineWithContinuation('Maybe you have some gold stashed away?');
+            if (paid && resident.mpeaceful)
+                await plineWithContinuation(shopThankYouMessage(resident));
+            game.context.move = paid ? 1 : 0;
+            return;
+        }
     }
 
     const billed = carriedShopBill(resident);
