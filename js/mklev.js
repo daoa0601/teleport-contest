@@ -74,7 +74,7 @@ import { artifactByName, artifactExistCount, createRandomArtifact, nameArtifact 
 import { addCreatedObjectToMonsterInventory, addObjectToMonsterInventory, linkCreatedObjectToMonsterInventory, linkObjectToMonsterInventory, restoreMonsterInventoryOwnership, unlinkMonsterObject, } from './monster_inventory.js';
 import { setupElementalBubbles } from './elemental.js';
 import { maybeGiveDomesticSaddle, putSaddleOnMonster } from './steed.js';
-import { inTown, roomForIndex, roomsAt } from './room.js';
+import { insideRoom, inTown, roomForIndex, roomsAt } from './room.js';
 import { insideShopRoomAt } from './shk.js';
 import { convertSecretDoor } from './detect.js';
 import { occupied, somex, somey, somexy, somexyspace, } from './mkroom.js';
@@ -4797,6 +4797,22 @@ export function finishSpecialRoamer(monster, alignment, peaceful) {
     monster.mtrapseen = 0x7fffffff;
     setMonsterMalign(monster);
 }
+// sp_lev.c:create_monster() searches before construction, including when
+// a worm's tail occupies the requested square. The result must stay in croom.
+async function createSpecialMonster(context, mndx, x, y, mmflags) {
+    const level = requireGameLevel();
+    if (monsterAtPosition(level, x, y)) {
+        const nearby = findMonsterNearPosition(mndx, x, y);
+        if (nearby) {
+            x = nearby.x;
+            y = nearby.y;
+        }
+    }
+    const room = context._room;
+    if (room && !insideRoom(level, room, x, y))
+        return null;
+    return await makemon(mndx, x, y, mmflags);
+}
 async function specialMonsterAt(context, mndx, x, y, { randomGender = true, randomAlignment = true, peaceful = null, asleep = null, mmflags = 0, roamerAlignment = null, } = {}) {
     // Lua's find_montype() resolves a requested gender before
     // create_monster() resolves random alignment.  Fixed-sex monsters skip
@@ -4808,7 +4824,7 @@ async function specialMonsterAt(context, mndx, x, y, { randomGender = true, rand
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
     mndx = applyMinesSameRaceMonsterGate(mndx);
-    const monster = await makemon(mndx, context.xstart + x, context.ystart + y, mmflags);
+    const monster = await createSpecialMonster(context, mndx, context.xstart + x, context.ystart + y, mmflags);
     if (monster && requestedFemale !== null)
         monster.female = requestedFemale;
     if (monster && peaceful != null)
@@ -4820,7 +4836,6 @@ async function specialMonsterAt(context, mndx, x, y, { randomGender = true, rand
     return monster;
 }
 async function specialMonsterClassAt(context, monsterClass, x, y, appearance = null, { randomAlignment = true, peaceful = null, asleep = null, mmflags = 0, roamerAlignment = null, } = {}) {
-    const level = requireGameLevel();
     // A class request resolves random alignment and mkclass(), but unlike a
     // named species it has no separate find_montype() gender draw.  Explicit
     // coordinates also bypass get_location()'s two-axis sampling.
@@ -4832,11 +4847,7 @@ async function specialMonsterClassAt(context, monsterClass, x, y, appearance = n
     // A null class choice asks makemon() for a random species.
     mndx = applyMinesSameRaceMonsterGate(mndx);
     const absoluteX = context.xstart + x, absoluteY = context.ystart + y;
-    const occupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, game) && candidate.mhp > 0
-        && candidate.mx === absoluteX && candidate.my === absoluteY);
-    const monster = occupied
-        ? await makemonNear(mndx, absoluteX, absoluteY, mmflags)
-        : await makemon(mndx, absoluteX, absoluteY, mmflags);
+    const monster = await createSpecialMonster(context, mndx, absoluteX, absoluteY, mmflags);
     if (monster && peaceful != null)
         monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null)
@@ -4881,7 +4892,6 @@ async function specialMonsterRandomLocation(context, mndx) {
     return point.x === -1 && point.y === -1 ? null : point;
 }
 async function specialExplicitMonster(context, mndx, appearance = null, { randomGender = true, randomAlignment = true, peaceful = null, asleep = null, mmflags = 0, roamerAlignment = null, } = {}) {
-    const level = requireGameLevel();
     // sp_lev.c find_montype() resolves a legal gender while parsing the Lua
     // table.  makemon() independently initializes gender, then
     // create_monster() restores this explicit value after construction.
@@ -4898,11 +4908,7 @@ async function specialExplicitMonster(context, mndx, appearance = null, { random
     const point = await specialMonsterRandomLocation(context, selectedSpecies);
     if (!point)
         return null;
-    const occupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, game) && candidate.mhp > 0
-        && candidate.mx === point.x && candidate.my === point.y);
-    const monster = occupied
-        ? await makemonNear(selectedSpecies, point.x, point.y, mmflags)
-        : await makemon(selectedSpecies, point.x, point.y, mmflags);
+    const monster = await createSpecialMonster(context, selectedSpecies, point.x, point.y, mmflags);
     if (!monster)
         return null;
     if (requestedFemale != null)
@@ -4920,7 +4926,6 @@ async function specialExplicitMonster(context, mndx, appearance = null, { random
     return monster;
 }
 async function specialMonsterOfClass(context, monsterClass, { randomAlignment = true, peaceful = null, asleep = null, mmflags = 0, roamerAlignment = null, } = {}) {
-    const level = requireGameLevel();
     // create_monster() resolves its random alignment before a one-character
     // monster id is expanded through mkclass_aligned().
     if (randomAlignment)
@@ -4935,12 +4940,7 @@ async function specialMonsterOfClass(context, monsterClass, { randomAlignment = 
     const point = await specialMonsterRandomLocation(context, mndx);
     if (!point)
         return null;
-    const occupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, game) && candidate.mhp > 0
-        && candidate.mx === point.x && candidate.my === point.y);
-    const monster = occupied
-        ? makemonNear(mndx, point.x, point.y, mmflags)
-        : makemon(mndx, point.x, point.y, mmflags);
-    const resolved = await monster;
+    const resolved = await createSpecialMonster(context, mndx, point.x, point.y, mmflags);
     if (resolved && peaceful != null)
         resolved.mpeaceful = peaceful ? 1 : 0;
     if (resolved && asleep != null)
@@ -5015,7 +5015,6 @@ async function specialTrapOfType(context, typ, options, coordinate) {
     return await mktrap(typ, options, null, point);
 }
 async function specialMonster(context, { randomAlignment = true, peaceful = null, asleep = null, mmflags = 0, roamerAlignment = null, } = {}) {
-    const level = requireGameLevel();
     if (randomAlignment)
         consumeSpecialMonsterAlignment();
     const alignment = typeof roamerAlignment === 'function'
@@ -5023,11 +5022,7 @@ async function specialMonster(context, { randomAlignment = true, peaceful = null
     const point = await specialRandomLocation(context);
     if (!point)
         return;
-    const occupiedPoint = level.monsters.some(monster => monsterHasMapPosition(monster, game) && monster.mhp > 0
-        && monster.mx === point.x && monster.my === point.y);
-    const monster = occupiedPoint
-        ? await makemonNear(null, point.x, point.y, mmflags)
-        : await makemon(null, point.x, point.y, mmflags);
+    const monster = await createSpecialMonster(context, null, point.x, point.y, mmflags);
     if (monster && peaceful != null)
         monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null)
@@ -6690,7 +6685,6 @@ async function callLuaThemerooms(name, args = []) {
     return state.callValueAsync(state.getGlobal(name), args);
 }
 async function specialRandomMonsterAt(context, x, y, { randomAlignment = true, peaceful = null, asleep = null, mmflags = 0, roamerAlignment = null, } = {}) {
-    const level = requireGameLevel();
     // A coordinate-only des.monster() resolves random alignment before
     // makemon(NULL, x, y).  Unlike a named species, it has no find_montype()
     // gender draw and unlike des.monster() without coordinates it performs no
@@ -6701,11 +6695,7 @@ async function specialRandomMonsterAt(context, x, y, { randomAlignment = true, p
         ? roamerAlignment() : roamerAlignment;
     const absoluteX = context.xstart + x;
     const absoluteY = context.ystart + y;
-    const occupied = level.monsters.some(monster => monsterHasMapPosition(monster, game) && monster.mhp > 0
-        && monster.mx === absoluteX && monster.my === absoluteY);
-    const monster = occupied
-        ? await makemonNear(null, absoluteX, absoluteY, mmflags)
-        : await makemon(null, absoluteX, absoluteY, mmflags);
+    const monster = await createSpecialMonster(context, null, absoluteX, absoluteY, mmflags);
     if (monster && peaceful != null)
         monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null)
