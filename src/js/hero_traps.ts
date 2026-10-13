@@ -3,6 +3,7 @@
 // tele_trap().
 
 import { heroIsHallucinating } from './senses.js';
+import { triggerHeroMagicTrapEffect } from './hero_magic_trap.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { maybeDestroyWeb } from './web_trap.js';
@@ -40,9 +41,6 @@ import { loseHeroHp } from './hero_damage.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { refreshMovementProperties } from './properties.js';
 import { heroLiquidEffects } from './hack.js';
-import {
-    hasInternalInvisibility, syncHeroInvisibility,
-} from './hero_invisibility.js';
 import { dungeonDepth } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { explodeLandMine } from './landmine_explosion.js';
@@ -92,10 +90,6 @@ import {
 import { CLR_GREEN } from './terminal.js';
 import { cansee } from './vision.js';
 import { revealVibratingSquare } from './invocation.js';
-import {
-    grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty,
-    hasInvokedProperty, hasWornProperty, removeIntrinsicProperty,
-} from './properties.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { activateMagicPortal } from './magic_portal.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -718,58 +712,7 @@ async function triggerMagicTrap(trap: Trap) {
         return;
     }
 
-    const fate = rnd(20);
-    if (fate === 11) {
-        await plineWithContinuation('You hear a low hum.');
-        const intrinsicInvisible = hasInternalInvisibility(game);
-        const otherInvisible = !!(
-            hasIntrinsicProperty('invisible', 'form', game)
-            || hasWornProperty('invisible', game)
-            || hasCarriedProperty('invisible', null, game)
-            || hasInvokedProperty('invisible', game)
-        );
-        const currentlyInvisible = intrinsicInvisible || otherInvisible;
-        if (!currentlyInvisible) {
-            if (!game.blind) {
-                await plineWithContinuation(
-                    game.u?.seeInvisible
-                        ? 'Gee!  All of a sudden, you can see right through yourself.'
-                        : "Gee!  All of a sudden, you can't see yourself.",
-                );
-            }
-        } else if (!otherInvisible) {
-            if (!game.blind) {
-                await plineWithContinuation(
-                    game.u?.seeInvisible
-                        ? "You can't see through yourself anymore."
-                        : 'You can see yourself again!',
-                );
-            }
-        } else {
-            await plineWithContinuation(
-                `You feel a little more ${
-                    intrinsicInvisible ? 'obvious' : 'hidden'
-                } now.`,
-            );
-        }
-        const nextIntrinsic = !intrinsicInvisible;
-        if (nextIntrinsic) grantIntrinsicProperty('invisible', 'outside', game);
-        else {
-            removeIntrinsicProperty('invisible', game);
-            game.u.invisibleTurns = 0;
-        }
-        syncHeroInvisibility(game);
-        newsym(game.u.ux, game.u.uy);
-        return;
-    }
-    const message = fate === 13
-        ? 'A shiver runs up and down your spine!'
-        : fate === 14 ? 'You hear distant howling.'
-            : fate === 15 ? 'You suddenly yearn for your distant homeland.'
-                : fate === 16 ? 'Your pack shakes violently!'
-                    : fate === 17 ? 'You smell charred flesh.'
-                        : fate === 18 ? 'You feel tired.' : null;
-    if (message) await pline(message);
+    await triggerHeroMagicTrapEffect();
 }
 
 async function triggerProjectileTrap(trap: Trap) {
