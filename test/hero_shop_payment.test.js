@@ -109,6 +109,31 @@ void test('used goods are paid before buying the remaining stack inside a sack',
     assert.equal(daggers.quan, 2);
     assert.equal(daggers.container, sack);
 });
+void test('rejecting an unaffordable partly used stack still permits a later affordable purchase', async () => {
+    freshObjectRoom();
+    const daggers = await addInventoryObject(DAGGER, { quan: 2 });
+    const sack = await addInventoryObject(SACK);
+    const { shopkeeper } = await createStaffedShop({ bill: [
+            { bo_id: daggers.o_id, bquan: 3, price: 4, useup: false },
+            { bo_id: sack.o_id, bquan: 1, price: 2, useup: false },
+        ] });
+    daggers.unpaid = sack.unpaid = true;
+    setHeroGoldAmount(game, 2);
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    // Leave the used-up portion unselected and buy the two intact entries.
+    input.feed('bc\n');
+    await withMessagePages(() => rhack('p'.charCodeAt(0)), input, /other dagger|bought .*sack|Thank you|enough to pay/, 4);
+    messages.push(game._pending_message);
+    assert.match(messages.join('\n'), /Please pay for the other dagger before buying these/);
+    assert.equal(sack.unpaid, false);
+    assert.equal(daggers.unpaid, true);
+    assert.equal(shopkeeper.eshk.billct, 1);
+    assert.equal(shopkeeper.eshk.bill[0]?.bquan, 3);
+    assert.equal(heroGoldAmount(game), 0);
+    assert.equal(game.context.move, 1);
+});
 for (const scenario of [
     { name: 'paying for contained merchandise without gold or credit takes no turn',
         gold: 0, stashed: 0, debt: 0 },
