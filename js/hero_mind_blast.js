@@ -21,6 +21,7 @@ export async function useHeroMindBlast({ state = game, publish = plineWithContin
         return { spentTime: false, hitCount: 0 };
     }
     hero.uen = energy - 10;
+    state.context.botl = true;
     await publish('You concentrate.');
     await publish('A wave of psychic energy pours out.');
     let hitCount = 0;

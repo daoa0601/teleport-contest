@@ -17,7 +17,8 @@ import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, } from '
 import { ACID_VENOM, BLINDING_VENOM, } from './object_data.js';
 import { heroMonsterForm } from './polyself.js';
 import { rn2, rnd } from './rng.js';
-import { heroIsBlind, syncBlindness } from './senses.js';
+import { heroIsBlind } from './senses.js';
+import { makeBlinded } from './sight_change.js';
 import { surfaceName } from './terrain_name.js';
 import { captureThrownObjectFlight, flyHeroThrownObject, heroThrowTrajectory, } from './thrown_object.js';
 import { promptDirection } from './tty_prompts.js';
@@ -101,9 +102,7 @@ async function tossVenomUp(venom, state, publish, random, rollOne) {
                 if (!wasBlind)
                     await publish('It blinds you!');
                 state.u.ucreamed = (state.u.ucreamed ?? 0) + blindIncrement;
-                state.u.blindTurns = (state.u.blindTurns ?? 0)
-                    + blindIncrement;
-                syncBlindness(state);
+                await makeBlinded((state.u.blindTurns ?? 0) + blindIncrement, { state, talk: false, publish });
             }
         }
         return { destroyed: true };

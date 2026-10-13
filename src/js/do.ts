@@ -13,7 +13,9 @@ import {
 import { MONSTER_ATTACKS } from './monster_data.js';
 import { AT_BOOM } from './monster_attack_types.js';
 import { M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
-import { syncBlindness } from './senses.js';
+import { setHeroBlindnessTurns } from './senses.js';
+import { makeBlinded } from './sight_change.js';
+import { gulpBlindnessCheck } from './engulf_blindness.js';
 
 function monsterHasActiveAttack(monster: Monster): boolean {
     return (MONSTER_ATTACKS[monster?.mnum] || [])
@@ -141,10 +143,11 @@ export async function continueWipingFace(occupation: WipeFaceOccupation, state: 
     if ((state.u?.blindTurns ?? 0) === 0) {
         await pline("You've got the glop off.");
         state.u.ucreamed = 0;
-        syncBlindness(state);
-        state.vision_full_recalc = 1;
-        if (!state.blind)
-            await plineWithContinuation('You can see again.');
+        const gulp = await gulpBlindnessCheck({ state, publish: plineWithContinuation });
+        if (!gulp.triggered && !gulp.died) {
+            setHeroBlindnessTurns(1, state);
+            await makeBlinded(0, { state, publish: plineWithContinuation });
+        }
         state._occupation = null;
     } else if ((state.u?.ucreamed ?? 0) === 0) {
         await pline('Your face feels clean now.');

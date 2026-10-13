@@ -38,6 +38,7 @@ export async function regenerateHeroHp(capacity, turn) {
         }
         if (!healing)
             return false;
+        state.context.botl = true;
         hero.mh += healing;
         return hero.mh === hero.mhmax;
     }
@@ -50,6 +51,7 @@ export async function regenerateHeroHp(capacity, turn) {
         healing++;
     if (!healing)
         return false;
+    state.context.botl = true;
     hero.uhp = Math.min(hero.uhpmax, hero.uhp + healing);
     return hero.uhp === hero.uhpmax;
 }

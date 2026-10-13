@@ -143,6 +143,7 @@ function recordHeroFatalEvent(): void {
     if (game.u.uhp !== 0 || (Upolyd(game.u) && game.u.mh !== 0)) {
         game.u.uhp = 0;
         game.u.mh = 0;
+        game.context.botl = true;
     }
 }
 
@@ -200,7 +201,9 @@ export async function restoreHeroAfterDeath({ deathType = null }: RevivalOptions
     game._helplessTurns = 1;
     game._helplessReason = 'attempting to cheat Death';
     game._helplessDoneMessage = '';
+    game.context.botl = true;
     clearHeroRemains(game);
+    await flush_screen(1);
     rebasePrayerAfterLifeSaving(game);
     const holder = game.u.ustuck;
     if (game.u.uswallow) {
@@ -1167,7 +1170,6 @@ async function discloseGame({
     await displayMessageWindow();
     // The final message window retains the status drawn by the fatal caller.
     // Disclosure uses committed HP after that message has been acknowledged.
-    delete game._statusHpOverride;
     let livingCat = false;
     for (const object of game.inventory) {
         if (!isQuantumBox(object)) continue;
@@ -1278,7 +1280,6 @@ async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promis
     if (outcome === 'died' && deathType < PANICKED
         && game.moves <= 1 && !game.program_state.stopprint) {
         // done() has committed zero HP; this pline refreshes that status.
-        delete game._statusHpOverride;
         await plineWithContinuation(`Do not pass Go.  Do not collect 200 ${currency(200)}.`);
     }
     game._canMakeBones = outcome === 'died' && deathType < GENOCIDED
@@ -1290,7 +1291,6 @@ async function settleGameExit(outcome: ShopExitOutcome): Promise<boolean> {
     const publish = async (message: string): Promise<void> => {
         // A real pline updates status; an existing death message alone
         // retains the status painted by the fatal caller.
-        delete game._statusHpOverride;
         await plineWithContinuation(message);
     };
     const taken = await settleShopkeepersOnExit(outcome, { silent, publish });

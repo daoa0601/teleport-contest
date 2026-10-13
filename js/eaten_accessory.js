@@ -70,6 +70,7 @@ export async function digestAccessory(object, { state = game } = {}) {
         grantIntrinsicProperty('protection', 'outside', state);
         state.u.ublessed = boundedIncrease(state.u.ublessed || 0, object.otyp === PROTECTION ? object.spe : 2, object.otyp, state);
         findArmorClass(state);
+        state.context.botl = true;
     }
     else if (object.otyp === FREE_ACTION) {
         if (!hasIntrinsicProperty('sleepResistance', 'outside', state))
@@ -83,6 +84,7 @@ export async function digestAccessory(object, { state = game } = {}) {
         learnObjectType(object.otyp, state);
         changeHeroSex(state);
         await pline(`You are suddenly very ${state.flags.female ? 'feminine' : 'masculine'}!`);
+        state.context.botl = true;
     }
     else if (object.otyp === UNCHANGING) {
         if (!state.u.unchanging && heroIsPolymorphed(state)) {

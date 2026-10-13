@@ -148,5 +148,6 @@ export async function fallIntoSink(
     hero.levitationTurns = 0; // C HLevitation--
     refreshProperty('levitation', state);
     refreshMovementProperties(state); // C float_vs_flight()
+    state.context.botl = true;
     return { fell: ufall, died: false };
 }

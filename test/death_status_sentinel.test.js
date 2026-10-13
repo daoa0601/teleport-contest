@@ -16,7 +16,6 @@ void test('fatal damage of minus one retains both health numbers through the dea
     game.u.uhp = -1;
     const input = resetInputState();
     const dying = finishMonsterAttackDeath(lich, {
-        damage: { hpKey: 'uhp', hpBefore: 67, damage: 68 },
         attribution: { kind: 'death-inflicted-by', killer: 'the touch of death', announcesDeath: true },
     });
     await input.waitUntilBlocked();

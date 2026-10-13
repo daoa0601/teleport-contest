@@ -36,4 +36,5 @@ export async function healHero(amount: number, extraMaximum: number, {
             await plineWithContinuation('You feel much less nauseated now.');
         await cureHeroSicknessWithMessages(state);
     }
+    state.context.botl = true;
 }

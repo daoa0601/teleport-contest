@@ -11,6 +11,7 @@ export async function healHeroLegs(state = game, { cause = 'healing', publish = 
     const hero = state.u;
     if (!((hero._woundedLegTurns ?? 0) > 0) && !hero._woundedLegSide)
         return false;
+    state.context.botl = true;
     const previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
     const temporary = hero.atemp;
     if (temporary && temporary.a[A_DEX] < 0)
@@ -28,6 +29,7 @@ export async function healHeroLegs(state = game, { cause = 'healing', publish = 
 }
 export async function woundHeroLegs(side, turns, state = game, { publish = plineWithContinuation, } = {}) {
     const hero = state.u;
+    state.context.botl = true;
     const previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
     if (!((hero._woundedLegTurns ?? 0) > 0) && !hero._woundedLegSide)
         requireHeroAttributes(hero).atemp.a[A_DEX]--;

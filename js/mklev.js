@@ -2830,6 +2830,7 @@ export async function splitHeroMonsterForm(state = game) {
     clone.mhpmax = u.mhmax;
     clone.mhp = Math.trunc(u.mh / 2);
     u.mh -= clone.mhp;
+    state.context.botl = true;
     clone.mhpmax = Math.trunc(u.mhmax / 2);
     u.mhmax -= clone.mhpmax;
     if (!u.uconduct)

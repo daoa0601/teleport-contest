@@ -181,7 +181,10 @@ async function chooseStylus(state) {
                 await pline('Never mind.');
             if (key === '-'.charCodeAt(0))
                 return 'hands';
-            return inventory.find(object => object.invlet === String.fromCharCode(key)) ?? null;
+            const object = inventory.find(object => object.invlet === String.fromCharCode(key)) ?? null;
+            if (object)
+                state.context.botl = true;
+            return object;
         }
     }
     const letters = compactInventoryLetters(suggested.map(object => object.invlet ?? '').join(''));

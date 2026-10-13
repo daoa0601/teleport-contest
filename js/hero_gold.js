@@ -54,6 +54,7 @@ export function addHeroGoldObject(state, incoming) {
     const amount = quantity(incoming);
     if (!amount)
         return { object: heroGoldObject(state), merged: false };
+    state.context.botl = true;
     const existing = heroGoldObject(state);
     if (existing && existing !== incoming) {
         const total = quantity(existing) + amount;
@@ -76,6 +77,8 @@ export function addHeroGoldObject(state, incoming) {
 export function setHeroGoldAmount(state, amount) {
     amount = Math.max(0, Math.trunc(amount ?? 0));
     let object = heroGoldObject(state);
+    if (amount !== heroGoldAmount(state))
+        state.context.botl = true;
     if (!amount) {
         if (object) {
             state.inventory = (state.inventory || [])
@@ -119,6 +122,7 @@ export function detachHeroGold(state, requested = null) {
     if (!detached)
         throw new Error('A gold stack must yield the requested coins.');
     unlinkObject(detached, state);
+    state.context.botl = true;
     if (state.uquiver === detached)
         state.uquiver = null;
     detached.ready = false;

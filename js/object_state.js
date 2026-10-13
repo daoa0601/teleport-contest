@@ -4,13 +4,15 @@
 // NetHack stores blessed/cursed as boolean bits.  Older JavaScript inventory
 // producers can also attach a textual `buc` compatibility field, so every
 // shared transition must keep that projection synchronized.
-import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, BAG_OF_HOLDING, CORPSE, OBJECT_CHARGED, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
+import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, BAG_OF_HOLDING, CORPSE, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { artifactById } from './artifacts.js';
-import { game } from './gstate.js';
+import { game, requireLiveGame } from './gstate.js';
 import { rn2 } from './rng.js';
 import { chargeAlteredUnpaidObject } from './shk.js';
 import { objectWeight } from './weight.js';
 import { bookCursed } from './spellbook_study.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, W_ARMG, W_ARMH, W_RING } from './const.js';
+import { bot } from './display.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const TOOL_CLASS = 6;
@@ -33,7 +35,45 @@ export async function drainObjectEnchantment(object, { random = rn2, byHero = fa
         await chargeAlteredUnpaidObject(object, 'drain', state);
     object.spe--;
     object.enchantment = object.spe;
+    drainWornBonuses(object, state);
+    if (state.context.botl) {
+        requireLiveGame(state);
+        await bot();
+    }
     return true;
+}
+function drainWornBonuses(object, state) {
+    const name = OBJECT_NAMES[object.otyp];
+    const worn = object.owornmask ?? 0;
+    const ring = object === (state.uleft || state.u.uleft)
+        || object === (state.uright || state.u.uright);
+    const attributes = [];
+    if (ring && (worn & W_RING)) {
+        if (name === 'gain strength')
+            attributes.push(A_STR);
+        else if (name === 'gain constitution')
+            attributes.push(A_CON);
+        else if (name === 'adornment')
+            attributes.push(A_CHA);
+        else if (name === 'increase accuracy')
+            state.u.uhitinc = (state.u.uhitinc ?? 0) - 1;
+        else if (name === 'increase damage')
+            state.u.udaminc = (state.u.udaminc ?? 0) - 1;
+    }
+    if (ring && name === 'protection')
+        state.context.botl = true;
+    if (name === 'helm of brilliance' && (worn & W_ARMH)
+        && object === (state.uarmh || state.u.uarmh))
+        attributes.push(A_INT, A_WIS);
+    if (name === 'gauntlets of dexterity' && (worn & W_ARMG)
+        && object === (state.uarmg || state.u.uarmg))
+        attributes.push(A_DEX);
+    if (!attributes.length)
+        return;
+    state.u.abon ??= { a: [0, 0, 0, 0, 0, 0] };
+    for (const attribute of attributes)
+        state.u.abon.a[attribute]--;
+    state.context.botl = true;
 }
 function updateStateDependentWeight(object) {
     if (object?.otyp === BAG_OF_HOLDING)
