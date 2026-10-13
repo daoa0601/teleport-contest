@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
+import { wearHeroArmor } from '../js/armor.js';
 import { DUST, LEVEL_TELEP, NO_MINVENT } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { resetInputState } from '../js/input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
+import { LEVITATION_BOOTS } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -14,6 +17,69 @@ import { freshConnectedLevels } from './support/connected-levels.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
+import { addInventoryObject } from './support/game-objects.js';
+for (const laterMonster of [false, true]) {
+    void test(`boots theft completes level teleport before command input${laterMonster ? ' and stops the next monster' : ''}`, async () => {
+        const { source, destination } = freshConnectedLevels();
+        requirePlayingGame(game);
+        game.flags.debug = true;
+        game.flags.safe_wait = false;
+        game._moveloopStarted = true;
+        game.u.umovement = 12;
+        game.u.uhp = game.u.uhpmax = 100;
+        destination.downTeleportRegion = { lx: 13, ly: 10, hx: 13, hy: 10 };
+        const giant = laterMonster
+            ? await createMonsterAt('hill giant', 10, 11, NO_MINVENT) : null;
+        if (giant) {
+            giant.mpeaceful = 0;
+            giant.msleeping = 0;
+            giant.m_lev = 30;
+            giant.movement = 12;
+        }
+        const nymph = await createMonsterAt('wood nymph', 11, 10, NO_MINVENT);
+        nymph.mpeaceful = 0;
+        nymph.msleeping = 0;
+        nymph.m_lev = 30;
+        nymph.movement = 12;
+        const boots = await addInventoryObject(LEVITATION_BOOTS);
+        wearHeroArmor(boots);
+        addTrap(source, LEVEL_TELEP, 10, 10);
+        const input = resetInputState();
+        input.feed('.');
+        initRng(1n);
+        await moveloop_core();
+        const response = moveloop_core();
+        await input.waitUntilBlocked();
+        assert.match(game._pending_message, /nymph takes off your.*boots/);
+        input.feed(' ');
+        await input.waitUntilBlocked();
+        assert.match(game._pending_message, /float gently to the stairs.*level teleport trap/);
+        input.feed(' ');
+        await input.waitUntilBlocked();
+        assert.match(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('') ?? '', /To what level do you want to teleport\?/);
+        input.feed('2\r');
+        installPagerInput(input, {
+            expected: /disoriented|stole|nymph|materialize/, limit: 12,
+        });
+        const pager = input.display;
+        assert.ok(pager);
+        input.display = {
+            async readKey() {
+                const topline = game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('') ?? '';
+                if (game._pending_message && /--More--/.test(topline))
+                    return pager.readKey();
+                assert.ok(game.level === destination, 'travel finishes before another command');
+                return 27;
+            },
+        };
+        await response;
+        assert.equal(game.inventory.includes(boots), false, 'the nymph completes her theft');
+        assert.ok(game.level === destination, 'travel finishes before another command');
+        assert.equal(game.u.uhp, 100, 'departure monsters stop moving when travel is scheduled');
+        if (giant)
+            assert.equal(giant.movement, 12, 'the later monster keeps its unused movement');
+    });
+}
 void test('a level teleport trap step gives destination monsters their response before another command', async () => {
     const { source, destination } = freshConnectedLevels();
     requirePlayingGame(game);

@@ -3213,8 +3213,12 @@ async function executeMonsterTurns(messageContext: MonsterMessageContext): Promi
     let somebodyCanMove = false;
     // C iter_mons_safe() snapshots identities, not their remaining movement.
     monsterTurns: for (const actor of monstersInFmonOrder(level.monsters)) {
-        if (game.level !== level || game.u.utotype || game.program_state?.gameover)
+        if (game.level !== level || game.program_state?.gameover)
             return false;
+        if (game.u.utotype) {
+            somebodyCanMove = false;
+            break;
+        }
         if (!level.monsters.includes(actor) || (actor.mhp ?? 1) <= 0 || actor.mx === 0
             || (actor.mstate ?? MON_FLOOR) !== MON_FLOOR)
             continue;
@@ -3542,6 +3546,13 @@ async function moveMonsters() {
         const somebodyCanMove = await executeMonsterTurns(messageContext);
         // C mon.c:movemon() refreshes moving light sources after the pass.
         if (hasLightSources()) game.vision_full_recalc = 1;
+        // A monster's action can schedule travel, including removal of
+        // levitation gear above a trap. Finish it before world maintenance
+        // or command input; the departure monsters are now dormant.
+        if (game._scheduledLevelChange) {
+            await finishScheduledLevelChange();
+            return false;
+        }
         return somebodyCanMove;
     } finally {
         game.context.mon_moving = previousMonsterMoving;

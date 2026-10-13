@@ -52,7 +52,7 @@ import { moveElementalBubbles } from './elemental.js';
 import {
     CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG,
     MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel,
-    Is_rogue_level,
+    Is_rogue_level, UTOTYPE_DEFERRED,
 } from './const.js';
 import { resurrectWizard } from './wizard.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -74,12 +74,15 @@ export interface ScheduledLevelChange {
     changeLevel: typeof gotoLevel;
 }
 
-// C do.c:schedule_goto(). The command keeps using the departure level
-// until moveloop_core() completes its movement and trap effects.
+// C do.c:schedule_goto(). The current command or monster finishes using
+// the departure level; utotype stops the next monster from moving.
 export function scheduleLevelChange(
     args: Parameters<typeof gotoLevel>, changeLevel = gotoLevel,
 ): void {
+    requirePlayingGame(game);
     game._scheduledLevelChange = { args, changeLevel };
+    game.u.utolev = { ...game.u.uz, ...args[0] };
+    game.u.utotype = UTOTYPE_DEFERRED;
 }
 
 export async function finishScheduledLevelChange(): Promise<void> {
@@ -87,6 +90,7 @@ export async function finishScheduledLevelChange(): Promise<void> {
     if (!travel) return;
     delete game._scheduledLevelChange;
     await travel.changeLevel(...travel.args);
+    game.u.utotype = 0;
 }
 
 interface LevelArrivalOptions {

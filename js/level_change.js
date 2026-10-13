@@ -37,13 +37,16 @@ import { fixShopDamage } from './shop_damage.js';
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest, } from './quest.js';
 import { fumaroles } from './monmove.js';
 import { moveElementalBubbles } from './elemental.js';
-import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, } from './const.js';
+import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, UTOTYPE_DEFERRED, } from './const.js';
 import { resurrectWizard } from './wizard.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-// C do.c:schedule_goto(). The command keeps using the departure level
-// until moveloop_core() completes its movement and trap effects.
+// C do.c:schedule_goto(). The current command or monster finishes using
+// the departure level; utotype stops the next monster from moving.
 export function scheduleLevelChange(args, changeLevel = gotoLevel) {
+    requirePlayingGame(game);
     game._scheduledLevelChange = { args, changeLevel };
+    game.u.utolev = { ...game.u.uz, ...args[0] };
+    game.u.utotype = UTOTYPE_DEFERRED;
 }
 export async function finishScheduledLevelChange() {
     const travel = game._scheduledLevelChange;
@@ -51,6 +54,7 @@ export async function finishScheduledLevelChange() {
         return;
     delete game._scheduledLevelChange;
     await travel.changeLevel(...travel.args);
+    game.u.utotype = 0;
 }
 export async function gotoLevel(targetDepth, { arrival = 'random', ladder = false, postMessage = '', } = {}) {
     requirePlayingGame(game);
