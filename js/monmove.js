@@ -130,7 +130,8 @@ import { addShopDamage } from './shop_damage.js';
 import { createHarmlessGasCloudSelection, createPoisonGasCloud, createSteamCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, } from './regions.js';
 import { heroIsDeaf, syncBlindness } from './senses.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
-import { monsterHasFireResistance } from './monster_resistance.js';
+import { monsterHasFireResistance, monsterHasStoneResistance } from './monster_resistance.js';
+import { monsterReflectsRay } from './ray.js';
 import { clearHeroSliming } from './slime.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero, } from './weapon_damage.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
@@ -2426,6 +2427,21 @@ async function movePet(monster, state, random, rollDice, rollOne, calls, resumeA
             if (target.mtame && monster.mtame && !heroHasConflict(state))
                 continue;
             if (maxPassiveMonsterDamage(target, monster) >= (monster.mhp ?? 1))
+                continue;
+            // dog_move() usually avoids paralysis and petrifying contact even
+            // when the expected passive HP damage would be survivable.
+            const avoidsEye = target.mnum === MONSTER_NAME.indexOf('floating eye')
+                && recordRandom(random, calls, 10) !== 0
+                && !!monster.mcansee
+                && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
+                && !!target.mcansee
+                && (!target.minvis || !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS))
+                && !monsterReflectsRay(monster, state);
+            const avoidsCube = target.mnum === MONSTER_NAME.indexOf('gelatinous cube')
+                && recordRandom(random, calls, 10) !== 0;
+            const avoidsPetrification = touchPetrifies(target.mnum)
+                && !monsterHasStoneResistance(monster);
+            if (avoidsEye || avoidsCube || avoidsPetrification)
                 continue;
             const attack = await petAttacksMonster(monster, target, state, random, rollDice, rollOne, calls, { x: nx, y: ny });
             return {
