@@ -5,7 +5,7 @@ import { farlookLocationDescription } from './cmd.js';
 import { A_WIS, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, HI_ZAP, IS_STWALL, Is_waterlevel, LAVAPOOL, MOAT, POOL, SPACE_POS, ZAP_POS, isok, xdir, ydir, } from './const.js';
 import { canSeeMonster, canSpotMonster, clearMessageWindow, flush_screen, map_invisible, plineWithContinuation, } from './display.js';
 import { explode } from './explosion.js';
-import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
+import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
 import { game, requireLiveGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -71,9 +71,15 @@ async function chooseSpellCenter(state) {
     }
     const question = 'Where do you want to cast the spell?';
     await plineWithContinuation(question);
+    const valid = (x, y) => (x !== state.u.ux || y !== state.u.uy)
+        && Math.max(Math.abs(x - state.u.ux), Math.abs(y - state.u.uy)) <= 10
+        && isok(x, y) && cansee(x, y) && !IS_STWALL(state.level.at(x, y)?.typ ?? 0);
+    prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse)
         await showGetposTip(state);
+    if (firstUse)
+        await plineWithContinuation('Move cursor to the desired position:');
     const selected = await selectMapPosition({
         start: { x: state.u.ux, y: state.u.uy },
         prompt: firstUse ? 'Move cursor to the desired position:'
@@ -82,9 +88,7 @@ async function chooseSpellCenter(state) {
         describe: farlookLocationDescription,
         // Native highlights exclude the hero, but getpos still injects the
         // hero into its valid-location cycle so self-targeting stays available.
-        isValidLocation: (x, y) => (x !== state.u.ux || y !== state.u.uy)
-            && Math.max(Math.abs(x - state.u.ux), Math.abs(y - state.u.uy)) <= 10
-            && isok(x, y) && cansee(x, y) && !IS_STWALL(state.level.at(x, y)?.typ ?? 0),
+        isValidLocation: valid,
     });
     if (!selected)
         return false;

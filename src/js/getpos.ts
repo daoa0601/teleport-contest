@@ -6,7 +6,8 @@ import {
     LOOK_TRADITIONAL, LOOK_VERBOSE, ROWNO,
 } from './const.js';
 import {
-    bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, newsym, pline, show_glyph_cell, terrain_glyph,
+    bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor,
+    newsym, newsym_force, pline, show_glyph_cell, terrain_glyph,
 } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
@@ -276,6 +277,12 @@ function gatherValidLocations(isValidLocation: ValidLocation, state: GameState =
     return spots;
 }
 
+// C getpos.c:getpos_sethilite(). Install after the caller's question and
+// before getpos's tutorial or instructions can flush these forced redraws.
+export function prepareMapPositionHighlights(isValidLocation: ValidLocation): void {
+    for (const { x, y } of gatherValidLocations(isValidLocation)) newsym_force(x, y);
+}
+
 function getposCycleKind(key: number): { kind: GetposCycleKind; step: -1 | 1 } | null {
     const kinds: readonly GetposCycleKind[] = ['mon', 'obj', 'door', 'unexplored', 'all'];
     for (const kind of kinds) {
@@ -353,6 +360,8 @@ export async function selectMapPosition({
     };
 
     try {
+        const initialMapCursor = isValidLocation && !game.flags.verbose
+            ? lastDirtyMapCursor() : null;
         for (;;) {
             // bgcolors off (this port's default): '$' alternates between no
             // marking and the S_goodpos overlay.  The cycle-only hero
@@ -361,6 +370,7 @@ export async function selectMapPosition({
                 ? validLocations().marked.filter(({ x, y }) => cansee(x, y))
                 : null;
             await paintGetposCursor(cursor, message, paintedSpots, preserveMap);
+            if (firstPaint && initialMapCursor) game.nhDisplay?.setCursor(...initialMapCursor);
             if (afterPaint) await afterPaint(cursor, firstPaint);
             firstPaint = false;
 
@@ -489,9 +499,9 @@ export async function selectMapPosition({
         // valid selection; tmp_at(DISP_END) newsyms only squares it drew.
         if (paintedSpots) {
             for (const { x, y } of paintedSpots) newsym(x, y);
-            await flush_screen(1);
-            // exitgetpos() leaves the tty cursor at the last selection spot.
-            game.nhDisplay?.setCursor(cursor.x - 1, cursor.y + 1);
+        }
+        if (isValidLocation) {
+            for (const { x, y } of gatherValidLocations(isValidLocation)) newsym_force(x, y);
         }
     }
 }

@@ -1,7 +1,7 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
 import { COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, ROWNO, } from './const.js';
-import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, newsym, pline, show_glyph_cell, terrain_glyph, } from './display.js';
+import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor, newsym, newsym_force, pline, show_glyph_cell, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -228,6 +228,12 @@ function gatherValidLocations(isValidLocation, state = game) {
     });
     return spots;
 }
+// C getpos.c:getpos_sethilite(). Install after the caller's question and
+// before getpos's tutorial or instructions can flush these forced redraws.
+export function prepareMapPositionHighlights(isValidLocation) {
+    for (const { x, y } of gatherValidLocations(isValidLocation))
+        newsym_force(x, y);
+}
 function getposCycleKind(key) {
     const kinds = ['mon', 'obj', 'door', 'unexplored', 'all'];
     for (const kind of kinds) {
@@ -298,6 +304,8 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
         return validity.cycle;
     };
     try {
+        const initialMapCursor = isValidLocation && !game.flags.verbose
+            ? lastDirtyMapCursor() : null;
         for (;;) {
             // bgcolors off (this port's default): '$' alternates between no
             // marking and the S_goodpos overlay.  The cycle-only hero
@@ -306,6 +314,8 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 ? validLocations().marked.filter(({ x, y }) => cansee(x, y))
                 : null;
             await paintGetposCursor(cursor, message, paintedSpots, preserveMap);
+            if (firstPaint && initialMapCursor)
+                game.nhDisplay?.setCursor(...initialMapCursor);
             if (afterPaint)
                 await afterPaint(cursor, firstPaint);
             firstPaint = false;
@@ -446,9 +456,10 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
         if (paintedSpots) {
             for (const { x, y } of paintedSpots)
                 newsym(x, y);
-            await flush_screen(1);
-            // exitgetpos() leaves the tty cursor at the last selection spot.
-            game.nhDisplay?.setCursor(cursor.x - 1, cursor.y + 1);
+        }
+        if (isValidLocation) {
+            for (const { x, y } of gatherValidLocations(isValidLocation))
+                newsym_force(x, y);
         }
     }
 }

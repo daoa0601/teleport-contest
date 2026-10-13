@@ -24,7 +24,7 @@ import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
-import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
+import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { ensureHeroSkills } from './skills.js';
 import { wakeMonstersNear } from './monster_wake.js';
@@ -215,11 +215,12 @@ async function chooseTarget(
     min: number,
     max: number,
 ) {
+    await pline('Where do you want to hit?');
+    const valid = (x: number, y: number) => validPolearmPosition(x, y, min, max, state);
+    prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
-    if (firstUse) {
-        await pline('Where do you want to hit?');
-        await showGetposTip(state);
-    }
+    if (firstUse) await showGetposTip(state);
+    if (firstUse) await pline('Move cursor to the desired position:');
 
     return selectMapPosition({
         start,
@@ -230,7 +231,7 @@ async function chooseTarget(
               : "Where do you want to hit?  (For instructions type a '?')",
         goal: 'the spot to hit',
         ...(describeTarget ? { describe: describeTarget } : {}),
-        isValidLocation: (x, y) => validPolearmPosition(x, y, min, max, state),
+        isValidLocation: valid,
     });
 }
 

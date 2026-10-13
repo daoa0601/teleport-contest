@@ -31,4 +31,3 @@ void test('travel keeps its selected stair description until another message rep
     assert.equal(topline(), 'staircase down');
     assert.equal(game.context.move, 1);
 });
-

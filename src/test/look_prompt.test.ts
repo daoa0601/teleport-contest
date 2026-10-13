@@ -29,4 +29,3 @@ void test('ordinary look gives the verbose cursor request while quick look stays
         assert.equal(request.includes('--More--'), !quick);
     }
 });
-
