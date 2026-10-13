@@ -16,6 +16,62 @@ for (const role of ['wizard', 'knight']) {
         assert.equal(await farlookLocationDescription(game.u.ux, game.u.uy), `human ${role} called Aster`);
     });
 }
+const selfSightCases = [
+    {
+        name: 'invisible hero sensed by telepathy',
+        hero: { invisibleTurns: 10, unblind_telepat_range: 64 },
+        description: 'invisible human wizard called Aster [seen: telepathy]',
+    },
+    {
+        name: 'invisible hero sensed by monster detection',
+        hero: { invisibleTurns: 10, detectMonsters: true },
+        description: 'invisible human wizard called Aster [seen: monster detection]',
+    },
+    {
+        name: 'invisible hero sensed by all three senses',
+        hero: { invisibleTurns: 10, infravision: true,
+            unblind_telepat_range: 64, detectMonsters: true },
+        description: 'invisible human wizard called Aster [seen: infravision, telepathy, monster detection]',
+    },
+    {
+        name: 'visible hero with telepathy',
+        hero: { unblind_telepat_range: 64 },
+        description: 'human wizard called Aster',
+    },
+    {
+        name: 'invisible hero who can see invisible',
+        hero: { invisibleTurns: 10, seeInvisible: true, unblind_telepat_range: 64 },
+        description: 'invisible human wizard called Aster',
+    },
+    {
+        name: 'blind invisible hero without a sensing ability',
+        hero: { invisibleTurns: 10, blindTurns: 10 },
+        description: 'human wizard called Aster',
+    },
+    {
+        name: 'blind invisible hero with telepathy',
+        hero: { invisibleTurns: 10, blindTurns: 10, unblind_telepat_range: 64 },
+        description: 'invisible human wizard called Aster',
+    },
+    {
+        name: 'swallowed invisible hero with telepathy',
+        hero: { invisibleTurns: 10, uswallow: true, unblind_telepat_range: 64 },
+        description: 'invisible human wizard called Aster',
+    },
+];
+for (const { name, hero, description } of selfSightCases) {
+    void test(`self-farlook describes the ${name}`, async () => {
+        freshObjectRoom({ role: 'wizard', hero });
+        game.plname = 'Aster';
+        newsym(game.u.ux, game.u.uy);
+        assert.equal(await farlookLocationDescription(game.u.ux, game.u.uy), description);
+    });
+}
+void test('self-farlook explains monster detection when the hero is hidden', async () => {
+    freshObjectRoom({ role: 'wizard', hero: { uundetected: true, detectMonsters: true } });
+    const description = await farlookLocationDescription(game.u.ux, game.u.uy);
+    assert.ok(description.endsWith(' [seen: monster detection]'), description);
+});
 void test('farlook respects terrain-only mode on the hero square', async () => {
     freshObjectRoom({ role: 'wizard' });
     game.iflags.terrainmode = TER_MAP;

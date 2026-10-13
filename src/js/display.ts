@@ -163,7 +163,7 @@ const HELM_OF_TELEPATHY = 100;
 const AMULET_OF_ESP = 201;
 const PM_LONG_WORM_TAIL = MONSTER_NAME.indexOf('long worm tail');
 
-function unblindTelepathyRange() {
+export function unblindTelepathyRange() {
     const wornSources = [game.uarmh, game.uamul].filter(object => object
         && (object.otyp === HELM_OF_TELEPATHY
             || object.otyp === AMULET_OF_ESP)).length;

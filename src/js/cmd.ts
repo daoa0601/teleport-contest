@@ -122,6 +122,7 @@ import {
 import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
     bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
+    unblindTelepathyRange,
     monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
     see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject,
@@ -347,7 +348,7 @@ import {
     resolveDirectGoldThrow, resolveQuiveredGoldThrow,
 } from './gold_throw.js';
 import {
-    heroIsBlind, heroIsHallucinating,
+    heroDetectsMonsters, heroIsBlind, heroIsHallucinating,
 } from './senses.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import {
@@ -4539,7 +4540,26 @@ async function wizardPositionDescription(x: number, y: number): Promise<string> 
             || `${race} ${(roleName || 'adventurer').toLowerCase()}`;
         const punishment = heroIsPunished()
             ? ', chained to a heavy iron ball' : '';
-        return `${form} called ${game.plname || 'player'}${punishment}`;
+        const blind = heroIsBlind(game);
+        const telepathy = unblindTelepathyRange() >= 0;
+        const detection = heroDetectsMonsters(game);
+        const invisible = propertyIsActive('invisible', game);
+        // self_lookat() includes invisibility while blind only when sensed.
+        const prefix = invisible && (!blind || telepathy || detection)
+            ? 'invisible ' : '';
+        const description = `${prefix}${form} called ${game.plname || 'player'}${punishment}`;
+        const unseen = invisible && !game.u.seeInvisible
+            && (game.u.seeInvisibleTurns ?? 0) === 0;
+        // lookat() treats touch while blind or swallowed as normal vision.
+        if (blind || game.u.uswallow || !(unseen || game.u.uundetected))
+            return description;
+        const senses = [
+            game.u.infravision ? 'infravision' : '',
+            telepathy ? 'telepathy' : '',
+            detection ? 'monster detection' : '',
+        ].filter(sense => sense.length > 0);
+        return senses.length > 0
+            ? `${description} [seen: ${senses.join(', ')}]` : description;
     }
     const loc = game.level?.at(x, y);
     if (!loc) return 'unexplored area';
