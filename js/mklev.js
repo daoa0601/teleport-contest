@@ -9063,13 +9063,11 @@ function topologize(croom) {
         return;
     if ((game.level.at(lowx, lowy)?.roomno ?? 0) === roomno)
         return;
-    const interiorRoomno = Is_rogue_level(game.u?.uz)
-        && croom.rtype === OROOM ? 0 : roomno;
     for (let x = lowx; x <= hix; x++)
         for (let y = lowy; y <= hiy; y++) {
             const loc = game.level.at(x, y);
             if (loc)
-                loc.roomno = interiorRoomno;
+                loc.roomno = roomno;
         }
     for (let x = lowx - 1; x <= hix + 1; x++)
         for (let y = lowy - 1; y <= hiy + 1; y += (hiy - lowy + 2)) {
