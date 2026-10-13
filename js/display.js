@@ -939,7 +939,8 @@ function objectGlyph(object) {
             statueGlyph: true, piletop,
         }
         : {
-            ch: activeObjectSymbols()[object.oclass] || '?',
+            ch: activeObjectSymbols()[objectUsesGenericGlyph(object)
+                ? object.oclass : objectClassForType(object.otyp)] || '?',
             color: objectColor(object), decgfx: false,
             kind: 'object', otyp: object.otyp, ...species, glyph,
             statueGlyph: object.otyp === STATUE, piletop,
@@ -1614,7 +1615,9 @@ function displayMonsterAtCell(monster, x, y, projection) {
             map_object({
                 ox: x, oy: y,
                 otyp: mimicAppearance(monster),
-                oclass: objectClassForType(mimicAppearance(monster)),
+                // Native uses zeroobj, whose class remains zero. A potion
+                // disguise therefore bypasses the generic-potion test.
+                oclass: 0,
                 corpsenm: monster.mcorpsenm ?? MONSTER_NAME.indexOf('tengu'),
                 dknown: false,
             }, !sensed);
