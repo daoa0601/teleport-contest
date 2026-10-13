@@ -35,6 +35,19 @@ void test('stepping onto a level teleport trap wears departure engravings before
     assert.equal(engravingAt(10, 10, source), null, 'walking away erases the one-character dust engraving on the departure level');
     assert.equal(engravingAt(10, 10, destination)?.text, '.', 'the same coordinates on the destination level are not part of the step');
 });
+for (const property of ['levitation', 'flying']) {
+    void test(`a hero with ${property} announces airborne level teleport trap contact`, async () => {
+        const level = freshObjectRoom({ flags: { debug: true } });
+        grantIntrinsicProperty(property, 'outside');
+        const input = resetInputState();
+        await answerPrompts(triggerHeroTrap(addTrap(level, LEVEL_TELEP, 10, 10)), input, [
+            { prompt: property === 'levitation'
+                    ? /You float onto a level teleport trap!--More--/
+                    : /You fly onto a level teleport trap!--More--/, keys: ' ' },
+            { prompt: /To what level do you want to teleport\?/, keys: '\x1b' },
+        ]);
+    });
+}
 for (const acceptDeath of [true, false]) {
     void test(`teleporting to Nowhere ${acceptDeath ? 'ends play without trap confusion' : 'confuses the hero after declining death'}`, async () => {
         const level = freshObjectRoom({ flags: {

@@ -788,7 +788,11 @@ async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOptions['
     intentional: boolean): Promise<void> {
     trap.tseen = true;
     const hero = game.u;
-    const verb = intentional ? 'trigger' : `${monsterLocomotion(heroMonsterForm(), 'step')} onto`;
+    // C hack.c:u_locomotion() gives the hero's active movement properties
+    // precedence over the species' normal way of moving.
+    const locomotion = hero.levitating || game.levitating ? 'float'
+        : hero.flying || game.flying ? 'fly' : monsterLocomotion(heroMonsterForm(), 'step');
+    const verb = intentional ? 'trigger' : `${locomotion} onto`;
     await plineWithContinuation(`You ${verb} a level teleport trap!`);
     if (hero.antimagic && !intentional) await shieldeff(hero.ux, hero.uy);
     if (hero.antimagic && !intentional || In_endgame(hero.uz)) {
