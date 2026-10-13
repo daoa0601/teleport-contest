@@ -3589,6 +3589,12 @@ async function moveHostile(
     ) {
         appr = 0;
     }
+    if (appr === 1 && monster.mnum === MONSTER_NAME.indexOf('leprechaun')) {
+        const carriedGold = monster.minvent?.find(object => object.otyp === GOLD_PIECE);
+        const heroGold = state.inventory.find(object => object.otyp === GOLD_PIECE);
+        // leppie_avoidance(): a richer leprechaun protects its own gold.
+        if (carriedGold && carriedGold.quan > (heroGold?.quan ?? 0)) appr = -1;
+    }
     const approach = monsterApproachPolicy(
         monster,
         state,
