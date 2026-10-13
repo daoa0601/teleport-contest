@@ -5006,6 +5006,12 @@ async function getFreeRoomLocation(context, coordinate, room) {
     throw new Error("get_free_room_loc: can't find a place!");
 }
 async function specialTrapOfType(context, typ, options, coordinate) {
+    // C sp_lev.c:create_trap(): invocation placement owns its coordinates,
+    // including when Lua supplies an explicit location or a room.
+    if (typ === VIBRATING_SQUARE) {
+        const square = vibratingSquarePoint();
+        return await maketrap(square.x, square.y, VIBRATING_SQUARE);
+    }
     const point = await specialTrapLocation(context, coordinate);
     if (!point)
         return null;

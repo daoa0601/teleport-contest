@@ -5108,6 +5108,12 @@ async function specialTrapOfType(
     context: SpecialLevelContext, typ: number, options: SpecialTrapOptions,
     coordinate: Position | null,
 ): Promise<Trap | null> {
+    // C sp_lev.c:create_trap(): invocation placement owns its coordinates,
+    // including when Lua supplies an explicit location or a room.
+    if (typ === VIBRATING_SQUARE) {
+        const square = vibratingSquarePoint();
+        return await maketrap(square.x, square.y, VIBRATING_SQUARE);
+    }
     const point = await specialTrapLocation(context, coordinate);
     if (!point) return null;
     return await mktrap(typ, options, null, point);
