@@ -43,7 +43,7 @@ function lookupNames(name: string, state: GameState) {
     }
     alternate = alternate?.replace(/^(?:a |an |the )/, '').split(' (', 1)[0] ?? null;
     base = base.split(' (', 1)[0] ?? '';
-    alternate ??= fruitFromName(base, { exact: true, state }) ? 'slime mold' : makeSingular(base);
+    alternate ??= fruitFromName(base, { exact: true, state }) ? 'fruit' : makeSingular(base);
     return { base, alternate };
 }
 
