@@ -7845,6 +7845,7 @@ async function beginStandardMonsterAttack(
     calls: MonsterCallLog,
     dochugContext: DochugContext,
 ) {
+    dochugContext.reachesFinalActions = true;
     if (movement.postMoveStatus === MMOVE_DONE) return;
     if (
         monster.mpeaceful &&
@@ -8356,6 +8357,7 @@ export async function takeMonsterTurn(
     const dochugContext = options.dochugContext ?? {
         entryMnum: monster.mnum,
         range: null,
+        reachesFinalActions: false,
     };
     if (!options.afterCovetousRelocation) {
         // monmove.c:dochug() erodes text beneath every awake, mobile actor

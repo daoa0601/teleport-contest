@@ -6469,6 +6469,7 @@ async function finishDochugAfterMovement(monster, movement, state, random, rollO
 // C dochug() phase four. The entry form and last distfleeck() result survive
 // movement, polymorph, expulsion, and input pauses; attitude is checked now.
 async function beginStandardMonsterAttack(monster, movement, state, random, rollOne, rollDice, calls, dochugContext) {
+    dochugContext.reachesFinalActions = true;
     if (movement.postMoveStatus === MMOVE_DONE)
         return;
     if (monster.mpeaceful &&
@@ -6848,6 +6849,7 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
     const dochugContext = options.dochugContext ?? {
         entryMnum: monster.mnum,
         range: null,
+        reachesFinalActions: false,
     };
     if (!options.afterCovetousRelocation) {
         // monmove.c:dochug() erodes text beneath every awake, mobile actor
