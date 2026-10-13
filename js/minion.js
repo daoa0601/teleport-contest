@@ -252,7 +252,7 @@ export async function msummon(monster = null) {
         };
         created.push(summoned);
         if (count === 0 && canSeeMonster(summoned)) {
-            await pline(`${summonedMonsterName(summoned)} appears in a ${summonEnvironment(summoned)}!`);
+            await plineWithContinuation(`${summonedMonsterName(summoned)} appears in a ${summonEnvironment(summoned)}!`);
         }
     }
     return { count: created.length, created };
