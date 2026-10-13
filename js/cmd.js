@@ -5070,7 +5070,7 @@ async function dopay() {
         }
     }
     if (resident !== shopkeeperForHero() && resident.mpeaceful && !resident.eshk?.robbed) {
-        await plineWithContinuation(`You do not owe ${resident.eshk?.shknam || 'the shopkeeper'} anything.`);
+        await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
         game.context.move = 1;
         return;
     }
@@ -5123,7 +5123,7 @@ async function dopay() {
     const billed = itemizedShopBill(resident);
     if (!billed.length) {
         if (!paid) {
-            await plineWithContinuation(`You do not owe ${resident.eshk?.shknam || 'the shopkeeper'} anything.`);
+            await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
             if (resident === shopkeeperForHero() && resident.mpeaceful && !heroGoldAmount(game))
                 await plineWithContinuation(`Moreover, you${hiddenGold(game, true) ? ' seem to' : ''} have no gold.`);
             game.context.move = 1;
