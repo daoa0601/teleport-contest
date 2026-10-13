@@ -29,7 +29,7 @@ import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
-import { A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd, } from './const.js';
+import { A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, STARVING, STONING, Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd, } from './const.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
@@ -623,10 +623,27 @@ function deathCauseRecord(killer, deathVerb = 'died') {
     if (/^(?:an?|the) /i.test(raw)
         || /^(?:Mr|Mrs|Ms|Miss|Sir|Lady|Lord)\.?\s/.test(raw))
         return `killed by ${raw}`;
-    const article = /^[aeiou]/i.test(raw) ? 'an' : 'a';
-    return `killed by ${article} ${raw}`;
+    return `killed by ${withIndefiniteArticle(raw)}`;
 }
-function currentScoreRecord(summary, { outcome = 'died', killer = '', deathVerb = 'died', deathCause = null, } = {}) {
+// C topten.c:formatkiller(TRUE). Score records include involuntary delay;
+// the tombstone, bones epitaph, and overview use the cause without it.
+function scoreDeathCause(cause, deathType) {
+    const cleanCause = cause.replaceAll(',', ';').replaceAll('=', '_').replaceAll('\t', ' ');
+    if ((game._helplessTurns ?? 0) <= 0 && game.multi >= 0)
+        return cleanCause;
+    let reason = game._helplessReason || 'helpless';
+    if (deathType === STONING && reason === 'getting stoned')
+        return cleanCause;
+    if (deathType === STARVING && reason === 'fainted from lack of food')
+        reason = 'fainted';
+    // Native BUFSZ includes the terminator; a long reason falls back to
+    // "helpless" when that fits rather than truncating the explanation.
+    const suffix = `, while ${reason}`;
+    return cleanCause.length + suffix.length < 256 ? cleanCause + suffix
+        : cleanCause.length + ', while helpless'.length < 256
+            ? `${cleanCause}, while helpless` : cleanCause;
+}
+function currentScoreRecord(summary, { outcome = 'died', killer = '', deathVerb = 'died', deathCause = null, deathType = null, } = {}) {
     return {
         points: summary.score,
         deathdnum: game.u?.uz?.dnum ?? 0,
@@ -638,7 +655,7 @@ function currentScoreRecord(summary, { outcome = 'died', killer = '', deathVerb 
         dungeon: currentDungeonName(),
         outcome,
         death: outcome === 'quit' ? 'quit'
-            : deathCause || deathCauseRecord(killer, deathVerb),
+            : scoreDeathCause(deathCause || deathCauseRecord(killer, deathVerb), deathType),
     };
 }
 function updateScoreRecord(current) {
@@ -1142,7 +1159,7 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
         await showTextWindow(deathSummaryLines(killer, summary, { deathVerb, deathCause, deathType }));
     }
     await finishScoreDisplay(currentScoreRecord(summary, {
-        killer, deathVerb, deathCause,
+        killer, deathVerb, deathCause, deathType,
     }), { stopPrinting: !showSummary });
     game.context.move = 0;
 }
