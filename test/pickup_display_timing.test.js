@@ -8,7 +8,20 @@ import { APPLE, FOOD_RATION } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
 import { vision_recalc } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
+import { CORR } from '../js/const.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('blind automatic floor inspection names the ground in a corridor', async () => {
+    const level = freshObjectRoom({ flags: { pickup: false }, hero: { blindTurns: 10 } });
+    level.requireAt(10, 10).typ = CORR;
+    await floorObject(APPLE, 10, 10);
+    const input = resetInputState();
+    const inspection = autopickupAtHero();
+    await input.waitUntilBlocked();
+    const message = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
+    input.feed(' ');
+    await inspection;
+    assert.match(message, /You try to feel what is lying here on the ground\./);
+});
 void test('walking onto a floor pile redraws the hero before acknowledging an older message', async () => {
     freshObjectRoom({ heroX: 10, heroY: 10, flags: { pickup: false } });
     await floorObject(APPLE, 11, 10);

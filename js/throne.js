@@ -1,6 +1,8 @@
 // Throne effects.
 // C ref: sit.c throne_sit_effect(), special_throne_effect(), attrcurse(),
 // and rndcurse().
+import { makeConfused } from './hero_mental_status.js';
+import { makeBlinded } from './sight_change.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { A_CON, A_MAX, ROOM, } from './const.js';
@@ -106,6 +108,7 @@ async function healHeroCompletely() {
     syncBlindness(game);
     cureHeroSickness(game);
     await healHeroLegs(game);
+    game.context.botl = true;
 }
 async function summonCourt(x, y) {
     let count = rnd(10);
@@ -175,8 +178,7 @@ async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
             await plineWithContinuation('A voice echoes:');
             await plineWithContinuation('"A curse upon thee for sitting upon this most holy throne!"');
             if (heroLuck() > 0) {
-                game.u.blindTurns = (game.u.blindTurns ?? 0) + rn1(100, 250);
-                syncBlindness(game);
+                await makeBlinded((game.u.blindTurns ?? 0) + rn1(100, 250));
                 changeLuck(heroLuck() > 1 ? -rnd(2) : -1);
             }
             else {
@@ -188,8 +190,7 @@ async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
                 || hasIntrinsicProperty('seeInvisible', null, game)) {
                 if (game.level?.flags?.nommap) {
                     await plineWithContinuation('A terrible drone fills your head!');
-                    game.u.confusionTurns = (game.u.confusionTurns ?? 0)
-                        + rnd(30);
+                    await makeConfused((game.u.confusionTurns ?? 0) + rnd(30), { talk: false });
                 }
                 else {
                     await plineWithContinuation('An image forms in your mind.');
@@ -218,7 +219,7 @@ async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
             break;
         case 13:
             await plineWithContinuation('Your mind turns into a pretzel!');
-            game.u.confusionTurns = (game.u.confusionTurns ?? 0) + rn1(7, 16);
+            await makeConfused((game.u.confusionTurns ?? 0) + rn1(7, 16), { talk: false });
             break;
     }
 }
@@ -362,7 +363,7 @@ export async function throneSitEffect({ gotoLevel = null, chooseTeleportDestinat
 }
 // Selection falls through the source list until it finds an intrinsic the
 // hero actually has. Worn sources stay active.
-export async function attrcurse() {
+export async function attrcurse({ publish = plineWithContinuation } = {}) {
     const hero = game.u;
     const start = rnd(CURSEABLE_INTRINSICS.length) - 1;
     for (const [property, ordinaryMessage] of CURSEABLE_INTRINSICS.slice(start)) {
@@ -378,12 +379,12 @@ export async function attrcurse() {
             if (!hero.seeInvisible) {
                 await refreshHeroSeeing();
             }
-            await plineWithContinuation(heroIsHallucinating(game)
+            await publish(heroIsHallucinating(game)
                 ? 'You tawt you taw a puttie tat!'
                 : 'You thought you saw something!');
         }
         else {
-            await plineWithContinuation(ordinaryMessage);
+            await publish(ordinaryMessage);
         }
         return property;
     }

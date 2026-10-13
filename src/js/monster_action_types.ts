@@ -228,7 +228,6 @@ export interface MovementSpellCast {
 
 export interface MonsterAttackPaging {
     pagerOwned: boolean;
-    messageAfterPager: boolean;
 }
 
 interface HeroAttackProgress {
@@ -240,7 +239,6 @@ interface HeroAttackProgress {
     attackerDone?: boolean;
     damage?: number;
     appliedDamage?: number;
-    fatalDamage?: { hpKey: 'mh' | 'uhp'; hpBefore: number; damage: number };
     oldFormMnum?: number;
 }
 

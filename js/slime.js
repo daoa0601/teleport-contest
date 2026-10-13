@@ -77,12 +77,16 @@ export function startHeroSliming({ state = game, turns = 10, killer = '', } = {}
         return false;
     hero.slimedTurns = turns;
     hero.slimed = turns > 0;
+    if (hero.slimed)
+        state.context.botl = true;
     hero.slimeKiller = killer;
     return hero.slimed;
 }
 export function clearHeroSliming(state = game) {
     const hero = state.u;
     const wasSliming = heroIsSliming(state);
+    if (wasSliming)
+        state.context.botl = true;
     hero.slimedTurns = 0;
     hero.slimed = false;
     delete hero.slimeKiller;
@@ -97,6 +101,7 @@ export function clearHeroSliming(state = game) {
 export async function burnAwayHeroSlime({ state = game } = {}) {
     if (!heroIsSliming(state))
         return false;
+    state.context.botl = true;
     state.u.slimedTurns = 0;
     state.u.slimed = false;
     await plineWithContinuation('The slime that covers you is burned away!');

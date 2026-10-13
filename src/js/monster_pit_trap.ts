@@ -101,9 +101,7 @@ export async function finishMonsterPitTrap(
     if (event.inSight) {
         const owner = event.trap.madeby_u ? 'your' : 'a';
         await publish(
-            `${describeMonster(monster)} falls into ${owner} ${
-                event.spiked ? 'spiked ' : ''
-            }pit!`,
+            `${describeMonster(monster)} falls into ${owner} pit!`,
         );
         event.trap.tseen = true;
         if (monster.mnum === PM_PIT_VIPER || monster.mnum === PM_PIT_FIEND)

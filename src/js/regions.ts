@@ -315,6 +315,7 @@ function halfHeroGasDamage(damage: number, state: GameState): number {
 }
 
 function damageHero(damage: number, state: GameState): number {
+    state.context.botl = true;
     const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';
     state.u[hitPoints] = Math.max(
         0, (state.u[hitPoints] ?? 1) - damage,

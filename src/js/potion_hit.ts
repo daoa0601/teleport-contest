@@ -14,6 +14,9 @@ import { requirePlayingGame } from './gstate.js';
 
 import { heroIsHallucinating } from './senses.js';
 import { heroIsUnaware } from './hero_sleep.js';
+import { makeConfused } from './hero_mental_status.js';
+import { makeBlinded } from './sight_change.js';
+import { makeDeaf } from './hero_hearing.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
@@ -68,7 +71,7 @@ import {
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { d, rnd, rn2, rnl } from './rng.js';
 import {
-    heroIsBlind, syncBlindness, syncDeafness,
+    heroIsBlind,
 } from './senses.js';
 import {
     chargeUnpaidObjectAsDebt, objectTypeKnown,
@@ -76,7 +79,7 @@ import {
 import { monsterSaddle } from './steed.js';
 import { monsterName } from './monster_name.js';
 import { deleteObject } from './object_delete.js';
-import { cansee, vision_recalc } from './vision.js';
+import { cansee } from './vision.js';
 import {
     applyHeroWaterVaporChange, transformWereMonster,
 } from './were.js';
@@ -98,7 +101,6 @@ export interface PotionVaporOptions {
     potion: GameObject;
     publish?: MessagePublisher;
     monsterCanSeeHero?: ((monster: Monster) => boolean) | null;
-    recalculateVision?: () => void;
 }
 
 export interface PotionVaporResult {
@@ -381,8 +383,14 @@ function healingCuresBlindness(potion: GameObject) {
 
 function healHeroOnePoint(state: PlayingGameState) {
     const hero = state.u;
-    if (Upolyd(hero) && (hero.mh ?? 0) < (hero.mhmax ?? 0)) hero.mh++;
-    if ((hero.uhp ?? 0) < (hero.uhpmax ?? 0)) hero.uhp++;
+    if (Upolyd(hero) && hero.mh < hero.mhmax) {
+        hero.mh++;
+        state.context.botl = true;
+    }
+    if (hero.uhp < hero.uhpmax) {
+        hero.uhp++;
+        state.context.botl = true;
+    }
 }
 
 function restoreBaseAttributes(state: PlayingGameState, potion: GameObject) {
@@ -396,6 +404,7 @@ function restoreBaseAttributes(state: PlayingGameState, potion: GameObject) {
             const current = base[index];
             if (current === undefined) throw new Error(`Missing hero attribute ${index}`);
             base[index] = current + 1;
+            state.context.botl = true;
             if (!potion.blessed) break;
         }
     }
@@ -528,7 +537,6 @@ export async function applySupportedPotionVapor({
     potion,
     publish = plineWithContinuation,
     monsterCanSeeHero = null,
-    recalculateVision,
 }: PotionVaporOptions): Promise<PotionVaporResult | null> {
     if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp)) return null;
     requirePlayingGame(state);
@@ -566,10 +574,8 @@ export async function applySupportedPotionVapor({
             : potion.otyp === POT_EXTRA_HEALING ? 2 : 1;
         for (let point = 0; point < points; point++) healHeroOnePoint(state);
         if (healingCuresBlindness(potion)) {
-            state.u.blindTurns = 0;
-            state.u.deafTurns = 0;
-            syncBlindness(state);
-            syncDeafness(state);
+            await makeBlinded(0, { state, talk: !state.u.ucreamed, publish });
+            await makeDeaf(0, { state, publish });
         }
         await exerciseAttribute(A_CON, true, state);
     } else if (potion.otyp === POT_SICKNESS
@@ -577,6 +583,7 @@ export async function applySupportedPotionVapor({
         const hero = state.u;
         if (Upolyd(hero)) hero.mh = (hero.mh ?? 0) <= 5 ? 1 : hero.mh - 5;
         else hero.uhp = (hero.uhp ?? 0) <= 5 ? 1 : hero.uhp - 5;
+        state.context.botl = true;
         await exerciseAttribute(A_CON, false, state);
     } else if (potion.otyp === POT_HALLUCINATION) {
         await publish('You have a momentary vision.');
@@ -585,10 +592,9 @@ export async function applySupportedPotionVapor({
         if ((hero.confusionTurns ?? 0) <= 0)
             await publish('You feel somewhat dizzy.');
         confusionDuration = rnd(5);
-        hero.confusionTurns = Math.min(
-            TIMEOUT,
-            Math.max(0, hero.confusionTurns ?? 0) + confusionDuration,
-        );
+        await makeConfused((hero.confusionTurns ?? 0) + confusionDuration, {
+            state, talk: false, publish,
+        });
     } else if (HELPLESS_POTION_TYPES.has(potion.otyp)) {
         identifiesType = true;
         const freeAction = heroHasFreeAction(state);
@@ -636,17 +642,11 @@ export async function applySupportedPotionVapor({
         if (!wasBlind && !unaware)
             await publish('It suddenly gets dark.');
         blindnessDuration = rnd(5);
-        hero.blindTurns = Math.min(
-            TIMEOUT,
-            Math.max(0, hero.blindTurns ?? 0) + blindnessDuration,
-        );
-        const blindNow = syncBlindness(state);
+        await makeBlinded((hero.blindTurns ?? 0) + blindnessDuration, {
+            state, talk: false, publish,
+        });
+        const blindNow = heroIsBlind(state);
         sightToggled = wasBlind !== blindNow;
-        if (sightToggled) {
-            state.vision_full_recalc = 1;
-            if (recalculateVision) recalculateVision();
-            else if (state === game) vision_recalc(0);
-        }
         if (!blindNow && !unaware)
             await publish('Your vision clears.');
     } else if (potion.otyp === POT_INVISIBILITY) {

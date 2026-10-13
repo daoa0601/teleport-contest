@@ -119,6 +119,7 @@ export function recordHeroPrizeAcquisition(object: GameObject, state: GameState 
 }
 
 export async function finishInventoryAddition(object: GameObject, state: GameState = game) {
+    if (object.oclass === COIN_CLASS) state.context.botl = true;
     updateCarriedFlags(object, true, state);
     await reactToSeenInventoryObject(object, state);
 }

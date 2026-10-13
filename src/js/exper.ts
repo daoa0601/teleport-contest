@@ -81,6 +81,7 @@ export function randomExperience({ gaining = false, state = game }: { gaining?: 
 export function addExperience(experience: number, scoreBonus = 0, state: GameState = game) {
     requirePlayingGame(state);
     state.u.uexp = (state.u.uexp || 0) + experience;
+    if (experience && state.flags.showexp) state.context.botl = true;
     state.u.urexp = (state.u.urexp || 0) + 4 * experience + scoreBonus;
     if (state.u.urexp >= (state.urole.key === 'wizard' ? 1000 : 2000))
         state.flags.beginner = false;
@@ -168,6 +169,7 @@ export async function gainExperienceLevel({
     hero.uhpmax += hp;
     hero.uhp = Math.min(hero.uhpmax, hero.uhp + hp);
     hero.uhppeak = Math.max(hero.uhppeak || 0, hero.uhpmax);
+    state.context.botl = true;
 
     let energy = levelEnergyIncrease(state);
     if (oldLevel < MAXULEV) {
@@ -206,6 +208,7 @@ export async function gainExperienceLevel({
         recordGameLogEvent(`${hero.ulevel <= hero.ulevelpeak ? 're' : ''}gained experience level ${hero.ulevel}`, { state });
     }
     hero.ulevelpeak = Math.max(hero.ulevelpeak, hero.ulevel);
+    state.context.botl = true;
 }
 
 // C attrib.c role_abil[] and race ability tables.
@@ -348,6 +351,7 @@ export async function loseHeroExperience(drainer: string | null = null, {
             if (restored.died) return true;
         }
     }
+    state.context.botl = true;
     return false;
 }
 

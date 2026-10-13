@@ -293,6 +293,7 @@ export async function explode(x: number, y: number, type: number, damage: number
         if (heroHurt === 2) {
             if (grabbing && grabPosition && (grabPosition.x - x) ** 2 + (grabPosition.y - y) ** 2 <= 2) heroDamage *= 2;
             state.u[hpKey] -= heroDamage;
+            state.context.botl = true;
         }
         const observe = heroHurt === 1 ? monstersObserveHeroResistance : monstersForgetHeroResistance;
         observe(seenResistanceForDamage(damageType), state);

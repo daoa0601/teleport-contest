@@ -245,6 +245,7 @@ async function chargingEffect(source: GameObject, state: PlayingGameState): Prom
             state.u.uen += d(source.blessed ? 6 : 4, 4);
             state.u.uen = state.u.uenmax = Math.max(state.u.uen, state.u.uenmax);
         }
+        state.context.botl = true;
         return;
     }
     const known = source.oclass === SPBOOK_CLASS || OBJECT_INITIAL_KNOWN[source.otyp]

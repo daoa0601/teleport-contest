@@ -81,9 +81,12 @@ export async function chooseInventoryObject(verb: string, classify: (object: Gam
     let object;
     if (game.flags?.force_invmenu) {
         object = await chooseFromInventoryMenu(verb, inventory, menuItems);
+        if (object && (object.oclass !== 12 || classify(object) !== GETOBJ_EXCLUDE))
+            game.context.botl = true;
     } else {
         const selection = await promptInventoryObject(
             `What do you want to ${verb}? [${choices}] `, inventory, {
+                verb, classify,
                 allowMenu: true, allowNone: true,
                 allowGold: inventory.some(object => object.oclass === 12), menuItems,
             });
@@ -283,7 +286,12 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
         const letter = String.fromCharCode(key);
         const object = eligible.find(candidate => candidate.invlet === letter);
         if (object) {
-            if (classify(object) === GETOBJ_EXCLUDE) {
+            const classification = classify(object);
+            // Interactive getobj() requests status even for non-gold items;
+            // its gold rejection and canned/hands choices return earlier.
+            if (object.oclass !== 12 || classification !== GETOBJ_EXCLUDE)
+                game.context.botl = true;
+            if (classification === GETOBJ_EXCLUDE) {
                 await pline(object.oclass === 12 ? `You cannot ${verb} gold.`
                     : `That is a silly thing to ${verb}.`);
                 return { cancelled: true, object: null, gold: false, none: false, count: null };
@@ -321,6 +329,7 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
             };
         }
         if (allowGold && letter === '$' && heroGoldAmount(game) > 0) {
+            game.context.botl = true;
             return {
                 cancelled: false,
                 object: null,
@@ -330,6 +339,7 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
             };
         }
 
+        game.context.botl = true;
         await pline("You don't have that object.");
         key = await askInventoryPrompt(prompt);
         count = null;

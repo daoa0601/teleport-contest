@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { ICE, NO_MINVENT, PLNMSG_ONE_ITEM_HERE } from '../js/const.js';
 import { slipOrTrip } from '../js/fumbling.js';
+import { showFloorPile } from '../js/floor_object_display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, STATUE } from '../js/object_data.js';
@@ -15,6 +16,14 @@ import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
+void test('fumbling refers to the item just described on the floor by a pronoun', async () => {
+    freshObjectRoom();
+    const dagger = await floorObject(DAGGER, 10, 10);
+    await showFloorPile([dagger]);
+    const messages = [];
+    await slipOrTrip(message => { messages.push(message); });
+    assert.equal(messages[0], 'You trip over it.');
+});
 void test('walking from ice can cause a temporary slip and two helpless turns', async () => {
     let slips = 0;
     for (let seed = 1; seed <= 12; seed++) {

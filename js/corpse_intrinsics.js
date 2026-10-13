@@ -146,8 +146,10 @@ export async function corpseEnergyBuzz({ state = game } = {}) {
         }
         hero.uen = hero.uenmax;
     }
-    if (hero.uen !== previousEnergy)
+    if (hero.uen !== previousEnergy) {
         await plineWithContinuation('You feel a mild buzz.');
+        state.context.botl = true;
+    }
 }
 // C timeout.c:ACID_RES/STONE_RES. Called in property order, after shock
 // resistance and before the later status timeouts.

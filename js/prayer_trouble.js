@@ -1,5 +1,5 @@
 // C pray.c:in_trouble(), worst_cursed_item(), and fix_worst_trouble().
-import { makeHallucinated } from './hero_mental_status.js';
+import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { ringRemovalObstacle } from './accessory.js';
 import { heroEyeCount, heroEyeName, heroStomachName } from './body_parts.js';
 import { A_STR, EXT_ENCUMBER, HUNGRY, HVY_ENCUMBER, IS_LAVA, IS_OBSTRUCTED, IS_POOL, SCORR, SDOOR, TT_BURIEDBALL, TT_LAVA, Upolyd, WEAK, W_SADDLE, isok, } from './const.js';
@@ -248,6 +248,7 @@ export async function fixPrayerTrouble(trouble, state = game) {
         case Trouble.HUNGRY:
             await pline(`Your ${heroStomachName(state)} feels content.`);
             await pline(restoreHeroNutrition(state));
+            state.context.botl = true;
             return;
         case Trouble.SICK:
             await pline('You feel better.');
@@ -267,10 +268,12 @@ export async function fixPrayerTrouble(trouble, state = game) {
             hero.uhpmax = Math.max(6, hero.uhpmax);
             hero.uhppeak = Math.max(hero.uhppeak || 0, hero.uhpmax);
             hero.uhp = hero.uhpmax;
+            state.context.botl = true;
             return;
         case Trouble.COLLAPSING:
             await pline(`You feel ${hero.amax.a[A_STR] - hero.acurr.a[A_STR] > 6 ? 'much ' : ''}stronger.`);
             hero.acurr.a[A_STR] = hero.amax.a[A_STR];
+            state.context.botl = true;
             object = ringRemovalObstacle(state.uleft, RIN_SUSTAIN_ABILITY, state)
                 || ringRemovalObstacle(state.uright, RIN_SUSTAIN_ABILITY, state);
             if (object)
@@ -327,6 +330,7 @@ export async function fixPrayerTrouble(trouble, state = game) {
             const before = nearCapacity(state);
             for (const index of attributeIndices)
                 hero.acurr.a[index] = Math.max(hero.acurr.a[index], hero.amax.a[index]);
+            state.context.botl = true;
             const after = nearCapacity(state);
             state._encumbranceLevel = after;
             hero._encumbrance = encumbranceLabel(after);
@@ -336,6 +340,7 @@ export async function fixPrayerTrouble(trouble, state = game) {
         case Trouble.BLIND: {
             let message = '';
             if ((hero.blindTurns ?? 0) > 0) {
+                state.context.botl = true;
                 const singleEye = heroEyeCount(state) === 1;
                 const eyes = singleEye ? heroEyeName(state) : makePlural(heroEyeName(state));
                 message = `Your ${eyes} feel${singleEye ? 's' : ''} better`;
@@ -343,6 +348,7 @@ export async function fixPrayerTrouble(trouble, state = game) {
                 setHeroBlindnessTurns(0, state);
             }
             if ((hero.deafTurns ?? 0) > 0) {
+                state.context.botl = true;
                 hero.deafTurns = 0;
                 syncDeafness(state);
                 if (!heroIsDeaf(state))
@@ -356,14 +362,10 @@ export async function fixPrayerTrouble(trouble, state = game) {
             await healHeroLegs(state, { publish: pline });
             return;
         case Trouble.STUNNED:
-            hero.stunnedTurns = 0;
-            refreshProperty('stunned', state);
-            await pline(heroIsHallucinating(state) ? 'You feel less wobbly now.' : 'You feel a bit steadier now.');
+            await makeStunned(0, { state, publish: pline });
             return;
         case Trouble.CONFUSED:
-            hero.confusionTurns = 0;
-            refreshProperty('confusion', state);
-            await pline(heroIsHallucinating(state) ? 'You feel less trippy now.' : 'You feel less confused now.');
+            await makeConfused(0, { state, publish: pline });
             return;
         case Trouble.HALLUCINATING:
             await pline('Looks like you are back in Kansas.');

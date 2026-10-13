@@ -1,12 +1,12 @@
 // Traps triggered while opening or disarming containers.
 // C ref: trap.c chest_trap().
-import { makeHallucinated } from './hero_mental_status.js';
+import { makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { A_CON, A_DEX, A_STR, Upolyd, W_BALL } from './const.js';
-import { plineWithContinuation, shieldeff, } from './display.js';
+import { bot, plineWithContinuation, shieldeff, } from './display.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -43,6 +43,7 @@ function containerLocation(container, state) {
     return location;
 }
 function damageHero(amount, state) {
+    state.context.botl = true;
     const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';
     state.u[hitPoints] = Math.max(0, (state.u[hitPoints] ?? 1) - amount);
 }
@@ -213,8 +214,7 @@ async function confuseHero(container, state, publish, random) {
         else
             await publish('You stagger...');
     }
-    state.u.stunnedTurns = (state.u.stunnedTurns ?? 0) + 16 + random(7);
-    state.u.stunned = true;
+    await makeStunned((state.u.stunnedTurns ?? 0) + 16 + random(7), { state, talk: false });
     await makeHallucinated((state.u.hallucinationTurns ?? 0) + 16 + random(5), {
         state, talk: false, publish,
     });
@@ -275,8 +275,10 @@ export async function triggerChestTrap(container, { state = game, disarm = false
     else {
         result = await confuseHero(container, state, publish, random);
     }
-    if (!result.destroyed && !result.died)
+    if (!result.destroyed && !result.died) {
+        await bot();
         container.tknown = true;
+    }
     return result;
 }
 //# sourceMappingURL=chest_trap.js.map

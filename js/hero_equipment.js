@@ -35,8 +35,9 @@ export async function removeWornHeroItem(object, state = game) {
         if (slot && (state[slot] === object || state.u?.[slot] === object)) {
             const cancelledDon = state._delayedAction?.kind === 'wear'
                 && state._delayedAction.object === object;
+            // Native *_off() clears worn sources; the command loop owns find_ac().
             const removed = await removeHeroArmor(object, state, {
-                deferArmorClass: !!state.context.mon_moving,
+                deferArmorClass: true,
             });
             if (removed && !cancelledDon)
                 await announceDisplacementLoss(object, state);

@@ -101,7 +101,7 @@ import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
 import {
-    chooseInventoryObject, compactInventoryLetters, promptInventoryObject,
+    chooseInventoryObject, compactInventoryLetters, promptInventoryObject, reassignInventoryLetters,
 } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
 import {
@@ -131,9 +131,10 @@ import {
     dozap,
 } from './zap.js';
 import {
-    bucAdjectiveForName, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject,
+    bucAdjectiveForName, checkInventoryGold, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject,
     inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject,
 } from './invent.js';
+import { mergeObjectStacks } from './object_merge.js';
 import type { InventoryAction } from './invent.js';
 import {
     castSpell, docast, dovspell,
@@ -201,7 +202,7 @@ import { makemonNear, mkgold, mksobj, rndClass } from './mklev.js';
 import {
     level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt,
 } from './dungeon.js';
-import { addInventoryItem, assignInventoryLetter } from './u_init.js';
+import { addInventoryItem, assignInventoryLetter, inventoryLetterRank } from './u_init.js';
 import { objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
 import { dropHeroObject } from './hero_drop.js';
 import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shop_sell.js';
@@ -2360,27 +2361,14 @@ async function doname() {
         game._pending_message = '';
         await restoreCommandMap();
     } else if (choice === 'i') {
-        const inventory = (game.inventory || [])
-            .filter((object: GameObject): object is GameObject & { invlet: string } =>
-                typeof object.invlet === 'string' && object.invlet.length > 0)
-            .sort((a, b) => a.invlet.localeCompare(b.invlet));
         // C do_name.c:name_ok() marks unseen, artifact and novel objects as
         // GETOBJ_DOWNPLAY.  getobj() omits those letters from the suggested
         // prompt while still accepting a directly typed inventory letter.
-        const suggested = inventory.filter(object =>
-            object.dknown !== false
-                && !object.oartifact
-                && object.otyp !== SPE_NOVEL);
-        const letters = compactInventoryLetters(
-            suggested.map(object => object.invlet).join(''),
-        );
-        const selection = await promptInventoryObject(
-            `What do you want to name? [${letters} or ?*] `,
-            inventory,
-            { allowMenu: true },
-        );
-        if (!selection.cancelled && selection.object) {
-            const object = selection.object;
+        const object = await chooseInventoryObject('name', candidate =>
+            candidate.oclass === 12 ? GETOBJ_EXCLUDE
+                : candidate.dknown === false || candidate.oartifact || candidate.otyp === SPE_NOVEL
+                    ? GETOBJ_DOWNPLAY : GETOBJ_SUGGEST, { forcePrompt: true });
+        if (object) {
             const value = await getLine(
                 `What do you want to name this ${object.name}?`,
                 (_ch, key) => key >= 32 && key < 127,
@@ -3519,7 +3507,6 @@ async function dorub(cannedInvlet: string | null = null) {
         game.context.move = 0;
         return;
     }
-
     // Interactive entry owns a getobj prompt which selection replaces.
     // Canned re-entry happens before the next physical key and inherits the
     // wield/scheduler topline, so its result must append to that message.
@@ -3756,33 +3743,63 @@ async function domonability() {
 }
 
 // C ref: invent.c:doorganize()/doorganize_core().
-// TODO: add splitting, collecting, merging, swapping, gold repair, and the
-// used-letter menu.
+// TODO: add ordinary stack splitting, collecting, merging, and the used-letter menu.
 async function doadjust() {
     const inventory = (game.inventory || [])
         .filter((object: GameObject): object is GameObject & { invlet: string } =>
                 typeof object.invlet === 'string' && object.invlet.length > 0)
-        .sort((a, b) => a.invlet.localeCompare(b.invlet));
+        .sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
     if (!inventory.length) {
         await pline("You aren't carrying anything to adjust.");
         game.context.move = 0;
         return;
     }
-
-    const sourceLetters = compactInventoryLetters(
-        inventory.map(object => object.invlet).join(''),
-    );
-    const selection = await promptInventoryObject(
-        `What do you want to adjust? [${sourceLetters} or ?*] `,
-        inventory,
-        { allowMenu: true },
-    );
-    if (selection.cancelled || !selection.object) {
+    if (inventory.length === 1 && inventory[0]?.oclass === 12 && inventory[0].invlet === '$') {
+        await pline("You aren't carrying anything adjustable.");
         game.context.move = 0;
         return;
     }
-
-    const object = selection.object;
+    if (game.flags.fixinv === false) reassignInventoryLetters();
+    const repairGold = await checkInventoryGold('adjust');
+    const object = await chooseInventoryObject('adjust', candidate =>
+        candidate.oclass === 12 && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST,
+        { forcePrompt: true });
+    if (!object) {
+        game.context.move = 0;
+        return;
+    }
+    const source = object.invlet;
+    if (!source) throw new Error('Adjusting inventory requires a lettered object.');
+    // C doorganize_core() chooses '$' itself when repairing gold. A purse
+    // already in '$' collects other stacks; one elsewhere merges into '$'.
+    if (object.oclass === 12) {
+        const collect = object.invlet === '$';
+        let purse = object;
+        let action = collect ? 'Collecting' : 'Moving';
+        for (const candidate of inventory) {
+            if (candidate === purse || candidate === object) continue;
+            if (!collect && candidate.invlet !== '$') continue;
+            const candidateName = candidate.oextra?.oname ?? candidate.oname;
+            const purseName = purse.oextra?.oname ?? purse.oname;
+            const merged = (!candidateName || candidateName === purseName)
+                ? await mergeObjectStacks(candidate, purse) : null;
+            if (merged) {
+                purse = merged;
+                if (collect) continue;
+                action = 'Merging';
+            } else if (!collect) {
+                candidate.invlet = source;
+                action = 'Swapping';
+            }
+            if (!collect) break;
+        }
+        purse.invlet = '$';
+        game.inventory.sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
+        observeObjectForNaming(purse);
+        await pline(`${action}: $ - ${inventoryItemDescription(purse)}.`);
+        game.context.move = 0;
+        return;
+    }
     const occupied = new Set(
         inventory.filter(candidate => candidate !== object)
             .map(candidate => candidate.invlet),
@@ -3816,12 +3833,10 @@ async function doadjust() {
 
     const displaced = inventory.find(candidate =>
         candidate !== object && candidate.invlet === destination);
-    const source = object.invlet;
-    if (!source) throw new Error('Adjusting inventory requires a lettered object.');
     if (displaced) displaced.invlet = source;
     object.invlet = destination;
     game.inventory.sort((a, b) =>
-        String(a.invlet).localeCompare(String(b.invlet)));
+        inventoryLetterRank(a) - inventoryLetterRank(b));
     game._pending_message = '';
     observeObjectForNaming(object);
     await pline(
@@ -4959,7 +4974,7 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
 export async function finishArmorRemoval(
     object: GameObject, { silent = false }: { silent?: boolean } = {},
 ): Promise<string> {
-    await removeHeroArmor(object, game);
+    await removeHeroArmor(object, game, { deferArmorClass: true });
     await announceDisplacementLoss(object, game);
     if (silent || game.flags?.verbose === false) return '';
     return armorOffMessage(object, game);
@@ -5077,7 +5092,6 @@ async function removeWornItem(action: 'remove' | 'take off', itemAction = false)
         return;
     }
 
-    const previousArmorClass = game.u?.uac ?? 10;
     // do_wear.c:off_msg() is conditional on flags.verbose.  When disabled,
     // immediate zero-delay armor removal leaves getobj's selector as the
     // physical topline even though the timed state change has committed.
@@ -5085,8 +5099,6 @@ async function removeWornItem(action: 'remove' | 'take off', itemAction = false)
     if (game.flags?.verbose === false && inventoryPrompt)
         game._retained_message = inventoryPrompt.trimEnd();
     const removalMessage = await finishArmorRemoval(object);
-    if (removalMessage && game.u?.uac !== previousArmorClass)
-        game._statusAcOverride = previousArmorClass;
     if (removalMessage)
         await plineWithContinuation(removalMessage);
     game.context.move = 1;
@@ -6478,6 +6490,7 @@ async function dothrow(
             }
             selectedItem = game.inventory?.find(candidate =>
                 candidate.invlet === String.fromCharCode(key)) ?? null;
+            game.context.botl = true;
             if (selectedItem) break;
 
             // invent.c:getobj() retains the picker after an absent letter.

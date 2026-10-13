@@ -104,5 +104,6 @@ export async function applyLevitationPotion(
     }
     /* levitating blocks flying */
     refreshMovementProperties(state);
+    state.context.botl = true;
     return { nothingHappened: potionNothing };
 }

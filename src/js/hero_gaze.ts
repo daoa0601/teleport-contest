@@ -227,6 +227,7 @@ export async function useHeroGaze({
         return { used: false, spentTime: false, reason: 'energy' };
     }
     state.u.uen = energy - 15;
+    state.context.botl = true;
 
     let looked = 0;
     for (const monster of [...(state.level?.monsters || [])]) {

@@ -105,6 +105,7 @@ export function adjustAttribute(attribute, amount, state = game) {
     const newValue = currentAttribute(attribute, state);
     const changed = newValue !== oldValue;
     if (changed) {
+        state.context.botl = true;
         if (!Array.isArray(hero._exercise))
             hero._exercise = [0, 0, 0, 0, 0, 0];
         hero._exercise[attribute] = 0;
@@ -175,6 +176,7 @@ export async function loseHeroStrength(amount, killer, { state = game, random = 
             hero.uhpmax = Math.max(hero.uhpmax - damage, minimumHp);
             hero.uhp = Math.min(hero.uhp, hero.uhpmax);
         }
+        state.context.botl = true;
     }
     if (remainingLoss > 0 && (Upolyd(hero) || !wasPolymorphed)) {
         const previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
@@ -243,6 +245,8 @@ export async function reportHeroEncumbrance(state = game) {
     const message = encumbranceMessage(previous, capacity);
     if (message)
         await plineWithContinuation(message);
+    if (previous !== capacity)
+        state.context.botl = true;
     state._encumbranceLevel = capacity;
     state.u._encumbrance = encumbranceLabel(capacity);
     state._capacityDirty = false;
@@ -320,6 +324,7 @@ export function restoreHeroBaseAttributes({ all = false, state = game } = {}) {
         if (hero.acurr.a[attribute] >= hero.amax.a[attribute])
             continue;
         hero.acurr.a[attribute] = hero.amax.a[attribute];
+        state.context.botl = true;
         if (hero._exercise && hero._exercise[attribute] < 0)
             hero._exercise[attribute] = 0;
         if (!all)

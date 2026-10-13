@@ -126,6 +126,7 @@ export async function applyCorpsePostEffects(mnum, { state = game, tin = null } 
             else
                 hero.uhp = hero.uhpmax;
             await makeBlinded(0, { state, talk: !hero.ucreamed });
+            state.context.botl = true;
             checkIntrinsics = true;
             break;
         case 'stalker':

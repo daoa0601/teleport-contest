@@ -2,6 +2,7 @@
 // C ref: uhitm.c passive() and passive_obj().
 
 import { heroIsHallucinating } from './senses.js';
+import { makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
@@ -37,7 +38,7 @@ import { OBJECT_NAMES } from './object_data.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { hasWornProperty } from './properties.js';
 import {
-    heroMonsterForm, returnHeroToHumanForm,
+    applyHeroGolemEffects, heroMonsterForm, returnHeroToHumanForm,
 } from './polyself.js';
 import { heroReflectionSource, heroReflectsRay } from './ray.js';
 import { d, rn2 } from './rng.js';
@@ -376,7 +377,7 @@ async function applyColdPassive(context: PassiveContext): Promise<PassiveEffect>
         await shieldeff(state.u.ux, state.u.uy, state);
         await publish('You feel a mild chill.');
         monstersObserveHeroResistance(M_SEEN_COLD, state);
-        await applyGolemEffects(AD_COLD, damage, state, publish);
+        await applyHeroGolemEffects(AD_COLD, damage, { state, publish });
         return { resisted: true, heroDied: false };
     }
 
@@ -397,9 +398,7 @@ async function applyStunPassive({ damage, state, publish }: PassiveContext): Pro
     const hero = state.u;
     if (hero.stunned || (hero.stunnedTurns ?? 0) > 0 || damage <= 0)
         return { heroDied: false };
-    await publish(hero.usteed ? 'You wobble in the saddle.' : 'You stagger...');
-    hero.stunnedTurns = damage;
-    hero.stunned = true;
+    await makeStunned(damage, { state, publish });
     return { heroDied: false };
 }
 
@@ -409,7 +408,7 @@ async function applyFirePassive({ monster, damage, state, publish, die }: Passiv
         await shieldeff(state.u.ux, state.u.uy, state);
         await publish('You feel mildly warm.');
         monstersObserveHeroResistance(M_SEEN_FIRE, state);
-        await applyGolemEffects(AD_FIRE, damage, state, publish);
+        await applyHeroGolemEffects(AD_FIRE, damage, { state, publish });
         return { resisted: true, heroDied: false };
     }
 
@@ -426,7 +425,7 @@ async function applyElectricPassive({ monster, damage, state, publish, die }: Pa
         await shieldeff(state.u.ux, state.u.uy, state);
         await publish('You feel a mild tingle.');
         monstersObserveHeroResistance(M_SEEN_ELEC, state);
-        await applyGolemEffects(AD_ELEC, damage, state, publish);
+        await applyHeroGolemEffects(AD_ELEC, damage, { state, publish });
         return { resisted: true, heroDied: false };
     }
 
@@ -439,6 +438,7 @@ async function applyElectricPassive({ monster, damage, state, publish, die }: Pa
 }
 
 async function damageHero(monster: Monster, amount: number, { state, publish, die }: Pick<PassiveContext, 'state' | 'publish' | 'die'>): Promise<boolean> {
+    state.context.botl = true;
     if (amount <= 0) return false;
     const hero = state.u;
     if (Upolyd(hero)) {
@@ -509,22 +509,6 @@ function monsterNearHero(monster: Monster, state: GameState): boolean {
         Math.abs((monster.mx ?? 0) - (state.u?.ux ?? 0)),
         Math.abs((monster.my ?? 0) - (state.u?.uy ?? 0)),
     ) <= 1;
-}
-
-async function applyGolemEffects(damageType: DamageType, damage: number, state: GameState, publish: MessagePublisher): Promise<void> {
-    const form = heroMonsterForm(state);
-    const name = form == null ? null : MONSTER_NAME[form];
-    let healing = 0;
-    if (damageType === AD_ELEC && name === 'flesh golem')
-        healing = Math.trunc((damage + 5) / 6);
-    else if (damageType === AD_FIRE && name === 'iron golem')
-        healing = damage;
-    if (healing <= 0 || (state.u.mh ?? 0) >= (state.u.mhmax ?? 0)) return;
-    const hp = state.u.mh, maximum = state.u.mhmax;
-    if (hp === undefined || maximum === undefined) return;
-    state.u.mh = Math.min(maximum, hp + healing);
-    await publish('Strangely, you feel better than before.');
-    await exerciseAttribute(A_STR, true, state);
 }
 
 export function passiveAttack(monster: Pick<Monster, 'mnum'> | null | undefined): MonsterAttack | null {

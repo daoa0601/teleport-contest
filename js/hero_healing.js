@@ -32,5 +32,6 @@ export async function healHero(amount, extraMaximum, { state = game, cureSicknes
             await plineWithContinuation('You feel much less nauseated now.');
         await cureHeroSicknessWithMessages(state);
     }
+    state.context.botl = true;
 }
 //# sourceMappingURL=hero_healing.js.map

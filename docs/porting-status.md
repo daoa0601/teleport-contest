@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–9 (`deb5b96`)
+## Parallel batches 1–10 (`28ebcf6`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -195,34 +195,41 @@ wizard quit prompts, `#whatis` help text, container gold category prompts,
 projectile trap reveal), **pool-map** (trap, feature and monster glyphs in the
 pool's first map differences).
 
+Batch 10: **pool-events** (vault guard timing, special-room entry, missing
+event messages), **pool-rng** (`obj_resists`, `mintrap`, `gethungry`,
+`dog_move`, `hitmu` random-call tails), **pool-naming** (pet, terrain, armor
+and monster names in messages and farlook). **pool-rng-2** merged after the
+batch run (`cba63f7`).
+
 ## Verification
 
-`npm test` at `deb5b96`: **8,234/8,234**. Merges require a fully green suite;
+`npm test` at `cba63f7`: **8,386/8,386**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 9).
+(no screen regression in batch 10, eval, public or pool).
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
-| Public | 32/44 | 9,741/11,405 | 694,322/792,838 | 0 |
-| Native eval sample | 278/300 | 49,250/50,586 | 3,577,331/3,616,669 | 0 |
-| Holdout-dev pool | 2,085/2,500 | | | 0 |
+| Public | 32/44 | 9,814/11,405 | 694,683/792,838 | 0 |
+| Native eval sample | 281/300 | 49,334/50,586 | 3,582,941/3,616,669 | 0 |
+| Holdout-dev pool | 2,176/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch9-deb5b96-{eval,public}` and
-`triage-deb5b96` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 8: 276/300, pool 2,040/2,500). No verified random call was
-lost; the ledgers now hold 199 eval and 145 public functions. The
-state oracle finds 287 sessions matching C state throughout; one hidden-state
+Runs: `.cache/generalization/batch10-28ebcf6-{eval,public}` and
+`triage-28ebcf6` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 9: 278/300, pool 2,085/2,500). No verified random call was
+lost; the ledgers now hold 200 eval and 146 public functions. The
+state oracle finds 288 sessions matching C state throughout; one hidden-state
 session remains.
 
 ## Next work
 
-In flight: pool-naming (pet, terrain, armor and monster names in messages),
-pool-events (vault guard timing, special-room entry, missing event messages),
-status-timing (status conditions shown at C's `bot()` points), pool-rng
-(`obj_resists`, `mintrap`, `gethungry`, `dog_move`, `distfleeck`, `hitmu`).
-`.cache/agents/pool-13fe4e1-firsts.tsv` lists pool first differences. Coverage
+In flight: status-timing (status conditions shown at C's `bot()` points),
+leftovers-9 (review leftovers; item-action prompt regressions), pager-timing
+(missing `--More--` pagers behind the `distfleeck` first differences),
+hitmu-special (special monster attacks). The batch-10 pool clusters are
+status 63, messages 36, `hitmu` 21, `collect_coords` 18, and corpse timeouts
+18; `.cache/agents/pool-28ebcf6-firsts.tsv` lists them. Coverage
 shows that `read.c`, `potion.c`, and `pray.c` are barely exercised.
 
 `splitObjectStack()` now links the new piece right after the original in

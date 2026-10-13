@@ -14,6 +14,30 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
 
+void test('the guard accepts and echoes names longer than thirty-one characters', async () => {
+    const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
+    requirePlayingGame(game);
+    level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
+    level.requireAt(16, 10).typ = CORR;
+    level.requireAt(11, 10).typ = VWALL;
+    game.u.uinvault = 29;
+    assert.equal(maintainVaultResidence(), true);
+    const name = 'Alexandria '.repeat(4).trim();
+    const input = resetInputState();
+    const arrival = continueVaultGuardArrival();
+    await input.waitUntilBlocked();
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    input.feed(name);
+    await input.waitUntilBlocked();
+    const echo = game.nhDisplay?.grid.slice(0, 2)
+        .map(row => row.map(cell => cell.ch).join('').trimEnd()).join('') ?? '';
+    input.feed('\n');
+    await arrival;
+
+    assert.ok(echo.includes(name), `The guard name echo was truncated: ${echo}`);
+});
+
 for (const goldLocation of ['none', 'purse', 'sack', 'both'] as const) {
     void test(`guard arrival pages unread prose and requests gold kept in ${goldLocation}`, async () => {
         const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });

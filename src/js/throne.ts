@@ -2,6 +2,8 @@
 // C ref: sit.c throne_sit_effect(), special_throne_effect(), attrcurse(),
 // and rndcurse().
 
+import { makeConfused } from './hero_mental_status.js';
+import { makeBlinded } from './sight_change.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import {
@@ -130,6 +132,7 @@ async function healHeroCompletely(): Promise<void> {
     syncBlindness(game);
     cureHeroSickness(game);
     await healHeroLegs(game);
+    game.context.botl = true;
 }
 
 async function summonCourt(x: number, y: number): Promise<void> {
@@ -211,8 +214,7 @@ async function normalThroneEffect(
             '"A curse upon thee for sitting upon this most holy throne!"',
         );
         if (heroLuck() > 0) {
-            game.u.blindTurns = (game.u.blindTurns ?? 0) + rn1(100, 250);
-            syncBlindness(game);
+            await makeBlinded((game.u.blindTurns ?? 0) + rn1(100, 250));
             changeLuck(heroLuck() > 1 ? -rnd(2) : -1);
         } else {
             await rndcurse();
@@ -225,8 +227,7 @@ async function normalThroneEffect(
                 await plineWithContinuation(
                     'A terrible drone fills your head!',
                 );
-                game.u.confusionTurns = (game.u.confusionTurns ?? 0)
-                    + rnd(30);
+                await makeConfused((game.u.confusionTurns ?? 0) + rnd(30), { talk: false });
             } else {
                 await plineWithContinuation('An image forms in your mind.');
                 mapLevel();
@@ -251,7 +252,7 @@ async function normalThroneEffect(
         break;
     case 13:
         await plineWithContinuation('Your mind turns into a pretzel!');
-        game.u.confusionTurns = (game.u.confusionTurns ?? 0) + rn1(7, 16);
+        await makeConfused((game.u.confusionTurns ?? 0) + rn1(7, 16), { talk: false });
         break;
     }
 }
@@ -417,7 +418,9 @@ export async function throneSitEffect({
 
 // Selection falls through the source list until it finds an intrinsic the
 // hero actually has. Worn sources stay active.
-export async function attrcurse() {
+export async function attrcurse({ publish = plineWithContinuation }: {
+    publish?: MessagePublisher;
+} = {}) {
     const hero = game.u;
     const start = rnd(CURSEABLE_INTRINSICS.length) - 1;
     for (const [property, ordinaryMessage] of CURSEABLE_INTRINSICS.slice(start)) {
@@ -431,11 +434,11 @@ export async function attrcurse() {
             if (!hero.seeInvisible) {
                 await refreshHeroSeeing();
             }
-            await plineWithContinuation(heroIsHallucinating(game)
+            await publish(heroIsHallucinating(game)
                 ? 'You tawt you taw a puttie tat!'
                 : 'You thought you saw something!');
         } else {
-            await plineWithContinuation(ordinaryMessage);
+            await publish(ordinaryMessage);
         }
         return property;
     }
