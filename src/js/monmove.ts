@@ -452,6 +452,7 @@ import {
     findNearbyMonsterPosition,
     goodPosition,
     monsterTeleportRestricted,
+    reportMonsterTeleportRestriction,
 } from './teleport_rules.js';
 import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
 import { publishMonsterWake } from './monster_wake.js';
@@ -3830,8 +3831,19 @@ async function moveHostile(
         if (!Array.isArray(monster.mtrack)) monster.mtrack = [];
         monster.mtrack.unshift({ x: oldx, y: oldy });
         monster.mtrack.length = Math.min(monster.mtrack.length, 4);
-    } else if (monster.wormno) {
-        shrinkStationaryMonsterWorm(monster, { rollDice });
+    } else {
+        if (isUnicorn(monster) && recordRandom(random, calls, 2)
+            && !(await reportMonsterTeleportRestriction(monster, { state }))) {
+            const relocation = await randomMonsterRelocation(monster, {
+                state, calls, random, rollOne, flags: RLOC_MSG,
+            });
+            // Native m_move() returns MOVED even if rloc() finds no square,
+            // and skips postmov() for this fallback.
+            return finishMovement(relocation || {
+                oldx, oldy, x: oldx, y: oldy, moved: false,
+            }, MMOVE_MOVED, 'dochug');
+        }
+        if (monster.wormno) shrinkStationaryMonsterWorm(monster, { rollDice });
     }
     return finishMovement(
         {

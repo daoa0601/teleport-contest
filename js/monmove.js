@@ -169,7 +169,7 @@ import { prepareMonsterItemUse, presentMonsterQuaff, presentMonsterWandUse, cons
 import { dragonFormForArmor } from './armor.js';
 import { findMonsterDefensiveItem, useMonsterDefensiveItem } from './monster_defensive_item.js';
 import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
-import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted, } from './teleport_rules.js';
+import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction, } from './teleport_rules.js';
 import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
 import { publishMonsterWake } from './monster_wake.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
@@ -2967,8 +2967,20 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
         monster.mtrack.unshift({ x: oldx, y: oldy });
         monster.mtrack.length = Math.min(monster.mtrack.length, 4);
     }
-    else if (monster.wormno) {
-        shrinkStationaryMonsterWorm(monster, { rollDice });
+    else {
+        if (isUnicorn(monster) && recordRandom(random, calls, 2)
+            && !(await reportMonsterTeleportRestriction(monster, { state }))) {
+            const relocation = await randomMonsterRelocation(monster, {
+                state, calls, random, rollOne, flags: RLOC_MSG,
+            });
+            // Native m_move() returns MOVED even if rloc() finds no square,
+            // and skips postmov() for this fallback.
+            return finishMovement(relocation || {
+                oldx, oldy, x: oldx, y: oldy, moved: false,
+            }, MMOVE_MOVED, 'dochug');
+        }
+        if (monster.wormno)
+            shrinkStationaryMonsterWorm(monster, { rollDice });
     }
     return finishMovement({
         oldx,
