@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { RUST_TRAP, SQKY_BOARD } from '../js/const.js';
+import { PL_PSIZ, RUST_TRAP, SQKY_BOARD } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { triggerImmediateMonsterTrap, resumeDeferredMonsterTrap } from '../js/monmove.js';
@@ -34,6 +34,21 @@ void test('a squeaky board addresses a named pet without a species article', asy
     const action = await triggerImmediateMonsterTrap(monster, game);
     await resumeDeferredMonsterTrap(action, game, { publish: text => { messages.push(text); } });
     assert.equal(messages[0], 'A board beneath Idefix squeaks a B flat loudly.');
+});
+void test('configured pet names sanitize each UTF-8 byte for the tty', () => {
+    const settings = parseNethackrc('OPTIONS=dogname:Ā,catname:Mélusine,horsename:€');
+    assert.equal(settings.flags.dogname, '_.');
+    assert.equal(settings.flags.catname, 'M__lusine');
+    assert.equal(settings.flags.horsename, '_._');
+});
+void test('configured pet names truncate at the native byte limit', () => {
+    const prefix = 'a'.repeat(PL_PSIZ - 2);
+    const settings = parseNethackrc(`OPTIONS=dogname:${prefix}ĀZ`);
+    assert.equal(settings.flags.dogname, `${prefix}_`);
+});
+void test('configured pet names end at a null byte', () => {
+    const settings = parseNethackrc('OPTIONS=dogname:Finn\x00Ghost');
+    assert.equal(settings.flags.dogname, 'Finn');
 });
 void test('a configured dog name overrides the role default and preserves its case', async () => {
     const settings = parseNethackrc('OPTIONS=dogname:Sir Wags');

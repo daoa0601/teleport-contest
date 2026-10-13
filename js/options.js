@@ -277,9 +277,7 @@ function parseConfiguration(rc, result) {
                 if (negated || optionValue === 'none' || optionValue === '(none)')
                     result.flags[bindingOption] = '';
                 else if (optionValue)
-                    result.flags[bindingOption] = optionValue.slice(0, PL_PSIZ - 1)
-                        .replace(/[\x00-\x1f\x7f\x80-\x9f\xff]/g, '.')
-                        .replace(/[\xa0-\xfe]/g, '_');
+                    result.flags[bindingOption] = configuredPetName(optionValue);
                 continue;
             }
             if (bindingOption === 'number_pad') {
@@ -465,6 +463,22 @@ function parseConfiguration(rc, result) {
     if (paranoiaSeen)
         result.flags.paranoia_bits = paranoiaBits;
     return result;
+}
+// C options.c:nmcpy() copies bytes; bones.c:sanitize_name() then applies
+// the default tty's seven-bit display rules to each byte separately.
+function configuredPetName(value) {
+    const bytes = new TextEncoder().encode(value).subarray(0, PL_PSIZ - 1);
+    let name = '';
+    for (const byte of bytes) {
+        if (byte === 0 || byte === 44)
+            break;
+        const character = byte & 0x7f;
+        if (character < 32 || character === 127)
+            name += '.';
+        else
+            name += byte > 127 ? '_' : String.fromCharCode(character);
+    }
+    return name;
 }
 const NUMBER_PAD_CHOICES = [
     ' 0 (off)', ' 1 (on)', ' 2 (on, MSDOS compatible)',
