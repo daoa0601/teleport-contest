@@ -5,7 +5,8 @@ import { NO_MINVENT, RUST_TRAP, W_ARM } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { pushKeys } from '../js/input.js';
-import { ROBE, MUMMY_WRAPPING, RING_MAIL, LEATHER_ARMOR } from '../js/object_data.js';
+import { beginObjectBurn } from '../js/light.js';
+import { ROBE, MUMMY_WRAPPING, RING_MAIL, LEATHER_ARMOR, OIL_LAMP, MAGIC_LAMP } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { burnArmorByFire, burnHeroArmorByFire } from '../js/trap.js';
@@ -75,5 +76,39 @@ void test('a rust trap uses the full name of ring mail wielded in the right hand
     await triggerHeroTrap(trap);
     assert.match(game._pending_message, /Your ring mail rusts!/);
     assert.equal(suit.oeroded, 1);
+});
+for (const [type, label] of [[OIL_LAMP, 'oil lamp'], [MAGIC_LAMP, 'magic lamp']]) {
+    void test(`a rust trap silently extinguishes a blind priest's wielded ${label} without revealing its beatitude`, async () => {
+        const level = freshObjectRoom({ role: 'priest' });
+        const lamp = await addInventoryObject(type, { age: 200, spe: 1 });
+        await setPrimaryWeapon(lamp);
+        assert.equal(beginObjectBurn(lamp, game, game.moves), true);
+        setHeroBlindnessTurns(10);
+        lamp.dknown = false;
+        lamp.bknown = false;
+        const trap = addTrap(level, RUST_TRAP, 10, 10);
+        pushKeys(' '.repeat(20));
+        initRng(14n);
+        await triggerHeroTrap(trap);
+        assert.equal(lamp.lamplit, false);
+        assert.equal(lamp.dknown, false);
+        assert.equal(lamp.bknown, false);
+        assert.equal(game._pending_message, 'A gush of water hits your right arm!');
+    });
+}
+void test('a rust trap names an unlit wielded lamp and reveals its beatitude to a blind priest', async () => {
+    const level = freshObjectRoom({ role: 'priest' });
+    const lamp = await addInventoryObject(OIL_LAMP);
+    await setPrimaryWeapon(lamp);
+    setHeroBlindnessTurns(10);
+    lamp.dknown = false;
+    lamp.bknown = false;
+    const trap = addTrap(level, RUST_TRAP, 10, 10);
+    pushKeys(' '.repeat(20));
+    initRng(14n);
+    await triggerHeroTrap(trap);
+    assert.equal(lamp.lamplit, false);
+    assert.equal(lamp.dknown, false);
+    assert.equal(lamp.bknown, true);
 });
 //# sourceMappingURL=pool_armor_naming.test.js.map

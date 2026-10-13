@@ -376,6 +376,7 @@ export async function waterDamageObject(
 ): Promise<WaterDamageOutcome> {
     if (!object) return 'nothing';
     if (splashLitObject(object, messages, state)) return 'damaged';
+    const name = description ?? objectCombatName(object, { state });
     const spe = object.spe ?? 0;
     if (object.otyp === CAN_OF_GREASE && spe > 0) return 'nothing';
     if (object.otyp === TOWEL && spe < 7) {
@@ -409,22 +410,14 @@ export async function waterDamageObject(
         const leaks = !waterproof || (object.cursed && random(3) === 0);
         if (leaks) {
             if (carriedByHero(object, state)) {
-                messages.push(
-                    `Some water gets into your ${
-                        waterObjectName(object, description)
-                    }!`,
-                );
+                messages.push(`Some water gets into your ${name}!`);
             }
             await waterDamageChain(objectContents(object), messages, state);
             return 'damaged';
         }
         if (carriedByHero(object, state)
             && !heroIsBlind(state) && !state.underwater) {
-            messages.push(
-                `The water cannot get into your ${
-                    waterObjectName(object, description)
-                }.`,
-            );
+            messages.push(`The water cannot get into your ${name}.`);
         }
         return 'damaged';
     }
@@ -432,8 +425,7 @@ export async function waterDamageObject(
     if (!force && ((state.u?.uluck ?? 0) + 5) > random(20))
         return 'nothing';
 
-    const name = waterObjectName(object, description);
-    const plural = waterObjectIsPlural(object, description);
+    const plural = waterObjectIsPlural(object, name);
     const carried = carriedByHero(object, state);
 
     if (object.oclass === 9) {

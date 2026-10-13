@@ -72,7 +72,7 @@ import { trapName } from './trap_name.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { monsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { objectCombatName, objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { trapTriggeredByFloor } from './monmove.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { observeObject } from './object_knowledge.js';
@@ -921,7 +921,7 @@ async function wetHeroObject(object, description = null) {
     const messages = [];
     const result = await waterDamageObject(object, messages, game, {
         force: true,
-        description: description ?? (object ? objectCombatName(object) : null),
+        description,
     });
     for (const message of messages)
         await plineWithContinuation(message);
