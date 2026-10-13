@@ -264,6 +264,7 @@ import {
     AD_SPC2,
     AD_SAMU,
     AD_SEDU,
+    AD_SGLD,
     AD_SITM,
     AD_SLIM,
     AD_SLOW,
@@ -5990,7 +5991,8 @@ async function beginHeroAttackSlot(
     } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
         || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS
-        || damageType === AD_HEAL || damageType === AD_ACID || damageType === AD_SLOW)) {
+        || damageType === AD_HEAL || damageType === AD_ACID || damageType === AD_SLOW
+        || damageType === AD_SGLD)) {
         const negated = damageType === AD_SLOW
             ? specialAttackNegated(monster, state.u, { state, random })
             : damageType === AD_POLY
