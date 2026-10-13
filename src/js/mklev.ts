@@ -5303,7 +5303,7 @@ function createSpecialRoomDoor(
     room: Room, state: string, wall: string, position = -1,
 ): void {
     const level = requireGameLevel();
-    const wantedDirection = wall === 'all' ? null
+    const wantedDirection = wall === 'all' || wall === 'random' ? null
         : wall === 'north' ? 0
             : wall === 'south' ? 1
                 : wall === 'west' ? 2 : 3;

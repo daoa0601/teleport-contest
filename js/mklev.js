@@ -5165,7 +5165,7 @@ async function buildSpecialRoom(spec, parent = null, contents = null) {
 }
 function createSpecialRoomDoor(room, state, wall, position = -1) {
     const level = requireGameLevel();
-    const wantedDirection = wall === 'all' ? null
+    const wantedDirection = wall === 'all' || wall === 'random' ? null
         : wall === 'north' ? 0
             : wall === 'south' ? 1
                 : wall === 'west' ? 2 : 3;
