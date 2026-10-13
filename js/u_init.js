@@ -980,7 +980,8 @@ function linkInventoryItem(item) {
     }
     return item;
 }
-function inventoryLetterRank(item) {
+// C invent.c:reorder_invent() toggles the ASCII case bit to put a-z before A-Z.
+export function inventoryLetterRank(item) {
     return (item.invlet?.charCodeAt(0) ?? 0) ^ 0x20;
 }
 async function finishAddedInventoryItem(item) {

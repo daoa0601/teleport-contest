@@ -122,7 +122,7 @@ import { shipObject } from './object_migration.js';
 import { moveObject, placeCreatedObject, } from './floor_object.js';
 import { makemonNear, mkgold, mksobj, rndClass } from './mklev.js';
 import { level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt, } from './dungeon.js';
-import { addInventoryItem, assignInventoryLetter } from './u_init.js';
+import { addInventoryItem, assignInventoryLetter, inventoryLetterRank } from './u_init.js';
 import { objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
 import { dropHeroObject } from './hero_drop.js';
 import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shop_sell.js';
@@ -3524,7 +3524,7 @@ async function domonability() {
 async function doadjust() {
     const inventory = (game.inventory || [])
         .filter((object) => typeof object.invlet === 'string' && object.invlet.length > 0)
-        .sort((a, b) => a.invlet.localeCompare(b.invlet));
+        .sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
     if (!inventory.length) {
         await pline("You aren't carrying anything to adjust.");
         game.context.move = 0;
@@ -3575,7 +3575,7 @@ async function doadjust() {
                 break;
         }
         purse.invlet = '$';
-        game.inventory.sort((a, b) => String(a.invlet).localeCompare(String(b.invlet)));
+        game.inventory.sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
         observeObjectForNaming(purse);
         await pline(`${action}: $ - ${inventoryItemDescription(purse)}.`);
         game.context.move = 0;
@@ -3611,7 +3611,7 @@ async function doadjust() {
     if (displaced)
         displaced.invlet = source;
     object.invlet = destination;
-    game.inventory.sort((a, b) => String(a.invlet).localeCompare(String(b.invlet)));
+    game.inventory.sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
     game._pending_message = '';
     observeObjectForNaming(object);
     await pline(`${displaced ? 'Swapping:' : destination === source
