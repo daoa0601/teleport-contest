@@ -6240,7 +6240,18 @@ async function createLuaMonster(context: SpecialLevelContext, options: DesMonste
                 peaceful, asleep, ...creation,
             });
     }
-    applyLuaMonsterAppearance(monster, options.appearance);
+    // sp_lev.c:lspo_monster() defaults class and random requests to male.
+    // create_monster() restores the requested sex after any initial shape.
+    if (monster) {
+        const explicitFemale = options.female === true || options.female === 1
+            ? true : options.female === false || options.female === 0 ? false : null;
+        const fixedSex = monsterType == null ? 0 : MONSTER_FLAGS2[monsterType] ?? 0;
+        const requestedFemale = fixedSex & M2_FEMALE ? true
+            : fixedSex & M2_MALE ? false
+                : explicitFemale ?? (monsterType == null ? false : !!monster.female);
+        applyLuaMonsterAppearance(monster, options.appearance);
+        monster.female = requestedFemale;
+    }
     if (monster && options.name != null)
         setMonsterGivenName(monster, options.name);
     if (monster && peaceful != null) {
