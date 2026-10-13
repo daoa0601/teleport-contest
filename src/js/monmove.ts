@@ -5989,7 +5989,7 @@ async function beginHeroAttackSlot(
     } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
         || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS
-        || damageType === AD_HEAL)) {
+        || damageType === AD_HEAL || damageType === AD_ACID)) {
         const negated = damageType === AD_POLY
             && (specialAttackNegated(monster, state.u, { state, random }) || !!monster.mspec_used);
         return {

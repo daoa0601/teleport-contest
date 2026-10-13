@@ -4,14 +4,14 @@ import { artifactById } from './artifacts.js';
 import { heroHasFreeAction } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
-import { A_CON, A_DEX, M_SEEN_SLEEP, Upolyd } from './const.js';
-import { shieldeff, type MessagePublisher } from './display.js';
+import { A_CON, A_DEX, A_STR, M_SEEN_ACID, M_SEEN_SLEEP, Upolyd } from './const.js';
+import { displayLiquidName, shieldeff, type MessagePublisher } from './display.js';
 import type { PlayingGameState } from './game_state.js';
 import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_CURS, AD_HEAL, AD_PLYS, AD_POLY, AD_SLEE, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { AD_ACID, AD_CURS, AD_HEAL, AD_PLYS, AD_POLY, AD_SLEE, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
 import { resolveNurseContact } from './monster_nurse_contact.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { grantMonsterIntrinsic } from './monster_corpse_intrinsic.js';
@@ -67,8 +67,31 @@ export async function resolveMonsterContactEffect(
         await curseHero(monster, state, publish, random);
     else if (attack.damageType === AD_HEAL)
         await resolveNurseContact(monster, attack, state, publish, random, rollOne, rollDice);
+    else if (attack.damageType === AD_ACID)
+        await splashHeroWithAcid(monster, attack, state, publish, random);
     else throw new Error(`Damage type ${attack.damageType} has no deferred contact effect`);
     attack.deferredPostHit = true;
+}
+
+async function splashHeroWithAcid(
+    monster: Monster, attack: HeroContactAttack, state: PlayingGameState,
+    publish: MessagePublisher, random: typeof rn2,
+): Promise<void> {
+    if (monster.mcan || random(3) !== 0) {
+        attack.damage = 0;
+        return;
+    }
+    const liquid = displayLiquidName('acid', state);
+    const seesHero = (observer: Monster) => monsterHasLineOfSightToHero(observer, state);
+    if (state.u.acidResistance) {
+        await publish(`You're covered in ${liquid}, but it seems harmless.`);
+        monstersObserveHeroResistance(M_SEEN_ACID, state, seesHero);
+        attack.damage = 0;
+    } else {
+        await publish(`You're covered in ${liquid}!  It burns!`);
+        await exerciseAttribute(A_STR, false, state);
+        monstersForgetHeroResistance(M_SEEN_ACID, state, seesHero);
+    }
 }
 
 // C uhitm.c:mhitm_ad_curs(). A daytime gremlin still makes contact, but
