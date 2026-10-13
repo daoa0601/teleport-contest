@@ -206,7 +206,7 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
             const liquid = await applyHeroLiquidEffects(plineWithContinuation, { entry: 'float-down' });
             if (liquid?.died || state.program_state?.gameover)
                 return 1;
-            noMsg = !!liquid?.moved; // C drown(): TRUE iff the player relocated
+            noMsg = !!liquid?.moved; // C drown(): TRUE after relocation or rescue
         }
         const location = requireGameLevel(state).requireAt(hero.ux, hero.uy);
         if (IS_LAVA(location.typ) && !state.iflags?.in_lava_effects) {

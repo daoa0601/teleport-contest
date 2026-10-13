@@ -1049,7 +1049,8 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
     u.uinwater = 0;
     state.underwater = false;
     await announceDrowningRescue(state, publish);
-    return { entered: true, moved: false, died: false };
+    // C drown() returns TRUE after rescue even when no safe landing exists.
+    return { entered: true, moved: true, died: false };
 }
 
 // C trap.c:rescued_from_terrain(DROWNING)/back_on_ground(TRUE).

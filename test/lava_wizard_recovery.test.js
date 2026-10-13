@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ICE, LAVAPOOL, POOL, TT_LAVA } from '../js/const.js';
+import { ICE, LAVAPOOL, POOL, TIMEOUT, TT_LAVA } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
 import { resetInputState } from '../js/input.js';
+import { floatHeroDown } from '../js/terrain_movement.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a wizard who declines lava death recovers and teleports to safety', async () => {
     const level = freshObjectRoom({ flags: { debug: true, bones: false, disclose: '-i -a -v -g -c -o' } });
@@ -89,6 +90,26 @@ void test('two drowning refusals survive even when the level has no dry landing'
     assert.equal(game.u.uinwater, 0);
     assert.match(game._pending_message ?? '', /You find yourself on top of water\./);
 });
+for (const mode of ['debug', 'explore']) {
+    void test(`${mode} drowning rescue ends levitation landing feedback without a dry destination`, async () => {
+        const level = freshObjectRoom({ flags: { [mode]: true, bones: false } });
+        for (let x = 7; x <= 16; x++) {
+            for (let y = 6; y <= 14; y++)
+                level.requireAt(x, y).typ = POOL;
+        }
+        const { ux, uy } = game.u;
+        game.u.levitationTurns = 1;
+        const refusals = refuseLiquidDeaths();
+        await floatHeroDown(TIMEOUT, 0);
+        assert.equal(refusals(), 2);
+        assert.equal(!!game.program_state.gameover, false);
+        assert.equal(game.u.ux, ux);
+        assert.equal(game.u.uy, uy);
+        assert.equal(game.u.uinwater, 0);
+        assert.match(game._pending_message ?? '', /You find yourself on top of water\./);
+        assert.doesNotMatch(game._pending_message ?? '', /You float gently/);
+    });
+}
 void test('drowning recovery describes the ice at its landing square', async () => {
     const level = freshObjectRoom({ flags: { explore: true, bones: false } });
     for (let x = 7; x <= 16; x++) {
