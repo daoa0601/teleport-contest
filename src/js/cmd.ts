@@ -3869,14 +3869,11 @@ async function doadjust(selected: GameObject | null = null, splitting: GameObjec
     // destination uses tty_yn_function(), which acknowledges unread prose.
     await flushPendingTopline();
     let destination = '';
-    for (let attempt = 0; attempt < 5; attempt++) {
+    for (let attempt = 1; ; attempt++) {
         let key = await promptKey(destinationPrompt, 1);
         if (key === 63 || key === 42) {
             key = await selectUsedInventoryLetter(splitting ? source : null);
-            if (!key) {
-                attempt--;
-                continue;
-            }
+            if (!key) continue;
         }
         destination = String.fromCharCode(key);
         if ([27, 32, 10, 13].includes(key) || splitting && destination === source) {
@@ -3894,7 +3891,7 @@ async function doadjust(selected: GameObject | null = null, splitting: GameObjec
             return;
         }
         if (/^[a-zA-Z]$/.test(destination) || destination === '#' && occupied.has('#')) break;
-        if (attempt === 4) {
+        if (attempt === 5) {
             if (splitting) await rejoinObjectStack(splitting, object, game);
             clearMessageWindow();
             await pline('Never mind.');

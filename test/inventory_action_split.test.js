@@ -144,4 +144,36 @@ void test('the fifth invalid split destination cancels and rejoins the stack wit
     assert.equal(game.inventory.length, 1);
     assert.equal(game.context.move, 0);
 });
+void test('dismissing the used-letter menu counts toward the split destination retry limit', async () => {
+    freshObjectRoom();
+    const dagger = await addInventoryObject(DAGGER, { quan: 2 });
+    await addInventoryObject(CLUB);
+    const input = resetInputState();
+    await answerPrompts(rhack('i'.charCodeAt(0)), input, [
+        { prompt: /Weapons/, keys: dagger.invlet },
+        { prompt: /I - Adjust inventory by splitting this stack/, keys: 'I' },
+    ]);
+    const splitting = rhack(0);
+    try {
+        await answerPrompts(splitting, input, [
+            { prompt: /Split 1 to what/, keys: '?' },
+            { prompt: /Inventory letters used:/, keys: '\r' },
+            ...Array.from({ length: 3 }, () => [
+                { prompt: /Split 1 to what/, keys: '1' },
+                { prompt: /Select an inventory slot letter\.[^\n]*--More--/, keys: ' ' },
+            ]).flat(),
+            { prompt: /Split 1 to what/, keys: '1' },
+        ]);
+    }
+    finally {
+        input.feed('\x1b\x1b');
+        await splitting;
+    }
+    await flush_screen(1);
+    const message = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
+    assert.match(message, /^Never mind\./);
+    assert.equal(dagger.quan, 2);
+    assert.equal(game.inventory.length, 2);
+    assert.equal(game.context.move, 0);
+});
 //# sourceMappingURL=inventory_action_split.test.js.map
