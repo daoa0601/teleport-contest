@@ -11,7 +11,7 @@ import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
-import { ARROW as FIRST_OBJECT, EGG, CHEST, GOLD_PIECE, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OBJECT_TOUGH, STATUE, TIN, TIN_OPENER, TOWEL, } from './object_data.js';
+import { ARROW as FIRST_OBJECT, EGG, CHEST, GOLD_PIECE, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, STATUE, TIN, TIN_OPENER, TOWEL, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
@@ -446,7 +446,7 @@ function itemActionEntries(item, state) {
     }
     else if ([2, 4, 11, 13].includes(item.oclass)) {
         const engraves = isBlade(item) || item.oclass === 11
-            || (item.oclass === 4 || item.oclass === 13) && !!OBJECT_TOUGH[item.otyp];
+            || (item.oclass === 4 || item.oclass === 13) && !!state.objectToughness?.[item.otyp];
         const verb = engraves ? 'Engrave' : 'Write';
         const surface = surfaceName(state.u.ux, state.u.uy, state);
         entries.push({ key: 'E', text: `${verb} on the ${surface} with ${stack ? 'one of these items' : 'this item'}` });
