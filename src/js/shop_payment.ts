@@ -94,6 +94,8 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
     if (!container && !await checkPurchaseFunds(resident, item, state)) return 'stop';
     // Only buy_container() suppresses "an unpaid" for a grouped purchase.
     const name = paymentObjectDescription(item.object, item.quantity, { state, purchasingContents: container });
+    const feedback = `You ${item.kind === 'used' ? 'paid for' : 'bought'} ${name}${
+        item.kind === 'used' ? ' at a cost of' : ' for'} ${item.price} gold piece${item.price === 1 ? '' : 's'}.`;
     let bought = 0;
     for (const object of purchases) {
         const entry = resident.eshk.bill.find(candidate => candidate.bo_id === object.o_id);
@@ -107,6 +109,9 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
             continue;
         }
         await payBillPrice(resident, price, state);
+        // dopayobj() finishes its feedback before pay_billed_items() updates
+        // the bill. Grouped contents are bought unseen before their summary.
+        if (!container) await plineWithContinuation(feedback);
         if (item.kind === 'used' && object.where !== 'onbill' && object.quan > 0) {
             entry.bquan = object.quan;
         } else {
@@ -123,8 +128,7 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
         await plineWithContinuation(`"You need to remove any unpaid items from that ${simpleObjectName(item.object, state)} and buy them separately."`);
         return 'stop';
     }
-    await plineWithContinuation(`You ${item.kind === 'used' ? 'paid for' : 'bought'} ${name}${
-        item.kind === 'used' ? ' at a cost of' : ' for'} ${item.price} gold piece${item.price === 1 ? '' : 's'}.`);
+    if (container) await plineWithContinuation(feedback);
     return 'paid';
 }
 
