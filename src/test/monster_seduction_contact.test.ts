@@ -18,6 +18,45 @@ import { freshObjectRoom } from './support/object-room.js';
 
 const RIN_ADORNMENT = OBJECT_NAMES.indexOf('adornment');
 
+for (const { description, callName, personalName, expected } of [
+    { description: 'short names that fit', callName: 'Keepsake', personalName: 'heirloom',
+        expected: 'ring called Keepsake named heirloom' },
+    { description: 'a long call name', callName: 'Evening jewels '.repeat(10), personalName: 'heirloom',
+        expected: 'ring called Evening ... named heirloom' },
+    { description: 'a long personal name', callName: 'Keepsake', personalName: 'Wedding present '.repeat(10),
+        expected: 'ring called Keepsake named Wedding ...' },
+    { description: 'two long names', callName: 'Evening jewels '.repeat(10), personalName: 'Wedding present '.repeat(10),
+        expected: 'ring called Evening ... named Wedding ...' },
+]) {
+    void test(`a seduction prompt preserves ${description} using native name shortening`, async () => {
+        const level = freshObjectRoom({ flags: { female: true } });
+        requirePlayingGame(game);
+        level.flags.noteleport = true;
+        game._objectCallNames = { [RIN_ADORNMENT]: callName };
+        const ring = await addInventoryObject(RIN_ADORNMENT, {
+            typeKnown: false, oextra: { oname: personalName },
+        });
+        const suit = await addInventoryObject(LEATHER_ARMOR);
+        wearHeroArmor(suit);
+        const incubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+        incubus.female = false;
+        const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_BITE,
+            damageType: AD_SSEX, hit: true, damage: 0 };
+        const input = resetInputState();
+        const promptName = expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        await answerPrompts(resolveMonsterContactEffect(incubus, attack, { state: game,
+            publish: async () => {}, random: () => 0 }), input, [
+            { prompt: new RegExp(`"That ${promptName} looks pretty`), keys: 'n' },
+            { prompt: /Shall I remove your suit, lover/, keys: 'n' },
+        ]);
+
+        assert.equal(ring.oextra?.oname, personalName, 'prompt shortening preserves the ring\'s full personal name');
+        assert.equal(game._objectCallNames[RIN_ADORNMENT], callName, 'prompt shortening preserves the full type call name');
+        assert.equal(game.inventory.includes(ring), true);
+    });
+}
+
 for (const blind of [false, true]) {
     void test(`a ${blind ? 'blind' : 'sighted'} hero ${blind ? 'does not learn' : 'learns'} an unseen adornment ring's appearance from the seduction prompt`, async () => {
         const level = freshObjectRoom({ flags: { female: true }, hero: { blindTurns: blind ? 20 : 0 } });

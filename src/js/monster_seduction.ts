@@ -5,7 +5,7 @@ import { armorSimpleName, armorSlotFor, heroHasDrainResistance, stopDonning } fr
 import { adjustAttribute, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHairName, heroHandName } from './body_parts.js';
 import { heroHasInvoluntaryDelay } from './command_state.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, LARGEST_INT, M_ATTK_AGR_DONE, RLOC_MSG, Upolyd } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, LARGEST_INT, M_ATTK_AGR_DONE, QBUFSZ, RLOC_MSG, Upolyd } from './const.js';
 import { currency } from './currency.js';
 import { canSeeMonster, type MessagePublisher } from './display.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
@@ -136,11 +136,10 @@ async function exchangeAdornmentRings(context: SeductionContext): Promise<boolea
             const suffix = female ? ' looks pretty.  May I have it?"'
                 : ' looks pretty.  Would you wear it for me?"';
             observeObjectForNaming(ring, { state });
-            let name = objectName(ring, state);
-            if (name.length + suffix.length + 6 >= 128) name = simpleObjectName(ring, state);
-            if (name.length + suffix.length + 6 >= 128) name = 'ring';
+            const prefix = '"That ';
+            const name = seductionRingName(ring, state, QBUFSZ - 1 - prefix.length - suffix.length);
             learnObjectType(RIN_ADORNMENT, state);
-            if (await promptYesNo(`"That ${name}${suffix}`) === 'n') continue;
+            if (await promptYesNo(`${prefix}${name}${suffix}`) === 'n') continue;
         } else {
             observeObjectForNaming(ring, { state });
             if (female) {
@@ -172,6 +171,38 @@ async function exchangeAdornmentRings(context: SeductionContext): Promise<boolea
         await publish(`${ring.invlet || '?'} - ${inventoryItemDescription(ring)}.`);
     }
     return triedGloves;
+}
+
+// C safe_qbuf()/short_oname(xname, simpleonames). Ring xname() has no
+// beatitude or erosion prefixes; shorten user names before the simple fallback.
+function seductionRingName(ring: GameObject, state: PlayingGameState, limit: number): string {
+    const fullName = objectName(ring, state);
+    if (fullName.length <= limit) return fullName;
+
+    const callName = state._objectCallNames?.[ring.otyp];
+    const personalName = ring.oextra?.oname || ring.oname;
+    const shortCallState = callName && callName.length >= 12
+        ? { ...state, _objectCallNames: {
+            ...state._objectCallNames, [ring.otyp]: `${callName.slice(0, 8)}...`,
+        } } : state;
+    const shortNamedRing = personalName && personalName.length >= 12
+        ? { ...ring, oextra: { ...ring.oextra, oname: `${personalName.slice(0, 8)}...` } }
+        : ring;
+
+    if (shortCallState !== state) {
+        const name = objectName(ring, shortCallState);
+        if (name.length <= limit) return name;
+    }
+    if (shortNamedRing !== ring) {
+        const name = objectName(shortNamedRing, state);
+        if (name.length <= limit) return name;
+    }
+    if (shortCallState !== state && shortNamedRing !== ring) {
+        const name = objectName(shortNamedRing, shortCallState);
+        if (name.length <= limit) return name;
+    }
+    const simpleName = simpleObjectName(ring, state);
+    return simpleName.length <= limit ? simpleName : 'ring';
 }
 
 async function undressHero(context: SeductionContext, triedGloves: boolean): Promise<void> {
