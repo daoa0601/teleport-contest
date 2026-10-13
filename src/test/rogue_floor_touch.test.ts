@@ -36,11 +36,29 @@ for (const color of [true, false]) {
 
             feel_location(11, 10);
 
-            assert.equal(destination.disp_ch, dark_room ? '.' : ' ');
-            assert.equal(destination.remembered_glyph?.ch, dark_room ? '.' : ' ');
+            const symbol = dark_room && color ? '.' : ' ';
+            assert.equal(destination.disp_ch, symbol);
+            assert.equal(destination.remembered_glyph?.ch, symbol);
             assert.equal(destination.remembered_glyph?.decgfx, false);
         });
     }
+}
+
+for (const symset of ['ASCII', 'DECgraphics']) {
+    void test(`grounded blind touch shows an unlit ${symset} floor as blank without color`, () => {
+        const level = freshObjectRoom({ flags: { color: false, dark_room: true } });
+        game.symset = symset;
+        const destination = level.requireAt(11, 10);
+        destination.lit = false;
+        destination.waslit = false;
+        setHeroBlindnessTurns(10);
+
+        feel_location(11, 10);
+
+        assert.equal(destination.disp_ch, ' ');
+        assert.equal(destination.remembered_glyph?.ch, ' ');
+        assert.equal(destination.remembered_glyph?.decgfx, false);
+    });
 }
 
 void test('levitating blind touch clears an unseen monster marker on an unlit Rogue floor', () => {

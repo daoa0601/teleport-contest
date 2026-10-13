@@ -1272,13 +1272,16 @@ export function feel_location(x, y) {
 }
 function rememberFeltRoom(x, y, location, symbol) {
     const dark = symbol === CmapSymbol.darkroom;
-    const floor = symbol !== CmapSymbol.stone;
+    // reglyph_darkroom() uses the floor symbol only with dark_room and color.
+    const floor = symbol === CmapSymbol.room
+        || dark && (game.flags.dark_room ?? true) && game.flags.color !== false;
     const dec = /^DECgraphics$/i.test(game.symset || '') && !Is_rogue_level(game.u.uz);
     const glyph = {
         ch: floor ? dec ? '~' : '.' : ' ',
         color: dark ? 16 : NO_COLOR,
         decgfx: floor && dec,
-        kind: 'terrain', terrainName: floor ? 'floor of a room' : 'stone',
+        kind: 'terrain', terrainName: dark ? 'dark part of a room'
+            : floor ? 'floor of a room' : 'stone',
         glyph: cmapToGlyph(symbol),
     };
     location.remembered_glyph = glyph;
