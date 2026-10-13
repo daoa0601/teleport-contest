@@ -50,7 +50,7 @@ import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { objectWeight } from './weight.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { carriedObjectOwner } from './shk.js';
-import { objectName, observeObjectForNaming } from './objnam.js';
+import { objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { getObjectLocation } from './object_location.js';
 import { useUpInventoryStack } from './hero_inventory.js';
@@ -198,10 +198,26 @@ async function affectCarriedLights(worsen: boolean) {
     for (const object of [...game.inventory]) {
         if (!object.lamplit) continue;
         if (artifactEmitsLight(object)) await impactArtifactLight(object, worsen);
-        else if (worsen) snuffOrdinaryLight(object);
+        else if (worsen) await snuffCarriedLight(object);
         if (object.lamplit) stillLit++;
     }
     return stillLit;
+}
+
+async function snuffCarriedLight(object: GameObject): Promise<void> {
+    if (!LIGHT_TYPES.has(object.otyp)) return;
+    if (!heroIsBlind()) {
+        if (CANDLE_TYPES.has(object.otyp)) {
+            const candelabrum = object.otyp === CANDELABRUM_OF_INVOCATION;
+            const many = candelabrum ? object.spe > 1 : object.quan > 1;
+            await plineWithContinuation(`${carriedObjectOwner(object, game)} ${
+                candelabrum ? "candelabrum's " : ''}candle${
+                many ? "s' flames are" : "'s flame is"} extinguished.`);
+        } else {
+            await plineWithContinuation(`${ownedObjectName(object)} ${objectNameIsPlural(object) ? 'go' : 'goes'} out!`);
+        }
+    }
+    snuffOrdinaryLight(object);
 }
 
 // C potion.c:impact_arti_light()/H2Opotion_dip(). The temporary water
