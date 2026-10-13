@@ -158,8 +158,15 @@ async function checkPurchaseFunds(resident: BilledShopkeeper, item: ShopBillItem
         return false;
     }
     if (funds >= cost) return true;
-    await plineWithContinuation(`You don't${hiddenGold(state, true) ? ' seem to' : ''} have gold${
-        resident.eshk.credit ? ' or credit' : ''} enough to pay for ${paymentObjectDescription(item.object, item.quantity, { state })}.`);
+    const originalQuantity = item.object.quan;
+    // dopayobj() leaves the payment quantity in place during refusal feedback.
+    item.object.quan = item.quantity;
+    try {
+        await plineWithContinuation(`You don't${hiddenGold(state, true) ? ' seem to' : ''} have gold${
+            resident.eshk.credit ? ' or credit' : ''} enough to pay for ${paymentObjectDescription(item.object, item.quantity, { state })}.`);
+    } finally {
+        item.object.quan = originalQuantity;
+    }
     return false;
 }
 
@@ -191,15 +198,22 @@ function containedPurchases(resident: BilledShopkeeper, container: GameObject, s
 
 async function rejectPartlyUsedPurchase(resident: BilledShopkeeper, object: GameObject,
     entry: ShopBillEntry, state: GameState): Promise<void> {
-    const other = simpleObjectName({ ...object, quan: entry.bquan - object.quan }, state);
-    if (!heroIsDeaf(state) && !shopkeeperIsMuted(resident)) {
-        const which = object.container ? `the one${object.quan > 1 ? 's' : ''} in ${
-            definiteName(simpleObjectName(object.container, state), state)}`
-            : object.quan > 1 ? 'these' : 'this one';
-        await plineWithContinuation(`"${resident.mpeaceful ? 'Please pay' : 'Pay'} for the other ${other} before buying ${which}."`);
-    } else {
-        const gesture = monsterHasNoLimbs(resident.mnum) ? 'motions to' : 'points out';
-        await plineWithContinuation(`${shopkeeperName(resident)} ${resident.mpeaceful ? '' : 'angrily '}${gesture} your bill for the other ${other} first.`);
+    const intactQuantity = object.quan;
+    // reject_purchase() restores the intact count after feedback returns.
+    object.quan = entry.bquan - intactQuantity;
+    try {
+        const other = simpleObjectName(object, state);
+        if (!heroIsDeaf(state) && !shopkeeperIsMuted(resident)) {
+            const which = object.container ? `the one${intactQuantity > 1 ? 's' : ''} in ${
+                definiteName(simpleObjectName(object.container, state), state)}`
+                : intactQuantity > 1 ? 'these' : 'this one';
+            await plineWithContinuation(`"${resident.mpeaceful ? 'Please pay' : 'Pay'} for the other ${other} before buying ${which}."`);
+        } else {
+            const gesture = monsterHasNoLimbs(resident.mnum) ? 'motions to' : 'points out';
+            await plineWithContinuation(`${shopkeeperName(resident)} ${resident.mpeaceful ? '' : 'angrily '}${gesture} your bill for the other ${other} first.`);
+        }
+    } finally {
+        object.quan = intactQuantity;
     }
 }
 

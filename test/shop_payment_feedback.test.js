@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { plineWithContinuation } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
+import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { deleteObject } from '../js/object_delete.js';
-import { DAGGER } from '../js/object_data.js';
+import { DAGGER, SACK } from '../js/object_data.js';
 import { buyShopBillItem, itemizedShopBill } from '../js/shop_payment.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 for (const portion of ['partly used', 'intact', 'fully used']) {
@@ -58,5 +60,76 @@ for (const portion of ['partly used', 'intact', 'fully used']) {
                 assert.equal(daggers.where, 'gone');
         }
     });
+}
+void test('an unaffordable used portion keeps its quantity until payment feedback returns', async () => {
+    freshObjectRoom();
+    const daggers = await addInventoryObject(DAGGER, {
+        quan: 3, oextra: { oname: 'the long and winding road through the northern mountains to the distant sea' },
+    });
+    const { shopkeeper } = await createStaffedShop({ bill: [
+            { bo_id: daggers.o_id, bquan: 5, price: 4, useup: false },
+        ] });
+    daggers.unpaid = true;
+    setHeroGoldAmount(game, 4);
+    const purchase = itemizedShopBill(shopkeeper).find(item => item.kind === 'used');
+    assert.ok(purchase);
+    const input = resetInputState();
+    const buying = buyShopBillItem(shopkeeper, purchase);
+    await input.waitUntilBlocked();
+    try {
+        assert.match(game._pending_message, /enough to pay for 2 .*daggers/);
+        assert.equal(daggers.quan, 2, 'The refusal refers to the two used daggers');
+        assert.equal(heroGoldAmount(game), 4);
+        assert.equal(shopkeeper.eshk.bill[0]?.bquan, 5);
+        assert.equal(daggers.unpaid, true);
+    }
+    finally {
+        input.feed(' ');
+        await buying;
+    }
+    assert.equal(await buying, 'stop');
+    assert.equal(daggers.quan, 3, 'The intact quantity returns after feedback');
+    assert.equal(shopkeeper.eshk.billct, 1);
+});
+for (const contained of [false, true]) {
+    for (const deaf of [false, true]) {
+        void test(`a ${deaf ? 'gestured' : 'spoken'} refusal to buy ${contained ? 'contained' : 'loose'} partly used goods keeps the used quantity through the pager`, async () => {
+            freshObjectRoom();
+            const sack = contained ? await addInventoryObject(SACK, { cknown: true }) : null;
+            const daggers = sack ? await knownObject(DAGGER, { quan: 3 })
+                : await addInventoryObject(DAGGER, { quan: 3 });
+            if (sack)
+                await addCreatedObjectToContainer(sack, daggers);
+            const { shopkeeper } = await createStaffedShop({ bill: [
+                    { bo_id: daggers.o_id, bquan: 5, price: 4, useup: false },
+                ] });
+            shopkeeper.eshk.shknam = 'Ada';
+            game.u.deafTurns = deaf ? 20 : 0;
+            daggers.unpaid = true;
+            setHeroGoldAmount(game, 20);
+            const purchase = itemizedShopBill(shopkeeper).find(item => item.kind !== 'used');
+            assert.ok(purchase);
+            const input = resetInputState();
+            await plineWithContinuation('You look over your purchases.');
+            const buying = buyShopBillItem(shopkeeper, purchase);
+            await input.waitUntilBlocked();
+            try {
+                assert.equal(daggers.quan, 2, 'The rejection refers to the used portion while earlier prose is paged');
+                assert.equal(heroGoldAmount(game), 20);
+                assert.equal(shopkeeper.eshk.bill[0]?.bquan, 5);
+                assert.equal(daggers.unpaid, true);
+            }
+            finally {
+                input.feed(' ');
+                await buying;
+            }
+            assert.equal(await buying, contained ? 'stop' : 'skip');
+            assert.match(game._pending_message, deaf ? /Ada points out your bill for the other daggers first\./
+                : contained ? /Please pay for the other daggers before buying the ones in the sack\./
+                    : /Please pay for the other daggers before buying these\./);
+            assert.equal(daggers.quan, 3, 'The intact quantity returns after rejection feedback');
+            assert.equal(shopkeeper.eshk.billct, 1);
+        });
+    }
 }
 //# sourceMappingURL=shop_payment_feedback.test.js.map
