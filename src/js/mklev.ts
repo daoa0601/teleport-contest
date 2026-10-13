@@ -5371,6 +5371,8 @@ async function specialShrinePriest(
         hostile_time: 0,
     };
     priest.mtrapseen = 0x7fffffff;
+    // priest.c:priestini() replaces the birth attitude and species alignment.
+    setMonsterMalign(priest);
 
     if (sanctum && altarAlignment === A_NONE) {
         const amulet = await mksobj(AMULET_OF_YENDOR, true, false);
