@@ -69,6 +69,7 @@ import { Is_astralevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
 import { clearHeroTrap } from './hero_traps.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
+import { seeTrap } from './trap.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameMap } from './game.js';
@@ -958,7 +959,7 @@ export async function teleportMonsterFromTrap(
     }
     if (event.visible) {
         await publish(`${subject} ${canSeeMonster(monster) ? 'seems disoriented.' : 'suddenly disappears!'}`);
-        trap.tseen = true;
+        seeTrap(trap, state);
     }
     return event;
 }
@@ -1050,7 +1051,7 @@ export async function teleportMonsterToRandomLevel(monster: Monster, trap: Trap,
     }
     if (seen) {
         await publish(`Suddenly, ${monsterName(monster, { state })} disappears out of sight.`);
-        trap.tseen = true;
+        seeTrap(trap, state);
     }
     if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT_CNTRL)) monster.mconf = 1;
     return migrateMonsterOffLevel(monster, state, { ...trap, dst: levelAtDepth(destination, { state }) },

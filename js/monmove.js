@@ -177,7 +177,7 @@ import { dragonFormForArmor } from './armor.js';
 import { findMonsterDefensiveItem, useMonsterDefensiveItem } from './monster_defensive_item.js';
 import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
 import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction, } from './teleport_rules.js';
-import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
+import { burnArmorByFire, monsterTrapVisibility, seeTrap } from './trap.js';
 import { publishMonsterWake } from './monster_wake.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
 import { aggravateMonsters, angerMonster, angerWatchGuards } from './monster_anger.js';
@@ -3586,7 +3586,7 @@ async function announceTrapLevelDeparture(monster, trap, state, publish) {
     const effect = trap.ttyp === HOLE ? 'falls into a hole'
         : trap.ttyp === TRAPDOOR ? 'falls through a trap door' : 'disappears out of sight';
     await publish(`Suddenly, ${canonicalMonsterName(monster, { state })} ${effect}.`);
-    trap.tseen = true;
+    seeTrap(trap, state);
 }
 async function triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls, publish = plineWithContinuation) {
     const trap = trapAtMonster(monster, state);

@@ -464,7 +464,7 @@ import {
     monsterTeleportRestricted,
     reportMonsterTeleportRestriction,
 } from './teleport_rules.js';
-import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
+import { burnArmorByFire, monsterTrapVisibility, seeTrap } from './trap.js';
 import { publishMonsterWake } from './monster_wake.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
 import { aggravateMonsters, angerMonster, angerWatchGuards } from './monster_anger.js';
@@ -4612,7 +4612,7 @@ async function announceTrapLevelDeparture(
     const effect = trap.ttyp === HOLE ? 'falls into a hole'
         : trap.ttyp === TRAPDOOR ? 'falls through a trap door' : 'disappears out of sight';
     await publish(`Suddenly, ${canonicalMonsterName(monster, { state })} ${effect}.`);
-    trap.tseen = true;
+    seeTrap(trap, state);
 }
 
 async function triggerMonsterTrap(
