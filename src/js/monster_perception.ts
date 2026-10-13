@@ -8,7 +8,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterIsAmorphous, monsterIsVampireShifter, monsterIsVerySmall } from './monster_data.js';
 import { AD_MAGM, AD_ACID } from './monster_attack_types.js';
 import { heroGoldAmount } from './hero_gold.js';
-import { clearPath, couldsee } from './vision.js';
+import { couldsee } from './vision.js';
 import {
     ACCESSIBLE, D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_MAGR, M_SEEN_NOTHING, isok,
 } from './const.js';
@@ -113,25 +113,10 @@ export function seenResistanceForDamage(damageType: number): number {
         ? M_SEEN_MAGR << (damageType - AD_MAGM) : M_SEEN_NOTHING;
 }
 
-function monsterCanSeeHero(monster: Monster, state: GameState): boolean {
-    if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
-        || monster.mcansee === 0) return false;
-    if (!Number.isFinite(state.u?.ux) || !Number.isFinite(state.u?.uy))
-        return false;
-    if (state.underwater || state.u?.uinwater) return false;
-    if (heroIsInvisible(state)
-        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS)) {
-        return false;
-    }
-    return clearPath(
-        monster.mx, monster.my, state.u?.ux, state.u?.uy,
-    );
-}
-
 function monstersThatCanSeeHero(state: GameState, canSeeHero: HeroVisibility | null): Monster[] {
     if (state.u?.uswallow) return [];
     const seesHero = canSeeHero
-        || ((monster: Monster) => monsterCanSeeHero(monster, state));
+        || ((monster: Monster) => monsterHasLineOfSightToHero(monster, state));
     return (state.level?.monsters || []).filter(monster =>
         monster && !monster.dead && (monster.mhp ?? 1) > 0
         && seesHero(monster));

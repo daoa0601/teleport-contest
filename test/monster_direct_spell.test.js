@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
-import { ICE, MM_ANGRY, MM_NOGRP, NO_MINVENT, POOL } from '../js/const.js';
+import { ICE, MM_ANGRY, MM_NOGRP, M_SEEN_COLD, M_SEEN_FIRE, NO_MINVENT, POOL } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -89,30 +89,51 @@ void test('Asmodeus freezes the hero square even when the hero resists cold', as
     assert.equal(square.typ, ICE);
     assert.equal(game.u.uhp, 100);
 });
-void test('Asmodeus remembers observed cold resistance and curses instead of casting again', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true, coldResistance: true } });
+for (const blinded of [false, true]) {
+    void test(`${blinded ? 'Blinded' : 'Sighted'} Asmodeus remembers cold resistance and curses instead of casting again`, async () => {
+        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true, coldResistance: true } });
+        requirePlayingGame(game);
+        const asmodeus = await createMonsterAt('Asmodeus', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+        asmodeus.mpeaceful = false;
+        asmodeus.mux = game.u.ux;
+        asmodeus.muy = game.u.uy;
+        asmodeus.mcansee = blinded ? 0 : 1;
+        const input = resetInputState();
+        const messages = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        installPagerInput(input, { expected: /Asmodeus|frost|resist/, limit: 12 });
+        await performMonsterHeroAttack(asmodeus, game, {
+            random: limit => limit - 1, rollOne: sides => sides, rollDice: count => count,
+        });
+        await flushPendingTopline();
+        game.u.coldResistance = false;
+        messages.length = 0;
+        await performMonsterHeroAttack(asmodeus, game, {
+            random: limit => limit - 1, rollOne: sides => sides, rollDice: count => count,
+        });
+        await flushPendingTopline();
+        assert.equal(game.u.uhp, 100, 'known resistance prevents a second spell even after protection is removed');
+        assert.match(messages.join('\n'), /Asmodeus points at you, then curses\./);
+        assert.doesNotMatch(messages.join('\n'), /casts a spell/);
+    });
+}
+void test('a blinded witness forgets cold resistance when a cold spell damages the hero', async () => {
+    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true } });
     requirePlayingGame(game);
     const asmodeus = await createMonsterAt('Asmodeus', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     asmodeus.mpeaceful = false;
     asmodeus.mux = game.u.ux;
     asmodeus.muy = game.u.uy;
-    const input = resetInputState();
-    const messages = [];
-    input.beforeRead = () => { messages.push(game._pending_message); };
-    installPagerInput(input, { expected: /Asmodeus|frost|resist/, limit: 12 });
+    asmodeus.m_lev = 30;
+    const witness = await createMonsterAt('hill orc', 12, 10, NO_MINVENT);
+    witness.mcansee = 0;
+    witness.seen_resistance = M_SEEN_COLD | M_SEEN_FIRE;
+    installPagerInput(resetInputState(), { expected: /Asmodeus|frost/, limit: 8 });
     await performMonsterHeroAttack(asmodeus, game, {
         random: limit => limit - 1, rollOne: sides => sides, rollDice: count => count,
     });
-    await flushPendingTopline();
-    game.u.coldResistance = false;
-    messages.length = 0;
-    await performMonsterHeroAttack(asmodeus, game, {
-        random: limit => limit - 1, rollOne: sides => sides, rollDice: count => count,
-    });
-    await flushPendingTopline();
-    assert.equal(game.u.uhp, 100, 'known resistance prevents a second spell even after protection is removed');
-    assert.match(messages.join('\n'), /Asmodeus points at you, then curses\./);
-    assert.doesNotMatch(messages.join('\n'), /casts a spell/);
+    assert.equal(game.u.uhp, 79);
+    assert.equal(witness.seen_resistance, M_SEEN_FIRE, 'Native monstunseesu clears only the resistance disproved by the spell');
 });
 void test('Asmodeus wastes a cold spell at a false nearby target', async () => {
     freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, seeInvisible: true, displaced: true } });
