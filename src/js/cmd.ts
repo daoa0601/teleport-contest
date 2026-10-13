@@ -5697,6 +5697,11 @@ async function doclose(): Promise<void> {
         game.context.move = 0;
         return;
     }
+    if (game.u.utrap && game.u.utraptype === TT_PIT) {
+        await pline("You can't reach over the edge of the pit.");
+        game.context.move = 0;
+        return;
+    }
     const key = await readDirectionKey();
     const direction = promptedDirectionKey(key, game.commandBindings);
     if (!isMovementKey(direction)) {
