@@ -30,7 +30,7 @@ import { speakArtifact } from './artifact_speech.js';
 import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light.js';
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
 import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
@@ -133,7 +133,7 @@ import { objectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
+import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
@@ -2331,7 +2331,7 @@ function inventoryActionCommand({ key, item }) {
             : item === game.uswapwep ? 'remarm_swapwep'
                 : item === game.uquiver ? 'dowieldquiver' : 'donull',
         'c': 'docallcmd', 'd': 'dodrop', 'E': 'doengrave', 'f': 'dofire',
-        'i': 'doorganize', 'P': 'doputon', 'Q': 'dowieldquiver', 'r': 'doread',
+        'i': 'doorganize', 'P': 'dowear', 'Q': 'dowieldquiver', 'r': 'doread',
         't': 'dothrow', 'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
         '/': 'dowhatis', '\x1b': null, ' ': null, '\n': null, '\r': null,
     };
@@ -2391,7 +2391,7 @@ async function runInventoryAction({ key, item }) {
             return;
         case 'P':
             queueCommandKeys(letter);
-            await doputon();
+            await dowear();
             return;
         case 'Q':
             queueCommandKeys(letter);
@@ -4912,36 +4912,26 @@ async function dowear() {
         game.context.move = 0;
         return;
     }
-    const armor = (game.inventory || []).filter(object => object.class === 'Armor' || object.oclass === 3);
-    if (!armor.length) {
-        await pline("You don't have anything appropriate to wear.");
+    // wear_ok() downplays accessories but accepts them through the same
+    // getobj transaction, including a queued inventory action.
+    const object = await chooseInventoryObject('wear', candidate => {
+        if ((candidate.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))
+            return GETOBJ_EXCLUDE_INACCESS;
+        if (candidate.oclass === 3)
+            return GETOBJ_SUGGEST;
+        if (candidate.oclass === 4 || candidate.oclass === 5
+            || isEyewear(candidate) || candidate.otyp === MEAT_RING)
+            return GETOBJ_DOWNPLAY;
+        return GETOBJ_EXCLUDE;
+    });
+    if (!object) {
         game.context.move = 0;
         return;
     }
-    const letters = armor.filter(object => !object.worn)
-        .map(object => object.invlet).join('');
-    const choices = letters ? `${letters} or ?*` : '*';
-    const selection = String.fromCharCode(await promptKey(`What do you want to wear? [${choices}] `));
-    game._pending_message = '';
-    const inventoryObject = (game.inventory || []).find(candidate => candidate.invlet === selection);
-    const object = armor.find(candidate => candidate === inventoryObject);
-    if (object) {
+    if (object.oclass === 3)
         await putOnArmorObject(object);
-        return;
-    }
-    const accessory = inventoryObject
-        && (inventoryObject.class === 'Rings' || inventoryObject.oclass === 4
-            || inventoryObject.class === 'Amulets'
-            || inventoryObject.oclass === 5
-            || inventoryObject.otyp === RIN_CONFLICT
-            || inventoryObject.otyp === BLINDFOLD
-            || inventoryObject.otyp === TOWEL)
-        ? inventoryObject : null;
-    if (!accessory) {
-        game.context.move = 0;
-        return;
-    }
-    await putOnAccessoryObject(accessory);
+    else
+        await putOnAccessoryObject(object);
 }
 // C refs: shk.c:dopay(), menu_pick_pay_items(), pay(), and update_bill().
 // The menu is a zero-time nested input transaction until at least one billed

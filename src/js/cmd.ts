@@ -46,7 +46,7 @@ import { speakArtifact } from './artifact_speech.js';
 import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light.js';
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
 import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
@@ -235,7 +235,7 @@ import {
     BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF,
     BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER,
     TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL,
-    RIN_CONFLICT,
+    RIN_CONFLICT, MEAT_RING,
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN,
     SHIELD_OF_REFLECTION, AMULET_OF_YENDOR,
     AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY,
@@ -2514,7 +2514,7 @@ function inventoryActionCommand({ key, item }: InventoryAction): NativeCommand |
             : item === game.uswapwep ? 'remarm_swapwep'
                 : item === game.uquiver ? 'dowieldquiver' : 'donull',
         'c': 'docallcmd', 'd': 'dodrop', 'E': 'doengrave', 'f': 'dofire',
-        'i': 'doorganize', 'P': 'doputon', 'Q': 'dowieldquiver', 'r': 'doread',
+        'i': 'doorganize', 'P': 'dowear', 'Q': 'dowieldquiver', 'r': 'doread',
         't': 'dothrow', 'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
         '/': 'dowhatis', '\x1b': null, ' ': null, '\n': null, '\r': null,
     };
@@ -2557,7 +2557,7 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
     case 'E': queueCommandKeys(letter); await doengrave(); return;
     case 'f': await dofire(); return;
     case 'i': queueCommandKeys(letter); await doadjust(); return;
-    case 'P': queueCommandKeys(letter); await doputon(); return;
+    case 'P': queueCommandKeys(letter); await dowear(); return;
     case 'Q': queueCommandKeys(letter); await doready(); return;
     case 'r': queueCommandKeys(letter); await doread({ gotoLevel }); return;
     case 't': await dothrow(item); return;
@@ -5218,41 +5218,23 @@ async function dowear(): Promise<void> {
         return;
     }
 
-    const armor = (game.inventory || []).filter(object =>
-        object.class === 'Armor' || object.oclass === 3);
-    if (!armor.length) {
-        await pline("You don't have anything appropriate to wear.");
+    // wear_ok() downplays accessories but accepts them through the same
+    // getobj transaction, including a queued inventory action.
+    const object = await chooseInventoryObject('wear', candidate => {
+        if ((candidate.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))
+            return GETOBJ_EXCLUDE_INACCESS;
+        if (candidate.oclass === 3) return GETOBJ_SUGGEST;
+        if (candidate.oclass === 4 || candidate.oclass === 5
+            || isEyewear(candidate) || candidate.otyp === MEAT_RING)
+            return GETOBJ_DOWNPLAY;
+        return GETOBJ_EXCLUDE;
+    });
+    if (!object) {
         game.context.move = 0;
         return;
     }
-
-    const letters = armor.filter(object => !object.worn)
-        .map(object => object.invlet).join('');
-    const choices = letters ? `${letters} or ?*` : '*';
-    const selection = String.fromCharCode(await promptKey(
-        `What do you want to wear? [${choices}] `,
-    ));
-    game._pending_message = '';
-    const inventoryObject = (game.inventory || []).find(candidate =>
-        candidate.invlet === selection);
-    const object = armor.find(candidate => candidate === inventoryObject);
-    if (object) {
-        await putOnArmorObject(object);
-        return;
-    }
-    const accessory = inventoryObject
-        && (inventoryObject.class === 'Rings' || inventoryObject.oclass === 4
-            || inventoryObject.class === 'Amulets'
-            || inventoryObject.oclass === 5
-            || inventoryObject.otyp === RIN_CONFLICT
-            || inventoryObject.otyp === BLINDFOLD
-            || inventoryObject.otyp === TOWEL)
-        ? inventoryObject : null;
-    if (!accessory) {
-        game.context.move = 0;
-        return;
-    }
-    await putOnAccessoryObject(accessory);
+    if (object.oclass === 3) await putOnArmorObject(object);
+    else await putOnAccessoryObject(object);
 }
 
 // C refs: shk.c:dopay(), menu_pick_pay_items(), pay(), and update_bill().
