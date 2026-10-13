@@ -5,7 +5,7 @@
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { deityName } from './alignment.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
-import { plineWithContinuation } from './display.js';
+import { canSeeMonster, plineWithContinuation } from './display.js';
 import { exerciseAttribute } from './attrib.js';
 import { castMonsterSpellRay } from './breath_ray.js';
 import { AT_MAGC, AD_ELEC } from './monster_attack_types.js';
@@ -240,7 +240,7 @@ export function priestIsCoaligned(priest, state = game) {
     return (state.u?.ualign?.type ?? A_NONE) === priestAlignment(priest);
 }
 export function visiblePriestName(priest, state = game) {
-    if (!cansee(priest.mx, priest.my) || priest.minvis || priest.mundetected)
+    if (!canSeeMonster(priest))
         return 'A nearby voice';
     const roamingMinion = !!priest.isminion && !priest.ispriest;
     const title = `${priest.mnum === 276 && !roamingMinion ? 'high ' : ''}${priest.female ? 'priestess' : 'priest'}`;

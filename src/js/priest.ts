@@ -10,7 +10,7 @@ import type { Monster, PriestData, MinionData } from './monster_types.js';
 import type { Room } from './map_types.js';
 import { deityName } from './alignment.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
-import { plineWithContinuation } from './display.js';
+import { canSeeMonster, plineWithContinuation } from './display.js';
 import type { MessagePublisher } from './display.js';
 import { exerciseAttribute } from './attrib.js';
 import { castMonsterSpellRay } from './breath_ray.js';
@@ -230,7 +230,7 @@ export function priestIsCoaligned(priest: Monster, state: GameState = game): boo
 }
 
 export function visiblePriestName(priest: Monster, state: GameState = game): string {
-    if (!cansee(priest.mx, priest.my) || priest.minvis || priest.mundetected)
+    if (!canSeeMonster(priest))
         return 'A nearby voice';
     const roamingMinion = !!priest.isminion && !priest.ispriest;
     const title = `${priest.mnum === 276 && !roamingMinion ? 'high ' : ''}${
