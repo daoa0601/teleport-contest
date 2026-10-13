@@ -2533,9 +2533,7 @@ async function dochat() {
             return;
         }
         if (monster?.pet && monster.meating) {
-            await pline(`${monster.name
-                ? monster.name.charAt(0).toUpperCase() + monster.name.slice(1)
-                : `The ${monsterInstanceDisplayName(monster)}`} is eating noisily.`);
+            await pline(`${monsterName(monster, { capitalized: true })} is eating noisily.`);
         }
         else if (monster && await publishMonsterNoise(monster, game)) {
             game.context.move = 1;
