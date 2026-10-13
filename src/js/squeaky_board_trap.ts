@@ -9,7 +9,8 @@ import { BOLT_LIM, COULD_SEE, squeakyBoardNoteWithArticle } from './const.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { wakeMonstersNear } from './monster_wake.js';
-import { monsterIsMindless, monsterTypeName } from './monster_data.js';
+import { monsterIsMindless } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import { heroIsDeaf } from './senses.js';
 import { monsterTrapVisibility } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
@@ -27,17 +28,8 @@ export interface MonsterSqueakyBoardEvent {
 }
 
 interface FinishTrapOptions {
-    monsterName?: (monster: Monster) => string;
     publish?: MessagePublisher;
     describeMonster?: (monster: Monster) => string;
-}
-
-function ordinaryMonsterName(monster: Monster) {
-    return monster?.name || monsterTypeName(monster?.mnum, !!monster?.female);
-}
-
-function ordinaryMonsterSubject(monster: Monster) {
-    return monster?.name || `The ${ordinaryMonsterName(monster)}`;
 }
 
 function canAlmostSee(state: GameState, x: number, y: number) {
@@ -74,8 +66,7 @@ export async function finishMonsterSqueakyBoard(
     state: GameState = game,
     {
         publish = async () => {},
-        monsterName = ordinaryMonsterName,
-        describeMonster = ordinaryMonsterSubject,
+        describeMonster = monster => monsterName(monster, { state, capitalized: true }),
     }: FinishTrapOptions = {},
 ) {
     if (!event || event.finished) return event;
@@ -83,7 +74,7 @@ export async function finishMonsterSqueakyBoard(
     if (event.inSight) {
         if (!event.deaf) {
             await publish(
-                `A board beneath the ${monsterName(monster)} squeaks ${event.note} loudly.`,
+                `A board beneath ${describeMonster(monster).replace(/^The /, 'the ')} squeaks ${event.note} loudly.`,
             );
             event.trap.tseen = true;
         } else if (!event.mindless) {

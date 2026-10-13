@@ -10,7 +10,7 @@ import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
 import { NO_COLOR } from './terminal.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
-import { MENU_FULL, PICK_ONE, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
+import { MENU_FULL, PICK_ONE, PL_PSIZ, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
 const DEFAULT_PARANOIA_BITS = PARANOID_PRAY | PARANOID_SWIM | PARANOID_TRAP;
 const MENU_STYLES = [
     ['traditional', '[prompt for object class(es), then', ' ask y/n for each item in those classes]'],
@@ -273,6 +273,15 @@ function parseConfiguration(rc, result) {
             const colonIdx = stripped.indexOf(':');
             const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trim().toLowerCase();
             const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
+            if (bindingOption === 'dogname' || bindingOption === 'catname' || bindingOption === 'horsename') {
+                if (negated || optionValue === 'none' || optionValue === '(none)')
+                    result.flags[bindingOption] = '';
+                else if (optionValue)
+                    result.flags[bindingOption] = optionValue.slice(0, PL_PSIZ - 1)
+                        .replace(/[\x00-\x1f\x7f\x80-\x9f\xff]/g, '.')
+                        .replace(/[\xa0-\xfe]/g, '_');
+                continue;
+            }
             if (bindingOption === 'number_pad') {
                 if (optionValue && negated)
                     continue;
@@ -774,9 +783,9 @@ function requestMenuSections() {
                 readonly('race', race),
                 readonly('gender', gender),
                 readonly('alignment', alignment),
-                readonly('catname', '(none)'),
-                readonly('dogname', '(none)'),
-                readonly('horsename', '(none)'),
+                readonly('catname', game.flags.catname || '(none)'),
+                readonly('dogname', game.flags.dogname || '(none)'),
+                readonly('horsename', game.flags.horsename || '(none)'),
                 readonly('msghistory', '20'),
                 readonly('pettype', 'random'),
                 readonly('soundlib', 'nosound'),

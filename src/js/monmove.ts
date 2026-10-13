@@ -8344,7 +8344,6 @@ export async function resumeDeferredMonsterTrap(
         case 'squeaky-board':
             await finishMonsterSqueakyBoard(action.monster, event, state, {
                 publish,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;

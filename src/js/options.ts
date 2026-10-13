@@ -14,7 +14,7 @@ import { NO_COLOR } from './terminal.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection } from './windows.js';
 import {
-    MENU_FULL, PICK_ONE,
+    MENU_FULL, PICK_ONE, PL_PSIZ,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
@@ -287,6 +287,15 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
             const colonIdx = stripped.indexOf(':');
             const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trim().toLowerCase();
             const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
+            if (bindingOption === 'dogname' || bindingOption === 'catname' || bindingOption === 'horsename') {
+                if (negated || optionValue === 'none' || optionValue === '(none)')
+                    result.flags[bindingOption] = '';
+                else if (optionValue)
+                    result.flags[bindingOption] = optionValue.slice(0, PL_PSIZ - 1)
+                        .replace(/[\x00-\x1f\x7f\x80-\x9f\xff]/g, '.')
+                        .replace(/[\xa0-\xfe]/g, '_');
+                continue;
+            }
             if (bindingOption === 'number_pad') {
                 if (optionValue && negated) continue;
                 const value = optionValue ? parseInt(optionValue, 10) || 0 : negated ? 0 : 1;
@@ -766,9 +775,9 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             readonly('race', race),
             readonly('gender', gender),
             readonly('alignment', alignment),
-            readonly('catname', '(none)'),
-            readonly('dogname', '(none)'),
-            readonly('horsename', '(none)'),
+            readonly('catname', game.flags.catname || '(none)'),
+            readonly('dogname', game.flags.dogname || '(none)'),
+            readonly('horsename', game.flags.horsename || '(none)'),
             readonly('msghistory', '20'),
             readonly('pettype', 'random'),
             readonly('soundlib', 'nosound'),

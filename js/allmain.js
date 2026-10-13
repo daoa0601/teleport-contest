@@ -1471,7 +1471,7 @@ function reluctantPetMessage(monster, movement) {
     const top = pile[0];
     const objectName = top ? distantMonsterObjectName(top) : 'something';
     const airborne = !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & 0x1);
-    return `Your ${quietMonsterName(monster)} ${airborne ? 'flies reluctantly over' : 'steps reluctantly onto'} ${objectName}.`;
+    return `${monsterName(monster, { state: game, capitalized: true, article: 'your', suppressIt: true })} ${airborne ? 'flies reluctantly over' : 'steps reluctantly onto'} ${objectName}.`;
 }
 async function monsterAttackMessage(monster, attack, previousAttack = null, random = rn2) {
     const game = requireInitializedGame();

@@ -7,32 +7,27 @@ import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { monsterTypeName } from './monster_data.js';
+import { possessiveName } from './monster_name.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { rn2 } from './rng.js';
 import { applyMonsterRustTrap, monsterTrapVisibility } from './trap.js';
 function ordinaryMonsterSubject(monster) {
     return monster?.name || `The ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
 }
-function lowerFirst(text) {
-    return text.charAt(0).toLowerCase() + text.slice(1);
-}
-function possessive(text) {
-    return /s$/i.test(text) ? `${text}'` : `${text}'s`;
-}
 async function presentRustTrap(monster, event, describeMonster, publish) {
     if (!event.inSight)
         return;
     const name = describeMonster(monster);
-    const lowerName = lowerFirst(name);
-    const owner = possessive(name);
-    const lowerOwner = lowerFirst(owner);
+    const lowerName = name.replace(/^The /, 'the ');
+    const owner = possessiveName(name);
+    const lowerOwner = possessiveName(lowerName);
     const arm = monsterArmName(monster.mnum);
     const hit = event.target === 'head'
         ? `A gush of water hits ${lowerName} on the head!`
         : event.target === 'left-arm'
-            ? `A gush of water hits ${lowerOwner} left ${arm}!`
+            ? `A gush of water hits ${lowerName}'s left ${arm}!`
             : event.target === 'right-arm'
-                ? `A gush of water hits ${lowerOwner} right ${arm}!`
+                ? `A gush of water hits ${lowerName}'s right ${arm}!`
                 : `A gush of water hits ${lowerName}!`;
     await publish(hit);
     for (const effect of event.effects) {

@@ -1709,7 +1709,7 @@ function reluctantPetMessage(monster: Monster, movement: MonsterMovement): strin
     const top = pile[0];
     const objectName = top ? distantMonsterObjectName(top) : 'something';
     const airborne = !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & 0x1);
-    return `Your ${quietMonsterName(monster)} ${
+    return `${monsterName(monster, { state: game, capitalized: true, article: 'your', suppressIt: true })} ${
         airborne ? 'flies reluctantly over' : 'steps reluctantly onto'
     } ${objectName}.`;
 }

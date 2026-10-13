@@ -37,6 +37,9 @@ export interface GameFlags extends Partial<Record<GameBooleanFlag, boolean>> {
     moonphase?: number | null;
     paranoia_bits?: number;
     pettype?: string;
+    dogname?: string;
+    catname?: string;
+    horsename?: string;
     pickup_burden?: string | number;
     pickup_types?: string;
     pile_limit?: string | number;
