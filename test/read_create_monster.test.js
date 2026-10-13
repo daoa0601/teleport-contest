@@ -1,10 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
+import { glyphAt, randomDisplayMonsterIdentity } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from '../js/monster_data.js';
 import { SCR_CREATE_MONSTER } from '../js/object_data.js';
+import { withIndefiniteArticle } from '../js/object_grammar.js';
+import { initRng, rn2Display } from '../js/rng.js';
 import { monsterSaddle } from '../js/steed.js';
 import { readInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -51,6 +54,27 @@ void test('wizard creation accepts a monster class symbol', async () => {
     await rhack(7);
     assert.equal(level.monsters.length, 1);
     assert.equal(MONSTER_SYMBOL[level.monsters[0]?.mnum ?? -1], 2);
+});
+void test('hallucinated wizard creation displays the newborn before its final appearance', async () => {
+    const { level, input } = creationRoom();
+    game.u.hallucinationTurns = 20;
+    // Native makemon() redraws a monster created by the hero before inventory
+    // initialization and at completion. A newt cannot perform armor checks.
+    rn2Display(MONSTER_NAME.length);
+    const finalAppearance = rn2Display(MONSTER_NAME.length);
+    const identity = randomDisplayMonsterIdentity();
+    const subject = identity.personal ? identity.name : withIndefiniteArticle(identity.name);
+    initRng(17n);
+    input.feed('newt\n');
+    await rhack(7);
+    const newt = level.monsters[0];
+    assert.ok(newt);
+    assert.equal(MONSTER_NAME[newt.mnum], 'newt');
+    const glyph = glyphAt(newt.mx, newt.my);
+    assert.ok(glyph?.kind === 'monster');
+    assert.equal(glyph.mnum, finalAppearance);
+    assert.equal(game._pending_message, `${subject.charAt(0).toUpperCase()}${subject.slice(1)} appears next to you.`);
+    assert.equal(game.context.move, 0);
 });
 for (const request of ['I', 'invisible monster']) {
     void test(`wizard creation resolves "${request}" to a permanently invisible stalker`, async () => {

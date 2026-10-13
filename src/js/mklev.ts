@@ -1860,6 +1860,8 @@ async function makemon(
         setMonsterPermanentInvisibility(pendingMonster);
         newsym(pendingMonster.mx, pendingMonster.my);
     }
+    if (mndx === PM_STALKER || mndx === PM_BLACK_LIGHT)
+        setMonsterPermanentInvisibility(pendingMonster);
     const isMimic = MONSTER_SYMBOL[mndx] === S_MIMIC;
     if (isMimic) await setMimicAppearance(pendingMonster);
 
@@ -1870,8 +1872,10 @@ async function makemon(
 
     const shaped = await initialShapechangedBirth(pendingMonster);
     if (shaped) {
-        if (requestedByHero)
+        if (requestedByHero) {
+            newsym(shaped.mx, shaped.my);
             setMonsterApparentHeroPosition(shaped, game, rn2);
+        }
         setMonsterMalign(shaped);
         level.monsters[monsterIndex] = shaped;
         return finishMonsterBirth(shaped, mmflags);
@@ -1880,8 +1884,10 @@ async function makemon(
     // makemon.c owns this initialization when its original requested
     // coordinate was the hero's occupied square.  enexto() has already moved
     // the actor, so preserve that caller fact separately from final x/y.
-    if (requestedByHero)
+    if (requestedByHero) {
+        newsym(pendingMonster.mx, pendingMonster.my);
         setMonsterApparentHeroPosition(pendingMonster, game, rn2);
+    }
 
     if (mndx === PM_LONG_WORM)
         initializeMonsterWormBody(pendingMonster, {
