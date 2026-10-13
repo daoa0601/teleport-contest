@@ -4,7 +4,7 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { currentAttribute } from './attrib.js';
 import { observeObjectForNaming } from './objnam.js';
 import { heroFootName, heroHandName, monsterHandName, } from './body_parts.js';
-import { ACCESSIBLE, A_DEX, COLNO, IS_FURNITURE, IS_LAVA, IS_POOL, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, ROWNO, TT_PIT, W_NONPASSWALL, isok, } from './const.js';
+import { A_DEX, IS_FURNITURE, IS_LAVA, IS_POOL, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, TT_PIT, isok, } from './const.js';
 import { canSpotMonster, map_invisible, newsym, pline, plineWithContinuation, } from './display.js';
 import { placeObject, remove_object, stack_object, } from './floor_object.js';
 import { objectNoLongerHeld } from './object_release.js';
@@ -13,7 +13,11 @@ import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { inventoryItemDescription } from './invent.js';
 import { wakeAttackedMonster } from './monster_anger.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SIZE, monsterTypeName, } from './monster_data.js';
+import { MONSTER_SIZE, monsterTypeName } from './monster_data.js';
+import { findMonsterNearPosition } from './mklev.js';
+import { heroSpecies } from './hero_species.js';
+import { finishDestinationSpotEffects } from './location_effects.js';
+import { announceInvocationSquare } from './invocation.js';
 import { unlinkMonsterObject } from './monster_inventory.js';
 import { unwieldMonsterWeapon } from './monster_weapon.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
@@ -24,17 +28,12 @@ import { strikeSteed } from './steed.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { moveHeroByTeleport } from './teleport.js';
-import { collectNearbyCoords } from './u_init.js';
+import { resetHeroTrap } from './terrain_movement.js';
 import { vision_recalc, vision_reset } from './vision.js';
 import { heroStrengthDamageBonus } from './weapon_damage.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { fireDamageObject } from './fire_damage.js';
 const PM_GRID_BUG = 116;
-const M1_FLY = 0x00000001;
-const M1_SWIM = 0x00000002;
-const M1_WALLWALK = 0x00000008;
-const M1_AMPHIBIOUS = 0x00000200;
-const M2_ROCKTHROW = 0x08000000;
 const CARDINAL_DIRECTIONS = [
     { dx: -1, dy: 0 }, { dx: 0, dy: -1 },
     { dx: 1, dy: 0 }, { dx: 0, dy: 1 },
@@ -226,40 +225,25 @@ function pitAnchor(targetX, targetY, monster, state) {
         anchor = monsterObject(monster);
     return anchor;
 }
-function heroCanStandAt(x, y, state) {
-    if (!isok(x, y))
-        return false;
-    const location = state.level?.at?.(x, y);
-    if (!location || monsterAt(x, y, state))
-        return false;
-    const form = state.u?.umonnum;
-    const flags1 = form !== undefined && Number.isInteger(form) ? MONSTER_FLAGS1[form] ?? 0 : 0;
-    const flags2 = form !== undefined && Number.isInteger(form) ? MONSTER_FLAGS2[form] ?? 0 : 0;
-    if (!ACCESSIBLE(location.typ)
-        && (!(flags1 & M1_WALLWALK)
-            || ((location.wall_info ?? 0) & W_NONPASSWALL)))
-        return false;
-    if (IS_POOL(location.typ)
-        && !(flags1 & (M1_FLY | M1_SWIM | M1_AMPHIBIOUS)))
-        return false;
-    if (IS_LAVA(location.typ) && !(flags1 & M1_FLY))
-        return false;
-    if ((state.level?.objects?.[x]?.[y] || []).some(object => object.otyp === BOULDER) && !(flags2 & M2_ROCKTHROW))
-        return false;
-    return true;
-}
 function pitEscapeDestination(targetX, targetY, monster, state) {
-    if (!monster)
-        return { x: targetX, y: targetY };
-    const radius = Math.max(COLNO, ROWNO);
-    return collectNearbyCoords(targetX, targetY, radius)
-        .find(point => heroCanStandAt(point.x, point.y, state)) || null;
+    return monster
+        ? findMonsterNearPosition(heroSpecies(state), targetX, targetY, { state })
+        : { x: targetX, y: targetY };
 }
 async function moveHeroOutOfPit(destination, state) {
-    const movement = await moveHeroByTeleport(destination.x, destination.y, state);
+    await resetHeroTrap(true, state);
+    const movement = await moveHeroByTeleport(destination.x, destination.y, state, { allowDrag: true });
     newsym(movement.oldx, movement.oldy);
     vision_reset();
-    vision_recalc(1);
+    vision_recalc(0);
+    const landing = await finishDestinationSpotEffects({
+        oldx: movement.oldx, oldy: movement.oldy,
+        newx: movement.x, newy: movement.y, explicitAttempt: false,
+    });
+    if (landing.died)
+        return;
+    await announceInvocationSquare();
+    state.vision_full_recalc = 1;
 }
 async function escapePit(targetX, targetY, monster, proficiency, attackMonster, holdObject, state) {
     const anchor = pitAnchor(targetX, targetY, monster, state);
