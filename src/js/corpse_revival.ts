@@ -228,10 +228,10 @@ function containerDescription(container: GameObject) {
 
 function revivalMessage(
     corpse: CorpseObject, monster: Monster, location: CorpseRevivalLocation,
-    originalWhere: ObjectWhere, state: GameState,
+    originalWhere: ObjectWhere, wasWielded: boolean,
 ) {
     if (originalWhere === 'inventory') {
-        return state.uwep === corpse
+        return wasWielded
             ? `The ${corpseName(corpse)} writhes out of your grasp!`
             : 'You feel squirming in your backpack!';
     }
@@ -475,6 +475,8 @@ async function reviveCorpse(
 ): Promise<CorpseRevivalResult> {
     requireCorpseSpecies(corpse);
     const originalWhere = corpse.where;
+    // A split-off body is not the weapon; retain the original stack's identity.
+    const wasWielded = state.uwep === corpse;
     await stopCorpseMeal(corpse, state);
     const digsOut = originalWhere === 'buried'
         && (isReviver(corpse.corpsenm)
@@ -506,7 +508,7 @@ async function reviveCorpse(
     monster.mrevived = 1;
     if (announce) {
         const message = revivalMessage(
-            body, monster, location, originalWhere, state,
+            body, monster, location, originalWhere, wasWielded,
         );
         if (message) messages.push(message);
     }

@@ -18,6 +18,7 @@ import { claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers, scheduleObjec
 import { initRng } from '../js/rng.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { vision_recalc } from '../js/vision.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -284,6 +285,22 @@ void test('a troll corpse in the pack revives beside the hero', async () => {
     assert.equal(event.messages.at(-1), 'You feel squirming in your backpack!');
     assert.equal(game.inventory.includes(corpse), false);
     assert.equal(Math.max(Math.abs(event.monster.mx - game.u.ux), Math.abs(event.monster.my - game.u.uy)), 1);
+});
+void test('a troll reviving from a wielded stack writhes out of the hero\'s grasp', async () => {
+    freshState();
+    requirePlayingGame(game);
+    const corpse = await trollCorpse();
+    corpse.quan = corpse.quantity = 2;
+    corpse.where = 'inventory';
+    game.inventory.push(corpse);
+    await setPrimaryWeapon(corpse);
+    const event = await reviveNow(corpse);
+    assert.ok(event);
+    assert.equal(event.kind, 'revived');
+    assert.equal(event.messages.at(-1), 'The troll corpse writhes out of your grasp!');
+    assert.equal(corpse.quan, 1);
+    assert.equal(game.uwep, corpse);
+    assert.ok(game.inventory.includes(corpse));
 });
 void test('a troll corpse revives from a sack in the hero pack', async () => {
     freshState();

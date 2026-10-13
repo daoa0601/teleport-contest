@@ -31,6 +31,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 
 function freshAltar({ alignment = 0, high = false, hero = {}, ...room }: ObjectRoomOptions & { alignment?: number; high?: boolean } = {}) {
     freshObjectRoom({
@@ -100,6 +101,23 @@ void test('#offer announces a Rider squirming out of the hero\'s inventory', asy
     assert.equal(corpse.where, 'gone');
     assert.ok(game.level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('Death')));
     assert.match(game._pending_message, /You feel squirming in your backpack!/);
+});
+
+void test('#offer makes a Rider in a wielded corpse stack writhe out of the hero\'s grasp', async () => {
+    freshAltar();
+    requirePlayingGame(game);
+    const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('Death'), {
+        quan: 2, quantity: 2,
+    }));
+    await setPrimaryWeapon(corpse);
+
+    await runExtendedCommand('offer', `${corpse.invlet} `);
+
+    assert.match(game._pending_message, /writhes out of your grasp!/);
+    assert.equal(corpse.quan, 1);
+    assert.equal(game.uwep, corpse);
+    assert.ok(game.inventory.includes(corpse));
+    assert.ok(game.level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('Death')));
 });
 
 void test('a blind hero offering their own race senses something dreadful being summoned', async () => {
