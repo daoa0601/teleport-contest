@@ -2,7 +2,7 @@
 import { adjustHeroAlignment } from './alignment.js';
 import { G_EXTINCT, G_GENOD, G_NOCORPSE, MM_NOMSG, NO_MINVENT, POLY_REVERT, Upolyd } from './const.js';
 import { plineWithContinuation } from './display.js';
-import { finishHeroDeath as finishNativeHeroDeath } from './end.js';
+import { listGenocided, finishHeroDeath as finishNativeHeroDeath } from './end.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { game, requireInitializedGame } from './gstate.js';
 import {
@@ -167,9 +167,6 @@ function recordGenocide(species: number): void {
     vital.mvflags |= G_GENOD | G_NOCORPSE;
     if (alreadyGenocided) return;
     state.u.uconduct.genocides = (state.u.uconduct.genocides ?? 0) + 1;
-    const name = makePlural(requireMonsterData(MONSTER_NAME, species));
-    state._genocidedMonsters ??= [];
-    if (!state._genocidedMonsters.includes(name)) state._genocidedMonsters.push(name);
 }
 
 function genocidePresentation(species: number): { name: string; prefix: string } {
@@ -231,7 +228,7 @@ async function requestGenocideSpecies(really: boolean): Promise<number | null> {
         }
         if (declinedGenocide(response)) return really ? null : rndmonstAdj();
         if (response === '?' || response === "'?'") {
-            await listGenocidedSpecies();
+            await listGenocided('g');
             attempt--;
             continue;
         }
@@ -275,7 +272,7 @@ async function requestGenocideClass(): Promise<number | null> {
         }
         if (declinedGenocide(response)) return null;
         if (response === '?' || response === "'?'") {
-            await listGenocidedSpecies();
+            await listGenocided('g');
             attempt--;
             continue;
         }
@@ -332,14 +329,6 @@ function canAnnounceImmuneSpecies(species: number): boolean {
         && (sound !== MS_NEMESIS || species === role.neminum)
         && (sound !== MS_GUARDIAN || species === role.guardnum)
         && (species !== PM_NINJA || role.key === 'samurai');
-}
-
-async function listGenocidedSpecies(): Promise<void> {
-    const names: string[] = [];
-    for (let species = 0; species < MONSTER_NAME.length; species++)
-        if (speciesWasGenocided(species)) names.push(makePlural(requireMonsterData(MONSTER_NAME, species)));
-    await plineWithContinuation(names.length ? `Genocided species: ${names.join(', ')}.`
-        : 'No creatures have been genocided.');
 }
 
 function capitalize(text: string): string {

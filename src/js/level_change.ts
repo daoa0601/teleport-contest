@@ -341,7 +341,9 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
             - dungeonDepth(oldDepth.dnum, oldDepth.dlevel);
         let damage = d(Math.max(distance, 1), 6);
         if (game.u.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
-        if (await loseHeroHp(damage, 'falling down a mine shaft')) return true;
+        if (await loseHeroHp(damage, 'falling down a mine shaft', {
+            deathCause: 'killed by falling down a mine shaft',
+        })) return true;
     }
     await autopickupAtHero();
     if (game.program_state?.gameover) return true;
@@ -440,8 +442,9 @@ async function applyStairTravelEffects(up: boolean, ladder: boolean): Promise<bo
             } else {
                 let damage = rnd(3);
                 if (game.u.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
-                if (await loseHeroHp(damage, ladder
-                    ? 'falling off a ladder' : 'tumbling down a flight of stairs')) return true;
+                const killer = ladder
+                    ? 'falling off a ladder' : 'tumbling down a flight of stairs';
+                if (await loseHeroHp(damage, killer, { deathCause: `killed by ${killer}` })) return true;
             }
             const touch = await selfTouchPetrifyingWeapons({
                 messageStart: 'Falling, you', publish: plineWithContinuation,

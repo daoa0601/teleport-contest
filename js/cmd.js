@@ -70,7 +70,7 @@ import { directionAssistPage, promptKey, readDirectionKey, restoreCommandMap, } 
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
-import { displayLiquidName, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
+import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
 import { dozap, } from './zap.js';
@@ -182,7 +182,7 @@ import { detachHeroGold, heroGoldAmount, heroGoldObject, setHeroGoldAmount } fro
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow, } from './gold_throw.js';
 import { heroIsBlind, heroIsHallucinating, } from './senses.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
-import { doquit, finishHeroDeath, vanquishedLines, } from './end.js';
+import { doquit, finishHeroDeath, vanquishedLines, listGenocided, } from './end.js';
 import { hasRecordedMonsterDeaths } from './monster_vitals.js';
 import { applyHeroContactPassive, } from './monster_passive.js';
 import { heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, heroIsVerySmall, heroCanChangeVampireShape, polymorphHero, returnHeroToHumanForm, } from './polyself.js';
@@ -201,7 +201,10 @@ import { doenhance, useHeroSkill, } from './skills.js';
 import { chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, } from './shk.js';
 import { visiblePriestName, } from './priest.js';
 import { gameLogEvents } from './gamelog.js';
-import { maybeSmudgeEngravings, wipeHeroEngraving } from './engrave.js';
+import { killerObjectName } from './objnam.js';
+import { GRAVE } from './const.js';
+import { disturbGrave } from './grave.js';
+import { deleteEngravingAt, maybeSmudgeEngravings, wipeHeroEngraving } from './engrave.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { shouldShowGetposTip, showGetposTip, moveGetposCursor, selectMapPosition, } from './getpos.js';
@@ -1623,16 +1626,18 @@ async function doTerrainOverview() {
             browseMessage = farlookLocationDescription(cursor.x, cursor.y);
             continue;
         }
-        await moreUntilDismissed('Done.');
+        await plineWithContinuation('Done.');
         break;
     }
+    // C map_redisplay() reaches cls(), which displays WIN_MESSAGE before
+    // redrawing the map. Bare more() would leave an acknowledged Done line.
+    await displayMessageWindow();
     restoreMapDisplay(displaySnapshot);
-    game._pending_message = '';
     await flush_screen(1);
     game.context.move = 0;
 }
-async function kickOuch(x, y) {
-    await pline('Ouch!  That hurts!');
+async function kickOuch(x, y, objectName = '') {
+    await plineWithContinuation('Ouch!  That hurts!');
     await exerciseAttribute(A_DEX, false);
     await exerciseAttribute(A_STR, false);
     wakeMonstersNear(x, y, 25);
@@ -1642,7 +1647,7 @@ async function kickOuch(x, y) {
     let damage = rnd(currentAttribute(A_CON) > 15 ? 3 : 5);
     if (game.u?.halfPhysicalDamage)
         damage = Math.trunc((damage + 1) / 2);
-    const died = await damageHeroFromKick(damage, x, y);
+    const died = await damageHeroFromKick(damage, x, y, objectName);
     if (!died && kickCausesRecoil())
         await recoilFromKick(4 + rn2(2));
 }
@@ -1660,12 +1665,15 @@ function kickDeathReason(x, y) {
         return 'kicking a wall';
     if (location.typ === TREE)
         return 'kicking a tree';
+    if (location.typ === GRAVE)
+        return 'kicking a headstone';
     if (location.typ === IRONBARS)
         return 'kicking an iron bar';
     return 'kicking something weird';
 }
-async function damageHeroFromKick(amount, x, y) {
-    return loseHeroHp(amount, kickDeathReason(x, y));
+async function damageHeroFromKick(amount, x, y, objectName) {
+    const killer = objectName ? `kicking ${objectName}` : kickDeathReason(x, y);
+    return loseHeroHp(amount, killer, { deathCause: `killed by ${killer}` });
 }
 function finishHurtleMonsterDeath(monster, { noCorpse = true } = {}) {
     return finishHeroMonsterKill(monster, monster.mx, monster.my, {
@@ -1881,7 +1889,7 @@ async function dokick() {
             game.context.move = 1;
             return;
         }
-        await kickFloorObject(x, y, {
+        const kicked = await kickFloorObject(x, y, {
             state: game,
             dx: game.u.dx,
             dy: game.u.dy,
@@ -1890,11 +1898,46 @@ async function dokick() {
         });
         if (game.program_state.gameover)
             return;
+        if (!kicked)
+            await kickOuch(x, y, killerObjectName(kickedObject));
         game.context.move = 1;
         return;
     }
     if (!location || IS_STWALL(location.typ)) {
         await kickOuch(x, y);
+        game.context.move = 1;
+        return;
+    }
+    if (location.typ === GRAVE) {
+        if (game.u.levitating || game.u.levitation || game.levitating) {
+            await kickDumb(x, y);
+        }
+        else if (rn2(4) !== 0) {
+            await kickOuch(x, y);
+        }
+        else if (!location.disturbed && rn2(2) === 0) {
+            await disturbGrave(x, y);
+        }
+        else {
+            await exerciseAttribute(A_WIS, false);
+            const alignment = game.u.ualign;
+            if (!alignment)
+                throw new Error('Breaking a grave requires hero alignment.');
+            if (game.urole?.key === 'archeologist' || game.urole?.key === 'samurai'
+                || (alignment.type === 1 && alignment.record > -10))
+                adjustHeroAlignment(-Math.sign(alignment.type));
+            location.typ = ROOM;
+            location.emptygrave = 0;
+            location.disturbed = 0;
+            placeCreatedObject(await mksobj(ROCK, true, false), x, y);
+            deleteEngravingAt(x, y);
+            if (heroIsBlind(game))
+                await pline('Crack!  Something broke!');
+            else {
+                await pline('The headstone topples over and breaks!');
+                newsym(x, y);
+            }
+        }
         game.context.move = 1;
         return;
     }
@@ -1965,6 +2008,10 @@ async function dokick() {
         game.context.move = 1;
         return;
     }
+    await kickDumb(x, y);
+    game.context.move = 1;
+}
+async function kickDumb(x, y) {
     // dokick.c:kick_dumb() always abuses Dexterity before deciding whether
     // an unremarkable floor kick is merely empty or strains a muscle.
     await exerciseAttribute(A_DEX, false);
@@ -1972,6 +2019,8 @@ async function dokick() {
         || game.uarmf?.otyp === KICKING_BOOTS;
     if (martial || currentAttribute(A_DEX) >= 16 || rn2(3) !== 0) {
         await pline('You kick at empty space.');
+        if (heroIsBlind(game))
+            feel_location(x, y);
     }
     else {
         await pline('Dumb move!  You strain a muscle.');
@@ -1980,7 +2029,6 @@ async function dokick() {
     }
     if (kickCausesRecoil() && rn2(2) !== 0)
         await recoilFromKick(1);
-    game.context.move = 1;
 }
 function putCommandLine(col, row, message, attr = 0) {
     const display = game.nhDisplay;
@@ -3725,14 +3773,7 @@ async function doVanquished() {
     game.context.move = 0;
 }
 async function doGenocided() {
-    const genocided = [...(game._genocidedMonsters || [])];
-    if (!genocided.length) {
-        await pline('No creatures have been genocided.');
-    }
-    else {
-        const lines = ['Genocided species:', '', ...genocided];
-        await showDisclosureOverlay(lines, { restoreUnderlay: true });
-    }
+    await listGenocided(game.iflags.menu_requested ? 'a' : 'y');
     game.context.move = 0;
 }
 function inventoryCommandLetter(item) {
@@ -5348,11 +5389,6 @@ async function applyTool(item, underlay) {
             state: game,
             ensureWielded: () => wieldTool(item, 'cast', { swapWeapons: doswapweapon }, game),
             describeTarget: wizardPositionDescription,
-            holdObject: async (object) => {
-                const prepared = await addPickedInventoryObject(object);
-                await plineWithContinuation(prepared.message);
-                return true;
-            },
             hurtle: (dx, dy) => hurtleHero(dx, dy, 1, {
                 finishTeleport: finishTeleportArrival,
                 gotoLevel,

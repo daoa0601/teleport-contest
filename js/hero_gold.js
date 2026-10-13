@@ -4,6 +4,8 @@ import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { createObjectBase } from './object_constructor.js';
 import { removeWornHeroItem } from './hero_equipment.js';
+import { splitObjectStack } from './object_stack.js';
+import { unlinkObject } from './object_location.js';
 import { nextIdent } from './ident.js';
 import { delobj } from './object_delete.js';
 import { markJustPicked } from './just_picked.js';
@@ -113,27 +115,14 @@ export function detachHeroGold(state, requested = null) {
     const amount = quantity(object);
     const count = requested === null
         ? amount : Math.max(1, Math.min(Math.trunc(requested), amount));
-    if (count >= amount) {
-        state.inventory = (state.inventory || [])
-            .filter(candidate => candidate !== object);
-        if (state.uquiver === object)
-            state.uquiver = null;
-        object.ready = false;
-        object.owornmask = 0;
-        object.where = 'free';
-        return object;
-    }
-    normalizeGoldObject(object, amount - count);
-    const detached = normalizeGoldObject({
-        ...object,
-        o_id: nextIdent(),
-        quan: count,
-        quantity: count,
-        ready: false,
-        owornmask: 0,
-        where: 'free',
-        container: null,
-    }, count);
+    const detached = count < amount ? splitObjectStack(object, count, state) : object;
+    if (!detached)
+        throw new Error('A gold stack must yield the requested coins.');
+    unlinkObject(detached, state);
+    if (state.uquiver === detached)
+        state.uquiver = null;
+    detached.ready = false;
+    detached.owornmask = 0;
     return detached;
 }
 //# sourceMappingURL=hero_gold.js.map

@@ -477,13 +477,13 @@ interface GoneSpecies {
 // C insight.c:num_gone()/num_genocides()/num_extinct(): end-of-game
 // disclosure reports genocides and extinctions together; uniques are
 // never listed, and a species carrying both flags counts once.
-function goneSpecies(): GoneSpecies[] {
+function goneSpecies(includeExtinct = true): GoneSpecies[] {
     return (game.mvitals || []).flatMap((vital, mnum) => {
         const flags = vital?.mvflags ?? 0;
         if (!flags || speciesIsUnique(mnum)) return [];
         const genocided = !!(flags & G_GENOD);
         const extinctOnly = (flags & (G_GENOD | G_EXTINCT)) === G_EXTINCT;
-        return genocided || extinctOnly
+        return genocided || (includeExtinct && extinctOnly)
             ? [{ mnum, genocided, extinctOnly }] : [];
     });
 }
@@ -524,6 +524,33 @@ function genocidedLines(
     if (genocided > 0) lines.push(`${genocided} species genocided.`);
     if (extinct > 0) lines.push(`${extinct} species extinct.`);
     return lines;
+}
+
+// C insight.c:list_genocided(), shared by live commands and final disclosure.
+export async function listGenocided(defquery: DisclosureDefault | 'g' = 'y', ask = false): Promise<void> {
+    const genociding = defquery === 'g';
+    const defaultAnswer: DisclosureDefault = defquery === 'g' ? 'y' : defquery;
+    const includeExtinct = !genociding && !!(game.program_state.gameover
+        || game.flags.debug || game.flags.explore || game.discover);
+    const gone = goneSpecies(includeExtinct);
+    if (!gone.length) {
+        if (!game.program_state.gameover)
+            await pline(`No creatures have been genocided${genociding ? ' yet' : ''}.`);
+        return;
+    }
+    const genocided = gone.filter(species => species.genocided).length;
+    const extinct = gone.filter(species => species.extinctOnly).length;
+    const question = `Do you want a list of ${extinct && !genocided ? 'extinct ' : ''}species${
+        genocided ? ' genocided' : ''}${extinct && genocided ? ' and extinct' : ''}?`;
+    const multiple = gone.length > 1;
+    const answer = ask ? await ynQuestion(question, multiple ? 'ynaq' : 'ynq', defaultAnswer,
+        { hiddenAll: !multiple }) : defaultAnswer;
+    if (answer === 'q') { stopDisclosure(); return; }
+    if (answer !== 'y' && answer !== 'a') return;
+    if (answer === 'a' && multiple && await setVanqOrder(false) < 0) return;
+    await showDisclosureOverlay(genocidedLines(gone, genocided, extinct, ask), {
+        restoreUnderlay: true,
+    });
 }
 
 function visitedMainDungeonLevels() {
@@ -1166,36 +1193,10 @@ async function discloseGame({
         }
     }
 
-    // C list_genocided(): nothing is asked when no species is gone, and
-    // the question adapts to which of genocided/extinct apply.
     if (!game.program_state.stopprint) {
-        const gone = goneSpecies();
-        const genocided = gone.filter(species => species.genocided).length;
-        const extinct = gone.filter(species => species.extinctOnly).length;
-        if (gone.length > 0) {
-            const { ask, defquery } = shouldQueryDiscloseOption('g');
-            const question = `Do you want a list of ${
-                extinct && !genocided ? 'extinct ' : ''}species${
-                genocided ? ' genocided' : ''}${
-                extinct && genocided ? ' and extinct' : ''}?`;
-            const multiple = gone.length > 1;
-            // Unlike the vanquished question, one gone species keeps an
-            // 'a' default visible in "(a)" while the choice stays hidden.
-            const answer = ask
-                ? await ynQuestion(
-                    question, multiple ? 'ynaq' : 'ynq', defquery,
-                    { hiddenAll: !multiple },
-                )
-                : defquery;
-            if (answer === 'q') return stopDisclosure();
-            if (answer === 'y' || answer === 'a') {
-                if (!(answer === 'a' && multiple
-                    && await setVanqOrder(false) < 0))
-                    await showDisclosureOverlay(genocidedLines(gone, genocided, extinct, ask), {
-                        restoreUnderlay: true,
-                    });
-            }
-        }
+        const { ask, defquery } = shouldQueryDiscloseOption('g');
+        await listGenocided(defquery, ask);
+        if (game.program_state.stopprint) return false;
     }
 
     if (!game.program_state.stopprint) {

@@ -60,7 +60,7 @@ import { stopRun } from './runmode.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
-import { canSpotMonster, docrt, redrawMap, bot, flush_screen, flushPendingTopline, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, _statusLine1, _statusLine2, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
+import { canSpotMonster, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, _statusLine1, _statusLine2, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset, hasLightSources, init_vision_globals, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
@@ -2369,7 +2369,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                             earlierActorPager: earlierActorPagerInScan,
                         }),
                         flushMessages: async () => {
-                            const dismissal = await flushPendingTopline();
+                            const dismissal = await displayMessageWindow();
                             if (dismissal != null)
                                 paging.pagerOwned = true;
                             paging.messageAfterPager = !!game._pending_message;

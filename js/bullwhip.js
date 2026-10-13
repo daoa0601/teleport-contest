@@ -6,8 +6,9 @@ import { observeObjectForNaming } from './objnam.js';
 import { heroFootName, heroHandName, monsterHandName, } from './body_parts.js';
 import { ACCESSIBLE, A_DEX, COLNO, IS_FURNITURE, IS_LAVA, IS_POOL, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, ROWNO, TT_PIT, W_NONPASSWALL, isok, } from './const.js';
 import { canSpotMonster, map_invisible, newsym, pline, plineWithContinuation, } from './display.js';
-import { detachFloorObjectUnit, placeObject, remove_object, stack_object, } from './floor_object.js';
+import { placeObject, remove_object, stack_object, } from './floor_object.js';
 import { objectNoLongerHeld } from './object_release.js';
+import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { inventoryItemDescription } from './invent.js';
@@ -110,7 +111,7 @@ function isHorseCorpse(object) {
     const species = monsterTypeName(object.corpsenm).toLowerCase();
     return species === 'pony' || species === 'horse' || species === 'warhorse';
 }
-async function snagFloorObject(proficiency, holdObject, state) {
+async function snagFloorObject(proficiency, state) {
     const pile = state.level?.objects?.[state.u.ux]?.[state.u.uy] || [];
     const object = pile[0];
     if (isHorseCorpse(object)) {
@@ -125,14 +126,8 @@ async function snagFloorObject(proficiency, holdObject, state) {
         await pline('The bullwhip slips free.');
         return true;
     }
-    const unit = detachFloorObjectUnit(object, state);
-    if (!unit)
-        throw new Error('A whipped floor stack could not provide an object.');
-    if (!await holdObject(unit)) {
-        await placeObject(unit, state.u.ux, state.u.uy);
-        await stack_object(unit, state);
+    if (!await pickupFloorObject(object, 1, true))
         await pline('The bullwhip slips free.');
-    }
     return true;
 }
 async function damageHeroWithWhip(whip, state) {
@@ -392,7 +387,7 @@ export async function useBullwhip(whip, direction, { state = game, attackMonster
             return { spentTime: true };
         }
         if ((heroIsAirborne(state) || hero.usteed)
-            && await snagFloorObject(proficiency, holdObject, state)) {
+            && await snagFloorObject(proficiency, state)) {
             return { spentTime: true };
         }
         await damageHeroWithWhip(whip, state);

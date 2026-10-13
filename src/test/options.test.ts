@@ -325,6 +325,31 @@ void test('one toggle-message acknowledgment opens the selected autopickup edito
     }
 });
 
+void test('the autopickup menu clears toggle text to the left of its corner', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.flags.showexp = false;
+    const transaction = await beginSelectedOptions(['showexp', 'pickup_types']);
+    try {
+        assert.equal(transaction.completed, false);
+        assert.match(visibleOptions(), /'showexp' option toggled on\.--More--/);
+        transaction.input.feed(' ');
+        await transaction.input.waitUntilBlocked();
+
+        const header = game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trim();
+        assert.equal(header, 'Autopickup what?');
+        transaction.input.feed('c\n');
+        await transaction.command;
+        assert.equal(game.flags.pickup_types, ')');
+        await flush_screen(1);
+        assert.doesNotMatch(visibleOptions(), /option toggled/);
+    } finally {
+        transaction.input.beforeRead = null;
+        transaction.input.feed('\x1b');
+        await transaction.command;
+    }
+});
+
 void test('an overflowing toggle message resumes the remaining changes before opening its editor', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

@@ -21,7 +21,7 @@ const MINERAL = 21;
 const RING_CLASS = 4;
 const M1_WALLWALK = 0x00000008;
 const M1_UNSOLID = 0x00100000;
-export async function hitHeroWithObject(object, damage, accuracy, { state = game, publish = plineWithContinuation, rollOne = rnd, die = finishHeroDeath, name: requestedName, killer: requestedKiller, } = {}) {
+export async function hitHeroWithObject(object, damage, accuracy, { state = game, publish = plineWithContinuation, rollOne = rnd, die = finishHeroDeath, name: requestedName, killer: requestedKiller, deathCause, } = {}) {
     requirePlayingGame(state);
     const name = requestedName ?? (artifactById(object.oartifact, state)?.name
         || OBJECT_NAMES[object.otyp]);
@@ -68,7 +68,9 @@ export async function hitHeroWithObject(object, damage, accuracy, { state = game
             await publish('It burns!');
             monstersObserveHeroResistance(seenResistanceForDamage(AD_ACID), state);
         }
-        if (await loseHeroHp(damage, killer, { state, publish, die }))
+        if (await loseHeroHp(damage, killer, {
+            state, publish, die, deathCause: deathCause ?? null,
+        }))
             return { hit: true, died: true };
         await exerciseAttribute(A_STR, false, state);
     }

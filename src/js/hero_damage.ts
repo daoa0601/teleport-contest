@@ -11,6 +11,9 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { finishMonsterAttackDeath } from './monster_attack_death.js';
 import { returnHeroToHumanForm } from './polyself.js';
+import { formatHeardMessage } from './hero_speech.js';
+import { hasPermanentIntrinsicProperty, propertyIsActive } from './properties.js';
+import type { PropertyName } from './property_types.js';
 import { stopRun } from './runmode.js';
 
 interface HeroDamageOptions {
@@ -37,7 +40,12 @@ export async function loseHeroHp(amount: number, killer: string, {
     if (state.flags?.showdamage && amount)
         await publish(`[HP ${-amount}, ${hero[current]} left]`);
     hero[maximum] = Math.max(hero[maximum], hero[current]);
-    if (hero[current] > 0) return false;
+    if (hero[current] > 0) {
+        if (amount > 0 && hero[current] * 10 < hero[maximum]
+            && (!polymorphed || hero.unchanging || state.unchanging
+                || propertyIsActive('unchanging', state))) await maybeWail(state, publish);
+        return false;
+    }
     if (polymorphed) {
         const result = await returnHeroToHumanForm(state, { publish, die });
         return result.died;
@@ -46,6 +54,33 @@ export async function loseHeroHp(amount: number, killer: string, {
         damage: { hpKey: current, hpBefore, damage: amount } });
 }
 
+
+// C hack.c:maybe_wail(): the cooldown advances even when sound is suppressed.
+async function maybeWail(state: GameState, publish: MessagePublisher): Promise<void> {
+    if (state.moves <= (state._wailMessageMove ?? 0) + 50) return;
+    state._wailMessageMove = state.moves;
+    const role = state.urole;
+    const namedRole = role?.key === 'wizard' || role?.key === 'valkyrie';
+    if (namedRole || state.urace?.name === 'elf') {
+        const who = namedRole ? role.name.m : 'Elf';
+        if (state.u.uhp === 1) {
+            await publish(`${who} is about to die.`);
+            return;
+        }
+        const powers: readonly PropertyName[] = [
+            'teleportation', 'seeInvisible', 'poisonResistance', 'coldResistance',
+            'shockResistance', 'fireResistance', 'sleepResistance', 'disintegrationResistance',
+            'teleportControl', 'stealth', 'fast', 'invisible',
+        ];
+        const count = powers.filter(power => hasPermanentIntrinsicProperty(power, state)).length;
+        await publish(count >= 4 ? `${who}, all your powers will be lost...`
+            : `${who}, your life force is running out.`);
+        return;
+    }
+    const warning = formatHeardMessage(state.u.uhp === 1
+        ? 'the wailing of the Banshee...' : 'the howling of the CwnAnnwn...', state);
+    if (warning) await publish(warning);
+}
 
 // C mhitu.c:mdamageu(). Unlike losehp(), this clamps current HP down to
 // the existing maximum and does not stop running on zero-damage effects.

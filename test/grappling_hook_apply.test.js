@@ -7,7 +7,7 @@ import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { GRAPPLING_HOOK, ROCK } from '../js/object_data.js';
+import { DART, GRAPPLING_HOOK, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject, } from './support/game-objects.js';
@@ -16,6 +16,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
+import { createStaffedShop } from './support/shop.js';
 async function installHook({ wielded = true, enchantment = 0 } = {}) {
     const hook = await addInventoryObject(GRAPPLING_HOOK, {
         spe: enchantment,
@@ -73,6 +74,26 @@ void test('a grappling hook snags one object from a visible floor square', async
     assert.equal(game.inventory.includes(rock), true);
     assert.equal(floorObjectsAt(game.level, 12, 10).includes(rock), false);
     assert.equal(game.context.move, 1);
+});
+void test('a hooked shop item is described after credit settles its bill', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const hook = await installHook();
+    const { shopkeeper } = await createStaffedShop({ left: 12, keeperX: 14 });
+    shopkeeper.eshk.credit = 1000;
+    const darts = placeCreatedObject(await knownObject(DART, { quantity: 3 }), 12, 10);
+    game._travelTipShown = true;
+    initRng(3n);
+    await applyInventoryObject(hook, 'll.          ');
+    const carried = game.inventory.find(object => object.otyp === DART);
+    assert.ok(carried, 'The hook must bring a dart into inventory');
+    assert.equal(carried.quan, 1);
+    assert.equal(darts.quan, 2);
+    assert.equal(carried.unpaid, false);
+    assert.equal(shopkeeper.eshk.billct, 0);
+    assert.equal(shopkeeper.eshk.credit, 0);
+    assert.match(game._pending_message, / - .*dart.*\.$/);
+    assert.doesNotMatch(game._pending_message, /unpaid|zorkmids/);
 });
 void test('a grappling hook can yank the hero one square toward solid terrain', async () => {
     freshObjectRoom();
@@ -146,5 +167,23 @@ void test('a levitating hero scuffs no engraving while hooking', async () => {
     assert.equal(underHero.text, '?');
     assert.equal(engravingAt(12, 10)?.text, '?');
     assert.equal(game.context.move, 1);
+});
+void test('a hook leaves an unliftable stack together on the floor', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const hook = await installHook();
+    for (const invlet of 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+        if (invlet === hook.invlet)
+            continue;
+        await addInventoryObject(DART, { invlet, nomerge: true });
+    }
+    const rocks = placeCreatedObject(await knownObject(ROCK, { quantity: 4 }), 12, 10);
+    game._travelTipShown = true;
+    initRng(3n);
+    await applyInventoryObject(hook, 'll.    ');
+    assert.equal(rocks.quan, 4);
+    assert.equal(floorObjectsAt(game.level, 12, 10).length, 1);
+    assert.equal(floorObjectsAt(game.level, 12, 10)[0], rocks);
+    assert.match(game._pending_message, /knapsack cannot accommodate/);
 });
 //# sourceMappingURL=grappling_hook_apply.test.js.map

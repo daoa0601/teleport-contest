@@ -155,7 +155,6 @@ export interface TutorialState {
     inventory: GameObject[];
     spells: MemorizedSpell[];
     mvitals: MonsterVital[];
-    genocided: string[] | undefined;
     discoveryOrder: number[] | undefined;
     encountered: Set<number> | undefined;
 }
@@ -282,7 +281,6 @@ export interface GameState {
     _artifactExists?: Set<number>;
     _artifactFound?: Set<number>;
     _artifactDiscoveries?: number[];
-    _genocidedMonsters?: string[];
     gamelog?: Array<{ turn: number; text: string }>;
     _bonesEncountered?: boolean;
     _bonesSaved?: boolean;
@@ -373,6 +371,7 @@ export interface GameState {
     _emptyShops?: number[];
     _shopFollowMessageTurn?: number;
     _monsterNoiseTime?: number;
+    _wailMessageMove?: number;
     lastMonsterWeaponReturnMessage?: number;
     _farMonsterNoise?: boolean;
     _monsterSwallower: Monster | { kind: 'hero' } | null;

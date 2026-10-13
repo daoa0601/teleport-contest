@@ -2278,9 +2278,10 @@ export async function flushPendingTopline() {
 // display honors Escape's WIN_STOP/WIN_CANCELLED flag before acknowledging.
 export async function displayMessageWindow() {
     if (game._suppressMessagesUntilInput)
-        return;
-    await flushPendingTopline();
+        return null;
+    const dismissal = await flushPendingTopline();
     clearMessageWindow();
+    return dismissal;
 }
 // C tty topl.c:update_topl().  A later pline either appends to the pending
 // topline or owns a --More-- boundary before replacing it.  Keep this policy

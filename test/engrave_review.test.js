@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
-import { ALTAR, AM_NEUTRAL, DB_ICE, DRAWBRIDGE_UP, DUST, ENGRAVE, MARK } from '../js/const.js';
+import { ALTAR, AM_NEUTRAL, DB_ICE, DRAWBRIDGE_UP, DUST, ENGRAVE, GRAVE, MARK } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { DAGGER, MAGIC_MARKER, POT_HEALING, WAN_LIGHT, WAN_POLYMORPH } from '../js/object_data.js';
+import { DAGGER, MAGIC_MARKER, POT_HEALING, WAN_LIGHT, WAN_NOTHING, WAN_POLYMORPH } from '../js/object_data.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
@@ -80,6 +80,22 @@ void test('writing on an altar names the stack of daggers in the plural', async 
     ]);
     assert.equal(game.u.ualign.record, 9);
     assert.equal(daggers.quan, 3);
+    assert.equal(game._occupation ?? null, null);
+});
+void test('a levitating wand user acknowledges the gesture before disturbing a grave', async () => {
+    freshObjectRoom({ hero: { levitation: true } });
+    requireFixtureGame(game);
+    const grave = game.level.requireAt(game.u.ux, game.u.uy);
+    grave.typ = GRAVE;
+    const wand = await addInventoryObject(WAN_NOTHING, { spe: 3 });
+    const input = resetInputState();
+    input.feed(wand.invlet);
+    await answerPrompts(rhack('E'.charCodeAt(0)), input, [
+        { prompt: /You gesture, with your wand, towards the headstone below you\.[\s\S]*--More--/, keys: ' ' },
+    ]);
+    assert.match(game._pending_message, /^You disturb the undead!/);
+    assert.equal(grave.disturbed, 1);
+    assert.equal(wand.spe, 3);
     assert.equal(game._occupation ?? null, null);
 });
 void test('blind polymorph replaces a carving with unknown pristine text', async () => {
