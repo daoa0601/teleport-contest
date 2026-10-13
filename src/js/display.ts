@@ -470,9 +470,12 @@ export function reglyph_darkroom(): void {
                         : { ch: ' ', color: NO_COLOR, decgfx: false,
                             kind: 'nothing', glyph: GlyphOffset.nothing };
                 }
-            } else if (loc.seenv && !cansee(x, y)
-                && (memory.glyph === cmapToGlyph(CmapSymbol.room) && loc.waslit
-                    || memory.glyph === GlyphOffset.nothing && loc.typ === ROOM)) {
+            } else if (memory.glyph === cmapToGlyph(CmapSymbol.darkroom)
+                || (loc.seenv && !cansee(x, y)
+                    && (memory.glyph === cmapToGlyph(CmapSymbol.room) && loc.waslit
+                        || memory.glyph === GlyphOffset.nothing && loc.typ === ROOM))) {
+                // Native also refreshes showsyms[S_darkroom] for glyphs that
+                // were already stored as darkroom while color was disabled.
                 loc.remembered_glyph = roomMemoryGlyph(true, dec);
             }
         }
