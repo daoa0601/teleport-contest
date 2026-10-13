@@ -5,6 +5,7 @@ import { game } from './gstate.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { setArtifactWarningWielded } from './artifact_warning.js';
+import { grantWornProperty, removeWornProperty } from './properties.js';
 import { endObjectBurn, equipmentLightMessage } from './light.js';
 import { plineWithContinuation } from './display.js';
 import { heroIsBlind } from './senses.js';
@@ -59,8 +60,15 @@ async function replaceSlot(object, slot, mask, flag, state) {
     installSlot(object, slot, mask, flag, state);
     return oldObject;
 }
-async function setWieldedArtifactProperties(object, active, state) {
-    if (artifactById(object.oartifact, state)?.flags.includes('SPFX_HALRES')) {
+export async function setWieldedArtifactProperties(object, active, state) {
+    const artifact = artifactById(object.oartifact, state);
+    if (artifact?.flags.includes('SPFX_SEARCH')) {
+        if (active)
+            grantWornProperty('searching', object, 'uwep', state);
+        else
+            removeWornProperty('searching', object, 'uwep', state);
+    }
+    if (artifact?.flags.includes('SPFX_HALRES')) {
         await makeHallucinated(Number(!active), {
             state, talk: !state.program_state?.restoring,
             resistanceSource: { object, slot: 'uwep' },

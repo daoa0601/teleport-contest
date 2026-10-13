@@ -14,7 +14,7 @@ import { blessObjectState, curseObject } from './object_state.js';
 import { inTown } from './room.js';
 import { rn2 } from './rng.js';
 import { updateUnpaidObjectPrice } from './shk.js';
-import { setTwoWeaponCombat } from './weapon_slots.js';
+import { setTwoWeaponCombat, setWieldedArtifactProperties } from './weapon_slots.js';
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
 
 export async function dipFountainSword(object: GameObject, location: MapLocation): Promise<boolean> {
@@ -39,6 +39,8 @@ export async function dipFountainSword(object: GameObject, location: MapLocation
         await pline('As the hand retreats, the fountain disappears!');
         nameArtifact(object, artifact, { knownOrigin: true });
         if (object === game.uswapwep) setTwoWeaponCombat(false);
+        // C oname() activates an artifact created in the wielded hand.
+        if (object === game.uwep) await setWieldedArtifactProperties(object, true, game);
         if (object.unpaid) updateUnpaidObjectPrice(object);
         discoverArtifact(artifact.id);
         blessObjectState(object);
