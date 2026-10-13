@@ -1,3 +1,5 @@
+import { monsterHiddenConditions } from './monster_status.js';
+import { visibleRegionAt } from './regions.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
 import { isRoom } from './map_types.js';
 import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
@@ -1666,7 +1668,7 @@ async function doTerrainOverview() {
         const delta = farlookDelta(browseKey);
         if (delta) {
             moveGetposCursor(cursor, delta.dx, delta.dy);
-            browseMessage = farlookLocationDescription(cursor.x, cursor.y);
+            browseMessage = await farlookLocationDescription(cursor.x, cursor.y);
             continue;
         }
         await plineWithContinuation('Done.');
@@ -4078,7 +4080,7 @@ async function doextcmd() {
     }
     await runExtendedCommand(completeExtendedCommand(normalizedCommand) || normalizedCommand);
 }
-function wizardPositionDescription(x, y) {
+async function wizardPositionDescription(x, y) {
     if (x === game.u?.ux && y === game.u?.uy) {
         const species = game.u.umonnum;
         const polymorphName = heroIsPolymorphed(game) && species !== undefined
@@ -4109,7 +4111,7 @@ function wizardPositionDescription(x, y) {
         observeDistantObjectForNaming(object);
         return floorObjectDescription(object);
     }
-    return farlookLocationDescription(x, y) || 'unexplored area';
+    return await farlookLocationDescription(x, y) || 'unexplored area';
 }
 function roomAtPosition(x, y) {
     const roomno = game.level?.at(x, y)?.roomno ?? 0;
@@ -4221,8 +4223,8 @@ function travelLocationDescription(x, y) {
         return 'staircase up';
     return '';
 }
-function travelPositionDescription(x, y) {
-    const description = wizardPositionDescription(x, y);
+async function travelPositionDescription(x, y) {
+    const description = await wizardPositionDescription(x, y);
     if (x === game.u?.ux && y === game.u?.uy)
         return description;
     const loc = game.level?.at?.(x, y);
@@ -4232,7 +4234,7 @@ function travelPositionDescription(x, y) {
     const valid = !unexploredProjection && isValidTravelTarget(x, y);
     return valid ? description : `${description} (no travel path)`;
 }
-export function farlookLocationDescription(x, y) {
+export async function farlookLocationDescription(x, y) {
     const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
     if (monster && glyphAt(x, y)?.kind === 'monster') {
         const hallucinating = heroIsHallucinating(game);
@@ -4251,7 +4253,13 @@ export function farlookLocationDescription(x, y) {
                 condition = ', meditating';
         }
         const tail = monster.mx !== x || monster.my !== y;
-        return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}`;
+        // look_at_monster() gates hidden details on the selected square,
+        // which can be a worm tail outside the head's cloud.
+        const hidden = monster.mundetected || M_AP_TYPE(monster) || visibleRegionAt(game, x, y)
+            ? await monsterHiddenConditions(monster, game, { showAlternateMonster: false })
+            : [];
+        const hiddenText = hidden.length ? `, ${hidden.join(', ')}` : '';
+        return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}${hiddenText}`;
     }
     const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y && candidate.tseen);
     if (trap?.ttyp === DART_TRAP)
@@ -4336,7 +4344,7 @@ async function dojump() {
     const result = await jumpHero(0);
     game.context.move = result.spentTime ? 1 : 0;
 }
-function verboseFarlookDescription(x, y) {
+async function verboseFarlookDescription(x, y) {
     const loc = game.level?.at(x, y);
     if (loc?.typ === CORR)
         return `#\x1b[8Ccan be many things (corridor)`;
@@ -4385,7 +4393,6 @@ async function dotravel() {
     // after the pick key, but removes it from the logical topline transaction.
     // Silent travel can retain that row; a new attack must replace rather than
     // append to "staircase down".
-    game._retained_message = game._pending_message;
     game._pending_message = '';
     if (cursor.x === game.u.ux && cursor.y === game.u.uy) {
         game._travelTarget = null;
@@ -4424,18 +4431,22 @@ async function dotravel() {
 // Quick far-look is a zero-time modal command.  It shares getpos's cached
 // cursor with travel, paints a short automatic description after movement,
 // then restores the gameplay cursor while showing the verbose selection.
-async function doFarlook() {
+async function doFarlook(quick = true) {
+    const verbose = !!game.flags.verbose && !quick;
+    await plineWithContinuation(verbose
+        ? 'Please move the cursor to a monster, object or location.'
+        : 'Pick a monster, object or location.');
     const firstUse = shouldShowGetposTip();
-    if (firstUse) {
-        await pline('Pick a monster, object or location.');
+    if (firstUse)
         await showGetposTip();
-    }
+    if (verbose)
+        await plineWithContinuation("(For instructions type a '?')");
+    if (firstUse)
+        await plineWithContinuation('Move cursor to a monster, object or location:');
     const cursor = await selectMapPosition({
         start: game._travelTarget
             ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
-        prompt: firstUse
-            ? 'Move cursor to a monster, object or location:'
-            : 'Pick a monster, object or location.',
+        prompt: game._pending_message || game._retained_message,
         goal: 'a monster, object or location',
         describe: farlookLocationDescription,
     });
@@ -4448,7 +4459,7 @@ async function doFarlook() {
     // description wraps and calls tty more() before do_look() can return.
     game._pending_message = '';
     game._retained_message = '';
-    await plineWithContinuation(verboseFarlookDescription(cursor.x, cursor.y));
+    await plineWithContinuation(await verboseFarlookDescription(cursor.x, cursor.y));
     game.context.move = 0;
 }
 async function restoreHelpMap() {
@@ -4491,7 +4502,7 @@ async function dowhatis() {
         await restoreHelpMap();
     const choice = String.fromCharCode(key);
     if (choice === '/') {
-        await doFarlook();
+        await doFarlook(false);
         return;
     }
     if (choice === 'i') {
