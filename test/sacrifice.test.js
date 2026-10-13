@@ -19,13 +19,17 @@ import { ddoinv } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR } from '../js/object_data.js';
+import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, GOLD_PIECE } from '../js/object_data.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, corpseObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
+import { setHeroBlindnessTurns } from '../js/senses.js';
+import { vision_recalc } from '../js/vision.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 function freshAltar({ alignment = 0, high = false, hero = {}, ...room } = {}) {
     freshObjectRoom({
         ...room,
@@ -50,6 +54,67 @@ void test('offering without an altar does not use a turn', async () => {
     await runExtendedCommand('offer');
     assert.equal(game.context.move, 0);
     assert.match(game._pending_message, /not on an altar/);
+});
+const persistentImpairments = ['confusion', 'stunned'];
+for (const condition of persistentImpairments) {
+    void test(`#offer is refused while ${condition} persists without a countdown`, async () => {
+        freshAltar();
+        requirePlayingGame(game);
+        const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('newt')));
+        grantIntrinsicProperty(condition, 'outside');
+        await runExtendedCommand('offer', `${corpse.invlet}\x1b`);
+        assert.ok(game.inventory.includes(corpse));
+        assert.equal(game.context.move, 0);
+        assert.match(game._pending_message, /You are too impaired to perform the rite\./);
+    });
+}
+void test('#offer rejects selected gold with the native gold refusal', async () => {
+    freshAltar();
+    requirePlayingGame(game);
+    const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('newt')));
+    await addInventoryObject(GOLD_PIECE, { quan: 12 });
+    await runExtendedCommand('offer', '$\x1b');
+    assert.match(game._pending_message, /You cannot sacrifice gold\./);
+    assert.equal(game.context.move, 0);
+    assert.ok(game.inventory.includes(corpse));
+});
+void test('#offer announces a Rider squirming out of the hero\'s inventory', async () => {
+    freshAltar();
+    requirePlayingGame(game);
+    const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('Death')));
+    await runExtendedCommand('offer', `${corpse.invlet} `);
+    assert.equal(corpse.where, 'gone');
+    assert.ok(game.level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('Death')));
+    assert.match(game._pending_message, /You feel squirming in your backpack!/);
+});
+void test('#offer makes a Rider in a wielded corpse stack writhe out of the hero\'s grasp', async () => {
+    freshAltar();
+    requirePlayingGame(game);
+    const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('Death'), {
+        quan: 2, quantity: 2,
+    }));
+    await setPrimaryWeapon(corpse);
+    await runExtendedCommand('offer', `${corpse.invlet} `);
+    assert.match(game._pending_message, /writhes out of your grasp!/);
+    assert.equal(corpse.quan, 1);
+    assert.equal(game.uwep, corpse);
+    assert.ok(game.inventory.includes(corpse));
+    assert.ok(game.level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('Death')));
+});
+void test('a blind hero offering their own race senses something dreadful being summoned', async () => {
+    freshAltar({ alignment: -1, hero: { permaBlind: true, ualign: { type: -1, record: 0 } } });
+    requirePlayingGame(game);
+    const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('human')));
+    setHeroBlindnessTurns(100);
+    vision_recalc(0);
+    const input = resetInputState();
+    assert.ok(corpse.invlet);
+    await answerPrompts(runExtendedCommand('offer', corpse.invlet), input, [
+        { prompt: /You have summoned something dreadful![\s\S]*--More--/, keys: ' ' },
+    ]);
+    assert.equal(corpse.where, 'gone');
+    assert.equal(game._helplessTurns, 3);
+    assert.ok(game.level.monsters.length > 0);
 });
 void test('a fresh floor corpse is consumed and reduces the prayer timeout', async () => {
     freshAltar();

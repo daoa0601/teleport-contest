@@ -6,7 +6,7 @@ import type { GameState, Fruit } from './game_state.js';
 import type { GameObject, ObjectBlessing } from './object_types.js';
 import type { Artifact } from './artifacts.js';
 import { fruitFromIndex, fruitFromName, matchWishedFruit } from './fruit.js';
-import { carriedObjectOwner, objectOwnershipPrefix, objectTypeKnown } from './shk.js';
+import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { mkobj, mksobj, rndClass } from './mklev.js';
 import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, SPE_LIM } from './const.js';
@@ -546,7 +546,11 @@ export function simpleObjectNameWithArticle(object: ObjectNameView, state: GameS
 export function ownedObjectName(
     object: GameObject, state: GameState = game, { capitalized = true } = {},
 ): string {
-    const prefix = objectOwnershipPrefix(object, state, { capitalized });
+    // yname() omits ownership for most personal artifacts; quest artifacts retain it.
+    const omitOwner = object.where === 'inventory'
+        && objectHasPersonalName(object, state)
+        && (object.oartifact ?? 0) < requiredArtifact('The Orb of Detection', state).id;
+    const prefix = omitOwner ? '' : objectOwnershipPrefix(object, state, { capitalized });
     const quantity = object.quan ?? object.quantity ?? 1;
     // yname() uses cxname(): corpses retain their species and plural suffix.
     const noun = object.otyp === CORPSE ? corpseName(object) : objectName(object, state);
@@ -594,15 +598,13 @@ export function ownedObjectAction(
     const personal = !!personalName && objectHasPersonalName(object, state);
     const name = personal && personalName
         ? personalName.replace(/^the /i, '')
-        : objectName(object, state);
+        : singularObjectName(object, state);
     const noun = quantity > 1 ? `${quantity} ${pluralizeObjectNoun(object, name)}` : name;
     const firstQuestArtifact = requiredArtifact('The Orb of Detection', state).id;
     const needsOwner = object.where !== 'inventory' || !personal
         || object.oartifact !== undefined && object.oartifact >= firstQuestArtifact;
-    let owner = carriedObjectOwner(object, state);
-    if (!capitalized && (owner === 'Your' || owner === 'The'))
-        owner = owner.toLowerCase();
-    let subject = needsOwner ? `${owner} ${noun}` : noun;
+    const prefix = needsOwner ? objectOwnershipPrefix(object, state, { capitalized }) : '';
+    let subject = `${prefix}${noun}`;
     if (capitalized) subject = subject.charAt(0).toUpperCase() + subject.slice(1);
     if (!verb) return subject;
     let action = verb;

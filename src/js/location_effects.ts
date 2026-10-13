@@ -47,13 +47,15 @@ interface ActiveSpot extends Position {
     trapType: number | undefined;
 }
 
-export async function finishTeleportArrival(movement: HeroTeleportMovement): Promise<SpotEffectResult> {
+export async function finishTeleportArrival(
+    movement: HeroTeleportMovement, { announceTeleport = true } = {},
+): Promise<SpotEffectResult> {
     newsym(movement.oldx, movement.oldy);
     vision_reset();
     vision_recalc(0);
     await redrawMap();
     await bot();
-    if (game.flags.verbose !== false) {
+    if (announceTeleport && game.flags.verbose !== false) {
         const place = movement.oldx === movement.x && movement.oldy === movement.y
             ? 'the same' : 'a different';
         await plineWithContinuation(`You materialize in ${place} location!`);

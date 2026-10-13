@@ -11,10 +11,10 @@ import { angryGods, godsUpset, godVoice } from './divine_wrath.js';
 import { grantPrayerFavor } from './divine_gifts.js';
 import { A_CON, A_NONE, A_WIS, ALTAR, AM_SHRINE, Amask2align, LUCKMIN, PARANOID_CONFIRM, PARANOID_PRAY, } from './const.js';
 import { adjustAttribute, attributeChangeMessage, exerciseAttribute } from './attrib.js';
-import { reviveCorpseImmediately } from './corpse_revival.js';
+import { reviveCorpseForHero } from './corpse_revival.js';
 import { loseHeroHp } from './hero_damage.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { CORPSE, OBJECT_NAMES, STATUE } from './object_data.js';
 import { blessObjectState, curseObject } from './object_state.js';
 import { returnHeroToHumanForm } from './polyself.js';
@@ -40,13 +40,14 @@ export async function altarWrath(x, y, state = game) {
         state.u.ualign.record = alignmentRecord - 1;
         return;
     }
-    await pline(state.deaf || state.u?.deaf
+    await pline(heroIsDeaf(state)
         ? `Despite your deafness, you seem to hear ${deity} say:`
         : `A voice (could it be ${deity}?) whispers:`);
     await pline('"Thou shalt pay, infidel!"');
-    const luck = state.u?.uluck ?? 0;
+    const baseLuck = state.u.uluck ?? 0;
+    const luck = baseLuck + (state.u.moreluck ?? 0);
     if (luck > -5 && rn2(luck + 6))
-        state.u.uluck = luck - (rn2(20) ? 1 : 2);
+        state.u.uluck = Math.max(LUCKMIN, baseLuck - (rn2(20) ? 1 : 2));
 }
 export async function dopray() {
     const game = requireInitializedGame();
@@ -67,7 +68,7 @@ export async function dopray() {
     const trouble = worstPrayerTrouble();
     // The pinned can_pray() rejects a demon unless the deity is neutral,
     // despite its comment describing the opposite restriction.
-    if (requireMonsterData(MONSTER_FLAGS2, hero.umonnum) & M2_DEMON && alignment !== 0) {
+    if (demonRejectsPrayer(alignment)) {
         await pline(`The very idea of praying to a ${alignment ? 'lawful' : 'neutral'} god is repugnant to you.`);
         return;
     }
@@ -99,6 +100,20 @@ export async function dopray() {
         hero.invulnerable = true;
     }
     game.context.move = 1;
+}
+// C can_pray(FALSE) uses the same trouble, timeout, and deity decision as #pray.
+export function canPraySafely() {
+    const game = requireInitializedGame();
+    const altar = currentAltar();
+    const alignment = altar ? Amask2align(altar.flags) : game.u.ualign.type;
+    const trouble = worstPrayerTrouble();
+    if (demonRejectsPrayer(alignment))
+        return false;
+    return prayerOutcome(alignment, trouble) === 'pleased' && !inHell();
+}
+function demonRejectsPrayer(alignment) {
+    const game = requireInitializedGame();
+    return !!(requireMonsterData(MONSTER_FLAGS2, game.u.umonnum) & M2_DEMON) && alignment !== 0;
 }
 function prayerOutcome(alignment, trouble) {
     const game = requireInitializedGame();
@@ -132,7 +147,7 @@ export async function finishPrayerOccupation(state = game) {
     try {
         if (outcome === 'moloch') {
             await pline(`You ${heroIsDeaf(state) ? 'intuit' : 'hear'} diabolical laughter all around you...`);
-            wakeMonstersNear(state.u.ux, state.u.uy, state.u.ulevel * 20, state);
+            await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, state.u.ulevel * 20, state);
             adjustHeroAlignment(-2, state);
             await exerciseAttribute(A_WIS, false, state);
             if (!inHell()) {
@@ -281,7 +296,7 @@ async function reviveAltarPet() {
     if (!object)
         return;
     if (object.otyp === CORPSE)
-        await reviveCorpseImmediately(object);
+        await reviveCorpseForHero(object);
     else
         await animateStatue(object, hero.ux, hero.uy, { magic: true });
 }

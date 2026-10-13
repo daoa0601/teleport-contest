@@ -4,7 +4,7 @@
 // NetHack stores blessed/cursed as boolean bits.  Older JavaScript inventory
 // producers can also attach a textual `buc` compatibility field, so every
 // shared transition must keep that projection synchronized.
-import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, BAG_OF_HOLDING, CORPSE, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
+import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, BAG_OF_HOLDING, CORPSE, FIGURINE, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { artifactById } from './artifacts.js';
 import { game, requireLiveGame } from './gstate.js';
 import { rn2 } from './rng.js';
@@ -13,6 +13,8 @@ import { objectWeight } from './weight.js';
 import { bookCursed } from './spellbook_study.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, W_ARMG, W_ARMH, W_RING } from './const.js';
 import { bot } from './display.js';
+import { updateCarriedLuck } from './hero_inventory.js';
+import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const TOOL_CLASS = 6;
@@ -75,9 +77,15 @@ function drainWornBonuses(object, state) {
         state.u.abon.a[attribute]--;
     state.context.botl = true;
 }
-function updateStateDependentWeight(object) {
+function updateBlessingEffects(object, state) {
+    if (object && state.inventory.includes(object))
+        updateCarriedLuck(object, state);
     if (object?.otyp === BAG_OF_HOLDING)
         object.owt = objectWeight(object);
+}
+function stopFigurineTransformation(object) {
+    if (object.otyp === FIGURINE && object.timed)
+        stopObjectTimer(object, OBJECT_TIMER_KIND.FIG_TRANSFORM);
 }
 export function objectResistsDestruction(object, ordinaryChance, artifactChance, random = rn2) {
     if (!object)
@@ -94,51 +102,53 @@ export function objectResistsDestruction(object, ordinaryChance, artifactChance,
     return random(100) < (object.oartifact || object.artifact
         ? artifactChance : ordinaryChance);
 }
-export function curseObjectState(object) {
+export function curseObjectState(object, state = game) {
     if (!object || object.oclass === COIN_CLASS)
         return false;
     const changed = !object.cursed || !!object.blessed;
     object.blessed = false;
     object.cursed = true;
     object.buc = 'cursed';
-    updateStateDependentWeight(object);
+    updateBlessingEffects(object, state);
     return changed;
 }
 // Live gameplay curses can interrupt an active study through its real input
 // boundary. Constructors and bones retain the atomic state initializer.
 export async function curseObject(object, { state = game } = {}) {
     const wasCursed = !!object?.cursed;
-    const changed = curseObjectState(object);
+    const changed = curseObjectState(object, state);
     if (object && changed && !wasCursed && object.oclass === 10)
         await bookCursed(object, { state });
     return changed;
 }
-export function blessObjectState(object) {
+export function blessObjectState(object, state = game) {
     if (!object || object.oclass === COIN_CLASS)
         return false;
     const changed = !object.blessed || !!object.cursed;
     object.blessed = true;
     object.cursed = false;
     object.buc = 'blessed';
-    updateStateDependentWeight(object);
+    updateBlessingEffects(object, state);
+    stopFigurineTransformation(object);
     return changed;
 }
-export function uncurseObjectState(object) {
+export function uncurseObjectState(object, state = game) {
     if (!object)
         return false;
     const changed = !!object.cursed;
     object.cursed = false;
     object.buc = object.blessed ? 'blessed' : 'uncursed';
-    updateStateDependentWeight(object);
+    updateBlessingEffects(object, state);
+    stopFigurineTransformation(object);
     return changed;
 }
-export function unblessObjectState(object) {
+export function unblessObjectState(object, state = game) {
     if (!object)
         return false;
     const changed = !!object.blessed;
     object.blessed = false;
     object.buc = object.cursed ? 'cursed' : 'uncursed';
-    updateStateDependentWeight(object);
+    updateBlessingEffects(object, state);
     return changed;
 }
 //# sourceMappingURL=object_state.js.map

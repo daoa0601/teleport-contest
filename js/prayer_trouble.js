@@ -1,11 +1,14 @@
 // C pray.c:in_trouble(), worst_cursed_item(), and fix_worst_trouble().
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { ringRemovalObstacle } from './accessory.js';
+import { simpleArmorName } from './armor.js';
 import { heroEyeCount, heroEyeName, heroStomachName } from './body_parts.js';
-import { A_STR, EXT_ENCUMBER, HUNGRY, HVY_ENCUMBER, IS_LAVA, IS_OBSTRUCTED, IS_POOL, SCORR, SDOOR, TT_BURIEDBALL, TT_LAVA, Upolyd, WEAK, W_SADDLE, isok, } from './const.js';
+import { A_STR, DISSOLVED, EXT_ENCUMBER, HUNGRY, HVY_ENCUMBER, IS_LAVA, IS_OBSTRUCTED, IS_POOL, PLNMSG_OBJ_GLOWS, SCORR, SDOOR, TT_BURIEDBALL, TT_LAVA, Upolyd, WEAK, W_SADDLE, isok, } from './const.js';
 import { displayColorName, docrt, plineWithContinuation as pline } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { confersLuck } from './hero_inventory.js';
+import { announceTerrainRescue } from './hack.js';
+import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { healHeroLegs } from './hero_legs.js';
 import { clearHeroStrangulation, heroIsStrangled } from './hero_strangulation.js';
@@ -13,17 +16,17 @@ import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
 import { currentHungerState, restoreHeroNutrition } from './hunger.js';
 import { consumeInventoryItem } from './invent.js';
 import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
 import { AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, BOULDER, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS, LOADSTONE, OBJECT_BIMANUAL, OBJECT_NAMES, } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { ownedObjectName } from './objnam.js';
+import { ownedObjectAction } from './objnam.js';
 import { uncurseObjectState } from './object_state.js';
 import { heroHasNoHands, heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { hasIntrinsicProperty, refreshProperty } from './properties.js';
 import { unpunishHero } from './punishment.js';
 import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';
 import { d, rnd } from './rng.js';
-import { blindfolded, heroIsBlind, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness, } from './senses.js';
+import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness, } from './senses.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { teleportHeroSafely } from './teleport.js';
@@ -43,7 +46,6 @@ export const Trouble = {
 };
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 const RIN_SUSTAIN_ABILITY = OBJECT_NAMES.indexOf('sustain ability');
-const M1_NOEYES = 0x00001000;
 const M2_ROCKTHROW = 0x08000000;
 export function worstPrayerTrouble(state = game) {
     requirePlayingGame(state);
@@ -188,7 +190,7 @@ function blockedByBoulders(dx, dy, state) {
     const type = isok(x, y) ? state.level.requireAt(x, y).typ : null;
     if (count > 1 && !(count === 2 && type !== null && (IS_POOL(type) || IS_LAVA(type))))
         return true;
-    if (dx && dy && state.dungeons?.[hero.uz.dnum]?.dname === 'Sokoban')
+    if (dx && dy && state.level.flags.sokoban_rules)
         return true;
     return type === null || IS_OBSTRUCTED(type) || bouldersAt(x, y) > 0;
 }
@@ -203,20 +205,21 @@ export async function uncursePrayerObject(object, label = null, state = game) {
     if (object === state.uarmg && (state.u.glibTurns ?? 0) > 0) {
         state.u.glibTurns = 0;
         refreshProperty('glib', state);
-        await pline('Your gloves are no longer slippery.');
+        await pline(`Your ${simpleArmorName(object, 'uarmg', state)} are no longer slippery.`);
         if (!object.cursed)
             return;
     }
     const blindfoldOnly = object === state.ublindf && blindfolded(state)
-        && !permanentBlind(state) && !state.u.blindTurns
-        && !(requireMonsterData(MONSTER_FLAGS1, state.u.umonnum) & M1_NOEYES);
+        && !heroIsBlinded(state);
     if (!heroIsBlind(state) || blindfoldOnly) {
-        const name = ownedObjectName(object, state);
-        const subject = label || `${name.charAt(0).toUpperCase()}${name.slice(1)} softly glow${object.quan > 1 ? '' : 's'}`;
+        const subject = label || ownedObjectAction(object, 'softly glow', state);
         await pline(`${subject} ${displayColorName('amber')}.`);
+        state._lastPlineKind = PLNMSG_OBJ_GLOWS;
         object.bknown = !heroIsHallucinating(state);
     }
-    uncurseObjectState(object);
+    const oldLight = objectLightRadius(object, state);
+    uncurseObjectState(object, state);
+    await adjustObjectLightAfterBlessing(object, oldLight, state);
 }
 export async function fixPrayerTrouble(trouble, state = game) {
     requirePlayingGame(state);
@@ -243,6 +246,7 @@ export async function fixPrayerTrouble(trouble, state = game) {
         case Trouble.LAVA:
             if (!await teleportHeroSafely())
                 clearHeroTrap(state);
+            await announceTerrainRescue(DISSOLVED, state);
             return;
         case Trouble.STARVING:
         case Trouble.HUNGRY:
@@ -374,11 +378,11 @@ export async function fixPrayerTrouble(trouble, state = game) {
         case Trouble.SADDLE:
             object = requirePrayerObject(saddle(state));
             if (!heroIsBlind(state)) {
-                const name = ownedObjectName(object, state);
-                await pline(`${name.charAt(0).toUpperCase()}${name.slice(1)} softly glows ${displayColorName('amber')}.`);
+                await pline(`${ownedObjectAction(object, 'softly glow', state)} ${displayColorName('amber')}.`);
+                state._lastPlineKind = PLNMSG_OBJ_GLOWS;
                 object.bknown = true;
             }
-            uncurseObjectState(object);
+            uncurseObjectState(object, state);
     }
 }
 function ringGlow(object, state) {
