@@ -3683,18 +3683,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) {
-        if (!canFallThrough(state.u.uz))
-            return null;
-        // trap.c:trapeffect_hole()->mlevel_tele_trap().  A grounded,
-        // non-huge ordinary actor migrates to the trap's fixed destination.
-        // migrate_to_level() unlinks it from fmon, so postmov() terminates
-        // before dochug()'s trailing distfleeck and the allocation loop no
-        // longer sees it.  Flight and huge-monster behavior remain the
-        // harmless trap eligibility already shared with mfndpos().
-        const airborne = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY);
-        const tooLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 4;
-        if (airborne || tooLarge || !trap.dst)
-            return null;
         // mintrap() grants thinking monsters implicit knowledge of holes
         // (but not trap doors) even before mtrapseen records the type.  The
         // destination remains legal to mfndpos(); this later gate usually
@@ -3707,11 +3695,19 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
             movement.trap = event;
             return event;
         }
+        monsterLearnsTrap(monster, trap);
+        monstersSeeTrap(state, trap);
+        // mintrap() handles avoidance and learning before trapeffect_hole()
+        // discovers that this level has nowhere to fall.
+        if (!canFallThrough(state.u.uz))
+            return null;
+        const airborne = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY);
+        const tooLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 4;
+        if (airborne || tooLarge || !trap.dst)
+            return null;
         // TODO: offer to release an uncursed leash before migration.
         if (monster.mleashed)
             return null;
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         await announceTrapLevelDeparture(monster, trap, state, publish);
         const event = await migrateMonsterOffLevel(monster, state, trap, {
             kind: 'level-fall-migration',
