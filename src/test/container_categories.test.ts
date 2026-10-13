@@ -130,3 +130,28 @@ void test('paranoid auto-selection offers quit and cancels without moving items'
     assert.equal(result.spentTime, false);
     assert.equal(chest.contents?.length, 2);
 });
+
+void test('a single-class category menu leaves the implied-all hint for its first eligible menu', async () => {
+    const { chest, club, potion } = await filledChest();
+    const cursedClub = await knownObject(CLUB, {
+        cursed: true, where: 'contained', container: chest,
+    });
+    game.flags.paranoia_bits = PARANOID_AUTOALL;
+    game.flags.cmdassist = false;
+    const input = resetInputState();
+    const hints: boolean[] = [];
+    for (const contents of [[club, cursedClub], [club, cursedClub, potion], [club, cursedClub, potion]]) {
+        chest.contents = contents;
+        input.feed('o');
+        const looting = useContainer(chest, { held: true });
+        await input.waitUntilBlocked();
+        const rows = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')) || [];
+        hints.push(rows.some(row => row.includes("'a' is implied")));
+        input.feed('\x1b');
+        await looting;
+    }
+
+    assert.equal(hints[0], false, 'A single-class menu has no All types entry to explain.');
+    assert.equal(hints[1], true, 'The first menu with All types must explain implied selection.');
+    assert.equal(hints[2], false, 'With cmdassist off, the hint appears only once.');
+});

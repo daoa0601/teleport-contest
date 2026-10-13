@@ -162,14 +162,14 @@ function categoryChoices(objects: readonly GameObject[]): MultiSelectItem<Contai
         itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
         value: { matches: () => false, filter: 'auto' },
     }];
-    const firstHint = verifyAll ? !game._autoAllImpliedHintShown : !game._autoAllHintShown;
-    if (firstHint || game.flags.cmdassist !== false) {
-        if (!verifyAll || showAll) choices.push({ selectable: false, text: verifyAll
+    if (!verifyAll || showAll) {
+        const firstHint = verifyAll ? !game._autoAllImpliedHintShown : !game._autoAllHintShown;
+        if (firstHint || game.flags.cmdassist !== false) choices.push({ selectable: false, text: verifyAll
             ? "    (if no other choices are picked, 'a' is implied)"
             : '    (ignored unless some other choices are also picked)' });
+        if (verifyAll) game._autoAllImpliedHintShown = true;
+        else game._autoAllHintShown = true;
     }
-    if (verifyAll) game._autoAllImpliedHintShown = true;
-    else game._autoAllHintShown = true;
     choices.push({ selectable: false, text: '' });
     if (showAll) choices.push({
         key: 'a', text: 'All types', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
