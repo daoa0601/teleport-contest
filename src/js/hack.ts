@@ -60,7 +60,7 @@ import {
 
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './terrain_properties.js';
-import { refreshMovementProperties } from './properties.js';
+import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
 import { surfaceName } from './terrain_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 
@@ -453,7 +453,11 @@ async function finishLavaLifeSaving({
         if (escape) return escape;
         await publish("You're still burning.");
     }
-    return { entered: true, moved: false, died: true };
+    // C lava_effects(): two recoveries without a landing give the hero
+    // five turns to find another way out before the lava becomes fatal again.
+    if (!heroResistsFire(state)) setPropertyTimeout('fireResistance', 5, state);
+    if (!heroHasWaterWalking(state)) setPropertyTimeout('waterWalking', 5, state);
+    return { entered: true, moved: false, died: false };
 }
 
 // C lava_effects() brackets its boots- and inventory-burning stages with
@@ -542,10 +546,17 @@ async function finishLavaEffects({
             previouslyAnnounced: bootsBurned ? 1 : 0,
         });
         if (state.program_state?.gameover) return { entered: true, moved: false, died: true };
-        return finishLavaLifeSaving({
+        const rescue = await finishLavaLifeSaving({
             state, publish, random, rollOne, repaint, resetVision,
             recalculateVision, applyLandingEffects, die,
         });
+        if (rescue.died || rescue.moved) return rescue;
+        const items = await destroyFireInventory(damage, {
+            state, publish, random, rollOne, die: finishDamageDeath,
+        });
+        if (items.heroDied) return { ...rescue, died: true };
+        await igniteItems(state.inventory, { state, publish, random });
+        return rescue;
     }
 
     let sank = false;
