@@ -13,7 +13,7 @@ import { monsterName } from './monster_name.js';
 import type { Monster } from './monster_types.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { OBJECT_NAMES } from './object_data.js';
-import { objectName } from './objnam.js';
+import { objectCombatName } from './objnam.js';
 import { propertyIsActive } from './properties.js';
 import { objectTypeKnown } from './shk.js';
 import type { rn2 } from './rng.js';
@@ -86,7 +86,7 @@ async function heroSlipsFromWrapping(
     if (!armor || (!armor.greased && armor.otyp !== OILSKIN_CLOAK)) return false;
     if (armor.cursed && random(3) === 0) return false;
     const name = armor.greased || objectTypeKnown(armor, state)
-        ? objectName(armor, state) : armorSimpleName(armor, state);
+        ? objectCombatName(armor, { state }) : armorSimpleName(armor, state);
     await publish(`${monsterName(monster, { state, capitalized: true })} slips off of your ${armor.greased ? 'greased' : 'slippery'} ${name}!`);
     if (armor.greased && random(2) === 0) {
         await publish('The grease wears off.');

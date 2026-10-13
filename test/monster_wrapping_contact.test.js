@@ -7,7 +7,7 @@ import { MM_ANGRY, MM_NOGRP, NO_MINVENT, POOL } from '../js/const.js';
 import { canSpotMonster, flushPendingTopline } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { AMULET_OF_LIFE_SAVING, LEATHER_CLOAK } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, LEATHER_CLOAK, OBJECT_NAMES } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -53,6 +53,39 @@ for (const grip of ['new hold', 'failed hold', 'greased cloak', 'cancelled hold'
             assert.equal(cloak.greased, false, 'slipping can wear off the protective grease');
         }
         assert.doesNotMatch(text, /couatl hits!/);
+    });
+}
+for (const { name, blind, greased, typeKnown, appearanceKnown } of [
+    { name: 'visible greased cloak', blind: false, greased: true, typeKnown: false, appearanceKnown: true },
+    { name: 'unseen greased cloak', blind: true, greased: true, typeKnown: false, appearanceKnown: false },
+    { name: 'identified oilskin cloak', blind: false, greased: false, typeKnown: true, appearanceKnown: true },
+    { name: 'unidentified oilskin cloak', blind: false, greased: false, typeKnown: false, appearanceKnown: false },
+]) {
+    void test(`slip feedback for ${name} ${appearanceKnown ? 'reveals' : 'does not reveal'} its appearance`, async () => {
+        freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        requirePlayingGame(game);
+        const couatl = await createMonsterAt('couatl', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+        couatl.mux = game.u.ux;
+        couatl.muy = game.u.uy;
+        const cloak = await addInventoryObject(OBJECT_NAMES.indexOf('oilskin cloak'), {
+            observed: false, dknown: false, greased, typeKnown,
+        });
+        wearHeroArmor(cloak);
+        game.u.blindTurns = blind ? 10 : 0;
+        const input = resetInputState();
+        installPagerInput(input, { expected: /couatl|It|grease/, limit: 8 });
+        const messages = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        assert.equal(cloak.dknown, false);
+        await performMonsterHeroAttack(couatl, game, {
+            random: limit => limit === 10 ? 0 : limit - 1,
+            rollOne: () => 1, rollDice: count => count,
+        });
+        await flushPendingTopline();
+        assert.ok(!game.u.ustuck, 'the cloak prevents the wrapping hold');
+        assert.match(messages.join('\n'), /slips off of your (?:greased|slippery) .*cloak!/);
+        assert.equal(cloak.dknown, appearanceKnown, 'slip feedback must preserve the expected appearance knowledge');
+        assert.equal(cloak.typeKnown, typeKnown, 'slip feedback does not identify the cloak type');
     });
 }
 void test('a missed bite prevents a couatl from starting its automatic hug', async () => {
