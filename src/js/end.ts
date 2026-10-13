@@ -39,7 +39,7 @@ import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
     A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, STARVING, STONING,
-    Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd,
+    Is_astralevel, PANICKED, PICK_ONE, STRAT_WAITFORU, Upolyd,
 } from './const.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING,
@@ -1268,6 +1268,9 @@ async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promis
     game.program_state.gameover = true;
     game.program_state.something_worth_saving = false;
     await doneObjectCleanup();
+    if (outcome === 'died' && game.moves <= 1
+        && deathType < PANICKED && !game.program_state.stopprint)
+        await plineWithContinuation('Do not pass Go.  Do not collect 200 zorkmids.');
     game._canMakeBones = outcome === 'died' && deathType < GENOCIDED
         && canMakeBones();
 }
