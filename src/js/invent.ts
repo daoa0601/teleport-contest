@@ -27,7 +27,7 @@ import {
     SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL,
 } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
-import { definiteName, objectCombatName, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
+import { definiteName, objectCombatName, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isWeaponTool, objectUsesCharges } from './object_properties.js';
@@ -561,7 +561,7 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
             && isTwoWeaponObject(state.uswapwep) && state.uswapwep && !OBJECT_BIMANUAL[state.uswapwep.otyp]))
         entries.push({ key: 'X', text: `Toggle two-weapon combat ${state.u.twoweap ? 'off' : 'on'}` });
     if (encyclopediaEntries(singularObjectName(item, state), state).length)
-        entries.push({ key: '/', text: `Look up information about ${objectNameIsPlural(item, state) ? 'these' : 'this'}` });
+        entries.push({ key: '/', text: `Look up information about ${stack ? 'these' : 'this'}` });
     return entries;
 }
 
