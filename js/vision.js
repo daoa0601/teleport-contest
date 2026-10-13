@@ -2,11 +2,12 @@
 // C ref: vision.c Algorithm C shadow-casting.
 import { monsterHasMapPosition } from './monster_location.js';
 import { game } from './gstate.js';
-import { COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD, D_CLOSED, D_LOCKED, D_TRAPPED, M_AP_OBJECT, M_AP_FURNITURE, M_AP_TYPE, Upolyd, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SVALL, IS_WALL, IS_POOL, Is_rogue_level, Is_waterlevel, ROOMOFFSET, TT_PIT, } from './const.js';
+import { COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD, D_CLOSED, D_LOCKED, D_TRAPPED, M_AP_OBJECT, M_AP_FURNITURE, M_AP_TYPE, Upolyd, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SVALL, IS_WALL, Is_rogue_level, Is_waterlevel, ROOMOFFSET, TT_PIT, } from './const.js';
 import { newsym } from './display.js';
 import { BOULDER } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { objectLightRadius } from './light.js';
+import { isPoolAt } from './terrain_properties.js';
 import { isRoom } from './map_types.js';
 export function mimicBlocksLight(monster) {
     if (monster.mappearance === undefined)
@@ -778,8 +779,7 @@ export function vision_recalc(control = 0) {
             if (underwater || u.utrap && u.utraptype === TT_PIT) {
                 for (let y = Math.max(0, uy - 1); y <= Math.min(ROWNO - 1, uy + 1); y++) {
                     for (let x = Math.max(1, ux - 1); x <= Math.min(COLNO - 1, ux + 1); x++) {
-                        const typ = level.requireAt(x, y).typ;
-                        if (underwater && !IS_POOL(typ) && typ !== WATER)
+                        if (underwater && !isPoolAt(x, y))
                             continue;
                         visionRow(next, y)[x] = COULD_SEE | IN_SIGHT;
                         next_rmin[y] = Math.min(visionValue(next_rmin, y), x);
