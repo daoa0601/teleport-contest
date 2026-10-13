@@ -157,6 +157,38 @@ void test('rejecting an unaffordable partly used stack still permits a later aff
     assert.equal(heroGoldAmount(game), 0);
     assert.equal(game.context.move, 1);
 });
+for (const stashedGold of [0, 37]) {
+    void test(`a container purchase reports exhausted cash and credit with ${stashedGold} gold stashed away`, async () => {
+        freshObjectRoom();
+        const first = await addInventoryObject(DAGGER, { quan: 2 });
+        const sack = await addInventoryObject(SACK, { cknown: true });
+        const contained = await knownObject(DAGGER);
+        await addCreatedObjectToContainer(sack, contained);
+        if (stashedGold)
+            await addCreatedObjectToContainer(sack, await knownObject(GOLD_PIECE, { quan: stashedGold }));
+        const { shopkeeper } = await createStaffedShop({ bill: [
+                { bo_id: first.o_id, bquan: 2, price: 4, useup: false },
+                { bo_id: contained.o_id, bquan: 1, price: 4, useup: false },
+            ] });
+        first.unpaid = contained.unpaid = true;
+        shopkeeper.eshk.credit = 4;
+        setHeroGoldAmount(game, 4);
+        const input = resetInputState();
+        const messages = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        input.feed('ab\n');
+        await withMessagePages(() => rhack('p'.charCodeAt(0)), input, /credit|bought .*dagger|no gold or credit left|enough to pay/, 4);
+        messages.push(game._pending_message);
+        assert.match(messages.join('\n'), new RegExp(`You ${stashedGold ? 'seem to ' : ''}have no gold or credit left\\.`));
+        assert.equal(first.unpaid, false);
+        assert.equal(contained.unpaid, true);
+        assert.equal(contained.container, sack);
+        assert.equal(shopkeeper.eshk.billct, 1);
+        assert.equal(shopkeeper.eshk.credit, 0);
+        assert.equal(heroGoldAmount(game), 0);
+        assert.equal(game.context.move, 1);
+    });
+}
 for (const scenario of [
     { name: 'paying for contained merchandise without gold or credit takes no turn',
         gold: 0, stashed: 0, debt: 0 },

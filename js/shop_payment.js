@@ -73,8 +73,12 @@ export async function buyShopBillItem(resident, item, state = game) {
     const container = item.kind === 'known-container' || item.kind === 'hidden-container';
     // buy_container() checks the group price first; dopayobj() rejects a
     // partly used loose stack before considering its intact portion's price.
-    if (container && !await checkPurchaseFunds(resident, item, state))
-        return 'stop';
+    if (container) {
+        if (!await checkPurchaseFunds(resident, item, state, 0))
+            return 'stop';
+        if (!await checkPurchaseFunds(resident, item, state))
+            return 'stop';
+    }
     const purchases = container ? containedPurchases(resident, item.object, state) : [item.object];
     for (const object of purchases) {
         const entry = resident.eshk.bill.find(candidate => candidate.bo_id === object.o_id);
@@ -108,8 +112,14 @@ export async function buyShopBillItem(resident, item, state = game) {
     await plineWithContinuation(`You ${item.kind === 'used' ? 'paid for' : 'bought'} ${name}${item.kind === 'used' ? ' at a cost of' : ' for'} ${item.price} gold piece${item.price === 1 ? '' : 's'}.`);
     return 'paid';
 }
-async function checkPurchaseFunds(resident, item, state) {
-    if (heroGoldAmount(state) + (resident.eshk.credit ?? 0) >= item.price)
+async function checkPurchaseFunds(resident, item, state, cost = item.price) {
+    const funds = heroGoldAmount(state) + (resident.eshk.credit ?? 0);
+    // C insufficient_funds(): zero cost checks for exhausted cash and credit.
+    if (cost === 0 && funds === 0) {
+        await plineWithContinuation(`You ${hiddenGold(state, true) ? 'seem to ' : ''}have no gold or credit left.`);
+        return false;
+    }
+    if (funds >= cost)
         return true;
     await plineWithContinuation(`You don't${hiddenGold(state, true) ? ' seem to' : ''} have gold${resident.eshk.credit ? ' or credit' : ''} enough to pay for ${paymentObjectDescription(item.object, item.quantity, { state })}.`);
     return false;
