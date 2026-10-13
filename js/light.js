@@ -12,12 +12,12 @@ import { requireInitializedHero } from './hero_types.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
 import { CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG, NO_MINVENT, } from './const.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation, } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation, displayColorName, } from './display.js';
 import { initializePet } from './dog.js';
-import { makemonNear } from './mklev.js';
+import { makemonNear, mksobj } from './mklev.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { monsterDigests, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
-import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OBJECT_NAMES, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
+import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OBJECT_NAMES, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
 import { roomForRoomno } from './room.js';
 import { rn2, rnd } from './rng.js';
@@ -31,7 +31,9 @@ import { objectName, observeObjectForNaming } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { getObjectLocation } from './object_location.js';
 import { useUpInventoryStack } from './hero_inventory.js';
-import { deleteObject } from './object_delete.js';
+import { deallocateObject, deleteObject } from './object_delete.js';
+import { blessObjectState, curseObjectState, objectResistsDestruction, unblessObjectState, uncurseObjectState } from './object_state.js';
+import { ownedObjectAction } from './objnam.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 const CANDLE_TYPES = new Set([
     CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE, WAX_CANDLE,
@@ -131,15 +133,59 @@ function snuffLightsAt(x, y) {
             snuffOrdinaryLight(object);
     }
 }
-function darkenCarriedLights() {
+async function affectCarriedLights(worsen) {
     let stillLit = 0;
-    for (const object of game.inventory || []) {
+    for (const object of [...game.inventory]) {
         if (!object.lamplit)
             continue;
-        if (!snuffOrdinaryLight(object))
+        if (artifactEmitsLight(object))
+            await impactArtifactLight(object, worsen);
+        else if (worsen)
+            snuffOrdinaryLight(object);
+        if (object.lamplit)
             stillLit++;
     }
     return stillLit;
+}
+// C potion.c:impact_arti_light()/H2Opotion_dip(). The temporary water
+// object is part of the native effect, including its construction draws.
+async function impactArtifactLight(object, worsen) {
+    if ((worsen ? object.cursed : object.blessed)
+        || objectResistsDestruction(object, 25, 75))
+        return;
+    const water = await mksobj(POT_WATER, true, false);
+    if (worsen)
+        curseObjectState(water);
+    else
+        blessObjectState(water);
+    const oldRadius = objectLightRadius(object);
+    const removeBlessing = worsen && object.blessed;
+    const removeCurse = !worsen && object.cursed;
+    const blind = heroIsBlind();
+    if (!blind) {
+        const color = displayColorName(removeBlessing ? 'brown' : removeCurse ? 'amber'
+            : worsen ? 'black' : 'light blue');
+        await plineWithContinuation(`${ownedObjectAction(object, 'glow')}${removeBlessing || removeCurse ? ` ${color}` : ` with ${withIndefiniteArticle(color)} aura`}.`);
+        object.bknown = !heroIsHallucinating();
+    }
+    else if (!water.bknown || !water.dknown)
+        object.bknown = false;
+    if (removeBlessing)
+        unblessObjectState(object);
+    else if (removeCurse)
+        uncurseObjectState(object);
+    else if (worsen)
+        curseObjectState(object);
+    else
+        blessObjectState(object);
+    const delta = objectLightRadius(object) - oldRadius;
+    if (delta) {
+        game.vision_full_recalc = 1;
+        if (!blind)
+            await plineWithContinuation(`${object.quan === 1 ? 'It shines' : 'They shine'} `
+                + `${Math.abs(delta) > 1 ? 'much ' : ''}${delta > 0 ? 'brighter' : 'less brightly'}.`);
+    }
+    deallocateObject(water);
 }
 export async function lightHitsGremlin(monster, damage, finishMonsterKill) {
     const name = monsterName(monster, { capitalized: true });
@@ -169,13 +215,13 @@ export async function lightHitsGremlin(monster, damage, finishMonsterKill) {
         map_invisible(monster.mx, monster.my);
     }
 }
-export async function lightRoom(lit, { radius = 5, finishMonsterKill } = {}) {
+export async function lightRoom(lit, { radius = 5, source, finishMonsterKill } = {}) {
     const blind = heroIsBlind();
     const swallowed = !!game.u?.uswallow;
     const noEffect = swallowed || game.underwater || game.u?.uinwater
         || Is_waterlevel(game.u?.uz);
     if (!lit) {
-        const stillLit = darkenCarriedLights();
+        const stillLit = await affectCarriedLights(true);
         if (!blind) {
             const message = stillLit
                 ? 'The ambient light seems dimmer.'
@@ -185,14 +231,18 @@ export async function lightRoom(lit, { radius = 5, finishMonsterKill } = {}) {
             await plineWithContinuation(message);
         }
     }
-    else if (swallowed) {
-        const message = swallowedLightMessage();
-        if (!blind && message)
-            await plineWithContinuation(message);
-    }
-    else if (!blind && (!Is_rogue_level(game.u?.uz)
-        || game.level?.at?.(game.u.ux, game.u.uy)?.typ !== CORR)) {
-        await plineWithContinuation(`A lit field ${noEffect ? 'briefly ' : ''}surrounds you!`);
+    else {
+        if (source?.oclass === SCROLL_CLASS && source.blessed)
+            await affectCarriedLights(false);
+        if (swallowed) {
+            const message = swallowedLightMessage();
+            if (!blind && message)
+                await plineWithContinuation(message);
+        }
+        else if (!blind && (!Is_rogue_level(game.u?.uz)
+            || game.level?.at?.(game.u.ux, game.u.uy)?.typ !== CORR)) {
+            await plineWithContinuation(`A lit field ${noEffect ? 'briefly ' : ''}surrounds you!`);
+        }
     }
     if (noEffect)
         return false;
@@ -282,6 +332,7 @@ export async function applyLightScrollEffect(scroll, { finishMonsterKill } = {})
         const lit = !scroll.cursed;
         await lightRoom(lit, {
             radius: scroll.blessed ? 9 : 5,
+            source: scroll,
             finishMonsterKill: finishMonsterKill || finishHeroMonsterKillOutcome,
         });
         if (game.program_state.gameover)
