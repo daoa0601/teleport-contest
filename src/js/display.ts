@@ -12,11 +12,10 @@ import { heroWarnsOfMonster } from './hero_species.js';
 import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
-import { currentHungerState } from './hunger.js';
 import { cansee, couldsee, vision_recalc } from './vision.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN,
-    COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE,
+    COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, NOT_HUNGRY,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
     TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD,
@@ -2068,7 +2067,7 @@ export function _statusLine2() {
     if (game.flags?.time)
         line += ` T:${game.moves ?? 1}`;
     if (u.usteed) line += ' Ride';
-    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][currentHungerState(game)];
+    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? NOT_HUNGRY];
     if (hungerLabel) line += ` ${hungerLabel}`;
     if (u._encumbrance) line += ` ${u._encumbrance}`;
     if (u.strangled || (u.strangledTurns ?? 0) > 0) line += ' Strngl';
