@@ -15,7 +15,7 @@ import { advanceDisplacementTimeout } from './hero_displacement.js';
 import { finishMealMimicry } from './meal_mimic.js';
 import { finishHeroDigestion } from './hero_combat_engulf.js';
 import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
-import { game, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
+import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import type { GameState, PlayingGameState, MonsterMessageContext } from './game_state.js';
 import type { PropertyName } from './property_types.js';
 import type { GameObject } from './object_types.js';
@@ -36,9 +36,10 @@ import { dosounds } from './ambient_sounds.js';
 import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
 import { monsterGainLevelRiseDestination } from './monmove.js';
-import { WATER } from './const.js';
+import { RLOC_NOMSG, WATER } from './const.js';
 import { presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse } from './monster_item_use.js';
-import { randomMonsterRelocation } from './teleport.js';
+import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
+import { monsterAtPosition } from './monster_location.js';
 import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
 import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
@@ -3634,6 +3635,8 @@ export async function newgame() {
     vision_reset();
     await checkSpecialRoom();
 
+    const occupant = monsterAtPosition(requireGameLevel(g), g.u.ux, g.u.uy);
+    if (occupant) await moveMonsterNextToHero(occupant, g, { flags: RLOC_NOMSG });
     await makedog();
     await uInitInventoryAttrs();
     // Initial display
