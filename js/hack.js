@@ -2,7 +2,7 @@
 // C ref: hack.c pooleffects() and trap.c drown().
 import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsHallucinating } from './senses.js';
-import { BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DOOR, ICE, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, } from './const.js';
+import { BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DOOR, DROWNING, ICE, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, } from './const.js';
 import { feel_newsym, newsym, plineWithContinuation } from './display.js';
 import { heroPassesWalls, heroFormSticks } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -35,6 +35,8 @@ import { inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED, } from './we
 import { destroyWornArmor, findArmorClass, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, } from './armor.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './terrain_properties.js';
+import { waterbodyName } from './terrain_name.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 // C hack.c:escape_from_sticky_mon(). True means this attempt was spent
 // struggling; release clears the grip directly, without unstuck's cooldown.
 export async function escapeFromStickyMonster(x, y) {
@@ -764,9 +766,7 @@ export async function heroLiquidEffects(options = {}) {
         stayingInPool = true;
     }
     if (!u.uinwater) {
-        await publish(waterWall
-            ? 'You plunge into the wall of water!'
-            : 'You fall into the pool of water!');
+        await publish(`You ${waterWall ? 'plunge' : 'fall'} into the ${waterbodyName(x, y, state)}${canLiveUnderwater ? '.' : '!'}`);
         if (!heroCanSwim(state) && !waterWall)
             await publish(heroIsHallucinating(state)
                 ? 'You sink like the Titanic.' : 'You sink like a rock.');
@@ -855,11 +855,17 @@ export async function heroLiquidEffects(options = {}) {
     u.uinwater = 1;
     await publish('You drown.');
     for (let attempt = 0; attempt < 2; attempt++) {
+        const liquid = waterbodyName(u.ux, u.uy, state);
+        const killer = liquid === 'water' ? 'deep water' : liquid;
+        const description = liquid === 'water' || liquid === 'limitless water'
+            ? killer : withIndefiniteArticle(killer);
         u.uhp = 0;
         const lifeSaving = state === game ? beginHeroLifeSaving(random) : null;
         if (!lifeSaving) {
             await die({
-                killer: 'deep water',
+                killer,
+                deathCause: `drowned in ${description}`,
+                deathType: DROWNING,
                 possessionAnswer: 'n',
                 deathVerb: 'drowned',
             });

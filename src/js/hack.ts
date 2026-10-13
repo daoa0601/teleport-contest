@@ -5,7 +5,7 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsHallucinating } from './senses.js';
 import {
     BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED,
-    DOOR, ICE, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL,
+    DOOR, DROWNING, ICE, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL,
     Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE,
     FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
@@ -60,6 +60,8 @@ import {
 
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './terrain_properties.js';
+import { waterbodyName } from './terrain_name.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -897,9 +899,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
         stayingInPool = true;
     }
     if (!u.uinwater) {
-        await publish(waterWall
-            ? 'You plunge into the wall of water!'
-            : 'You fall into the pool of water!');
+        await publish(`You ${waterWall ? 'plunge' : 'fall'} into the ${waterbodyName(x, y, state)}${canLiveUnderwater ? '.' : '!'}`);
         if (!heroCanSwim(state) && !waterWall)
             await publish(heroIsHallucinating(state)
                 ? 'You sink like the Titanic.' : 'You sink like a rock.');
@@ -993,11 +993,17 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
     u.uinwater = 1;
     await publish('You drown.');
     for (let attempt = 0; attempt < 2; attempt++) {
+        const liquid = waterbodyName(u.ux, u.uy, state);
+        const killer = liquid === 'water' ? 'deep water' : liquid;
+        const description = liquid === 'water' || liquid === 'limitless water'
+            ? killer : withIndefiniteArticle(killer);
         u.uhp = 0;
         const lifeSaving = state === game ? beginHeroLifeSaving(random) : null;
         if (!lifeSaving) {
             await die({
-                killer: 'deep water',
+                killer,
+                deathCause: `drowned in ${description}`,
+                deathType: DROWNING,
                 possessionAnswer: 'n',
                 deathVerb: 'drowned',
             });
