@@ -409,7 +409,6 @@ export async function rerollMenu() {
             acceptKey.charCodeAt(0), rerollKey.charCodeAt(0),
             27, 32, 10, 13,
         ],
-        restoreUnderlay: true,
     });
     const choice = String.fromCharCode(key);
     const reroll = choice === rerollKey ? true
@@ -464,7 +463,7 @@ async function showItemActionMenu(item: GameObject) {
     entries.push({ key: '/', text: 'Look up information about this' });
     return showChoiceWindow({
         title: `Do what with the ${itemName}?`, entries,
-        validKeys: [27, 32, 10, 13], restoreUnderlay: true,
+        validKeys: [27, 32, 10, 13],
     });
 }
 

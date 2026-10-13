@@ -1,10 +1,12 @@
 import type { MessagePublisher } from './display.js';
 import { slipOrTrip } from './fumbling.js';
 import { invWeight } from './weight.js';
+import { rewindEngravingsForSave } from './engrave.js';
 import { finishMonsterHideUnder } from './monster_hiding.js';
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 import { heroIsHallucinating } from './senses.js';
+import { mcalcmove } from './monster_speed.js';
 import { makeBlinded } from './sight_change.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
@@ -1087,13 +1089,17 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(
     if (rn2(generationRate) === 0) await makemonAt(null, 0, 0);
     const polymorphed = (game.u.mtimedone !== undefined && game.u.mtimedone > 0)
         && Number.isInteger(game.u?.umonnum);
-    let moveAmount = polymorphed
-        ? (MONSTER_MOVE[game.u.umonnum] ?? 0)
-        : 12;
-    if (game.u?.veryFast) {
-        if (rn2(3) !== 0) moveAmount += 12;
-    } else if (game.u?.fast && rn2(3) === 0) {
-        moveAmount += 12;
+    let moveAmount;
+    if (game.u.usteed && game.u.umoved) {
+        moveAmount = mcalcmove(game.u.usteed, true, rn2, game);
+    } else {
+        moveAmount = polymorphed
+            ? (MONSTER_MOVE[game.u.umonnum] ?? 0) : 12;
+        if (game.u.veryFast) {
+            if (rn2(3) !== 0) moveAmount += 12;
+        } else if (game.u.fast && rn2(3) === 0) {
+            moveAmount += 12;
+        }
     }
     // allmain.c:u_calc_moveamt() applies current carrying capacity after the
     // current form's natural speed and Fast/Very_fast bonus.  OVERLOADED is
@@ -3201,7 +3207,8 @@ export async function performMonsterHeroAttack(
         { random, rollDice, rollOne });
     if (messageContext) messageContext.earlierActorPager = effects.earlierActorPager;
     const offensive = action.movement.heroAttackSequence?.offensive;
-    const returnedDeath = offensive?.status === 'completed' && offensive.result.nativeResult === 1;
+    const returnedDeath = action.movement.heroAttackResult === 1
+        || (offensive?.status === 'completed' && offensive.result.nativeResult === 1);
     return {
         nativeResult: returnedDeath || monster.dead || monster.mhp <= 0 ? 1 : 0,
         heroDied: effects.heroDied || !!state.program_state.gameover,
@@ -3653,6 +3660,7 @@ export async function newgame() {
     // maintenance pass.  Compatibility paths historically hid this by
     // skipping the generic maintenance block altogether.
 
+    if (g.flags.checkpoint ?? true) rewindEngravingsForSave(g.level);
     // welcome() can wrap and wait before moveloop_preamble(). unixmain's
     // discovery-mode notice follows it, also before calendar effects.
     await plineWithContinuation(welcomeText());
@@ -3913,11 +3921,6 @@ export async function moveloop_core() {
         if (moved) await currentLuaLifecycle().runCallbacks(g, 'end_turn');
         return;
     }
-
-    // tty ESC at --More-- suppresses later plines until the next real
-    // command read.  Preserve the overflow message already installed while
-    // reopening output for the command rhack() is about to request.
-    g._suppressMessagesUntilInput = false;
 
     // Read and execute one command
     g.u.umoved = false;

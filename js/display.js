@@ -308,13 +308,15 @@ const ANSI_COLOR = [
     90, // remembered room/corridor while blind (tty dark gray)
 ];
 function rememberedColor(glyph, loc, x, y) {
-    // display.c maps an unlit corridor with S_litcorr only while it is in
-    // sight.  When that live projection becomes hero memory, retain the lit
-    // identity only for a location whose own waslit bit supports it.
+    // newsym() darkens unseen corridors with dark_room and color enabled,
+    // even when the terrain remains lit. Without those options, waslit
+    // determines whether memory retains the bright corridor glyph.
     if (glyph?.kind === 'terrain' && glyph.ch === '#'
-        && loc?.typ === CORR && !loc.waslit && !cansee(x, y)
+        && loc?.typ === CORR && !cansee(x, y)
+        && (!loc.waslit || ((game.flags.dark_room ?? true) && game.flags.color !== false))
         && glyph.color === CLR_WHITE) {
         glyph.color = NO_COLOR;
+        glyph.glyph = cmapToGlyph(CmapSymbol.corr);
     }
     // Preserve the port's established blind-memory behavior on ordinary
     // levels.  Premapped levels distinguish background from mapped objects
@@ -2435,6 +2437,22 @@ function toplineRows(message, columns) {
         }
     }
     return lines;
+}
+// C update_topl()/topl_putsym(): key queries wrap without a More prompt.
+// Return the rows covered so tty_yn_function's cleanup can restore the map.
+export function renderKeyPrompt(message, cursorOffset = 0) {
+    const display = game.nhDisplay;
+    const lines = toplineRows(message, display?.cols ?? COLNO);
+    if (!display)
+        return lines.length;
+    for (const [row, line] of lines.entries()) {
+        display.clearRow(row);
+        for (const [column, cell] of line.entries())
+            display.setCell(column, row, cell.ch, NO_COLOR, 0);
+    }
+    const lastLine = lines.at(-1) ?? lines[0];
+    display.setCursor(lastLine.length + cursorOffset, lines.length - 1);
+    return lines.length;
 }
 export async function moreUntilDismissed(message, { urgent = false } = {}) {
     await pline(message);

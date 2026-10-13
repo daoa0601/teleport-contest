@@ -1,4 +1,5 @@
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
+import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
@@ -7,7 +8,6 @@ import { runDueTimers } from './timer_effects.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { promptKey } from './tty_prompts.js';
 import { flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt, bot, } from './display.js';
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { d, rnd, rn2 } from './rng.js';
@@ -39,7 +39,8 @@ import { fumaroles } from './monmove.js';
 import { moveElementalBubbles } from './elemental.js';
 import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, } from './const.js';
 import { resurrectWizard } from './wizard.js';
-export async function gotoLevel(targetDepth, { arrival = 'random', ladder = false, postMessage = '', preArrivalPager = '', } = {}) {
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
+export async function gotoLevel(targetDepth, { arrival = 'random', ladder = false, postMessage = '', } = {}) {
     requirePlayingGame(game);
     const oldDepth = { ...game.u.uz };
     const destinationDepth = { ...oldDepth, ...targetDepth };
@@ -83,8 +84,6 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         await pline('A mysterious force prevents you from descending.');
         return false;
     }
-    if (preArrivalPager)
-        await promptKey(preArrivalPager);
     await currentLuaLifecycle().runCallbacks(game, 'level_leave');
     if (arrival === 'falling')
         await impactDrop(null, game.u.ux, game.u.uy, {
@@ -120,6 +119,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         updateMonsterLastMove(game);
     if (!game._levelCache)
         game._levelCache = new Map();
+    rewindEngravingsForSave(oldLevel);
     game._levelCache.set(levelCacheKey(oldDepth), cachedLevelState(oldLevel, oldStairs));
     if (leavingTutorial) {
         for (const key of game._levelCache.keys()) {
@@ -147,6 +147,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         game.program_state.in_getlev = true;
         try {
             game.level = cached.level;
+            restoreEngravingPointers(cached.level);
             game.stairs = cached.stairs;
             restoreCachedLevelMetadata(cached);
             await restoreCachedMonsterState(cached);
@@ -196,21 +197,28 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         && newDepth.dnum === game.valley_level.dnum
         && newDepth.dlevel === game.valley_level.dlevel;
     if (game._restoredBones) {
-        // do.c marks a loaded bones level as familiar.  tty can suspend the
-        // deferred level-teleport message before familiar_level_msg() is
-        // delivered, leaving the latter pending at the hero cursor for the
-        // next input boundary.
-        const familiarMessages = [
-            'You have a sense of deja vu.',
-            "You feel like you've been here before.",
-            'This place looks familiar...',
-            '',
-        ];
-        const familiarMessage = familiarMessages[rn2(4)];
         if (postMessage) {
             await plineWithContinuation(postMessage);
-            await flushPendingTopline();
         }
+        let familiarMessage = '';
+        // bones_include_name() matches through the hero name's trailing hyphen.
+        if (game.level.bonesNames?.some(name => name.startsWith(`${game.plname}-`))) {
+            const perception = heroIsBlind(game) ? 'seems' : 'looks';
+            const familiarMessages = heroIsHallucinating(game) ? [
+                `Whoa!  Everything ${perception} different.`,
+                'You are surrounded by twisty little passages, all alike.',
+                `Gee, this ${perception} like uncle Conan's place...`,
+                '',
+            ] : [
+                'You have a sense of deja vu.',
+                "You feel like you've been here before.",
+                `This place ${perception} familiar...`,
+                '',
+            ];
+            familiarMessage = familiarMessages[rn2(4)] ?? '';
+        }
+        if (postMessage)
+            await flushPendingTopline();
         if (familiarMessage)
             await pline(familiarMessage);
         game._restoredBones = false;
@@ -279,6 +287,8 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     }
     if (!cached)
         await creditTouristNewLevel();
+    if (game.flags.checkpoint ?? true)
+        rewindEngravingsForSave(game.level);
     const levelAnnotation = game._levelAnnotations?.get?.(`${newDepth.dnum}:${newDepth.dlevel}`);
     if (levelAnnotation) {
         await pline(`You remember this level as ${levelAnnotation}.`);

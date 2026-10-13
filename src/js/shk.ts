@@ -17,7 +17,7 @@ import type {
     Shopkeeper, ShopRoom, ShopTransaction,
 } from './shop_types.js';
 import { SHOP_TYPES } from './shop_data.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsHuman, monsterIsVampire } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire } from './monster_data.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterName, possessiveName, shopkeeperName } from './monster_name.js';
 import { containedGold } from './gold.js';
@@ -45,7 +45,7 @@ import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } 
 import { intemple } from './priest.js';
 import { recordDiscoveredRoom } from './dungeon.js';
 import {
-    BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CRYSTAL_BALL,
+    BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CORPSE, CRYSTAL_BALL,
     DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX,
     MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST,
     OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT,
@@ -65,6 +65,8 @@ const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const GLASS = 19;
 const BILLSZ = 200; // C include/mextra.h
+const G_UNIQ = 0x1000;
+const M2_PNAME = 0x00080000;
 
 
 function sameLevel(a: DungeonLocation | null | undefined, b: DungeonLocation | null | undefined): boolean {
@@ -99,6 +101,11 @@ export function shopkeeperInOwnShop(
     if (!sameLevel(monster.eshk.shoplevel, state?.u?.uz)) return false;
     return roomsAt(state.level, monster.mx, monster.my, SHOPBASE)
         .includes(monster.eshk.shoproom);
+}
+
+// C tended_shop(): checking residency must not apply shop_keeper()'s surcharge.
+export function tendedShop(room: Room | null | undefined, state: GameState = game): boolean {
+    return shopkeeperInOwnShop(room?.resident, state);
 }
 
 // C end.c:done_in_by().  General shopkeeper names carry a gendered
@@ -939,7 +946,21 @@ export function updateUnpaidObjectPrice(object: GameObject, state: GameState = g
     );
 }
 
-// C shk.c:shk_your(), shk_owns(), and mon_owns(). Shop ownership takes
+// C shk.c:Shk_Your(). The returned prefix includes its separator; a corpse
+// of a personally named monster has no prefix or separator at all.
+export function objectOwnershipPrefix(object: GameObject, state: GameState = game): string {
+    const species = object.corpsenm;
+    if (object.otyp === CORPSE && species !== undefined && MONSTER_NAME[species] !== undefined) {
+        if ((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME) return '';
+        if (((MONSTER_GENO[species] ?? 0) & G_UNIQ)
+            && !['high cleric', 'long worm tail'].includes(MONSTER_NAME[species]))
+            return 'The ';
+    }
+    const owner = carriedObjectOwner(object, state);
+    return `${owner.charAt(0).toUpperCase()}${owner.slice(1)} `;
+}
+
+// C shk.c:shk_owns() and mon_owns(). Shop ownership takes
 // precedence over the carrier, using the object's location rather than ours.
 export function carriedObjectOwner(object: GameObject, state: GameState = game): string {
     const location = getObjectLocation(object, state);

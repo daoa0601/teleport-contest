@@ -3883,6 +3883,31 @@ export async function beginMonsterHeroAttack(
     if (dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 3)
         endVoluntaryMultiTurn(state);
     if (monster === state.u.usteed) return {};
+    if (!state.u.uswallow && state.u.usteed) {
+        const steed = state.u.usteed;
+        const orc = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ORC);
+        // mattacku() chooses the steed before testing adjacency. Orcs
+        // choose it half the time; other monsters choose it one in four.
+        if (recordRandom(random, calls, orc ? 2 : 4) === 0
+            && dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 2) {
+            const attack = await attackMonsterWithMonster(monster, steed, {
+                state, random, rollDice, rollOne, calls,
+            });
+            if (monsterAttackStopsAggressor(attack)) return { heroAttackResult: 1 };
+            if (attack.heroDied || monster.dead || monster.mhp <= 0
+                || steed.dead || steed.mhp <= 0 || !state.u.usteed
+                || dist2(monster.mx, monster.my, state.u.ux, state.u.uy) > 2)
+                return {};
+            // A surviving steed retaliates immediately, including after a
+            // miss, without spending a movement ration or a chance roll.
+            const retaliation = await attackMonsterWithMonster(state.u.usteed, monster, {
+                state, random, rollDice, rollOne, calls,
+            });
+            const attackerDied = retaliation.kind === 'monster-attack'
+                && !!((retaliation.nativeResult ?? 0) & M_ATTK_DEF_DIED);
+            return { heroAttackResult: attackerDied ? 1 : 0 };
+        }
+    }
     if (await disturbMealMimicry(monster, { state })) return {};
     const threshold = monsterAttackThreshold(monster, state, rollOne, calls);
     const alreadyFleeing = !!monster.mflee;
@@ -7935,6 +7960,8 @@ async function beginStandardMonsterAttack(
 function attachMonsterAttack(movement: MonsterMovement, attack: MonsterAttackInitiation): void {
     if (attack.heroAttackSequence !== undefined)
         movement.heroAttackSequence = attack.heroAttackSequence;
+    if (attack.heroAttackResult !== undefined)
+        movement.heroAttackResult = attack.heroAttackResult;
 }
 
 // C postmov() has separate gates for movement effects and the floor tail.

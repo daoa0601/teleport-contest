@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { wearHeroArmor } from '../js/armor.js';
-import { HOLE, NO_MINVENT, ROOM, STONE } from '../js/const.js';
+import { FOUNTAIN, HOLE, NO_MINVENT, ROOM, STONE } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { level_difficulty } from '../js/dungeon.js';
 import { placeCreatedObject, remove_object } from '../js/floor_object.js';
@@ -26,6 +26,58 @@ import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject, floorObject, knownObject, untimedCorpse } from './support/game-objects.js';
 import { installPolymorphedHero, installPunishedHero } from './support/hero-state.js';
 import { installPagerInput } from './support/pager-input.js';
+import { requireScreenCell } from './support/screen.js';
+import { createDungeon, createSpecialLevel } from './support/topology.js';
+import { answerPrompts } from './support/input-boundaries.js';
+import { docrt, flush_screen } from '../js/display.js';
+
+void test('wizard level teleport places the hero before acknowledging the Amulet grant', async () => {
+    const { destination } = freshConnectedLevels();
+    requirePlayingGame(game);
+    game.flags.debug = true;
+    // The Wizard is elsewhere, so arrival has no resurrection pager.
+    game.context.no_of_wizards = 1;
+    game.dungeons.push(createDungeon({ dname: 'The Elemental Planes', num_dunlevs: 5 }));
+    game.astral_level = createSpecialLevel({ dnum: 1, dlevel: 1 });
+    game.specialLevels = new Map([['earth', createSpecialLevel({ dnum: 1, dlevel: 5 })]]);
+    const levels = game._levelCache;
+    assert.ok(levels);
+    const cached = levels.get('0:2');
+    assert.ok(cached);
+    levels.set('1:5', cached);
+    destination.upTeleportRegion = { lx: 13, ly: 10, hx: 13, hy: 10 };
+    destination.requireAt(12, 10).typ = FOUNTAIN;
+    await docrt();
+    await flush_screen(1);
+    const input = resetInputState();
+    const changing = rhack(22);
+    await input.waitUntilBlocked();
+    input.feed('?\r');
+    await input.waitUntilBlocked();
+    assert.ok(game.nhDisplay);
+    assert.match(game.nhDisplay.grid.map(row => row.map(cell => cell.ch).join('')).join('\n'),
+        /Level teleport to where:/);
+    input.feed('a');
+    await input.waitUntilBlocked();
+
+    try {
+        assert.match(game._pending_message, /Endgame prerequisite: .*the Amulet of Yendor\./);
+        assert.equal(game.u.uhave?.amulet, 1);
+        assert.ok(game.level === destination, 'destination creation precedes the message acknowledgement');
+        assert.equal(game.u.uz.dnum, 1);
+        assert.equal(game.u.uz.dlevel, 5);
+        assert.equal(requireScreenCell(0, 0).ch, 'E', 'the message window remains visible while the map is paused');
+        assert.equal(game.u.ux, 13, 'hero placement also precedes the acknowledgement');
+        assert.equal(game.u.uy, 10);
+        assert.equal(requireScreenCell(11, 11).ch, '.', 'the old map remains until the prerequisite is acknowledged');
+    } finally {
+        await answerPrompts(changing, input, [
+            { prompt: /Endgame prerequisite: .*the Amulet of Yendor\.--More--/, keys: ' ' },
+        ]);
+    }
+    assert.equal(requireScreenCell(11, 11).ch, '{', 'acknowledging the grant reveals the destination map');
+    assert.equal(game._pending_message, 'You materialize on a different level!');
+});
 
 void test('quest stairs require permission from the leader', async () => {
     const { source } = freshConnectedLevels({ dungeonName: 'The Quest' });

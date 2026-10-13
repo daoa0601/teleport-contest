@@ -33,10 +33,12 @@ import { senseBuriedObjects } from './buried_object.js';
 import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
+import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
+import { stumbleOntoMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
-import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { minimalObjectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { descendFromLevitation } from './levitation_commands.js';
@@ -71,7 +73,7 @@ import { directionAssistPage, promptKey, readDirectionKey, restoreCommandMap, } 
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
-import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
+import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
 import { dozap, } from './zap.js';
@@ -166,7 +168,7 @@ import { activateStatueTrapAt } from './statue_trap.js';
 import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedBucFate, resolveDippedSensationFate, } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
 import { heroArmName, heroHandName, heroNeckName } from './body_parts.js';
-import { withIndefiniteArticle, makePlural } from './object_grammar.js';
+import { armorUsesPairGrammar, withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { isWetTowel, willWeld } from './weapon_type.js';
 import { announceWeaponWeld, explainTwoWeaponEnd, refuseWeldedPrimary } from './weapon_feedback.js';
@@ -203,7 +205,7 @@ import { continueHeroDigging, diggingTarget } from './hero_digging.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { wieldTool } from './wield_tool.js';
 import { doenhance, useHeroSkill, } from './skills.js';
-import { chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, } from './shk.js';
+import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, tendedShop, } from './shk.js';
 import { visiblePriestName, } from './priest.js';
 import { gameLogEvents } from './gamelog.js';
 import { killerObjectName } from './objnam.js';
@@ -233,6 +235,7 @@ const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
 const M2_ROCKTHROW = 0x08000000;
+const M1_HUMANOID = 0x00020000;
 const MAT_GEMSTONE = 20;
 const MAT_MINERAL = 21;
 function isMovementKey(ch) {
@@ -2685,13 +2688,12 @@ function specialLevelReachable(event) {
 }
 // C ref: teleport.c level_tele().  Wizard-menu entry into the Elemental
 // Planes grants the real Amulet before deferred_goto() starts.  Object
-// construction and inventory identity therefore precede getbones()/mklev(),
-// while tty does not expose prinv() until the destination transaction yields
-// at its pre-arrival acknowledgement.
+// construction, inventory identity, and prinv() precede getbones()/mklev().
+// Destination placement finishes before tty asks for acknowledgement.
 async function endgamePrerequisite(destination) {
     if (!In_endgame(destination) || In_endgame(game.u?.uz)
         || game.u?.uhave?.amulet)
-        return '';
+        return;
     const amulet = await addInventoryItem(await mksobj(AMULET_OF_YENDOR, true, false));
     // teleport.c prints the grant with prinv(); its doname()->xname() path
     // observes the visible object and appends it to the Amulet disco[] class
@@ -2700,7 +2702,8 @@ async function endgamePrerequisite(destination) {
     if (!game.u.uhave)
         game.u.uhave = {};
     game.u.uhave.amulet = 1;
-    return `Endgame prerequisite: ${amulet.invlet} - the Amulet of Yendor.--More--`;
+    const message = `Endgame prerequisite: ${amulet.invlet} - the Amulet of Yendor.`;
+    await pline(message);
 }
 // C ref: dungeon.c print_dungeon(TRUE). Build one source-ordered menu stream;
 // the tty layer alone owns pagination and nested input capture.
@@ -2795,8 +2798,8 @@ export async function chooseWizardLevelDestination() {
     const destination = await showPagedPickOneMenu({ rows, choices });
     if (!destination)
         return null;
-    const preArrivalPager = await endgamePrerequisite(destination);
-    return { destination, preArrivalPager };
+    await endgamePrerequisite(destination);
+    return { destination };
 }
 async function wizLevelTeleport({ menuRequested = false } = {}) {
     game.context.move = 0;
@@ -2978,6 +2981,7 @@ function completeExtendedCommand(prefix) {
     return matches.length === 1 ? matches[0]?.name ?? null : null;
 }
 const EXTENDED_COMMAND_HANDLERS = new Map([
+    ['whatis', dowhatis],
     ['takeoffall', takeOffAll],
     ['conduct', doconduct],
     ['chronicle', doChronicle],
@@ -5632,14 +5636,20 @@ async function doquiverCore(verb) {
     let spentTime = false;
     if (primary || alternate) {
         const quantity = item.quantity ?? item.quan ?? 1;
+        const noun = minimalObjectName(item, game);
+        const names = quantity === 1 ? noun : makePlural(noun);
+        const usePlural = objectNameIsPlural(item, game)
+            || item.otyp === LENSES || armorUsesPairGrammar(OBJECT_NAMES[item.otyp]);
+        let confirmation = primary
+            ? `You are wielding ${usePlural ? 'those' : 'that'}.  Ready ${usePlural ? 'them' : 'it'} instead?`
+            : `${usePlural ? 'Those are' : 'That is'} your ${wasTwoweap ? 'second' : 'alternate'} weapon.  Ready ${usePlural ? 'them' : 'it'} instead?`;
         let readyAll = true;
         if (quantity > 1 && hasFreeBasicInventoryLetter()
             && splittableForQuiver(item)) {
-            const plural = item.plural || makePlural(item.name || 'object');
             const slotDescription = primary
-                ? `You are wielding ${quantity} ${plural}.`
+                ? `You are wielding ${quantity} ${names}.`
                 : `${wasTwoweap ? 'You are dual wielding'
-                    : 'Your alternate weapon is'} ${quantity} ${plural}.`;
+                    : 'Your alternate weapon is'} ${quantity} ${names}.`;
             const partial = await promptYesNoQuit(`${slotDescription}  Ready ${quantity - 1} of them?`);
             if (partial === 'q') {
                 game.context.move = 0;
@@ -5649,10 +5659,16 @@ async function doquiverCore(verb) {
                 item = splitStackForQuiver(item, quantity - 1);
                 readyAll = false;
             }
+            else
+                confirmation = 'Ready all of them instead?';
         }
         if (readyAll) {
-            const answer = await promptYesNoQuit(`Ready ${quantity > 1 ? 'all of them' : 'it'} instead?`);
+            const answer = await promptYesNoQuit(confirmation);
             if (answer !== 'y') {
+                const owner = objectOwnershipPrefix(item, game);
+                const remains = objectNameIsPlural(item, game) ? 'remain' : 'remains';
+                const slot = primary || wasTwoweap ? 'wielded' : 'as secondary weapon';
+                await plineWithContinuation(`${owner}${names} ${remains} ${slot}.`);
                 game.context.move = 0;
                 return { item: null, spentTime: false, cancelled: false };
             }
@@ -5670,11 +5686,21 @@ async function doquiverCore(verb) {
         await setQuiverObject(item, game);
     observeObjectForNaming(item);
     const description = inventoryItemDescription(item);
-    await pline(verb === 'fire'
+    await plineWithContinuation(verb === 'fire'
         ? `You ready: ${item.invlet} - ${description}.`
         : `${item.invlet} - ${description}.`);
     if (verb === 'fire')
         await setQuiverObject(item, game);
+    if (spentTime) {
+        if (primary) {
+            const humanoid = !!((MONSTER_FLAGS1[heroSpecies(game)] ?? 0) & M1_HUMANOID);
+            const hands = game.uarmg ? 'empty handed'
+                : humanoid ? 'bare handed' : 'not wielding anything';
+            await plineWithContinuation(`You are now ${hands}.`);
+        }
+        else
+            await plineWithContinuation('You are no longer using two weapons at once.');
+    }
     game.context.move = spentTime ? 1 : 0;
     return { item, spentTime, cancelled: false };
 }
@@ -6739,6 +6765,28 @@ async function moveOutOfBounds(x, y) {
     game.context.move = 0;
     return false;
 }
+// C hack.c:domove_bump_mon(). The m-prefix spends the step before the
+// destination monster can choose displacement or receive an attack.
+async function bumpIntoMonster(monster, x, y) {
+    if (!game.context.nopick || game.context.travel)
+        return false;
+    const glyph = glyphAt(x, y);
+    if (!canSpotMonster(monster)
+        && glyph?.kind !== 'invisible' && glyph?.kind !== 'warning')
+        return false;
+    if (M_AP_TYPE(monster)
+        && !(game.u.protectionFromShapeChangers || game.protectionFromShapeChangers)
+        && !canSenseMonster(monster)) {
+        await stumbleOntoMimic(monster);
+    }
+    else if (monster.mpeaceful && !heroIsHallucinating(game)) {
+        await plineWithContinuation(`Pardon me, ${monsterName(monster, { article: 'none', exact: true })}.`);
+    }
+    else {
+        await plineWithContinuation(`You move right into ${monsterName(monster)}.`);
+    }
+    return true;
+}
 async function domoveCore(dx, dy, explicitAttempt) {
     requirePlayingGame(game);
     const u = game.u;
@@ -6845,8 +6893,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
         // after impaired_movement() has changed u.dx/u.dy; a Shift-run which
         // is redirected into the pet therefore stops before do_attack() and
         // its one-in-seven displacement refusal roll.
-        const safeMonster = game.flags.safe_dog !== false
-            && !!monster.mpeaceful
+        const safeMonster = (game.flags.safe_dog ?? true) && !!monster.mpeaceful
             && canSpotMonster(monster)
             && !game.context?.forcefight
             && !confused
@@ -6873,13 +6920,42 @@ async function domoveCore(dx, dy, explicitAttempt) {
         // step after the intervening monster phase.
         if (!safeMonster && game._runState)
             stopRun(game);
-        if (safeMonster) {
+        if (await bumpIntoMonster(monster, newx, newy))
+            return true;
+        if (beastChoosesHeroDisplacement(monster, game, newx, newy)) {
+            const ballChainMove = await beginBallAndChainMove(newx, newy);
+            if (ballChainMove?.blocked) {
+                if (ballChainMove.blockedMessage)
+                    await pline(ballChainMove.blockedMessage);
+                game.context.move = Number(ballChainMove.consumedTurn);
+                return ballChainMove.consumedTurn;
+            }
+            const oldx = u.ux, oldy = u.uy;
+            u.ux = newx;
+            u.uy = newy;
+            await settleBeastHeroDisplacement(monster, game);
+            if (game.program_state.gameover)
+                return true;
+            return finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove });
+        }
+        if (safeMonster && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
             // C ref: hack.c do_attack()/domove(): a tame monster normally
             // yields to the hero, and ordinary peacefuls share the same
             // displacement path.  Only tame actors flee after refusal.
             const tame = !!(monster.pet || monster.mtame);
-            const yields = rn2(7) !== 0;
-            if (!yields && tame) {
+            const blocked = heroIsPunished() || rn2(7) === 0
+                || (!!monster.wormno && ['baby long worm', 'long worm', 'long worm tail']
+                    .includes(MONSTER_NAME[monster.mnum] ?? ''))
+                || (IS_OBSTRUCTED(game.level.requireAt(u.ux, u.uy).typ)
+                    && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000008));
+            const inShop = !blocked && roomsAt(game.level, monster.mx, monster.my, SHOPBASE)
+                .some(roomno => tendedShop(roomForRoomno(game.level, roomno), game));
+            if ((blocked || inShop) && monster.isshk
+                && !game.context.travel && !game.context.run) {
+                await dopay();
+                return true;
+            }
+            if ((blocked || inShop) && tame) {
                 const flight = await makeMonsterFlee(monster, {
                     turns: rnd(6), announce: false,
                 });
@@ -6892,15 +6968,16 @@ async function domoveCore(dx, dy, explicitAttempt) {
             const speciesName = monsterInstanceDisplayName(monster);
             const subject = tame ? tameName
                 : monster.name ? speciesName : `the ${speciesName}`;
-            if (!yields) {
+            if (blocked || inShop) {
                 const displayName = subject.charAt(0).toUpperCase()
                     + subject.slice(1);
-                await pline(`You stop.  ${displayName} is in the way!`);
+                await plineWithContinuation(`You stop.  ${displayName} is in the way!`);
+                stopRun(game);
                 return true;
             }
-            if (monster.mfrozen || !monster.mcanmove || monster.msleeping
-                || (MONSTER_MOVE[monster.mnum] === 0 && rn2(6))) {
-                await pline(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
+            if (monster.mfrozen || monster.msleeping || !monster.mcanmove
+                || ((MONSTER_MOVE[monster.mnum] ?? 0) === 0 && rn2(6))) {
+                await plineWithContinuation(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
                 stopRun(game);
                 return true;
             }

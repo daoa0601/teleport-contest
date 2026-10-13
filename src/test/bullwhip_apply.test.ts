@@ -24,7 +24,7 @@ void test('applying an unwielded bullwhip wields it before asking for direction'
         spe: 2,
     });
     initRng(7101n);
-    await applyInventoryObject(whip, 'l');
+    await applyInventoryObject(whip, ' l'); // Acknowledge wielding before the direction query.
 
     assert.equal(game.uwep, whip);
     assert.equal(game.context.move, 1);

@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–6 (`48cdd93`)
+## Parallel batches 1–7 (`6b76d8c`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -170,34 +170,40 @@ glyph identity), **rng-mmove** (`m_move()` goal and tie-break rolls),
 **rng-levelgen-2** (corridors, mazes, kelp, monster weapons, corpse chance),
 **rng-combat** (`hitmu` damage paths, `dochug` gates, mind-flayer blast order).
 
+Batch 7: **messages-4** (message, status and prompt details; status redraw
+measures the current load), **map-cells** (native pit, night, x-ray and Rogue
+vision; blind touch mapping; redraw suppression during level construction;
+death-description fields), **burden-fix** (a merge had restored a `bot()` call
+after batch pickup that native `pickup()` lacks, showing "Burdened" a screen
+early in nine sessions).
+
 ## Verification
 
-`npm test` at `48cdd93`: **7,875/7,875**. Merges require a fully green suite;
+`npm test` at `6b76d8c`: **7,949/7,949**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 6).
+(no screen regression in batch 7 after burden-fix).
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
 | Public | 22/44 | 8,597/11,405 | 620,282/792,838 | 0 |
-| Native eval sample | 241/300 | 45,193/50,586 | 3,376,245/3,616,669 | 0 |
+| Native eval sample | 258/300 | 47,115/50,586 | 3,456,102/3,616,669 | 0 |
 
-Runs: `.cache/generalization/batch6-48cdd93-{eval,public}` in the verify
-worktree (baseline `base-06d7e73`: 143/300; batch 5: 229/300). No verified
-random call was lost. The state oracle finds 261 sessions matching C state
-throughout; one hidden-state session remains.
+Runs: `.cache/generalization/batch7-6b76d8c-{eval,public}` in the verify
+worktree (baseline `base-06d7e73`: 143/300; batch 6: 241/300). No verified
+random call was lost; the ledgers now hold 175 eval and 120 public functions.
+The state oracle finds 275 sessions matching C state throughout; two
+hidden-state sessions remain.
 
 ## Next work
 
-In flight: tty-menus (`wintty.c` menus, prompts, message suppression),
-map-memory (remembered floor and walls, vision timing), monster-display
-(monster glyphs, `I` markers, cursor), wear-gaps (`do_wear.c` review
-findings), object-gaps (grapple and whip pickup, kick feedback, fall killers,
-`maybe_wail()`, headstones, `#genocided`). Most remaining eval failures now
-start with a screen difference; `.cache/agents/batch2-screen-firsts.tsv`
-groups them. Coverage shows that `read.c`, `potion.c`, and `pray.c` are barely
-exercised; add scenario recipes there.
+In flight: rng-monsters-2 (monster-action random-call tails, pet swap with
+ball and chain), messages-5 (message and status details), public-msgs and
+public-rng (first differences in the public set, which has not moved since
+batch 5), rng-singles (corpse timers, ice fumbling, a missing xorn). Coverage
+shows that `read.c`, `potion.c`, and `pray.c` are barely exercised; add
+scenario recipes there.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,

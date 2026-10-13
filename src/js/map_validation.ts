@@ -130,6 +130,8 @@ function validArrivalRegion(value: unknown): value is ArrivalRegion {
 function validEngraving(value: unknown): value is Engraving {
     return fieldsMatch<Engraving>(value, {
         x: integer, y: integer, text: string, pristine: string,
+        erasedPrefix: optional((prefix): prefix is string => string(prefix) && /^ *$/.test(prefix)),
+        rememberedPrefix: optional((prefix): prefix is string => string(prefix) && /^ *$/.test(prefix)),
         rememberedText: string, epoch: integer, engr_type: integer,
         nowipeout: boolean, guardobjects: boolean, eread: boolean, erevealed: boolean,
     });
@@ -218,6 +220,7 @@ export function restoreSavedMap(value: unknown, entities: MapEntityChecks): Game
         monsters: arrayOf(entities.monster), traps: arrayOf(validSavedTrap),
         regions: arrayOf(validGasCloud), levelTimers: arrayOf(validTimer),
         exclusionZones: arrayOf(validExclusion), flags: validFlags,
+        bonesNames: optional(arrayOf(string)),
         upstair: optional(validSavedPosition), dnstair: optional(validSavedPosition),
         upTeleportRegion: optional(nullable(validArrivalRegion)),
         downTeleportRegion: optional(nullable(validArrivalRegion)),

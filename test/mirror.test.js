@@ -72,7 +72,7 @@ void test('an umber-hulk form confuses itself and a vampire has no reflection', 
     assert.ok((game.u.confusionTurns ?? 0) >= 3 && (game.u.confusionTurns ?? 0) <= 12);
     game.u.confusionTurns = 0;
     installPolymorphedHero('vampire');
-    await reflect(mirror);
+    await reflect(mirror, ' .'); // Acknowledge the previous reflection before aiming again.
     assert.equal(game._pending_message, "You don't have a reflection.");
 });
 void test('vertical mirrors show the surrounding surface without affecting monsters', async () => {
@@ -82,7 +82,7 @@ void test('vertical mirrors show the surrounding surface without affecting monst
     const eye = await createMonsterAt('floating eye', 11, 10);
     await reflect(mirror, '>');
     assert.equal(game._pending_message, 'You reflect the floor.');
-    await reflect(mirror, '<');
+    await reflect(mirror, ' <');
     assert.equal(game._pending_message, 'You reflect the ceiling.');
     assert.equal(eye.mfrozen || 0, 0);
 });
