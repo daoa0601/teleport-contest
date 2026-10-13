@@ -262,7 +262,7 @@ import {
     MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, monsterTypeName,
 } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
-import { nameToMonster } from './mondata.js';
+import { createParticularMonster } from './read_creation.js';
 import {
     addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience,
 } from './exper.js';
@@ -287,7 +287,6 @@ import {
 } from './armor.js';
 import {
     findMonsterArmorClass,
-    nameMonsterForCreationArmorChecks,
 } from './monworn.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 
@@ -383,9 +382,6 @@ import {
     payShopDebt, shopkeeperForHero, shopThankYouMessage,
     tendedShop,
 } from './shk.js';
-import {
-    visiblePriestName,
-} from './priest.js';
 import { gameLogEvents } from './gamelog.js';
 import { killerObjectName } from './objnam.js';
 import { GRAVE } from './const.js';
@@ -425,7 +421,7 @@ import {
     IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT,
     SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
     ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
-    STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
+    STRAT_WAITMASK, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
     Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD,
     WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
     ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP,
@@ -2727,15 +2723,6 @@ async function wizWish() {
 
 // C refs: cmd.c Ctrl-G/wizgenesis, wizcmds.c wiz_genesis(), and read.c
 // create_particular().  The debug command remains zero-time.
-const WIZGENESIS_SUBSTITUTIONS = new Map([
-    [123, 'human zombie'], // Angel
-    [271, 'human zombie'], // shopkeeper
-    [272, 'human zombie'], // guard
-    [275, 'human zombie'], // aligned cleric
-    [276, 'human zombie'], // high cleric
-    [285, 'doppelganger'], // Wizard of Yendor
-]);
-
 // C wiz_polyself(): allow a chosen form without consuming a game turn.
 async function wizPolyself() {
     await polymorphHero(POLY_CONTROLLED);
@@ -2743,112 +2730,7 @@ async function wizPolyself() {
 }
 
 async function wizGenesis() {
-    const value = await getLine(
-        'Create what kind of monster?',
-        (_ch, key) => key >= 32 && key < 127,
-    );
-    if (value === null) {
-        game.context.move = 0;
-        return;
-    }
-
-    const description = value.trim().replace(/ +/g, ' ');
-    const explicitQuantity = /^(\d+) */u.exec(description);
-    let quantity = explicitQuantity
-        ? Number.parseInt(explicitQuantity[1] ?? '', 10)
-        : (game.multi > 0 ? 1 + game.multi : 1);
-    const quantityLimit = ROWNO * (COLNO - 1);
-    if (quantity < 1 || quantity > quantityLimit) {
-        const census = requireGameLevel().monsters.filter(monster =>
-            monster.mhp > 0 && !(monster.isgd && monster.mx === 0)).length;
-        quantity = quantityLimit - census;
-    }
-    const requestedName = explicitQuantity
-        ? description.slice(explicitQuantity[0].length) : description;
-
-    // read.c:create_particular_parse() removes state modifiers before lookup.
-    const sleepingPattern = /(^|\s)sleeping\s+/iu;
-    const sleeping = sleepingPattern.test(requestedName);
-    const stateStrippedName = sleeping
-        ? requestedName.replace(sleepingPattern, '$1')
-        : requestedName;
-    const tamePattern = /^\s*tame\s+/iu;
-    const tame = tamePattern.test(stateStrippedName);
-    const dispositionStrippedName = tame
-        ? stateStrippedName.replace(tamePattern, '')
-        : stateStrippedName;
-    const peacefulPattern = /^\s*peaceful\s+/iu;
-    const peaceful = peacefulPattern.test(dispositionStrippedName);
-    const peacefulStrippedName = peaceful
-        ? dispositionStrippedName.replace(peacefulPattern, '')
-        : dispositionStrippedName;
-    const hostilePattern = /^\s*hostile\s+/iu;
-    const hostile = hostilePattern.test(peacefulStrippedName);
-    const monsterName = hostile
-        ? peacefulStrippedName.replace(hostilePattern, '')
-        : peacefulStrippedName;
-    let mnum = nameToMonster(monsterName);
-    if (mnum < 0) {
-        await pline("I've never heard of such monsters.");
-        game.context.move = 0;
-        return;
-    }
-
-    // read.c:cant_revive() substitutes special-location actors which cannot
-    // be created in an ordinary square.  Wizard create_particular() retains
-    // both types across a modal prompt and only starts makemon() after the
-    // answer.  The affirmative branch forces the requested actor; default/no
-    // constructs the disoriented human-zombie substitute.
-    const substituteName = WIZGENESIS_SUBSTITUTIONS.get(mnum);
-    if (substituteName !== undefined) {
-        const requestedName = MONSTER_NAME[mnum];
-        const force = await promptYesNo(
-            `Creating ${substituteName} instead; force ${requestedName}?`,
-        );
-        if (force !== 'y') mnum = nameToMonster(substituteName);
-    }
-
-    for (let created = 0; created < quantity; created++) {
-        const monster = await makemonNear(
-            mnum, game.u.ux, game.u.uy, MM_NOEXCLAM,
-        );
-        if (!monster) break;
-        // Native creation records kill alignment again after forcing attitude.
-        if (tame) {
-            await tameMonster(monster);
-        } else if (peaceful || hostile) {
-            monster.mtame = 0;
-            monster.pet = false;
-            monster.mpeaceful = peaceful ? 1 : 0;
-            setMonsterMalign(monster);
-        }
-        // create_particular_creation() applies requested sleep after makemon
-        // announces the actor.
-        if (sleeping) monster.msleeping = 1;
-        newsym(monster.mx, monster.my);
-        const hallucinating = heroIsHallucinating();
-        if (hallucinating) {
-            nameMonsterForCreationArmorChecks(
-                monster, () => randomDisplayMonsterName(),
-            );
-        }
-        newsym(monster.mx, monster.my);
-        if (canSpotMonster(monster)) {
-            const clericInstance = monster.ispriest || monster.isminion
-                ? visiblePriestName(monster) : null;
-            const name = MONSTER_NAME[mnum];
-            if (name === undefined) throw new RangeError(`Unknown created monster species ${mnum}`);
-            const subject = clericInstance
-                || (mnum === 285
-                    ? (hallucinating
-                        ? randomDisplayMonsterSubject(true) : `The ${name}`)
-                    : null)
-                || withIndefiniteArticle(name);
-            await pline(
-                `${subject.charAt(0).toUpperCase()}${subject.slice(1)} appears next to you.`,
-            );
-        }
-    }
+    await createParticularMonster();
     game.context.move = 0;
 }
 
