@@ -27,8 +27,8 @@ export interface HeroObjectHitOptions {
     rollOne?: (sides: number) => number;
     die?: DeathHandler;
     name?: string;
+    /** Already formatted, as returned by C killer_xname(). */
     killer?: string;
-    deathCause?: string;
 }
 
 export interface HeroObjectHitResult {
@@ -50,7 +50,6 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
     die = finishHeroDeath,
     name: requestedName,
     killer: requestedKiller,
-    deathCause,
 }: HeroObjectHitOptions = {}): Promise<HeroObjectHitResult> {
     requirePlayingGame(state);
     // C thitu() uses doname() for stacks and mshot_xname() for single objects.
@@ -59,7 +58,12 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
     if (requestedName === undefined && quantity > 1) observeObjectForNaming(object, { state });
     const name = requestedName ?? (quantity > 1 ? objectDescription(object, { state })
         : objectCombatName(object, { state, includeCorpseSpecies: false }));
-    const killer = requestedKiller ?? killerObjectName(object, state);
+    // C thitu() keeps an object killer's article and only adds one to an
+    // explicit name when that name does not already start with an article.
+    const namedKiller = requestedName === undefined ? undefined
+        : /^(?:the|an?) /i.test(requestedName) ? requestedName
+            : withIndefiniteArticle(requestedName);
+    const killer = requestedKiller ?? namedKiller ?? killerObjectName(object, state);
     if (typeof name !== 'string' || typeof killer !== 'string')
         throw new Error(`Unknown object type ${object.otyp} hit the hero.`);
     const description = objectHasPersonalName(object, state) || quantity > 1
@@ -99,7 +103,7 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
             monstersObserveHeroResistance(seenResistanceForDamage(AD_ACID), state);
         }
         if (await loseHeroHp(damage, killer, {
-            state, publish, die, deathCause: deathCause ?? null,
+            state, publish, die, deathCause: `killed by ${killer}`,
         }))
             return { hit: true, died: true };
         await exerciseAttribute(A_STR, false, state);

@@ -15,7 +15,8 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitHeroWithObject } from '../js/hero_object_hit.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { BAG_OF_HOLDING, BOULDER, CLUB, CORPSE } from '../js/object_data.js';
+import { ARROW, BAG_OF_HOLDING, BOULDER, CLUB, CORPSE, DART } from '../js/object_data.js';
+import { killerObjectName } from '../js/objnam.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
 import { scatterFloorObjects } from '../js/scatter.js';
@@ -108,6 +109,48 @@ for (const [count, cause] of [[1, 'a club'], [3, 'clubs']] as const) {
             random: () => 0,
             rollOne: sides => sides === 20 ? 1 : sides,
         }), `killed by ${cause}`);
+    });
+}
+
+for (const [count, cause] of [[1, 'a club'], [3, 'clubs']] as const) {
+    void test(`a fatal object hit preserves ${cause} as its killer`, async () => {
+        lowHitPointRoom();
+        const clubs = await knownObject(CLUB, { quantity: count, spe: 0 });
+
+        await dieWith(() => hitHeroWithObject(clubs, 1, 8, { rollOne: () => 1 }),
+            `killed by ${cause}`);
+    });
+}
+
+void test('a fatal Medusa corpse hit preserves the possessive killer name', async () => {
+    lowHitPointRoom();
+    const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('Medusa') });
+
+    await dieWith(() => hitHeroWithObject(corpse, 1, 8, { rollOne: () => 1 }),
+        "killed by Medusa's corpse");
+});
+
+void test('a fatal projectile preserves its formatted killer when the hit name is supplied', async () => {
+    lowHitPointRoom();
+    const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('Medusa') });
+
+    await dieWith(() => hitHeroWithObject(corpse, 1, 8, {
+        name: 'corpse', killer: killerObjectName(corpse), rollOne: () => 1,
+    }), "killed by Medusa's corpse");
+});
+
+for (const [type, name, killer] of [
+    [DART, 'little dart', 'a little dart'],
+    [DART, 'a little dart', 'a little dart'],
+    [DART, 'the little dart', 'the little dart'],
+    [ARROW, 'an arrow', 'an arrow'],
+] as const) {
+    void test(`a fatal object hit named ${name} uses the supplied name as its killer`, async () => {
+        lowHitPointRoom();
+        const missile = await knownObject(type, { spe: 0 });
+
+        await dieWith(() => hitHeroWithObject(missile, 1, 8, { name, rollOne: () => 1 }),
+            `killed by ${killer}`);
     });
 }
 
