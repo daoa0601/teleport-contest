@@ -64,7 +64,6 @@ export interface ChoiceWindowOptions {
     title: string;
     entries: readonly ChoiceMenuEntry[];
     validKeys?: readonly number[] | null;
-    restoreUnderlay?: boolean;
 }
 
 export interface PageLocalMenuItem<T> {
@@ -368,14 +367,13 @@ export async function showTextMenuOverlay(lines: readonly TextMenuEntry[]): Prom
  * are labels. Callers can also admit control keys through validKeys.
  */
 export async function showChoiceWindow({
-    title, entries, validKeys = null, restoreUnderlay = false,
+    title, entries, validKeys = null,
 }: ChoiceWindowOptions): Promise<number> {
     const d = display();
     if (!d) return 27;
 
     const underlay = snapshotMenuUnderlay();
-    const underlayCursor = restoreUnderlay
-        ? { col: d.cursorCol, row: d.cursorRow, visible: d.cursorVisible } : null;
+    const underlayCursor = { col: d.cursorCol, row: d.cursorRow, visible: d.cursorVisible };
 
     const rows: ChoiceMenuRow[] = [
         // tty menu prompts inherit `menu_headings`; the default is inverse.
@@ -415,7 +413,9 @@ export async function showChoiceWindow({
         if (itemOnAnotherPage) continue;
         if (!validKeys || validKeys.includes(key)) break;
     }
-    if (underlay && underlayCursor) {
+    // tty_destroy_nhwindow() erases every active menu before its caller
+    // opens another window or asks for more input.
+    if (underlay) {
         for (const [row, cells] of underlay.entries()) {
             for (const [col, cell] of cells.entries()) {
                 d.setCell(col, row, cell.ch, cell.color, cell.attr);
