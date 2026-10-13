@@ -1,3 +1,4 @@
+import { monsterFireDescription } from './monster_fire_description.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { recorderLocalHour } from './calendar.js';
 // Monster movement-ration state, movement, and combat.
@@ -5372,7 +5373,7 @@ export function resumeDeferredHeroFireSpecial(action, state, random = rn2) {
         attack.fireEffectMessage = 'You avoid harm.';
     }
     else {
-        attack.fireEffectMessage = "You're on fire!";
+        attack.fireEffectMessage = `You're ${monsterFireDescription({ mnum: heroSpecies(state) }, attack.attackType)}!`;
         if (state.u.fireResistance) {
             attack.damage = 0;
             attack.fireResistanceMessage = "The fire doesn't feel hot!";

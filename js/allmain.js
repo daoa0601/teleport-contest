@@ -1509,6 +1509,8 @@ async function monsterAttackMessage(monster, attack, previousAttack = null, rand
     // C hitmsg() requires adjacent slots in the species' attack array.
     // getmattk() replacements use a separate buffer and cannot be adjacent.
     const again = previousAttack?.hit
+        && previousAttack.kind === 'hero-attack'
+        && previousAttack.effect !== 'physical-hug'
         && previousAttack.attackType === attack.attackType
         && previousAttack.attackIndex + 1 === attack.attackIndex
         && previousAttack.effectiveAttack === MONSTER_ATTACKS[monster.mnum]?.[previousAttack.attackIndex]
