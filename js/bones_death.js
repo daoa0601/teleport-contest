@@ -1,6 +1,6 @@
 // C refs: bones.c:savebones(), drop_upon_death(), and give_to_nearby_mon().
 import { monsterHasMapPosition } from './monster_location.js';
-import { GRAVE, HEADSTONE, isok, LEAVESTATUE, MM_NONAME, NON_PM, NO_MINVENT, ROOM, } from './const.js';
+import { CORPSTAT_INIT, G_NOCORPSE, GRAVE, HEADSTONE, isok, LEAVESTATUE, MM_NONAME, NON_PM, NO_MINVENT, ROOM, Upolyd, } from './const.js';
 import { completeBonesMonster, giveHeroResistancesToMonster, } from './bones_monster.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -8,14 +8,14 @@ import { setTwoWeaponCombat } from './weapon_slots.js';
 import { makeEngravingAt } from './engrave.js';
 import { endObjectBurn } from './light.js';
 import { placeObjectSynchronously, placeCreatedObject } from './floor_object.js';
-import { bonesLevelExists, makemonAt, mkcorpstat, mksobj, saveBonesLevel, } from './mklev.js';
+import { bonesLevelExists, createCorpstatAt, makemonAt, mkcorpstat, mksobj, saveBonesLevel, } from './mklev.js';
 import { monsterCanCarryObject, monsterLikesObjects, } from './monster_carry.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { addObjectToContainer } from './object_container.js';
 import { CORPSE, MUMMY_WRAPPING, STATUE } from './object_data.js';
 import { curseObjectState } from './object_state.js';
-import { MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
 import { objectNoLongerHeldSynchronously } from './object_release.js';
 import { rn2 } from './rng.js';
 import { objectWeight } from './weight.js';
@@ -114,12 +114,15 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion) {
     const y = game.u?.uy ?? 0;
     const arise = game.u?.ugrave_arise ?? NON_PM;
     let corpse = null;
-    if (arise === NON_PM) {
-        corpse = await mksobj(CORPSE, true, false);
-        corpse.corpsenm = game.urace?.mnum ?? PM_HUMAN;
+    const heroForm = game.u.umonnum;
+    if (heroForm === undefined)
+        throw new Error('Death remains require an initialized hero species');
+    const formFlags = game.mvitals?.[heroForm]?.mvflags ?? MONSTER_GENO[heroForm] ?? 0;
+    if (arise === NON_PM && !(formFlags & G_NOCORPSE)) {
+        const species = Upolyd(game.u) ? heroForm : game.urace?.mnum ?? PM_HUMAN;
+        corpse = await createCorpstatAt(CORPSE, null, species, x, y, CORPSTAT_INIT);
         corpse.name = `${game.plname || 'player'} corpse`;
         corpse.oname = game.plname || 'player';
-        placeCreatedObject(corpse, x, y);
         const deathSquare = level.at(x, y);
         const trapped = level.traps.some(trap => trap.tx === x && trap.ty === y);
         if (deathSquare && (deathSquare.typ === ROOM || deathSquare.typ === GRAVE) && !trapped) {
