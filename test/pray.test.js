@@ -186,6 +186,23 @@ void test('#pray stops a cursed figurine\'s transformation when granting an inve
     assert.equal(figurine.cursed, false);
     assert.equal(objectTimers(figurine).length, 0);
 });
+for (const quantity of [1, 2]) {
+    void test(`#pray names the species of ${quantity} cursed corpses during inventory cleansing`, async () => {
+        prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
+        const corpse = await addInventoryObject(CORPSE, {
+            cursed: true, corpsenm: MONSTER_NAME.indexOf('newt'), quan: quantity,
+        });
+        await addInventoryObject(LUCKSTONE);
+        initRng(5n);
+        const messages = await prayAndReadMessages();
+        const announcement = quantity === 1
+            ? 'Your newt corpse softly glows amber.'
+            : 'Your 2 newt corpses softly glow amber.';
+        assert.ok(messages.some(message => message.includes(announcement)), `Expected ${announcement} in prayer messages: ${messages.join('\n')}`);
+        assert.equal(corpse.cursed, false);
+        assert.equal(corpse.bknown, true);
+    });
+}
 void test('#pray makes a former pet\'s corpse glow when reviving it on an altar', async () => {
     prayerRoom();
     requirePlayingGame(game);

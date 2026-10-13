@@ -543,7 +543,7 @@ export function ownedObjectAction(object, verb, state = game, { capitalized = tr
     const personal = !!personalName && objectHasPersonalName(object, state);
     const name = personal && personalName
         ? personalName.replace(/^the /i, '')
-        : objectName(object, state);
+        : singularObjectName(object, state);
     const noun = quantity > 1 ? `${quantity} ${pluralizeObjectNoun(object, name)}` : name;
     const firstQuestArtifact = requiredArtifact('The Orb of Detection', state).id;
     const needsOwner = object.where !== 'inventory' || !personal
