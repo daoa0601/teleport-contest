@@ -25,9 +25,16 @@ function lookupNames(name: string, state: GameState) {
         .replace(/^invisible /, '').replace(/^saddled /, '')
         .replace(/^(?:blessed |uncursed |cursed )/, '').replace(/^empty /, '')
         .replace(/^(?:partly used |partly eaten )/, '');
+    let baseOffset = name.length - base.length;
     if (base.startsWith('statue of ')) base = 'statue';
     else if (base.startsWith('figurine of ')) base = 'figurine';
-    base = base.replace(/^[+-]\d+ ?/, '').replace(/^moist towel/, 'wet towel');
+    const beforeEnchantment = base;
+    base = base.replace(/^[+-]\d+ ?/, '');
+    baseOffset += beforeEnchantment.length - base.length;
+    if (base.startsWith('moist towel')) {
+        base = base.replace(/^moist towel/, 'wet towel');
+        baseOffset += 2;
+    }
 
     const named = base.indexOf(' named ');
     const called = base.indexOf(' called ');
@@ -43,7 +50,14 @@ function lookupNames(name: string, state: GameState) {
     }
     alternate = alternate?.replace(/^(?:a |an |the )/, '').split(' (', 1)[0] ?? null;
     base = base.split(' (', 1)[0] ?? '';
-    alternate ??= fruitFromName(base, { exact: true, state }) ? 'fruit' : makeSingular(base);
+    if (alternate === null && fruitFromName(base, { exact: true, state })) {
+        alternate = 'fruit';
+        // C checkfile() writes "fruit" over newstr while dbase_str still
+        // points past the removed prefixes. That can erase the original
+        // lookup; longer prefixes leave it beyond the overwritten bytes.
+        if (baseOffset <= alternate.length) base = alternate.slice(baseOffset);
+    }
+    alternate ??= makeSingular(base);
     return { base, alternate };
 }
 

@@ -10,10 +10,17 @@ void test('an unfamiliar custom fruit uses the edible fruit encyclopedia entry',
     assert.equal(entries.length, 1);
     assert.ok(entries[0]?.lines.some(line => line.includes('this is edible')));
 });
-void test('a custom fruit with an existing encyclopedia name includes both entries', () => {
+void test('an article-prefixed custom fruit shows only the fruit entry even when its name is a weapon', () => {
     freshObjectRoom();
     initializeFruitRegistry('dagger');
     const entries = encyclopediaEntries('a dagger');
+    assert.equal(entries.length, 1);
+    assert.ok(entries[0]?.lines.some(line => line.includes('this is edible')));
+});
+void test('a longer prefix preserves the weapon entry after the custom fruit entry', () => {
+    freshObjectRoom();
+    initializeFruitRegistry('dagger');
+    const entries = encyclopediaEntries('an uncursed dagger');
     assert.equal(entries.length, 2);
     assert.ok(entries[0]?.lines.some(line => line.includes('this is edible')));
     assert.ok(entries[1]?.lines.some(line => line.includes('dagger')));
