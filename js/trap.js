@@ -3,7 +3,7 @@
 // water_damage(), and erode_obj().
 import { IS_POOL, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok, } from './const.js';
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
-import { objectCombatName } from './objnam.js';
+import { objectCombatName, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
@@ -270,7 +270,8 @@ export async function waterDamageObject(object, messages = [], state = game, { f
         if (random(2) === 0) {
             object.greased = false;
             if (carriedByHero(object, state)) {
-                messages.push(`The grease on your ${waterObjectName(object, description)} washes off.`);
+                observeObjectForNaming(object, { state });
+                messages.push(`The grease on ${ownedObjectName(object, state, { capitalized: false })} washes off.`);
             }
             if (object.otyp === POT_ACID) {
                 messages.push(explodingPotionMessage(object, state));

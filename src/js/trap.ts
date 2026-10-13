@@ -7,7 +7,7 @@ import {
     W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok,
 } from './const.js';
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
-import { objectCombatName } from './objnam.js';
+import { objectCombatName, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
@@ -386,10 +386,9 @@ export async function waterDamageObject(
         if (random(2) === 0) {
             object.greased = false;
             if (carriedByHero(object, state)) {
+                observeObjectForNaming(object, { state });
                 messages.push(
-                    `The grease on your ${
-                        waterObjectName(object, description)
-                    } washes off.`,
+                    `The grease on ${ownedObjectName(object, state, { capitalized: false })} washes off.`,
                 );
             }
             if (object.otyp === POT_ACID) {
