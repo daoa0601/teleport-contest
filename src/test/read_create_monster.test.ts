@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { MONSTER_SYMBOL, monsterTypeName } from '../js/monster_data.js';
+import { MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from '../js/monster_data.js';
 import { SCR_CREATE_MONSTER } from '../js/object_data.js';
 import { monsterSaddle } from '../js/steed.js';
 import { readInventoryObject } from './support/commands.js';
@@ -75,6 +75,26 @@ void test('a wizard reading create monster chooses the species through the nativ
 
     assert.equal(level.monsters.length, 1);
     assert.equal(monsterTypeName(level.monsters[0]?.mnum ?? -1), 'newt');
+    assert.equal(scroll.where, 'gone');
+    assert.equal(game.context.move, 1);
+});
+
+void test('a create-monster scroll keeps imposed invisibility through a chameleon birth', async () => {
+    const { level, input } = creationRoom();
+    const scroll = await addInventoryObject(SCR_CREATE_MONSTER, { blessed: true, typeKnown: true });
+    input.beforeRead = () => {
+        input.feed(/Create what kind/.test(game._pending_message) ? 'invisible chameleon\n' : ' ');
+    };
+
+    await readInventoryObject(scroll);
+
+    assert.equal(level.monsters.length, 1);
+    const chameleon = level.monsters[0];
+    assert.ok(chameleon);
+    assert.equal(chameleon.cham, MONSTER_NAME.indexOf('chameleon'));
+    assert.notEqual(chameleon.mnum, chameleon.cham, 'The birth must exercise a change of form');
+    assert.equal(!!chameleon.perminvis, true);
+    assert.equal(!!chameleon.minvis, true);
     assert.equal(scroll.where, 'gone');
     assert.equal(game.context.move, 1);
 });

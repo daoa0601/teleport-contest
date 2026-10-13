@@ -465,6 +465,8 @@ function initialShapechangedMonster<T extends Monster>(monster: T, targetMnum: n
     const { level, hp } = newMonsterHitPoints(targetMnum);
     const permanentlyInvisible = targetMnum === PM_STALKER
         || targetMnum === PM_BLACK_LIGHT;
+    const oldNaturallyInvisible = baseMnum === PM_STALKER
+        || baseMnum === PM_BLACK_LIGHT;
     const inventory: GameObject[] = [];
     // Keep the actor already linked on the level while changing its body.
     monster.mnum = targetMnum;
@@ -476,7 +478,9 @@ function initialShapechangedMonster<T extends Monster>(monster: T, targetMnum: n
     monster.mpeaceful = monster.mpeaceful ? 1 : 0;
     monster.mcanmove = 1;
     monster.mcansee = monster.mcansee ?? 1;
-    monster.minvis = monster.perminvis = permanentlyInvisible;
+    if (!monster.perminvis || oldNaturallyInvisible)
+        monster.perminvis = permanentlyInvisible;
+    monster.minvis = monster.invis_blkd ? 0 : !!monster.perminvis;
     monster.movement = 0;
     monster.mmove = MONSTER_MOVE[targetMnum] ?? 0;
     monster.mspeed = 0;
