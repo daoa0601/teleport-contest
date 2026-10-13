@@ -4392,8 +4392,7 @@ async function wizardPositionDescription(x: number, y: number): Promise<string> 
     // the terrain below it.  A visible (or still remembered) pile therefore
     // owns farlook before the room/corridor fallback.
     const object = game.level?.objects?.[x]?.[y]?.[0];
-    if (object && (cansee(x, y)
-        || loc.remembered_glyph?.kind === 'object')) {
+    if (object && glyph?.kind === 'object') {
         observeDistantObjectForNaming(object);
         return floorObjectDescription(object);
     }

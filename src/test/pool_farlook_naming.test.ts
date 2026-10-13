@@ -3,12 +3,12 @@ import test from 'node:test';
 
 import { farlookLocationDescription, askTeleportDestination } from '../js/cmd.js';
 import { feel_location, glyphAt, newsym } from '../js/display.js';
-import { NO_MINVENT, ROOM } from '../js/const.js';
+import { NO_MINVENT, POOL, ROOM } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { STATUE } from '../js/object_data.js';
+import { KELP_FROND, STATUE } from '../js/object_data.js';
 import { races } from '../js/roles.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { floorObject } from './support/game-objects.js';
@@ -40,6 +40,23 @@ void test('automatic farlook describes a hallucinated statue as a creature', asy
 
     assert.ok(description.length > 0);
     assert.doesNotMatch(description, /statue/);
+});
+
+void test('automatic farlook describes water covering objects on the bottom', async () => {
+    const level = freshObjectRoom({ flags: { tips: false, verbose: false } });
+    level.requireAt(11, 10).typ = POOL;
+    await floorObject(KELP_FROND, 11, 10, { quan: 2 });
+    newsym(11, 10);
+    const input = resetInputState();
+    const choosing = askTeleportDestination();
+    await input.waitUntilBlocked();
+    input.feed('l');
+    await input.waitUntilBlocked();
+    const description = game._pending_message;
+    input.feed('\x1b');
+    await choosing;
+
+    assert.equal(description, 'pool of water');
 });
 
 void test('automatic position descriptions identify a warning glyph', async () => {
