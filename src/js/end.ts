@@ -38,7 +38,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
-    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, STARVING, STONING,
+    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, STARVING, STONING,
     Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd,
 } from './const.js';
 import {
@@ -52,6 +52,7 @@ import { heroIsBlind } from './senses.js';
 import { finishShopkeeperRepossession, settleShopkeepersOnExit } from './shop_settlement.js';
 import type { ShopExitOutcome } from './shop_settlement.js';
 import { payVaultGuardOnExit } from './vault_exit.js';
+import { currency } from './currency.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
 import { promptChoice, promptYesNo } from './query.js';
 import {
@@ -1268,6 +1269,9 @@ async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promis
     game.program_state.gameover = true;
     game.program_state.something_worth_saving = false;
     await doneObjectCleanup();
+    if (outcome === 'died' && deathType < PANICKED
+        && game.moves <= 1 && !game.program_state.stopprint)
+        await plineWithContinuation(`Do not pass Go.  Do not collect 200 ${currency(200)}.`);
     game._canMakeBones = outcome === 'died' && deathType < GENOCIDED
         && canMakeBones();
 }

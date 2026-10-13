@@ -16,7 +16,7 @@ function visibleText() {
         .map(row => row.map(cell => cell.ch).join('').trimEnd()).join('\n');
 }
 void test('acknowledges the death message before leaving bones when disclosure is disabled', async () => {
-    const level = freshPlayableRoom();
+    const level = freshPlayableRoom({ moves: 40 });
     requirePlayingGame(game);
     init_objects();
     game.storage = memoryStorage();
@@ -49,7 +49,7 @@ void test('acknowledges the death message before leaving bones when disclosure i
     await ending;
 });
 void test('ending text does not reprompt a message after Escape cancels the message window', async () => {
-    freshPlayableRoom();
+    freshPlayableRoom({ moves: 40 });
     requirePlayingGame(game);
     game.flags.disclose = '-i -a -v -c -o';
     game.flags.tombstone = false;
@@ -73,7 +73,7 @@ for (const { name, tombstone, dismissal, trailingPage } of [
     { name: 'does not invent a trailing page without the tombstone', tombstone: false, dismissal: ' ', trailingPage: false },
 ]) {
     void test(name, async () => {
-        freshPlayableRoom();
+        freshPlayableRoom({ moves: 40 });
         requirePlayingGame(game);
         game.flags.disclose = '-i -a -v -c -o';
         game.flags.tombstone = tombstone;
