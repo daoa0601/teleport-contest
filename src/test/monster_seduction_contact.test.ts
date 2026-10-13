@@ -18,6 +18,40 @@ import { freshObjectRoom } from './support/object-room.js';
 
 const RIN_ADORNMENT = OBJECT_NAMES.indexOf('adornment');
 
+for (const female of [false, true]) {
+    for (const goodOutcome of [false, true]) {
+        const species = female ? 'succubus' : 'incubus';
+        void test(`a tame ${species} is called yours during ${goodOutcome ? 'successful' : 'unsuccessful'} seduction`, async () => {
+            const level = freshObjectRoom({ flags: { female: !female } });
+            requirePlayingGame(game);
+            level.flags.noteleport = true;
+            const demon = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+            demon.female = female;
+            demon.mtame = 10;
+            const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_BITE,
+                damageType: AD_SSEX, hit: true, damage: 0 };
+            const messages: string[] = [];
+
+            await resolveMonsterContactEffect(demon, attack, { state: game,
+                publish: async message => { messages.push(message); },
+                random: range => range === 35 ? (goodOutcome ? 0 : 34) : 2,
+                rollOne: () => 4 });
+
+            assert.ok(messages.includes(`Time stands still while you and your ${species} lie in each other's arms...`),
+                messages.join('\n'));
+            if (goodOutcome) {
+                assert.ok(messages.includes(`You seem to have enjoyed it more than your ${species}...`),
+                    messages.join('\n'));
+                assert.ok(messages.includes(`You will always remember your ${species}...`),
+                    messages.join('\n'));
+            } else {
+                assert.ok(messages.includes(`Your ${species} seems to have enjoyed it more than you...`),
+                    messages.join('\n'));
+            }
+        });
+    }
+}
+
 void test('a bad seduction outcome displays the next hallucinated demon identity', async () => {
     const level = freshObjectRoom({ flags: { female: true },
         hero: { hallucinationTurns: 20 } });

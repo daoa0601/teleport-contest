@@ -93,7 +93,7 @@ export async function resolveHeroSeduction(
         return finishSeductionAttack(attack);
     }
     if (state.u.ualign.type === -1) adjustHeroAlignment(1, state);
-    await publish(`Time stands still while you and ${monsterName(monster, { state, suppressIt: true })} lie in each other's arms...`, { urgent: true });
+    await publish(`Time stands still while you and ${monsterName(monster, { state, article: 'your', suppressIt: true })} lie in each other's arms...`, { urgent: true });
     await seductionOutcome(context);
     if (state.program_state.gameover) return finishSeductionAttack(attack);
     await paySeducer(context);
@@ -206,7 +206,7 @@ async function seductionOutcome(context: SeductionContext): Promise<void> {
     const hero = state.u;
     const attributes = currentAttribute(A_CHA, state) + currentAttribute(A_INT, state);
     if (random(35) > Math.min(attributes, 32)) {
-        await publish(`${monsterName(monster, { state, suppressIt: true, capitalized: true })} seems to have enjoyed it more than you...`);
+        await publish(`${monsterName(monster, { state, article: 'your', suppressIt: true, capitalized: true })} seems to have enjoyed it more than you...`);
         const outcome = random(5);
         if (outcome === 0) {
             await publish('You feel drained of energy.');
@@ -237,7 +237,7 @@ async function seductionOutcome(context: SeductionContext): Promise<void> {
         return;
     }
     monster.mspec_used = rollOne(100);
-    await publish(`You seem to have enjoyed it more than ${monsterName(monster, { state, suppressIt: true })}...`);
+    await publish(`You seem to have enjoyed it more than ${monsterName(monster, { state, article: 'your', suppressIt: true })}...`);
     const outcome = random(5);
     if (outcome === 0) {
         await publish('You feel raised to your full potential.');
@@ -247,7 +247,7 @@ async function seductionOutcome(context: SeductionContext): Promise<void> {
         hero.uenpeak = Math.max(hero.uenpeak, hero.uenmax);
     } else if (outcome === 1 || outcome === 2) {
         await publish(outcome === 1 ? 'You feel good enough to do it again.'
-            : `You will always remember ${monsterName(monster, { state, suppressIt: true })}...`);
+            : `You will always remember ${monsterName(monster, { state, article: 'your', suppressIt: true })}...`);
         const attribute = outcome === 1 ? A_CON : A_WIS;
         adjustAttribute(attribute, 1, state);
         await exerciseAttribute(attribute, true, state);
@@ -269,12 +269,12 @@ async function paySeducer(context: SeductionContext): Promise<void> {
     const { state, monster, publish, random, rollOne } = context;
     if (monster.mtame) return;
     if (random(20) < currentAttribute(A_CHA, state)) {
-        const name = monsterName(monster, { state, suppressIt: true, capitalized: true });
+        const name = monsterName(monster, { state, article: 'your', suppressIt: true, capitalized: true });
         await publish(`${name} demands that you pay ${monsterObjectPronoun(monster, { state, noIt: true, random })}, but you refuse...`);
         return;
     }
     if (heroSpecies(state) === MONSTER_NAME.indexOf('leprechaun')) {
-        const name = monsterName(monster, { state, suppressIt: true, capitalized: true });
+        const name = monsterName(monster, { state, article: 'your', suppressIt: true, capitalized: true });
         await publish(`${name} tries to take your gold, but fails...`);
         return;
     }
@@ -284,7 +284,7 @@ async function paySeducer(context: SeductionContext): Promise<void> {
     cost = Math.min(cost, money);
     if (!cost) await publish(heroIsDeaf(state) ? 'No charge.' : '"It\'s on the house!"');
     else {
-        const name = monsterName(monster, { state, suppressIt: true, capitalized: true });
+        const name = monsterName(monster, { state, article: 'your', suppressIt: true, capitalized: true });
         await publish(`${name} takes ${cost} ${currency(cost, { state, random })} for services rendered!`);
         const payment = detachHeroGold(state, cost);
         if (!payment) throw new Error('Seduction payment selected an absent purse.');
