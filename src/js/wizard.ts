@@ -4,6 +4,7 @@ import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { newsym, plineWithContinuation, canSpotMonster } from './display.js';
 import { makemonNear } from './mklev.js';
+import { setMonsterMalign } from './monster_alignment.js';
 import { STRAT_WAITMASK, MM_NOWAIT } from './const.js';
 import {
     catchUpMonster, monsterArrive, WIZ_ARRIVE,
@@ -92,7 +93,7 @@ export async function resurrectWizard(): Promise<Monster | null> {
         // paranoia
         wizard.mtame = 0;
         wizard.mpeaceful = 0;
-        delete wizard.malign;
+        setMonsterMalign(wizard);
         if (wizard.mrevived) newsym(wizard.mx, wizard.my);
         if (wizard.mrevived && canSpotMonster(wizard)) {
             await plineWithContinuation(

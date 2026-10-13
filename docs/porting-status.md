@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–4 (`109bd35`)
+## Parallel batches 1–5 (`33b2f78`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -157,27 +157,32 @@ suppression; it also fixed the long-failing shapechanger intrinsic-menu test),
 orcs hostile to elves), **wear-gaps** (`do_wear.c` review findings),
 **map-memory** (remembered floor and walls, light-source vision refresh).
 
+Batch 5: **tty-regressions** (native message erasure at engulfing, autopickup
+menus, terrain exit), **object-gaps** (grapple/whip pickup, kick feedback and
+gold scatter, fall killers, `maybe_wail()`, headstones, `#genocided`),
+**monster-display** (glyph identity for redraws, `I` markers, cursor),
+**rng-tail-5** (`role_init`, `moveloop_core`, `dmgval`, `obj_resists`,
+`place_lregion`).
+
 ## Verification
 
-`npm test` at `109bd35`: **7,587/7,587**. Merges now require a fully green
-suite.
+`npm test` at `33b2f78`: **7,707/7,707**. Merges require a fully green suite;
+batch runs also compare matched screens per session with the previous batch.
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
-| Public | 21/44 | 8,548/11,405 | 608,975/792,838 | 0 |
-| Native eval sample | 220/300 | 41,533/50,586 | 3,102,719/3,616,669 | 0 |
+| Public | 22/44 | 8,557/11,405 | 608,975/792,838 | 0 |
+| Native eval sample | 229/300 | 42,737/50,586 | 3,136,678/3,616,669 | 0 |
 
-Runs: `.cache/generalization/batch4-109bd35-{eval,public}` in the verify
-worktree (baseline `base-06d7e73`: 143/300; batch 3: 206/300). No verified
-random call was lost; the ledgers hold 98 (eval) and 112 (public) functions.
-Open regression: tty-menus moved three public sessions' first screen
-difference earlier (seed0013-friday13-save-then-fullmoon-restore, which fully
-passed; seed0007-rogue-snake-swamp; seed0383-wizard-hallucinate): the port
-keeps a message on row 0 that C has cleared. A fix unit is running. The state
-oracle finds 234 sessions matching C state throughout; one hidden-state session
-(b3210ed8) lacks a xorn that C has at step 78.
+Runs: `.cache/generalization/batch5-33b2f78-{eval,public}` in the verify
+worktree (baseline `base-06d7e73`: 143/300; batch 4: 220/300). No verified
+random call was lost. Open regression: monster-display moved two sessions'
+first screen difference earlier (eval 17da1be8, which fully passed, at step
+108; public seed0012-monk-vault-escort from 31 to 25): the hero glyph is not
+redrawn where C redraws it. A fix unit is running. The state oracle finds 240
+sessions matching C state throughout; one hidden-state session remains.
 
 ## Next work
 

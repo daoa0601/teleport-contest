@@ -51,11 +51,11 @@ import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js
 import { mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
-import { cleanupSpecialLevelMap } from './special_level_cleanup.js';
+import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
 import { A_CHA, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, P_SHORT_SWORD, P_SABER, AM_SHRINE, AM_SANCTUM, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
-import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL, OBJECT_SPELL_LEVEL, OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, OBJECT_SUBTYPE, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE, ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE, QUARTERSTAFF, BULLWHIP, FEDORA, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ORCISH_ARROW, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, SCIMITAR, AXE, PICK_AXE, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, IRON_SHOES, HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, MIRROR, POT_OBJECT_DETECTION, SHIELD_OF_REFLECTION, SADDLE, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, } from './object_data.js';
+import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL, OBJECT_SPELL_LEVEL, OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, OBJECT_SUBTYPE, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE, ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE, QUARTERSTAFF, BULLWHIP, FEDORA, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ORCISH_ARROW, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, SCIMITAR, AXE, PICK_AXE, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, IRON_SHOES, HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, MIRROR, POT_OBJECT_DETECTION, RIN_INVISIBILITY, SHIELD_OF_REFLECTION, SADDLE, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, } from './object_data.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND, MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS, SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData, } from './monster_data.js';
-import { isReviver, isRider, ZOMBIE_FORM_BY_LIVING_CORPSE, } from './corpse_species.js';
+import { isReviver, isRider, zombieForm, } from './corpse_species.js';
 import { adjustedMonsterLevel, newMonsterHitPoints, } from './monster_hit_points.js';
 import { changeMonsterForm, initialShapechangedBirth, pickNastyShape, } from './monster_polymorph.js';
 import { initializeMonsterWormBody, restoreMonsterWormHeads, validMonsterWormBodies, } from './monster_worm.js';
@@ -1068,7 +1068,7 @@ export function startCorpseTimeout(body, { zombify = false } = {}) {
             break;
         }
     }
-    else if (zombify && ZOMBIE_FORM_BY_LIVING_CORPSE.has(species)
+    else if (zombify && zombieForm(species) !== null
         && !body.norevive) {
         kind = OBJECT_TIMER_KIND.ZOMBIFY_MON;
         delay = rn1(15, 5);
@@ -1441,6 +1441,8 @@ async function initMonsterGroup(mndx, x, y, countRange, mmflags) {
         const member = await makemonNear(mndx, centerX, centerY, mmflags | MM_NOGRP);
         if (member) {
             member.mpeaceful = 0;
+            member.mavenge = 0;
+            setMonsterMalign(member);
             centerX = member.mx;
             centerY = member.my;
         }
@@ -1706,6 +1708,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         mcanmove: 1, mcansee: 1, mgenmklev: !!game.in_mklev,
         mux: 0, muy: 0,
         msleeping: monsterSleeping, mpeaceful: peaceful ? 1 : 0,
+        malign: 0,
         minvent: monsterInventory,
         inventory: monsterInventory,
         hasInventory: false,
@@ -1722,6 +1725,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     if (shaped) {
         if (requestedByHero)
             setMonsterApparentHeroPosition(shaped, game, rn2);
+        setMonsterMalign(shaped);
         level.monsters[monsterIndex] = shaped;
         return finishMonsterBirth(shaped, mmflags);
     }
@@ -1741,23 +1745,26 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         && x && y) {
         await mkobj_at(RANDOM_CLASS, x, y, true);
     }
-    // C makemon.c creates an ordinary aligned/high cleric without MM_EPRI or
-    // MM_EMIN as a roaming minion before group and inventory initialization.
-    // create_particular() applies an explicit hostile disposition only after
-    // this constructor returns, so both alignment/renegade draws remain live.
-    let clericMinion = null;
-    if ([PM_ALIGNED_CLERIC, PM_HIGH_CLERIC].includes(mndx)
-        && !(mmflags & (MM_EPRI | MM_EMIN))) {
+    // Ordinary clerics always become roamers; ordinary Angels have a
+    // one-in-three chance. Callers requesting priest/minion data own its
+    // alignment themselves. This birth state also applies under NO_MINVENT.
+    let roamingMinion = null;
+    const becomesRoamer = [PM_ALIGNED_CLERIC, PM_HIGH_CLERIC].includes(mndx)
+        ? !(mmflags & (MM_EPRI | MM_EMIN))
+        : mndx === MONSTER_NAME.indexOf('Angel') && !(mmflags & MM_EMIN) && !rn2(3);
+    if (becomesRoamer) {
         const minAlign = rn2(3) - 1;
         const renegade = !!(mmflags & MM_ANGRY) || rn2(3) === 0;
         const minionPeaceful = minAlign === (game.u?.ualign?.type ?? 0)
             ? !renegade : renegade;
-        clericMinion = {
+        roamingMinion = {
             min_align: minAlign,
             renegade,
             mpeaceful: minionPeaceful ? 1 : 0,
         };
-        pendingMonster.mpeaceful = clericMinion.mpeaceful;
+        pendingMonster.isminion = 1;
+        pendingMonster.emin = { min_align: minAlign, renegade };
+        pendingMonster.mpeaceful = roamingMinion.mpeaceful;
     }
     if (mdat == null && !(mmflags & MM_NOGRP)) {
         const geno = MONSTER_GENO[mndx] || 0;
@@ -1783,7 +1790,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             }
         }
         else if ((genderFlags & M2_MINION)
-            && (clericMinion?.min_align ?? monsterAlignmentType(pendingMonster)) === A_LAWFUL) {
+            && (roamingMinion?.min_align ?? monsterAlignmentType(pendingMonster)) === A_LAWFUL) {
             object.cursed = false;
             object.spe = Math.max(0, object.spe);
             object.oerodeproof = true;
@@ -1935,12 +1942,8 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         const isLord = !!(genderFlags & 0x00000400);
         const weapon = await mksobj(rn2(3) ? LONG_SWORD : SILVER_MACE, false, false);
         const promote = !rn2(20) || isLord;
-        if (promote && requireMonsterData(MONSTER_ALIGNMENT, mndx) > 0) {
-            weapon.oextra = {
-                ...(weapon.oextra || {}),
-                oname: weapon.otyp === LONG_SWORD ? 'Sunsword' : 'Demonbane',
-            };
-            weapon.artifact = true;
+        if (promote && monsterAlignmentType(pendingMonster) === A_LAWFUL) {
+            nameArtifact(weapon, artifactByName(weapon.otyp === LONG_SWORD ? 'Sunsword' : 'Demonbane'));
         }
         weapon.blessed = true;
         weapon.cursed = false;
@@ -2466,6 +2469,13 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 12) { // S_LEPRECHAUN
         await mkmonmoney(d(level_difficulty(), 30));
     }
+    if (allowMonsterInventory && !Is_rogue_level(game.u.uz)
+        && mndx === MONSTER_NAME.indexOf('Nazgul')) {
+        const ring = await mksobj(RIN_INVISIBILITY, false, false);
+        ring.cursed = true;
+        await addCreatedObjectToMonsterInventory(pendingMonster, ring, game);
+        hasMonsterInventory = true;
+    }
     if (allowMonsterInventory && MONSTER_SYMBOL[mndx] === 39) { // S_MUMMY
         if (rn2(7))
             await mongets(MUMMY_WRAPPING);
@@ -2606,7 +2616,8 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         mx: x, my: y, mhp: hp, mhpmax: hp,
         m_lev: baseLevel, female: monsterFemale,
         msleeping: monsterSleeping,
-        mpeaceful: clericMinion?.mpeaceful ?? (birthPeaceful ? 1 : 0),
+        mpeaceful: roamingMinion?.mpeaceful ?? (birthPeaceful ? 1 : 0),
+        malign: 0,
         mcanmove: 1, mcansee: 1,
         mgenmklev: !!game.in_mklev,
         seen_resistance: 0,
@@ -2629,13 +2640,13 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         // pickup, polymorph, and loss paths explicitly set NEED_WEAPON.
         weaponCheck: 0,
     };
-    if (clericMinion) {
+    if (roamingMinion) {
         monster.isminion = 1;
         monster.emin = {
-            min_align: clericMinion.min_align,
-            renegade: clericMinion.renegade,
+            min_align: roamingMinion.min_align,
+            renegade: roamingMinion.renegade,
         };
-        monster.maligntyp = clericMinion.min_align;
+        monster.maligntyp = roamingMinion.min_align;
     }
     if (mndx === PM_LONG_WORM) {
         if (pendingMonster.wormno !== undefined)
@@ -2673,6 +2684,9 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     if (mndx === PM_SHOPKEEPER) {
         monster.mpeaceful = 1;
     }
+    // makemon.c:set_malign() records the finalized birth attitude, before
+    // later changes to the hero's alignment can affect kill credit.
+    setMonsterMalign(monster);
     if (generatedGhostName != null)
         setMonsterGivenName(monster, generatedGhostName);
     registerQuestLeader(monster);
@@ -2802,7 +2816,7 @@ export async function splitHeroMonsterForm(state = game) {
     clone.edog = edog;
     clone.mextra ??= {};
     clone.mextra.edog = edog;
-    delete clone.malign;
+    setMonsterMalign(clone, state);
     clone.mhpmax = u.mhmax;
     clone.mhp = Math.trunc(u.mh / 2);
     u.mh -= clone.mhp;
@@ -2922,6 +2936,7 @@ export async function summonNastyMonsters(summoner, { onCreate = null } = {}) {
             monster.msleeping = 0;
             monster.mpeaceful = 0;
             monster.mtame = 0;
+            setMonsterMalign(monster);
             monster.mspec_used = rnd(4);
             created.push(monster);
             if (monster.mnum === archLich || monster.mnum === archon) {
@@ -3012,8 +3027,17 @@ export async function maketrap(x, y, typ) {
         // advance at least one level, then have a 3/4 chance to stop at each
         // level until the current dungeon's bottom is reached.
         const dnum = game.u?.uz?.dnum ?? 0;
-        const bottom = game.dungeons?.[dnum]?.num_dunlevs
+        const dungeon = game.dungeons?.[dnum];
+        let bottom = dungeon?.num_dunlevs
             ?? (game.u?.uz?.dlevel ?? 1);
+        if (In_quest(game.u.uz)) {
+            const locate = game.specialLevels?.get('x-loca');
+            if (locate && (dungeon?.dunlev_ureached ?? 0) < locate.dlevel)
+                bottom = locate.dlevel;
+        }
+        else if (In_hell(game.u.uz) && !game.u.uevent?.invoked) {
+            bottom--;
+        }
         let dlevel = game.u?.uz?.dlevel ?? 1;
         while (dlevel < bottom) {
             dlevel++;
@@ -3307,7 +3331,7 @@ export function randomEngraving() {
         text: wipeoutText(pristine, Math.trunc(pristine.length / 4)),
     };
 }
-const BONES_VERSION = 10;
+const BONES_VERSION = 11;
 function bonesStorageKey(level = game.u.uz) {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
 }
@@ -4109,14 +4133,7 @@ function specialDoorAt(context, mask, x, y) {
         return null;
     if (!IS_DOOR(loc.typ) && loc.typ !== SDOOR)
         loc.typ = DOOR;
-    const wallOrDoor = (candidate) => !!candidate
-        && (IS_WALL(candidate.typ) || IS_DOOR(candidate.typ)
-            || candidate.typ === SDOOR);
-    const wleft = wallOrDoor(level.at(doorX - 1, doorY));
-    const wright = wallOrDoor(level.at(doorX + 1, doorY));
-    const wup = wallOrDoor(level.at(doorX, doorY - 1));
-    const wdown = wallOrDoor(level.at(doorX, doorY + 1));
-    loc.horizontal = !!((wleft || wright) && !(wup && wdown));
+    setSpecialDoorOrientation(doorX, doorY);
     loc.doormask = mask;
     return { x: doorX, y: doorY };
 }
@@ -4200,13 +4217,7 @@ function specialIrregularRoom(context, x, y, rtype, lit, needfill) {
     room.irregular = true;
     room.needjoining = true;
     room.needfill = needfill;
-    for (let doorX = room.lx - 1; doorX <= room.hx + 1; doorX++) {
-        for (let doorY = room.ly - 1; doorY <= room.hy + 1; doorY++) {
-            const loc = level.at(doorX, doorY);
-            if (loc && (IS_DOOR(loc.typ) || loc.typ === SDOOR))
-                add_door(doorX, doorY, room);
-        }
-    }
+    addDoorsToSpecialRoom(room);
     return room;
 }
 function getSpecialLevelExtents() {
@@ -4568,6 +4579,7 @@ async function fillCourtRoom(room) {
     if (ruler) {
         ruler.msleeping = 1;
         ruler.mpeaceful = 0;
+        setMonsterMalign(ruler);
         const mace = await mksobj(MACE, true, false);
         await addObjectToMonsterInventory(ruler, mace, game, { atFront: true });
     }
@@ -4601,7 +4613,10 @@ async function fillCourtRoom(room) {
                 : await makemon(mndx, x, y, MM_ASLEEP | MM_NOGRP);
             if (monster) {
                 monster.msleeping = 1;
-                monster.mpeaceful = 0;
+                if (monster.mpeaceful) {
+                    monster.mpeaceful = 0;
+                    setMonsterMalign(monster);
+                }
             }
         }
     }
@@ -4954,20 +4969,8 @@ async function finishLevelTrapConstruction(trap, { spiderOnWeb = true, seen = fa
 async function specialTrapLocation(context, coordinate) {
     const level = requireGameLevel();
     const room = context._room;
-    if (room) {
-        const point = await getLocationCoord(context, coordinate, DRY);
-        if (level.at(point.x, point.y)?.typ === ROOM)
-            return point;
-        // get_free_room_loc() falls back to room floor, including when
-        // an explicit coordinate names furniture or other terrain.
-        for (let attempt = 0; attempt <= 100; attempt++) {
-            if (!somexy(room, point))
-                throw new Error("get_room_loc: can't find a place!");
-            if (level.at(point.x, point.y)?.typ === ROOM)
-                return point;
-        }
-        throw new Error("get_free_room_loc: can't find a place!");
-    }
+    if (room)
+        return await getFreeRoomLocation(context, coordinate, room);
     for (let attempt = 0; attempt <= 100; attempt++) {
         const point = await getLocationCoord(context, coordinate, DRY);
         const terrain = level.at(point.x, point.y)?.typ;
@@ -4975,6 +4978,21 @@ async function specialTrapLocation(context, coordinate) {
             return point;
     }
     return null;
+}
+// sp_lev.c:get_free_room_loc(). Furniture can satisfy DRY placement;
+// room features retry on ordinary floor instead of replacing each other.
+async function getFreeRoomLocation(context, coordinate, room) {
+    const level = requireGameLevel();
+    const point = await getLocationCoord(context, coordinate, DRY);
+    if (level.at(point.x, point.y)?.typ === ROOM)
+        return point;
+    for (let attempt = 0; attempt <= 100; attempt++) {
+        if (!somexy(room, point))
+            throw new Error("get_room_loc: can't find a place!");
+        if (level.at(point.x, point.y)?.typ === ROOM)
+            return point;
+    }
+    throw new Error("get_free_room_loc: can't find a place!");
 }
 async function specialTrapOfType(context, typ, options, coordinate) {
     const point = await specialTrapLocation(context, coordinate);
@@ -5054,11 +5072,73 @@ function addDoorsToSpecialRoom(room) {
         for (let y = room.ly - 1; y <= room.hy + 1; y++) {
             const loc = level.at(x, y);
             if (loc && (IS_DOOR(loc.typ) || loc.typ === SDOOR))
-                add_door(x, y, room);
+                maybeAddSpecialRoomDoor(x, y, room);
         }
     }
     for (const subroom of room.sbrooms || [])
         addDoorsToSpecialRoom(subroom);
+}
+// sp_lev.c:link_doors_rooms(). A later Lua room can create a door shared
+// with an earlier one, so link the completed map before stocking it.
+function linkSpecialLevelDoors() {
+    const level = requireGameLevel();
+    for (let y = 0; y < ROWNO; y++) {
+        for (let x = 0; x < COLNO; x++) {
+            const loc = level.requireAt(x, y);
+            if (!IS_DOOR(loc.typ) && loc.typ !== SDOOR)
+                continue;
+            setSpecialDoorOrientation(x, y);
+            for (const room of level.rooms.slice(0, level.nroom)) {
+                if (!isRoom(room))
+                    continue;
+                maybeAddSpecialRoomDoor(x, y, room);
+                for (const subroom of room.sbrooms ?? [])
+                    maybeAddSpecialRoomDoor(x, y, subroom);
+            }
+        }
+    }
+}
+function maybeAddSpecialRoomDoor(x, y, room) {
+    const level = requireGameLevel();
+    const roomNumber = room.roomnoidx + ROOMOFFSET;
+    const inRectangle = !room.irregular
+        && x >= room.lx - 1 && x <= room.hx + 1
+        && y >= room.ly - 1 && y <= room.hy + 1;
+    if (inRectangle || level.at(x, y)?.roomno === roomNumber
+        || specialDoorSharedWithRoom(x, y, room, roomNumber)) {
+        add_door(x, y, room);
+    }
+}
+function specialDoorSharedWithRoom(x, y, room, roomNumber) {
+    const level = requireGameLevel();
+    const loc = level.at(x, y);
+    if (!isok(x, y) || !loc || (loc.roomno === roomNumber && !loc.edge))
+        return false;
+    return (isok(x - 1, y) && x - 1 <= room.hx && level.at(x - 1, y)?.roomno === roomNumber)
+        || (isok(x + 1, y) && x + 1 >= room.lx && level.at(x + 1, y)?.roomno === roomNumber)
+        || (isok(x, y - 1) && y - 1 <= room.hy && level.at(x, y - 1)?.roomno === roomNumber)
+        || (isok(x, y + 1) && y + 1 >= room.ly && level.at(x, y + 1)?.roomno === roomNumber);
+}
+function setSpecialDoorOrientation(x, y) {
+    const level = requireGameLevel();
+    const wallOrDoor = (nx, ny) => {
+        const loc = level.at(nx, ny);
+        return isok(nx, ny) && !!loc
+            && (IS_WALL(loc.typ) || IS_DOOR(loc.typ) || loc.typ === SDOOR);
+    };
+    let left = wallOrDoor(x - 1, y), right = wallOrDoor(x + 1, y);
+    let up = wallOrDoor(x, y - 1), down = wallOrDoor(x, y + 1);
+    if (!left && !right && !up && !down) {
+        const joinsDoor = (nx, ny) => {
+            const loc = level.at(nx, ny);
+            return !isok(nx, ny) || !!loc && (IS_OBSTRUCTED(loc.typ) || loc.typ === IRONBARS);
+        };
+        left = joinsDoor(x - 1, y);
+        right = joinsDoor(x + 1, y);
+        up = joinsDoor(x, y - 1);
+        down = joinsDoor(x, y + 1);
+    }
+    level.requireAt(x, y).horizontal = (left || right) && !(up && down);
 }
 async function buildSpecialRoom(spec, parent = null, contents = null) {
     const level = requireGameLevel();
@@ -5210,16 +5290,7 @@ function specialRectangularRoom(context, x1, y1, x2, y2, rtype, lit, needfill) {
     room.needjoining = true;
     room.needfill = needfill;
     topologize(room);
-    // sp_lev.c:add_doors_to_room() runs as soon as each Lua region closes.
-    // For rectangular rooms inside_room() includes the one-cell perimeter,
-    // so every mapped door in that ring is linked in x-major/y-minor order.
-    for (let x = room.lx - 1; x <= room.hx + 1; x++) {
-        for (let y = room.ly - 1; y <= room.hy + 1; y++) {
-            const loc = level.at(x, y);
-            if (loc && (IS_DOOR(loc.typ) || loc.typ === SDOOR))
-                add_door(x, y, room);
-        }
-    }
+    addDoorsToSpecialRoom(room);
     return room;
 }
 async function specialShrinePriest(temple, altarX, altarY, altarAlignment, { sanctum = false } = {}) {
@@ -5264,6 +5335,8 @@ async function specialShrinePriest(temple, altarX, altarY, altarAlignment, { san
         hostile_time: 0,
     };
     priest.mtrapseen = 0x7fffffff;
+    // priest.c:priestini() replaces the birth attitude and species alignment.
+    setMonsterMalign(priest);
     if (sanctum && altarAlignment === A_NONE) {
         const amulet = await mksobj(AMULET_OF_YENDOR, true, false);
         await addObjectToMonsterInventory(priest, amulet, game, { atFront: true });
@@ -5586,19 +5659,15 @@ function luaCoordinate(options) {
 async function createLuaAltar(context, options) {
     const level = requireGameLevel();
     const coordinate = luaCoordinate(options);
-    const point = coordinate
-        ? {
-            x: context.xstart + coordinate.x,
-            y: context.ystart + coordinate.y,
-        }
-        : await specialRandomLocation(context);
-    if (!point)
-        return;
+    const point = context._room
+        ? await getFreeRoomLocation(context, coordinate, context._room)
+        : await getLocationCoord(context, coordinate, DRY);
     const altar = level.at(point.x, point.y);
-    if (!altar || IS_FURNITURE(altar.typ))
+    if (!altar || altar.typ === STAIRS || altar.typ === LADDER)
+        return;
+    if (!setLevelTerrainType(point.x, point.y, ALTAR))
         return;
     const alignment = luaSpecialAlignment(options.align);
-    altar.typ = ALTAR;
     altar.flags = Align2amask(alignment);
     const altarType = options.type ?? 'altar';
     if (!['altar', 'shrine', 'sanctum'].includes(altarType))
@@ -6045,6 +6114,11 @@ async function createLuaMonster(context, options) {
     applyLuaMonsterAppearance(monster, options.appearance);
     if (monster && options.name != null)
         setMonsterGivenName(monster, options.name);
+    if (monster && peaceful != null) {
+        monster.mpeaceful = peaceful ? 1 : 0;
+        // sp_lev.c:create_monster() resets kill credit after the Lua override.
+        setMonsterMalign(monster);
+    }
     if (monster && options.waiting) {
         monster.mstrategy = (monster.mstrategy ?? 0) | STRAT_WAITFORU;
         monster.waiting = true;
@@ -6083,8 +6157,6 @@ async function createLuaMonster(context, options) {
     if (monster && options.m_lev_adj) {
         monster.m_lev = Math.max(0, Math.min(49, monster.m_lev + options.m_lev_adj));
     }
-    if (monster && peaceful != null)
-        monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null)
         monster.msleeping = asleep ? 1 : 0;
     return monster ?? null;
@@ -6542,6 +6614,8 @@ function createLuaLevelSession() {
             return roomFailed;
         },
         async finishSpecialLevel() {
+            linkSpecialLevelDoors();
+            removeSpecialLevelBoundaries(mappedCells);
             if (currentLevel().checkInaccessibles)
                 await ensureWaysOut();
             await cleanupSpecialLevelMap();
@@ -8224,24 +8298,39 @@ async function fillBarracksRoom(room) {
     }
     level.flags.has_barracks = true;
 }
-// C ref: mkroom.c fill_zoo(BEEHIVE).  The queen occupies the geometric
-// center; every other eligible room square receives a sleeping, ungrouped
+// C ref: mkroom.c fill_zoo(BEEHIVE). The queen uses the center when it
+// belongs to the room. Every other eligible square receives a sleeping
 // killer bee, followed by that square's independent royal-jelly probe.
 async function fillBeehiveRoom(croom) {
     const level = requireGameLevel();
-    const centerX = croom.lx + Math.trunc((croom.hx - croom.lx + 1) / 2);
-    const centerY = croom.ly + Math.trunc((croom.hy - croom.ly + 1) / 2);
+    const roomNumber = croom.roomnoidx + ROOMOFFSET;
+    let centerX = croom.lx + Math.trunc((croom.hx - croom.lx + 1) / 2);
+    let centerY = croom.ly + Math.trunc((croom.hy - croom.ly + 1) / 2);
+    const center = level.requireAt(centerX, centerY);
+    if (croom.irregular && (center.roomno !== roomNumber || center.edge)) {
+        const point = { x: centerX, y: centerY };
+        somexyspace(croom, point);
+        centerX = point.x;
+        centerY = point.y;
+    }
     const door = croom.doorct ? level.doors?.[croom.fdoor] : null;
     for (let x = croom.lx; x <= croom.hx; x++) {
         for (let y = croom.ly; y <= croom.hy; y++) {
             const loc = level.at(x, y);
-            if (!loc || !SPACE_POS(loc.typ))
+            if (!loc)
                 continue;
-            if (door && ((x === croom.lx && door.x === x - 1)
-                || (x === croom.hx && door.x === x + 1)
-                || (y === croom.ly && door.y === y - 1)
-                || (y === croom.hy && door.y === y + 1)))
+            if (croom.irregular) {
+                if (loc.roomno !== roomNumber || loc.edge
+                    || (door && Math.max(Math.abs(x - door.x), Math.abs(y - door.y)) <= 1))
+                    continue;
+            }
+            else if (!SPACE_POS(loc.typ)
+                || (door && ((x === croom.lx && door.x === x - 1)
+                    || (x === croom.hx && door.x === x + 1)
+                    || (y === croom.ly && door.y === y - 1)
+                    || (y === croom.hy && door.y === y + 1)))) {
                 continue;
+            }
             const mndx = x === centerX && y === centerY ? 5 : 1;
             const monster = await makemon(mndx, x, y, MM_ASLEEP | MM_NOGRP);
             if (monster)
@@ -8815,6 +8904,8 @@ function create_room(x, y, w, h, xal, yal, rtype, rlit) {
             const lowy = { v: yabs }, ddy = { v: htmp };
             if (r1 && !check_room(lowx, ddx, lowy, ddy, vault))
                 r1 = null;
+            xabs = lowx.v;
+            yabs = lowy.v;
         }
     } while (++trycnt <= 100 && !r1);
     if (!r1)

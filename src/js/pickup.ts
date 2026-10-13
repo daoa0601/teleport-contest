@@ -10,7 +10,7 @@ import {
 import { tryCallObjectType } from './object_call.js';
 import {
     newsym, flush_screen, pline, plineWithContinuation,
-    map_object,
+    bot, map_object,
 } from './display.js';
 import { dungeonFeatureSentenceAt } from './dungeon_feature.js';
 import { showMultiSelectWindow } from './windows.js';
@@ -228,7 +228,6 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         const lift = await liftObject({ object, count, telekinesis });
         if (lift.decision === 'stop') break;
         if (lift.decision !== 'lift') continue;
-        if (object.oclass === 12) game.context.botl = true;
         if (object.otyp !== LOADSTONE)
             object = splitPickupStack(object, lift.count);
 
@@ -269,6 +268,7 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
     }
     if (batch && picked && !game.program_state?.gameover) {
         if (!source.monster) newsym(source.x, source.y);
+        await bot();
     }
     return { picked, attempted };
 }
@@ -376,6 +376,8 @@ async function checkHere(source: PickupSource, pickedSome: boolean): Promise<{ d
         return { died: false };
     }
     stopRun();
+    // C check_here() flushes movement before look_here() can page a prior
+    // message. The pager itself leaves pending map changes untouched.
     await flush_screen(1);
     const feature = skipFeature ? '' : dungeonFeatureSentenceAt(x, y);
     if (heroIsBlind(game)) {

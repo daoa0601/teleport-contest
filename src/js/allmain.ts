@@ -1744,6 +1744,7 @@ async function monsterAttackMessage(
 ): Promise<string | null> {
     const game = requireInitializedGame();
     if (attack.effect === 'petrifying-corpse') return null;
+    if (attack.effect === 'physical-hug') return null;
     if (attack.effect === 'engulf' || attack.effect === 'engulf-tick'
         || attack.effect === 'engulf-refused' || attack.effect === 'item-theft') return null;
     if (attack.effect === 'blind-natural' && !attack.blindMessage) return null;
@@ -3370,7 +3371,8 @@ async function executeMonsterTurns(messageContext: MonsterMessageContext): Promi
         // including items whose effects await their messages below.
         const offensive = movement.heroAttackSequence?.offensive;
         const attackReturnedDeath = offensive?.status === 'completed' && offensive.result.nativeResult === 1;
-        if (!movement.usedMisc && !attackReturnedDeath && action.dochugContext?.range?.inRange
+        if (action.dochugContext?.reachesFinalActions
+            && !movement.usedMisc && !attackReturnedDeath && action.dochugContext.range?.inRange
             && !monster.dead && monster.mhp > 0 && monster.mx !== 0
             && MONSTER_SOUND[monster.mnum] === 34 && !monster.mpeaceful
             && couldsee(monster.mx, monster.my) && !monster.minvis) {
