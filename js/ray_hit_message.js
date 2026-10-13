@@ -25,23 +25,27 @@ export function rayMissMessage(effect, monster, { x, y, state = game }) {
 // C objnam.c:The()/the(). Capitalized object names are not all proper names:
 // fruit, species titles, and compounds such as Amulet of Yendor need articles.
 export function capitalizedDefiniteName(name, state = game) {
+    const subject = definiteName(name, state);
+    return subject.charAt(0).toUpperCase() + subject.slice(1);
+}
+export function definiteName(name, state = game) {
     if (!name)
-        return 'The []';
+        return 'the []';
     if (/^the /iu.test(name))
-        return `T${name.slice(1)}`;
+        return `t${name.slice(1)}`;
     if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name))
-        return `The ${name}`;
+        return `the ${name}`;
     if (fruitFromName(name, { exact: true, state })) {
         const artifact = artifactByName(name, state);
         if (!artifact || /^the /iu.test(artifact.name))
-            return `The ${name}`;
+            return `the ${name}`;
     }
     const lastSpace = name.lastIndexOf(' ');
     const separator = lastSpace >= 0 ? lastSpace : name.lastIndexOf('-');
     if (separator < 0)
         return name;
     if (!/^[A-Z]/u.test(name.slice(separator + 1)))
-        return name.includes("'") ? name : `The ${name}`;
+        return name.includes("'") ? name : `the ${name}`;
     if (name.indexOf(' ') >= separator)
         return name;
     const lower = name.toLowerCase();
@@ -51,7 +55,7 @@ export function capitalizedDefiniteName(name, state = game) {
     const of = lower.indexOf(' of ');
     if (of >= 0 && (suffix < 0 || of < suffix)
         || suffix < 0 && name.endsWith('Platinum Yendorian Express Card'))
-        return `The ${name}`;
+        return `the ${name}`;
     return name;
 }
 // Native rumors.c:CapitalMon() includes capitalized species names and titles,

@@ -9,6 +9,7 @@ import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { ACID_VENOM, OBJECT_MATERIAL } from './object_data.js';
 import { rnd } from './rng.js';
+import { definiteName } from './ray_hit_message.js';
 import { heroIsBlind } from './senses.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
@@ -38,8 +39,8 @@ export async function hitHeroWithObject(object, damage, accuracy, { state = game
     const killer = requestedKiller ?? namedKiller ?? killerObjectName(object, state);
     if (typeof name !== 'string' || typeof killer !== 'string')
         throw new Error(`Unknown object type ${object.otyp} hit the hero.`);
-    const description = objectHasPersonalName(object, state) || quantity > 1
-        ? name : withIndefiniteArticle(name);
+    const description = objectHasPersonalName(object, state) ? definiteName(name, state)
+        : quantity > 1 ? name : withIndefiniteArticle(name);
     const terse = heroIsBlind(state) || state.flags.verbose === false;
     const threshold = state.u.uac + accuracy;
     const roll = rollOne(20);
