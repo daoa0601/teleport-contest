@@ -5,6 +5,7 @@ import { game } from './gstate.js';
 import { OBJECT_DESCRIPTIONS, OBJECT_NAMES } from './object_data.js';
 import { recordObjectCall, recordObjectEncounter } from './object_knowledge.js';
 import { getLine } from './query.js';
+import { flush_screen } from './display.js';
 import { objectTypeKnown } from './shk.js';
 const MAX_PLAYER_NAME_LENGTH = 62; // PL_PSIZ - 1
 export function objectTypeCallNoun(object, state = game) {
@@ -40,6 +41,8 @@ export async function tryCallObjectType(object, state = game) {
         state._objectCallNames?.[object.otyp]) {
         return { prompted: false, named: false, callName: null };
     }
+    // C docall() publishes buffered status before getlin() disables bot().
+    await flush_screen(1);
     const noun = objectTypeCallNoun(object, state);
     const appearance = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
     const prompt = object.oclass === 8 && object.fromsink
