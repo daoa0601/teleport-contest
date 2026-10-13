@@ -27,7 +27,7 @@ import { useMonsterOffensiveItem } from './monster_offensive_item.js';
 import { searchMonsterItems } from './monster_item_search.js';
 import { monsterCouldReachItem } from './monster_item_reach.js';
 import { consumeMonsterFloorObjects } from './monster_floor_consumption.js';
-import { digestGelatinousCubeInventory } from './monster_consumption.js';
+import { digestGelatinousCubeInventory, feedBeeRoyalJelly } from './monster_consumption.js';
 import { pickUpMonsterFloorObject } from './monster_pickup.js';
 import { digMonsterTunnel } from './monster_tunnel.js';
 import { monsterMovementBaseFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterCorrodesBars, } from './monster_movement_traits.js';
@@ -170,7 +170,7 @@ import { learnObjectType } from './object_knowledge.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { rndmonstAdj } from './mklev.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
-import { BAG_OF_TRICKS, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH } from './object_data.js';
+import { BAG_OF_TRICKS, LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH } from './object_data.js';
 import { lootMonsterContainer } from './monster_container_loot.js';
 import { isContainer } from './container.js';
 import { isQuantumBox } from './quantum_cat.js';
@@ -7102,6 +7102,21 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
         };
     }
     const entryMnum = dochugContext.entryMnum;
+    // dochug() gives royal jelly priority over movement and attacks.
+    const royalJelly = entryMnum === MONSTER_NAME.indexOf('killer bee')
+        ? state.level.objects[monster.mx]?.[monster.my]?.find(object => object.otyp === LUMP_OF_ROYAL_JELLY)
+        : null;
+    if (royalJelly && await feedBeeRoyalJelly(monster, royalJelly, state)) {
+        return {
+            calls, dochugContext,
+            movement: {
+                oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                moved: false, actionCompleted: true,
+                actorDied: !!monster.dead || monster.mhp <= 0,
+                heroDied: !!state.program_state.gameover,
+            },
+        };
+    }
     if (entryMnum === MONSTER_NAME.indexOf('gelatinous cube')
         && await digestGelatinousCubeInventory(monster, state, { random, rollOne, rollDice })) {
         return {
