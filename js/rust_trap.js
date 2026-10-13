@@ -31,10 +31,7 @@ async function presentRustTrap(monster, event, state, publish) {
         const owner = possessiveName(monsterName(monster, {
             state, capitalized: effect.kind !== 'rustproof',
         }));
-        if (effect.kind === 'grease-protected') {
-            await publish(`${owner} ${objectName} is protected by the layer of grease!`);
-        }
-        else if (effect.kind === 'rustproof') {
+        if (effect.kind === 'rustproof') {
             await publish(`Somehow, ${owner} ${objectName} is not affected by the oxidation.`);
         }
         else if (effect.kind === 'rusted') {

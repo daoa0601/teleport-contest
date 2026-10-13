@@ -413,10 +413,8 @@ function rustObject(object, description, monster, state, roll, luckRoll) {
         const greaseWashedOff = roll(2) === 0;
         if (greaseWashedOff)
             object.greased = false;
-        return {
-            outcome: 'greased', kind: 'grease-protected', object,
-            description,
-        };
+        // C water_damage(): monster-carried grease washes off without feedback.
+        return { outcome: 'greased' };
     }
     return rustMetalObject(object, description, luckRoll);
 }

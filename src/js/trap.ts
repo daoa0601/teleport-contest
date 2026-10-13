@@ -88,20 +88,13 @@ interface RustDamageEffect {
     erosion: number;
 }
 
-interface GreaseWaterEffect {
-    kind: 'grease-protected';
-    outcome: 'greased';
-    object: GameObject;
-    description: string;
-}
-
 type MetalRustResult = { outcome: 'nothing'; kind?: never }
     | RustProofEffect | RustDamageEffect;
-type RustResult = MetalRustResult | GreaseWaterEffect
+type RustResult = MetalRustResult | { outcome: 'greased'; kind?: never }
     | (LightWaterEffect & { outcome: 'damaged' });
 
 export type WaterObjectEffect = LightWaterEffect | RustProofEffect
-    | RustDamageEffect | GreaseWaterEffect;
+    | RustDamageEffect;
 
 export interface MonsterRustTrapEvent {
     kind: 'rust-trap';
@@ -567,10 +560,8 @@ function rustObject(
     if (object.greased) {
         const greaseWashedOff = roll(2) === 0;
         if (greaseWashedOff) object.greased = false;
-        return {
-            outcome: 'greased', kind: 'grease-protected', object,
-            description,
-        };
+        // C water_damage(): monster-carried grease washes off without feedback.
+        return { outcome: 'greased' };
     }
 
     return rustMetalObject(object, description, luckRoll);
