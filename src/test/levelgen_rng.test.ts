@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { A_LAWFUL, ARROW_TRAP, COLNO, CORR, DOOR, D_NODOOR, G_EXTINCT, G_GENOD, HOLE, LADDER, LAVAPOOL, LEVEL_TELEP, M_AP_FURNITURE, PIT, POOL, ROCKTRAP, ROOM, ROOMOFFSET, ROWNO, SCORR, STAIRS, TELEP_TRAP, THEMEROOM, TRAPDOOR, WEB } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { CmapSymbol } from '../js/glyph_numbers.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { resetInputState } from '../js/input.js';
 import { isRoom } from '../js/map_types.js';
@@ -523,16 +524,27 @@ void test('deep corridor doors can become door-disguised mimics', async t => {
     `);
     requirePlayingGame(game);
     game.u.uz.dlevel = 20;
-    game.level = new GameMap();
-    initRng(125);
+    let doorMimics = 0;
+    // dosdoor() only replaces some trapped doors. Sample levels rather
+    // than requiring one seed to create a mimic after all room contents.
+    for (let seed = 1; seed <= 128; seed++) {
+        game.level = new GameMap();
+        initRng(seed);
 
-    await mklev();
+        await mklev();
 
-    const mimic = game.level.monsters.find(monster =>
-        MONSTER_NAME[monster.mnum]?.includes('mimic'));
-    assert.ok(mimic, 'deep corridors should sometimes create a mimic in place of a trapped door');
-    const door = game.level.requireAt(mimic.mx, mimic.my);
-    assert.equal(door.typ, DOOR);
-    assert.equal(door.doormask, D_NODOOR, 'the mimic replaces the trapped door');
-    assert.equal(mimic.m_ap_type, M_AP_FURNITURE);
+        const level: GameMap = game.level;
+        for (const mimic of level.monsters) {
+            if (!MONSTER_NAME[mimic.mnum]?.includes('mimic')) continue;
+            const door = level.requireAt(mimic.mx, mimic.my);
+            if (door.typ !== DOOR) continue;
+            doorMimics++;
+            const where = `seed ${seed}, door ${mimic.mx},${mimic.my}`;
+            assert.equal(door.doormask, D_NODOOR, `the mimic replaces the trapped door (${where})`);
+            assert.equal(mimic.m_ap_type, M_AP_FURNITURE, `the mimic disguises itself as furniture (${where})`);
+            assert.ok(mimic.mappearance === CmapSymbol.hcdoor || mimic.mappearance === CmapSymbol.vcdoor,
+                `the mimic appears as a closed door (${where})`);
+        }
+    }
+    assert.ok(doorMimics > 0, 'deep corridors should sometimes replace a trapped door with a mimic');
 });
