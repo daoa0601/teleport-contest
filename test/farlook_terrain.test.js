@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { farlookLocationDescription } from '../js/cmd.js';
-import { ICE, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, WATER } from '../js/const.js';
+import { ICE, LA_DOWN, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, STAIRS, WATER } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { newsym } from '../js/display.js';
 import { makeBlinded } from '../js/sight_change.js';
@@ -31,6 +31,33 @@ void test('a remembered liquid glyph uses the current surface description', asyn
     location.typ = ROOM;
     assert.equal(farlookLocationDescription(11, 10), 'water');
 });
+for (const remembered of [false, true]) {
+    void test(`farlook describes ${remembered ? 'remembered' : 'visible'} blocked Quest stairs and opens them after the leader dies`, async () => {
+        const level = freshObjectRoom();
+        game.dungeons = [{
+                dname: 'The Quest', num_dunlevs: 5, entry_lev: 1, dunlev_ureached: 1,
+                depth_start: 1, flags: { maze_like: false, hellish: false, alignment: null },
+                bonetag: undefined, protofile: undefined, levelFill: undefined, themeRooms: undefined,
+            }];
+        game._activeSpecialLevel = {
+            prototype: 'Val-strt', file: 'Val-strt.lua', defaultLit: true,
+            align: ['law', 'neutral', 'chaos'],
+        };
+        const location = level.requireAt(11, 10);
+        location.typ = STAIRS;
+        location.ladder = LA_DOWN;
+        level.dnstair = { x: 11, y: 10 };
+        newsym(11, 10);
+        if (remembered) {
+            await makeBlinded(10, { talk: false });
+            vision_recalc(0);
+        }
+        assert.equal(farlookLocationDescription(11, 10), 'blocked staircase down');
+        assert.ok(game.quest_status);
+        game.quest_status.killed_leader = true;
+        assert.equal(farlookLocationDescription(11, 10), 'staircase down');
+    });
+}
 for (const [terrain, description] of [
     [POOL, 'pool of water'], [MOAT, 'moat'], [WATER, 'wall of water'],
     [LAVAWALL, 'wall of lava'], [ICE, 'ice'],

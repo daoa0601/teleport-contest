@@ -4255,6 +4255,11 @@ export function farlookLocationDescription(x, y) {
         CmapSymbol.lavawall, CmapSymbol.ice,
     ].some(symbol => glyph.glyph === cmapToGlyph(symbol)))
         return waterbodyName(x, y);
+    // do_screen_description() applies the Quest gate to the glyph's stair
+    // description, whether the stair is visible now or remembered.
+    if (glyph?.kind === 'terrain' && glyph.terrainName === 'staircase down'
+        && onQuestStart(game) && !okToQuest(game))
+        return 'blocked staircase down';
     if (loc.disp_glyph?.kind === 'nothing')
         return 'dark part of a room';
     // pager.c:do_screen_description() recognizes the concrete S_cloud glyph
