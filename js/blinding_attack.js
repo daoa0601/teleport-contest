@@ -47,9 +47,8 @@ export function monsterCanBeBlindedByObject(monster, objectType, { heroInsideTar
         return true;
     return !wearsVisoredHelmet(monster?.minvent || monster?.inventory || [], state);
 }
-export function applyMonsterBlindness(monster, rollOne) {
+export function applyMonsterBlindness(monster, blindIncrement) {
     const wasSeeing = !!monster.mcansee;
-    const blindIncrement = rollOne(25) + 20;
     monster.mcansee = 0;
     monster.mblinded = Math.min(127, (monster.mblinded ?? 0) + blindIncrement);
     return { blindIncrement, wasSeeing };
@@ -80,7 +79,7 @@ function creamPieTarget(monster, name) {
 export function blindMonsterWithThrownObject(monster, objectType, { heroInsideTarget = false, state = game, rollOne = rnd, } = {}) {
     if (!monsterCanBeBlindedByObject(monster, objectType, { heroInsideTarget, state }))
         return null;
-    return applyMonsterBlindness(monster, rollOne);
+    return applyMonsterBlindness(monster, rollOne(25) + 20);
 }
 export function heroCanBeBlindedByVenom(state = game) {
     const hero = state.u;

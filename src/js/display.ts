@@ -163,7 +163,7 @@ const HELM_OF_TELEPATHY = 100;
 const AMULET_OF_ESP = 201;
 const PM_LONG_WORM_TAIL = MONSTER_NAME.indexOf('long worm tail');
 
-function unblindTelepathyRange() {
+export function unblindTelepathyRange() {
     const wornSources = [game.uarmh, game.uamul].filter(object => object
         && (object.otyp === HELM_OF_TELEPATHY
             || object.otyp === AMULET_OF_ESP)).length;
@@ -1033,7 +1033,7 @@ const decWallColors = new Map<GlyphOffset, number>([
 // C display.h:canspotself().  See-invisible does not make the hero's own
 // glyph opaque again; ordinary self projection depends on not being
 // invisible, while telepathy/detection can supply a sensory projection.
-function canSpotHeroSelf() {
+export function canSpotHeroSelf() {
     const invisible = !!(
         game.u?.invisible || game.u?.invis || game.invisible
     );

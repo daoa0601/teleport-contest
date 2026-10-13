@@ -5,6 +5,7 @@ import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitMonsterWithHeroObject } from '../js/hero_physical_hit.js';
+import { resolveHeroObjectContact } from '../js/hero_object_contact.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
@@ -22,6 +23,21 @@ import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 
 const BIRTH_FLAGS = NO_MINVENT | MM_NOGRP | MM_NOWAIT;
+
+void test('a cream-pie hit can leave a monster blind for the minimum twenty-one turns', async () => {
+    freshObjectRoom();
+    const monster = await createMonsterAt('goblin', 11, 10, BIRTH_FLAGS);
+    monster.mpeaceful = false;
+    const pie = await knownObject(CREAM_PIE);
+
+    await resolveHeroObjectContact(monster, pie, {
+        mode: 'thrown', random: () => 0, rollOne: () => 25, publish: () => {},
+    });
+
+    assert.equal(monster.mblinded, 21);
+    assert.equal(monster.mcansee, 0);
+    assert.equal(pie.where, 'gone');
+});
 
 async function contactRoom(expected: RegExp, species = 'goblin') {
     freshObjectRoom({ gameplaySeed: 97n, flags: { verbose: true }, hero: { ulevel: 30, uhp: 500, uhpmax: 500 } });

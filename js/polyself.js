@@ -18,6 +18,7 @@ import { d, rnd, rn1, rn2 } from './rng.js';
 import { adjustLevelAbilities, experienceRankIndex, randomExperience, } from './exper.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { reportHeroEncumbrance } from './attrib.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor, monsterHasNoHands, monsterHornCount, monsterIsBat, monsterIsCentaur, monsterIsAmorphous, monsterIsSlithy, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm, } from './monster_data.js';
 import { AD_ELEC, AD_FIRE } from './monster_attack_types.js';
 import { AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_MATERIAL, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';
@@ -488,7 +489,6 @@ export async function polymonHero(mnum, options = {}) {
         await exerciseAttribute(A_WIS, true);
         return { transformed: false };
     }
-    const previousCapacity = nearCapacity(game);
     const wasHolding = game.u.ustuck && !game.u.uswallow && heroFormSticks(game);
     const wasBlind = heroIsBlind(game);
     mnum = await beginMonsterForm(mnum, options);
@@ -551,12 +551,9 @@ export async function polymonHero(mnum, options = {}) {
     }
     await escapeTrapsAfterFormChange();
     await restartAmuletStrangulation();
-    const currentCapacity = nearCapacity(game);
-    game._encumbranceLevel = currentCapacity;
-    game.u._encumbrance = encumbranceLabel(currentCapacity);
-    const capacityMessage = encumbranceMessage(previousCapacity, currentCapacity);
-    if (capacityMessage)
-        await plineWithContinuation(capacityMessage);
+    // dropz() may already have reported the new body's carrying capacity
+    // while dropping armor. Native encumber_msg() shares that cached level.
+    await reportHeroEncumbrance(game);
     const retouch = await retouchEquipment(2);
     if (retouch.died)
         return { transformed: true, mnum, died: true };

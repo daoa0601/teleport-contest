@@ -27,7 +27,7 @@ const MONSTER_CLASS_NAMES = [
 function canonicalMonsterNumber(name) {
     return MONSTER_NAME.findIndex(candidate => candidate?.toLowerCase() === name.toLowerCase());
 }
-const MONSTER_NAME_ALIASES = new Map([
+const MONSTER_NAME_ALIAS_ENTRIES = [
     ['grey dragon', 'gray dragon'],
     ['baby grey dragon', 'baby gray dragon'],
     ['grey unicorn', 'gray unicorn'],
@@ -61,27 +61,28 @@ const MONSTER_NAME_ALIASES = new Map([
     ['green elf', 'Green-elf'],
     ['grey elf', 'Grey-elf'],
     ['gray elf', 'Grey-elf'],
-    ['elf lady', 'elf-noble'],
-    ['elf lord', 'elf-noble'],
+    ['elf lady', 'elf-noble', 1],
+    ['elf lord', 'elf-noble', 0],
     ['elf noble', 'elf-noble'],
     ['olog hai', 'Olog-hai'],
     ['arch lich', 'arch-lich'],
     ['archlich', 'arch-lich'],
-    ['incubi', 'amorous demon'],
-    ['succubi', 'amorous demon'],
+    ['incubi', 'amorous demon', 0],
+    ['succubi', 'amorous demon', 1],
     ['violet fungi', 'violet fungus'],
     ['homunculi', 'homunculus'],
     ['baluchitheria', 'baluchitherium'],
     ['lurkers above', 'lurker above'],
-    ['cavemen', 'cave dweller'],
-    ['cavewomen', 'cave dweller'],
+    ['cavemen', 'cave dweller', 0],
+    ['cavewomen', 'cave dweller', 1],
     ['watchmen', 'watchman'],
     ['djinn', 'djinni'],
     ['mumakil', 'mumak'],
     ['erinyes', 'erinys'],
-].map(([alias, target]) => [
+];
+const MONSTER_NAME_ALIASES = new Map(MONSTER_NAME_ALIAS_ENTRIES.map(([alias, target, gender = 2]) => [
     alias,
-    typeof target === 'number' ? target : canonicalMonsterNumber(target),
+    { mnum: typeof target === 'number' ? target : canonicalMonsterNumber(target), gender },
 ]));
 function normalizeMonsterName(value) {
     let name = String(value || '').trim().toLowerCase()
@@ -99,11 +100,16 @@ function acceptedNameRemainder(remainder) {
         || /^(?:s|es|'|'s)(?: |$)/.test(remainder);
 }
 function monsterNames(mnum) {
-    return new Set([
-        MONSTER_NAME[mnum],
-        monsterTypeName(mnum, false),
-        monsterTypeName(mnum, true),
-    ].filter((name) => typeof name === 'string' && name.length > 0).map(name => name.toLowerCase()));
+    const neutral = MONSTER_NAME[mnum]?.toLowerCase() ?? '';
+    const male = monsterTypeName(mnum, false).toLowerCase();
+    const female = monsterTypeName(mnum, true).toLowerCase();
+    const names = [
+        { name: neutral, gender: 2 },
+    ];
+    if (male !== female) {
+        names.push({ name: male, gender: 0 }, { name: female, gender: 1 });
+    }
+    return names.filter(candidate => candidate.name.length > 0);
 }
 function roleTitleMonster(name) {
     let best = null;
@@ -127,27 +133,33 @@ function roleTitleMonster(name) {
     return best?.mnum ?? -1;
 }
 export function nameToMonster(value) {
+    return resolveMonsterName(value)?.mnum ?? -1;
+}
+export function resolveMonsterName(value) {
     const requested = normalizeMonsterName(value);
     if (!requested)
-        return -1;
-    for (const [alias, mnum] of MONSTER_NAME_ALIASES) {
+        return null;
+    for (const [alias, match] of MONSTER_NAME_ALIASES) {
         if (requested.startsWith(alias)
             && acceptedNameRemainder(requested.slice(alias.length))) {
-            return mnum;
+            return match;
         }
     }
     let best = null;
     for (let mnum = 0; mnum < MONSTER_NAME.length; mnum++) {
-        for (const name of monsterNames(mnum)) {
+        for (const { name, gender } of monsterNames(mnum)) {
             if (!requested.startsWith(name)
                 || !acceptedNameRemainder(requested.slice(name.length))) {
                 continue;
             }
             if (!best || name.length > best.length)
-                best = { length: name.length, mnum };
+                best = { length: name.length, mnum, gender };
         }
     }
-    return best?.mnum ?? roleTitleMonster(requested);
+    if (best)
+        return { mnum: best.mnum, gender: best.gender };
+    const mnum = roleTitleMonster(requested);
+    return mnum < 0 ? null : { mnum, gender: 2 };
 }
 function singularClassName(value) {
     const name = normalizeMonsterName(value);

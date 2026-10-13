@@ -24,6 +24,8 @@ import { setTinVariety } from './tin.js';
 import { setWallState } from './wall_topology.js';
 import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './monster_location.js';
 import { finishMonsterBirth } from './monster_birth.js';
+import { createParticularMonster } from './read_creation.js';
+import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { nameObjectFromTopten } from './topten.js';
 import { normalDemon } from './minion.js';
 import { randomMonsterRelocation } from './teleport.js';
@@ -118,7 +120,7 @@ import {
     M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE,
     MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
     MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK,
-    MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_EDOG, NO_MINVENT,
+    MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT,
     G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE,
     ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN,
     CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL,
@@ -1854,6 +1856,12 @@ async function makemon(
         hasInventory: false,
     };
     const monsterIndex = level.monsters.push(pendingMonster) - 1;
+    if (mmflags & MM_MINVIS) {
+        setMonsterPermanentInvisibility(pendingMonster);
+        newsym(pendingMonster.mx, pendingMonster.my);
+    }
+    if (mndx === PM_STALKER || mndx === PM_BLACK_LIGHT)
+        setMonsterPermanentInvisibility(pendingMonster);
     const isMimic = MONSTER_SYMBOL[mndx] === S_MIMIC;
     if (isMimic) await setMimicAppearance(pendingMonster);
 
@@ -1864,8 +1872,10 @@ async function makemon(
 
     const shaped = await initialShapechangedBirth(pendingMonster);
     if (shaped) {
-        if (requestedByHero)
+        if (requestedByHero) {
+            newsym(shaped.mx, shaped.my);
             setMonsterApparentHeroPosition(shaped, game, rn2);
+        }
         setMonsterMalign(shaped);
         level.monsters[monsterIndex] = shaped;
         return finishMonsterBirth(shaped, mmflags);
@@ -1874,8 +1884,10 @@ async function makemon(
     // makemon.c owns this initialization when its original requested
     // coordinate was the hero's occupied square.  enexto() has already moved
     // the actor, so preserve that caller fact separately from final x/y.
-    if (requestedByHero)
+    if (requestedByHero) {
+        newsym(pendingMonster.mx, pendingMonster.my);
         setMonsterApparentHeroPosition(pendingMonster, game, rn2);
+    }
 
     if (mndx === PM_LONG_WORM)
         initializeMonsterWormBody(pendingMonster, {
@@ -2651,7 +2663,7 @@ async function makemon(
         && (wieldedArtifact === artifactByName('Excalibur')?.id || wieldedArtifact === artifactByName('Demonbane')?.id);
     const birthPeaceful = bribingPrince ? !baneWielded
         : mndx === PM_RAVEN && game.uwep?.otyp === BEC_DE_CORBIN ? true : peaceful;
-    const birthInvisible = monsterInvisible || bribingPrince;
+    const birthInvisible = monsterInvisible || bribingPrince || !!pendingMonster.perminvis;
     const monster: MonsterBirthState = {
         m_id: monsterId,
         mnum: mndx, cham: pendingMonster.cham ?? -1,
@@ -2709,8 +2721,8 @@ async function makemon(
             (game.context.no_of_wizards || 0) + 1;
     }
     restoreMonsterInventoryOwnership(monster);
-    await initializeMonsterArmor(monster);
     if (allowMonsterInventory) {
+        await initializeMonsterArmor(monster);
         await maybeGiveDomesticSaddle(monster);
         monster.hasInventory = monsterInventory.length > 0;
     }
@@ -2913,7 +2925,15 @@ export async function makemonNear(
 // the hero saw or sensed at least one result.
 export async function createCritters(count: number, mnum: number | null = null): Promise<boolean> {
     let known = false;
+    let ask = !!game.flags.debug;
     while (count-- > 0) {
+        if (ask) {
+            if (await createParticularMonster()) {
+                known = true;
+                continue;
+            }
+            ask = false;
+        }
         if (mnum == null && game.level?.flags?.rndmongen === false) continue;
         let monster = null;
         if (mnum == null && game.u?.uinwater) {
@@ -5440,7 +5460,6 @@ export async function generateMinetown(active: ActiveSpecialLevel): Promise<void
         throw new RangeError(`unknown Minetown layout ${active?.variant}`);
     }
     active.file = `minetn-${active.variant}.lua`;
-    level.flags.is_maze_lev = true;
     level.flags.has_town = true;
     await generateSpecialAndFixup(generateLuaSpecialLevel, active);
     for (const room of level.rooms.slice(0, level.nroom))
@@ -5502,13 +5521,15 @@ async function specialShrinePriest(
         const y = altarY + dy;
         const loc = level.at(x, y);
         if (loc && SPACE_POS(loc.typ)
-            && !level.monsters.some(monster => monsterHasMapPosition(monster, game) && monster.mhp > 0
-                && monster.mx === x && monster.my === y)) {
+            && !(level.objects[x]?.[y] ?? []).some(object => object.otyp === BOULDER)) {
             priestX = x;
             priestY = y;
             break;
         }
     }
+
+    const occupant = monsterAtPosition(level, priestX, priestY);
+    if (occupant) await randomMonsterRelocation(occupant, { flags: RLOC_NOMSG });
 
     const priest = await makemon(
         sanctum ? PM_HIGH_CLERIC : PM_ALIGNED_CLERIC,
@@ -5808,16 +5829,8 @@ function luaSpecialAlignment(value = 'random') {
 
 function specialRoomAt(x: number, y: number, roomType: number): Room | null {
     const level = requireGameLevel();
-    const roomNumber = level.at(x, y)?.roomno ?? 0;
-    const direct = roomNumber >= ROOMOFFSET
-        ? level.rooms?.[roomNumber - ROOMOFFSET] : null;
-    if (direct && isRoom(direct) && direct.rtype === roomType) return direct;
-    return level.rooms
-        ?.slice(0, level.nroom)
-        .filter(isRoom)
-        .find(room => room.rtype === roomType
-            && x >= room.lx && x <= room.hx
-            && y >= room.ly && y <= room.hy) ?? null;
+    const roomNumber = roomsAt(level, x, y, roomType)[0];
+    return roomNumber === undefined ? null : roomForIndex(level, roomNumber - ROOMOFFSET);
 }
 
 function luaCoordinate(options: { coord?: DesOptions['coord']; x?: number | undefined; y?: number | undefined }): Position | null {
@@ -5845,7 +5858,9 @@ async function createLuaAltar(context: SpecialLevelContext, options: DesOptions)
     const altarType = options.type ?? 'altar';
     if (!['altar', 'shrine', 'sanctum'].includes(altarType))
         throw new Error(`unsupported Lua altar type ${altarType}`);
-    const temple = specialRoomAt(point.x, point.y, TEMPLE);
+    const temple = context._room
+        ? context._room.rtype === TEMPLE ? context._room : null
+        : specialRoomAt(point.x, point.y, TEMPLE);
     if (!temple || altarType === 'altar') return;
     const sanctum = altarType === 'sanctum';
     await specialShrinePriest(

@@ -14,6 +14,7 @@ import { releaseObjectLeash } from './monster_leash.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import { objectWeight } from './weight.js';
 import { bookDisappears } from './spellbook_study.js';
+import { rn2 } from './rng.js';
 const FOOD_CLASS = 7;
 async function clearEquipment(object, state) {
     await removeHeroEquipment(object, state);
@@ -101,17 +102,17 @@ export async function deleteObject(object, state = game, { mergeInto = null } = 
 }
 // C invent.c:1428-1433 delobj(): normal object deletion (if unpaid, it
 // remains on the bill).
-export async function delobj(object, state = game) {
-    await delobjCore(object, false, state);
+export async function delobj(object, state = game, random = rn2) {
+    await delobjCore(object, false, state, random);
 }
 // C invent.c:1435-1462 delobj_core().  `force` is the Rider-revival path.
-export async function delobjCore(object, force, state = game) {
+export async function delobjCore(object, force, state = game, random = rn2) {
     requireLiveGame(state);
     /* obj_resists(obj,0,0) protects the Amulet, the invocation tools,
      * and Rider corpses; the ordinary path still consumes its rn2(100)
      * roll at zero probability (objectResistsDestruction does not skip
      * the call), so deletion RNG parity is preserved. */
-    if (!force && objectResistsDestruction(object, 0, 0)) {
+    if (!force && objectResistsDestruction(object, 0, 0, random)) {
         object.in_use = false; /* in case caller has set this */
         return;
     }

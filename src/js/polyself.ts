@@ -27,6 +27,7 @@ import {
 } from './exper.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { reportHeroEncumbrance } from './attrib.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1,
     MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME,
@@ -578,7 +579,6 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
         return { transformed: false };
     }
 
-    const previousCapacity = nearCapacity(game);
     const wasHolding = game.u.ustuck && !game.u.uswallow && heroFormSticks(game);
     const wasBlind = heroIsBlind(game);
     mnum = await beginMonsterForm(mnum, options);
@@ -637,11 +637,9 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
     await escapeTrapsAfterFormChange();
     await restartAmuletStrangulation();
 
-    const currentCapacity = nearCapacity(game);
-    game._encumbranceLevel = currentCapacity;
-    game.u._encumbrance = encumbranceLabel(currentCapacity);
-    const capacityMessage = encumbranceMessage(previousCapacity, currentCapacity);
-    if (capacityMessage) await plineWithContinuation(capacityMessage);
+    // dropz() may already have reported the new body's carrying capacity
+    // while dropping armor. Native encumber_msg() shares that cached level.
+    await reportHeroEncumbrance(game);
 
     const retouch = await retouchEquipment(2);
     if (retouch.died) return { transformed: true, mnum, died: true };

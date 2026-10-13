@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    M_AP_F_DKNOWN, M_AP_FURNITURE, M_AP_MONSTER, MM_ANGRY, MM_NOMSG, MM_NOEXCLAM, NO_MINVENT,
+    M_AP_F_DKNOWN, M_AP_FURNITURE, M_AP_MONSTER, MM_ANGRY, MM_MINVIS, MM_NOMSG, MM_NOEXCLAM, NO_MINVENT,
 } from '../js/const.js';
 import { canSeeMonster, glyphAt, newsym, pline } from '../js/display.js';
 import { makeEngravingAt } from '../js/engrave.js';
@@ -14,7 +14,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { makePlural } from '../js/object_grammar.js';
 import { GOLD_PIECE, POT_HEALING } from '../js/object_data.js';
 import { minimalObjectName } from '../js/objnam.js';
-import { initRng } from '../js/rng.js';
+import { initRng, rn2Display } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
@@ -49,6 +49,39 @@ void test('a sensed invisible birth announces its actual monster', async () => {
     await makemonAt(species('stalker'), 11, 10, NO_MINVENT);
 
     assert.equal(game._pending_message, 'An invisible stalker suddenly appears next to you!');
+});
+
+void test('imposed invisibility redraws a hallucinated birth before its final appearance', async () => {
+    freshObjectRoom({ hero: { seeInvisible: true, hallucinationTurns: 20 } });
+    initRng(17n);
+    // worn.c:mon_set_minvis() displays the monster immediately; makemon()
+    // displays it again at completion. Each redraw picks a hallucinated form.
+    rn2Display(MONSTER_NAME.length);
+    const finalAppearance = rn2Display(MONSTER_NAME.length);
+    initRng(17n);
+
+    const monster = await makemonAt(species('newt'), 11, 10, MM_MINVIS | MM_NOMSG | NO_MINVENT);
+
+    assert.ok(monster);
+    assert.equal(!!monster.minvis, true);
+    const glyph = glyphAt(11, 10);
+    assert.ok(glyph?.kind === 'monster', 'See invisible must retain the hallucinated monster glyph');
+    assert.equal(glyph.mnum, finalAppearance);
+});
+
+void test('a human created without inventory skips hallucinated armor names', async () => {
+    freshObjectRoom({ hero: { hallucinationTurns: 20 }, gameplaySeed: 17n });
+    const finalAppearance = rn2Display(MONSTER_NAME.length);
+    initRng(17n);
+
+    const human = await makemonAt(species('human'), 11, 10, NO_MINVENT | MM_NOMSG);
+
+    assert.ok(human);
+    assert.equal(human.minvent.length, 0);
+    const glyph = glyphAt(11, 10);
+    assert.ok(glyph?.kind === 'monster');
+    assert.equal(glyph.mnum, finalAppearance);
+    assert.equal(game._pending_message || '', '');
 });
 
 void test('an unseen birth does not announce its arrival', async () => {

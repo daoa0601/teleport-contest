@@ -24,6 +24,34 @@ import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { completeHeroStartup } from './support/startup.js';
 
+void test('tutorial entry retains the old armor class until its entry message is acknowledged', async () => {
+    const engine = await runSegment({
+        seed: 719,
+        datetime: '20261012090000',
+        nethackrc: 'OPTIONS=name:Learner,role:Ranger,race:elf,gender:female,align:chaotic,!legacy,!autopickup,pettype:none',
+        moves: '', storage: memoryStorage(),
+    });
+    const startingArmorClass = engine.state.u.uac;
+    assert.ok(startingArmorClass !== undefined && startingArmorClass < 10,
+        'the Ranger must start with protective equipment');
+    let entryFound = false;
+    for (let phase = 0; phase < 8; phase++) {
+        const display = engine.state.nhDisplay;
+        assert.ok(display);
+        const message = display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+        if (message.includes('Entering the tutorial.')) {
+            entryFound = true;
+            break;
+        }
+        engine.inputGate.feed(message.includes('Do you want a tutorial?') ? 'y' : ' ');
+        await engine.runUntilInputNeeded();
+    }
+
+    assert.equal(entryFound, true, 'startup must reach the tutorial entry message');
+    assert.equal(engine.state.inventory.length, 0);
+    assert.equal(engine.state.u.uac, startingArmorClass);
+});
+
 void test('entering the tutorial stores equipment and returning restores the same items', async t => {
     freshObjectRoom();
     requirePlayingGame(game);

@@ -170,7 +170,7 @@ export async function resolveHeroObjectContact(
         }));
         await angerAttackedMonster(monster);
         if (state.program_state.gameover) return { ...contact, done: true, survived: monster.mhp > 0, heroDied: true };
-        if (canBlind) applyMonsterBlindness(monster, rollOne);
+        if (canBlind) applyMonsterBlindness(monster, random(25) + 21);
         await consumeContactObject(object, state, mode !== 'melee');
         contact.getDamageBonus = false;
         contact.specialMessage = true;

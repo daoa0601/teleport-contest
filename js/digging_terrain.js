@@ -49,7 +49,8 @@ import { autopickupAtHero } from './pickup.js';
 import { roomsAt } from './room.js';
 import { d, rn2 } from './rng.js';
 import { surfaceName } from './terrain_name.js';
-import { waterDamageChain, destroyLavaFloorObjects } from './trap.js';
+import { waterDamageChain } from './trap.js';
+import { fireDamageChain } from './fire_damage.js';
 import { cansee } from './vision.js';
 import { CLR_BLUE } from './terminal.js';
 import { isAxe } from './weapon_type.js';
@@ -597,9 +598,9 @@ export async function liquidFlow(x, y, typ, trap, fillMessage, { state = game } 
     const pile = pileAt(x, y, state);
     if (pile.length) {
         if (typ === LAVAPOOL) {
-            await destroyLavaFloorObjects(pile, {
+            await fireDamageChain(pile, {
+                state, x, y, force: true,
                 publish: plineWithContinuation,
-                visible: cansee(x, y),
             });
         }
         else {

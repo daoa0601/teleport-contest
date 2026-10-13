@@ -4,6 +4,7 @@ import { MIGR_RANDOM, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
+import { flush_screen } from '../js/display.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
 import { migrateMonsterOffLevel } from '../js/monster_migration.js';
@@ -14,6 +15,27 @@ import { knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenRow } from './support/screen.js';
+
+void test('a resurrected Wizard announces his threat without repeating his birth announcement', async () => {
+    freshObjectRoom({ moves: 5000 });
+    const messages: string[] = [];
+    const input = resetInputState();
+    input.beforeRead = () => {
+        messages.push(requireScreenRow(0).map(cell => cell.ch).join('').trimEnd());
+        input.feed(' ');
+    };
+
+    const wizard = await resurrectWizard();
+    await flush_screen();
+    messages.push(requireScreenRow(0).map(cell => cell.ch).join('').trimEnd());
+
+    assert.ok(wizard);
+    assert.ok(messages.some(message => message.includes('So thou thought thou couldst kill me, fool.')),
+        `Expected the Wizard's threat; saw ${messages.join(' | ')}`);
+    assert.equal(messages.filter(message => message.includes('suddenly appears next to you')).length, 1,
+        `Expected one visible birth announcement: ${messages.join(' | ')}`);
+});
 
 void test('an environmental Wizard death starts demigod intervention and removes his population count', async () => {
     freshObjectRoom();

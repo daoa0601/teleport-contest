@@ -39,6 +39,7 @@ import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
+import { TER_MON } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
 import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
@@ -79,13 +80,13 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
-import { chooseInventoryObject, compactInventoryLetters, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
+import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
 import { directionAssistPage, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
-import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
+import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
 import { dozap, } from './zap.js';
@@ -149,9 +150,9 @@ import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
-import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, monsterTypeName, } from './monster_data.js';
+import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
-import { nameToMonster } from './mondata.js';
+import { createParticularMonster } from './read_creation.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
 import { removeHeroAccessory, wearHeroAccessory, } from './accessory.js';
 import { heroIsStrangled } from './hero_strangulation.js';
@@ -165,7 +166,7 @@ import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
 import { announceDisplacementLoss, applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor, armorSimpleName, armorOffMessage, findArmorClass, heroIsDisplaced, removeHeroArmor, wearHeroArmor, } from './armor.js';
-import { findMonsterArmorClass, nameMonsterForCreationArmorChecks, } from './monworn.js';
+import { findMonsterArmorClass, } from './monworn.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { aggravateMonsters, angerAttackedMonster, wakeAttackedMonster, } from './monster_anger.js';
@@ -201,7 +202,7 @@ import { finishDestinationSpotEffects, finishTeleportArrival } from './location_
 import { dosacrifice } from './sacrifice.js';
 import { detachHeroGold, heroGoldAmount, heroGoldObject, setHeroGoldAmount } from './hero_gold.js';
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow, } from './gold_throw.js';
-import { heroIsBlind, heroIsHallucinating, } from './senses.js';
+import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating, } from './senses.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import { doquit, finishHeroDeath, vanquishedLines, listGenocided, } from './end.js';
 import { hasRecordedMonsterDeaths } from './monster_vitals.js';
@@ -220,7 +221,6 @@ import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { wieldTool } from './wield_tool.js';
 import { doenhance, useHeroSkill, } from './skills.js';
 import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, objectTypeKnown, payShopDebt, shopkeeperForHero, shopThankYouMessage, tendedShop, } from './shk.js';
-import { visiblePriestName, } from './priest.js';
 import { gameLogEvents } from './gamelog.js';
 import { killerObjectName } from './objnam.js';
 import { GRAVE } from './const.js';
@@ -239,7 +239,7 @@ import { kickWithMonsterForm } from './hero_form_kick.js';
 import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, safeTeleportDestination, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
-import { RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
+import { RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 // object.h enum value; object_data currently exposes the two other tools.
@@ -2539,9 +2539,7 @@ async function dochat() {
             return;
         }
         if (monster?.pet && monster.meating) {
-            await pline(`${monster.name
-                ? monster.name.charAt(0).toUpperCase() + monster.name.slice(1)
-                : `The ${monsterInstanceDisplayName(monster)}`} is eating noisily.`);
+            await pline(`${monsterName(monster, { capitalized: true })} is eating noisily.`);
         }
         else if (monster && await publishMonsterNoise(monster, game)) {
             game.context.move = 1;
@@ -2591,115 +2589,13 @@ async function wizWish() {
 }
 // C refs: cmd.c Ctrl-G/wizgenesis, wizcmds.c wiz_genesis(), and read.c
 // create_particular().  The debug command remains zero-time.
-const WIZGENESIS_SUBSTITUTIONS = new Map([
-    [123, 'human zombie'], // Angel
-    [271, 'human zombie'], // shopkeeper
-    [272, 'human zombie'], // guard
-    [275, 'human zombie'], // aligned cleric
-    [276, 'human zombie'], // high cleric
-    [285, 'doppelganger'], // Wizard of Yendor
-]);
 // C wiz_polyself(): allow a chosen form without consuming a game turn.
 async function wizPolyself() {
     await polymorphHero(POLY_CONTROLLED);
     game.context.move = 0;
 }
 async function wizGenesis() {
-    const value = await getLine('Create what kind of monster?', (_ch, key) => key >= 32 && key < 127);
-    if (value === null) {
-        game.context.move = 0;
-        return;
-    }
-    const description = value.trim().replace(/ +/g, ' ');
-    const explicitQuantity = /^(\d+) */u.exec(description);
-    let quantity = explicitQuantity
-        ? Number.parseInt(explicitQuantity[1] ?? '', 10)
-        : (game.multi > 0 ? 1 + game.multi : 1);
-    const quantityLimit = ROWNO * (COLNO - 1);
-    if (quantity < 1 || quantity > quantityLimit) {
-        const census = requireGameLevel().monsters.filter(monster => monster.mhp > 0 && !(monster.isgd && monster.mx === 0)).length;
-        quantity = quantityLimit - census;
-    }
-    const requestedName = explicitQuantity
-        ? description.slice(explicitQuantity[0].length) : description;
-    // read.c:create_particular_parse() removes state modifiers before lookup.
-    const sleepingPattern = /(^|\s)sleeping\s+/iu;
-    const sleeping = sleepingPattern.test(requestedName);
-    const stateStrippedName = sleeping
-        ? requestedName.replace(sleepingPattern, '$1')
-        : requestedName;
-    const tamePattern = /^\s*tame\s+/iu;
-    const tame = tamePattern.test(stateStrippedName);
-    const dispositionStrippedName = tame
-        ? stateStrippedName.replace(tamePattern, '')
-        : stateStrippedName;
-    const peacefulPattern = /^\s*peaceful\s+/iu;
-    const peaceful = peacefulPattern.test(dispositionStrippedName);
-    const peacefulStrippedName = peaceful
-        ? dispositionStrippedName.replace(peacefulPattern, '')
-        : dispositionStrippedName;
-    const hostilePattern = /^\s*hostile\s+/iu;
-    const hostile = hostilePattern.test(peacefulStrippedName);
-    const monsterName = hostile
-        ? peacefulStrippedName.replace(hostilePattern, '')
-        : peacefulStrippedName;
-    let mnum = nameToMonster(monsterName);
-    if (mnum < 0) {
-        await pline("I've never heard of such monsters.");
-        game.context.move = 0;
-        return;
-    }
-    // read.c:cant_revive() substitutes special-location actors which cannot
-    // be created in an ordinary square.  Wizard create_particular() retains
-    // both types across a modal prompt and only starts makemon() after the
-    // answer.  The affirmative branch forces the requested actor; default/no
-    // constructs the disoriented human-zombie substitute.
-    const substituteName = WIZGENESIS_SUBSTITUTIONS.get(mnum);
-    if (substituteName !== undefined) {
-        const requestedName = MONSTER_NAME[mnum];
-        const force = await promptYesNo(`Creating ${substituteName} instead; force ${requestedName}?`);
-        if (force !== 'y')
-            mnum = nameToMonster(substituteName);
-    }
-    for (let created = 0; created < quantity; created++) {
-        const monster = await makemonNear(mnum, game.u.ux, game.u.uy, MM_NOEXCLAM);
-        if (!monster)
-            break;
-        // Native creation records kill alignment again after forcing attitude.
-        if (tame) {
-            await tameMonster(monster);
-        }
-        else if (peaceful || hostile) {
-            monster.mtame = 0;
-            monster.pet = false;
-            monster.mpeaceful = peaceful ? 1 : 0;
-            setMonsterMalign(monster);
-        }
-        // create_particular_creation() applies requested sleep after makemon
-        // announces the actor.
-        if (sleeping)
-            monster.msleeping = 1;
-        newsym(monster.mx, monster.my);
-        const hallucinating = heroIsHallucinating();
-        if (hallucinating) {
-            nameMonsterForCreationArmorChecks(monster, () => randomDisplayMonsterName());
-        }
-        newsym(monster.mx, monster.my);
-        if (canSpotMonster(monster)) {
-            const clericInstance = monster.ispriest || monster.isminion
-                ? visiblePriestName(monster) : null;
-            const name = MONSTER_NAME[mnum];
-            if (name === undefined)
-                throw new RangeError(`Unknown created monster species ${mnum}`);
-            const subject = clericInstance
-                || (mnum === 285
-                    ? (hallucinating
-                        ? randomDisplayMonsterSubject(true) : `The ${name}`)
-                    : null)
-                || withIndefiniteArticle(name);
-            await pline(`${subject.charAt(0).toUpperCase()}${subject.slice(1)} appears next to you.`);
-        }
-    }
+    await createParticularMonster();
     game.context.move = 0;
 }
 async function wizKill() {
@@ -4178,6 +4074,8 @@ async function doextcmd() {
                 continue;
             }
             game._pending_message = '';
+            game._retained_message = '';
+            game.nhDisplay?.clearRow(0);
             game.context.move = 0;
             return;
         }
@@ -4235,7 +4133,26 @@ async function wizardPositionDescription(x, y) {
             || `${race} ${(roleName || 'adventurer').toLowerCase()}`;
         const punishment = heroIsPunished()
             ? ', chained to a heavy iron ball' : '';
-        return `${form} called ${game.plname || 'player'}${punishment}`;
+        const blind = heroIsBlind(game);
+        const telepathy = unblindTelepathyRange() >= 0;
+        const detection = heroDetectsMonsters(game);
+        const invisible = propertyIsActive('invisible', game);
+        // self_lookat() includes invisibility while blind only when sensed.
+        const prefix = invisible && (!blind || telepathy || detection)
+            ? 'invisible ' : '';
+        const description = `${prefix}${form} called ${game.plname || 'player'}${punishment}`;
+        const unseen = invisible && !game.u.seeInvisible
+            && (game.u.seeInvisibleTurns ?? 0) === 0;
+        // lookat() treats touch while blind or swallowed as normal vision.
+        if (blind || game.u.uswallow || !(unseen || game.u.uundetected))
+            return description;
+        const senses = [
+            game.u.infravision ? 'infravision' : '',
+            telepathy ? 'telepathy' : '',
+            detection ? 'monster detection' : '',
+        ].filter(sense => sense.length > 0);
+        return senses.length > 0
+            ? `${description} [seen: ${senses.join(', ')}]` : description;
     }
     const loc = game.level?.at(x, y);
     if (!loc)
@@ -4378,7 +4295,15 @@ async function travelPositionDescription(x, y) {
     const valid = !unexploredProjection && isValidTravelTarget(x, y);
     return valid ? description : `${description} (no travel path)`;
 }
+// C pager.c:lookat() gives the sensed hero priority over the map glyph.
+// Terrain-only inspection deliberately omits that self description.
+function farlookDescribesHero(x, y) {
+    return x === game.u.ux && y === game.u.uy && canSpotHeroSelf()
+        && (!game.iflags.terrainmode || !!(game.iflags.terrainmode & TER_MON));
+}
 export async function farlookLocationDescription(x, y) {
+    if (farlookDescribesHero(x, y))
+        return wizardPositionDescription(x, y);
     const glyph = glyphAt(x, y);
     if (glyph?.kind === 'warning') {
         const index = glyph.glyph === undefined ? -1 : glyph.glyph - GlyphOffset.warning;
@@ -4497,6 +4422,24 @@ async function dojump() {
     game.context.move = result.spentTime ? 1 : 0;
 }
 async function verboseFarlookDescription(x, y) {
+    const glyph = glyphAt(x, y);
+    if (farlookDescribesHero(x, y) && glyph?.kind === 'monster'
+        && glyph.mnum !== undefined) {
+        // C do_screen_description() classifies the displayed glyph. With
+        // showrace, that can differ from the role named by self_lookat().
+        const species = glyph.mnum;
+        const symbol = monsterClassSymbol(species);
+        const explanation = MONSTER_CLASS_EXPLAIN[MONSTER_SYMBOL[species] ?? 0];
+        if (!explanation)
+            throw new Error(`Displayed species ${species} has no monster class description`);
+        const includesHero = symbol === '@' && !heroIsPolymorphed(game) && game.urace
+            && game.urace.name !== 'human' && game.urace.name !== 'elf';
+        // A blank also denotes stone, air, darkness, and unexplored squares.
+        // C collapses more than four meanings before appending self_lookat().
+        const classDescription = symbol === ' ' ? 'can be many things'
+            : withIndefiniteArticle(explanation) + (includesHero ? ' or you' : '');
+        return `${symbol}\x1b[8C${classDescription} (${await farlookLocationDescription(x, y)})`;
+    }
     const loc = game.level?.at(x, y);
     if (loc?.typ === CORR)
         return `#\x1b[8Ccan be many things (corridor)`;
@@ -6247,11 +6190,15 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     const launcher = game.uwep;
     const wieldingSling = !!launcher
         && OBJECT_SUBTYPE[launcher.otyp] === OBJECT_SUBTYPE[SLING];
-    const throwables = (game.inventory || []).filter(item => (item.oclass || objectClassForType(item.otyp))
-        === (wieldingSling ? 13 : 2)
-        && !(item === game.uwep && (item.quantity ?? item.quan ?? 1) === 1));
-    const inventoryLetters = throwables.map(item => item.invlet).join('');
-    const letters = `${heroGoldAmount(game) > 0 ? '$' : ''}${inventoryLetters}`;
+    if (!selectedItem && game.flags.fixinv === false)
+        reassignInventoryLetters();
+    // C getobj() sorts its candidates independently of the carried chain.
+    const throwables = (game.inventory || []).filter(item => {
+        const objectClass = item.oclass || objectClassForType(item.otyp);
+        return (objectClass === 12 || objectClass === (wieldingSling ? 13 : 2))
+            && !(item === game.uwep && (item.quantity ?? item.quan ?? 1) === 1);
+    }).sort((left, right) => inventoryLetterOrder(left.invlet) - inventoryLetterOrder(right.invlet));
+    const letters = throwables.map(item => item.invlet).join('');
     const prompt = letters
         ? `What do you want to throw? [${letters} or ?*] `
         : 'What do you want to throw? [*] ';

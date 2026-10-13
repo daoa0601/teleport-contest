@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ALTAR, FOUNTAIN, SINK } from '../js/const.js';
+import { ALTAR, FOUNTAIN, SINK, TEMPLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { generateMinetown } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, TALLOW_CANDLE, WAX_CANDLE, } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
+import { roomForRoomno } from '../js/room.js';
 import { countTerrain, floorObjects, levelStairs, } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 async function buildMinetown(variant) {
@@ -18,6 +19,30 @@ async function buildMinetown(variant) {
     game.urole = role;
     await generateMinetown(active);
 }
+for (const variant of [2, 3, 4, 7]) {
+    void test(`Minetown layout ${variant} assigns a priest to its temple subroom`, async () => {
+        await buildMinetown(variant);
+        requirePlayingGame(game);
+        const priests = game.level.monsters.filter(monster => monster.ispriest);
+        assert.equal(priests.length, 1, 'the shrine must have one resident priest');
+        const priest = priests[0];
+        assert.ok(priest?.epri);
+        const shrine = priest.epri.shrpos;
+        assert.equal(game.level.requireAt(shrine.x, shrine.y).typ, ALTAR);
+        assert.equal(roomForRoomno(game.level, priest.epri.shroom)?.rtype, TEMPLE);
+        assert.equal(priest.mpeaceful, 1);
+    });
+}
+void test('College Town retains ordinary room placement rules', async () => {
+    await buildMinetown(4);
+    requirePlayingGame(game);
+    assert.equal(game.level.flags.is_maze_lev, false);
+});
+void test('Grotto Town uses the maze placement rules declared by its Lua level', async () => {
+    await buildMinetown(5);
+    requirePlayingGame(game);
+    assert.equal(game.level.flags.is_maze_lev, true);
+});
 function liveMonsterCount(name) {
     requirePlayingGame(game);
     const type = MONSTER_NAME.indexOf(name);
