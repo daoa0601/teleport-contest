@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { OBJECT_NAMES, POT_CONFUSION, POT_BOOZE, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_ENERGY, POT_HEALING, POT_SICKNESS, POT_SPEED, POT_WATER, UNICORN_HORN } from '../js/object_data.js';
+import { inventoryItemDescription } from '../js/invent.js';
+import { OBJECT_NAMES, POT_CONFUSION, POT_BOOZE, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_ENERGY, POT_HEALING, POT_SEE_INVISIBLE, POT_SICKNESS, POT_SPEED, POT_WATER, UNICORN_HORN } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -55,6 +56,26 @@ void test('a cursed dipped potion explodes, hurts the hero and destroys both ing
     assert.equal(game.inventory.includes(source), false);
     assert.ok(game.u.uhp < 40);
     assert.match(game._pending_message, /They explode/);
+});
+void test('an exploding unknown see-invisible potion can be called before it is destroyed', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const dipped = await addInventoryObject(POT_SEE_INVISIBLE, {
+        cursed: true, known: false, typeKnown: false,
+    });
+    const source = await addInventoryObject(POT_SPEED);
+    const sibling = await addInventoryObject(POT_SEE_INVISIBLE, {
+        blessed: true, known: false, typeKnown: false,
+    });
+    resetInputState();
+    await runExtendedCommand('dip', dipped.invlet + source.invlet + ' '.repeat(20) + 'veil\n');
+    assert.equal(game.inventory.includes(dipped), false);
+    assert.equal(game.inventory.includes(source), false);
+    assert.ok(game.u.uhp < 40);
+    assert.equal(game._objectCallNames?.[POT_SEE_INVISIBLE], 'veil');
+    assert.match(inventoryItemDescription(sibling), /potion called veil/);
+    assert.equal(game._knownObjectTypes?.has(POT_SEE_INVISIBLE) ?? false, false);
+    assert.equal(game.context.move, 1);
 });
 void test('a unicorn horn clears one sickness bottle without consuming the horn or the other bottles', async () => {
     freshObjectRoom();

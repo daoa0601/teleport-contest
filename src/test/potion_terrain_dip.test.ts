@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { POOL, SINK } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { CORPSE, POT_ACID, POT_WATER, SCR_BLANK_PAPER, SCR_IDENTIFY, TOWEL } from '../js/object_data.js';
+import { CORPSE, POT_ACID, POT_SEE_INVISIBLE, POT_WATER, SCR_BLANK_PAPER, SCR_IDENTIFY, TOWEL } from '../js/object_data.js';
+import { inventoryItemDescription } from '../js/invent.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
@@ -71,6 +72,25 @@ void test('dipping acid into a sink pours away one bottle', async () => {
     assert.equal(acid.quan, 1);
     assert.equal(game.context.move, 1);
     assert.match(game._pending_message, /drain seems less clogged/);
+});
+
+void test('sink vapors offer a call name for an unknown see-invisible potion', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.level.requireAt(game.u.ux, game.u.uy).typ = SINK;
+    const potion = await addInventoryObject(POT_SEE_INVISIBLE, {
+        quan: 2, known: false, typeKnown: false,
+    });
+    resetInputState();
+    initRng(123n);
+
+    await runExtendedCommand('dip', potion.invlet + 'y' + ' '.repeat(20) + 'veil\n');
+
+    assert.equal(potion.quan, 1);
+    assert.equal(game._objectCallNames?.[POT_SEE_INVISIBLE], 'veil');
+    assert.match(inventoryItemDescription(potion), /potion called veil/);
+    assert.equal(game._knownObjectTypes?.has(POT_SEE_INVISIBLE) ?? false, false);
+    assert.equal(game.context.move, 1);
 });
 
 for (const quantity of [1, 2]) {

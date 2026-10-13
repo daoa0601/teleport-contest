@@ -49,9 +49,7 @@ export async function hitHeroWithThrownPotion(potion: GameObject, {
     }
     if (!heroDied) {
         if (heroPotionVaporProfile(state).canReceive) {
-            const vapor = await applySupportedPotionVapor({ state, potion, publish });
-            // Potions without a vapor effect still reach native docall().
-            if (!vapor) await tryCallObjectType(potion, state);
+            await applySupportedPotionVapor({ state, potion, publish });
         } else if (potion.dknown && cansee(state.u.ux, state.u.uy)) {
             await tryCallObjectType(potion, state);
         }

@@ -350,6 +350,7 @@ function cursedVaporEyeMessage(state) {
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Its final knowledge transaction either identifies an unambiguous effect or
 // asks for a type-wide call name before the caller frees the potion identity.
+// Potions without a vapor effect still reach that naming opportunity.
 export async function applySupportedPotionVapor(options) {
     const potion = options.potion;
     const inUse = potion.in_use;
@@ -364,14 +365,12 @@ export async function applySupportedPotionVapor(options) {
         else
             potion.in_use = inUse;
     }
-    if (!effect?.received)
+    if (!effect.received)
         return effect;
     const typeCall = await finishPotionVaporKnowledge(options.state ?? game, potion, effect.identifiesType ?? false);
     return { ...effect, typeCall };
 }
 async function applyPotionVaporEffect({ state = game, potion, publish = plineWithContinuation, monsterCanSeeHero = null, }) {
-    if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp))
-        return null;
     requirePlayingGame(state);
     const profile = heroPotionVaporProfile(state);
     if (!profile.canReceive)
@@ -984,7 +983,7 @@ export async function hitMonsterWithSupportedPotion({ state = game, monster, pot
             vaporEffect = await applySupportedPotionVapor({
                 state, potion, publish,
             });
-            breathedVapor = vaporEffect?.received !== false;
+            breathedVapor = vaporEffect.received;
         }
     }
     let typeCall = vaporEffect?.typeCall || null;
