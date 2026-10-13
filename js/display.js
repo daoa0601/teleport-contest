@@ -339,6 +339,54 @@ function showRememberedLocation(x, y, loc) {
     loc.remembered_glyph = glyph;
     show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, objectGlyphAttr(glyph), glyph);
 }
+// C display.c:reglyph_darkroom(). Option changes convert stored floor glyphs
+// before docrt() displays memory; ordinary redraws must leave memory alone.
+export function reglyph_darkroom() {
+    if (!game.level)
+        return;
+    const darkRoom = game.flags.dark_room ?? true;
+    const showDarkFloor = darkRoom && game.flags.color !== false
+        && !Is_rogue_level(game.u.uz);
+    const dec = /^DECgraphics$/i.test(game.symset || '') && !Is_rogue_level(game.u.uz);
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const loc = game.level.at(x, y);
+            const memory = loc?.remembered_glyph;
+            if (!loc || !memory)
+                continue;
+            if (!darkRoom && loc.waslit && memory.glyph === cmapToGlyph(CmapSymbol.corr)) {
+                loc.remembered_glyph = { ...memory, color: CLR_WHITE,
+                    glyph: cmapToGlyph(CmapSymbol.litcorr),
+                    kind: 'terrain', terrainName: 'lit corridor' };
+            }
+            else if (darkRoom && !cansee(x, y)
+                && memory.glyph === cmapToGlyph(CmapSymbol.litcorr)) {
+                loc.remembered_glyph = { ...memory, color: NO_COLOR,
+                    glyph: cmapToGlyph(CmapSymbol.corr),
+                    kind: 'terrain', terrainName: 'corridor' };
+            }
+            if (!showDarkFloor) {
+                if (memory.glyph === cmapToGlyph(CmapSymbol.darkroom)) {
+                    loc.remembered_glyph = loc.waslit ? roomMemoryGlyph(false, dec)
+                        : { ch: ' ', color: NO_COLOR, decgfx: false,
+                            kind: 'nothing', glyph: GlyphOffset.nothing };
+                }
+            }
+            else if (loc.seenv && !cansee(x, y)
+                && (memory.glyph === cmapToGlyph(CmapSymbol.room) && loc.waslit
+                    || memory.glyph === GlyphOffset.nothing && loc.typ === ROOM)) {
+                loc.remembered_glyph = roomMemoryGlyph(true, dec);
+            }
+        }
+    }
+}
+function roomMemoryGlyph(dark, dec) {
+    return {
+        ch: dec ? '~' : '.', color: dark ? 16 : NO_COLOR, decgfx: dec,
+        kind: 'terrain', terrainName: dark ? 'dark part of a room' : 'floor of a room',
+        glyph: cmapToGlyph(dark ? CmapSymbol.darkroom : CmapSymbol.room),
+    };
+}
 function stairGlyphIndex(loc, x, y) {
     // C display.c:back_to_cmap(). Direction belongs to the terrain cell;
     // the traversed stairway determines whether its branch is known.
