@@ -51,6 +51,7 @@ import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
+import { TER_MON } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
 import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
@@ -117,7 +118,7 @@ import {
 } from './object_call.js';
 import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
-    bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster,
+    bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
     monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
     see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject,
@@ -257,7 +258,8 @@ import {
 } from './terminal.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, monsterTypeName,
+    MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN,
+    requireMonsterData, monsterTypeName, monsterClassSymbol,
 } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
 import { nameToMonster } from './mondata.js';
@@ -4673,7 +4675,15 @@ async function travelPositionDescription(x: number, y: number): Promise<string> 
     return valid ? description : `${description} (no travel path)`;
 }
 
+// C pager.c:lookat() gives the sensed hero priority over the map glyph.
+// Terrain-only inspection deliberately omits that self description.
+function farlookDescribesHero(x: number, y: number): boolean {
+    return x === game.u.ux && y === game.u.uy && canSpotHeroSelf()
+        && (!game.iflags.terrainmode || !!(game.iflags.terrainmode & TER_MON));
+}
+
 export async function farlookLocationDescription(x: number, y: number): Promise<string> {
+    if (farlookDescribesHero(x, y)) return wizardPositionDescription(x, y);
     const glyph = glyphAt(x, y);
     if (glyph?.kind === 'warning') {
         const index = glyph.glyph === undefined ? -1 : glyph.glyph - GlyphOffset.warning;
@@ -4781,6 +4791,13 @@ async function dojump(): Promise<void> {
 }
 
 async function verboseFarlookDescription(x: number, y: number): Promise<string> {
+    if (farlookDescribesHero(x, y)) {
+        const species = heroSpecies(game);
+        const symbol = monsterClassSymbol(species);
+        const explanation = MONSTER_CLASS_EXPLAIN[MONSTER_SYMBOL[species] ?? 0];
+        if (!explanation) throw new Error(`Hero species ${species} has no monster class description`);
+        return `${symbol}\x1b[8C${withIndefiniteArticle(explanation)} (${await farlookLocationDescription(x, y)})`;
+    }
     const loc = game.level?.at(x, y);
     if (loc?.typ === CORR)
         return `#\x1b[8Ccan be many things (corridor)`;

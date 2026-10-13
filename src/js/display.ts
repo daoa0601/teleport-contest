@@ -1033,7 +1033,7 @@ const decWallColors = new Map<GlyphOffset, number>([
 // C display.h:canspotself().  See-invisible does not make the hero's own
 // glyph opaque again; ordinary self projection depends on not being
 // invisible, while telepathy/detection can supply a sensory projection.
-function canSpotHeroSelf() {
+export function canSpotHeroSelf() {
     const invisible = !!(
         game.u?.invisible || game.u?.invis || game.invisible
     );
