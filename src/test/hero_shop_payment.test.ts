@@ -7,6 +7,31 @@ import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { GOLD_PIECE, SACK } from '../js/object_data.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
+
+for (const goldLocation of ['none', 'purse', 'sack'] as const) {
+    void test(`paying an empty resident bill reports gold kept in ${goldLocation}`, async () => {
+        freshObjectRoom();
+        const { shopkeeper } = await createStaffedShop();
+        shopkeeper.eshk.shknam = 'Ada';
+        setHeroGoldAmount(game, goldLocation === 'purse' ? 37 : 0);
+        if (goldLocation === 'sack') {
+            const sack = await addInventoryObject(SACK);
+            await addCreatedObjectToContainer(sack, await knownObject(GOLD_PIECE, { quan: 37 }));
+        }
+
+        await rhack('p'.charCodeAt(0));
+
+        assert.match(game._pending_message, /You do not owe Ada anything\./);
+        if (goldLocation === 'purse') assert.doesNotMatch(game._pending_message, /no gold/);
+        else assert.match(game._pending_message, goldLocation === 'sack'
+            ? /Moreover, you seem to have no gold\./ : /Moreover, you have no gold\./);
+        assert.equal(game.context.move, 0);
+        assert.equal(heroGoldAmount(game), goldLocation === 'purse' ? 37 : 0);
+    });
+}
 
 void test('counted walking into a peaceful shopkeeper pays the merchandise usage debt', async () => {
     freshObjectRoom();
