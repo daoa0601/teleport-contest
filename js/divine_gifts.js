@@ -2,7 +2,7 @@
 import { recordAchievement } from './achievements.js';
 import { deityName } from './alignment.js';
 import { findArmorClass } from './armor.js';
-import { artifactById, artifactByName, discoverArtifact, findArtifact, nameArtifact, } from './artifacts.js';
+import { artifactById, artifactByName, discoverArtifact, nameArtifact, } from './artifacts.js';
 import { heroFootName, monsterStomachName } from './body_parts.js';
 import { ACH_TUNE, A_STR, P_BROAD_SWORD, P_LONG_SWORD, Upolyd } from './const.js';
 import { displayColorName, newsym, plineWithContinuation as pline, see_monsters } from './display.js';
@@ -334,9 +334,6 @@ async function crownHero() {
         const blackSword = hero.ualign.type < 0 ? `${displayColorName('black')} sword` : null;
         if (!classGift && object && held) {
             if (hero.ualign.type === 0) {
-                if (!heroIsBlind(game))
-                    observeObject(object);
-                findArtifact(object);
                 await pline(`Your ${objectName(object)} goes snicker-snack!`);
             }
             else {

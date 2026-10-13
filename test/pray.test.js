@@ -7,13 +7,13 @@ import { A_NONE, ALTAR, Align2amask, LAVAPOOL, PARANOID_PRAY, ROOM, STONE, TT_LA
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
-import { artifactById, initializeArtifacts } from '../js/artifacts.js';
+import { artifactById, artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
 import { grantPrayerFavor } from '../js/divine_gifts.js';
 import { magicNegation } from '../js/magic_negation.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKey, resetInputState } from '../js/input.js';
-import { AMULET_OF_LIFE_SAVING, BLINDFOLD, BOULDER, CORPSE, DAGGER, FIGURINE, GAUNTLETS_OF_FUMBLING, LEATHER_GLOVES, LOADSTONE, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, BLINDFOLD, BOULDER, CORPSE, DAGGER, FIGURINE, GAUNTLETS_OF_FUMBLING, LEATHER_GLOVES, LOADSTONE, LONG_SWORD, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
@@ -34,6 +34,7 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { syncBlindness } from '../js/senses.js';
+import { gameLogEvents } from '../js/gamelog.js';
 function prayerRoom({ hero = {}, flags = {}, ...room } = {}) {
     freshObjectRoom({
         ...room,
@@ -267,6 +268,23 @@ void test('#pray does not reveal a blindfold\'s curse when another intrinsic als
     await resolvePrayer();
     assert.equal(blindfold.cursed, false);
     assert.equal(blindfold.bknown, false);
+});
+void test('#pray crowning enhances a carried Vorpal Blade without recording a new acquisition', async () => {
+    prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
+    requirePlayingGame(game);
+    initializeArtifacts();
+    const vorpal = artifactByName('Vorpal Blade');
+    assert.ok(vorpal);
+    const sword = await addInventoryObject(LONG_SWORD);
+    assert.equal(nameArtifact(sword, vorpal), true);
+    await setPrimaryWeapon(sword);
+    await addInventoryObject(LUCKSTONE);
+    initRng(2n);
+    await resolvePrayer();
+    assert.equal(game.u.uevent?.uhand_of_elbereth, 2);
+    assert.equal(sword.blessed, true);
+    assert.equal(sword.oerodeproof, true);
+    assert.ok(!gameLogEvents().some(event => event.text.startsWith('found Vorpal Blade')));
 });
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {
     prayerRoom();
