@@ -79,13 +79,14 @@ for (const blind of [false, true]) {
         assert.notEqual(game.uleft, ring);
     });
 }
-void test('a leap-day demand reveals a blind hero\'s carried gloves', async () => {
-    const level = freshObjectRoom({ flags: { female: false }, hero: { blindTurns: 20 } });
+void test('a leap-day demand reveals a blind priest\'s carried gloves and their curse', async () => {
+    const level = freshObjectRoom({ role: 'priest', flags: { female: false }, hero: { blindTurns: 20 } });
     requirePlayingGame(game);
     level.flags.noteleport = true;
     game.datetime = '20000229120000';
     const gloves = await addInventoryObject(GAUNTLETS_OF_POWER, {
-        observed: false, dknown: false, typeKnown: false, oextra: { oname: 'winter mittens' },
+        observed: false, dknown: false, bknown: false, cursed: true,
+        typeKnown: false, oextra: { oname: 'winter mittens' },
     });
     const suit = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(suit);
@@ -100,6 +101,7 @@ void test('a leap-day demand reveals a blind hero\'s carried gloves', async () =
         { prompt: /Shall I remove your suit, lover/, keys: 'n' },
     ]);
     assert.equal(gloves.dknown, true);
+    assert.equal(gloves.bknown, true);
     assert.ok(game._encounteredObjectTypes?.has(GAUNTLETS_OF_POWER));
     assert.match(messages.join('\n'), /named winter mittens and eleven more pairs of gloves/);
 });

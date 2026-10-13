@@ -81,7 +81,10 @@ export async function resolveHeroSeduction(
                 const gloves = state.uarmg
                     ?? state.inventory.find(object => armorSlotFor(object.otyp) === 'uarmg');
                 // The succubus reveals the gloves even when the hero is blind.
-                if (gloves) observeObject(gloves, state);
+                if (gloves) {
+                    observeObject(gloves, state);
+                    observeObjectForNaming(gloves, { state });
+                }
                 await publish(`"Well, then you owe me ${gloves
                     ? `${ownedObjectName(gloves, state, { capitalized: false })} and eleven more pairs of gloves`
                     : 'twelve pairs of gloves'}!"`);
