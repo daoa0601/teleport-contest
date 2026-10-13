@@ -33,6 +33,7 @@ import { senseBuriedObjects } from './buried_object.js';
 import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
+import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
@@ -6801,6 +6802,22 @@ async function domoveCore(dx, dy, explicitAttempt) {
         // step after the intervening monster phase.
         if (!safeMonster && game._runState)
             stopRun(game);
+        if (beastChoosesHeroDisplacement(monster, game, newx, newy)) {
+            const ballChainMove = await beginBallAndChainMove(newx, newy);
+            if (ballChainMove?.blocked) {
+                if (ballChainMove.blockedMessage)
+                    await pline(ballChainMove.blockedMessage);
+                game.context.move = Number(ballChainMove.consumedTurn);
+                return ballChainMove.consumedTurn;
+            }
+            const oldx = u.ux, oldy = u.uy;
+            u.ux = newx;
+            u.uy = newy;
+            await settleBeastHeroDisplacement(monster, game);
+            if (game.program_state.gameover)
+                return true;
+            return finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove });
+        }
         if (safeMonster && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
             // C ref: hack.c do_attack()/domove(): a tame monster normally
             // yields to the hero, and ordinary peacefuls share the same
