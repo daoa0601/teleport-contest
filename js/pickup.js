@@ -7,6 +7,7 @@ import { floorObjectDescription, readFloorEngraving, showFloorPile, } from './fl
 import { tryCallObjectType } from './object_call.js';
 import { newsym, flush_screen, pline, plineWithContinuation, map_object, } from './display.js';
 import { dungeonFeatureSentenceAt } from './dungeon_feature.js';
+import { surfaceName } from './terrain_name.js';
 import { showMultiSelectWindow } from './windows.js';
 import { addInventoryItem } from './u_init.js';
 import { recordHeroPrizeAcquisition } from './hero_inventory.js';
@@ -368,7 +369,7 @@ async function checkHere(source, pickedSome) {
         const first = source.objects[0];
         if (first)
             map_object(first, false, false);
-        await plineWithContinuation('You try to feel what is lying here on the floor.');
+        await plineWithContinuation(`You try to feel what is lying here on the ${surfaceName(x, y)}.`);
     }
     return await showFloorPile(source.objects, pickedSome, feature, { automatic: true });
 }
