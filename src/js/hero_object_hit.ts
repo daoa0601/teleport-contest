@@ -52,7 +52,11 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
     deathCause,
 }: HeroObjectHitOptions = {}): Promise<HeroObjectHitResult> {
     requirePlayingGame(state);
-    const name = requestedName ?? objectCombatName(object, { state });
+    // C thitu() uses mshot_xname(), not cxname(), for a single corpse.
+    const quantity = object.quan ?? object.quantity ?? 1;
+    const name = requestedName ?? objectCombatName(object, {
+        state, includeCorpseSpecies: quantity > 1,
+    });
     const killer = requestedKiller ?? killerObjectName(object, state);
     if (typeof name !== 'string' || typeof killer !== 'string')
         throw new Error(`Unknown object type ${object.otyp} hit the hero.`);

@@ -7,14 +7,16 @@ import { gotoLevel } from '../js/level_change.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { hitHeroWithObject } from '../js/hero_object_hit.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
-import { pushKeys } from '../js/input.js';
-import { BAG_OF_HOLDING, BOULDER, CLUB } from '../js/object_data.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { BAG_OF_HOLDING, BOULDER, CLUB, CORPSE } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { dosit } from '../js/sit.js';
-import { addInventoryObject, floorObject } from './support/game-objects.js';
+import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { carriedGold, readyGold } from './support/gold-arena.js';
 import { addTrap } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -89,6 +91,14 @@ for (const [count, cause] of [[1, 'a club'], [3, 'clubs']]) {
         }), `killed by ${cause}`);
     });
 }
+void test('a fatal single corpse hit uses a generic hit name and a species-specific killer', async () => {
+    lowHitPointRoom();
+    const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('newt') });
+    const messages = [];
+    resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+    await dieWith(() => hitHeroWithObject(corpse, 1, 8, { rollOne: () => 1 }), 'killed by a newt corpse');
+    assert.ok(messages.includes('You are hit by a corpse.'), `The hit should say a corpse; received: ${messages.join(' | ')}`);
+});
 void test('putting a bag of holding into another can kill with the explosion', async () => {
     lowHitPointRoom();
     for (const invlet of ['a', 'b']) {

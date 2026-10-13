@@ -22,7 +22,11 @@ const M1_WALLWALK = 0x00000008;
 const M1_UNSOLID = 0x00100000;
 export async function hitHeroWithObject(object, damage, accuracy, { state = game, publish = plineWithContinuation, rollOne = rnd, die = finishHeroDeath, name: requestedName, killer: requestedKiller, deathCause, } = {}) {
     requirePlayingGame(state);
-    const name = requestedName ?? objectCombatName(object, { state });
+    // C thitu() uses mshot_xname(), not cxname(), for a single corpse.
+    const quantity = object.quan ?? object.quantity ?? 1;
+    const name = requestedName ?? objectCombatName(object, {
+        state, includeCorpseSpecies: quantity > 1,
+    });
     const killer = requestedKiller ?? killerObjectName(object, state);
     if (typeof name !== 'string' || typeof killer !== 'string')
         throw new Error(`Unknown object type ${object.otyp} hit the hero.`);
