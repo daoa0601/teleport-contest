@@ -1,3 +1,6 @@
+import type { DipTarget } from './dip_water.js';
+import { washHands } from './dip_water.js';
+import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { monsterHiddenConditions } from './monster_status.js';
 import { visibleRegionAt } from './regions.js';
@@ -4005,44 +4008,24 @@ async function doturn() {
     await turnUndeadByCallingOnDeity(game);
 }
 
-// C refs: trap.c water_damage()/erode_obj().  Fountain dipping forces the
-// water check, so the ordinary luck-based shield is bypassed; the erosion
-// result then controls dipfountain()'s separate one-in-two early-return gate.
-async function waterDamageCarriedObject(object: GameObject) {
-    const kind = objectErosionKind(object);
-    if (!kind || kind.action !== 'rust') return ER_NOTHING;
-
-    const proof = !!object.oerodeproof;
-    if (proof) {
-        object.rknown = true;
-        return ER_NOTHING;
-    }
-    if (object.blessed && rnl(4) === 0) return ER_NOTHING;
-    if ((object.oeroded || 0) >= 3) return ER_NOTHING;
-
-    const message = objectErosionMessage(object, kind);
-    await pline(message);
-    object.oeroded = (object.oeroded || 0) + 1;
-    if (object.worn) findArmorClass(game);
-    return ER_DAMAGED;
-}
-
-async function dipFountain(object: GameObject, loc: MapLocation) {
-    const result = await waterDamageCarriedObject(object);
-    if (result !== ER_NOTHING && rn2(2) === 0) {
+async function dipFountain(object: DipTarget, loc: MapLocation) {
+    const result = object === 'hands' || object === game.uarmg ? await washHands()
+        : await waterDamageObject(object, [], game, { force: true, publish: plineWithContinuation });
+    if (result === 'destroyed' || result !== 'nothing' && rn2(2) === 0) {
         return;
     }
 
     const fate = rnd(30);
     let eventMessage = '';
-    const wasCursed = object.cursed;
-    const bucEffect = resolveDippedBucFate({
+    const wasCursed = object !== 'hands' && object.cursed;
+    const bucEffect = object === 'hands' ? { handled: fate >= 16 && fate <= 20,
+        message: fate >= 17 && fate <= 20 ? 'A feeling of loss comes over you.' : '' } : resolveDippedBucFate({
         fate,
         object,
         blind: !!game.blind,
         liquidName: () => displayLiquidName('water'),
     });
-    if (!wasCursed && object.cursed) {
+    if (object !== 'hands' && !wasCursed && object.cursed) {
         await dropCursedSecondaryWeapon(object);
         if (game.program_state.gameover) return;
         await bookCursed(object);
@@ -4104,7 +4087,7 @@ async function dipFountain(object: GameObject, loc: MapLocation) {
 
         await dryFountainAt(game.u.ux, game.u.uy);
         return;
-    } else if ((fate < 16 || fate === 30) && result === ER_NOTHING) {
+    } else if ((fate < 16 || fate === 30) && result === 'nothing') {
         eventMessage = 'Nothing seems to happen.';
     }
     if (eventMessage) await plineWithContinuation(eventMessage);

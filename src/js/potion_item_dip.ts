@@ -7,7 +7,6 @@ import { displayColorName, plineWithContinuation as pline } from './display.js';
 import { explode } from './explosion.js';
 import { fireDamageObject } from './fire_damage.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { useUpInventoryStack } from './hero_inventory.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { tryCallObjectType } from './object_call.js';
@@ -23,7 +22,7 @@ import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { objectName, objectNameIsPlural, ownedObjectAction, ownedObjectName } from './objnam.js';
 import { setPropertyTimeout } from './properties.js';
 import { d } from './rng.js';
-import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { blindfolded, heroIsBlind, heroIsBlinded, heroIsHallucinating } from './senses.js';
 import { chargeAlteredUnpaidObject, chargeUnpaidUsage, updateUnpaidObjectPrice } from './shk.js';
 import { waterDamageObject } from './trap.js';
 import { mixPotions, neutralizePotion } from './potion_mixing.js';
@@ -105,19 +104,15 @@ async function dipInWater(object: GameObject, potion: GameObject): Promise<boole
     else if (potion.cursed && object.blessed) { action = 'unbless'; color = 'brown'; }
     else if (potion.cursed && !object.cursed) { action = 'curse'; color = 'black'; }
     if (!potion.blessed && !potion.cursed) {
-        const messages: string[] = [];
-        const result = await waterDamageObject(object, messages, game, { force: true });
-        for (const message of messages) await pline(message);
-        if (result === 'destroyed') {
-            // Native pot_acid_damage() destroys the dipped stack.
-            await useUpInventoryStack(object);
-        }
-        if (!heroIsHallucinating() && messages.some(message => /water/.test(message)))
-            learnObjectType(POT_WATER);
+        let mentionedWater = false;
+        const result = await waterDamageObject(object, [], game, {
+            force: true, publish: pline, mentionWater: () => { mentionedWater = true; },
+        });
+        if (mentionedWater) learnObjectType(POT_WATER);
         return result !== 'nothing';
     }
     if (!action) return false;
-    const seen = !heroIsBlind();
+    const seen = !heroIsBlind() || object === game.ublindf && blindfolded() && !heroIsBlinded();
     if (seen) {
         const glow = displayColorName(color);
         const suffix = action === 'bless' || action === 'curse'
