@@ -23,6 +23,7 @@ import {
     map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell,
     unmap_invisible, plineWithContinuation, flashGlyphAt, terrain_glyph,
     transientMonsterGlyph, transientTrapGlyph,
+    cls, displaySelf, docrt, feel_newsym,
 } from './display.js';
 import {
     BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR,
@@ -42,6 +43,7 @@ import { recordDiscoveredRoom, recordMappedOverviewState } from './dungeon.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './monster_name.js';
+import { NO_COLOR } from './terminal.js';
 
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
@@ -228,15 +230,38 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
                     if (monster) exerciseWisdom();
                     return true;
                 }
-                trap.tseen = true;
-                exerciseWisdom();
-                map_trap(trap, true);
-                await plineWithContinuation(foundTrapMessage(trap));
+                await findTrap(trap);
                 found = true;
             }
         }
     }
     return found;
+}
+
+// C detect.c:find_trap(). A covered trap gets a separate map display so
+// the discovery is visible even when an object or monster occupies it.
+async function findTrap(trap: Trap): Promise<void> {
+    trap.tseen = true;
+    exerciseWisdom();
+    feel_newsym(trap.tx, trap.ty);
+    const projected = glyphAt(trap.tx, trap.ty);
+    const cleared = heroIsHallucinating(game)
+        || projected?.kind !== 'trap' || projected.trapType !== trap.ttyp;
+    if (cleared) {
+        await cls();
+        for (let x = 1; x < COLNO; x++) {
+            for (let y = 0; y < ROWNO; y++) {
+                show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'nothing' });
+            }
+        }
+        map_trap(trap, true);
+        displaySelf();
+    }
+    await plineWithContinuation(foundTrapMessage(trap));
+    if (cleared) {
+        await flushPendingTopline();
+        await docrt();
+    }
 }
 
 // C detect.c:warnreveal(). Ordinary Warning can expose a nearby hider
