@@ -385,7 +385,7 @@ async function freezeLiquidAt(x: number, y: number, state: GameState, publish: M
             ? 'The lava cools and solidifies.'
             : wasMoat ? 'The moat is bridged with ice!'
                 : 'The water freezes.';
-        await publish(message);
+        await publish(message, { noRepeat: true });
         newsym(x, y);
     } else if (!lava && !deaf) {
         await publish('You hear a crackling sound.');
