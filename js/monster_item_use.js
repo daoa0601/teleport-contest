@@ -46,13 +46,13 @@ export async function presentMonsterQuaff(monster, object, { state, publish = pl
 // C muse.c:you_aggravate(). The temporary revelation is acknowledged before
 // the potion is consumed or another monster can act.
 export async function revealAggravatingMonster(monster, state) {
-    const owner = possessiveName(monsterName(monster, { state, suppressIt: true }));
+    const owner = possessiveName(monsterName(monster, { state, article: 'your', suppressIt: true }));
     await plineWithContinuation(`For some reason, ${owner} presence is known to you.`);
     await cls();
     const glyph = transientMonsterGlyph(monster);
     show_glyph_cell(monster.mx, monster.my, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
     displaySelf();
-    await plineWithContinuation(`You feel aggravated at ${monsterName(monster, { state, suppressIt: true })}.`);
+    await plineWithContinuation(`You feel aggravated at ${monsterName(monster, { state, article: 'your', suppressIt: true })}.`);
     await displayMessageWindow();
     await docrt();
     if (heroIsUnconscious(state)) {

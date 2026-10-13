@@ -8,11 +8,36 @@ import { heroIsUnconscious, putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { revealAggravatingMonster } from '../js/monster_item_use.js';
+import { initializePet } from '../js/dog.js';
 import { POT_INVISIBILITY } from '../js/object_data.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+void test('an aggravating potion revelation names a tame drinker as your monster', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const drinker = await createMonsterAt('goblin', 14, 10, NO_MINVENT);
+    initializePet(drinker, { state: game });
+    const messages: string[] = [];
+    const input = resetInputState();
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    input.display = {
+        async readKey() {
+            const row = game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('') ?? '';
+            assert.match(row, /--More--/);
+            return 32;
+        },
+    };
+
+    await revealAggravatingMonster(drinker, game);
+
+    assert.ok(messages.includes("For some reason, your goblin's presence is known to you."),
+        `Expected the pet's presence message; received: ${messages.join(' | ')}`);
+    assert.ok(messages.includes('You feel aggravated at your goblin.'),
+        `Expected the pet's aggravation message; received: ${messages.join(' | ')}`);
+});
 
 for (const visible of [true, false]) {
     void test(`a cursed invisibility potion reveals its ${visible ? 'visible' : 'unseen'} drinker before the turn resumes`, async () => {
