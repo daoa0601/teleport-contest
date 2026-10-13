@@ -85,6 +85,7 @@ import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
 import { dozap, } from './zap.js';
 import { bucAdjectiveForName, checkInventoryGold, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, selectUsedInventoryLetter, } from './invent.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
+import { unlinkObject } from './object_location.js';
 import { castSpell, docast, dovspell, } from './spell.js';
 import { vomitHero, } from './hero_illness.js';
 import { heroBreathAttack } from './hero_breath.js';
@@ -3691,17 +3692,20 @@ async function doadjust(selected = null, splitting = null) {
     }
     let action = splitting ? 'Splitting:' : destination === source ? 'Collecting:' : 'Moving:';
     let bumped = null;
-    for (const candidate of inventory) {
-        if (candidate === object)
-            continue;
+    // C extracts the selected stack before collecting. A merge can free
+    // that object, so it must never reappear among the remaining candidates.
+    unlinkObject(object, game);
+    for (const candidate of game.inventory.slice()) {
         const name = object.oextra?.oname ?? object.oname;
         const candidateName = candidate.oextra?.oname ?? candidate.oname;
         const permitsName = !candidateName || !!name && name === candidateName;
         if (destination === source) {
             if (permitsName) {
                 const merged = await mergeObjectStacks(candidate, object);
-                if (merged)
+                if (merged) {
                     object = merged;
+                    unlinkObject(object, game);
+                }
             }
             continue;
         }
@@ -3710,6 +3714,7 @@ async function doadjust(selected = null, splitting = null) {
         const merged = permitsName ? await mergeObjectStacks(candidate, object) : null;
         if (merged) {
             object = merged;
+            unlinkObject(object, game);
             action = 'Merging:';
         }
         else if (!splitting) {
@@ -3726,6 +3731,7 @@ async function doadjust(selected = null, splitting = null) {
             const splitMerge = await mergeObjectStacks(candidate, object);
             if (splitMerge) {
                 object = splitMerge;
+                unlinkObject(object, game);
                 action = 'Splitting and merging:';
             }
             else {
@@ -3735,21 +3741,26 @@ async function doadjust(selected = null, splitting = null) {
                     object.oname = name;
                 }
                 if (game.inventory.filter(item => item !== object && item.oclass !== 12).length >= 52) {
+                    object.where = 'inventory';
+                    game.inventory.unshift(object);
                     await rejoinObjectStack(splitting, object, game);
                     clearMessageWindow();
                     await pline('Your pack is too full.');
                     game.context.move = 0;
                     return;
                 }
-                game.inventory.splice(game.inventory.indexOf(candidate), 1);
+                unlinkObject(candidate, game);
                 bumped = candidate;
             }
         }
         break;
     }
     object.invlet = destination;
+    object.where = 'inventory';
+    game.inventory.unshift(object);
     if (bumped) {
         assignInventoryLetter(bumped);
+        bumped.where = 'inventory';
         game.inventory.unshift(bumped);
     }
     game.inventory.sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
