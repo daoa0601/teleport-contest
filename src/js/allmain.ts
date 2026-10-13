@@ -1844,7 +1844,6 @@ async function resolveDeferredHeroItemTheft(
         return true;
     }
     monster.mavenge = 1;
-    findArmorClass(game);
 
     observeObjectForNaming(object);
     const stolenObjectDescription = inventoryItemDescription(object);

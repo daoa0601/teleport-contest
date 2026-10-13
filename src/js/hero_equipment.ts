@@ -38,7 +38,7 @@ export async function removeWornHeroItem(object: GameObject, state: GameState = 
     try {
         const slot = armorSlotFor(object.otyp);
         if (slot && (state[slot] === object || state.u?.[slot] === object))
-            await removeHeroArmor(object, state);
+            await removeHeroArmor(object, state, { deferArmorClass: true });
         await removeHeroAccessory(object, state);
         if (state.ublindf === object || state.u?.ublindf === object) {
             await removeEyewear(object, { state });

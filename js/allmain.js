@@ -1596,7 +1596,6 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
         return true;
     }
     monster.mavenge = 1;
-    findArmorClass(game);
     observeObjectForNaming(object);
     const stolenObjectDescription = inventoryItemDescription(object);
     const thief = removalMessage && /nymph$/.test(quietMonsterName(monster))
