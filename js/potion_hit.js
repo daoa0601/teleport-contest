@@ -284,6 +284,8 @@ async function installPotionHelplessness(state, duration, reason) {
     }
     state._helplessReason = reason;
     state._helplessDoneMessage = 'You can move again.';
+    if ((state._prayerTurnsRemaining ?? 0) > 0)
+        state._prayerCompletionMessage = 'You can move again.';
     await exerciseAttribute(A_DEX, false, state);
 }
 function heroIsFast(state) {
