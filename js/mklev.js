@@ -3027,8 +3027,18 @@ export async function maketrap(x, y, typ) {
         // advance at least one level, then have a 3/4 chance to stop at each
         // level until the current dungeon's bottom is reached.
         const dnum = game.u?.uz?.dnum ?? 0;
-        const bottom = game.dungeons?.[dnum]?.num_dunlevs
+        const dungeon = game.dungeons?.[dnum];
+        let bottom = dungeon?.num_dunlevs
             ?? (game.u?.uz?.dlevel ?? 1);
+        if (In_quest(game.u.uz)) {
+            const role = game.urole?.filecode;
+            const locate = role ? game.specialLevels?.get(`${role}-loca`) : undefined;
+            if (locate && (dungeon?.dunlev_ureached ?? 0) < locate.dlevel)
+                bottom = locate.dlevel;
+        }
+        else if (In_hell(game.u.uz) && !game.u.uevent?.invoked) {
+            bottom--;
+        }
         let dlevel = game.u?.uz?.dlevel ?? 1;
         while (dlevel < bottom) {
             dlevel++;
