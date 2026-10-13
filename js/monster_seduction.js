@@ -11,7 +11,7 @@ import { canSeeMonster } from './display.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
 import { loseHeroHp } from './hero_damage.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
+import { detachHeroGold, heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { inventoryItemDescription } from './invent.js';
@@ -338,6 +338,11 @@ async function paySeducer(context) {
     else {
         const name = monsterName(monster, { state, article: 'your', suppressIt: true, capitalized: true });
         await publish(`${name} takes ${cost} ${currency(cost, { state, random })} for services rendered!`);
+        if (cost === money) {
+            const purse = heroGoldObject(state);
+            if (purse?.owornmask)
+                await removeWornHeroItem(purse, state);
+        }
         const payment = detachHeroGold(state, cost);
         if (!payment)
             throw new Error('Seduction payment selected an absent purse.');

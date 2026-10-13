@@ -3,6 +3,7 @@ import { heroFootName, monsterFootName } from './body_parts.js';
 import { LARGEST_INT, RLOC_MSG } from './const.js';
 import { newsym, type MessagePublisher } from './display.js';
 import type { PlayingGameState } from './game_state.js';
+import { removeHeroEquipment } from './hero_equipment.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { heroSpecies } from './hero_species.js';
 import { MONSTER_SYMBOL, monsterIsSlithy } from './monster_data.js';
@@ -38,7 +39,9 @@ export async function stealHeroGold(
         return;
     }
     if (!purse) return;
-    const stolen = detachHeroGold(state, Math.min(purse.quan, someGold(heroGoldAmount(state), random)));
+    const count = Math.min(purse.quan, someGold(heroGoldAmount(state), random));
+    if (count === purse.quan) await removeHeroEquipment(purse, state);
+    const stolen = detachHeroGold(state, count);
     if (!stolen) throw new Error('The leprechaun selected an absent purse.');
     await linkObjectToMonsterInventory(monster, stolen, { state });
     await publish('Your purse feels lighter.');
