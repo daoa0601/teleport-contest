@@ -12,7 +12,7 @@ import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { playInstrument } from '../js/music.js';
-import { destroyDrawbridge } from '../js/dbridge.js';
+import { destroyDrawbridge, openDrawbridge } from '../js/dbridge.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, ROCK, WOODEN_HARP,
 } from '../js/object_data.js';
@@ -24,6 +24,7 @@ import {
     createMonsterAt, equipMonsterObject,
 } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
 
 const PM_WATER_ELEMENTAL = 157;
 const PM_GHOST = 287;
@@ -139,6 +140,29 @@ void test('an opening portcullis releases its occupant onto the bridge',
         assert.equal(monster.mx, 12);
         assert.equal(monster.my, 10);
     });
+
+for (const startsInside of [false, true]) {
+    void test(`an opening drawbridge moves its occupant ${startsInside ? 'out of' : 'into'} gas`, async () => {
+        installStrongholdDrawbridge();
+        const monster = await createMonsterAt('goblin', 12, 9);
+        monster.mcanmove = 0;
+        monster.msleeping = 1;
+        monster.mhp = 100;
+        const cloud = createHarmlessGasCloudSelection(game,
+            [{ x: 12, y: startsInside ? 9 : 10 }], { ttl: 10 });
+        assert.ok(cloud);
+        cloud.damage = 8;
+        pushKeys(' '.repeat(20));
+
+        await openDrawbridge(12, 10);
+        await runLevelRegions(game, { publish: async () => {} });
+
+        assert.equal(monster.mx, 12);
+        assert.equal(monster.my, 10, 'The portcullis occupant moves onto the span');
+        assert.equal(monster.mhp < 100, !startsInside,
+            'Only an occupant moved into the cloud takes gas damage');
+    });
+}
 
 void test('a closing portcullis crushes a helpless monster', async () => {
     const { level, bridge, wall } = installStrongholdDrawbridge();

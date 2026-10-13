@@ -12,7 +12,8 @@ import { addObjectToContainer } from '../js/object_container.js';
 import { buryObject } from '../js/buried_object.js';
 import { CHEST, DAGGER, POT_HEALING } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { addShopObjectToBill, carriedShopBill, checkSpecialRoom, settleCarriedShopBillItem, } from '../js/shk.js';
+import { addShopObjectToBill, checkSpecialRoom } from '../js/shk.js';
+import { itemizedShopBill, buyShopBillItem } from '../js/shop_payment.js';
 import { settleShopkeepersOnExit } from '../js/shop_settlement.js';
 import { setPaidShopkeeper } from '../js/shop_damage.js';
 import { roomForRoomno } from '../js/room.js';
@@ -130,13 +131,14 @@ void test('a consumed purchase can be paid after saving and restoring', async ()
     assert.equal(await saveGame(storage), true);
     assert.equal(restoreGame('BillSaver', storage), true);
     const keeper = game.level.monsters.find(monster => monster.m_id === keeperId);
-    const [purchase] = carriedShopBill(keeper);
+    assert.ok(keeper);
+    const [purchase] = itemizedShopBill(keeper);
     assert.ok(purchase);
     const purse = heroGoldAmount(game);
-    assert.equal(settleCarriedShopBillItem(keeper, purchase), true);
+    assert.equal(await buyShopBillItem(keeper, purchase), 'paid');
     assert.equal(heroGoldAmount(game), purse - purchase.price);
     assert.equal(purchase.object.where, 'gone');
-    assert.equal(carriedShopBill(keeper).length, 0);
+    assert.equal(itemizedShopBill(keeper).length, 0);
 });
 void test('hero death settles nested purchases and frees used-up bill identities', async () => {
     const { west, east } = await twoShops();

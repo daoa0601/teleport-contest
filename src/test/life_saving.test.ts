@@ -16,7 +16,8 @@ import { discardMonsterInventory } from '../js/monster_drop.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { pickupAtHero } from '../js/pickup.js';
-import { carriedShopBill, unpaidObjectCost } from '../js/shk.js';
+import { unpaidObjectCost } from '../js/shk.js';
+import { itemizedShopBill } from '../js/shop_payment.js';
 import { rileShopkeeper } from '../js/shop_damage.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -59,7 +60,7 @@ void test('a life-saving amulet remains payable after it crumbles', async () => 
     assert.ok(game.u.uhp > 0);
     assert.ok(!game.inventory.includes(amulet));
     assert.equal(game.uamul, null);
-    const amountOwed = carriedShopBill(shopkeeper)
+    const amountOwed = itemizedShopBill(shopkeeper)
         .reduce((total, item) => total + item.price, 0);
     assert.equal(amountOwed, price);
 });

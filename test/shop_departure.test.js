@@ -15,7 +15,8 @@ import { addObjectToContainer } from '../js/object_container.js';
 import { deleteObject } from '../js/object_delete.js';
 import { CHEST, DAGGER, POT_HEALING } from '../js/object_data.js';
 import { addShopDamage } from '../js/shop_damage.js';
-import { addShopObjectToBill, carriedShopBill, checkSpecialRoom } from '../js/shk.js';
+import { addShopObjectToBill, checkSpecialRoom } from '../js/shk.js';
+import { itemizedShopBill } from '../js/shop_payment.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
@@ -62,7 +63,7 @@ for (const cause of ['departure', 'environment', 'hero', 'genocide']) {
         assert.equal(game.level.damagelist.length, 0);
         assert.equal(!!purchase.unpaid, false);
         assert.equal(!!owned.no_charge, false);
-        assert.equal(carriedShopBill(shopkeeper).length, 0);
+        assert.equal(itemizedShopBill(shopkeeper).length, 0);
         assert.ok(!game.u.ushops.includes(roomno));
         assert.ok(room.rtype >= SHOPBASE);
         assert.equal(!!game.level.flags.has_shop, true);
@@ -92,7 +93,7 @@ void test('a keeper leaving a different shop only clears shallow floor ownership
     assert.equal(!!content.no_charge, true);
     assert.equal(!!buried.no_charge, true);
     assert.equal(east.room.resident, east.shopkeeper);
-    assert.ok(carriedShopBill(east.shopkeeper).some(item => item.object === used));
+    assert.ok(itemizedShopBill(east.shopkeeper).some(item => item.object === used));
 });
 void test('a shared shop boundary settles the departing keeper even when its room is not first', async () => {
     freshObjectRoom({ hero: { ux: 4, uy: 10 } });

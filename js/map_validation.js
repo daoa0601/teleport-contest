@@ -71,7 +71,9 @@ function validGasCloud(value) {
     return fieldsMatch(value, {
         kind: (kind) => kind === 'gas-cloud',
         visible: boolean, damage: integer, ttl: integer,
-        cells: arrayOf(validSavedPosition), heroFault: optional(boolean),
+        cells: arrayOf(validSavedPosition),
+        monsterIds: arrayOf((id) => integer(id) && id > 0),
+        heroFault: optional(boolean),
     });
 }
 function validTimer(value) {

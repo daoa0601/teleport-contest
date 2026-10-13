@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
+import { MM_ANGRY, NO_MINVENT, POOL } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame, resetGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -13,6 +13,26 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createStaffedShop } from './support/shop.js';
+import { BOULDER } from '../js/object_data.js';
+import { floorObject } from './support/game-objects.js';
+for (const hazard of ['boulder', 'pool']) {
+    void test(`a peaceful kitten refuses displacement onto a ${hazard}`, async () => {
+        const level = freshObjectRoom();
+        requirePlayingGame(game);
+        const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
+        initializePet(pet, { state: game });
+        if (hazard === 'boulder')
+            await floorObject(BOULDER, 10, 10);
+        else
+            level.requireAt(10, 10).typ = POOL;
+        pushKeys(' '.repeat(20));
+        initRng(1n);
+        await rhack('l'.charCodeAt(0));
+        assert.equal(game.u.ux, 10);
+        assert.equal(pet.mx, 11);
+        assert.match(game._pending_message, /Your kitten doesn't want to swap places/);
+    });
+}
 void test('a blind hero discovers an unseen pet without swapping places', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

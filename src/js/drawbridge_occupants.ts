@@ -24,6 +24,7 @@ import {
 import { AD_DGST, AD_PHYS } from './monster_attack_types.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { rnd } from './rng.js';
+import { updateMonsterRegions } from './regions.js';
 import {
     moveHeroByTeleport, safeTeleportDestination,
 } from './teleport.js';
@@ -248,6 +249,7 @@ function moveEntity(entity: DrawbridgeEntity, destination: Position, state: Game
     } else {
         entity.actor.mx = destination.x;
         entity.actor.my = destination.y;
+        updateMonsterRegions(entity.actor, state);
     }
     entity.x = destination.x;
     entity.y = destination.y;

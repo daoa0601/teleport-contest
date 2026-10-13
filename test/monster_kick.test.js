@@ -14,6 +14,7 @@ import { addInventoryObject, uninitializedObject } from './support/game-objects.
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
 const PM_JACKAL = 12;
 function freshKickArena(role = 'tourist') {
     const level = freshPlayableRoom({
@@ -50,6 +51,27 @@ void test('a quick snake can slide away from a kick', async () => {
     assert.equal(snake.mhp, 20);
     assert.match(game._pending_message, /slides, nimbly evading your kick/);
 });
+for (const startsInside of [false, true]) {
+    void test(`evading a kick ${startsInside ? 'out of' : 'into'} gas changes the monster's exposure`, async () => {
+        const jackal = await installKickArena('jackal');
+        jackal.mhp = jackal.mhpmax = 100;
+        const cells = startsInside ? [{ x: 11, y: 10 }] : [
+            { x: 9, y: 9 }, { x: 10, y: 9 }, { x: 11, y: 9 },
+            { x: 9, y: 10 },
+            { x: 9, y: 11 }, { x: 10, y: 11 }, { x: 11, y: 11 },
+        ];
+        const cloud = createHarmlessGasCloudSelection(game, cells, { ttl: 10 });
+        assert.ok(cloud);
+        cloud.damage = 8;
+        initRng(7n);
+        await kickDirection('l', ' '.repeat(20));
+        assert.match(game._pending_message, /evading your kick/);
+        assert.ok(jackal.mx !== 11 || jackal.my !== 10, 'The jackal left its original square');
+        assert.equal(jackal.mhp, 100, 'Evasion avoids kick damage');
+        await runLevelRegions(game, { publish: async () => { } });
+        assert.equal(jackal.mhp < 100, !startsInside, `The jackal ${startsInside ? 'outside' : 'inside'} the cloud has ${jackal.mhp} HP`);
+    });
+}
 void test('a heavy load can leave a clumsy kick harmless', async () => {
     const lichen = await installKickArena(158);
     requirePlayingGame(game);
@@ -199,6 +221,27 @@ void test('a martial kick can push a monster into a web', async () => {
     }
     assert.ok(reeled, 'a kick pushed the goblin onto the web');
 });
+for (const startsInside of [false, true]) {
+    void test(`a martial kick ${startsInside ? 'out of' : 'into'} gas changes the monster's exposure`, async () => {
+        let reeled = false;
+        for (let seed = 1; seed <= 30 && !reeled; seed++) {
+            const monster = await installKickArena('goblin', 'monk');
+            monster.mhp = 100;
+            const cloud = createHarmlessGasCloudSelection(game, [{ x: startsInside ? 11 : 12, y: 10 }], { ttl: 10 });
+            assert.ok(cloud);
+            cloud.damage = 8;
+            initRng(BigInt(seed));
+            await kickDirection('l', ' '.repeat(20));
+            reeled = monster.mx === 12;
+            if (reeled) {
+                const hpAfterKick = monster.mhp;
+                await runLevelRegions(game, { publish: async () => { } });
+                assert.equal(monster.mhp < hpAfterKick, !startsInside, 'Only a monster kicked into the cloud takes gas damage');
+            }
+        }
+        assert.ok(reeled, 'A martial kick must push the goblin to the next square');
+    });
+}
 for (const lifesaving of [false, true]) {
     void test(`a kicked monster resolves a fatal bear trap${lifesaving ? ' with life saving' : ''}`, async () => {
         let fatalTrap = false;

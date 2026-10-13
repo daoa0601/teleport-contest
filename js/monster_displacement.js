@@ -8,6 +8,7 @@ import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { finishMonsterEating } from './monster_eating.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { updateMonsterRegions } from './regions.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
 import { monsterName, monsterPossessive } from './monster_name.js';
 import { monsterPolymorphsWhenStoned, petrifyMonsterAttacker, } from './monster_stoning.js';
@@ -78,7 +79,8 @@ export async function displaceMonster(aggressor, defender, state = game, { quiet
     placeMonsterAt(defender, from.x, from.y);
     if (defender.wormno)
         placeMonsterWormTailRandomly(defender, segments, { state, random });
-    // Region effects derive membership from current coordinates.
+    updateMonsterRegions(aggressor, state);
+    updateMonsterRegions(defender, state);
     if (bothSpotted && !quietly)
         await publish(displacementMessage(aggressor, defender, false, state, random));
     newsym(from.x, from.y);

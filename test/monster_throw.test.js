@@ -10,7 +10,7 @@ import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';
 import { monsterVolleyCount, readyRangedMonsterWeapon, throwMonsterProjectile, throwMonsterWeaponAtMonster } from '../js/monster_throw.js';
 import { selectMonsterRangedWeapon } from '../js/monster_weapon.js';
-import { AMULET_OF_LIFE_SAVING, ARROW, BOULDER, BOW, CREAM_PIE, DAGGER, DART, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, POT_CONFUSION, SLING, STATUE, YA, YUMI } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, ARROW, BOULDER, BOW, CREAM_PIE, DAGGER, DART, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, POT_ACID, POT_CONFUSION, SLING, STATUE, YA, YUMI } from '../js/object_data.js';
 import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { uninitializedObject, untimedCorpse } from './support/game-objects.js';
 import { floorObjectQuantityAt, floorObjectsAt } from './support/level-state.js';
@@ -42,6 +42,26 @@ function projectileRoom() {
 }
 const ordinaryChoices = (bound) => Math.min(1, bound - 1);
 const minimumRoll = () => 1;
+void test('a monster-thrown acid potion wakes sleeping monsters near a shrieking victim', async () => {
+    projectileRoom();
+    requirePlayingGame(game);
+    const source = await combatant('orc');
+    const target = await combatant('orc', { x: 12, hitPoints: 30 });
+    const sleeper = await combatant('orc', { x: 12, y: 11 });
+    sleeper.msleeping = 1;
+    const potion = await uninitializedObject(POT_ACID);
+    await addObjectToMonsterInventory(source, potion);
+    const messages = [];
+    await throwMonsterProjectile(source, potion, {
+        state: game, dx: 1, dy: 0, range: 3, target,
+        random: ordinaryChoices, rollOne: minimumRoll,
+        publish: async (message) => { messages.push(message); },
+    });
+    assert.ok(target.mhp < 30);
+    assert.equal(sleeper.msleeping, 0);
+    assert.match(messages.join('\n'), /shrieks in pain![\s\S]*wakes up\./);
+    assert.equal(source.minvent.includes(potion), false);
+});
 for (const adjacent of [true, false]) {
     void test(`monster-thrown potion vapor ${adjacent ? 'can reach an adjacent hero' : 'cannot reach a distant hero'}`, async () => {
         projectileRoom();

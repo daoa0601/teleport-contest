@@ -9,9 +9,9 @@ import { bot, clearMessageWindow, consumeHallucinatedMenuObjectGlyph, docrt, flu
 import { showChoiceWindow, showInventoryWindow, showMultiSelectWindow, } from './windows.js';
 import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
-import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
+import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
-import { ARROW as FIRST_OBJECT, EGG, CHEST, GOLD_PIECE, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, } from './object_data.js';
+import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { definiteName, objectCombatName, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
@@ -25,6 +25,7 @@ import { makePlural } from './object_grammar.js';
 import { objectIsVulnerableToErosion } from './object_erosion.js';
 import { discoverArtifact } from './artifacts.js';
 import { isContainer } from './container.js';
+import { isEdibleFood } from './food_selection.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { useUpInventoryStack } from './hero_inventory.js';
@@ -405,9 +406,11 @@ export async function rerollMenu() {
     return reroll;
 }
 function inventorySections(items = game.inventory || [], includeGold = true) {
+    return inventorySectionsInOrder(sortObjects(items, { mode: inventorySortMode() }), includeGold);
+}
+function inventorySectionsInOrder(items, includeGold = true) {
     const grouped = new Map();
-    const sorted = sortObjects(items, { mode: inventorySortMode() });
-    for (const item of sorted) {
+    for (const item of items) {
         if (!includeGold && item.oclass === COIN_CLASS)
             continue;
         observeObjectForNaming(item);
@@ -448,10 +451,23 @@ function itemActionEntries(item, state, repairGold) {
         const noun = item.oclass === 2 || isWeaponTool(item) ? 'weapon' : 'item';
         entries.push({ key: '-', text: `${verb} '-' to ${action} ${stack ? `these ${noun}s` : `this ${noun}`}` });
     }
+    if (item.otyp === BAG_OF_TRICKS) {
+        const discovered = item.typeKnown || state._knownObjectTypes?.has(item.otyp);
+        entries.push({ key: 'a', text: discovered ? 'Reach into this bag' : 'Open this container' });
+    }
+    else if (isContainer(item))
+        entries.push({ key: 'a', text: 'Open this container' });
     if (item.oclass !== COIN_CLASS && item.dknown !== false && !item.oartifact && item.otyp !== SPE_NOVEL)
         entries.push({ key: 'c', text: `Name ${stack ? 'this stack of' : 'this specific'} ${itemName}` });
     if (!alreadyWorn)
         entries.push({ key: 'd', text: `Drop this ${stack ? 'stack' : 'item'}` });
+    if (item.otyp === TIN) {
+        const opener = state.uwep?.otyp === TIN_OPENER ? ' with your tin opener' : '';
+        entries.push({ key: 'e', text: `Open ${stack ? 'one of these tins' : 'this tin'}${opener} and eat the contents` });
+    }
+    else if (isEdibleFood(item, state)) {
+        entries.push({ key: 'e', text: `Eat ${stack ? 'one of these' : 'this'}` });
+    }
     if (item.otyp === TOWEL) {
         entries.push({ key: 'E', text: 'Wipe the floor with this towel' });
     }
@@ -472,12 +488,15 @@ function itemActionEntries(item, state, repairGold) {
     }
     if (item.oclass !== COIN_CLASS || repairGold)
         entries.push({ key: 'i', text: 'Adjust inventory by assigning new letter' });
+    if (stack && item.oclass !== COIN_CLASS)
+        entries.push({ key: 'I', text: 'Adjust inventory by splitting this stack' });
     if (item.oclass === 4 && !alreadyWorn)
         entries.push({ key: 'P', text: 'Put this ring on' });
     if ([2, 13].includes(item.oclass) && item !== state.uquiver)
         entries.push({ key: 'Q', text: `Quiver this ${stack ? 'stack' : 'item'} for easy ${shoot ? 'shooting' : 'throwing'} with 'f'ire` });
-    if (item.oclass === 10)
-        entries.push({ key: 'r', text: 'Study this spellbook' });
+    const reading = itemReadingText(item, state);
+    if (reading)
+        entries.push({ key: 'r', text: reading });
     if ((item.owornmask ?? 0) & W_ACCESSORY) {
         const accessory = (item.owornmask ?? 0) & W_AMUL ? 'amulet'
             : (item.owornmask ?? 0) & W_RING ? 'ring'
@@ -516,18 +535,48 @@ function itemActionEntries(item, state, repairGold) {
             && isTwoWeaponObject(state.uswapwep) && state.uswapwep && !OBJECT_BIMANUAL[state.uswapwep.otyp]))
         entries.push({ key: 'X', text: `Toggle two-weapon combat ${state.u.twoweap ? 'off' : 'on'}` });
     if (encyclopediaEntries(singularObjectName(item, state), state).length)
-        entries.push({ key: '/', text: 'Look up information about this' });
+        entries.push({ key: '/', text: `Look up information about ${stack ? 'these' : 'this'}` });
     return entries;
+}
+// C iactions.c:item_reading_classification(). Reading advice depends on
+// what the hero knows about the type, rather than the object's charges.
+function itemReadingText(item, state) {
+    const known = !!OBJECT_INITIAL_KNOWN[item.otyp] || !!item.typeKnown
+        || !!state._knownObjectTypes?.has(item.otyp);
+    if (item.otyp === FORTUNE_COOKIE)
+        return 'Read the message inside this cookie';
+    if (item.otyp === OBJECT_NAMES.indexOf('T-shirt'))
+        return 'Read the slogan on the shirt';
+    if (item.otyp === ALCHEMY_SMOCK)
+        return 'Read the slogan on the apron';
+    if (item.otyp === HAWAIIAN_SHIRT)
+        return 'Look at the pattern on the shirt';
+    if (item.oclass === SCROLL_CLASS) {
+        const magic = item.dknown && (item.otyp !== SCR_BLANK_PAPER || !known)
+            ? ' to activate its magic' : '';
+        return `Read this scroll${magic}`;
+    }
+    if (item.oclass !== SPBOOK_CLASS)
+        return null;
+    const novel = item.otyp === SPE_NOVEL;
+    const blank = item.otyp === SPE_BLANK_PAPER && known;
+    const tome = item.otyp === SPE_BOOK_OF_THE_DEAD && known;
+    const verb = novel || blank ? 'Read' : tome ? 'Examine' : 'Study';
+    const noun = novel ? simpleObjectName(item, state) : tome ? 'tome' : 'spellbook';
+    return `${verb} this ${noun}`;
 }
 function inventoryActionKey(code) {
     const key = String.fromCharCode(code);
     switch (key) {
         case '-':
+        case 'a':
         case 'c':
         case 'd':
+        case 'e':
         case 'E':
         case 'f':
         case 'i':
+        case 'I':
         case 'P':
         case 'Q':
         case 'r':
@@ -562,6 +611,19 @@ export async function ddoinv() {
     await flush_screen(1);
     game.context.move = 0;
     return action;
+}
+// C invent.c:display_used_invlets(). A split's original letter is omitted;
+// all remaining carried slots, including gold, stay visible.
+export async function selectUsedInventoryLetter(avoidLetter) {
+    const items = game.inventory.filter(item => item.invlet !== avoidLetter);
+    // This menu walks the carried chain once per pack class; sortloot does
+    // not reorder items within a class, even when it sorts other menus.
+    const ordered = game.flags.sortpack === false ? items
+        : inventoryClassOrder().flatMap(oclass => items.filter(item => item.oclass === oclass));
+    const result = await showInventoryWindow(inventorySectionsInOrder(ordered), {
+        title: 'Inventory letters used:', pickMode: PICK_ONE,
+    });
+    return result.key;
 }
 // C end.c:really_done() discovers every carried type and marks all of the
 // object's knowledge bits before disclose() calls display_inventory().

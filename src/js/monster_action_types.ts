@@ -611,7 +611,6 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     deferredAfterRestrictedTenguTeleport?: boolean;
     deferredAfterSpecialAttack?: boolean;
     deferredCovetousRelocation?: boolean;
-    covetousRelocation?: { appearMessage: boolean };
     deferredPetEating?: boolean;
     deferredPetMove?: boolean;
     deferredPetReluctance?: boolean;

@@ -3,16 +3,18 @@ import { requireScreenCell } from './support/screen.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { flush_screen } from '../js/display.js';
+import { feel_location, flush_screen, glyphAt, newsym } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
-import { ATR_INVERSE } from '../js/terminal.js';
+import { ATR_INVERSE, CLR_WHITE, NO_COLOR } from '../js/terminal.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { RLOC_NOMSG } from '../js/const.js';
+import { CORR, NO_MINVENT, RLOC_NOMSG, ROOM } from '../js/const.js';
 import { initRng } from '../js/rng.js';
 import { randomMonsterRelocation } from '../js/teleport.js';
 import { createMonsterAt } from './support/monsters.js';
 import { resetInputState } from '../js/input.js';
-import { rhack } from '../js/cmd.js';
+import { farlookLocationDescription, rhack } from '../js/cmd.js';
+import { cansee, vision_recalc } from '../js/vision.js';
+import { setHeroBlindnessTurns } from '../js/senses.js';
 import { Engine } from '../js/jsmain.js';
 import { GameDisplay } from '../js/game_display.js';
 import { restoreGame, saveGame } from '../js/save.js';
@@ -88,6 +90,138 @@ void test('Escape cancels changes selected in the advanced options menu', async 
     game.flags.time = false;
     await chooseOption('time', false);
     assert.equal(game.flags.time, false);
+});
+
+for (const [action, keys] of [
+    ['cancelling', '\x1b'],
+    ['accepting no changes', '\n'],
+    ['toggling autopickup', 'f\x1b'],
+] as const) {
+    void test(`${action} in simple options preserves the lit floor remembered beneath a detected monster`, async () => {
+        const level = freshObjectRoom({ flags: { dark_room: true, color: true },
+            hero: { detectMonsters: true } });
+        newsym(11, 10);
+        await createMonsterAt('newt', 11, 10, NO_MINVENT);
+        game.u.ux = 30;
+        level.requireAt(30, 10).typ = ROOM;
+        vision_recalc(0);
+        newsym(11, 10);
+        assert.equal(cansee(11, 10), false);
+        assert.equal(glyphAt(11, 10)?.kind, 'monster');
+        const before = level.requireAt(11, 10).remembered_glyph;
+        assert.ok(before?.kind === 'terrain');
+        assert.equal(before.terrainName, 'floor of a room');
+        const input = resetInputState();
+        input.feed(keys);
+
+        await rhack('O'.charCodeAt(0));
+
+        const after = level.requireAt(11, 10).remembered_glyph;
+        assert.ok(after?.kind === 'terrain');
+        assert.equal(after.terrainName, 'floor of a room');
+    });
+}
+
+void test('a simple pet-highlight change refreshes the remembered floor beneath a detected monster', async () => {
+    const level = freshObjectRoom({ flags: { dark_room: true, color: true },
+        hero: { detectMonsters: true } });
+    newsym(11, 10);
+    await createMonsterAt('newt', 11, 10, NO_MINVENT);
+    game.u.ux = 30;
+    level.requireAt(30, 10).typ = ROOM;
+    vision_recalc(0);
+    newsym(11, 10);
+    assert.equal(cansee(11, 10), false);
+    const before = level.requireAt(11, 10).remembered_glyph;
+    assert.ok(before?.kind === 'terrain');
+    assert.equal(before.terrainName, 'floor of a room');
+    const input = resetInputState();
+    input.feed('>e\x1b');
+
+    await rhack('O'.charCodeAt(0));
+
+    const after = level.requireAt(11, 10).remembered_glyph;
+    assert.ok(after?.kind === 'terrain');
+    assert.equal(after.terrainName, 'dark part of a room');
+});
+
+for (const symset of ['ASCII', 'DECgraphics']) {
+    void test(`enabling color restores the ${symset} floor symbol of a room learned by touch`, async () => {
+        const level = freshObjectRoom({ flags: { dark_room: true, color: false } });
+        game.symset = symset;
+        const floor = level.requireAt(11, 10);
+        floor.lit = false;
+        floor.waslit = false;
+        setHeroBlindnessTurns(10);
+        vision_recalc(0);
+        feel_location(11, 10);
+        await flush_screen(1);
+        assert.equal(requireScreenCell(10, 11).ch, ' ');
+        assert.equal(await farlookLocationDescription(11, 10), 'dark part of a room');
+
+        await chooseOption('color', true);
+        await flush_screen(1);
+
+        assert.equal(requireScreenCell(10, 11).ch, symset === 'DECgraphics' ? '·' : '.');
+        assert.equal(await farlookLocationDescription(11, 10), 'dark part of a room');
+    });
+}
+
+for (const option of ['dark_room', 'color']) {
+    for (const lit of [true, false]) {
+        void test(`turning off ${option} restores ${lit ? 'a remembered lit floor' : 'blankness for a remembered unlit room'}`, async () => {
+            const level = freshObjectRoom({ flags: { dark_room: true, color: true } });
+            const floor = level.requireAt(11, 10);
+            floor.lit = lit;
+            vision_recalc(0);
+            newsym(11, 10);
+            game.u.ux = 30;
+            level.requireAt(30, 10).typ = ROOM;
+            vision_recalc(0);
+            newsym(11, 10);
+            assert.equal(cansee(11, 10), false);
+            assert.equal(await farlookLocationDescription(11, 10), 'dark part of a room');
+
+            await chooseOption(option, true);
+            await flush_screen(1);
+
+            assert.equal(requireScreenCell(10, 11).ch, lit ? '.' : ' ');
+            if (lit) {
+                assert.equal(requireScreenCell(10, 11).color, NO_COLOR);
+                assert.equal(await farlookLocationDescription(11, 10), 'floor of a room');
+            } else {
+                assert.equal(glyphAt(11, 10)?.kind, 'nothing');
+            }
+
+            await chooseOption(option, true);
+            await flush_screen(1);
+
+            assert.equal(requireScreenCell(10, 11).ch, '.');
+            assert.equal(await farlookLocationDescription(11, 10), 'dark part of a room');
+        });
+    }
+}
+
+void test('toggling dark_room restores and darkens remembered lit corridors', async () => {
+    const level = freshObjectRoom({ flags: { dark_room: true, color: true } });
+    level.requireAt(11, 10).typ = CORR;
+    newsym(11, 10);
+    game.u.ux = 30;
+    level.requireAt(30, 10).typ = ROOM;
+    vision_recalc(0);
+    newsym(11, 10);
+
+    await chooseOption('dark_room', true);
+    await flush_screen(1);
+
+    assert.equal(requireScreenCell(10, 11).ch, '#');
+    assert.equal(requireScreenCell(10, 11).color, CLR_WHITE);
+
+    await chooseOption('dark_room', true);
+    await flush_screen(1);
+
+    assert.equal(requireScreenCell(10, 11).ch, '#');
+    assert.equal(requireScreenCell(10, 11).color, NO_COLOR);
 });
 
 void test('advanced sortloot selection changes the ordering of carried items', async () => {

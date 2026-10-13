@@ -22,7 +22,7 @@ import { quaff } from './quaff.js';
 import { tameMonster } from './monster_taming.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { jumpHero } from './jumping.js';
-import { feel_location } from './display.js';
+import { clearMessageWindow, feel_location } from './display.js';
 // cmd.js — Command dispatch and movement.
 // C ref: cmd.c rhack(), hack.c domove().
 
@@ -52,7 +52,7 @@ import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
-import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
+import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
@@ -82,6 +82,8 @@ import {
     floorObjectDescription,
 } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
+import { itemizedShopBill, minimumShopPurchase, buyShopBillItem } from './shop_payment.js';
+import { paymentObjectDescription } from './object_description.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -132,9 +134,10 @@ import {
 } from './zap.js';
 import {
     bucAdjectiveForName, checkInventoryGold, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject,
-    inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject,
+    inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, selectUsedInventoryLetter,
 } from './invent.js';
-import { mergeObjectStacks } from './object_merge.js';
+import { mergable, mergeObjectStacks } from './object_merge.js';
+import { unlinkObject } from './object_location.js';
 import type { InventoryAction } from './invent.js';
 import {
     castSpell, docast, dovspell,
@@ -376,8 +379,8 @@ import {
     doenhance, useHeroSkill,
 } from './skills.js';
 import {
-    objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, minimumShopPurchase, objectTypeKnown,
-    payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage,
+    objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, objectTypeKnown,
+    payShopDebt, shopkeeperForHero, shopThankYouMessage,
     tendedShop,
 } from './shk.js';
 import {
@@ -413,7 +416,7 @@ import {
     bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport,
     randomMonsterRelocation, safeTeleportDestination,
 } from './teleport.js';
-import { monsterTeleportRestricted } from './teleport_rules.js';
+import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import {
     RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM,
@@ -2512,8 +2515,8 @@ function inventoryActionCommand({ key, item }: InventoryAction): NativeCommand |
         '-': item === game.uwep ? 'dowield'
             : item === game.uswapwep ? 'remarm_swapwep'
                 : item === game.uquiver ? 'dowieldquiver' : 'donull',
-        'c': 'docallcmd', 'd': 'dodrop', 'E': 'doengrave', 'f': 'dofire',
-        'i': 'doorganize', 'P': 'dowear', 'Q': 'dowieldquiver', 'r': 'doread',
+        'a': 'doapply', 'c': 'docallcmd', 'd': 'dodrop', 'e': 'doeat', 'E': 'doengrave', 'f': 'dofire',
+        'i': 'doorganize', 'I': 'adjust_split', 'P': 'dowear', 'Q': 'dowieldquiver', 'r': 'doread',
         'R': 'ia_dotakeoff', 't': 'dothrow', 'T': 'ia_dotakeoff',
         'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
         '/': 'dowhatis', '\x1b': null, ' ': null, '\n': null, '\r': null,
@@ -2554,11 +2557,18 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
             await doready();
         }
         return;
+    case 'a': queueCommandKeys(letter); await doapply(); return;
     case 'c': queueCommandKeys(`i${letter}`); await doname(); return;
     case 'd': queueCommandKeys(letter); await dodrop(); return;
+    case 'e':
+        queueCommandKeys(letter);
+        game.iflags.menu_requested = true;
+        await doeat();
+        return;
     case 'E': queueCommandKeys(letter); await doengrave(); return;
     case 'f': await dofire(); return;
     case 'i': queueCommandKeys(letter); await doadjust(); return;
+    case 'I': queueCommandKeys(letter); await adjustSplit(); return;
     case 'P': queueCommandKeys(letter); await dowear(); return;
     case 'Q': queueCommandKeys(letter); await doready(); return;
     case 'r': queueCommandKeys(letter); await doread({ gotoLevel }); return;
@@ -3322,6 +3332,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['annotate', doannotate],
     ['herecmdmenu', doherecmdmenu],
     ['adjust', doadjust],
+    ['altadjust', adjustSplit],
     ['levelchange', wizLevelChange],
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
@@ -3742,9 +3753,54 @@ async function domonability() {
     game.context.move = 0;
 }
 
+// C ref: invent.c:adjust_split(). The split remains linked beside its
+// original until the destination is chosen; cancelling merges it back.
+async function adjustSplit(): Promise<void> {
+    game.context.move = 0;
+    const object = await chooseInventoryObject('split', candidate =>
+        candidate.oclass === 12 ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST);
+    if (!object || object.quan < 2 || object.oclass === 12) return;
+    const amount = object.quan === 2 ? 1 : await readInventorySplitCount();
+    if (amount === null) {
+        await pline('Never mind.');
+        return;
+    }
+    if (amount < 1 || amount >= object.quan) {
+        await pline(`Amount to split from current stack must be ${amount < 1
+            ? 'at least 1' : `less than ${object.quan}`}.`);
+        return;
+    }
+    const split = splitObjectStack(object, amount, game);
+    if (!split) throw new Error('An admitted inventory stack could not be split');
+    await doadjust(split, object);
+}
+
+// C cmd.c:get_count(GC_ECHOFIRST): digits extend the count and either erase
+// key removes its last digit. A non-digit accepts only space or return.
+async function readInventorySplitCount(): Promise<number | null> {
+    await flushPendingTopline();
+    let key = await promptKey('Split off how many?', 1);
+    if (key < 48 || key > 57) return null;
+    let count = key - 48;
+    let showZero = key === 48;
+    for (;;) {
+        clearMessageWindow();
+        key = await promptKey(`Count: ${count > 0 || showZero ? count : ''}`);
+        if (key >= 48 && key <= 57) {
+            count = Math.min(Number.MAX_SAFE_INTEGER, count * 10 + key - 48);
+            showZero = key === 48;
+        } else if (key === 8 || key === 127) {
+            count = Math.trunc(count / 10);
+            showZero = false;
+        } else {
+            clearMessageWindow();
+            return key === 32 || key === 10 || key === 13 ? count : null;
+        }
+    }
+}
+
 // C ref: invent.c:doorganize()/doorganize_core().
-// TODO: add ordinary stack splitting, collecting, merging, and the used-letter menu.
-async function doadjust() {
+async function doadjust(selected: GameObject | null = null, splitting: GameObject | null = null) {
     const inventory = (game.inventory || [])
         .filter((object: GameObject): object is GameObject & { invlet: string } =>
                 typeof object.invlet === 'string' && object.invlet.length > 0)
@@ -3759,9 +3815,9 @@ async function doadjust() {
         game.context.move = 0;
         return;
     }
-    if (game.flags.fixinv === false) reassignInventoryLetters();
-    const repairGold = await checkInventoryGold('adjust');
-    const object = await chooseInventoryObject('adjust', candidate =>
+    if (!selected && game.flags.fixinv === false) reassignInventoryLetters();
+    const repairGold = !selected && await checkInventoryGold('adjust');
+    let object = selected || await chooseInventoryObject('adjust', candidate =>
         candidate.oclass === 12 && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST,
         { forcePrompt: true });
     if (!object) {
@@ -3800,52 +3856,132 @@ async function doadjust() {
         game.context.move = 0;
         return;
     }
+    const adjusting = object;
     const occupied = new Set(
-        inventory.filter(candidate => candidate !== object)
+        inventory.filter(candidate => candidate !== adjusting && !mergable(candidate, adjusting))
             .map(candidate => candidate.invlet),
     );
     const recommended = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
         .split('')
-        .filter(letter => letter === object.invlet || !occupied.has(letter))
+        .filter(letter => letter === adjusting.invlet || !occupied.has(letter))
         .join('');
-    const destinationPrompt = `Adjust letter to what [${
+    const destinationPrompt = `${splitting ? `Split ${object.quan}` : 'Adjust letter'} to what [${
         compactInventoryLetters(recommended)}] (? see used letters)?`;
     // The source item's queued letter bypasses getobj's prompt, but the
     // destination uses tty_yn_function(), which acknowledges unread prose.
     await flushPendingTopline();
-    const key = await promptKey(destinationPrompt, 1);
-    const destination = String.fromCharCode(key);
-    if (key === 27 || key === 32 || key === 10 || key === 13) {
-        game._pending_message = '';
-        await pline('Never mind.');
-        game.context.move = 0;
-        return;
+    let destination = '';
+    for (let attempt = 1; ; attempt++) {
+        let key = await promptKey(destinationPrompt, 1);
+        if (key === 63 || key === 42) {
+            key = await selectUsedInventoryLetter(splitting ? source : null);
+            if (!key) continue;
+        }
+        destination = String.fromCharCode(key);
+        if ([27, 32, 10, 13].includes(key) || splitting && destination === source) {
+            if (splitting) await rejoinObjectStack(splitting, object, game);
+            clearMessageWindow();
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
+        if (destination === '$') {
+            if (splitting) await rejoinObjectStack(splitting, object, game);
+            clearMessageWindow();
+            await pline("Only gold coins may be moved into the '$' slot.");
+            game.context.move = 0;
+            return;
+        }
+        if (/^[a-zA-Z]$/.test(destination) || destination === '#' && occupied.has('#')) break;
+        if (attempt === 5) {
+            if (splitting) await rejoinObjectStack(splitting, object, game);
+            clearMessageWindow();
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
+        await plineWithContinuation('Select an inventory slot letter.');
+        await flushPendingTopline();
     }
 
-    if (!/^[a-zA-Z]$/.test(destination)) {
-        // The source retries invalid destinations up to five times.  Keep
-        // this unclaimed branch zero-time without mutating the object.
-        game._pending_message = '';
-        await pline('Select an inventory slot letter.');
-        game.context.move = 0;
-        return;
+    let action = splitting ? 'Splitting:' : destination === source ? 'Collecting:' : 'Moving:';
+    let bumped: GameObject | null = null;
+    // C extracts the selected stack before collecting. A merge can free
+    // that object, so it must never reappear among the remaining candidates.
+    unlinkObject(object, game);
+    for (const candidate of game.inventory.slice()) {
+        const name = object.oextra?.oname ?? object.oname;
+        const candidateName = candidate.oextra?.oname ?? candidate.oname;
+        const permitsName = !candidateName || !!name && name === candidateName;
+        if (destination === source) {
+            if (permitsName) {
+                const merged = await mergeObjectStacks(candidate, object);
+                if (merged) {
+                    object = merged;
+                    unlinkObject(object, game);
+                }
+            }
+            continue;
+        }
+        if (candidate.invlet !== destination) continue;
+        const merged = permitsName ? await mergeObjectStacks(candidate, object) : null;
+        if (merged) {
+            object = merged;
+            unlinkObject(object, game);
+            action = 'Merging:';
+        } else if (!splitting) {
+            candidate.invlet = source;
+            action = 'Swapping:';
+        } else {
+            // A split takes the destination's name when otherwise compatible.
+            if (name && !object.oartifact) {
+                if (object.oextra) delete object.oextra.oname;
+                delete object.oname;
+            }
+            const splitMerge = await mergeObjectStacks(candidate, object);
+            if (splitMerge) {
+                object = splitMerge;
+                unlinkObject(object, game);
+                action = 'Splitting and merging:';
+            } else {
+                if (name) {
+                    if (object.oextra) object.oextra.oname = name;
+                    object.oname = name;
+                }
+                if (game.inventory.filter(item => item !== object && item.oclass !== 12).length >= 52) {
+                    object.where = 'inventory';
+                    game.inventory.unshift(object);
+                    await rejoinObjectStack(splitting, object, game);
+                    clearMessageWindow();
+                    await pline('Your pack is too full.');
+                    game.context.move = 0;
+                    return;
+                }
+                unlinkObject(candidate, game);
+                bumped = candidate;
+            }
+        }
+        break;
     }
-
-    const displaced = inventory.find(candidate =>
-        candidate !== object && candidate.invlet === destination);
-    if (displaced) displaced.invlet = source;
     object.invlet = destination;
+    object.where = 'inventory';
+    game.inventory.unshift(object);
+    if (bumped) {
+        assignInventoryLetter(bumped);
+        bumped.where = 'inventory';
+        game.inventory.unshift(bumped);
+    }
     game.inventory.sort((a, b) =>
         inventoryLetterRank(a) - inventoryLetterRank(b));
     game._pending_message = '';
     observeObjectForNaming(object);
     await pline(
-        `${displaced ? 'Swapping:' : destination === source
-            ? 'Collecting:' : 'Moving:'} ${destination} - ${
+        `${action} ${destination} - ${
             inventoryItemDescription(object, {
                 primaryHandDetail: inventoryPrimaryHandDetail(object),
             })}.`,
     );
+    if (bumped) await plineWithContinuation(`Moving: ${bumped.invlet} - ${inventoryItemDescription(bumped)}.`);
     game.context.move = 0;
 }
 
@@ -4399,7 +4535,7 @@ async function wizardPositionDescription(x: number, y: number): Promise<string> 
     const loc = game.level?.at(x, y);
     if (!loc) return 'unexplored area';
     const glyph = glyphAt(x, y);
-    if (glyph?.kind === 'warning' || glyph?.kind === 'nothing')
+    if (glyph?.kind === 'warning' || glyph?.kind === 'nothing' || glyph?.kind === 'monster')
         return farlookLocationDescription(x, y);
     if (loc.typ === TREE && loc.remembered_glyph) return 'tree';
     if (!loc.remembered_glyph && !cansee(x, y)) return 'unexplored area';
@@ -4407,8 +4543,7 @@ async function wizardPositionDescription(x: number, y: number): Promise<string> 
     // the terrain below it.  A visible (or still remembered) pile therefore
     // owns farlook before the room/corridor fallback.
     const object = game.level?.objects?.[x]?.[y]?.[0];
-    if (object && (cansee(x, y)
-        || loc.remembered_glyph?.kind === 'object')) {
+    if (object && glyph?.kind === 'object') {
         observeDistantObjectForNaming(object);
         return floorObjectDescription(object);
     }
@@ -4556,8 +4691,7 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
         const prefix = hallucinating ? ''
             : monster.mtame ? 'tame '
                 : monster.mpeaceful ? 'peaceful ' : '';
-        const name = hallucinating
-            ? randomDisplayMonsterName() : monsterInstanceDisplayName(monster);
+        const name = distantMonsterName(monster);
         let condition = '';
         if (!hallucinating) {
             if ((monster.mfrozen ?? 0) > 0)
@@ -4576,6 +4710,9 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
         const hiddenText = hidden.length ? `, ${hidden.join(', ')}` : '';
         return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}${hiddenText}`;
     }
+    // Hallucinated statues project monster glyphs without a live monster.
+    if (glyph?.kind === 'monster' && heroIsHallucinating(game))
+        return randomDisplayMonsterName();
 
     const trap = game.level?.traps?.find(candidate =>
         candidate.tx === x && candidate.ty === y && candidate.tseen);
@@ -4619,9 +4756,8 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
         if (remembered === ' ') return 'stone';
         if (remembered === '#') return 'corridor';
         if (remembered === '.') return 'floor of a room';
-        if (remembered === '<') return 'staircase up';
-        if (remembered === '>')
-            return travelLocationDescription(x, y) || 'staircase down';
+        if (remembered === '<' || remembered === '>')
+            return loc.remembered_glyph.terrainName;
         if (remembered === '{') return 'fountain';
         if (remembered === '+') {
             return loc.typ === DOOR && loc.doormask === D_ISOPEN
@@ -5351,6 +5487,12 @@ async function dopay(): Promise<void> {
         }
     }
 
+    if (resident !== shopkeeperForHero() && resident.mpeaceful && !resident.eshk?.robbed) {
+        await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
+        game.context.move = 1;
+        return;
+    }
+
     let paid = false;
     const debt = Math.max(0, resident.eshk?.debit ?? 0);
     if (debt) {
@@ -5402,10 +5544,10 @@ async function dopay(): Promise<void> {
         }
     }
 
-    const billed = carriedShopBill(resident);
+    const billed = itemizedShopBill(resident);
     if (!billed.length) {
         if (!paid) {
-            await plineWithContinuation(`You do not owe ${resident.eshk?.shknam || 'the shopkeeper'} anything.`);
+            await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
             if (resident === shopkeeperForHero() && resident.mpeaceful && !heroGoldAmount(game))
                 await plineWithContinuation(`Moreover, you${hiddenGold(game, true) ? ' seem to' : ''} have no gold.`);
             game.context.move = 1;
@@ -5417,19 +5559,22 @@ async function dopay(): Promise<void> {
     }
 
     for (const item of billed) observeObjectForNaming(item.object);
-    const sections = [{
-        heading: '',
-        items: billed.map((item, index) => ({
-            key: String.fromCharCode(97 + index),
-            text: `${item.price} Zm, ${floorObjectDescription(item.object)}`,
+    const priceWidth = String(Math.max(...billed.map(item => item.price))).length;
+    const used = billed.filter(item => item.kind === 'used');
+    const intact = billed.filter(item => item.kind !== 'used');
+    const sections = [used, intact].filter(items => items.length).map(items => ({
+        heading: used.length ? `${items === used ? 'Used up' : 'Unpaid'} item${items.length > 1 ? 's' : ''}:` : '',
+        items: items.map(item => ({
+            key: String.fromCharCode(97 + billed.indexOf(item)),
+            text: `${String(item.price).padStart(priceWidth)} Zm, ${paymentObjectDescription(item.object, item.quantity)}`,
             value: item,
         })),
-    }];
+    }));
     game._pending_message = '';
     await flush_screen(1);
     const selected = await showMultiSelectWindow({
         title: 'Pay for which items?', sections,
-        omitHeadings: true,
+        omitHeadings: !used.length,
     });
     if (!selected.length) {
         game.context.move = paid ? 1 : 0;
@@ -5437,17 +5582,24 @@ async function dopay(): Promise<void> {
     }
 
     let paidForItem = false;
-    for (const item of selected) {
-        if (!settleCarriedShopBillItem(resident, item)) continue;
+    let finished = true;
+    // Native queued selection buys in bill order, regardless of selection order.
+    for (const item of billed.filter(item => selected.includes(item))) {
+        const result = await buyShopBillItem(resident, item);
+        if (result === 'stop') {
+            finished = false;
+            break;
+        }
+        if (result === 'skip') continue;
         paidForItem = true;
-        observeObjectForNaming(item.object);
-        await pline(`You bought ${floorObjectDescription(item.object)} for ${item.price} gold piece${item.price === 1 ? '' : 's'}.`);
+        await bot();
     }
     if (!paid && !paidForItem) {
         game.context.move = 0;
         return;
     }
-    await plineWithContinuation(shopThankYouMessage(resident));
+    if (finished && resident.mpeaceful)
+        await plineWithContinuation(shopThankYouMessage(resident));
     game.context.move = 1;
 }
 
@@ -7648,8 +7800,9 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             await moveSteedWithHero();
             // C drag_ball() can pull the hero back before the swap check.
             // A refused swap still completes ball placement and its delay.
-            if (monster.mpeaceful && game.level.traps.some(trap =>
-                trap.tx === oldx && trap.ty === oldy)) {
+            if (monster.mpeaceful && (!goodPosition(oldx, oldy,
+                { kind: 'monster', monster }, { state: game })
+                || game.level.traps.some(trap => trap.tx === oldx && trap.ty === oldy))) {
                 const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
                 await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
                 u.ux = oldx; u.uy = oldy;

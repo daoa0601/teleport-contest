@@ -15,7 +15,8 @@ import { pickupAtHero } from '../js/pickup.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { addShopDamage } from '../js/shop_damage.js';
-import { addShopObjectToBill, carriedShopBill } from '../js/shk.js';
+import { addShopObjectToBill } from '../js/shk.js';
+import { itemizedShopBill } from '../js/shop_payment.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { freshGame } from './support/game-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
@@ -41,7 +42,7 @@ void test('removing a keeper after game over clears its room ownership and outst
     addShopDamage(13, 10, 20);
     assert.equal(game.inventory.includes(purchase), true);
     assert.equal(purchase.unpaid, true);
-    assert.equal(carriedShopBill(shopkeeper).length, 2);
+    assert.equal(itemizedShopBill(shopkeeper).length, 2);
     assert.ok(game.u.ushops.includes(roomno));
     game.program_state.gameover = true;
 
@@ -54,7 +55,7 @@ void test('removing a keeper after game over clears its room ownership and outst
     assert.equal(purchase.unpaid, false);
     assert.equal(used.where, 'gone');
     assert.equal(owned.no_charge, false);
-    assert.equal(carriedShopBill(shopkeeper).length, 0);
+    assert.equal(itemizedShopBill(shopkeeper).length, 0);
     assert.equal(level.damagelist?.length, 0);
     assert.equal(game.u.ushops.includes(roomno), false);
 });

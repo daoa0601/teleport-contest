@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
+import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plineWithContinuation, reglyph_darkroom } from './display.js';
 import { vision_recalc } from './vision.js';
 import { nhgetch } from './input.js';
 import { getLine } from './query.js';
@@ -987,7 +987,10 @@ async function doRequestMenuOptions(): Promise<void> {
     }
     if (selected.has('pickup_types')) await editPickupTypes(true);
     if (selected.has('sortloot')) await editSortLoot();
-    if (needsRedraw) await docrt();
+    if (needsRedraw) {
+        reglyph_darkroom();
+        await docrt();
+    }
     await bot();
     game.context.move = 0;
 }
@@ -1072,6 +1075,7 @@ export async function doOptions(menuRequested = false): Promise<void> {
         game._optionsInitialized = true;
     }
     let page: 1 | 2 = 1;
+    let needsRedraw = false;
     for (;;) {
         renderOptionsPage(page);
         const key = await nhgetch();
@@ -1110,8 +1114,10 @@ export async function doOptions(menuRequested = false): Promise<void> {
             flags.pushweapon = !flags.pushweapon;
         } else if (page === 2 && input === 'e') {
             flags.hilite_pet = !flags.hilite_pet;
+            needsRedraw = true;
         } else if (page === 2 && input === 'f') {
             flags.hilite_pile = !flags.hilite_pile;
+            needsRedraw = true;
         } else if (page === 2 && input === 'l') {
             flags.showexp = !flags.showexp;
         } else if (page === 2 && input === 'p') {
@@ -1122,6 +1128,7 @@ export async function doOptions(menuRequested = false): Promise<void> {
         page = 1;
     }
     game._pending_message = '';
+    if (needsRedraw) reglyph_darkroom();
     await docrt();
     await bot();
     game.context.move = 0;

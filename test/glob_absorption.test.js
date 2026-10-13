@@ -10,7 +10,8 @@ import { landFloorObject } from '../js/floor_effects.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { unlinkObject } from '../js/object_location.js';
 import { GLOB_OF_BLACK_PUDDING } from '../js/object_data.js';
-import { addShopObjectToBill, billForObject, carriedShopBill } from '../js/shk.js';
+import { addShopObjectToBill, billForObject } from '../js/shk.js';
+import { itemizedShopBill } from '../js/shop_payment.js';
 import { shopOfferForObject } from '../js/shop_sell.js';
 import { pushKeys } from '../js/input.js';
 import { knownObject } from './support/game-objects.js';
@@ -120,7 +121,7 @@ void test('shop material mixed into a player glob remains owed through a used-up
     assert.ok(remainingCharge);
     assert.equal(remainingCharge.price, oldPrice);
     assert.equal(remainingCharge.useup, true);
-    assert.ok(carriedShopBill(shopkeeper).some(({ object }) => object.o_id === remainingCharge.bo_id && object.where === 'onbill'));
+    assert.ok(itemizedShopBill(shopkeeper).some(({ object }) => object.o_id === remainingCharge.bo_id && object.where === 'onbill'));
 });
 void test('merging two player globs inside a staffed shop creates no charge or credit', async () => {
     freshObjectRoom();

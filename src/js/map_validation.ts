@@ -100,7 +100,9 @@ function validGasCloud(value: unknown): value is GasCloud {
     return fieldsMatch<GasCloud>(value, {
         kind: (kind): kind is 'gas-cloud' => kind === 'gas-cloud',
         visible: boolean, damage: integer, ttl: integer,
-        cells: arrayOf(validSavedPosition), heroFault: optional(boolean),
+        cells: arrayOf(validSavedPosition),
+        monsterIds: arrayOf((id): id is number => integer(id) && id > 0),
+        heroFault: optional(boolean),
     });
 }
 

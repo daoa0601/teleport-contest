@@ -312,29 +312,86 @@ const ANSI_COLOR = [
     97, // CLR_WHITE     15
     90, // remembered room/corridor while blind (tty dark gray)
 ];
-function rememberedColor(glyph, loc, x, y) {
-    // newsym() darkens unseen corridors with dark_room and color enabled,
-    // even when the terrain remains lit. Without those options, waslit
-    // determines whether memory retains the bright corridor glyph.
-    if (glyph?.kind === 'terrain' && glyph.ch === '#'
-        && loc?.typ === CORR && !cansee(x, y)
-        && (!loc.waslit || ((game.flags.dark_room ?? true) && game.flags.color !== false))
-        && glyph.color === CLR_WHITE) {
-        glyph.color = NO_COLOR;
-        glyph.glyph = cmapToGlyph(CmapSymbol.corr);
+// C display.c:newsym(): only remembered room and corridor terrain changes
+// when it leaves sight. Objects, traps, and engravings retain their glyphs.
+function rememberedGlyph(glyph, loc, x, y) {
+    if (glyph.kind !== 'terrain' || cansee(x, y))
+        return glyph;
+    const rogue = Is_rogue_level(game.u.uz);
+    const darkRoom = !rogue && (game.flags.dark_room ?? true) && game.flags.color !== false;
+    if (loc.typ === CORR && glyph.glyph === cmapToGlyph(CmapSymbol.litcorr)
+        && (rogue || !loc.waslit || darkRoom)) {
+        return { ...glyph, color: NO_COLOR, glyph: cmapToGlyph(CmapSymbol.corr) };
     }
-    // Preserve the port's established blind-memory behavior on ordinary
-    // levels.  Premapped levels distinguish background from mapped objects
-    // and traps, just as C's glyph categories do.
-    // display.c only substitutes DARKROOMSYM when the remembered glyph is
-    // the room terrain itself.  Objects, traps, and engravings keep their
-    // remembered glyph (and color) when blindness removes IN_SIGHT.
-    const darkRoomMemory = glyph?.kind === 'terrain' && loc?.typ === ROOM
-        && (loc.premapped
-            ? !cansee(x, y) && (game.flags?.dark_room ?? true)
-                && game.flags?.color !== false
-            : game.blind);
-    return darkRoomMemory ? 16 : glyph?.color;
+    if (loc.typ !== ROOM || glyph.glyph !== cmapToGlyph(CmapSymbol.room)
+        || loc.waslit && !darkRoom)
+        return glyph;
+    if (rogue) {
+        return { ch: ' ', color: NO_COLOR, decgfx: false, kind: 'terrain',
+            terrainName: 'stone', glyph: cmapToGlyph(CmapSymbol.stone) };
+    }
+    return { ...glyph, ch: darkRoom ? glyph.ch : ' ',
+        color: darkRoom ? 16 : NO_COLOR, decgfx: darkRoom && !!glyph.decgfx,
+        terrainName: 'dark part of a room', glyph: cmapToGlyph(CmapSymbol.darkroom) };
+}
+function showRememberedLocation(x, y, loc) {
+    const memory = loc.remembered_glyph;
+    if (!memory)
+        return;
+    const glyph = rememberedGlyph(memory, loc, x, y);
+    loc.remembered_glyph = glyph;
+    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, objectGlyphAttr(glyph), glyph);
+}
+// C display.c:reglyph_darkroom(). Option changes convert stored floor glyphs
+// before docrt() displays memory; ordinary redraws must leave memory alone.
+export function reglyph_darkroom() {
+    if (!game.level)
+        return;
+    const darkRoom = game.flags.dark_room ?? true;
+    const showDarkFloor = darkRoom && game.flags.color !== false
+        && !Is_rogue_level(game.u.uz);
+    const dec = /^DECgraphics$/i.test(game.symset || '') && !Is_rogue_level(game.u.uz);
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const loc = game.level.at(x, y);
+            const memory = loc?.remembered_glyph;
+            if (!loc || !memory)
+                continue;
+            if (!darkRoom && loc.waslit && memory.glyph === cmapToGlyph(CmapSymbol.corr)) {
+                loc.remembered_glyph = { ...memory, color: CLR_WHITE,
+                    glyph: cmapToGlyph(CmapSymbol.litcorr),
+                    kind: 'terrain', terrainName: 'lit corridor' };
+            }
+            else if (darkRoom && !cansee(x, y)
+                && memory.glyph === cmapToGlyph(CmapSymbol.litcorr)) {
+                loc.remembered_glyph = { ...memory, color: NO_COLOR,
+                    glyph: cmapToGlyph(CmapSymbol.corr),
+                    kind: 'terrain', terrainName: 'corridor' };
+            }
+            if (!showDarkFloor) {
+                if (memory.glyph === cmapToGlyph(CmapSymbol.darkroom)) {
+                    loc.remembered_glyph = loc.waslit ? roomMemoryGlyph(false, dec)
+                        : { ch: ' ', color: NO_COLOR, decgfx: false,
+                            kind: 'nothing', glyph: GlyphOffset.nothing };
+                }
+            }
+            else if (memory.glyph === cmapToGlyph(CmapSymbol.darkroom)
+                || (loc.seenv && !cansee(x, y)
+                    && (memory.glyph === cmapToGlyph(CmapSymbol.room) && loc.waslit
+                        || memory.glyph === GlyphOffset.nothing && loc.typ === ROOM))) {
+                // Native also refreshes showsyms[S_darkroom] for glyphs that
+                // were already stored as darkroom while color was disabled.
+                loc.remembered_glyph = roomMemoryGlyph(true, dec);
+            }
+        }
+    }
+}
+function roomMemoryGlyph(dark, dec) {
+    return {
+        ch: dec ? '~' : '.', color: dark ? 16 : NO_COLOR, decgfx: dec,
+        kind: 'terrain', terrainName: dark ? 'dark part of a room' : 'floor of a room',
+        glyph: cmapToGlyph(dark ? CmapSymbol.darkroom : CmapSymbol.room),
+    };
 }
 function stairGlyphIndex(loc, x, y) {
     // C display.c:back_to_cmap(). Direction belongs to the terrain cell;
@@ -626,15 +683,18 @@ export function terrain_glyph(loc, x, y) {
     const appearance = terrainGlyphAppearance(loc, x, y);
     const typ = projectedTerrainType(loc);
     const symbol = terrainSymbolIndex(loc, x, y, typ, appearance);
+    return {
+        ...appearance, kind: 'terrain', terrainName: terrainGlyphName(loc, x, y, appearance),
+        glyph: typ === ALTAR ? altarToGlyph(loc.flags) : cmapToGlyph(symbol, currentWallGlyphOffset()),
+    };
+}
+// display.h:cmap_walls_to_glyph() applies to both real walls and disguises.
+function currentWallGlyphOffset() {
     const branch = game.dungeons[game.u.uz?.dnum ?? 0];
-    const wallOffset = branch?.dname === 'The Gnomish Mines' ? GlyphOffset.cmapMines
+    return branch?.dname === 'The Gnomish Mines' ? GlyphOffset.cmapMines
         : branch?.flags.hellish ? GlyphOffset.cmapGehennom
             : Is_knox_level(game.u.uz) ? GlyphOffset.cmapKnox
                 : In_sokoban(game.u.uz) ? GlyphOffset.cmapSokoban : GlyphOffset.cmapMain;
-    return {
-        ...appearance, kind: 'terrain', terrainName: terrainGlyphName(loc, x, y, appearance),
-        glyph: typ === ALTAR ? altarToGlyph(loc.flags) : cmapToGlyph(symbol, wallOffset),
-    };
 }
 function terrainSymbolIndex(loc, x, y, typ, appearance) {
     if ((IS_WALL(typ) && typ !== DBWALL) || typ === SDOOR) {
@@ -864,6 +924,28 @@ function monsterGlyphNumber(mnum, female, state) {
 function heroDisplayGlyph() {
     if (game.u?.m_ap_type === M_AP_OBJECT)
         return apparentObjectGlyph(game.u);
+    if (game.u.m_ap_type === M_AP_MONSTER) {
+        const appearance = game.u.mappearance;
+        if (!ismnum(appearance))
+            throw new Error('Hero monster disguise requires a valid species');
+        return displayMonsterGlyph(appearance, Upolyd(game.u) ? !!game.u.mfemale : !!game.flags.female);
+    }
+    if (game.u.m_ap_type === M_AP_FURNITURE) {
+        const appearance = game.u.mappearance;
+        const symbol = appearance === undefined ? undefined : MAP_SYMBOLS[appearance];
+        if (appearance === undefined || !symbol)
+            throw new Error('Hero furniture disguise requires a valid map symbol');
+        const rogue = Is_rogue_level(game.u.uz);
+        const decSymbol = !rogue && /^DECgraphics$/i.test(game.symset || '')
+            ? decFurnitureSymbols.get(appearance) : undefined;
+        const ch = rogue ? rogueFurnitureSymbols.get(appearance) ?? symbol.ch : decSymbol ?? symbol.ch;
+        const wallOffset = currentWallGlyphOffset();
+        const wallDisguise = appearance >= CmapSymbol.vwall && appearance <= CmapSymbol.trwall;
+        const color = decSymbol !== undefined && wallDisguise
+            ? decWallColors.get(wallOffset) ?? symbol.color : symbol.color;
+        return { ch, color, decgfx: decSymbol !== undefined,
+            kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, wallOffset) };
+    }
     // display.h:hero_glyph and you.h:Ugender select the current body's sex.
     // Hero glyph identity still changes when the tty symbol remains '@'.
     const polymorphed = Upolyd(game.u);
@@ -875,6 +957,34 @@ function heroDisplayGlyph() {
     return polymorphed ? glyph
         : { ...glyph, ch: game.flags.showrace ? glyph.ch : '@', color: CLR_WHITE };
 }
+// symbols.c:init_rogue_symbols() changes ordinary stairs and open doorways.
+// Branch stairs retain their default symbols.
+const rogueFurnitureSymbols = new Map([
+    [CmapSymbol.ndoor, '+'], [CmapSymbol.vodoor, '+'], [CmapSymbol.hodoor, '+'],
+    [CmapSymbol.upstair, '%'], [CmapSymbol.dnstair, '%'],
+]);
+// dat/symbols:DECgraphics overrides dungeon symbols independently of the
+// terrain type at the hero's location. Furniture mimicry uses these symbols.
+const decFurnitureSymbols = new Map([
+    [CmapSymbol.vwall, 'x'], [CmapSymbol.hwall, 'q'],
+    [CmapSymbol.tlcorn, 'l'], [CmapSymbol.trcorn, 'k'],
+    [CmapSymbol.blcorn, 'm'], [CmapSymbol.brcorn, 'j'],
+    [CmapSymbol.crwall, 'n'], [CmapSymbol.tuwall, 'v'],
+    [CmapSymbol.tdwall, 'w'], [CmapSymbol.tlwall, 'u'], [CmapSymbol.trwall, 't'],
+    [CmapSymbol.ndoor, '~'], [CmapSymbol.vodoor, 'a'], [CmapSymbol.hodoor, 'a'],
+    [CmapSymbol.bars, '|'], [CmapSymbol.tree, 'g'], [CmapSymbol.room, '~'],
+    [CmapSymbol.upladder, 'y'], [CmapSymbol.dnladder, 'z'],
+    [CmapSymbol.brupladder, 'y'], [CmapSymbol.brdnladder, 'z'],
+    [CmapSymbol.altar, '{'], [CmapSymbol.pool, '`'], [CmapSymbol.ice, '~'],
+    [CmapSymbol.lava, '`'], [CmapSymbol.lavawall, '`'],
+    [CmapSymbol.vodbridge, '~'], [CmapSymbol.hodbridge, '~'], [CmapSymbol.water, '`'],
+]);
+// display.c:reset_glyphmap() and map_glyphinfo() retain the glyph's color.
+// dat/symbols:DECgraphics assigns these colors to branch wall glyphs.
+const decWallColors = new Map([
+    [GlyphOffset.cmapMines, CLR_BROWN], [GlyphOffset.cmapGehennom, CLR_RED],
+    [GlyphOffset.cmapKnox, CLR_YELLOW], [GlyphOffset.cmapSokoban, CLR_BLUE],
+]);
 // C display.h:canspotself().  See-invisible does not make the hero's own
 // glyph opaque again; ordinary self projection depends on not being
 // invisible, while telepathy/detection can supply a sensory projection.
@@ -1465,7 +1575,7 @@ export function displaySelf() {
     const glyph = steed && monsterVisible(steed)
         ? displayMonsterGlyph(heroIsHallucinating() ? rn2Display(MONSTER_COLOR.length) : steed.mnum, !!steed.female, 'ridden')
         : heroDisplayGlyph();
-    show_glyph_cell(game.u.ux, game.u.uy, glyph.ch, glyph.color, false, 0, glyph);
+    show_glyph_cell(game.u.ux, game.u.uy, glyph.ch, glyph.color, glyph.decgfx ?? false, 0, glyph);
 }
 // C display.c:newsym_force(). A forced redraw prints even an unchanged glyph.
 export function newsym_force(x, y) {
@@ -1604,15 +1714,7 @@ export function newsym(x, y) {
         map_location(x, y, true);
     }
     else if (loc.remembered_glyph) {
-        if (Is_rogue_level(game.u.uz) && loc.typ === ROOM && !loc.waslit
-            && loc.remembered_glyph.glyph === cmapToGlyph(CmapSymbol.room)) {
-            loc.remembered_glyph = {
-                ch: ' ', color: NO_COLOR, decgfx: false, kind: 'terrain',
-                terrainName: 'stone', glyph: cmapToGlyph(CmapSymbol.stone),
-            };
-        }
-        // Out of sight but remembered — show remembered glyph
-        show_glyph_cell(x, y, loc.remembered_glyph.ch, rememberedColor(loc.remembered_glyph, loc, x, y), loc.remembered_glyph.decgfx, objectGlyphAttr(loc.remembered_glyph), loc.remembered_glyph);
+        showRememberedLocation(x, y, loc);
     }
     else {
         // A living glyph is only an overlay.  When its actor vacates an
@@ -1932,8 +2034,11 @@ export async function docrt({ beforeGlow = null } = {}) {
         for (let y = 0; y < ROWNO; y++)
             for (let x = 1; x < COLNO; x++) {
                 const loc = game.level.at(x, y);
-                if (loc?.remembered_glyph) {
-                    show_glyph_cell(x, y, loc.remembered_glyph.ch, rememberedColor(loc.remembered_glyph, loc, x, y), loc.remembered_glyph.decgfx, objectGlyphAttr(loc.remembered_glyph), loc.remembered_glyph);
+                const memory = loc?.remembered_glyph;
+                if (memory) {
+                    // docrt_flags() displays memory unchanged. newsym() owns
+                    // corrections after sight and monster senses are restored.
+                    show_glyph_cell(x, y, memory.ch, memory.color, memory.decgfx, objectGlyphAttr(memory), memory);
                 }
                 else {
                     show_glyph_cell(x, y, ' ', NO_COLOR, false);
@@ -1969,11 +2074,14 @@ export async function redrawMap() {
             // or traps which did not move while the modal was open.
             const monster = monsterAtMapCell(x, y);
             if (cansee(x, y) || (monster
-                && monsterProjectionAtCell(monster, x, y))) {
+                && (monsterProjectionAtCell(monster, x, y)
+                    || !isWormTail(monster, x, y) && monsterHasWarningProjection(monster)))) {
+                // newsym() displays Warning before correcting unseen floor
+                // memory, just as it does for an identified monster.
                 newsym(x, y);
             }
             else if (loc?.remembered_glyph) {
-                show_glyph_cell(x, y, loc.remembered_glyph.ch, rememberedColor(loc.remembered_glyph, loc, x, y), loc.remembered_glyph.decgfx, objectGlyphAttr(loc.remembered_glyph), loc.remembered_glyph);
+                showRememberedLocation(x, y, loc);
             }
             else {
                 // Modal redraw reconstructs presentation from visibility and

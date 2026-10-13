@@ -6,6 +6,10 @@ import { plineWithContinuation, shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
+import { nameToMonster } from './mondata.js';
+import { MONSTER_FLAGS2, MONSTER_GENO } from './monster_data.js';
+import { definiteName } from './objnam.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 import { d, rn2, rnd } from './rng.js';
 import { encumbranceLabel, encumbranceMessage, nearCapacity, } from './weight.js';
 const POISON_EFFECT = [
@@ -74,6 +78,16 @@ export async function poisonHero({ reason, killer, attribute, fatal = 30, state 
         await line("The poison doesn't seem to affect you.");
         return { resisted: true, died: false, pagerOwned };
     }
+    // poisoned() uses the unique monster's name without an indefinite
+    // article, even though its caller only supplied a species name.
+    const species = nameToMonster(killer);
+    const unique = species >= 0 && !!((MONSTER_GENO[species] ?? 0) & 0x1000);
+    const personal = species >= 0 && !!((MONSTER_FLAGS2[species] ?? 0) & 0x00080000);
+    if (unique && !personal)
+        killer = definiteName(killer);
+    const attributedKiller = unique || /^(?:the|an?) /iu.test(killer)
+        ? killer : withIndefiniteArticle(killer);
+    const hpDeathCause = `killed by ${attributedKiller}`;
     let previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
     const reportEncumbrance = async () => {
         if (await updateEncumbrance(previousCapacity, state, publish))
@@ -107,7 +121,7 @@ export async function poisonHero({ reason, killer, attribute, fatal = 30, state 
             hero.uhpmax = maximum;
             hero.uhp = Math.min(hero.uhp, maximum);
             damage = adjustedDamageAfterMaxHpLoss(damage, oldHp, state);
-            if (await loseHeroHp(damage, killer, { state, publish: line, die }))
+            if (await loseHeroHp(damage, killer, { state, publish: line, die, deathCause: hpDeathCause }))
                 return { damage, died: true, pagerOwned };
             const constitutionLoss = attribute === A_CON ? -3 : -1;
             await loseAttribute(A_CON, constitutionLoss);
@@ -121,7 +135,7 @@ export async function poisonHero({ reason, killer, attribute, fatal = 30, state 
             && hero.halfGasDamage) {
             damage = Math.trunc((damage + 1) / 2);
         }
-        if (await loseHeroHp(damage, killer, { state, publish: line, die }))
+        if (await loseHeroHp(damage, killer, { state, publish: line, die, deathCause: hpDeathCause }))
             return { damage, died: true, pagerOwned };
     }
     else {
@@ -131,6 +145,7 @@ export async function poisonHero({ reason, killer, attribute, fatal = 30, state 
     if (hero.uhp < 1 && await die({
         killer,
         deathType: /poison/iu.test(killer) ? DIED : POISONING,
+        deathCause: /poison/iu.test(killer) ? hpDeathCause : `poisoned by ${attributedKiller}`,
     }))
         return { damage, died: true, pagerOwned };
     await reportEncumbrance();

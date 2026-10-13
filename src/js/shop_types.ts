@@ -30,10 +30,12 @@ export interface CostlyShopSpot extends ShopRoom {
     resident: Shopkeeper;
 }
 
-export interface CarriedShopBillItem {
-    entry: ShopBillEntry;
+export interface ShopBillItem {
     object: GameObject;
+    kind: 'used' | 'intact' | 'known-container' | 'hidden-container';
+    quantity: number;
     price: number;
+    billIndex: number;
 }
 
 export interface ShopTransaction {
