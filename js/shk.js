@@ -18,7 +18,7 @@ import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
-import { A_CHA, A_WIS, DELPHI, In_mines, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM, ROOMOFFSET, SHOPBASE, TEMPLE, Upolyd, MGIVENNAME, } from './const.js';
+import { A_CHA, A_WIS, ANTHOLE, DELPHI, In_mines, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM, ROOMOFFSET, SHOPBASE, TEMPLE, Upolyd, MGIVENNAME, } from './const.js';
 import { inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
 import { intemple } from './priest.js';
 import { recordDiscoveredRoom } from './dungeon.js';
@@ -1232,6 +1232,12 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
         }
         else if (room.rtype === TEMPLE) {
             result = await intemple(roomno);
+        }
+        else if (room.rtype === ANTHOLE) {
+            await plineWithContinuation('You enter an anthole!');
+            recordDiscoveredRoom(roomno - ROOMOFFSET);
+            room.rtype = OROOM;
+            result = room;
         }
     }
     return result;
