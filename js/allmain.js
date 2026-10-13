@@ -1030,7 +1030,6 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({ sourceTurn, moveA
                 return {
                     kind: 'timeout-message',
                     timeoutKind: 'stun',
-                    message: 'You feel a bit steadier now.',
                     sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
                     prayerTimeoutFreeze,
                 };
@@ -1058,7 +1057,6 @@ function finishInitialTurnMaintenanceAfterStun({ sourceTurn, moveAmount, deferAm
                 return {
                     kind: 'timeout-message',
                     timeoutKind: 'confusion',
-                    message: 'You feel less confused now.',
                     sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
                     prayerTimeoutFreeze,
                 };

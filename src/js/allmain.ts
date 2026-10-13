@@ -301,7 +301,6 @@ type MaintenancePhase =
     | (TimeoutMaintenance & {
         kind: 'timeout-message';
         timeoutKind: 'stun' | 'confusion';
-        message: string;
     })
     | (TurnMaintenance & { kind: 'regions' })
     | (TurnMaintenance & Position & { kind: 'statue-trap' });
@@ -1239,7 +1238,6 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({
                 return {
                     kind: 'timeout-message',
                     timeoutKind: 'stun',
-                    message: 'You feel a bit steadier now.',
                     sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
                     prayerTimeoutFreeze,
                 };
@@ -1270,7 +1268,6 @@ function finishInitialTurnMaintenanceAfterStun({
                 return {
                     kind: 'timeout-message',
                     timeoutKind: 'confusion',
-                    message: 'You feel less confused now.',
                     sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
                     prayerTimeoutFreeze,
                 };

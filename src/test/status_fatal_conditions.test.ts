@@ -29,7 +29,7 @@ for (const [type, label] of [
     });
 }
 
-void test('fatal conditions precede hunger and load in native status order', async () => {
+void test('simultaneous fatal conditions follow native severity order', async () => {
     freshObjectRoom();
     await startHeroSickness({ turns: 20, type: SICK_VOMITABLE | SICK_NONVOMITABLE });
     await setHeroSlimingTimeout(10);
