@@ -8,9 +8,64 @@ import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
-import { DAGGER, GOLD_PIECE, SACK } from '../js/object_data.js';
+import { DAGGER, GOLD_PIECE, OBJECT_NAMES, SACK } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { planInput, withMessagePages } from './support/planned-input.js';
+import { A_CHA } from '../js/const.js';
+void test('a lower container quote cannot settle a higher agreed bill without enough funds', async () => {
+    freshObjectRoom({ role: 'archeologist' });
+    requirePlayingGame(game);
+    const sack = await addInventoryObject(SACK, { cknown: true });
+    const daggers = await knownObject(DAGGER, { quan: 2 });
+    await addCreatedObjectToContainer(sack, daggers);
+    const { shopkeeper } = await createStaffedShop({ bill: [
+            { bo_id: daggers.o_id, bquan: 2, price: 4, useup: false },
+        ] });
+    daggers.unpaid = true;
+    game.u.acurr.a[A_CHA] = game.u.amax.a[A_CHA] = 20;
+    setHeroGoldAmount(game, 4);
+    const keeperGold = shopkeeper.gold ?? 0;
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    input.feed('a\n');
+    await withMessagePages(() => rhack('p'.charCodeAt(0)), input, /enough to pay|contents failed unexpectedly|Program in disorder|Please report|remove any unpaid|bought the contents|Thank you/, 6);
+    messages.push(game._pending_message);
+    assert.match(messages.join('\n'), /enough to pay for 2 .*daggers/);
+    assert.match(messages.join('\n'), /remove any unpaid items from that .*sack and buy them separately/);
+    assert.equal(heroGoldAmount(game), 4);
+    assert.equal(shopkeeper.gold ?? 0, keeperGold);
+    assert.equal(shopkeeper.eshk.billct, 1);
+    assert.equal(daggers.unpaid, true);
+    assert.equal(game.context.move, 0);
+});
+void test('a container purchase keeps an unaffordable bill entry and buys later affordable contents', async () => {
+    freshObjectRoom({ role: 'archeologist' });
+    requirePlayingGame(game);
+    const sack = await addInventoryObject(SACK, { cknown: true });
+    const dagger = await knownObject(DAGGER);
+    const knife = await knownObject(OBJECT_NAMES.indexOf('knife'));
+    await addCreatedObjectToContainer(sack, dagger);
+    await addCreatedObjectToContainer(sack, knife);
+    const { shopkeeper } = await createStaffedShop({ bill: [
+            { bo_id: dagger.o_id, bquan: 1, price: 6, useup: false },
+            { bo_id: knife.o_id, bquan: 1, price: 2, useup: false },
+        ] });
+    dagger.unpaid = knife.unpaid = true;
+    game.u.acurr.a[A_CHA] = game.u.amax.a[A_CHA] = 20;
+    setHeroGoldAmount(game, 4);
+    const keeperGold = shopkeeper.gold ?? 0;
+    const input = resetInputState();
+    input.feed('a\n');
+    await withMessagePages(() => rhack('p'.charCodeAt(0)), input, /enough to pay|contents failed unexpectedly|Program in disorder|Please report|bought the contents|Thank you/, 7);
+    assert.equal(dagger.unpaid, true);
+    assert.equal(knife.unpaid, false);
+    assert.equal(shopkeeper.eshk.billct, 1);
+    assert.equal(shopkeeper.eshk.bill[0]?.bo_id, dagger.o_id);
+    assert.equal(heroGoldAmount(game), 2);
+    assert.equal(shopkeeper.gold, keeperGold + 2);
+    assert.equal(game.context.move, 1);
+});
 for (const buy of [false, true]) {
     void test(`${buy ? 'buying' : 'cancelling'} contained goods uses payment selection and spends time only for a purchase`, async (t) => {
         freshObjectRoom();

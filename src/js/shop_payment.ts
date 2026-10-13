@@ -17,6 +17,7 @@ import { heroIsDeaf } from './senses.js';
 import { shopkeeperName } from './monster_name.js';
 import { unlinkObject } from './object_location.js';
 import { deallocateObject } from './object_delete.js';
+import { impossible } from './diagnostics.js';
 
 export function minimumShopPurchase(resident: Monster, state: GameState = game): {
     price: number; multipleItems: boolean;
@@ -92,11 +93,19 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
     if (!container && !await checkPurchaseFunds(resident, item, state)) return 'stop';
     // Only buy_container() suppresses "an unpaid" for a grouped purchase.
     const name = paymentObjectDescription(item.object, item.quantity, { state, purchasingContents: container });
+    let bought = 0;
     for (const object of purchases) {
         const entry = resident.eshk.bill.find(candidate => candidate.bo_id === object.o_id);
         if (!entry) continue;
         const quantity = item.kind === 'used' ? item.quantity : object.quan;
-        await payBillPrice(resident, entry.price * quantity, state);
+        const price = entry.price * quantity;
+        // The group quote uses today's valuation; each bill entry retains
+        // its agreed price. Native keeps trying later contents after a refusal.
+        if (container && !await checkPurchaseFunds(resident, { ...item, object, quantity }, state, price)) {
+            await impossible(`Buying ${simpleObjectName(item.object, state)} contents failed unexpectedly (#${object.o_id} 0).`, { state });
+            continue;
+        }
+        await payBillPrice(resident, price, state);
         if (item.kind === 'used' && object.where !== 'onbill' && object.quan > 0) {
             entry.bquan = object.quan;
         } else {
@@ -107,6 +116,11 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
             }
             removeBillEntry(resident, entry);
         }
+        bought++;
+    }
+    if (container && bought === 0) {
+        await plineWithContinuation(`"You need to remove any unpaid items from that ${simpleObjectName(item.object, state)} and buy them separately."`);
+        return 'stop';
     }
     await plineWithContinuation(`You ${item.kind === 'used' ? 'paid for' : 'bought'} ${name}${
         item.kind === 'used' ? ' at a cost of' : ' for'} ${item.price} gold piece${item.price === 1 ? '' : 's'}.`);
