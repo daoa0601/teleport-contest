@@ -832,6 +832,7 @@ export async function destroyMonsterInventoryByElement(monster, damageType, sour
         if (!destroyed)
             continue;
         if (visible) {
+            observeObjectForNaming(object, { state });
             await publish(destructionMessage(object, damageType, destroyed, quantity, monster, state));
         }
         await removeMonsterQuantity(monster, object, destroyed, state, publish);
