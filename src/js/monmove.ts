@@ -6745,13 +6745,14 @@ function covetousSeeksHealing(monster: Monster, state: PlayingGameState): boolea
         covetousExternalTargetExists(monster, state, mask));
 }
 
-function runCovetousHarassTactics(
+async function runCovetousHarassTactics(
     monster: Monster,
     state: PlayingGameState,
     random: RandomBelow,
     calls: MonsterCallLog,
+    rollOne: RollOne,
     afterRetreat = false,
-): MonsterMovement | null {
+): Promise<MonsterMovement | null> {
     if (!afterRetreat && !covetousUsesHarassStrategy(monster, state)) return null;
     // tactics() replaces the previous strategy while retaining the two
     // waiting bits and its one-shot relocation presentation bit.
@@ -6771,12 +6772,9 @@ function runCovetousHarassTactics(
     if (!destination) return null;
     const oldx = monster.mx;
     const oldy = monster.my;
-    const strategy = monster.mstrategy ?? 0;
-    const appearMessage = !!(strategy & STRAT_APPEARMSG);
-    monster.mstrategy = strategy & ~STRAT_APPEARMSG;
-    monster.mx = destination.x;
-    monster.my = destination.y;
-    monster.mtrack = [];
+    await relocateMonsterTo(monster, destination.x, destination.y, {
+        state, random, rollOne, calls, flags: RLOC_MSG,
+    });
     return {
         oldx,
         oldy,
@@ -6784,7 +6782,6 @@ function runCovetousHarassTactics(
         y: monster.my,
         moved: oldx !== monster.mx || oldy !== monster.my,
         deferredCovetousRelocation: true,
-        covetousRelocation: { appearMessage },
     };
 }
 
@@ -8513,17 +8510,17 @@ export async function takeMonsterTurn(
             monster.mflee = 0;
         }
     }
-    setMonsterApparentHeroPosition(monster, state, random, calls);
     if (!options.afterCovetousRelocation) {
+        setMonsterApparentHeroPosition(monster, state, random, calls);
         let tacticsMovement: MonsterMovement | null = null;
         if (covetousSeeksHealing(monster, state)) {
             const retreat = await retreatCovetousMonster(monster, state, random, rollOne);
             if (retreat === 'harass')
-                tacticsMovement = runCovetousHarassTactics(monster, state, random, calls, true);
+                tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls, rollOne, true);
         } else {
             const pickedTarget = await covetousPicksUpTargetUnderfoot(monster, state);
             if (!pickedTarget)
-                tacticsMovement = runCovetousHarassTactics(monster, state, random, calls);
+                tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls, rollOne);
         }
         if (state.program_state.gameover) {
             return {
