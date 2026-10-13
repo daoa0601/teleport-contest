@@ -8,7 +8,7 @@ import { heroPassesWalls, heroFormSticks } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { monsterName } from './monster_name.js';
-import { beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath, } from './end.js';
+import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, } from './end.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { heroIsUnaware } from './hero_sleep.js';
@@ -298,6 +298,11 @@ async function reviveHeroFromLava(state, publish, random) {
     await completeHeroLifeSaving(lifeSaving);
     return true;
 }
+async function finishLiquidDeath(options) {
+    // The liquid effect has already announced the death. done() still owns
+    // life saving and the wizard/explore recovery question.
+    return await finishHeroDeath({ ...options, deathLineShown: true });
+}
 async function teleportHeroOutOfLiquid({ state, random, rollOne, repaint, resetVision, recalculateVision, applyLandingEffects, }) {
     const destination = safeTeleportDestination(state, random, rollOne);
     if (!destination)
@@ -314,7 +319,7 @@ async function teleportHeroOutOfLiquid({ state, random, rollOne, repaint, resetV
 async function finishLavaLifeSaving({ state, publish, random, rollOne, repaint, resetVision, recalculateVision, applyLandingEffects, die, }) {
     for (let attempt = 0; attempt < 2; attempt++) {
         state.u.uhp = -1;
-        await publish('You burn to a crisp...');
+        await publish('You burn to a crisp...', { urgent: true });
         if (!await reviveHeroFromLava(state, publish, random)) {
             await die({
                 killer: 'molten lava',
@@ -322,9 +327,8 @@ async function finishLavaLifeSaving({ state, publish, random, rollOne, repaint, 
                 deathVerb: 'burned',
                 deathType: BURNING,
             });
-            if (state.context)
-                state.context.move = 0;
-            return { entered: true, moved: false, died: true };
+            if (state.program_state.gameover)
+                return { entered: true, moved: false, died: true };
         }
         if (state.program_state?.gameover)
             return { entered: true, moved: false, died: true };
@@ -449,7 +453,7 @@ async function finishLavaEffects({ state, location, publish, random, rollDice, r
     await igniteItems(state.inventory, { state, publish, random });
     return { entered: true, moved: false, died: false, sank };
 }
-export async function sinkHeroIntoLava({ state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, repaint = newsym, resetVision = vision_reset, recalculateVision = vision_recalc, applyLandingEffects = async () => { }, die = finishOrdinaryDeath, } = {}) {
+export async function sinkHeroIntoLava({ state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, repaint = newsym, resetVision = vision_reset, recalculateVision = vision_recalc, applyLandingEffects = async () => { }, die = finishLiquidDeath, } = {}) {
     requirePlayingGame(state);
     const hero = state.u;
     if (!hero?.utrap || hero.utraptype !== TT_LAVA)
@@ -704,7 +708,7 @@ async function leaveWater({ state, location, publish, resetVision, recalculateVi
 // their terrain-entry guards: a submerged hero still drowns while held
 // by a monster or wearing water-walking boots (C Amulet_off()).
 export async function heroLiquidEffects(options = {}) {
-    const { state = game, publish = plineWithContinuation, random = rn2, recalculateVision = vision_recalc, resetVision = vision_reset, repaint = newsym, rollDice = d, rollOne = rnd, chooseTeleportDestination = null, applyLandingEffects = async () => { }, die = finishOrdinaryDeath, entry = 'spot-effects', } = options;
+    const { state = game, publish = plineWithContinuation, random = rn2, recalculateVision = vision_recalc, resetVision = vision_reset, repaint = newsym, rollDice = d, rollOne = rnd, chooseTeleportDestination = null, applyLandingEffects = async () => { }, die = finishLiquidDeath, entry = 'spot-effects', } = options;
     const fromFloatDown = entry === 'float-down';
     if (!state.level)
         return null;

@@ -16,7 +16,7 @@ import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { monsterName } from './monster_name.js';
 import {
-    beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
+    beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath,
 } from './end.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
@@ -66,7 +66,7 @@ import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Position } from './map_types.js';
 import type { MessagePublisher } from './display.js';
-import type { DeathHandler, OrdinaryDeathHandler } from './end.js';
+import type { DeathHandler, OrdinaryDeathHandler, OrdinaryDeathOptions } from './end.js';
 
 type RandomBelow = (limit: number) => number;
 type RollDice = (count: number, sides: number) => number;
@@ -401,6 +401,12 @@ async function reviveHeroFromLava(state: PlayingGameState, publish: MessagePubli
     return true;
 }
 
+async function finishLiquidDeath(options: OrdinaryDeathOptions): Promise<boolean> {
+    // The liquid effect has already announced the death. done() still owns
+    // life saving and the wizard/explore recovery question.
+    return await finishHeroDeath({ ...options, deathLineShown: true });
+}
+
 async function teleportHeroOutOfLiquid({
     state, random, rollOne, repaint, resetVision, recalculateVision,
     applyLandingEffects,
@@ -423,7 +429,7 @@ async function finishLavaLifeSaving({
 }: LavaSurvivalContext): Promise<EnteredLiquid> {
     for (let attempt = 0; attempt < 2; attempt++) {
         state.u.uhp = -1;
-        await publish('You burn to a crisp...');
+        await publish('You burn to a crisp...', { urgent: true });
         if (!await reviveHeroFromLava(state, publish, random)) {
             await die({
                 killer: 'molten lava',
@@ -431,8 +437,8 @@ async function finishLavaLifeSaving({
                 deathVerb: 'burned',
                 deathType: BURNING,
             });
-            if (state.context) state.context.move = 0;
-            return { entered: true, moved: false, died: true };
+            if (state.program_state.gameover)
+                return { entered: true, moved: false, died: true };
         }
 
         if (state.program_state?.gameover)
@@ -570,7 +576,7 @@ export async function sinkHeroIntoLava({
     resetVision = vision_reset,
     recalculateVision = vision_recalc,
     applyLandingEffects = async () => {},
-    die = finishOrdinaryDeath,
+    die = finishLiquidDeath,
 }: Omit<HeroLiquidOptions, 'rollDice' | 'chooseTeleportDestination' | 'entry'> = {}): Promise<LavaSinkingResult | null> {
     requirePlayingGame(state);
     const hero = state.u;
@@ -834,7 +840,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
         rollOne = rnd,
         chooseTeleportDestination = null,
         applyLandingEffects = async () => {},
-        die = finishOrdinaryDeath,
+        die = finishLiquidDeath,
         entry = 'spot-effects',
     } = options;
     const fromFloatDown = entry === 'float-down';
