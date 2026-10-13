@@ -174,6 +174,8 @@ export interface GameState {
     initAlignment: Alignment | null;
     context: GameContext;
     program_state: ProgramState;
+    _autoAllHintShown?: boolean;
+    _autoAllImpliedHintShown?: boolean;
     flags: GameFlags;
     iflags: InterfaceFlags;
     last_hider?: number;

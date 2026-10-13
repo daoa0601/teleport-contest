@@ -16,7 +16,7 @@ import { nhgetch } from './input.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { objectClassForType } from './object_knowledge.js';
+import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
 import { liftObject } from './lift_object.js';
 import { endObjectBurn } from './light.js';
@@ -44,6 +44,7 @@ import { heroHasNoHands } from './polyself.js';
 import { observeQuantumCat } from './quantum_cat.js';
 import { d, rn2 } from './rng.js';
 
+import { getLine, promptChoice } from './query.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { NO_COLOR } from './terminal.js';
 import { assignInventoryLetter } from './u_init.js';
@@ -53,14 +54,25 @@ import {
     restoreMenuUnderlay, showChoiceWindow,
     showMultiSelectWindow,
 } from './windows.js';
-import { W_ACCESSORY, W_ARMOR } from './const.js';
+import {
+    MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM,
+    W_ACCESSORY, W_ARMOR,
+} from './const.js';
 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { CountedSelection, MenuUnderlay, MultiSelectSection, SelectableMenuItem } from './windows.js';
+import type { CountedSelection, MenuUnderlay, MultiSelectItem, MultiSelectSection, SelectableMenuItem } from './windows.js';
 
 type ObjectMatcher = (object: GameObject) => boolean;
-interface ContainerCategory { matches: ObjectMatcher }
+interface ContainerCategory {
+    matches: ObjectMatcher;
+    filter: 'auto' | 'all' | 'class' | 'buc' | 'unpaid' | 'picked';
+}
+interface CategorySelection {
+    matchers: ObjectMatcher[];
+    autoSelect: boolean;
+    justPickedCount?: number;
+}
 interface TransferStack { object: GameObject; parent: GameObject | null }
 export type ContainerTransferResult =
     | { moved: true; message: string; stop?: never; destroyedContainer?: never }
@@ -139,60 +151,127 @@ function bucCategory(object: GameObject): 'B' | 'C' | 'U' | 'X' {
     return 'U';
 }
 
-function categoryChoices(objects: readonly GameObject[]): SelectableMenuItem<ContainerCategory>[] {
+// C pickup.c:query_category(), for menu_loot's ALL_TYPES/UNPAID/BUCX/
+// CHOOSE_ALL/JUSTPICKED flags. Special filters stay out of menu inversion.
+function categoryChoices(objects: readonly GameObject[]): MultiSelectItem<ContainerCategory>[] {
     const groups = objectsByClass(objects);
-    const choices: SelectableMenuItem<ContainerCategory>[] = [
-        {
-            key: 'a', text: 'All types',
-            value: { matches: () => true },
-        },
-        ...groups.map((group, index) => ({
-            key: String.fromCharCode(98 + index),
-            text: group.name,
-            value: {
-                matches: (object: GameObject) => className(object) === group.name,
-            },
-        })),
-    ];
+    const showAll = groups.length > 1;
+    const verifyAll = !!((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL);
+    const choices: MultiSelectItem<ContainerCategory>[] = [{
+        key: 'A', text: 'Auto-select every relevant item',
+        itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+        value: { matches: () => false, filter: 'auto' },
+    }];
+    const firstHint = verifyAll ? !game._autoAllImpliedHintShown : !game._autoAllHintShown;
+    if (firstHint || game.flags.cmdassist !== false) {
+        if (!verifyAll || showAll) choices.push({ selectable: false, text: verifyAll
+            ? "    (if no other choices are picked, 'a' is implied)"
+            : '    (ignored unless some other choices are also picked)' });
+    }
+    if (verifyAll) game._autoAllImpliedHintShown = true;
+    else game._autoAllHintShown = true;
+    choices.push({ selectable: false, text: '' });
+    if (showAll) choices.push({
+        key: 'a', text: 'All types', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+        value: { matches: () => true, filter: 'all' },
+    });
+    choices.push(...groups.map((group, index): SelectableMenuItem<ContainerCategory> => ({
+        key: String.fromCharCode((showAll ? 98 : 97) + index),
+        text: group.name,
+        groupAccelerator: OBJECT_CLASS_SYMBOLS[group.members[0]?.oclass ?? 0] || '',
+        value: { matches: (object: GameObject) => className(object) === group.name, filter: 'class' },
+    })));
+    const special: SelectableMenuItem<ContainerCategory>[] = [];
+    if (objects.some(hasUnpaidContents)) special.push({
+        key: 'u', text: 'Unpaid items', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+        value: { matches: hasUnpaidContents, filter: 'unpaid' },
+    });
     const bucNames = {
-        B: 'Items known to be Blessed',
-        C: 'Items known to be Cursed',
-        U: 'Items known to be Uncursed',
-        X: 'Items of unknown Bless/Curse status',
+        B: 'Items known to be Blessed', C: 'Items known to be Cursed',
+        U: 'Items known to be Uncursed', X: 'Items of unknown Bless/Curse status',
     };
     for (const category of ['B', 'C', 'U', 'X'] as const) {
-        if (!objects.some(object => bucCategory(object) === category))
-            continue;
-        choices.push({
-            key: category,
-            text: bucNames[category],
-            value: {
-                matches: (object: GameObject) => bucCategory(object) === category,
-            },
+        if (objects.some(object => bucCategory(object) === category)) special.push({
+            key: category, text: bucNames[category], itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+            value: { matches: object => bucCategory(object) === category, filter: 'buc' },
         });
     }
-    if (objects.some(object => object.pickup_prev)) {
-        choices.push({
-            key: 'P', text: 'Items you just picked up',
-            value: { matches: (object: GameObject) => !!object.pickup_prev },
-        });
-    }
+    const justPicked = objects.filter(object => object.pickup_prev);
+    const onePicked = justPicked.length === 1 ? justPicked[0] : null;
+    if (justPicked.length) special.push({
+        key: 'P', text: onePicked ? `Just picked up: ${objectDescription(onePicked)}`
+            : 'Items you just picked up', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+        value: { matches: object => !!object.pickup_prev, filter: 'picked' },
+    });
+    if (special.length) choices.push({ selectable: false, text: '' }, ...special);
     return choices;
 }
 
-async function chooseCategories(title: string, objects: readonly GameObject[]): Promise<ObjectMatcher[]> {
+function hasUnpaidContents(object: GameObject): boolean {
+    return !!object.unpaid || !!object.contents?.some(hasUnpaidContents);
+}
+
+// allow_category(): match one selection in every active filter group.
+// Selecting coins by class takes precedence over the other filters.
+function categoryMatcher(filters: readonly ContainerCategory[]): ObjectMatcher {
+    if (filters.some(filter => filter.filter === 'all')) return () => true;
+    const classes = filters.filter(filter => filter.filter === 'class');
+    const groups = ['class', 'buc', 'unpaid', 'picked'] as const;
+    return object => {
+        if (object.otyp === GOLD_PIECE && classes.length)
+            return classes.some(filter => filter.matches(object));
+        return groups.every(group => {
+            const members = filters.filter(filter => filter.filter === group);
+            return !members.length || members.some(filter => filter.matches(object));
+        });
+    };
+}
+
+async function confirmAutoSelection(): Promise<'y' | 'n' | 'q'> {
+    if (!((game.flags.paranoia_bits ?? 0) & PARANOID_CONFIRM))
+        return promptChoice('Really autoselect All?', ['y', 'n', 'q'], 'n');
+    let prefix = '';
+    for (let tries = 0; tries < 6; tries++) {
+        const answer = (await getLine(`${prefix}Really autoselect All? [yes|no]`,
+            (_character, key) => key >= 32 && key < 127))?.trim().toLowerCase();
+        if (answer === 'yes') return 'y';
+        if (answer === 'no') return 'n';
+        if (answer === undefined || answer === 'quit') return 'q';
+        prefix = '"Yes" or "No": ';
+    }
+    return 'n';
+}
+
+async function chooseCategories(title: string, objects: readonly GameObject[]): Promise<CategorySelection> {
+    if (game.flags.menu_style !== undefined && game.flags.menu_style !== MENU_FULL)
+        return { matchers: [() => true], autoSelect: false };
     const groups = objectsByClass(objects);
     const knownBuc = new Set(objects.map(bucCategory));
     const onlyGroup = groups[0];
-    if (groups.length === 1 && onlyGroup && knownBuc.size <= 1)
-        return [object => className(object) === onlyGroup.name];
+    if (groups.length === 1 && onlyGroup && knownBuc.size <= 1
+        && !objects.some(hasUnpaidContents))
+        return { matchers: [object => className(object) === onlyGroup.name], autoSelect: false };
 
     const selected = await showMultiSelectWindow({
-        title,
-        sections: [{ heading: '', items: categoryChoices(objects) }],
-        omitHeadings: true,
+        title, sections: [{ heading: '', items: categoryChoices(objects) }], omitHeadings: true,
+        returnCounts: true,
     });
-    return selected.map(choice => choice.matches);
+    let autoSelect = selected.some(choice => choice.value.filter === 'auto');
+    const filters = selected.filter(choice => choice.value.filter !== 'auto').map(choice => choice.value);
+    const picked = selected.find(choice => choice.value.filter === 'picked');
+    const matchers: ObjectMatcher[] = filters.length ? [categoryMatcher(filters)] : [];
+    if (autoSelect) {
+        if ((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL) {
+            const answer = await confirmAutoSelection();
+            if (answer === 'q') return { matchers: [], autoSelect: false };
+            autoSelect = answer === 'y';
+            if (!matchers.length) matchers.push(() => true);
+        } else if (!matchers.length) {
+            await plineWithContinuation('No relevant items selected.');
+            autoSelect = false;
+        }
+    }
+    return { matchers, autoSelect, ...(picked ? { justPickedCount: Math.max(0, picked.count) } : {}) };
 }
 
 function matchingObjects(objects: readonly GameObject[], matchers: readonly ObjectMatcher[]): GameObject[] {
@@ -512,11 +591,13 @@ export async function takeFromContainer(
 
 async function takeSelectedObjects(container: GameObject): Promise<ContainerTransferResult[]> {
     if (!container.contents?.length) return [];
-    const matchers = await chooseCategories(
+    const categories = await chooseCategories(
         'Take out what type of objects?', container.contents,
     );
-    const eligible = matchingObjects(container.contents, matchers);
-    const selected = await chooseObjects('Take out what?', eligible, false);
+    const eligible = matchingObjects(container.contents, categories.matchers);
+    const selected = categories.autoSelect
+        ? eligible.map(value => ({ value, count: -1 }))
+        : await chooseObjects('Take out what?', eligible, false);
     const results: ContainerTransferResult[] = [];
     let resetJustPicked = true;
     for (const selection of selected) {
@@ -541,11 +622,18 @@ async function putSelectedObjects(container: GameObject, stashOne = false): Prom
         selected = await chooseObjects('What do you want to stash?', candidates, true);
         selected = selected.slice(0, 1);
     } else {
-        const matchers = await chooseCategories(
+        const categories = await chooseCategories(
             'Put in what type of objects?', candidates,
         );
-        const eligible = matchingObjects(candidates, matchers);
-        selected = await chooseObjects('Put in what?', eligible, true);
+        const eligible = matchingObjects(candidates, categories.matchers);
+        const onePicked = categories.justPickedCount !== undefined
+            && candidates.filter(object => object.pickup_prev).length === 1
+            ? candidates.find(object => object.pickup_prev) : null;
+        selected = categories.autoSelect
+            ? eligible.map(value => ({ value, count: -1 }))
+            : onePicked
+                ? [{ value: onePicked, count: categories.justPickedCount ?? -1 }]
+                : await chooseObjects('Put in what?', eligible, true);
     }
     const results: ContainerTransferResult[] = [];
     for (const selection of selected) {
