@@ -8,7 +8,8 @@ import { flushPendingTopline } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
-import { BOW, DAGGER, OBJECT_NAMES, PICK_AXE, TOWEL } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { BOW, CORPSE, DAGGER, OBJECT_NAMES, PICK_AXE, TOWEL } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
@@ -71,6 +72,23 @@ void test('an improvised weapon announcement uses its owned name without invento
 
     assert.match(await text(messages), /You begin bashing monsters with your tin opener\./);
 });
+
+for (const quantity of [1, 2]) {
+    void test(`bashing with ${quantity} lichen corpse${quantity === 1 ? '' : 's'} announces the species`, async () => {
+        const messages = await combatRoom();
+        const corpse = await addInventoryObject(CORPSE, {
+            corpsenm: MONSTER_NAME.indexOf('lichen'), quan: quantity, quantity,
+        });
+        await wield(corpse);
+        await text(messages);
+
+        await rhack('l'.charCodeAt(0));
+
+        assert.match(await text(messages), quantity === 1
+            ? /You begin bashing monsters with your lichen corpse\./
+            : /You begin bashing monsters with your lichen corpses\./);
+    });
+}
 
 for (const [name, type] of [['bow', BOW], ['unmounted halberd', OBJECT_NAMES.indexOf('halberd')]] as const) {
     void test(`using a ${name} in melee announces bashing once`, async () => {

@@ -500,9 +500,11 @@ export function ownedObjectName(object, state = game, { capitalized = true } = {
     let owner = carriedObjectOwner(object, state);
     if (!capitalized && (owner === 'Your' || owner === 'The'))
         owner = owner.toLowerCase();
-    const noun = objectName(object, state);
     const quantity = object.quan ?? object.quantity ?? 1;
-    const name = `${owner} ${quantity === 1 ? noun : pluralizeObjectNoun(object, noun)}`;
+    // yname() uses cxname(): corpses retain their species and plural suffix.
+    const noun = object.otyp === CORPSE ? corpseName(object) : objectName(object, state);
+    const name = `${owner} ${quantity === 1 || object.otyp === CORPSE
+        ? noun : pluralizeObjectNoun(object, noun)}`;
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
 // Native fruit labels imported from bones can already be plural. xname
