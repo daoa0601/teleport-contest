@@ -39,6 +39,7 @@ export interface MonsterNameOptions {
 }
 
 interface NameFormatOptions extends Omit<MonsterNameOptions, 'state' | 'capitalized' | 'exact'> {
+    called?: boolean;
     suppressName?: boolean;
     suppressShopkeeper?: boolean;
     suppressAppearance?: boolean;
@@ -150,8 +151,8 @@ export function distantMonsterName(monster: Monster, {
         const title = monster.female ? 'high priestess' : 'high priest';
         return article === 'the' ? `the ${title}` : title;
     }
-    return monsterName(monster, {
-        state, article, suppressIt: true, suppressSaddle: false,
+    return formatMonsterName(monster, state, {
+        article, called: true, suppressSaddle: false,
     });
 }
 
@@ -177,7 +178,7 @@ export function namelessMonsterName(monster: Monster, {
 }
 
 function formatMonsterName(monster: Monster, state: GameState, {
-    adjective = '', article = 'the', suppressName = false,
+    adjective = '', article = 'the', called = false, suppressName = false,
     suppressSaddle = !!MGIVENNAME(monster), suppressIt = false,
     suppressShopkeeper = false, augmentIt = false, suppressInvisible = false,
     suppressHallucination = false, suppressAppearance = false,
@@ -235,6 +236,9 @@ function formatMonsterName(monster: Monster, state: GameState, {
         personal = true;
         if (monster.mnum === PM_GHOST) {
             name = `${possessiveName(givenName)} ghost`;
+        } else if (called) {
+            name = `${typeName} called ${givenName}`;
+            personal = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME);
         } else if (monsterIsPlayerMonster(monster.mnum)
             && / the /i.test(givenName)) {
             // A player monster's adjectives belong after its own "the".

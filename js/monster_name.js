@@ -99,8 +99,8 @@ export function distantMonsterName(monster, { state = game, article = 'none', } 
         const title = monster.female ? 'high priestess' : 'high priest';
         return article === 'the' ? `the ${title}` : title;
     }
-    return monsterName(monster, {
-        state, article, suppressIt: true, suppressSaddle: false,
+    return formatMonsterName(monster, state, {
+        article, called: true, suppressSaddle: false,
     });
 }
 // C newcham(): YMonnam with the saddle always suppressed.
@@ -118,7 +118,7 @@ export function namelessMonsterName(monster, { state = game, article = 'none', s
         article, suppressName: true, suppressSaddle, suppressIt, suppressInvisible, suppressHallucination,
     });
 }
-function formatMonsterName(monster, state, { adjective = '', article = 'the', suppressName = false, suppressSaddle = !!MGIVENNAME(monster), suppressIt = false, suppressShopkeeper = false, augmentIt = false, suppressInvisible = false, suppressHallucination = false, suppressAppearance = false, } = {}) {
+function formatMonsterName(monster, state, { adjective = '', article = 'the', called = false, suppressName = false, suppressSaddle = !!MGIVENNAME(monster), suppressIt = false, suppressShopkeeper = false, augmentIt = false, suppressInvisible = false, suppressHallucination = false, suppressAppearance = false, } = {}) {
     const gameover = !!state.program_state?.gameover;
     const engulfing = state.u.uswallow && state.u.ustuck === monster;
     if (article === 'your' && !monster.mtame)
@@ -174,6 +174,10 @@ function formatMonsterName(monster, state, { adjective = '', article = 'the', su
         personal = true;
         if (monster.mnum === PM_GHOST) {
             name = `${possessiveName(givenName)} ghost`;
+        }
+        else if (called) {
+            name = `${typeName} called ${givenName}`;
+            personal = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME);
         }
         else if (monsterIsPlayerMonster(monster.mnum)
             && / the /i.test(givenName)) {

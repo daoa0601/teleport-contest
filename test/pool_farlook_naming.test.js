@@ -7,6 +7,8 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { distantMonsterName } from '../js/monster_name.js';
 import { KELP_FROND, STATUE } from '../js/object_data.js';
 import { races } from '../js/roles.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
@@ -19,6 +21,33 @@ void test('farlook describes the saddle on a tame pony', async () => {
     await createSaddledSteed('pony', { x: 11, y: 10 });
     newsym(11, 10);
     assert.equal(await farlookLocationDescription(11, 10), 'tame saddled pony');
+});
+void test('farlook includes the species and given name of a saddled pet', async () => {
+    freshObjectRoom();
+    const pony = await createSaddledSteed('pony', { x: 11, y: 10 });
+    setMonsterGivenName(pony, 'Fido');
+    newsym(11, 10);
+    assert.equal(await farlookLocationDescription(11, 10), 'tame saddled pony called Fido');
+});
+for (const [species, givenName, description] of [
+    ['little dog', 'Fido', 'the little dog called Fido'],
+    ['Medusa', 'Aster', 'Medusa called Aster'],
+    ['ghost', 'James', "James' ghost"],
+    ['knight', 'Alex the Gallant', 'the knight called Alex the Gallant'],
+]) {
+    void test(`distant naming preserves the ${species}'s species and name rules`, async () => {
+        freshObjectRoom();
+        const monster = await createMonsterAt(species, 11, 10, NO_MINVENT);
+        setMonsterGivenName(monster, givenName);
+        assert.equal(distantMonsterName(monster, { article: 'the' }), description);
+    });
+}
+void test('distant naming refers to an unspotted monster as it', async () => {
+    freshObjectRoom();
+    const monster = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
+    setMonsterGivenName(monster, 'Fido');
+    monster.minvis = true;
+    assert.equal(distantMonsterName(monster), 'it');
 });
 for (const [female, title] of [[false, 'high priest'], [true, 'high priestess']]) {
     void test(`farlook conceals an invisible Astral ${title}'s identity at a distance`, async () => {
