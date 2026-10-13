@@ -178,6 +178,18 @@ void test('#pray makes a former pet\'s corpse glow when reviving it on an altar'
     assert.equal(corpse.where, 'gone');
     assert.ok(game.level.monsters.some(monster => monster.mnum === pet.mnum && monster.mtame));
 });
+void test('altar wrath considers a carried luckstone when deciding whether to reduce luck', async () => {
+    prayerRoom({ hero: { uluck: -6 } });
+    requirePlayingGame(game);
+    const altar = game.level.requireAt(10, 10);
+    altar.typ = ALTAR;
+    altar.flags = Align2amask(1);
+    await addInventoryObject(LUCKSTONE);
+    assert.equal(game.u.moreluck, 3);
+    initRng(2n);
+    await runExtendedCommand('sit', '\x1b');
+    assert.ok((game.u.uluck ?? 0) < -6, 'total luck above -5 can still be reduced by altar wrath');
+});
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {
     prayerRoom();
     requirePlayingGame(game);

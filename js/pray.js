@@ -40,13 +40,14 @@ export async function altarWrath(x, y, state = game) {
         state.u.ualign.record = alignmentRecord - 1;
         return;
     }
-    await pline(state.deaf || state.u?.deaf
+    await pline(heroIsDeaf(state)
         ? `Despite your deafness, you seem to hear ${deity} say:`
         : `A voice (could it be ${deity}?) whispers:`);
     await pline('"Thou shalt pay, infidel!"');
-    const luck = state.u?.uluck ?? 0;
+    const baseLuck = state.u.uluck ?? 0;
+    const luck = baseLuck + (state.u.moreluck ?? 0);
     if (luck > -5 && rn2(luck + 6))
-        state.u.uluck = luck - (rn2(20) ? 1 : 2);
+        state.u.uluck = Math.max(LUCKMIN, baseLuck - (rn2(20) ? 1 : 2));
 }
 export async function dopray() {
     const game = requireInitializedGame();
