@@ -21,6 +21,7 @@ import { MON_FLOOR, PICK_ONE } from './const.js';
 import { showInventoryWindow } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
 import { dosounds } from './ambient_sounds.js';
+import { regenerateHeroHp } from './hero_regeneration.js';
 import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
 import { monsterGainLevelRiseDestination } from './monmove.js';
@@ -712,34 +713,10 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
     // allmain.c:regen_hp() runs after nh_timeout().  If a timeout pline
     // suspended at tty, no regeneration or later maintenance may run until
     // that exact source stack resumes.
-    const activeHp = polymorphed ? 'mh' : 'uhp';
-    const activeHpMax = polymorphed ? 'mhmax' : 'uhpmax';
-    if (!game.u?.invulnerable
-        && (game.u?.[activeHp] ?? 0) < (game.u?.[activeHpMax] ?? 0)) {
-        let shouldHeal;
-        if (polymorphed) {
-            // allmain.c:regen_hp() does not use the human level/Constitution
-            // rn2(100) check for monster-form HP.  Ordinary forms recover one
-            // point only from Regeneration or on the deterministic 20-turn
-            // cadence while movement encumbrance permits it.  The dry-eel
-            // damage branch remains separate from this non-eel carrier.
-            const nonEel = MONSTER_SYMBOL[game.u.umonnum] !== 57;
-            const encumbranceOk = nearCapacity(game) < MOD_ENCUMBER
-                || !game.u?.umoved;
-            shouldHeal = nonEel && (game.u.regeneration
-                || (encumbranceOk && sourceTurn % 20 === 0));
-        }
-        else {
-            const constitution = game.u?.acurr?.a?.[A_CON] || 0;
-            shouldHeal = (game.u.ulevel + constitution) > rn2(100)
-                || game.u.regeneration;
-        }
-        if (shouldHeal) {
-            game.u[activeHp] = Math.min(game.u[activeHpMax], game.u[activeHp] + 1);
-            if (game.u[activeHp] === game.u[activeHpMax])
-                interruptCountedActivity('You are in full health.');
-        }
-    }
+    if (await regenerateHeroHp(nearCapacity(game), sourceTurn))
+        interruptCountedActivity('You are in full health.');
+    if (game.program_state.gameover)
+        return { kind: 'complete', moveAmount };
     if ((game.u?.uen ?? 0) < (game.u?.uenmax ?? 0)) {
         const capacity = nearCapacity(game);
         const level = game.u?.ulevel ?? 1;
