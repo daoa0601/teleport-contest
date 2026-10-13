@@ -2,6 +2,8 @@
 // C ref: sit.c throne_sit_effect(), special_throne_effect(), attrcurse(),
 // and rndcurse().
 
+import { makeConfused } from './hero_mental_status.js';
+import { makeBlinded } from './sight_change.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import {
@@ -212,8 +214,7 @@ async function normalThroneEffect(
             '"A curse upon thee for sitting upon this most holy throne!"',
         );
         if (heroLuck() > 0) {
-            game.u.blindTurns = (game.u.blindTurns ?? 0) + rn1(100, 250);
-            syncBlindness(game);
+            await makeBlinded((game.u.blindTurns ?? 0) + rn1(100, 250));
             changeLuck(heroLuck() > 1 ? -rnd(2) : -1);
         } else {
             await rndcurse();
@@ -226,8 +227,7 @@ async function normalThroneEffect(
                 await plineWithContinuation(
                     'A terrible drone fills your head!',
                 );
-                game.u.confusionTurns = (game.u.confusionTurns ?? 0)
-                    + rnd(30);
+                await makeConfused((game.u.confusionTurns ?? 0) + rnd(30), { talk: false });
             } else {
                 await plineWithContinuation('An image forms in your mind.');
                 mapLevel();
@@ -252,7 +252,7 @@ async function normalThroneEffect(
         break;
     case 13:
         await plineWithContinuation('Your mind turns into a pretzel!');
-        game.u.confusionTurns = (game.u.confusionTurns ?? 0) + rn1(7, 16);
+        await makeConfused((game.u.confusionTurns ?? 0) + rn1(7, 16), { talk: false });
         break;
     }
 }

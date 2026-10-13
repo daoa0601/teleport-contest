@@ -2,6 +2,7 @@
 // C refs: potion.c make_sick(), make_vomiting();
 // timeout.c sickness_dialogue(), vomiting_dialogue(); eat.c vomit().
 import { heroIsHallucinating } from './senses.js';
+import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute, } from './attrib.js';
 import { A_CON, ALTAR, FAINTING, ICE, POISONING, SICK_ALL, SICK_NONVOMITABLE, SICK_VOMITABLE, TIMEOUT, } from './const.js';
@@ -216,14 +217,13 @@ export async function advanceHeroVomiting({ state = game, publish = pline, rollD
         return { active: false, vomited: false };
     const nextTurns = Math.max(0, (hero.vomitingTurns ?? 0) - 1);
     if (nextTurns === 9) {
-        hero.confusionTurns = (hero.confusionTurns ?? 0) + rollDice(2, 4);
+        await makeConfused((hero.confusionTurns ?? 0) + rollDice(2, 4), { state, talk: false });
         stopCountedAction(state);
     }
     else if (nextTurns === 6) {
-        hero.stunnedTurns = (hero.stunnedTurns ?? 0) + rollDice(2, 4);
-        hero.stunned = true;
+        await makeStunned((hero.stunnedTurns ?? 0) + rollDice(2, 4), { state, talk: false });
         state._occupation = null;
-        hero.confusionTurns = (hero.confusionTurns ?? 0) + rollDice(2, 4);
+        await makeConfused((hero.confusionTurns ?? 0) + rollDice(2, 4), { state, talk: false });
     }
     const message = vomitingMessage(state, nextTurns);
     if (message)

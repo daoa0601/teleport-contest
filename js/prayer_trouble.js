@@ -1,5 +1,5 @@
 // C pray.c:in_trouble(), worst_cursed_item(), and fix_worst_trouble().
-import { makeHallucinated } from './hero_mental_status.js';
+import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { ringRemovalObstacle } from './accessory.js';
 import { heroEyeCount, heroEyeName, heroStomachName } from './body_parts.js';
 import { A_STR, EXT_ENCUMBER, HUNGRY, HVY_ENCUMBER, IS_LAVA, IS_OBSTRUCTED, IS_POOL, SCORR, SDOOR, TT_BURIEDBALL, TT_LAVA, Upolyd, WEAK, W_SADDLE, isok, } from './const.js';
@@ -248,6 +248,7 @@ export async function fixPrayerTrouble(trouble, state = game) {
         case Trouble.HUNGRY:
             await pline(`Your ${heroStomachName(state)} feels content.`);
             await pline(restoreHeroNutrition(state));
+            state.context.botl = true;
             return;
         case Trouble.SICK:
             await pline('You feel better.');
@@ -361,14 +362,10 @@ export async function fixPrayerTrouble(trouble, state = game) {
             await healHeroLegs(state, { publish: pline });
             return;
         case Trouble.STUNNED:
-            hero.stunnedTurns = 0;
-            refreshProperty('stunned', state);
-            await pline(heroIsHallucinating(state) ? 'You feel less wobbly now.' : 'You feel a bit steadier now.');
+            await makeStunned(0, { state, publish: pline });
             return;
         case Trouble.CONFUSED:
-            hero.confusionTurns = 0;
-            refreshProperty('confusion', state);
-            await pline(heroIsHallucinating(state) ? 'You feel less trippy now.' : 'You feel less confused now.');
+            await makeConfused(0, { state, publish: pline });
             return;
         case Trouble.HALLUCINATING:
             await pline('Looks like you are back in Kansas.');

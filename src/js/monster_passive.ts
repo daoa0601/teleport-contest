@@ -2,6 +2,7 @@
 // C ref: uhitm.c passive() and passive_obj().
 
 import { heroIsHallucinating } from './senses.js';
+import { makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
@@ -397,9 +398,7 @@ async function applyStunPassive({ damage, state, publish }: PassiveContext): Pro
     const hero = state.u;
     if (hero.stunned || (hero.stunnedTurns ?? 0) > 0 || damage <= 0)
         return { heroDied: false };
-    await publish(hero.usteed ? 'You wobble in the saddle.' : 'You stagger...');
-    hero.stunnedTurns = damage;
-    hero.stunned = true;
+    await makeStunned(damage, { state, publish });
     return { heroDied: false };
 }
 
