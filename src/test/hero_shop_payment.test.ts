@@ -12,7 +12,7 @@ import { GOLD_PIECE, SACK } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 
 for (const goldLocation of ['none', 'purse', 'sack'] as const) {
-    void test(`paying an empty resident bill reports gold kept in ${goldLocation}`, async () => {
+    void test(`paying an empty resident bill takes a turn with gold kept in ${goldLocation}`, async () => {
         freshObjectRoom();
         const { shopkeeper } = await createStaffedShop();
         shopkeeper.eshk.shknam = 'Ada';
@@ -28,7 +28,7 @@ for (const goldLocation of ['none', 'purse', 'sack'] as const) {
         if (goldLocation === 'purse') assert.doesNotMatch(game._pending_message, /no gold/);
         else assert.match(game._pending_message, goldLocation === 'sack'
             ? /Moreover, you seem to have no gold\./ : /Moreover, you have no gold\./);
-        assert.equal(game.context.move, 0);
+        assert.equal(game.context.move, 1);
         assert.equal(heroGoldAmount(game), goldLocation === 'purse' ? 37 : 0);
     });
 }

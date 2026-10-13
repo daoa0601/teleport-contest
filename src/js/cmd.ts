@@ -5314,7 +5314,7 @@ async function dopay(): Promise<void> {
             await plineWithContinuation(`You do not owe ${resident.eshk?.shknam || 'the shopkeeper'} anything.`);
             if (resident === shopkeeperForHero() && resident.mpeaceful && !heroGoldAmount(game))
                 await plineWithContinuation(`Moreover, you${hiddenGold(game, true) ? ' seem to' : ''} have no gold.`);
-            game.context.move = 0;
+            game.context.move = 1;
             return;
         }
         await plineWithContinuation(shopThankYouMessage(resident));
