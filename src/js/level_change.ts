@@ -69,6 +69,26 @@ export interface LevelChangeOptions {
     postMessage?: string;
 }
 
+export interface ScheduledLevelChange {
+    args: Parameters<typeof gotoLevel>;
+    changeLevel: typeof gotoLevel;
+}
+
+// C do.c:schedule_goto(). The command keeps using the departure level
+// until moveloop_core() completes its movement and trap effects.
+export function scheduleLevelChange(
+    args: Parameters<typeof gotoLevel>, changeLevel = gotoLevel,
+): void {
+    game._scheduledLevelChange = { args, changeLevel };
+}
+
+export async function finishScheduledLevelChange(): Promise<void> {
+    const travel = game._scheduledLevelChange;
+    if (!travel) return;
+    delete game._scheduledLevelChange;
+    await travel.changeLevel(...travel.args);
+}
+
 interface LevelArrivalOptions {
     arrival: LevelArrival;
     ladder: boolean;

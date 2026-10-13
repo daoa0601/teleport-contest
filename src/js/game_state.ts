@@ -24,6 +24,7 @@ import type { LuaAlignmentName } from './lua/lifecycle.js';
 import type { SpellCategory } from './data_types.js';
 import type { PrayerTrouble } from './prayer_trouble.js';
 import type { HeroGenocideCause } from './hero_genocide.js';
+import type { ScheduledLevelChange } from './level_change.js';
 
 export interface MonsterMessageContext {
     earlierActorPager: boolean;
@@ -271,6 +272,7 @@ export interface GameState {
     _activeSpecialLevel?: ActiveSpecialLevel | null;
     _specialLevelPrototype?: string | null | undefined;
     _levelCache?: Map<string, CachedLevelState>;
+    _scheduledLevelChange?: ScheduledLevelChange;
     _levelAnnotations?: Map<string, string>;
     _overviewRecords?: Map<string, OverviewRecord>;
     _heroTrack?: Position[];

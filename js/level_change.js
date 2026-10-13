@@ -40,6 +40,18 @@ import { moveElementalBubbles } from './elemental.js';
 import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, } from './const.js';
 import { resurrectWizard } from './wizard.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
+// C do.c:schedule_goto(). The command keeps using the departure level
+// until moveloop_core() completes its movement and trap effects.
+export function scheduleLevelChange(args, changeLevel = gotoLevel) {
+    game._scheduledLevelChange = { args, changeLevel };
+}
+export async function finishScheduledLevelChange() {
+    const travel = game._scheduledLevelChange;
+    if (!travel)
+        return;
+    delete game._scheduledLevelChange;
+    await travel.changeLevel(...travel.args);
+}
 export async function gotoLevel(targetDepth, { arrival = 'random', ladder = false, postMessage = '', } = {}) {
     requirePlayingGame(game);
     const oldDepth = { ...game.u.uz };

@@ -35,6 +35,7 @@ import { monsterMissMessage } from './monster_miss.js';
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_STCK } from './monster_attack_types.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, } from './monster_perception.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
+import { finishScheduledLevelChange } from './level_change.js';
 import { findArtifact } from './artifacts.js';
 import { observeBucForNaming } from './object_knowledge.js';
 import { loseHeroExperience } from './exper.js';
@@ -3480,6 +3481,9 @@ export async function moveloop_core() {
         const moved = await continueRun(g);
         if (g.program_state.gameover)
             return;
+        await finishScheduledLevelChange();
+        if (g.program_state.gameover)
+            return;
         if (moved) {
             g.u.umovement = (g.u.umovement ?? 12) - 12;
             g._heroTimePending = true;
@@ -3497,6 +3501,9 @@ export async function moveloop_core() {
     else {
         await rhack(0);
     }
+    if (g.program_state.gameover)
+        return;
+    await finishScheduledLevelChange();
     if (g.program_state.gameover)
         return;
     // Advance turn

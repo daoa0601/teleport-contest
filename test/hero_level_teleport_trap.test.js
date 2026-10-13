@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { LEVEL_TELEP } from '../js/const.js';
+import { moveloop_core } from '../js/allmain.js';
+import { DUST, LEVEL_TELEP } from '../js/const.js';
+import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { resetInputState } from '../js/input.js';
@@ -8,6 +10,31 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { freshConnectedLevels } from './support/connected-levels.js';
+import { answerPrompts } from './support/input-boundaries.js';
+void test('stepping onto a level teleport trap wears departure engravings before travelling', async () => {
+    const { source, destination } = freshConnectedLevels();
+    requirePlayingGame(game);
+    game.flags.debug = true;
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    destination.downTeleportRegion = { lx: 13, ly: 10, hx: 13, hy: 10 };
+    makeEngravingAt(10, 10, '.', null, 0, DUST);
+    game.level = destination;
+    makeEngravingAt(10, 10, '.', null, 0, DUST);
+    game.level = source;
+    addTrap(source, LEVEL_TELEP, 11, 10);
+    const input = resetInputState();
+    input.feed('l');
+    await answerPrompts(moveloop_core(), input, [
+        { prompt: /You step onto a level teleport trap!--More--/, keys: ' ' },
+        { prompt: /To what level do you want to teleport\?/, keys: '2\r' },
+        { prompt: /You feel disoriented\.--More--/, keys: ' ' },
+    ]);
+    assert.equal(game.level, destination);
+    assert.equal(engravingAt(10, 10, source), null, 'walking away erases the one-character dust engraving on the departure level');
+    assert.equal(engravingAt(10, 10, destination)?.text, '.', 'the same coordinates on the destination level are not part of the step');
+});
 for (const acceptDeath of [true, false]) {
     void test(`teleporting to Nowhere ${acceptDeath ? 'ends play without trap confusion' : 'confuses the hero after declining death'}`, async () => {
         const level = freshObjectRoom({ flags: {

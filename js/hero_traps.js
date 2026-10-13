@@ -18,7 +18,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
 import { levelTeleport } from './level_teleport.js';
-import { gotoLevel as changeLevel } from './level_change.js';
+import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { heroLiquidEffects } from './hack.js';
 import { dungeonDepth } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -703,10 +703,9 @@ async function triggerLevelTeleportTrap(trap, gotoLevel, intentional) {
     }
     deleteTrap(trap);
     newsym(hero.ux, hero.uy);
-    // level_tele() schedules travel; trap feedback and confusion happen on
-    // the old level before deferred_goto() performs the change.
-    const travel = { args: null };
-    await levelTeleport({ gotoLevel: (...args) => { travel.args = args; } });
+    await levelTeleport({
+        gotoLevel: (...args) => { scheduleLevelChange(args, gotoLevel ?? changeLevel); },
+    });
     if (game.program_state.gameover)
         return;
     const controlled = heroControlsTeleport();
@@ -718,8 +717,6 @@ async function triggerLevelTeleportTrap(trap, gotoLevel, intentional) {
     }
     if (!controlled)
         setPropertyTimeout('confusion', (hero.confusionTurns ?? 0) + 3, game);
-    if (travel.args)
-        await (gotoLevel ?? changeLevel)(...travel.args);
 }
 async function triggerSqueakyBoard(trap, { viaSitting = false, failedUntrap = false, forceTrap = false } = {}) {
     requirePlayingGame(game);
