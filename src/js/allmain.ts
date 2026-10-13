@@ -1950,11 +1950,11 @@ async function resolveDeferredHeroItemTheft(
     // sight. The later retreat message in mhitm_ad_sedu() names the thief too.
     if (!seenBeforeRemoval && (wornArmor || wasAccessory) && canSpotMonster(monster))
         subject = monsterName(monster, { state: game, capitalized: true });
-    if (object.unpaid)
-        removeObjectAndContentsFromBill(object, game, { resident: currentShopResident(game) });
-    // C yname() observes the item while it still belongs to the hero.
+    // C yname() observes and names ownership before the shop bill is cleared.
     observeObjectForNaming(object);
     const stolenName = ownedObjectName(object, game, { capitalized: false });
+    if (object.unpaid)
+        removeObjectAndContentsFromBill(object, game, { resident: currentShopResident(game) });
     unlinkObject(object, game);
     await finishInventoryRemoval(object, game);
     if (game.program_state?.gameover) {
