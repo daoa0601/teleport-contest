@@ -22,7 +22,7 @@ import {
     W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit,
 } from './const.js';
 import {
-    ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER,
+    ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER,
     HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES,
     SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL,
 } from './object_data.js';
@@ -488,7 +488,10 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
         const noun = item.oclass === 2 || isWeaponTool(item) ? 'weapon' : 'item';
         entries.push({ key: '-', text: `${verb} '-' to ${action} ${stack ? `these ${noun}s` : `this ${noun}`}` });
     }
-    if (isContainer(item)) entries.push({ key: 'a', text: 'Open this container' });
+    if (item.otyp === BAG_OF_TRICKS) {
+        const discovered = item.typeKnown || state._knownObjectTypes?.has(item.otyp);
+        entries.push({ key: 'a', text: discovered ? 'Reach into this bag' : 'Open this container' });
+    } else if (isContainer(item)) entries.push({ key: 'a', text: 'Open this container' });
     if (item.oclass !== COIN_CLASS && item.dknown !== false && !item.oartifact && item.otyp !== SPE_NOVEL)
         entries.push({ key: 'c', text: `Name ${stack ? 'this stack of' : 'this specific'} ${itemName}` });
     if (!alreadyWorn) entries.push({ key: 'd', text: `Drop this ${stack ? 'stack' : 'item'}` });
