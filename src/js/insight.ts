@@ -2,6 +2,8 @@
 // C ref: insight.c — doattributes(), enlightenment().
 
 import { heroIsHallucinating } from './senses.js';
+import { canPraySafely } from './pray.js';
+import { deityName } from './alignment.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { game, requireInitializedGame } from './gstate.js';
 import {
@@ -533,6 +535,7 @@ function basicEnlightenmentLines(roleName: string) {
 }
 
 function magicEnlightenmentLines() {
+    const game = requireInitializedGame();
     const u = game.u;
     const record = u.ualign?.record || 0;
     const piety = piousness(record);
@@ -545,8 +548,13 @@ function magicEnlightenmentLines() {
     ];
     if (game.flags?.debug) lines.push(`  Your alignment is ${record}.`);
     lines.push(...liveAttributePropertyLines());
-    lines.push(`  You can't safely pray${game.flags?.debug
-        ? ` (${u.ublesscnt || 0})` : ''}.`);
+    if (u.ugangr) {
+        const anger = u.ugangr > 6 ? 'extremely ' : u.ugangr > 3 ? 'very ' : '';
+        lines.push(`  ${deityName(u.ualign.type)} is ${anger}angry with you${game.flags.debug ? ` (${u.ugangr})` : ''}.`);
+    } else {
+        lines.push(`  You ${canPraySafely() ? 'can' : "can't"} safely pray${game.flags?.debug
+            ? ` (${u.ublesscnt || 0})` : ''}.`);
+    }
     const mortality = u.umortality ?? 0;
     if (mortality > 0) {
         lines.push(`  You have been killed ${

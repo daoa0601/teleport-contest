@@ -78,7 +78,7 @@ export async function dopray() {
     const trouble = worstPrayerTrouble();
     // The pinned can_pray() rejects a demon unless the deity is neutral,
     // despite its comment describing the opposite restriction.
-    if (requireMonsterData(MONSTER_FLAGS2, hero.umonnum) & M2_DEMON && alignment !== 0) {
+    if (demonRejectsPrayer(alignment)) {
         await pline(`The very idea of praying to a ${alignment ? 'lawful' : 'neutral'} god is repugnant to you.`);
         return;
     }
@@ -106,6 +106,21 @@ export async function dopray() {
         hero.invulnerable = true;
     }
     game.context.move = 1;
+}
+
+// C can_pray(FALSE) uses the same trouble, timeout, and deity decision as #pray.
+export function canPraySafely(): boolean {
+    const game = requireInitializedGame();
+    const altar = currentAltar();
+    const alignment = altar ? Amask2align(altar.flags) : game.u.ualign.type;
+    const trouble = worstPrayerTrouble();
+    if (demonRejectsPrayer(alignment)) return false;
+    return prayerOutcome(alignment, trouble) === 'pleased' && !inHell();
+}
+
+function demonRejectsPrayer(alignment: number): boolean {
+    const game = requireInitializedGame();
+    return !!(requireMonsterData(MONSTER_FLAGS2, game.u.umonnum) & M2_DEMON) && alignment !== 0;
 }
 
 function prayerOutcome(alignment: number, trouble: PrayerTrouble): PrayerOutcome {
