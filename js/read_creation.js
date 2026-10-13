@@ -14,6 +14,7 @@ import { revivalReplacement } from './revival_species.js';
 import { monsterSaddle, putSaddleOnMonster } from './steed.js';
 import { isPoolAt } from './terrain_properties.js';
 import { couldsee } from './vision.js';
+const PM_STALKER = MONSTER_NAME.indexOf('stalker');
 export async function createParticularMonster() {
     requirePlayingGame(game);
     let prompt = 'Create what kind of monster?';
@@ -87,10 +88,10 @@ function monsterChoice(name) {
     if (name === '~')
         return { kind: 'species', species: 114, gender: 2 }; // long worm
     if (name === 'I')
-        return { kind: 'species', species: 43, gender: 2 }; // stalker
+        return { kind: 'species', species: PM_STALKER, gender: 2 };
     const monsterClass = nameToMonsterClass(name);
     if (monsterClass === 35)
-        return { kind: 'species', species: 43, gender: 2 };
+        return { kind: 'species', species: PM_STALKER, gender: 2 };
     if (monsterClass === 59)
         return { kind: 'species', species: 114, gender: 2 };
     return monsterClass > 0 ? { kind: 'class', monsterClass } : null;

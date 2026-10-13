@@ -63,6 +63,23 @@ void test('wizard creation accepts a monster class symbol', async () => {
     assert.equal(MONSTER_SYMBOL[level.monsters[0]?.mnum ?? -1], 2);
 });
 
+for (const request of ['I', 'invisible monster']) {
+    void test(`wizard creation resolves "${request}" to a permanently invisible stalker`, async () => {
+        const { level, input } = creationRoom();
+        input.feed(`${request}\n`);
+
+        await rhack(7);
+
+        assert.equal(level.monsters.length, 1);
+        const stalker = level.monsters[0];
+        assert.ok(stalker);
+        assert.equal(MONSTER_NAME[stalker.mnum], 'stalker');
+        assert.equal(!!stalker.minvis, true);
+        assert.equal(!!stalker.perminvis, true);
+        assert.equal(game.context.move, 0);
+    });
+}
+
 void test('a wizard reading create monster chooses the species through the native creation prompt', async () => {
     const { level, input } = creationRoom();
     const scroll = await addInventoryObject(SCR_CREATE_MONSTER, { blessed: true, typeKnown: true });

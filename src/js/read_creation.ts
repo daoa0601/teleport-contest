@@ -35,6 +35,8 @@ interface CreationRequest {
     hidden: boolean;
 }
 
+const PM_STALKER = MONSTER_NAME.indexOf('stalker');
+
 export async function createParticularMonster(): Promise<boolean> {
     requirePlayingGame(game);
     let prompt = 'Create what kind of monster?';
@@ -102,9 +104,9 @@ function monsterChoice(name: string): MonsterChoice | null {
     const match = resolveMonsterName(name);
     if (match) return { kind: 'species', species: match.mnum, gender: match.gender };
     if (name === '~') return { kind: 'species', species: 114, gender: 2 }; // long worm
-    if (name === 'I') return { kind: 'species', species: 43, gender: 2 }; // stalker
+    if (name === 'I') return { kind: 'species', species: PM_STALKER, gender: 2 };
     const monsterClass = nameToMonsterClass(name);
-    if (monsterClass === 35) return { kind: 'species', species: 43, gender: 2 };
+    if (monsterClass === 35) return { kind: 'species', species: PM_STALKER, gender: 2 };
     if (monsterClass === 59) return { kind: 'species', species: 114, gender: 2 };
     return monsterClass > 0 ? { kind: 'class', monsterClass } : null;
 }
