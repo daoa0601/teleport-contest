@@ -8,6 +8,7 @@ import { resetInputState } from '../js/input.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { relocateMonsterTo } from '../js/teleport.js';
 import { displaceMonster } from '../js/monster_displacement.js';
+import { hurtleMonster } from '../js/monster_hurtle.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -98,6 +99,24 @@ void test('a monster teleporting into and out of gas changes its exposure', asyn
 
     assert.equal(soldier.mhp, hp);
 });
+
+for (const startsInside of [false, true]) {
+    void test(`knockback ${startsInside ? 'out of' : 'into'} gas changes the monster's exposure`, async () => {
+        freshObjectRoom();
+        const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
+        soldier.mhp = 100;
+        const cloud = createHarmlessGasCloudSelection(game,
+            [{ x: startsInside ? 11 : 13, y: 10 }], { ttl: 10 });
+        assert.ok(cloud);
+        cloud.damage = 8;
+
+        await hurtleMonster(soldier, 1, 0, 2);
+        await runLevelRegions(game, { publish: async () => {} });
+
+        assert.equal(soldier.mx, 13, 'Knockback crosses two open squares');
+        assert.equal(soldier.mhp < 100, !startsInside);
+    });
+}
 
 void test('displacing another monster updates gas exposure for both actors', async () => {
     freshObjectRoom();
