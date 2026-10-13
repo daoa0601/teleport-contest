@@ -78,7 +78,9 @@ export async function slipOrTrip(publish = plineWithContinuation) {
     if (hero.fumblingFromIce || onIce && !rn2(3)) {
         const iceOnly = !hero.fumblingFromArmor && !hero.fumblingIntrinsic
             && !propertyIsActive('fumbling', game);
-        const subject = steed ? monsterName(steed, { state: game, capitalized: true }) : 'You';
+        const subject = steed ? monsterName(steed, {
+            state: game, capitalized: true, suppressSaddle: true,
+        }) : 'You';
         const verb = rn2(2) ? 'slip' : 'slide';
         await publish(`${subject} ${verb}${steed ? 's' : ''} ${onIce ? 'on' : 'off'} the ice.`);
         if (steed && !saddle?.cursed && (!iceOnly || !rn2(3))) {

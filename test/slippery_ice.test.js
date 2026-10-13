@@ -2,9 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { ICE } from '../js/const.js';
+import { slipOrTrip } from '../js/fumbling.js';
 import { game } from '../js/gstate.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
+import { createSaddledSteed } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 void test('walking from ice can cause a temporary slip and two helpless turns', async () => {
     let slips = 0;
@@ -52,4 +55,23 @@ void test('cold resistance prevents an unmounted hero from slipping on ice', asy
         assert.equal(game.u.fumblingTurns ?? 0, 0, `cold resistance protects the hero for seed ${seed}`);
     }
 });
+for (const onIce of [true, false]) {
+    void test(`a saddled pony slipping ${onIce ? 'on' : 'off'} ice is named without its saddle`, async () => {
+        const level = freshObjectRoom();
+        if (onIce)
+            level.requireAt(game.u.ux, game.u.uy).typ = ICE;
+        const steed = await createSaddledSteed('pony', { saddle: { cursed: true } });
+        game.u.usteed = steed;
+        game.u.fumblingFromIce = true;
+        game.u.ux0 = game.u.ux;
+        game.u.uy0 = game.u.uy;
+        const messages = [];
+        await slipOrTrip(async (message) => { messages.push(message); });
+        assert.equal(messages.length, 1);
+        assert.match(messages[0] ?? '', onIce
+            ? /^The pony (?:slips|slides) on the ice\.$/
+            : /^The pony (?:slips|slides) off the ice\.$/);
+        assert.equal(game.u.usteed, steed, 'the cursed saddle keeps the hero mounted');
+    });
+}
 //# sourceMappingURL=slippery_ice.test.js.map
