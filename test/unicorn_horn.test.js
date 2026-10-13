@@ -19,7 +19,7 @@ void test('applying a unicorn horn uses a turn without consuming it', async () =
     const horn = await freshHorn();
     requirePlayingGame(game);
     await applyInventoryObject(horn);
-    assert.match(game._pending_message, /Nothing seems to happen\.$/);
+    assert.match(game._pending_message, /Nothing happens\.$/);
     assert.equal(game.context.move, 1);
     assert.equal(game.inventory.includes(horn), true);
 });
@@ -27,7 +27,7 @@ void test('a unicorn form can use its natural horn', async () => {
     freshMonsterAbilityRoom('gray unicorn');
     requirePlayingGame(game);
     await runMonsterAbilityCommand();
-    assert.match(game._pending_message, /Nothing seems to happen\.$/);
+    assert.match(game._pending_message, /Nothing happens\.$/);
     assert.equal(game.context.move, 1);
 });
 void test('an uncursed horn can cure several timed ailments', async () => {

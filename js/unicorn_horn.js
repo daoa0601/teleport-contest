@@ -33,7 +33,7 @@ export async function useUnicornHorn({ object = null, state = game, publish = pl
     }
     const troubles = currentHornTroubles(state);
     if (!troubles.length) {
-        await publish('Nothing seems to happen.');
+        await publish('Nothing happens.');
         return { used: true, spentTime: true, caused: null, cured: [] };
     }
     if (troubles.length > 1)
