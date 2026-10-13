@@ -449,6 +449,8 @@ function itemActionEntries(item, state, repairGold) {
         const noun = item.oclass === 2 || isWeaponTool(item) ? 'weapon' : 'item';
         entries.push({ key: '-', text: `${verb} '-' to ${action} ${stack ? `these ${noun}s` : `this ${noun}`}` });
     }
+    if (isContainer(item))
+        entries.push({ key: 'a', text: 'Open this container' });
     if (item.oclass !== COIN_CLASS && item.dknown !== false && !item.oartifact && item.otyp !== SPE_NOVEL)
         entries.push({ key: 'c', text: `Name ${stack ? 'this stack of' : 'this specific'} ${itemName}` });
     if (!alreadyWorn)
@@ -533,6 +535,7 @@ function inventoryActionKey(code) {
     const key = String.fromCharCode(code);
     switch (key) {
         case '-':
+        case 'a':
         case 'c':
         case 'd':
         case 'e':

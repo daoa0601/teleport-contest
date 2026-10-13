@@ -70,7 +70,7 @@ export interface InventoryDescriptionOptions {
     projectPrimaryHand?: boolean;
 }
 
-export type InventoryActionKey = '-' | 'c' | 'd' | 'e' | 'E' | 'f' | 'i' | 'I' | 'P' | 'Q' | 'r' | 'R' | 't' | 'T' | 'w' | 'x' | 'X' | '/'
+export type InventoryActionKey = '-' | 'a' | 'c' | 'd' | 'e' | 'E' | 'f' | 'i' | 'I' | 'P' | 'Q' | 'r' | 'R' | 't' | 'T' | 'w' | 'x' | 'X' | '/'
     | '\x1b' | ' ' | '\n' | '\r';
 export interface InventoryAction { key: InventoryActionKey; item: GameObject }
 type IdentificationBeatitude = 'B' | 'U' | 'C' | 'X';
@@ -488,6 +488,7 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
         const noun = item.oclass === 2 || isWeaponTool(item) ? 'weapon' : 'item';
         entries.push({ key: '-', text: `${verb} '-' to ${action} ${stack ? `these ${noun}s` : `this ${noun}`}` });
     }
+    if (isContainer(item)) entries.push({ key: 'a', text: 'Open this container' });
     if (item.oclass !== COIN_CLASS && item.dknown !== false && !item.oartifact && item.otyp !== SPE_NOVEL)
         entries.push({ key: 'c', text: `Name ${stack ? 'this stack of' : 'this specific'} ${itemName}` });
     if (!alreadyWorn) entries.push({ key: 'd', text: `Drop this ${stack ? 'stack' : 'item'}` });
@@ -564,7 +565,7 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
 function inventoryActionKey(code: number): InventoryActionKey {
     const key = String.fromCharCode(code);
     switch (key) {
-    case '-': case 'c': case 'd': case 'e': case 'E': case 'f': case 'i': case 'I': case 'P': case 'Q': case 'r': case 'R':
+    case '-': case 'a': case 'c': case 'd': case 'e': case 'E': case 'f': case 'i': case 'I': case 'P': case 'Q': case 'r': case 'R':
     case 't': case 'T': case 'w': case 'x': case 'X': case '/': case '\x1b': case ' ': case '\n': case '\r':
         return key;
     default:

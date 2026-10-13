@@ -2333,7 +2333,7 @@ function inventoryActionCommand({ key, item }) {
         '-': item === game.uwep ? 'dowield'
             : item === game.uswapwep ? 'remarm_swapwep'
                 : item === game.uquiver ? 'dowieldquiver' : 'donull',
-        'c': 'docallcmd', 'd': 'dodrop', 'e': 'doeat', 'E': 'doengrave', 'f': 'dofire',
+        'a': 'doapply', 'c': 'docallcmd', 'd': 'dodrop', 'e': 'doeat', 'E': 'doengrave', 'f': 'dofire',
         'i': 'doorganize', 'I': 'adjust_split', 'P': 'dowear', 'Q': 'dowieldquiver', 'r': 'doread',
         'R': 'ia_dotakeoff', 't': 'dothrow', 'T': 'ia_dotakeoff',
         'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
@@ -2375,6 +2375,10 @@ async function runInventoryAction({ key, item }) {
                 queueCommandKeys('-');
                 await doready();
             }
+            return;
+        case 'a':
+            queueCommandKeys(letter);
+            await doapply();
             return;
         case 'c':
             queueCommandKeys(`i${letter}`);
