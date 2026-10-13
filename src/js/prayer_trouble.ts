@@ -24,7 +24,7 @@ import {
     LOADSTONE, OBJECT_BIMANUAL, OBJECT_NAMES,
 } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { ownedObjectName } from './objnam.js';
+import { ownedObjectAction } from './objnam.js';
 import { uncurseObjectState } from './object_state.js';
 import { heroHasNoHands, heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { hasIntrinsicProperty, refreshProperty } from './properties.js';
@@ -196,8 +196,7 @@ export async function uncursePrayerObject(object: GameObject, label: string | nu
         && !permanentBlind(state) && !state.u.blindTurns
         && !(requireMonsterData(MONSTER_FLAGS1, state.u.umonnum) & M1_NOEYES);
     if (!heroIsBlind(state) || blindfoldOnly) {
-        const name = ownedObjectName(object, state);
-        const subject = label || `${name.charAt(0).toUpperCase()}${name.slice(1)} softly glow${object.quan > 1 ? '' : 's'}`;
+        const subject = label || ownedObjectAction(object, 'softly glow', state);
         await pline(`${subject} ${displayColorName('amber')}.`);
         object.bknown = !heroIsHallucinating(state);
     }
@@ -350,8 +349,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
     case Trouble.SADDLE:
         object = requirePrayerObject(saddle(state));
         if (!heroIsBlind(state)) {
-            const name = ownedObjectName(object, state);
-            await pline(`${name.charAt(0).toUpperCase()}${name.slice(1)} softly glows ${displayColorName('amber')}.`);
+            await pline(`${ownedObjectAction(object, 'softly glow', state)} ${displayColorName('amber')}.`);
             object.bknown = true;
         }
         uncurseObjectState(object);

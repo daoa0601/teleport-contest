@@ -14,8 +14,9 @@ import { grantPrayerFavor } from '../js/divine_gifts.js';
 import { magicNegation } from '../js/magic_negation.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
-import { pushKey } from '../js/input.js';
-import { AMULET_OF_LIFE_SAVING, LEATHER_GLOVES, OBJECT_NAMES } from '../js/object_data.js';
+import { pushKey, resetInputState } from '../js/input.js';
+import { AMULET_OF_LIFE_SAVING, LEATHER_GLOVES, LOADSTONE, OBJECT_NAMES } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
@@ -24,6 +25,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { installPagerInput } from './support/pager-input.js';
 
 function prayerRoom({ hero = {}, flags = {}, ...room }: ObjectRoomOptions = {}) {
     freshObjectRoom({
@@ -86,6 +88,22 @@ void test('a modest prayer cures petrification before hunger', async () => {
 
     assert.equal(game.u.stonedTurns, 0);
     assert.equal(game.u.uhunger, 10);
+});
+
+void test('#pray names the whole stack when releasing cursed loadstones', async () => {
+    prayerRoom({ hero: { uluck: 13 } });
+    requirePlayingGame(game);
+    const stones = await addInventoryObject(LOADSTONE, { cursed: true, quan: 2, quantity: 2 });
+    initRng(2n);
+    installPagerInput(resetInputState(), {
+        expected: /pray|prayer|shimmering light|pleased|loadstones/, limit: 6,
+    });
+
+    await runExtendedCommand('pray', 'y');
+    await finishPrayerOccupation();
+
+    assert.equal(stones.cursed, false);
+    assert.match(game._pending_message, /Your 2 loadstones softly glow amber\./);
 });
 
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {

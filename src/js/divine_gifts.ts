@@ -29,7 +29,7 @@ import { deleteObject } from './object_delete.js';
 import { withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { learnObjectType, observeObject, recordObjectEncounter } from './object_knowledge.js';
 import { blessObjectState, uncurseObjectState } from './object_state.js';
-import { objectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { objectName, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty } from './properties.js';
 import type { PropertyName } from './property_types.js';
 import { rn1, rn2 } from './rng.js';
@@ -82,25 +82,25 @@ async function blessWieldedWeapon(): Promise<void> {
     const damaged = weapon.oeroded || weapon.oeroded2;
     const repair = damaged ? ` and ${weapon.quan > 1 ? 'are' : 'is'} now as good as new` : '';
     const name = ownedObjectName(weapon);
-    const subject = name.charAt(0).toUpperCase() + name.slice(1);
+    const glow = ownedObjectAction(weapon, 'softly glow');
     const changed = weapon.cursed || !weapon.blessed;
     if (weapon.cursed) {
         await pline(heroIsBlind(game)
             ? `You feel the power of ${deityName(game.u.ualign.type)} over ${name}.`
-            : `${subject} softly glow${weapon.quan > 1 ? '' : 's'} ${displayColorName('amber')}${repair}.`);
+            : `${glow} ${displayColorName('amber')}${repair}.`);
         uncurseObjectState(weapon);
         weapon.bknown = true;
     } else if (!weapon.blessed) {
         const color = heroIsBlind(game) ? null : displayColorName('light blue');
         await pline(color === null
             ? `You feel the blessing of ${deityName(game.u.ualign.type)} over ${name}.`
-            : `${subject} softly glow${weapon.quan > 1 ? '' : 's'} with ${withIndefiniteArticle(color)} aura${repair}.`);
+            : `${glow} with ${withIndefiniteArticle(color)} aura${repair}.`);
         blessObjectState(weapon);
         weapon.bknown = true;
     }
     if (damaged) {
         weapon.oeroded = weapon.oeroded2 = 0;
-        if (!changed) await pline(`${subject} ${heroIsBlind(game) ? 'feel' : 'look'}${weapon.quan > 1 ? '' : 's'} as good as new!`);
+        if (!changed) await pline(`${ownedObjectAction(weapon, heroIsBlind(game) ? 'feel' : 'look')} as good as new!`);
     }
 }
 
@@ -161,8 +161,7 @@ async function uncurseInventory(): Promise<void> {
     for (const object of game.inventory) {
         if (!object.cursed || object === game.uarmh && object.otyp === HELM_OF_OPPOSITE_ALIGNMENT) continue;
         if (!blind) {
-            const name = ownedObjectName(object);
-            await pline(`${name.charAt(0).toUpperCase()}${name.slice(1)} softly glow${object.quan > 1 ? '' : 's'} ${displayColorName('amber')}.`);
+            await pline(`${ownedObjectAction(object, 'softly glow')} ${displayColorName('amber')}.`);
             object.bknown = true;
         }
         uncurseObjectState(object);
