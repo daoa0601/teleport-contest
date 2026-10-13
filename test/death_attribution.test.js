@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { performMonsterHeroAttack } from '../js/allmain.js';
 import { finishOrdinaryDeath } from '../js/end.js';
-import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishMonsterAttackDeath } from '../js/monster_attack_death.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { restoreGame, saveGame } from '../js/save.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -93,6 +95,45 @@ void test('a death while fainted includes helplessness in the score but leaves t
     assert.doesNotMatch(tombstone, /fainted/);
     assert.equal(loadScoreRecords()[0]?.death, 'killed by a fox, while fainted from lack of food');
 });
+for (const restored of [false, true]) {
+    for (const sameKiller of [true, false]) {
+        void test(`${restored ? 'saved' : 'ongoing'} paralysis ${sameKiller ? 'omits' : 'keeps'} the ghoul attribution when ${sameKiller ? 'that ghoul' : 'another ghoul'} kills the hero`, async () => {
+            freshObjectRoom({
+                hero: { uhp: 100, uhpmax: 100, uac: 10 },
+                flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
+            });
+            requirePlayingGame(game);
+            game.plname = 'GhoulVictim';
+            const storage = memoryStorage();
+            game.storage = storage;
+            game.u.urexp = 100;
+            game.iflags.toptenwin = false;
+            const ghoul = await createMonsterAt('ghoul', 11, 10);
+            ghoul.mpeaceful = 0;
+            ghoul.m_lev = 20;
+            ghoul.mux = game.u.ux;
+            ghoul.muy = game.u.uy;
+            const killer = sameKiller ? ghoul : await createMonsterAt('ghoul', 10, 11);
+            const killerId = killer.m_id;
+            let input = resetInputState();
+            installPagerInput(input, { expected: /claws|frozen/i, limit: 8 });
+            await performMonsterHeroAttack(ghoul, game, {
+                random: () => 0, rollOne: () => 1, rollDice: () => 1,
+            });
+            assert.ok((game._helplessTurns ?? 0) > 0, 'The ghoul must paralyze the hero before the fatal attack');
+            if (restored) {
+                assert.equal(await saveGame(storage), true);
+                assert.equal(restoreGame('GhoulVictim', storage), true);
+                input = resetInputState();
+            }
+            const fatalGhoul = requireGameLevel().monsters.find(monster => monster.m_id === killerId);
+            assert.ok(fatalGhoul, 'The ghoul killer must remain on the level after restoring');
+            installPagerInput(input, { expected: /claws|frozen|die|Goodbye|points|You were/i, limit: 8 });
+            await finishMonsterAttackDeath(fatalGhoul);
+            assert.equal(loadScoreRecords()[0]?.death, `killed by a ghoul, while paralyzed${sameKiller ? '' : ' by a ghoul'}`);
+        });
+    }
+}
 for (const { causeLength, expectedSuffix } of [
     { causeLength: 64, expectedSuffix: ', while paralyzed by a floating eye' },
     { causeLength: 65, expectedSuffix: ', while helpless' },

@@ -99,8 +99,16 @@ export async function finishMonsterAttackDeath(monster, { damage, pagerOwned = f
     const fatalDeathCause = customCause
         ? attribution.deathCause ?? `killed by ${fatalKiller}`
         : `${deathType === STONING ? 'petrified' : 'killed'} by ${fatalKiller}`;
-    if (!customCause)
+    if (!customCause) {
+        // done_in_by() removes redundant attribution only for the causing monster.
+        const reason = game._helplessReason;
+        if (reason && typeof reason !== 'string' && reason.monsterId === monster.m_id) {
+            const firstSpace = reason.text.indexOf(' ');
+            if (firstSpace >= 0)
+                game._helplessReason = { ...reason, text: reason.text.slice(0, firstSpace) };
+        }
         setHeroRemainsFromMonster(monster, game);
+    }
     // done_in_by() announces the death while HP still holds the lethal
     // (often negative) value; done() commits zero afterwards. The
     // life-saving transaction performs done()'s commit itself.

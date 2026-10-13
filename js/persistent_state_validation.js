@@ -35,6 +35,12 @@ function validPersistentState(value, entities) {
     function activeSpecial(candidate) {
         return validSavedActiveSpecialLevel(candidate, entities);
     }
+    function helplessReason(candidate) {
+        return string(candidate) || closedFieldsMatch(candidate, {
+            monsterId: (id) => integer(id) && id >= 0,
+            text: string,
+        });
+    }
     const fields = {
         Luck: optional(integer),
         _activeSpecialLevel: optional(nullable(activeSpecial)),
@@ -56,7 +62,7 @@ function validPersistentState(value, entities) {
         _fobjSerial: optional(integer),
         _helplessAfter: optional(nullable(oneOf('end-mimic-meal', 'hear-again', 'unfaint', 'finish-digestion'))),
         _helplessDoneMessage: optional(nullable(string)),
-        _helplessReason: optional(nullable(string)),
+        _helplessReason: optional(nullable(helplessReason)),
         _helplessTurns: optional(integer),
         _heroActionSeq: optional(integer),
         _heroTrack: optional(arrayOf(validSavedPosition)),

@@ -763,7 +763,8 @@ function scoreDeathCause(cause: string, deathType: number | null): string {
     const scoreDeathSize = 100; // C topten.c:DTHSZ, excluding the terminator.
     const cleanCause = sanitizeDeathCause(cause).slice(0, scoreDeathSize);
     if ((game._helplessTurns ?? 0) <= 0 && game.multi >= 0) return cleanCause;
-    let reason = game._helplessReason || 'helpless';
+    const helplessness = game._helplessReason;
+    let reason = (typeof helplessness === 'string' ? helplessness : helplessness?.text) || 'helpless';
     if (deathType === STONING && reason === 'getting stoned') return cleanCause;
     if (deathType === STARVING && reason === 'fainted from lack of food') reason = 'fainted';
     // formatkiller() consumes a byte while reading the cause terminator,
