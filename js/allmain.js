@@ -1613,34 +1613,6 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
 function visibleMonsterSubject(monster) {
     return monsterName(monster, { capitalized: true });
 }
-function covetousRelocationMessage(monster, movement, actorWasSpotted) {
-    const game = requireInitializedGame();
-    const relocation = movement?.covetousRelocation;
-    if (!relocation)
-        return null;
-    const nowSeen = canSpotMonster(monster);
-    const distance = dist2(monster.mx, monster.my, game.u?.ux ?? monster.mx, game.u?.uy ?? monster.my);
-    const suffix = distance <= 2 ? ' next to you'
-        : distance <= BOLT_LIM * BOLT_LIM ? ' close by' : '';
-    const blind = !!game.blind || (game.u.blindTurns !== undefined && game.u.blindTurns > 0);
-    // teleport.c:rloc_to_core() gives a visible old location precedence over
-    // STRAT_APPEARMSG.  Seeing the actor vanish clears that one-shot bit, so
-    // an already-visible Wizard reports a relocation rather than a fresh
-    // arrival even when genesis left STRAT_APPEARMSG set.
-    if (actorWasSpotted && nowSeen) {
-        return `${visibleMonsterSubject(monster)} vanishes and reappears${suffix}.`;
-    }
-    if (actorWasSpotted)
-        return `${visibleMonsterSubject(monster)} vanishes!`;
-    if (relocation.appearMessage) {
-        const subject = monsterName(monster, { article: 'a', capitalized: true });
-        return `${subject} suddenly ${blind ? 'arrives' : 'appears'}${suffix}!`;
-    }
-    if (nowSeen) {
-        return `${visibleMonsterSubject(monster)} ${blind ? 'arrives' : 'appears'}${suffix}!`;
-    }
-    return null;
-}
 const WIZARD_CUSS_INSULTS = [
     'antic', 'blackguard', 'caitiff', 'chucklehead', 'coistrel', 'craven',
     'cretin', 'cur', 'dastard', 'demon fodder', 'dimwit', 'dolt', 'fool',
@@ -2958,15 +2930,8 @@ async function executeMonsterTurns(messageContext) {
         await presentRestrictedMonsterTeleport(action, game, actorWasOpticallySeen);
         movement = action.movement;
         if (movement?.deferredCovetousRelocation) {
-            // rloc_to_core() repaints both endpoints before it emits the
-            // arrival line.  That pline may first have to page an older hero
-            // message; only after it resumes does dochug() run distfleeck and
-            // the monster's contact attack.
-            newsym(movement.oldx, movement.oldy);
-            newsym(movement.x, movement.y);
-            const relocationMessage = covetousRelocationMessage(monster, movement, actorWasSpotted);
-            if (relocationMessage)
-                await plineWithContinuation(relocationMessage);
+            // tactics() has completed relocation and its input pauses.
+            // Resume range checks and attacks from the new position.
             game._deferVisibleMonsterContact = true;
             try {
                 await resumeDeferredCovetousRelocation(action, game);

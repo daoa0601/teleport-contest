@@ -229,7 +229,7 @@ import { abuseKickedPet, kickConductViolation, levitatingKickMisses, prepareKick
 import { kickFloorObject } from './object_kick.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, safeTeleportDestination, } from './teleport.js';
-import { monsterTeleportRestricted } from './teleport_rules.js';
+import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import { RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
@@ -4105,7 +4105,7 @@ async function wizardPositionDescription(x, y) {
     if (!loc)
         return 'unexplored area';
     const glyph = glyphAt(x, y);
-    if (glyph?.kind === 'warning' || glyph?.kind === 'nothing')
+    if (glyph?.kind === 'warning' || glyph?.kind === 'nothing' || glyph?.kind === 'monster')
         return farlookLocationDescription(x, y);
     if (loc.typ === TREE && loc.remembered_glyph)
         return 'tree';
@@ -4115,8 +4115,7 @@ async function wizardPositionDescription(x, y) {
     // the terrain below it.  A visible (or still remembered) pile therefore
     // owns farlook before the room/corridor fallback.
     const object = game.level?.objects?.[x]?.[y]?.[0];
-    if (object && (cansee(x, y)
-        || loc.remembered_glyph?.kind === 'object')) {
+    if (object && glyph?.kind === 'object') {
         observeDistantObjectForNaming(object);
         return floorObjectDescription(object);
     }
@@ -4261,8 +4260,9 @@ export async function farlookLocationDescription(x, y) {
         const prefix = hallucinating ? ''
             : monster.mtame ? 'tame '
                 : monster.mpeaceful ? 'peaceful ' : '';
-        const name = hallucinating
-            ? randomDisplayMonsterName() : monsterInstanceDisplayName(monster);
+        const name = monsterName(monster, {
+            state: game, article: 'none', suppressIt: true, suppressSaddle: false,
+        });
         let condition = '';
         if (!hallucinating) {
             if ((monster.mfrozen ?? 0) > 0)
@@ -4281,6 +4281,9 @@ export async function farlookLocationDescription(x, y) {
         const hiddenText = hidden.length ? `, ${hidden.join(', ')}` : '';
         return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}${hiddenText}`;
     }
+    // Hallucinated statues project monster glyphs without a live monster.
+    if (glyph?.kind === 'monster' && heroIsHallucinating(game))
+        return randomDisplayMonsterName();
     const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y && candidate.tseen);
     if (trap?.ttyp === DART_TRAP)
         return 'dart trap';
@@ -4328,10 +4331,8 @@ export async function farlookLocationDescription(x, y) {
             return 'corridor';
         if (remembered === '.')
             return 'floor of a room';
-        if (remembered === '<')
-            return 'staircase up';
-        if (remembered === '>')
-            return travelLocationDescription(x, y) || 'staircase down';
+        if (remembered === '<' || remembered === '>')
+            return loc.remembered_glyph.terrainName;
         if (remembered === '{')
             return 'fountain';
         if (remembered === '+') {
@@ -7246,7 +7247,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
             await moveSteedWithHero();
             // C drag_ball() can pull the hero back before the swap check.
             // A refused swap still completes ball placement and its delay.
-            if (monster.mpeaceful && game.level.traps.some(trap => trap.tx === oldx && trap.ty === oldy)) {
+            if (monster.mpeaceful && (!goodPosition(oldx, oldy, { kind: 'monster', monster }, { state: game })
+                || game.level.traps.some(trap => trap.tx === oldx && trap.ty === oldy))) {
                 const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
                 await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
                 u.ux = oldx;

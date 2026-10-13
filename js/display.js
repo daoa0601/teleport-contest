@@ -309,29 +309,35 @@ const ANSI_COLOR = [
     97, // CLR_WHITE     15
     90, // remembered room/corridor while blind (tty dark gray)
 ];
-function rememberedColor(glyph, loc, x, y) {
-    // newsym() darkens unseen corridors with dark_room and color enabled,
-    // even when the terrain remains lit. Without those options, waslit
-    // determines whether memory retains the bright corridor glyph.
-    if (glyph?.kind === 'terrain' && glyph.ch === '#'
-        && loc?.typ === CORR && !cansee(x, y)
-        && (!loc.waslit || ((game.flags.dark_room ?? true) && game.flags.color !== false))
-        && glyph.color === CLR_WHITE) {
-        glyph.color = NO_COLOR;
-        glyph.glyph = cmapToGlyph(CmapSymbol.corr);
+// C display.c:newsym(): only remembered room and corridor terrain changes
+// when it leaves sight. Objects, traps, and engravings retain their glyphs.
+function rememberedGlyph(glyph, loc, x, y) {
+    if (glyph.kind !== 'terrain' || cansee(x, y))
+        return glyph;
+    const rogue = Is_rogue_level(game.u.uz);
+    const darkRoom = !rogue && (game.flags.dark_room ?? true) && game.flags.color !== false;
+    if (loc.typ === CORR && glyph.glyph === cmapToGlyph(CmapSymbol.litcorr)
+        && (rogue || !loc.waslit || darkRoom)) {
+        return { ...glyph, color: NO_COLOR, glyph: cmapToGlyph(CmapSymbol.corr) };
     }
-    // Preserve the port's established blind-memory behavior on ordinary
-    // levels.  Premapped levels distinguish background from mapped objects
-    // and traps, just as C's glyph categories do.
-    // display.c only substitutes DARKROOMSYM when the remembered glyph is
-    // the room terrain itself.  Objects, traps, and engravings keep their
-    // remembered glyph (and color) when blindness removes IN_SIGHT.
-    const darkRoomMemory = glyph?.kind === 'terrain' && loc?.typ === ROOM
-        && (loc.premapped
-            ? !cansee(x, y) && (game.flags?.dark_room ?? true)
-                && game.flags?.color !== false
-            : game.blind);
-    return darkRoomMemory ? 16 : glyph?.color;
+    if (loc.typ !== ROOM || glyph.glyph !== cmapToGlyph(CmapSymbol.room)
+        || loc.waslit && !darkRoom)
+        return glyph;
+    if (rogue) {
+        return { ch: ' ', color: NO_COLOR, decgfx: false, kind: 'terrain',
+            terrainName: 'stone', glyph: cmapToGlyph(CmapSymbol.stone) };
+    }
+    return { ...glyph, ch: darkRoom ? glyph.ch : ' ',
+        color: darkRoom ? 16 : NO_COLOR, decgfx: darkRoom && !!glyph.decgfx,
+        terrainName: 'dark part of a room', glyph: cmapToGlyph(CmapSymbol.darkroom) };
+}
+function showRememberedLocation(x, y, loc) {
+    const memory = loc.remembered_glyph;
+    if (!memory)
+        return;
+    const glyph = rememberedGlyph(memory, loc, x, y);
+    loc.remembered_glyph = glyph;
+    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, objectGlyphAttr(glyph), glyph);
 }
 function stairGlyphIndex(loc, x, y) {
     // C display.c:back_to_cmap(). Direction belongs to the terrain cell;
@@ -1601,15 +1607,7 @@ export function newsym(x, y) {
         map_location(x, y, true);
     }
     else if (loc.remembered_glyph) {
-        if (Is_rogue_level(game.u.uz) && loc.typ === ROOM && !loc.waslit
-            && loc.remembered_glyph.glyph === cmapToGlyph(CmapSymbol.room)) {
-            loc.remembered_glyph = {
-                ch: ' ', color: NO_COLOR, decgfx: false, kind: 'terrain',
-                terrainName: 'stone', glyph: cmapToGlyph(CmapSymbol.stone),
-            };
-        }
-        // Out of sight but remembered — show remembered glyph
-        show_glyph_cell(x, y, loc.remembered_glyph.ch, rememberedColor(loc.remembered_glyph, loc, x, y), loc.remembered_glyph.decgfx, objectGlyphAttr(loc.remembered_glyph), loc.remembered_glyph);
+        showRememberedLocation(x, y, loc);
     }
     else {
         // A living glyph is only an overlay.  When its actor vacates an
@@ -1930,7 +1928,7 @@ export async function docrt({ beforeGlow = null } = {}) {
             for (let x = 1; x < COLNO; x++) {
                 const loc = game.level.at(x, y);
                 if (loc?.remembered_glyph) {
-                    show_glyph_cell(x, y, loc.remembered_glyph.ch, rememberedColor(loc.remembered_glyph, loc, x, y), loc.remembered_glyph.decgfx, objectGlyphAttr(loc.remembered_glyph), loc.remembered_glyph);
+                    showRememberedLocation(x, y, loc);
                 }
                 else {
                     show_glyph_cell(x, y, ' ', NO_COLOR, false);
@@ -1969,7 +1967,7 @@ export async function redrawMap() {
                 newsym(x, y);
             }
             else if (loc?.remembered_glyph) {
-                show_glyph_cell(x, y, loc.remembered_glyph.ch, rememberedColor(loc.remembered_glyph, loc, x, y), loc.remembered_glyph.decgfx, objectGlyphAttr(loc.remembered_glyph), loc.remembered_glyph);
+                showRememberedLocation(x, y, loc);
             }
             else {
                 // Modal redraw reconstructs presentation from visibility and

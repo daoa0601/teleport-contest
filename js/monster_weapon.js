@@ -14,6 +14,7 @@ import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './lig
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData, } from './monster_data.js';
 import { monsterCanTouchObject } from './monster_carry.js';
 import { unlinkMonsterObject } from './monster_inventory.js';
+import { monsterName } from './monster_name.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { isPoisonableObject } from './object_properties.js';
 import { recordObjectEncounter } from './object_knowledge.js';
@@ -266,13 +267,13 @@ export async function wieldMonsterWeapon(monster, state = game, { publish = plin
             const plural = (previous.quan ?? previous.quantity ?? 1) > 1;
             const welded = `${plural ? 'are' : 'is'} welded to ${pronoun} ${hand}`;
             if (weapon.otyp === PICK_AXE) {
-                await publish(`Since ${monsterPossessive(monster)} weapon${plural ? 's' : ''} ${welded},`);
-                await publish(`${monsterSentenceSubject(monster)} cannot wield that pick-axe.`);
+                await publish(`Since ${monsterPossessive(monster, state)} weapon${plural ? 's' : ''} ${welded},`);
+                await publish(`${monsterName(monster, { state, capitalized: true })} cannot wield that pick-axe.`);
             }
             else {
                 observeObjectForNaming(weapon, { state });
                 const description = inventoryItemDescription(weapon);
-                await publish(`${monsterSentenceSubject(monster)} tries to wield ${description}.`);
+                await publish(`${monsterName(monster, { state, capitalized: true })} tries to wield ${description}.`);
                 observeObjectForNaming(previous, { state });
                 await publish(`${ownedObjectName(previous, state)} ${welded}!`);
             }
@@ -288,14 +289,14 @@ export async function wieldMonsterWeapon(monster, state = game, { publish = plin
     if (canSeeMonster(monster)) {
         observeObjectForNaming(weapon, { state });
         const description = inventoryItemDescription(weapon);
-        await publish(`${monsterSentenceSubject(monster)} wields ${description}${digging ? '.' : '!'}`);
+        await publish(`${monsterName(monster, { state, capitalized: true })} wields ${description}${digging ? '.' : '!'}`);
         if (weapon.otyp === AKLYS)
-            await publish(`${monsterSentenceSubject(monster)} secures the tether on the ${objectName(weapon, state)}.`);
+            await publish(`${monsterName(monster, { state, capitalized: true })} secures the tether on the ${objectName(weapon, state)}.`);
         if (willWeld(weapon)) {
             const plural = (weapon.quan ?? weapon.quantity ?? 1) > 1;
             const hand = wieldingHand(monster, weapon);
             const welding = plural ? 'weld themselves' : 'welds itself';
-            await publish(`${namedWeapon(weapon, state)} ${welding} to ${monsterPossessive(monster)} ${hand}!`);
+            await publish(`${namedWeapon(weapon, state)} ${welding} to ${monsterPossessive(monster, state)} ${hand}!`);
             weapon.bknown = true;
         }
     }
@@ -304,7 +305,7 @@ export async function wieldMonsterWeapon(monster, state = game, { publish = plin
         if (canSeeMonster(monster)) {
             const hand = monsterHandName(monster.mnum);
             const brightness = equipmentLightDescription(weapon, state);
-            await publish(`${namedWeapon(weapon, state)} shines ${brightness} in ${monsterPossessive(monster)} ${hand}!`);
+            await publish(`${namedWeapon(weapon, state)} shines ${brightness} in ${monsterPossessive(monster, state)} ${hand}!`);
         }
         else if (cansee(monster.mx, monster.my)) {
             const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
@@ -348,9 +349,8 @@ function wieldingHand(monster, weapon) {
     const hand = monsterHandName(monster.mnum);
     return OBJECT_BIMANUAL[weapon.otyp] ? makePlural(hand) : hand;
 }
-function monsterPossessive(monster) {
-    const subject = monsterSentenceSubject(monster);
-    const name = monster.name ? subject : subject.charAt(0).toLowerCase() + subject.slice(1);
+function monsterPossessive(monster, state) {
+    const name = monsterName(monster, { state });
     return name.endsWith('s') ? `${name}'` : `${name}'s`;
 }
 export async function unwieldMonsterWeapon(monster, state = game, { weapon = monsterWieldedWeapon(monster), publish = plineWithContinuation, } = {}) {
@@ -360,7 +360,7 @@ export async function unwieldMonsterWeapon(monster, state = game, { weapon = mon
         endObjectBurn(weapon, state);
         if (canSeeMonster(monster)) {
             const hand = monsterHandName(monster.mnum);
-            await publish(`${namedWeapon(weapon, state)} in ${monsterPossessive(monster)} ${hand} stops shining.`);
+            await publish(`${namedWeapon(weapon, state)} in ${monsterPossessive(monster, state)} ${hand} stops shining.`);
         }
     }
     if (monster.mw === weapon)

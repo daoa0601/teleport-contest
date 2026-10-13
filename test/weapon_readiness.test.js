@@ -52,6 +52,15 @@ void test('dropping a used weapon announces bare-handed combat on the next attac
     await rhack('l'.charCodeAt(0));
     assert.doesNotMatch(await text(messages), /You begin bashing/);
 });
+void test('an improvised weapon announcement uses its owned name without inventory details', async () => {
+    const messages = await combatRoom();
+    requirePlayingGame(game);
+    const opener = await addInventoryObject(OBJECT_NAMES.indexOf('tin opener'));
+    await wield(opener);
+    await text(messages);
+    await rhack('l'.charCodeAt(0));
+    assert.match(await text(messages), /You begin bashing monsters with your tin opener\./);
+});
 for (const [name, type] of [['bow', BOW], ['unmounted halberd', OBJECT_NAMES.indexOf('halberd')]]) {
     void test(`using a ${name} in melee announces bashing once`, async () => {
         const messages = await combatRoom();

@@ -1,13 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { farlookLocationDescription } from '../js/cmd.js';
-import { ICE, LA_DOWN, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, STAIRS, WATER } from '../js/const.js';
+import { ICE, LA_DOWN, LA_UP, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, STAIRS, WATER } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { newsym } from '../js/display.js';
 import { LEVEL_TIMER_KIND, scheduleLevelTimer } from '../js/object_timers.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
+for (const remembered of [false, true]) {
+    void test(`farlook preserves the ${remembered ? 'remembered' : 'visible'} branch-staircase description`, async () => {
+        const level = freshObjectRoom();
+        const location = level.requireAt(11, 10);
+        location.typ = STAIRS;
+        location.ladder = LA_UP;
+        game.stairs = { sx: 11, sy: 10, up: true, isladder: false,
+            tolev: { dnum: 1, dlevel: 1 }, u_traversed: true, next: null };
+        newsym(11, 10);
+        if (remembered) {
+            level.requireAt(30, 10).typ = ROOM;
+            game.u.ux = 30;
+            vision_recalc(0);
+            newsym(11, 10);
+        }
+        assert.equal(await farlookLocationDescription(11, 10), 'branch staircase up');
+    });
+}
 for (const remembered of [false, true]) {
     void test(`farlook describes ${remembered ? 'remembered' : 'visible'} lava`, async () => {
         const level = freshObjectRoom();
