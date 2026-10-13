@@ -50,7 +50,7 @@ import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { objectWeight } from './weight.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { carriedObjectOwner } from './shk.js';
-import { objectName } from './objnam.js';
+import { objectName, observeObjectForNaming } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { getObjectLocation } from './object_location.js';
 import { useUpInventoryStack } from './hero_inventory.js';
@@ -627,6 +627,7 @@ function catchesFire(object: GameObject | null | undefined, random: RandomBelow)
 }
 
 function lightSourceName(object: GameObject, state: GameState) {
+    observeObjectForNaming(object, { state });
     const name = objectName(object, state);
     const quantity = object.quan ?? object.quantity ?? 1;
     return quantity > 1 ? makePlural(name) : name;
@@ -645,10 +646,10 @@ export async function igniteItems(
     const ignited = [];
     for (const object of objects || []) {
         if (!catchesFire(object, random)) continue;
-        const name = lightSourceName(object, state);
         const plural = (object.quan ?? object.quantity ?? 1) > 1;
-        const blind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
+        const blind = heroIsBlind(state);
         if (visible) {
+            const name = lightSourceName(object, state);
             const prefix = object.where === 'floor' ? 'The'
                 : carrier ? possessiveName(monsterName(carrier, { state, capitalized: true })) : 'Your';
             await publish(blind
