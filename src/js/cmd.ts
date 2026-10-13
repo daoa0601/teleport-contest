@@ -5327,6 +5327,17 @@ async function dopay(): Promise<void> {
         paid = true;
     }
 
+    // pay_billed_items() checks the whole bill, including contained goods,
+    // before offering item selection. Stashed gold cannot fund this payment.
+    if (resident === shopkeeperForHero() && (resident.eshk?.billct ?? 0) > 0
+        && !heroGoldAmount(game) && !(resident.eshk?.credit ?? 0)) {
+        await plineWithContinuation(`You ${hiddenGold(game, true) ? 'seem to ' : ''}have no gold or credit${paid ? ' left' : ''}.`);
+        if (paid && resident.mpeaceful)
+            await plineWithContinuation(shopThankYouMessage(resident));
+        game.context.move = paid ? 1 : 0;
+        return;
+    }
+
     const billed = carriedShopBill(resident);
     if (!billed.length) {
         if (!paid) {

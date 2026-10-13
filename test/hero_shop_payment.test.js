@@ -8,7 +8,7 @@ import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
-import { GOLD_PIECE, SACK } from '../js/object_data.js';
+import { DAGGER, GOLD_PIECE, SACK } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { withMessagePages } from './support/planned-input.js';
 for (const goldLocation of ['none', 'purse', 'sack']) {
@@ -32,6 +32,63 @@ for (const goldLocation of ['none', 'purse', 'sack']) {
         assert.equal(heroGoldAmount(game), goldLocation === 'purse' ? 37 : 0);
     });
 }
+for (const scenario of [
+    { name: 'paying for contained merchandise without gold or credit takes no turn',
+        gold: 0, stashed: 0, debt: 0 },
+    { name: 'contained gold cannot fund payment for contained merchandise',
+        gold: 0, stashed: 37, debt: 0 },
+    { name: 'paying a usage debt spends a turn when no gold remains for contained merchandise',
+        gold: 25, stashed: 0, debt: 25 },
+]) {
+    void test(scenario.name, async () => {
+        freshObjectRoom();
+        const sack = await addInventoryObject(SACK);
+        const dagger = await knownObject(DAGGER);
+        await addCreatedObjectToContainer(sack, dagger);
+        const { shopkeeper } = await createStaffedShop({ bill: [
+                { bo_id: dagger.o_id, bquan: 1, price: 4, useup: false },
+            ] });
+        dagger.unpaid = true;
+        shopkeeper.eshk.shknam = 'Ada';
+        shopkeeper.eshk.credit = 0;
+        shopkeeper.eshk.debit = scenario.debt;
+        setHeroGoldAmount(game, scenario.gold);
+        if (scenario.stashed) {
+            await addCreatedObjectToContainer(sack, await knownObject(GOLD_PIECE, { quan: scenario.stashed }));
+        }
+        const input = resetInputState();
+        const messages = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        await withMessagePages(() => rhack('p'.charCodeAt(0)), input, /owe Ada|pay that debt|no gold or credit|Thank you/, 3);
+        messages.push(game._pending_message);
+        assert.equal(game.context.move, scenario.debt ? 1 : 0);
+        assert.match(messages.join('\n'), new RegExp(`You ${scenario.stashed ? 'seem to ' : ''}have no gold or credit${scenario.debt ? ' left' : ''}\\.`));
+        if (scenario.debt)
+            assert.match(messages.join('\n'), /Thank you for shopping/);
+        assert.equal(shopkeeper.eshk.debit, 0);
+        assert.equal(shopkeeper.eshk.billct, 1);
+        assert.equal(dagger.unpaid, true);
+        assert.equal(dagger.container, sack);
+        assert.equal(heroGoldAmount(game), 0);
+    });
+}
+void test('offering payment outside a peaceful shopkeeper\'s shop spends a turn', async () => {
+    freshObjectRoom();
+    const sack = await addInventoryObject(SACK);
+    const dagger = await knownObject(DAGGER);
+    await addCreatedObjectToContainer(sack, dagger);
+    const { shopkeeper } = await createStaffedShop({ left: 11, bill: [
+            { bo_id: dagger.o_id, bquan: 1, price: 4, useup: false },
+        ] });
+    dagger.unpaid = true;
+    shopkeeper.eshk.shknam = 'Ada';
+    setHeroGoldAmount(game, 0);
+    await rhack('p'.charCodeAt(0));
+    assert.equal(game.context.move, 1);
+    assert.match(game._pending_message, /You do not owe Ada anything\./);
+    assert.equal(dagger.unpaid, true);
+    assert.equal(shopkeeper.eshk.billct, 1);
+});
 for (const condition of ['sleeping', 'paralyzed']) {
     void test(`paying an empty bill leaves a ${condition} shopkeeper helpless without spending a turn`, async () => {
         freshObjectRoom();
