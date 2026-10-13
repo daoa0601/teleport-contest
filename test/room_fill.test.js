@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ALTAR, FILL_NORMAL, FOUNTAIN, GRAVE, OROOM, ROOM, ROOMOFFSET, SINK, } from '../js/const.js';
+import { ALTAR, BEEHIVE, FILL_NORMAL, FOUNTAIN, GRAVE, OROOM, ROOM, ROOMOFFSET, SINK, } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { fill_ordinary_room, mksobj, } from '../js/mklev.js';
+import { fill_ordinary_room, fillSpecialRoom, mksobj, } from '../js/mklev.js';
 import { level_difficulty } from '../js/dungeon.js';
 import { CHEST, DART, LARGE_BOX, } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
@@ -10,6 +10,7 @@ import { initRng } from '../js/rng.js';
 import { objectWeight } from '../js/weight.js';
 import { floorObjects } from './support/level-state.js';
 import { freshGame } from './support/game-state.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 function roomState({ seed, depth = 1, amulet = false, rogue = false }) {
     freshGame({
         hero: {
@@ -62,6 +63,27 @@ function roomTerrain(room) {
             terrain.push(requireGameLevel().requireAt(x, y).typ);
     return terrain;
 }
+void test('an irregular beehive stocks its own floor and keeps the queen inside it', async () => {
+    const room = roomState({ seed: 7, depth: 12 });
+    const level = requireGameLevel();
+    room.rtype = BEEHIVE;
+    room.irregular = true;
+    for (let x = room.lx; x <= room.hx; x++)
+        for (let y = room.ly; y <= room.hy; y++)
+            level.requireAt(x, y).roomno = 0;
+    const floor = [{ x: 10, y: 5 }, { x: 11, y: 6 }, { x: 12, y: 6 }];
+    for (const point of floor)
+        level.requireAt(point.x, point.y).roomno = ROOMOFFSET;
+    const boundary = level.requireAt(13, 6);
+    boundary.roomno = ROOMOFFSET;
+    boundary.edge = true;
+    await fillSpecialRoom(room);
+    assert.equal(level.monsters.length, floor.length);
+    assert.ok(level.monsters.every(monster => floor.some(point => point.x === monster.mx && point.y === monster.my)));
+    assert.equal(level.monsters.filter(monster => monster.mnum === MONSTER_NAME.indexOf('queen bee')).length, 1);
+    assert.ok(level.monsters.every(monster => monster.msleeping));
+    assert.ok(floorObjects(level).every(object => floor.some(point => point.x === object.ox && point.y === object.oy)));
+});
 void test('mksobj finalizes stack weight after type-specific initialization', async () => {
     roomState({ seed: 17 });
     const darts = await mksobj(DART, true, false);

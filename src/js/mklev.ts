@@ -8431,23 +8431,37 @@ async function fillBarracksRoom(room: Room): Promise<void> {
     level.flags.has_barracks = true;
 }
 
-// C ref: mkroom.c fill_zoo(BEEHIVE).  The queen occupies the geometric
-// center; every other eligible room square receives a sleeping, ungrouped
+// C ref: mkroom.c fill_zoo(BEEHIVE). The queen uses the center when it
+// belongs to the room. Every other eligible square receives a sleeping
 // killer bee, followed by that square's independent royal-jelly probe.
 async function fillBeehiveRoom(croom: Room): Promise<void> {
     const level = requireGameLevel();
-    const centerX = croom.lx + Math.trunc((croom.hx - croom.lx + 1) / 2);
-    const centerY = croom.ly + Math.trunc((croom.hy - croom.ly + 1) / 2);
+    const roomNumber = level.rooms.indexOf(croom) + ROOMOFFSET;
+    let centerX = croom.lx + Math.trunc((croom.hx - croom.lx + 1) / 2);
+    let centerY = croom.ly + Math.trunc((croom.hy - croom.ly + 1) / 2);
+    const center = level.requireAt(centerX, centerY);
+    if (croom.irregular && (center.roomno !== roomNumber || center.edge)) {
+        const point = { x: centerX, y: centerY };
+        somexyspace(croom, point);
+        centerX = point.x;
+        centerY = point.y;
+    }
     const door = croom.doorct ? level.doors?.[croom.fdoor] : null;
     for (let x = croom.lx; x <= croom.hx; x++) {
         for (let y = croom.ly; y <= croom.hy; y++) {
             const loc = level.at(x, y);
-            if (!loc || !SPACE_POS(loc.typ)) continue;
-            if (door && ((x === croom.lx && door.x === x - 1)
-                || (x === croom.hx && door.x === x + 1)
-                || (y === croom.ly && door.y === y - 1)
-                || (y === croom.hy && door.y === y + 1)))
+            if (!loc) continue;
+            if (croom.irregular) {
+                if (loc.roomno !== roomNumber || loc.edge
+                    || (door && Math.max(Math.abs(x - door.x), Math.abs(y - door.y)) <= 1))
+                    continue;
+            } else if (!SPACE_POS(loc.typ)
+                || (door && ((x === croom.lx && door.x === x - 1)
+                    || (x === croom.hx && door.x === x + 1)
+                    || (y === croom.ly && door.y === y - 1)
+                    || (y === croom.hy && door.y === y + 1)))) {
                 continue;
+            }
             const mndx = x === centerX && y === centerY ? 5 : 1;
             const monster = await makemon(
                 mndx, x, y, MM_ASLEEP | MM_NOGRP,
