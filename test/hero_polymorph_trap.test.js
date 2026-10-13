@@ -49,6 +49,20 @@ void test('wielded Magicbane resists a polymorph trap without consuming it', asy
     assert.equal(game.u.umonnum, originalForm);
     assert.equal(game._pending_message, 'You step onto a polymorph trap!  You feel momentarily different.');
 });
+void test('a priest recognizes blessed replacement boots when a polymorph trap prints them', async () => {
+    const level = freshObjectRoom({ role: 'priest' });
+    const shoes = await addInventoryObject(IRON_SHOES, { blessed: true });
+    wearHeroArmor(shoes);
+    const trap = addTrap(level, POLY_TRAP, 10, 10);
+    installPagerInput(resetInputState(), { expected: /polymorph trap|warps strangely/, limit: 3 });
+    await triggerHeroTrap(trap);
+    const replacement = game.uarmf;
+    assert.ok(replacement);
+    assert.equal(replacement.otyp, KICKING_BOOTS);
+    assert.equal(replacement.blessed, true);
+    assert.equal(replacement.bknown, true);
+    assert.match(game._pending_message, / - a blessed pair of .+ \(being worn\)\./);
+});
 void test('a polymorph trap replaces worn iron shoes with kicking boots and vanishes', async () => {
     const level = freshObjectRoom();
     const shoes = await addInventoryObject(IRON_SHOES, { spe: 2 });

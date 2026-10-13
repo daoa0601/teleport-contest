@@ -4,7 +4,7 @@ import { inventoryItemDescription } from './invent.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { monsterName } from './monster_name.js';
-import { ownedObjectName } from './objnam.js';
+import { observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroIsUnchanging, polymorphHero } from './polyself.js';
 import { propertyIsActive } from './properties.js';
@@ -40,8 +40,10 @@ export async function triggerHeroPolymorphTrap(trap, viaSitting) {
         await plineWithContinuation(`${ownedObjectName(shoes)} warps strangely.`);
         await poly_obj(shoes, shoes.otyp === IRON_SHOES ? KICKING_BOOTS : IRON_SHOES);
         const replacement = game.uarmf || game.u.uarmf;
-        if (replacement)
+        if (replacement) {
+            observeObjectForNaming(replacement);
             await plineWithContinuation(`${replacement.invlet} - ${inventoryItemDescription(replacement)}.`);
+        }
         return;
     }
     if (propertyIsActive('antimagic', game) || heroHasArtifactDefense('magic', game)
