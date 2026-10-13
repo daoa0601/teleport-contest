@@ -1457,6 +1457,8 @@ async function monsterAttackMessage(monster, attack, previousAttack = null, rand
         return null;
     if (attack.effect === 'nurse-heal' || attack.effect === 'nurse-cooperate')
         return null;
+    if (attack.effect === 'seduction-contact')
+        return null;
     if (attack.effect === 'engulf' || attack.effect === 'engulf-tick'
         || attack.effect === 'engulf-refused' || attack.effect === 'item-theft')
         return null;

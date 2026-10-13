@@ -10,7 +10,8 @@ import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_ACID, AD_CURS, AD_HEAL, AD_PLYS, AD_POLY, AD_SGLD, AD_SLEE, AD_SLOW, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { AD_ACID, AD_CURS, AD_HEAL, AD_PLYS, AD_POLY, AD_SGLD, AD_SLEE, AD_SLOW, AD_SSEX, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { resolveHeroSeduction } from './monster_seduction.js';
 import { stealHeroGold } from './monster_gold_theft.js';
 import { heroHasRemovableSpeed, slowHero } from './hero_speed.js';
 import { resolveNurseContact } from './monster_nurse_contact.js';
@@ -58,6 +59,8 @@ export async function resolveMonsterContactEffect(monster, attack, { state, publ
     }
     else if (attack.damageType === AD_SGLD)
         await stealHeroGold(monster, state, publish, random, rollOne);
+    else if (attack.damageType === AD_SSEX)
+        await resolveHeroSeduction(monster, attack, state, publish, random, rollOne);
     else
         throw new Error(`Damage type ${attack.damageType} has no deferred contact effect`);
     attack.deferredPostHit = true;

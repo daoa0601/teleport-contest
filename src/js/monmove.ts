@@ -265,6 +265,7 @@ import {
     AD_SAMU,
     AD_SEDU,
     AD_SGLD,
+    AD_SSEX,
     AD_SITM,
     AD_SLIM,
     AD_SLOW,
@@ -5992,7 +5993,7 @@ async function beginHeroAttackSlot(
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
         || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS
         || damageType === AD_HEAL || damageType === AD_ACID || damageType === AD_SLOW
-        || damageType === AD_SGLD)) {
+        || damageType === AD_SGLD || damageType === AD_SSEX)) {
         const negated = damageType === AD_SLOW
             ? specialAttackNegated(monster, state.u, { state, random })
             : damageType === AD_POLY
@@ -6002,6 +6003,7 @@ async function beginHeroAttackSlot(
             oldFormMnum, negated, deferredSpecialContact: true,
             ...(damageType === AD_WRAP ? { effect: 'wrapping-natural' } : {}),
             ...(damageType === AD_HEAL ? { effect: `nurse-${nurseContactMode(monster, state)}` } : {}),
+            ...(damageType === AD_SSEX ? { effect: 'seduction-contact' } : {}),
         };
     } else if (hit && damageType === AD_STCK) {
         const armorProtection = state?.u?._magicNegation ?? 0;
