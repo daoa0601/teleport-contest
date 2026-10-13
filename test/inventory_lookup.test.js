@@ -73,11 +73,12 @@ void test('inventory lookup shows the selected weapon information and consumes i
     const input = resetInputState();
     await answerPrompts(rhack('i'.charCodeAt(0)), input, [
         { prompt: /Weapons/, keys: katana.invlet },
-        { prompt: /Do what with the katana\?/, keys: '/' },
+        { prompt: /Do what with the katanas\?/, keys: '/' },
     ]);
     await answerPrompts(rhack(0), input, [
         { prompt: /samurai[\s\S]*--More--/i, keys: ' ' },
     ]);
+    assert.equal(katana.quan, 2);
     assert.equal(game.context.move, 0);
     input.feed('s');
     await answerPrompts(rhack(0), input, []);
