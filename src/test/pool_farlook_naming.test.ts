@@ -11,6 +11,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { KELP_FROND, STATUE } from '../js/object_data.js';
 import { races } from '../js/roles.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
+import { cansee, vision_recalc } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -110,6 +111,18 @@ void test('farlook describes a blind-touch darkroom glyph even when the room was
     game.flags.dark_room = true;
     setHeroBlindnessTurns(10);
     feel_location(11, 10);
+
+    assert.equal(await farlookLocationDescription(11, 10), 'dark part of a room');
+});
+
+void test('farlook describes a remembered lit room outside sight as dark with dark_room enabled', async () => {
+    const level = freshObjectRoom({ flags: { dark_room: true, color: true } });
+    newsym(11, 10);
+    level.requireAt(30, 10).typ = ROOM;
+    game.u.ux = 30;
+    vision_recalc(0);
+    newsym(11, 10);
+    assert.equal(cansee(11, 10), false);
 
     assert.equal(await farlookLocationDescription(11, 10), 'dark part of a room');
 });
