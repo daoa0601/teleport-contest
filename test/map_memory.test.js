@@ -4,11 +4,12 @@ import { CORR, FOUNTAIN, NO_MINVENT, ROOM, SINK, STONE } from '../js/const.js';
 import { CLR_WHITE, NO_COLOR } from '../js/terminal.js';
 import { rhack } from '../js/cmd.js';
 import { mapLevel, premap_detect } from '../js/detect.js';
-import { docrt, flush_screen, glyphAt, map_invisible, map_location, newsym, unmap_invisible } from '../js/display.js';
+import { docrt, flush_screen, glyphAt, map_invisible, map_location, newsym, redrawMap, unmap_invisible } from '../js/display.js';
 import { CmapSymbol, cmapToGlyph } from '../js/glyph_numbers.js';
 import { recordMappedOverviewState } from '../js/dungeon.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { placeMonsterAt } from '../js/monster_location.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
@@ -52,6 +53,32 @@ void test('redrawing an unseen detected monster preserves its remembered lit flo
     assert.equal(glyphAt(11, 10)?.kind, 'monster');
     assert.equal(floor.remembered_glyph?.glyph, cmapToGlyph(CmapSymbol.room), 'the detection overlay must leave the remembered floor lit');
 });
+for (const { name, terrain, litGlyph, darkGlyph } of [
+    { name: 'room', terrain: ROOM, litGlyph: CmapSymbol.room, darkGlyph: CmapSymbol.darkroom },
+    { name: 'corridor', terrain: CORR, litGlyph: CmapSymbol.litcorr, darkGlyph: CmapSymbol.corr },
+]) {
+    void test(`redrawing an unseen Warning preserves the remembered lit ${name} until the monster leaves`, async () => {
+        const level = freshObjectRoom({ flags: { dark_room: true, color: true },
+            hero: { warning: true } });
+        const floor = level.requireAt(11, 10);
+        floor.typ = terrain;
+        floor.lit = true;
+        newsym(11, 10);
+        const xorn = await createMonsterAt('xorn', 11, 10, NO_MINVENT);
+        xorn.mpeaceful = false;
+        xorn.m_lev = 8;
+        setHeroBlindnessTurns(10);
+        vision_recalc(0);
+        assert.equal(cansee(11, 10), false);
+        await redrawMap();
+        await flush_screen(1);
+        assert.equal(requireScreenCell(10, 11).ch, '2');
+        assert.equal(floor.remembered_glyph?.glyph, cmapToGlyph(litGlyph), `Warning must preserve the remembered lit ${name}`);
+        placeMonsterAt(xorn, 13, 10);
+        newsym(11, 10);
+        assert.equal(floor.remembered_glyph?.glyph, cmapToGlyph(darkGlyph), `the unoccupied ${name} must darken outside sight`);
+    });
+}
 function currentFeatures() {
     requirePlayingGame(game);
     recordMappedOverviewState();

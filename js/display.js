@@ -2021,7 +2021,10 @@ export async function redrawMap() {
             // or traps which did not move while the modal was open.
             const monster = monsterAtMapCell(x, y);
             if (cansee(x, y) || (monster
-                && monsterProjectionAtCell(monster, x, y))) {
+                && (monsterProjectionAtCell(monster, x, y)
+                    || !isWormTail(monster, x, y) && monsterHasWarningProjection(monster)))) {
+                // newsym() displays Warning before correcting unseen floor
+                // memory, just as it does for an identified monster.
                 newsym(x, y);
             }
             else if (loc?.remembered_glyph) {
