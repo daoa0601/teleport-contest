@@ -8792,7 +8792,7 @@ async function makerogueghost(): Promise<void> {
     const ghost = await makemon(287, x, y, 0); // PM_GHOST
     if (!ghost) return;
     ghost.msleeping = 1;
-    ghost.name = roguename();
+    setMonsterGivenName(ghost, roguename());
 
     let ghostobj;
     if (rn2(4)) {

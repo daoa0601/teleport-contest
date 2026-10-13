@@ -8604,7 +8604,7 @@ async function makerogueghost() {
     if (!ghost)
         return;
     ghost.msleeping = 1;
-    ghost.name = roguename();
+    setMonsterGivenName(ghost, roguename());
     let ghostobj;
     if (rn2(4)) {
         ghostobj = await mksobj_at(FOOD_RATION, x, y, false, false);
