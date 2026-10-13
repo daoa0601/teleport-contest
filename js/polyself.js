@@ -1,5 +1,9 @@
 // Hero form changes and equipment.
 // C refs: polyself.c polyself(), polymon(), break_armor(), drop_weapon().
+import { weaponDescription } from './weapon_description.js';
+import { P_SHORT_SWORD, P_SABER } from './const.js';
+import { makePlural } from './object_grammar.js';
+import { OBJECT_SUBTYPE } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
 import { finishHeroHelplessness } from './allmain.js';
@@ -761,7 +765,12 @@ async function dropPolymorphWeapons(alone) {
     const canDropSecondary = !secondary || canDropPolymorphWeapon(secondary);
     if (alone) {
         const verb = canDropPrimary && canDropSecondary ? 'drop' : 'release';
-        await plineWithContinuation(`You find you must ${verb} your ${secondary ? 'weapons' : 'weapon'}!`);
+        let noun = droppedWeaponNoun(primary);
+        if (secondary && noun !== droppedWeaponNoun(secondary))
+            noun = 'weapon';
+        if (primary.quan !== 1 || secondary)
+            noun = makePlural(noun);
+        await plineWithContinuation(`You find you must ${verb} ${noun.startsWith('corpse') ? 'the' : 'your'} ${noun}!`);
     }
     const weapons = [
         [secondary, canDropSecondary], [primary, canDropPrimary],
@@ -778,6 +787,11 @@ async function dropPolymorphWeapons(alone) {
         if (game.program_state.gameover)
             return;
     }
+}
+function droppedWeaponNoun(object) {
+    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    return object.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER
+        ? 'sword' : weaponDescription(object);
 }
 function canDropPolymorphWeapon(object) {
     if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_SADDLE))
