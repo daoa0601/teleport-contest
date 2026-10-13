@@ -1007,7 +1007,8 @@ async function advanceHeroShapeChange(): Promise<void> {
         && rn2(80 - (sessionIsNight(game.datetime) ? 20 : 0)) === 0)
         game._pendingHeroShapeChange = 'were';
 
-    if (!game._pendingHeroShapeChange || heroIsUnchanging(game) || game.multi < 0) return;
+    if (!game._pendingHeroShapeChange || heroIsUnchanging(game)
+        || heroHasInvoluntaryDelay(game)) return;
     await stopHeroOccupation(game);
     if (game._pendingHeroShapeChange === 'polymorph') await polymorphHero();
     else await applyHeroWereChange();

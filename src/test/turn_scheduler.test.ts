@@ -5,7 +5,7 @@ import { installPagerInput, finishAtCommandInput } from './support/pager-input.j
 import { planInput } from './support/planned-input.js';
 import assert from 'node:assert/strict';
 
-import { moveloop_core } from '../js/allmain.js';
+import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
 import { A_STR, IRONBARS, NEED_WEAPON, NEW_MOON, NO_MINVENT, NO_WEAPON_WANTED, PIT, POOL, STONE, W_WEP } from '../js/const.js';
@@ -32,6 +32,30 @@ import { canSeeMonster } from '../js/display.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setHeroLycanthropy } from '../js/were.js';
+import { putHeroToSleep } from '../js/hero_sleep.js';
+
+void test('a queued were change waits until the hero wakes up', async () => {
+    const input = freshTurnRoom();
+    requirePlayingGame(game);
+    const beast = MONSTER_NAME.indexOf('werejackal');
+    const human = game.u.umonnum;
+    setHeroLycanthropy(beast);
+    putHeroToSleep(10);
+    game._pendingHeroShapeChange = 'were';
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(game._helplessTurns, 9);
+    assert.equal(game.u.umonnum, human, 'sleep must defer the queued transformation');
+
+    await finishHeroHelplessness('');
+    installPagerInput(input, { expected: /turn into|hear/, limit: 8 });
+    input.feed('.');
+    await moveloop_core();
+
+    assert.equal(game.u.umonnum, beast, 'the deferred transformation resumes after waking');
+});
 
 void test('an infected human changes into its were form during ordinary turn maintenance', async () => {
     const input = freshTurnRoom({ seed: 81n });

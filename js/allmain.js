@@ -799,7 +799,8 @@ async function advanceHeroShapeChange() {
     else if (infected && !Upolyd(game.u)
         && rn2(80 - (sessionIsNight(game.datetime) ? 20 : 0)) === 0)
         game._pendingHeroShapeChange = 'were';
-    if (!game._pendingHeroShapeChange || heroIsUnchanging(game) || game.multi < 0)
+    if (!game._pendingHeroShapeChange || heroIsUnchanging(game)
+        || heroHasInvoluntaryDelay(game))
         return;
     await stopHeroOccupation(game);
     if (game._pendingHeroShapeChange === 'polymorph')
