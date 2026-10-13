@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–11 (`6e9df9f`)
+## Parallel batches 1–12 (`2fa55d1`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -211,37 +211,45 @@ nymphs, simple wield names, corpse ownership prefixes), **pool-map-2** (poison
 death tombstones and killer text, item-action menu entries, hero redraw timing,
 monster glyphs).
 
+Batch 12: **pool-rng-3** (pool random-call tails: `obj_resists`,
+`collect_coords`, `dog_move`), **review-debt-2** (native payment groups for
+contained shop goods, poison-cloud membership across movement and knockback),
+**pager-timing** (missing `--More--` pagers before monster turns, delayed armor
+removal over level-teleport traps), **public-3** (self-farlook, dip prompt
+without gold, saddled steed names; +3 public sessions), **audit-read** (a C
+source audit of `read.c`, which the corpus barely runs: scroll light and
+darkness on carried lights, charging feedback, genocide choices, wizard
+monster creation), **pool-rng-4** (monster-turn random-call tails).
+
 ## Verification
 
-`npm test` at `6e9df9f`: **8,633/8,633**. Merges require a fully green suite;
+`npm test` at `2fa55d1`: **8,810/8,810**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(batch 11: no eval or pool regression; one public session that already
-diverges at step 196 lost three later screens).
+(no screen regression in batch 12, eval, public or pool).
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
-| Public | 33/44 | 9,819/11,405 | 694,683/792,838 | 0 |
-| Native eval sample | 290/300 | 49,511/50,586 | 3,586,274/3,616,669 | 0 |
-| Holdout-dev pool | 2,299/2,500 | | | 0 |
+| Public | 36/44 | 10,845/11,405 | 778,133/792,838 | 0 |
+| Native eval sample | 292/300 | 49,927/50,586 | 3,592,633/3,616,669 | 0 |
+| Holdout-dev pool | 2,350/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch11-6e9df9f-{eval,public}` and
-`triage-6e9df9f` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 10: 281/300, pool 2,176/2,500). No verified random call was
-lost; the ledgers now hold 267 eval and 146 public functions. The
-state oracle finds 291 sessions matching C state throughout; one hidden-state
+Runs: `.cache/generalization/batch12-2fa55d1-{eval,public}` and
+`triage-2fa55d1` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 11: 290/300, pool 2,299/2,500). No verified random call was
+lost; the ledgers now hold 281 eval and 184 public functions. The
+state oracle finds 293 sessions matching C state throughout; one hidden-state
 session remains.
 
 ## Next work
 
-In flight: pager-timing (missing `--More--` pagers behind the `distfleeck`
-first differences), review-debt-2 (contained shop goods payment, poison-cloud
-membership), pool-rng-3 (`obj_resists`, `m_move`, `next_ident`, `mcalcmove`
-and other pool random-call tails). The batch-11 pool clusters are messages 22,
-`distfleeck` and pager gaps 37, map 13, and `obj_resists` 11;
-`.cache/agents/pool-6e9df9f-firsts.tsv` lists them. Coverage
-shows that `read.c`, `potion.c`, and `pray.c` are barely exercised.
+In flight: pool-msgs-4 (steal.c armor theft, sticking fire hugs, wizard-mode
+death prompt), and C-source audits of the files the corpus barely runs:
+audit-potion (`potion.c`), audit-pray (`pray.c`), audit-apply (`apply.c`). The
+batch-12 pool clusters are messages 22, `distfleeck` 18 (C starts a monster
+turn where JS does something else), map 14 and status 9;
+`.cache/agents/pool-2fa55d1-firsts.tsv` lists them. 
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,
