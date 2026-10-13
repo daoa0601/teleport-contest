@@ -4,6 +4,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, stopDonning } from './armor.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute, reportHeroEncumbrance } from './attrib.js';
 import { heroHairName, heroHandName } from './body_parts.js';
+import { recorderIsLeapDay } from './calendar.js';
 import { heroHasInvoluntaryDelay } from './command_state.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, LARGEST_INT, M_ATTK_AGR_DONE, QBUFSZ, RLOC_MSG, Upolyd } from './const.js';
 import { currency } from './currency.js';
@@ -58,7 +59,7 @@ export async function resolveHeroSeduction(monster, attack, state, publish, rand
         return finishSeductionAttack(attack);
     if (state.uarm || state.uarmc) {
         if (!heroIsDeaf(state)) {
-            if (state.datetime?.slice(4, 8) === '0229' && female) {
+            if (recorderIsLeapDay(state.datetime) && female) {
                 const gloves = state.uarmg
                     ?? state.inventory.find(object => armorSlotFor(object.otyp) === 'uarmg');
                 // The succubus reveals the gloves even when the hero is blind.

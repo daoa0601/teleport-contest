@@ -5,6 +5,16 @@ export function recorderLocalHour(datetime) {
         timeZone: 'America/New_York', hourCycle: 'h23', hour: '2-digit',
     }).format(new Date(epoch * 1000)));
 }
+// C mhitu.c:ld() uses calendar.c:yyyymmdd(0), after localtime()
+// normalizes the fixed clock's inherited daylight saving offset.
+export function recorderIsLeapDay(datetime) {
+    const epoch = recorderLocalEpochSeconds(datetime) || Date.now() / 1000;
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date(epoch * 1000));
+    return parts.some(part => part.type === 'month' && part.value === '02')
+        && parts.some(part => part.type === 'day' && part.value === '29');
+}
 export function recorderLocalEpochSeconds(datetime) {
     if (!datetime || !/^\d{14}$/.test(datetime))
         return 0;
