@@ -2689,11 +2689,9 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
     let gy = isFiniteNumber(monster.muy) ? monster.muy : heroY;
     // m_move() establishes the base approach mode before refreshing its
     // short-range visual target and applying ranged-distance policy.
-    let appr = monster.mflee
-        ? -1
-        : monster.mconf || monster.mcansee === false || monster.mcansee === 0
-            ? 0
-            : 1;
+    const disoriented = monster.mconf || monster.mcansee === false || monster.mcansee === 0
+        || state.u.uswallow && state.u.ustuck === monster;
+    let appr = disoriented ? 0 : monster.mflee ? -1 : 1;
     // C m_move() does not pursue the hero's omniscient coordinates through
     // long, unseen passages.  Outside its short direct-vision envelope, an
     // eyed monster follows the newest adjacent entry in the hero track.  The
@@ -2742,11 +2740,11 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
     let selected = false;
     let selectedInfo = 0;
     // C m_move() makes stalkers, bats, and lights intermittently wander even
-    // while hostile.  This roll is part of the approach decision and must
+    // while fleeing. This roll is part of the approach decision and must
     // precede item search and mfndpos()'s random-reservoir selection.
     const symbol = MONSTER_SYMBOL[monster?.mnum];
-    if (appr === 1 &&
-        (monster?.mnum === 153 || symbol === 28 || symbol === 25) &&
+    if (appr !== 0 &&
+        (monster.mnum === PM_STALKER || symbol === 28 || symbol === S_LIGHT) &&
         recordRandom(random, calls, 3) === 0) {
         appr = 0;
     }
