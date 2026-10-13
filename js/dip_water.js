@@ -1,12 +1,13 @@
 // C fountain.c:wash_hands(), shared by fountain, sink and pool dips.
 import { heroFingerName, heroHandName } from './body_parts.js';
+import { armorSimpleName } from './armor.js';
 import { displayLiquidName, plineWithContinuation as pline } from './display.js';
 import { game } from './gstate.js';
 import { makePlural } from './object_grammar.js';
 import { setPropertyTimeout } from './properties.js';
 import { waterDamageObject } from './trap.js';
 export function fingersOrGloves() {
-    return game.uarmg ? 'gloves' : makePlural(heroFingerName());
+    return game.uarmg ? armorSimpleName(game.uarmg) : makePlural(heroFingerName());
 }
 export async function washHands() {
     const glib = (game.u.glibTurns ?? 0) > 0;

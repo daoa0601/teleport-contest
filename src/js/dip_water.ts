@@ -1,5 +1,6 @@
 // C fountain.c:wash_hands(), shared by fountain, sink and pool dips.
 import { heroFingerName, heroHandName } from './body_parts.js';
+import { armorSimpleName } from './armor.js';
 import { displayLiquidName, plineWithContinuation as pline } from './display.js';
 import { game } from './gstate.js';
 import { makePlural } from './object_grammar.js';
@@ -11,7 +12,7 @@ import type { WaterDamageOutcome } from './trap.js';
 export type DipTarget = GameObject | 'hands';
 
 export function fingersOrGloves(): string {
-    return game.uarmg ? 'gloves' : makePlural(heroFingerName());
+    return game.uarmg ? armorSimpleName(game.uarmg) : makePlural(heroFingerName());
 }
 
 export async function washHands(): Promise<WaterDamageOutcome> {

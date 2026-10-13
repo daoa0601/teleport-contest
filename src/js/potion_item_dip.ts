@@ -1,9 +1,9 @@
 // C potion.c:potion_dip(): item treatment, before and after potion mixing.
 import type { GameObject } from './object_types.js';
 import { exerciseAttribute } from './attrib.js';
-import { heroFingerName } from './body_parts.js';
 import { A_WIS, EXPL_FIERY, PLNMSG_OBJ_GLOWS } from './const.js';
 import { displayColorName, plineWithContinuation as pline } from './display.js';
+import { fingersOrGloves } from './dip_water.js';
 import { explode } from './explosion.js';
 import { fireDamageObject } from './fire_damage.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -19,7 +19,7 @@ import { objectQuantity } from './object_stack.js';
 import { blessObjectState, curseObject, unblessObjectState, uncurseObjectState } from './object_state.js';
 import { CORPSE, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_EXTRA_HEALING, POT_FULL_HEALING,
     POT_HEALING, POT_OIL, POT_POLYMORPH, POT_SICKNESS, POT_WATER, TOWEL } from './object_data.js';
-import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { objectCombatName, objectNameIsPlural, ownedObjectAction, ownedObjectName } from './objnam.js';
 import { setPropertyTimeout } from './properties.js';
 import { d } from './rng.js';
@@ -170,8 +170,7 @@ async function dipInOil(object: GameObject, potion: GameObject): Promise<boolean
     if (potion.lamplit) {
         await fireDamageObject(object, { force: true, x: game.u.ux, y: game.u.uy, publish: pline });
     } else if (potion.cursed) {
-        const hands = game.uarmg ? 'gloves' : makePlural(heroFingerName());
-        await pline(`The potion spills and covers your ${hands} with oil.`);
+        await pline(`The potion spills and covers your ${fingersOrGloves()} with oil.`);
         setPropertyTimeout('glib', (game.u.glibTurns ?? 0) + d(2, 10));
     } else if (object.oclass !== 2 && !isWeaponTool(object)) return false;
     else if ((!objectIsVulnerableToErosion(object, 'rust') && !objectIsVulnerableToErosion(object, 'corrosion'))
