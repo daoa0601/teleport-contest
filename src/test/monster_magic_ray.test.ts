@@ -100,6 +100,9 @@ void test('an Angel remembers visible magic resistance and curses on its next sp
     wearHeroArmor(await addInventoryObject(OBJECT_NAMES.indexOf('cloak of magic resistance')));
     findArmorClass();
     const angel = await createMonsterAt('Angel', 14, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    // makemon.c can make an MM_ANGRY Angel a peaceful roaming minion.
+    // This resistance test needs an Angel that has become hostile.
+    angel.mpeaceful = 0;
     angel.msleeping = 0;
     angel.movement = 12;
     initRng(2n);

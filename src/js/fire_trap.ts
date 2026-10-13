@@ -24,8 +24,9 @@ import { burnAwayHeroSlime } from './hack.js';
 import { dist2 } from './hacklib.js';
 import { meltIce } from './ice.js';
 import { igniteItems } from './light.js';
-import { MONSTER_LEVEL, monsterTypeName } from './monster_data.js';
+import { MONSTER_LEVEL } from './monster_data.js';
 import { monsterHasFireResistance } from './monster_resistance.js';
+import { monsterName as perceivedMonsterName } from './monster_name.js';
 import {
     monstersForgetHeroResistance,
     monstersObserveHeroResistance,
@@ -61,7 +62,6 @@ interface FireTrapOptions {
     publish?: MessagePublisher;
     random?: (limit: number) => number;
     rollOne?: (sides: number) => number;
-    monsterName?: (monster: Monster) => string;
     describeMonster?: (monster: Monster) => string;
 }
 
@@ -155,14 +155,6 @@ async function burnFloorAndIce(
     if (isIceAt(hero.ux, hero.uy)) await meltIce(hero.ux, hero.uy);
 }
 
-function ordinaryMonsterName(monster: Monster) {
-    return monster?.name || monsterTypeName(monster?.mnum, !!monster?.female);
-}
-
-function ordinaryMonsterSubject(monster: Monster) {
-    return monster?.name || `The ${ordinaryMonsterName(monster)}`;
-}
-
 async function finishMonsterFireDeath(
     monster: Monster,
     event: MonsterFireTrapEvent,
@@ -207,8 +199,7 @@ export async function finishMonsterFireTrap(
         publish = plineWithContinuation,
         random = rn2,
         rollOne = rnd,
-        monsterName = ordinaryMonsterName,
-        describeMonster = ordinaryMonsterSubject,
+        describeMonster = monster => perceivedMonsterName(monster, { state, capitalized: true }),
     }: FireTrapOptions = {},
 ) {
     if (event.finished) return event;
@@ -216,7 +207,7 @@ export async function finishMonsterFireTrap(
     const y = event.trap.ty;
     const surface = surfaceName(x, y, state);
     if (event.inSight) {
-        await publish(`A tower of flame erupts from the ${surface} under ${monsterName(monster)}!`);
+        await publish(`A tower of flame erupts from the ${surface} under ${perceivedMonsterName(monster, { state })}!`);
     } else if (event.seeSquare) {
         await publish(`You see a tower of flame erupt from the ${surface}!`);
     }

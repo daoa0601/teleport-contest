@@ -234,10 +234,17 @@ export async function tty_display_nhwindow<T>(window: TtyMenuWindow<T>, how: Men
 }
 
 export async function tty_select_menu<T>(window: TtyMenuWindow<T>, how: MenuPickMode): Promise<TtyMenuResult<T>> {
+    const previousStatusDisabled = game._statusUpdatesDisabled;
+    game._statusUpdatesDisabled = true;
     try {
         return await tty_display_nhwindow(window, how);
     } finally {
-        await tty_dismiss_nhwindow(window);
+        try {
+            await tty_dismiss_nhwindow(window);
+        } finally {
+            if (previousStatusDisabled === undefined) delete game._statusUpdatesDisabled;
+            else game._statusUpdatesDisabled = previousStatusDisabled;
+        }
     }
 }
 

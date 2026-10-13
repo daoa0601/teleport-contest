@@ -12,7 +12,6 @@ import { wakeMonster } from './monster_anger.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { heroSpecies } from './hero_species.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { killerObjectName } from './objnam.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
@@ -198,11 +197,8 @@ async function hitHero(node, state, options) {
         let damage = rollPhysicalWeaponDamageAgainstHero(object, state, { rollOne: options.rollOne });
         if (state.u.halfPhysicalDamage)
             damage = Math.trunc((damage + 1) / 2);
-        // C thitu(): killer_xname() supplies the article or plural itself.
-        const killer = killerObjectName(object, state);
         const result = await hitHeroWithObject(object, damage, attack, {
             state, publish: options.publish, rollOne: options.rollOne,
-            killer, deathCause: `killed by ${killer}`,
         });
         if (result.hit) {
             node.range -= 3;

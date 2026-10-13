@@ -8,7 +8,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { setMonsterApparentHeroPosition } from '../js/monster_perception.js';
 import { attackHeroWithPolearm } from '../js/monster_polearm.js';
-import { LANCE } from '../js/object_data.js';
+import { LANCE, OBJECT_NAMES } from '../js/object_data.js';
 import { rn2 } from '../js/rng.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';
@@ -24,6 +24,26 @@ async function soldierWithLance(x: number, y: number) {
     findArmorClass();
     return soldier;
 }
+
+void test('an unfamiliar polearm keeps its visible appearance in the thrust and miss messages', async () => {
+    freshObjectRoom({ hero: { uac: 10 }, flags: { verbose: true } });
+    requirePlayingGame(game);
+    const soldier = await createMonsterAt('soldier', 12, 10, NO_MINVENT);
+    soldier.mux = game.u.ux;
+    soldier.muy = game.u.uy;
+    const polearm = await equipMonsterObject(soldier,
+        await knownObject(OBJECT_NAMES.indexOf('spetum'), { spe: 0, typeKnown: false, known: false, dknown: false }), W_WEP);
+    const messages: string[] = [];
+
+    await attackHeroWithPolearm(soldier, polearm, game, {
+        publish: async message => { messages.push(message); }, rollOne: () => 20,
+    });
+
+    assert.equal(messages[0], 'The soldier thrusts a forked polearm.');
+    assert.match(messages[1] ?? '', /forked polearm/);
+    assert.equal(polearm.dknown, true, 'watching the thrust reveals the appearance');
+    assert.equal(polearm.typeKnown, false, 'watching an attack does not identify the weapon type');
+});
 
 void test('a monster can strike at a knight\'s move distance without throwing its lance', async () => {
     freshObjectRoom();

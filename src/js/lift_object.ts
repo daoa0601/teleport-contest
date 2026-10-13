@@ -1,7 +1,7 @@
 // Decide how much of a floor or container stack the hero can lift.
 // C refs: pickup.c carry_count() and lift_object().
 
-import { pline } from './display.js';
+import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { inventoryItemDescription } from './invent.js';
@@ -122,7 +122,7 @@ function presentTense(object: GameObject): string {
 async function reportPartialLift(object: GameObject, count: number, container: GameObject | null, telekinesis: boolean): Promise<void> {
     observeObjectForNaming(object);
     const verb = container ? 'carry' : telekinesis ? 'acquire' : 'lift';
-    await pline(`You can only ${verb} ${count === 1 ? 'one' : 'some'} of the ${
+    await plineWithContinuation(`You can only ${verb} ${count === 1 ? 'one' : 'some'} of the ${
         itemDescription(object)} ${locationPhrase(container)}.`);
 }
 
@@ -132,12 +132,12 @@ async function reportUnliftable(object: GameObject, container: GameObject | null
     const description = itemDescription(object);
     const where = locationPhrase(container, !container);
     if ((state.inventory || []).length || heroGoldAmount(state)) {
-        await pline(`There ${presentTense(object)} ${description} ${where}, but you cannot ${
+        await plineWithContinuation(`There ${presentTense(object)} ${description} ${where}, but you cannot ${
             verb} any more.`);
         return;
     }
     const subject = objectQuantity(object) === 1 ? 'it ' : 'even one ';
-    await pline(`There ${presentTense(object)} ${description} ${where}, but ${subject
+    await plineWithContinuation(`There ${presentTense(object)} ${description} ${where}, but ${subject
         }is too heavy for you to ${verb}.`);
 }
 
@@ -213,7 +213,7 @@ export async function liftObject({
     count = Math.max(0, Math.min(Math.trunc(count || total), total));
 
     if (object.otyp === BOULDER && state.level?.flags?.sokoban_rules) {
-        await pline('You cannot get your hand around this boulder.');
+        await plineWithContinuation('You cannot get your hand around this boulder.');
         return { decision: 'stop', count: 0 };
     }
 
@@ -227,7 +227,7 @@ export async function liftObject({
             return { decision: 'lift', count: total };
         }
         const noun = OBJECT_NAMES[object.otyp] || object.name || 'object';
-        await pline(`You are carrying too much stuff to pick up ${
+        await plineWithContinuation(`You are carrying too much stuff to pick up ${
             total === 1 ? 'another' : 'more'} ${noun}.`);
         return { decision: 'stop', count: 0 };
     }
@@ -243,7 +243,7 @@ export async function liftObject({
     if (object.otyp !== GOLD_PIECE && object.oclass !== COIN_CLASS
         && inventoryObjectCount(state) >= INVENTORY_SLOT_COUNT
         && !canMergeWithInventory(object, liftedCount, state)) {
-        await pline(`Your knapsack cannot accommodate any more items${
+        await plineWithContinuation(`Your knapsack cannot accommodate any more items${
             goldFollows(object, container, state) ? ' (except gold)' : ''}.`);
         resetRejectedScareScroll(object, container);
         return { decision: 'stop', count: 0 };

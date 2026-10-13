@@ -4,10 +4,11 @@
 import { heroIsDisplaced } from './armor.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
+import { heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterIsAmorphous, monsterIsVampireShifter, monsterIsVerySmall } from './monster_data.js';
 import { AD_MAGM, AD_ACID } from './monster_attack_types.js';
 import { heroGoldAmount } from './hero_gold.js';
-import { clearPath, couldsee } from './vision.js';
+import { couldsee } from './vision.js';
 import { ACCESSIBLE, D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_MAGR, M_SEEN_NOTHING, isok, } from './const.js';
 import { isContainer } from './container.js';
 import { ARROW, BAG_OF_HOLDING, BAG_OF_TRICKS, BLINDFOLD, BOOMERANG, CANDY_BAR, CORPSE, CREDIT_CARD, CRYSKNIFE, DAGGER, FEDORA, FORTUNE_COOKIE, LEASH, LEATHER_JACKET, LEMBAS_WAFER, LOCK_PICK, LUMP_OF_ROYAL_JELLY, MAGIC_MARKER, MAGIC_WHISTLE, OBJECT_SUBTYPE, OILSKIN_SACK, PANCAKE, SACK, SKELETON_KEY, SLING, STETHOSCOPE, TALLOW_CANDLE, TIN_OPENER, TIN_WHISTLE, TOWEL, WAX_CANDLE, } from './object_data.js';
@@ -45,13 +46,19 @@ export function monsterCanFog(monster, state) {
         && !((state?.mvitals?.[PM_FOG_CLOUD]?.mvflags ?? 0) & G_GENOD)
         && !state.u.protectionFromShapeChangers
         && !state.protectionFromShapeChangers
-        && !inventoryBlocksDoorPassage(monster);
+        && !inventoryBlocksDoorPassage(monster.minvent || []);
 }
 export function monsterCanOoze(monster) {
-    return monsterIsAmorphous(monster) && !inventoryBlocksDoorPassage(monster);
+    return monsterIsAmorphous(monster)
+        && !inventoryBlocksDoorPassage(monster.minvent || []);
 }
-function inventoryBlocksDoorPassage(monster) {
-    for (const object of monster.minvent || []) {
+// C can_ooze() uses the hero's inventory for youmonst, not minvent.
+export function heroCanOoze(state) {
+    return monsterIsAmorphous({ mnum: heroSpecies(state) })
+        && !inventoryBlocksDoorPassage(state.inventory);
+}
+function inventoryBlocksDoorPassage(inventory) {
+    for (const object of inventory) {
         const type = object.otyp;
         // The pinned source compares otyp, not oclass, for this first test.
         if (type === COIN_CLASS && object.quan > 100)
@@ -80,25 +87,11 @@ export function seenResistanceForDamage(damageType) {
     return damageType >= AD_MAGM && damageType <= AD_ACID
         ? M_SEEN_MAGR << (damageType - AD_MAGM) : M_SEEN_NOTHING;
 }
-function monsterCanSeeHero(monster, state) {
-    if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
-        || monster.mcansee === 0)
-        return false;
-    if (!Number.isFinite(state.u?.ux) || !Number.isFinite(state.u?.uy))
-        return false;
-    if (state.underwater || state.u?.uinwater)
-        return false;
-    if (heroIsInvisible(state)
-        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS)) {
-        return false;
-    }
-    return clearPath(monster.mx, monster.my, state.u?.ux, state.u?.uy);
-}
 function monstersThatCanSeeHero(state, canSeeHero) {
     if (state.u?.uswallow)
         return [];
     const seesHero = canSeeHero
-        || ((monster) => monsterCanSeeHero(monster, state));
+        || ((monster) => monsterHasLineOfSightToHero(monster, state));
     return (state.level?.monsters || []).filter(monster => monster && !monster.dead && (monster.mhp ?? 1) > 0
         && seesHero(monster));
 }
