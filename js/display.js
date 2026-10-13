@@ -626,15 +626,18 @@ export function terrain_glyph(loc, x, y) {
     const appearance = terrainGlyphAppearance(loc, x, y);
     const typ = projectedTerrainType(loc);
     const symbol = terrainSymbolIndex(loc, x, y, typ, appearance);
+    return {
+        ...appearance, kind: 'terrain', terrainName: terrainGlyphName(loc, x, y, appearance),
+        glyph: typ === ALTAR ? altarToGlyph(loc.flags) : cmapToGlyph(symbol, currentWallGlyphOffset()),
+    };
+}
+// display.h:cmap_walls_to_glyph() applies to both real walls and disguises.
+function currentWallGlyphOffset() {
     const branch = game.dungeons[game.u.uz?.dnum ?? 0];
-    const wallOffset = branch?.dname === 'The Gnomish Mines' ? GlyphOffset.cmapMines
+    return branch?.dname === 'The Gnomish Mines' ? GlyphOffset.cmapMines
         : branch?.flags.hellish ? GlyphOffset.cmapGehennom
             : Is_knox_level(game.u.uz) ? GlyphOffset.cmapKnox
                 : In_sokoban(game.u.uz) ? GlyphOffset.cmapSokoban : GlyphOffset.cmapMain;
-    return {
-        ...appearance, kind: 'terrain', terrainName: terrainGlyphName(loc, x, y, appearance),
-        glyph: typ === ALTAR ? altarToGlyph(loc.flags) : cmapToGlyph(symbol, wallOffset),
-    };
 }
 function terrainSymbolIndex(loc, x, y, typ, appearance) {
     if ((IS_WALL(typ) && typ !== DBWALL) || typ === SDOOR) {
@@ -878,7 +881,7 @@ function heroDisplayGlyph() {
         const decSymbol = !Is_rogue_level(game.u.uz) && /^DECgraphics$/i.test(game.symset || '')
             ? decFurnitureSymbols.get(appearance) : undefined;
         return { ch: decSymbol ?? symbol.ch, color: symbol.color, decgfx: decSymbol !== undefined,
-            kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance) };
+            kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, currentWallGlyphOffset()) };
     }
     // display.h:hero_glyph and you.h:Ugender select the current body's sex.
     // Hero glyph identity still changes when the tty symbol remains '@'.
