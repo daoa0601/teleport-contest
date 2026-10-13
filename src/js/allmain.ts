@@ -3964,12 +3964,6 @@ export async function moveloop_core() {
         return;
     }
 
-    // Queued actions and counted repeats do not read a new command key.
-    // Escape's message suppression survives until a real command read or
-    // until a prompted question clears tty's WIN_STOP flag.
-    if (!g._cannedCommands?.length && g.multi === 0)
-        g._suppressMessagesUntilInput = false;
-
     // Read and execute one command
     g.u.umoved = false;
     if (g.multi > 0) {
