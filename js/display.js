@@ -1249,7 +1249,10 @@ export function feel_location(x, y) {
             else if (forgottenBoulder || glyph?.kind === 'terrain'
                 && glyph.glyph !== undefined && glyph.glyph >= cmapToGlyph(CmapSymbol.stone)
                 && glyph.glyph < cmapToGlyph(CmapSymbol.darkroom)) {
-                rememberFeltRoom(x, y, loc);
+                const dark = (game.flags.dark_room ?? true) && game.flags.color !== false
+                    && !Is_rogue_level(game.u.uz);
+                rememberFeltRoom(x, y, loc, dark ? CmapSymbol.darkroom
+                    : loc.waslit ? CmapSymbol.room : CmapSymbol.stone);
             }
         }
         else {
@@ -1265,17 +1268,16 @@ export function feel_location(x, y) {
         });
     }
 }
-function rememberFeltRoom(x, y, location) {
-    const dark = (game.flags.dark_room ?? true) && game.flags.color !== false
-        && !Is_rogue_level(game.u.uz);
-    const floor = dark || location.waslit;
+function rememberFeltRoom(x, y, location, symbol) {
+    const dark = symbol === CmapSymbol.darkroom;
+    const floor = symbol !== CmapSymbol.stone;
     const dec = /^DECgraphics$/i.test(game.symset || '') && !Is_rogue_level(game.u.uz);
     const glyph = {
         ch: floor ? dec ? '~' : '.' : ' ',
         color: dark ? 16 : NO_COLOR,
         decgfx: floor && dec,
         kind: 'terrain', terrainName: floor ? 'floor of a room' : 'stone',
-        glyph: cmapToGlyph(dark ? CmapSymbol.darkroom : floor ? CmapSymbol.room : CmapSymbol.stone),
+        glyph: cmapToGlyph(symbol),
     };
     location.remembered_glyph = glyph;
     show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
@@ -1284,7 +1286,8 @@ function darkenFeltFloor(x, y, location) {
     const glyph = location.remembered_glyph;
     if (location.typ === ROOM && glyph?.glyph === cmapToGlyph(CmapSymbol.room)
         && (!location.waslit || (game.flags.dark_room ?? true) && game.flags.color !== false)) {
-        rememberFeltRoom(x, y, location);
+        // Grounded touch chooses darkroom even on Rogue levels or without color.
+        rememberFeltRoom(x, y, location, (game.flags.dark_room ?? true) ? CmapSymbol.darkroom : CmapSymbol.stone);
     }
     else if (location.typ === CORR && glyph?.glyph === cmapToGlyph(CmapSymbol.litcorr)
         && !location.waslit) {
