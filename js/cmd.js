@@ -4230,6 +4230,8 @@ async function doextcmd() {
                 continue;
             }
             game._pending_message = '';
+            game._retained_message = '';
+            game.nhDisplay?.clearRow(0);
             game.context.move = 0;
             return;
         }
