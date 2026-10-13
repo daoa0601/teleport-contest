@@ -25,6 +25,31 @@ import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject, floorObject, knownObject, untimedCorpse } from './support/game-objects.js';
 import { installPolymorphedHero, installPunishedHero } from './support/hero-state.js';
 import { installPagerInput } from './support/pager-input.js';
+import { requireScreenCell } from './support/screen.js';
+import { docrt, flush_screen } from '../js/display.js';
+void test('a level transition loads the destination before acknowledging its prerequisite', async () => {
+    const { destination } = freshConnectedLevels();
+    requirePlayingGame(game);
+    destination.downTeleportRegion = { lx: 13, ly: 10, hx: 13, hy: 10 };
+    await docrt();
+    await flush_screen(1);
+    const input = resetInputState();
+    const changing = gotoLevel({ dlevel: 2 }, {
+        preArrivalMessage: 'Endgame prerequisite: a - the Amulet of Yendor.',
+    });
+    await input.waitUntilBlocked();
+    try {
+        assert.ok(game.level === destination, 'destination creation precedes the message acknowledgement');
+        assert.equal(game.u.uz.dlevel, 2);
+        assert.equal(requireScreenCell(0, 0).ch, 'E', 'the message window remains visible while the map is paused');
+        assert.equal(game.u.ux, 13, 'hero placement also precedes the acknowledgement');
+        assert.equal(requireScreenCell(12, 11).ch, '.', 'the old map remains until the prerequisite is acknowledged');
+    }
+    finally {
+        input.feed(' ');
+        await changing;
+    }
+});
 void test('quest stairs require permission from the leader', async () => {
     const { source } = freshConnectedLevels({ dungeonName: 'The Quest' });
     requirePlayingGame(game);

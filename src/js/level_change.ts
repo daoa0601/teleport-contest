@@ -8,9 +8,8 @@ import { runDueTimers } from './timer_effects.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { promptKey } from './tty_prompts.js';
 import {
-    flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt, bot,
+    flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt, bot, displayMessageWindow,
 } from './display.js';
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { d, rnd, rn2 } from './rng.js';
@@ -66,7 +65,7 @@ export interface LevelChangeOptions {
     arrival?: LevelArrival;
     ladder?: boolean;
     postMessage?: string;
-    preArrivalPager?: string;
+    preArrivalMessage?: string;
 }
 
 interface LevelArrivalOptions {
@@ -74,13 +73,14 @@ interface LevelArrivalOptions {
     ladder: boolean;
     followers: Monster[];
     beforeGlow: () => Promise<void>;
+    preArrivalMessage: string;
 }
 
 export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     arrival = 'random',
     ladder = false,
     postMessage = '',
-    preArrivalPager = '',
+    preArrivalMessage = '',
 }: LevelChangeOptions = {}): Promise<boolean> {
     requirePlayingGame(game);
     const oldDepth = { ...game.u.uz };
@@ -125,8 +125,6 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         await pline('A mysterious force prevents you from descending.');
         return false;
     }
-
-    if (preArrivalPager) await promptKey(preArrivalPager);
 
     await currentLuaLifecycle().runCallbacks(game, 'level_leave');
 
@@ -211,7 +209,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         postMessage = '';
         await plineWithContinuation(message);
     };
-    const died = await arriveOnLevel(oldDepth, { arrival, ladder, followers, beforeGlow });
+    const died = await arriveOnLevel(oldDepth, { arrival, ladder, followers, beforeGlow, preArrivalMessage });
     if (died) return true;
     const newDepth = { ...game.u.uz };
 
@@ -359,7 +357,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     return true;
 }
 
-async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers, beforeGlow }: LevelArrivalOptions): Promise<boolean> {
+async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers, beforeGlow, preArrivalMessage }: LevelArrivalOptions): Promise<boolean> {
     requirePlayingGame(game);
     const atStairs = arrival === 'stairs' || arrival === 'downstairs';
     const up = dungeonDepth(game.u.uz.dnum, game.u.uz.dlevel)
@@ -416,6 +414,12 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
         if (Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz)) await moveElementalBubbles();
         else if (game.level.flags.fumaroles) fumaroles(game);
         vision_reset_new_level();
+        // goto_level() has finished placement before docrt() acknowledges
+        // prinv()'s prerequisite. Map output stays paused during this pager.
+        if (preArrivalMessage) {
+            await pline(preArrivalMessage);
+            await displayMessageWindow();
+        }
         await docrt({ beforeGlow });
         return false;
     } finally {

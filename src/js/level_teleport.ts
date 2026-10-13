@@ -24,9 +24,9 @@ const shudder = 'You shudder for a moment.';
 export type LevelChange = (...args: Parameters<typeof changeLevel>) => unknown;
 
 type LevelRequest =
-    | { random: true; depth?: never; destination?: never; preArrivalPager?: never }
-    | { random?: false; depth: number; destination?: never; preArrivalPager?: never }
-    | { random?: false; depth?: never; destination: DungeonLocation; preArrivalPager?: string | null };
+    | { random: true; depth?: never; destination?: never; preArrivalMessage?: never }
+    | { random?: false; depth: number; destination?: never; preArrivalMessage?: never }
+    | { random?: false; depth?: never; destination: DungeonLocation; preArrivalMessage?: string | null };
 
 export async function levelTeleport({ state = game, gotoLevel = changeLevel,
     menuRequested = false }: {
@@ -103,7 +103,7 @@ export async function levelTeleport({ state = game, gotoLevel = changeLevel,
         ? await destinationAtDepth(newDepth, state) : null);
     if (!destination || sameLevel(destination, hero.uz)) return;
     await gotoLevel({ dnum: destination.dnum, dlevel: destination.dlevel }, {
-        arrival: 'random', preArrivalPager: request.preArrivalPager || '',
+        arrival: 'random', preArrivalMessage: request.preArrivalMessage || '',
         postMessage: state.flags.verbose ? 'You materialize on a different level!' : '',
     });
 }

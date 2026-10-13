@@ -2889,9 +2889,8 @@ function specialLevelReachable(event: SpecialLayoutEvent) {
 
 // C ref: teleport.c level_tele().  Wizard-menu entry into the Elemental
 // Planes grants the real Amulet before deferred_goto() starts.  Object
-// construction and inventory identity therefore precede getbones()/mklev(),
-// while tty does not expose prinv() until the destination transaction yields
-// at its pre-arrival acknowledgement.
+// construction, inventory identity, and prinv() precede getbones()/mklev().
+// Destination placement finishes before tty asks for acknowledgement.
 async function endgamePrerequisite(destination: DungeonLocation) {
     if (!In_endgame(destination) || In_endgame(game.u?.uz)
         || game.u?.uhave?.amulet) return '';
@@ -2904,9 +2903,11 @@ async function endgamePrerequisite(destination: DungeonLocation) {
     recordObjectEncounter(amulet.otyp);
     if (!game.u.uhave) game.u.uhave = {};
     game.u.uhave.amulet = 1;
-    return `Endgame prerequisite: ${
+    const message = `Endgame prerequisite: ${
         amulet.invlet
-    } - the Amulet of Yendor.--More--`;
+    } - the Amulet of Yendor.`;
+    await pline(message);
+    return message;
 }
 
 // C ref: dungeon.c print_dungeon(TRUE). Build one source-ordered menu stream;
@@ -3007,8 +3008,8 @@ export async function chooseWizardLevelDestination() {
     const { rows, choices } = wizardLevelMenu();
     const destination = await showPagedPickOneMenu({ rows, choices });
     if (!destination) return null;
-    const preArrivalPager = await endgamePrerequisite(destination);
-    return { destination, preArrivalPager };
+    const preArrivalMessage = await endgamePrerequisite(destination);
+    return { destination, preArrivalMessage };
 }
 
 async function wizLevelTeleport({ menuRequested = false } = {}) {
