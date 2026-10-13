@@ -944,10 +944,12 @@ export async function rhack(key) {
     }
     const inputKey = key;
     const configured = configuredCommand(key);
-    // The input boundary displayed the previous command's message.  Clear it
-    // now; any message produced below remains visible at the next boundary.
-    game._pending_message = '';
-    game._retained_message = '';
+    // A player command acknowledges the previous topline. A canned command
+    // bypasses parse(), so unread prose and cmd_before output remain pending.
+    if (!cannedCommand) {
+        game._pending_message = '';
+        game._retained_message = '';
+    }
     if (!cannedCommand && !configured.command) {
         game.multi = 0;
         game._cannedCommands = [];
@@ -1003,32 +1005,26 @@ async function runCommandHandler(binding, { cannedCommand = null, previousMessag
     // byte.  Tool commands use this to resume the original operation after
     // wield_tool() has spent one action installing the selected object.
     if (cannedCommand?.kind === 'rub') {
-        game._pending_message = previousMessage;
         await dorub(cannedCommand.invlet);
         return;
     }
     if (cannedCommand?.kind === 'apply') {
-        game._pending_message = previousMessage;
         await doapply(cannedCommand.invlet);
         return;
     }
     if (cannedCommand?.kind === 'swap-weapon') {
-        game._pending_message = previousMessage;
         await doswapweapon();
         return;
     }
     if (cannedCommand?.kind === 'wield') {
-        game._pending_message = previousMessage;
         await dowield(cannedCommand.invlet);
         return;
     }
     if (cannedCommand?.kind === 'fire') {
-        game._pending_message = previousMessage;
         await dofire(cannedCommand.shotLimit ?? 0);
         return;
     }
     if (cannedCommand?.kind === 'inventory-action') {
-        game._pending_message = previousMessage;
         await executeInventoryAction(cannedCommand.action);
         return;
     }
@@ -5121,7 +5117,6 @@ async function dodrop() {
                 object = splitCarriedStack(object, selection.count);
             }
         }
-        game._pending_message = '';
         const spentTime = await dropHeroObject(object, {
             state: game, publish: plineWithContinuation,
         });

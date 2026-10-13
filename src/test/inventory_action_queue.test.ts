@@ -37,7 +37,10 @@ void test('an unread end-turn message does not consume an inventory drop choice'
     const core = await startLuaCore(t);
     core.execute(`
         function after_inventory()
-            nh.pline("You consider your possessions.")
+            if not considered then
+                nh.pline("You consider your possessions.")
+                considered = true
+            end
             return true
         end
         nh.callback("end_turn", "after_inventory")
