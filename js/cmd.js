@@ -6700,7 +6700,9 @@ async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, b
         || IS_OBSTRUCTED(loc?.typ ?? STONE)
         || IS_FURNITURE(loc?.typ ?? STONE)))
         stopRun();
-    if (!propertyIsActive('levitation', game) && !propertyIsActive('flying', game)
+    // C trap.c:move_into_trap() skips domove_core()'s footstep disturbance.
+    if (!trapOptions.failedUntrap
+        && !propertyIsActive('levitation', game) && !propertyIsActive('flying', game)
         && !propertyIsActive('stealth', game)
         && (MONSTER_BODY_META[heroSpecies(game)]?.[0] ?? 0) >= 400)
         disturbBuriedZombies(u.ux, u.uy);
