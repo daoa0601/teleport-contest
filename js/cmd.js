@@ -200,7 +200,7 @@ import { continueHeroDigging, diggingTarget } from './hero_digging.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { wieldTool } from './wield_tool.js';
 import { doenhance, useHeroSkill, } from './skills.js';
-import { carriedObjectOwner, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, } from './shk.js';
+import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, } from './shk.js';
 import { visiblePriestName, } from './priest.js';
 import { gameLogEvents } from './gamelog.js';
 import { killerObjectName } from './objnam.js';
@@ -5660,10 +5660,10 @@ async function doquiverCore(verb) {
         if (readyAll) {
             const answer = await promptYesNoQuit(confirmation);
             if (answer !== 'y') {
-                const owner = carriedObjectOwner(item, game);
+                const owner = objectOwnershipPrefix(item, game);
                 const remains = objectNameIsPlural(item, game) ? 'remain' : 'remains';
                 const slot = primary || wasTwoweap ? 'wielded' : 'as secondary weapon';
-                await plineWithContinuation(`${owner} ${names} ${remains} ${slot}.`);
+                await plineWithContinuation(`${owner}${names} ${remains} ${slot}.`);
                 game.context.move = 0;
                 return { item: null, spentTime: false, cancelled: false };
             }

@@ -3,7 +3,8 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { CLUB, DART } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { CLUB, CORPSE, DART } from '../js/object_data.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';
@@ -53,4 +54,27 @@ void test('declining the partial stack offer asks whether to ready all', async (
     assert.equal(game.uswapwep, darts);
     assert.match(game._pending_message, /Your darts remain as secondary weapon\./);
 });
+for (const slot of ['primary', 'alternate', 'second']) {
+    for (const [species, owner] of [['Medusa', ''], ['Oracle', 'The '], ['jackal', 'Your ']]) {
+        void test(`declining to ready the ${species} corpse in the ${slot} slot uses its native ownership prefix`, async () => {
+            freshGameplayRoom();
+            const corpse = await addInventoryObject(CORPSE, {
+                invlet: 'a', corpsenm: MONSTER_NAME.indexOf(species),
+            });
+            if (slot === 'primary')
+                await setPrimaryWeapon(corpse);
+            else
+                await setSecondaryWeapon(corpse);
+            game.u.twoweap = slot === 'second';
+            resetInputState().feed('an');
+            await rhack('Q'.charCodeAt(0));
+            const position = slot === 'alternate' ? 'as secondary weapon' : 'wielded';
+            assert.match(game._pending_message, new RegExp(`(?:^|  )${owner}corpse remains ${position}\\.$`));
+            assert.equal(slot === 'primary' ? game.uwep : game.uswapwep, corpse);
+            assert.equal(game.u.twoweap, slot === 'second');
+            assert.equal(game.uquiver, null);
+            assert.equal(game.context.move, 0);
+        });
+    }
+}
 //# sourceMappingURL=quiver_confirmation.test.js.map
