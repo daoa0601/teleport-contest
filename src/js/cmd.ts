@@ -4130,16 +4130,22 @@ function dipTargetDescription(object: GameObject) {
 // confirmation, and the committed dip are one nested command transaction.
 async function dodip() {
     const items = (game.inventory || []).filter((item: GameObject): item is GameObject & { invlet: string } =>
-            item.oclass !== 12
-            && typeof item.invlet === 'string' && item.invlet.length > 0)
+            typeof item.invlet === 'string' && item.invlet.length > 0)
         .sort((a, b) => a.invlet.localeCompare(b.invlet));
+    const suggested = items.filter(item => item.oclass !== 12);
     const letters = compactInventoryLetters(
-        items.map(item => item.invlet).join(''),
+        suggested.map(item => item.invlet).join(''),
     );
     const selection = await promptInventoryObject(
         `What do you want to dip? [${letters} or ?*] `,
         items,
-        { allowMenu: true, retainPromptOnCancel: true },
+        {
+            verb: 'dip',
+            classify: item => item.oclass === 12 ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST,
+            menuItems: suggested,
+            allowMenu: true,
+            retainPromptOnCancel: true,
+        },
     );
     if (selection.cancelled || !selection.object) {
         game.context.move = 0;
