@@ -6804,8 +6804,9 @@ async function domoveCore(dx, dy, explicitAttempt) {
         // after impaired_movement() has changed u.dx/u.dy; a Shift-run which
         // is redirected into the pet therefore stops before do_attack() and
         // its one-in-seven displacement refusal roll.
-        const safeMonster = !!(monster.pet || monster.mtame
-            || monster.mpeaceful)
+        const safeMonster = game.flags.safe_dog !== false
+            && !!monster.mpeaceful
+            && canSpotMonster(monster)
             && !game.context?.forcefight
             && !confused
             && !heroIsHallucinating(game)
