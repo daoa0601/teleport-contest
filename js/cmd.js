@@ -46,6 +46,7 @@ import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { confirmHeroStep } from './hero_step_confirmation.js';
 import { monsterPassesBars } from './monster_movement_traits.js';
+import { heroCanEnterIronBars } from './iron_bars_meal.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import { floorObjectDescription, } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -6838,6 +6839,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
             if (u.utrap
                 && !await heroCanMoveFromTrap(newx, newy))
                 return true;
+            if (!await heroCanEnterIronBars(newx, newy, game))
+                return false;
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
                 if (ballChainMove.blockedMessage)
@@ -6908,6 +6911,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
         return false;
     if (!await heroCanMoveFromTrap(newx, newy))
         return true;
+    if (!await heroCanEnterIronBars(newx, newy, game))
+        return false;
     if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))
         && !heroCanPassWallAt(game, newx, newy)) {
         const fumbling = !!(u?.fumbling || (u?.fumblingTurns || 0) > 0);

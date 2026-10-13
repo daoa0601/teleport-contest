@@ -64,6 +64,7 @@ import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { confirmHeroStep } from './hero_step_confirmation.js';
 import { monsterPassesBars } from './monster_movement_traits.js';
+import { heroCanEnterIronBars } from './iron_bars_meal.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import {
     floorObjectDescription,
@@ -7289,6 +7290,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy)) return false;
             if (u.utrap
                 && !await heroCanMoveFromTrap(newx, newy)) return true;
+            if (!await heroCanEnterIronBars(newx, newy, game)) return false;
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
                 if (ballChainMove.blockedMessage) await pline(ballChainMove.blockedMessage);
@@ -7358,6 +7360,8 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
     if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy)) return false;
 
     if (!await heroCanMoveFromTrap(newx, newy)) return true;
+
+    if (!await heroCanEnterIronBars(newx, newy, game)) return false;
 
     if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))
         && !heroCanPassWallAt(game, newx, newy)) {
