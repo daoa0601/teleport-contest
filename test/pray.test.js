@@ -13,7 +13,7 @@ import { magicNegation } from '../js/magic_negation.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKey, resetInputState } from '../js/input.js';
-import { AMULET_OF_LIFE_SAVING, BOULDER, LEATHER_GLOVES, LOADSTONE, OBJECT_NAMES } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, BOULDER, LEATHER_GLOVES, LOADSTONE, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -98,6 +98,16 @@ void test('#pray rescues a hero whose only exit requires a forbidden diagonal bo
     await floorObject(BOULDER, 11, 11);
     await resolvePrayer();
     assert.ok(game.u.ux !== 10 || game.u.uy !== 10, 'the diagonal boulder leaves no pushable exit');
+});
+void test('#pray restores the carried luck bonus when it uncurses a luckstone', async () => {
+    prayerRoom({ hero: { uluck: 13 } });
+    requirePlayingGame(game);
+    const stone = await addInventoryObject(LUCKSTONE, { cursed: true });
+    assert.equal(game.u.moreluck, -3);
+    initRng(1n);
+    await resolvePrayer();
+    assert.equal(stone.cursed, false);
+    assert.equal(game.u.moreluck, 3);
 });
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {
     prayerRoom();

@@ -215,7 +215,7 @@ export async function uncursePrayerObject(object, label = null, state = game) {
         await pline(`${subject} ${displayColorName('amber')}.`);
         object.bknown = !heroIsHallucinating(state);
     }
-    uncurseObjectState(object);
+    uncurseObjectState(object, state);
 }
 export async function fixPrayerTrouble(trouble, state = game) {
     requirePlayingGame(state);
@@ -376,7 +376,7 @@ export async function fixPrayerTrouble(trouble, state = game) {
                 await pline(`${ownedObjectAction(object, 'softly glow', state)} ${displayColorName('amber')}.`);
                 object.bknown = true;
             }
-            uncurseObjectState(object);
+            uncurseObjectState(object, state);
     }
 }
 function ringGlow(object, state) {

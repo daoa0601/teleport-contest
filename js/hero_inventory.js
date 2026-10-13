@@ -182,7 +182,7 @@ function updateCarriedFlags(object, carried, state) {
     }
     state._capacityDirty = true;
 }
-function updateCarriedLuck(object, state) {
+export function updateCarriedLuck(object, state = game) {
     if (confersLuck(object, state)) {
         const lucky = state.inventory.filter(item => confersLuck(item, state));
         const luck = lucky.reduce((sum, item) => sum + (item.cursed ? -1 : 1) * item.quan, 0);
