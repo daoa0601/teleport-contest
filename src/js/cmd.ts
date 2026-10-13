@@ -249,7 +249,7 @@ import {
     LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
     BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION,
     BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF,
-    BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE,
+    BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE,
     TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL,
     RIN_CONFLICT, MEAT_RING,
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN,
@@ -370,6 +370,7 @@ import { useCreamPie } from './cream_pie.js';
 import { useFigurine } from './figurine_apply.js';
 import { checkHeroLeashes, useLeash } from './leash_apply.js';
 import { useGrease } from './grease_apply.js';
+import { useSaddle } from './steed.js';
 import {
     isRoyalJelly, useRoyalJelly,
 } from './royal_jelly.js';
@@ -5985,6 +5986,10 @@ async function doapply(cannedInvlet: string | null = null): Promise<void> {
 async function applyTool(
     item: GameObject, underlay: ReturnType<typeof snapshotMenuUnderlay>,
 ): Promise<GameObject | null> {
+    if (item.otyp === SADDLE) {
+        game.context.move = await useSaddle(item) ? 1 : 0;
+        return item;
+    }
     if (item.otyp === CAN_OF_GREASE) {
         game.context.move = await useGrease(item) ? 1 : 0;
         return item;
