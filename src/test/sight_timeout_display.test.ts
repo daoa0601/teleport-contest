@@ -43,6 +43,30 @@ void test('blindness expiry redraws a warm monster in a dark corridor through in
     assert.equal(game.level.requireAt(14, 10).disp_ch, 'd');
 });
 
+void test('regaining sight on timeout preserves counted searching without a stop message', async () => {
+    const input = freshTurnRoom();
+    requirePlayingGame(game);
+    setHeroBlindnessTurns(1);
+    input.feed('3s');
+    await moveloop_core();
+    assert.ok(game._occupation);
+    input.display = {
+        async readKey(): Promise<number> {
+            assert.fail(`Counted searching requested another key: ${
+                game._pending_message || game._retained_message}`);
+        },
+    };
+
+    await moveloop_core();
+
+    assert.equal(game.u.blindTurns, 0);
+    assert.equal(game.blind, false);
+    assert.ok(game._occupation, 'regaining sight interrupted the remaining searches');
+    assert.ok(game.multi > 0);
+    assert.match(game._pending_message || game._retained_message, /You can see again\./);
+    assert.doesNotMatch(game._pending_message || game._retained_message, /You stop searching\./);
+});
+
 void test('blindness expiry preserves counted searching when the Eyes kept the hero sighted', async () => {
     const input = freshTurnRoom({ role: 'monk', hero: {
         ualign: { type: 0, record: 0 }, uhp: 100, uhpmax: 100,

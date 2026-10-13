@@ -1083,16 +1083,16 @@ async function finishInitialTurnMaintenanceAfterConfusion({ sourceTurn, moveAmou
     const game = requireInitializedGame();
     if (!prayerTimeoutFreeze
         && game.u.blindTurns !== undefined && game.u.blindTurns > 0) {
-        if (game.u.blindTurns === 1) {
-            // C timeout.c restores one tick before make_blinded(0), so the
-            // recovery message precedes toggle_blindness and its redraws.
+        game.u.blindTurns--;
+        if (game.u.blindTurns === 0) {
+            // C nh_timeout() samples Blind after decrementing, then restores
+            // one tick for make_blinded()'s recovery message and redraws.
             const wasBlind = heroIsBlind(game);
+            game.u.blindTurns = 1;
             await makeBlinded(0);
             if (wasBlind && !heroIsBlind(game))
                 await stopHeroOccupation(game);
         }
-        else
-            game.u.blindTurns--;
     }
     if (!prayerTimeoutFreeze
         && game.u.deafTurns !== undefined && game.u.deafTurns > 0) {
