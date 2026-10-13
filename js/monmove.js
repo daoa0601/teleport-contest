@@ -97,7 +97,7 @@ import { artifactById } from './artifacts.js';
 import { respondMedusa } from './monster_gaze.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, randomDisplayMonsterName, randomDisplayMonsterSubject, plineWithContinuation, } from './display.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
-import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
+import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
 import { AMULET_OF_YENDOR, APPLE, BANANA, BELL_OF_OPENING, BULLWHIP, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_MATERIAL, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
 import { unlinkObject } from './object_location.js';
@@ -4575,7 +4575,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         calls.push(`d(${dice},${sides})`);
         if (attackType !== AT_ENGL
             && (monsterIsUndead(monster.mnum) || monsterIsVampireShifter(monster))
-            && Number(String(state.datetime || '').slice(8, 10)) === 0) {
+            && state.datetime?.slice(8, 10) === '00') {
             damage += rollDice(dice, sides);
             calls.push(`d(${dice},${sides})`);
         }
@@ -4856,7 +4856,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
     }
     else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
-        || damageType === AD_WRAP || damageType === AD_DRIN)) {
+        || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS)) {
         const negated = damageType === AD_POLY
             && (specialAttackNegated(monster, state.u, { state, random }) || !!monster.mspec_used);
         return {

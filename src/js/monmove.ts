@@ -242,6 +242,7 @@ import {
     AD_BLND,
     AD_CLRC,
     AD_COLD,
+    AD_CURS,
     AD_DRIN,
     AD_CORR,
     AD_DCAY,
@@ -5985,7 +5986,7 @@ async function beginHeroAttackSlot(
         };
     } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
-        || damageType === AD_WRAP || damageType === AD_DRIN)) {
+        || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS)) {
         const negated = damageType === AD_POLY
             && (specialAttackNegated(monster, state.u, { state, random }) || !!monster.mspec_used);
         return {

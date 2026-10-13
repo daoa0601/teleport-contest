@@ -362,7 +362,7 @@ export async function throneSitEffect({ gotoLevel = null, chooseTeleportDestinat
 }
 // Selection falls through the source list until it finds an intrinsic the
 // hero actually has. Worn sources stay active.
-export async function attrcurse() {
+export async function attrcurse({ publish = plineWithContinuation } = {}) {
     const hero = game.u;
     const start = rnd(CURSEABLE_INTRINSICS.length) - 1;
     for (const [property, ordinaryMessage] of CURSEABLE_INTRINSICS.slice(start)) {
@@ -378,12 +378,12 @@ export async function attrcurse() {
             if (!hero.seeInvisible) {
                 await refreshHeroSeeing();
             }
-            await plineWithContinuation(heroIsHallucinating(game)
+            await publish(heroIsHallucinating(game)
                 ? 'You tawt you taw a puttie tat!'
                 : 'You thought you saw something!');
         }
         else {
-            await plineWithContinuation(ordinaryMessage);
+            await publish(ordinaryMessage);
         }
         return property;
     }

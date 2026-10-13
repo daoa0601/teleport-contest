@@ -10,14 +10,19 @@ import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_PLYS, AD_POLY, AD_SLEE, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { AD_CURS, AD_PLYS, AD_POLY, AD_SLEE, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { grantMonsterIntrinsic } from './monster_corpse_intrinsic.js';
+import { sessionIsNight } from './monster_sound.js';
+import { attrcurse } from './throne.js';
+import { heroIsDeaf } from './senses.js';
 import { resolveMonsterWrapping } from './monster_wrapping_contact.js';
 import { askTeleportDestination } from './cmd.js';
 import { heroControlsTeleport, teleportHero } from './teleport.js';
 import { monsterName, namelessMonsterName } from './monster_name.js';
 import { monsterHasLineOfSightToHero, monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { stopHeroOccupation } from './occupation.js';
-import { heroIsUnchanging, heroHasProtectionFromShapeChangers, polymorphHero, } from './polyself.js';
+import { heroIsUnchanging, heroHasProtectionFromShapeChangers, polymorphHero, returnHeroToHumanForm, } from './polyself.js';
 import { applyHeroWereChange, revertHeroWereForm, setHeroLycanthropy } from './were.js';
 import { rn2, rnd } from './rng.js';
 import { drainHeroBrain } from './monster_hero_brain.js';
@@ -38,9 +43,29 @@ export async function resolveMonsterContactEffect(monster, attack, { state, publ
         await paralyzeHero(monster, state, publish, random, rollOne);
     else if (attack.damageType === AD_WRAP)
         await resolveMonsterWrapping(monster, attack, state, publish, random);
+    else if (attack.damageType === AD_CURS)
+        await curseHero(monster, state, publish, random);
     else
         throw new Error(`Damage type ${attack.damageType} has no deferred contact effect`);
     attack.deferredPostHit = true;
+}
+// C uhitm.c:mhitm_ad_curs(). A daytime gremlin still makes contact, but
+// only its nighttime curse can remove and retain a hero's intrinsic.
+async function curseHero(monster, state, publish, random) {
+    if (monster.mnum === MONSTER_NAME.indexOf('gremlin') && !sessionIsNight(state.datetime))
+        return;
+    if (monster.mcan || random(10) !== 0)
+        return;
+    if (!heroIsDeaf(state)) {
+        await publish(heroIsBlind(state) ? 'You hear laughter.'
+            : `${monsterName(monster, { state, capitalized: true })} chuckles.`);
+    }
+    if (state.u.umonnum === MONSTER_NAME.indexOf('clay golem')) {
+        await publish('Some writing vanishes from your head!');
+        await returnHeroToHumanForm(state, { publish });
+        return;
+    }
+    await grantMonsterIntrinsic(monster, await attrcurse({ publish }), state, publish);
 }
 // C uhitm.c:mhitm_ad_plys(). Existing helplessness skips the paralysis
 // chance, but cancellation and Free action leave the contact damage intact.
