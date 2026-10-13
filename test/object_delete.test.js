@@ -12,7 +12,8 @@ import { deleteObject, delobj } from '../js/object_delete.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { unlinkObject } from '../js/object_location.js';
 import { addObjectToContainer } from '../js/object_container.js';
-import { addShopObjectToBill, carriedShopBill } from '../js/shk.js';
+import { addShopObjectToBill } from '../js/shk.js';
+import { itemizedShopBill } from '../js/shop_payment.js';
 import { AMULET_OF_YENDOR, MAGIC_LAMP, OIL_LAMP, OBJECT_NAMES, } from '../js/object_data.js';
 import { MONSTER_NAME, } from '../js/monster_data.js';
 import { knownObject, addInventoryObject } from './support/game-objects.js';
@@ -104,7 +105,7 @@ void test('nested billed content survives container destruction on the bill', as
     const entry = resident.eshk.bill.find(candidate => candidate.bo_id === potion.o_id);
     assert.ok(entry, 'the bill entry must survive container destruction');
     assert.equal(entry.useup, true);
-    assert.ok(carriedShopBill(resident).some(item => item.object === potion));
+    assert.ok(itemizedShopBill(resident).some(item => item.object === potion));
 });
 for (const [name, type] of [['magic lamp', MAGIC_LAMP], ['oil lamp', OIL_LAMP]]) {
     void test(`deleting a lit ${name} removes its light before the next message`, async () => {

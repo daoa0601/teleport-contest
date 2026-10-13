@@ -13,7 +13,8 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { carriedShopBill, unpaidObjectCost } from '../js/shk.js';
+import { unpaidObjectCost } from '../js/shk.js';
+import { itemizedShopBill } from '../js/shop_payment.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
 import { objectWeight } from '../js/weight.js';
@@ -333,7 +334,7 @@ void test('degrading an unpaid crysknife charges its old value before transforma
 
     assert.equal(knife.otyp, WORM_TOOTH);
     assert.ok(!knife.unpaid);
-    const amountOwed = carriedShopBill(shopkeeper)
+    const amountOwed = itemizedShopBill(shopkeeper)
         .reduce((total, item) => total + item.price, 0);
     assert.equal(amountOwed, before);
 });
@@ -506,7 +507,7 @@ void test('evaporating an unpaid weapon leaves its full purchase price owed', as
 
         if (!game.inventory.includes(sword)) {
             destroyed++;
-            const amountOwed = carriedShopBill(shopkeeper)
+            const amountOwed = itemizedShopBill(shopkeeper)
                 .reduce((total, item) => total + item.price, 0);
             assert.equal(amountOwed, price);
             assert.equal(game.uwep, null);

@@ -3,19 +3,16 @@ import assert from 'node:assert/strict';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { finishMonsterKilled } from '../js/monster_death.js';
 import { AD_DRST } from '../js/monster_attack_types.js';
-import { runLevelRegions } from '../js/regions.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 function poisonCloud({ x = 10, y = 10, damage = 8, ttl = 3 } = {}) {
-    return {
-        kind: 'gas-cloud',
-        visible: true,
-        heroFault: false,
-        damage,
-        ttl,
-        cells: [{ x, y }],
-    };
+    const region = createHarmlessGasCloudSelection(game, [{ x, y }], { ttl });
+    assert.ok(region);
+    region.damage = damage;
+    region.heroFault = false;
+    return region;
 }
 function freshCloudRoom(hero = {}) {
     freshPlayableRoom({

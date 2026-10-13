@@ -2453,6 +2453,11 @@ export async function cls() {
         display.clearScreen();
     game._pending_message = '';
     game._retained_message = '';
+    // clear_glyph_buffer() forgets the display, preserving remembered terrain.
+    for (let y = 0; y < ROWNO; y++)
+        for (let x = 1; x < COLNO; x++)
+            show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'unexplored', glyph: GlyphOffset.unexplored });
+    game.context.botl = true;
 }
 // C tty_clear_nhwindow(WIN_MESSAGE). A seen prompt still occupies the
 // physical message row; clearing it is separate from acknowledging input.

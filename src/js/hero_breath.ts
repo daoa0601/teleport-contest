@@ -236,7 +236,7 @@ async function hitWithDisintegration(context: HeroRayContext) {
         }
         noteRayResistance(context, false);
         state.u.ugrave_arise = NON_PM;
-        const heroDied = await die({ killer: context.name || 'finger of death' });
+        const heroDied = await die({ killer: context.name || 'finger of death', deathLineShown: true });
         return { resisted: false, damage: 0, heroDied };
     }
     if (state.u.disintegrationResistance) {
@@ -272,7 +272,8 @@ async function hitWithDisintegration(context: HeroRayContext) {
         await disintegrateWornArmor(shirt, { state, publish });
     }
     state.u.ugrave_arise = context.nativeType === -24 ? -3 : NON_PM;
-    const heroDied = await die({ killer: context.name || 'blast of disintegration' });
+    // zhitu() calls done(DIED) directly; only losehp() prints "You die...".
+    const heroDied = await die({ killer: context.name || 'blast of disintegration', deathLineShown: true });
     return { resisted: false, damage: 0, heroDied };
 }
 

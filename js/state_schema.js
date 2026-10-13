@@ -1,6 +1,6 @@
 // state_schema.js — Versioned boundary between saved game data and runtime state.
 // C refs: save.c, restore.c, decl.h, you.h, rm.h.
-export const SAVE_VERSION = 26;
+export const SAVE_VERSION = 27;
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
     '_artifactExists', '_artifactFound', '_artifactRuntime', '_bonesEncountered',
@@ -89,6 +89,7 @@ const transientFields = {
     _queuedHelplessRecoveryMessage: true,
     _retained_message: true,
     _runState: true,
+    _scheduledLevelChange: true,
     _screen_output: true,
     _shopFollowMessageTurn: true,
     _shopRepossession: true,

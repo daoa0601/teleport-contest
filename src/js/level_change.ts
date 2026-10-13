@@ -52,7 +52,7 @@ import { moveElementalBubbles } from './elemental.js';
 import {
     CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG,
     MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel,
-    Is_rogue_level,
+    Is_rogue_level, UTOTYPE_DEFERRED,
 } from './const.js';
 import { resurrectWizard } from './wizard.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -67,6 +67,36 @@ export interface LevelChangeOptions {
     arrival?: LevelArrival;
     ladder?: boolean;
     postMessage?: string;
+}
+
+export interface ScheduledLevelChange {
+    args: Parameters<typeof gotoLevel>;
+    changeLevel: typeof gotoLevel;
+}
+
+// C do.c:schedule_goto(). The current command or monster finishes using
+// the departure level; utotype stops the next monster from moving.
+export function scheduleLevelChange(
+    args: Parameters<typeof gotoLevel>, changeLevel = gotoLevel,
+): void {
+    requirePlayingGame(game);
+    game._scheduledLevelChange = { args, changeLevel };
+    game.u.utolev = { ...game.u.uz, ...args[0] };
+    game.u.utotype = UTOTYPE_DEFERRED;
+}
+
+export async function finishScheduledLevelChange(): Promise<void> {
+    const travel = game._scheduledLevelChange;
+    if (!travel) return;
+    requirePlayingGame(game);
+    const destination = game.u.utolev;
+    if (!destination) throw new Error('Scheduled level travel has no destination');
+    delete game._scheduledLevelChange;
+    // C do.c:deferred_goto() preserves the topline when travel stays here.
+    if (game.u.uz.dnum !== destination.dnum
+        || game.u.uz.dlevel !== destination.dlevel)
+        await travel.changeLevel(...travel.args);
+    game.u.utotype = 0;
 }
 
 interface LevelArrivalOptions {
@@ -106,7 +136,6 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         && destinationDepth.dlevel === oldDepth.dlevel) {
         game._pending_message = '';
         game._retained_message = '';
-        game.context.move = 0;
         await docrt();
         await bot();
         return false;
@@ -120,7 +149,6 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     if (onQuestStart(game)
         && destinationDepth.dnum === oldDepth.dnum
         && !okToQuest(game)) {
-        game.context.move = 0;
         await pline('A mysterious force prevents you from descending.');
         return false;
     }
@@ -221,7 +249,6 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     if (!game._restoredBones) restoreCachedHeroTrack(cached);
     game._tutorialActive = Number.isInteger(tutorialDnum)
         && destinationDepth.dnum === tutorialDnum;
-    game.context.move = 0;
     // Quest text preparation can run Lua, so finish it before a message
     // pauses for player input.
     const questArrival = prepareQuestArrival({

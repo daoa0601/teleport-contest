@@ -14,6 +14,7 @@ import { initRng } from '../js/rng.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { mklev, saveBonesLevel } from '../js/mklev.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     AMULET_OF_YENDOR, CHEST, CORPSE, DAGGER, FAKE_AMULET_OF_YENDOR,
@@ -156,6 +157,28 @@ function storedBones(storage: StorageBackend) {
         'bones did not retain their format version');
     return { key, payload: decodeBonesPayload(encoded, header.version) };
 }
+
+void test('a monster restored from bones retains its gas exposure under its new identity', async () => {
+    const storage = memoryStorage();
+    freshBonesRoom(storage);
+    const soldier = await createMonsterAt('soldier', 12, 10);
+    soldier.mhp = soldier.mhpmax = 100;
+    const cloud = createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }]);
+    assert.ok(cloud);
+    cloud.damage = 8;
+    cloud.heroFault = true;
+    assert.equal(saveBonesLevel(), true);
+    freshBonesRoom(storage);
+    pushKeys('yn');
+
+    await mklev();
+    const restored = requireGameLevel().monsters.find(monster => monster.mnum === soldier.mnum);
+    assert.ok(restored, 'Bones must restore the soldier');
+    await runLevelRegions(game, { publish: async () => {} });
+
+    assert.ok(restored.mhp < 100, 'The restored soldier must still be exposed to the cloud');
+    assert.equal(requireGameLevel().regions[0]?.heroFault, false);
+});
 
 void test('bones restore resets old hero state and repairs entity links',
     async () => {

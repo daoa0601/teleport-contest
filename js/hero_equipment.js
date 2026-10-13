@@ -1,7 +1,7 @@
 // Clear equipment when an item leaves the hero or changes type.
 // C worn.c:setnotworn(). Command messages belong to the caller.
 import { clearHeroAccessory, removeHeroAccessory } from './accessory.js';
-import { armorSlotFor, clearHeroArmor, removeHeroArmor } from './armor.js';
+import { announceDisplacementLoss, armorSlotFor, clearHeroArmor, removeHeroArmor } from './armor.js';
 import { I_SPECIAL } from './const.js';
 import { removeEyewear, unequipEyewear } from './eyewear.js';
 import { game } from './gstate.js';
@@ -32,10 +32,16 @@ export async function removeWornHeroItem(object, state = game) {
     object.in_use = true;
     try {
         const slot = armorSlotFor(object.otyp);
-        if (slot && (state[slot] === object || state.u?.[slot] === object))
-            // Native *_off() clears worn sources; the command loop owns
-            // find_ac(). A fatal removal can end before that refresh.
-            await removeHeroArmor(object, state, { deferArmorClass: true });
+        if (slot && (state[slot] === object || state.u?.[slot] === object)) {
+            const cancelledDon = state._delayedAction?.kind === 'wear'
+                && state._delayedAction.object === object;
+            // Native *_off() clears worn sources; the command loop owns find_ac().
+            const removed = await removeHeroArmor(object, state, {
+                deferArmorClass: true,
+            });
+            if (removed && !cancelledDon)
+                await announceDisplacementLoss(object, state);
+        }
         await removeHeroAccessory(object, state);
         if (state.ublindf === object || state.u?.ublindf === object) {
             await removeEyewear(object, { state });

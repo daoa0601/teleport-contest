@@ -110,6 +110,7 @@ export interface GasCloud {
     damage: number;
     ttl: number;
     cells: Position[];
+    monsterIds: number[];
     heroFault?: boolean;
 }
 

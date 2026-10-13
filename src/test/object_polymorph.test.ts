@@ -30,7 +30,8 @@ import { beginObjectBurn } from '../js/light.js';
 import { objectTimers } from '../js/object_timers.js';
 import { objectMaterial } from '../js/object_material.js';
 import { objectWeight } from '../js/weight.js';
-import { addShopObjectToBill, carriedShopBill, objectTypeKnown } from '../js/shk.js';
+import { addShopObjectToBill, objectTypeKnown } from '../js/shk.js';
+import { itemizedShopBill } from '../js/shop_payment.js';
 import { addInventoryObject, corpseObject, floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
@@ -205,12 +206,12 @@ void test('shuddered shop goods retain their used-up bill', async () => {
 
     await do_osshock(arrows);
 
-    const bill = carriedShopBill(shopkeeper);
+    const bill = itemizedShopBill(shopkeeper);
     assert.equal(bill.length, 1);
     assert.ok(bill[0]);
-    assert.equal(bill[0].entry.useup, true);
+    assert.equal(bill[0].kind, 'used');
     assert.equal(bill[0].object.where, 'onbill');
-    assert.equal(bill[0].entry.bquan + arrows.quan, 12);
+    assert.equal(bill[0].quantity + arrows.quan, 12);
 });
 
 void test('an unpaid replacement retains the old bill identity and angers its owner', async () => {
@@ -227,7 +228,7 @@ void test('an unpaid replacement retains the old bill identity and angers its ow
     assert.equal(shopkeeper.eshk.following, 1);
     assert.equal(ration.where, 'inventory');
     assert.equal(dagger.where, 'onbill');
-    assert.ok(carriedShopBill(shopkeeper).some(item => item.object === dagger && item.entry.useup));
+    assert.ok(itemizedShopBill(shopkeeper).some(item => item.object === dagger && item.kind === 'used'));
 });
 
 void test('gold material makes a real golem and consumes the pile', async () => {

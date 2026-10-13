@@ -3,7 +3,7 @@
 
 import type { GameState } from './game_state.js';
 
-export const SAVE_VERSION = 26;
+export const SAVE_VERSION = 27;
 
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
@@ -97,6 +97,7 @@ const transientFields = {
     _queuedHelplessRecoveryMessage: true,
     _retained_message: true,
     _runState: true,
+    _scheduledLevelChange: true,
     _screen_output: true,
     _shopFollowMessageTurn: true,
     _shopRepossession: true,

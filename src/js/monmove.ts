@@ -390,6 +390,7 @@ import {
     GAS_OK,
     monsterGasTolerance,
     visibleRegionAt,
+    updateMonsterRegions,
 } from './regions.js';
 import { heroIsDeaf, syncBlindness } from './senses.js';
 import {
@@ -1158,7 +1159,6 @@ export async function finishDeferredMonsterMiscItem(
     }
     if (misc.kind === 'potion-invisibility' || misc.kind === 'wand-invisibility') {
         setMonsterPermanentInvisibility(monster, !misc.object.cursed);
-        if (misc.kind === 'potion-invisibility') await consumeMonsterItem(monster, misc.object, state);
         misc.effectApplied = true;
         return misc;
     }
@@ -3046,6 +3046,8 @@ async function finishPetMovePlan(
         };
     }
 
+    if (nix !== oldx || niy !== oldy)
+        updateMonsterRegions(monster, state, { x: nix, y: niy });
     monster.mx = nix;
     monster.my = niy;
     if (nix !== oldx || niy !== oldy) {
@@ -3267,6 +3269,7 @@ async function movePet(
             }
         }
         if (edible) {
+            updateMonsterRegions(monster, state, { x: nx, y: ny });
             monster.mx = nx;
             monster.my = ny;
             if (!Array.isArray(monster.mtrack)) monster.mtrack = [];
@@ -3837,6 +3840,7 @@ async function moveHostile(
             'dochug',
         );
     }
+    if (selected) updateMonsterRegions(monster, state, { x: nix, y: niy });
     if (selectedInfo & ALLOW_ROCK && monsterCanBreakBoulder(monster)) {
         await breakMonsterBoulder(monster, nix, niy, state, { random });
         return finishMovement(

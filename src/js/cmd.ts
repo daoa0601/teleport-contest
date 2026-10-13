@@ -83,6 +83,8 @@ import {
     floorObjectDescription,
 } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
+import { itemizedShopBill, minimumShopPurchase, buyShopBillItem } from './shop_payment.js';
+import { paymentObjectDescription } from './object_description.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -380,8 +382,8 @@ import {
     doenhance, useHeroSkill,
 } from './skills.js';
 import {
-    objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, minimumShopPurchase, objectTypeKnown,
-    payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage,
+    objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, objectTypeKnown,
+    payShopDebt, shopkeeperForHero, shopThankYouMessage,
     tendedShop,
 } from './shk.js';
 import {
@@ -5519,6 +5521,12 @@ async function dopay(): Promise<void> {
         }
     }
 
+    if (resident !== shopkeeperForHero() && resident.mpeaceful && !resident.eshk?.robbed) {
+        await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
+        game.context.move = 1;
+        return;
+    }
+
     let paid = false;
     const debt = Math.max(0, resident.eshk?.debit ?? 0);
     if (debt) {
@@ -5570,10 +5578,10 @@ async function dopay(): Promise<void> {
         }
     }
 
-    const billed = carriedShopBill(resident);
+    const billed = itemizedShopBill(resident);
     if (!billed.length) {
         if (!paid) {
-            await plineWithContinuation(`You do not owe ${resident.eshk?.shknam || 'the shopkeeper'} anything.`);
+            await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
             if (resident === shopkeeperForHero() && resident.mpeaceful && !heroGoldAmount(game))
                 await plineWithContinuation(`Moreover, you${hiddenGold(game, true) ? ' seem to' : ''} have no gold.`);
             game.context.move = 1;
@@ -5585,19 +5593,22 @@ async function dopay(): Promise<void> {
     }
 
     for (const item of billed) observeObjectForNaming(item.object);
-    const sections = [{
-        heading: '',
-        items: billed.map((item, index) => ({
-            key: String.fromCharCode(97 + index),
-            text: `${item.price} Zm, ${floorObjectDescription(item.object)}`,
+    const priceWidth = String(Math.max(...billed.map(item => item.price))).length;
+    const used = billed.filter(item => item.kind === 'used');
+    const intact = billed.filter(item => item.kind !== 'used');
+    const sections = [used, intact].filter(items => items.length).map(items => ({
+        heading: used.length ? `${items === used ? 'Used up' : 'Unpaid'} item${items.length > 1 ? 's' : ''}:` : '',
+        items: items.map(item => ({
+            key: String.fromCharCode(97 + billed.indexOf(item)),
+            text: `${String(item.price).padStart(priceWidth)} Zm, ${paymentObjectDescription(item.object, item.quantity)}`,
             value: item,
         })),
-    }];
+    }));
     game._pending_message = '';
     await flush_screen(1);
     const selected = await showMultiSelectWindow({
         title: 'Pay for which items?', sections,
-        omitHeadings: true,
+        omitHeadings: !used.length,
     });
     if (!selected.length) {
         game.context.move = paid ? 1 : 0;
@@ -5605,17 +5616,24 @@ async function dopay(): Promise<void> {
     }
 
     let paidForItem = false;
-    for (const item of selected) {
-        if (!settleCarriedShopBillItem(resident, item)) continue;
+    let finished = true;
+    // Native queued selection buys in bill order, regardless of selection order.
+    for (const item of billed.filter(item => selected.includes(item))) {
+        const result = await buyShopBillItem(resident, item);
+        if (result === 'stop') {
+            finished = false;
+            break;
+        }
+        if (result === 'skip') continue;
         paidForItem = true;
-        observeObjectForNaming(item.object);
-        await pline(`You bought ${floorObjectDescription(item.object)} for ${item.price} gold piece${item.price === 1 ? '' : 's'}.`);
+        await bot();
     }
     if (!paid && !paidForItem) {
         game.context.move = 0;
         return;
     }
-    await plineWithContinuation(shopThankYouMessage(resident));
+    if (finished && resident.mpeaceful)
+        await plineWithContinuation(shopThankYouMessage(resident));
     game.context.move = 1;
 }
 
