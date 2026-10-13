@@ -27,7 +27,7 @@ import {
     STATUE, TIN, TIN_OPENER, TOWEL,
 } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
-import { objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
+import { definiteName, objectCombatName, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isWeaponTool, objectUsesCharges } from './object_properties.js';
@@ -455,7 +455,7 @@ function inventorySections(items: readonly GameObject[] = game.inventory || [], 
 
 async function showItemActionMenu(item: GameObject) {
     return showChoiceWindow({
-        title: `Do what with the ${objectName(item)}?`,
+        title: `Do what with ${definiteName(objectCombatName(item))}?`,
         entries: itemActionEntries(item, game),
         validKeys: [27, 32, 10, 13],
     });
