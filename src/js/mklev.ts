@@ -85,7 +85,7 @@ import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js
 import { mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
-import { cleanupSpecialLevelMap } from './special_level_cleanup.js';
+import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
 import {
     A_CHA,
     COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER,
@@ -171,7 +171,7 @@ import {
     SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData,
 } from './monster_data.js';
 import {
-    isReviver, isRider, ZOMBIE_FORM_BY_LIVING_CORPSE,
+    isReviver, isRider, zombieForm,
 } from './corpse_species.js';
 import {
     adjustedMonsterLevel, newMonsterHitPoints,
@@ -1176,7 +1176,7 @@ export function startCorpseTimeout(body: GameObject | null | undefined, { zombif
             delay = turn;
             break;
         }
-    } else if (zombify && ZOMBIE_FORM_BY_LIVING_CORPSE.has(species)
+    } else if (zombify && zombieForm(species) !== null
         && !body.norevive) {
         kind = OBJECT_TIMER_KIND.ZOMBIFY_MON;
         delay = rn1(15, 5);
@@ -6714,6 +6714,7 @@ function createLuaLevelSession() {
             return roomFailed;
         },
         async finishSpecialLevel() {
+            removeSpecialLevelBoundaries(mappedCells);
             if (currentLevel().checkInaccessibles) await ensureWaysOut();
             await cleanupSpecialLevelMap();
             if (!requireGameLevel().flags.corrmaze)

@@ -7331,6 +7331,10 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                 return true;
             }
             monster.mx = oldx; monster.my = oldy;
+            // C domove_swap_with_pet() redraws both actors before the swap
+            // announcement can flush the map or pause for acknowledgment.
+            newsym(newx, newy);
+            newsym(oldx, oldy);
             const swapName = tame ? tameName
                 : monster.name ? `peaceful ${speciesName}`
                     : `the peaceful ${speciesName}`;

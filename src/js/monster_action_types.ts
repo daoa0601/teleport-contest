@@ -153,6 +153,8 @@ export interface MonsterRange {
 export interface DochugContext {
     entryMnum: number;
     range: MonsterRange | null;
+    // Native early returns after movement or item use omit final speeches.
+    reachesFinalActions: boolean;
 }
 
 export interface MonsterMoveCandidate extends Position {

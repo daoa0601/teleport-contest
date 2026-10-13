@@ -225,6 +225,8 @@ import {
     MONSTER_SIZE,
     MONSTER_SYMBOL,
     monsterIsCovetous,
+    monsterIsNoncorporeal,
+    monsterIsWhirly,
     monsterIsShade,
     monsterIsUnsolid,
     monsterIsThickSkinned,
@@ -457,6 +459,7 @@ import {
     findNearbyMonsterPosition,
     goodPosition,
     monsterTeleportRestricted,
+    reportMonsterTeleportRestriction,
 } from './teleport_rules.js';
 import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
 import { publishMonsterWake } from './monster_wake.js';
@@ -1580,9 +1583,9 @@ function monsterCannotSqueezeThrough(monster: Monster, state: PlayingGameState) 
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     if (flags & M1_WALLWALK) return false;
     const flexible =
-        !!(flags & (M1_AMORPHOUS | M1_SLITHY | M1_UNSOLID)) ||
-        MONSTER_SYMBOL[monster?.mnum] === S_VORTEX ||
-        monster?.mnum === PM_AIR_ELEMENTAL ||
+        !!(flags & (M1_AMORPHOUS | M1_SLITHY)) ||
+        monsterIsWhirly(monster) ||
+        monsterIsNoncorporeal(monster) ||
         monsterCanFog(monster, state);
     if ((MONSTER_SIZE[monster?.mnum] ?? 0) >= 3 && !flexible) return true;
     return currentMonsterLoad(monster) > WT_TOOMUCH_DIAGONAL;
@@ -3835,8 +3838,19 @@ async function moveHostile(
         if (!Array.isArray(monster.mtrack)) monster.mtrack = [];
         monster.mtrack.unshift({ x: oldx, y: oldy });
         monster.mtrack.length = Math.min(monster.mtrack.length, 4);
-    } else if (monster.wormno) {
-        shrinkStationaryMonsterWorm(monster, { rollDice });
+    } else {
+        if (isUnicorn(monster) && recordRandom(random, calls, 2)
+            && !(await reportMonsterTeleportRestriction(monster, { state }))) {
+            const relocation = await randomMonsterRelocation(monster, {
+                state, calls, random, rollOne, flags: RLOC_MSG,
+            });
+            // Native m_move() returns MOVED even if rloc() finds no square,
+            // and skips postmov() for this fallback.
+            return finishMovement(relocation || {
+                oldx, oldy, x: oldx, y: oldy, moved: false,
+            }, MMOVE_MOVED, 'dochug');
+        }
+        if (monster.wormno) shrinkStationaryMonsterWorm(monster, { rollDice });
     }
     return finishMovement(
         {
@@ -7857,6 +7871,7 @@ async function beginStandardMonsterAttack(
     calls: MonsterCallLog,
     dochugContext: DochugContext,
 ) {
+    dochugContext.reachesFinalActions = true;
     if (movement.postMoveStatus === MMOVE_DONE) return;
     if (
         monster.mpeaceful &&
@@ -8368,6 +8383,7 @@ export async function takeMonsterTurn(
     const dochugContext = options.dochugContext ?? {
         entryMnum: monster.mnum,
         range: null,
+        reachesFinalActions: false,
     };
     if (!options.afterCovetousRelocation) {
         // monmove.c:dochug() erodes text beneath every awake, mobile actor
