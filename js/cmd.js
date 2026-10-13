@@ -140,6 +140,8 @@ import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExper
 import { removeHeroAccessory, wearHeroAccessory, } from './accessory.js';
 import { heroIsStrangled } from './hero_strangulation.js';
 import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { disturbBuriedZombies } from './object_impact.js';
+import { MONSTER_BODY_META } from './monster_data.js';
 import { heroCanOoze } from './monster_perception.js';
 import { isPoolAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
@@ -6671,6 +6673,10 @@ async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, b
         || IS_OBSTRUCTED(loc?.typ ?? STONE)
         || IS_FURNITURE(loc?.typ ?? STONE)))
         stopRun();
+    if (!propertyIsActive('levitation', game) && !propertyIsActive('flying', game)
+        && !propertyIsActive('stealth', game)
+        && (MONSTER_BODY_META[heroSpecies(game)]?.[0] ?? 0) >= 400)
+        disturbBuriedZombies(u.ux, u.uy);
     newsym(oldx, oldy);
     vision_recalc(1);
     await announceInvocationSquare();
