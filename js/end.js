@@ -1,5 +1,6 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
+import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { achievementEntries } from './achievements.js';
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
@@ -1186,6 +1187,19 @@ export async function doquit() {
         await flush_screen(1);
         game.context.move = 0;
         return;
+    }
+    if (game.flags.debug) {
+        const dump = await promptChoice('Dump core?', ['y', 'n', 'q'], 'q');
+        if (dump === 'y') {
+            game.program_state.windows_exited = true;
+            game.program_state.gameover = true;
+            game.context.move = 0;
+            // NH_abort() terminates the native process before done(QUIT).
+            // The engine exposes that termination to its host.
+            throw new PanicTermination('Wizard requested a core dump');
+        }
+        if (dump === 'q')
+            stopDisclosure();
     }
     await finishOrdinaryQuit();
 }
