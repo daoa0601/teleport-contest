@@ -4292,18 +4292,22 @@ async function dotravel() {
 // Quick far-look is a zero-time modal command.  It shares getpos's cached
 // cursor with travel, paints a short automatic description after movement,
 // then restores the gameplay cursor while showing the verbose selection.
-async function doFarlook() {
+async function doFarlook(quick = true) {
+    const verbose = !!game.flags.verbose && !quick;
+    await plineWithContinuation(verbose
+        ? 'Please move the cursor to a monster, object or location.'
+        : 'Pick a monster, object or location.');
     const firstUse = shouldShowGetposTip();
-    if (firstUse) {
-        await pline('Pick a monster, object or location.');
+    if (firstUse)
         await showGetposTip();
-    }
+    if (verbose)
+        await plineWithContinuation("(For instructions type a '?')");
+    if (firstUse)
+        await plineWithContinuation('Move cursor to a monster, object or location:');
     const cursor = await selectMapPosition({
         start: game._travelTarget
             ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
-        prompt: firstUse
-            ? 'Move cursor to a monster, object or location:'
-            : 'Pick a monster, object or location.',
+        prompt: game._pending_message || game._retained_message,
         goal: 'a monster, object or location',
         describe: farlookLocationDescription,
     });
@@ -4356,7 +4360,7 @@ async function dowhatis() {
     });
     await restoreHelpMap();
     if (String.fromCharCode(key) === '/') {
-        await doFarlook();
+        await doFarlook(false);
         return;
     }
     game.context.move = 0;
