@@ -6,7 +6,7 @@ import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignmen
 import { artifactById, artifactExistCount, createArtifactGift, discoverArtifact, markArtifactFound, } from './artifacts.js';
 import { adjustAttribute, exerciseAttribute } from './attrib.js';
 import { heroFootName } from './body_parts.js';
-import { A_NONE, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, Is_astralevel, LUCKMAX, LUCKMIN, MM_NOMSG, ROOM, STRAT_APPEARMSG, } from './const.js';
+import { A_NONE, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, Is_astralevel, LUCKMAX, LUCKMIN, MM_NOMSG, ROOM, STRAT_APPEARMSG, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, } from './const.js';
 import { isRider } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { displayColorName, newsym, plineWithContinuation as pline, } from './display.js';
@@ -19,7 +19,7 @@ import { heroCanReachFloor } from './floor_reach.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
-import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './inventory_prompt.js';
 import { demonLord, summonMinion } from './minion.js';
 import { makemonNear } from './mklev.js';
 import { MONSTER_ALIGNMENT, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_NAME, monsterIsUnicorn, } from './monster_data.js';
@@ -107,20 +107,14 @@ async function chooseOffering() {
             declinedFloor = true;
         }
     }
-    const offerings = game.inventory.filter(object => [CORPSE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR].includes(object.otyp));
-    if (!offerings.length) {
-        await pline(`You don't have anything ${declinedFloor ? 'else ' : ''}to sacrifice.`);
-        return null;
-    }
     const astral = Is_astralevel(hero.uz);
-    const suggested = offerings.filter(object => astral === (object.oclass === AMULET_CLASS));
-    const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
-    const selection = await promptInventoryObject(`What do you want to sacrifice? ${letters ? `[${letters} or ?*]` : '[*]'} `, game.inventory, { allowMenu: true, menuItems: suggested.length ? suggested : offerings });
-    const object = selection.object;
-    if (object && ![AMULET_CLASS, FOOD_CLASS].includes(object.oclass ?? 0)) {
-        await pline('That is a silly thing to sacrifice.');
-        return null;
-    }
+    const object = await chooseInventoryObject('sacrifice', object => {
+        if (object.oclass !== FOOD_CLASS && object.oclass !== AMULET_CLASS)
+            return GETOBJ_EXCLUDE;
+        if (![CORPSE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR].includes(object.otyp))
+            return GETOBJ_EXCLUDE_SELECTABLE;
+        return astral !== (object.oclass === AMULET_CLASS) ? GETOBJ_DOWNPLAY : GETOBJ_SUGGEST;
+    }, { emptyMessage: `You don't have anything ${declinedFloor ? 'else ' : ''}to sacrifice.` });
     if (object && object.oclass !== AMULET_CLASS && object.otyp !== CORPSE) {
         await pline("You can't sacrifice that!");
         return null;

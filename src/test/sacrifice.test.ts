@@ -21,7 +21,7 @@ import { ddoinv } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR } from '../js/object_data.js';
+import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, GOLD_PIECE } from '../js/object_data.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, corpseObject } from './support/game-objects.js';
@@ -73,6 +73,19 @@ for (const condition of ['confusion', 'stunned'] as const) {
         assert.match(game._pending_message, /You are too impaired to perform the rite\./);
     });
 }
+
+void test('#offer rejects selected gold with the native gold refusal', async () => {
+    freshAltar();
+    requirePlayingGame(game);
+    const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('newt')));
+    await addInventoryObject(GOLD_PIECE, { quan: 12 });
+
+    await runExtendedCommand('offer', '$\x1b');
+
+    assert.match(game._pending_message, /You cannot sacrifice gold\./);
+    assert.equal(game.context.move, 0);
+    assert.ok(game.inventory.includes(corpse));
+});
 
 void test('a fresh floor corpse is consumed and reduces the prayer timeout', async () => {
     freshAltar();
