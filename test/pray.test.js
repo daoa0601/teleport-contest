@@ -204,6 +204,18 @@ for (const quantity of [1, 2]) {
         assert.equal(corpse.bknown, true);
     });
 }
+void test('#pray omits the ownership prefix when cleansing Medusa\'s corpse', async () => {
+    prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
+    const corpse = await addInventoryObject(CORPSE, {
+        cursed: true, corpsenm: MONSTER_NAME.indexOf('Medusa'),
+    });
+    await addInventoryObject(LUCKSTONE);
+    initRng(5n);
+    const messages = await prayAndReadMessages();
+    assert.match(messages.join('\n'), /(?:^|\n| {2})Medusa's corpse softly glows amber\./);
+    assert.equal(corpse.cursed, false);
+    assert.equal(corpse.bknown, true);
+});
 void test('#pray makes a former pet\'s corpse glow when reviving it on an altar', async () => {
     prayerRoom();
     requirePlayingGame(game);
