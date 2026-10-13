@@ -1,0 +1,102 @@
+// C apply.c:use_grease(), grease_ok(); do_wear.c:inaccessible_equipment().
+import { armorSimpleName } from './armor.js';
+import { heroFingerName } from './body_parts.js';
+import { GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
+import { plineWithContinuation as pline } from './display.js';
+import { game } from './gstate.js';
+import { dropInventoryObjectAtHero } from './hero_drop.js';
+import { compactInventoryLetters, inventoryLetterOrder, promptInventoryObject } from './inventory_prompt.js';
+import { consumeObjectCharge } from './object_charge.js';
+import { makePlural } from './object_grammar.js';
+import { objectName, ownedObjectName } from './objnam.js';
+import { objectQuantity } from './object_stack.js';
+import { propertyIsActive } from './properties.js';
+import { rn1, rn2 } from './rng.js';
+import { carriedObjectOwner } from './shk.js';
+import { setSlipperyHands } from './towel.js';
+import type { GameObject } from './object_types.js';
+import type { InventoryClassification } from './inventory_prompt.js';
+
+export async function useGrease(can: GameObject): Promise<boolean> {
+    if (game.u.glib || (game.u.glibTurns ?? 0) > 0) {
+        await dropGrease(can);
+        return true;
+    }
+    if (can.spe <= 0) {
+        const plural = objectQuantity(can) !== 1;
+        await pline(`${canName(can)} ${can.known ? plural ? 'are' : 'is' : plural ? 'seem' : 'seems'} ${can.known ? '' : 'to be '}empty.`);
+        return true;
+    }
+    if ((can.cursed || propertyIsActive('fumbling', game)) && !rn2(2)) {
+        await consumeObjectCharge(can);
+        await dropGrease(can);
+        return true;
+    }
+    const inventory = [...game.inventory].sort((a, b) => inventoryLetterOrder(a.invlet) - inventoryLetterOrder(b.invlet));
+    const suggested = inventory.filter(object => greaseSuggestion(object) === GETOBJ_SUGGEST);
+    const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
+    const selection = await promptInventoryObject(`What do you want to grease? [- ${letters} or ?*] `, inventory, {
+        verb: 'grease', classify: greaseSuggestion, allowNone: true,
+        noneDescription: 'grease your fingers', allowMenu: true, allowGold: true, menuItems: suggested,
+    });
+    if (selection.cancelled) return false;
+    if (selection.gold || selection.object?.oclass === 12) {
+        await pline('You cannot grease gold.');
+        return false;
+    }
+    const target = selection.object;
+    if (target) {
+        const covering = coveringEquipment(target);
+        const outermost = covering[0];
+        if (outermost) {
+            const names = covering.map((object, index) => index && carriedObjectOwner(object, game) === carriedObjectOwner(outermost, game)
+                ? objectName(object, game) : ownedObjectName(object, game, { capitalized: false }));
+            await pline(`You need to take off ${names.join(' and ')} to grease ${ownedObjectName(target, game, { capitalized: false })}.`);
+            return false;
+        }
+    }
+    await consumeObjectCharge(can);
+    const old = game.u.glibTurns ?? 0;
+    if (target) {
+        await pline(`You cover ${ownedObjectName(target, game, { capitalized: false })} with a thick layer of grease.`);
+        target.greased = true;
+        if (can.cursed) {
+            setSlipperyHands(old + rn1(6, 10));
+            await pline(`Some of the grease gets all over your ${fingers(true)}.`);
+        }
+    } else {
+        setSlipperyHands(old + rn1(11, 5));
+        await pline(`You coat your ${fingers(true)} with grease.`);
+    }
+    return true;
+}
+
+function greaseSuggestion(object: GameObject): InventoryClassification {
+    if (object.oclass === 12) return GETOBJ_EXCLUDE;
+    return coveringEquipment(object).length ? GETOBJ_EXCLUDE_INACCESS : GETOBJ_SUGGEST;
+}
+
+function coveringEquipment(object: GameObject): GameObject[] {
+    if (!object.owornmask) return [];
+    const cloak = game.uarmc, suit = game.uarm, gloves = game.uarmg;
+    if (object === suit && cloak) return [cloak];
+    if (object === game.uarmu) return [cloak, suit].filter(item => item !== null && item !== undefined);
+    if ((object === game.uleft || object === game.uright) && gloves) return [gloves];
+    return [];
+}
+
+function fingers(simple: boolean): string {
+    const gloves = game.uarmg;
+    return gloves ? simple ? armorSimpleName(gloves, game) : objectName(gloves, game)
+        : makePlural(heroFingerName(game));
+}
+
+function canName(can: GameObject): string {
+    const name = objectName(can, game);
+    return `The ${objectQuantity(can) > 1 ? makePlural(name) : name}`;
+}
+
+async function dropGrease(can: GameObject) {
+    await pline(`${canName(can)} ${objectQuantity(can) === 1 ? 'slips' : 'slip'} from your ${fingers(false)}.`);
+    await dropInventoryObjectAtHero(can);
+}
