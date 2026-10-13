@@ -2191,19 +2191,13 @@ async function doname() {
         await restoreCommandMap();
     }
     else if (choice === 'i') {
-        const inventory = (game.inventory || [])
-            .filter((object) => typeof object.invlet === 'string' && object.invlet.length > 0)
-            .sort((a, b) => a.invlet.localeCompare(b.invlet));
         // C do_name.c:name_ok() marks unseen, artifact and novel objects as
         // GETOBJ_DOWNPLAY.  getobj() omits those letters from the suggested
         // prompt while still accepting a directly typed inventory letter.
-        const suggested = inventory.filter(object => object.dknown !== false
-            && !object.oartifact
-            && object.otyp !== SPE_NOVEL);
-        const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
-        const selection = await promptInventoryObject(`What do you want to name? [${letters} or ?*] `, inventory, { allowMenu: true });
-        if (!selection.cancelled && selection.object) {
-            const object = selection.object;
+        const object = await chooseInventoryObject('name', candidate => candidate.oclass === 12 ? GETOBJ_EXCLUDE
+            : candidate.dknown === false || candidate.oartifact || candidate.otyp === SPE_NOVEL
+                ? GETOBJ_DOWNPLAY : GETOBJ_SUGGEST, { forcePrompt: true });
+        if (object) {
             const value = await getLine(`What do you want to name this ${object.name}?`, (_ch, key) => key >= 32 && key < 127);
             if (value !== null) {
                 const name = value.trim().replace(/\s+/g, ' ');
