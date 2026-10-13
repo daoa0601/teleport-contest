@@ -4,6 +4,7 @@ import { POOL, SINK } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { POT_ACID, POT_WATER, SCR_BLANK_PAPER, SCR_IDENTIFY, TOWEL } from '../js/object_data.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -18,6 +19,23 @@ void test('dipping a scroll into a pool blanks it without using a potion', async
     assert.equal(scroll.otyp, SCR_BLANK_PAPER);
     assert.equal(game.context.move, 1);
 });
+for (const level of ['air_level', 'water_level']) {
+    void test(`levitating above a pool on the ${level} preserves the dipped scroll`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        game[level] = { ...game.u.uz, flags: { town: false }, alignment: null };
+        game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
+        grantIntrinsicProperty('levitation', 'outside');
+        const scroll = await addInventoryObject(SCR_IDENTIFY, { pickup_prev: true });
+        resetInputState();
+        await runExtendedCommand('dip', scroll.invlet + 'y' + ' '.repeat(20));
+        assert.equal(scroll.otyp, SCR_IDENTIFY);
+        assert.equal(game.inventory.includes(scroll), true);
+        assert.equal(scroll.pickup_prev, true);
+        assert.equal(game.context.move, 1);
+        assert.match(game._pending_message, /You are floating high above the pool of water\./);
+    });
+}
 void test('washing bare hands in a pool removes slippery fingers', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

@@ -10,6 +10,8 @@ import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, p
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { objectQuantity } from './object_stack.js';
 import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectName } from './objnam.js';
+import { floatingAbove } from './levitation_commands.js';
+import { propertyIsActive } from './properties.js';
 import { promptYesNo } from './query.js';
 import { objectOwnershipPrefix } from './shk.js';
 import { dipSink } from './sink_dipping.js';
@@ -47,6 +49,11 @@ export async function dip({ fountain, }) {
         && (location.typ === SINK || isPoolAt(game.u.ux, game.u.uy))) {
         const source = location.typ === SINK ? 'sink' : waterbodyName(game.u.ux, game.u.uy);
         if (await promptYesNo(`Dip ${target} into the ${source}?`, 'n') === 'y') {
+            if (location.typ !== SINK && propertyIsActive('levitation')) {
+                await floatingAbove(source);
+                game.context.move = 1;
+                return;
+            }
             if (object !== 'hands')
                 object.pickup_prev = false;
             if (location.typ === SINK)
