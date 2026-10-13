@@ -3435,12 +3435,12 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
         }
         if (movement?.usedMisc?.kind === 'potion-invisibility' || movement?.usedMisc?.kind === 'wand-invisibility') {
             const misc = movement.usedMisc;
-            const nameBeforeInvisibility = monsterName(monster, { state: game });
             let sawDrinking;
             if (misc.kind === 'wand-invisibility') {
                 sawDrinking = canSeeMonster(monster);
                 await presentMonsterWandUse(monster, misc.object, { state: game, self: true });
             } else sawDrinking = await presentMonsterQuaff(monster, misc.object);
+            const nameBeforeInvisibility = monsterName(monster, { state: game });
             await finishDeferredMonsterMiscItem(action, game);
             newsym(monster.mx, monster.my);
             const stillSeen = canSpotMonster(monster);
