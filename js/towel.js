@@ -91,7 +91,7 @@ export async function useTowel(object, { state = game } = {}) {
     return result;
 }
 export function setSlipperyHands(turns, state = game) {
-    if (!!state.u.glib !== (turns > 0))
+    if (!!state.u.glib === (turns > 0))
         state.context.botl = true;
     state.u.glibTurns = Math.max(0, Math.min(TIMEOUT, turns));
     state.u.glib = state.u.glibTurns > 0;
