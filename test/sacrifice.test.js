@@ -74,6 +74,15 @@ void test('#offer rejects selected gold with the native gold refusal', async () 
     assert.equal(game.context.move, 0);
     assert.ok(game.inventory.includes(corpse));
 });
+void test('#offer announces a Rider squirming out of the hero\'s inventory', async () => {
+    freshAltar();
+    requirePlayingGame(game);
+    const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('Death')));
+    await runExtendedCommand('offer', `${corpse.invlet} `);
+    assert.equal(corpse.where, 'gone');
+    assert.ok(game.level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('Death')));
+    assert.match(game._pending_message, /You feel squirming in your backpack!/);
+});
 void test('a fresh floor corpse is consumed and reduces the prayer timeout', async () => {
     freshAltar();
     requirePlayingGame(game);

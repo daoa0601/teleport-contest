@@ -134,7 +134,9 @@ async function offerCorpse(corpse, highAltar, alignment) {
         return;
     if (isRider(corpse.corpsenm)) {
         await pline('At your touch, the corpse suddenly moves...');
-        await reviveCorpseImmediately(corpse);
+        const revival = await reviveCorpseImmediately(corpse);
+        for (const message of revival?.messages ?? [])
+            await pline(message);
         await exerciseAttribute(A_WIS, false);
         return;
     }
