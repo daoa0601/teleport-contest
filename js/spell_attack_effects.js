@@ -71,8 +71,7 @@ async function chooseSpellCenter(state) {
     }
     const question = 'Where do you want to cast the spell?';
     await plineWithContinuation(question);
-    const valid = (x, y) => (x !== state.u.ux || y !== state.u.uy)
-        && Math.max(Math.abs(x - state.u.ux), Math.abs(y - state.u.uy)) <= 10
+    const valid = (x, y) => Math.max(Math.abs(x - state.u.ux), Math.abs(y - state.u.uy)) <= 10
         && isok(x, y) && cansee(x, y) && !IS_STWALL(state.level.at(x, y)?.typ ?? 0);
     prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
@@ -86,9 +85,8 @@ async function chooseSpellCenter(state) {
             : state.flags.verbose ? `${question}  (For instructions type a '?')` : question,
         goal: 'the desired position',
         describe: farlookLocationDescription,
-        // Native highlights exclude the hero, but getpos still injects the
-        // hero into its valid-location cycle so self-targeting stays available.
         isValidLocation: valid,
+        highlightHero: false,
     });
     if (!selected)
         return false;

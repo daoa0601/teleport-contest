@@ -203,8 +203,7 @@ function canCenterCloud(x: number, y: number, state: PlayingGameState): boolean 
 
 async function chooseCenter(question: string, state: PlayingGameState): Promise<Position | null> {
     await pline(question);
-    const valid = (x: number, y: number) => (x !== state.u.ux || y !== state.u.uy)
-        && canCenterCloud(x, y, state);
+    const valid = (x: number, y: number) => canCenterCloud(x, y, state);
     prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse) await showGetposTip(state);
@@ -215,6 +214,7 @@ async function chooseCenter(question: string, state: PlayingGameState): Promise<
             : state.flags.verbose ? `${question}  (For instructions type a '?')` : question,
         goal: 'the desired position', describe: farlookLocationDescription,
         isValidLocation: valid,
+        highlightHero: false,
     });
     clearMessageWindow();
     return selected;

@@ -3,7 +3,7 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DRAWBRIDGE_UP, HWALL, IRONBARS, LAVAPOOL, LAVAWALL, MM_ANGRY, MM_NOGRP, MOAT, NO_MINVENT, POOL, STONE, WATER, W_AMUL, } from '../js/const.js';
-import { flushPendingTopline, glyphAt, newsym } from '../js/display.js';
+import { clearMessageWindow, flushPendingTopline, glyphAt, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_REFLECTION, SPE_CONE_OF_COLD, SPE_FIREBALL } from '../js/object_data.js';
@@ -12,8 +12,9 @@ import { makeBlinded } from '../js/sight_change.js';
 import { castChainLightning, castSkilledElementalSpell } from '../js/spell_attack_effects.js';
 import { vision_recalc } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';
+import { runExtendedCommand } from './support/commands.js';
 import { installSwallowedHero } from './support/hero-state.js';
-import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
+import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { withMessagePages } from './support/planned-input.js';
 function spellRoom({ hero = {}, ...options } = {}) {
@@ -63,6 +64,28 @@ void test('cancelling skilled spell targeting leaves nearby actors unharmed', as
     assert.equal(result.targeted, false);
     assert.equal(jackal.mhp, 500);
     assert.equal(game.u.uhp, 500);
+});
+void test('skilled targeting leaves the steed unmarked and refreshes its hallucination on exit', async () => {
+    spellRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    assert.equal(game.u.usteed, pony);
+    clearMessageWindow();
+    game.u.hallucinationTurns = 20;
+    const pseudo = await knownObject(SPE_FIREBALL, { initialize: false });
+    const input = resetInputState();
+    input.feed('$');
+    const casting = castSkilledElementalSpell(pseudo);
+    await input.waitUntilBlocked();
+    const marked = glyphAt(game.u.ux, game.u.uy);
+    input.feed('\x1b');
+    const result = await casting;
+    const restored = glyphAt(game.u.ux, game.u.uy);
+    assert.ok(marked?.kind === 'monster', 'Target marks leave the visible steed on screen.');
+    assert.ok(restored?.kind === 'monster');
+    assert.notEqual(restored.mnum, marked.mnum, 'Ending targeting refreshes the hallucinated steed.');
+    assert.equal(result.targeted, false);
 });
 void test('a target farther than ten squares makes a skilled spell dissipate', async () => {
     const { input } = spellRoom();

@@ -279,7 +279,7 @@ function matchesGetposCycle(kind, x, y) {
         'water', 'molten lava', 'wall of lava', 'floor of a room',
         'dark part of a room', 'corridor', 'lit corridor'].includes(terrain);
 }
-export async function selectMapPosition({ start, prompt, goal, describe, afterPaint = null, isValidLocation = null, preserveMap = false, force = true, }) {
+export async function selectMapPosition({ start, prompt, goal, describe, afterPaint = null, isValidLocation = null, highlightHero = true, preserveMap = false, force = true, }) {
     const cursor = { ...start };
     const savedDirection = { dx: game.u.dx, dy: game.u.dy, dz: game.u.dz };
     const movePrompt = `Move cursor to ${goal}:`;
@@ -289,7 +289,6 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
     // getpos_sethilite(NULL, NULL) resets them at its exit.
     const validity = { cycle: null };
     let markValid = false;
-    let paintedSpots = null;
     const targetCycles = new Map();
     const validLocations = () => {
         if (!validity.cycle) {
@@ -316,8 +315,9 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             // bgcolors off (this port's default): '$' alternates between no
             // marking and the S_goodpos overlay.  The cycle-only hero
             // injection never paints unless the predicate accepts the hero.
-            paintedSpots = isValidLocation && markValid
-                ? validLocations().marked.filter(({ x, y }) => cansee(x, y))
+            const paintedSpots = isValidLocation && markValid
+                ? validLocations().marked.filter(({ x, y }) => cansee(x, y)
+                    && (highlightHero || x !== game.u.ux || y !== game.u.uy))
                 : null;
             await paintGetposCursor(cursor, message, paintedSpots, preserveMap);
             if (firstPaint && initialMapCursor)

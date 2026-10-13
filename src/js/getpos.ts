@@ -33,6 +33,8 @@ export interface MapPositionOptions {
     describe?: PositionDescription | null;
     afterPaint?: ((cursor: Position, firstPaint: boolean) => void | Promise<void>) | null;
     isValidLocation?: ValidLocation | null;
+    // Spell and cloud targeting admit the hero but omit its '$' overlay.
+    highlightHero?: boolean;
     preserveMap?: boolean;
     force?: boolean;
 }
@@ -333,6 +335,7 @@ export async function selectMapPosition({
     describe,
     afterPaint = null,
     isValidLocation = null,
+    highlightHero = true,
     preserveMap = false,
     force = true,
 }: MapPositionOptions): Promise<MapPositionSelection | null> {
@@ -345,7 +348,6 @@ export async function selectMapPosition({
     // getpos_sethilite(NULL, NULL) resets them at its exit.
     const validity: { cycle: ValidLocationCycle | null } = { cycle: null };
     let markValid = false;
-    let paintedSpots: Position[] | null = null;
     const targetCycles = new Map<GetposCycleKind, LocationCycle>();
 
     const validLocations = (): ValidLocationCycle => {
@@ -373,8 +375,9 @@ export async function selectMapPosition({
             // bgcolors off (this port's default): '$' alternates between no
             // marking and the S_goodpos overlay.  The cycle-only hero
             // injection never paints unless the predicate accepts the hero.
-            paintedSpots = isValidLocation && markValid
-                ? validLocations().marked.filter(({ x, y }) => cansee(x, y))
+            const paintedSpots = isValidLocation && markValid
+                ? validLocations().marked.filter(({ x, y }) => cansee(x, y)
+                    && (highlightHero || x !== game.u.ux || y !== game.u.uy))
                 : null;
             await paintGetposCursor(cursor, message, paintedSpots, preserveMap);
             if (firstPaint && initialMapCursor) game.nhDisplay?.setCursor(...initialMapCursor);
