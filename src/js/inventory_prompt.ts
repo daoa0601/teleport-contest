@@ -14,6 +14,8 @@ import type { GameObject } from './object_types.js';
 export type InventoryClassification = 0 | 1 | 2 | 3 | 4 | 5;
 
 export interface InventoryPromptOptions {
+    verb?: string;
+    classify?: (object: GameObject) => InventoryClassification;
     allowGold?: boolean;
     allowNone?: boolean;
     noneDescription?: string;
@@ -200,6 +202,8 @@ export function compactInventoryLetters(letters: string): string {
 }
 
 export async function promptInventoryObject(prompt: string, eligible: readonly GameObject[], {
+    verb = 'use',
+    classify = () => GETOBJ_SUGGEST,
     allowGold = false,
     allowNone = false,
     noneDescription,
@@ -214,7 +218,8 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
     const queuedKey = takeCommandKey();
     if (queuedKey !== undefined) {
         const letter = String.fromCharCode(queuedKey);
-        const object = eligible.find(candidate => candidate.invlet === letter);
+        const object = eligible.find(candidate => candidate.invlet === letter
+            && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
         if (object) return { cancelled: false, object, gold: false, none: false, count: null };
         if (allowNone && letter === '-')
             return { cancelled: false, object: null, gold: false, none: true, count: null };
@@ -278,6 +283,11 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
         const letter = String.fromCharCode(key);
         const object = eligible.find(candidate => candidate.invlet === letter);
         if (object) {
+            if (classify(object) === GETOBJ_EXCLUDE) {
+                await pline(object.oclass === 12 ? `You cannot ${verb} gold.`
+                    : `That is a silly thing to ${verb}.`);
+                return { cancelled: true, object: null, gold: false, none: false, count: null };
+            }
             if (count === 0) {
                 return {
                     cancelled: true, object: null, gold: false,

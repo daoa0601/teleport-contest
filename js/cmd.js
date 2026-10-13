@@ -4823,6 +4823,9 @@ async function dowield() {
     const choices = ['-', compactInventoryLetters(letters)].filter(Boolean).join(' ');
     const prompt = `What do you want to wield? [${choices} or ?*] `;
     const selection = await promptInventoryObject(prompt, game.inventory || [], {
+        verb: 'wield',
+        classify: object => object.oclass === 12 ? GETOBJ_EXCLUDE
+            : object.oclass === 2 || isWeaponTool(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY,
         allowNone: true, allowMenu: true,
         menuItems: weapons.length ? weapons : game.inventory.filter(item => item.oclass !== 12),
         noneDescription: `your ${game.uarmg ? 'gloved' : 'bare'} ${makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,

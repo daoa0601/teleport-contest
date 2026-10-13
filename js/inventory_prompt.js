@@ -161,13 +161,14 @@ export function compactInventoryLetters(letters) {
     }
     return compact;
 }
-export async function promptInventoryObject(prompt, eligible, { allowGold = false, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, retainPromptOnCancel = false, menuItems = eligible, } = {}) {
+export async function promptInventoryObject(prompt, eligible, { verb = 'use', classify = () => GETOBJ_SUGGEST, allowGold = false, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, retainPromptOnCancel = false, menuItems = eligible, } = {}) {
     // getobj() checks CQ_CANNED before invoking tty_yn_function(). A queued
     // choice neither acknowledges unread prose nor paints an item question.
     const queuedKey = takeCommandKey();
     if (queuedKey !== undefined) {
         const letter = String.fromCharCode(queuedKey);
-        const object = eligible.find(candidate => candidate.invlet === letter);
+        const object = eligible.find(candidate => candidate.invlet === letter
+            && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
         if (object)
             return { cancelled: false, object, gold: false, none: false, count: null };
         if (allowNone && letter === '-')
@@ -234,6 +235,11 @@ export async function promptInventoryObject(prompt, eligible, { allowGold = fals
         const letter = String.fromCharCode(key);
         const object = eligible.find(candidate => candidate.invlet === letter);
         if (object) {
+            if (classify(object) === GETOBJ_EXCLUDE) {
+                await pline(object.oclass === 12 ? `You cannot ${verb} gold.`
+                    : `That is a silly thing to ${verb}.`);
+                return { cancelled: true, object: null, gold: false, none: false, count: null };
+            }
             if (count === 0) {
                 return {
                     cancelled: true, object: null, gold: false,
