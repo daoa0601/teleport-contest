@@ -6853,11 +6853,12 @@ async function medusaEmptyStatue(context: SpecialLevelContext, fixedPoint: Posit
         const was = await makemon(mndx, 0, 0,
             MM_NOCOUNTBIRTH | MM_NOMSG);
         if (!was) continue;
-        if (monsterHasStoneResistance(was) || monsterPolymorphsWhenStoned(was)) {
+        if (mndx === null) throw new Error('Medusa statue monster has no species.');
+        // makemon() can change the form; C tests poly_when_stoned(wastyp).
+        if (monsterHasStoneResistance(was) || monsterPolymorphsWhenStoned({ mnum: mndx })) {
             await removeMonsterFromGame(was);
             continue;
         }
-        if (mndx === null) throw new Error('Medusa statue monster has no species.');
         propagateMonsterSpecies(mndx, true, false);
         statue.corpsenm = mndx;
         await putGeneratedMonsterInventoryInStatue(was, statue);
