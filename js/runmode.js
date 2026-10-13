@@ -17,6 +17,8 @@ export function startRun(dx, dy, g = game, mode = 1) {
     return g._runState;
 }
 export function stopRun(g = game) {
+    if (g.context.run && g.flags.time)
+        g.context.time_botl = true;
     g._runState = null;
     g.context.run = 0;
     g.context.mv = false;
@@ -37,6 +39,7 @@ export async function captureRunmodeDelay(g = game, enabled = false, sourceTurn 
     const runmodeDelayFrames = runmodeDelayFrameCount(g, enabled, sourceTurn);
     if (!runmodeDelayFrames)
         return;
+    g.context.time_botl = !!g.flags.time;
     const restoreTopline = (topline) => {
         if (!topline)
             return;

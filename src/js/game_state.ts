@@ -408,11 +408,8 @@ export interface GameState {
     _mapFlushPaused?: boolean;
     _statusUpdatesDisabled?: boolean;
     _cursorOverride?: [number, number] | null;
-    _statusAcOverride?: number;
     _statusDeafOverride?: boolean;
     _statusGoldOverride?: number;
-    _statusHpOverride?: number;
-    _statusProjectedAc?: number;
     _armorClassDirty?: boolean;
     _armorClassDirtyAfterDelayedFrame?: boolean;
     _preserveLeadingStyledBlanks?: boolean;

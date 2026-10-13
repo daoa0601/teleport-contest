@@ -113,7 +113,9 @@ export async function restoreHeroAfterDeath({ deathType = null } = {}) {
     game._helplessTurns = 1;
     game._helplessReason = 'attempting to cheat Death';
     game._helplessDoneMessage = '';
+    game.context.botl = true;
     clearHeroRemains(game);
+    await flush_screen(1);
     rebasePrayerAfterLifeSaving(game);
     const holder = game.u.ustuck;
     if (game.u.uswallow) {
@@ -1025,7 +1027,6 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
     await displayMessageWindow();
     // The final message window retains the status drawn by the fatal caller.
     // Disclosure uses committed HP after that message has been acknowledged.
-    delete game._statusHpOverride;
     let livingCat = false;
     for (const object of game.inventory) {
         if (!isQuantumBox(object))
@@ -1137,7 +1138,6 @@ async function settleGameExit(outcome) {
     const publish = async (message) => {
         // A real pline updates status; an existing death message alone
         // retains the status painted by the fatal caller.
-        delete game._statusHpOverride;
         await plineWithContinuation(message);
     };
     const taken = await settleShopkeepersOnExit(outcome, { silent, publish });

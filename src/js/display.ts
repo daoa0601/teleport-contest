@@ -2136,15 +2136,13 @@ export function _statusLine2(refreshLoad = true) {
             : `Dlvl:${dungeonDepth(u.uz)}`;
     const polymorphed = (u.mtimedone ?? 0) > 0;
     // botl.c bounds the printed numbers without changing combat state.
-    const currentHp = game._statusHpOverride
-        ?? (polymorphed ? u.mh : u.uhp) ?? 0;
+    const currentHp = (polymorphed ? u.mh : u.uhp) ?? 0;
     const displayedHp = Math.max(0, Math.min(currentHp, 9999));
     const maximumHp = Math.min((polymorphed ? u.mhmax : u.uhpmax) ?? 0, 9999);
     const displayedPower = Math.min(u.uen ?? 0, 9999);
     const maximumPower = Math.min(u.uenmax ?? 0, 9999);
     const goldSymbol = Is_rogue_level(u.uz) ? '*' : '$';
-    const displayedAc = game._statusAcOverride
-        ?? game._statusProjectedAc ?? u.uac ?? 10;
+    const displayedAc = u.uac ?? 10;
     const displayedGold = game._statusGoldOverride
         ?? heroGoldAmount(game);
     let line = `${location} ${goldSymbol}:${displayedGold} HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`;
@@ -2212,7 +2210,12 @@ export function serialize_terminal_grid(display: Pick<GameDisplay, 'rows' | 'col
 }
 
 function displayedStatusLines(): readonly [string, string] {
-    return game.nhDisplay?.statusLines ?? ['', ''];
+    const display = game.nhDisplay;
+    if (display?.statusVisible && !game._statusUpdatesDisabled)
+        return display.statusLines ?? ['', ''];
+    const row = (index: number) => game.nhDisplay?.grid[index]
+        ?.map(cell => cell.ch).join('').trimEnd() ?? '';
+    return [row(22), row(23)];
 }
 
 function writeStatusLines(display: GameDisplay, lines: readonly [string, string]): void {
@@ -2323,6 +2326,7 @@ export function clearMapDisplay() {
 // ── cls ──
 export async function cls() {
     await flushPendingTopline();
+    game.context.botl = true;
     const display = game?.nhDisplay;
     if (display?.clearScreen) display.clearScreen();
     game._pending_message = '';
@@ -2349,7 +2353,10 @@ export function clearMessageWindow(coveredRows?: number) {
     }
     // docorner() asks bot() to restore covered status rows. getlin() keeps
     // status updates disabled through this cleanup, leaving those rows blank.
-    if (rows > ROWNO + 1) refreshStatusLines();
+    if (rows > ROWNO + 1) {
+        if (game._statusUpdatesDisabled) display.statusVisible = false;
+        refreshStatusLines();
+    }
     display.setCursor(0, 0);
 }
 
@@ -2360,12 +2367,14 @@ export async function bot() {
 
 function refreshStatusLines(): void {
     const display = game.nhDisplay;
-    if (!display || game._statusUpdatesDisabled || game.u.uhp === -1 || game.program_state.saving
-        || game.program_state.windows_exited || game._suppressMapStatusForFlush) return;
-    game.u._encumbrance = encumbranceLabel(nearCapacity(game));
+    if (!display || game._statusUpdatesDisabled) return;
     game.context.botl = false;
     game.context.time_botl = false;
+    if (game.u.uhp === -1 || game.program_state.saving
+        || game.program_state.windows_exited || game._suppressMapStatusForFlush) return;
+    game.u._encumbrance = encumbranceLabel(nearCapacity(game));
     display.statusLines = [_statusLine1(), _statusLine2(false)];
+    display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
 }
 
@@ -2380,6 +2389,7 @@ export function timebot(): void {
         || game._suppressMapStatusForFlush) return;
     const [first, second] = display.statusLines;
     display.statusLines = [first, second.replace(/\bT:\d+\b/, `T:${game.moves}`)];
+    display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
 }
 

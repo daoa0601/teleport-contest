@@ -4,13 +4,12 @@ import { game } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import type { DeathDamage } from './end.js';
 import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
-import { canSpotMonster, flush_screen, pline, plineWithContinuation } from './display.js';
+import { canSpotMonster, flushPendingTopline, flush_screen, pline, plineWithContinuation } from './display.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
     restoreHeroAfterDeath,
 } from './end.js';
 import { setHeroRemainsFromMonster } from './death_remains.js';
-import { nhgetch } from './input.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
@@ -96,25 +95,17 @@ function fatalMonsterDescription(monster: Monster): string {
 }
 
 export async function finishMonsterAttackDeath(monster: Monster, {
-    damage, pagerOwned = false, messageAfterPager = false,
-    earlierActorPager = false, attribution = { kind: 'done-in-by' }, deathType = null,
+    pagerOwned = false, attribution = { kind: 'done-in-by' }, deathType = null,
 }: MonsterAttackDeathOptions = {}): Promise<boolean> {
     const customCause = attribution.kind === 'death-inflicted-by';
     const announcesDeath = !customCause || attribution.announcesDeath;
     const projectedFatalLine = !!game._pending_message
         && !game._suppressMessagesUntilInput;
-    const rawHpAfter = damage ? damage.hpBefore - damage.damage : 0;
-    const hpSaveSentinel = damage?.hpKey === 'uhp' && rawHpAfter === -1;
-    // bot() reserves raw HP -1 as a save sentinel. A real pager can retain
-    // the old status row there; exact zero and deeper overkill repaint it.
-    if (projectedFatalLine && damage && rawHpAfter !== 0 && rawHpAfter >= -1
-        && (hpSaveSentinel || earlierActorPager
-            || (pagerOwned && !messageAfterPager))) {
-        game._statusHpOverride = damage.hpBefore;
+    if (projectedFatalLine && announcesDeath) {
+        // You("die...") flushes the raw injury before tty pages older prose.
+        await flush_screen(1);
+        await waitForCurrentMonsterMore();
     }
-    const retainStatus = game._statusHpOverride !== undefined && hpSaveSentinel;
-    if (projectedFatalLine && announcesDeath) await waitForCurrentMonsterMore();
-    if (!retainStatus) delete game._statusHpOverride;
     const fatalKiller = customCause ? attribution.killer : fatalMonsterDescription(monster);
     const fatalDeathCause = customCause
         ? attribution.deathCause ?? `killed by ${fatalKiller}`
@@ -134,10 +125,6 @@ export async function finishMonsterAttackDeath(monster: Monster, {
     // life-saving transaction performs done()'s commit itself.
     const lifeSaving = beginHeroLifeSaving();
     if (lifeSaving) {
-        // done() normalizes HP before it emits the life-saving
-        // branch; unlike a plain debug-death pager, that combined
-        // line always projects committed zero.
-        delete game._statusHpOverride;
         // done_in_by() writes the fatal line before done(); the
         // latter appends both life-saving lines until the next
         // message would overflow tty's top line.  Identification
@@ -146,7 +133,6 @@ export async function finishMonsterAttackDeath(monster: Monster, {
         const dismissal = await waitForMonsterMore(
             `${announcesDeath ? 'You die...  ' : ''}But wait...  Your medallion ${medallionEffect}!`,
         );
-        delete game._statusHpOverride;
         await pline('You feel much better!');
         // ESC at tty --More-- sets WIN_STOP: the new overflow
         // message is still installed, but later messages in this
@@ -198,7 +184,6 @@ export async function finishMonsterAttackDeath(monster: Monster, {
         commitFatalEvent();
     }
     if (game.flags?.debug || game.flags?.explore) {
-        delete game._statusHpOverride;
         const die = await promptYesNo('Die?');
         if (die !== 'y') {
             await plineWithContinuation("OK, so you don't die.");
@@ -221,16 +206,6 @@ export async function finishMonsterAttackDeath(monster: Monster, {
 }
 
 export async function waitForCurrentMonsterMore(fallbackMessage = '') {
-    const current = game._pending_message || fallbackMessage;
-    const more = `${current}--More--`;
-    await pline(more);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(more.length, 0);
-    let key;
-    do key = await nhgetch();
-    while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
-    game._pending_message = '';
-    game._retained_message = '';
-    if (key === 27) game._suppressMessagesUntilInput = true;
-    return key;
+    if (!game._pending_message) game._pending_message = fallbackMessage;
+    return flushPendingTopline();
 }

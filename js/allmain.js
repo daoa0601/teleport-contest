@@ -108,7 +108,7 @@ import { advanceHeroStrangulation } from './hero_strangulation.js';
 import { initTrack, setTrack } from './track.js';
 import { autopickupAtHero } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
-import { applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, destroyWornArmor, objectErosionKind, objectErosionMessage, projectedArmorClass, wornArmorInDestroyOrder, } from './armor.js';
+import { applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, destroyWornArmor, objectErosionKind, objectErosionMessage, wornArmorInDestroyOrder, } from './armor.js';
 import { nearCapacity, } from './weight.js';
 import { dist2, dungeonDepth } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName, } from './monster_data.js';
@@ -1395,7 +1395,6 @@ async function advanceWorldTurn() {
         findArmorClass(game);
         game._armorClassDirty = false;
         delete game._armorClassDirtyAfterDelayedFrame;
-        delete game._statusProjectedAc;
     }
 }
 async function settleHeroLiquidAfterAction() {
@@ -3182,14 +3181,6 @@ async function executeMonsterTurns(messageContext) {
         if (!movement?.moved)
             continue;
     }
-    delete game._statusAcOverride;
-    // Erosion mutates worn armor during movemon(), but C does not run
-    // find_ac() until the actor scan has finished.  Only after that boundary
-    // may the next ordinary input project the new AC; intervening combat and
-    // death pagers retain the pre-scan status value.
-    if (game._armorClassDirty
-        && !game._armorClassDirtyAfterDelayedFrame)
-        game._statusProjectedAc = projectedArmorClass(game);
     return game.level === level && somebodyCanMove;
 }
 async function moveMonsters() {
@@ -3353,7 +3344,6 @@ export async function moveloop_core() {
         && !g._armorClassDirtyAfterDelayedFrame) {
         findArmorClass(g);
         g._armorClassDirty = false;
-        delete g._statusProjectedAc;
     }
     if (g._prayerTurnsRemaining !== undefined && g._prayerTurnsRemaining > 0) {
         const prayerTurn = g.moves || 1;
@@ -3416,7 +3406,6 @@ export async function moveloop_core() {
             findArmorClass(g);
             g._armorClassDirty = false;
             delete g._armorClassDirtyAfterDelayedFrame;
-            delete g._statusProjectedAc;
         }
         else if (delayed.kind === 'remove') {
             // C allmain.c:unmul() emits nomovemsg before calling afternmv.
@@ -3426,6 +3415,8 @@ export async function moveloop_core() {
             if (delayed.finishMessage)
                 await plineWithContinuation(delayed.finishMessage);
             await finishArmorRemoval(delayed.object, { silent: true });
+            findArmorClass(g);
+            g._armorClassDirty = false;
         }
         g._delayedAction = null;
     }
@@ -3477,9 +3468,6 @@ export async function moveloop_core() {
         vision_recalc(0);
         g.vision_full_recalc = 0;
     }
-    // A removal message can leave the old AC on screen. Clear that temporary
-    // value before the ordinary status repaint.
-    delete g._statusAcOverride;
     await flush_screen(1);
     heroEveryturnEffect(g);
     // A negative C `multi` suppresses rhack() but still leaves context.move

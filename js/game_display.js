@@ -22,6 +22,7 @@ export class GameDisplay {
     messageWinFlags;
     // WIN_STATUS retains its fields independently of map and message redraws.
     statusLines = null;
+    statusVisible = true;
     constructor(terminalOrContainerId = null) {
         // A supplied terminal permits headless use; a container ID creates the browser surface.
         if (terminalOrContainerId instanceof Terminal) {

@@ -267,10 +267,12 @@ export async function fixPrayerTrouble(trouble, state = game) {
             hero.uhpmax = Math.max(6, hero.uhpmax);
             hero.uhppeak = Math.max(hero.uhppeak || 0, hero.uhpmax);
             hero.uhp = hero.uhpmax;
+            state.context.botl = true;
             return;
         case Trouble.COLLAPSING:
             await pline(`You feel ${hero.amax.a[A_STR] - hero.acurr.a[A_STR] > 6 ? 'much ' : ''}stronger.`);
             hero.acurr.a[A_STR] = hero.amax.a[A_STR];
+            state.context.botl = true;
             object = ringRemovalObstacle(state.uleft, RIN_SUSTAIN_ABILITY, state)
                 || ringRemovalObstacle(state.uright, RIN_SUSTAIN_ABILITY, state);
             if (object)

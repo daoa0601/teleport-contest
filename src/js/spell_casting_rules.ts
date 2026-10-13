@@ -54,6 +54,7 @@ export async function checkSpellCast(spell: SpellReference | null, { state = gam
         await plineWithContinuation('It invokes nightmarish images in your mind...');
         await backfireForgottenSpell(memorized, state);
         hero.uen = Math.max(0, hero.uen - rnd(energy));
+        state.context.botl = true;
         return { allowed: false, spentTime: true, energy };
     }
     await warnAboutFadingKnowledge(knowledge);
@@ -74,6 +75,7 @@ export async function checkSpellCast(spell: SpellReference | null, { state = gam
     if (amuletDrains) {
         await plineWithContinuation('You feel the amulet draining your energy away.');
         hero.uen = Math.max(0, hero.uen - rnd(2 * energy));
+        state.context.botl = true;
     }
     if (energy > hero.uen) {
         const suffix = hero.uen < hero.uenmax ? ''
@@ -90,6 +92,7 @@ export async function checkSpellCast(spell: SpellReference | null, { state = gam
     if (confused || rnd(100) > chance) {
         await plineWithContinuation('You fail to cast the spell correctly.');
         hero.uen -= Math.trunc(energy / 2);
+        state.context.botl = true;
         return { allowed: false, spentTime: true, energy };
     }
     return { allowed: true, spentTime: true, energy };
