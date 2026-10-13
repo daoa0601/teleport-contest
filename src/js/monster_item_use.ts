@@ -15,7 +15,7 @@ import { MONSTER_GENO } from './monster_data.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { paralyzeMonster } from './mon.js';
 import { destroyObjectFromMonsterInventory, forgetObjectKnowledge } from './monster_inventory.js';
-import { monsterName, monsterReflexiveAction, monsterSubjectPronoun } from './monster_name.js';
+import { monsterName, monsterReflexiveAction, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import type { MonsterOffensiveOptions } from './monster_offensive_types.js';
 import { sameMonsterRace } from './monster_race.js';
 import type { Monster } from './monster_types.js';
@@ -69,14 +69,13 @@ export async function presentMonsterQuaff(monster: Monster, object: GameObject, 
 // C muse.c:you_aggravate(). The temporary revelation is acknowledged before
 // the potion is consumed or another monster can act.
 export async function revealAggravatingMonster(monster: Monster, state: PlayingGameState): Promise<void> {
-    const name = () => monsterName(monster, { state, suppressIt: true });
-    const presence = name();
-    await plineWithContinuation(`For some reason, ${presence}${presence.endsWith('s') ? "'" : "'s"} presence is known to you.`);
+    const owner = possessiveName(monsterName(monster, { state, suppressIt: true }));
+    await plineWithContinuation(`For some reason, ${owner} presence is known to you.`);
     await cls();
     const glyph = transientMonsterGlyph(monster);
     show_glyph_cell(monster.mx, monster.my, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
     displaySelf();
-    await plineWithContinuation(`You feel aggravated at ${name()}.`);
+    await plineWithContinuation(`You feel aggravated at ${monsterName(monster, { state, suppressIt: true })}.`);
     await displayMessageWindow();
     await docrt();
     if (heroIsUnconscious(state)) {

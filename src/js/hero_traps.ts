@@ -86,8 +86,7 @@ import { specialPrototypeAt } from './dungeon.js';
 import { setTrack } from './track.js';
 import {
     bringLeashedFollowers, clearFixedTeleportDestination, heroControlsTeleport, heroTeleportDestinationOk,
-    heroTeleportTrapBlock, moveHeroByTeleport,
-    safeTeleportDestination,
+    heroTeleportTrapBlock, moveHeroByTeleport, teleportHero,
 } from './teleport.js';
 import { CLR_GREEN } from './terminal.js';
 import { cansee } from './vision.js';
@@ -125,7 +124,6 @@ import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, 
 import { trapTriggeredByFloor } from './monmove.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { askTeleportDestination } from './cmd.js';
-import { teleportHero } from './teleport.js';
 import { observeObject } from './object_knowledge.js';
 import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
 
