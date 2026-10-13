@@ -126,11 +126,13 @@ void test('a trap encountered during a direct move resumes after the previous me
     const sleeper = await createMonsterAt('jackal', 14, 10, NO_MINVENT);
     sleeper.msleeping = 1;
     let acknowledged = false;
+    const pages: string[] = [];
     input.beforeRead = () => {
         const screen = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
         assert.match(screen, /--More--/, `Unexpected trap input:\n${screen}`);
         assert.equal(leprechaun.mx, 12);
         assert.equal(sleeper.msleeping, 1, 'the board wakes nearby monsters after its message');
+        pages.push(screen.split('\n')[0] ?? '');
         acknowledged = true;
         input.feed(' ');
     };
@@ -141,7 +143,9 @@ void test('a trap encountered during a direct move resumes after the previous me
     assert.equal(result.status, MMOVE_MOVED);
     assert.equal(trap.tseen, true);
     assert.equal(sleeper.msleeping, 0);
-    assert.match(await topline(), /board beneath the leprechaun squeaks a C note/);
+    assert.ok(pages.some(page => page.includes('board beneath the leprechaun squeaks a C note')),
+        'the board announcement is acknowledged before the wake-up message');
+    assert.equal(await topline(), 'The jackal wakes up.');
 });
 
 void test('a fatal movement trap completes death before returning the native result', async () => {
