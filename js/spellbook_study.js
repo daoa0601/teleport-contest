@@ -322,7 +322,7 @@ function delayReading(delay, state) {
         state._helplessTurns = turns;
     }
     state._helplessReason = 'reading a book';
-    state._helplessDoneMessage = '';
+    state._helplessDoneMessage = null;
 }
 function outcome(spentTime, state) {
     return { spentTime, heroDied: !!state.program_state.gameover };
