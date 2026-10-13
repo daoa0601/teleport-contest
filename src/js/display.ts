@@ -2151,7 +2151,7 @@ export function _statusLine2(refreshLoad = true) {
     if (game.flags?.time)
         line += ` T:${game.moves ?? 1}`;
     if (u.usteed) line += ' Ride';
-    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][game._statusHungerOverride ?? currentHungerState(game)];
+    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][game._statusHungerOverride ?? u.uhs ?? currentHungerState(game)];
     if (hungerLabel) line += ` ${hungerLabel}`;
     const load = refreshLoad ? encumbranceLabel(nearCapacity(game)) : u._encumbrance;
     if (load) line += ` ${load}`;
