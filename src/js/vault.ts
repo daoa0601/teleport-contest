@@ -421,20 +421,16 @@ export async function continueVaultGuardArrival(state: GameState = game) {
     await morePrompt("Suddenly one of the Vault's guards enters!");
     await readGuardName();
 
+    await plineWithContinuation('"I don\'t know you."');
+    const gold = heroGoldAmount(game);
     const stashedGold = hiddenGold(game, true);
-    if (stashedGold) {
-        corridor.dropgoldcnt++;
-        await morePrompt('"I don\'t know you."  "You have hidden gold."');
-        await morePrompt('"Most likely all your gold was stolen from this vault."');
-        await pline('"Please drop that gold and follow me."');
-    } else if (heroGoldAmount(game)) {
-        corridor.dropgoldcnt++;
-        await morePrompt('"I don\'t know you."');
-        await morePrompt('"Most likely all your gold was stolen from this vault."');
-        await pline('"Please drop that gold and follow me."');
+    if (!gold && !stashedGold) {
+        await plineWithContinuation('"Please follow me."');
     } else {
-        await morePrompt('"I don\'t know you."');
-        await pline('"Please follow me."');
+        if (!gold) await plineWithContinuation('"You have hidden gold."');
+        await plineWithContinuation('"Most likely all your gold was stolen from this vault."');
+        await plineWithContinuation('"Please drop that gold and follow me."');
+        corridor.dropgoldcnt++;
     }
 
     if (!IS_WALL(original.typ)) {
