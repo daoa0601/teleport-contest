@@ -11,7 +11,7 @@ import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_ARMOR, is_pit, } from './const.js';
-import { ARROW as FIRST_OBJECT, EGG, CHEST, GOLD_PIECE, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, STATUE, TIN, } from './object_data.js';
+import { ARROW as FIRST_OBJECT, EGG, CHEST, GOLD_PIECE, LARGE_BOX, MAGIC_MARKER, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OBJECT_TOUGH, STATUE, TIN, TOWEL, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
@@ -435,9 +435,16 @@ function itemActionEntries(item, state) {
     entries.push({ key: 'c', text: `Name ${stack ? 'this stack of' : 'this specific'} ${itemName}` });
     if (!alreadyWorn)
         entries.push({ key: 'd', text: `Drop this ${stack ? 'stack' : 'item'}` });
-    if ([2, 4, 11, 13].includes(item.oclass)
-        || [239, 245].includes(item.otyp)) {
-        const verb = isBlade(item) || item.oclass === 11 ? 'Engrave' : 'Write';
+    if (item.otyp === TOWEL) {
+        entries.push({ key: 'E', text: 'Wipe the floor with this towel' });
+    }
+    else if (item.otyp === MAGIC_MARKER) {
+        entries.push({ key: 'E', text: 'Scribble graffiti on the floor' });
+    }
+    else if ([2, 4, 11, 13].includes(item.oclass)) {
+        const engraves = isBlade(item) || item.oclass === 11
+            || (item.oclass === 4 || item.oclass === 13) && !!OBJECT_TOUGH[item.otyp];
+        const verb = engraves ? 'Engrave' : 'Write';
         const surface = surfaceName(state.u.ux, state.u.uy, state);
         entries.push({ key: 'E', text: `${verb} on the ${surface} with ${stack ? 'one of these items' : 'this item'}` });
     }
