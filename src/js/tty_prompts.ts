@@ -1,7 +1,7 @@
 // Top-line key prompts used by commands which can pause for input.
 // C refs: win/tty/topl.c more() and win/tty/wintty.c tty_nhgetch().
 
-import { bot, clearMessageWindow, docrt, flush_screen, pline } from './display.js';
+import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, pline } from './display.js';
 import { CLICK_1, CLICK_2, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK } from './const.js';
 import { game } from './gstate.js';
 import { selectMapPosition } from './getpos.js';
@@ -41,6 +41,11 @@ export async function promptKey(message: string, cursorOffset = 0): Promise<numb
 // C cmd.c:getdir() removes its query immediately after receiving a key,
 // before interpreting that key as a direction, cancellation, or help.
 export async function readDirectionKey(message = 'In what direction? ') {
+    // tty_yn_function() skips an unread topline stopped by Escape, then
+    // clears WIN_STOP before painting its question.
+    if (game._suppressMessagesUntilInput) clearMessageWindow();
+    else await flushPendingTopline();
+    game._suppressMessagesUntilInput = false;
     await paintKeyPrompt(message);
     const key = (await readchar('direction')) & 255;
     clearMessageWindow();

@@ -3964,10 +3964,11 @@ export async function moveloop_core() {
         return;
     }
 
-    // tty ESC at --More-- suppresses later plines until the next real
-    // command read.  Preserve the overflow message already installed while
-    // reopening output for the command rhack() is about to request.
-    g._suppressMessagesUntilInput = false;
+    // Queued actions and counted repeats do not read a new command key.
+    // Escape's message suppression survives until a real command read or
+    // until a prompted question clears tty's WIN_STOP flag.
+    if (!g._cannedCommands?.length && g.multi === 0)
+        g._suppressMessagesUntilInput = false;
 
     // Read and execute one command
     g.u.umoved = false;
