@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
+import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { applyNethackrc } from '../js/options.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
@@ -29,3 +31,35 @@ void test('ordinary look gives the verbose cursor request while quick look stays
         assert.equal(request.includes('--More--'), !quick);
     }
 });
+
+for (const [binding, key, label] of [
+    ['!', '!', '!'],
+    ['C-a', '\x01', '^A'],
+] as const) {
+    void test(`ordinary look advertises and accepts the rebound ${label} help key`, async () => {
+        freshObjectRoom({ flags: { tips: false, verbose: true } });
+        applyNethackrc(`BINDINGS=${binding}:getpos.help`);
+        const input = resetInputState();
+        input.feed('/');
+        const looking = rhack('/'.charCodeAt(0));
+        try {
+            await input.waitUntilBlocked();
+            input.feed(' ');
+            await input.waitUntilBlocked();
+            assert.ok(topline().includes(`(For instructions type a '${label}')`),
+                `The look prompt should advertise the configured ${label} help key: ${topline()}`);
+
+            input.feed(key);
+            await input.waitUntilBlocked();
+            assert.match(topline(), /Use .* to move the cursor to a monster/);
+
+            input.feed(' ');
+            await input.waitUntilBlocked();
+            assert.match(topline(), /^Move cursor to a monster, object or location:/);
+        } finally {
+            input.feed('\x1b\x1b');
+            await looking;
+        }
+        assert.equal(game.context.move, 0);
+    });
+}

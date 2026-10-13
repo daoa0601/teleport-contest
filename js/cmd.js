@@ -4439,8 +4439,12 @@ async function doFarlook(quick = true) {
     const firstUse = shouldShowGetposTip();
     if (firstUse)
         await showGetposTip();
-    if (verbose)
-        await plineWithContinuation("(For instructions type a '?')");
+    if (verbose) {
+        const helpKey = game.commandBindings.specialKey('getpos.help');
+        if (helpKey === undefined)
+            throw new Error('Map selection requires a getpos.help binding');
+        await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+    }
     if (firstUse)
         await plineWithContinuation('Move cursor to a monster, object or location:');
     const cursor = await selectMapPosition({
