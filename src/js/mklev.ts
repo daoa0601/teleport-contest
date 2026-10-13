@@ -168,7 +168,7 @@ import {
     SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData,
 } from './monster_data.js';
 import {
-    isReviver, isRider, ZOMBIE_FORM_BY_LIVING_CORPSE,
+    isReviver, isRider, zombieForm,
 } from './corpse_species.js';
 import {
     adjustedMonsterLevel, newMonsterHitPoints,
@@ -1133,7 +1133,7 @@ export function startCorpseTimeout(body: GameObject | null | undefined, { zombif
             delay = turn;
             break;
         }
-    } else if (zombify && ZOMBIE_FORM_BY_LIVING_CORPSE.has(species)
+    } else if (zombify && zombieForm(species) !== null
         && !body.norevive) {
         kind = OBJECT_TIMER_KIND.ZOMBIFY_MON;
         delay = rn1(15, 5);
