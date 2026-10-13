@@ -4607,9 +4607,8 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
         if (remembered === ' ') return 'stone';
         if (remembered === '#') return 'corridor';
         if (remembered === '.') return 'floor of a room';
-        if (remembered === '<') return 'staircase up';
-        if (remembered === '>')
-            return travelLocationDescription(x, y) || 'staircase down';
+        if (remembered === '<' || remembered === '>')
+            return loc.remembered_glyph.terrainName;
         if (remembered === '{') return 'fountain';
         if (remembered === '+') {
             return loc.typ === DOOR && loc.doormask === D_ISOPEN
