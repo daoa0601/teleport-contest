@@ -34,6 +34,7 @@ import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monst
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
+import { stumbleOntoMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
@@ -71,7 +72,7 @@ import { directionAssistPage, promptKey, readDirectionKey, restoreCommandMap, } 
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
-import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
+import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
 import { dozap, } from './zap.js';
@@ -6670,6 +6671,28 @@ async function moveOutOfBounds(x, y) {
     game.context.move = 0;
     return false;
 }
+// C hack.c:domove_bump_mon(). The m-prefix spends the step before the
+// destination monster can choose displacement or receive an attack.
+async function bumpIntoMonster(monster, x, y) {
+    if (!game.context.nopick || game.context.travel)
+        return false;
+    const glyph = glyphAt(x, y);
+    if (!canSpotMonster(monster)
+        && glyph?.kind !== 'invisible' && glyph?.kind !== 'warning')
+        return false;
+    if (M_AP_TYPE(monster)
+        && !(game.u.protectionFromShapeChangers || game.protectionFromShapeChangers)
+        && !canSenseMonster(monster)) {
+        await stumbleOntoMimic(monster);
+    }
+    else if (monster.mpeaceful && !heroIsHallucinating(game)) {
+        await pline(`Pardon me, ${monsterName(monster, { article: 'none', exact: true })}.`);
+    }
+    else {
+        await pline(`You move right into ${monsterName(monster)}.`);
+    }
+    return true;
+}
 async function domoveCore(dx, dy, explicitAttempt) {
     requirePlayingGame(game);
     const u = game.u;
@@ -6802,6 +6825,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
         // step after the intervening monster phase.
         if (!safeMonster && game._runState)
             stopRun(game);
+        if (await bumpIntoMonster(monster, newx, newy))
+            return true;
         if (beastChoosesHeroDisplacement(monster, game, newx, newy)) {
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
