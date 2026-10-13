@@ -822,7 +822,7 @@ export async function animateRollingBoulderCell(boulder, glyph, x, y, previous) 
         newsym(previous.x, previous.y);
     if (!cansee(x, y))
         return null;
-    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr);
+    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr, glyph);
     // Keep the animation cursor after the last map cell the display changed.
     const frameCursor = previous
         ? lastDirtyMapCursor() ?? [x, y + 1]
