@@ -916,7 +916,9 @@ function heroDisplayGlyph(): DisplayGlyph {
         const appearance = game.u.mappearance;
         const symbol = appearance === undefined ? undefined : MAP_SYMBOLS[appearance];
         if (appearance === undefined || !symbol) throw new Error('Hero furniture disguise requires a valid map symbol');
-        return { ch: symbol.ch, color: symbol.color, decgfx: false,
+        const decSymbol = !Is_rogue_level(game.u.uz) && /^DECgraphics$/i.test(game.symset || '')
+            ? decFurnitureSymbols.get(appearance) : undefined;
+        return { ch: decSymbol ?? symbol.ch, color: symbol.color, decgfx: decSymbol !== undefined,
             kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance) };
     }
     // display.h:hero_glyph and you.h:Ugender select the current body's sex.
@@ -930,6 +932,23 @@ function heroDisplayGlyph(): DisplayGlyph {
     return polymorphed ? glyph
         : { ...glyph, ch: game.flags.showrace ? glyph.ch : '@', color: CLR_WHITE };
 }
+
+// dat/symbols:DECgraphics overrides dungeon symbols independently of the
+// terrain type at the hero's location. Furniture mimicry uses these symbols.
+const decFurnitureSymbols = new Map<number, string>([
+    [CmapSymbol.vwall, 'x'], [CmapSymbol.hwall, 'q'],
+    [CmapSymbol.tlcorn, 'l'], [CmapSymbol.trcorn, 'k'],
+    [CmapSymbol.blcorn, 'm'], [CmapSymbol.brcorn, 'j'],
+    [CmapSymbol.crwall, 'n'], [CmapSymbol.tuwall, 'v'],
+    [CmapSymbol.tdwall, 'w'], [CmapSymbol.tlwall, 'u'], [CmapSymbol.trwall, 't'],
+    [CmapSymbol.ndoor, '~'], [CmapSymbol.vodoor, 'a'], [CmapSymbol.hodoor, 'a'],
+    [CmapSymbol.bars, '|'], [CmapSymbol.tree, 'g'], [CmapSymbol.room, '~'],
+    [CmapSymbol.upladder, 'y'], [CmapSymbol.dnladder, 'z'],
+    [CmapSymbol.brupladder, 'y'], [CmapSymbol.brdnladder, 'z'],
+    [CmapSymbol.altar, '{'], [CmapSymbol.pool, '`'], [CmapSymbol.ice, '~'],
+    [CmapSymbol.lava, '`'], [CmapSymbol.lavawall, '`'],
+    [CmapSymbol.vodbridge, '~'], [CmapSymbol.hodbridge, '~'], [CmapSymbol.water, '`'],
+]);
 
 // C display.h:canspotself().  See-invisible does not make the hero's own
 // glyph opaque again; ordinary self projection depends on not being
@@ -1533,7 +1552,7 @@ export function displaySelf() {
             !!steed.female, 'ridden')
         : heroDisplayGlyph();
     show_glyph_cell(game.u.ux, game.u.uy,
-        glyph.ch, glyph.color, false, 0, glyph);
+        glyph.ch, glyph.color, glyph.decgfx ?? false, 0, glyph);
 }
 
 // C display.c:newsym_force(). A forced redraw prints even an unchanged glyph.
