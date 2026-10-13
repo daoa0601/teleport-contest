@@ -15,8 +15,9 @@ import { MONSTER_FLAGS1 } from './monster_data.js';
 import { ACID_VENOM, OBJECT_MATERIAL } from './object_data.js';
 import { rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
-import { withIndefiniteArticle } from './object_grammar.js';
-import { objectCombatName, objectHasPersonalName, killerObjectName } from './objnam.js';
+import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { objectDescription } from './object_description.js';
+import { objectCombatName, objectHasPersonalName, killerObjectName, observeObjectForNaming } from './objnam.js';
 import { AD_ACID } from './monster_attack_types.js';
 import { monstersObserveHeroResistance, seenResistanceForDamage } from './monster_perception.js';
 
@@ -52,15 +53,16 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
     deathCause,
 }: HeroObjectHitOptions = {}): Promise<HeroObjectHitResult> {
     requirePlayingGame(state);
-    // C thitu() uses mshot_xname(), not cxname(), for a single corpse.
+    // C thitu() uses doname() for stacks and mshot_xname() for single objects.
+    // The latter omits the monster species from a single corpse's hit name.
     const quantity = object.quan ?? object.quantity ?? 1;
-    const name = requestedName ?? objectCombatName(object, {
-        state, includeCorpseSpecies: quantity > 1,
-    });
+    if (requestedName === undefined && quantity > 1) observeObjectForNaming(object, { state });
+    const name = requestedName ?? (quantity > 1 ? objectDescription(object, { state })
+        : objectCombatName(object, { state, includeCorpseSpecies: false }));
     const killer = requestedKiller ?? killerObjectName(object, state);
     if (typeof name !== 'string' || typeof killer !== 'string')
         throw new Error(`Unknown object type ${object.otyp} hit the hero.`);
-    const description = objectHasPersonalName(object, state)
+    const description = objectHasPersonalName(object, state) || quantity > 1
         ? name : withIndefiniteArticle(name);
     const terse = heroIsBlind(state) || state.flags.verbose === false;
     const threshold = state.u.uac + accuracy;
@@ -69,7 +71,7 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
         if (terse) await publish('It misses.');
         else if (threshold <= roll - 2) {
             const subject = description.charAt(0).toUpperCase() + description.slice(1);
-            await publish(`${subject} misses you.`);
+            await publish(`${subject} ${verbForSubject(subject, 'miss')} you.`);
         } else await publish(`You are almost hit by ${description}.`);
         return { hit: false, died: false };
     }
