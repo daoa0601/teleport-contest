@@ -1,5 +1,5 @@
 import { game, requirePlayingGame } from './gstate.js';
-import { map_trap, newsym, plineWithContinuation, shieldeff } from './display.js';
+import { newsym, plineWithContinuation, shieldeff } from './display.js';
 import { inventoryItemDescription } from './invent.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterLocomotion } from './monster_locomotion.js';
@@ -19,8 +19,11 @@ const IRON = 11;
 const WAND_CLASS = 12;
 export async function triggerHeroPolymorphTrap(trap, viaSitting) {
     requirePlayingGame(game);
-    trap.tseen = true;
-    map_trap(trap);
+    // C seetrap() reveals the floor without replacing the hero's glyph.
+    if (!trap.tseen) {
+        trap.tseen = true;
+        newsym(trap.tx, trap.ty);
+    }
     const steed = game.u.usteed;
     const locomotion = game.u.levitating ? 'float' : game.u.flying ? 'fly'
         : monsterLocomotion(heroSpecies(game), 'step');

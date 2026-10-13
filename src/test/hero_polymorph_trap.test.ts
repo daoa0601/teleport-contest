@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroArmor } from '../js/armor.js';
 import { POLY_TRAP } from '../js/const.js';
-import { game } from '../js/gstate.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
+import { flush_screen } from '../js/display.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { resetInputState } from '../js/input.js';
 import { IRON_SHOES, KICKING_BOOTS } from '../js/object_data.js';
@@ -48,6 +49,30 @@ void test('a polymorph trap replaces worn iron shoes with kicking boots and vani
     assert.equal(game.uarmf?.spe, 2);
     assert.equal(shoes.where, 'gone');
 });
+
+for (const known of [false, true]) {
+    void test(`a ${known ? 'known' : 'newly revealed'} polymorph trap keeps the hero visible while changing iron shoes`, async () => {
+        const level = freshObjectRoom();
+        const shoes = await addInventoryObject(IRON_SHOES);
+        wearHeroArmor(shoes);
+        const trap = addTrap(level, POLY_TRAP, game.u.ux, game.u.uy, { tseen: known });
+        const input = resetInputState();
+        input.beforeRead = () => {
+            assert.equal(requireGameDisplay().grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch, '@',
+                'The trap message must leave the hero visible.');
+        };
+        installPagerInput(input, { expected: /polymorph trap|warps strangely/, limit: 3 });
+        await flush_screen(1);
+
+        await triggerHeroTrap(trap);
+        await flush_screen(1);
+
+        assert.equal(level.traps.includes(trap), false);
+        assert.equal(game.uarmf?.otyp, KICKING_BOOTS);
+        assert.equal(requireGameDisplay().grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch, '@',
+            'The hero must remain visible after the shoes change.');
+    });
+}
 
 void test('an unprotected hero removes the trap before choosing a new form', async () => {
     const level = freshObjectRoom({ hero: { polymorphControl: true }, gameplaySeed: 2n });
