@@ -201,8 +201,8 @@ export async function getposHelpUntilDismissed(goal, { hasValidLocations = false
     while (![27, 32, 10, 13].includes(key));
     return key;
 }
-function describeSelectedPosition(describe, cursor, fallback) {
-    return describe?.(cursor.x, cursor.y) || fallback;
+async function describeSelectedPosition(describe, cursor, fallback) {
+    return await describe?.(cursor.x, cursor.y) || fallback;
 }
 // C getpos.c:gather_locs()/gather_locs_interesting() with GLOC_VALID minus
 // the hero injection: predicate-true squares ordered by cmp_coord_distu()
@@ -330,7 +330,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 game.u.dy = movement.dy;
                 const distance = fast || movement.mode !== 0 ? 8 : 1;
                 moveGetposCursor(cursor, movement.dx * distance, movement.dy * distance);
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             if (key === 18) {
@@ -354,7 +354,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 return null;
             }
             if (ch === ' ') {
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
@@ -371,7 +371,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     validity.cycle.index = 0;
                 for (const cycle of targetCycles.values())
                     cycle.index = 0;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             if (isValidLocation && (key === game.commandBindings.specialKey('getpos.valid.next')
@@ -388,7 +388,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     throw new Error('The selected valid location is missing');
                 cursor.x = spot.x;
                 cursor.y = spot.y;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             const target = getposCycleKind(key);
@@ -409,14 +409,14 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     throw new Error('The selected target location is missing');
                 cursor.x = spot.x;
                 cursor.y = spot.y;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             const feature = nextGetposFeature(cursor, ch);
             if (feature) {
                 cursor.x = feature.x;
                 cursor.y = feature.y;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             message = getposFeatureMissMessage(ch);

@@ -84,7 +84,7 @@ export function mapDetectedMonster(monster: Monster, showTail: boolean, state: G
     }
 }
 
-function detectionDescription(x: number, y: number, terrainMode: number, objects: ReadonlyMap<string, DetectionObject> | null, state: GameState): string {
+async function detectionDescription(x: number, y: number, terrainMode: number, objects: ReadonlyMap<string, DetectionObject> | null, state: GameState): Promise<string> {
     const glyph = glyphAt(x, y, state);
     if (glyph?.kind === 'invisible') return 'unseen creature';
     if (glyph?.kind === 'object' && (terrainMode & TER_OBJ)) {

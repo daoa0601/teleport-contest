@@ -1,3 +1,4 @@
+import { monsterHiddenConditions } from './monster_status.js';
 import type { ChoiceMenuItem } from './windows.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
 import type { GameState } from './game_state.js';
@@ -1801,7 +1802,7 @@ async function doTerrainOverview() {
         const delta = farlookDelta(browseKey);
         if (delta) {
             moveGetposCursor(cursor, delta.dx, delta.dy);
-            browseMessage = farlookLocationDescription(cursor.x, cursor.y);
+            browseMessage = await farlookLocationDescription(cursor.x, cursor.y);
             continue;
         }
         await plineWithContinuation('Done.');
@@ -4276,7 +4277,7 @@ async function doextcmd(): Promise<void> {
     );
 }
 
-function wizardPositionDescription(x: number, y: number): string {
+async function wizardPositionDescription(x: number, y: number): Promise<string> {
     if (x === game.u?.ux && y === game.u?.uy) {
         const species = game.u.umonnum;
         const polymorphName = heroIsPolymorphed(game) && species !== undefined
@@ -4304,7 +4305,7 @@ function wizardPositionDescription(x: number, y: number): string {
         observeDistantObjectForNaming(object);
         return floorObjectDescription(object);
     }
-    return farlookLocationDescription(x, y) || 'unexplored area';
+    return await farlookLocationDescription(x, y) || 'unexplored area';
 }
 
 function roomAtPosition(x: number, y: number): Room | null {
@@ -4421,8 +4422,8 @@ function travelLocationDescription(x: number, y: number): string {
     return '';
 }
 
-function travelPositionDescription(x: number, y: number): string {
-    const description = wizardPositionDescription(x, y);
+async function travelPositionDescription(x: number, y: number): Promise<string> {
+    const description = await wizardPositionDescription(x, y);
     if (x === game.u?.ux && y === game.u?.uy) return description;
     const loc = game.level?.at?.(x, y);
     // hack.c:is_valid_travelpt() rejects unexplored stone before searching.
@@ -4432,7 +4433,7 @@ function travelPositionDescription(x: number, y: number): string {
     return valid ? description : `${description} (no travel path)`;
 }
 
-export function farlookLocationDescription(x: number, y: number): string {
+export async function farlookLocationDescription(x: number, y: number): Promise<string> {
     const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
     if (monster && glyphAt(x, y)?.kind === 'monster') {
         const hallucinating = heroIsHallucinating(game);
@@ -4451,7 +4452,11 @@ export function farlookLocationDescription(x: number, y: number): string {
                 condition = ', meditating';
         }
         const tail = monster.mx !== x || monster.my !== y;
-        return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}`;
+        const hidden = await monsterHiddenConditions(monster, game, {
+            showAlternateMonster: false,
+        });
+        const hiddenText = hidden.length ? `, ${hidden.join(', ')}` : '';
+        return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}${hiddenText}`;
     }
 
     const trap = game.level?.traps?.find(candidate =>
@@ -4508,7 +4513,7 @@ async function dojump(): Promise<void> {
     game.context.move = result.spentTime ? 1 : 0;
 }
 
-function verboseFarlookDescription(x: number, y: number): string {
+async function verboseFarlookDescription(x: number, y: number): Promise<string> {
     const loc = game.level?.at(x, y);
     if (loc?.typ === CORR)
         return `#\x1b[8Ccan be many things (corridor)`;
@@ -4622,7 +4627,7 @@ async function doFarlook(): Promise<void> {
     // description wraps and calls tty more() before do_look() can return.
     game._pending_message = '';
     game._retained_message = '';
-    await plineWithContinuation(verboseFarlookDescription(cursor.x, cursor.y));
+    await plineWithContinuation(await verboseFarlookDescription(cursor.x, cursor.y));
     game.context.move = 0;
 }
 

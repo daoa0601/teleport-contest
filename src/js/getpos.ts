@@ -20,7 +20,7 @@ import type { Position } from './map_types.js';
 
 export type MapPositionPickType = typeof LOOK_TRADITIONAL | typeof LOOK_QUICK
     | typeof LOOK_ONCE | typeof LOOK_VERBOSE;
-export type PositionDescription = (x: number, y: number) => string | null | undefined;
+export type PositionDescription = (x: number, y: number) => string | null | undefined | Promise<string | null | undefined>;
 export type ValidLocation = (x: number, y: number) => boolean;
 export interface MapPositionSelection extends Position {
     pickType: MapPositionPickType;
@@ -250,8 +250,8 @@ export async function getposHelpUntilDismissed(
     return key;
 }
 
-function describeSelectedPosition(describe: PositionDescription | null | undefined, cursor: Position, fallback: string): string {
-    return describe?.(cursor.x, cursor.y) || fallback;
+async function describeSelectedPosition(describe: PositionDescription | null | undefined, cursor: Position, fallback: string): Promise<string> {
+    return await describe?.(cursor.x, cursor.y) || fallback;
 }
 
 // C getpos.c:gather_locs()/gather_locs_interesting() with GLOC_VALID minus
@@ -384,7 +384,7 @@ export async function selectMapPosition({
                 game.u.dy = movement.dy;
                 const distance = fast || movement.mode !== 0 ? 8 : 1;
                 moveGetposCursor(cursor, movement.dx * distance, movement.dy * distance);
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
 
@@ -409,7 +409,7 @@ export async function selectMapPosition({
                 return null;
             }
             if (ch === ' ') {
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
@@ -423,7 +423,7 @@ export async function selectMapPosition({
                 // NHKF_GETPOS_SELF resets every gather index.
                 if (validity.cycle) validity.cycle.index = 0;
                 for (const cycle of targetCycles.values()) cycle.index = 0;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             if (isValidLocation && (key === game.commandBindings.specialKey('getpos.valid.next')
@@ -439,7 +439,7 @@ export async function selectMapPosition({
                 if (!spot) throw new Error('The selected valid location is missing');
                 cursor.x = spot.x;
                 cursor.y = spot.y;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             const target = getposCycleKind(key);
@@ -460,14 +460,14 @@ export async function selectMapPosition({
                 if (!spot) throw new Error('The selected target location is missing');
                 cursor.x = spot.x;
                 cursor.y = spot.y;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             const feature = nextGetposFeature(cursor, ch);
             if (feature) {
                 cursor.x = feature.x;
                 cursor.y = feature.y;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             message = getposFeatureMissMessage(ch);
