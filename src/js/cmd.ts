@@ -1120,9 +1120,11 @@ export async function rhack(key: number): Promise<void> {
 
     const cannedName = cannedCommand?.kind === 'swap-weapon'
         ? 'swap' : cannedCommand?.kind;
-    const command = cannedCommand
-        ? NATIVE_COMMANDS.find(entry => entry.name === cannedName) ?? null
-        : configured.command;
+    const command = cannedCommand?.kind === 'inventory-action'
+        ? inventoryActionCommand(cannedCommand.action)
+        : cannedCommand
+            ? NATIVE_COMMANDS.find(entry => entry.name === cannedName) ?? null
+            : configured.command;
     if (!await commandAllowed(command)) {
         resetCommandVariables(true);
         return;
@@ -2504,6 +2506,19 @@ async function dotwoweapon() {
 
 // C iactions.c:itemactions_pushkeys(). The menu closes before the queued
 // command runs; its object letter answers the later inventory prompt.
+function inventoryActionCommand({ key, item }: InventoryAction): NativeCommand | null {
+    const handlers: Record<InventoryAction['key'], string | null> = {
+        '-': item === game.uwep ? 'dowield'
+            : item === game.uswapwep ? 'remarm_swapwep'
+                : item === game.uquiver ? 'dowieldquiver' : 'donull',
+        'c': 'docallcmd', 'd': 'dodrop', 'E': 'doengrave', 'f': 'dofire',
+        'i': 'doorganize', 'P': 'doputon', 'Q': 'dowieldquiver', 'r': 'doread',
+        't': 'dothrow', 'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
+        '/': 'dowhatis', '\x1b': null, ' ': null, '\n': null, '\r': null,
+    };
+    return NATIVE_COMMANDS.find(command => command.handler === handlers[key]) ?? null;
+}
+
 async function executeInventoryAction({ key, item }: InventoryAction): Promise<void> {
     try {
         await runInventoryAction({ key, item });
