@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { artifactByName, discoverArtifact } from '../js/artifacts.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { ARROW, DAGGER, POT_OIL } from '../js/object_data.js';
+import { ARROW, DAGGER, LONG_SWORD, POT_OIL } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -42,4 +43,26 @@ void test('a single oiled dagger uses a singular verb', async () => {
     await runExtendedCommand('dip', dagger.invlet + oil.invlet + ' '.repeat(20));
     assert.match(game._pending_message, /Your dagger gleams with an oily sheen\./);
 });
+for (const blind of [false, true]) {
+    for (const damaged of [false, true]) {
+        void test(`oil ${damaged ? 'repair' : 'dipping'} names identified Excalibur when ${blind ? 'felt' : 'seen'}`, async () => {
+            freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
+            const artifact = artifactByName('Excalibur');
+            assert.ok(artifact);
+            const sword = await addInventoryObject(LONG_SWORD, {
+                oartifact: artifact.id, oextra: { oname: artifact.name },
+                rknown: true, oeroded: damaged ? 2 : 0,
+            });
+            discoverArtifact(artifact.id);
+            const oil = await addInventoryObject(POT_OIL);
+            resetInputState();
+            await runExtendedCommand('dip', sword.invlet + oil.invlet + ' '.repeat(20));
+            const effect = damaged ? `${blind ? 'feels' : 'is'} less rusty`
+                : blind ? 'feels oily' : 'gleams with an oily sheen';
+            assert.match(game._pending_message, new RegExp(`(?:^|  )Excalibur ${effect}\\.`));
+            assert.equal(sword.oeroded, damaged ? 1 : 0);
+            assert.equal(game.inventory.includes(oil), false);
+        });
+    }
+}
 //# sourceMappingURL=potion_dip_oil_name.test.js.map

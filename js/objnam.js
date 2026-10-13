@@ -497,7 +497,11 @@ export function simpleObjectNameWithArticle(object, state = game) {
     return withIndefiniteArticle(noun);
 }
 export function ownedObjectName(object, state = game, { capitalized = true } = {}) {
-    const prefix = objectOwnershipPrefix(object, state, { capitalized });
+    // C yname(): carried artifacts use their personal name, except for
+    // quest artifacts whose names need an ownership prefix.
+    const needsOwner = object.where !== 'inventory' || !objectHasPersonalName(object, state)
+        || (object.oartifact ?? 0) >= requiredArtifact('The Orb of Detection', state).id;
+    const prefix = needsOwner ? objectOwnershipPrefix(object, state, { capitalized }) : '';
     const quantity = object.quan ?? object.quantity ?? 1;
     // yname() uses cxname(): corpses retain their species and plural suffix.
     const noun = object.otyp === CORPSE ? corpseName(object) : objectName(object, state);
