@@ -11,7 +11,7 @@ import {
     DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP,
     DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP,
     DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY,
-    FOUNTAIN, GRAVE, HOLE, ICE, LADDER, MOAT, PIT, POOL, ROOM, STAIRS,
+    FOUNTAIN, GRAVE, HOLE, ICE, LADDER, LAVAPOOL, MOAT, PIT, POOL, ROOM, STAIRS,
     STONE, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE,
 } from '../js/const.js';
 import {
@@ -21,7 +21,8 @@ import {
 import { game } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { pushKeys } from '../js/input.js';
-import { BOULDER, CORPSE, LEASH } from '../js/object_data.js';
+import { BOULDER, CLUB, CORPSE, GOLD_PIECE, LEASH } from '../js/object_data.js';
+import { fireDamageObject } from '../js/fire_damage.js';
 import {
     LEVEL_TIMER_KIND, scheduleLevelTimer,
 } from '../js/object_timers.js';
@@ -210,6 +211,34 @@ void test('liquid_flow unearths buried objects and removes the trap', async () =
     assert.ok((floorObjectsAt(level, 11, 10) || []).includes(buried));
     assert.match(game._pending_message,
         /As you dig, the hole fills with water/);
+});
+
+void test('lava flooding burns a floor club without destroying it on first exposure', async () => {
+    const level = heroRoom();
+    const club = await floorObject(CLUB, 11, 10);
+    level.requireAt(11, 10).typ = LAVAPOOL;
+
+    await liquidFlow(11, 10, LAVAPOOL, null, null);
+
+    assert.equal(club.where, 'floor');
+    assert.equal(club.oeroded, 1);
+    assert.ok(floorObjectsAt(level, 11, 10).includes(club));
+});
+
+void test('lava flooding over gold preserves subsequent fire protection', async () => {
+    const level = heroRoom();
+    const gold = await floorObject(GOLD_PIECE, 11, 10, { quan: 20 });
+    const club = await addInventoryObject(CLUB);
+    level.requireAt(11, 10).typ = LAVAPOOL;
+    initRng(5n);
+
+    await liquidFlow(11, 10, LAVAPOOL, null, null);
+    await fireDamageObject(club, { x: 10, y: 10 });
+
+    assert.equal(gold.where, 'floor');
+    assert.equal(gold.quan, 20);
+    assert.equal(club.oeroded ?? 0, 0,
+        'Unaffected floor gold must not alter the next item\'s luck protection.');
 });
 
 void test('an adjacent hole takes a grounded monster down with it', async () => {

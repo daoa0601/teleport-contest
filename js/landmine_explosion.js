@@ -9,7 +9,8 @@ import { fillPitWithBoulderAt } from './pit_fill.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { rn2, rnd } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
-import { destroyLavaFloorObjects, waterDamageChain } from './trap.js';
+import { waterDamageChain } from './trap.js';
+import { fireDamageChain } from './fire_damage.js';
 import { vision_note_blocker_change } from './vision.js';
 function levelHasNoPits(state) {
     return Is_airlevel(state.u?.uz) || Is_waterlevel(state.u?.uz);
@@ -35,11 +36,10 @@ async function fillMineHoleWithLiquid(x, y, trap, liquid, state, options) {
     location.flags = 0;
     const pile = state.level?.objects?.[x]?.[y] || [];
     if (liquid === LAVAPOOL) {
-        await destroyLavaFloorObjects(pile, {
-            state, x, y,
+        await fireDamageChain(pile, {
+            state, x, y, force: true,
             publish: options.publish,
             random: options.random,
-            visible: options.seeSquare,
         });
     }
     else {

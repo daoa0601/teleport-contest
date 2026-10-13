@@ -23,7 +23,8 @@ import { stopAllObjectTimers } from './object_timers.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { rnl, rnd, rn2 } from './rng.js';
-import { destroyLavaFloorObjects, waterDamageChain, } from './trap.js';
+import { waterDamageChain } from './trap.js';
+import { fireDamageChain } from './fire_damage.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { monsterInAir } from './terrain_properties.js';
 const M1_CLING = 0x00000010;
@@ -80,10 +81,9 @@ async function flowLiquidIntoChasm(x, y, trap, liquid, monster) {
     location.typ = liquid;
     location.flags = 0;
     if (liquid === LAVAPOOL) {
-        await destroyLavaFloorObjects(game.level?.objects?.[x]?.[y] || [], {
-            state: game, x, y,
+        await fireDamageChain(game.level?.objects?.[x]?.[y] || [], {
+            state: game, x, y, force: true,
             publish: plineWithContinuation,
-            visible: cansee(x, y),
         });
     }
     else {
