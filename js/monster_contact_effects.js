@@ -1,18 +1,20 @@
 // C uhitm.c:mhitm_ad_were(), mhitm_ad_slee(), mhitm_ad_poly(), and mhitm_ad_tlpt().
 // These effects resume after hitmsg(); polymorph negation precedes hitmsg().
 import { artifactById } from './artifacts.js';
+import { heroHasFreeAction } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
-import { heroHasInvoluntaryDelay } from './command_state.js';
-import { A_CON, M_SEEN_SLEEP, Upolyd } from './const.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { A_CON, A_DEX, M_SEEN_SLEEP, Upolyd } from './const.js';
 import { shieldeff } from './display.js';
 import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_POLY, AD_SLEE, AD_TLPT, AD_WERE } from './monster_attack_types.js';
+import { AD_PLYS, AD_POLY, AD_SLEE, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { resolveMonsterWrapping } from './monster_wrapping_contact.js';
 import { askTeleportDestination } from './cmd.js';
 import { heroControlsTeleport, teleportHero } from './teleport.js';
-import { monsterName } from './monster_name.js';
+import { monsterName, namelessMonsterName } from './monster_name.js';
 import { monsterHasLineOfSightToHero, monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { stopHeroOccupation } from './occupation.js';
 import { heroIsUnchanging, heroHasProtectionFromShapeChangers, polymorphHero, } from './polyself.js';
@@ -28,9 +30,35 @@ export async function resolveMonsterContactEffect(monster, attack, { state, publ
         await polymorphHeroOnContact(monster, attack, state, publish, rollOne);
     else if (attack.damageType === AD_TLPT)
         await teleportHeroOnContact(monster, attack, state, publish, random);
+    else if (attack.damageType === AD_PLYS)
+        await paralyzeHero(monster, state, publish, random, rollOne);
+    else if (attack.damageType === AD_WRAP)
+        await resolveMonsterWrapping(monster, attack, state, publish, random);
     else
         throw new Error(`Damage type ${attack.damageType} has no deferred contact effect`);
     attack.deferredPostHit = true;
+}
+// C uhitm.c:mhitm_ad_plys(). Existing helplessness skips the paralysis
+// chance, but cancellation and Free action leave the contact damage intact.
+async function paralyzeHero(monster, state, publish, random, rollOne) {
+    if (heroHasInvoluntaryDelay(state) || random(3) !== 0)
+        return;
+    if (await magicPreventsContact(monster, state, publish, random))
+        return;
+    if (heroHasFreeAction(state)) {
+        await publish('You momentarily stiffen.');
+        return;
+    }
+    await publish(heroIsBlind(state) ? 'You are frozen!'
+        : `You are frozen by ${monsterName(monster, { state })}!`);
+    endVoluntaryMultiTurn(state);
+    state._helplessTurns = rollOne(10);
+    state._helplessDoneMessage = 'You can move again.';
+    state._helplessReason = `paralyzed by ${namelessMonsterName(monster, {
+        state, article: 'a', suppressIt: true, suppressInvisible: true,
+        suppressHallucination: true, suppressSaddle: true,
+    })}`;
+    await exerciseAttribute(A_DEX, false, state);
 }
 async function teleportHeroOnContact(monster, attack, state, publish, random) {
     if (specialAttackNegated(monster, state.u, { state, random })) {

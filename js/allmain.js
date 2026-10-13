@@ -25,7 +25,9 @@ import { randomMonsterRelocation } from './teleport.js';
 import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
 import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
-import { AD_DGST, AD_DRST, AD_STCK } from './monster_attack_types.js';
+import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_STCK } from './monster_attack_types.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, } from './monster_perception.js';
+import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { findArtifact } from './artifacts.js';
 import { observeBucForNaming } from './object_knowledge.js';
 import { loseHeroExperience } from './exper.js';
@@ -74,7 +76,7 @@ import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { igniteItems } from './light.js';
-import { destroyColdInventory, destroyElectricInventory, destroyFireInventory, } from './zap.js';
+import { applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, } from './zap.js';
 import { discoverReflectingShield } from './ray.js';
 import { addObjectToMonsterInventory, } from './monster_inventory.js';
 import { claimNextDueObjectTimer, peekNextDueObjectTimer, } from './object_timers.js';
@@ -1495,7 +1497,7 @@ function reluctantPetMessage(monster, movement) {
 }
 async function monsterAttackMessage(monster, attack, previousAttack = null, random = rn2) {
     const game = requireInitializedGame();
-    if (attack.effect === 'petrifying-corpse')
+    if (attack.effect === 'petrifying-corpse' || attack.effect === 'wrapping-natural')
         return null;
     if (attack.effect === 'physical-hug')
         return null;
@@ -1759,6 +1761,53 @@ async function resolveErosionFormRehumanization(heroAttack, effectMessage) {
     heroAttack.heroDied = restored.died;
     heroAttack.deferredPostHit = !restored.died;
     return pagerOwned;
+}
+// mcastu.c:castmu() elemental spells use spell protection and floor effects;
+// they never enter hitmu()'s armor cancellation or contact/passive tail.
+async function resolveDeferredHeroDirectSpell(action, attack, state, publish, random, rollDice) {
+    const type = attack.damageType;
+    if (type !== AD_FIRE && type !== AD_COLD && type !== AD_MAGM)
+        throw new Error(`Unsupported direct monster spell damage type: ${type}`);
+    attack.deferredSpellEffect = false;
+    const resisted = type === AD_FIRE ? !!state.u.fireResistance
+        : type === AD_COLD ? !!state.u.coldResistance : !!state.u.antimagic;
+    let damage = resisted ? 0 : (attack.damage ?? 0);
+    if (resisted) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        await publish(type === AD_MAGM ? 'The missiles bounce off!' : 'But you resist the effects.');
+    }
+    else if (type === AD_MAGM) {
+        // Native replaces its already-halved pre-roll with fresh missile
+        // damage. Half_spell_damage is not applied to this second roll.
+        const count = Math.trunc(action.monster.m_lev / 2) + 1;
+        damage = rollDice(count, 6);
+        action.calls.push(`d(${count},6)`);
+    }
+    const resistance = seenResistanceForDamage(type);
+    if (resisted)
+        monstersObserveHeroResistance(resistance, state);
+    else
+        monstersForgetHeroResistance(resistance, state);
+    if (type === AD_FIRE && clearHeroSliming(state))
+        await publish('The slime that covers you is burned away!');
+    if (type === AD_MAGM) {
+        const engraving = engravingAt(state.u.ux, state.u.uy, state.level);
+        if (engraving) {
+            const wear = rollDice(6, 6);
+            action.calls.push('d(6,6)');
+            wipeEngravingAt(state.u.ux, state.u.uy, engraving.text.length + wear, true, state.level);
+        }
+    }
+    await applyRayFloorFeatures(type === AD_FIRE ? 'fire' : type === AD_COLD ? 'cold' : 'magic', state.u.ux, state.u.uy, state, {
+        rayNoun: 'spell', heroCaused: false, publish,
+        random: limit => {
+            action.calls.push(`rn2(${limit})`);
+            return random(limit);
+        },
+    });
+    attack.appliedDamage = 0;
+    if (damage && !state.program_state.gameover)
+        applyHeroSpellDamage(attack, damage, state);
 }
 async function resolveDeferredHeroFirePillar(action, heroAttack, publish) {
     const game = requireInitializedGame();
@@ -2145,7 +2194,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                         }
                         else if (heroAttack.fumbled && !game.deaf
                             && canSeeMonster(monster)) {
-                            curseMessage = `The air crackles around the ${quietMonsterName(monster)}.`;
+                            curseMessage = `The air crackles around ${monsterName(monster)}.`;
                         }
                         else if (heroAttack.curseKind === 'audible') {
                             curseMessage = 'You hear a mumbled curse.';
@@ -2177,7 +2226,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                         await publishSpellMessage(`${caster} casts a spell${heroAttack.directed ? ' at you' : ''}!`);
                     }
                     if (heroAttack.deferredSpellDamage)
-                        rollDeferredHeroSpellDamage(action, game);
+                        rollDeferredHeroSpellDamage(action, game, rollDice);
                     let effectMessage = heroAttack.spellEffectMessage;
                     if (heroAttack.spell === 'cure-self'
                         && canSeeMonster(monster)) {
@@ -2213,8 +2262,12 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     const effectDismissal = effectMessage
                         ? await publishSpellMessage(effectMessage)
                         : null;
-                    if (heroAttack.deferredSpellEffect)
-                        resumeDeferredHeroSpell(action, game);
+                    if (heroAttack.deferredSpellEffect) {
+                        if (heroAttack.spell)
+                            resumeDeferredHeroSpell(action, game);
+                        else
+                            await resolveDeferredHeroDirectSpell(action, heroAttack, game, publishSpellMessage, random, rollDice);
+                    }
                     if (heroAttack.deferredStrengthLoss) {
                         const { amount, killer } = heroAttack.deferredStrengthLoss;
                         delete heroAttack.deferredStrengthLoss;

@@ -97,10 +97,10 @@ export function monsterFormChangeName(monster, { state = game } = {}) {
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
 // C noname_monnam(monster, ARTICLE_NONE).
-export function namelessMonsterName(monster, { state = game, article = 'none', suppressIt = false, suppressInvisible = false, } = {}) {
+export function namelessMonsterName(monster, { state = game, article = 'none', suppressIt = false, suppressInvisible = false, suppressHallucination = false, suppressSaddle = false, } = {}) {
     requireLiveGame(state);
     return formatMonsterName(monster, state, {
-        article, suppressName: true, suppressSaddle: false, suppressIt, suppressInvisible,
+        article, suppressName: true, suppressSaddle, suppressIt, suppressInvisible, suppressHallucination,
     });
 }
 function formatMonsterName(monster, state, { adjective = '', article = 'the', suppressName = false, suppressSaddle = !!MGIVENNAME(monster), suppressIt = false, suppressShopkeeper = false, augmentIt = false, suppressInvisible = false, suppressHallucination = false, suppressAppearance = false, } = {}) {

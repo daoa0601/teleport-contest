@@ -797,7 +797,7 @@ async function triggerProjectileTrap(trap: Trap) {
     );
     const mortality = hero.umortality || 0;
     const hit = await hitHeroWithObject(missile, damage, attackLevel, {
-        name: noun, killer: noun,
+        name: noun,
     });
     if (hit.died) return;
     if (hit.hit) {

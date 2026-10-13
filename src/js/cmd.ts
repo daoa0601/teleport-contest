@@ -65,6 +65,7 @@ import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { confirmHeroStep } from './hero_step_confirmation.js';
 import { monsterPassesBars } from './monster_movement_traits.js';
+import { heroCanEnterIronBars } from './iron_bars_meal.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import {
     floorObjectDescription,
@@ -254,6 +255,7 @@ import {
 } from './accessory.js';
 import { heroIsStrangled } from './hero_strangulation.js';
 import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroCanOoze } from './monster_perception.js';
 import { isPoolAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
@@ -475,18 +477,39 @@ async function rejectTightHeroDiagonal(dx: number, dy: number): Promise<boolean>
     return true;
 }
 
+function heroOozesUnderDoor(destination: MapLocation | null): boolean {
+    return destination?.typ === DOOR
+        && !!(destination.doormask & (D_CLOSED | D_LOCKED))
+        && !heroPassesWalls(game) && heroCanOoze(game);
+}
+
+// C test_move(DO_MOVE): oozing bypasses only the doorway entry check.
+async function rejectHeroDiagonalDoorway(dx: number, dy: number, destination: MapLocation | null): Promise<boolean> {
+    const entryDoor = heroOozesUnderDoor(destination) ? null : destination;
+    if (!dx || !dy || heroPassesWalls(game)
+        || !blocksDiagonalDoor(game.level?.at(game.u.ux, game.u.uy), entryDoor)) return false;
+    const entering = blocksDiagonalDoor(null, entryDoor);
+    if (game.flags.mention_walls || entering && (game.u.uinwater || game.underwater)) {
+        await plineWithContinuation(`You can't move diagonally ${entering ? 'into' : 'out of'} an intact doorway.`);
+    }
+    game.context.move = 0;
+    return true;
+}
+
 // C test_move(TEST_MOVE): confirmation tests obstacles without performing
 // auto-open, boulder pushing, or the hero's eventual movement.
 function heroCanConfirmStep(x: number, y: number): boolean {
     const hero = game.u;
     const location = game.level?.at(x, y);
-    if (!location || (blocksMove(x, y) && !heroCanPassWallAt(game, x, y))) return false;
+    if (!location) return false;
+    const oozing = heroOozesUnderDoor(location);
+    if (blocksMove(x, y) && !heroCanPassWallAt(game, x, y) && !oozing) return false;
     const passesWalls = heroPassesWalls(game);
     if (location.typ === IRONBARS && !passesWalls
         && !monsterPassesBars({ mnum: heroSpecies(game) })) return false;
     const dx = x - hero.ux, dy = y - hero.uy;
     if (dx && dy) {
-        if (!passesWalls && blocksDiagonalDoor(game.level?.at(hero.ux, hero.uy), location)) return false;
+        if (!passesWalls && blocksDiagonalDoor(game.level?.at(hero.ux, hero.uy), oozing ? null : location)) return false;
         if (heroBadRock(game, hero.ux, y) && heroBadRock(game, x, hero.uy)) {
             if (heroTightDiagonalReason(game)) return false;
         } else if (wormCrossesBetween(hero.ux, hero.uy, x, y, game)) return false;
@@ -7285,6 +7308,9 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy)) return false;
             if (u.utrap
                 && !await heroCanMoveFromTrap(newx, newy)) return true;
+            if (!await heroCanEnterIronBars(newx, newy, game)) return false;
+            if (heroOozesUnderDoor(loc)) await pline('You ooze under the door.');
+            if (await rejectHeroDiagonalDoorway(dx, dy, loc)) return false;
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
                 if (ballChainMove.blockedMessage) await pline(ballChainMove.blockedMessage);
@@ -7323,7 +7349,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             const swapName = tame ? tameName
                 : monster.name ? `peaceful ${speciesName}`
                     : `the peaceful ${speciesName}`;
-            await pline(`You swap places with ${swapName}.`);
+            await plineWithContinuation(`You swap places with ${swapName}.`);
             return finishMovedHero({
                 oldx, oldy, newx, newy, loc, explicitAttempt,
                 ballChainMove,
@@ -7359,8 +7385,12 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
 
     if (!await heroCanMoveFromTrap(newx, newy)) return true;
 
+    if (!await heroCanEnterIronBars(newx, newy, game)) return false;
+
+    const oozingUnderDoor = heroOozesUnderDoor(loc);
+    if (oozingUnderDoor) await pline('You ooze under the door.');
     if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))
-        && !heroCanPassWallAt(game, newx, newy)) {
+        && !heroCanPassWallAt(game, newx, newy) && !oozingUnderDoor) {
         const fumbling = !!(u?.fumbling || (u?.fumblingTurns || 0) > 0);
         const blind = !!(u?.blind || (u?.blindTurns || 0) > 0);
         const dexterity = currentAttribute(A_DEX);
@@ -7442,7 +7472,8 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
     // tight-diagonal shoulders.  A boulder on ordinary floor is not terrain
     // obstruction, so that case still reaches cant_squeeze_thru() below
     // before moverock().
-    if (blocksMove(newx, newy) && !heroCanPassWallAt(game, newx, newy)) {
+    if (blocksMove(newx, newy) && !heroCanPassWallAt(game, newx, newy)
+        && !oozingUnderDoor) {
         const weapon = game.uwep || game.u.uwep;
         if (loc && IS_OBSTRUCTED(loc.typ) && game.flags?.autodig
             && !game._runState && !game.context.nopick && weapon && isPick(weapon)
@@ -7474,12 +7505,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
     // C ref: hack.c test_move().  Once the closed-door/autoopen path has had
     // its opportunity, intact open and doorless doorways only allow
     // orthogonal entry/exit.
-    if (dx && dy && !heroPassesWalls(game) && blocksDiagonalDoor(
-        game.level?.at(u.ux, u.uy), loc,
-    )) {
-        game.context.move = 0;
-        return false;
-    }
+    if (await rejectHeroDiagonalDoorway(dx, dy, loc)) return false;
 
     if (await rejectTightHeroDiagonal(dx, dy)) return false;
 

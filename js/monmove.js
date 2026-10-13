@@ -12,6 +12,8 @@ import { seenResistanceForDamage } from './monster_perception.js';
 import { watchDigging } from './digging_watch.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
+import { useMonsterMindBlast } from './monster_mind_blast.js';
+import { monsterIsMindFlayer } from './monster_data.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame } from './gstate.js';
@@ -92,7 +94,7 @@ import { artifactById } from './artifacts.js';
 import { respondMedusa } from './monster_gaze.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, randomDisplayMonsterName, randomDisplayMonsterSubject, plineWithContinuation, } from './display.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsWhirly, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
-import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
+import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SITM, AD_SLIM, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
 import { AMULET_OF_YENDOR, APPLE, BANANA, BELL_OF_OPENING, BULLWHIP, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_MATERIAL, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
 import { unlinkObject } from './object_location.js';
@@ -4309,14 +4311,18 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         AT_ENGL,
     ].includes(attackType))
         return null;
-    if (attackType === AT_MAGC && (damageType === AD_SPEL || damageType === AD_CLRC)) {
+    if (attackType === AT_MAGC) {
         // mhitu.c:mattacku() enters castmu() without a to-hit die.  Spell
         // choice and fumble precede the casting line.  Base spell damage is
         // rolled only after that line returns from tty; a long actor name can
         // therefore move d() to the acknowledgement input.
-        let spell = monster.m_lev ? chooseMonsterSpell(monster, damageType, state, random, calls)
-            : MONSTER_WIZARD_SPELLS[0];
-        if (!spell)
+        const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
+        const choosesSpell = damageType === AD_SPEL || damageType === AD_CLRC;
+        let spell = choosesSpell
+            ? monsterLevel ? chooseMonsterSpell(monster, damageType, state, random, calls)
+                : MONSTER_WIZARD_SPELLS[0]
+            : undefined;
+        if (choosesSpell && !spell)
             return {
                 kind: 'hero-spell',
                 threshold,
@@ -4325,10 +4331,11 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
                 attackIndex,
                 cast: false,
             };
-        if (!monster.m_lev)
+        if (!monsterLevel)
             return {
                 kind: 'hero-spell', threshold, attackType, damageType, attackIndex,
-                cast: false, blocked: true, curseKind: monsterCurseKind(monster, spell, state, random, calls),
+                cast: false, blocked: true,
+                curseKind: monsterCurseKind(monster, !!(spell && (spell.flags & MCF_INDIRECT)), state, random, calls),
             };
         // C castmu() starts cnt at 40.  choose_monster_spell() already tests
         // usefulness while walking the spell table; the do/while condition
@@ -4336,7 +4343,8 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // after the loop.  Stateful usefulness checks such as geyser's
         // rn2(5) make that exact call count observable.
         let attempts = 39;
-        while (attempts-- > 0 && monsterSpellUseless(monster, spell, state, random, calls)) {
+        while (spell && (damageType === AD_SPEL || damageType === AD_CLRC)
+            && attempts-- > 0 && monsterSpellUseless(monster, spell, state, random, calls)) {
             spell = chooseMonsterSpell(monster, damageType, state, random, calls);
         }
         if (attempts < 0) {
@@ -4346,32 +4354,33 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
                 attackType,
                 damageType,
                 attackIndex,
-                spell: spell.key,
+                ...(spell ? { spell: spell.key } : {}),
                 cast: false,
             };
         }
         if (monster.mcan ||
             monster.mspec_used ||
-            !(monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0)) {
-            const curseKind = monsterCurseKind(monster, spell, state, random, calls);
+            ((monster.seen_resistance ?? 0) & seenResistanceForDamage(damageType))) {
+            const curseKind = monsterCurseKind(monster, !!(spell && (spell.flags & MCF_INDIRECT)), state, random, calls);
             return {
                 kind: 'hero-spell',
                 threshold,
                 attackType,
                 damageType,
                 attackIndex,
-                spell: spell.key,
+                ...(spell ? { spell: spell.key } : {}),
                 cast: false,
                 blocked: true,
                 curseKind,
             };
         }
-        const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
-        monster.mspec_used = monsterLevel < 8 ? 10 - monsterLevel : 2;
-        if (!foundHero && !(spell.flags & MCF_INDIRECT))
+        if (choosesSpell)
+            monster.mspec_used = monsterLevel < 8 ? 10 - monsterLevel : 2;
+        const directed = !(spell && (spell.flags & MCF_INDIRECT));
+        if (!foundHero && directed)
             return {
                 kind: 'hero-spell', threshold, attackType, damageType, attackIndex,
-                spell: spell.key, cast: false, misdirected: true,
+                ...(spell ? { spell: spell.key } : {}), cast: false, misdirected: true,
             };
         endVoluntaryMultiTurn(state);
         const fumble = recordRandom(random, calls, Math.max(1, monsterLevel * 10)) <
@@ -4383,7 +4392,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
                 attackType,
                 damageType,
                 attackIndex,
-                spell: spell.key,
+                ...(spell ? { spell: spell.key } : {}),
                 cast: false,
                 fumbled: true,
             };
@@ -4398,12 +4407,12 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             attackType,
             damageType,
             attackIndex,
-            spell: spell.key,
+            ...(spell ? { spell: spell.key } : {}),
             cast: true,
             spellDice: foundHero ? spellDice : 0,
             spellSides,
             deferredSpellDamage: true,
-            directed: !(spell.flags & MCF_INDIRECT),
+            directed,
             deferredSpellEffect: true,
         };
     }
@@ -4779,7 +4788,8 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         };
     }
     else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
-        || damageType === AD_POLY || damageType === AD_TLPT)) {
+        || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
+        || damageType === AD_WRAP)) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         const negated = damageType === AD_POLY
@@ -4787,6 +4797,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         return {
             kind: 'hero-attack', roll, threshold, hit, damage, attackType, damageType,
             oldFormMnum, negated, deferredSpecialContact: true,
+            ...(damageType === AD_WRAP ? { effect: 'wrapping-natural' } : {}),
         };
     }
     else if (hit && damageType === AD_STCK) {
@@ -4828,8 +4839,8 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             deferredFireNegation: true,
         };
     }
-    else if (hit && attackType === AT_TUCH && damageType === AD_COLD && dice > 0 && sides > 0) {
-        // hmon() rolls base damage before mhitm_ad_cold(), but the latter
+    else if (hit && attackType !== AT_ENGL && damageType === AD_COLD) {
+        // hitmu() rolls base damage before mhitm_ad_cold(), but the latter
         // projects hitmsg() before checking magic cancellation.  Leave that
         // check deferred so an already-full tty topline can suspend between
         // d() and rn2(10).
@@ -5801,14 +5812,20 @@ export function rollDeferredHeroSpellDamage(action, state, rollDice = d) {
     }
     if (heroHasHalfSpellDamage(state))
         damage = Math.trunc((damage + 1) / 2);
+    attack.damage = damage;
+    attack.deferredSpellDamage = false;
+    if (attack.damageType === AD_FIRE || attack.damageType === AD_COLD || attack.damageType === AD_MAGM) {
+        attack.spellEffectMessage = attack.damageType === AD_FIRE ? "You're enveloped in flames."
+            : attack.damageType === AD_COLD ? "You're covered in frost."
+                : 'You are hit by a shower of missiles!';
+        return attack;
+    }
     const spell = (attack.damageType === AD_CLRC ? MONSTER_CLERIC_SPELLS : MONSTER_WIZARD_SPELLS).find((candidate) => candidate.key === attack.spell);
     if (!spell)
         throw new Error('A deferred spell must retain its selected native spell');
     const preview = monsterSpellEffectPreview(spell, damage, state);
-    attack.damage = damage;
     attack.effectDamage = preview.effectDamage;
     attack.spellEffectMessage = preview.effectMessage;
-    attack.deferredSpellDamage = false;
     return attack;
 }
 // mdamageu() subtracts from the active body. Keep raw HP for tty's -1
@@ -5817,7 +5834,8 @@ export function applyHeroSpellDamage(attack, damage, state) {
     const hpKey = Upolyd(state.u) ? 'mh' : 'uhp';
     const hpBefore = state.u[hpKey];
     attack.fatalDamage = { hpKey, hpBefore, damage };
-    state.u[hpKey] = Math.max(0, hpBefore - damage);
+    const hpMax = hpKey === 'mh' ? state.u.mhmax : state.u.uhpmax;
+    state.u[hpKey] = Math.min(hpMax, hpBefore - damage);
     attack.appliedDamage = damage;
     attack.rehumanize = hpKey === 'mh' && state.u.mh < 1;
     attack.heroDied = hpKey === 'uhp' && state.u.uhp < 1;
@@ -6043,9 +6061,9 @@ function chooseMonsterSpell(monster, damageType, state, random, calls) {
     }
     return list[0];
 }
-function monsterCurseKind(monster, spell, state, random, calls) {
+function monsterCurseKind(monster, undirected, state, random, calls) {
     if (canSeeMonster(monster) && couldsee(monster.mx, monster.my)) {
-        if (spell.flags & MCF_INDIRECT)
+        if (undirected)
             return 'visible-undirected';
         const wrongTarget = monster.mux !== state.u.ux || monster.muy !== state.u.uy;
         if (state.u.invisible && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS) && wrongTarget
@@ -6060,7 +6078,7 @@ function monsterCurseKind(monster, spell, state, random, calls) {
     return null;
 }
 async function publishMonsterSpellFailure(monster, spell, state, random, calls) {
-    const kind = monsterCurseKind(monster, spell, state, random, calls);
+    const kind = monsterCurseKind(monster, !!(spell.flags & MCF_INDIRECT), state, random, calls);
     if (kind === 'audible')
         await plineWithContinuation('You hear a mumbled curse.', { noRepeat: true });
     else if (kind) {
@@ -6951,7 +6969,7 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
         if (monsterIsCovetous(monster))
             setMonsterApparentHeroPosition(monster, state, random, calls);
     }
-    const range = await checkMonsterHeroRange(monster, { state, random, rollOne });
+    let range = await checkMonsterHeroRange(monster, { state, random, rollOne });
     dochugContext.range = range;
     if (range.heroDied)
         return {
@@ -6999,6 +7017,27 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
         };
     }
     await watchOnDuty(monster, state, random, calls);
+    if (monsterIsMindFlayer(dochugContext.entryMnum) && recordRandom(random, calls, 20) === 0) {
+        const heroDied = await useMonsterMindBlast(monster, state, {
+            random: limit => recordRandom(random, calls, limit),
+            rollOne: sides => {
+                calls.push(`rnd(${sides})`);
+                return rollOne(sides);
+            },
+            resistsConflict: () => resistConflict(monster, state, rollOne, calls),
+        });
+        if (heroDied)
+            return {
+                calls, dochugContext,
+                movement: {
+                    oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                    moved: false, heroDied: true,
+                },
+            };
+        setMonsterApparentHeroPosition(monster, state, random, calls);
+        range = await checkMonsterHeroRange(monster, { state, random, rollOne });
+        dochugContext.range = range;
+    }
     if (await readyCloseMonsterWeapon(monster, state)) {
         return {
             calls,
