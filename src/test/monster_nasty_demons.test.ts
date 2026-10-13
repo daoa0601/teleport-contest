@@ -3,7 +3,8 @@ import test from 'node:test';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { MONSTER_FLAGS2 } from '../js/monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_FLAGS2 } from '../js/monster_data.js';
+import { msummon } from '../js/minion.js';
 import { AD_SPEL } from '../js/monster_attack_types.js';
 import { resumeDeferredMovementSpell } from '../js/monmove.js';
 import type { MonsterMovementAction } from '../js/monster_action_types.js';
@@ -42,4 +43,20 @@ void test('an arch-lich can summon demons through Gehennom summon-nasties', asyn
     assert.ok(effect.count > 0, 'Gehennom summon-nasties must create demons for a lich too');
     assert.ok(effect.created.every(monster => (MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x100));
     assert.match(effect.message ?? '', /monster.*appears? from nowhere/i);
+});
+
+void test('Wizard-style demon summoning can choose lawful demons without a caster', async () => {
+    let lawfulSummons = 0;
+    for (let seed = 1; seed <= 32; seed++) {
+        freshObjectRoom({ hero: { ulevel: 20, uz: { dnum: 0, dlevel: 20 } } });
+        const input = resetInputState();
+        input.beforeRead = () => input.feed(' ');
+        initRng(BigInt(seed));
+
+        const effect = await msummon();
+
+        lawfulSummons += effect.created.filter(monster =>
+            (MONSTER_ALIGNMENT[monster.mnum] ?? 0) > 0).length;
+    }
+    assert.ok(lawfulSummons > 0, 'an unrestricted Wizard summon must admit lawful demons');
 });
