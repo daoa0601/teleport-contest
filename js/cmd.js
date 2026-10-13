@@ -5518,24 +5518,33 @@ async function doopen() {
         game.context.move = 1;
         return;
     }
+    let spentTime = !!(game.u.confused || game.u.confusionTurns
+        || game.u.stunned || game.u.stunnedTurns);
+    if (loc) {
+        const previousGlyph = glyphAt(x, y)?.glyph;
+        recordMappedOverviewState();
+        const previousTerrain = loc.lastseentyp;
+        newsym(x, y);
+        // doopen_indir() uses a turn when looking at the target teaches
+        // the hero something, even if the target has no door to open.
+        if (glyphAt(x, y)?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
+            spentTime = true;
+    }
+    game.context.move = Number(spentTime);
     if (loc?.typ !== DOOR) {
         await pline('You see no door there.');
-        game.context.move = 0;
         return;
     }
     if (loc.doormask === D_BROKEN) {
         await pline('This door is broken.');
-        game.context.move = 0;
         return;
     }
     if (loc.doormask === D_NODOOR) {
         await pline('This doorway has no door.');
-        game.context.move = 0;
         return;
     }
     if (loc.doormask === D_ISOPEN) {
         await pline('This door is already open.');
-        game.context.move = 0;
         return;
     }
     if (loc.doormask & D_LOCKED) {
