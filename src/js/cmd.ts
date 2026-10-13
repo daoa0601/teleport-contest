@@ -7209,9 +7209,9 @@ async function bumpIntoMonster(monster: Monster, x: number, y: number): Promise<
         && !canSenseMonster(monster)) {
         await stumbleOntoMimic(monster);
     } else if (monster.mpeaceful && !heroIsHallucinating(game)) {
-        await pline(`Pardon me, ${monsterName(monster, { article: 'none', exact: true })}.`);
+        await plineWithContinuation(`Pardon me, ${monsterName(monster, { article: 'none', exact: true })}.`);
     } else {
-        await pline(`You move right into ${monsterName(monster)}.`);
+        await plineWithContinuation(`You move right into ${monsterName(monster)}.`);
     }
     return true;
 }
