@@ -97,6 +97,7 @@ function validArrivalRegion(value) {
 function validEngraving(value) {
     return fieldsMatch(value, {
         x: integer, y: integer, text: string, pristine: string,
+        erasedPrefix: optional((prefix) => string(prefix) && /^ *$/.test(prefix)),
         rememberedText: string, epoch: integer, engr_type: integer,
         nowipeout: boolean, guardobjects: boolean, eread: boolean, erevealed: boolean,
     });

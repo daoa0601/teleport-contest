@@ -179,6 +179,7 @@ export interface LevelFlags {
 
 export interface Engraving extends Position {
     text: string;
+    erasedPrefix?: string;
     pristine: string;
     rememberedText: string;
     epoch: number;
