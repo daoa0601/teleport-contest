@@ -21,7 +21,7 @@ import {
     MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_ARMOR, is_pit,
 } from './const.js';
 import {
-    ARROW as FIRST_OBJECT, EGG, CHEST, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, STATUE, TIN,
+    ARROW as FIRST_OBJECT, EGG, CHEST, GOLD_PIECE, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, STATUE, TIN,
 } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
@@ -489,8 +489,10 @@ function itemActionEntries(item: GameObject, state: GameState) {
     if (item.oclass === 10)
         entries.push({ key: 'r', text: 'Study this spellbook' });
     if (!alreadyWorn) {
-        const fireAlias = item === state.uquiver ? " (same as 'f')" : '';
-        entries.push({ key: 't', text: `${shoot ? 'Shoot' : 'Throw'} ${stack ? 'one of these' : 'this item'}${fireAlias}` });
+        const goldStack = stack && item.otyp === GOLD_PIECE;
+        const quantity = stack ? goldStack ? 'them' : 'one of these' : 'this item';
+        const fireAlias = item === state.uquiver && !goldStack ? " (same as 'f')" : '';
+        entries.push({ key: 't', text: `${shoot ? 'Shoot' : 'Throw'} ${quantity}${fireAlias}` });
     }
     if (item !== state.uwep)
         entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'}${item.oclass === 2 || isWeaponTool(item) ? ' as your weapon' : ' in your hands'}` });
