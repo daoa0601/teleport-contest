@@ -3,12 +3,16 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { game, requirePlayingGame, resetGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
+import type { MonsterFlag } from '../js/monster_types.js';
 import { initRng } from '../js/rng.js';
+import { restoreGame, saveGame } from '../js/save.js';
 import { makeBlinded } from '../js/sight_change.js';
+import { vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { createStaffedShop } from './support/shop.js';
 
 void test('a blind hero discovers an unseen pet without swapping places', async () => {
@@ -68,6 +72,32 @@ void test('a helpless pet refuses a swap after passing the ordinary refusal chan
     assert.equal(pet.mx, 11);
     assert.match(game._pending_message, /doesn't seem to move/);
 });
+
+for (const canMove of [false, 0] satisfies readonly MonsterFlag[]) {
+    void test(`a restored pet with mcanmove=${canMove} refuses displacement`, async () => {
+        freshObjectRoom();
+        const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
+        initializePet(pet, { state: game });
+        pet.mcanmove = canMove;
+        game.plname = 'HelplessPet';
+        const storage = memoryStorage();
+        assert.equal(await saveGame(storage), true);
+        resetGame();
+        assert.equal(restoreGame('HelplessPet', storage), true);
+        requirePlayingGame(game);
+        vision_recalc(0);
+        const restoredPet = game.level.monsters.find(monster => monster.m_id === pet.m_id);
+        assert.ok(restoredPet);
+        pushKeys(' '.repeat(20));
+        initRng(1n);
+
+        await rhack('l'.charCodeAt(0));
+
+        assert.equal(game.u.ux, 10);
+        assert.equal(restoredPet.mx, 11);
+        assert.match(game._pending_message, /doesn't seem to move/);
+    });
+}
 
 void test('a pet in a tended shop blocks the hero even after passing its ordinary refusal chance', async () => {
     freshObjectRoom();

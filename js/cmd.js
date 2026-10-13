@@ -6943,7 +6943,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 stopRun(game);
                 return true;
             }
-            if (monster.mfrozen || monster.msleeping || monster.mcanmove === 0
+            if (monster.mfrozen || monster.msleeping || !monster.mcanmove
                 || ((MONSTER_MOVE[monster.mnum] ?? 0) === 0 && rn2(6))) {
                 await plineWithContinuation(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
                 stopRun(game);
