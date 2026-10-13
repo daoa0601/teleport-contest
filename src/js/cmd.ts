@@ -2696,21 +2696,14 @@ async function wizGenesis() {
             mnum, game.u.ux, game.u.uy, MM_NOEXCLAM,
         );
         if (!monster) break;
-        // create_particular_creation() applies disposition before its later
-        // requested state flags.  Deleting a constructor-provided malign lets
-        // the shared death-alignment fallback derive it from forced peace.
+        // Native creation records kill alignment again after forcing attitude.
         if (tame) {
             await tameMonster(monster);
-        } else if (peaceful) {
+        } else if (peaceful || hostile) {
             monster.mtame = 0;
             monster.pet = false;
-            monster.mpeaceful = 1;
-            delete monster.malign;
-        } else if (hostile) {
-            monster.mtame = 0;
-            monster.pet = false;
-            monster.mpeaceful = 0;
-            delete monster.malign;
+            monster.mpeaceful = peaceful ? 1 : 0;
+            setMonsterMalign(monster);
         }
         // create_particular_creation() applies requested sleep after makemon
         // announces the actor.
