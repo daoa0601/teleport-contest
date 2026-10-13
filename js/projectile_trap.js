@@ -2,7 +2,7 @@
 // C ref: trap.c:trapeffect_arrow_trap() and trapeffect_dart_trap().
 import { finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap, revealTrap } from './trap_lifecycle.js';
 import { ARROW_TRAP, DART_TRAP } from './const.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -56,7 +56,7 @@ export async function beginMonsterProjectileTrap(monster, trap, state = game, { 
     if (projectileType === DART && random(6) === 0)
         missile.opoisoned = 1;
     if (visibility.inSight)
-        trap.tseen = true;
+        revealTrap(trap, state);
     const hit = findMonsterArmorClass(monster) + (trap.ttyp === ARROW_TRAP ? 8 : 7) + (missile.spe ?? 0) <=
         rollOne(20);
     return {
