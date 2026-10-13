@@ -26,9 +26,8 @@ for (const occupant of ['pony', 'long worm']) {
         assert.ok(lua);
         game.level = new GameMap();
         game.in_mklev = true;
-        await lua.executeAsync(`
-            des.map({ x = 0, y = 0, map = "....................\\n....................\\n....................\\n....................\\n....................\\n....................\\n....................\\n....................\\n....................\\n...................." })
-        `);
+        const floorMap = Array.from({ length: 10 }, () => '.'.repeat(20)).join('\n');
+        await lua.executeAsync(`des.map({ x = 0, y = 0, map = [[${floorMap}]] })`);
         let point = { x: 10, y: 5 };
         const first = await createMonsterAt(occupant, point.x, point.y, NO_MINVENT | MM_NOTAIL);
         if (occupant === 'long worm') {

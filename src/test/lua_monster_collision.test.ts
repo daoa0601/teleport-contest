@@ -28,9 +28,8 @@ for (const occupant of ['pony', 'long worm'] as const) {
         assert.ok(lua);
         game.level = new GameMap();
         game.in_mklev = true;
-        await lua.executeAsync(`
-            des.map({ x = 0, y = 0, map = "....................\\n....................\\n....................\\n....................\\n....................\\n....................\\n....................\\n....................\\n....................\\n...................." })
-        `);
+        const floorMap = Array.from({ length: 10 }, () => '.'.repeat(20)).join('\n');
+        await lua.executeAsync(`des.map({ x = 0, y = 0, map = [[${floorMap}]] })`);
         let point = { x: 10, y: 5 };
         const first = await createMonsterAt(occupant, point.x, point.y, NO_MINVENT | MM_NOTAIL);
         if (occupant === 'long worm') {
@@ -40,11 +39,11 @@ for (const occupant of ['pony', 'long worm'] as const) {
             point = { x: tail.x, y: tail.y };
         }
         const requested = { x: point.x, y: point.y };
-    
+
         await lua.executeAsync(`
             des.monster({ ${occupant === 'pony' ? 'id = "pony",' : ''} name = "Second", x = ${requested.x}, y = ${requested.y} })
         `);
-    
+
         const second = game.level.monsters.find(monster => monster.mgivenname === 'Second');
         assert.ok(second, 'the second monster must be created rather than discarded');
         assert.equal(monsterAtPosition(game.level, requested.x, requested.y) === first, true);
