@@ -8,7 +8,8 @@ import { heroSpecies } from './hero_species.js';
 import { MONSTER_SIZE } from './monster_data.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
-import { OBJECT_NAMES } from './object_data.js';
+import { objectCombatName } from './objnam.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 import { stopHeroOccupation } from './occupation.js';
 import { rn2, rnd } from './rng.js';
 import { couldsee } from './vision.js';
@@ -23,10 +24,10 @@ export async function attackHeroWithPolearm(monster, weapon, state = game, { pub
     if (distance > 5 || !couldsee(monster.mx, monster.my))
         return;
     const artifact = artifactById(weapon.oartifact, state);
-    const name = artifact?.name || OBJECT_NAMES[weapon.otyp];
+    const name = artifact?.name || objectCombatName(weapon, { state });
     if (!name)
         throw new Error(`Unknown polearm object type ${weapon.otyp}`);
-    const description = artifact ? name : `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
+    const description = artifact ? name : withIndefiniteArticle(name);
     if (canSeeMonster(monster)) {
         const verb = monsterWeaponSwingVerb(weapon, distance <= 2, random);
         await publish(`${monsterSentenceSubject(monster)} ${verb} ${description}.`);

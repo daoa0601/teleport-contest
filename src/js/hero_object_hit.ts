@@ -1,6 +1,5 @@
 // C mthrowu.c:thitu(). Polearms and thrown weapons share this hit rule.
 
-import { artifactById } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_STR } from './const.js';
 import { plineWithContinuation } from './display.js';
@@ -13,11 +12,11 @@ import type { MessagePublisher } from './display.js';
 import { loseHeroHp } from './hero_damage.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
-import { ACID_VENOM, OBJECT_MATERIAL, OBJECT_NAMES } from './object_data.js';
+import { ACID_VENOM, OBJECT_MATERIAL } from './object_data.js';
 import { rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { objectHasPersonalName } from './objnam.js';
+import { objectCombatName, objectHasPersonalName, killerObjectName } from './objnam.js';
 import { AD_ACID } from './monster_attack_types.js';
 import { monstersObserveHeroResistance, seenResistanceForDamage } from './monster_perception.js';
 
@@ -53,9 +52,8 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
     deathCause,
 }: HeroObjectHitOptions = {}): Promise<HeroObjectHitResult> {
     requirePlayingGame(state);
-    const name = requestedName ?? (artifactById(object.oartifact, state)?.name
-        || OBJECT_NAMES[object.otyp]);
-    const killer = requestedKiller ?? OBJECT_NAMES[object.otyp];
+    const name = requestedName ?? objectCombatName(object, { state });
+    const killer = requestedKiller ?? killerObjectName(object, state);
     if (typeof name !== 'string' || typeof killer !== 'string')
         throw new Error(`Unknown object type ${object.otyp} hit the hero.`);
     const description = objectHasPersonalName(object, state)
