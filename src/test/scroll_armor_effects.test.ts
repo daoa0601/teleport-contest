@@ -24,7 +24,8 @@ import { pickupAtHero } from '../js/pickup.js';
 import { propertyIsActive } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { applyArmorScrollEffect } from '../js/scroll_armor_effects.js';
-import { carriedShopBill, unpaidObjectCost } from '../js/shk.js';
+import { unpaidObjectCost } from '../js/shk.js';
+import { itemizedShopBill } from '../js/shop_payment.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject, addInventoryWeapon, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -407,7 +408,7 @@ void test('destroy armor charges the original price of eroded unpaid armor', asy
 
     assert.ok(price > 0);
     assert.ok(!armor.unpaid);
-    assert.equal(carriedShopBill(shopkeeper).reduce((sum, item) => sum + item.price, 0), price);
+    assert.equal(itemizedShopBill(shopkeeper).reduce((sum, item) => sum + item.price, 0), price);
 });
 
 void test('armor mutation waits until the previous visible message has been acknowledged', async () => {

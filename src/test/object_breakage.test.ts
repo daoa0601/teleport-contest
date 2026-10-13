@@ -5,7 +5,7 @@ import {
     breakFloorObject, objectBreaksOnImpact,
 } from '../js/object_breakage.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { carriedShopBill } from '../js/shk.js';
+import { itemizedShopBill } from '../js/shop_payment.js';
 import { beginObjectBurn } from '../js/light.js';
 import {
     OBJECT_NAMES, POT_HEALING, POT_OIL, POT_WATER,
@@ -133,7 +133,7 @@ void test('breaking unpaid goods outside every shop retains a used-up bill rathe
     assert.equal(shopkeeper.eshk.debit, 0);
     assert.equal(shopkeeper.eshk.bill.length, 1);
     assert.equal(entry.useup, true);
-    assert.ok(carriedShopBill(shopkeeper).some(item => item.object === potion));
+    assert.ok(itemizedShopBill(shopkeeper).some(item => item.object === potion));
     assert.equal(potion.where, 'onbill');
     assert.equal(potion.unpaid, false);
 });

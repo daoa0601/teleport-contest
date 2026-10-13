@@ -12,7 +12,8 @@ import {
 import { pushKey, resetInputState } from '../js/input.js';
 import { mkgold } from '../js/mklev.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
-import { addShopObjectToBill, billForObject, settleCarriedShopBillItem } from '../js/shk.js';
+import { addShopObjectToBill, billForObject } from '../js/shk.js';
+import { buyShopBillItem } from '../js/shop_payment.js';
 import { carriedGold } from './support/gold-arena.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
@@ -176,9 +177,10 @@ void test('partial shop payment preserves the purse identity and exact remainder
         const entry = bill.entry;
         entry.price = 7;
 
-        assert.equal(settleCarriedShopBillItem(resident, {
-            entry, object: merchandise, price: 7,
-        }, game), true);
+        assert.equal(await buyShopBillItem(resident, {
+            object: merchandise, kind: 'intact', quantity: merchandise.quan,
+            price: 7, billIndex: 0,
+        }, game), 'paid');
 
         assert.equal(heroGoldObject(game), purse);
         assert.equal(heroGoldAmount(game), 13);

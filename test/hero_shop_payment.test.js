@@ -11,6 +11,34 @@ import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { DAGGER, GOLD_PIECE, SACK } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { planInput, withMessagePages } from './support/planned-input.js';
+for (const buy of [false, true]) {
+    void test(`${buy ? 'buying' : 'cancelling'} contained goods uses payment selection and spends time only for a purchase`, async (t) => {
+        freshObjectRoom();
+        const sack = await addInventoryObject(SACK, { cknown: true });
+        const dagger = await knownObject(DAGGER);
+        await addCreatedObjectToContainer(sack, dagger);
+        const { shopkeeper } = await createStaffedShop({ bill: [
+                { bo_id: dagger.o_id, bquan: 1, price: 4, useup: false },
+            ] });
+        dagger.unpaid = true;
+        setHeroGoldAmount(game, 4);
+        const input = resetInputState();
+        const messages = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        planInput(input, t, [
+            { prompt: /Pay for which items\?[\s\S]*4 Zm, the contents of your .*sack/, keys: buy ? 'a\n' : '\u001b' },
+            ...(buy ? [{ prompt: /bought the contents of your .*sack for 4 gold pieces.*--More--/, keys: ' ' }] : []),
+        ]);
+        await rhack('p'.charCodeAt(0));
+        assert.equal(game.context.move, buy ? 1 : 0);
+        assert.equal(heroGoldAmount(game), buy ? 0 : 4);
+        assert.equal(shopkeeper.eshk.billct, buy ? 0 : 1);
+        assert.equal(dagger.unpaid, !buy);
+        assert.equal(dagger.container, sack);
+        if (buy)
+            assert.match(messages.join('\n'), /bought the contents of your .*sack for 4 gold pieces/);
+    });
+}
 for (const goldLocation of ['none', 'purse', 'sack']) {
     void test(`paying an empty resident bill takes a turn with gold kept in ${goldLocation}`, async () => {
         freshObjectRoom();
@@ -32,6 +60,55 @@ for (const goldLocation of ['none', 'purse', 'sack']) {
         assert.equal(heroGoldAmount(game), goldLocation === 'purse' ? 37 : 0);
     });
 }
+void test('buying an unpaid sack and nested goods settles the whole group using credit before cash', async () => {
+    freshObjectRoom();
+    const sack = await addInventoryObject(SACK, { cknown: true });
+    const inner = await knownObject(SACK, { cknown: false });
+    const daggers = await knownObject(DAGGER, { quan: 2 });
+    await addCreatedObjectToContainer(inner, daggers);
+    await addCreatedObjectToContainer(sack, inner);
+    const { shopkeeper } = await createStaffedShop({ bill: [
+            { bo_id: sack.o_id, bquan: 1, price: 2, useup: false },
+            { bo_id: daggers.o_id, bquan: 2, price: 4, useup: false },
+        ] });
+    sack.unpaid = daggers.unpaid = true;
+    shopkeeper.eshk.credit = 3;
+    const goldBefore = shopkeeper.gold ?? 0;
+    setHeroGoldAmount(game, 7);
+    const input = resetInputState();
+    input.feed('a\n');
+    await withMessagePages(() => rhack('p'.charCodeAt(0)), input, /credit|bought .*sack and its contents|Thank you/, 4);
+    assert.equal(shopkeeper.eshk.billct, 0);
+    assert.equal(shopkeeper.eshk.credit, 0);
+    assert.equal(shopkeeper.gold, goldBefore + 7);
+    assert.equal(heroGoldAmount(game), 0);
+    assert.equal(sack.unpaid, false);
+    assert.equal(daggers.unpaid, false);
+    assert.equal(daggers.container, inner);
+    assert.equal(inner.container, sack);
+    assert.equal(sack.cknown, true);
+    assert.equal(inner.cknown, false);
+    assert.equal(game.context.move, 1);
+});
+void test('used goods are paid before buying the remaining stack inside a sack', async () => {
+    freshObjectRoom();
+    const sack = await addInventoryObject(SACK, { cknown: true });
+    const daggers = await knownObject(DAGGER, { quan: 2 });
+    await addCreatedObjectToContainer(sack, daggers);
+    const { shopkeeper } = await createStaffedShop({ bill: [
+            { bo_id: daggers.o_id, bquan: 3, price: 4, useup: false },
+        ] });
+    daggers.unpaid = true;
+    setHeroGoldAmount(game, 12);
+    const input = resetInputState();
+    input.feed('ab\n');
+    await withMessagePages(() => rhack('p'.charCodeAt(0)), input, /paid for .*dagger|bought the contents|Thank you/, 4);
+    assert.equal(heroGoldAmount(game), 0);
+    assert.equal(shopkeeper.eshk.billct, 0);
+    assert.equal(daggers.unpaid, false);
+    assert.equal(daggers.quan, 2);
+    assert.equal(daggers.container, sack);
+});
 for (const scenario of [
     { name: 'paying for contained merchandise without gold or credit takes no turn',
         gold: 0, stashed: 0, debt: 0 },
