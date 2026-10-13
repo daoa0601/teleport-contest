@@ -1127,6 +1127,8 @@ async function runCommandHandler(binding, { cannedCommand = null, previousMessag
         const action = await ddoinv();
         if (action?.key === 't')
             await dothrow(action.item);
+        else if (action?.key === 'i')
+            await doadjust(action.item);
     }
     else if (ch === 'O') {
         await doOptions();
@@ -3398,7 +3400,7 @@ async function domonability() {
 // C ref: invent.c:doorganize()/doorganize_core().
 // TODO: add splitting, collecting, merging, swapping, gold repair, and the
 // used-letter menu.
-async function doadjust() {
+async function doadjust(selectedObject = null) {
     const inventory = (game.inventory || [])
         .filter((object) => typeof object.invlet === 'string' && object.invlet.length > 0)
         .sort((a, b) => a.invlet.localeCompare(b.invlet));
@@ -3408,7 +3410,8 @@ async function doadjust() {
         return;
     }
     const sourceLetters = compactInventoryLetters(inventory.map(object => object.invlet).join(''));
-    const selection = await promptInventoryObject(`What do you want to adjust? [${sourceLetters} or ?*] `, inventory, { allowMenu: true });
+    const selection = selectedObject ? { object: selectedObject, cancelled: false }
+        : await promptInventoryObject(`What do you want to adjust? [${sourceLetters} or ?*] `, inventory, { allowMenu: true });
     if (selection.cancelled || !selection.object) {
         game.context.move = 0;
         return;
