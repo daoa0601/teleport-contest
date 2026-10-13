@@ -362,7 +362,7 @@ import {
 import {
     chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown,
     payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage,
-    shopResident, shopkeeperInOwnShop,
+    tendedShop,
 } from './shk.js';
 import {
     visiblePriestName,
@@ -7305,10 +7305,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                 || (IS_OBSTRUCTED(game.level.requireAt(u.ux, u.uy).typ)
                     && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000008));
             const inShop = !blocked && roomsAt(game.level, monster.mx, monster.my, SHOPBASE)
-                .some(roomno => {
-                    const keeper = shopResident(roomno, game);
-                    return !!keeper && shopkeeperInOwnShop(keeper, game);
-                });
+                .some(roomno => tendedShop(roomForRoomno(game.level, roomno), game));
             if ((blocked || inShop) && monster.isshk && !game._runState) {
                 await dopay();
                 return true;

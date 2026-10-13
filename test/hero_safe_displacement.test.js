@@ -74,4 +74,20 @@ void test('a pet in a tended shop blocks the hero even after passing its ordinar
     assert.equal(pet.mflee, 1);
     assert.match(game._pending_message, /is in the way/);
 });
+void test('a pet blocking a step in an angry keeper\'s shop does not increase the bill', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const entry = { bo_id: 123, price: 100, bquan: 1, useup: false };
+    const { shopkeeper } = await createStaffedShop({ keeperX: 13, keeperY: 11, bill: [entry] });
+    shopkeeper.mpeaceful = 0;
+    const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
+    initializePet(pet, { state: game });
+    pushKeys(' '.repeat(20));
+    initRng(1n);
+    await rhack('l'.charCodeAt(0));
+    assert.equal(game.u.ux, 10);
+    assert.match(game._pending_message, /is in the way/);
+    assert.equal(entry.price, 100);
+    assert.equal(!!shopkeeper.eshk.surcharge, false);
+});
 //# sourceMappingURL=hero_safe_displacement.test.js.map
