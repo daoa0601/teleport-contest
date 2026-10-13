@@ -87,7 +87,7 @@ import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
 import { resetBulkTakeoff } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
-import { nhgetch, queueCommandKeys } from './input.js';
+import { clearCommandKeys, nhgetch, queueCommandKeys } from './input.js';
 import { readCommandInput } from './command_input.js';
 import {
     chooseInventoryObject, compactInventoryLetters, promptInventoryObject,
@@ -2505,6 +2505,16 @@ async function dotwoweapon() {
 // C iactions.c:itemactions_pushkeys(). The menu closes before the queued
 // command runs; its object letter answers the later inventory prompt.
 async function executeInventoryAction({ key, item }: InventoryAction): Promise<void> {
+    try {
+        await runInventoryAction({ key, item });
+    } finally {
+        // These keys belong to this item's prompts. Native rhack discards
+        // them if the command fails before it asks for the selected item.
+        clearCommandKeys();
+    }
+}
+
+async function runInventoryAction({ key, item }: InventoryAction): Promise<void> {
     const letter = item.invlet;
     if (!letter || !game.inventory.includes(item)) {
         game.context.move = 0;

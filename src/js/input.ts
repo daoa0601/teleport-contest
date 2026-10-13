@@ -61,6 +61,10 @@ export class InputGate {
         this.commandKeys.push(...[...keys].map(keyCode));
     }
 
+    clearCommandKeys(): void {
+        this.commandKeys.length = 0;
+    }
+
     async readKey(): Promise<number> {
         // C cmdq keys answer a command's prompts without asking tty or
         // consuming input the player already entered for the next command.
@@ -120,6 +124,10 @@ export function pushKeys(keys: KeyInput | readonly KeyInput[]): void {
 
 export function queueCommandKeys(keys: string): void {
     activeInputGate.queueCommandKeys(keys);
+}
+
+export function clearCommandKeys(): void {
+    activeInputGate.clearCommandKeys();
 }
 
 export async function nhgetch() {
