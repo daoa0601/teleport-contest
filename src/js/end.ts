@@ -38,7 +38,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
-    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, STARVING, STONING,
+    A_CON, A_WIS, BUFSZ, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, STARVING, STONING,
     Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd,
 } from './const.js';
 import {
@@ -763,8 +763,8 @@ function scoreDeathCause(cause: string, deathType: number | null): string {
     // Native BUFSZ includes the terminator; a long reason falls back to
     // "helpless" when that fits rather than truncating the explanation.
     const suffix = `, while ${reason}`;
-    return cleanCause.length + suffix.length < 256 ? cleanCause + suffix
-        : cleanCause.length + ', while helpless'.length < 256
+    return cleanCause.length + suffix.length < BUFSZ ? cleanCause + suffix
+        : cleanCause.length + ', while helpless'.length < BUFSZ
             ? `${cleanCause}, while helpless` : cleanCause;
 }
 
