@@ -6,6 +6,7 @@ import { A_DEX, DISMOUNT_FELL, PLNMSG_ONE_ITEM_HERE, W_SADDLE } from './const.js
 import { plineWithContinuation, type MessagePublisher } from './display.js';
 import { game } from './gstate.js';
 import { hurtleHero } from './hero_hurtle.js';
+import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { heroSpecies } from './hero_species.js';
 import { gotoLevel } from './level_change.js';
 import { finishTeleportArrival } from './location_effects.js';
@@ -96,7 +97,14 @@ export async function slipOrTrip(publish: MessagePublisher = plineWithContinuati
             }
             const dx = hero.dx ?? 0, dy = hero.dy ?? 0;
             if (hero.ux + dx !== hero.ux0 || hero.uy + dy !== hero.uy0)
-                await hurtleHero(dx, dy, 1, { verbose: false, finishTeleport: finishTeleportArrival, gotoLevel });
+                await hurtleHero(dx, dy, 1, {
+                    verbose: false, finishTeleport: finishTeleportArrival, gotoLevel,
+                    finishMonsterDeath: (monster, death) => finishHeroMonsterKill(
+                        monster, monster.mx, monster.my, {
+                            ...death, showKillMessage: false, recordConduct: false, publish,
+                        },
+                    ),
+                });
         }
         return;
     }

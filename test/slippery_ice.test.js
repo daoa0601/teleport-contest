@@ -1,13 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { ICE } from '../js/const.js';
+import { ICE, NO_MINVENT } from '../js/const.js';
 import { slipOrTrip } from '../js/fumbling.js';
 import { game } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
+import { STATUE } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { createSaddledSteed } from './support/monsters.js';
+import { installPolymorphedHero } from './support/hero-state.js';
+import { floorObjectsAt } from './support/level-state.js';
+import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
 void test('walking from ice can cause a temporary slip and two helpless turns', async () => {
     let slips = 0;
@@ -74,4 +79,21 @@ for (const onIce of [true, false]) {
         assert.equal(game.u.usteed, steed, 'the cursed saddle keeps the hero mounted');
     });
 }
+void test('a cockatrice-form hero slipping into an unarmored monster leaves its statue and earns kill credit', async () => {
+    const level = freshObjectRoom();
+    installPolymorphedHero('cockatrice');
+    const orc = await createMonsterAt('orc', 9, 10, NO_MINVENT);
+    game.u.fumblingFromIce = true;
+    game.u.ux0 = 10;
+    game.u.uy0 = 9;
+    installPagerInput(resetInputState(), { expected: /slide|slip|bump|orc|stone/i, limit: 6 });
+    initRng(70n);
+    await slipOrTrip();
+    assert.equal(level.monsters.includes(orc), false, 'the collision completes the monster death');
+    assert.ok(floorObjectsAt(level, 9, 10)
+        .some(object => object.otyp === STATUE && object.corpsenm === orc.mnum));
+    assert.equal(game.u.uconduct?.killer, 1, 'the collision counts as one hero kill');
+    assert.ok((game.u.uexp ?? 0) > 0, 'the hero receives experience for the petrified monster');
+    assert.equal(game.u.ux, 10, 'the monster stops the hurtle before the hero enters its square');
+});
 //# sourceMappingURL=slippery_ice.test.js.map
