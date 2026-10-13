@@ -232,7 +232,7 @@ async function confirmAutoSelection(): Promise<'y' | 'n' | 'q'> {
         return promptChoice('Really autoselect All?', ['y', 'n', 'q'], 'n');
     let prefix = '';
     for (let tries = 0; tries < 6; tries++) {
-        const answer = (await getLine(`${prefix}Really autoselect All? [yes|no]`,
+        const answer = (await getLine(`${prefix}Really autoselect All? [yes|no|quit]`,
             (_character, key) => key >= 32 && key < 127))?.trim().toLowerCase();
         if (answer === 'yes') return 'y';
         if (answer === 'no') return 'n';

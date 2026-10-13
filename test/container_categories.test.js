@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { PARANOID_AUTOALL, PARANOID_CONFIRM } from '../js/const.js';
 import { useContainer } from '../js/container.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -97,5 +98,19 @@ void test('a rejected counted just-picked selection keeps both stacks and spends
     assert.equal(chest.contents?.some(object => object.otyp === LOADSTONE), false);
     assert.equal(result.spentTime, true);
     assert.equal(game._lastPlineMessage, "The stones won't leave your person.");
+});
+void test('paranoid auto-selection offers quit and cancels without moving items', async () => {
+    const { chest } = await filledChest();
+    game.flags.paranoia_bits = PARANOID_AUTOALL | PARANOID_CONFIRM;
+    const input = resetInputState();
+    input.feed('oA\n');
+    const looting = useContainer(chest, { held: true });
+    await input.waitUntilBlocked();
+    const prompt = requireScreenRow(0).map(cell => cell.ch).join('').trimEnd();
+    input.feed('quit\n');
+    const result = await looting;
+    assert.equal(prompt, 'Really autoselect All? [yes|no|quit]');
+    assert.equal(result.spentTime, false);
+    assert.equal(chest.contents?.length, 2);
 });
 //# sourceMappingURL=container_categories.test.js.map
