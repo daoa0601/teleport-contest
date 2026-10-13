@@ -2975,6 +2975,7 @@ function completeExtendedCommand(prefix) {
     return matches.length === 1 ? matches[0]?.name ?? null : null;
 }
 const EXTENDED_COMMAND_HANDLERS = new Map([
+    ['whatis', dowhatis],
     ['takeoffall', takeOffAll],
     ['conduct', doconduct],
     ['chronicle', doChronicle],

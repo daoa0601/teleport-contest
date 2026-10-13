@@ -3198,6 +3198,7 @@ function completeExtendedCommand(prefix: string): string | null {
 }
 
 const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
+    ['whatis', dowhatis],
     ['takeoffall', takeOffAll],
     ['conduct', doconduct],
     ['chronicle', doChronicle],
