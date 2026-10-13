@@ -1660,6 +1660,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         mcanmove: 1, mcansee: 1, mgenmklev: !!game.in_mklev,
         mux: 0, muy: 0,
         msleeping: monsterSleeping, mpeaceful: peaceful ? 1 : 0,
+        malign: 0,
         minvent: monsterInventory,
         inventory: monsterInventory,
         hasInventory: false,
@@ -2562,6 +2563,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         m_lev: baseLevel, female: monsterFemale,
         msleeping: monsterSleeping,
         mpeaceful: clericMinion?.mpeaceful ?? (birthPeaceful ? 1 : 0),
+        malign: 0,
         mcanmove: 1, mcansee: 1,
         mgenmklev: !!game.in_mklev,
         seen_resistance: 0,
@@ -3266,7 +3268,7 @@ export function randomEngraving() {
         text: wipeoutText(pristine, Math.trunc(pristine.length / 4)),
     };
 }
-const BONES_VERSION = 10;
+const BONES_VERSION = 11;
 function bonesStorageKey(level = game.u.uz) {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
 }

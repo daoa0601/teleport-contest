@@ -3,7 +3,7 @@
 
 import type { GameState } from './game_state.js';
 
-export const SAVE_VERSION = 24;
+export const SAVE_VERSION = 25;
 
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',

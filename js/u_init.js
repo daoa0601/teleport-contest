@@ -629,6 +629,7 @@ export async function makedog() {
         female,
         mtame: 10,
         mpeaceful: 1,
+        malign: 0,
         mcanmove: 1,
         mcansee: 1,
         mblinded: 0,

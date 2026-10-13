@@ -102,7 +102,7 @@ function killingIsMurder(monster: Monster) {
     const mnum = monster?.mnum ?? -1;
     return monsterIsHuman(mnum)
         && !monsterIsAlwaysHostile(mnum)
-        && (monster.malign ?? 0) <= 0
+        && monster.malign <= 0
         && !monsterIsPlayerMonster(mnum)
         && !monsterIsPlainHuman(mnum)
         && (game.u?.ualign?.type ?? 0) !== A_CHAOTIC;
@@ -383,7 +383,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     } else if (monster.mpeaceful) {
         adjustHeroAlignment(-5);
     }
-    adjustHeroAlignment(monster.malign ?? 0);
+    adjustHeroAlignment(monster.malign);
     return { killed: true, heroDied: false };
 }
 

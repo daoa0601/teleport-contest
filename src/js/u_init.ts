@@ -727,6 +727,7 @@ export async function makedog(): Promise<Monster | null> {
         female,
         mtame: 10,
         mpeaceful: 1,
+        malign: 0,
         mcanmove: 1,
         mcansee: 1,
         mblinded: 0,
