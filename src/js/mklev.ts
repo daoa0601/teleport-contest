@@ -2032,7 +2032,7 @@ async function makemon(
     } else if (mndx >= 59 && mndx <= 61) { // kobold through kobold leader
         // C ref: makemon.c m_initweap(), S_KOBOLD.
         if (!rn2(4)) await mInitthrow(DART, 12);
-        rn2(75); // final m_initweap() offensive-item check
+        await giveOffensiveMonsterItem();
     } else if (mndx >= 70 && mndx <= 73) {
         // C ref: makemon.c m_initweap(), S_ORC.  Goblins, hobgoblins,
         // corpses-only base orcs, and hill orcs all use the default armament
@@ -2083,7 +2083,7 @@ async function makemon(
         }
         if (!rn2(10)) await mongets(ELVEN_MITHRIL_COAT);
         if (!rn2(10)) await mongets(DWARVISH_CLOAK);
-        rn2(75);
+        await giveOffensiveMonsterItem();
     } else if (MONSTER_SYMBOL[mndx] === 8
         && (genderFlags & M2_DWARF)) {
         // C ref: makemon.c m_initweap(), S_HUMANOID/is_dwarf().  Keep the
@@ -2224,7 +2224,7 @@ async function makemon(
         if (!secondaryWeapon && primaryWeapon !== DAGGER && !rn2(4))
             secondaryWeapon = KNIFE;
         if (secondaryWeapon) await mongets(secondaryWeapon);
-        rn2(75);
+        await giveOffensiveMonsterItem();
 
         if (rn2(5)) await mongets(rn2(3) ? SPLINT_MAIL : BANDED_MAIL);
         else await mongets(LEATHER_ARMOR);

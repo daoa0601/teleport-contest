@@ -1922,7 +1922,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         // C ref: makemon.c m_initweap(), S_KOBOLD.
         if (!rn2(4))
             await mInitthrow(DART, 12);
-        rn2(75); // final m_initweap() offensive-item check
+        await giveOffensiveMonsterItem();
     }
     else if (mndx >= 70 && mndx <= 73) {
         // C ref: makemon.c m_initweap(), S_ORC.  Goblins, hobgoblins,
@@ -1975,7 +1975,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             await mongets(ELVEN_MITHRIL_COAT);
         if (!rn2(10))
             await mongets(DWARVISH_CLOAK);
-        rn2(75);
+        await giveOffensiveMonsterItem();
     }
     else if (MONSTER_SYMBOL[mndx] === 8
         && (genderFlags & M2_DWARF)) {
@@ -2150,7 +2150,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             secondaryWeapon = KNIFE;
         if (secondaryWeapon)
             await mongets(secondaryWeapon);
-        rn2(75);
+        await giveOffensiveMonsterItem();
         if (rn2(5))
             await mongets(rn2(3) ? SPLINT_MAIL : BANDED_MAIL);
         else
