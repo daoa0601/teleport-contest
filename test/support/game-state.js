@@ -70,7 +70,12 @@ export function freshGame({ level = new GameMap(), role = 'archeologist', race =
     initializeMonsterVitals(state);
     initializeHeroSpecies(state);
     initializeHeroRoomMembership(state);
-    const configuredHero = { ...u, ...hero };
+    const configuredHero = {
+        ...u,
+        ...hero,
+        // This fixture starts on an established level, outside an arrival.
+        uz0: hero.uz0 ?? { ...(hero.uz ?? u.uz) },
+    };
     state.u = configuredHero;
     initializeFruitRegistry(undefined, state);
     resetInputState();

@@ -109,7 +109,12 @@ export function freshGame({
     initializeMonsterVitals(state);
     initializeHeroSpecies(state);
     initializeHeroRoomMembership(state);
-    const configuredHero: InitializedHero = { ...u, ...hero };
+    const configuredHero: InitializedHero = {
+        ...u,
+        ...hero,
+        // This fixture starts on an established level, outside an arrival.
+        uz0: hero.uz0 ?? { ...(hero.uz ?? u.uz) },
+    };
     state.u = configuredHero;
     initializeFruitRegistry(undefined, state);
     resetInputState();
