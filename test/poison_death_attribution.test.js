@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { A_STR } from '../js/const.js';
+import { A_STR, SICK_NONVOMITABLE } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { advanceHeroSickness, startHeroSickness } from '../js/hero_illness.js';
 import { poisonHero } from '../js/poison.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -52,4 +53,31 @@ void test('ordinary poison HP damage attributes a unique killer without changing
     assert.equal(result.died, true);
     assert.equal(loadScoreRecords()[0]?.death, 'killed by Juiblex');
 });
+for (const { killer, cause } of [
+    { killer: 'Juiblex', cause: 'Juiblex' },
+    { killer: 'Oracle', cause: 'the Oracle' },
+    { killer: 'rabid rat', cause: 'a rabid rat' },
+]) {
+    void test(`fatal illness from ${killer} keeps the native killer article`, async () => {
+        freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+        requirePlayingGame(game);
+        game.storage = memoryStorage();
+        game.u.urexp = 100;
+        game.iflags.toptenwin = false;
+        const input = resetInputState();
+        let tombstone = '';
+        input.beforeRead = () => {
+            const text = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+            if (text.includes('REST'))
+                tombstone = text;
+        };
+        installPagerInput(input, { expected: /sick|illness|Goodbye|points|You were/i, limit: 8 });
+        await startHeroSickness({ turns: 1, cause: killer, type: SICK_NONVOMITABLE });
+        const result = await advanceHeroSickness();
+        assert.equal(result.died, true);
+        assert.equal(loadScoreRecords()[0]?.death, `poisoned by ${cause}`);
+        if (killer === 'Juiblex')
+            assert.match(tombstone, /\|\s+poisoned by\s+\|/);
+    });
+}
 //# sourceMappingURL=poison_death_attribution.test.js.map
