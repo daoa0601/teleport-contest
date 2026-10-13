@@ -91,6 +91,8 @@ export async function useTowel(object, { state = game } = {}) {
     return result;
 }
 export function setSlipperyHands(turns, state = game) {
+    // Native make_glib() redraws when the old and requested states agree.
+    // Timeout expiry calls it after clearing the old timer.
     if (!!state.u.glib === (turns > 0))
         state.context.botl = true;
     state.u.glibTurns = Math.max(0, Math.min(TIMEOUT, turns));
