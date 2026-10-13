@@ -25,10 +25,6 @@ import type { SpellCategory } from './data_types.js';
 import type { PrayerTrouble } from './prayer_trouble.js';
 import type { HeroGenocideCause } from './hero_genocide.js';
 
-export interface MonsterMessageContext {
-    earlierActorPager: boolean;
-}
-
 // C dynamic_multi_reason() retains the causing monster's identity for done_in_by().
 export interface MonsterHelplessnessReason {
     monsterId: number;
@@ -385,7 +381,6 @@ export interface GameState {
     _monsterSwallower: Monster | { kind: 'hero' } | null;
     _monsterEngulf: { attacker: Monster; defender: Monster; defenderExposed: boolean } | null;
     _deferVisibleMonsterContact?: boolean | undefined;
-    _monsterMessageContext?: MonsterMessageContext;
     _steedDismounting?: boolean;
     _elementalClogMessageMove?: number;
     _cannibalCheckMove?: number;

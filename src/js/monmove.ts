@@ -3939,7 +3939,7 @@ export async function beginMonsterHeroAttack(
         results: [],
         lastAttackRoll: 0,
         firstFoundYou: monster.mux === state.u.ux && monster.muy === state.u.uy,
-        paging: { pagerOwned: false, messageAfterPager: false },
+        paging: { pagerOwned: false },
         offensive: offensive ? { status: 'selected', choice: offensive } : null,
         skipNonMagic: false,
         skipBrainDrain: false,
@@ -5291,7 +5291,6 @@ function monsterAttackMessagePublisher(paging: MonsterAttackPaging): PublishMons
     return async (message, options) => {
         const dismissal = await plineWithContinuation(message, options);
         if (dismissal != null) paging.pagerOwned = true;
-        else if (paging.pagerOwned) paging.messageAfterPager = true;
         return dismissal;
     };
 }
@@ -7136,7 +7135,6 @@ export function applyHeroSpellDamage(
 ) {
     const hpKey = Upolyd(state.u) ? 'mh' : 'uhp';
     const hpBefore = state.u[hpKey];
-    attack.fatalDamage = { hpKey, hpBefore, damage };
     state.context.botl = true;
     const hpMax = hpKey === 'mh' ? state.u.mhmax : state.u.uhpmax;
     state.u[hpKey] = Math.min(hpMax, hpBefore - damage);

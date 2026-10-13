@@ -77,7 +77,6 @@ export async function damageHeroFromMonster(monster, amount, { state = game, pub
     const polymorphed = Upolyd(hero);
     const hpKey = polymorphed ? 'mh' : 'uhp';
     const maximum = polymorphed ? 'mhmax' : 'uhpmax';
-    const hpBefore = hero[hpKey];
     state.context.botl = true;
     hero[hpKey] -= amount;
     if (state.flags.showdamage && amount)
@@ -87,6 +86,6 @@ export async function damageHeroFromMonster(monster, amount, { state = game, pub
         return false;
     if (polymorphed)
         return (await returnHeroToHumanForm(state, { publish })).died;
-    return die(monster, { damage: { hpKey, hpBefore, damage: amount } });
+    return die(monster);
 }
 //# sourceMappingURL=hero_damage.js.map

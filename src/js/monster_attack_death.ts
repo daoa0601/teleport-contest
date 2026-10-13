@@ -2,7 +2,6 @@
 // C refs: end.c done_in_by()/done()/savelife(), tty message windows.
 import { game } from './gstate.js';
 import type { Monster } from './monster_types.js';
-import type { DeathDamage } from './end.js';
 import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
 import { canSpotMonster, flushPendingTopline, flush_screen, pline, plineWithContinuation } from './display.js';
 import {
@@ -28,10 +27,7 @@ export type MonsterDeathAttribution = { kind: 'done-in-by' } | {
 };
 
 export interface MonsterAttackDeathOptions {
-    damage?: DeathDamage;
     pagerOwned?: boolean;
-    messageAfterPager?: boolean;
-    earlierActorPager?: boolean;
     attribution?: MonsterDeathAttribution;
     deathType?: number | null;
 }

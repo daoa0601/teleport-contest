@@ -68,7 +68,6 @@ const transientFields = {
     _didNothingFlag: true,
     _emptyShops: true,
     _deferVisibleMonsterContact: true,
-    _monsterMessageContext: true,
     _delayedAction: true,
     _heroMeleeThisCommand: true,
     _heroTimePending: true,
