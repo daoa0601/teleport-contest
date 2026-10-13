@@ -35,6 +35,10 @@ export async function grantMonsterCorpseIntrinsic(monster, species, state = game
     // retain, such as strength, telepathy, teleportation, acid, or petrification.
     if (!property || !shouldGiveIntrinsic(property, species))
         return;
+    await grantMonsterIntrinsic(monster, property, state);
+}
+// C mon.c:mon_give_prop(). Monsters retain only the six resistance bits.
+export async function grantMonsterIntrinsic(monster, property, state = game, publish = plineWithContinuation) {
     const effect = monsterIntrinsic(property);
     if (!effect)
         return;
@@ -42,9 +46,13 @@ export async function grantMonsterCorpseIntrinsic(monster, species, state = game
         | (monster.mintrinsics ?? 0)) & effect.bit);
     monster.mintrinsics = (monster.mintrinsics ?? 0) | effect.bit;
     if (canSeeMonster(monster) && !alreadyInnate)
-        await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} ${effect.message}`);
+        await publish(`${monsterName(monster, { state, capitalized: true })} ${effect.message}`);
 }
 function monsterIntrinsic(property) {
+    if (property !== 'fireResistance' && property !== 'coldResistance'
+        && property !== 'sleepResistance' && property !== 'disintegrationResistance'
+        && property !== 'shockResistance' && property !== 'poisonResistance')
+        return null;
     switch (property) {
         case 'fireResistance': return { bit: 0x01, message: 'shivers slightly.' };
         case 'coldResistance': return { bit: 0x02, message: 'looks quite warm.' };
@@ -52,13 +60,6 @@ function monsterIntrinsic(property) {
         case 'disintegrationResistance': return { bit: 0x08, message: 'looks very firm.' };
         case 'shockResistance': return { bit: 0x10, message: 'crackles with static electricity.' };
         case 'poisonResistance': return { bit: 0x20, message: 'looks healthy.' };
-        case 'acidResistance':
-        case 'stoneResistance':
-        case 'telepathy':
-        case 'teleportation':
-        case 'teleportControl':
-        case 'strength':
-            return null;
     }
 }
 //# sourceMappingURL=monster_corpse_intrinsic.js.map

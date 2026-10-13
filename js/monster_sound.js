@@ -1,7 +1,7 @@
 // Pet begging and animal noises shared by #chat and mounted breath fallback.
 // C ref: sounds.c domonnoise().
 import { game, requireLiveGame } from './gstate.js';
-import { recorderLocalEpochSeconds } from './calendar.js';
+import { recorderLocalHour } from './calendar.js';
 import { canSpotMonster, glyphAt, map_invisible, plineWithContinuation } from './display.js';
 import { monsterName, monsterObjectPronoun, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
 import { wakeMonstersNear } from './monster_wake.js';
@@ -44,10 +44,7 @@ export function monsterSentenceSubject(monster) {
     return `The ${saddle}${monsterTypeName(monster.mnum, !!monster.female)}`;
 }
 export function sessionIsNight(datetime) {
-    const epoch = recorderLocalEpochSeconds(datetime) || Date.now() / 1000;
-    const hour = Number(new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/New_York', hourCycle: 'h23', hour: '2-digit',
-    }).format(new Date(epoch * 1000)));
+    const hour = recorderLocalHour(datetime);
     return hour < 6 || hour > 21;
 }
 // C sounds.c:growl_sound(). Summoning uses the same noise while unseen.

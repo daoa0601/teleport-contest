@@ -23,11 +23,11 @@ export async function speedUpHero(duration, state = game) {
     await exerciseAttribute(A_DEX, true, state);
     setPropertyTimeout('fast', propertyTimeout('fast', state) + duration, state);
 }
-export async function slowHero(state = game) {
+export async function slowHero(state = game, publish = plineWithContinuation) {
     requireLiveGame(state);
     setPropertyTimeout('fast', 0, state);
     removeIntrinsicProperty('fast', state);
-    await plineWithContinuation(state.u.fast || state.u.veryFast
+    await publish(state.u.fast || state.u.veryFast
         ? 'Your quickness feels less natural.' : 'You slow down.');
     await exerciseAttribute(A_DEX, false, state);
 }
