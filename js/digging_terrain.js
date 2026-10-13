@@ -464,6 +464,7 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                 hero.utrap = 2 + rn2(4); /* rn1(4, 2) */
                 hero.utraptype = TT_PIT;
                 refreshMovementProperties(state);
+                state.context.botl = true;
                 state.vision_full_recalc = 1; /* vision limits change */
             }
             else {

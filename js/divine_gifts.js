@@ -123,7 +123,10 @@ async function restoreHeroVigor() {
     hero.uhp = hero.uhpmax;
     if (Upolyd(hero))
         hero.mh = hero.mhmax;
-    hero.acurr.a[A_STR] = Math.max(hero.acurr.a[A_STR], hero.amax.a[A_STR]);
+    if (hero.acurr.a[A_STR] < hero.amax.a[A_STR]) {
+        hero.acurr.a[A_STR] = hero.amax.a[A_STR];
+        game.context.botl = true;
+    }
     if (hero.uhunger < 900)
         await pline(restoreHeroNutrition());
     hero.uluck = Math.max(0, hero.uluck || 0);
@@ -131,6 +134,7 @@ async function restoreHeroVigor() {
     const { regainedSight } = setHeroBlindnessTurns(0);
     if (regainedSight)
         await pline('You can see again.');
+    game.context.botl = true;
 }
 async function revealCastleTune(alignment) {
     requirePlayingGame(game);

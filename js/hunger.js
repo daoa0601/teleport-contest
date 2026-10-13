@@ -247,8 +247,10 @@ async function dieFromHunger(cause, state) {
 // C eat.c:Hear_again()/unfaint(). allmain calls this after the awaited
 // recovery message, so neither hearing nor hunger changes before acknowledgment.
 export async function regainHearingAfterHelplessness({ state = game } = {}) {
-    if (rn2(2) === 0)
+    if (rn2(2) === 0) {
         await makeDeaf(0, { state, talk: false });
+        state.context.botl = true;
+    }
 }
 export async function recoverHeroFromFainting({ state = game } = {}) {
     requirePlayingGame(state);

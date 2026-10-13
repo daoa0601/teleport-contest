@@ -114,6 +114,7 @@ export async function buryObject(object: GameObject, state: GameState = game, {
         state.u.utrap = rn1(50, 20);
         state.u.utraptype = TT_BURIEDBALL;
         refreshMovementProperties(state);
+        state.context.botl = true;
         await publish('The iron ball gets buried!');
     }
 

@@ -93,7 +93,6 @@ const transientFields = {
     _shopFollowMessageTurn: true,
     _shopRepossession: true,
     _silentPrefixRetainedTopline: true,
-    _statusDeafOverride: true,
     _statusGoldOverride: true,
     _statusUpdatesDisabled: true,
     _steedDismounting: true,

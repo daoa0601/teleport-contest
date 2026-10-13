@@ -359,6 +359,7 @@ export async function clearHeroArmor(object: GameObject, state: GameState = game
 
     const hero = state.u;
     object._armorApplied = false;
+    if (object.otyp === GAUNTLETS_OF_POWER) state.context.botl = true;
     if (object.otyp === SPEED_BOOTS) {
         object._grantsVeryFastFromArmor = false;
         hero.veryFastFromArmor = (state.inventory || []).some(candidate =>
@@ -405,12 +406,14 @@ export function someHeroArmor(state: GameState = game) {
 // C do_wear.c:adj_abon(). The slot must still own the object when called,
 // including the subtraction immediately before its *_off() transition.
 export function adjustArmorAttributeBonus(object: GameObject | null | undefined, amount: number, state: GameState = game) {
-    if (!object || !amount) return;
+    if (!object) return;
     const attributes: AttributeIndex[] = object === equippedObject(state, 'uarmg')
         && object.otyp === GAUNTLETS_OF_DEXTERITY ? [A_DEX]
         : object === equippedObject(state, 'uarmh')
             && object.otyp === HELM_OF_BRILLIANCE ? [A_INT, A_WIS] : [];
     if (!attributes.length) return;
+    state.context.botl = true;
+    if (!amount) return;
     const hero = state.u;
     hero.abon ||= { a: [0, 0, 0, 0, 0, 0] };
     for (const attribute of attributes) hero.abon.a[attribute] += amount;
@@ -643,7 +646,10 @@ export async function applyArmorOnEffects(object: GameObject, state: GameState =
         state.u.uluck = Math.min(LUCKMAX, (state.u.uluck ?? 0) + 1);
         return [];
     }
-    if (object?.otyp === GAUNTLETS_OF_POWER) return [];
+    if (object?.otyp === GAUNTLETS_OF_POWER) {
+        state.context.botl = true;
+        return [];
+    }
 
     if (object?.otyp === FUMBLE_BOOTS) {
         const hero = state.u;

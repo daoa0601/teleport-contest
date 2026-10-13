@@ -406,7 +406,6 @@ export interface GameState {
     _mapFlushPaused?: boolean;
     _statusUpdatesDisabled?: boolean;
     _cursorOverride?: [number, number] | null;
-    _statusDeafOverride?: boolean;
     _statusGoldOverride?: number;
     _armorClassDirty?: boolean;
     _armorClassDirtyAfterDelayedFrame?: boolean;

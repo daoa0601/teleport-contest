@@ -307,6 +307,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
         const before = nearCapacity(state);
         for (const index of attributeIndices)
             hero.acurr.a[index] = Math.max(hero.acurr.a[index], hero.amax.a[index]);
+        state.context.botl = true;
         const after = nearCapacity(state);
         state._encumbranceLevel = after;
         hero._encumbrance = encumbranceLabel(after);
@@ -316,6 +317,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
     case Trouble.BLIND: {
         let message = '';
         if ((hero.blindTurns ?? 0) > 0) {
+            state.context.botl = true;
             const singleEye = heroEyeCount(state) === 1;
             const eyes = singleEye ? heroEyeName(state) : makePlural(heroEyeName(state));
             message = `Your ${eyes} feel${singleEye ? 's' : ''} better`;
@@ -323,6 +325,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
             setHeroBlindnessTurns(0, state);
         }
         if ((hero.deafTurns ?? 0) > 0) {
+            state.context.botl = true;
             hero.deafTurns = 0;
             syncDeafness(state);
             if (!heroIsDeaf(state)) message += message ? ' and you can hear again' : 'You can hear again';

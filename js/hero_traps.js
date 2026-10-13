@@ -183,6 +183,7 @@ async function triggerPit(trap, { viaSitting = false, failedUntrap = false, took
     hero.utrap = rn2(6) + 2;
     hero.utraptype = TT_PIT;
     refreshMovementProperties(game);
+    game.context.botl = true;
     if (steed) {
         // C steedintrap(): a ridden steed takes the pit's hit instead of the hero.
         steed.mx = hero.ux;
@@ -275,6 +276,7 @@ async function triggerWeb(trap, { viaSitting = false, failedUntrap = false, forc
     hero.utrap = turns;
     hero.utraptype = TT_WEB;
     refreshMovementProperties(game);
+    game.context.botl = true;
     if (!turns) {
         if (!noWebMessage)
             await plineWithContinuation(`You tear through ${trap.madeby_u ? 'your' : 'a'} web!`);
@@ -344,6 +346,7 @@ export function clearHeroTrap(state = game) {
     state.u.utrap = 0;
     state.u.utraptype = 0;
     refreshMovementProperties(state);
+    state.context.botl = true;
 }
 function reduceHeroTrapDuration() {
     const hero = game.u;
@@ -882,6 +885,7 @@ async function triggerBearTrap(trap, { failedUntrap = false, forceTrap = false, 
     hero.utrap = 4 + rn2(4);
     hero.utraptype = TT_BEARTRAP;
     refreshMovementProperties(game);
+    game.context.botl = true;
     const steed = hero.usteed;
     if (steed) {
         const name = monsterName(steed);

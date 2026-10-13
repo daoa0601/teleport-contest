@@ -222,6 +222,7 @@ export async function loseHeroStrength(amount: number, killer: string | null | u
             hero.uhpmax = Math.max(hero.uhpmax - damage, minimumHp);
             hero.uhp = Math.min(hero.uhp, hero.uhpmax);
         }
+        state.context.botl = true;
     }
     if (remainingLoss > 0 && (Upolyd(hero) || !wasPolymorphed)) {
         const previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
@@ -367,6 +368,7 @@ export function restoreHeroBaseAttributes({ all = false, state = game }: { all?:
         requireAttributeIndex(attribute);
         if (hero.acurr.a[attribute] >= hero.amax.a[attribute]) continue;
         hero.acurr.a[attribute] = hero.amax.a[attribute];
+        state.context.botl = true;
         if (hero._exercise && hero._exercise[attribute] < 0) hero._exercise[attribute] = 0;
         if (!all) break;
     }

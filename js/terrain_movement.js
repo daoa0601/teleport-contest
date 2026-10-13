@@ -34,6 +34,7 @@ export async function floatHeroUp(state = game, previous = null) {
     // World transitions (trap triggers, pickups, level changes) must run on
     // the live singleton; pure property snapshots keep an injected state.
     requireLiveGame(state);
+    state.context.botl = true;
     const hero = state.u;
     const previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
     // Wearing a levitation source suppresses Flying before this runs, so the
@@ -97,6 +98,7 @@ export async function floatHeroUp(state = game, previous = null) {
     if (wasFlying)
         await plineWithContinuation('You are no longer able to control your flight.');
     refreshMovementProperties(state);
+    state.context.botl = true;
     const capacity = nearCapacity(state);
     const message = encumbranceMessage(previousCapacity, capacity);
     state._encumbranceLevel = capacity;
@@ -127,6 +129,7 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
     if (propertyIsActive('levitation', state))
         return 0; // maybe another ring/potion/boots
     if (before.blockedByTerrain || before.blockedByTrap) {
+        state.context.botl = true; // float_vs_flight() precedes its feedback.
         // C BLevitation: never actually levitating, so no landing effects.
         // Only a sole floor-trap hold (C BLevitation == I_SPECIAL) speaks.
         const trappedSolely = before.blockedByTrap
@@ -137,7 +140,7 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
         await settleEncumbrance(state, previousCapacity);
         return 0;
     }
-    state._capacityDirty = true; // C disp.botl = TRUE
+    state.context.botl = true;
     endVoluntaryMultiTurn(state); // C nomul(0)
     if (before.flyingBlocked) {
         // controlled flight is no longer overridden by levitation
@@ -317,6 +320,8 @@ export async function resetHeroTrap(message = true, state = game) {
     }
 }
 export async function switchHeroTerrain(state = game) {
+    const wasLevitating = propertyIsActive('levitation', state);
+    const wasFlying = propertyIsActive('flying', state);
     const hero = state.u;
     const location = requireGameLevel(state).requireAt(hero.ux, hero.uy);
     const blocked = IS_OBSTRUCTED(location.typ)
@@ -340,8 +345,12 @@ export async function switchHeroTerrain(state = game) {
     else if (propertyIsBlocked('flying', state)) {
         setPropertyTerrainBlocked('flying', false, state);
         refreshMovementProperties(state);
+        state.context.botl = true;
         if (propertyIsActive('flying', state))
             await plineWithContinuation('You start flying.');
     }
+    if (wasLevitating !== propertyIsActive('levitation', state)
+        || wasFlying !== propertyIsActive('flying', state))
+        state.context.botl = true;
 }
 //# sourceMappingURL=terrain_movement.js.map

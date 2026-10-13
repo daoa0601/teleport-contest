@@ -57,6 +57,7 @@ export async function convertHeroAlignment(alignment, state = game) {
     const previous = current.type;
     const original = hero.ualignbase?.[1] ?? previous;
     hero.ublessed = 0;
+    state.context.botl = true;
     hero.ualignbase = [alignment, original];
     const name = alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
     recordGameLogEvent(`permanently converted to ${name}`, { state });

@@ -140,7 +140,7 @@ export async function advanceFlyingTimeout(
             turns: hero.flyingTurns };
 
     if (wasFlying && !propertyIsActive('flying', state)) {
-        state._capacityDirty = true; // C disp.botl = TRUE
+        state.context.botl = true;
         await publish('You land.');
         await applyHeroLocationEffects(publish);
         return { active: false, expired: true, landed: true };

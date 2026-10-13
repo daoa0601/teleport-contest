@@ -100,7 +100,7 @@ function statusEnlightenmentLines() {
             : blindfolded(game) ? 'deliberately' : 'temporarily';
         lines.push(`  You are ${kind} blind.`);
     }
-    if (game._statusDeafOverride ?? heroIsDeaf(game))
+    if (heroIsDeaf(game))
         lines.push('  You are deaf.');
     if (u.punished || (game.uball && game.uchain))
         lines.push('  You are chained to a heavy iron ball.');

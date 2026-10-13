@@ -61,6 +61,7 @@ import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.
 import { heroGoldAmount } from './hero_gold.js';
 import { encumbranceLabel, nearCapacity } from './weight.js';
 import { heroCanReachFloor } from './floor_reach.js';
+import { propertyIsActive } from './properties.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -156,7 +157,6 @@ function activeObjectSymbols() {
 }
 
 const M3_INFRAVISIBLE = 0x0200;
-const M1_FLY = 0x00000001;
 const M1_MINDLESS = 0x00010000;
 const TELEPATHY_RANGE = 8 * 8; // BOLT_LIM squared
 const HELM_OF_TELEPATHY = 100;
@@ -2185,10 +2185,10 @@ export function _statusLine2(refreshLoad = true) {
     if (sick && ((u.sickType ?? 0) & SICK_NONVOMITABLE)) line += ' TermIll';
     if (game.blind) line += ' Blind';
     if ((u.confusionTurns ?? 0) > 0) line += ' Conf';
-    if ((game._statusDeafOverride ?? game.deaf)) line += ' Deaf';
-    if (polymorphed
-        && ((MONSTER_FLAGS1[u.umonnum ?? -1] ?? 0) & M1_FLY)) line += ' Fly';
+    if (game.deaf) line += ' Deaf';
+    if (propertyIsActive('flying', game)) line += ' Fly';
     if (heroIsHallucinating(game)) line += ' Hallu';
+    if (propertyIsActive('levitation', game)) line += ' Lev';
     if (u.usteed) line += ' Ride';
     if (u.stunned || (u.stunnedTurns ?? 0) > 0) line += ' Stun';
     return line;

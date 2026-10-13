@@ -1,19 +1,20 @@
 // Using a unicorn horn as an item or as a polymorphed unicorn's ability.
 // C refs: apply.c use_unicorn_horn(), cmd.c domonability().
-import { makeHallucinated } from './hero_mental_status.js';
+import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
+import { makeBlinded } from './sight_change.js';
+import { makeDeaf } from './hero_hearing.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { currentAttribute } from './attrib.js';
 import { A_CON, SICK_ALL, SICK_NONVOMITABLE, } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { objectName } from './objnam.js';
-import { refreshProperty } from './properties.js';
 import { cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroSickness, startHeroVomiting, vomitHero, } from './hero_illness.js';
 import { MONSTER_ATTACKS, monsterIsUnicorn, } from './monster_data.js';
 import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
 import { heroMonsterForm } from './polyself.js';
 import { d, rn2 } from './rng.js';
-import { heroIsBlind, heroIsDeaf, setHeroBlindnessTurns, syncDeafness, heroIsHallucinating } from './senses.js';
+import { heroIsDeaf, heroIsHallucinating, } from './senses.js';
 const SICK = 'sickness';
 const BLIND = 'blindness';
 const HALLUCINATING = 'hallucination';
@@ -47,7 +48,9 @@ export async function useUnicornHorn({ object = null, state = game, publish = pl
         await cureHornTrouble(trouble, state, publish);
         cured.push(trouble);
     }
-    if (!cured.length)
+    if (cured.length)
+        state.context.botl = true;
+    else
         await publish('Nothing seems to happen.');
     return { used: true, spentTime: true, caused: null, cured };
 }
@@ -97,13 +100,7 @@ async function cureHornTrouble(trouble, state, publish) {
         return;
     }
     if (trouble === BLIND) {
-        const wasBlind = heroIsBlind(state);
-        const result = setHeroBlindnessTurns(hero.ucreamed ?? 0, state);
-        if (talk && wasBlind && result.regainedSight) {
-            await publish(heroIsHallucinating(state)
-                ? 'Far out!  Everything is all cosmic again!'
-                : 'You can see again.');
-        }
+        await makeBlinded(hero.ucreamed ?? 0, { state, talk, publish });
         return;
     }
     if (trouble === HALLUCINATING) {
@@ -117,24 +114,14 @@ async function cureHornTrouble(trouble, state, publish) {
         return;
     }
     if (trouble === CONFUSED) {
-        hero.confusionTurns = 0;
-        if (talk) {
-            await publish(`You feel less ${heroIsHallucinating(state) ? 'trippy' : 'confused'} now.`);
-        }
+        await makeConfused(0, { state, talk, publish });
         return;
     }
     if (trouble === STUNNED) {
-        hero.stunnedTurns = 0;
-        refreshProperty('stunned', state);
-        if (talk) {
-            await publish(`You feel ${heroIsHallucinating(state) ? 'less wobbly' : 'a bit steadier'} now.`);
-        }
+        await makeStunned(0, { state, talk, publish });
         return;
     }
-    hero.deafTurns = 0;
-    syncDeafness(state);
-    if (talk && !heroIsDeaf(state))
-        await publish('You can hear again.');
+    await makeDeaf(0, { state, talk, publish });
 }
 async function causeHornTrouble(object, state, publish, random, rollDice) {
     const extraTurns = random(90) + 10;
@@ -153,7 +140,7 @@ async function causeHornTrouble(object, state, publish, random, rollDice) {
         return SICK;
     }
     if (trouble === 1) {
-        await addBlindness(extraTurns, state, publish);
+        await makeBlinded((state.u.blindTurns ?? 0) + extraTurns, { state, publish });
         return BLIND;
     }
     if (trouble === 2) {
@@ -161,11 +148,11 @@ async function causeHornTrouble(object, state, publish, random, rollDice) {
         if (!(hero.confusionTurns ?? 0) && !heroIsUnaware(state)) {
             await publish(`You suddenly feel ${heroIsHallucinating(state) ? 'trippy' : 'confused'}.`);
         }
-        hero.confusionTurns = (hero.confusionTurns ?? 0) + extraTurns;
+        await makeConfused((hero.confusionTurns ?? 0) + extraTurns, { state, publish });
         return CONFUSED;
     }
     if (trouble === 3) {
-        await addStun(extraTurns, state, publish);
+        await makeStunned((state.u.stunnedTurns ?? 0) + extraTurns, { state, publish });
         return STUNNED;
     }
     if (trouble === 4) {
@@ -181,36 +168,9 @@ async function causeHornTrouble(object, state, publish, random, rollDice) {
         await makeHallucinated((state.u.hallucinationTurns ?? 0) + extraTurns, { state, publish });
         return HALLUCINATING;
     }
-    await addDeafness(extraTurns, state, publish);
-    return DEAF;
-}
-async function addBlindness(turns, state, publish) {
-    const hero = state.u;
-    const wasBlind = heroIsBlind(state);
-    setHeroBlindnessTurns((hero.blindTurns ?? 0) + turns, state);
-    if (!heroIsUnaware(state) && !wasBlind && heroIsBlind(state)) {
-        await publish(heroIsHallucinating(state)
-            ? 'Oh, bummer!  Everything is dark!  Help!'
-            : 'A cloud of darkness falls upon you.');
-    }
-}
-async function addStun(turns, state, publish) {
-    const hero = state.u;
-    if (!(hero.stunnedTurns ?? 0) && !heroIsUnaware(state)) {
-        await publish(hero.usteed
-            ? 'You wobble in the saddle.' : 'You stagger...');
-    }
-    hero.stunnedTurns = (hero.stunnedTurns ?? 0) + turns;
-    hero.stunned = true;
-}
-async function addDeafness(turns, state, publish) {
-    const hero = state.u;
-    const wasDeaf = heroIsDeaf(state);
-    hero.deafTurns = (hero.deafTurns ?? 0) + turns;
-    syncDeafness(state);
-    if (wasDeaf)
+    if (heroIsDeaf(state))
         await publish('Nothing seems to happen.');
-    else if (!heroIsUnaware(state))
-        await publish('You are unable to hear anything.');
+    await makeDeaf((state.u.deafTurns ?? 0) + extraTurns, { state, publish });
+    return DEAF;
 }
 //# sourceMappingURL=unicorn_horn.js.map

@@ -27,6 +27,7 @@ import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.
 import { heroGoldAmount } from './hero_gold.js';
 import { encumbranceLabel, nearCapacity } from './weight.js';
 import { heroCanReachFloor } from './floor_reach.js';
+import { propertyIsActive } from './properties.js';
 const HALLUCINATED_LIQUIDS = [
     'yoghurt', 'oobleck', 'clotted blood', 'diluted water',
     'purified water', 'instant coffee', 'tea', 'herbal infusion',
@@ -56,7 +57,6 @@ function activeObjectSymbols() {
         ? ROGUE_OBJECT_SYMBOLS : OBJECT_CLASS_SYMBOLS;
 }
 const M3_INFRAVISIBLE = 0x0200;
-const M1_FLY = 0x00000001;
 const M1_MINDLESS = 0x00010000;
 const TELEPATHY_RANGE = 8 * 8; // BOLT_LIM squared
 const HELM_OF_TELEPATHY = 100;
@@ -2155,13 +2155,14 @@ export function _statusLine2(refreshLoad = true) {
         line += ' Blind';
     if ((u.confusionTurns ?? 0) > 0)
         line += ' Conf';
-    if ((game._statusDeafOverride ?? game.deaf))
+    if (game.deaf)
         line += ' Deaf';
-    if (polymorphed
-        && ((MONSTER_FLAGS1[u.umonnum ?? -1] ?? 0) & M1_FLY))
+    if (propertyIsActive('flying', game))
         line += ' Fly';
     if (heroIsHallucinating(game))
         line += ' Hallu';
+    if (propertyIsActive('levitation', game))
+        line += ' Lev';
     if (u.usteed)
         line += ' Ride';
     if (u.stunned || (u.stunnedTurns ?? 0) > 0)
