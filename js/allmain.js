@@ -307,10 +307,7 @@ export async function restoregamePreamble() {
     if (game.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
     await applyCalendarMessages();
-    await readEngravingAt(game.u.ux, game.u.uy, {
-        showMore: showInlineMore,
-        showLine: plineWithContinuation,
-    });
+    await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
     await fixShopDamage(game);
     await finishMoveloopPreamble();
 }
@@ -391,10 +388,7 @@ async function enterTutorial() {
     vision_reset();
     await docrt();
     await checkSpecialRoom();
-    await readEngravingAt(game.u.ux, game.u.uy, {
-        showMore: showInlineMore,
-        showLine: plineWithContinuation,
-    });
+    await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
     findArmorClass(game);
     await redrawMap();
     await flush_screen(1);
@@ -1028,18 +1022,20 @@ function finishInitialTurnMaintenanceAfterStun({ sourceTurn, moveAmount, capacit
         && game.u.confusionTurns !== undefined && game.u.confusionTurns > 0) {
         const remaining = game.u.confusionTurns - 1;
         if (remaining === 0) {
+            const message = heroIsHallucinating(game)
+                ? 'You feel less trippy now.' : 'You feel less confused now.';
             if (deferAmbientMessage) {
                 return {
                     kind: 'timeout-message',
                     timeoutKind: 'confusion',
-                    message: 'You feel less confused now.',
+                    message,
                     sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
                     prayerTimeoutFreeze,
                 };
             }
             game.u.confusionTurns = 0;
             refreshProperty('confusion', game);
-            appendTurnMessage('You feel less confused now.');
+            appendTurnMessage(message);
         }
         else
             game.u.confusionTurns = remaining;

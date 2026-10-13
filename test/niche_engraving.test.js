@@ -22,10 +22,7 @@ void test('a niche warning with an eroded question mark still ends its reading w
         if (!warning)
             continue;
         installPagerInput(resetInputState(), { expected: /written here/, limit: 2 });
-        await readEngravingAt(warning.x, warning.y, {
-            showMore: plineWithContinuation,
-            showLine: plineWithContinuation,
-        });
+        await readEngravingAt(warning.x, warning.y, plineWithContinuation);
         assert.ok(game._pending_message.endsWith('".'), game._pending_message);
         return;
     }

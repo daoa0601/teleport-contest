@@ -96,7 +96,6 @@ void test('nausea worsens, confuses, stuns, and ends in vomiting', async () => {
         'You are about to vomit.',
         'You vomit!',
         'You feel cured.  What a relief!',
-        'You feel much less nauseated now.',
     ]);
     assert.equal(game.u.uhunger, 880);
     assert.equal(game.u.sick, false);
@@ -121,6 +120,15 @@ void test('a rat form cannot vomit away food poisoning', async () => {
     assert.deepEqual(messages, ['Your jaw gapes convulsively.']);
     assert.equal(result.spewed, false);
     assert.equal(game.u.sick, true);
+    assert.equal(game._helplessTurns, 2);
+});
+void test('natural vomiting expiry announces the vomit without a cure message', async () => {
+    freshHeroConditionRoom();
+    startHeroVomiting({ turns: 1 });
+    const messages = [];
+    await advanceHeroVomiting({ publish: async (message) => { messages.push(message); } });
+    assert.deepEqual(messages, ['You vomit!']);
+    assert.equal(game.u.vomitingTurns, 0);
     assert.equal(game._helplessTurns, 2);
 });
 void test('a vomiting yellow dragon breathes acid on its weapon and armor', async () => {

@@ -10,7 +10,7 @@ import type { Position, Room } from './map_types.js';
 import { isRoom } from './map_types.js';
 import { nhgetch } from './input.js';
 import { deleteEngravingAt } from './engrave.js';
-import { bot, redrawMap, flush_screen, newsym, pline } from './display.js';
+import { bot, redrawMap, flush_screen, newsym, pline, plineWithContinuation, displayMessageWindow } from './display.js';
 import {
     COLNO,
     ROWNO,
@@ -166,15 +166,8 @@ function guardEntryToward(destination: Position) {
 }
 
 async function morePrompt(message: string) {
-    const line = `${message}--More--`;
-    await pline(line);
-    let key;
-    do {
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(line.length, 0);
-        key = await nhgetch();
-    } while (![27, 10, 13, 32].includes(key));
-    game._pending_message = '';
+    await plineWithContinuation(message);
+    await displayMessageWindow();
 }
 
 async function readGuardName() {
@@ -428,20 +421,16 @@ export async function continueVaultGuardArrival(state: GameState = game) {
     await morePrompt("Suddenly one of the Vault's guards enters!");
     await readGuardName();
 
+    await plineWithContinuation('"I don\'t know you."');
+    const gold = heroGoldAmount(game);
     const stashedGold = hiddenGold(game, true);
-    if (stashedGold) {
-        corridor.dropgoldcnt++;
-        await morePrompt('"I don\'t know you."  "You have hidden gold."');
-        await morePrompt('"Most likely all your gold was stolen from this vault."');
-        await pline('"Please drop that gold and follow me."');
-    } else if (heroGoldAmount(game)) {
-        corridor.dropgoldcnt++;
-        await morePrompt('"I don\'t know you."');
-        await morePrompt('"Most likely all your gold was stolen from this vault."');
-        await pline('"Please drop that gold and follow me."');
+    if (!gold && !stashedGold) {
+        await plineWithContinuation('"Please follow me."');
     } else {
-        await morePrompt('"I don\'t know you."');
-        await pline('"Please follow me."');
+        if (!gold) await plineWithContinuation('"You have hidden gold."');
+        await plineWithContinuation('"Most likely all your gold was stolen from this vault."');
+        await plineWithContinuation('"Please drop that gold and follow me."');
+        corridor.dropgoldcnt++;
     }
 
     if (!IS_WALL(original.typ)) {
