@@ -53,11 +53,17 @@ export async function chooseObjectToCharge(state = game) {
         .sort((a, b) => letterOrder.indexOf(a) - letterOrder.indexOf(b)).join(''));
     const choices = letters ? `[${letters} or ?*]` : '[*]';
     const selection = await promptInventoryObject(`What do you want to charge? ${choices} `, inventory, {
+        verb: 'charge',
         allowMenu: true,
+        allowNone: true,
         allowCount: true,
         allowGold: true,
         menuItems: suggested.length ? suggested : inventory.filter(object => chargingChoice(object, state) === 'downplay'),
     });
+    if (selection.none) {
+        await pline('You mime charging something.');
+        return null;
+    }
     const { object, count } = selection;
     if (!object)
         return null;
