@@ -11,6 +11,7 @@ import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { heroWarnsOfMonster } from './hero_species.js';
 import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
+import { encumbranceLabel, nearCapacity } from './weight.js';
 import { nhgetch } from './input.js';
 import { cansee, couldsee, vision_recalc } from './vision.js';
 import {
@@ -2069,7 +2070,8 @@ export function _statusLine2() {
     if (u.usteed) line += ' Ride';
     const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? NOT_HUNGRY];
     if (hungerLabel) line += ` ${hungerLabel}`;
-    if (u._encumbrance) line += ` ${u._encumbrance}`;
+    const load = encumbranceLabel(nearCapacity(game));
+    if (load) line += ` ${load}`;
     if (u.strangled || (u.strangledTurns ?? 0) > 0) line += ' Strngl';
     if (game.blind) line += ' Blind';
     if (polymorphed
