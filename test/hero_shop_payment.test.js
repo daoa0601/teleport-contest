@@ -90,6 +90,29 @@ void test('buying an unpaid sack and nested goods settles the whole group using 
     assert.equal(inner.cknown, false);
     assert.equal(game.context.move, 1);
 });
+void test('buying an unpaid sack with already paid contents names its unpaid ownership', async () => {
+    freshObjectRoom();
+    const sack = await addInventoryObject(SACK, { cknown: true });
+    const dagger = await knownObject(DAGGER, { unpaid: false });
+    await addCreatedObjectToContainer(sack, dagger);
+    const { shopkeeper } = await createStaffedShop({ bill: [
+            { bo_id: sack.o_id, bquan: 1, price: 2, useup: false },
+        ] });
+    sack.unpaid = true;
+    setHeroGoldAmount(game, 2);
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    input.feed('a\n');
+    await withMessagePages(() => rhack('p'.charCodeAt(0)), input, /bought .*sack and its contents|Thank you/, 3);
+    messages.push(game._pending_message);
+    assert.match(messages.join('\n'), /You bought an unpaid .*sack and its contents for 2 gold pieces\./);
+    assert.equal(sack.unpaid, false);
+    assert.equal(dagger.unpaid, false);
+    assert.equal(dagger.container, sack);
+    assert.equal(shopkeeper.eshk.billct, 0);
+    assert.equal(heroGoldAmount(game), 0);
+});
 void test('used goods are paid before buying the remaining stack inside a sack', async () => {
     freshObjectRoom();
     const sack = await addInventoryObject(SACK, { cknown: true });

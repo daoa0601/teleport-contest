@@ -37,8 +37,8 @@ const RING_CLASS = 4;
 // C objnam.c:paydoname(). Billing hides contents, weights, and the usual
 // inventory price; the payment menu supplies its own price column.
 export function paymentObjectDescription(object: GameObject, quantity: number, {
-    state = game, purchasing = false,
-}: { state?: GameState; purchasing?: boolean } = {}): string {
+    state = game, purchasingContents = false,
+}: { state?: GameState; purchasingContents?: boolean } = {}): string {
     const { quan, cknown } = object;
     const { wizweight, suppress_price } = state.iflags;
     const hasContents = !!object.contents?.length;
@@ -49,7 +49,7 @@ export function paymentObjectDescription(object: GameObject, quantity: number, {
     try {
         let name = objectDescription(object, { state });
         if (hasContents) {
-            if (!object.no_charge && !(purchasing && object.unpaid))
+            if (!object.no_charge && !(purchasingContents && object.unpaid))
                 name = `${object.unpaid ? 'an unpaid' : 'your'} ${name.replace(/^an? /, '')}`;
             name = object.unpaid ? `${name} and its contents` : `the contents of ${name}`;
         }

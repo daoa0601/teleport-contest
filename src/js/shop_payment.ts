@@ -87,7 +87,8 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
         }
     }
     if (!container && !await checkPurchaseFunds(resident, item, state)) return 'stop';
-    const name = paymentObjectDescription(item.object, item.quantity, { state, purchasing: true });
+    // Only buy_container() suppresses "an unpaid" for a grouped purchase.
+    const name = paymentObjectDescription(item.object, item.quantity, { state, purchasingContents: container });
     for (const object of purchases) {
         const entry = resident.eshk.bill.find(candidate => candidate.bo_id === object.o_id);
         if (!entry) continue;
