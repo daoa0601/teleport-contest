@@ -4254,7 +4254,6 @@ async function dotravel() {
     // after the pick key, but removes it from the logical topline transaction.
     // Silent travel can retain that row; a new attack must replace rather than
     // append to "staircase down".
-    game._retained_message = game._pending_message;
     game._pending_message = '';
     if (cursor.x === game.u.ux && cursor.y === game.u.uy) {
         game._travelTarget = null;
