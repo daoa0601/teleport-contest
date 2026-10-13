@@ -9,14 +9,16 @@ import { maybeDestroyWeb } from './web_trap.js';
 import { currentAttribute, exerciseAttribute, } from './attrib.js';
 import { armorSimpleName, objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroFootName, heroHeadName, monsterFootName } from './body_parts.js';
-import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_quest, is_pit, HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP, LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
+import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_endgame, In_quest, is_pit, HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
 import { flush_screen, lastDirtyMapCursor, map_trap, newsym, pline, plineWithContinuation, shieldeff, show_glyph_cell, } from './display.js';
 import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { buriedBallNear, buriedBallToPunishment } from './buried_object.js';
 import { loseHeroHp } from './hero_damage.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { refreshMovementProperties } from './properties.js';
+import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
+import { levelTeleport } from './level_teleport.js';
+import { gotoLevel as changeLevel } from './level_change.js';
 import { heroLiquidEffects } from './hack.js';
 import { dungeonDepth } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -43,7 +45,7 @@ import { finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { specialPrototypeAt } from './dungeon.js';
 import { setTrack } from './track.js';
-import { bringLeashedFollowers, clearFixedTeleportDestination, heroTeleportDestinationOk, heroTeleportTrapBlock, moveHeroByTeleport, safeTeleportDestination, } from './teleport.js';
+import { bringLeashedFollowers, clearFixedTeleportDestination, heroControlsTeleport, heroTeleportDestinationOk, heroTeleportTrapBlock, moveHeroByTeleport, safeTeleportDestination, } from './teleport.js';
 import { CLR_GREEN } from './terminal.js';
 import { cansee } from './vision.js';
 import { revealVibratingSquare } from './invocation.js';
@@ -682,6 +684,37 @@ async function triggerProjectileTrap(trap) {
     await stack_object(missile, game);
     newsym(trap.tx, trap.ty);
 }
+// C teleport.c:level_tele_trap(). The level prompt acknowledges the trap
+// announcement before accepting its first character.
+async function triggerLevelTeleportTrap(trap, gotoLevel, intentional) {
+    trap.tseen = true;
+    const hero = game.u;
+    const verb = intentional ? 'trigger' : `${monsterLocomotion(heroMonsterForm(), 'step')} onto`;
+    await plineWithContinuation(`You ${verb} a level teleport trap!`);
+    if (hero.antimagic && !intentional)
+        await shieldeff(hero.ux, hero.uy);
+    if (hero.antimagic && !intentional || In_endgame(hero.uz)) {
+        await plineWithContinuation('You feel a wrenching sensation.');
+        return;
+    }
+    deleteTrap(trap);
+    newsym(hero.ux, hero.uy);
+    // level_tele() schedules travel; trap feedback and confusion happen on
+    // the old level before deferred_goto() performs the change.
+    const travel = { args: null };
+    await levelTeleport({ gotoLevel: (...args) => { travel.args = args; } });
+    const controlled = heroControlsTeleport();
+    if (heroIsHallucinating(game) || controlled) {
+        await plineWithContinuation(`You briefly feel ${heroIsHallucinating(game) ? 'oriented' : 'centered'}.`);
+    }
+    else {
+        await plineWithContinuation(`You feel ${(hero.confusionTurns ?? 0) > 0 || hero.confused ? 'even more ' : ''}disoriented.`);
+    }
+    if (!controlled)
+        setPropertyTimeout('confusion', (hero.confusionTurns ?? 0) + 3, game);
+    if (travel.args)
+        await (gotoLevel ?? changeLevel)(...travel.args);
+}
 async function triggerSqueakyBoard(trap, { viaSitting = false, failedUntrap = false } = {}) {
     const hero = game.u;
     const blind = !!game.blind || heroIsBlind(game);
@@ -1077,6 +1110,9 @@ export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel =
         }
         case TELEP_TRAP:
             shortCircuited = await triggerTeleportTrap(trap, finishTeleport);
+            break;
+        case LEVEL_TELEP:
+            await triggerLevelTeleportTrap(trap, gotoLevel, viaSitting || forceTrap);
             break;
         case ARROW_TRAP:
         case DART_TRAP:
