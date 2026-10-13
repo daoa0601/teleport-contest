@@ -431,12 +431,18 @@ export function armorObjectName(object, state, { minimal = false } = {}) {
             : state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp] ?? actualName;
     return armorPresentationName(noun, ordinaryName);
 }
-// C ansimpleoname(): no personal/call names, quantity prefix, or observation.
-export function simpleObjectNameWithArticle(object, state = game) {
+// C simpleonames(): suppress personal/call names and the quantity prefix.
+export function simpleObjectName(object, state = game) {
     const noun = minimalObjectName(object, state);
     const quantity = object.quan ?? object.quantity ?? 1;
+    return quantity === 1 ? noun : pluralizeObjectNoun(object, noun);
+}
+// C ansimpleoname(): add an article to singular simple names.
+export function simpleObjectNameWithArticle(object, state = game) {
+    const noun = simpleObjectName(object, state);
+    const quantity = object.quan ?? object.quantity ?? 1;
     if (quantity !== 1)
-        return pluralizeObjectNoun(object, noun);
+        return noun;
     const uniqueType = object.otyp === FAKE_AMULET_OF_YENDOR ? AMULET_OF_YENDOR : object.otyp;
     if (OBJECT_UNIQUE[uniqueType] && noun === OBJECT_NAMES[uniqueType])
         return definiteKillerName(noun);

@@ -24,7 +24,7 @@ import {
     ARROW as FIRST_OBJECT, EGG, CHEST, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, STATUE, TIN,
 } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
-import { objectName, observeObjectForNaming, singularObjectName } from './objnam.js';
+import { objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isWeaponTool, objectUsesCharges } from './object_properties.js';
@@ -479,7 +479,7 @@ function itemActionEntries(item: GameObject, state: GameState) {
     }
     if (item === state.uquiver) {
         const launcher = shoot && state.uwep
-            ? ` with your wielded ${objectName(state.uwep, state)}` : '';
+            ? ` with your wielded ${simpleObjectName(state.uwep, state)}` : '';
         entries.push({ key: 'f', text: `${shoot ? 'Shoot' : 'Throw'} ${stack ? 'one of these' : 'this'}${launcher}` });
     }
     entries.push({ key: 'i', text: 'Adjust inventory by assigning new letter' });
