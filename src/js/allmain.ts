@@ -1952,6 +1952,8 @@ async function resolveDeferredHeroItemTheft(
         subject = monsterName(monster, { state: game, capitalized: true });
     if (object.unpaid)
         removeObjectAndContentsFromBill(object, game, { resident: currentShopResident(game) });
+    // C yname() observes the item while it still belongs to the hero.
+    observeObjectForNaming(object);
     const stolenName = ownedObjectName(object, game, { capitalized: false });
     unlinkObject(object, game);
     await finishInventoryRemoval(object, game);
