@@ -640,7 +640,10 @@ export async function changeMonsterForm(
             if (wasSpotted)
                 message = `${oldSubject} turns into ${namelessMonsterName(monster, { state, article: 'a' })}!`;
             else
-                message = `${monsterName(monster, { state, capitalized: true, article: monster.mtame ? 'your' : 'a' })} appears!`;
+                message = `${monsterName(monster, {
+                    state, capitalized: true, article: monster.mtame ? 'your' : 'a',
+                    suppressSaddle: false,
+                })} appears!`;
             await publish(message);
         } else {
             if (wasSpotted) {

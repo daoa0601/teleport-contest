@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
-import { createMonsterAt } from './support/monsters.js';
+import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 for (const [species, description] of [
@@ -25,3 +25,18 @@ for (const [species, description] of [
         assert.equal(monster.mgivenname, 'Spot');
     });
 }
+
+void test('a named mount that becomes visible announces its saddle', async () => {
+    freshObjectRoom();
+    const mount = await createSaddledSteed('pony');
+    setMonsterGivenName(mount, 'Spot');
+    mount.minvis = true;
+    const messages: string[] = [];
+
+    await changeMonsterForm(mount, MONSTER_NAME.indexOf('horse'), game, {
+        showMessage: true, publish: text => { messages.push(text); },
+    });
+
+    assert.equal(messages[0], 'Saddled Spot appears!');
+    assert.equal(mount.saddled, true);
+});
