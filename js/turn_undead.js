@@ -3,6 +3,7 @@ import { requirePlayingGame } from './gstate.js';
 // C ref: pray.c doturn() and maybe_turn_mon_iter().
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
+import { hallucinatedDeityName } from './alignment.js';
 import { A_WIS, BOLT_LIM, MAXULEV, } from './const.js';
 import { pline, shieldeff, } from './display.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -26,14 +27,6 @@ const TURN_LEVEL_BY_CLASS = new Map([
     [54, 14], // ghost
     [38, 16], // lich
 ]);
-function deityName(state) {
-    const alignment = state.u?.ualign?.type ?? 0;
-    if (alignment > 0)
-        return state.urole?.gods?.lawful || 'your god';
-    if (alignment < 0)
-        return state.urole?.gods?.chaotic || 'your god';
-    return state.urole?.gods?.neutral || 'your god';
-}
 function heroIsDemonOrUndead(state) {
     const hero = state.u;
     const flags = MONSTER_FLAGS2[hero.umonnum] ?? 0;
@@ -91,7 +84,7 @@ export async function turnUndeadByCallingOnDeity(state = game, { finishMonsterKi
         state.u.uconduct = {};
     const priorCalls = state.u.uconduct.gnostic ?? 0;
     state.u.uconduct.gnostic = priorCalls + 1;
-    const deity = deityName(state);
+    const deity = hallucinatedDeityName(state.u.ualign.type, state);
     if (!heroCanChant(state)) {
         const strangled = state.u?.strangled
             || (state.u?.strangledTurns ?? 0) > 0;
@@ -110,7 +103,7 @@ export async function turnUndeadByCallingOnDeity(state = game, { finishMonsterKi
         return [];
     }
     if (inGehennom(state)) {
-        await pline(`Since you are in Gehennom, ${deity} can't help you.`);
+        await pline(`Since you are in Gehennom, ${deity} ${deity === 'Moloch' ? "won't" : "can't"} help you.`);
         aggravateMonsters(state, random);
         state.context.move = 1;
         return [];

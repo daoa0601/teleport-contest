@@ -9,6 +9,7 @@ import { turnUndeadByCallingOnDeity } from '../js/turn_undead.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { runExtendedCommand } from './support/commands.js';
+import { initRng } from '../js/rng.js';
 const PM_HUMAN_MUMMY = 192;
 const PM_HUMAN_ZOMBIE = 244;
 function freshPriest(alignment = 1) {
@@ -72,5 +73,18 @@ void test('#turn is refused in any hellish dungeon, even with a different dungeo
     assert.ok(game.level.monsters.includes(zombie));
     assert.equal(game._helplessTurns ?? 0, 0);
     assert.equal(game.context.move, 1);
+});
+void test('a hallucinating priest calls upon different imagined deities with #turn', async () => {
+    const invocations = new Set();
+    for (let seed = 1n; seed <= 4n; seed++) {
+        freshPriest(1);
+        requirePlayingGame(game);
+        game.u.hallucinationTurns = 50;
+        initRng(seed);
+        await runExtendedCommand('turn');
+        assert.match(game._pending_message, /^Calling upon .+, you chant an arcane formula\./);
+        invocations.add(game._pending_message);
+    }
+    assert.ok(invocations.size > 1, 'hallucination must change the deity named by the invocation');
 });
 //# sourceMappingURL=turn_undead.test.js.map
