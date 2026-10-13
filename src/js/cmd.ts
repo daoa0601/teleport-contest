@@ -7308,6 +7308,12 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                 await pline(`You stop.  ${displayName} is in the way!`);
                 return true;
             }
+            if (monster.mfrozen || !monster.mcanmove || monster.msleeping
+                || (MONSTER_MOVE[monster.mnum] === 0 && rn2(6))) {
+                await pline(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
+                stopRun(game);
+                return true;
+            }
             // C domove_core() confirms a yielded step before either actor
             // changes position or the hero tries to escape a current trap.
             if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy)) return false;
