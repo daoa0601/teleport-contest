@@ -20,7 +20,7 @@ import { zapHeroWithObject } from './hero_self_zap.js';
 import { liquidForHole } from './hole.js';
 import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand, } from './immediate_zap.js';
 import { lightRoom } from './light.js';
-import { canDigDown, makemonNear } from './mklev.js';
+import { canDigDown, makemonAt } from './mklev.js';
 import { monsterAtPosition } from './monster_location.js';
 import { delobj } from './object_delete.js';
 import { BOULDER, OBJECT_DESCRIPTIONS, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, } from './object_data.js';
@@ -151,7 +151,7 @@ export async function breakWand(wand, { state = game } = {}) {
             fillMessageShown ||= dug.filledWithLiquid;
         }
         else if (wand.otyp === WAN_CREATE_MONSTER) {
-            await makemonNear(null, state.u.ux, state.u.uy);
+            await makemonAt(null, state.u.ux, state.u.uy);
         }
         else if (x !== state.u.ux || y !== state.u.uy) {
             const monster = monsterAtPosition(state.level, x, y);

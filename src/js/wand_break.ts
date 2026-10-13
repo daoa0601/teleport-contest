@@ -30,7 +30,7 @@ import {
     beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand,
 } from './immediate_zap.js';
 import { lightRoom } from './light.js';
-import { canDigDown, makemonNear } from './mklev.js';
+import { canDigDown, makemonAt } from './mklev.js';
 import { monsterAtPosition } from './monster_location.js';
 import { delobj } from './object_delete.js';
 import {
@@ -157,7 +157,7 @@ export async function breakWand(wand: GameObject, { state = game }: { state?: Ga
             shopDamage ||= dug.shopDamage;
             fillMessageShown ||= dug.filledWithLiquid;
         } else if (wand.otyp === WAN_CREATE_MONSTER) {
-            await makemonNear(null, state.u.ux, state.u.uy);
+            await makemonAt(null, state.u.ux, state.u.uy);
         } else if (x !== state.u.ux || y !== state.u.uy) {
             const monster = monsterAtPosition(state.level, x, y);
             if (monster) await hitMonsterWithWand(monster, wand, { state, x, y });
