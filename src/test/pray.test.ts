@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { angryGodMaximum } from '../js/divine_wrath.js';
 import { finishPrayerOccupation } from '../js/pray.js';
 import { moveloop_core } from '../js/allmain.js';
-import { A_NONE, ALTAR, Align2amask, LAVAPOOL, PARANOID_PRAY, ROOM, STONE, TT_LAVA, W_NONPASSWALL } from '../js/const.js';
+import { A_NONE, ALTAR, Align2amask, LAVAPOOL, PARANOID_PRAY, ROOM, STONE, TT_LAVA, W_NONPASSWALL, W_TOOL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
@@ -15,7 +15,7 @@ import { magicNegation } from '../js/magic_negation.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKey, resetInputState } from '../js/input.js';
-import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, DAGGER, FIGURINE, GAUNTLETS_OF_FUMBLING, LEATHER_GLOVES, LOADSTONE, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, BLINDFOLD, BOULDER, CORPSE, DAGGER, FIGURINE, GAUNTLETS_OF_FUMBLING, LEATHER_GLOVES, LOADSTONE, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
@@ -35,6 +35,7 @@ import { saveMonsterTraits } from '../js/monster_traits.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { syncBlindness } from '../js/senses.js';
 
 function prayerRoom({ hero = {}, flags = {}, ...room }: ObjectRoomOptions = {}) {
     freshObjectRoom({
@@ -298,6 +299,22 @@ void test('#pray names known gauntlets when curing slippery fingers before uncur
     assert.equal(game.u.glibTurns, 0);
     assert.equal(gloves.cursed, false);
     assert.ok(messages.some(message => message.includes('Your gauntlets are no longer slippery.')));
+});
+
+void test('#pray does not reveal a blindfold\'s curse when another intrinsic also prevents sight', async () => {
+    prayerRoom({ hero: { ualign: { type: 0, record: 1 } } });
+    requirePlayingGame(game);
+    grantIntrinsicProperty('blinded', 'outside');
+    const blindfold = await addInventoryObject(BLINDFOLD, { cursed: true, bknown: false });
+    game.ublindf = game.u.ublindf = blindfold;
+    blindfold.owornmask = W_TOOL;
+    syncBlindness();
+    assert.equal(blindfold.bknown, false);
+
+    await resolvePrayer();
+
+    assert.equal(blindfold.cursed, false);
+    assert.equal(blindfold.bknown, false);
 });
 
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {

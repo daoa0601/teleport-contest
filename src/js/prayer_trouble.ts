@@ -19,7 +19,7 @@ import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
 import { currentHungerState, restoreHeroNutrition } from './hunger.js';
 import { consumeInventoryItem } from './invent.js';
 import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
 import {
     AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, BOULDER, FUMBLE_BOOTS,
     GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS,
@@ -34,7 +34,7 @@ import { unpunishHero } from './punishment.js';
 import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';
 import { d, rnd } from './rng.js';
 import {
-    blindfolded, heroIsBlind, heroIsDeaf, heroIsHallucinating,
+    blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating,
     permanentBlind, setHeroBlindnessTurns, syncDeafness,
 } from './senses.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
@@ -62,7 +62,6 @@ export const Trouble = {
 export type PrayerTrouble = typeof Trouble[keyof typeof Trouble] | 0;
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 const RIN_SUSTAIN_ABILITY = OBJECT_NAMES.indexOf('sustain ability');
-const M1_NOEYES = 0x00001000;
 const M2_ROCKTHROW = 0x08000000;
 
 export function worstPrayerTrouble(state: GameState = game): PrayerTrouble {
@@ -195,8 +194,7 @@ export async function uncursePrayerObject(object: GameObject, label: string | nu
         if (!object.cursed) return;
     }
     const blindfoldOnly = object === state.ublindf && blindfolded(state)
-        && !permanentBlind(state) && !state.u.blindTurns
-        && !(requireMonsterData(MONSTER_FLAGS1, state.u.umonnum) & M1_NOEYES);
+        && !heroIsBlinded(state);
     if (!heroIsBlind(state) || blindfoldOnly) {
         const subject = label || ownedObjectAction(object, 'softly glow', state);
         await pline(`${subject} ${displayColorName('amber')}.`);
