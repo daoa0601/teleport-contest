@@ -85,6 +85,7 @@ import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js
 import { mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
+import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
 import {
     A_CHA,
@@ -6189,15 +6190,13 @@ function applyLuaMonsterAppearance(monster: Monster | null | undefined, appearan
         monster.mappearance = appearance.type;
         return;
     }
-    const terrains: Record<string, number> = {
-        fountain: FOUNTAIN,
-        'staircase down': STAIRS,
-    };
-    const terrain = terrains[appearance.name];
-    if (appearance.kind !== 'terrain' || terrain == null)
+    // C sp_lev.c:create_monster() stores the matching defsyms index,
+    // which is distinct from the terrain type used by map locations.
+    const symbol = MAP_SYMBOLS.findIndex(candidate => candidate.name === appearance.name);
+    if (symbol < 0)
         throw new Error(`unsupported Lua monster appearance ${appearance.name}`);
     monster.m_ap_type = M_AP_FURNITURE;
-    monster.mappearance = terrain;
+    monster.mappearance = symbol;
 }
 
 async function createLuaMonster(context: SpecialLevelContext, options: DesMonsterOptions): Promise<Monster | null> {

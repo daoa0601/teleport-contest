@@ -206,7 +206,7 @@ async function offMessage(object, state) {
     if (message)
         await pline(message);
 }
-async function canSelectOff(object, slot) {
+export async function canSelectOff(object, slot) {
     const weapon = takeoffSlotObject('uwep');
     const gloves = takeoffSlotObject('uarmg');
     const cloak = takeoffSlotObject('uarmc');

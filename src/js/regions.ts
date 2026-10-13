@@ -28,7 +28,8 @@ import {
 } from './monster_data.js';
 import { AD_DRST, AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { d, rn2, rnd } from './rng.js';
-import { heroIsBlind, setHeroBlindnessTurns, syncBlindness } from './senses.js';
+import { heroIsBlind } from './senses.js';
+import { makeBlinded } from './sight_change.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 
 const GAS_BAD = 0;
@@ -254,8 +255,7 @@ export async function rescueHeroFromRegion(state: GameState = game): Promise<voi
         await plineWithContinuation('The gas cloud has dissipated.');
     }
     if (state.u.blindTurns === 1) {
-        const { regainedSight } = setHeroBlindnessTurns(0, state);
-        if (regainedSight) await plineWithContinuation('You can see again.');
+        await makeBlinded(0, { state });
     }
 }
 
@@ -340,8 +340,7 @@ async function affectHeroWithGas(
 
     if (!heroIsBlind(state)) {
         await publish('Your eyes sting.');
-        state.u.blindTurns = Math.max(state.u.blindTurns ?? 0, 1);
-        syncBlindness(state);
+        await makeBlinded(1, { state, talk: false, publish });
     }
     if (tolerance === GAS_MINOR) {
         await publish('You cough!');
