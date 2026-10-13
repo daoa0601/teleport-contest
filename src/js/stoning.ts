@@ -411,11 +411,11 @@ export async function touchPetrifyingCorpse(object: GameObject | null | undefine
         || gloves || heroResistsStoning()) return null;
 
     const corpse = corpseWithArticle(object);
-    await pline(`${action} ${corpse} is a fatal mistake.`);
+    await plineWithContinuation(`${action} ${corpse} is a fatal mistake.`);
     await beforeDeath?.();
     const result = await resolveImmediatePetrification({
         killer: corpse,
-        publish: pline,
+        publish: plineWithContinuation,
     });
     return result.transformed && !result.died ? null : { died: result.died };
 }
