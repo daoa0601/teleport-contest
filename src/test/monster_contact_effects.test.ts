@@ -84,7 +84,7 @@ for (const delay of ['dressing', 'unprotected prayer', 'negative multi']) {
             assert.ok(armor.invlet);
             resetInputState().feed(armor.invlet);
             await rhack('W'.charCodeAt(0));
-            assert.ok((game._delayedAction?.remainingGlobalTurns ?? 0) > 0);
+            assert.equal(game.uarm, armor);
         } else if (delay === 'unprotected prayer') {
             game.flags.paranoia_bits = 0;
             game.flags.debug = false;

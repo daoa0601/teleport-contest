@@ -39,11 +39,10 @@ export type RunState = DirectionalRunState | TravelRunState;
 
 export type DelayedArmorAction = {
     object: GameObject;
-    remainingGlobalTurns: number;
     ready: boolean;
-    finishMessage: string;
     _runmodeRetainedTopline?: TerminalCell[] | undefined;
-} & ({ kind: 'wear' | 'remove' } | { kind: 'steal'; thief: Monster });
+} & ({ kind: 'wear' | 'remove'; remainingGlobalTurns: number; finishMessage: string }
+    | { kind: 'steal'; thief: Monster });
 
 export interface CommandInput {
     key: number;

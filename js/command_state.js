@@ -33,9 +33,10 @@ export function endVoluntaryMultiTurn(state = game) {
 // Native multi < 0 includes sleep, paralysis, prayer, and delayed actions.
 // Their remaining turns have separate owners in this runtime.
 export function heroHasInvoluntaryDelay(state = game) {
+    const dressing = state._delayedAction;
     return (state.multi ?? 0) < 0
         || (state._helplessTurns ?? 0) > 0
         || (state._prayerTurnsRemaining ?? 0) > 0
-        || (state._delayedAction?.remainingGlobalTurns ?? 0) > 0;
+        || !!(dressing && dressing.kind !== 'steal' && dressing.remainingGlobalTurns > 0);
 }
 //# sourceMappingURL=command_state.js.map

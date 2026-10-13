@@ -84,7 +84,8 @@ void test('a nymph waits while the hero removes a suit, then steals it', async (
     let reads = 0;
     input.beforeRead = () => {
         if (++reads > 12) throw new Error(`Removal did not finish: ${JSON.stringify({
-            delay: game._delayedAction?.remainingGlobalTurns, moves: game.moves,
+            delay: game._delayedAction?.kind === 'steal' ? game._helplessTurns
+                : game._delayedAction?.remainingGlobalTurns, moves: game.moves,
             multi: game.multi, movement: game.u.umovement, message: game._pending_message,
         })}`);
     };

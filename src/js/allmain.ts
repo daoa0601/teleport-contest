@@ -702,12 +702,8 @@ async function finishInitialTurnMaintenanceAfterIntervention(
         await moveElementalBubbles();
     else if (game.level?.flags?.fumaroles) fumaroles(game);
     const delayedAction = game._delayedAction;
-    if (delayedAction && delayedAction.remainingGlobalTurns > 0) {
+    if (delayedAction && delayedAction.kind !== 'steal' && delayedAction.remainingGlobalTurns > 0) {
         delayedAction.remainingGlobalTurns--;
-        // A later theft uses nomul() to preserve the remaining delay.
-        // Keep its negative multi current as each global turn elapses.
-        if (delayedAction.kind === 'steal')
-            game.multi = -delayedAction.remainingGlobalTurns;
         if (delayedAction.remainingGlobalTurns === 0)
             delayedAction.ready = true;
     }
@@ -720,6 +716,7 @@ async function finishInitialTurnMaintenanceAfterIntervention(
         if (!game._deathSurvivedMessagePending)
             game._helplessRunmodeDelayPending = sourceTurn;
         game._helplessTurns--;
+        if (delayedAction?.kind === 'steal') game.multi = -game._helplessTurns;
         if (game._helplessTurns === 0) {
             const doneMessage = game._helplessDoneMessage
                 ?? 'You can move again.';
@@ -1655,6 +1652,12 @@ export async function finishHeroHelplessness(
     state._helplessDoneMessage = null;
     const after = state._helplessAfter;
     state._helplessAfter = null;
+    // stealarm is an afternmv callback, so sleep and life saving change
+    // when it runs. A later after-handler replaces it, just as in C.
+    if (state._delayedAction?.kind === 'steal') {
+        if (after) state._delayedAction = null;
+        else state._delayedAction.ready = true;
+    }
     // C eat.c:Hear_again() runs after unmul() has delivered nomovemsg.
     // Keep it after the awaited tty continuation: if the rotten-food
     // message fills the topline, the acknowledgement resumes here before
@@ -1893,18 +1896,24 @@ async function resolveDeferredHeroItemTheft(
             object.cursed = false;
             try {
                 await plineWithContinuation(removalMessage, { urgent: true });
+                // nomul() cannot shorten another involuntary delay. Set it
+                // before removal, whose effects can sleep or life-save us.
+                // Life saving may replace the counter during this same
+                // monster turn, before maintenance refreshes multi.
+                const currentDelay = game._helplessTurns || -game.multi;
+                const remaining = Math.max(delay, currentDelay);
+                game.multi = -remaining;
+                game._helplessTurns = remaining;
+                game._helplessReason = 'taking off clothes';
+                game._helplessDoneMessage = null;
                 await removeWornHeroItem(object, game);
             } finally {
                 object.cursed = cursed;
             }
-            // nomul() refuses to shorten an existing negative multi, even
-            // when this theft replaces the armor being removed.
-            const remaining = Math.max(delay, -game.multi, game._helplessTurns ?? 0);
-            if (remaining > 0) {
+            if ((game._helplessTurns ?? 0) > 0) {
                 game._delayedAction = { kind: 'steal', thief: monster, object,
-                    remainingGlobalTurns: remaining, ready: false, finishMessage: '' };
-                game.multi = -remaining;
-                game._helplessDoneMessage = null;
+                    ready: false };
+                game._helplessAfter = null;
                 return false;
             }
         }
@@ -3823,7 +3832,6 @@ export async function moveloop_core() {
             g._armorClassDirty = false;
             delete g._armorClassDirtyAfterDelayedFrame;
         } else if (delayed.kind === 'steal') {
-            await finishHeroHelplessness();
             await finishDelayedArmorTheft(delayed.thief, delayed.object);
         } else if (delayed.kind === 'remove') {
             // C allmain.c:unmul() emits nomovemsg before calling afternmv.
