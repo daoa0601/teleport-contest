@@ -5093,7 +5093,7 @@ async function dowield(cannedInvlet: string | null = null): Promise<void> {
         )
         : {
             cancelled: false,
-            none: false,
+            none: cannedInvlet === '-',
             object: (game.inventory || []).find(candidate =>
                 candidate.invlet === cannedInvlet),
         };

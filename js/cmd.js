@@ -4788,7 +4788,7 @@ async function dowield(cannedInvlet = null) {
         })
         : {
             cancelled: false,
-            none: false,
+            none: cannedInvlet === '-',
             object: (game.inventory || []).find(candidate => candidate.invlet === cannedInvlet),
         };
     if (selection.cancelled) {
