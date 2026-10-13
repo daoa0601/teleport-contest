@@ -492,10 +492,7 @@ export async function restoregamePreamble() {
     if (game.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
     await applyCalendarMessages();
-    await readEngravingAt(game.u.ux, game.u.uy, {
-        showMore: showInlineMore,
-        showLine: plineWithContinuation,
-    });
+    await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
     await fixShopDamage(game);
     await finishMoveloopPreamble();
 }
@@ -578,10 +575,7 @@ async function enterTutorial() {
     vision_reset();
     await docrt();
     await checkSpecialRoom();
-    await readEngravingAt(game.u.ux, game.u.uy, {
-        showMore: showInlineMore,
-        showLine: plineWithContinuation,
-    });
+    await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
     findArmorClass(game);
     await redrawMap();
     await flush_screen(1);

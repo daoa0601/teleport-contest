@@ -21,13 +21,7 @@ import {
 } from './stoning.js';
 
 export async function readFloorEngraving(x: number, y: number): Promise<void> {
-    const read = await readEngravingAt(x, y, {
-        showMore: async (message: string) => {
-            await plineWithContinuation(message);
-            return flushPendingTopline();
-        },
-        showLine: plineWithContinuation,
-    });
+    const read = await readEngravingAt(x, y, plineWithContinuation);
     if (read && game._runState) stopRun();
 }
 
