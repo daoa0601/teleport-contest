@@ -73,6 +73,7 @@ export interface SpellbookContext {
 export interface GameContext extends FoodContext {
     move: number;
     botl?: boolean | number;
+    time_botl?: boolean;
     bypasses?: boolean;
     current_fruit?: number;
     digging?: DiggingContext;
@@ -411,7 +412,6 @@ export interface GameState {
     _statusDeafOverride?: boolean;
     _statusGoldOverride?: number;
     _statusHpOverride?: number;
-    _statusHungerOverride?: number;
     _statusProjectedAc?: number;
     _armorClassDirty?: boolean;
     _armorClassDirtyAfterDelayedFrame?: boolean;

@@ -148,7 +148,6 @@ export async function updateHeroHunger(increasing, { state = game } = {}) {
     const context = state.context;
     if (state._occupation?.key === 'eat-food' || context.forceSaveHungerState) {
         // newuhs() changes uhs here without requesting a status redraw.
-        state._statusHungerOverride ??= hero.uhs ?? NOT_HUNGRY;
         context.hungerStateBeforeMeal ??= hero.uhs ?? NOT_HUNGRY;
         hero.uhs = next;
         return;
@@ -194,6 +193,7 @@ export async function updateHeroHunger(increasing, { state = game } = {}) {
         stopRun(state);
     }
     hero.uhs = next;
+    state.context.botl = true;
     await bot();
     if ((Upolyd(hero) ? hero.mh : hero.uhp) < 1)
         await dieFromHunger('exhaustion', state);

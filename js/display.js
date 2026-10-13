@@ -1926,6 +1926,7 @@ export async function docrt({ beforeGlow = null } = {}) {
     }
     finally {
         game.program_state.in_docrt = false;
+        game.context.botl = true;
     }
 }
 // Refresh map cells after an ordinary vision change or a temporary overlay.
@@ -2128,7 +2129,7 @@ export function _statusLine2(refreshLoad = true) {
         if ((u.sickType ?? 0) & SICK_NONVOMITABLE)
             line += ' TermIll';
     }
-    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][game._statusHungerOverride ?? u.uhs ?? currentHungerState(game)];
+    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? currentHungerState(game)];
     if (hungerLabel)
         line += ` ${hungerLabel}`;
     const load = refreshLoad ? encumbranceLabel(nearCapacity(game)) : u._encumbrance;
@@ -2200,20 +2201,8 @@ export function serialize_terminal_grid(display) {
     }
     return output;
 }
-function statusLines(update) {
-    // C botl.c:bot() reserves uhp == -1 for saving. It leaves both status
-    // rows untouched, even when real damage happens to produce that value.
-    if (!update || game._statusUpdatesDisabled || game.u.uhp === -1) {
-        const row = (index) => game.nhDisplay?.grid[index]
-            ?.map(cell => cell.ch).join('').trimEnd() ?? '';
-        return [row(22), row(23)];
-    }
-    // A map flush retains the displayed load until native code requests bot().
-    if (game.context.botl) {
-        game.u._encumbrance = encumbranceLabel(nearCapacity(game));
-        game.context.botl = false;
-    }
-    return [_statusLine1(), _statusLine2(false)];
+function displayedStatusLines() {
+    return game.nhDisplay?.statusLines ?? ['', ''];
 }
 function writeStatusLines(display, lines) {
     for (const [index, text] of lines.entries()) {
@@ -2224,7 +2213,7 @@ function writeStatusLines(display, lines) {
     }
 }
 // ── Build screen output ──
-function _buildScreenOutput(updateStatus = true) {
+function _buildScreenOutput() {
     const display = game?.nhDisplay;
     if (!display)
         return;
@@ -2244,7 +2233,7 @@ function _buildScreenOutput(updateStatus = true) {
         output += (blankMainWindow ? '' : render_map_row(y)) + '\n';
     }
     // Row 22-23: status
-    const status = statusLines(updateStatus);
+    const status = displayedStatusLines();
     output += (blankMainWindow ? '' : status[0]) + '\n';
     output += blankMainWindow ? '' : status[1];
     game._screen_output = output;
@@ -2297,8 +2286,10 @@ export async function flush_screen(mode) {
         game._mapFlushPaused = !game._mapFlushPaused;
     if (game._mapFlushPaused)
         return;
-    if (game.context.botl)
+    if (game.context.botl || game.nhDisplay?.statusLines === null)
         refreshStatusLines();
+    else if (game.context.time_botl)
+        timebot();
     const display = game.nhDisplay;
     const mapCursor = mode === 0 && display
         ? lastDirtyMapCursor() ?? [display.cursorCol, display.cursorRow] : null;
@@ -2366,9 +2357,23 @@ function refreshStatusLines() {
         || game.program_state.windows_exited || game._suppressMapStatusForFlush)
         return;
     game.u._encumbrance = encumbranceLabel(nearCapacity(game));
-    delete game._statusHungerOverride;
     game.context.botl = false;
-    writeStatusLines(display, statusLines(true));
+    game.context.time_botl = false;
+    display.statusLines = [_statusLine1(), _statusLine2(false)];
+    writeStatusLines(display, display.statusLines);
+}
+// C botl.c:stat_update_time() notifies only BL_TIME. Other fields keep the
+// values from the last bot(), even if game state changed during an occupation.
+export function timebot() {
+    game.context.time_botl = false;
+    const display = game.nhDisplay;
+    if (!display?.statusLines || !game.flags.time || game._statusUpdatesDisabled
+        || game.program_state.saving || game.program_state.windows_exited
+        || game._suppressMapStatusForFlush)
+        return;
+    const [first, second] = display.statusLines;
+    display.statusLines = [first, second.replace(/\bT:\d+\b/, `T:${game.moves}`)];
+    writeStatusLines(display, display.statusLines);
 }
 // ── pline ──
 export async function pline(msg) {
@@ -2526,7 +2531,7 @@ async function pageTopline(message, { urgent = false, menuLetter } = {}) {
         game._suppressMessagesUntilInput = false;
         game._retained_message = '';
         if (lines.length > 1)
-            _buildScreenOutput(false);
+            _buildScreenOutput();
         else
             display?.clearRow(0);
         display?.setCursor(0, 0);
@@ -2536,7 +2541,7 @@ async function pageTopline(message, { urgent = false, menuLetter } = {}) {
     // erases a one-line message; WIN_NOSTOP only prevents output suppression.
     game._retained_message = '';
     if (lines.length > 1) {
-        _buildScreenOutput(false);
+        _buildScreenOutput();
         display?.setCursor(0, 0);
     }
     else if (key === 27) {

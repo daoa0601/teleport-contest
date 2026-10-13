@@ -15,6 +15,7 @@ export async function loseHeroHp(amount, killer, { state = game, publish = pline
     const polymorphed = Upolyd(hero);
     const current = polymorphed ? 'mh' : 'uhp';
     const maximum = polymorphed ? 'mhmax' : 'uhpmax';
+    state.context.botl = true;
     stopRun(state);
     const hpBefore = hero[current];
     hero[current] -= amount;
@@ -77,6 +78,7 @@ export async function damageHeroFromMonster(monster, amount, { state = game, pub
     const hpKey = polymorphed ? 'mh' : 'uhp';
     const maximum = polymorphed ? 'mhmax' : 'uhpmax';
     const hpBefore = hero[hpKey];
+    state.context.botl = true;
     hero[hpKey] -= amount;
     if (state.flags.showdamage && amount)
         await publish(`[HP ${-amount}, ${hero[hpKey]} left]`);

@@ -152,6 +152,7 @@ export function adjustAttribute(attribute: number, amount: number, state: GameSt
     const newValue = currentAttribute(attribute, state);
     const changed = newValue !== oldValue;
     if (changed) {
+        state.context.botl = true;
         if (!Array.isArray(hero._exercise)) hero._exercise = [0, 0, 0, 0, 0, 0];
         hero._exercise[attribute] = 0;
     }
@@ -287,6 +288,7 @@ export async function reportHeroEncumbrance(state: GameState = game): Promise<vo
     const capacity = nearCapacity(state);
     const message = encumbranceMessage(previous, capacity);
     if (message) await plineWithContinuation(message);
+    if (previous !== capacity) state.context.botl = true;
     state._encumbranceLevel = capacity;
     state.u._encumbrance = encumbranceLabel(capacity);
     state._capacityDirty = false;

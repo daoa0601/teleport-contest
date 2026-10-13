@@ -735,6 +735,7 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
                 || game.u.regeneration;
         }
         if (shouldHeal) {
+            game.context.botl = true;
             game.u[activeHp] = Math.min(game.u[activeHpMax], game.u[activeHp] + 1);
             if (game.u[activeHp] === game.u[activeHpMax])
                 interruptCountedActivity('You are in full health.');
@@ -756,6 +757,7 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
             if (game.u?.magicalBreathingExtrinsic)
                 upper += 2;
             game.u.uen = Math.min(game.u.uenmax, game.u.uen + 1 + rn2(upper));
+            game.context.botl = true;
             if (game.u.uen === game.u.uenmax)
                 interruptCountedActivity('You feel full of energy.');
         }
@@ -909,6 +911,8 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(deferAmbientMess
     addHeroMovementRation(game, moveAmount);
     setTrack(game);
     game.moves = (game.moves || 1) + 1;
+    if (game.flags.time && !game.context.run)
+        game.context.time_botl = true;
     game._heroActionSeq = game.moves * 8;
     await currentLuaLifecycle().callCore(game, 'moveloop_turn');
     // nh_timeout() precedes regeneration and exerchk() in the C loop.  Keep
@@ -3477,7 +3481,6 @@ export async function moveloop_core() {
     // A removal message can leave the old AC on screen. Clear that temporary
     // value before the ordinary status repaint.
     delete g._statusAcOverride;
-    await bot();
     await flush_screen(1);
     heroEveryturnEffect(g);
     // A negative C `multi` suppresses rhack() but still leaves context.move

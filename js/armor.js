@@ -799,7 +799,11 @@ export function projectedArmorClass(state = game) {
 export function findArmorClass(state = game) {
     const hero = state.u;
     hero._magicNegation = magicNegation(hero, state);
-    hero.uac = projectedArmorClass(state);
+    const armorClass = projectedArmorClass(state);
+    if (hero.uac !== armorClass) {
+        hero.uac = armorClass;
+        state.context.botl = true;
+    }
     return hero.uac;
 }
 export function armorSimpleName(object, state = game) {

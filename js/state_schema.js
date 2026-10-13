@@ -98,7 +98,6 @@ const transientFields = {
     _statusDeafOverride: true,
     _statusGoldOverride: true,
     _statusHpOverride: true,
-    _statusHungerOverride: true,
     _statusProjectedAc: true,
     _statusUpdatesDisabled: true,
     _steedDismounting: true,

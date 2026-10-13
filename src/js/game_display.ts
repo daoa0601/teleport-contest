@@ -24,6 +24,8 @@ export class GameDisplay {
     readonly messages: string[];
     toplin: number;
     messageWinFlags: number;
+    // WIN_STATUS retains its fields independently of map and message redraws.
+    statusLines: readonly [string, string] | null = null;
 
     constructor(terminalOrContainerId: Terminal | string | HTMLElement | null = null) {
         // A supplied terminal permits headless use; a container ID creates the browser surface.

@@ -16,6 +16,7 @@ export async function stopHeroOccupation(state = game, publish = plineWithContin
             await publish(`You stop ${occupation.text}.`);
         }
         state._occupation = null;
+        state.context.botl = true;
     }
     if (occupation || (state.multi ?? 0) >= 0)
         endVoluntaryMultiTurn(state);

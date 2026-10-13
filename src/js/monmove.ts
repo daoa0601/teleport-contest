@@ -1865,6 +1865,7 @@ function reduceHeroContactDamage(
 // its maximum. Lethal HP stays negative until done() commits zero, after
 // done_in_by() has announced the death.
 function applyHeroContactDamage(state: PlayingGameState, damage: number) {
+    state.context.botl = true;
     if (Upolyd(state.u)) state.u.mh = Math.min((state.u.mh ?? 1) - damage, state.u.mhmax ?? 1);
     else state.u.uhp = Math.min(state.u.uhp - damage, state.u.uhpmax);
 }
@@ -6625,6 +6626,7 @@ export function resumeDeferredHeroStun(
         const oldTurns = state.u?.stunnedTurns ?? 0;
         state.u.stunnedTurns = oldTurns + Math.max(0, attack.damage ?? 0);
         state.u.stunned = state.u.stunnedTurns > 0;
+        if (!oldTurns && state.u.stunnedTurns) state.context.botl = true;
         if (oldTurns === 0) attack.stunMessage = 'You stagger...';
         attack.damage = Math.trunc((attack.damage ?? 0) / 2);
         attack.stunSelected = true;
@@ -7019,6 +7021,7 @@ export function resumeDeferredHeroBlindness(
         if (state?.u) state.u.blindTurns = oldTurns + increment;
         toggled = !state.blind && oldTurns <= 0;
         syncBlindness(state);
+        if (toggled) state.context.botl = true;
         state.vision_full_recalc = 1;
     }
     recordRandom(random, action.calls, 3);
@@ -7134,6 +7137,7 @@ export function applyHeroSpellDamage(
     const hpKey = Upolyd(state.u) ? 'mh' : 'uhp';
     const hpBefore = state.u[hpKey];
     attack.fatalDamage = { hpKey, hpBefore, damage };
+    state.context.botl = true;
     const hpMax = hpKey === 'mh' ? state.u.mhmax : state.u.uhpmax;
     state.u[hpKey] = Math.min(hpMax, hpBefore - damage);
     attack.appliedDamage = damage;
@@ -7180,6 +7184,7 @@ export function resumeDeferredHeroSpell(
             const monsterLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
             let duration = monsterLevel;
             if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
+            if (!state.u.confusionTurns && duration) state.context.botl = true;
             state.u.confusionTurns = (state.u.confusionTurns ?? 0) + duration;
         }
         attack.appliedDamage = 0;
@@ -7255,6 +7260,7 @@ export function resumeDeferredHeroSpell(
             if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
             duration += state.u?.stunnedTurns ?? 0;
         }
+        if (!!state.u.stunnedTurns !== !!duration) state.context.botl = true;
         state.u.stunnedTurns = duration;
         state.u.stunned = duration > 0;
         attack.stunnedHero = true;

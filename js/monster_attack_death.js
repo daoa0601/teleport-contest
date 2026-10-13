@@ -150,6 +150,7 @@ export async function finishMonsterAttackDeath(monster, { damage, pagerOwned = f
         if (game.u.uhp !== 0 || (Upolyd(game.u) && game.u.mh !== 0)) {
             game.u.uhp = 0;
             game.u.mh = 0;
+            game.context.botl = true;
         }
     };
     if (announcesDeath && game._suppressMessagesUntilInput) {
