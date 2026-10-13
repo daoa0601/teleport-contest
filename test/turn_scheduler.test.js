@@ -13,7 +13,7 @@ import { initializePet } from '../js/dog.js';
 import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { AKLYS, AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, CLUB, DAGGER, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, SHIELD_OF_DRAIN_RESISTANCE, WAN_MAGIC_MISSILE, } from '../js/object_data.js';
+import { AKLYS, AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, CLUB, CORPSE, DAGGER, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, SHIELD_OF_DRAIN_RESISTANCE, WAN_MAGIC_MISSILE, } from '../js/object_data.js';
 import { startHeroSickness, startHeroVomiting, } from '../js/hero_illness.js';
 import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
@@ -28,6 +28,39 @@ import { vision_recalc, vision_reset } from '../js/vision.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setHeroLycanthropy } from '../js/were.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
+import { takeMonsterTurn } from '../js/monmove.js';
+void test('digestion ends a polymorphed cube turn before the next monster attacks', async () => {
+    const remainingHp = [];
+    for (const digestBeforeScheduling of [true, false]) {
+        const input = freshTurnRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        requirePlayingGame(game);
+        const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
+        const cube = await createMonsterAt('gelatinous cube', 12, 10, NO_MINVENT);
+        for (const monster of [giant, cube]) {
+            monster.mpeaceful = 0;
+            monster.msleeping = 0;
+            monster.movement = 12;
+        }
+        const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('chameleon') });
+        await addObjectToMonsterInventory(cube, corpse);
+        installPagerInput(input, { expected: /turns into|hill giant/, limit: 8 });
+        initRng(11n);
+        // Native dochug() returns after digestion. Finishing that action
+        // before the actor scan must leave the next attack unchanged.
+        if (digestBeforeScheduling) {
+            await takeMonsterTurn(cube, game);
+            cube.movement = 0;
+        }
+        game._heroTimePending = true;
+        await finishAtCommandInput(input, moveloop_core, /turns into|hill giant/);
+        assert.equal(corpse.where, 'gone');
+        assert.equal(cube.mnum, MONSTER_NAME.indexOf('imp'));
+        assert.equal(cube.movement, 0);
+        assert.ok(game.u.uhp < 100, 'the giant must finish its attack after digestion');
+        remainingHp.push(game.u.uhp);
+    }
+    assert.equal(remainingHp[1], remainingHp[0], 'digestion must not add a curse attempt before the giant attacks');
+});
 void test('a queued were change waits until the hero wakes up', async () => {
     const input = freshTurnRoom();
     requirePlayingGame(game);

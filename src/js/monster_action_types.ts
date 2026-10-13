@@ -563,6 +563,7 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     movementStage?: 'postmov' | 'dochug';
     postMoveCapabilities?: MonsterMovementCapabilities;
     actionCompleted?: boolean;
+    digestedInventory?: boolean;
     actorDied?: boolean;
     actorLeftLevel?: boolean;
     heroDied?: boolean;

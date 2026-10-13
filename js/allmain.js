@@ -2928,6 +2928,9 @@ async function executeMonsterTurns(messageContext) {
             return false;
         if (action.conflictFight)
             continue;
+        // C dochug() returns after gelcube_digests(), before attacks or cursing.
+        if (action.movement.digestedInventory)
+            continue;
         // C dochug() returns immediately when item use spends the turn.
         if (action.movement?.usedDefense)
             continue;

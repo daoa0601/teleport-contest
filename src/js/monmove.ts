@@ -8504,7 +8504,8 @@ export async function takeMonsterTurn(
             calls, dochugContext,
             movement: {
                 oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
-                moved: false, actionCompleted: true, postMoveStatus: MMOVE_NOTHING,
+                moved: false, actionCompleted: true, digestedInventory: true,
+                postMoveStatus: MMOVE_NOTHING,
                 actorDied: !!monster.dead || monster.mhp <= 0,
                 heroDied: !!state.program_state.gameover,
             },
