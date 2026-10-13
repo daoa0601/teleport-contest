@@ -6,7 +6,7 @@ import { rhack } from '../js/cmd.js';
 import { ALTAR, Align2amask, BEAR_TRAP, FOUNTAIN, LANDMINE, PIT, TELEP_TRAP, THRONE, TT_BEARTRAP, TT_PIT, TT_WEB, WEB, } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { CLUB, CREAM_PIE, WHITE_DRAGON_SCALE_MAIL, } from '../js/object_data.js';
+import { CLUB, CORPSE, CREAM_PIE, WHITE_DRAGON_SCALE_MAIL, } from '../js/object_data.js';
 import { attrcurse, rndcurse } from '../js/throne.js';
 import { applyArmorOnEffects } from '../js/armor.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, } from '../js/properties.js';
@@ -17,6 +17,14 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+void test('sitting on a corpse describes the seat before its discomfort', async () => {
+    freshGameplayRoom();
+    await floorObject(CORPSE, 10, 10, { corpsenm: 0, name: 'giant ant corpse' });
+    pushKeys('sit\n');
+    await rhack('#'.charCodeAt(0));
+    assert.match(game._pending_message, /You sit on the corpse\.  It's not very comfortable\.\.\./);
+    assert.equal(game.context.move, 1);
+});
 void test('sitting on cream pies crushes the whole floor stack', async () => {
     const level = freshGameplayRoom();
     requirePlayingGame(game);

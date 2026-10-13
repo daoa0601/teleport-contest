@@ -7,7 +7,7 @@ import {
     TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { pline } from './display.js';
+import { plineWithContinuation as pline } from './display.js';
 import { game, requireInitializedGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -26,10 +26,11 @@ import {
     MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_MATERIAL, OBJECT_NAMES,
+    CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_MATERIAL,
     OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
+import { objectCombatName } from './objnam.js';
 import { heroGoldAmount } from './hero_gold.js';
 import {
     heroFormFlags, heroFormHidesWithoutCover,
@@ -90,13 +91,6 @@ function formIsHumanoid() {
 
 function objectQuantity(object: GameObject): number {
     return object?.quan ?? object?.quantity ?? 1;
-}
-
-function objectName(object: GameObject): string {
-    const quantity = objectQuantity(object);
-    const singular = object?.name || OBJECT_NAMES[object?.otyp] || 'object';
-    const plural = object?.plural || `${singular}s`;
-    return quantity === 1 ? singular : `${quantity} ${plural}`;
 }
 
 function surfaceName(typ: number): string {
@@ -178,7 +172,7 @@ async function sitOnObject(object: GameObject): Promise<void> {
         return;
     }
 
-    const name = objectName(object);
+    const name = objectCombatName(object, { includeCorpseSpecies: false });
     await pline(heroFormFlags(game) & M1_SLITHY
         ? `You coil up around the ${name}.`
         : `You sit on the ${name}.`);

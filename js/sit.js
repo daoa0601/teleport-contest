@@ -2,7 +2,7 @@
 // C ref: sit.c dosit() and lay_an_egg().
 import { A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE, ROOM, IS_LAVA, IS_POOL, Is_waterlevel, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { pline } from './display.js';
+import { plineWithContinuation as pline } from './display.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { spendHeroNutrition } from './hunger.js';
 import { heroCanReachFloor } from './floor_reach.js';
@@ -10,8 +10,9 @@ import { burnAwayHeroSlime } from './hack.js';
 import { placeCreatedObject, remove_object, stack_object } from './floor_object.js';
 import { mksobj, set_corpsenm, } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
-import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS, } from './object_data.js';
+import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_MATERIAL, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS, } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
+import { objectCombatName } from './objnam.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { heroFormFlags, heroFormHidesWithoutCover, heroMonsterForm, } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
@@ -64,12 +65,6 @@ function formIsHumanoid() {
 }
 function objectQuantity(object) {
     return object?.quan ?? object?.quantity ?? 1;
-}
-function objectName(object) {
-    const quantity = objectQuantity(object);
-    const singular = object?.name || OBJECT_NAMES[object?.otyp] || 'object';
-    const plural = object?.plural || `${singular}s`;
-    return quantity === 1 ? singular : `${quantity} ${plural}`;
 }
 function surfaceName(typ) {
     if (IS_POOL(typ))
@@ -156,7 +151,7 @@ async function sitOnObject(object) {
         await pline("It's probably not a good time for a picnic...");
         return;
     }
-    const name = objectName(object);
+    const name = objectCombatName(object, { includeCorpseSpecies: false });
     await pline(heroFormFlags(game) & M1_SLITHY
         ? `You coil up around the ${name}.`
         : `You sit on the ${name}.`);
