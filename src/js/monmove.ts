@@ -5859,8 +5859,6 @@ async function beginHeroAttackSlot(
         // magic cancellation, optionally checks inventory destruction, then
         // the shared post-hit knockback path consumes its distance/chance
         // draws even though an electric bite cannot knock the hero back.
-        damage = rollDice(1, 1);
-        calls.push('d(1,1)');
         const armorProtection = state?.u?._magicNegation ?? 0;
         const negated = recordRandom(random, calls, 10) < 3 * armorProtection;
         if (!negated) {
