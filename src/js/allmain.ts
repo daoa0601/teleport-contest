@@ -3355,20 +3355,6 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
             && action.movement.usedMisc.nativeResult !== 0) continue;
         await resumeTrappedMonster(action);
         let { monster, movement } = action;
-        if (movement?.spellCast?.cast) {
-            // monmove.c's undirected cast bypasses m_move().  The casting
-            // line is a tty boundary; only after it resumes may the spell
-            // create monsters and dochug() finish this actor.
-            if (canSpotMonster(monster)) {
-                await plineWithContinuation(
-                    `${visibleMonsterSubject(monster)} casts a spell!`,
-                );
-            }
-            await resumeDeferredMovementSpell(
-                action, game,
-            );
-            movement = action.movement;
-        }
         // A fleeing teleport spends this actor's turn, even if no destination was found.
         if (movement?.fleeingRelocation || movement?.fleeingTeleportFailed) continue;
         await presentRestrictedMonsterTeleport(action, game, actorWasOpticallySeen);
@@ -3387,6 +3373,17 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
             if (movement?.usedDefense) continue;
             if (movement?.usedMisc?.kind === 'item-result'
                 && movement.usedMisc.nativeResult !== 0) continue;
+        }
+        if (movement?.spellCast?.cast) {
+            // dochug() chooses the movement spell after covetous tactics,
+            // so a resumed relocation can still produce this casting phase.
+            if (canSpotMonster(monster)) {
+                await plineWithContinuation(
+                    `${visibleMonsterSubject(monster)} casts a spell!`,
+                );
+            }
+            await resumeDeferredMovementSpell(action, game);
+            movement = action.movement;
         }
         await presentPetMovementPrelude(action, game, actorWasOpticallySeen);
         movement = action.movement;
