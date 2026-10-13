@@ -4,6 +4,7 @@ import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish } from './potion_occupants.js';
 import { quaff } from './quaff.js';
 import { tameMonster } from './monster_taming.js';
+import { setMonsterMalign } from './monster_alignment.js';
 import { jumpHero } from './jumping.js';
 import { feel_location } from './display.js';
 // cmd.js — Command dispatch and movement.
@@ -3073,6 +3074,7 @@ async function djinniFromLamp(object) {
         case 2:
             await plineWithContinuation('"You freed me!"');
             djinni.mpeaceful = 1;
+            setMonsterMalign(djinni);
             break;
         case 3:
             await plineWithContinuation('"It is about time!"');
@@ -3085,6 +3087,7 @@ async function djinniFromLamp(object) {
             djinni.mpeaceful = 0;
             djinni.mtame = 0;
             djinni.pet = false;
+            setMonsterMalign(djinni);
             break;
     }
 }
