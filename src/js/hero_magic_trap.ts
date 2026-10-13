@@ -92,8 +92,11 @@ export async function triggerHeroMagicTrapEffect(): Promise<void> {
         await plineWithContinuation('You feel tired.');
         return;
     case 19: {
-        const message = attributeChangeMessage(A_CHA, adjustAttribute(A_CHA, 1));
-        if (message) await plineWithContinuation(message);
+        const change = adjustAttribute(A_CHA, 1);
+        if (change.changed || game.flags.verbose) {
+            const message = attributeChangeMessage(A_CHA, change);
+            if (message) await plineWithContinuation(message);
+        }
         for (let dx = -1; dx <= 1; dx++) {
             for (let dy = -1; dy <= 1; dy++) {
                 const x = game.u.ux + dx, y = game.u.uy + dy;

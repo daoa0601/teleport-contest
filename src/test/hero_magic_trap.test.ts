@@ -86,6 +86,36 @@ void test('a benevolent magic trap increases charisma and tames adjacent monster
     assert.ok(goblin.mtame);
 });
 
+for (const outcome of [
+    {
+        description: 'stays quiet at maximum charisma with verbose mode off',
+        charisma: 18, verbose: false, resultingCharisma: 18, message: '',
+    },
+    {
+        description: 'reports maximum charisma with verbose mode on',
+        charisma: 18, verbose: true, resultingCharisma: 18,
+        message: "You're already as charismatic as you can get.",
+    },
+    {
+        description: 'reports a charisma gain with verbose mode off',
+        charisma: 12, verbose: false, resultingCharisma: 13, message: 'You feel charismatic!',
+    },
+]) {
+    void test(`a benevolent magic trap ${outcome.description}`, async () => {
+        const trap = magicTrapRoom();
+        requirePlayingGame(game);
+        game.u.acurr.a[A_CHA] = outcome.charisma;
+        game.u.amax.a[A_CHA] = outcome.charisma;
+        game.flags.verbose = outcome.verbose;
+        initRng(60n);
+
+        await triggerHeroTrap(trap, { forceTrap: true });
+
+        assert.equal(game.u.acurr.a[A_CHA], outcome.resultingCharisma);
+        assert.equal(game._last_message, outcome.message);
+    });
+}
+
 void test('magic-trap cleansing uncurses worn gear and preserves the confusion timeout', async () => {
     const trap = magicTrapRoom();
     const amulet = await addInventoryObject(AMULET_OF_REFLECTION, { cursed: true });
