@@ -3,6 +3,7 @@ import type { GameObject } from './object_types.js';
 import type { MapLocation } from './map_types.js';
 import type { DipTarget } from './dip_water.js';
 import { washHands } from './dip_water.js';
+import { armorSlotFor } from './armor.js';
 import type { InventoryClassification } from './inventory_prompt.js';
 import { FOUNTAIN, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST, SINK } from './const.js';
 import { heroHandName } from './body_parts.js';
@@ -13,13 +14,13 @@ import { game, requirePlayingGame } from './gstate.js';
 import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, promptInventoryObject } from './inventory_prompt.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { objectQuantity } from './object_stack.js';
-import { objectName, observeObjectForNaming, ownedObjectName, simpleObjectName } from './objnam.js';
+import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectName } from './objnam.js';
 import { promptYesNo } from './query.js';
 import { dipSink } from './sink_dipping.js';
 import { isPoolAt } from './terrain_properties.js';
 import { waterbodyName } from './terrain_name.js';
 import { waterDamageObject } from './trap.js';
-import { POT_ACID } from './object_data.js';
+import { LENSES, POT_ACID } from './object_data.js';
 import { treatDippedObject } from './potion_item_dip.js';
 
 export async function dip({
@@ -32,7 +33,7 @@ export async function dip({
     const location = game.level.requireAt(game.u.ux, game.u.uy);
     let declinedSource = false;
     const description = object === 'hands' ? `your ${makePlural(heroHandName())}` : dipTargetDescription(object);
-    const target = game.flags.verbose ? description : object === 'hands' || objectQuantity(object) > 1 ? 'them' : 'it';
+    const target = game.flags.verbose ? description : dipTargetPronoun(object);
     if (!game.iflags.menu_requested && heroCanReachFloor(game) && location.typ === FOUNTAIN) {
         if (await promptYesNo(`Dip ${target} into the fountain?`, 'n') === 'y') {
             if (object !== 'hands') object.pickup_prev = false;
@@ -127,6 +128,13 @@ async function reportCoveredEquipment(object: GameObject): Promise<boolean> {
     }).join(' and ');
     await pline(`You need to take off ${name} to dip ${ownedObjectName(object, game, { capitalized: false })}.`);
     return true;
+}
+
+function dipTargetPronoun(object: DipTarget): string {
+    if (object === 'hands') return 'them';
+    const slot = object.oclass === 3 ? armorSlotFor(object.otyp) : null;
+    return objectNameIsPlural(object) || object.otyp === LENSES
+        || slot === 'uarmg' || slot === 'uarmf' ? 'them' : 'it';
 }
 
 function dipTargetDescription(object: GameObject): string {
