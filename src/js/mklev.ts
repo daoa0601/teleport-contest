@@ -5486,13 +5486,15 @@ async function specialShrinePriest(
         const y = altarY + dy;
         const loc = level.at(x, y);
         if (loc && SPACE_POS(loc.typ)
-            && !level.monsters.some(monster => monsterHasMapPosition(monster, game) && monster.mhp > 0
-                && monster.mx === x && monster.my === y)) {
+            && !(level.objects[x]?.[y] ?? []).some(object => object.otyp === BOULDER)) {
             priestX = x;
             priestY = y;
             break;
         }
     }
+
+    const occupant = monsterAtPosition(level, priestX, priestY);
+    if (occupant) await randomMonsterRelocation(occupant, { flags: RLOC_NOMSG });
 
     const priest = await makemon(
         sanctum ? PM_HIGH_CLERIC : PM_ALIGNED_CLERIC,
@@ -5792,16 +5794,8 @@ function luaSpecialAlignment(value = 'random') {
 
 function specialRoomAt(x: number, y: number, roomType: number): Room | null {
     const level = requireGameLevel();
-    const roomNumber = level.at(x, y)?.roomno ?? 0;
-    const direct = roomNumber >= ROOMOFFSET
-        ? level.rooms?.[roomNumber - ROOMOFFSET] : null;
-    if (direct && isRoom(direct) && direct.rtype === roomType) return direct;
-    return level.rooms
-        ?.slice(0, level.nroom)
-        .filter(isRoom)
-        .find(room => room.rtype === roomType
-            && x >= room.lx && x <= room.hx
-            && y >= room.ly && y <= room.hy) ?? null;
+    const roomNumber = roomsAt(level, x, y, roomType)[0];
+    return roomNumber === undefined ? null : roomForIndex(level, roomNumber - ROOMOFFSET);
 }
 
 function luaCoordinate(options: { coord?: DesOptions['coord']; x?: number | undefined; y?: number | undefined }): Position | null {
@@ -5829,7 +5823,9 @@ async function createLuaAltar(context: SpecialLevelContext, options: DesOptions)
     const altarType = options.type ?? 'altar';
     if (!['altar', 'shrine', 'sanctum'].includes(altarType))
         throw new Error(`unsupported Lua altar type ${altarType}`);
-    const temple = specialRoomAt(point.x, point.y, TEMPLE);
+    const temple = context._room
+        ? context._room.rtype === TEMPLE ? context._room : null
+        : specialRoomAt(point.x, point.y, TEMPLE);
     if (!temple || altarType === 'altar') return;
     const sanctum = altarType === 'sanctum';
     await specialShrinePriest(
