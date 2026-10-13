@@ -3536,7 +3536,9 @@ async function doadjust() {
         .filter(letter => letter === object.invlet || !occupied.has(letter))
         .join('');
     const destinationPrompt = `Adjust letter to what [${compactInventoryLetters(recommended)}] (? see used letters)?`;
-    game._pending_message = '';
+    // The source item's queued letter bypasses getobj's prompt, but the
+    // destination uses tty_yn_function(), which acknowledges unread prose.
+    await flushPendingTopline();
     const key = await promptKey(destinationPrompt, 1);
     const destination = String.fromCharCode(key);
     if (key === 27 || key === 32 || key === 10 || key === 13) {
