@@ -206,7 +206,7 @@ async function triggerPit(trap, { viaSitting = false, failedUntrap = false, took
             : conjoined || deliberate ? 'stepped into a pit of iron spikes'
                 : adjacent ? 'stumbled into a pit of iron spikes'
                     : 'fell into a pit of iron spikes';
-        if (await loseHeroHp(damage, killer))
+        if (await loseHeroHp(damage, killer, { deathCause: killer }))
             return;
         if (rn2(6) === 0) {
             const poison = await poisonHero({
@@ -221,7 +221,8 @@ async function triggerPit(trap, { viaSitting = false, failedUntrap = false, took
         }
     }
     else if (!conjoined && !deliberate && !(plunged && (flying || (formFlags & M1_CLING)))) {
-        if (await loseHeroHp(physicalDamage(rnd(adjacent ? 3 : 6)), plunged ? 'deliberately plunged into a pit' : 'fell into a pit'))
+        const killer = plunged ? 'deliberately plunged into a pit' : 'fell into a pit';
+        if (await loseHeroHp(physicalDamage(rnd(adjacent ? 3 : 6)), killer, { deathCause: killer }))
             return;
     }
     const ball = game.uball || hero.uball;
