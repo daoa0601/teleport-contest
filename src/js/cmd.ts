@@ -4791,12 +4791,20 @@ async function dojump(): Promise<void> {
 }
 
 async function verboseFarlookDescription(x: number, y: number): Promise<string> {
-    if (farlookDescribesHero(x, y)) {
-        const species = heroSpecies(game);
+    const glyph = glyphAt(x, y);
+    if (farlookDescribesHero(x, y) && glyph?.kind === 'monster'
+        && glyph.mnum !== undefined) {
+        // C do_screen_description() classifies the displayed glyph. With
+        // showrace, that can differ from the role named by self_lookat().
+        const species = glyph.mnum;
         const symbol = monsterClassSymbol(species);
         const explanation = MONSTER_CLASS_EXPLAIN[MONSTER_SYMBOL[species] ?? 0];
-        if (!explanation) throw new Error(`Hero species ${species} has no monster class description`);
-        return `${symbol}\x1b[8C${withIndefiniteArticle(explanation)} (${await farlookLocationDescription(x, y)})`;
+        if (!explanation) throw new Error(`Displayed species ${species} has no monster class description`);
+        const includesHero = symbol === '@' && !heroIsPolymorphed(game) && game.urace
+            && game.urace.name !== 'human' && game.urace.name !== 'elf';
+        const classDescription = withIndefiniteArticle(explanation)
+            + (includesHero ? ' or you' : '');
+        return `${symbol}\x1b[8C${classDescription} (${await farlookLocationDescription(x, y)})`;
     }
     const loc = game.level?.at(x, y);
     if (loc?.typ === CORR)
