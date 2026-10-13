@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { AD_SSEX, AT_BITE } from '../js/monster_attack_types.js';
 import { resolveMonsterContactEffect } from '../js/monster_contact_effects.js';
 import { monsterName } from '../js/monster_name.js';
-import { LEATHER_ARMOR, OBJECT_NAMES } from '../js/object_data.js';
+import { GAUNTLETS_OF_POWER, LEATHER_ARMOR, OBJECT_NAMES } from '../js/object_data.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -43,6 +43,30 @@ for (const blind of [false, true]) {
         assert.notEqual(game.uleft, ring);
     });
 }
+void test('a leap-day demand reveals a blind hero\'s carried gloves', async () => {
+    const level = freshObjectRoom({ flags: { female: false }, hero: { blindTurns: 20 } });
+    requirePlayingGame(game);
+    level.flags.noteleport = true;
+    game.datetime = '20000229120000';
+    const gloves = await addInventoryObject(GAUNTLETS_OF_POWER, {
+        observed: false, dknown: false, typeKnown: false, oextra: { oname: 'winter mittens' },
+    });
+    const suit = await addInventoryObject(LEATHER_ARMOR);
+    wearHeroArmor(suit);
+    const succubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    succubus.female = true;
+    const attack = { kind: 'hero-attack', attackType: AT_BITE,
+        damageType: AD_SSEX, hit: true, damage: 0 };
+    const messages = [];
+    const input = resetInputState();
+    await answerPrompts(resolveMonsterContactEffect(succubus, attack, { state: game,
+        publish: async (message) => { messages.push(message); }, random: () => 0 }), input, [
+        { prompt: /Shall I remove your suit, lover/, keys: 'n' },
+    ]);
+    assert.equal(gloves.dknown, true);
+    assert.ok(game._encounteredObjectTypes?.has(GAUNTLETS_OF_POWER));
+    assert.match(messages.join('\n'), /named winter mittens and eleven more pairs of gloves/);
+});
 for (const female of [false, true]) {
     for (const goodOutcome of [false, true]) {
         const species = female ? 'succubus' : 'incubus';

@@ -19,7 +19,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterName, monsterObjectPronoun, monsterSubjectPronoun } from './monster_name.js';
 import { OBJECT_NAMES } from './object_data.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType, observeObject } from './object_knowledge.js';
 import { observeObjectForNaming } from './objnam.js';
 import { objectName, ownedObjectName, simpleObjectName } from './objnam.js';
 import { unlinkObject } from './object_location.js';
@@ -60,8 +60,9 @@ export async function resolveHeroSeduction(monster, attack, state, publish, rand
         if (!heroIsDeaf(state)) {
             if (state.datetime?.slice(4, 8) === '0229' && female) {
                 const gloves = state.inventory.find(object => armorSlotFor(object.otyp) === 'uarmg');
+                // The succubus reveals the gloves even when the hero is blind.
                 if (gloves)
-                    observeObjectForNaming(gloves, { state });
+                    observeObject(gloves, state);
                 await publish(`"Well, then you owe me ${gloves
                     ? `${ownedObjectName(gloves, state, { capitalized: false })} and eleven more pairs of gloves`
                     : 'twelve pairs of gloves'}!"`);
