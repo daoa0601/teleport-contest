@@ -1975,8 +1975,12 @@ export async function docrt({ beforeGlow = null }: RedrawOptions = {}) {
         for (let y = 0; y < ROWNO; y++)
             for (let x = 1; x < COLNO; x++) {
                 const loc = game.level.at(x, y);
-                if (loc?.remembered_glyph) {
-                    showRememberedLocation(x, y, loc);
+                const memory = loc?.remembered_glyph;
+                if (memory) {
+                    // docrt_flags() displays memory unchanged. newsym() owns
+                    // corrections after sight and monster senses are restored.
+                    show_glyph_cell(x, y, memory.ch, memory.color, memory.decgfx,
+                        objectGlyphAttr(memory), memory);
                 } else {
                     show_glyph_cell(x, y, ' ', NO_COLOR, false);
                 }

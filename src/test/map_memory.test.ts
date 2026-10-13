@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { CORR, FOUNTAIN, ROOM, SINK, STONE } from '../js/const.js';
+import { CORR, FOUNTAIN, NO_MINVENT, ROOM, SINK, STONE } from '../js/const.js';
 import { CLR_WHITE, NO_COLOR } from '../js/terminal.js';
 import { rhack } from '../js/cmd.js';
 import { mapLevel, premap_detect } from '../js/detect.js';
-import { flush_screen, map_invisible, map_location, newsym, unmap_invisible } from '../js/display.js';
+import { docrt, flush_screen, glyphAt, map_invisible, map_location, newsym, unmap_invisible } from '../js/display.js';
+import { CmapSymbol, cmapToGlyph } from '../js/glyph_numbers.js';
 import { recordMappedOverviewState } from '../js/dungeon.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
@@ -15,6 +16,7 @@ import { setHeroBlindnessTurns } from '../js/senses.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 
@@ -40,6 +42,24 @@ for (const darkRoom of [true, false]) {
         assert.equal(requireScreenCell(10, 11).color, darkRoom ? NO_COLOR : CLR_WHITE);
     });
 }
+
+void test('redrawing an unseen detected monster preserves its remembered lit floor', async () => {
+    const level = freshObjectRoom({ flags: { dark_room: true, color: true },
+        hero: { monsterDetection: true } });
+    await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+    newsym(11, 10);
+    const floor = level.requireAt(11, 10);
+    setHeroBlindnessTurns(10);
+    vision_recalc(0);
+    assert.equal(cansee(11, 10), false);
+    assert.equal(floor.remembered_glyph?.glyph, cmapToGlyph(CmapSymbol.room));
+
+    await docrt();
+
+    assert.equal(glyphAt(11, 10)?.kind, 'monster');
+    assert.equal(floor.remembered_glyph?.glyph, cmapToGlyph(CmapSymbol.room),
+        'the detection overlay must leave the remembered floor lit');
+});
 
 function currentFeatures() {
     requirePlayingGame(game);
