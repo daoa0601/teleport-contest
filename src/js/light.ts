@@ -22,7 +22,7 @@ import { monsterName, possessiveName } from './monster_name.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
 import {
     CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG,
-    NO_MINVENT,
+    NO_MINVENT, PLNMSG_OBJ_GLOWS,
 } from './const.js';
 import {
     canSeeMonster, canSpotMonster, map_invisible, newsym,
@@ -122,6 +122,23 @@ export function objectLightRadius(object: GameObject | null | undefined, state: 
     if (object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE)
         return Math.min(15, Math.floor(Math.sqrt(object.quan ?? object.quantity ?? 1)) + 1);
     return LIGHT_TYPES.has(object.otyp) ? 3 : 0;
+}
+
+// C mkobj.c:maybe_adjust_light(). The active radius follows the blessing state.
+export async function adjustObjectLightAfterBlessing(
+    object: GameObject, oldRadius: number, state: GameState = game,
+): Promise<void> {
+    const delta = objectLightRadius(object, state) - oldRadius;
+    if (!delta) return;
+    state.vision_full_recalc = 1;
+    if (heroIsBlind(state)) return;
+    const location = getObjectLocation(object, state);
+    if (!location) return;
+    const justGlowed = state._lastPlineKind === PLNMSG_OBJ_GLOWS;
+    if (!justGlowed && object.where !== 'inventory' && !cansee(location.x, location.y)) return;
+    const subject = justGlowed ? (object.quan === 1 ? 'It' : 'They') : ownedObjectName(object, state);
+    const verb = objectNameIsPlural(object, state) ? 'shine' : 'shines';
+    await plineWithContinuation(`${subject} ${verb} ${Math.abs(delta) > 1 ? 'much ' : ''}${delta > 0 ? 'brighter' : 'less brightly'}.`);
 }
 
 export function equipmentLightDescription(object: GameObject | null | undefined, state: GameState = game) {

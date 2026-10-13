@@ -37,6 +37,7 @@ import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { syncBlindness } from '../js/senses.js';
 import { gameLogEvents } from '../js/gamelog.js';
+import { beginObjectBurn, objectLightRadius } from '../js/light.js';
 
 function prayerRoom({ hero = {}, flags = {}, ...room }: ObjectRoomOptions = {}) {
     freshObjectRoom({
@@ -338,6 +339,26 @@ void test('#pray crowning enhances a carried Vorpal Blade without recording a ne
     assert.equal(sword.blessed, true);
     assert.equal(sword.oerodeproof, true);
     assert.ok(!gameLogEvents().some(event => event.text.startsWith('found Vorpal Blade')));
+});
+
+void test('#pray brightens a lit artifact when blessing the wielded weapon', async () => {
+    prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
+    requirePlayingGame(game);
+    initializeArtifacts();
+    const sunsword = artifactByName('Sunsword');
+    assert.ok(sunsword);
+    const sword = await addInventoryObject(LONG_SWORD);
+    assert.equal(nameArtifact(sword, sunsword), true);
+    await setPrimaryWeapon(sword);
+    beginObjectBurn(sword);
+    assert.equal(objectLightRadius(sword), 2);
+    await addInventoryObject(LUCKSTONE);
+    initRng(9n);
+
+    const messages = await prayAndReadMessages();
+
+    assert.equal(objectLightRadius(sword), 3);
+    assert.ok(messages.some(message => message.includes('It shines brighter.')));
 });
 
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {

@@ -3,7 +3,7 @@ import { rotCorpse } from './corpse_rot.js';
 // C refs: do.c revive_corpse()/revive_mon()/zombify_mon() and zap.c revive().
 import { tameMonster } from './monster_taming.js';
 import { setMonsterGivenName } from './monster_given_name.js';
-import { RLOC_NOMSG, CORR, G_GENOD, GRAVE, IS_POOL, MFAST, MM_NOCOUNTBIRTH, MM_NOTAIL, MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, ROOM, } from './const.js';
+import { RLOC_NOMSG, CORR, G_GENOD, GRAVE, IS_POOL, MFAST, MM_NOCOUNTBIRTH, MM_NOTAIL, MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, PLNMSG_OBJ_GLOWS, ROOM, } from './const.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { makePetWary } from './dog.js';
@@ -421,6 +421,7 @@ async function describeHeroRevival(corpse, monster, oneOf, state) {
         const name = ownedObjectName(corpse, state, { capitalized: !oneOf });
         const subject = oneOf ? `One of ${makePlural(name)}` : name;
         await plineWithContinuation(`${subject} glows iridescently.`);
+        state._lastPlineKind = PLNMSG_OBJ_GLOWS;
     }
     else if (chargeable) {
         await plineWithContinuation('A corpse is resuscitated.');

@@ -8,7 +8,7 @@ import {
     RLOC_NOMSG,
     CORR, G_GENOD, GRAVE, IS_POOL, MFAST,
     MM_NOCOUNTBIRTH, MM_NOTAIL,
-    MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, ROOM,
+    MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, PLNMSG_OBJ_GLOWS, ROOM,
 } from './const.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
@@ -531,6 +531,7 @@ async function describeHeroRevival(
         const name = ownedObjectName(corpse, state, { capitalized: !oneOf });
         const subject = oneOf ? `One of ${makePlural(name)}` : name;
         await plineWithContinuation(`${subject} glows iridescently.`);
+        state._lastPlineKind = PLNMSG_OBJ_GLOWS;
     } else if (chargeable) {
         await plineWithContinuation('A corpse is resuscitated.');
     }

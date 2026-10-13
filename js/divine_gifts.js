@@ -4,7 +4,7 @@ import { deityName } from './alignment.js';
 import { findArmorClass } from './armor.js';
 import { artifactById, artifactByName, discoverArtifact, nameArtifact, } from './artifacts.js';
 import { heroFootName, monsterStomachName } from './body_parts.js';
-import { ACH_TUNE, A_STR, P_BROAD_SWORD, P_LONG_SWORD, Upolyd } from './const.js';
+import { ACH_TUNE, A_STR, P_BROAD_SWORD, P_LONG_SWORD, PLNMSG_OBJ_GLOWS, Upolyd } from './const.js';
 import { displayColorName, newsym, plineWithContinuation as pline, see_monsters } from './display.js';
 import { godVoice } from './divine_wrath.js';
 import { gainExperienceLevel } from './exper.js';
@@ -13,6 +13,7 @@ import { landFloorObject } from './floor_effects.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { restoreHeroNutrition } from './hunger.js';
+import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { mkobj, mksobj, rndClass } from './mklev.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
 import { monsterName } from './monster_name.js';
@@ -85,7 +86,11 @@ async function blessWieldedWeapon() {
         await pline(heroIsBlind(game)
             ? `You feel the power of ${deityName(game.u.ualign.type)} over ${ownedObjectName(weapon, game, { capitalized: false })}.`
             : `${ownedObjectAction(weapon, 'softly glow')} ${displayColorName('amber')}${repair}.`);
+        if (!heroIsBlind(game))
+            game._lastPlineKind = PLNMSG_OBJ_GLOWS;
+        const oldLight = objectLightRadius(weapon);
         uncurseObjectState(weapon);
+        await adjustObjectLightAfterBlessing(weapon, oldLight);
         weapon.bknown = true;
     }
     else if (!weapon.blessed) {
@@ -93,7 +98,11 @@ async function blessWieldedWeapon() {
         await pline(color === null
             ? `You feel the blessing of ${deityName(game.u.ualign.type)} over ${ownedObjectName(weapon, game, { capitalized: false })}.`
             : `${ownedObjectAction(weapon, 'softly glow')} with ${withIndefiniteArticle(color)} aura${repair}.`);
+        if (color !== null)
+            game._lastPlineKind = PLNMSG_OBJ_GLOWS;
+        const oldLight = objectLightRadius(weapon);
         blessObjectState(weapon);
+        await adjustObjectLightAfterBlessing(weapon, oldLight);
         weapon.bknown = true;
     }
     if (damaged) {
@@ -168,9 +177,12 @@ async function uncurseInventory() {
             continue;
         if (!blind) {
             await pline(`${ownedObjectAction(object, 'softly glow')} ${displayColorName('amber')}.`);
+            game._lastPlineKind = PLNMSG_OBJ_GLOWS;
             object.bknown = true;
         }
+        const oldLight = objectLightRadius(object);
         uncurseObjectState(object);
+        await adjustObjectLightAfterBlessing(object, oldLight);
     }
 }
 async function grantDivineProperty() {
@@ -354,7 +366,9 @@ async function crownHero() {
     if (object?.oartifact === artifact.id)
         discoverArtifact(artifact.id);
     if (isWeapon(object)) {
+        const oldLight = objectLightRadius(object);
         blessObjectState(object);
+        await adjustObjectLightAfterBlessing(object, oldLight);
         object.oeroded = object.oeroded2 = 0;
         object.oerodeproof = object.bknown = object.rknown = true;
         object.spe = Math.max(1, object.spe);
