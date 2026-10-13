@@ -5,6 +5,7 @@ import { displayColorName, plineWithContinuation as pline } from './display.js';
 import { explode } from './explosion.js';
 import { fireDamageObject } from './fire_damage.js';
 import { game, requirePlayingGame } from './gstate.js';
+import { recordGameLogEvent } from './gamelog.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { tryCallObjectType } from './object_call.js';
@@ -165,8 +166,10 @@ async function dipInPolymorph(object, potion) {
         potion.in_use = false;
         return;
     }
-    game.u.uconduct ??= {};
-    game.u.uconduct.polypiles = (game.u.uconduct.polypiles ?? 0) + 1;
+    const conduct = game.u.uconduct ??= {};
+    if (!conduct.polypiles)
+        recordGameLogEvent(`polymorphed ${game.flags.female ? 'her' : 'his'} first item`);
+    conduct.polypiles = (conduct.polypiles ?? 0) + 1;
     const oldType = object.otyp;
     const replacement = await poly_obj(object);
     if (!replacement) {
