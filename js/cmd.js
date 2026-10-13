@@ -4173,6 +4173,7 @@ export function farlookLocationDescription(x, y) {
             return loc.typ === DOOR && loc.doormask === D_ISOPEN
                 ? 'open door' : 'closed door';
         }
+        return loc.remembered_glyph.terrainName;
     }
     if (loc.typ === FOUNTAIN)
         return 'fountain';
@@ -4190,7 +4191,8 @@ export function farlookLocationDescription(x, y) {
         return 'floor of a room';
     if (loc.typ === CORR)
         return 'corridor';
-    return travelLocationDescription(x, y);
+    const glyph = glyphAt(x, y);
+    return glyph?.kind === 'terrain' ? glyph.terrainName : travelLocationDescription(x, y);
 }
 // C apply.c:dojump(): the physical command shares the spell's jump owner.
 async function dojump() {
