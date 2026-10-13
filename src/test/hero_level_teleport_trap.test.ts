@@ -7,6 +7,41 @@ import { resetInputState } from '../js/input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { memoryStorage } from './support/memory-storage.js';
+
+for (const acceptDeath of [true, false]) {
+    void test(`teleporting to Nowhere ${acceptDeath ? 'ends play without trap confusion' : 'confuses the hero after declining death'}`, async () => {
+        const level = freshObjectRoom({ flags: {
+            debug: true, bones: false, tombstone: false, disclose: '-i -a -v -g -c -o',
+        } });
+        requirePlayingGame(game);
+        game.storage = memoryStorage();
+        game.iflags.toptenwin = false;
+        const input = resetInputState();
+        input.feed(' 0\ry');
+        input.display = {
+            async readKey() {
+                const row = game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('') ?? '';
+                if (row.startsWith('Die?')) return (acceptDeath ? 'y' : 'n').charCodeAt(0);
+                const screen = game.nhDisplay?.grid.map(line => line.map(cell => cell.ch).join('')).join('\n') ?? '';
+                assert.match(screen, /--More--|\(end\)/);
+                return 32;
+            },
+        };
+
+        await triggerHeroTrap(addTrap(level, LEVEL_TELEP, 10, 10));
+
+        assert.equal(!!game.program_state.gameover, acceptDeath);
+        assert.equal(game.u.confusionTurns ?? 0, acceptDeath ? 0 : 3,
+            'only a surviving hero receives the trap confusion');
+        if (acceptDeath) {
+            assert.doesNotMatch(game._pending_message, /disoriented/,
+                'the trap must not print another message after the death display');
+        } else {
+            assert.match(game._pending_message, /Your body rematerializes\..*You feel disoriented\.$/);
+        }
+    });
+}
 
 void test('a level teleport trap pages its announcement before asking for a level', async () => {
     const level = freshObjectRoom({ flags: { debug: true } });

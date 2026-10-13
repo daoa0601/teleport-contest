@@ -802,6 +802,7 @@ async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOptions['
     // the old level before deferred_goto() performs the change.
     const travel: { args: Parameters<LevelChange> | null } = { args: null };
     await levelTeleport({ gotoLevel: (...args) => { travel.args = args; } });
+    if (game.program_state.gameover) return;
     const controlled = heroControlsTeleport();
     if (heroIsHallucinating(game) || controlled) {
         await plineWithContinuation(`You briefly feel ${heroIsHallucinating(game) ? 'oriented' : 'centered'}.`);
