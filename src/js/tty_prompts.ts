@@ -5,7 +5,7 @@ import { bot, clearMessageWindow, docrt, flush_screen, pline } from './display.j
 import { CLICK_1, CLICK_2, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK } from './const.js';
 import { game } from './gstate.js';
 import { selectMapPosition } from './getpos.js';
-import { nhgetch, readchar } from './input.js';
+import { nhgetch, readchar, takeCommandKey } from './input.js';
 import { promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { rn2 } from './rng.js';
@@ -34,6 +34,8 @@ async function paintKeyPrompt(message: string, cursorOffset = 0): Promise<void> 
 }
 
 export async function promptKey(message: string, cursorOffset = 0): Promise<number> {
+    const queuedKey = takeCommandKey();
+    if (queuedKey !== undefined) return queuedKey;
     await paintKeyPrompt(message, cursorOffset);
     return nhgetch();
 }

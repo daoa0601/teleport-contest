@@ -5,7 +5,7 @@ import { flushPendingTopline, pline } from './display.js';
 import { game } from './gstate.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { selectInventoryObject } from './invent.js';
-import { nhgetch } from './input.js';
+import { clearCommandKeys, nhgetch, takeCommandKey } from './input.js';
 import { promptKey } from './tty_prompts.js';
 import { rn2 } from './rng.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
@@ -56,6 +56,14 @@ export type InventoryObjectSelection = {
 export async function chooseInventoryObject(verb: string, classify: (object: GameObject) => InventoryClassification, {
     forcePrompt = false, emptyMessage = `You don't have anything to ${verb}.`,
 }: { forcePrompt?: boolean; emptyMessage?: string } = {}): Promise<GameObject | null> {
+    const queuedKey = takeCommandKey();
+    if (queuedKey !== undefined) {
+        const object = game.inventory.find(candidate =>
+            candidate.invlet === String.fromCharCode(queuedKey)
+            && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
+        if (!object) clearCommandKeys();
+        return object ?? null;
+    }
     if (game.flags?.fixinv === false) reassignInventoryLetters();
     const inventory = [...(game.inventory || [])]
         .sort((left, right) => inventoryLetterOrder(left.invlet) - inventoryLetterOrder(right.invlet));
@@ -201,6 +209,20 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
     retainPromptOnCancel = false,
     menuItems = eligible,
 }: InventoryPromptOptions = {}): Promise<InventoryObjectSelection> {
+    // getobj() checks CQ_CANNED before invoking tty_yn_function(). A queued
+    // choice neither acknowledges unread prose nor paints an item question.
+    const queuedKey = takeCommandKey();
+    if (queuedKey !== undefined) {
+        const letter = String.fromCharCode(queuedKey);
+        const object = eligible.find(candidate => candidate.invlet === letter);
+        if (object) return { cancelled: false, object, gold: false, none: false, count: null };
+        if (allowNone && letter === '-')
+            return { cancelled: false, object: null, gold: false, none: true, count: null };
+        if (allowGold && letter === '$' && heroGoldAmount(game) > 0)
+            return { cancelled: false, object: null, gold: true, none: false, count: null };
+        clearCommandKeys();
+        return { cancelled: true, object: null, gold: false, none: false, count: null };
+    }
     let key = await askInventoryPrompt(prompt);
     let count: number | null = null;
     for (;;) {

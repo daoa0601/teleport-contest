@@ -2167,7 +2167,7 @@ async function doname() {
     putCommandLine(left, 7, 'a - record an annotation for the current level');
     putCommandLine(left, 8, '(end)');
     display.setCursor(left + 6, 8);
-    const choice = String.fromCharCode(await nhgetch()).toLowerCase();
+    const choice = String.fromCharCode(takeCommandKey() ?? await nhgetch()).toLowerCase();
     game._pending_message = '';
     await restoreCommandMap();
     // C refs: do_name.c:docallcmd()/do_oname() and

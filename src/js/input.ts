@@ -70,10 +70,8 @@ export class InputGate {
     }
 
     async readKey(): Promise<number> {
-        // C cmdq keys answer a command's prompts without asking tty or
-        // consuming input the player already entered for the next command.
-        const commandKey = this.takeCommandKey();
-        if (commandKey !== undefined) return commandKey;
+        // tty input belongs to the player. Command owners consume canned
+        // choices explicitly so message pagers cannot steal item letters.
         await this.beforeRead?.();
         const queued = this.queue.shift();
         if (queued !== undefined) return queued;
