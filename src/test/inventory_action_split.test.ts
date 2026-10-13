@@ -19,6 +19,7 @@ void test('a carried stack offers splitting through its inventory action menu', 
     try {
         const text = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
         assert.match(text, /I - Adjust inventory by splitting this stack/);
+        assert.match(text, /\/ - Look up information about these/);
     } finally {
         input.feed('\x1b');
         await menu;
