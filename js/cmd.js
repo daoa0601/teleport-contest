@@ -3564,14 +3564,17 @@ async function readInventorySplitCount() {
     if (key < 48 || key > 57)
         return null;
     let count = key - 48;
+    let showZero = key === 48;
     for (;;) {
         clearMessageWindow();
-        key = await promptKey(`Count: ${count}`, 1);
+        key = await promptKey(`Count: ${count > 0 || showZero ? count : ''}`, 1);
         if (key >= 48 && key <= 57) {
             count = Math.min(Number.MAX_SAFE_INTEGER, count * 10 + key - 48);
+            showZero = key === 48;
         }
         else if (key === 8 || key === 127) {
             count = Math.trunc(count / 10);
+            showZero = false;
         }
         else {
             clearMessageWindow();

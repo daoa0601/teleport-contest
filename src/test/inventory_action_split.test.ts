@@ -94,3 +94,34 @@ void test('splitting into a compatible stack merges the selected quantity into t
     assert.equal(destination.quan, 5);
     assert.equal(game.inventory.length, 2);
 });
+
+for (const eraseKey of ['\b', '\x7f']) {
+    void test(`${eraseKey === '\b' ? 'Backspace' : 'Delete'} clears the split count display, while a typed zero remains visible`, async () => {
+        freshObjectRoom();
+        const dagger = await addInventoryObject(DAGGER, { quan: 7 });
+        const input = resetInputState();
+        await answerPrompts(rhack('i'.charCodeAt(0)), input, [
+            { prompt: /Weapons/, keys: dagger.invlet },
+            { prompt: /I - Adjust inventory by splitting this stack/, keys: 'I' },
+        ]);
+
+        const splitting = rhack(0);
+        try {
+            await answerPrompts(splitting, input, [
+                { prompt: /Split off how many\?/, keys: '2' },
+                { prompt: /Count: 2/, keys: eraseKey },
+                { prompt: /Count: +\n/, keys: '0' },
+                { prompt: /Count: 0/, keys: '3' },
+                { prompt: /Count: 3/, keys: ' ' },
+                { prompt: /Split 3 to what/, keys: 'z' },
+            ]);
+        } finally {
+            input.feed('\x1b');
+            await splitting;
+        }
+
+        assert.equal(dagger.quan, 4);
+        assert.equal(game.inventory.find(object => object.invlet === 'z')?.quan, 3);
+        assert.equal(game.context.move, 0);
+    });
+}
