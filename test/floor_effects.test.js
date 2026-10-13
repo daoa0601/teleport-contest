@@ -8,7 +8,7 @@ import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { unlinkObject } from '../js/object_location.js';
 import { learnObjectType } from '../js/object_knowledge.js';
-import { CHEST, FIRE_HORN, GLOB_OF_BLACK_PUDDING, GOLD_PIECE, POT_HEALING, SPE_BOOK_OF_THE_DEAD } from '../js/object_data.js';
+import { CHEST, FIRE_HORN, GLOB_OF_BLACK_PUDDING, GOLD_PIECE, POT_HEALING, SPE_BOOK_OF_THE_DEAD, TOOLED_HORN, UNICORN_HORN } from '../js/object_data.js';
 import { LAVAPOOL } from '../js/const.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys } from '../js/input.js';
@@ -32,6 +32,20 @@ void test('a fire horn survives landing in lava', async () => {
     assert.ok(floorObjectsAt(game.level, 12, 10).includes(horn));
     assert.equal(messages.some(message => message.includes('burn')), false);
 });
+for (const type of [TOOLED_HORN, UNICORN_HORN]) {
+    void test(`a ${type === TOOLED_HORN ? 'tooled' : 'unicorn'} horn burns up when it lands in lava`, async () => {
+        const level = freshObjectRoom();
+        level.requireAt(12, 10).typ = LAVAPOOL;
+        const horn = await knownObject(type);
+        const messages = [];
+        await landFloorObject(horn, 12, 10, {
+            publish: async (message) => { messages.push(message); },
+        });
+        assert.equal(horn.where, 'gone');
+        assert.equal(floorObjectsAt(level, 12, 10).includes(horn), false);
+        assert.ok(messages.some(message => message.includes('hit lava and burn up')));
+    });
+}
 void test('a chest burning in lava spills surviving contents onto its square', async () => {
     freshObjectRoom();
     requireFixtureGame(game);
