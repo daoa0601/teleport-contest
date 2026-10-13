@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { angryGodMaximum } from '../js/divine_wrath.js';
 import { finishPrayerOccupation } from '../js/pray.js';
 import { moveloop_core } from '../js/allmain.js';
-import { ALTAR, Align2amask, PARANOID_PRAY, STONE, W_NONPASSWALL } from '../js/const.js';
+import { ALTAR, Align2amask, PARANOID_PRAY, ROOM, STONE, W_NONPASSWALL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
@@ -13,7 +13,7 @@ import { magicNegation } from '../js/magic_negation.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKey, resetInputState } from '../js/input.js';
-import { AMULET_OF_LIFE_SAVING, LEATHER_GLOVES, LOADSTONE, OBJECT_NAMES } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, BOULDER, LEATHER_GLOVES, LOADSTONE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -88,6 +88,16 @@ void test('#pray names the whole stack when releasing cursed loadstones', async 
     await finishPrayerOccupation();
     assert.equal(stones.cursed, false);
     assert.match(game._pending_message, /Your 2 loadstones softly glow amber\./);
+});
+void test('#pray rescues a hero whose only exit requires a forbidden diagonal boulder push', async () => {
+    prayerRoom({ left: 10, right: 10, top: 10, bottom: 10, hero: { ualign: { type: 0, record: 1 } } });
+    requirePlayingGame(game);
+    game.level.flags.sokoban_rules = true;
+    game.level.requireAt(11, 11).typ = ROOM;
+    game.level.requireAt(12, 12).typ = ROOM;
+    await floorObject(BOULDER, 11, 11);
+    await resolvePrayer();
+    assert.ok(game.u.ux !== 10 || game.u.uy !== 10, 'the diagonal boulder leaves no pushable exit');
 });
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {
     prayerRoom();

@@ -172,7 +172,7 @@ function blockedByBoulders(dx: number, dy: number, state: PlayingGameState) {
     const x = hero.ux + 2 * dx, y = hero.uy + 2 * dy;
     const type = isok(x, y) ? state.level.requireAt(x, y).typ : null;
     if (count > 1 && !(count === 2 && type !== null && (IS_POOL(type) || IS_LAVA(type)))) return true;
-    if (dx && dy && state.dungeons?.[hero.uz.dnum]?.dname === 'Sokoban') return true;
+    if (dx && dy && state.level.flags.sokoban_rules) return true;
     return type === null || IS_OBSTRUCTED(type) || bouldersAt(x, y) > 0;
 }
 
