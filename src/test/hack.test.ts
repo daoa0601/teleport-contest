@@ -143,7 +143,10 @@ void test('an unprotected hero burns in lava', async () => {
         ...noDisplay,
         publish: async (message: string) => messages.push(message),
         rollDice: () => 10,
-        die: async details => { deaths.push(details); },
+        die: async details => {
+            deaths.push(details);
+            game.program_state.gameover = true;
+        },
     });
     const death = deaths[0];
     assert.ok(death !== undefined);
@@ -201,7 +204,10 @@ void test('a trapped fire-resistant hero eventually dissolves in lava', async ()
     const result = await sinkHeroIntoLava({
         ...noDisplay,
         publish: async () => {},
-        die: async details => { deaths.push(details); },
+        die: async details => {
+            deaths.push(details);
+            game.program_state.gameover = true;
+        },
     });
     assert.ok(result !== null && result !== undefined);
     assert.equal(result.died, true);
@@ -434,7 +440,10 @@ void test('a cursed loadstone can keep the hero from crawling out', async () => 
         ...noDisplay,
         publish: async (message: string) => messages.push(message),
         random: range => range - 1,
-        die: async details => { deaths.push(details); },
+        die: async details => {
+            deaths.push(details);
+            game.program_state.gameover = true;
+        },
     });
     assert.ok(result !== null && result !== undefined);
     assert.equal(result.died, true);

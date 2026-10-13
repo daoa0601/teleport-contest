@@ -38,6 +38,7 @@ import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWater
 import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
 import { surfaceName } from './terrain_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { iceDescriptionAt } from './dungeon_feature.js';
 // C hack.c:escape_from_sticky_mon(). True means this attempt was spent
 // struggling; release clears the grip directly, without unstuck's cooldown.
 export async function escapeFromStickyMonster(x, y) {
@@ -931,6 +932,7 @@ async function announceDrowningRescue(state, publish) {
                 surface = 'solid ground';
                 break;
             case 'ice':
+                surface = iceDescriptionAt(ux, uy, { state });
                 break;
             case 'bridge':
             case 'altar':

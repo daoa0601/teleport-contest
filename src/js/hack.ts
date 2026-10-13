@@ -63,6 +63,7 @@ import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWater
 import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
 import { surfaceName } from './terrain_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { iceDescriptionAt } from './dungeon_feature.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -1069,6 +1070,7 @@ async function announceDrowningRescue(state: PlayingGameState, publish: MessageP
             surface = 'solid ground';
             break;
         case 'ice':
+            surface = iceDescriptionAt(ux, uy, { state });
             break;
         case 'bridge': case 'altar': case 'headstone':
             surface = withIndefiniteArticle(surface);

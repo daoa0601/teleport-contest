@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { LAVAPOOL, POOL, TT_LAVA } from '../js/const.js';
+import { ICE, LAVAPOOL, POOL, TT_LAVA } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
 import { resetInputState } from '../js/input.js';
@@ -94,4 +94,21 @@ void test('two drowning refusals survive even when the level has no dry landing'
     assert.ok((game.u.uhp ?? 0) > 0);
     assert.equal(game.u.uinwater, 0);
     assert.match(game._pending_message ?? '', /You find yourself on top of water\./);
+});
+
+void test('drowning recovery describes the ice at its landing square', async () => {
+    const level = freshObjectRoom({ flags: { explore: true, bones: false } });
+    for (let x = 7; x <= 16; x++) {
+        for (let y = 6; y <= 14; y++) level.requireAt(x, y).typ = ICE;
+    }
+    for (let x = 9; x <= 11; x++) {
+        for (let y = 9; y <= 11; y++) level.requireAt(x, y).typ = POOL;
+    }
+    refuseLiquidDeaths();
+
+    const result = await heroLiquidEffects();
+
+    assert.equal(result?.died, false);
+    assert.equal(level.requireAt(game.u.ux, game.u.uy).typ, ICE);
+    assert.match(game._pending_message ?? '', /You find yourself on solid ice\./);
 });
