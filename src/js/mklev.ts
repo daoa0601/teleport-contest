@@ -2548,10 +2548,11 @@ async function makemon(
             const box = await mksobj(LARGE_BOX, false, false);
             const cat = await mksobj(CORPSE, true, false);
             box.spe = 1;
-            cat.corpsenm = 33; // PM_HOUSECAT
+            set_corpsenm(cat, 33); // PM_HOUSECAT
             stopObjectTimer(cat, OBJECT_TIMER_KIND.ROT_CORPSE);
             cat.otrapped = false;
-            box.contents = [cat];
+            await addCreatedObjectToContainer(box, cat);
+            box.owt = objectWeight(box);
             await addCreatedObjectToMonsterInventory(pendingMonster, box, game);
             hasMonsterInventory = true;
         }
