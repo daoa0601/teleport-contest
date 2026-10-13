@@ -14,7 +14,8 @@ import { game, requirePlayingGame } from './gstate.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { restoreHeroNutrition } from './hunger.js';
 import { mkobj, mksobj, rndClass } from './mklev.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, requireMonsterData } from './monster_data.js';
+import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { HELM_OF_OPPOSITE_ALIGNMENT, LONG_SWORD, MAGIC_MARKER, getObjectClassBounds, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, SPE_BLANK_PAPER, requireObjectData, } from './object_data.js';
 import { deleteObject } from './object_delete.js';
@@ -208,7 +209,7 @@ export async function announceDivineGift(description) {
         const monster = game.u.ustuck;
         if (!monster)
             throw new Error('A swallowed hero must have a swallowing monster');
-        const name = monster.name || `the ${MONSTER_NAME[monster.mnum]}`;
+        const name = monsterName(monster);
         const owner = /s$/.test(name) ? `${name}'` : `${name}'s`;
         const stomach = monsterStomachName(monster.mnum);
         await pline(`${description} drops into ${owner} ${stomach}.`);

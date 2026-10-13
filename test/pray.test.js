@@ -10,7 +10,7 @@ import { findArmorClass, wearHeroArmor } from '../js/armor.js';
 import { artifactById, initializeArtifacts } from '../js/artifacts.js';
 import { grantPrayerFavor } from '../js/divine_gifts.js';
 import { magicNegation } from '../js/magic_negation.js';
-import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
+import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, FIGURINE, LEATHER_GLOVES, LOADSTONE, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
@@ -30,6 +30,8 @@ import { objectTimers } from '../js/object_timers.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initializePet } from '../js/dog.js';
 import { saveMonsterTraits } from '../js/monster_traits.js';
+import { installSwallowedHero } from './support/hero-state.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 function prayerRoom({ hero = {}, flags = {}, ...room } = {}) {
     freshObjectRoom({
         ...room,
@@ -42,6 +44,30 @@ function prayerRoom({ hero = {}, flags = {}, ...room } = {}) {
 async function resolvePrayer(answers = 'y\x1b') {
     await runExtendedCommand('pray', answers);
     await finishPrayerOccupation();
+}
+async function prayAndReadMessages() {
+    const input = resetInputState();
+    const prayer = runExtendedCommand('pray', 'y').then(() => finishPrayerOccupation());
+    const messages = [];
+    try {
+        for (;;) {
+            const blocked = await Promise.race([
+                input.waitUntilBlocked().then(() => true), prayer.then(() => false),
+            ]);
+            if (!blocked)
+                break;
+            assert.ok(messages.length < 30, 'prayer did not finish its message pages');
+            messages.push(requireGameDisplay().grid.slice(0, 3)
+                .map(row => row.map(cell => cell.ch).join('')).join('\n'));
+            input.feed(' ');
+        }
+        messages.push(game._pending_message);
+    }
+    finally {
+        input.feed('\x1b');
+        await prayer;
+    }
+    return messages;
 }
 void test('a successful ordinary prayer protects an injured hero while praying', async () => {
     freshObjectRoom({
@@ -189,6 +215,21 @@ void test('altar wrath considers a carried luckstone when deciding whether to re
     initRng(2n);
     await runExtendedCommand('sit', '\x1b');
     assert.ok((game.u.uluck ?? 0) < -6, 'total luck above -5 can still be reduced by altar wrath');
+});
+void test('divine lightning from #pray names the monster swallowing the hero', async () => {
+    prayerRoom({ hero: { ugangr: 5 } });
+    requirePlayingGame(game);
+    const worm = await createMonsterAt('purple worm', 11, 10);
+    setMonsterGivenName(worm, 'Gullet');
+    installSwallowedHero(worm);
+    grantIntrinsicProperty('disintegrationResistance', 'outside');
+    initRng(2n);
+    const messages = await prayAndReadMessages();
+    const strike = messages.find(message => message.includes('It strikes'));
+    assert.match(strike ?? '', /Gullet/, 'the divine bolt must name its swallowing victim');
+    assert.equal(game.level.monsters.includes(worm), false);
+    assert.equal(game.u.uconduct.killer ?? 0, 0);
+    assert.ok(!game.program_state.gameover);
 });
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {
     prayerRoom();
