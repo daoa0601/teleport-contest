@@ -51,6 +51,7 @@ void test('fireassist prefers a known-safe launcher over unknown and known-curse
     game.uquiver = flint;
     await rhack('f'.charCodeAt(0));
     await rhack(0);
+    pushKey(' '); // Acknowledge the launcher change before choosing the shot direction.
     pushKey('l');
     await rhack(0);
     assert.equal(game.uwep, knownSafe);
@@ -97,12 +98,9 @@ void test('autoquiver prefers current-launcher ammo and fires it immediately', a
     game.uwep = sling;
     game._knownObjectTypes = new Set([FLINT]);
     game._commandCount = 1;
-    // The trailing keys let the pre-fix manual picker terminate.  The
-    // source autoquiver path consumes only the direction and leaves them
-    // irrelevant to this completed command.
-    pushKey('l');
+    // Acknowledge autoquiver's readiness message before the direction.
     pushKey(' ');
-    pushKey(27);
+    pushKey('l');
     await rhack('f'.charCodeAt(0));
     assert.equal(game.uquiver, flint);
     assert.equal(flint.quantity, 2);
@@ -124,7 +122,7 @@ void test('manual empty-quiver fire keeps the surviving selected stack readied',
         quan: 3, quantity: 3,
     });
     game.uwep = club;
-    await fireFromEmptyQuiver('bl');
+    await fireFromEmptyQuiver('b l');
     assert.equal(game.uquiver, darts);
     assert.equal(darts.ready, true);
     assert.equal(darts.quantity, 2);
@@ -162,6 +160,7 @@ void test('autoquiver excludes hidden and artifact objects and ranks missiles ov
     game.uwep = club;
     game.uswapwep = sling;
     game._knownObjectTypes = new Set([FLINT]);
+    pushKey(' ');
     pushKey('l');
     await rhack('f'.charCodeAt(0));
     assert.equal(game.uquiver, darts);
@@ -184,7 +183,7 @@ void test('manual fire splits all but one wielded projectile into a new quiver i
         wielded: true, owornmask: W_WEP,
     });
     game.uwep = darts;
-    await fireFromEmptyQuiver('ayl');
+    await fireFromEmptyQuiver('ay l');
     const quivered = game.uquiver;
     assert.equal(game.uwep, darts);
     assert.equal(darts.quantity, 1);
@@ -207,7 +206,7 @@ void test('moving the whole primary stack to the quiver spends time even when fi
         wielded: true, owornmask: W_WEP,
     });
     game.uwep = darts;
-    await fireFromEmptyQuiver('any\u001b');
+    await fireFromEmptyQuiver('any \u001b');
     assert.equal(game.uwep, null);
     assert.equal(game.uquiver, darts);
     assert.equal(darts.quantity, 3);
@@ -232,7 +231,7 @@ void test('manual fire splits an alternate stack without replacing its parent sl
     });
     game.uwep = club;
     game.uswapwep = darts;
-    await fireFromEmptyQuiver('byl');
+    await fireFromEmptyQuiver('by l');
     const quivered = game.uquiver;
     assert.equal(game.uwep, club);
     assert.equal(game.uswapwep, darts);
@@ -262,7 +261,8 @@ void test('moving the whole offhand stack ends two-weapon mode and preserves can
     game.uwep = club;
     game.uswapwep = darts;
     game.u.twoweap = true;
-    await fireFromEmptyQuiver('bny\u001b');
+    // Readiness and leaving two-weapon mode each precede the direction.
+    await fireFromEmptyQuiver('bny  \u001b');
     assert.equal(game.uwep, club);
     assert.equal(game.uswapwep, null);
     assert.equal(game.uquiver, darts);
@@ -290,7 +290,7 @@ void test('moving an unused alternate stack remains zero-time when the later fir
     game.uwep = club;
     game.uswapwep = darts;
     game.u.twoweap = false;
-    await fireFromEmptyQuiver('bny\u001b');
+    await fireFromEmptyQuiver('bny \u001b');
     assert.equal(game.uwep, club);
     assert.equal(game.uswapwep, null);
     assert.equal(game.uquiver, darts);

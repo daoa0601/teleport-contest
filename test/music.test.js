@@ -71,7 +71,7 @@ void test('a fire horn shoots a ray and spends one charge', async () => {
     const target = await createMonsterAt('gas spore', 11, 10);
     target.mhp = target.mhpmax = 100;
     const horn = await instrument(FIRE_HORN, 2);
-    pushKeys('yl          ');
+    pushKeys('y l          '); // Acknowledge the horn announcement before choosing its direction.
     await playInstrument(horn);
     assert.equal(horn.spe, 1);
     assert.ok(target.mhp < 100);
@@ -83,7 +83,7 @@ void test('cold resistance protects against a frost horn aimed at yourself', asy
     game.u.coldResistance = true;
     game.u.uhp = game.u.uhpmax = 100;
     const horn = await instrument(FROST_HORN, 1);
-    pushKeys('y.          ');
+    pushKeys('y .          ');
     await playInstrument(horn);
     assert.equal(game.u.uhp, 100);
     assert.equal(horn.spe, 0);

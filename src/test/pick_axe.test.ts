@@ -39,7 +39,7 @@ void test('applying an unwielded pick spends a turn wielding before asking a dir
     assert.equal(game.uwep, pick);
     assert.equal(game.context.move, 1);
     assert.equal(requireGameLevel().requireAt(11, 10).typ, STONE);
-    pushKeys('l');
+    pushKeys(' l'); // Acknowledge wielding before the resumed direction query.
     await rhack(0);
     assert.match(game._pending_message, /You start digging/);
     assert.equal(game.context.move, 1);

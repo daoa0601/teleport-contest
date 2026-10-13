@@ -545,11 +545,6 @@ function magicEnlightenmentLines() {
     ];
     if (game.flags?.debug) lines.push(`  Your alignment is ${record}.`);
     lines.push(...liveAttributePropertyLines());
-    if (game.uarmc?.otyp === 148) {
-        lines.push(
-            '  You are magic-protected because of your cloak of magic resistance.',
-        );
-    }
     lines.push(`  You can't safely pray${game.flags?.debug
         ? ` (${u.ublesscnt || 0})` : ''}.`);
     const mortality = u.umortality ?? 0;

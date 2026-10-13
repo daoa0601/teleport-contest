@@ -38,7 +38,7 @@ import { stumbleOntoMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
-import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { minimalObjectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { descendFromLevitation } from './levitation_commands.js';
@@ -142,6 +142,9 @@ import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExper
 import { removeHeroAccessory, wearHeroAccessory, } from './accessory.js';
 import { heroIsStrangled } from './hero_strangulation.js';
 import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { disturbBuriedZombies } from './object_impact.js';
+import { checkSlipperyIce } from './fumbling.js';
+import { MONSTER_BODY_META } from './monster_data.js';
 import { heroCanOoze } from './monster_perception.js';
 import { isPoolAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
@@ -165,7 +168,7 @@ import { activateStatueTrapAt } from './statue_trap.js';
 import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedBucFate, resolveDippedSensationFate, } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
 import { heroArmName, heroHandName, heroNeckName } from './body_parts.js';
-import { withIndefiniteArticle, makePlural } from './object_grammar.js';
+import { armorUsesPairGrammar, withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { isWetTowel, willWeld } from './weapon_type.js';
 import { announceWeaponWeld, explainTwoWeaponEnd, refuseWeldedPrimary } from './weapon_feedback.js';
@@ -202,7 +205,7 @@ import { continueHeroDigging, diggingTarget } from './hero_digging.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { wieldTool } from './wield_tool.js';
 import { doenhance, useHeroSkill, } from './skills.js';
-import { chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, tendedShop, } from './shk.js';
+import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, tendedShop, } from './shk.js';
 import { visiblePriestName, } from './priest.js';
 import { gameLogEvents } from './gamelog.js';
 import { killerObjectName } from './objnam.js';
@@ -232,6 +235,7 @@ const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
 const M2_ROCKTHROW = 0x08000000;
+const M1_HUMANOID = 0x00020000;
 const MAT_GEMSTONE = 20;
 const MAT_MINERAL = 21;
 function isMovementKey(ch) {
@@ -2686,13 +2690,12 @@ function specialLevelReachable(event) {
 }
 // C ref: teleport.c level_tele().  Wizard-menu entry into the Elemental
 // Planes grants the real Amulet before deferred_goto() starts.  Object
-// construction and inventory identity therefore precede getbones()/mklev(),
-// while tty does not expose prinv() until the destination transaction yields
-// at its pre-arrival acknowledgement.
+// construction, inventory identity, and prinv() precede getbones()/mklev().
+// Destination placement finishes before tty asks for acknowledgement.
 async function endgamePrerequisite(destination) {
     if (!In_endgame(destination) || In_endgame(game.u?.uz)
         || game.u?.uhave?.amulet)
-        return '';
+        return;
     const amulet = await addInventoryItem(await mksobj(AMULET_OF_YENDOR, true, false));
     // teleport.c prints the grant with prinv(); its doname()->xname() path
     // observes the visible object and appends it to the Amulet disco[] class
@@ -2701,7 +2704,8 @@ async function endgamePrerequisite(destination) {
     if (!game.u.uhave)
         game.u.uhave = {};
     game.u.uhave.amulet = 1;
-    return `Endgame prerequisite: ${amulet.invlet} - the Amulet of Yendor.--More--`;
+    const message = `Endgame prerequisite: ${amulet.invlet} - the Amulet of Yendor.`;
+    await pline(message);
 }
 // C ref: dungeon.c print_dungeon(TRUE). Build one source-ordered menu stream;
 // the tty layer alone owns pagination and nested input capture.
@@ -2796,8 +2800,8 @@ export async function chooseWizardLevelDestination() {
     const destination = await showPagedPickOneMenu({ rows, choices });
     if (!destination)
         return null;
-    const preArrivalPager = await endgamePrerequisite(destination);
-    return { destination, preArrivalPager };
+    await endgamePrerequisite(destination);
+    return { destination };
 }
 async function wizLevelTeleport({ menuRequested = false } = {}) {
     game.context.move = 0;
@@ -2979,6 +2983,7 @@ function completeExtendedCommand(prefix) {
     return matches.length === 1 ? matches[0]?.name ?? null : null;
 }
 const EXTENDED_COMMAND_HANDLERS = new Map([
+    ['whatis', dowhatis],
     ['takeoffall', takeOffAll],
     ['conduct', doconduct],
     ['chronicle', doChronicle],
@@ -5634,14 +5639,20 @@ async function doquiverCore(verb) {
     let spentTime = false;
     if (primary || alternate) {
         const quantity = item.quantity ?? item.quan ?? 1;
+        const noun = minimalObjectName(item, game);
+        const names = quantity === 1 ? noun : makePlural(noun);
+        const usePlural = objectNameIsPlural(item, game)
+            || item.otyp === LENSES || armorUsesPairGrammar(OBJECT_NAMES[item.otyp]);
+        let confirmation = primary
+            ? `You are wielding ${usePlural ? 'those' : 'that'}.  Ready ${usePlural ? 'them' : 'it'} instead?`
+            : `${usePlural ? 'Those are' : 'That is'} your ${wasTwoweap ? 'second' : 'alternate'} weapon.  Ready ${usePlural ? 'them' : 'it'} instead?`;
         let readyAll = true;
         if (quantity > 1 && hasFreeBasicInventoryLetter()
             && splittableForQuiver(item)) {
-            const plural = item.plural || makePlural(item.name || 'object');
             const slotDescription = primary
-                ? `You are wielding ${quantity} ${plural}.`
+                ? `You are wielding ${quantity} ${names}.`
                 : `${wasTwoweap ? 'You are dual wielding'
-                    : 'Your alternate weapon is'} ${quantity} ${plural}.`;
+                    : 'Your alternate weapon is'} ${quantity} ${names}.`;
             const partial = await promptYesNoQuit(`${slotDescription}  Ready ${quantity - 1} of them?`);
             if (partial === 'q') {
                 game.context.move = 0;
@@ -5651,10 +5662,16 @@ async function doquiverCore(verb) {
                 item = splitStackForQuiver(item, quantity - 1);
                 readyAll = false;
             }
+            else
+                confirmation = 'Ready all of them instead?';
         }
         if (readyAll) {
-            const answer = await promptYesNoQuit(`Ready ${quantity > 1 ? 'all of them' : 'it'} instead?`);
+            const answer = await promptYesNoQuit(confirmation);
             if (answer !== 'y') {
+                const owner = objectOwnershipPrefix(item, game);
+                const remains = objectNameIsPlural(item, game) ? 'remain' : 'remains';
+                const slot = primary || wasTwoweap ? 'wielded' : 'as secondary weapon';
+                await plineWithContinuation(`${owner}${names} ${remains} ${slot}.`);
                 game.context.move = 0;
                 return { item: null, spentTime: false, cancelled: false };
             }
@@ -5672,11 +5689,21 @@ async function doquiverCore(verb) {
         await setQuiverObject(item, game);
     observeObjectForNaming(item);
     const description = inventoryItemDescription(item);
-    await pline(verb === 'fire'
+    await plineWithContinuation(verb === 'fire'
         ? `You ready: ${item.invlet} - ${description}.`
         : `${item.invlet} - ${description}.`);
     if (verb === 'fire')
         await setQuiverObject(item, game);
+    if (spentTime) {
+        if (primary) {
+            const humanoid = !!((MONSTER_FLAGS1[heroSpecies(game)] ?? 0) & M1_HUMANOID);
+            const hands = game.uarmg ? 'empty handed'
+                : humanoid ? 'bare handed' : 'not wielding anything';
+            await plineWithContinuation(`You are now ${hands}.`);
+        }
+        else
+            await plineWithContinuation('You are no longer using two weapons at once.');
+    }
     game.context.move = spentTime ? 1 : 0;
     return { item, spentTime, cancelled: false };
 }
@@ -6683,6 +6710,12 @@ async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, b
         || IS_OBSTRUCTED(loc?.typ ?? STONE)
         || IS_FURNITURE(loc?.typ ?? STONE)))
         stopRun();
+    // C trap.c:move_into_trap() skips domove_core()'s footstep disturbance.
+    if (!trapOptions.failedUntrap
+        && !propertyIsActive('levitation', game) && !propertyIsActive('flying', game)
+        && !propertyIsActive('stealth', game)
+        && (MONSTER_BODY_META[heroSpecies(game)]?.[0] ?? 0) >= 400)
+        disturbBuriedZombies(u.ux, u.uy);
     newsym(oldx, oldy);
     vision_recalc(1);
     await announceInvocationSquare();
@@ -6813,6 +6846,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
         u.uy = monster.my;
         return attackHostileMonster(monster, monster.mx, monster.my);
     }
+    checkSlipperyIce();
     // C hack.c:impaired_movement() always checks Confusion before deriving
     // the destination.  A nonzero rn2(5) keeps the requested direction; on
     // impairment, confdir(TRUE) chooses cardinals first and retries only an

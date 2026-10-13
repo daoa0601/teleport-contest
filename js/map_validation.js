@@ -185,6 +185,7 @@ export function restoreSavedMap(value, entities) {
         monsters: arrayOf(entities.monster), traps: arrayOf(validSavedTrap),
         regions: arrayOf(validGasCloud), levelTimers: arrayOf(validTimer),
         exclusionZones: arrayOf(validExclusion), flags: validFlags,
+        bonesNames: optional(arrayOf(string)),
         upstair: optional(validSavedPosition), dnstair: optional(validSavedPosition),
         upTeleportRegion: optional(nullable(validArrivalRegion)),
         downTeleportRegion: optional(nullable(validArrivalRegion)),

@@ -1,13 +1,10 @@
 // C zap.c:hit()/miss(). Reporting an impact and identifying its target
 // are separate decisions. Callers own whether a hit or miss is reported.
 import { canSpotMonster } from './display.js';
-import { artifactByName } from './artifacts.js';
-import { fruitFromName } from './fruit.js';
 import { game } from './gstate.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { verbForSubject } from './object_grammar.js';
-import { BOGUS_MONSTERS } from './random_text_data.js';
+import { definiteName } from './objnam.js';
 import { cansee } from './vision.js';
 export function rayHitMessage(effect, monster, { x, y, damage = 0, ending, state = game }) {
     const inside = state.u.uswallow && state.u.ustuck === monster;
@@ -27,56 +24,5 @@ export function rayMissMessage(effect, monster, { x, y, state = game }) {
 export function capitalizedDefiniteName(name, state = game) {
     const subject = definiteName(name, state);
     return subject.charAt(0).toUpperCase() + subject.slice(1);
-}
-export function definiteName(name, state = game) {
-    if (!name)
-        return 'the []';
-    if (/^the /iu.test(name))
-        return `t${name.slice(1)}`;
-    if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name))
-        return `the ${name}`;
-    if (fruitFromName(name, { exact: true, state })) {
-        const artifact = artifactByName(name, state);
-        if (!artifact || /^the /iu.test(artifact.name))
-            return `the ${name}`;
-    }
-    const lastSpace = name.lastIndexOf(' ');
-    const separator = lastSpace >= 0 ? lastSpace : name.lastIndexOf('-');
-    if (separator < 0)
-        return name;
-    if (!/^[A-Z]/u.test(name.slice(separator + 1)))
-        return name.includes("'") ? name : `the ${name}`;
-    if (name.indexOf(' ') >= separator)
-        return name;
-    const lower = name.toLowerCase();
-    const named = lower.indexOf(' named ');
-    const called = lower.indexOf(' called ');
-    const suffix = named < 0 ? called : called < 0 ? named : Math.min(named, called);
-    const of = lower.indexOf(' of ');
-    if (of >= 0 && (suffix < 0 || of < suffix)
-        || suffix < 0 && name.endsWith('Platinum Yendorian Express Card'))
-        return `the ${name}`;
-    return name;
-}
-// Native rumors.c:CapitalMon() includes capitalized species names and titles,
-// but excludes individual names in both the real and hallucinatory tables.
-const CAPITALIZED_MONSTER_TITLES = [
-    ...MONSTER_NAME.flatMap((name, species) => {
-        const unique = !!((MONSTER_GENO[species] ?? 0) & 0x1000);
-        const personal = !!((MONSTER_FLAGS2[species] ?? 0) & 0x00080000);
-        if (unique && (personal || name === 'high cleric' || name === 'long worm tail'))
-            return [];
-        return [name, monsterTypeName(species), monsterTypeName(species, true)];
-    }),
-    ...BOGUS_MONSTERS.flatMap(name => {
-        const code = name.charAt(0);
-        if (code && '-+='.includes(code))
-            return [];
-        return ['_', '|'].includes(code) ? [name.slice(1)] : [name];
-    }),
-].filter(name => /^[A-Z]/u.test(name));
-function capitalizedMonsterTitle(name) {
-    return CAPITALIZED_MONSTER_TITLES.some(title => name.startsWith(title)
-        && (name.length === title.length || [' ', "'"].includes(name.charAt(title.length))));
 }
 //# sourceMappingURL=ray_hit_message.js.map

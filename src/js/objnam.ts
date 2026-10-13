@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 import type { GameState, Fruit } from './game_state.js';
 import type { GameObject, ObjectBlessing } from './object_types.js';
 import type { Artifact } from './artifacts.js';
-import { fruitFromIndex, matchWishedFruit } from './fruit.js';
+import { fruitFromIndex, fruitFromName, matchWishedFruit } from './fruit.js';
 import { carriedObjectOwner, objectTypeKnown } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { mkobj, mksobj, rndClass } from './mklev.js';
@@ -46,6 +46,7 @@ import { observeBucForNaming, observeObject } from './object_knowledge.js';
 import { getObjectLocation } from './object_location.js';
 import { objectDisclosureText } from './object_inscription.js';
 import { cansee } from './vision.js';
+import { BOGUS_MONSTERS } from './random_text_data.js';
 
 // Detection and minimal_xname supply a naming view without allocating a game object.
 export type ObjectNameView = Pick<GameObject, 'otyp' | 'oclass'> & Partial<Pick<GameObject,
@@ -257,7 +258,7 @@ export function foodObjectName(object: GameObject, {
     if (object.otyp === CORPSE)
         return corpseName(object, { singular: true, definite });
     const name = objectName(object, state);
-    return definite ? definiteKillerName(name) : name;
+    return definite ? definiteName(name, state) : name;
 }
 
 // invent.c:loot_xname() ignores counts and individual user names. Its
@@ -320,7 +321,7 @@ export function killerObjectName(object: GameObject, state: GameState = game): s
     }
     // A possessive unique monster name already supplies its own article.
     if (quantity !== 1 || /(?:'s |s' )/i.test(name)) return name;
-    return OBJECT_UNIQUE[object.otyp] ? definiteKillerName(name)
+    return OBJECT_UNIQUE[object.otyp] ? definiteName(name, state)
         : withIndefiniteArticle(name);
 }
 
@@ -403,12 +404,53 @@ function physicalObjectNoun(object: ObjectNameView, noun: string, state: GameSta
     return noun;
 }
 
-// The native the() retains capitalized proper names, but supplies an article
-// for compound item names such as Amulet of Yendor and Bell of Opening.
-function definiteKillerName(name: string): string {
-    if (/^the /i.test(name)) return name.replace(/^The /, 'the ');
-    return /^[A-Z]/.test(name) && !/ of /i.test(name) && !/[- ][a-z]/.test(name)
-        ? name : `the ${name}`;
+// C objnam.c:the(): fruit and compound object names need articles; personal names do not.
+export function definiteName(name: string, state: GameState = game): string {
+    if (!name) return 'the []';
+    if (/^the /iu.test(name)) return `t${name.slice(1)}`;
+    if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name)) return `the ${name}`;
+    if (fruitFromName(name, { exact: true, state })) {
+        const artifact = artifactByName(name, state);
+        // the() uses artifact_name(..., FALSE), so fuzzy wish matches do not
+        // turn an ordinary fruit label into an artifact's personal name.
+        if (!artifact || /^the /iu.test(artifact.name)
+            || artifact.name.toLowerCase() !== name.toLowerCase()) return `the ${name}`;
+    }
+    const lastSpace = name.lastIndexOf(' ');
+    const separator = lastSpace >= 0 ? lastSpace : name.lastIndexOf('-');
+    if (separator < 0) return name;
+    if (!/^[A-Z]/u.test(name.slice(separator + 1)))
+        return name.includes("'") ? name : `the ${name}`;
+    if (name.indexOf(' ') >= separator) return name;
+    const lower = name.toLowerCase();
+    const named = lower.indexOf(' named ');
+    const called = lower.indexOf(' called ');
+    const suffix = named < 0 ? called : called < 0 ? named : Math.min(named, called);
+    const of = lower.indexOf(' of ');
+    if (of >= 0 && (suffix < 0 || of < suffix)
+        || suffix < 0 && name.endsWith('Platinum Yendorian Express Card')) return `the ${name}`;
+    return name;
+}
+
+// Native rumors.c:CapitalMon() includes capitalized species names and titles,
+// but excludes individual names in both the real and hallucinatory tables.
+const CAPITALIZED_MONSTER_TITLES = [
+    ...MONSTER_NAME.flatMap((name, species) => {
+        const unique = !!((MONSTER_GENO[species] ?? 0) & 0x1000);
+        const personal = !!((MONSTER_FLAGS2[species] ?? 0) & 0x00080000);
+        if (unique && (personal || name === 'high cleric' || name === 'long worm tail')) return [];
+        return [name, monsterTypeName(species), monsterTypeName(species, true)];
+    }),
+    ...BOGUS_MONSTERS.flatMap(name => {
+        const code = name.charAt(0);
+        if (code && '-+='.includes(code)) return [];
+        return ['_', '|'].includes(code) ? [name.slice(1)] : [name];
+    }),
+].filter(name => /^[A-Z]/u.test(name));
+
+function capitalizedMonsterTitle(name: string): boolean {
+    return CAPITALIZED_MONSTER_TITLES.some(title => name.startsWith(title)
+        && (name.length === title.length || [' ', "'"].includes(name.charAt(title.length))));
 }
 
 // C minimal_xname() builds a bare object so personal names, call names,
@@ -483,7 +525,7 @@ export function simpleObjectNameWithArticle(object: ObjectNameView, state: GameS
     if (quantity !== 1) return pluralizeObjectNoun(object, noun);
     const uniqueType = object.otyp === FAKE_AMULET_OF_YENDOR ? AMULET_OF_YENDOR : object.otyp;
     if (OBJECT_UNIQUE[uniqueType] && noun === OBJECT_NAMES[uniqueType])
-        return definiteKillerName(noun);
+        return definiteName(noun, state);
     return withIndefiniteArticle(noun);
 }
 
