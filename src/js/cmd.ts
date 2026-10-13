@@ -1,4 +1,5 @@
 import type { DipTarget } from './dip_water.js';
+import { dipFountainSword } from './fountain_sword.js';
 import { washHands } from './dip_water.js';
 import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
@@ -4009,6 +4010,7 @@ async function doturn() {
 }
 
 async function dipFountain(object: DipTarget, loc: MapLocation) {
+    if (object !== 'hands' && await dipFountainSword(object, loc)) return;
     const result = object === 'hands' || object === game.uarmg ? await washHands()
         : await waterDamageObject(object, [], game, { force: true, publish: plineWithContinuation });
     if (result === 'destroyed' || result !== 'nothing' && rn2(2) === 0) {
