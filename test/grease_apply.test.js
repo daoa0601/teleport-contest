@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { W_ARM, W_ARMC } from '../js/const.js';
+import { W_ARM, W_ARMC, W_ARMG } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { CAN_OF_GREASE, CLOAK_OF_PROTECTION, DAGGER, LEATHER_ARMOR } from '../js/object_data.js';
+import { CAN_OF_GREASE, CLOAK_OF_PROTECTION, DAGGER, GAUNTLETS_OF_POWER, LEATHER_ARMOR } from '../js/object_data.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -53,5 +53,14 @@ void test('an empty known grease can reports that it is empty and takes time', a
     await applyInventoryObject(grease);
     assert.equal(game._pending_message, 'The can of grease is empty.');
     assert.equal(game.context.move, 1);
+});
+void test('a dropped grease can slips from the fingers even when gloves are worn', async () => {
+    freshPlayableRoom({ hero: { glibTurns: 8, glib: true } });
+    const grease = await addInventoryObject(CAN_OF_GREASE, { spe: 3 });
+    const gloves = await addInventoryObject(GAUNTLETS_OF_POWER, { owornmask: W_ARMG });
+    game.uarmg = game.u.uarmg = gloves;
+    await applyInventoryObject(grease);
+    assert.equal(game._pending_message, 'The can of grease slips from your fingers.');
+    assert.equal(grease.where, 'floor');
 });
 //# sourceMappingURL=grease_apply.test.js.map

@@ -88,8 +88,7 @@ function coveringEquipment(object) {
 }
 function fingers(simple) {
     const gloves = game.uarmg;
-    return gloves ? simple ? armorSimpleName(gloves, game) : objectName(gloves, game)
-        : makePlural(heroFingerName(game));
+    return simple && gloves ? armorSimpleName(gloves, game) : makePlural(heroFingerName(game));
 }
 function canName(can) {
     const name = objectName(can, game);
