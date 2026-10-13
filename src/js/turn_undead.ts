@@ -19,7 +19,7 @@ import {
     A_WIS, BOLT_LIM, MAXULEV,
 } from './const.js';
 import {
-    pline, shieldeff,
+    plineWithContinuation as pline, shieldeff,
 } from './display.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { game } from './gstate.js';
@@ -75,15 +75,6 @@ function eligibleTarget(monster: Monster, heroLevel: number) {
 async function turnOneMonster(monster: Monster, state: PlayingGameState, options: Required<TurnUndeadOptions>): Promise<TurnOutcome> {
     const { finishMonsterKill, random } = options;
     const heroLevel = state.u?.ulevel ?? 1;
-    monster.msleeping = 0;
-
-    if (state.u?.confused || (state.u?.confusionTurns ?? 0) > 0) {
-        monster.mflee = 0;
-        monster.mfrozen = 0;
-        monster.mcanmove = 1;
-        return 'faltered';
-    }
-
     if (monsterResistsEffect(monster, heroLevel, random)) {
         await shieldeff(monster.mx, monster.my, state);
         if (cansee(monster.mx, monster.my))
@@ -162,16 +153,22 @@ export async function turnUndeadByCallingOnDeity(state: GameState = game, {
         if (!couldsee(monster.mx, monster.my)
             || dx * dx + dy * dy > rangeSquared
             || !eligibleTarget(monster, state.u?.ulevel ?? 1)) continue;
-        const result = await turnOneMonster(monster, state, {
-            finishMonsterKill,
-            random,
-        });
+        monster.msleeping = 0;
+        let result: TurnOutcome;
+        if (state.u.confused || (state.u.confusionTurns ?? 0) > 0) {
+            if (!falterMessageShown) {
+                await pline('Unfortunately, your voice falters.');
+                falterMessageShown = true;
+            }
+            monster.mflee = 0;
+            monster.mfrozen = 0;
+            monster.mcanmove = 1;
+            result = 'faltered';
+        } else {
+            result = await turnOneMonster(monster, state, { finishMonsterKill, random });
+        }
         if (result === 'hero-died') return results;
         results.push({ monster, result });
-        if (result === 'faltered' && !falterMessageShown) {
-            await pline('Unfortunately, your voice falters.');
-            falterMessageShown = true;
-        }
     }
 
     endVoluntaryMultiTurn(state);

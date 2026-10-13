@@ -124,3 +124,34 @@ void test('an attempted #turn breaks atheism even when strangulation prevents ch
     assert.equal(game.context.move, 0);
     assert.equal(gameLogEvents().filter(event => event.text === 'rejected atheism by turning undead').length, 1);
 });
+
+void test('a confused #turn wakes its target before the faltering voice is announced', async () => {
+    freshPriest(1);
+    requirePlayingGame(game);
+    const zombie = await createMonsterAt('human zombie', 11, 10);
+    zombie.mpeaceful = false;
+    zombie.msleeping = 1;
+    zombie.mfrozen = 5;
+    zombie.mcanmove = 0;
+    setPropertyTimeout('confusion', 10);
+    const input = resetInputState();
+    const turning = runExtendedCommand('turn');
+    try {
+        const boundary = await Promise.race([
+            turning.then(() => 'completed'), input.waitUntilBlocked().then(() => 'input'),
+        ]);
+        assert.equal(boundary, 'input', 'the invocation must be acknowledged before the faltering announcement');
+        assert.equal(zombie.msleeping, 0);
+        assert.equal(zombie.mfrozen, 5);
+        input.feed(' ');
+        await turning;
+    } finally {
+        input.feed('\x1b');
+        await turning;
+    }
+
+    assert.match(game._pending_message, /Unfortunately, your voice falters\./);
+    assert.equal(zombie.mfrozen, 0);
+    assert.equal(zombie.mcanmove, 1);
+    assert.equal(zombie.mflee, 0);
+});
