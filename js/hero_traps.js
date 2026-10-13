@@ -73,7 +73,7 @@ import { trapName } from './trap_name.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { monsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { objectCombatName, objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { observeObject } from './object_knowledge.js';
 const M1_CLING = 0x00000010;
 const M1_HIDE = 0x00000100;
@@ -932,16 +932,11 @@ async function triggerBearTrap(trap, { failedUntrap = false, forceTrap = false, 
     await exerciseAttribute(A_DEX, false);
     return false;
 }
-function rustTargetName(object, fallback) {
-    if (object && object.oclass === 3)
-        return armorSimpleName(object, game);
-    return object?.name || OBJECT_NAMES[object?.otyp ?? -1] || fallback;
-}
-async function wetHeroObject(object, description) {
+async function wetHeroObject(object, description = null) {
     const messages = [];
     const result = await waterDamageObject(object, messages, game, {
         force: true,
-        description,
+        description: description ?? (object ? objectCombatName(object) : null),
     });
     for (const message of messages)
         await plineWithContinuation(message);
@@ -967,7 +962,7 @@ async function triggerRustTrap(trap) {
     if (target === 0) {
         await plineWithContinuation(`A gush of water hits you on the ${heroHeadName(game)}!`);
         const helmet = heroObject('uarmh');
-        await wetHeroObject(helmet, rustTargetName(helmet, 'helmet'));
+        await wetHeroObject(helmet, helmet ? armorSimpleName(helmet, game) : 'helmet');
     }
     else if (target === 1) {
         await plineWithContinuation(`A gush of water hits your left ${heroArmName(game)}!`);
@@ -981,17 +976,17 @@ async function triggerRustTrap(trap) {
                 weapon = secondary;
             else if (primary && OBJECT_BIMANUAL[primary.otyp])
                 weapon = primary;
-            await wetHeroObject(weapon, rustTargetName(weapon, 'weapon'));
+            await wetHeroObject(weapon);
             const gloves = heroObject('uarmg');
-            await wetHeroObject(gloves, rustTargetName(gloves, 'gloves'));
+            await wetHeroObject(gloves, gloves ? armorSimpleName(gloves, game) : 'gloves');
         }
     }
     else if (target === 2) {
         await plineWithContinuation(`A gush of water hits your right ${heroArmName(game)}!`);
         const weapon = heroObject('uwep');
-        await wetHeroObject(weapon, rustTargetName(weapon, 'weapon'));
+        await wetHeroObject(weapon);
         const gloves = heroObject('uarmg');
-        await wetHeroObject(gloves, rustTargetName(gloves, 'gloves'));
+        await wetHeroObject(gloves, gloves ? armorSimpleName(gloves, game) : 'gloves');
     }
     else {
         await plineWithContinuation('A gush of water hits you!');
@@ -1008,9 +1003,12 @@ async function triggerRustTrap(trap) {
         const cloak = heroObject('uarmc');
         const suit = heroObject('uarm');
         const shirt = heroObject('uarmu');
-        const torso = cloak || suit || shirt;
-        const fallback = cloak ? 'cloak' : shirt ? 'shirt' : 'armor';
-        await wetHeroObject(torso, rustTargetName(torso, fallback));
+        if (cloak)
+            await wetHeroObject(cloak, armorSimpleName(cloak, game));
+        else if (suit)
+            await wetHeroObject(suit, armorSimpleName(suit, game));
+        else
+            await wetHeroObject(shirt, 'shirt');
     }
     if (heroIsPolymorphed(game) && hero.umonnum === PM_IRON_GOLEM) {
         await rustIronGolemHero();

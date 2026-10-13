@@ -9,6 +9,7 @@ import { pushKeys } from '../js/input.js';
 import { ROBE, MUMMY_WRAPPING, RING_MAIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { burnHeroArmorByFire } from '../js/trap.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -38,5 +39,19 @@ void test('a rust trap calls a worn ring mail suit mail', async () => {
     await triggerHeroTrap(trap);
 
     assert.match(game._pending_message, /Your mail rusts!/);
+    assert.equal(suit.oeroded, 1);
+});
+
+void test('a rust trap uses the full name of ring mail wielded in the right hand', async () => {
+    const level = freshObjectRoom();
+    const suit = await addInventoryObject(RING_MAIL);
+    await setPrimaryWeapon(suit);
+    const trap = addTrap(level, RUST_TRAP, 10, 10);
+    pushKeys(' '.repeat(20));
+    initRng(14n);
+
+    await triggerHeroTrap(trap);
+
+    assert.match(game._pending_message, /Your ring mail rusts!/);
     assert.equal(suit.oeroded, 1);
 });
