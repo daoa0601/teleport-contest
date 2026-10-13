@@ -6,7 +6,7 @@ import {
     LOOK_TRADITIONAL, LOOK_VERBOSE, ROWNO,
 } from './const.js';
 import {
-    bot, redrawMap, flush_screen, glyphAt, newsym, pline, show_glyph_cell, terrain_glyph,
+    bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, newsym, pline, show_glyph_cell, terrain_glyph,
 } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
@@ -373,7 +373,7 @@ export async function selectMapPosition({
             }
             const ch = String.fromCharCode(key);
             if (key === 27) {
-                game._pending_message = '';
+                clearMessageWindow();
                 return null;
             }
             const pickType = mapPositionPickType(key);
