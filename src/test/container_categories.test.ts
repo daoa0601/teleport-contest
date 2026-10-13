@@ -4,7 +4,7 @@ import test from 'node:test';
 import { useContainer } from '../js/container.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { CHEST, CLUB, POT_HEALING } from '../js/object_data.js';
+import { CHEST, CLUB, LOADSTONE, POT_HEALING } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
@@ -91,4 +91,24 @@ void test('a count on a single just-picked stack stashes that many items directl
     assert.equal(clubs.quan, 3);
     const stored = chest.contents?.filter(object => object.otyp === CLUB);
     assert.equal(stored?.reduce((total, object) => total + object.quan, 0), 3);
+});
+
+void test('a rejected counted just-picked selection keeps both stacks and spends a turn', async () => {
+    const { chest } = await filledChest();
+    await addInventoryObject(POT_HEALING);
+    const stones = await addInventoryObject(LOADSTONE, {
+        quantity: 5, cursed: true, pickup_prev: true,
+    });
+    const input = resetInputState();
+    input.feed('i2P\n');
+
+    const result = await useContainer(chest, { held: true });
+
+    const carried = game.inventory.filter(object => object.otyp === LOADSTONE);
+    assert.equal(stones.quan, 3, 'The original loadstone stack keeps the unselected three.');
+    assert.equal(carried.length, 2, 'The rejected split stays in the inventory.');
+    assert.equal(carried.find(object => object !== stones)?.quan, 2);
+    assert.equal(chest.contents?.some(object => object.otyp === LOADSTONE), false);
+    assert.equal(result.spentTime, true);
+    assert.equal(game._lastPlineMessage, "The stones won't leave your person.");
 });

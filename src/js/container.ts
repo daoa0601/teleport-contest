@@ -613,11 +613,15 @@ async function takeSelectedObjects(container: GameObject): Promise<ContainerTran
     return results;
 }
 
-async function putSelectedObjects(container: GameObject, stashOne = false): Promise<ContainerTransferResult[]> {
+async function putSelectedObjects(container: GameObject, stashOne = false): Promise<{
+    results: ContainerTransferResult[];
+    spentTime: boolean;
+}> {
     const candidates = (game.inventory || [])
         .filter(object => object !== container);
-    if (!candidates.length) return [];
+    if (!candidates.length) return { results: [], spentTime: false };
     let selected: CountedSelection<GameObject>[];
+    let spentTime = false;
     if (stashOne) {
         selected = await chooseObjects('What do you want to stash?', candidates, true);
         selected = selected.slice(0, 1);
@@ -629,11 +633,20 @@ async function putSelectedObjects(container: GameObject, stashOne = false): Prom
         const onePicked = categories.justPickedCount !== undefined
             && candidates.filter(object => object.pickup_prev).length === 1
             ? candidates.find(object => object.pickup_prev) : null;
+        if (!categories.autoSelect && onePicked) {
+            // menu_loot's single just-picked path keeps a rejected split
+            // and charges a turn regardless of in_container's result.
+            const transfer = splitForTransfer(onePicked, categories.justPickedCount ?? -1, game);
+            const result = await putIntoContainer(container, transfer.object);
+            if (result.message) await plineWithContinuation(result.message);
+            return { results: [result], spentTime: true };
+        }
         selected = categories.autoSelect
             ? eligible.map(value => ({ value, count: -1 }))
-            : onePicked
-                ? [{ value: onePicked, count: categories.justPickedCount ?? -1 }]
-                : await chooseObjects('Put in what?', eligible, true);
+            : await chooseObjects('Put in what?', eligible, true);
+        // The ordinary menu path also charges a turn for a selected item,
+        // including a rejection; auto-selection counts successful transfers.
+        spentTime = !categories.autoSelect && selected.length > 0;
     }
     const results: ContainerTransferResult[] = [];
     for (const selection of selected) {
@@ -644,7 +657,7 @@ async function putSelectedObjects(container: GameObject, stashOne = false): Prom
         if (result.message) await plineWithContinuation(result.message);
         if (result.destroyedContainer || result.stop) break;
     }
-    return results;
+    return { results, spentTime: spentTime || results.some(result => result.moved) };
 }
 
 function contentLines(container: GameObject): string[] {
@@ -787,10 +800,11 @@ export async function useContainer(container: GameObject, {
             await pline(`You don't have anything else to ${
                 action === keys.stash ? 'stash' : 'put in'}.`);
         } else {
-            const results = await putSelectedObjects(
+            const transfer = await putSelectedObjects(
                 container, action === keys.stash,
             );
-            if (results.some(result => result.moved)) spentTime = true;
+            const results = transfer.results;
+            if (transfer.spentTime) spentTime = true;
             stopped = results.some(result => result.stop);
             if (results.some(result => result.destroyedContainer)) {
                 return { spentTime: true, container: null };

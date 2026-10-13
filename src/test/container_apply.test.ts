@@ -268,7 +268,7 @@ void test('invocation items cannot be hidden in a container', async () => {
     assert.deepEqual(game.inventory, [chest, amulet]);
     assert.deepEqual(chest.contents, []);
     assert.equal(amulet.where, 'inventory');
-    assert.equal(game.context.move, 0);
+    assert.equal(game.context.move, 1, 'Selecting a rejected item from the loot menu spends a turn.');
     assert.match(game._pending_message, /cannot be confined/);
 });
 
