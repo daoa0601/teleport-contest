@@ -324,6 +324,12 @@ function stairway_find_special_dir(up) {
 function u_on_newpos(x, y) {
     game.u.ux = x;
     game.u.uy = y;
+    // dungeon.c:u_on_newpos() cannot retain a position on the departed level.
+    if (game.u.uz?.dnum !== game.u.uz0?.dnum
+        || game.u.uz?.dlevel !== game.u.uz0?.dlevel) {
+        game.u.ux0 = x;
+        game.u.uy0 = y;
+    }
 }
 // C refs: dungeon.c Can_dig_down()/Can_fall_thru().  A level's hard-floor
 // flag is only one of the gates: bottom levels and the invocation level also
