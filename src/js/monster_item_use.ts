@@ -57,7 +57,10 @@ export async function presentMonsterQuaff(monster: Monster, object: GameObject, 
         observeObjectForNaming(object, { state });
         const name = inventoryItemDescription({ ...object, quan: 1, quantity: 1 });
         await publish(`${monsterName(monster, { state, capitalized: true })} drinks ${name}!`);
-    } else if (!heroIsDeaf(state)) await publish('You hear a chugging sound.');
+    } else if (!heroIsDeaf(state)) {
+        const message = formatHeardMessage('a chugging sound.', state);
+        if (message) await publish(message);
+    }
     return seen;
 }
 
