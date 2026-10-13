@@ -13,6 +13,7 @@ import { finishTeleportArrival } from './location_effects.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterIsWhirly } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { monsterHasColdResistance } from './monster_resistance.js';
+import { observeObjectForNaming } from './objnam.js';
 import { CORPSE, OBJECT_DESCRIPTIONS, ROCK } from './object_data.js';
 import { objectDescription } from './object_description.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
@@ -57,7 +58,10 @@ export async function slipOrTrip(publish: MessagePublisher = plineWithContinuati
         let what: string;
         if (game._lastPlineKind === PLNMSG_ONE_ITEM_HERE)
             what = top.quan === 1 ? 'it' : hallucinating ? 'they' : 'them';
-        else if (top.dknown || !heroIsBlind(game)) what = objectDescription(top, { state: game });
+        else if (top.dknown || !heroIsBlind(game)) {
+            observeObjectForNaming(top);
+            what = objectDescription(top, { state: game });
+        }
         else {
             const rocks = pile.find(object => object.otyp === ROCK);
             what = rocks ? rocks.quan === 1 ? 'a rock' : 'some rocks' : 'something';

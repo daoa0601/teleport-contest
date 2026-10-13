@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { ICE, NO_MINVENT } from '../js/const.js';
+import { ICE, NO_MINVENT, PLNMSG_ONE_ITEM_HERE } from '../js/const.js';
 import { slipOrTrip } from '../js/fumbling.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { STATUE } from '../js/object_data.js';
+import { DAGGER, STATUE } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
+import { floorObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
@@ -96,4 +97,32 @@ void test('a cockatrice-form hero slipping into an unarmored monster leaves its 
     assert.ok((game.u.uexp ?? 0) > 0, 'the hero receives experience for the petrified monster');
     assert.equal(game.u.ux, 10, 'the monster stops the hurtle before the hero enters its square');
 });
+for (const blind of [false, true]) {
+    void test(`a ${blind ? 'blind' : 'sighted'} Cleric learns a dagger's curse when naming it in a trip`, async () => {
+        freshObjectRoom({ role: 'priest', hero: { blindTurns: blind ? 20 : 0 } });
+        const dagger = await floorObject(DAGGER, 10, 10, {
+            cursed: true, known: false, bknown: false, dknown: blind,
+        });
+        const messages = [];
+        await slipOrTrip(async (message) => { messages.push(message); });
+        assert.equal(dagger.bknown, true, 'naming teaches the Cleric the curse');
+        assert.equal(dagger.dknown, true, 'the sighted Cleric observes the dagger');
+        assert.equal(messages[0], 'You trip over a cursed dagger.');
+    });
+}
+for (const description of ['it', 'something']) {
+    void test(`tripping over ${description} leaves an unnamed dagger's curse unknown`, async () => {
+        freshObjectRoom({ role: 'priest', hero: { blindTurns: description === 'something' ? 20 : 0 } });
+        const dagger = await floorObject(DAGGER, 10, 10, {
+            cursed: true, known: false, bknown: false, dknown: false,
+        });
+        if (description === 'it')
+            game._lastPlineKind = PLNMSG_ONE_ITEM_HERE;
+        const messages = [];
+        await slipOrTrip(async (message) => { messages.push(message); });
+        assert.equal(dagger.bknown, false, 'the trip does not name the dagger');
+        assert.equal(dagger.dknown, false, 'the trip does not observe the dagger');
+        assert.equal(messages[0], `You trip over ${description}.`);
+    });
+}
 //# sourceMappingURL=slippery_ice.test.js.map
