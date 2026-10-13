@@ -5123,8 +5123,7 @@ async function doopen() {
         return;
     }
     if (loc.doormask & D_LOCKED) {
-        await pline('This door is locked.');
-        game.context.move = 0;
+        game.context.move = Number(await openLockedDoor(loc, x, y));
         return;
     }
     if (rnl(20) < Math.trunc((currentStrength()
@@ -6415,6 +6414,25 @@ function autoUnlockTool(g = game) {
     }
     return null;
 }
+async function openLockedDoor(door, x, y) {
+    await pline('This door is locked.');
+    const tool = autoUnlockTool(game);
+    if (!tool)
+        return false;
+    game.u.dz = 0;
+    await flushPendingTopline();
+    const answer = await promptYesNoQuit(`Unlock it with your ${lockToolPresentation(tool)}?`);
+    if (answer !== 'y')
+        return false;
+    game._occupation = {
+        key: 'pick-lock',
+        text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD
+            ? 'picking the lock' : 'unlocking the door',
+        remaining: 51, usedtime: 0, door, x, y, tool,
+        chance: lockPickChance(tool, game),
+    };
+    return true;
+}
 function lockToolPresentation(tool) {
     if (tool.otyp === SKELETON_KEY)
         return 'skeleton key';
@@ -6948,28 +6966,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
         // later diagonal-door restriction, so a diagonal attempt still owns
         // this zero-time message.
         if (loc.doormask & D_LOCKED) {
-            const tool = autoUnlockTool(game);
-            if (!tool) {
-                await pline('This door is locked.');
-                return false;
-            }
-            await promptKey('This door is locked.--More--');
-            const toolName = lockToolPresentation(tool);
-            const answer = await promptYesNoQuit(`Unlock it with your ${toolName}?`);
-            if (answer === 'y') {
-                game._occupation = {
-                    key: 'pick-lock',
-                    text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD
-                        ? 'picking the lock' : 'unlocking the door',
-                    remaining: 51,
-                    usedtime: 0,
-                    door: loc,
-                    x: newx,
-                    y: newy,
-                    tool,
-                    chance: lockPickChance(tool, game),
-                };
-            }
+            await openLockedDoor(loc, newx, newy);
             game.context.move = 0;
             return false;
         }
