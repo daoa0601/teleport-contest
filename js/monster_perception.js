@@ -4,6 +4,7 @@
 import { heroIsDisplaced } from './armor.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
+import { heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterIsAmorphous, monsterIsVampireShifter, monsterIsVerySmall } from './monster_data.js';
 import { AD_MAGM, AD_ACID } from './monster_attack_types.js';
 import { heroGoldAmount } from './hero_gold.js';
@@ -45,13 +46,19 @@ export function monsterCanFog(monster, state) {
         && !((state?.mvitals?.[PM_FOG_CLOUD]?.mvflags ?? 0) & G_GENOD)
         && !state.u.protectionFromShapeChangers
         && !state.protectionFromShapeChangers
-        && !inventoryBlocksDoorPassage(monster);
+        && !inventoryBlocksDoorPassage(monster.minvent || []);
 }
 export function monsterCanOoze(monster) {
-    return monsterIsAmorphous(monster) && !inventoryBlocksDoorPassage(monster);
+    return monsterIsAmorphous(monster)
+        && !inventoryBlocksDoorPassage(monster.minvent || []);
 }
-function inventoryBlocksDoorPassage(monster) {
-    for (const object of monster.minvent || []) {
+// C can_ooze() uses the hero's inventory for youmonst, not minvent.
+export function heroCanOoze(state) {
+    return monsterIsAmorphous({ mnum: heroSpecies(state) })
+        && !inventoryBlocksDoorPassage(state.inventory);
+}
+function inventoryBlocksDoorPassage(inventory) {
+    for (const object of inventory) {
         const type = object.otyp;
         // The pinned source compares otyp, not oclass, for this first test.
         if (type === COIN_CLASS && object.quan > 100)
