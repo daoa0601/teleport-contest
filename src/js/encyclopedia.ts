@@ -64,12 +64,12 @@ function patternMatches(pattern: string, name: string): boolean {
     let starNameIndex = 0;
     while (nameIndex < name.length) {
         const character = pattern.charAt(patternIndex);
-        if (character === '?' || character === name.charAt(nameIndex)) {
-            patternIndex++;
-            nameIndex++;
-        } else if (character === '*') {
+        if (character === '*') {
             starIndex = patternIndex++;
             starNameIndex = nameIndex;
+        } else if (character === '?' || character === name.charAt(nameIndex)) {
+            patternIndex++;
+            nameIndex++;
         } else if (starIndex >= 0) {
             patternIndex = starIndex + 1;
             nameIndex = ++starNameIndex;
