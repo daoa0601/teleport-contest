@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–5 (`33b2f78`)
+## Parallel batches 1–6 (`48cdd93`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -164,25 +164,29 @@ gold scatter, fall killers, `maybe_wail()`, headstones, `#genocided`),
 **rng-tail-5** (`role_init`, `moveloop_core`, `dmgval`, `obj_resists`,
 `place_lregion`).
 
+Batch 6: **monster-birth** (`set_malign()` at birth, `AT_HUGS` grabbing and
+holding), **display-regressions** (hero and pet redraws suppressed by the new
+glyph identity), **rng-mmove** (`m_move()` goal and tie-break rolls),
+**rng-levelgen-2** (corridors, mazes, kelp, monster weapons, corpse chance),
+**rng-combat** (`hitmu` damage paths, `dochug` gates, mind-flayer blast order).
+
 ## Verification
 
-`npm test` at `33b2f78`: **7,707/7,707**. Merges require a fully green suite;
-batch runs also compare matched screens per session with the previous batch.
+`npm test` at `48cdd93`: **7,875/7,875**. Merges require a fully green suite;
+batch runs also compare matched screens per session with the previous batch
+(no screen regression in batch 6).
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
-| Public | 22/44 | 8,557/11,405 | 608,975/792,838 | 0 |
-| Native eval sample | 229/300 | 42,737/50,586 | 3,136,678/3,616,669 | 0 |
+| Public | 22/44 | 8,597/11,405 | 620,282/792,838 | 0 |
+| Native eval sample | 241/300 | 45,193/50,586 | 3,376,245/3,616,669 | 0 |
 
-Runs: `.cache/generalization/batch5-33b2f78-{eval,public}` in the verify
-worktree (baseline `base-06d7e73`: 143/300; batch 4: 220/300). No verified
-random call was lost. Open regression: monster-display moved two sessions'
-first screen difference earlier (eval 17da1be8, which fully passed, at step
-108; public seed0012-monk-vault-escort from 31 to 25): the hero glyph is not
-redrawn where C redraws it. A fix unit is running. The state oracle finds 240
-sessions matching C state throughout; one hidden-state session remains.
+Runs: `.cache/generalization/batch6-48cdd93-{eval,public}` in the verify
+worktree (baseline `base-06d7e73`: 143/300; batch 5: 229/300). No verified
+random call was lost. The state oracle finds 261 sessions matching C state
+throughout; one hidden-state session remains.
 
 ## Next work
 
