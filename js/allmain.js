@@ -1314,7 +1314,8 @@ async function advanceWorldTurn() {
     while (phase.kind === 'timeout-message') {
         if (phase.timeoutKind === 'stun') {
             await makeStunned(0);
-            await stopHeroOccupation(game);
+            if (!propertyIsActive('stunned', game))
+                await stopHeroOccupation(game);
             phase = await finishInitialTurnMaintenanceAfterStun(phase);
         }
         else {
