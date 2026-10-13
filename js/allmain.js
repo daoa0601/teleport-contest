@@ -51,6 +51,7 @@ import { makeMonsterFlee } from './monster_flee.js';
 import { stopHeroOccupation } from './occupation.js';
 import { fixShopDamage } from './shop_damage.js';
 import { removeWornHeroItem } from './hero_equipment.js';
+import { isWeldedPrimary } from './weapon_slots.js';
 import { unlinkObject } from './object_location.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { RLOC_MSG, LOST_STOLEN } from './const.js';
@@ -1620,10 +1621,20 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
         }
         return false;
     };
-    if (animal && ((object.cursed && wasWorn
-        && object !== game.uquiver && !(object === game.uswapwep && !game.u.twoweap))
-        || !monsterCanCarryObject(monster, object, game, draw)))
-        return refuse();
+    if (animal) {
+        let stuck = !!object.cursed && wasWorn
+            && object !== game.uquiver && !(object === game.uswapwep && !game.u.twoweap);
+        const weapon = game.uwep;
+        const ring = object === game.uleft || object === game.uright;
+        if (!stuck && ring && weapon && isWeldedPrimary(weapon, game)) {
+            // C welded() reveals the curse even when the other hand is free.
+            weapon.bknown = true;
+            const primaryRing = game.u.rightHanded === false ? game.uleft : game.uright;
+            stuck = object === primaryRing || !!OBJECT_BIMANUAL[weapon.otyp];
+        }
+        if (stuck || !monsterCanCarryObject(monster, object, game, draw))
+            return refuse();
+    }
     const previousDelay = game._delayedAction;
     const wasDoffing = (previousDelay?.kind === 'remove' && previousDelay.object === object)
         || isBeingTakenOff(object, game);
