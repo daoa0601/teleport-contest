@@ -167,10 +167,43 @@ for (const wearsOff of [false, true]) {
     });
 }
 
+for (const { blind, oilskin } of [
+    { blind: false, oilskin: false },
+    { blind: true, oilskin: false },
+    { blind: false, oilskin: true },
+]) {
+    void test(`slipping out of a hug ${blind ? 'leaves unseen armor unnamed' : 'observes and names the armor'} with ${oilskin ? 'a known oilskin cloak' : 'greased leather armor'}`, async () => {
+        const ape = await attacker();
+        requirePlayingGame(game);
+        game.u.blindTurns = blind ? 10 : 0;
+        const armor = await addInventoryObject(oilskin ? OILSKIN_CLOAK : LEATHER_ARMOR, {
+            greased: !oilskin, typeKnown: true, oname: 'Escape coat',
+        });
+        armor.dknown = false;
+        armor.owornmask = oilskin ? W_ARMC : W_ARM;
+        if (oilskin) game.uarmc = armor;
+        else game.uarm = armor;
+        const { messages } = attackMessages();
+
+        await performMonsterHeroAttack(ape, game, hits);
+        messages.push(game._pending_message);
+        await flushPendingTopline();
+
+        assert.ok(!game.u.ustuck);
+        assert.equal(game.u.uhp, 98);
+        assert.equal(armor.dknown, !blind);
+        if (blind) assert.doesNotMatch(messages.join('\n'), /Escape coat/);
+        else assert.match(messages.join('\n'), /cannot hold onto your .+ named Escape coat!/);
+    });
+}
+
 void test('an undiscovered oilskin cloak prevents a hug without revealing its type', async () => {
     const ape = await attacker();
     requirePlayingGame(game);
-    const cloak = await addInventoryObject(OILSKIN_CLOAK, { typeKnown: false });
+    const cloak = await addInventoryObject(OILSKIN_CLOAK, {
+        typeKnown: false, oname: 'Escape coat',
+    });
+    cloak.dknown = false;
     game._knownObjectTypes?.delete(OILSKIN_CLOAK);
     cloak.owornmask = W_ARMC;
     game.uarmc = cloak;
@@ -183,7 +216,8 @@ void test('an undiscovered oilskin cloak prevents a hug without revealing its ty
     assert.ok(!game.u.ustuck);
     assert.equal(game.u.uhp, 98);
     assert.match(messages.join('\n'), /cannot hold onto your slippery cloak!/);
-    assert.doesNotMatch(messages.join('\n'), /oilskin|slippery slippery/);
+    assert.doesNotMatch(messages.join('\n'), /oilskin|slippery slippery|Escape coat/);
+    assert.equal(cloak.dknown, false);
 });
 
 void test('cursed slippery armor can fail to protect against a hug', async () => {

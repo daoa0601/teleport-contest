@@ -9,7 +9,7 @@ import type { PlayingGameState } from './game_state.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import type { Monster } from './monster_types.js';
-import { objectName } from './objnam.js';
+import { objectCombatName } from './objnam.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { objectTypeKnown } from './shk.js';
 
@@ -44,7 +44,7 @@ async function heroSlipsFree(
     if (armor.cursed && random(3) === 0) return false;
 
     const name = armor.greased || objectTypeKnown(armor, state)
-        ? objectName(armor, state) : armorSimpleName(armor, state);
+        ? objectCombatName(armor, { state }) : armorSimpleName(armor, state);
     await publish(`${monsterName(monster, { state, capitalized: true })} grabs you, but cannot hold onto your ${armor.greased ? 'greased' : 'slippery'} ${name}!`);
     // The grease roll and inventory change follow the slip message, which
     // may suspend for a pager while the armor is still greased.
