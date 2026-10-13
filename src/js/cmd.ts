@@ -5255,9 +5255,9 @@ async function dowear(): Promise<void> {
     else await putOnAccessoryObject(object);
 }
 
-// C refs: shk.c:dopay(), menu_pick_pay_items(), pay(), and update_bill().
-// The menu is a zero-time nested input transaction until at least one billed
-// object is actually purchased; payment then owns one elapsed hero action.
+// C refs: shk.c:dopay(), rouse_shk(), menu_pick_pay_items(), pay(), and update_bill().
+// An empty bill takes a turn when the keeper can respond. A payment menu
+// takes no time until a debt or billed item is paid.
 async function dopay(): Promise<void> {
     game.multi = 0;
     const shopkeepers = (game.level?.monsters || [])
@@ -5281,6 +5281,25 @@ async function dopay(): Promise<void> {
         await pline('There appears to be no shopkeeper here to receive your payment.');
         game.context.move = 0;
         return;
+    }
+
+    if (resident.msleeping || !resident.mcanmove) {
+        // Outstanding charges rouse the keeper before payment can proceed.
+        if (resident.eshk?.robbed || resident.eshk?.billct || resident.eshk?.debit) {
+            if (canSpotMonster(resident)) {
+                const recovery = resident.msleeping ? 'wakes up' : 'can move again';
+                await plineWithContinuation(`${shopkeeperName(resident, { capitalized: true })} ${recovery}.`);
+            }
+            resident.msleeping = 0;
+            resident.mfrozen = 0;
+            resident.mcanmove = 1;
+        } else {
+            const name = shopkeeperName(resident, { capitalized: true });
+            const response = rn2(2) ? 'seems to be napping' : "doesn't respond";
+            await plineWithContinuation(`${name} ${response}.`);
+            game.context.move = 0;
+            return;
+        }
     }
 
     let paid = false;
