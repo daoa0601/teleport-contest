@@ -482,7 +482,7 @@ async function hitMonsterWithProjectile(defender, shot, remaining, context) {
             const cause = object.oclass === VENOM_CLASS ? 'venom' : object.otyp === CREAM_PIE ? 'pie' : objectCombatName(object, { state });
             await publish(`${monsterName(defender, { state, capitalized: true })} is blinded by the ${cause}.`);
         }
-        applyMonsterBlindness(defender, rollOne);
+        applyMonsterBlindness(defender, rollOne(25) + 20);
     }
     if (!shot.targetDied && !state.context.mon_moving)
         await angerAttackedMonster(defender);
