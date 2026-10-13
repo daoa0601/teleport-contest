@@ -7473,7 +7473,8 @@ async function monsterSummonSpellEffect(
     const summoned = await summonNastyMonsters(monster);
     effect = {
         ...effect,
-        ...(summoned.deferredDemonSummon ? await msummon(monster) : summoned),
+        // nasty() delegates to msummon(NULL), using the Wizard's demon choices.
+        ...(summoned.deferredDemonSummon ? await msummon() : summoned),
     };
     for (const created of effect.created || []) {
         const hostileState = created.mpeaceful;
