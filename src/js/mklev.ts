@@ -2901,7 +2901,6 @@ export async function makemonNear(
 ): Promise<MonsterBirthState | null> {
     const pos = findMonsterNearPosition(mnum, centerX, centerY, {
         ignoreWater: !!(flags & MM_IGNOREWATER),
-        gpflags: GP_AVOID_MONPOS,
     });
     if (!pos) return null;
     // teleport.c:enexto_core() tests every shuffled coordinate through

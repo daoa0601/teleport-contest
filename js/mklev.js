@@ -2860,7 +2860,6 @@ export async function splitHeroMonsterForm(state = game) {
 export async function makemonNear(mnum, centerX, centerY, flags = 0, requestedByHero = centerX === game.u?.ux && centerY === game.u?.uy) {
     const pos = findMonsterNearPosition(mnum, centerX, centerY, {
         ignoreWater: !!(flags & MM_IGNOREWATER),
-        gpflags: GP_AVOID_MONPOS,
     });
     if (!pos)
         return null;
