@@ -5,13 +5,15 @@ import { wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, POOL } from '../js/const.js';
 import { canSpotMonster, flushPendingTopline } from '../js/display.js';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, LEATHER_CLOAK } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { memoryStorage } from './support/memory-storage.js';
+import { createDungeon } from './support/topology.js';
 for (const grip of ['new hold', 'failed hold', 'greased cloak', 'cancelled hold', 'existing cancelled hold']) {
     void test(`a couatl follows the wrapping rules for a ${grip}`, async () => {
         freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
@@ -133,5 +135,37 @@ void test('an eel holding a breathing hero underwater triggers life saving', asy
     assert.equal(game.inventory.includes(amulet), false, 'drowning consumes the life-saving amulet');
     assert.equal(game.u.umortality, 1);
     assert.ok(!game.program_state.gameover);
+});
+void test('an eel drowning the hero uses drowned in both final summary lines', async () => {
+    const level = freshObjectRoom({
+        hero: { uhp: 100, uhpmax: 100, uac: 10 },
+        flags: { verbose: true, bones: false, disclose: '-i -a -v -g -c -o', tombstone: false },
+    });
+    requirePlayingGame(game);
+    game.storage = memoryStorage();
+    game.iflags.toptenwin = false;
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
+    level.requireAt(11, 10).typ = POOL;
+    const eel = await createMonsterAt('giant eel', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    eel.mundetected = 0;
+    eel.mux = game.u.ux;
+    eel.muy = game.u.uy;
+    game.u.ustuck = eel;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /eel|Goodbye/, limit: 8 });
+    let endingText = '';
+    input.beforeRead = () => {
+        if (game.program_state.gameover) {
+            endingText += requireGameDisplay().grid
+                .map(row => row.map(cell => cell.ch).join('').trim())
+                .filter(row => /You (?:died|drowned|were level)/.test(row)).join('\n');
+        }
+    };
+    await performMonsterHeroAttack(eel, game, {
+        random: limit => limit - 1, rollOne: () => 1, rollDice: count => count,
+    });
+    assert.equal(game.program_state.gameover, true);
+    assert.match(endingText, /You drowned in The Dungeons of Doom/);
+    assert.match(endingText.replace(/\s+/g, ' '), /when you drowned\./);
 });
 //# sourceMappingURL=monster_wrapping_contact.test.js.map

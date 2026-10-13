@@ -62,7 +62,7 @@ export async function resolveMonsterWrapping(
         const species = withIndefiniteArticle(monsterTypeName(monster.mnum, !!monster.female));
         const killer = `${moat ? 'moat' : 'pool of water'} by ${species}`;
         attack.heroDied = await finishHeroDeath({
-            killer, deathType: DROWNING, deathLineShown: true,
+            killer, deathType: DROWNING, deathVerb: 'drowned', deathLineShown: true,
             deathCause: `drowned in ${withIndefiniteArticle(killer)}`,
         });
         return;
