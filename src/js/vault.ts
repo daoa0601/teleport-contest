@@ -10,7 +10,7 @@ import type { Position, Room } from './map_types.js';
 import { isRoom } from './map_types.js';
 import { nhgetch } from './input.js';
 import { deleteEngravingAt } from './engrave.js';
-import { bot, redrawMap, flush_screen, newsym, pline } from './display.js';
+import { bot, redrawMap, flush_screen, newsym, pline, plineWithContinuation, displayMessageWindow } from './display.js';
 import {
     COLNO,
     ROWNO,
@@ -166,15 +166,8 @@ function guardEntryToward(destination: Position) {
 }
 
 async function morePrompt(message: string) {
-    const line = `${message}--More--`;
-    await pline(line);
-    let key;
-    do {
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(line.length, 0);
-        key = await nhgetch();
-    } while (![27, 10, 13, 32].includes(key));
-    game._pending_message = '';
+    await plineWithContinuation(message);
+    await displayMessageWindow();
 }
 
 async function readGuardName() {
