@@ -101,7 +101,7 @@ import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNear, wakeMonstersNearWithMessages } from './monster_wake.js';
 import { ceilingName } from './terrain_name.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import {
@@ -816,14 +816,15 @@ async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOptions['
 
 async function triggerSqueakyBoard(
     trap: Trap,
-    { viaSitting = false, failedUntrap = false } = {},
+    { viaSitting = false, failedUntrap = false, forceTrap = false } = {},
 ) {
+    requirePlayingGame(game);
     const hero = game.u;
     const blind = !!game.blind || heroIsBlind(game);
     const deaf = !!game.deaf || heroIsDeaf(game);
     const flying = !!(hero.flying || game.flying);
     const airborne = !!(hero.levitating || game.levitating || flying);
-    const forced = failedUntrap || (flying && viaSitting);
+    const forced = forceTrap || failedUntrap || (flying && viaSitting);
     if (airborne && !forced) {
         if (!blind) {
             trap.tseen = true;
@@ -841,7 +842,7 @@ async function triggerSqueakyBoard(
         : `A board beneath you squeaks ${
             squeakyBoardNoteWithArticle(trap.tnote ?? -1) || 'a note'
         } loudly.`);
-    wakeMonstersNear(hero.ux, hero.uy, 40, game);
+    await wakeMonstersNearWithMessages(hero.ux, hero.uy, hero.ulevel * 20, game);
 }
 
 function heroPassesRocks() {
@@ -1254,7 +1255,7 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
         await triggerProjectileTrap(trap);
         break;
     case SQKY_BOARD:
-        await triggerSqueakyBoard(trap, { viaSitting, failedUntrap });
+        await triggerSqueakyBoard(trap, { viaSitting, failedUntrap, forceTrap });
         break;
     case ROCKTRAP:
         await triggerFallingRockTrap(trap);
