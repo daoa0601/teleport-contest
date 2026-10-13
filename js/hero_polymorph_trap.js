@@ -37,6 +37,7 @@ export async function triggerHeroPolymorphTrap(trap, viaSitting) {
     const shoes = game.uarmf || game.u.uarmf;
     if (shoes && OBJECT_MATERIAL[shoes.otyp] === IRON) {
         deleteTrap(trap);
+        observeObjectForNaming(shoes);
         await plineWithContinuation(`${ownedObjectName(shoes)} warps strangely.`);
         await poly_obj(shoes, shoes.otyp === IRON_SHOES ? KICKING_BOOTS : IRON_SHOES);
         const replacement = game.uarmf || game.u.uarmf;

@@ -16,6 +16,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setHeroBlindnessTurns } from '../js/senses.js';
 
 for (const protection of ['antimagic', 'unchanging'] as const) {
     void test(`${protection} leaves a revealed polymorph trap in place`, async () => {
@@ -87,6 +88,34 @@ void test('a polymorph trap replaces worn iron shoes with kicking boots and vani
     assert.equal(game.uarmf?.spe, 2);
     assert.equal(shoes.where, 'gone');
 });
+
+for (const blind of [false, true]) {
+    void test(`polymorph-trap feedback ${blind ? 'keeps unseen boots unnamed while blind' : 'observes named boots after sight returns'}`, async () => {
+        const level = freshObjectRoom();
+        setHeroBlindnessTurns(20);
+        const shoes = await addInventoryObject(IRON_SHOES, {
+            observed: false, dknown: false, oname: 'Buster',
+        });
+        wearHeroArmor(shoes);
+        if (!blind) setHeroBlindnessTurns(0);
+        const trap = addTrap(level, POLY_TRAP, 10, 10);
+        const messages: string[] = [];
+        const input = resetInputState();
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        installPagerInput(input, { expected: /polymorph trap|warps strangely/, limit: 3 });
+
+        await triggerHeroTrap(trap);
+        messages.push(game._pending_message);
+
+        assert.equal(shoes.dknown, !blind, 'Naming the original boots observes them only with sight.');
+        assert.equal(game._encounteredObjectTypes?.has(IRON_SHOES) ?? false, !blind,
+            'Seeing the original boots records their type as encountered.');
+        const feedback = messages.join('\n');
+        assert.match(feedback, /warps strangely\./);
+        assert.equal(feedback.includes('named Buster warps strangely.'), !blind,
+            'The warping message includes the assigned name only after seeing the boots.');
+    });
+}
 
 for (const known of [false, true]) {
     void test(`a ${known ? 'known' : 'newly revealed'} polymorph trap keeps the hero visible while changing iron shoes`, async () => {
