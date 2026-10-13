@@ -2512,7 +2512,7 @@ function inventoryActionCommand({ key, item }: InventoryAction): NativeCommand |
         '-': item === game.uwep ? 'dowield'
             : item === game.uswapwep ? 'remarm_swapwep'
                 : item === game.uquiver ? 'dowieldquiver' : 'donull',
-        'c': 'docallcmd', 'd': 'dodrop', 'E': 'doengrave', 'f': 'dofire',
+        'c': 'docallcmd', 'd': 'dodrop', 'e': 'doeat', 'E': 'doengrave', 'f': 'dofire',
         'i': 'doorganize', 'P': 'dowear', 'Q': 'dowieldquiver', 'r': 'doread',
         'R': 'ia_dotakeoff', 't': 'dothrow', 'T': 'ia_dotakeoff',
         'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
@@ -2556,6 +2556,11 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
         return;
     case 'c': queueCommandKeys(`i${letter}`); await doname(); return;
     case 'd': queueCommandKeys(letter); await dodrop(); return;
+    case 'e':
+        queueCommandKeys(letter);
+        game.iflags.menu_requested = true;
+        await doeat();
+        return;
     case 'E': queueCommandKeys(letter); await doengrave(); return;
     case 'f': await dofire(); return;
     case 'i': queueCommandKeys(letter); await doadjust(); return;

@@ -25,6 +25,7 @@ import { makePlural } from './object_grammar.js';
 import { objectIsVulnerableToErosion } from './object_erosion.js';
 import { discoverArtifact } from './artifacts.js';
 import { isContainer } from './container.js';
+import { isEdibleFood } from './food_selection.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { useUpInventoryStack } from './hero_inventory.js';
@@ -452,6 +453,13 @@ function itemActionEntries(item, state, repairGold) {
         entries.push({ key: 'c', text: `Name ${stack ? 'this stack of' : 'this specific'} ${itemName}` });
     if (!alreadyWorn)
         entries.push({ key: 'd', text: `Drop this ${stack ? 'stack' : 'item'}` });
+    if (item.otyp === TIN) {
+        const opener = state.uwep?.otyp === TIN_OPENER ? ' with your tin opener' : '';
+        entries.push({ key: 'e', text: `Open ${stack ? 'one of these tins' : 'this tin'}${opener} and eat the contents` });
+    }
+    else if (isEdibleFood(item, state)) {
+        entries.push({ key: 'e', text: `Eat ${stack ? 'one of these' : 'this'}` });
+    }
     if (item.otyp === TOWEL) {
         entries.push({ key: 'E', text: 'Wipe the floor with this towel' });
     }
@@ -525,6 +533,7 @@ function inventoryActionKey(code) {
         case '-':
         case 'c':
         case 'd':
+        case 'e':
         case 'E':
         case 'f':
         case 'i':

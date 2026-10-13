@@ -39,6 +39,7 @@ import { makePlural } from './object_grammar.js';
 import { objectIsVulnerableToErosion } from './object_erosion.js';
 import { discoverArtifact } from './artifacts.js';
 import { isContainer } from './container.js';
+import { isEdibleFood } from './food_selection.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { useUpInventoryStack } from './hero_inventory.js';
@@ -69,7 +70,7 @@ export interface InventoryDescriptionOptions {
     projectPrimaryHand?: boolean;
 }
 
-export type InventoryActionKey = '-' | 'c' | 'd' | 'E' | 'f' | 'i' | 'P' | 'Q' | 'r' | 'R' | 't' | 'T' | 'w' | 'x' | 'X' | '/'
+export type InventoryActionKey = '-' | 'c' | 'd' | 'e' | 'E' | 'f' | 'i' | 'P' | 'Q' | 'r' | 'R' | 't' | 'T' | 'w' | 'x' | 'X' | '/'
     | '\x1b' | ' ' | '\n' | '\r';
 export interface InventoryAction { key: InventoryActionKey; item: GameObject }
 type IdentificationBeatitude = 'B' | 'U' | 'C' | 'X';
@@ -490,6 +491,12 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
     if (item.oclass !== COIN_CLASS && item.dknown !== false && !item.oartifact && item.otyp !== SPE_NOVEL)
         entries.push({ key: 'c', text: `Name ${stack ? 'this stack of' : 'this specific'} ${itemName}` });
     if (!alreadyWorn) entries.push({ key: 'd', text: `Drop this ${stack ? 'stack' : 'item'}` });
+    if (item.otyp === TIN) {
+        const opener = state.uwep?.otyp === TIN_OPENER ? ' with your tin opener' : '';
+        entries.push({ key: 'e', text: `Open ${stack ? 'one of these tins' : 'this tin'}${opener} and eat the contents` });
+    } else if (isEdibleFood(item, state)) {
+        entries.push({ key: 'e', text: `Eat ${stack ? 'one of these' : 'this'}` });
+    }
     if (item.otyp === TOWEL) {
         entries.push({ key: 'E', text: 'Wipe the floor with this towel' });
     } else if (item.otyp === MAGIC_MARKER) {
@@ -555,7 +562,7 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
 function inventoryActionKey(code: number): InventoryActionKey {
     const key = String.fromCharCode(code);
     switch (key) {
-    case '-': case 'c': case 'd': case 'E': case 'f': case 'i': case 'P': case 'Q': case 'r': case 'R':
+    case '-': case 'c': case 'd': case 'e': case 'E': case 'f': case 'i': case 'P': case 'Q': case 'r': case 'R':
     case 't': case 'T': case 'w': case 'x': case 'X': case '/': case '\x1b': case ' ': case '\n': case '\r':
         return key;
     default:
