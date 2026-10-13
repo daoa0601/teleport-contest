@@ -19,7 +19,7 @@ import { objectQuantity } from './object_stack.js';
 import { blessObjectState, curseObject, unblessObjectState, uncurseObjectState } from './object_state.js';
 import { CORPSE, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_EXTRA_HEALING, POT_FULL_HEALING,
     POT_HEALING, POT_OIL, POT_POLYMORPH, POT_SICKNESS, POT_WATER, TOWEL } from './object_data.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { objectCombatName, objectNameIsPlural, ownedObjectAction, ownedObjectName } from './objnam.js';
 import { setPropertyTimeout } from './properties.js';
 import { d } from './rng.js';
@@ -171,12 +171,15 @@ async function dipInOil(object: GameObject, potion: GameObject): Promise<boolean
     } else if (object.oclass !== 2 && !isWeaponTool(object)) return false;
     else if ((!objectIsVulnerableToErosion(object, 'rust') && !objectIsVulnerableToErosion(object, 'corrosion'))
         || isLauncherAmmunition(object) || !(object.oeroded || object.oeroded2)) {
-        await pline(heroIsBlind() ? `${ownedObjectAction(object, 'feel')} oily.`
-            : `${ownedObjectAction(object, 'gleam')} with an oily sheen.`);
+        const verb = verbForSubject(objectNameIsPlural(object) ? 'they' : null,
+            heroIsBlind() ? 'feel' : 'gleam');
+        await pline(`${ownedObjectName(object)} ${verb} ${heroIsBlind() ? 'oily' : 'with an oily sheen'}.`);
     } else {
         const damage = object.oeroded && object.oeroded2 ? 'corroded and rusty'
             : object.oeroded ? 'rusty' : 'corroded';
-        await pline(`${ownedObjectAction(object, heroIsBlind() ? 'feel' : 'are')} less ${damage}.`);
+        const verb = verbForSubject(objectNameIsPlural(object) ? 'they' : null,
+            heroIsBlind() ? 'feel' : 'are');
+        await pline(`${ownedObjectName(object)} ${verb} less ${damage}.`);
         object.oeroded = Math.max(0, (object.oeroded ?? 0) - 1);
         object.oeroded2 = Math.max(0, (object.oeroded2 ?? 0) - 1);
         wisdom = true;
