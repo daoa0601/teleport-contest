@@ -1,3 +1,4 @@
+import { recorderLocalEpochSeconds } from './calendar.js';
 import type { MessagePublisher } from './display.js';
 import { slipOrTrip } from './fumbling.js';
 import { invWeight } from './weight.js';
@@ -72,7 +73,7 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { readEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { d, rn2, rnd } from './rng.js';
 import {
-    mklev, l_nhcore_init, makemonAt, recorderLocalEpochSeconds,
+    mklev, l_nhcore_init, makemonAt,
     summonNastyMonsters,
     u_on_upstairs,
 } from './mklev.js';
