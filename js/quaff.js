@@ -1,6 +1,7 @@
 // C potion.c:dodrink()/dopotion(). Effects are shared with spells and digestion.
 import { FOUNTAIN, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, SINK } from './const.js';
 import { plineWithContinuation as pline } from './display.js';
+import { addExperience } from './exper.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -102,7 +103,7 @@ export async function drinkPotion(source, { state = game, consume = true } = {})
                 await tryCallObjectType(source, state);
             else {
                 learnObjectType(source.otyp, state);
-                state.u.urexp = (state.u.urexp || 0) + 10;
+                addExperience(0, 10, state);
             }
         }
     }
