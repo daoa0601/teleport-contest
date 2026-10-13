@@ -14,6 +14,7 @@ import { shopkeeperName } from './monster_name.js';
 import { unlinkObject } from './object_location.js';
 import { deallocateObject } from './object_delete.js';
 import { impossible } from './diagnostics.js';
+import { monsterHasNoLimbs } from './monster_data.js';
 export function minimumShopPurchase(resident, state = game) {
     const bill = itemizedShopBill(resident, state);
     if (!bill.length || !hasShopBill(resident))
@@ -172,7 +173,8 @@ async function rejectPartlyUsedPurchase(resident, object, entry, state) {
         await plineWithContinuation(`"${resident.mpeaceful ? 'Please pay' : 'Pay'} for the other ${other} before buying ${which}."`);
     }
     else {
-        await plineWithContinuation(`${shopkeeperName(resident)} ${resident.mpeaceful ? '' : 'angrily '}points out your bill for the other ${other} first.`);
+        const gesture = monsterHasNoLimbs(resident.mnum) ? 'motions to' : 'points out';
+        await plineWithContinuation(`${shopkeeperName(resident)} ${resident.mpeaceful ? '' : 'angrily '}${gesture} your bill for the other ${other} first.`);
     }
 }
 async function payBillPrice(resident, price, state) {
