@@ -1460,7 +1460,7 @@ function monsterTrapIsHarmless(monster: Monster, trap: Trap, state: PlayingGameS
 
 // trap.c:floor_trigger(). These traps require contact with the floor even
 // when their eventual effect (a dart or falling rock) could hit a flyer.
-function trapTriggeredByFloor(trap: Trap): boolean {
+export function trapTriggeredByFloor(trap: Trap): boolean {
     return [ARROW_TRAP, DART_TRAP, ROCKTRAP, SQKY_BOARD, BEAR_TRAP,
         LANDMINE, ROLLING_BOULDER_TRAP, SLP_GAS_TRAP, RUST_TRAP, FIRE_TRAP,
         PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
