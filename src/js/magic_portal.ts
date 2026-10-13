@@ -4,6 +4,7 @@
 import { In_endgame } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { makeStunned } from './hero_mental_status.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Trap } from './map_types.js';
 import type { gotoLevel as changeLevel } from './level_change.js';
@@ -17,12 +18,11 @@ function isTutorialLevel(level: DungeonLocation | undefined) {
     return dungeonName(level) === 'The Tutorial';
 }
 
-function addPortalStun() {
+async function addPortalStun() {
     const hero = game.u;
     const alreadyStunned = !!(hero.stunned
         || (hero.stunnedTurns ?? 0) > 0);
-    hero.stunnedTurns = (hero.stunnedTurns ?? 0) + 3;
-    hero.stunned = true;
+    await makeStunned((hero.stunnedTurns ?? 0) + 3, { talk: false });
     return alreadyStunned ? 'You feel dizzier.' : 'You feel slightly dizzy.';
 }
 
@@ -49,7 +49,8 @@ export async function activateMagicPortal(
         && !isTutorialLevel(trap.dst);
     // domagicportal() schedules this as deferred_goto()'s pre-message. Its
     // pline flushes the activation before any destination generation.
-    await plineWithContinuation(leavingTutorial ? 'Resuming regular play.' : addPortalStun());
+    const preMessage = leavingTutorial ? 'Resuming regular play.' : await addPortalStun();
+    await plineWithContinuation(preMessage);
     await gotoLevel(trap.dst, {
         arrival: leavingTutorial ? 'stairs' : 'portal',
     });

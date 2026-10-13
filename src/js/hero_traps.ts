@@ -39,6 +39,7 @@ import type { HeroHurtleOptions } from './hero_hurtle.js';
 import { buriedBallNear, buriedBallToPunishment } from './buried_object.js';
 import { loseHeroHp } from './hero_damage.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
+import { makeConfused } from './hero_mental_status.js';
 import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
 import { levelTeleport } from './level_teleport.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
@@ -814,7 +815,7 @@ async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOptions['
     } else {
         await plineWithContinuation(`You feel ${(hero.confusionTurns ?? 0) > 0 || hero.confused ? 'even more ' : ''}disoriented.`);
     }
-    if (!controlled) setPropertyTimeout('confusion', (hero.confusionTurns ?? 0) + 3, game);
+    if (!controlled) await makeConfused((hero.confusionTurns ?? 0) + 3, { talk: false });
 }
 
 async function triggerSqueakyBoard(
