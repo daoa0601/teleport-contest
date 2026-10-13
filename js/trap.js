@@ -144,6 +144,7 @@ export async function destroyLavaFloorObjects(objects, { state = game, publish =
                     await publish(object.quan === 1 ? 'It burns up!' : 'They burn up!');
                 }
                 else {
+                    observeObjectForNaming(object, { state });
                     await publish(`You see ${fullObjectDescription(object, { state })} hit lava and burn up!`);
                 }
             }

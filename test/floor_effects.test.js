@@ -63,6 +63,27 @@ void test('a chest burning in lava spills surviving contents onto its square', a
     assert.ok(floorObjectsAt(game.level, 12, 10).includes(gold));
     assert.ok(messages.includes('Its contents fall out.'));
 });
+for (const role of ['ranger', 'priest']) {
+    void test(`a ${role} observes an unseen horn spilling from a chest into lava`, async () => {
+        const level = freshObjectRoom({ role });
+        level.requireAt(12, 10).typ = LAVAPOOL;
+        const chest = await knownObject(CHEST, { initialize: false });
+        const horn = await knownObject(TOOLED_HORN, {
+            initialize: false, blessed: true,
+            dknown: false, bknown: false, known: false, typeKnown: false,
+        });
+        await addCreatedObjectToContainer(chest, horn, game);
+        const messages = [];
+        await landFloorObject(chest, 12, 10, {
+            publish: message => { messages.push(message); },
+        });
+        assert.equal(messages.find(message => message.endsWith('hit lava and burn up!')), `You see a ${role === 'priest' ? 'blessed ' : ''}horn hit lava and burn up!`);
+        assert.equal(horn.dknown, true);
+        assert.equal(horn.bknown, role === 'priest');
+        assert.equal(game._encounteredObjectTypes?.has(TOOLED_HORN), true);
+        assert.equal(horn.where, 'gone');
+    });
+}
 void test('an unlit oil potion landing in lava ignites and explodes', async () => {
     const level = freshObjectRoom();
     level.requireAt(12, 10).typ = LAVAPOOL;
