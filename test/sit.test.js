@@ -3,6 +3,7 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
+import { discoverArtifact } from '../js/artifacts.js';
 import { ALTAR, Align2amask, BEAR_TRAP, FOUNTAIN, LANDMINE, PIT, TELEP_TRAP, THRONE, TT_BEARTRAP, TT_PIT, TT_WEB, WEB, } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -12,7 +13,7 @@ import { applyArmorOnEffects } from '../js/armor.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
-import { addInventoryObject, floorObject, } from './support/game-objects.js';
+import { addInventoryObject, floorArtifact, floorObject, } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -25,6 +26,21 @@ void test('sitting on a corpse describes the seat before its discomfort', async 
     assert.match(game._pending_message, /You sit on the corpse\.  It's not very comfortable\.\.\./);
     assert.equal(game.context.move, 1);
 });
+for (const [artifact, seat] of [
+    ['Excalibur', 'Excalibur'],
+    ['The Orb of Detection', 'the Orb of Detection'],
+]) {
+    void test(`sitting on ${artifact} uses its native article`, async () => {
+        freshGameplayRoom();
+        const object = await floorArtifact(artifact, 10, 10, { rknown: true });
+        assert.ok(object.oartifact);
+        discoverArtifact(object.oartifact);
+        pushKeys('sit\n');
+        await rhack('#'.charCodeAt(0));
+        assert.equal(game._pending_message, `You sit on ${seat}.  It's not very comfortable...`);
+        assert.equal(game.context.move, 1);
+    });
+}
 void test('sitting on cream pies crushes the whole floor stack', async () => {
     const level = freshGameplayRoom();
     requirePlayingGame(game);

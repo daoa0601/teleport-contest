@@ -30,7 +30,7 @@ import {
     OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
-import { objectCombatName } from './objnam.js';
+import { objectCombatName, withDefiniteArticle } from './objnam.js';
 import { heroGoldAmount } from './hero_gold.js';
 import {
     heroFormFlags, heroFormHidesWithoutCover,
@@ -172,10 +172,10 @@ async function sitOnObject(object: GameObject): Promise<void> {
         return;
     }
 
-    const name = objectCombatName(object, { includeCorpseSpecies: false });
+    const name = withDefiniteArticle(objectCombatName(object, { includeCorpseSpecies: false }));
     await pline(heroFormFlags(game) & M1_SLITHY
-        ? `You coil up around the ${name}.`
-        : `You sit on the ${name}.`);
+        ? `You coil up around ${name}.`
+        : `You sit on ${name}.`);
     if (object.otyp === CORPSE
         && (MONSTER_FLAGS1[object.corpsenm ?? -1] ?? 0) & M1_AMORPHOUS) {
         await pline("It's squishy...");

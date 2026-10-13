@@ -12,7 +12,7 @@ import { mksobj, set_corpsenm, } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
 import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_MATERIAL, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS, } from './object_data.js';
 import { recordObjectEncounter } from './object_knowledge.js';
-import { objectCombatName } from './objnam.js';
+import { objectCombatName, withDefiniteArticle } from './objnam.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { heroFormFlags, heroFormHidesWithoutCover, heroMonsterForm, } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
@@ -151,10 +151,10 @@ async function sitOnObject(object) {
         await pline("It's probably not a good time for a picnic...");
         return;
     }
-    const name = objectCombatName(object, { includeCorpseSpecies: false });
+    const name = withDefiniteArticle(objectCombatName(object, { includeCorpseSpecies: false }));
     await pline(heroFormFlags(game) & M1_SLITHY
-        ? `You coil up around the ${name}.`
-        : `You sit on the ${name}.`);
+        ? `You coil up around ${name}.`
+        : `You sit on ${name}.`);
     if (object.otyp === CORPSE
         && (MONSTER_FLAGS1[object.corpsenm ?? -1] ?? 0) & M1_AMORPHOUS) {
         await pline("It's squishy...");

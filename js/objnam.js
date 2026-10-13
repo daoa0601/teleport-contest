@@ -206,7 +206,7 @@ export function foodObjectName(object, { state = game, definite = false, } = {})
     if (object.otyp === CORPSE)
         return corpseName(object, { singular: true, definite });
     const name = objectName(object, state);
-    return definite ? definiteKillerName(name) : name;
+    return definite ? withDefiniteArticle(name) : name;
 }
 // invent.c:loot_xname() ignores counts and individual user names. Its
 // temporary adjustments group water, towels, and globs without altering them.
@@ -275,7 +275,7 @@ export function killerObjectName(object, state = game) {
     // A possessive unique monster name already supplies its own article.
     if (quantity !== 1 || /(?:'s |s' )/i.test(name))
         return name;
-    return OBJECT_UNIQUE[object.otyp] ? definiteKillerName(name)
+    return OBJECT_UNIQUE[object.otyp] ? withDefiniteArticle(name)
         : withIndefiniteArticle(name);
 }
 function objectMonsterName(object) {
@@ -359,7 +359,7 @@ function physicalObjectNoun(object, noun, state) {
 }
 // The native the() retains capitalized proper names, but supplies an article
 // for compound item names such as Amulet of Yendor and Bell of Opening.
-function definiteKillerName(name) {
+export function withDefiniteArticle(name) {
     if (/^the /i.test(name))
         return name.replace(/^The /, 'the ');
     return /^[A-Z]/.test(name) && !/ of /i.test(name) && !/[- ][a-z]/.test(name)
@@ -433,7 +433,7 @@ export function simpleObjectNameWithArticle(object, state = game) {
         return pluralizeObjectNoun(object, noun);
     const uniqueType = object.otyp === FAKE_AMULET_OF_YENDOR ? AMULET_OF_YENDOR : object.otyp;
     if (OBJECT_UNIQUE[uniqueType] && noun === OBJECT_NAMES[uniqueType])
-        return definiteKillerName(noun);
+        return withDefiniteArticle(noun);
     return withIndefiniteArticle(noun);
 }
 export function ownedObjectName(object, state = game, { capitalized = true } = {}) {
