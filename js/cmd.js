@@ -6855,7 +6855,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
                     && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000008));
             const inShop = !blocked && roomsAt(game.level, monster.mx, monster.my, SHOPBASE)
                 .some(roomno => tendedShop(roomForRoomno(game.level, roomno), game));
-            if ((blocked || inShop) && monster.isshk && !game._runState) {
+            if ((blocked || inShop) && monster.isshk
+                && !game.context.travel && !game.context.run) {
                 await dopay();
                 return true;
             }
