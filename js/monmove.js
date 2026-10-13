@@ -2784,7 +2784,10 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
         if (carriedGold && carriedGold.quan > (heroGold?.quan ?? 0))
             appr = -1;
     }
-    const approach = monsterApproachPolicy(monster, state, appr, monster.mux ?? gx, monster.muy ?? gy, limit => recordRandom(random, calls, limit));
+    // Confused and engulfing monsters skip deliberate ranged movement.
+    const approach = monster.mconf || state.u.uswallow && state.u.ustuck === monster
+        ? { policy: appr, min: 0, max: 0 }
+        : monsterApproachPolicy(monster, state, appr, monster.mux ?? gx, monster.muy ?? gy, limit => recordRandom(random, calls, limit));
     appr = approach.policy;
     // Native lined_up() is evaluated for every admitted search, including
     // peaceful actors, before approach determines whether combat forbids it.

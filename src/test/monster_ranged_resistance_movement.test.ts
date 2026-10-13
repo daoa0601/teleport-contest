@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { M_SEEN_FIRE, MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { takeMonsterTurn } from '../js/monmove.js';
+import { beginMonsterMove, takeMonsterTurn } from '../js/monmove.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -20,3 +20,15 @@ for (const fireResistanceKnown of [true, false]) {
         assert.equal(hound.mx, fireResistanceKnown ? 11 : 9);
     });
 }
+
+void test('a confused Chromatic Dragon can wander toward the hero instead of retreating for breath', async () => {
+    freshObjectRoom({ left: 8, right: 18, top: 8, bottom: 12, heroX: 13, heroY: 10 });
+    requirePlayingGame(game);
+    const dragon = await createMonsterAt('Chromatic Dragon', 10, 10, MM_ANGRY | NO_MINVENT);
+    dragon.mconf = 1;
+
+    await beginMonsterMove(dragon, game, () => 0);
+
+    assert.equal(dragon.mx, 11);
+    assert.equal(dragon.mconf, 1);
+});
