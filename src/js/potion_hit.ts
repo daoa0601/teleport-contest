@@ -553,12 +553,18 @@ export async function applySupportedPotionVapor(options: PotionVaporOptions): Pr
     const potion = options.potion;
     const inUse = potion.in_use;
     potion.in_use = true;
+    let effect: PotionVaporResult | null;
     try {
-        return await applyPotionVaporEffect(options);
+        effect = await applyPotionVaporEffect(options);
     } finally {
         if (inUse === undefined) delete potion.in_use;
         else potion.in_use = inUse;
     }
+    if (!effect?.received) return effect;
+    const typeCall = await finishPotionVaporKnowledge(
+        options.state ?? game, potion, effect.identifiesType ?? false,
+    );
+    return { ...effect, typeCall };
 }
 
 async function applyPotionVaporEffect({
@@ -574,10 +580,7 @@ async function applyPotionVaporEffect({
     if (!profile.canReceive) return { received: false };
     if (heroHasVaporShield(state)) {
         await publish('Some vapor passes harmlessly around you.');
-        const typeCall = await finishPotionVaporKnowledge(
-            state, potion, false,
-        );
-        return { received: true, shielded: true, typeCall };
+        return { received: true, shielded: true };
     }
 
     let abilityStart = null;
@@ -696,9 +699,6 @@ async function applyPotionVaporEffect({
     } else if (potion.otyp === POT_OIL) {
         // potionbreathe() has no oil case.
     }
-    const typeCall = await finishPotionVaporKnowledge(
-        state, potion, identifiesType,
-    );
     return {
         received: true,
         abilityStart,
@@ -711,7 +711,6 @@ async function applyPotionVaporEffect({
         sightToggled,
         resisted,
         identifiesType,
-        typeCall,
     };
 }
 

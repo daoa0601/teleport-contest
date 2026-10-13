@@ -351,8 +351,9 @@ export async function applySupportedPotionVapor(options) {
     const potion = options.potion;
     const inUse = potion.in_use;
     potion.in_use = true;
+    let effect;
     try {
-        return await applyPotionVaporEffect(options);
+        effect = await applyPotionVaporEffect(options);
     }
     finally {
         if (inUse === undefined)
@@ -360,6 +361,10 @@ export async function applySupportedPotionVapor(options) {
         else
             potion.in_use = inUse;
     }
+    if (!effect?.received)
+        return effect;
+    const typeCall = await finishPotionVaporKnowledge(options.state ?? game, potion, effect.identifiesType ?? false);
+    return { ...effect, typeCall };
 }
 async function applyPotionVaporEffect({ state = game, potion, publish = plineWithContinuation, monsterCanSeeHero = null, }) {
     if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp))
@@ -370,8 +375,7 @@ async function applyPotionVaporEffect({ state = game, potion, publish = plineWit
         return { received: false };
     if (heroHasVaporShield(state)) {
         await publish('Some vapor passes harmlessly around you.');
-        const typeCall = await finishPotionVaporKnowledge(state, potion, false);
-        return { received: true, shielded: true, typeCall };
+        return { received: true, shielded: true };
     }
     let abilityStart = null;
     let confusionDuration = null;
@@ -496,7 +500,6 @@ async function applyPotionVaporEffect({ state = game, potion, publish = plineWit
     else if (potion.otyp === POT_OIL) {
         // potionbreathe() has no oil case.
     }
-    const typeCall = await finishPotionVaporKnowledge(state, potion, identifiesType);
     return {
         received: true,
         abilityStart,
@@ -509,7 +512,6 @@ async function applyPotionVaporEffect({ state = game, potion, publish = plineWit
         sightToggled,
         resisted,
         identifiesType,
-        typeCall,
     };
 }
 async function applySupportedDirectEffect({ state, monster, potion, targetVisible, targetSpotted, wakeMonster: wakeAttackedTarget, publish, showShield, spotMonster, repaintMonster, rememberInvisible, wakeNearby, splitMonster, transformWere, finishKill, heroCaused, }) {
