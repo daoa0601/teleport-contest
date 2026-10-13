@@ -1772,6 +1772,7 @@ async function finishDelayedArmorTheft(thief, object, state) {
         removeObjectAndContentsFromBill(object, state, { resident: currentShopResident(state) });
     unlinkObject(object, state);
     await finishInventoryRemoval(object, state);
+    observeObjectForNaming(object, { state });
     await plineWithContinuation(`${monsterName(thief, { state, capitalized: true })} steals ${inventoryItemDescription(object)}!`);
     await addObjectToMonsterInventory(thief, object, state);
     await makeMonsterFlee(thief, { state, announce: false });

@@ -43,6 +43,27 @@ async function finishRemoval(messages) {
         await moveloop_core();
     await flushPendingTopline();
 }
+for (const blind of [false, true]) {
+    void test(`delayed suit theft reveals its curse to a ${blind ? 'blind' : 'sighted'} priest`, async () => {
+        freshObjectRoom({ role: 'priest', flags: { female: true },
+            hero: { uhp: 100, uhpmax: 100, blindTurns: blind ? 20 : 0 } });
+        requirePlayingGame(game);
+        const suit = await addInventoryObject(LEATHER_ARMOR, {
+            cursed: true, bknown: false, observed: false, spe: 0, enchantment: 0,
+        });
+        wearHeroArmor(suit);
+        const thief = await nearbyThief();
+        installPagerInput(resetInputState(), { expected: /nymph|She/, limit: 12 });
+        await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+        assert.equal(suit.bknown, false, 'The charm only names the armor slot');
+        thief.movement = -100;
+        const messages = [];
+        await finishRemoval(messages);
+        assert.ok(thief.minvent.includes(suit));
+        assert.equal(suit.bknown, true, 'Naming the stolen suit reveals its beatitude to a priest');
+        assert.match(messages.join('\n'), /steals a cursed \+0 leather armor!/);
+    });
+}
 for (const species of ['water nymph', 'monkey']) {
     void test(`${species} attempting delayed armor theft leaves later bite attacks active`, async () => {
         freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
