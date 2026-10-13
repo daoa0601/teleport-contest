@@ -39,15 +39,8 @@ export async function cancelObjectMagic(object, { state = game } = {}) {
             && originalType !== SPE_CANCELLATION && originalType !== SPE_BOOK_OF_THE_DEAD) {
             await chargeAlteredUnpaidObject(object, 'cancel', state);
             object.otyp = SPE_BLANK_PAPER;
-            if (originalType === SPE_NOVEL) {
-                object.novelidx = 0;
-                object.corpsenm = 0;
-                delete object.oname;
-                delete object.name;
-                if (object.oextra)
-                    delete object.oextra.oname;
-                updateContainerWeight(object);
-            }
+            if (originalType === SPE_NOVEL)
+                blankNovel(object);
         }
         else if (objectClass === 8) {
             await chargeAlteredUnpaidObject(object, originalType !== POT_WATER ? 'cancel'
@@ -101,7 +94,15 @@ function removeWornBonuses(object, state) {
     if (name === 'increase damage')
         state.u.udaminc = (state.u.udaminc ?? 0) - amount;
 }
-function updateContainerWeight(object) {
+export function blankNovel(object) {
+    if (object.otyp !== SPE_BLANK_PAPER)
+        throw new TypeError('A blanked novel must be a blank spellbook.');
+    object.novelidx = 0;
+    object.corpsenm = 0;
+    delete object.oname;
+    delete object.name;
+    if (object.oextra)
+        delete object.oextra.oname;
     for (let current = object; current; current = current.container)
         current.owt = objectWeight(current);
 }

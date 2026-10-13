@@ -16,10 +16,11 @@ import { heroIsFlying } from './polyself.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
-import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, ICE_BOX, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OILSKIN_SACK, POT_ACID, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, TOWEL, } from './object_data.js';
+import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, ICE_BOX, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OILSKIN_SACK, POT_ACID, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TOWEL, } from './object_data.js';
 import { erodeObject } from './object_erosion.js';
 import { delobj } from './object_delete.js';
 import { learnObjectType } from './object_knowledge.js';
+import { blankNovel } from './object_cancellation.js';
 import { displayLiquidName } from './display.js';
 import { objectResistsDestruction } from './object_state.js';
 import { objectMaterial } from './object_material.js';
@@ -355,12 +356,17 @@ export async function waterDamageObject(object, messages = [], state = game, { f
         }
         if (object.otyp === SPE_BLANK_PAPER)
             return 'nothing';
+        const novel = object.otyp === SPE_NOVEL;
         if (carried)
             await emit(`Your ${name} ${plural ? 'fade' : 'fades'}.`);
         if (object.spestudied)
             object.spestudied = random(object.spestudied);
         object.otyp = SPE_BLANK_PAPER;
         object.dknown = false;
+        if (novel) {
+            blankNovel(object);
+            state._capacityDirty = true;
+        }
         return 'damaged';
     }
     if (object.oclass === 8) {
