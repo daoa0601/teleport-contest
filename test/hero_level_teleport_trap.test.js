@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { DUST, LEVEL_TELEP } from '../js/const.js';
+import { DUST, LEVEL_TELEP, NO_MINVENT } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
@@ -12,6 +12,38 @@ import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { answerPrompts } from './support/input-boundaries.js';
+import { createMonsterAt } from './support/monsters.js';
+import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
+void test('a level teleport trap step gives destination monsters their response before another command', async () => {
+    const { source, destination } = freshConnectedLevels();
+    requirePlayingGame(game);
+    game.flags.debug = true;
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    game.u.uhp = game.u.uhpmax = 100;
+    destination.downTeleportRegion = { lx: 13, ly: 10, hx: 13, hy: 10 };
+    game.level = destination;
+    const giant = await createMonsterAt('hill giant', 14, 10, NO_MINVENT);
+    giant.mpeaceful = 0;
+    giant.msleeping = 0;
+    giant.m_lev = 30;
+    giant.movement = 12;
+    game.level = source;
+    addTrap(source, LEVEL_TELEP, 11, 10);
+    const input = resetInputState();
+    input.feed('l');
+    const turn = game.moves;
+    await answerPrompts(moveloop_core(), input, [
+        { prompt: /You step onto a level teleport trap!--More--/, keys: ' ' },
+        { prompt: /To what level do you want to teleport\?/, keys: '2\r' },
+        { prompt: /You feel disoriented\.--More--/, keys: ' ' },
+    ]);
+    installPagerInput(input, { expected: /materialize|hill giant/, limit: 8 });
+    await finishAtCommandInput(input, moveloop_core, /materialize|hill giant/);
+    assert.equal(game.level, destination);
+    assert.ok(game.u.uhp < 100, 'the giant attacks after the timed step');
+    assert.equal(game.moves, turn + 1, 'the step consumes one world turn');
+});
 void test('stepping onto a level teleport trap wears departure engravings before travelling', async () => {
     const { source, destination } = freshConnectedLevels();
     requirePlayingGame(game);

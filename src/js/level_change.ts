@@ -126,7 +126,6 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         && destinationDepth.dlevel === oldDepth.dlevel) {
         game._pending_message = '';
         game._retained_message = '';
-        game.context.move = 0;
         await docrt();
         await bot();
         return false;
@@ -140,7 +139,6 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     if (onQuestStart(game)
         && destinationDepth.dnum === oldDepth.dnum
         && !okToQuest(game)) {
-        game.context.move = 0;
         await pline('A mysterious force prevents you from descending.');
         return false;
     }
@@ -239,7 +237,6 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     if (!game._restoredBones) restoreCachedHeroTrack(cached);
     game._tutorialActive = Number.isInteger(tutorialDnum)
         && destinationDepth.dnum === tutorialDnum;
-    game.context.move = 0;
     // Quest text preparation can run Lua, so finish it before a message
     // pauses for player input.
     const questArrival = prepareQuestArrival({
