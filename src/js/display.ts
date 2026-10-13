@@ -1290,7 +1290,8 @@ export function feel_location(x: number, y: number) {
         else if (loc.typ === DOOR) map_background(x, y, true);
         else if (IS_ROOM(loc.typ) || IS_POOL(loc.typ)) {
             const glyph = loc.remembered_glyph;
-            const forgottenBoulder = glyph?.kind === 'object' && glyph.otyp === BOULDER
+            // Native touch clears the ordinary boulder glyph, retaining pile memory.
+            const forgottenBoulder = glyph?.glyph === GlyphOffset.object + BOULDER
                 || glyph?.kind === 'invisible';
             if (forgottenBoulder && loc.typ !== ROOM) map_background(x, y, true);
             else if (forgottenBoulder || glyph?.kind === 'terrain'
