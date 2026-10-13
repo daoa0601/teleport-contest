@@ -17,6 +17,7 @@ import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { rn2 } from './rng.js';
+import { heroHasArtifactDefense } from './artifacts.js';
 
 const IRON = 11;
 const WAND_CLASS = 12;
@@ -48,7 +49,8 @@ export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean):
             await plineWithContinuation(`${replacement.invlet} - ${inventoryItemDescription(replacement)}.`);
         return;
     }
-    if (propertyIsActive('antimagic', game) || heroIsUnchanging(game)) {
+    if (propertyIsActive('antimagic', game) || heroHasArtifactDefense('magic', game)
+        || heroIsUnchanging(game)) {
         await shieldeff(game.u.ux, game.u.uy);
         await plineWithContinuation('You feel momentarily different.');
         return;
