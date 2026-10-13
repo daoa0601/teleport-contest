@@ -1084,8 +1084,9 @@ async function finishInitialTurnMaintenanceAfterConfusion({ sourceTurn, moveAmou
         if (game.u.blindTurns === 1) {
             // C timeout.c restores one tick before make_blinded(0), so the
             // recovery message precedes toggle_blindness and its redraws.
+            const wasBlind = heroIsBlind(game);
             await makeBlinded(0);
-            if (!heroIsBlind(game))
+            if (wasBlind && !heroIsBlind(game))
                 await stopHeroOccupation(game);
         }
         else

@@ -3,13 +3,17 @@ import test from 'node:test';
 
 import { moveloop_core } from '../js/allmain.js';
 import { CORR } from '../js/const.js';
-import { newsym } from '../js/display.js';
+import { flushPendingTopline, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { artifactObject } from './support/game-objects.js';
+import { applyInventoryObject } from './support/commands.js';
+import { addInventoryItem } from '../js/u_init.js';
+import { installPagerInput } from './support/pager-input.js';
 
 void test('blindness expiry redraws a warm monster in a dark corridor through infravision', async () => {
     const input = freshTurnRoom();
@@ -37,4 +41,29 @@ void test('blindness expiry redraws a warm monster in a dark corridor through in
     assert.equal(game.blind, false);
     assert.equal(dog.mx, 14);
     assert.equal(game.level.requireAt(14, 10).disp_ch, 'd');
+});
+
+void test('blindness expiry preserves counted searching when the Eyes kept the hero sighted', async () => {
+    const input = freshTurnRoom({ role: 'monk', hero: {
+        ualign: { type: 0, record: 0 }, uhp: 100, uhpmax: 100,
+    } });
+    requirePlayingGame(game);
+    const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
+    installPagerInput(input, { expected: /Eyes|vision/, limit: 4 });
+    await applyInventoryObject(eyes);
+    await flushPendingTopline();
+    input.display = null;
+    setHeroBlindnessTurns(1);
+    assert.equal(game.blind, false);
+    input.feed('3s');
+    await moveloop_core();
+    assert.ok(game._occupation);
+
+    input.feed('  .');
+    await moveloop_core();
+
+    assert.equal(game.u.blindTurns, 0);
+    assert.equal(game.blind, false);
+    assert.ok(game._occupation, 'searching stopped even though sight never changed');
+    assert.ok(game.multi > 0);
 });
