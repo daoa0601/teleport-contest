@@ -184,6 +184,12 @@ export function objectName(object, state = game, { minimal = false } = {}) {
         : individualName;
     return `${noun} named ${name}`.replace(/^the /i, '');
 }
+// C objnam.c:singular(otmp, xname) retains corpse species while describing
+// one item. Ordinary objectName() already omits the stack quantity.
+export function singularObjectName(object, state = game) {
+    return object.otyp === CORPSE ? corpseName(object, { singular: true })
+        : objectName(object, state);
+}
 // C cxname()/xname(): contact feedback observes the object and retains its
 // quantity, poison, physical details, and personal name without a count prefix.
 export function objectCombatName(object, { state = game, includeCorpseSpecies = true, } = {}) {

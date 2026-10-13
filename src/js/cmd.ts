@@ -218,7 +218,7 @@ import {
     captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding,
 } from './thrown_object.js';
 import {
-    objectName, unseenObjectNoun,
+    objectName, singularObjectName, unseenObjectNoun,
 } from './objnam.js';
 import {
     artifactById,
@@ -4765,7 +4765,7 @@ async function dowhatis(): Promise<void> {
         const queuedLetter = takeCommandKey();
         const letter = queuedLetter ?? (await selectInventoryObject()).key;
         const item = game.inventory.find(item => item.invlet === String.fromCharCode(letter));
-        if (item) await showEncyclopediaInformation(objectName({ ...item, quan: 1, quantity: 1 }));
+        if (item) await showEncyclopediaInformation(singularObjectName(item));
         else if (queuedLetter !== undefined) clearCommandKeys();
     }
     game.context.move = 0;

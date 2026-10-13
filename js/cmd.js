@@ -130,7 +130,7 @@ import { throwOrdinaryObject } from './ordinary_throw.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { chooseHeroVolleyCount } from './hero_multishot.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, } from './thrown_object.js';
-import { objectName, unseenObjectNoun, } from './objnam.js';
+import { objectName, singularObjectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
@@ -4495,7 +4495,7 @@ async function dowhatis() {
         const letter = queuedLetter ?? (await selectInventoryObject()).key;
         const item = game.inventory.find(item => item.invlet === String.fromCharCode(letter));
         if (item)
-            await showEncyclopediaInformation(objectName({ ...item, quan: 1, quantity: 1 }));
+            await showEncyclopediaInformation(singularObjectName(item));
         else if (queuedLetter !== undefined)
             clearCommandKeys();
     }

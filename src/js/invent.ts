@@ -24,7 +24,7 @@ import {
     ARROW as FIRST_OBJECT, EGG, CHEST, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, STATUE, TIN,
 } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
-import { objectName, observeObjectForNaming } from './objnam.js';
+import { objectName, observeObjectForNaming, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isWeaponTool, objectUsesCharges } from './object_properties.js';
@@ -503,7 +503,7 @@ function itemActionEntries(item: GameObject, state: GameState) {
             && isTwoWeaponObject(state.uwep) && state.uwep && !OBJECT_BIMANUAL[state.uwep.otyp]
             && isTwoWeaponObject(state.uswapwep) && state.uswapwep && !OBJECT_BIMANUAL[state.uswapwep.otyp]))
         entries.push({ key: 'X', text: `Toggle two-weapon combat ${state.u.twoweap ? 'off' : 'on'}` });
-    if (encyclopediaEntries(objectName({ ...item, quan: 1, quantity: 1 }, state), state).length)
+    if (encyclopediaEntries(singularObjectName(item, state), state).length)
         entries.push({ key: '/', text: 'Look up information about this' });
     return entries;
 }
