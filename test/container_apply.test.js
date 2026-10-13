@@ -8,13 +8,14 @@ import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { takeFromContainer } from '../js/container.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BAG_OF_HOLDING, CHEST, CLUB, CORPSE, DART, ICE_BOX, LEATHER_GLOVES, LOADSTONE, } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BAG_OF_HOLDING, CHEST, CLUB, CORPSE, DART, ICE_BOX, LEATHER_GLOVES, LOADSTONE, WAN_CANCELLATION, } from '../js/object_data.js';
 import { OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject, unopenedCatBox, } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
+import { installPagerInput } from './support/pager-input.js';
 async function unlockedContainer(otyp, invlet, overrides = {}) {
     const container = await addInventoryObject(otyp, {
         invlet,
@@ -39,6 +40,37 @@ void test('applying a carried chest can put an ordinary item inside', async () =
     assert.equal(chest.cknown, true);
     assert.equal(game.context.move, 1);
 });
+for (const { selection, answers, putClubFirst, expectedMove } of [
+    { selection: 'auto-selection with no prior transfer', answers: 'iA/\n', putClubFirst: false, expectedMove: 0 },
+    { selection: 'auto-selection after a successful transfer', answers: 'iA)/\n', putClubFirst: true, expectedMove: 1 },
+    { selection: 'an ordinary menu selection', answers: 'i/\nb\n', putClubFirst: false, expectedMove: 1 },
+    { selection: 'a single just-picked selection', answers: 'iP\n', putClubFirst: false, expectedMove: 1 },
+    { selection: 'stash-one', answers: 'sb\n', putClubFirst: false, expectedMove: 1 },
+]) {
+    void test(`a bag explosion charges the native turn cost for ${selection}`, async () => {
+        requirePlayingGame(game);
+        game.u.uhp = game.u.uhpmax = 100;
+        const bag = await unlockedContainer(BAG_OF_HOLDING, 'a', { cknown: true });
+        if (putClubFirst)
+            await addInventoryObject(CLUB, { invlet: 'c' });
+        const wand = await addInventoryObject(WAN_CANCELLATION, {
+            invlet: 'b', spe: 1, pickup_prev: true,
+        });
+        const remainingWand = await addInventoryObject(WAN_CANCELLATION, {
+            invlet: 'd', spe: 1,
+        });
+        installPagerInput(resetInputState(), {
+            expected: /You put .*club into the bag\.|magical explosion/,
+            limit: 2,
+        });
+        await applyInventoryObject(bag, answers);
+        assert.equal(game.inventory.includes(bag), false, 'The explosion destroys the bag.');
+        assert.equal(game.inventory.includes(wand), false, 'The explosion destroys its trigger.');
+        assert.equal(game.inventory.includes(remainingWand), true, 'Destruction stops further transfers.');
+        assert.ok(game.u.uhp < 100 && game.u.uhp > 0, 'The hero survives the explosion damage.');
+        assert.equal(game.context.move, expectedMove, `Turn cost for ${selection}`);
+    });
+}
 void test('applying a carried chest can take its item back out', async () => {
     requirePlayingGame(game);
     const chest = await unlockedContainer(CHEST, 'a', {

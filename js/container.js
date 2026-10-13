@@ -591,6 +591,9 @@ async function putSelectedObjects(container, stashOne = false) {
         results.push(result);
         if (result.message)
             await plineWithContinuation(result.message);
+        // Stashing one item costs a turn even when it destroys the bag.
+        if (stashOne && result.destroyedContainer)
+            spentTime = true;
         if (result.destroyedContainer || result.stop)
             break;
     }
@@ -740,7 +743,7 @@ export async function useContainer(container, { held = false, moreContainers = f
                 spentTime = true;
             stopped = results.some(result => result.stop);
             if (results.some(result => result.destroyedContainer)) {
-                return { spentTime: true, container: null };
+                return { spentTime, container: null };
             }
         }
     }
