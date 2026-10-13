@@ -6,6 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { HI_ZAP } from '../js/const.js';
+import { flush_screen } from '../js/display.js';
 import {
     getposHelpUntilDismissed, selectMapPosition,
 } from '../js/getpos.js';
@@ -231,12 +232,15 @@ void test("the '$' marking is cleaned up after a pick, a cancel, and an error",
         freshObjectRoom();
         const picked = await driveSelection('$z.');
         await picked.selection;
+        // exitgetpos queues restored glyphs; its caller flushes the map.
+        await flush_screen(0);
         for (const { x, y } of VISIBLE_VALID)
             assert.equal(glyphAt(x, y), '.', `${x},${y}`);
 
         freshObjectRoom();
         const cancelled = await driveSelection('$\x1b');
         assert.equal(await cancelled.selection, null);
+        await flush_screen(0);
         for (const { x, y } of VISIBLE_VALID)
             assert.equal(glyphAt(x, y), '.', `${x},${y}`);
 
@@ -249,6 +253,7 @@ void test("the '$' marking is cleaned up after a pick, a cancel, and an error",
             },
         });
         await assert.rejects(failing.selection, /describe failed/);
+        await flush_screen(0);
         for (const { x, y } of VISIBLE_VALID)
             assert.equal(glyphAt(x, y), '.', `${x},${y}`);
     });

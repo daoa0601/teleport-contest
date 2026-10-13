@@ -33,16 +33,25 @@ import { impossible } from './diagnostics.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2 } from './rng.js';
 import type { MessagePublisher } from './display.js';
-import { canSeeMonster } from './display.js';
+import { canSeeMonster, newsym } from './display.js';
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import type { Trap } from './map_types.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
 
 type CallRecorder = Pick<MonsterCallLog, 'push'>;
 type ArmorMask = typeof W_ARM | typeof W_ARMC | typeof W_ARMH
     | typeof W_ARMS | typeof W_ARMG | typeof W_ARMF | typeof W_ARMU;
+
+// C trap.c:seetrap(). Discovering a trap refreshes the nonliving layer;
+// any object or monster still covering it keeps its usual display priority.
+export function seeTrap(trap: Trap, state: GameState = game): void {
+    if (trap.tseen) return;
+    trap.tseen = true;
+    if (state === game) newsym(trap.tx, trap.ty);
+}
 
 interface LavaInventoryOptions {
     state?: GameState;

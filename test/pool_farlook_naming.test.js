@@ -50,7 +50,7 @@ for (const [female, name] of [[true, 'elf-lady'], [false, 'elf-lord']]) {
         assert.equal(description, `${name} called Aster`);
     });
 }
-void test('farlook describes a blind-touch darkroom glyph even when the room was lit', () => {
+void test('farlook describes a blind-touch darkroom glyph even when the room was lit', async () => {
     const level = freshObjectRoom();
     const floor = level.requireAt(11, 10);
     floor.typ = ROOM;
@@ -58,7 +58,7 @@ void test('farlook describes a blind-touch darkroom glyph even when the room was
     game.flags.dark_room = true;
     setHeroBlindnessTurns(10);
     feel_location(11, 10);
-    assert.equal(farlookLocationDescription(11, 10), 'dark part of a room');
+    assert.equal(await farlookLocationDescription(11, 10), 'dark part of a room');
 });
 void test('automatic self descriptions use the racial adjective', async () => {
     const elf = races.find(race => race.name === 'elf');

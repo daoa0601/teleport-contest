@@ -2,13 +2,14 @@
 // C refs: trap.c dotrap(), trapeffect_*(), launch_obj(), and teleport.c
 // tele_trap().
 import { heroIsHallucinating } from './senses.js';
+import { triggerHeroMagicTrapEffect } from './hero_magic_trap.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { maybeDestroyWeb } from './web_trap.js';
 import { currentAttribute, exerciseAttribute, } from './attrib.js';
 import { armorSimpleName, objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroFootName, heroHeadName, monsterFootName } from './body_parts.js';
-import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_quest, is_pit, HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP, LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
+import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_quest, is_pit, HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP, LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
 import { flush_screen, lastDirtyMapCursor, map_trap, newsym, pline, plineWithContinuation, shieldeff, show_glyph_cell, } from './display.js';
 import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { isRoom } from './map_types.js';
@@ -17,7 +18,6 @@ import { loseHeroHp } from './hero_damage.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { refreshMovementProperties } from './properties.js';
 import { heroLiquidEffects } from './hack.js';
-import { hasInternalInvisibility, syncHeroInvisibility, } from './hero_invisibility.js';
 import { dungeonDepth } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { explodeLandMine } from './landmine_explosion.js';
@@ -47,7 +47,6 @@ import { bringLeashedFollowers, clearFixedTeleportDestination, heroTeleportDesti
 import { CLR_GREEN } from './terminal.js';
 import { cansee } from './vision.js';
 import { revealVibratingSquare } from './invocation.js';
-import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, removeIntrinsicProperty, } from './properties.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { activateMagicPortal } from './magic_portal.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -76,6 +75,7 @@ import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, 
 import { trapTriggeredByFloor } from './monmove.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { observeObject } from './object_knowledge.js';
+import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
 const M1_CLING = 0x00000010;
 const M1_HIDE = 0x00000100;
 const S_MIMIC = 13;
@@ -206,7 +206,7 @@ async function triggerPit(trap, { viaSitting = false, failedUntrap = false, took
             : conjoined || deliberate ? 'stepped into a pit of iron spikes'
                 : adjacent ? 'stumbled into a pit of iron spikes'
                     : 'fell into a pit of iron spikes';
-        if (await loseHeroHp(damage, killer))
+        if (await loseHeroHp(damage, killer, { deathCause: killer }))
             return;
         if (rn2(6) === 0) {
             const poison = await poisonHero({
@@ -221,7 +221,8 @@ async function triggerPit(trap, { viaSitting = false, failedUntrap = false, took
         }
     }
     else if (!conjoined && !deliberate && !(plunged && (flying || (formFlags & M1_CLING)))) {
-        if (await loseHeroHp(physicalDamage(rnd(adjacent ? 3 : 6)), plunged ? 'deliberately plunged into a pit' : 'fell into a pit'))
+        const killer = plunged ? 'deliberately plunged into a pit' : 'fell into a pit';
+        if (await loseHeroHp(physicalDamage(rnd(adjacent ? 3 : 6)), killer, { deathCause: killer }))
             return;
     }
     const ball = game.uball || hero.uball;
@@ -626,52 +627,7 @@ async function triggerMagicTrap(trap) {
         game.u.uenpeak = Math.max(game.u.uenpeak ?? 0, game.u.uenmax);
         return;
     }
-    const fate = rnd(20);
-    if (fate === 11) {
-        await plineWithContinuation('You hear a low hum.');
-        const intrinsicInvisible = hasInternalInvisibility(game);
-        const otherInvisible = !!(hasIntrinsicProperty('invisible', 'form', game)
-            || hasWornProperty('invisible', game)
-            || hasCarriedProperty('invisible', null, game)
-            || hasInvokedProperty('invisible', game));
-        const currentlyInvisible = intrinsicInvisible || otherInvisible;
-        if (!currentlyInvisible) {
-            if (!game.blind) {
-                await plineWithContinuation(game.u?.seeInvisible
-                    ? 'Gee!  All of a sudden, you can see right through yourself.'
-                    : "Gee!  All of a sudden, you can't see yourself.");
-            }
-        }
-        else if (!otherInvisible) {
-            if (!game.blind) {
-                await plineWithContinuation(game.u?.seeInvisible
-                    ? "You can't see through yourself anymore."
-                    : 'You can see yourself again!');
-            }
-        }
-        else {
-            await plineWithContinuation(`You feel a little more ${intrinsicInvisible ? 'obvious' : 'hidden'} now.`);
-        }
-        const nextIntrinsic = !intrinsicInvisible;
-        if (nextIntrinsic)
-            grantIntrinsicProperty('invisible', 'outside', game);
-        else {
-            removeIntrinsicProperty('invisible', game);
-            game.u.invisibleTurns = 0;
-        }
-        syncHeroInvisibility(game);
-        newsym(game.u.ux, game.u.uy);
-        return;
-    }
-    const message = fate === 13
-        ? 'A shiver runs up and down your spine!'
-        : fate === 14 ? 'You hear distant howling.'
-            : fate === 15 ? 'You suddenly yearn for your distant homeland.'
-                : fate === 16 ? 'Your pack shakes violently!'
-                    : fate === 17 ? 'You smell charred flesh.'
-                        : fate === 18 ? 'You feel tired.' : null;
-    if (message)
-        await pline(message);
+    await triggerHeroMagicTrapEffect();
 }
 async function triggerProjectileTrap(trap) {
     const hero = game.u;
@@ -1161,6 +1117,9 @@ export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel =
             break;
         case MAGIC_TRAP:
             await triggerMagicTrap(trap);
+            break;
+        case POLY_TRAP:
+            await triggerHeroPolymorphTrap(trap, viaSitting);
             break;
         case PIT:
         case SPIKED_PIT:

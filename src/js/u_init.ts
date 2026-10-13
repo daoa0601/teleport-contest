@@ -1067,7 +1067,17 @@ function linkInventoryItem(item: GameObject): GameObject {
     assignInventoryLetter(item);
     item.where = 'inventory';
     game.inventory.push(item);
+    // C invent.c:addinv_core0()/reorder_invent(): fixed letters order the
+    // carried chain, including gold before letters and lowercase before uppercase.
+    if (game.flags.fixinv !== false) {
+        game.inventory.sort((left, right) =>
+            inventoryLetterRank(left) - inventoryLetterRank(right));
+    }
     return item;
+}
+
+function inventoryLetterRank(item: GameObject): number {
+    return (item.invlet?.charCodeAt(0) ?? 0) ^ 0x20;
 }
 
 async function finishAddedInventoryItem(item: GameObject): Promise<GameObject> {

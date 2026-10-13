@@ -464,7 +464,7 @@ import {
     monsterTeleportRestricted,
     reportMonsterTeleportRestriction,
 } from './teleport_rules.js';
-import { burnArmorByFire, monsterTrapVisibility } from './trap.js';
+import { burnArmorByFire, monsterTrapVisibility, seeTrap } from './trap.js';
 import { publishMonsterWake } from './monster_wake.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
 import { aggravateMonsters, angerMonster, angerWatchGuards } from './monster_anger.js';
@@ -4612,7 +4612,7 @@ async function announceTrapLevelDeparture(
     const effect = trap.ttyp === HOLE ? 'falls into a hole'
         : trap.ttyp === TRAPDOOR ? 'falls through a trap door' : 'disappears out of sight';
     await publish(`Suddenly, ${canonicalMonsterName(monster, { state })} ${effect}.`);
-    trap.tseen = true;
+    seeTrap(trap, state);
 }
 
 async function triggerMonsterTrap(
@@ -4634,6 +4634,20 @@ async function triggerMonsterTrap(
         && [PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
     if (!movement.forcedTrapLanding && !sokobanFall && airborne && trapTriggeredByFloor(trap))
         return null;
+    if (trap.ttyp === STATUE_TRAP) {
+        // C mintrap() teaches the type before trapeffect_statue_trap()
+        // declines to animate statues for monsters.
+        if (monsterKnowsTrap(monster, trap) && !movement.forcedTrapLanding
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
+            const event: MonsterTrapEvent = { kind: 'known-trap-avoided', trap, damage: 0 };
+            movement.trap = event;
+            return event;
+        }
+        monsterLearnsTrap(monster, trap);
+        monstersSeeTrap(state, trap);
+        if (trap.madeby_u && rnl(5)) await angerMonster(monster);
+        return null;
+    }
     if (trap.ttyp === MAGIC_PORTAL) {
         // trap.c:mintrap()->trapeffect_magic_portal() treats a fixed portal
         // as inescapable, then routes monsters through mlevel_tele_trap().

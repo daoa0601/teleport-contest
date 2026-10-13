@@ -16,10 +16,6 @@ const POISON_EFFECT = [
     'You feel very sick!',
     'You break out in hives!',
 ];
-function attributeChanged(result) {
-    return !!(result?.changed || result?.baseChanged
-        || result?.maximumChanged);
-}
 export function poisonAttributeMessage(attribute, state = game, exclaim = true) {
     const punctuation = exclaim ? '!' : '.';
     if (attribute === A_STR && currentAttribute(A_STR, state) === 125)
@@ -78,7 +74,22 @@ export async function poisonHero({ reason, killer, attribute, fatal = 30, state 
         await line("The poison doesn't seem to affect you.");
         return { resisted: true, died: false, pagerOwned };
     }
-    const previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
+    let previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
+    const reportEncumbrance = async () => {
+        if (await updateEncumbrance(previousCapacity, state, publish))
+            pagerOwned = true;
+        previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
+    };
+    const loseAttribute = async (target, amount) => {
+        const change = adjustAttribute(target, amount, state);
+        if (!change.changed)
+            return;
+        state.context.botl = true;
+        // adjattrib() calls encumber_msg() before poisontell() during play.
+        if (state.program_state.in_moveloop && (target === A_STR || target === A_CON))
+            await reportEncumbrance();
+        await line(poisonAttributeMessage(target, state));
+    };
     const outcome = fatal
         ? random(fatal + (thrownWeapon ? 20 : 0)) : 1;
     let damage = 0;
@@ -99,14 +110,9 @@ export async function poisonHero({ reason, killer, attribute, fatal = 30, state 
             if (await loseHeroHp(damage, killer, { state, publish: line, die }))
                 return { damage, died: true, pagerOwned };
             const constitutionLoss = attribute === A_CON ? -3 : -1;
-            const constitution = adjustAttribute(A_CON, constitutionLoss, state);
-            if (attributeChanged(constitution))
-                await line(poisonAttributeMessage(A_CON, state));
-            if (attribute !== A_CON) {
-                const poisonedAttribute = adjustAttribute(attribute, -3, state);
-                if (attributeChanged(poisonedAttribute))
-                    await line(poisonAttributeMessage(attribute, state));
-            }
+            await loseAttribute(A_CON, constitutionLoss);
+            if (attribute !== A_CON)
+                await loseAttribute(attribute, -3);
         }
     }
     else if (outcome > 5) {
@@ -120,17 +126,14 @@ export async function poisonHero({ reason, killer, attribute, fatal = 30, state 
     }
     else {
         const loss = thrownWeapon || !fatal ? 1 : rollDice(2, 2);
-        const result = adjustAttribute(attribute, -loss, state);
-        if (attributeChanged(result))
-            await line(poisonAttributeMessage(attribute, state));
+        await loseAttribute(attribute, -loss);
     }
     if (hero.uhp < 1 && await die({
         killer,
         deathType: /poison/iu.test(killer) ? DIED : POISONING,
     }))
         return { damage, died: true, pagerOwned };
-    if (await updateEncumbrance(previousCapacity, state, publish))
-        pagerOwned = true;
+    await reportEncumbrance();
     return {
         damage,
         died: false,

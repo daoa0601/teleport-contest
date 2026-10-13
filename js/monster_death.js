@@ -303,7 +303,7 @@ export async function detachDeadMonster(monster, state, random, publish) {
     const x = monster.mx;
     const y = monster.my;
     monster.mhp = 0;
-    createSteamVortexDeathCloud(monster, state, random);
+    await createSteamVortexDeathCloud(monster, state, random, publish);
     if (monster.isgd && !await prepareVaultGuardDeath(monster, state))
         return false;
     const emittedLight = monsterEmitsLight(monster.mnum);

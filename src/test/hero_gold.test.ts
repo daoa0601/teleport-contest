@@ -9,13 +9,14 @@ import { game } from '../js/gstate.js';
 import {
     detachHeroGold, heroGoldAmount, heroGoldObject,
 } from '../js/hero_gold.js';
-import { pushKey } from '../js/input.js';
+import { pushKey, resetInputState } from '../js/input.js';
 import { mkgold } from '../js/mklev.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
 import { addShopObjectToBill, billForObject, settleCarriedShopBillItem } from '../js/shk.js';
 import { carriedGold } from './support/gold-arena.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
+import { requireScreenRow } from './support/screen.js';
 import {
     freshGameplayRoom, freshPlayableRoom,
 } from './support/playable-room.js';
@@ -123,11 +124,19 @@ void test('putting gold into a bag and taking it out moves the same identity',
             invlet: 'a', cknown: false,
         });
 
-        pushKey('a');
-        pushKey('i');
-        pushKey('$');
-        pushKey(13);
-        await rhack('a'.charCodeAt(0));
+        const input = resetInputState();
+        input.feed('ai');
+        const putting = rhack('a'.charCodeAt(0));
+        await input.waitUntilBlocked();
+        // C menu_loot counts the bag itself when querying inventory classes.
+        assert.match(requireScreenRow(0).map(cell => cell.ch).join(''),
+            /Put in what type of objects\?/);
+        input.feed('$\n');
+        await input.waitUntilBlocked();
+        assert.match(requireScreenRow(0).map(cell => cell.ch).join(''),
+            /Put in what\?/);
+        input.feed('$\n');
+        await putting;
 
         assert.equal(heroGoldObject(game), null);
         assert.equal(heroGoldAmount(game), 0);
@@ -136,11 +145,14 @@ void test('putting gold into a bag and taking it out moves the same identity',
         assert.equal(purse.where, 'contained');
         assert.equal(purse.container, bag);
 
-        pushKey('a');
-        pushKey('o');
-        pushKey('$');
-        pushKey(13);
-        await rhack('a'.charCodeAt(0));
+        input.feed('ao');
+        const taking = rhack('a'.charCodeAt(0));
+        await input.waitUntilBlocked();
+        // C query_category skips the category prompt for gold-only contents.
+        assert.match(requireScreenRow(0).map(cell => cell.ch).join(''),
+            /Take out what\?/);
+        input.feed('$\n');
+        await taking;
 
         assert.equal(heroGoldObject(game), purse);
         assert.equal(heroGoldAmount(game), 23);

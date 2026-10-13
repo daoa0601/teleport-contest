@@ -85,6 +85,7 @@ import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js
 import { mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
+import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
 import {
     A_CHA,
@@ -3774,7 +3775,6 @@ export async function mklev(): Promise<void> {
     g.in_mklev = true;
     await makelevel();
     await currentLuaLifecycle().runCallbacks(g, 'level_enter');
-    countLevelFeatures();
     await level_finalize_topology();
     g.in_mklev = false;
 }
@@ -3972,12 +3972,16 @@ function setLevelTerrainType(x: number, y: number, typ: number): boolean {
         loc.arboreal_sdoor = 1;
         return true;
     }
+    const oldType = loc.typ;
     loc.typ = typ;
     if (IS_LAVA(typ)) loc.lit = true;
     if (typ === ICE && game._activeSpecialLevel?.levelInitialized) {
         loc.icedpool = game._activeSpecialLevel.icedPools
             ? ICED_POOL : ICED_MOAT;
     }
+    // C mkmaze.c:set_levltyp() recounts when fountain or sink membership changes.
+    if ((oldType === FOUNTAIN) !== (typ === FOUNTAIN)
+        || (oldType === SINK) !== (typ === SINK)) countLevelFeatures();
     return true;
 }
 
@@ -5109,6 +5113,12 @@ async function specialTrapOfType(
     context: SpecialLevelContext, typ: number, options: SpecialTrapOptions,
     coordinate: Position | null,
 ): Promise<Trap | null> {
+    // C sp_lev.c:create_trap(): invocation placement owns its coordinates,
+    // including when Lua supplies an explicit location or a room.
+    if (typ === VIBRATING_SQUARE) {
+        const square = vibratingSquarePoint();
+        return await maketrap(square.x, square.y, VIBRATING_SQUARE);
+    }
     const point = await specialTrapLocation(context, coordinate);
     if (!point) return null;
     return await mktrap(typ, options, null, point);
@@ -5735,17 +5745,13 @@ async function createLuaFeature(
         const loc = level.at(
             context.xstart + point.x, context.ystart + point.y,
         );
-        if (loc) {
+        if (loc && !IS_FURNITURE(loc.typ)) {
             loc.typ = featureType;
-            if (featureType === FOUNTAIN) level.flags.nfountains++;
-            else if (featureType === SINK) level.flags.nsinks++;
         }
         return;
     }
-    if (await specialFeatureOfType(context, featureType)) {
-        if (featureType === FOUNTAIN) level.flags.nfountains++;
-        else if (featureType === SINK) level.flags.nsinks++;
-    }
+    // C sp_lev.c:sel_set_feature() writes terrain without updating counters.
+    await specialFeatureOfType(context, featureType);
 }
 
 function noncoalignedSpecialAlignment() {
@@ -6189,15 +6195,13 @@ function applyLuaMonsterAppearance(monster: Monster | null | undefined, appearan
         monster.mappearance = appearance.type;
         return;
     }
-    const terrains: Record<string, number> = {
-        fountain: FOUNTAIN,
-        'staircase down': STAIRS,
-    };
-    const terrain = terrains[appearance.name];
-    if (appearance.kind !== 'terrain' || terrain == null)
+    // C sp_lev.c:create_monster() stores the matching defsyms index,
+    // which is distinct from the terrain type used by map locations.
+    const symbol = MAP_SYMBOLS.findIndex(candidate => candidate.name === appearance.name);
+    if (symbol < 0)
         throw new Error(`unsupported Lua monster appearance ${appearance.name}`);
     monster.m_ap_type = M_AP_FURNITURE;
-    monster.mappearance = terrain;
+    monster.mappearance = symbol;
 }
 
 async function createLuaMonster(context: SpecialLevelContext, options: DesMonsterOptions): Promise<Monster | null> {
@@ -6808,6 +6812,7 @@ function createLuaLevelSession() {
             const allowedFlips = currentLevel().allowFlips;
             if (allowedFlips === undefined) throw new Error('Lua level flip flags are uninitialized');
             flipSpecialLevelRandom(allowedFlips);
+            countLevelFeatures();
             if (currentLevel().solidify) solidifyLuaMap(mappedCells);
             flipLuaRegions(currentLevel());
         },
@@ -10223,7 +10228,7 @@ function mkfount(croom: Room): void {
     if (!find_okay_roompos(croom, pos)) return;
     const loc = level.at(pos.x, pos.y);
     if (loc) {
-        loc.typ = FOUNTAIN;
+        if (!setLevelTerrainType(pos.x, pos.y, FOUNTAIN)) return;
         if (!rn2(7)) loc.blessedftn = 1;
         level.flags.nfountains++;
     }
@@ -10319,7 +10324,7 @@ export async function fill_ordinary_room(croom: Room | null | undefined, bonus_i
     if (!rn2(60)) {
         if (find_okay_roompos(croom, pos)) {
             const loc = level.at(pos.x, pos.y);
-            if (loc) { loc.typ = SINK; level.flags.nsinks = (level.flags.nsinks || 0) + 1; }
+            if (loc && setLevelTerrainType(pos.x, pos.y, SINK)) level.flags.nsinks++;
         }
     }
     // Altar

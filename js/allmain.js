@@ -21,6 +21,7 @@ import { MON_FLOOR, PICK_ONE } from './const.js';
 import { showInventoryWindow } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
 import { dosounds } from './ambient_sounds.js';
+import { regenerateHeroHp } from './hero_regeneration.js';
 import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
 import { monsterGainLevelRiseDestination } from './monmove.js';
@@ -74,7 +75,7 @@ import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import { ACID_VENOM, CORPSE, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_NAMES, SHIELD_OF_REFLECTION, } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { observeDistantObjectForNaming, observeObjectForNaming, } from './objnam.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, STONE, ZAP_POS, STRAT_CLOSE, STRAT_WAITFORU, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_LAVA, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, STONE, ZAP_POS, STRAT_CLOSE, STRAT_WAITFORU, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_LAVA, } from './const.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries, } from './u_init.js';
 import { makeDeaf } from './hero_hearing.js';
 import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
@@ -306,10 +307,7 @@ export async function restoregamePreamble() {
     if (game.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
     await applyCalendarMessages();
-    await readEngravingAt(game.u.ux, game.u.uy, {
-        showMore: showInlineMore,
-        showLine: plineWithContinuation,
-    });
+    await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
     await fixShopDamage(game);
     await finishMoveloopPreamble();
 }
@@ -390,10 +388,7 @@ async function enterTutorial() {
     vision_reset();
     await docrt();
     await checkSpecialRoom();
-    await readEngravingAt(game.u.ux, game.u.uy, {
-        showMore: showInlineMore,
-        showLine: plineWithContinuation,
-    });
+    await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
     findArmorClass(game);
     await redrawMap();
     await flush_screen(1);
@@ -705,50 +700,26 @@ async function finishInitialTurnMaintenanceAfterAutomaticSearch({ sourceTurn, mo
     await dosounds();
     return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount });
 }
-async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount, deferAmbientMessage, polymorphed, }) {
+async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed, }) {
     const game = requireInitializedGame();
     if (game.u.ublesscnt > 0)
         game.u.ublesscnt--;
     // allmain.c:regen_hp() runs after nh_timeout().  If a timeout pline
     // suspended at tty, no regeneration or later maintenance may run until
     // that exact source stack resumes.
-    const activeHp = polymorphed ? 'mh' : 'uhp';
-    const activeHpMax = polymorphed ? 'mhmax' : 'uhpmax';
-    if (!game.u?.invulnerable
-        && (game.u?.[activeHp] ?? 0) < (game.u?.[activeHpMax] ?? 0)) {
-        let shouldHeal;
-        if (polymorphed) {
-            // allmain.c:regen_hp() does not use the human level/Constitution
-            // rn2(100) check for monster-form HP.  Ordinary forms recover one
-            // point only from Regeneration or on the deterministic 20-turn
-            // cadence while movement encumbrance permits it.  The dry-eel
-            // damage branch remains separate from this non-eel carrier.
-            const nonEel = MONSTER_SYMBOL[game.u.umonnum] !== 57;
-            const encumbranceOk = nearCapacity(game) < MOD_ENCUMBER
-                || !game.u?.umoved;
-            shouldHeal = nonEel && (game.u.regeneration
-                || (encumbranceOk && sourceTurn % 20 === 0));
-        }
-        else {
-            const constitution = game.u?.acurr?.a?.[A_CON] || 0;
-            shouldHeal = (game.u.ulevel + constitution) > rn2(100)
-                || game.u.regeneration;
-        }
-        if (shouldHeal) {
-            game.u[activeHp] = Math.min(game.u[activeHpMax], game.u[activeHp] + 1);
-            if (game.u[activeHp] === game.u[activeHpMax])
-                interruptCountedActivity('You are in full health.');
-        }
-    }
+    const recoveryCapacity = game.u.invulnerable ? UNENCUMBERED : capacity;
+    if (await regenerateHeroHp(recoveryCapacity, sourceTurn))
+        interruptCountedActivity('You are in full health.');
+    if (game.program_state.gameover)
+        return { kind: 'complete', moveAmount };
     if ((game.u?.uen ?? 0) < (game.u?.uenmax ?? 0)) {
-        const capacity = nearCapacity(game);
         const level = game.u?.ulevel ?? 1;
         const roleFactor = game.urole?.key === 'wizard' ? 3 : 4;
         const interval = Math.max(1, Math.trunc(((30 + 8 - level) * roleFactor) / 6));
         const energyRegeneration = !!(game.u?.energyRegeneration
             || game.u?.energyRegenerationIntrinsic
             || game.u?.energyRegenerationExtrinsic);
-        if ((capacity < MOD_ENCUMBER
+        if ((recoveryCapacity < MOD_ENCUMBER
             && sourceTurn % interval === 0)
             || energyRegeneration) {
             const attributes = game.u?.acurr?.a || [];
@@ -771,7 +742,7 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
             return {
                 kind: 'statue-trap',
                 x, y, sourceTurn, moveAmount,
-                deferAmbientMessage, polymorphed,
+                capacity, deferAmbientMessage, polymorphed,
             };
         }
     }
@@ -805,10 +776,10 @@ async function advanceHeroShapeChange() {
         await applyHeroWereChange();
     delete game._pendingHeroShapeChange;
 }
-function finishInitialTurnMaintenanceAfterTimeout({ sourceTurn, moveAmount, deferAmbientMessage, polymorphed, }) {
+function finishInitialTurnMaintenanceAfterTimeout({ sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed, }) {
     return {
         kind: 'regions',
-        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
     };
 }
 async function runLevelRegionTurn() {
@@ -830,6 +801,9 @@ async function runLevelRegionTurn() {
 }
 async function beginInitialTurnMaintenance() {
     const game = requireInitializedGame();
+    // allmain.c caches this after monster movement. Timeouts can change the
+    // load, but movement and recovery for this turn keep the earlier capacity.
+    const capacity = nearCapacity(game);
     // allmain.c runs mcalcdistress() before allocating the next movement
     // ration. Regeneration, were-change checks, and temporary maladies count
     // down once per global turn, independent of the monster's own speed.
@@ -855,9 +829,9 @@ async function beginInitialTurnMaintenance() {
             wakeNearby: (x, y, distance) => wakeMonstersNear(x, y, distance, game),
         });
     }
-    return finishInitialTurnMaintenanceAfterMonsterDistress(true);
+    return finishInitialTurnMaintenanceAfterMonsterDistress(capacity, true);
 }
-async function finishInitialTurnMaintenanceAfterMonsterDistress(deferAmbientMessage) {
+async function finishInitialTurnMaintenanceAfterMonsterDistress(capacity, deferAmbientMessage) {
     const game = requireInitializedGame();
     allocateMonsterMovement(game.level?.monsters || [], rn2, game);
     // allmain.c:maybe_generate_rnd_mon().  Monster pressure increases below
@@ -886,21 +860,20 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(deferAmbientMess
             moveAmount += 12;
         }
     }
-    // allmain.c:u_calc_moveamt() applies current carrying capacity after the
-    // current form's natural speed and Fast/Very_fast bonus.  OVERLOADED is
+    // allmain.c:u_calc_moveamt() applies the cached carrying capacity after
+    // the current form's natural speed and Fast/Very_fast bonus.  OVERLOADED is
     // deliberately the default case: a zero-speed mold receives no movement
     // until intrinsic Fast grants a complete 12-point action.
-    const movementCapacity = nearCapacity(game);
-    if (movementCapacity === 1) {
+    if (capacity === 1) {
         moveAmount -= Math.trunc(moveAmount / 4);
     }
-    else if (movementCapacity === 2) {
+    else if (capacity === 2) {
         moveAmount -= Math.trunc(moveAmount / 2);
     }
-    else if (movementCapacity === 3) {
+    else if (capacity === 3) {
         moveAmount -= Math.trunc(moveAmount * 3 / 4);
     }
-    else if (movementCapacity === 4) {
+    else if (capacity === 4) {
         moveAmount -= Math.trunc(moveAmount * 7 / 8);
     }
     // C records the hero's current square after monster movement/allocation
@@ -924,14 +897,14 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(deferAmbientMess
         }
         return {
             kind: 'object-timers',
-            sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+            sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
         };
     }
     return finishInitialTurnMaintenanceAfterObjectTimers({
-        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
     });
 }
-async function finishInitialTurnMaintenanceAfterObjectTimers({ sourceTurn, moveAmount, deferAmbientMessage, polymorphed, }) {
+async function finishInitialTurnMaintenanceAfterObjectTimers({ sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed, }) {
     const game = requireInitializedGame();
     // C timeout.c:nh_timeout() expires temporary confusion before regen,
     // sounds, hunger, and exerchk().  The final tick is observable twice:
@@ -1027,7 +1000,7 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({ sourceTurn, moveA
                     kind: 'timeout-message',
                     timeoutKind: 'stun',
                     message: 'You feel a bit steadier now.',
-                    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+                    sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
                     prayerTimeoutFreeze,
                 };
             }
@@ -1039,38 +1012,40 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({ sourceTurn, moveA
             game.u.stunnedTurns = remaining;
     }
     return finishInitialTurnMaintenanceAfterStun({
-        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
         prayerTimeoutFreeze,
     });
 }
-function finishInitialTurnMaintenanceAfterStun({ sourceTurn, moveAmount, deferAmbientMessage, polymorphed, prayerTimeoutFreeze, }) {
+function finishInitialTurnMaintenanceAfterStun({ sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed, prayerTimeoutFreeze, }) {
     const game = requireInitializedGame();
     if (!prayerTimeoutFreeze
         && game.u.confusionTurns !== undefined && game.u.confusionTurns > 0) {
         const remaining = game.u.confusionTurns - 1;
         if (remaining === 0) {
+            const message = heroIsHallucinating(game)
+                ? 'You feel less trippy now.' : 'You feel less confused now.';
             if (deferAmbientMessage) {
                 return {
                     kind: 'timeout-message',
                     timeoutKind: 'confusion',
-                    message: 'You feel less confused now.',
-                    sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+                    message,
+                    sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
                     prayerTimeoutFreeze,
                 };
             }
             game.u.confusionTurns = 0;
             refreshProperty('confusion', game);
-            appendTurnMessage('You feel less confused now.');
+            appendTurnMessage(message);
         }
         else
             game.u.confusionTurns = remaining;
     }
     return finishInitialTurnMaintenanceAfterConfusion({
-        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
         prayerTimeoutFreeze,
     });
 }
-async function finishInitialTurnMaintenanceAfterConfusion({ sourceTurn, moveAmount, deferAmbientMessage, polymorphed, prayerTimeoutFreeze, }) {
+async function finishInitialTurnMaintenanceAfterConfusion({ sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed, prayerTimeoutFreeze, }) {
     const game = requireInitializedGame();
     if (!prayerTimeoutFreeze
         && game.u.blindTurns !== undefined && game.u.blindTurns > 0) {
@@ -1130,11 +1105,11 @@ async function finishInitialTurnMaintenanceAfterConfusion({ sourceTurn, moveAmou
         }
     }
     return finishInitialTurnMaintenanceAfterFumbling({
-        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
         prayerTimeoutFreeze,
     });
 }
-async function finishInitialTurnMaintenanceAfterFumbling({ sourceTurn, moveAmount, deferAmbientMessage, polymorphed, prayerTimeoutFreeze, }) {
+async function finishInitialTurnMaintenanceAfterFumbling({ sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed, prayerTimeoutFreeze, }) {
     const game = requireInitializedGame();
     if (!prayerTimeoutFreeze
         && game.u._woundedLegTurns !== undefined && game.u._woundedLegTurns > 0) {
@@ -1260,7 +1235,7 @@ async function finishInitialTurnMaintenanceAfterFumbling({ sourceTurn, moveAmoun
             'reflection', 'freeAction', 'sustainAbility', 'lifeSaving',
         ], game);
     return finishInitialTurnMaintenanceAfterTimeout({
-        sourceTurn, moveAmount, deferAmbientMessage, polymorphed,
+        sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
     });
 }
 // C timeout.c decrements every intrinsic timeout in prop.h order. These
@@ -3284,6 +3259,7 @@ export async function newgame() {
 // C ref: allmain.c moveloop_core()
 export async function moveloop_core() {
     const g = requireInitializedGame();
+    g.program_state.in_moveloop = true;
     if (g.program_state?.gameover) {
         await nhgetch();
         return;

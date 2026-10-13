@@ -138,6 +138,8 @@ const transientFields = {
     nhDisplay: true,
     nhrect: true,
     program_state: true,
+    _autoAllHintShown: true,
+    _autoAllImpliedHintShown: true,
     rect_cnt: true,
     storage: true,
     vision_full_recalc: true,

@@ -1520,6 +1520,13 @@ export function displaySelf() {
         glyph.ch, glyph.color, false, 0, glyph);
 }
 
+// C display.c:newsym_force(). A forced redraw prints even an unchanged glyph.
+export function newsym_force(x: number, y: number): void {
+    newsym(x, y);
+    const location = game.level?.at(x, y);
+    if (location) location.gnew = 1;
+}
+
 // ── newsym ──
 function monsterDisplayAttribute(monster: Monster) {
     if ((monster.pet || (monster.mtame ?? 0) > 0) && !heroIsHallucinating()

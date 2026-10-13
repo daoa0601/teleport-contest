@@ -249,7 +249,6 @@ void test('guard arrival preserves the vault wall restriction for restoration', 
     const arrived = await answerPrompts(continueVaultGuardArrival(), input, [
         { prompt: /Suddenly one of the Vault's guards enters![\s\S]*--More--/, keys: ' ' },
         { prompt: /Hello stranger, who are you\?/, keys: 'TestHero\n' },
-        { prompt: /I don't know you\.[\s\S]*--More--/, keys: ' ' },
     ]);
     assert.equal(arrived, true);
     const guard = level.monsters.find(monster => monster.isgd);

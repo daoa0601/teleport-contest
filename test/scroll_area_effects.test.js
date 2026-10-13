@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { CORR, D_CLOSED, DOOR, PIT, P_DAGGER, STONE, W_ARMH } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { clearMessageWindow, glyphAt } from '../js/display.js';
 import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -16,9 +17,10 @@ import { advanceHeroSkill, ensureHeroSkills, practiceNeededToAdvance } from '../
 import { forceLearnSpell, knownSpell } from '../js/spell.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { runExtendedCommand } from './support/commands.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
-import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
+import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 function room(t, answers = [], options = {}) {
     freshObjectRoom({ left: 5, right: 25, top: 5, bottom: 15,
@@ -249,6 +251,28 @@ for (const keys of ['\x1b', 'llllll.']) {
         assert.match(game._pending_message, keys === '\x1b' ? /Never mind/ : /whiff of rotten eggs/);
     });
 }
+void test('cloud targeting leaves the steed unmarked and refreshes its hallucination on exit', async (t) => {
+    room(t, [], { role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    assert.equal(game.u.usteed, pony);
+    clearMessageWindow();
+    game.u.hallucinationTurns = 20;
+    const source = await scroll(SCR_STINKING_CLOUD);
+    const input = resetInputState();
+    input.feed('$');
+    const reading = applyAreaScrollEffect(source);
+    await input.waitUntilBlocked();
+    const marked = glyphAt(game.u.ux, game.u.uy);
+    input.feed('\x1b');
+    await reading;
+    const restored = glyphAt(game.u.ux, game.u.uy);
+    assert.ok(marked?.kind === 'monster', 'Target marks leave the visible steed on screen.');
+    assert.ok(restored?.kind === 'monster');
+    assert.notEqual(restored.mnum, marked.mnum, 'Ending targeting refreshes the hallucinated steed.');
+    assert.equal(game.level.regions.length, 0);
+});
 void test('cloud spreads through corridors and doors and announces a newly enveloped reader', async (t) => {
     const input = room(t);
     requirePlayingGame(game);

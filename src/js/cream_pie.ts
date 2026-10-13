@@ -9,12 +9,12 @@ import { CREAM_PIE } from './object_data.js';
 import { heroHasEyes } from './body_parts.js';
 import { rnd, rn2 } from './rng.js';
 import {
-    blindfolded, heroIsBlind, syncBlindness,
+    blindfolded, heroIsBlind,
 } from './senses.js';
 import {
     chargeAlteredUnpaidObject,
 } from './shk.js';
-import { redrawSight, rememberVisibleTerrain } from './sight_change.js';
+import { makeBlinded } from './sight_change.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
 import { objectWeight } from './weight.js';
 import type { GameObject } from './object_types.js';
@@ -73,9 +73,8 @@ export async function useCreamPie(stack: GameObject | null | undefined) {
     if (heroHasEyes(game) && !blindfolded(game)) {
         const blindIncrement = rnd(25);
         game.u.ucreamed = (game.u.ucreamed ?? 0) + blindIncrement;
-        game.u.blindTurns = (game.u.blindTurns ?? 0) + blindIncrement;
-        const blind = syncBlindness(game);
-        if (blind && !wasBlind) rememberVisibleTerrain();
+        await makeBlinded((game.u.blindTurns ?? 0) + blindIncrement, { talk: false });
+        const blind = heroIsBlind(game);
         if (!blind || wasBlind) {
             await plineWithContinuation(
                 `There's ${wasCreamed ? 'more ' : ''}sticky goop all over your face.`,
@@ -85,7 +84,6 @@ export async function useCreamPie(stack: GameObject | null | undefined) {
                 "You can't see through all the sticky goop on your face.",
             );
         }
-        if (blind !== wasBlind) await redrawSight();
     }
 
     await chargeAlteredUnpaidObject(pie, 'splatter');
