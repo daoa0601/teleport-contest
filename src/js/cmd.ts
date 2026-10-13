@@ -4775,9 +4775,9 @@ async function showEncyclopediaInformation(name: string): Promise<void> {
     const entries = encyclopediaEntries(name);
     // checkfile() fills an NHW_MENU with putstr(), so tty treats its rows
     // as prose and accepts only the --More-- responses, even across pages.
-    for (const entry of entries) await showDisclosureOverlay(entry.lines);
-    if (entries.length) await restoreHelpMap();
-    else await pline("You don't have any information on those things.");
+    for (const entry of entries)
+        await showDisclosureOverlay(entry.lines, { restoreUnderlay: true });
+    if (!entries.length) await pline("You don't have any information on those things.");
 }
 
 // C pager.c:dohelp().
