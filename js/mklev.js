@@ -1709,6 +1709,9 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         mux: 0, muy: 0,
         msleeping: monsterSleeping, mpeaceful: peaceful ? 1 : 0,
         malign: 0,
+        mwandexp: Is_stronghold(game.u.uz) || Is_knox_level(game.u.uz)
+            || In_endgame(game.u.uz) || In_hell(game.u.uz)
+            || In_V_tower(game.u.uz) || In_quest(game.u.uz),
         minvent: monsterInventory,
         inventory: monsterInventory,
         hasInventory: false,
@@ -2615,6 +2618,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         mnum: mndx, cham: pendingMonster.cham ?? -1,
         mx: x, my: y, mhp: hp, mhpmax: hp,
         m_lev: baseLevel, female: monsterFemale,
+        mwandexp: pendingMonster.mwandexp ?? false,
         msleeping: monsterSleeping,
         mpeaceful: roamingMinion?.mpeaceful ?? (birthPeaceful ? 1 : 0),
         malign: 0,
