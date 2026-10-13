@@ -43,7 +43,7 @@ function heroIsDemonOrUndead(state) {
 }
 function inGehennom(state) {
     const dnum = state.u?.uz?.dnum ?? -1;
-    return state.dungeons?.[dnum]?.dname === 'Gehennom';
+    return !!state.dungeons?.[dnum]?.flags.hellish;
 }
 function eligibleTarget(monster, heroLevel) {
     if (!monster || monster.dead || (monster.mhp ?? 1) <= 0

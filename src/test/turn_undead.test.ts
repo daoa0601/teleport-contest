@@ -9,6 +9,7 @@ import { resetInputState } from '../js/input.js';
 import { turnUndeadByCallingOnDeity } from '../js/turn_undead.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runExtendedCommand } from './support/commands.js';
 
 const PM_HUMAN_MUMMY = 192;
 const PM_HUMAN_ZOMBIE = 244;
@@ -69,4 +70,19 @@ void test('a chaotic priest makes a weak undead monster peaceful', async () => {
     assert.ok(zombie.mhp > 0);
     assert.equal(zombie.mpeaceful, 1);
     assert.ok(!zombie.mflee);
+});
+
+void test('#turn is refused in any hellish dungeon, even with a different dungeon name', async () => {
+    freshPriest(1);
+    requirePlayingGame(game);
+    game.dungeons = [createDungeon({ dname: 'The Infernal Caves', flags: { hellish: true } })];
+    const zombie = await createMonsterAt('human zombie', 11, 10);
+    zombie.mpeaceful = false;
+
+    await runExtendedCommand('turn', '\x1b');
+
+    assert.match(game._pending_message, /Since you are in Gehennom, Athena can't help you\./);
+    assert.ok(game.level.monsters.includes(zombie));
+    assert.equal(game._helplessTurns ?? 0, 0);
+    assert.equal(game.context.move, 1);
 });
