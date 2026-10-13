@@ -691,11 +691,16 @@ function deathSummaryLines(killer: string, { gold, score, depth, moves }: GameSu
     return [
         ...(tombstone ? ['', ...stone.map(([col, text]) => ' '.repeat(col) + text), '', ''] : []),
         `${goodbye} ${name} the ${role}...`, '',
-        `You ${deathVerb} in ${deathDungeon} on dungeon level ${depth} with ${score} points,`,
-        `and ${gold} pieces of gold, after ${moves} moves.`,
-        `You were level ${game.u?.ulevel || 1} with a maximum of ${game.u?.uhpmax || 1} hit points when you ${deathVerb}.`,
+        `You ${deathVerb} in ${deathDungeon} on dungeon level ${depth} with ${score} point${plur(score)},`,
+        `and ${gold} piece${plur(gold)} of gold, after ${moves} move${plur(moves)}.`,
+        `You were level ${game.u?.ulevel || 1} with a maximum of ${game.u?.uhpmax || 1} hit point${plur(game.u?.uhpmax || 1)} when you ${deathVerb}.`,
         '',
     ];
+}
+
+// C hacklib.c plur(): the summary lines in end.c pluralize every count.
+function plur(count: number): string {
+    return count === 1 ? '' : 's';
 }
 
 function roleGoodbye() {
@@ -718,13 +723,13 @@ function renderQuitSummaryPage({ gold, score, depth, moves }: GameSummary) {
     terminalLine(
         2, 0,
         `You quit in ${currentDungeonName()} on dungeon level ${
-            depth} with ${score} points,`,
+            depth} with ${score} point${plur(score)},`,
     );
-    terminalLine(3, 0, `and ${gold} pieces of gold, after ${moves} moves.`);
+    terminalLine(3, 0, `and ${gold} piece${plur(gold)} of gold, after ${moves} move${plur(moves)}.`);
     terminalLine(
         4, 0,
         `You were level ${game.u?.ulevel || 1} with a maximum of ${
-            game.u?.uhpmax || 1} hit points when you quit.`,
+            game.u?.uhpmax || 1} hit point${plur(game.u?.uhpmax || 1)} when you quit.`,
     );
     terminalLine(23, 0, '--More--');
     display?.setCursor(8, 23);
@@ -1411,7 +1416,7 @@ export async function finishLivingGame(outcome: LivingOutcome) {
         const company = ['You', ...names].join(' and ');
         if (names.length) lines.push(company);
         const action = outcome === 'ascended' ? 'went to your reward' : 'escaped from the dungeon';
-        lines.push(`${names.length ? '' : 'You '}${action} with ${summary.score} point${summary.score === 1 ? '' : 's'},`);
+        lines.push(`${names.length ? '' : 'You '}${action} with ${summary.score} point${plur(summary.score)},`);
         lines.push(...await finalPossessionLines(possessions));
         lines.push(`and ${summary.gold} piece${summary.gold === 1 ? '' : 's'} of gold, after ${summary.moves} move${summary.moves === 1 ? '' : 's'}.`);
         lines.push(`You were level ${game.u.ulevel} with a maximum of ${game.u.uhpmax} hit points when you ${outcome}.`);
