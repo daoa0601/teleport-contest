@@ -2,6 +2,7 @@
 
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { ringRemovalObstacle } from './accessory.js';
+import { simpleArmorName } from './armor.js';
 import { heroEyeCount, heroEyeName, heroStomachName } from './body_parts.js';
 import {
     A_STR, DISSOLVED, EXT_ENCUMBER, HUNGRY, HVY_ENCUMBER, IS_LAVA, IS_OBSTRUCTED,
@@ -190,7 +191,7 @@ export async function uncursePrayerObject(object: GameObject, label: string | nu
     if (object === state.uarmg && (state.u.glibTurns ?? 0) > 0) {
         state.u.glibTurns = 0;
         refreshProperty('glib', state);
-        await pline('Your gloves are no longer slippery.');
+        await pline(`Your ${simpleArmorName(object, 'uarmg', state)} are no longer slippery.`);
         if (!object.cursed) return;
     }
     const blindfoldOnly = object === state.ublindf && blindfolded(state)

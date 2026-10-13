@@ -15,10 +15,10 @@ import { magicNegation } from '../js/magic_negation.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKey, resetInputState } from '../js/input.js';
-import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, DAGGER, FIGURINE, LEATHER_GLOVES, LOADSTONE, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, DAGGER, FIGURINE, GAUNTLETS_OF_FUMBLING, LEATHER_GLOVES, LOADSTONE, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { startHeroPetrification } from '../js/stoning.js';
-import { grantIntrinsicProperty } from '../js/properties.js';
+import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
@@ -283,6 +283,21 @@ void test('a blind hero feels the deity\'s blessing over the weapon during #pray
 
     assert.equal(dagger.blessed, true);
     assert.ok(messages.some(message => message.includes('You feel the blessing of Ishtar over your dagger.')));
+});
+
+void test('#pray names known gauntlets when curing slippery fingers before uncursing them', async () => {
+    prayerRoom({ hero: { uluck: 13 } });
+    requirePlayingGame(game);
+    const gloves = await addInventoryObject(GAUNTLETS_OF_FUMBLING, { cursed: true });
+    wearHeroArmor(gloves);
+    setPropertyTimeout('glib', 10);
+    initRng(2n);
+
+    const messages = await prayAndReadMessages();
+
+    assert.equal(game.u.glibTurns, 0);
+    assert.equal(gloves.cursed, false);
+    assert.ok(messages.some(message => message.includes('Your gauntlets are no longer slippery.')));
 });
 
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {

@@ -518,7 +518,7 @@ export async function disintegrateWornArmor(armor, { state = game, publish = pli
     await stopHeroOccupation(state, publish);
     return true;
 }
-function simpleArmorName(armor, slot, state) {
+export function simpleArmorName(armor, slot, state) {
     const name = OBJECT_NAMES[armor.otyp];
     if (!name)
         throw new RangeError(`Missing name for armor type ${armor.otyp}`);

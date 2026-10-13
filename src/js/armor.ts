@@ -523,7 +523,7 @@ export async function disintegrateWornArmor(armor: GameObject, {
     return true;
 }
 
-function simpleArmorName(armor: GameObject, slot: ArmorSlot, state: GameState): string {
+export function simpleArmorName(armor: GameObject, slot: ArmorSlot, state: GameState): string {
     const name = OBJECT_NAMES[armor.otyp];
     if (!name) throw new RangeError(`Missing name for armor type ${armor.otyp}`);
     const appearance = state.objectDescriptions?.[armor.otyp]
