@@ -282,6 +282,7 @@ export function restoreHeroNutrition(state = game) {
     requirePlayingGame(state);
     const hero = state.u;
     const before = nearCapacity(state);
+    state.context.botl = hero.uhs !== NOT_HUNGRY || (hero.atemp?.a[A_STR] ?? 0) < 0;
     hero.uhunger = 900;
     hero.uhs = NOT_HUNGRY;
     if (!hero.atemp || !(hero.atemp.a[A_STR] < 0))
