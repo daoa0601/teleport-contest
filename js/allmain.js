@@ -2,6 +2,7 @@ import { finishMonsterHideUnder } from './monster_hiding.js';
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 import { heroIsHallucinating } from './senses.js';
+import { makeBlinded } from './sight_change.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { advanceSpellProtection } from './spell_misc_effects.js';
@@ -1080,17 +1081,15 @@ async function finishInitialTurnMaintenanceAfterConfusion({ sourceTurn, moveAmou
     const game = requireInitializedGame();
     if (!prayerTimeoutFreeze
         && game.u.blindTurns !== undefined && game.u.blindTurns > 0) {
-        const wasBlind = !!game.blind;
-        game.u.blindTurns--;
-        if (game.u.blindTurns === 0) {
-            syncBlindness(game);
-            if (wasBlind && !game.blind) {
-                appendTurnMessage('You can see again.');
-                game.vision_full_recalc = 1;
-                if (game._occupation)
-                    game._occupation = null;
-            }
+        if (game.u.blindTurns === 1) {
+            // C timeout.c restores one tick before make_blinded(0), so the
+            // recovery message precedes toggle_blindness and its redraws.
+            await makeBlinded(0);
+            if (!heroIsBlind(game))
+                await stopHeroOccupation(game);
         }
+        else
+            game.u.blindTurns--;
     }
     if (!prayerTimeoutFreeze
         && game.u.deafTurns !== undefined && game.u.deafTurns > 0) {
