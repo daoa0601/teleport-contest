@@ -1,13 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { NO_MINVENT, W_AMUL } from '../js/const.js';
-import { game, requireGameLevel } from '../js/gstate.js';
+import { MIGR_RANDOM, NO_MINVENT, W_AMUL } from '../js/const.js';
+import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
+import { migrateMonsterOffLevel } from '../js/monster_migration.js';
 import { monsterDeathCount } from '../js/monster_vitals.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
+import { resurrectWizard } from '../js/wizard.js';
 import { knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
@@ -102,4 +104,39 @@ void test('life saving keeps the Wizard alive without starting demigod intervent
     assert.equal(game.context.no_of_wizards, 1);
     assert.equal(!!game.u.uevent?.udemigod, false);
     assert.equal(game.u.udg_cnt, 0);
+});
+
+void test('killing a newly resurrected Wizard gives twenty points of alignment credit', async () => {
+    freshObjectRoom({ moves: 5000, hero: { ulevel: 30, ulevelmax: 30 } });
+    requirePlayingGame(game);
+    resetInputState().feed('    ');
+
+    const wizard = await resurrectWizard();
+    assert.ok(wizard, 'resurrection should create the Wizard');
+    assert.equal(wizard.mpeaceful, 0);
+    await finishHeroMonsterKill(wizard, wizard.mx, wizard.my, {
+        showKillMessage: false, noCorpse: true,
+    });
+
+    assert.equal(game.u.ualign.record, 20);
+});
+
+void test('killing a recalled migrating Wizard gives twenty points of alignment credit', async () => {
+    freshObjectRoom({ moves: 5000, hero: { ulevel: 30, ulevelmax: 30 } });
+    requirePlayingGame(game);
+    const wizard = await createMonsterAt('Wizard of Yendor', 12, 10, NO_MINVENT);
+    await migrateMonsterOffLevel(wizard, game, {
+        dst: { dnum: 0, dlevel: 9 },
+    }, { mode: MIGR_RANDOM });
+    game.moves += 60;
+    resetInputState().feed('    ');
+
+    const recalled = await resurrectWizard();
+    assert.equal(recalled, wizard);
+    assert.equal(wizard.mpeaceful, 0);
+    await finishHeroMonsterKill(wizard, wizard.mx, wizard.my, {
+        showKillMessage: false, noCorpse: true,
+    });
+
+    assert.equal(game.u.ualign.record, 20);
 });

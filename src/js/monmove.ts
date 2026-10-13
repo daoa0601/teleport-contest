@@ -349,6 +349,7 @@ import { displaceMonster, monsterDisplacementFlags } from './monster_displacemen
 import { retouchEquipment } from './hero_retouch.js';
 import { returnHeroToHumanForm, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
+import { resolvePhysicalHeroHug } from './monster_hug.js';
 import {
     cansee,
     clearPath,
@@ -6282,8 +6283,14 @@ async function beginHeroAttackSlot(
     ) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
-        const physicalEffect =
-            attackType === AT_WEAP ? 'physical-unarmed-weapon' : 'physical-natural';
+        const physicalHug = attackType === AT_HUGS && !heroFormSticks(state);
+        if (physicalHug) {
+            damage = await resolvePhysicalHeroHug(monster, damage, state,
+                range => recordRandom(random, calls, range),
+                monsterAttackMessagePublisher(sequence.paging));
+        }
+        const physicalEffect = physicalHug ? 'physical-hug'
+            : attackType === AT_WEAP ? 'physical-unarmed-weapon' : 'physical-natural';
         // hitmu() rolls ordinary physical damage before pline() announces the
         // hit, but knockback and HP subtraction happen after that message.
         // The tty can suspend inside pline() for --More--, so the live actor

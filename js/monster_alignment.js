@@ -2,9 +2,10 @@
 // C refs: priest.c mon_aligntyp() and makemon.c set_malign().
 import { A_NONE } from './const.js';
 import { game } from './gstate.js';
-import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, requireMonsterData, } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SOUND, requireMonsterData, } from './monster_data.js';
 const M2_HOSTILE = 0x00100000;
 const M2_PEACEFUL = 0x00200000;
+const MS_LEADER = 36;
 function monsterAlignmentValue(monster) {
     if (monster.ispriest) {
         if (!monster.epri)
@@ -31,7 +32,7 @@ export function setMonsterMalign(monster, state = game) {
         === Math.sign(state.u?.ualign?.type ?? 0);
     const absoluteAlignment = Math.abs(alignment);
     const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
-    if (monster?.mnum === state.urole?.ldrnum) {
+    if (MONSTER_SOUND[monster.mnum] === MS_LEADER) {
         monster.malign = -20;
     }
     else if (alignment === A_NONE) {

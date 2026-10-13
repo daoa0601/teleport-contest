@@ -1497,6 +1497,8 @@ async function monsterAttackMessage(monster, attack, previousAttack = null, rand
     const game = requireInitializedGame();
     if (attack.effect === 'petrifying-corpse')
         return null;
+    if (attack.effect === 'physical-hug')
+        return null;
     if (attack.effect === 'engulf' || attack.effect === 'engulf-tick'
         || attack.effect === 'engulf-refused' || attack.effect === 'item-theft')
         return null;

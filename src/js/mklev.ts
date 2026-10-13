@@ -1570,6 +1570,8 @@ async function initMonsterGroup(
         );
         if (member) {
             member.mpeaceful = 0;
+            member.mavenge = 0;
+            setMonsterMalign(member);
             centerX = member.mx;
             centerY = member.my;
         }
@@ -1825,6 +1827,7 @@ async function makemon(
         mcanmove: 1, mcansee: 1, mgenmklev: !!game.in_mklev,
         mux: 0, muy: 0,
         msleeping: monsterSleeping, mpeaceful: peaceful ? 1 : 0,
+        malign: 0,
         minvent: monsterInventory,
         inventory: monsterInventory,
         hasInventory: false,
@@ -1842,6 +1845,7 @@ async function makemon(
     if (shaped) {
         if (requestedByHero)
             setMonsterApparentHeroPosition(shaped, game, rn2);
+        setMonsterMalign(shaped);
         level.monsters[monsterIndex] = shaped;
         return finishMonsterBirth(shaped, mmflags);
     }
@@ -2625,6 +2629,7 @@ async function makemon(
         m_lev: baseLevel, female: monsterFemale,
         msleeping: monsterSleeping,
         mpeaceful: clericMinion?.mpeaceful ?? (birthPeaceful ? 1 : 0),
+        malign: 0,
         mcanmove: 1, mcansee: 1,
         mgenmklev: !!game.in_mklev,
         seen_resistance: 0,
@@ -2691,6 +2696,9 @@ async function makemon(
     if (mndx === PM_SHOPKEEPER) {
         monster.mpeaceful = 1;
     }
+    // makemon.c:set_malign() records the finalized birth attitude, before
+    // later changes to the hero's alignment can affect kill credit.
+    setMonsterMalign(monster);
     if (generatedGhostName != null) setMonsterGivenName(monster, generatedGhostName);
     registerQuestLeader(monster);
     level.monsters[monsterIndex] = monster;
@@ -2839,7 +2847,7 @@ export async function splitHeroMonsterForm(state: GameState = game): Promise<Mon
     clone.edog = edog;
     clone.mextra ??= {};
     clone.mextra.edog = edog;
-    delete clone.malign;
+    setMonsterMalign(clone, state);
 
     clone.mhpmax = u.mhmax;
     clone.mhp = Math.trunc(u.mh / 2);
@@ -2991,6 +2999,7 @@ export async function summonNastyMonsters(
             monster.msleeping = 0;
             monster.mpeaceful = 0;
             monster.mtame = 0;
+            setMonsterMalign(monster);
             monster.mspec_used = rnd(4);
             created.push(monster);
 
@@ -3387,7 +3396,7 @@ export function randomEngraving(): { pristine: string; text: string } {
     };
 }
 
-const BONES_VERSION = 10;
+const BONES_VERSION = 11;
 
 function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
@@ -4602,6 +4611,7 @@ async function fillCourtRoom(room: Room): Promise<void> {
     if (ruler) {
         ruler.msleeping = 1;
         ruler.mpeaceful = 0;
+        setMonsterMalign(ruler);
         const mace = await mksobj(MACE, true, false);
         await addObjectToMonsterInventory(ruler, mace, game, { atFront: true });
     }
@@ -4635,7 +4645,10 @@ async function fillCourtRoom(room: Room): Promise<void> {
                 : await makemon(mndx, x, y, MM_ASLEEP | MM_NOGRP);
             if (monster) {
                 monster.msleeping = 1;
-                monster.mpeaceful = 0;
+                if (monster.mpeaceful) {
+                    monster.mpeaceful = 0;
+                    setMonsterMalign(monster);
+                }
             }
         }
     }
@@ -5401,6 +5414,8 @@ async function specialShrinePriest(
         hostile_time: 0,
     };
     priest.mtrapseen = 0x7fffffff;
+    // priest.c:priestini() replaces the birth attitude and species alignment.
+    setMonsterMalign(priest);
 
     if (sanctum && altarAlignment === A_NONE) {
         const amulet = await mksobj(AMULET_OF_YENDOR, true, false);
@@ -6170,6 +6185,11 @@ async function createLuaMonster(context: SpecialLevelContext, options: DesMonste
     applyLuaMonsterAppearance(monster, options.appearance);
     if (monster && options.name != null)
         setMonsterGivenName(monster, options.name);
+    if (monster && peaceful != null) {
+        monster.mpeaceful = peaceful ? 1 : 0;
+        // sp_lev.c:create_monster() resets kill credit after the Lua override.
+        setMonsterMalign(monster);
+    }
     if (monster && options.waiting) {
         monster.mstrategy = (monster.mstrategy ?? 0) | STRAT_WAITFORU;
         monster.waiting = true;
@@ -6205,7 +6225,6 @@ async function createLuaMonster(context: SpecialLevelContext, options: DesMonste
             0, Math.min(49, monster.m_lev + options.m_lev_adj),
         );
     }
-    if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
     if (monster && asleep != null) monster.msleeping = asleep ? 1 : 0;
     return monster ?? null;
 }
