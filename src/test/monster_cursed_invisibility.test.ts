@@ -2,9 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { NO_MINVENT } from '../js/const.js';
+import { plineWithContinuation } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { heroIsUnconscious, putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { revealAggravatingMonster } from '../js/monster_item_use.js';
 import { POT_INVISIBILITY } from '../js/object_data.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { knownObject } from './support/game-objects.js';
@@ -59,3 +62,29 @@ for (const visible of [true, false]) {
         assert.equal(potion.where, 'gone');
     });
 }
+
+void test('an aggravating potion revelation wakes a sleeping hero after its acknowledgment', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const drinker = await createMonsterAt('goblin', 14, 10, NO_MINVENT);
+    putHeroToSleep(10, { state: game });
+    await plineWithContinuation('You dream that you hear a chugging sound.');
+    const input = resetInputState();
+    let acknowledgedRevelation = false;
+    input.display = {
+        async readKey() {
+            assert.equal(heroIsUnconscious(game), true,
+                'the hero remains asleep during the revelation pagers');
+            const screen = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
+            assert.match(screen, /--More--/);
+            if (screen.startsWith('You feel aggravated at the goblin.')) acknowledgedRevelation = true;
+            return 32;
+        },
+    };
+
+    await revealAggravatingMonster(drinker, game);
+
+    assert.equal(acknowledgedRevelation, true);
+    assert.equal(game._helplessTurns, 1);
+    assert.equal(game._helplessDoneMessage, 'Aggravated, you are jolted into full consciousness.');
+});
