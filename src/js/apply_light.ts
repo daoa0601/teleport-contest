@@ -23,7 +23,7 @@ import {
 import { impossible } from './diagnostics.js';
 import { objectWeight } from './weight.js';
 import { d, rn2 } from './rng.js';
-import { TIMEOUT } from './const.js';
+import { setSlipperyHands } from './towel.js';
 import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, MAGIC_LAMP, OBJECT_COST,
     OIL_LAMP, TALLOW_CANDLE, WAX_CANDLE, requireObjectData,
@@ -91,7 +91,7 @@ export async function useLamp(object: GameObject, { state = game }: { state?: Ga
             const gloves = state.uarmg || state.u.uarmg;
             const fingers = gloves ? armorSimpleName(gloves, state) : makePlural(heroFingerName(state));
             await plineWithContinuation(`The lamp spills and covers your ${fingers} with oil.`);
-            state.u.glibTurns = Math.min(TIMEOUT, (state.u.glibTurns ?? 0) + d(2, 10));
+            setSlipperyHands((state.u.glibTurns ?? 0) + d(2, 10), state);
         } else await plineWithContinuation(heroIsBlind(state) ? 'Nothing seems to happen.'
             : `${theName(object, state)} ${objectQuantity(object) === 1 ? 'flickers' : 'flicker'} for a moment, then ${objectQuantity(object) === 1 ? 'dies' : 'die'}.`);
         return result(object, state);
