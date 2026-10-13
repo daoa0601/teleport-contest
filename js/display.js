@@ -13,7 +13,7 @@ import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
 import { cansee, couldsee, vision_recalc } from './vision.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
@@ -849,16 +849,23 @@ function displayMonsterGlyph(mnum, female = false, monsterState = 'normal') {
 }
 function monsterGlyphNumber(mnum, female, state) {
     const offset = state === 'pet' ? GlyphOffset.petMale
-        : state === 'detected' ? GlyphOffset.detectMale : GlyphOffset.monMale;
+        : state === 'detected' ? GlyphOffset.detectMale
+            : state === 'ridden' ? GlyphOffset.riddenMale : GlyphOffset.monMale;
     return offset + mnum + (female ? MONSTER_COLOR.length : 0);
 }
 function heroDisplayGlyph() {
     if (game.u?.m_ap_type === M_AP_OBJECT)
         return apparentObjectGlyph(game.u);
-    if ((game.u?.mtimedone ?? 0) > 0
-        && typeof game.u.umonnum === 'number' && Number.isInteger(game.u.umonnum))
-        return displayMonsterGlyph(game.u.umonnum);
-    return { ch: '@', color: CLR_WHITE, decgfx: false };
+    // display.h:hero_glyph and you.h:Ugender select the current body's sex.
+    // Hero glyph identity still changes when the tty symbol remains '@'.
+    const polymorphed = Upolyd(game.u);
+    const mnum = polymorphed || !game.flags.showrace
+        ? game.u.umonnum : game.urace?.mnum;
+    if (!ismnum(mnum))
+        throw new Error('Hero glyph requires an initialized species');
+    const glyph = displayMonsterGlyph(mnum, polymorphed ? !!game.u.mfemale : !!game.flags.female);
+    return polymorphed ? glyph
+        : { ...glyph, ch: game.flags.showrace ? glyph.ch : '@', color: CLR_WHITE };
 }
 // C display.h:canspotself().  See-invisible does not make the hero's own
 // glyph opaque again; ordinary self projection depends on not being
@@ -1249,6 +1256,16 @@ export function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false, attr
         decgfx = false;
     }
     const nextGlyph = glyph || { kind: 'effect' };
+    if (game.flags.color === false) {
+        color = NO_COLOR;
+        // reset_glyphmap() marks ice sharing the floor symbol with MG_BW_ICE.
+        // tty_print_glyph() displays that flag inversely when permitted.
+        if (nextGlyph.glyph === cmapToGlyph(CmapSymbol.ice)
+            && game.flags.use_inverse !== false
+            && game.iflags.use_inverse !== false && game.iflags.wc_inverse !== false) {
+            attr |= ATR_INVERSE;
+        }
+    }
     // show_glyph() compares glyph identity as well as buffered appearance.
     // Different species can share the same character and color.
     // Once queued, a cell still needs printing if a later update restores it.
@@ -1361,8 +1378,12 @@ export function unmap_invisible(x, y, show = true) {
     return true;
 }
 export function displaySelf() {
-    const glyph = heroDisplayGlyph();
-    show_glyph_cell(game.u.ux, game.u.uy, game.u.usteed?.symbol || glyph.ch, game.u.usteed ? (game.u.usteed.color ?? CLR_BROWN) : glyph.color, false, 0, { ...glyph, kind: 'monster' });
+    // display.h:maybe_display_usteed() gives a visible steed its own identity.
+    const steed = game.u.usteed;
+    const glyph = steed && monsterVisible(steed)
+        ? displayMonsterGlyph(heroIsHallucinating() ? rn2Display(MONSTER_COLOR.length) : steed.mnum, !!steed.female, 'ridden')
+        : heroDisplayGlyph();
+    show_glyph_cell(game.u.ux, game.u.uy, glyph.ch, glyph.color, false, 0, glyph);
 }
 // ── newsym ──
 function monsterDisplayAttribute(monster) {
@@ -1421,7 +1442,7 @@ export function newsym(x, y) {
     // not leak ordinary map glyphs back into the cleared viewport.
     if (game.u?.uswallow) {
         if (game.u.ux === x && game.u.uy === y)
-            show_glyph_cell(x, y, heroDisplayGlyph().ch, heroDisplayGlyph().color, false, 0, { kind: 'monster' });
+            displaySelf();
         return;
     }
     if (restrictedUnderwaterView()
@@ -1747,7 +1768,7 @@ export function swallowed(first = false) {
             color = NO_COLOR;
         show_glyph_cell(sx, sy, ch, color, decgfx);
     }
-    show_glyph_cell(x, y, '@', CLR_WHITE, false);
+    displaySelf();
     lastSwallowedX = x;
     lastSwallowedY = y;
 }
@@ -1852,9 +1873,7 @@ export async function redrawMap() {
             }
         }
     if (game.u?.ux > 0 && canSpotHeroSelf()) {
-        const heroGlyph = heroDisplayGlyph();
-        show_glyph_cell(game.u.ux, game.u.uy, game.u?.usteed?.symbol || heroGlyph.ch, game.u?.usteed
-            ? (game.u.usteed.color ?? CLR_BROWN) : heroGlyph.color, false);
+        displaySelf();
     }
     // vision_recalc's newly visible cells were projected above; source docrt
     // then overlays fmon once more in linked-list order.

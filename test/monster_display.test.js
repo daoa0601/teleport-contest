@@ -7,10 +7,11 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { nameToMonster } from '../js/mondata.js';
 import { setMonsterSpecies } from '../js/monster_species.js';
+import { changeHeroSex } from '../js/hero_species.js';
 import { CORPSE, POT_HEALING, POT_SPEED, STATUE } from '../js/object_data.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { makeBlinded } from '../js/sight_change.js';
-import { CLR_BLUE, CLR_BROWN, CLR_CYAN, CLR_GRAY, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { ATR_INVERSE, CLR_BLUE, CLR_BROWN, CLR_CYAN, CLR_GRAY, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import { cansee } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addTrap } from './support/level-state.js';
@@ -231,6 +232,77 @@ void test('a monster gender change redraws its unchanged map symbol', async () =
     assert.equal(requireScreenCell(10, 11).ch, 'd');
     assert.deepEqual([display.cursorCol, display.cursorRow], [11, 11]);
 });
+void test('changing hero gender redraws the unchanged hero symbol', async () => {
+    freshObjectRoom({ flags: { female: false } });
+    newsym(game.u.ux, game.u.uy);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+    changeHeroSex();
+    newsym(game.u.ux, game.u.uy);
+    await flush_screen(0);
+    assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, '@');
+    assert.deepEqual([display.cursorCol, display.cursorRow], [game.u.ux, game.u.uy + 1]);
+});
+void test('a polymorphed hero redraws when the current body changes gender', async () => {
+    freshObjectRoom({
+        hero: { umonnum: nameToMonster('jackal'), mtimedone: 20, mfemale: false },
+    });
+    newsym(game.u.ux, game.u.uy);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+    game.u.mfemale = true;
+    newsym(game.u.ux, game.u.uy);
+    await flush_screen(0);
+    assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, 'd');
+    assert.deepEqual([display.cursorCol, display.cursorRow], [game.u.ux, game.u.uy + 1]);
+});
+void test('changing the saved human gender preserves a polymorphed body glyph', async () => {
+    freshObjectRoom({
+        flags: { female: false },
+        hero: { umonnum: nameToMonster('jackal'), mtimedone: 20, mfemale: false },
+    });
+    newsym(game.u.ux, game.u.uy);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+    game.flags.female = true;
+    newsym(game.u.ux, game.u.uy);
+    await flush_screen(0);
+    assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, 'd');
+    assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
+});
+void test('showrace redraws the human hero even when the race and role symbols match', async () => {
+    freshObjectRoom({ flags: { showrace: false } });
+    newsym(game.u.ux, game.u.uy);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+    game.flags.showrace = true;
+    newsym(game.u.ux, game.u.uy);
+    await flush_screen(0);
+    assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, '@');
+    assert.deepEqual([display.cursorCol, display.cursorRow], [game.u.ux, game.u.uy + 1]);
+});
+void test('a ridden glyph follows the steed gender rather than the hero gender', async () => {
+    freshObjectRoom({ flags: { female: false } });
+    const steed = await createMonsterAt('pony', 11, 10, MM_NOGRP | NO_MINVENT);
+    game.u.usteed = steed;
+    newsym(game.u.ux, game.u.uy);
+    await flush_screen(1);
+    const display = requireGameDisplay(game);
+    display.setCursor(20, 0);
+    changeHeroSex();
+    newsym(game.u.ux, game.u.uy);
+    await flush_screen(0);
+    assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
+    steed.female = !steed.female;
+    newsym(game.u.ux, game.u.uy);
+    await flush_screen(0);
+    assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, 'u');
+    assert.deepEqual([display.cursorCol, display.cursorRow], [game.u.ux, game.u.uy + 1]);
+});
 void test('taming redraws a monster even with pet highlighting disabled', async () => {
     freshObjectRoom({ flags: { hilite_pet: false } });
     const monster = await createMonsterAt('jackal', 11, 10, MM_NOGRP | NO_MINVENT);
@@ -360,6 +432,33 @@ void test('replacing a raised bridge with its exposed ice preserves the cursor',
     assert.equal(requireScreenCell(10, 11).ch, '.');
     assert.equal(requireScreenCell(10, 11).color, CLR_CYAN);
     assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
+});
+for (const symset of ['ASCII', 'DECgraphics']) {
+    for (const typ of [ICE, DRAWBRIDGE_UP]) {
+        void test(`${symset} ice ${typ === ICE ? 'terrain' : 'under a raised bridge'} uses inverse video without color`, async () => {
+            const level = freshObjectRoom({ flags: { color: false } });
+            game.symset = symset;
+            const location = level.requireAt(11, 10);
+            location.typ = typ;
+            location.drawbridgemask = DB_ICE;
+            newsym(11, 10);
+            await flush_screen(1);
+            const cell = requireScreenCell(10, 11);
+            assert.equal(cell.ch, symset === 'DECgraphics' ? '·' : '.');
+            assert.equal(cell.color, NO_COLOR);
+            assert.equal(cell.attr, ATR_INVERSE);
+        });
+    }
+}
+void test('monochrome ice respects disabling inverse video', async () => {
+    const level = freshObjectRoom({ flags: { color: false, use_inverse: false } });
+    level.requireAt(11, 10).typ = ICE;
+    newsym(11, 10);
+    await flush_screen(1);
+    const cell = requireScreenCell(10, 11);
+    assert.equal(cell.ch, '.');
+    assert.equal(cell.color, NO_COLOR);
+    assert.equal(cell.attr, 0);
 });
 for (const { name, typ, mask, ch, color } of [
     { name: 'ice', typ: ICE, mask: 0, ch: '·', color: CLR_CYAN },

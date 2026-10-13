@@ -1,4 +1,5 @@
 import { GlyphOffset } from './glyph_numbers.js';
+import { ismnum } from './const.js';
 function isRecord(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -20,7 +21,7 @@ export function validSavedGlyphMetadata(value) {
                 && (!('piletop' in value) || value.piletop === false);
         case 'object':
             return isInteger(value.otyp)
-                && (!('corpsenm' in value) || isInteger(value.corpsenm))
+                && (!('corpsenm' in value) || ismnum(value.corpsenm))
                 && (!('statueGlyph' in value) || typeof value.statueGlyph === 'boolean')
                 && (!('piletop' in value) || typeof value.piletop === 'boolean');
         case 'trap':
