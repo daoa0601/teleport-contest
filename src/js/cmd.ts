@@ -108,7 +108,7 @@ import {
 } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
 import {
-    directionAssistPage, promptKey, readDirectionKey,
+    directionAssistPage, promptDirection, promptKey, readDirectionKey,
     restoreCommandMap,
 } from './tty_prompts.js';
 import {
@@ -6030,9 +6030,7 @@ async function applyTool(
             game.context.move = 1;
             return item;
         }
-        const direction = await getAdjacentLocation(
-            'In what direction?', null, game.u.ux, game.u.uy,
-        );
+        const direction = await promptDirection();
         if (!direction) return item;
         game._pending_message = '';
         const result = await useBullwhip(item, direction, {

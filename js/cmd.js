@@ -77,7 +77,7 @@ import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './i
 import { readCommandInput } from './command_input.js';
 import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
-import { directionAssistPage, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
+import { directionAssistPage, promptDirection, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
@@ -5768,7 +5768,7 @@ async function applyTool(item, underlay) {
             game.context.move = 1;
             return item;
         }
-        const direction = await getAdjacentLocation('In what direction?', null, game.u.ux, game.u.uy);
+        const direction = await promptDirection();
         if (!direction)
             return item;
         game._pending_message = '';
