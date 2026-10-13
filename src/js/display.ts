@@ -321,7 +321,9 @@ function observeNearbyObject(object: ObjectGlyphSource, x: number, y: number) {
     // observation when the glyph is generic.  An ordinary type-specific
     // glyph can be rendered without adding that type to discoveries; explicit
     // examination, inventory, and pickup paths own those encounters.
-    if (!generic) return false;
+    // STRANGE_OBJECT lies outside C's generic glyph range, so a mimic's
+    // zero-class disguise cannot become a known object at close range.
+    if (!generic || object.oclass === 0) return false;
     const range = Math.max(game.u?.xray_range ?? -1, 2);
     const dx = x - game.u.ux, dy = y - game.u.uy;
     const nearDistance = range * range * 2 - range;
@@ -927,6 +929,10 @@ function canSpotHeroSelf() {
 }
 
 function objectClassForType(otyp: number) {
+    // objects.h slots 1..17 have matching classes; slot 0 is a strange object.
+    const firstRealObject = OBJECT_BASES[2];
+    if (firstRealObject !== undefined && otyp > 0 && otyp < firstRealObject)
+        return otyp;
     for (let cls = 2; cls < OBJECT_BASES.length - 1; cls++) {
         const first = OBJECT_BASES[cls];
         const next = OBJECT_BASES[cls + 1];
@@ -981,6 +987,9 @@ function objectGlyph(object: ObjectGlyphSource): ObjectGlyph {
     const species = (object.otyp === CORPSE || object.otyp === STATUE)
         && object.corpsenm !== undefined ? { corpsenm: object.corpsenm } : {};
     const glyph = objectGlyphNumber(object, piletop);
+    // reset_glyphmap() resolves both normal and generic object numbers
+    // through objects[].oc_class, including a mimic's zero-class disguise.
+    const displayedType = objectUsesGenericGlyph(object) ? object.oclass : object.otyp;
     return statueSymbol
         ? {
             ch: statueSymbol, color: CLR_WHITE, decgfx: false,
@@ -988,8 +997,7 @@ function objectGlyph(object: ObjectGlyphSource): ObjectGlyph {
             statueGlyph: true, piletop,
         }
         : {
-            ch: activeObjectSymbols()[objectUsesGenericGlyph(object)
-                ? object.oclass : objectClassForType(object.otyp)] || '?',
+            ch: activeObjectSymbols()[objectClassForType(displayedType)] || '?',
             color: objectColor(object), decgfx: false,
             kind: 'object', otyp: object.otyp, ...species, glyph,
             statueGlyph: object.otyp === STATUE, piletop,
