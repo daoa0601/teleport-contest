@@ -1745,23 +1745,26 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         && x && y) {
         await mkobj_at(RANDOM_CLASS, x, y, true);
     }
-    // C makemon.c creates an ordinary aligned/high cleric without MM_EPRI or
-    // MM_EMIN as a roaming minion before group and inventory initialization.
-    // create_particular() applies an explicit hostile disposition only after
-    // this constructor returns, so both alignment/renegade draws remain live.
-    let clericMinion = null;
-    if ([PM_ALIGNED_CLERIC, PM_HIGH_CLERIC].includes(mndx)
-        && !(mmflags & (MM_EPRI | MM_EMIN))) {
+    // Ordinary clerics always become roamers; ordinary Angels have a
+    // one-in-three chance. Callers requesting priest/minion data own its
+    // alignment themselves. This birth state also applies under NO_MINVENT.
+    let roamingMinion = null;
+    const becomesRoamer = [PM_ALIGNED_CLERIC, PM_HIGH_CLERIC].includes(mndx)
+        ? !(mmflags & (MM_EPRI | MM_EMIN))
+        : mndx === MONSTER_NAME.indexOf('Angel') && !(mmflags & MM_EMIN) && !rn2(3);
+    if (becomesRoamer) {
         const minAlign = rn2(3) - 1;
         const renegade = !!(mmflags & MM_ANGRY) || rn2(3) === 0;
         const minionPeaceful = minAlign === (game.u?.ualign?.type ?? 0)
             ? !renegade : renegade;
-        clericMinion = {
+        roamingMinion = {
             min_align: minAlign,
             renegade,
             mpeaceful: minionPeaceful ? 1 : 0,
         };
-        pendingMonster.mpeaceful = clericMinion.mpeaceful;
+        pendingMonster.isminion = 1;
+        pendingMonster.emin = { min_align: minAlign, renegade };
+        pendingMonster.mpeaceful = roamingMinion.mpeaceful;
     }
     if (mdat == null && !(mmflags & MM_NOGRP)) {
         const geno = MONSTER_GENO[mndx] || 0;
@@ -1787,7 +1790,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             }
         }
         else if ((genderFlags & M2_MINION)
-            && (clericMinion?.min_align ?? monsterAlignmentType(pendingMonster)) === A_LAWFUL) {
+            && (roamingMinion?.min_align ?? monsterAlignmentType(pendingMonster)) === A_LAWFUL) {
             object.cursed = false;
             object.spe = Math.max(0, object.spe);
             object.oerodeproof = true;
@@ -1939,12 +1942,8 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         const isLord = !!(genderFlags & 0x00000400);
         const weapon = await mksobj(rn2(3) ? LONG_SWORD : SILVER_MACE, false, false);
         const promote = !rn2(20) || isLord;
-        if (promote && requireMonsterData(MONSTER_ALIGNMENT, mndx) > 0) {
-            weapon.oextra = {
-                ...(weapon.oextra || {}),
-                oname: weapon.otyp === LONG_SWORD ? 'Sunsword' : 'Demonbane',
-            };
-            weapon.artifact = true;
+        if (promote && monsterAlignmentType(pendingMonster) === A_LAWFUL) {
+            nameArtifact(weapon, artifactByName(weapon.otyp === LONG_SWORD ? 'Sunsword' : 'Demonbane'));
         }
         weapon.blessed = true;
         weapon.cursed = false;
@@ -2610,7 +2609,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         mx: x, my: y, mhp: hp, mhpmax: hp,
         m_lev: baseLevel, female: monsterFemale,
         msleeping: monsterSleeping,
-        mpeaceful: clericMinion?.mpeaceful ?? (birthPeaceful ? 1 : 0),
+        mpeaceful: roamingMinion?.mpeaceful ?? (birthPeaceful ? 1 : 0),
         malign: 0,
         mcanmove: 1, mcansee: 1,
         mgenmklev: !!game.in_mklev,
@@ -2634,13 +2633,13 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         // pickup, polymorph, and loss paths explicitly set NEED_WEAPON.
         weaponCheck: 0,
     };
-    if (clericMinion) {
+    if (roamingMinion) {
         monster.isminion = 1;
         monster.emin = {
-            min_align: clericMinion.min_align,
-            renegade: clericMinion.renegade,
+            min_align: roamingMinion.min_align,
+            renegade: roamingMinion.renegade,
         };
-        monster.maligntyp = clericMinion.min_align;
+        monster.maligntyp = roamingMinion.min_align;
     }
     if (mndx === PM_LONG_WORM) {
         if (pendingMonster.wormno !== undefined)
