@@ -61,7 +61,8 @@ void test('offering without an altar does not use a turn', async () => {
     assert.match(game._pending_message, /not on an altar/);
 });
 
-for (const condition of ['confusion', 'stunned'] as const) {
+const persistentImpairments: readonly ['confusion', 'stunned'] = ['confusion', 'stunned'];
+for (const condition of persistentImpairments) {
     void test(`#offer is refused while ${condition} persists without a countdown`, async () => {
         freshAltar();
         requirePlayingGame(game);
