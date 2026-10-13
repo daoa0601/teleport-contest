@@ -248,7 +248,7 @@ import {
     LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
     BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION,
     BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF,
-    BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE,
+    BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY,
     TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL,
     RIN_CONFLICT, MEAT_RING,
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN,
@@ -370,6 +370,7 @@ import { checkHeroLeashes, useLeash } from './leash_apply.js';
 import { useGrease } from './grease_apply.js';
 import { useStethoscope } from './stethoscope.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
+import { useHornOfPlenty } from './horn_of_plenty.js';
 import { useSaddle } from './steed.js';
 import {
     isRoyalJelly, useRoyalJelly,
@@ -5945,6 +5946,11 @@ async function doapply(cannedInvlet: string | null = null): Promise<void> {
 async function applyTool(
     item: GameObject, underlay: ReturnType<typeof snapshotMenuUnderlay>,
 ): Promise<GameObject | null> {
+    if (item.otyp === HORN_OF_PLENTY) {
+        await useHornOfPlenty(item);
+        game.context.move = 1;
+        return item;
+    }
     if (item.otyp === BAG_OF_TRICKS) {
         await useBagOfTricks(item);
         game.context.move = 1;
