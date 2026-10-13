@@ -67,3 +67,20 @@ for (const showrace of [true, false]) {
         assert.match(description, /^:.*a lizard \(newt called Aster\)$/);
     });
 }
+
+for (const form of ['ghost', 'shade']) {
+    void test(`self-farlook includes the blank symbol's ambiguity while polymorphed into a ${form}`, async () => {
+        freshObjectRoom({ role: 'wizard', flags: { tips: false },
+            hero: { umonnum: nameToMonster(form), mh: 8, mhmax: 8 } });
+        game.plname = 'Aster';
+        newsym(game.u.ux, game.u.uy);
+        const input = resetInputState();
+        input.feed(';.');
+
+        await rhack(0);
+        await flush_screen(1);
+
+        const description = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trim();
+        assert.ok(description?.endsWith(`can be many things (${form} called Aster)`), description);
+    });
+}

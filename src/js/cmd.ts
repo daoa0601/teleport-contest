@@ -4803,8 +4803,10 @@ async function verboseFarlookDescription(x: number, y: number): Promise<string> 
         if (!explanation) throw new Error(`Displayed species ${species} has no monster class description`);
         const includesHero = symbol === '@' && !heroIsPolymorphed(game) && game.urace
             && game.urace.name !== 'human' && game.urace.name !== 'elf';
-        const classDescription = withIndefiniteArticle(explanation)
-            + (includesHero ? ' or you' : '');
+        // A blank also denotes stone, air, darkness, and unexplored squares.
+        // C collapses more than four meanings before appending self_lookat().
+        const classDescription = symbol === ' ' ? 'can be many things'
+            : withIndefiniteArticle(explanation) + (includesHero ? ' or you' : '');
         return `${symbol}\x1b[8C${classDescription} (${await farlookLocationDescription(x, y)})`;
     }
     const loc = game.level?.at(x, y);
