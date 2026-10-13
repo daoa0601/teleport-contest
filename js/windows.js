@@ -8,7 +8,7 @@
 // pagination, cursor position, and input boundaries.
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
-import { docrt, flush_screen } from './display.js';
+import { clearMessageWindow, docrt, flush_screen } from './display.js';
 import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED } from './const.js';
 import { NO_COLOR } from './terminal.js';
 import { menuLayout, windowOrigin, selectableMenuText, paintMenuPage, snapshotMenuUnderlay, restoreMenuUnderlay, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from './tty_menu.js';
@@ -265,8 +265,11 @@ export async function showChoiceWindow({ title, entries, validKeys = null, }) {
     const d = display();
     if (!d)
         return 27;
-    const underlay = snapshotMenuUnderlay();
     const underlayCursor = { col: d.cursorCol, row: d.cursorRow, visible: d.cursorVisible };
+    // tty_display_nhwindow() clears WIN_MESSAGE before painting a menu.
+    // Save the map after that erasure so dismissal cannot revive old prose.
+    clearMessageWindow();
+    const underlay = snapshotMenuUnderlay();
     const rows = [
         // tty menu prompts inherit `menu_headings`; the default is inverse.
         { text: title, attr: ATR_INVERSE },
@@ -285,7 +288,6 @@ export async function showChoiceWindow({ title, entries, validKeys = null, }) {
     const menu = menuLayout(rows, d.cols, d.rows, game.flags.menu_overlay !== false);
     let page = 0;
     let key;
-    d.clearRow(0);
     for (;;) {
         const pageRows = menu.rows.slice(page * menu.pageSize, (page + 1) * menu.pageSize);
         paintMenuPage(d, menu, page, pageRows, underlay);
@@ -314,11 +316,7 @@ export async function showChoiceWindow({ title, entries, validKeys = null, }) {
     // tty_destroy_nhwindow() erases every active menu before its caller
     // opens another window or asks for more input.
     if (underlay) {
-        for (const [row, cells] of underlay.entries()) {
-            for (const [col, cell] of cells.entries()) {
-                d.setCell(col, row, cell.ch, cell.color, cell.attr);
-            }
-        }
+        restoreMenuUnderlay(underlay);
         d.setCursor(underlayCursor.col, underlayCursor.row);
         d.cursorVisible = underlayCursor.visible;
     }
