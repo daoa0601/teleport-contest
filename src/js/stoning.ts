@@ -210,10 +210,7 @@ export async function fixHeroPetrification({ state = game }: { state?: GameState
     const message = heroIsHallucinating(state)
         ? `What a pity--you just ruined a future piece of ${currentAttribute(A_CHA, state) > 15 ? 'fine ' : ''}art!`
         : 'You feel limber!';
-    state.u.stonedTurns = 0;
-    state.u.stoned = false;
-    await plineWithContinuation(message);
-    clearHeroPetrification(state);
+    await setHeroPetrificationTimeout(0, { state, message });
     return true;
 }
 

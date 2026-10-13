@@ -4,13 +4,26 @@ import { SICK_NONVOMITABLE, SICK_VOMITABLE } from '../js/const.js';
 import { bot, flush_screen, plineWithContinuation } from '../js/display.js';
 import { cureHeroSickness, startHeroSickness } from '../js/hero_illness.js';
 import { setHeroSlimingTimeout } from '../js/slime.js';
-import { setHeroPetrificationTimeout } from '../js/stoning.js';
+import { fixHeroPetrification, setHeroPetrificationTimeout } from '../js/stoning.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 function status(): string {
     return requireScreenRow(23).map(cell => cell.ch).join('');
 }
+
+void test('curing petrification removes Stone when the cure feedback is displayed', async () => {
+    freshObjectRoom();
+    await setHeroPetrificationTimeout(5);
+    await bot();
+    assert.match(status(), /\bStone\b/);
+
+    await fixHeroPetrification();
+    await flush_screen(1);
+
+    assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /You feel limber!/);
+    assert.doesNotMatch(status(), /\bStone\b/);
+});
 
 for (const [type, label] of [
     [SICK_VOMITABLE, 'FoodPois'], [SICK_NONVOMITABLE, 'TermIll'],
