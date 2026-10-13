@@ -3,7 +3,7 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { DUST, LEVEL_TELEP, NO_MINVENT } from '../js/const.js';
-import { newsym, plineWithContinuation } from '../js/display.js';
+import { flush_screen, newsym, plineWithContinuation } from '../js/display.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
@@ -154,6 +154,27 @@ void test('a level teleport trap step gives destination monsters their response 
     assert.equal(game.level, destination);
     assert.ok(game.u.uhp < 100, 'the giant attacks after the timed step');
     assert.equal(game.moves, turn + 1, 'the step consumes one world turn');
+});
+void test('fuzzer level teleport to the current level preserves trap feedback', async () => {
+    const { source } = freshConnectedLevels({ destinationDepth: 1 });
+    requirePlayingGame(game);
+    game.iflags.debug_fuzzer = true;
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    const trap = addTrap(source, LEVEL_TELEP, 11, 10);
+    const input = resetInputState();
+    input.feed('l');
+    await moveloop_core();
+    await flush_screen(1);
+    assert.equal(game.level, source, 'the hero stays on the departure level');
+    assert.equal(game.u.ux, 11);
+    assert.equal(game.u.uy, 10);
+    assert.equal(source.traps.includes(trap), false, 'the trap is consumed');
+    assert.equal(game.u.confusionTurns, 3);
+    assert.equal(game.u.utotype, 0, 'same-level travel is finished');
+    const topline = game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('') ?? '';
+    assert.match(topline, /You step onto a level teleport trap!/);
+    assert.match(topline, /You feel disoriented\./);
 });
 void test('stepping onto a level teleport trap wears departure engravings before travelling', async () => {
     const { source, destination } = freshConnectedLevels();

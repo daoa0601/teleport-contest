@@ -88,8 +88,14 @@ export function scheduleLevelChange(
 export async function finishScheduledLevelChange(): Promise<void> {
     const travel = game._scheduledLevelChange;
     if (!travel) return;
+    requirePlayingGame(game);
+    const destination = game.u.utolev;
+    if (!destination) throw new Error('Scheduled level travel has no destination');
     delete game._scheduledLevelChange;
-    await travel.changeLevel(...travel.args);
+    // C do.c:deferred_goto() preserves the topline when travel stays here.
+    if (game.u.uz.dnum !== destination.dnum
+        || game.u.uz.dlevel !== destination.dlevel)
+        await travel.changeLevel(...travel.args);
     game.u.utotype = 0;
 }
 
