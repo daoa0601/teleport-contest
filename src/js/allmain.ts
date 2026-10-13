@@ -42,6 +42,7 @@ import { RLOC_NOMSG, WATER } from './const.js';
 import { presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse } from './monster_item_use.js';
 import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
+import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
 import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
@@ -547,6 +548,9 @@ async function enterTutorial() {
     game.u.uz = { ...target };
     game._specialLevelPrototype = 'tut-1';
     await mklev();
+    // goto_level() arrives through u_on_rndspot(), even when Lua restricts
+    // the region to a single square.
+    await placeHeroAtRandomArrival(game.level.downTeleportRegion);
     const tutorialLevel = game.level;
     const tutorialStairs = game.stairs;
     const tutorialPosition = {

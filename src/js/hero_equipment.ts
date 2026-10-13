@@ -11,18 +11,20 @@ import type { GameObject } from './object_types.js';
 import { syncBlindness } from './senses.js';
 import { losePrimaryWeapon, releaseWeaponSlots } from './weapon_slots.js';
 
-export async function removeHeroEquipment(object: GameObject, state: GameState = game): Promise<void> {
+export async function removeHeroEquipment(object: GameObject, state: GameState = game, {
+    deferArmorClass = false,
+}: { deferArmorClass?: boolean } = {}): Promise<void> {
     const armorSlot = armorSlotFor(object.otyp);
     if (state.uskin === object) {
         state.uskin = null;
         object.owornmask = (object.owornmask ?? 0) & ~I_SPECIAL;
-        await clearHeroArmor(object, state);
+        await clearHeroArmor(object, state, { deferArmorClass });
     }
     if (armorSlot && (state[armorSlot] === object
         || state.u?.[armorSlot] === object)) {
-        await clearHeroArmor(object, state);
+        await clearHeroArmor(object, state, { deferArmorClass });
     }
-    clearHeroAccessory(object, state);
+    clearHeroAccessory(object, state, { deferArmorClass });
     if (state.ublindf === object || state.u?.ublindf === object) {
         unequipEyewear(object, state);
         syncBlindness(state);

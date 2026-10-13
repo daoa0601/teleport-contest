@@ -35,7 +35,9 @@ async function storeTutorialState(state) {
     const inventory = [...(state.inventory || [])];
     for (const object of inventory) {
         const mask = object.owornmask || 0;
-        await removeHeroEquipment(object, state);
+        // nhl_gamestate() uses setnotworn(); find_ac() belongs to the next
+        // command-loop refresh, after the tutorial entry pager.
+        await removeHeroEquipment(object, state, { deferArmorClass: true });
         for (const [slot] of WORN_SLOTS) {
             if (state[slot] === object)
                 state[slot] = null;
