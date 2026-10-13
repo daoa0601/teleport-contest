@@ -3741,13 +3741,16 @@ export async function moveloop_core() {
             if (delayed.finishMessage)
                 await plineWithContinuation(delayed.finishMessage);
             await finishArmorRemoval(delayed.object, { silent: true });
+        }
+        g._delayedAction = null;
+        // C moveloop_core() completes travel caused by unmul() before find_ac().
+        // Arrival pagers retain the AC from before the armor was removed.
+        await finishScheduledLevelChange();
+        if (g.program_state.gameover) return;
+        if (delayed.kind === 'remove') {
             findArmorClass(g);
             g._armorClassDirty = false;
         }
-        g._delayedAction = null;
-        // C moveloop_core() takes travel caused by unmul() before command input.
-        await finishScheduledLevelChange();
-        if (g.program_state.gameover) return;
     } else if (g._delayedAction) {
         // A delayed action spends movement without reading another command.
         g.u.umoved = false;
