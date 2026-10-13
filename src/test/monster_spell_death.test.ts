@@ -20,7 +20,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { installPagerInput } from './support/pager-input.js';
 import type { InputGate } from '../js/input.js';
 
-const SPELL_PROSE = /^$|survived that attempt on your life|mumbled curse|priest|cleric|lich|wounds|geyser|die|medallion|frozen|touch of death|pillar of fire|lightning|curses|misses|normal|head suddenly|return|Goodbye|points|But wait|feel much better/i;
+const SPELL_PROSE = /^$|survived that attempt on your life|mumbled curse|priest|cleric|lich|wounds|geyser|die|medallion|frozen|touch of death|pillar of fire|lightning|curses|misses|normal|head suddenly|return|Goodbye|points|But wait|feel much better|Do not pass Go|Your body rises from the dead/i;
 
 async function runSpellTurn(input: InputGate, messages: string[], refuseDeath = false) {
     input.beforeRead = () => { messages.push(game._pending_message || ''); };

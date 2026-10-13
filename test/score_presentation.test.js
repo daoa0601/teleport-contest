@@ -215,6 +215,7 @@ void test('raw scores scroll a long own-score list while retaining the current g
 void test('a starvation death commits after both death pages and shows its native score description', async () => {
     const storage = memoryStorage();
     const input = readyToQuit(storage);
+    game.moves = 40;
     game.flags.bones = false;
     game.u.uhp = 0;
     const ending = finishOrdinaryDeath({ killer: 'starvation', deathCause: 'died of starvation' });

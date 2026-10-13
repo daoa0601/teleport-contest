@@ -1,16 +1,37 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { docrt, flush_screen } from '../js/display.js';
+import { docrt, flush_screen, plineWithContinuation } from '../js/display.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { ATR_INVERSE, NO_COLOR, Terminal } from '../js/terminal.js';
-import { showDisclosureOverlay } from '../js/windows.js';
+import { showChoiceWindow, showDisclosureOverlay } from '../js/windows.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
 
 function rowText(row: number): string {
     return requireGameDisplay().grid[row]?.map(cell => cell.ch).join('').trimEnd() ?? '';
+}
+
+for (const kind of ['prose', 'choices'] as const) {
+    void test(`a ${kind} window acknowledges unread prose before painting its contents`, async () => {
+        freshPlayableRoom();
+        await plineWithContinuation('You study the markings.');
+        const input = resetInputState();
+        const window = kind === 'prose'
+            ? showDisclosureOverlay(['The runes describe a doorway.'])
+            : showChoiceWindow({ title: 'Choose a doorway:', entries: [{ key: 'a', text: 'the east doorway' }] });
+        try {
+            await input.waitUntilBlocked();
+            assert.equal(rowText(0), 'You study the markings.--More--');
+            input.feed(' ');
+            await input.waitUntilBlocked();
+            assert.match(rowText(0), kind === 'prose' ? /The runes describe a doorway\./ : /Choose a doorway:/);
+        } finally {
+            input.feed('\x1b\x1b');
+            await window;
+        }
+    });
 }
 
 for (const { width, firstColumn, mapVisible } of [

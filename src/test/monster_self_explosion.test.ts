@@ -23,7 +23,7 @@ import { polymonHero } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { createDungeon } from './support/topology.js';
 
-const EXPLOSION_PROSE = /^$|freaked out|seem unaffected|reconstitutes|puff of smoke|stagger under your heavy load|rebalance your load|boots smoulder|survived that attempt on your life|explodes|Boom|caught in|medallion|But wait|fatal|feel|burn|frozen|cold|hot|electri|die|destroyed|killed|potion|scroll|pit|fall|evaporat|door|turn into|armor|Goodbye|points|experience/i;
+const EXPLOSION_PROSE = /^$|freaked out|seem unaffected|reconstitutes|puff of smoke|stagger under your heavy load|rebalance your load|boots smoulder|survived that attempt on your life|explodes|Boom|caught in|medallion|But wait|fatal|feel|burn|frozen|cold|hot|electri|die|destroyed|killed|potion|scroll|pit|fall|evaporat|door|turn into|armor|Goodbye|points|experience|Do not pass Go/i;
 
 function explosionRoom() {
     const input = freshTurnRoom({ role: 'barbarian', left: 1, right: 18, top: 1, bottom: 18 });

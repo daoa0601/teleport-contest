@@ -14,12 +14,14 @@ export class InputGate {
     beforeRead;
     display;
     queue;
+    commandKeys;
     pendingRead;
     blockedWaiters;
     constructor({ beforeRead = null, display = null } = {}) {
         this.beforeRead = beforeRead;
         this.display = display;
         this.queue = [];
+        this.commandKeys = [];
         this.pendingRead = null;
         this.blockedWaiters = [];
     }
@@ -42,7 +44,18 @@ export class InputGate {
         this.pendingRead = null;
         resolve(code);
     }
+    queueCommandKeys(keys) {
+        this.commandKeys.push(...[...keys].map(keyCode));
+    }
+    clearCommandKeys() {
+        this.commandKeys.length = 0;
+    }
+    takeCommandKey() {
+        return this.commandKeys.shift();
+    }
     async readKey() {
+        // tty input belongs to the player. Command owners consume canned
+        // choices explicitly so message pagers cannot steal item letters.
         await this.beforeRead?.();
         const queued = this.queue.shift();
         if (queued !== undefined)
@@ -70,6 +83,7 @@ export class InputGate {
     }
     clear() {
         this.queue.length = 0;
+        this.commandKeys.length = 0;
     }
     get isBlocked() {
         return this.pendingRead !== null;
@@ -86,6 +100,15 @@ export function pushKey(key) {
 }
 export function pushKeys(keys) {
     activeInputGate.feed(keys);
+}
+export function queueCommandKeys(keys) {
+    activeInputGate.queueCommandKeys(keys);
+}
+export function clearCommandKeys() {
+    activeInputGate.clearCommandKeys();
+}
+export function takeCommandKey() {
+    return activeInputGate.takeCommandKey();
 }
 export async function nhgetch() {
     // tty_nhgetch() clears WIN_STOP before reading any key, including a

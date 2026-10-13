@@ -33,7 +33,6 @@ import { impactDrop } from './object_migration.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import { heroPassesWalls } from './hero_species.js';
 import { d, rn2, rnd } from './rng.js';
-import { stopRun } from './runmode.js';
 import { artifactById } from './artifacts.js';
 import { fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain, } from './ball.js';
 import { pitsAreConjoined } from './pit_connections.js';
@@ -74,6 +73,8 @@ import { resetHeroTrap } from './terrain_movement.js';
 import { monsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { trapTriggeredByFloor } from './monmove.js';
+import { monsterLocomotion } from './monster_locomotion.js';
 import { observeObject } from './object_knowledge.js';
 import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
 const M1_CLING = 0x00000010;
@@ -855,28 +856,12 @@ async function triggerRollingBoulderTrap(trap) {
         await plineWithContinuation(wasKnown
             ? 'No boulder was released.' : 'Fortunately for you, no boulder was released.');
 }
-async function triggerBearTrap(trap, { failedUntrap = false, forceTrap = false, forceBungle = false, viaSitting = false, tookPlunge = false, } = {}) {
+async function triggerBearTrap(trap, { failedUntrap = false, forceTrap = false, viaSitting = false, } = {}) {
     requirePlayingGame(game);
     const hero = game.u;
     const levitating = hero.levitating || game.levitating;
     const flying = hero.flying || game.flying;
     const forced = forceTrap || failedUntrap;
-    const owner = trap.madeby_u ? 'your' : 'a';
-    if (!forced) {
-        if (levitating || (flying && !viaSitting && !tookPlunge)) {
-            if (trap.tseen)
-                await plineWithContinuation(`You ${levitating ? 'float' : 'fly'} over ${owner} ${trapName(trap.ttyp)}.`);
-            return false;
-        }
-        if (trap.tseen && !hero.fumbling
-            && !forceBungle && !tookPlunge && rn2(5) === 0) {
-            await plineWithContinuation(`You escape ${owner} ${trapName(trap.ttyp)}.`);
-            return false;
-        }
-    }
-    if (hero.usteed)
-        monsterLearnsTrap(hero.usteed, trap);
-    monstersSeeTrap(game, trap);
     const damage = d(2, 4);
     if (!forced && !viaSitting && (levitating || flying))
         return false;
@@ -1083,7 +1068,46 @@ export async function prepareHoleFall(trap, { tookPlunge = false } = {}) {
 export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel = null, viaSitting = false, failedUntrap = false, forceTrap = false, forceBungle = false, noWebMessage = false, tookPlunge = false, recursiveTrap = false, } = {}) {
     if (!trap)
         return { died: false, shortCircuited: false };
-    stopRun();
+    endVoluntaryMultiTurn();
+    requirePlayingGame(game);
+    const hero = game.u;
+    const pit = is_pit(trap.ttyp);
+    const sokobanFall = game.level.flags.sokoban_rules
+        && (pit || trap.ttyp === HOLE || trap.ttyp === TRAPDOOR);
+    const forced = forceTrap || failedUntrap
+        || (trap.ttyp === TELEP_TRAP && trap.teledest
+            && isok(trap.teledest.x, trap.teledest.y));
+    const owner = trap.madeby_u ? 'your'
+        : trap.ttyp === ARROW_TRAP ? 'an' : 'a';
+    if (sokobanFall) {
+        await plineWithContinuation(`Air currents pull you down into ${owner} ${trapName(trap.ttyp, { ignoreHallucination: true })}!`);
+    }
+    else if (!forced) {
+        const airborne = hero.levitating || game.levitating
+            || ((hero.flying || game.flying) && !viaSitting && !tookPlunge);
+        if (trapTriggeredByFloor(trap) && airborne) {
+            const locomotion = hero.levitating || game.levitating ? 'float'
+                : hero.flying || game.flying ? 'fly' : monsterLocomotion(heroMonsterForm(), 'step');
+            if (trap.tseen)
+                await plineWithContinuation(`You ${locomotion} over ${owner} ${trapName(trap.ttyp)}.`);
+            return { died: false, shortCircuited: false };
+        }
+        const previousPit = game.level.traps.find(candidate => candidate.tx === hero.ux0 && candidate.ty === hero.uy0);
+        const fromPit = pit && hero.utrap && hero.utraptype === TT_PIT
+            && previousPit && is_pit(previousPit.ttyp);
+        const conjoined = fromPit && pitsAreConjoined(previousPit, trap);
+        const adjacent = fromPit && (hero.dx || hero.dy);
+        if (trap.tseen && !hero.fumbling && trap.ttyp !== MAGIC_PORTAL
+            && trap.ttyp !== VIBRATING_SQUARE && trap.ttyp !== ANTI_MAGIC
+            && !forceBungle && !tookPlunge && !conjoined && !adjacent
+            && (rn2(5) === 0 || (pit && (heroFormFlags() & M1_CLING)))) {
+            await plineWithContinuation(`You escape ${owner} ${trapName(trap.ttyp)}.`);
+            return { died: false, shortCircuited: false };
+        }
+    }
+    if (hero.usteed)
+        monsterLearnsTrap(hero.usteed, trap);
+    monstersSeeTrap(game, trap);
     let died = false;
     let shortCircuited = false;
     switch (trap.ttyp) {
@@ -1123,7 +1147,7 @@ export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel =
             break;
         case BEAR_TRAP:
             died = await triggerBearTrap(trap, {
-                failedUntrap, forceTrap, forceBungle, viaSitting, tookPlunge,
+                failedUntrap, forceTrap, viaSitting,
             });
             break;
         case FIRE_TRAP:

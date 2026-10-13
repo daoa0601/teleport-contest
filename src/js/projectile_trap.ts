@@ -19,6 +19,7 @@ import { ARROW, DART, OBJECT_NAMES } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { rn2, rnd } from './rng.js';
 import { monsterTrapVisibility } from './trap.js';
+import { newsym } from './display.js';
 import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 
@@ -96,7 +97,10 @@ export async function beginMonsterProjectileTrap(
     const projectileType = trap.ttyp === DART_TRAP ? DART : ARROW;
     const missile = await makeTrapMissile(projectileType, trap);
     if (projectileType === DART && random(6) === 0) missile.opoisoned = 1;
-    if (visibility.inSight) trap.tseen = true;
+    if (visibility.inSight && !trap.tseen) {
+        trap.tseen = true;
+        newsym(trap.tx, trap.ty);
+    }
     const hit =
         findMonsterArmorClass(monster) + (trap.ttyp === ARROW_TRAP ? 8 : 7) + (missile.spe ?? 0) <=
         rollOne(20);
