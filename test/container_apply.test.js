@@ -51,10 +51,11 @@ for (const { selection, answers, putClubFirst, expectedMove } of [
         requirePlayingGame(game);
         game.u.uhp = game.u.uhpmax = 100;
         const bag = await unlockedContainer(BAG_OF_HOLDING, 'a', { cknown: true });
+        // Auto-selection follows inventory letters, so the club must precede the wand.
         if (putClubFirst)
-            await addInventoryObject(CLUB, { invlet: 'c' });
+            await addInventoryObject(CLUB, { invlet: 'b' });
         const wand = await addInventoryObject(WAN_CANCELLATION, {
-            invlet: 'b', spe: 1, pickup_prev: true,
+            invlet: putClubFirst ? 'c' : 'b', spe: 1, pickup_prev: true,
         });
         const remainingWand = await addInventoryObject(WAN_CANCELLATION, {
             invlet: 'd', spe: 1,
