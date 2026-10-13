@@ -27,7 +27,7 @@ import { addInventoryObject, floorObject, knownObject, untimedCorpse } from './s
 import { installPolymorphedHero, installPunishedHero } from './support/hero-state.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenCell } from './support/screen.js';
-import { docrt, flush_screen } from '../js/display.js';
+import { docrt, flush_screen, pline } from '../js/display.js';
 
 void test('a level transition loads the destination before acknowledging its prerequisite', async () => {
     const { destination } = freshConnectedLevels();
@@ -35,10 +35,9 @@ void test('a level transition loads the destination before acknowledging its pre
     destination.downTeleportRegion = { lx: 13, ly: 10, hx: 13, hy: 10 };
     await docrt();
     await flush_screen(1);
+    await pline('Endgame prerequisite: a - the Amulet of Yendor.');
     const input = resetInputState();
-    const changing = gotoLevel({ dlevel: 2 }, {
-        preArrivalMessage: 'Endgame prerequisite: a - the Amulet of Yendor.',
-    });
+    const changing = gotoLevel({ dlevel: 2 });
     await input.waitUntilBlocked();
 
     try {

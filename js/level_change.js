@@ -7,7 +7,7 @@ import { runDueTimers } from './timer_effects.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt, bot, displayMessageWindow, } from './display.js';
+import { flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt, bot, } from './display.js';
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { d, rnd, rn2 } from './rng.js';
 import { deliverMigratingObjects, impactDrop } from './object_migration.js';
@@ -38,7 +38,7 @@ import { COLNO, ROWNO, CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, IS_POO
 import { blocksMove } from './hack.js';
 import { resurrectWizard } from './wizard.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-export async function gotoLevel(targetDepth, { arrival = 'random', ladder = false, postMessage = '', preArrivalMessage = '', } = {}) {
+export async function gotoLevel(targetDepth, { arrival = 'random', ladder = false, postMessage = '', } = {}) {
     requirePlayingGame(game);
     const oldDepth = { ...game.u.uz };
     const destinationDepth = { ...oldDepth, ...targetDepth };
@@ -165,7 +165,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         postMessage = '';
         await plineWithContinuation(message);
     };
-    const died = await arriveOnLevel(oldDepth, { arrival, ladder, followers, beforeGlow, preArrivalMessage });
+    const died = await arriveOnLevel(oldDepth, { arrival, ladder, followers, beforeGlow });
     if (died)
         return true;
     const newDepth = { ...game.u.uz };
@@ -311,7 +311,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     game.u.uz0 = { ...game.u.uz };
     return true;
 }
-async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow, preArrivalMessage }) {
+async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow }) {
     requirePlayingGame(game);
     const atStairs = arrival === 'stairs' || arrival === 'downstairs';
     const up = dungeonDepth(game.u.uz.dnum, game.u.uz.dlevel)
@@ -385,12 +385,6 @@ async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow, pre
         else if (game.level.flags.fumaroles)
             fumaroles(game);
         vision_reset_new_level();
-        // goto_level() has finished placement before docrt() acknowledges
-        // prinv()'s prerequisite. Map output stays paused during this pager.
-        if (preArrivalMessage) {
-            await pline(preArrivalMessage);
-            await displayMessageWindow();
-        }
         await docrt({ beforeGlow });
         return false;
     }

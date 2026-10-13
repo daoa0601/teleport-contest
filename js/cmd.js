@@ -2687,7 +2687,7 @@ function specialLevelReachable(event) {
 async function endgamePrerequisite(destination) {
     if (!In_endgame(destination) || In_endgame(game.u?.uz)
         || game.u?.uhave?.amulet)
-        return '';
+        return;
     const amulet = await addInventoryItem(await mksobj(AMULET_OF_YENDOR, true, false));
     // teleport.c prints the grant with prinv(); its doname()->xname() path
     // observes the visible object and appends it to the Amulet disco[] class
@@ -2698,7 +2698,6 @@ async function endgamePrerequisite(destination) {
     game.u.uhave.amulet = 1;
     const message = `Endgame prerequisite: ${amulet.invlet} - the Amulet of Yendor.`;
     await pline(message);
-    return message;
 }
 // C ref: dungeon.c print_dungeon(TRUE). Build one source-ordered menu stream;
 // the tty layer alone owns pagination and nested input capture.
@@ -2793,8 +2792,8 @@ export async function chooseWizardLevelDestination() {
     const destination = await showPagedPickOneMenu({ rows, choices });
     if (!destination)
         return null;
-    const preArrivalMessage = await endgamePrerequisite(destination);
-    return { destination, preArrivalMessage };
+    await endgamePrerequisite(destination);
+    return { destination };
 }
 async function wizLevelTeleport({ menuRequested = false } = {}) {
     game.context.move = 0;
