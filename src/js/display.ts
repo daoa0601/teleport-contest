@@ -13,6 +13,9 @@ import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
+import { heroIsSick } from './hero_illness.js';
+import { heroIsSliming } from './slime.js';
+import { heroIsPetrifying } from './stoning.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN,
@@ -22,7 +25,7 @@ import {
     TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD,
     IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN,
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN,
-    SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7,
+    SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SICK_VOMITABLE, SICK_NONVOMITABLE,
     WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR,
     BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE,
     ENGRAVE, BURN, HEADSTONE,
@@ -2152,20 +2155,26 @@ export function _statusLine2(refreshLoad = true) {
     }
     if (game.flags?.time)
         line += ` T:${game.moves ?? 1}`;
-    if (u.usteed) line += ' Ride';
+    if (heroIsPetrifying(game)) line += ' Stone';
+    if (heroIsSliming(game)) line += ' Slime';
+    if (u.strangled || (u.strangledTurns ?? 0) > 0) line += ' Strngl';
+    if (heroIsSick(game)) {
+        if ((u.sickType ?? 0) & SICK_VOMITABLE) line += ' FoodPois';
+        if ((u.sickType ?? 0) & SICK_NONVOMITABLE) line += ' TermIll';
+    }
     const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][game._statusHungerOverride ?? u.uhs ?? currentHungerState(game)];
     if (hungerLabel) line += ` ${hungerLabel}`;
     const load = refreshLoad ? encumbranceLabel(nearCapacity(game)) : u._encumbrance;
     if (load) line += ` ${load}`;
-    if (u.strangled || (u.strangledTurns ?? 0) > 0) line += ' Strngl';
     if (game.blind) line += ' Blind';
-    if (polymorphed
-        && ((MONSTER_FLAGS1[u.umonnum ?? -1] ?? 0) & M1_FLY)) line += ' Fly';
-    if ((u.confusionTurns ?? 0) > 0) line += ' Conf';
     if ((game._statusDeafOverride ?? game.deaf)) line += ' Deaf';
+    if (u.stunned || (u.stunnedTurns ?? 0) > 0) line += ' Stun';
+    if ((u.confusionTurns ?? 0) > 0) line += ' Conf';
     if (heroIsHallucinating(game))
         line += ' Hallu';
-    if (u.stunned || (u.stunnedTurns ?? 0) > 0) line += ' Stun';
+    if (polymorphed
+        && ((MONSTER_FLAGS1[u.umonnum ?? -1] ?? 0) & M1_FLY)) line += ' Fly';
+    if (u.usteed) line += ' Ride';
     return line;
 }
 

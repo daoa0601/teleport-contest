@@ -12,8 +12,11 @@ import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
+import { heroIsSick } from './hero_illness.js';
+import { heroIsSliming } from './slime.js';
+import { heroIsPetrifying } from './stoning.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SICK_VOMITABLE, SICK_NONVOMITABLE, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
@@ -2113,29 +2116,39 @@ export function _statusLine2(refreshLoad = true) {
     }
     if (game.flags?.time)
         line += ` T:${game.moves ?? 1}`;
-    if (u.usteed)
-        line += ' Ride';
+    if (heroIsPetrifying(game))
+        line += ' Stone';
+    if (heroIsSliming(game))
+        line += ' Slime';
+    if (u.strangled || (u.strangledTurns ?? 0) > 0)
+        line += ' Strngl';
+    if (heroIsSick(game)) {
+        if ((u.sickType ?? 0) & SICK_VOMITABLE)
+            line += ' FoodPois';
+        if ((u.sickType ?? 0) & SICK_NONVOMITABLE)
+            line += ' TermIll';
+    }
     const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][game._statusHungerOverride ?? u.uhs ?? currentHungerState(game)];
     if (hungerLabel)
         line += ` ${hungerLabel}`;
     const load = refreshLoad ? encumbranceLabel(nearCapacity(game)) : u._encumbrance;
     if (load)
         line += ` ${load}`;
-    if (u.strangled || (u.strangledTurns ?? 0) > 0)
-        line += ' Strngl';
     if (game.blind)
         line += ' Blind';
+    if ((game._statusDeafOverride ?? game.deaf))
+        line += ' Deaf';
+    if (u.stunned || (u.stunnedTurns ?? 0) > 0)
+        line += ' Stun';
+    if ((u.confusionTurns ?? 0) > 0)
+        line += ' Conf';
+    if (heroIsHallucinating(game))
+        line += ' Hallu';
     if (polymorphed
         && ((MONSTER_FLAGS1[u.umonnum ?? -1] ?? 0) & M1_FLY))
         line += ' Fly';
-    if ((u.confusionTurns ?? 0) > 0)
-        line += ' Conf';
-    if ((game._statusDeafOverride ?? game.deaf))
-        line += ' Deaf';
-    if (heroIsHallucinating(game))
-        line += ' Hallu';
-    if (u.stunned || (u.stunnedTurns ?? 0) > 0)
-        line += ' Stun';
+    if (u.usteed)
+        line += ' Ride';
     return line;
 }
 // ── Serialize terminal grid for screen comparison ──
