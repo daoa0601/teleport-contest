@@ -5984,7 +5984,7 @@ async function createLuaObject(context, options, parentContainer, parentMonster,
     if (options.trapped && Object.hasOwn(options, 'tknown'))
         object.tknown = !!options.tknown;
     object.greased = !!options.greased;
-    if (object.otyp === STATUE || object.otyp === CORPSE) {
+    if (objectType === STATUE || objectType === CORPSE) {
         object.spe = (options.historic ? CORPSTAT_HISTORIC : 0)
             | (options.male ? CORPSTAT_MALE : 0)
             | (options.female ? CORPSTAT_FEMALE : 0);
