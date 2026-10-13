@@ -603,25 +603,22 @@ async function putLregionHere(
     return true;
 }
 
-// C ref: stairs.c u_on_upstairs — place hero on upstairs or fallback
+// C stairs.c:u_on_upstairs() uses downward travel rules for random arrivals.
 export async function u_on_upstairs(): Promise<void> {
     const stway = stairway_find_dir(true);
     if (stway) { u_on_newpos(stway.sx, stway.sy); return; }
-    // No upstair — try special stairs, then random
     const special = stairway_find_special_dir(false);
     if (special) { u_on_newpos(special.sx, special.sy); return; }
-    // Random placement via place_lregion
-    await place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_UPTELE, null);
+    await place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_DOWNTELE, null);
 }
 
-// C ref: stairs.c u_on_dnstairs — ascending arrives on the destination's
-// downstairs, its upward special stair, or a random legal location.
+// C stairs.c:u_on_dnstairs() uses upward travel rules for random arrivals.
 export async function u_on_downstairs(): Promise<void> {
     const stway = stairway_find_dir(false);
     if (stway) { u_on_newpos(stway.sx, stway.sy); return; }
     const special = stairway_find_special_dir(true);
     if (special) { u_on_newpos(special.sx, special.sy); return; }
-    await place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_DOWNTELE, null);
+    await place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_UPTELE, null);
 }
 
 // Object probabilities are mutable because gemstone rarity changes with
