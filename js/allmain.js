@@ -1455,6 +1455,8 @@ async function monsterAttackMessage(monster, attack, previousAttack = null, rand
         return null;
     if (attack.effect === 'physical-hug' || attack.effect === 'silent-physical-touch')
         return null;
+    if (attack.effect === 'nurse-heal' || attack.effect === 'nurse-cooperate')
+        return null;
     if (attack.effect === 'engulf' || attack.effect === 'engulf-tick'
         || attack.effect === 'engulf-refused' || attack.effect === 'item-theft')
         return null;
@@ -2389,7 +2391,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                 }
                 if (heroAttack.deferredSpecialContact)
                     await resolveMonsterContactEffect(monster, heroAttack, {
-                        state: game, publish: publishEquipmentMessage, random, rollOne,
+                        state: game, publish: publishEquipmentMessage, random, rollOne, rollDice,
                     });
                 if (game.program_state.gameover)
                     return { heroDied: true, earlierActorPager: earlierActorPagerInScan };

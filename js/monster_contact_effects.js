@@ -10,7 +10,8 @@ import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_CURS, AD_PLYS, AD_POLY, AD_SLEE, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { AD_CURS, AD_HEAL, AD_PLYS, AD_POLY, AD_SLEE, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { resolveNurseContact } from './monster_nurse_contact.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { grantMonsterIntrinsic } from './monster_corpse_intrinsic.js';
 import { sessionIsNight } from './monster_sound.js';
@@ -24,10 +25,10 @@ import { monsterHasLineOfSightToHero, monstersForgetHeroResistance, monstersObse
 import { stopHeroOccupation } from './occupation.js';
 import { heroIsUnchanging, heroHasProtectionFromShapeChangers, polymorphHero, returnHeroToHumanForm, } from './polyself.js';
 import { applyHeroWereChange, revertHeroWereForm, setHeroLycanthropy } from './were.js';
-import { rn2, rnd } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 import { drainHeroBrain } from './monster_hero_brain.js';
 import { AD_DRIN } from './monster_attack_types.js';
-export async function resolveMonsterContactEffect(monster, attack, { state, publish, random = rn2, rollOne = rnd }) {
+export async function resolveMonsterContactEffect(monster, attack, { state, publish, random = rn2, rollOne = rnd, rollDice = d }) {
     attack.deferredSpecialContact = false;
     if (attack.damageType === AD_DRIN)
         await drainHeroBrain(monster, attack, state, publish, random, rollOne);
@@ -45,6 +46,8 @@ export async function resolveMonsterContactEffect(monster, attack, { state, publ
         await resolveMonsterWrapping(monster, attack, state, publish, random);
     else if (attack.damageType === AD_CURS)
         await curseHero(monster, state, publish, random);
+    else if (attack.damageType === AD_HEAL)
+        await resolveNurseContact(monster, attack, state, publish, random, rollOne, rollDice);
     else
         throw new Error(`Damage type ${attack.damageType} has no deferred contact effect`);
     attack.deferredPostHit = true;

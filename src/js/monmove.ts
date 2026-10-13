@@ -243,6 +243,7 @@ import {
     AD_CLRC,
     AD_COLD,
     AD_CURS,
+    AD_HEAL,
     AD_DRIN,
     AD_CORR,
     AD_DCAY,
@@ -399,6 +400,7 @@ import {
     rollPhysicalWeaponDamageAgainstHero,
 } from './weapon_damage.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
+import { nurseContactMode } from './monster_nurse_contact.js';
 import { selectAttack } from './attack_selection.js';
 import { resolveMonsterCombatExplosion } from './monster_combat_explosion.js';
 import { resolveMonsterCombatDamage } from './monster_combat_damage.js';
@@ -5986,13 +5988,15 @@ async function beginHeroAttackSlot(
         };
     } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
-        || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS)) {
+        || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS
+        || damageType === AD_HEAL)) {
         const negated = damageType === AD_POLY
             && (specialAttackNegated(monster, state.u, { state, random }) || !!monster.mspec_used);
         return {
             kind: 'hero-attack', roll, threshold, hit, damage, attackType, damageType,
             oldFormMnum, negated, deferredSpecialContact: true,
             ...(damageType === AD_WRAP ? { effect: 'wrapping-natural' } : {}),
+            ...(damageType === AD_HEAL ? { effect: `nurse-${nurseContactMode(monster, state)}` } : {}),
         };
     } else if (hit && damageType === AD_STCK) {
         const armorProtection = state?.u?._magicNegation ?? 0;
@@ -6895,7 +6899,7 @@ export async function resumeDeferredHeroContact(
         return action;
     }
     if (attack.contactDone) {
-        attack.nativeResult = M_ATTK_HIT;
+        attack.nativeResult ??= M_ATTK_HIT;
         attack.deferredPostHit = false;
         return action;
     }
