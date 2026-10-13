@@ -26,6 +26,7 @@ import { addInventoryObject, corpseObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 function freshAltar({ alignment = 0, high = false, hero = {}, ...room } = {}) {
     freshObjectRoom({
         ...room,
@@ -51,6 +52,18 @@ void test('offering without an altar does not use a turn', async () => {
     assert.equal(game.context.move, 0);
     assert.match(game._pending_message, /not on an altar/);
 });
+for (const condition of ['confusion', 'stunned']) {
+    void test(`#offer is refused while ${condition} persists without a countdown`, async () => {
+        freshAltar();
+        requirePlayingGame(game);
+        const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('newt')));
+        grantIntrinsicProperty(condition, 'outside');
+        await runExtendedCommand('offer', `${corpse.invlet}\x1b`);
+        assert.ok(game.inventory.includes(corpse));
+        assert.equal(game.context.move, 0);
+        assert.match(game._pending_message, /You are too impaired to perform the rite\./);
+    });
+}
 void test('a fresh floor corpse is consumed and reduces the prayer timeout', async () => {
     freshAltar();
     requirePlayingGame(game);

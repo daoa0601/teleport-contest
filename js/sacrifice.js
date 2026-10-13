@@ -32,7 +32,7 @@ import { objectQuantity } from './object_stack.js';
 import { uncurseObjectState } from './object_state.js';
 import { angerTemplePriest } from './priest.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
-import { grantIntrinsicProperty } from './properties.js';
+import { grantIntrinsicProperty, propertyIsActive } from './properties.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { rn2, rnl, rnd, rnz } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -58,7 +58,7 @@ export async function dosacrifice() {
         await pline(`You are not ${hero.levitating || hero.flying ? 'over' : 'on'} an altar.`);
         return;
     }
-    if ((hero.confusionTurns ?? 0) > 0 || (hero.stunnedTurns ?? 0) > 0) {
+    if (propertyIsActive('confusion') || propertyIsActive('stunned')) {
         await pline('You are too impaired to perform the rite.');
         return;
     }
