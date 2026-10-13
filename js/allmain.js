@@ -271,7 +271,14 @@ async function applyCalendarMessages() {
 export async function restoregamePreamble() {
     const game = requireInitializedGame();
     delete game._pendingHeroShapeChange;
+    const quest = game.quest_status;
+    const savedGenders = quest && { leader: quest.ldrgend, nemesis: quest.nemgend };
     initializeRoleQuestGenders();
+    // C restgamestate() reloads q_score after role_init() rolls its genders.
+    if (quest && savedGenders) {
+        quest.ldrgend = savedGenders.leader;
+        quest.nemgend = savedGenders.nemesis;
+    }
     await l_nhcore_init();
     game._moveloopStarted = false;
     // pickup.c's oldcap is process-local (decl.c), not restored save state.
