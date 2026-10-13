@@ -48,6 +48,7 @@ export async function useHeroMindBlast({
     }
 
     hero.uen = energy - 10;
+    state.context.botl = true;
     await publish('You concentrate.');
     await publish('A wave of psychic energy pours out.');
 

@@ -1,11 +1,11 @@
 // Hero energy loss.
 // C ref: trap.c drain_en().
 
-import type { Hero } from './hero_types.js';
+import type { GameState } from './game_state.js';
 import { rnd } from './rng.js';
 
 export function drainHeroEnergy(
-    state: { u: Pick<Hero, 'uen' | 'uenmax'> },
+    state: Pick<GameState, 'u' | 'context'>,
     amount: number,
     { maximumAlreadyDrained = false, rollOne = rnd } = {},
 ) {
@@ -14,8 +14,11 @@ export function drainHeroEnergy(
 
     const maximum = hero.uenmax ?? 0;
     if (maximum < 1) {
-        hero.uen = 0;
-        hero.uenmax = 0;
+        if (hero.uen || maximum) {
+            hero.uen = 0;
+            hero.uenmax = 0;
+            state.context.botl = true;
+        }
         return 'You feel momentarily lethargic.';
     }
 
@@ -30,6 +33,7 @@ export function drainHeroEnergy(
     } else if (hero.uen > maximum) {
         hero.uen = maximum;
     }
+    state.context.botl = true;
 
     return `You feel your magical energy drain away${punctuation}`;
 }
