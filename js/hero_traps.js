@@ -8,7 +8,7 @@ import { maybeDestroyWeb } from './web_trap.js';
 import { currentAttribute, exerciseAttribute, } from './attrib.js';
 import { objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroFootName, heroHeadName, monsterFootName } from './body_parts.js';
-import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_quest, is_pit, HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP, LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
+import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_quest, is_pit, HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP, LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
 import { flush_screen, lastDirtyMapCursor, map_trap, newsym, pline, plineWithContinuation, shieldeff, show_glyph_cell, } from './display.js';
 import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { isRoom } from './map_types.js';
@@ -76,6 +76,7 @@ import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, 
 import { trapTriggeredByFloor } from './monmove.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { observeObject } from './object_knowledge.js';
+import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
 const M1_CLING = 0x00000010;
 const M1_HIDE = 0x00000100;
 const S_MIMIC = 13;
@@ -1162,6 +1163,9 @@ export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel =
             break;
         case MAGIC_TRAP:
             await triggerMagicTrap(trap);
+            break;
+        case POLY_TRAP:
+            await triggerHeroPolymorphTrap(trap, viaSitting);
             break;
         case PIT:
         case SPIKED_PIT:

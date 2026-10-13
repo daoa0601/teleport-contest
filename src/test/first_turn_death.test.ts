@@ -23,7 +23,6 @@ void test('a first-turn death gives its parting message before the bones questio
         await ending;
     }
 });
-
 void test('a hallucinating first-turn death names fictional currency in the parting message', async () => {
     freshObjectRoom({ moves: 1, hero: { hallucinationTurns: 20 }, flags: {
         debug: true, bones: false, disclose: '-i -a -v -g -c -o', tombstone: false,
@@ -41,4 +40,3 @@ void test('a hallucinating first-turn death names fictional currency in the part
         await ending;
     }
 });
-

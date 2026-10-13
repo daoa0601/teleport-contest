@@ -311,39 +311,19 @@ function readingMessages(
     return { first, second };
 }
 
-// The first pline must finish its tty --More-- transaction before the second
-// can replace it.  Callers provide the window/input policy so this module
-// remains independent of command dispatch.
+// Native read_engr_at() sends two separate messages. The terminal decides
+// whether each fits beside earlier prose before it asks for acknowledgement.
 export async function readEngravingAt(
     x: number,
     y: number,
-    {
-        showMore,
-        showLine,
-    }: {
-        showMore: MessagePublisher;
-        showLine: MessagePublisher;
-    },
+    publish: MessagePublisher,
 ): Promise<boolean> {
     const engraving = engravingAt(x, y);
     if (!engraving?.text) return false;
     const messages = readingMessages(engraving, x, y);
     if (!messages) return false;
-    // TTY topl.c:update_topl() reserves eight columns for --More-- and three
-    // more for its append bookkeeping: new + old + 3 < CO - 8.  With the
-    // contest's 80-column tty, a two-space-joined row may be at most 70
-    // columns.  Forcing every first clause through --More-- would still steal
-    // the following command key (notably a numeric search prefix).
-    const combined = `${messages.first}  ${messages.second}`;
-    const ttyColumns = 80;
-    const morePromptWidth = 8;
-    const canAppend =
-        messages.second.length + messages.first.length + 3 < ttyColumns - morePromptWidth;
-    if (canAppend) await showLine(combined);
-    else {
-        await showMore(messages.first);
-        await showLine(messages.second);
-    }
+    await publish(messages.first);
+    await publish(messages.second);
     engraving.rememberedText = engraving.text;
     engraving.eread = true;
     engraving.erevealed = true;

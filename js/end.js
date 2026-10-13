@@ -29,15 +29,15 @@ import { recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
-import { currency } from './currency.js';
 import { restoreHeroNutrition } from './hunger.js';
-import { A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, STARVING, STONING, Is_astralevel, PANICKED, PICK_ONE, STRAT_WAITFORU, Upolyd, } from './const.js';
+import { A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, STARVING, STONING, Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd, } from './const.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
 import { heroIsBlind } from './senses.js';
 import { finishShopkeeperRepossession, settleShopkeepersOnExit } from './shop_settlement.js';
 import { payVaultGuardOnExit } from './vault_exit.js';
+import { currency } from './currency.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { clearHeroRemains, setHeroRemainsFromDeath, } from './death_remains.js';
@@ -1134,9 +1134,12 @@ async function startGameExit(outcome, deathType = DIED) {
     game.program_state.gameover = true;
     game.program_state.something_worth_saving = false;
     await doneObjectCleanup();
-    if (outcome === 'died' && game.moves <= 1
-        && deathType < PANICKED && !game.program_state.stopprint)
+    if (outcome === 'died' && deathType < PANICKED
+        && game.moves <= 1 && !game.program_state.stopprint) {
+        // done() has committed zero HP; this pline refreshes that status.
+        delete game._statusHpOverride;
         await plineWithContinuation(`Do not pass Go.  Do not collect 200 ${currency(200)}.`);
+    }
     game._canMakeBones = outcome === 'died' && deathType < GENOCIDED
         && canMakeBones();
 }

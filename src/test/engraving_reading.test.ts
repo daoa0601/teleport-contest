@@ -16,10 +16,7 @@ for (const { text, pristine, ending } of [
         const engraving = makeEngravingAt(10, 10, text, pristine, 0, DUST);
         assert.ok(engraving);
 
-        await readEngravingAt(10, 10, {
-            showMore: plineWithContinuation,
-            showLine: plineWithContinuation,
-        });
+        await readEngravingAt(10, 10, plineWithContinuation);
 
         assert.ok(game._pending_message.endsWith(`You read: "${text}${ending}`),
             `Unexpected reading: ${game._pending_message}`);

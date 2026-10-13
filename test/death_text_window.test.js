@@ -49,7 +49,7 @@ void test('acknowledges the death message before leaving bones when disclosure i
     await ending;
 });
 void test('ending text does not reprompt a message after Escape cancels the message window', async () => {
-    freshPlayableRoom();
+    freshPlayableRoom({ moves: 40 });
     requirePlayingGame(game);
     game.flags.disclose = '-i -a -v -c -o';
     game.flags.tombstone = false;
