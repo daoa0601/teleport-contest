@@ -76,9 +76,14 @@ export async function treatDippedObject(object: GameObject, potion: GameObject):
             return true;
         }
     }
-    if (potion.otyp === POT_ACID && await erodeObject(object, 'corrosion') !== 'nothing') {
-        await poof(potion);
-        return true;
+    if (potion.otyp === POT_ACID) {
+        const erosion = await erodeObject(object, 'corrosion', {
+            displayName: objectCombatName(object),
+        });
+        if (erosion !== 'nothing') {
+            await poof(potion);
+            return true;
+        }
     }
     if (potion.otyp === POT_OIL) {
         if (await dipInOil(object, potion)) return true;
