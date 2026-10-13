@@ -3928,7 +3928,8 @@ async function dodip() {
         .sort((a, b) => a.invlet.localeCompare(b.invlet));
     const suggested = items.filter(item => item.oclass !== 12);
     const letters = compactInventoryLetters(suggested.map(item => item.invlet).join(''));
-    const selection = await promptInventoryObject(`What do you want to dip? [${letters} or ?*] `, items, {
+    const choices = letters ? `[${letters} or ?*]` : '[*]';
+    const selection = await promptInventoryObject(`What do you want to dip? ${choices} `, items, {
         verb: 'dip',
         classify: item => item.oclass === 12 ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST,
         menuItems: suggested,

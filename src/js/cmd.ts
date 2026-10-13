@@ -4139,8 +4139,9 @@ async function dodip() {
     const letters = compactInventoryLetters(
         suggested.map(item => item.invlet).join(''),
     );
+    const choices = letters ? `[${letters} or ?*]` : '[*]';
     const selection = await promptInventoryObject(
-        `What do you want to dip? [${letters} or ?*] `,
+        `What do you want to dip? ${choices} `,
         items,
         {
             verb: 'dip',
