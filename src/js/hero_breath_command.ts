@@ -54,6 +54,7 @@ export async function useHeroBreath({
     }
 
     hero.uen = energy - 15;
+    state.context.botl = true;
     const direction = await readDirection();
     if (direction === null)
         return { used: false, spentTime: false, reason: 'cancelled' };

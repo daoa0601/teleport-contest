@@ -398,6 +398,7 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
     newsym(movement.oldx, movement.oldy);
     vision_recalc(1);
     await applyHeroLocationEffects();
+    game.context.botl = true;
     return true;
 }
 
@@ -767,9 +768,10 @@ export async function dismountHero(
         state._encumbranceLevel = capacity;
         hero._encumbrance = encumbranceLabel(capacity);
         const capacityMessage = encumbranceMessage(baseline, capacity);
+        state.context.botl = true;
         if (capacityMessage) await announce(capacityMessage);
         state.vision_full_recalc = 1;
-    }
+    } else state.context.botl = true;
     if (isPolearm(state.uwep || hero.uwep)) state._unweapon = true;
     return {
         dismounted: true,

@@ -16,7 +16,7 @@ void test('inventory-menu wield refuses coins without replacing the weapon or ta
     const input = resetInputState();
     await answerPrompts(rhack('i'.charCodeAt(0)), input, [
         { prompt: /Coins/, keys: coins.invlet },
-        { prompt: /Do what with the gold piece\?/, keys: 'w' },
+        { prompt: /Do what with the gold pieces\?/, keys: 'w' },
     ]);
     await answerPrompts(rhack(0), input, []);
     assert.equal(game.uwep, dagger);

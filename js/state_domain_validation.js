@@ -6,6 +6,7 @@ export function validSavedGameContext(value, entities) {
     return closedFieldsMatch(value, {
         move: integer,
         botl: optional((entry) => boolean(entry) || integer(entry)),
+        time_botl: optional(boolean),
         bypasses: optional(boolean),
         current_fruit: optional(integer),
         digging: optional(validDiggingContext),

@@ -21,6 +21,7 @@ export async function useHeroBreath({ state = game, attack = heroBreathAttack(st
         return { used: false, spentTime: false, reason: 'energy' };
     }
     hero.uen = energy - 15;
+    state.context.botl = true;
     const direction = await readDirection();
     if (direction === null)
         return { used: false, spentTime: false, reason: 'cancelled' };

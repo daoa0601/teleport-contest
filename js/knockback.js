@@ -9,7 +9,7 @@ import { requireInitializedHero } from './hero_types.js';
 import { canKnockHeroToward, hurtleHero } from './hero_hurtle.js';
 import { AD_PHYS, AD_STCK, AD_WRAP, AT_BUTT, AT_CLAW, AT_ENGL, AT_HUGS, AT_KICK, AT_WEAP, } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
-import { hurtleMonster, staggerVerb, willMonsterHurtle } from './monster_hurtle.js';
+import { hurtleMonster, willMonsterHurtle } from './monster_hurtle.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterName } from './monster_name.js';
@@ -18,7 +18,7 @@ import { LOADSTONE } from './object_data.js';
 import { isBluntWeapon, isFlimsyObject } from './object_properties.js';
 import { rn2 } from './rng.js';
 import { dismountHero } from './steed.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { makeStunned } from './hero_mental_status.js';
 import { goodPosition } from './teleport_rules.js';
 const M1_FLY = 0x00000001;
 const M1_UNSOLID = 0x00100000;
@@ -171,12 +171,7 @@ export async function tryKnockback(attacker, defender, attack, { state = game, r
         if (attackerMonster)
             setMonsterApparentHeroPosition(attackerMonster, state, random);
         if (!state.u.stunned && !((state.u.stunnedTurns ?? 0) > 0) && random(4) === 0) {
-            if (!heroIsUnaware(state)) {
-                await publish(state.u.usteed ? 'You wobble in the saddle.'
-                    : `You ${staggerVerb(state.u.umonnum).replace(/s$/u, '')}...`);
-            }
-            state.u.stunnedTurns = distance + 1;
-            state.u.stunned = true;
+            await makeStunned(distance + 1, { state, publish });
         }
     }
     else {

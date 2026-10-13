@@ -30,7 +30,8 @@ void test('ring mail can cancel a grid bug bite after its single base damage rol
     assert.equal(game.u.uhp, hp, 'magic cancellation prevents the electric bite damage');
 });
 for (const [hour, damage] of [['00', 12], ['01', 6], ['12', 6]]) {
-    void test(`a wraith's touch deals ${damage} damage at recorded hour ${hour}`, async () => {
+    void test(`a wraith's touch deals ${damage} damage at recorded hour ${hour}`, async (context) => {
+        context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 0, 1, 12) });
         freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
         game.datetime = `20000110${hour}0000`;
@@ -42,8 +43,28 @@ for (const [hour, damage] of [['00', 12], ['01', 6], ['12', 6]]) {
         assert.equal(attack.heroAttackSequence?.current?.damage, damage);
     });
 }
+for (const [currentMonth, datetime, damage] of [
+    [6, '20020115000000', 6],
+    [6, '20020115010000', 12],
+    [0, '20020715230000', 12],
+    [0, '20020715000000', 6],
+]) {
+    void test(`wraith damage at ${datetime} follows the recorder clock inherited in month ${currentMonth + 1}`, async (context) => {
+        context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, currentMonth, 1, 12) });
+        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        requirePlayingGame(game);
+        game.datetime = datetime;
+        const wraith = await createMonsterAt('wraith', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+        wraith.m_lev = 30;
+        wraith.mux = game.u.ux;
+        wraith.muy = game.u.uy;
+        const attack = await beginMonsterHeroAttack(wraith, game, range => Math.min(1, range - 1), () => 1, (count, sides) => count * sides, []);
+        assert.equal(attack.heroAttackSequence?.current?.damage, damage, 'the second damage roll applies only at midnight after local-time conversion');
+    });
+}
 for (const [hour, stolen] of [['05', true], ['06', false], ['21', false], ['22', true]]) {
-    void test(`a gremlin ${stolen ? 'steals' : 'leaves'} an intrinsic at recorded hour ${hour}`, async () => {
+    void test(`a gremlin ${stolen ? 'steals' : 'leaves'} an intrinsic at recorded hour ${hour}`, async (context) => {
+        context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 0, 1, 12) });
         freshObjectRoom();
         requirePlayingGame(game);
         game.datetime = `20000110${hour}0000`;

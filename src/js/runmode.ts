@@ -22,6 +22,7 @@ export function startRun(dx: number, dy: number, g: GameState = game, mode: Dire
 }
 
 export function stopRun(g: GameState = game): void {
+    if (g.context.run && g.flags.time) g.context.time_botl = true;
     g._runState = null;
     g.context.run = 0;
     g.context.mv = false;
@@ -52,6 +53,7 @@ export async function captureRunmodeDelay(
         g, enabled, sourceTurn,
     );
     if (!runmodeDelayFrames) return;
+    g.context.time_botl = !!g.flags.time;
 
     const restoreTopline = (topline: readonly TerminalCell[] | null | undefined): void => {
         if (!topline) return;

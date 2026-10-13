@@ -51,11 +51,13 @@ export function startAmuletStrangulation(state = game) {
     if (!heroCanBeStrangled(state) || heroIsStrangled(state)) return false;
     learnObjectType(AMULET_OF_STRANGULATION, state);
     state.u.strangledTurns = 6;
+    state.context.botl = true;
     refreshProperty('strangled', state);
     return true;
 }
 
 export function clearHeroStrangulation(state = game) {
+    if (heroIsStrangled(state)) state.context.botl = true;
     state.u.strangledTurns = 0;
     refreshProperty('strangled', state);
 }
@@ -76,6 +78,7 @@ export async function restartAmuletStrangulation(
         return;
     const wasStrangled = heroIsStrangled(state);
     state.u.strangledTurns = 6;
+    state.context.botl = true;
     refreshProperty('strangled', state);
     const action = wasStrangled ? 'still constricts' : 'begins constricting';
     const name = amulet.dknown === false ? 'amulet'

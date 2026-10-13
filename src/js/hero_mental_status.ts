@@ -31,9 +31,11 @@ interface HallucinationOptions extends MentalStatusOptions {
 export async function makeConfused(turns: number, {
     state = game, talk = true, publish = plineWithContinuation,
 }: MentalStatusOptions = {}) {
+    const old = state.u.confusionTurns ?? 0;
     if (!turns && state.u.confusionTurns && talk && !heroIsUnaware(state)) {
         await publish(`You feel less ${heroIsHallucinating(state) ? 'trippy' : 'confused'} now.`);
     }
+    if (!!turns !== !!old) state.context.botl = true;
     setPropertyTimeout('confusion', turns, state);
 }
 
@@ -49,6 +51,7 @@ export async function makeStunned(turns: number, {
                 : `You ${staggerVerb(heroSpecies(state)).replace(/s$/, '')}...`);
         }
     }
+    if (!!turns !== old) state.context.botl = true;
     state.u.stunnedTurns = Math.max(0, Math.min(0x00ffffff, Math.trunc(turns)));
     refreshProperty('stunned', state);
 }
@@ -101,6 +104,7 @@ export async function makeHallucinated(turns: number, {
             see_traps();
         }
         // The pinned TTY port has no persistent inventory window to refresh.
+        state.context.botl = true;
         if (speaking) await publish(turns
             ? `Oh wow!  Everything ${verb} so cosmic!`
             : `Everything ${verb} SO boring now.`);

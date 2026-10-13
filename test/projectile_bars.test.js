@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CORR, DOOR, IRONBARS, NO_MINVENT, W_NONDIGGABLE } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { canSeeMonster } from '../js/display.js';
 import { ACID_VENOM, ARROW, BLINDING_VENOM, DAGGER, LEATHER_GLOVES, MIRROR, OBJECT_NAMES, POT_ACID, POT_WATER, WAR_HAMMER, } from '../js/object_data.js';
 import { projectileHitsIronBars } from '../js/projectile_bars.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
@@ -12,6 +13,22 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 const KNIFE = OBJECT_NAMES.indexOf('knife');
 const RUBBER_HOSE = OBJECT_NAMES.indexOf('rubber hose');
+void test('a hard missile hitting bars announces a visible sleeper waking', async () => {
+    const level = freshObjectRoom();
+    level.requireAt(12, 10).typ = IRONBARS;
+    const sleeper = await createMonsterAt('goblin', 13, 10, NO_MINVENT);
+    sleeper.msleeping = 1;
+    assert.equal(canSeeMonster(sleeper), true);
+    const messages = [];
+    await projectileHitsIronBars(await knownObject(DAGGER), {
+        x: 11, y: 10, barsX: 12, barsY: 10,
+        publish: message => { messages.push(message); },
+        random: limit => limit - 1,
+    });
+    assert.equal(sleeper.msleeping, 0);
+    assert.equal(messages[0], 'Clonk!');
+    assert.equal(messages[1], 'The goblin wakes up.');
+});
 for (const { objectType, blocked } of [
     { objectType: ARROW, blocked: false },
     { objectType: KNIFE, blocked: false },
@@ -83,7 +100,8 @@ void test('a projectile impact wakes nearby sleepers even when the hero cannot h
     });
     assert.equal(nearby.msleeping, 0);
     assert.equal(distant.msleeping, 1);
-    assert.equal(messages.length, 0);
+    assert.equal(messages[0], 'The goblin wakes up.');
+    assert.equal(messages.length, 1);
 });
 void test('a flimsy projectile makes a soft impact and leaves sleepers alone', async () => {
     const level = freshObjectRoom();

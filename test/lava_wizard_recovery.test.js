@@ -7,6 +7,30 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { floatHeroDown } from '../js/terrain_movement.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { wearHeroArmor, findArmorClass } from '../js/armor.js';
+import { LEATHER_ARMOR } from '../js/object_data.js';
+import { addInventoryObject } from './support/game-objects.js';
+void test('lava destroys armor while keeping its cached AC through the death refusal question', async () => {
+    const level = freshObjectRoom({ flags: { debug: true, bones: false } });
+    const armor = await addInventoryObject(LEATHER_ARMOR, { spe: 0 });
+    wearHeroArmor(armor);
+    assert.equal(findArmorClass(), 8);
+    level.requireAt(10, 10).typ = LAVAPOOL;
+    const input = resetInputState();
+    let questionAC;
+    input.beforeRead = () => {
+        if (game._pending_message.startsWith('Die?')) {
+            questionAC = game.u.uac;
+            input.feed('n');
+        }
+        else
+            input.feed(' ');
+    };
+    await heroLiquidEffects();
+    assert.equal(game.inventory.includes(armor), false);
+    assert.equal(game.uarm, null);
+    assert.equal(questionAC, 8);
+});
 void test('a wizard who declines lava death recovers and teleports to safety', async () => {
     const level = freshObjectRoom({ flags: { debug: true, bones: false, disclose: '-i -a -v -g -c -o' } });
     level.requireAt(10, 10).typ = LAVAPOOL;

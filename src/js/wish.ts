@@ -195,6 +195,7 @@ export async function makeWish({
         previousCapacity, currentCapacity,
     );
     if (capacityMessage) await plineWithContinuation(capacityMessage);
+    if (previousCapacity !== currentCapacity) game.context.botl = true;
     game._encumbranceLevel = currentCapacity;
     game.u._encumbrance = encumbranceLabel(currentCapacity);
     game.u.ublesscnt = (game.u.ublesscnt || 0) + 50 + rn2(100);

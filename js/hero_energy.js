@@ -6,8 +6,11 @@ export function drainHeroEnergy(state, amount, { maximumAlreadyDrained = false, 
     let punctuation = maximumAlreadyDrained ? '!' : '.';
     const maximum = hero.uenmax ?? 0;
     if (maximum < 1) {
-        hero.uen = 0;
-        hero.uenmax = 0;
+        if (hero.uen || maximum) {
+            hero.uen = 0;
+            hero.uenmax = 0;
+            state.context.botl = true;
+        }
         return 'You feel momentarily lethargic.';
     }
     if (amount > ((hero.uen ?? 0) + maximum) / 3)
@@ -22,6 +25,7 @@ export function drainHeroEnergy(state, amount, { maximumAlreadyDrained = false, 
     else if (hero.uen > maximum) {
         hero.uen = maximum;
     }
+    state.context.botl = true;
     return `You feel your magical energy drain away${punctuation}`;
 }
 //# sourceMappingURL=hero_energy.js.map

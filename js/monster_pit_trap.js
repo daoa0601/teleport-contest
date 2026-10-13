@@ -54,7 +54,7 @@ export async function finishMonsterPitTrap(monster, event, { publish = plineWith
         return event;
     if (event.inSight) {
         const owner = event.trap.madeby_u ? 'your' : 'a';
-        await publish(`${describeMonster(monster)} falls into ${owner} ${event.spiked ? 'spiked ' : ''}pit!`);
+        await publish(`${describeMonster(monster)} falls into ${owner} pit!`);
         event.trap.tseen = true;
         if (monster.mnum === PM_PIT_VIPER || monster.mnum === PM_PIT_FIEND)
             await publish("How pitiful.  Isn't that the pits?");

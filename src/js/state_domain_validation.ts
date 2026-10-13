@@ -23,6 +23,7 @@ export function validSavedGameContext(
     return closedFieldsMatch<GameContext>(value, {
         move: integer,
         botl: optional((entry): entry is boolean | number => boolean(entry) || integer(entry)),
+        time_botl: optional(boolean),
         bypasses: optional(boolean),
         current_fruit: optional(integer),
         digging: optional(validDiggingContext),

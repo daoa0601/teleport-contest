@@ -1,14 +1,14 @@
 // Traps triggered while opening or disarming containers.
 // C ref: trap.c chest_trap().
 
-import { makeHallucinated } from './hero_mental_status.js';
+import { makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { A_CON, A_DEX, A_STR, Upolyd, W_BALL } from './const.js';
 import {
-    plineWithContinuation, shieldeff,
+    bot, plineWithContinuation, shieldeff,
 } from './display.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { game } from './gstate.js';
@@ -85,6 +85,7 @@ function containerLocation(container: GameObject, state: GameState): Position {
 }
 
 function damageHero(amount: number, state: GameState): void {
+    state.context.botl = true;
     const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';
     state.u[hitPoints] = Math.max(
         0, (state.u[hitPoints] ?? 1) - amount,
@@ -267,8 +268,7 @@ async function confuseHero(container: GameObject, state: GameState, publish: Mes
         if (hallucinating) await publish('What a groovy feeling!');
         else await publish('You stagger...');
     }
-    state.u.stunnedTurns = (state.u.stunnedTurns ?? 0) + 16 + random(7);
-    state.u.stunned = true;
+    await makeStunned((state.u.stunnedTurns ?? 0) + 16 + random(7), { state, talk: false });
     await makeHallucinated((state.u.hallucinationTurns ?? 0) + 16 + random(5), {
         state, talk: false, publish,
     });
@@ -336,6 +336,9 @@ export async function triggerChestTrap(container: GameObject | null | undefined,
         result = await confuseHero(container, state, publish, random);
     }
 
-    if (!result.destroyed && !result.died) container.tknown = true;
+    if (!result.destroyed && !result.died) {
+        await bot();
+        container.tknown = true;
+    }
     return result;
 }

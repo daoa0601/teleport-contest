@@ -1,4 +1,5 @@
 import { launchRollingBoulder } from './rolling_boulder.js';
+import { recorderLocalHour } from './calendar.js';
 import type { MonsterLiquidDeathContext } from './mon.js';
 import type { MonsterDeathOptions } from './monster_death.js';
 import type { Monster } from './monster_types.js';
@@ -411,7 +412,7 @@ import { resolveMonsterCombatGaze } from './monster_combat_gaze.js';
 import { resolveMonsterCombatEngulf } from './monster_combat_engulf.js';
 import { tryMonsterPuddingSplit } from './monster_pudding_split.js';
 import { erodeAttackingWeapon } from './object_erosion.js';
-import { specialAttackNegated } from './magic_negation.js';
+import { magicNegation, specialAttackNegated } from './magic_negation.js';
 import {
     poisonAttackAttribute,
     poisonHeroFromMonster,
@@ -1873,6 +1874,7 @@ function reduceHeroContactDamage(
 // its maximum. Lethal HP stays negative until done() commits zero, after
 // done_in_by() has announced the death.
 function applyHeroContactDamage(state: PlayingGameState, damage: number) {
+    state.context.botl = true;
     if (Upolyd(state.u)) state.u.mh = Math.min((state.u.mh ?? 1) - damage, state.u.mhmax ?? 1);
     else state.u.uhp = Math.min(state.u.uhp - damage, state.u.uhpmax);
 }
@@ -3944,7 +3946,7 @@ export async function beginMonsterHeroAttack(
         results: [],
         lastAttackRoll: 0,
         firstFoundYou: monster.mux === state.u.ux && monster.muy === state.u.uy,
-        paging: { pagerOwned: false, messageAfterPager: false },
+        paging: { pagerOwned: false },
         offensive: offensive ? { status: 'selected', choice: offensive } : null,
         skipNonMagic: false,
         skipBrainDrain: false,
@@ -5311,7 +5313,6 @@ function monsterAttackMessagePublisher(paging: MonsterAttackPaging): PublishMons
     return async (message, options) => {
         const dismissal = await plineWithContinuation(message, options);
         if (dismissal != null) paging.pagerOwned = true;
-        else if (paging.pagerOwned) paging.messageAfterPager = true;
         return dismissal;
     };
 }
@@ -5677,7 +5678,7 @@ async function beginHeroAttackSlot(
         calls.push(`d(${dice},${sides})`);
         if (attackType !== AT_ENGL
             && (monsterIsUndead(monster.mnum) || monsterIsVampireShifter(monster))
-            && state.datetime?.slice(8, 10) === '00') {
+            && recorderLocalHour(state.datetime) === 0) {
             damage += rollDice(dice, sides);
             calls.push(`d(${dice},${sides})`);
         }
@@ -5859,7 +5860,7 @@ async function beginHeroAttackSlot(
         // magic cancellation, optionally checks inventory destruction, then
         // the shared post-hit knockback path consumes its distance/chance
         // draws even though an electric bite cannot knock the hero back.
-        const armorProtection = state?.u?._magicNegation ?? 0;
+        const armorProtection = magicNegation(state.u, state);
         const negated = recordRandom(random, calls, 10) < 3 * armorProtection;
         if (!negated) {
             recordRandom(random, calls, 20);
@@ -6004,7 +6005,7 @@ async function beginHeroAttackSlot(
             ...(damageType === AD_SSEX ? { effect: 'seduction-contact' } : {}),
         };
     } else if (hit && damageType === AD_STCK) {
-        const armorProtection = state?.u?._magicNegation ?? 0;
+        const armorProtection = magicNegation(state.u, state);
         const negated = !!monster.mcan || recordRandom(random, calls, 10) < 3 * armorProtection;
         return {
             kind: 'hero-attack',
@@ -6191,7 +6192,7 @@ async function beginHeroAttackSlot(
             oldFormMnum,
         };
     } else if (hit && damageType === AD_SLIM) {
-        const armorProtection = state?.u?._magicNegation ?? 0;
+        const armorProtection = magicNegation(state.u, state);
         const cancelled = !!monster.mcan;
         const negated = cancelled || recordRandom(random, calls, 10) < 3 * armorProtection;
         return {
@@ -6288,7 +6289,7 @@ async function beginHeroAttackSlot(
         // hitmsg(); some_armor(), drain resistance, and the state mutation
         // precede the optional "less effective" pline which can force the
         // earlier hit line through tty.
-        const armorProtection = state?.u?._magicNegation ?? 0;
+        const armorProtection = magicNegation(state.u, state);
         const negated = !!monster.mcan || recordRandom(random, calls, 10) < 3 * armorProtection;
         let drainedObject = null;
         if (!negated) {
@@ -6490,7 +6491,7 @@ export function resumeDeferredHeroColdSpecial(
 ) {
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredColdNegation) return action;
-    const armorProtection = state?.u?._magicNegation ?? 0;
+    const armorProtection = magicNegation(state.u, state);
     const cancelled = !!action.monster?.mcan;
     attack.coldOriginalDamage = attack.damage ?? 0;
     attack.negated = cancelled || recordRandom(random, action.calls, 10) < 3 * armorProtection;
@@ -6523,7 +6524,7 @@ export function resumeDeferredHeroFireSpecial(
 ) {
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredFireNegation) return action;
-    const armorProtection = state?.u?._magicNegation ?? 0;
+    const armorProtection = magicNegation(state.u, state);
     const cancelled = !!action.monster?.mcan;
     attack.fireOriginalDamage = attack.damage ?? 0;
     attack.negated = cancelled || recordRandom(random, action.calls, 10) < 3 * armorProtection;
@@ -6558,7 +6559,7 @@ export function resumeDeferredHeroElectricSpecial(
 ) {
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredElectricNegation) return action;
-    const armorProtection = state?.u?._magicNegation ?? 0;
+    const armorProtection = magicNegation(state.u, state);
     const cancelled = !!action.monster?.mcan;
     attack.electricOriginalDamage = attack.damage ?? 0;
     attack.negated = cancelled || recordRandom(random, action.calls, 10) < 3 * armorProtection;
@@ -6619,6 +6620,7 @@ export function resumeDeferredHeroStun(
         const oldTurns = state.u?.stunnedTurns ?? 0;
         state.u.stunnedTurns = oldTurns + Math.max(0, attack.damage ?? 0);
         state.u.stunned = state.u.stunnedTurns > 0;
+        if (!oldTurns && state.u.stunnedTurns) state.context.botl = true;
         if (oldTurns === 0) attack.stunMessage = 'You stagger...';
         attack.damage = Math.trunc((attack.damage ?? 0) / 2);
         attack.stunSelected = true;
@@ -7013,6 +7015,7 @@ export function resumeDeferredHeroBlindness(
         if (state?.u) state.u.blindTurns = oldTurns + increment;
         toggled = !state.blind && oldTurns <= 0;
         syncBlindness(state);
+        if (toggled) state.context.botl = true;
         state.vision_full_recalc = 1;
     }
     recordRandom(random, action.calls, 3);
@@ -7127,7 +7130,7 @@ export function applyHeroSpellDamage(
 ) {
     const hpKey = Upolyd(state.u) ? 'mh' : 'uhp';
     const hpBefore = state.u[hpKey];
-    attack.fatalDamage = { hpKey, hpBefore, damage };
+    state.context.botl = true;
     const hpMax = hpKey === 'mh' ? state.u.mhmax : state.u.uhpmax;
     state.u[hpKey] = Math.min(hpMax, hpBefore - damage);
     attack.appliedDamage = damage;
@@ -7152,6 +7155,7 @@ export function resumeDeferredHeroSpell(
         syncBlindness(state);
         state.vision_full_recalc = 1;
         attack.toggledBlindness = !wasBlind;
+        if (!wasBlind && state.blind) state.context.botl = true;
         attack.appliedDamage = 0;
         return attack;
     }
@@ -7174,6 +7178,7 @@ export function resumeDeferredHeroSpell(
             const monsterLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
             let duration = monsterLevel;
             if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
+            if (!state.u.confusionTurns && duration) state.context.botl = true;
             state.u.confusionTurns = (state.u.confusionTurns ?? 0) + duration;
         }
         attack.appliedDamage = 0;
@@ -7249,6 +7254,7 @@ export function resumeDeferredHeroSpell(
             if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
             duration += state.u?.stunnedTurns ?? 0;
         }
+        if (!!state.u.stunnedTurns !== !!duration) state.context.botl = true;
         state.u.stunnedTurns = duration;
         state.u.stunned = duration > 0;
         attack.stunnedHero = true;

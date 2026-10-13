@@ -115,6 +115,8 @@ async function applyAmuletOnEffects(object, state, { wasFlying, wasInGas }) {
         return;
     }
     let message;
+    if (OBJECT_PROPERTY[object.otyp] === 'flying')
+        state.context.botl = true;
     if (object.otyp === AMULET_OF_UNCHANGING && heroIsSliming(state))
         clearHeroSliming(state);
     else if (object.otyp === AMULET_OF_RESTFUL_SLEEP) {
@@ -153,6 +155,7 @@ async function changeSexFromAmulet(object, state) {
     await showWornAmulet(object, state);
     if (changed) {
         newsym(state.u.ux, state.u.uy);
+        state.context.botl = true;
         await plineWithContinuation(`You are suddenly very ${state.flags.female ? 'feminine' : 'masculine'}!`);
     }
     else
@@ -185,6 +188,8 @@ export async function removeHeroAccessory(object, state = game) {
     const previousLevitation = captureLevitationState(state);
     const wasStealthy = propertyIsActive('stealth', state);
     const property = clearHeroAccessory(object, state);
+    if (property === 'flying')
+        state.context.botl = true;
     if (property === 'stealth' && wasStealthy && !propertyIsActive('stealth', state)) {
         learnRing(object, true, state);
         const steed = state.u.usteed;
@@ -241,6 +246,7 @@ function changeRingBonus(ring, direction, state) {
         const observable = before !== currentAttribute(attribute, state);
         if (observable || !attributeIsAtLimit(attribute, state))
             learnRing(ring, observable, state);
+        state.context.botl = true;
     }
     else if (ring.otyp === RIN_INCREASE_ACCURACY) {
         state.u.uhitinc = (state.u.uhitinc || 0) + direction * ring.spe;

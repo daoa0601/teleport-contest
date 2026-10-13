@@ -1,3 +1,4 @@
+import { recorderLocalEpochSeconds } from './calendar.js';
 import { slipOrTrip } from './fumbling.js';
 import { invWeight } from './weight.js';
 import { rewindEngravingsForSave } from './engrave.js';
@@ -7,7 +8,7 @@ import { finishMonsterHideUnder } from './monster_hiding.js';
 import { heroIsHallucinating } from './senses.js';
 import { mcalcmove } from './monster_speed.js';
 import { makeBlinded } from './sight_change.js';
-import { makeHallucinated } from './hero_mental_status.js';
+import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { advanceSpellProtection } from './spell_misc_effects.js';
 import { advanceDisplacementTimeout } from './hero_displacement.js';
@@ -54,7 +55,7 @@ import { reassessMonsterArmor } from './monworn.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { readEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { d, rn2, rnd } from './rng.js';
-import { mklev, l_nhcore_init, makemonAt, recorderLocalEpochSeconds, summonNastyMonsters, u_on_upstairs, } from './mklev.js';
+import { mklev, l_nhcore_init, makemonAt, summonNastyMonsters, u_on_upstairs, } from './mklev.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
 import { applyHeroLiquidEffects, continueCountedCommand, continueRun, finishArmorRemoval, getLine, promptYesNo, rhack, } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
@@ -110,7 +111,7 @@ import { advanceHeroStrangulation } from './hero_strangulation.js';
 import { initTrack, setTrack } from './track.js';
 import { autopickupAtHero } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
-import { applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, destroyWornArmor, objectErosionKind, objectErosionMessage, projectedArmorClass, wornArmorInDestroyOrder, } from './armor.js';
+import { applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, destroyWornArmor, objectErosionKind, objectErosionMessage, wornArmorInDestroyOrder, } from './armor.js';
 import { nearCapacity, } from './weight.js';
 import { dist2, dungeonDepth } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName, } from './monster_data.js';
@@ -728,6 +729,7 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
             if (game.u?.magicalBreathingExtrinsic)
                 upper += 2;
             game.u.uen = Math.min(game.u.uenmax, game.u.uen + 1 + rn2(upper));
+            game.context.botl = true;
             if (game.u.uen === game.u.uenmax)
                 interruptCountedActivity('You feel full of energy.');
         }
@@ -883,6 +885,8 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(capacity, deferA
     addHeroMovementRation(game, moveAmount);
     setTrack(game);
     game.moves = (game.moves || 1) + 1;
+    if (game.flags.time && !game.context.run)
+        game.context.time_botl = true;
     game._heroActionSeq = game.moves * 8;
     await currentLuaLifecycle().callCore(game, 'moveloop_turn');
     // nh_timeout() precedes regeneration and exerchk() in the C loop.  Keep
@@ -1000,12 +1004,12 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({ sourceTurn, moveA
                 return {
                     kind: 'timeout-message',
                     timeoutKind: 'stun',
-                    message: 'You feel a bit steadier now.',
                     sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
                     prayerTimeoutFreeze,
                 };
             }
             game.u.stunnedTurns = 0;
+            game.context.botl = true;
             refreshProperty('stunned', game);
             appendTurnMessage('You feel a bit steadier now.');
         }
@@ -1029,12 +1033,12 @@ function finishInitialTurnMaintenanceAfterStun({ sourceTurn, moveAmount, capacit
                 return {
                     kind: 'timeout-message',
                     timeoutKind: 'confusion',
-                    message,
                     sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
                     prayerTimeoutFreeze,
                 };
             }
             game.u.confusionTurns = 0;
+            game.context.botl = true;
             refreshProperty('confusion', game);
             appendTurnMessage(message);
         }
@@ -1284,15 +1288,15 @@ async function advanceWorldTurn() {
     if (game.program_state?.gameover)
         return;
     while (phase.kind === 'timeout-message') {
-        await plineWithContinuation(phase.message);
         if (phase.timeoutKind === 'stun') {
-            game.u.stunnedTurns = 0;
-            refreshProperty('stunned', game);
+            await makeStunned(0);
+            if (!propertyIsActive('stunned', game))
+                await stopHeroOccupation(game);
             phase = await finishInitialTurnMaintenanceAfterStun(phase);
         }
         else {
-            game.u.confusionTurns = 0;
-            refreshProperty('confusion', game);
+            await makeConfused(0);
+            await stopHeroOccupation(game);
             phase = await finishInitialTurnMaintenanceAfterConfusion(phase);
         }
     }
@@ -1368,7 +1372,6 @@ async function advanceWorldTurn() {
         findArmorClass(game);
         game._armorClassDirty = false;
         delete game._armorClassDirtyAfterDelayedFrame;
-        delete game._statusProjectedAc;
     }
 }
 async function settleHeroLiquidAfterAction() {
@@ -1577,7 +1580,6 @@ async function resolveDeferredHeroItemTheft(action, monster, attack) {
         return true;
     }
     monster.mavenge = 1;
-    findArmorClass(game);
     observeObjectForNaming(object);
     const stolenObjectDescription = inventoryItemDescription(object);
     const thief = removalMessage && /nymph$/.test(quietMonsterName(monster))
@@ -1993,6 +1995,9 @@ async function finishDeathSurvivalMessage(g = game) {
     }
 }
 async function finishHeroDeathAfterMonsterMessage(options) {
+    // losehp() enters urgent_pline(), whose map flush precedes paging the
+    // previous message. Its pending HP request must reach that pager.
+    await flush_screen(1);
     await waitForCurrentMonsterMore();
     return finishHeroDeath(options);
 }
@@ -2021,17 +2026,15 @@ async function presentMonsterHiding(action) {
     await resumeDeferredMonsterHideUnder(action, game);
     delete movement.hideUnder;
 }
-async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan = false, { random = rn2, rollDice = d, rollOne = rnd } = {}) {
+async function presentMonsterAttackEffects(action, game, { random = rn2, rollDice = d, rollOne = rnd } = {}) {
     const monster = action.monster;
     let movement = action.movement;
     // A special mover can attack before postmov(), then dochug() can
     // admit a fresh attack. Movement and its feedback must not replay.
     do {
         await completeMonsterOffensiveAction(action, game, random, rollDice, rollOne);
-        const offensiveSequence = movement.heroAttackSequence;
         if (movement.heroDied || game.program_state.gameover)
-            return { heroDied: true,
-                earlierActorPager: earlierActorPagerInScan || !!offensiveSequence?.paging.pagerOwned };
+            return { heroDied: true };
         if (movement?.heroAttackSequence?.current) {
             let heroDied = false;
             let heroAttack = movement.heroAttackSequence.current;
@@ -2042,8 +2045,6 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     const dismissal = await plineWithContinuation(message, options);
                     if (dismissal != null)
                         paging.pagerOwned = true;
-                    else if (paging.pagerOwned)
-                        paging.messageAfterPager = true;
                     return dismissal;
                 };
                 if (heroAttack.kind === 'hero-magic-ray') {
@@ -2051,7 +2052,6 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                         state: game, publish: publishSlotMessage, calls: action.calls,
                         die: (options) => options.damage
                             ? finishMonsterAttackDeath(monster, {
-                                damage: options.damage,
                                 attribution: {
                                     kind: 'death-inflicted-by', killer: options.killer,
                                     deathCause: options.deathCause
@@ -2059,13 +2059,11 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                                     announcesDeath: true,
                                 },
                                 pagerOwned: paging.pagerOwned,
-                                messageAfterPager: paging.messageAfterPager,
-                                earlierActorPager: earlierActorPagerInScan,
                             }) : finishHeroDeath(options),
                     });
                     heroAttack.nativeResult = result.mask;
                     if (result.heroDied)
-                        return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        return { heroDied: true };
                     previousHeroAttack = heroAttack;
                     heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
                     continue;
@@ -2074,7 +2072,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     const result = await resolveMonsterSelfExplosion(monster, heroAttack.effectiveAttack, {
                         foundHero: heroAttack.foundHero, state: game, publish: publishSlotMessage,
                         die: (options) => options.damage ? finishMonsterAttackDeath(monster, {
-                            damage: options.damage, deathType: options.deathType ?? null,
+                            deathType: options.deathType ?? null,
                             attribution: {
                                 kind: 'death-inflicted-by', killer: options.killer,
                                 deathCause: options.deathCause
@@ -2082,13 +2080,11 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                                 announcesDeath: !options.deathLineShown,
                             },
                             pagerOwned: paging.pagerOwned,
-                            messageAfterPager: paging.messageAfterPager,
-                            earlierActorPager: earlierActorPagerInScan,
                         }) : finishHeroDeath(options),
                     });
                     heroAttack.nativeResult = result.mask;
                     if (result.heroDied)
-                        return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        return { heroDied: true };
                     previousHeroAttack = heroAttack;
                     heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
                     continue;
@@ -2096,15 +2092,13 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                 if (heroAttack.kind === 'hero-gaze') {
                     const result = await resolveMonsterGaze(monster, heroAttack.effectiveAttack, {
                         state: game, publish: publishSlotMessage, calls: action.calls,
-                        die: (actor, damage = {}) => finishMonsterAttackDeath(actor, {
-                            ...damage, pagerOwned: paging.pagerOwned,
-                            messageAfterPager: paging.messageAfterPager,
-                            earlierActorPager: earlierActorPagerInScan,
+                        die: (actor, options = {}) => finishMonsterAttackDeath(actor, {
+                            ...options, pagerOwned: paging.pagerOwned,
                         }),
                     });
                     heroAttack.nativeResult = result.mask;
                     if (result.heroDied)
-                        return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        return { heroDied: true };
                     previousHeroAttack = heroAttack;
                     heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
                     continue;
@@ -2113,7 +2107,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     const heroDied = heroAttack.kind === 'hero-projectile'
                         ? heroAttack.projectile.heroDied : heroAttack.spit.heroDied;
                     if (heroDied)
-                        return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        return { heroDied: true };
                     previousHeroAttack = heroAttack;
                     heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
                     continue;
@@ -2127,7 +2121,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     if (breath.launched) {
                         await resolveDeferredMonsterBreath(action, breath, game, publishSlotMessage);
                         if (game.program_state?.gameover)
-                            return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                            return { heroDied: true };
                         if (game._occupation)
                             game._interruptedMultiActionDebt = true;
                         game._occupation = null;
@@ -2143,8 +2137,6 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                         const dismissal = await plineWithContinuation(message);
                         if (dismissal != null)
                             paging.pagerOwned = true;
-                        else if (paging.pagerOwned)
-                            paging.messageAfterPager = true;
                         return dismissal;
                     };
                     if (!heroAttack.cast) {
@@ -2233,7 +2225,6 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     if (heroAttack.deferredStrengthLoss) {
                         const { amount, killer } = heroAttack.deferredStrengthLoss;
                         delete heroAttack.deferredStrengthLoss;
-                        const hpBefore = game.u.uhp;
                         const died = await loseHeroStrength(amount, killer, {
                             state: game,
                             publish: publishSpellMessage,
@@ -2245,17 +2236,11 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                             die: (options) => options.killer !== killer
                                 ? finishHeroDeathAfterMonsterMessage(options)
                                 : finishMonsterAttackDeath(monster, {
-                                    damage: {
-                                        hpKey: 'uhp', hpBefore,
-                                        damage: hpBefore - game.u.uhp,
-                                    },
                                     attribution: {
                                         kind: 'death-inflicted-by', killer,
                                         announcesDeath: true,
                                     },
                                     pagerOwned: paging.pagerOwned,
-                                    messageAfterPager: paging.messageAfterPager,
-                                    earlierActorPager: earlierActorPagerInScan,
                                 }),
                         });
                         if (died) {
@@ -2266,11 +2251,11 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     if (heroAttack.deferredFirePillar)
                         await resolveDeferredHeroFirePillar(action, heroAttack, publishSpellMessage);
                     if (game.program_state.gameover)
-                        return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        return { heroDied: true };
                     if (heroAttack.deferredLightningSpell)
                         await resolveDeferredHeroLightningSpell(action, heroAttack, publishSpellMessage);
                     if (game.program_state.gameover)
-                        return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        return { heroDied: true };
                     if (heroAttack.deferredInsectSpell)
                         await resolveDeferredHeroInsectSpell(action, heroAttack);
                     if (heroAttack.deferredCurseItems)
@@ -2321,23 +2306,19 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                         }
                         const restored = await returnHeroToHumanForm(game);
                         if (restored.died)
-                            return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                            return { heroDied: true };
                         heroAttack.rehumanize = false;
                     }
                     if (heroAttack.heroDied) {
                         if (await finishMonsterAttackDeath(monster, {
-                            ...(heroAttack.fatalDamage ? { damage: heroAttack.fatalDamage } : {}),
                             ...(heroAttack.fatalAttribution ? { attribution: heroAttack.fatalAttribution } : {}),
                             pagerOwned: paging.pagerOwned,
-                            messageAfterPager: paging.messageAfterPager,
-                            earlierActorPager: earlierActorPagerInScan,
                         })) {
                             heroDied = true;
                             break;
                         }
                         heroAttack.heroDied = false;
                     }
-                    delete heroAttack.fatalDamage;
                     delete heroAttack.fatalAttribution;
                     previousHeroAttack = heroAttack;
                     heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
@@ -2376,14 +2357,10 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     && contactDismissal !== undefined) {
                     paging.pagerOwned = true;
                 }
-                const activeHpKey = Upolyd(game.u) ? 'mh' : 'uhp';
-                const hpBeforeDeferredHit = game.u?.[activeHpKey] ?? 1;
                 const publishEquipmentMessage = async (line, options) => {
                     const dismissal = await plineWithContinuation(line, options);
                     if (dismissal != null)
                         paging.pagerOwned = true;
-                    if (paging.pagerOwned)
-                        paging.messageAfterPager = !!game._pending_message;
                     return dismissal;
                 };
                 if (heroAttack.hit && heroAttack.effect === 'physical-weapon') {
@@ -2396,7 +2373,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                         state: game, publish: publishEquipmentMessage, random, rollOne, rollDice,
                     });
                 if (game.program_state.gameover)
-                    return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                    return { heroDied: true };
                 if (heroAttack.deferredStickingAfterHit)
                     resumeDeferredHeroSticking(action, game);
                 if (heroAttack.stickingMessage) {
@@ -2410,7 +2387,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                 if (heroAttack.deferredItemTheft) {
                     const theftPager = await resolveDeferredHeroItemTheft(action, monster, heroAttack);
                     if (game.program_state.gameover)
-                        return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        return { heroDied: true };
                     paging.pagerOwned ||= theftPager;
                 }
                 if (heroAttack.deferredEngulf) {
@@ -2419,18 +2396,15 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                         die: (attacker, options = {}) => finishMonsterAttackDeath(attacker, {
                             ...options,
                             pagerOwned: paging.pagerOwned,
-                            messageAfterPager: paging.messageAfterPager,
-                            earlierActorPager: earlierActorPagerInScan,
                         }),
                         flushMessages: async () => {
                             const dismissal = await displayMessageWindow();
                             if (dismissal != null)
                                 paging.pagerOwned = true;
-                            paging.messageAfterPager = !!game._pending_message;
                         },
                     });
                     if (engulf?.died || game.program_state.gameover)
-                        return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        return { heroDied: true };
                 }
                 if (heroAttack.deferredSlimeEffect)
                     resumeDeferredHeroSlime(action, game);
@@ -2519,7 +2493,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                         },
                     });
                     if (died)
-                        return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        return { heroDied: true };
                 }
                 if (heroAttack.deferredStunGate)
                     resumeDeferredHeroStun(action, game);
@@ -2576,7 +2550,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     };
                     await resumeDeferredHeroContact(action, game, contactOptions);
                     if (game.program_state?.gameover)
-                        return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        return { heroDied: true };
                     if (heroAttack.deferredElementalInventory) {
                         const inventoryDamage = heroAttack.deferredElementalInventory;
                         const destroyInventory = {
@@ -2586,7 +2560,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                         }[inventoryDamage.damageType];
                         const items = await destroyInventory(inventoryDamage.sourceDamage, { state: game, ...contactOptions });
                         if (items.heroDied)
-                            return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                            return { heroDied: true };
                         if (inventoryDamage.damageType === 'fire') {
                             await igniteItems(game.inventory, {
                                 state: game,
@@ -2607,7 +2581,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                         }
                     }
                     if (game.program_state?.gameover)
-                        return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                        return { heroDied: true };
                 }
                 if (heroAttack.deferredBlindEffect) {
                     const toggledBlindness = resumeDeferredHeroBlindness(action, game);
@@ -2642,13 +2616,7 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                     continue;
                 }
                 if (await finishMonsterAttackDeath(monster, {
-                    damage: {
-                        hpKey: activeHpKey, hpBefore: hpBeforeDeferredHit,
-                        damage: heroAttack.appliedDamage ?? heroAttack.damage ?? 0,
-                    },
                     pagerOwned: paging.pagerOwned,
-                    messageAfterPager: paging.messageAfterPager,
-                    earlierActorPager: earlierActorPagerInScan,
                 })) {
                     heroDied = true;
                     break;
@@ -2657,24 +2625,21 @@ async function presentMonsterAttackEffects(action, game, earlierActorPagerInScan
                 previousHeroAttack = heroAttack;
                 heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
             }
-            earlierActorPagerInScan ||= paging.pagerOwned;
             if (heroDied)
-                return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+                return { heroDied: true };
         }
-        if (offensiveSequence)
-            earlierActorPagerInScan ||= offensiveSequence.paging.pagerOwned;
         if (!movement?.deferredAfterSpecialAttack || game.program_state?.gameover)
             break;
         await resumeDeferredSpecialAttack(action, game, random, rollDice, rollOne);
         movement = action.movement;
         if (await presentMonsterPostMove(action, game))
-            return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
+            return { heroDied: true };
         await presentMonsterPickups(action, game);
         movement = action.movement;
     } while (!game.program_state?.gameover);
     if (game.program_state?.gameover)
-        return { heroDied: true, earlierActorPager: earlierActorPagerInScan };
-    return { heroDied: false, earlierActorPager: earlierActorPagerInScan };
+        return { heroDied: true };
+    return { heroDied: false };
 }
 // Trap, door, tunneling, and hiding feedback belongs to postmov(), before
 // returning to either dochug() or the hero's out-of-sequence movement caller.
@@ -2813,10 +2778,7 @@ export async function performMonsterHeroAttack(monster, state, { random = rn2, r
     finally {
         state._deferVisibleMonsterContact = previousDeferral;
     }
-    const messageContext = state._monsterMessageContext;
-    const effects = await presentMonsterAttackEffects(action, state, messageContext?.earlierActorPager ?? false, { random, rollDice, rollOne });
-    if (messageContext)
-        messageContext.earlierActorPager = effects.earlierActorPager;
+    const effects = await presentMonsterAttackEffects(action, state, { random, rollDice, rollOne });
     const offensive = action.movement.heroAttackSequence?.offensive;
     const returnedDeath = action.movement.heroAttackResult === 1
         || (offensive?.status === 'completed' && offensive.result.nativeResult === 1);
@@ -2859,7 +2821,7 @@ export async function moveMonsterForHeroAttack(monster, state = requireInitializ
         throw new Error('Monster movement completed without its native movement result.');
     return { status, heroDied: heroDied || !!state.program_state.gameover };
 }
-async function executeMonsterTurns(messageContext) {
+async function executeMonsterTurns() {
     const game = requireInitializedGame();
     const level = game.level;
     let somebodyCanMove = false;
@@ -2990,8 +2952,7 @@ async function executeMonsterTurns(messageContext) {
         if (await presentMonsterPostMove(action, game))
             return false;
         movement = action.movement;
-        const attackEffects = await presentMonsterAttackEffects(action, game, messageContext.earlierActorPager);
-        messageContext.earlierActorPager = attackEffects.earlierActorPager;
+        const attackEffects = await presentMonsterAttackEffects(action, game);
         if (attackEffects.heroDied)
             return false;
         movement = action.movement;
@@ -3159,25 +3120,14 @@ async function executeMonsterTurns(messageContext) {
         if (!movement?.moved)
             continue;
     }
-    delete game._statusAcOverride;
-    // Erosion mutates worn armor during movemon(), but C does not run
-    // find_ac() until the actor scan has finished.  Only after that boundary
-    // may the next ordinary input project the new AC; intervening combat and
-    // death pagers retain the pre-scan status value.
-    if (game._armorClassDirty
-        && !game._armorClassDirtyAfterDelayedFrame)
-        game._statusProjectedAc = projectedArmorClass(game);
     return game.level === level && somebodyCanMove;
 }
 async function moveMonsters() {
     const game = requireInitializedGame();
     const previousMonsterMoving = game.context.mon_moving;
-    const previousMessages = game._monsterMessageContext;
-    const messageContext = { earlierActorPager: false };
     game.context.mon_moving = true;
-    game._monsterMessageContext = messageContext;
     try {
-        const somebodyCanMove = await executeMonsterTurns(messageContext);
+        const somebodyCanMove = await executeMonsterTurns();
         // C mon.c:movemon() refreshes moving light sources after the pass.
         if (hasLightSources())
             game.vision_full_recalc = 1;
@@ -3185,10 +3135,6 @@ async function moveMonsters() {
     }
     finally {
         game.context.mon_moving = previousMonsterMoving;
-        if (previousMessages)
-            game._monsterMessageContext = previousMessages;
-        else
-            delete game._monsterMessageContext;
     }
 }
 // C ref: allmain.c newgame()
@@ -3334,7 +3280,6 @@ export async function moveloop_core() {
         && !g._armorClassDirtyAfterDelayedFrame) {
         findArmorClass(g);
         g._armorClassDirty = false;
-        delete g._statusProjectedAc;
     }
     if (g._prayerTurnsRemaining !== undefined && g._prayerTurnsRemaining > 0) {
         const prayerTurn = g.moves || 1;
@@ -3397,7 +3342,6 @@ export async function moveloop_core() {
             findArmorClass(g);
             g._armorClassDirty = false;
             delete g._armorClassDirtyAfterDelayedFrame;
-            delete g._statusProjectedAc;
         }
         else if (delayed.kind === 'remove') {
             // C allmain.c:unmul() emits nomovemsg before calling afternmv.
@@ -3407,6 +3351,8 @@ export async function moveloop_core() {
             if (delayed.finishMessage)
                 await plineWithContinuation(delayed.finishMessage);
             await finishArmorRemoval(delayed.object, { silent: true });
+            findArmorClass(g);
+            g._armorClassDirty = false;
         }
         g._delayedAction = null;
     }
@@ -3458,10 +3404,6 @@ export async function moveloop_core() {
         vision_recalc(0);
         g.vision_full_recalc = 0;
     }
-    // A removal message can leave the old AC on screen. Clear that temporary
-    // value before the ordinary status repaint.
-    delete g._statusAcOverride;
-    await bot();
     await flush_screen(1);
     heroEveryturnEffect(g);
     // A negative C `multi` suppresses rhack() but still leaves context.move

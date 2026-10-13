@@ -6,6 +6,7 @@ import { game } from './gstate.js';
 import { OBJECT_DESCRIPTIONS, OBJECT_NAMES } from './object_data.js';
 import { recordObjectCall, recordObjectEncounter } from './object_knowledge.js';
 import { getLine } from './query.js';
+import { flush_screen } from './display.js';
 import { objectTypeKnown } from './shk.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
@@ -65,6 +66,8 @@ export async function tryCallObjectType(
     ) {
         return { prompted: false, named: false, callName: null };
     }
+    // C docall() publishes buffered status before getlin() disables bot().
+    await flush_screen(1);
 
     const noun = objectTypeCallNoun(object, state);
     const appearance = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];

@@ -4,10 +4,9 @@
 import { heroIsHallucinating } from './senses.js';
 import { pline, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
-import { nextIdent } from './ident.js';
 import { CREAM_PIE } from './object_data.js';
 import { heroHasEyes } from './body_parts.js';
-import { rnd, rn2 } from './rng.js';
+import { rnd } from './rng.js';
 import {
     blindfolded, heroIsBlind,
 } from './senses.js';
@@ -16,42 +15,24 @@ import {
 } from './shk.js';
 import { makeBlinded } from './sight_change.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
-import { objectWeight } from './weight.js';
+import { splitObjectStack } from './object_stack.js';
+import { unlinkObject } from './object_location.js';
+import { delobj } from './object_delete.js';
 import type { GameObject } from './object_types.js';
 
 function splitOnePie(stack: GameObject) {
     const quantity = stack.quan ?? stack.quantity ?? 1;
     if (quantity <= 1) return { pie: stack, several: false };
 
-    const pie: GameObject = {
-        ...stack,
-        o_id: nextIdent(game),
-        quan: 1,
-        quantity: 1,
-        owt: 0,
-        owornmask: 0,
-        worn: false,
-        wielded: false,
-        alternate: false,
-        ready: false,
-        timed: 0,
-        lamplit: false,
-        where: 'inventory',
-    };
-    pie.owt = objectWeight(pie);
-    stack.quan = stack.quantity = quantity - 1;
-    stack.owt = objectWeight(stack);
-
+    const pie = splitObjectStack(stack, 1, game);
+    if (!pie) throw new Error('A stack of cream pies must yield one pie.');
     return { pie, several: true };
 }
 
 async function deletePie(pie: GameObject) {
     await releaseWeaponSlots(pie);
-    pie.owornmask = 0;
-    pie.worn = false;
-    const index = game.inventory?.indexOf(pie) ?? -1;
-    if (index >= 0) game.inventory.splice(index, 1);
-    pie.where = 'gone';
+    unlinkObject(pie, game);
+    await delobj(pie, game);
     game._capacityDirty = true;
 }
 
@@ -87,7 +68,6 @@ export async function useCreamPie(stack: GameObject | null | undefined) {
     }
 
     await chargeAlteredUnpaidObject(pie, 'splatter');
-    rn2(100);
     await deletePie(pie);
     return true;
 }

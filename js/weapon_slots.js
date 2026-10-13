@@ -90,6 +90,9 @@ export async function setPrimaryWeapon(object, state = game) {
         installSlot(object, 'uwep', W_WEP, 'wielded', state);
         await setWieldedArtifactProperties(object, true, state);
     }
+    if (artifactById(previous?.oartifact, state)?.name === 'Ogresmasher'
+        || artifactById(object?.oartifact, state)?.name === 'Ogresmasher')
+        state.context.botl = true;
     // setuwep ends the displaced light after setworn's new warning census.
     if (previous?.lamplit && artifactEmitsLight(previous)) {
         endObjectBurn(previous, state);

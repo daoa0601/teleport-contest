@@ -8,7 +8,7 @@ import type { Monster, VaultGuardData } from './monster_types.js';
 import type { MonsterCallLog, MonsterMovement } from './monster_action_types.js';
 import type { Position, Room } from './map_types.js';
 import { isRoom } from './map_types.js';
-import { nhgetch } from './input.js';
+import { getLine } from './query.js';
 import { deleteEngravingAt } from './engrave.js';
 import { bot, redrawMap, flush_screen, newsym, pline, plineWithContinuation, displayMessageWindow } from './display.js';
 import {
@@ -171,19 +171,14 @@ async function morePrompt(message: string) {
 }
 
 async function readGuardName() {
-    const prompt = '"Hello stranger, who are you?" -';
-    let name = '';
-    for (;;) {
-        await pline(`${prompt} ${name}`);
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(prompt.length + 1 + name.length, 0);
-        const key = await nhgetch();
-        if (key === 10 || key === 13) break;
-        if (key === 8 || key === 127) name = name.slice(0, -1);
-        else if (key >= 32 && key <= 126 && name.length < 31) name += String.fromCharCode(key);
+    const prompt = heroIsDeaf(game) ? 'You are required to supply your name. -'
+        : '"Hello stranger, who are you?" -';
+    for (let tries = 5; tries > 0; tries--) {
+        const response = await getLine(prompt, (_character, key) => key >= 32 && key !== 127);
+        const name = response?.trim().replace(/\s+/g, ' ') ?? '\x1b';
+        if (name) return name;
     }
-    game._pending_message = '';
-    return name.trim();
+    return '';
 }
 
 function guardGoldState(state: GameState = game) {

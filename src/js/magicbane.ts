@@ -101,6 +101,7 @@ export async function applyMagicbaneHit(
                 state.u.uenmax = (state.u.uenmax ?? 0) + 1;
                 state.u.uenpeak = Math.max(state.u.uenpeak ?? 0, state.u.uenmax);
                 state.u.uen = (state.u.uen ?? 0) + 1;
+                state.context.botl = true;
                 await publish('You absorb magical energy!');
             }
         }

@@ -4959,7 +4959,7 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
 export async function finishArmorRemoval(
     object: GameObject, { silent = false }: { silent?: boolean } = {},
 ): Promise<string> {
-    await removeHeroArmor(object, game);
+    await removeHeroArmor(object, game, { deferArmorClass: true });
     await announceDisplacementLoss(object, game);
     if (silent || game.flags?.verbose === false) return '';
     return armorOffMessage(object, game);
@@ -5077,7 +5077,6 @@ async function removeWornItem(action: 'remove' | 'take off', itemAction = false)
         return;
     }
 
-    const previousArmorClass = game.u?.uac ?? 10;
     // do_wear.c:off_msg() is conditional on flags.verbose.  When disabled,
     // immediate zero-delay armor removal leaves getobj's selector as the
     // physical topline even though the timed state change has committed.
@@ -5085,8 +5084,6 @@ async function removeWornItem(action: 'remove' | 'take off', itemAction = false)
     if (game.flags?.verbose === false && inventoryPrompt)
         game._retained_message = inventoryPrompt.trimEnd();
     const removalMessage = await finishArmorRemoval(object);
-    if (removalMessage && game.u?.uac !== previousArmorClass)
-        game._statusAcOverride = previousArmorClass;
     if (removalMessage)
         await plineWithContinuation(removalMessage);
     game.context.move = 1;
@@ -6478,6 +6475,7 @@ async function dothrow(
             }
             selectedItem = game.inventory?.find(candidate =>
                 candidate.invlet === String.fromCharCode(key)) ?? null;
+            game.context.botl = true;
             if (selectedItem) break;
 
             // invent.c:getobj() retains the picker after an absent letter.

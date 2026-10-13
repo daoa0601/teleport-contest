@@ -144,6 +144,8 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     if (heroIsPunished()) unplaceBallAndChain(game);
     clearHeroTrap(game);
     game.u.ustuck = null;
+    // goto_level() calls set_ustuck(NULL), which requests a status update.
+    game.context.botl = true;
     game.u.uswallow = game.uswallow = 0;
     game.u.uswldtim = 0;
     game.u.uinwater = 0;

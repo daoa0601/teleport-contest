@@ -155,6 +155,7 @@ export async function useHeroGaze({ state = game, attack = heroGazeAttack(state)
         return { used: false, spentTime: false, reason: 'energy' };
     }
     state.u.uen = energy - 15;
+    state.context.botl = true;
     let looked = 0;
     for (const monster of [...(state.level?.monsters || [])]) {
         if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
