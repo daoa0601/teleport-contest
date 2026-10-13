@@ -231,6 +231,7 @@ export async function advanceHeroPetrification({ state = game, publish = pline, 
         killer,
         deathCause: petrificationDeathCause(state),
         deathVerb: 'turned to stone',
+        deathLineShown: true,
         deathType: STONING,
     });
     clearHeroPetrification(state);
