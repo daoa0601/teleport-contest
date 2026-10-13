@@ -8,11 +8,11 @@ import { makeBlinded } from './sight_change.js';
 import { makeDeaf } from './hero_hearing.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { heroEyeCount, heroEyeName } from './body_parts.js';
-import { makePlural, verbForSubject } from './object_grammar.js';
+import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
-import { A_CON, A_DEX, A_WIS, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd, } from './const.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation, shieldeff, } from './display.js';
+import { A_CON, A_DEX, A_WIS, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, PLNMSG_OBJ_GLOWS, STRAT_WAITFORU, TIMEOUT, Upolyd, } from './const.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, displayColorName, plineWithContinuation, shieldeff, } from './display.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { splitMonster as splitMonsterActor } from './monster_clone.js';
@@ -164,25 +164,20 @@ async function applyPotionToSaddle({ state, monster, saddle, potion, targetVisib
     const owner = saddleOwnerPhrase(monster);
     const objectName = saddleName(saddle);
     let change = null;
-    let message = '';
     if (potion.otyp === POT_WATER && potion.blessed) {
         if (saddle.cursed) {
-            change = () => uncurseObjectState(saddle);
-            message = `${owner} ${objectName} glows amber.`;
+            change = { apply: () => uncurseObjectState(saddle), color: 'amber', aura: false };
         }
         else if (!saddle.blessed) {
-            change = () => blessObjectState(saddle);
-            message = `${owner} ${objectName} glows with a light blue aura.`;
+            change = { apply: () => blessObjectState(saddle), color: 'light blue', aura: true };
         }
     }
     else if (potion.otyp === POT_WATER && potion.cursed) {
         if (saddle.blessed) {
-            change = () => unblessObjectState(saddle);
-            message = `${owner} ${objectName} glows brown.`;
+            change = { apply: () => unblessObjectState(saddle), color: 'brown', aura: false };
         }
         else if (!saddle.cursed) {
-            change = () => curseObjectState(saddle);
-            message = `${owner} ${objectName} glows with a black aura.`;
+            change = { apply: () => curseObjectState(saddle), color: 'black', aura: true };
         }
     }
     if (!change) {
@@ -191,13 +186,16 @@ async function applyPotionToSaddle({ state, monster, saddle, potion, targetVisib
         return;
     }
     if (seen) {
-        await publish(message);
+        const color = displayColorName(change.color, state);
+        const glow = change.aura ? `with ${withIndefiniteArticle(color)} aura` : color;
+        await publish(`${owner} ${objectName} glows ${glow}.`);
+        state._lastPlineKind = PLNMSG_OBJ_GLOWS;
         saddle.bknown = !heroIsHallucinating(state);
     }
     else if (!potion.bknown || !potion.dknown) {
         saddle.bknown = false;
     }
-    change();
+    change.apply();
 }
 function healingCuresBlindness(potion) {
     if (potion.otyp === POT_FULL_HEALING)
