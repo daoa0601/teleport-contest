@@ -4008,8 +4008,6 @@ async function advanceHeroAttackSequence(
             continue;
         const slot: HeroAttackSlot = {
             attackIndex,
-            sourceAttackIndex: effectiveAttack === MONSTER_ATTACKS[monster.mnum]?.[attackIndex]
-                ? attackIndex : null,
             effectiveAttack,
             oldFormMnum: state.u.umonnum,
         };

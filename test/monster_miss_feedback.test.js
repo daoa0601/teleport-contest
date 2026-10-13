@@ -99,6 +99,20 @@ for (const middleMiss of [true, false]) {
         assert.equal(game.u.uhp, hp - (middleMiss ? 2 : 3));
     });
 }
+void test('a barbed devil using a replacement claw does not call the hit a repeated attack', async () => {
+    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 0 } });
+    requirePlayingGame(game);
+    const devil = await createMonsterAt('barbed devil', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    devil.mux = game.u.ux;
+    devil.muy = game.u.uy;
+    devil.mspec_used = 2;
+    const messages = observeMessages(/barbed devil/);
+    await performMonsterHeroAttack(devil, game, {
+        rollOne: () => 1, rollDice: count => count,
+    });
+    assert.match(messages(), /The barbed devil hits!\s+The barbed devil hits!\s+The barbed devil stings!/);
+    assert.doesNotMatch(messages(), /hits again!/);
+});
 void test('an unseen ordinary miss marks its source before interrupting searching', async () => {
     const level = freshObjectRoom({ hero: { uac: 0 } });
     requirePlayingGame(game);

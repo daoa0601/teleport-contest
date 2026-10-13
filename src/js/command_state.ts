@@ -4,6 +4,7 @@
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { stopRun } from './runmode.js';
+import { clearCommandKeys } from './input.js';
 
 // C cmd.c:reset_cmd_vars(). Full command_count belongs to the next parse.
 export function resetCommandVariables(clearQueues: boolean): void {
@@ -13,7 +14,10 @@ export function resetCommandVariables(clearQueues: boolean): void {
     game.context.move = 0;
     game.multi = 0;
     game.iflags.menu_requested = false;
-    if (clearQueues) game._cannedCommands = [];
+    if (clearQueues) {
+        game._cannedCommands = [];
+        clearCommandKeys();
+    }
 }
 
 // C hack.c:nomul(0). Cancel voluntary repetition, not an involuntary delay.
@@ -21,6 +25,7 @@ export function resetCommandVariables(clearQueues: boolean): void {
 // still need its final callback after the remaining multi becomes zero.
 export function endVoluntaryMultiTurn(state: GameState = game): void {
     if (heroHasInvoluntaryDelay(state)) return;
+    state.context.botl = true;
     const hero = state.u;
     hero.invulnerable = false; // u.uinvulnerable, not the timed property
     hero.usleep = 0;

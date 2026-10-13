@@ -232,7 +232,6 @@ export interface MonsterAttackPaging {
 }
 
 interface HeroAttackProgress {
-    sourceAttackIndex?: number | null;
     attackType?: number;
     damageType?: number;
     nativeResult?: number;
@@ -445,7 +444,6 @@ export type HeroAttack =
 
 export interface HeroAttackSlot {
     attackIndex: number;
-    sourceAttackIndex: number | null;
     effectiveAttack: AttackTuple;
     oldFormMnum: number;
 }

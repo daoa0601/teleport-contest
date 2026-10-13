@@ -111,7 +111,7 @@ import { clearJustPicked } from './just_picked.js';
 import { applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, destroyWornArmor, objectErosionKind, objectErosionMessage, projectedArmorClass, wornArmorInDestroyOrder, } from './armor.js';
 import { nearCapacity, } from './weight.js';
 import { dist2, dungeonDepth } from './hacklib.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName, } from './monster_data.js';
 import { finishHeroDeath, } from './end.js';
 import { runLevelRegions } from './regions.js';
 import { maintainVaultResidence, continueVaultGuardArrival, } from './vault.js';
@@ -1523,12 +1523,14 @@ async function monsterAttackMessage(monster, attack, previousAttack = null, rand
                 : attack.attackType === 4 ? 'butts'
                     : attack.attackType === 5 ? 'touches you'
                         : attack.attackType === 6 ? 'stings' : 'hits';
-    // getmattk() substitutes into a separate native attack buffer. Only
-    // consecutive original slots can continue hitmsg()'s repeated-hit chain.
+    // C hitmsg() requires adjacent slots in the species' attack array.
+    // getmattk() replacements use a separate buffer and cannot be adjacent.
     const again = previousAttack?.hit
-        && attack.sourceAttackIndex != null
-        && previousAttack.sourceAttackIndex === attack.sourceAttackIndex - 1
-        && previousAttack.attackType === attack.attackType ? ' again' : '';
+        && previousAttack.attackType === attack.attackType
+        && previousAttack.attackIndex + 1 === attack.attackIndex
+        && previousAttack.effectiveAttack === MONSTER_ATTACKS[monster.mnum]?.[previousAttack.attackIndex]
+        && attack.effectiveAttack === MONSTER_ATTACKS[monster.mnum]?.[attack.attackIndex]
+        ? ' again' : '';
     return `${attack.attackType === 16 ? possessiveName(subject) : subject} ${verb}${again}!`;
 }
 function wornTheftObjectDescription(object) {

@@ -23,7 +23,7 @@ import type { Monster } from './monster_types.js';
 import { isRoom } from './map_types.js';
 import type { Position, Trap } from './map_types.js';
 import type {
-    HeroAttack, HeroAttackSequence, HeroContactAttack, HeroSpellAttack,
+    HeroAttack, HeroAttackSequence, HeroAttackSlot, HeroContactAttack, HeroSpellAttack,
     MonsterAction, MonsterMovement, MonsterMovementAction, MonsterCallLog,
     RandomBelow, RollDice, RollOne,
 } from './monster_action_types.js';
@@ -239,7 +239,7 @@ import {
     nearCapacity,
 } from './weight.js';
 import { dist2, dungeonDepth } from './hacklib.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving,
     monsterTypeName,
 } from './monster_data.js';
@@ -1715,8 +1715,8 @@ function reluctantPetMessage(monster: Monster, movement: MonsterMovement): strin
 }
 
 async function monsterAttackMessage(
-    monster: Monster, attack: HeroContactAttack,
-    previousAttack: HeroAttack | null = null,
+    monster: Monster, attack: HeroContactAttack & HeroAttackSlot,
+    previousAttack: (HeroAttack & HeroAttackSlot) | null = null,
     random: RandomBelow = rn2,
 ): Promise<string | null> {
     const game = requireInitializedGame();
@@ -1763,12 +1763,14 @@ async function monsterAttackMessage(
             : attack.attackType === 4 ? 'butts'
                 : attack.attackType === 5 ? 'touches you'
                     : attack.attackType === 6 ? 'stings' : 'hits';
-    // getmattk() substitutes into a separate native attack buffer. Only
-    // consecutive original slots can continue hitmsg()'s repeated-hit chain.
+    // C hitmsg() requires adjacent slots in the species' attack array.
+    // getmattk() replacements use a separate buffer and cannot be adjacent.
     const again = previousAttack?.hit
-        && attack.sourceAttackIndex != null
-        && previousAttack.sourceAttackIndex === attack.sourceAttackIndex - 1
-        && previousAttack.attackType === attack.attackType ? ' again' : '';
+        && previousAttack.attackType === attack.attackType
+        && previousAttack.attackIndex + 1 === attack.attackIndex
+        && previousAttack.effectiveAttack === MONSTER_ATTACKS[monster.mnum]?.[previousAttack.attackIndex]
+        && attack.effectiveAttack === MONSTER_ATTACKS[monster.mnum]?.[attack.attackIndex]
+        ? ' again' : '';
     return `${attack.attackType === 16 ? possessiveName(subject) : subject} ${verb}${again}!`;
 }
 
@@ -2363,7 +2365,7 @@ async function presentMonsterAttackEffects(
         if (movement?.heroAttackSequence?.current) {
             let heroDied = false;
             let heroAttack: HeroAttackSequence['current'] = movement.heroAttackSequence.current;
-                let previousHeroAttack: HeroAttack | null = null;
+                let previousHeroAttack: (HeroAttack & HeroAttackSlot) | null = null;
                 const paging = movement.heroAttackSequence.paging;
                 while (heroAttack) {
                     const publishSlotMessage: typeof plineWithContinuation = async (message, options) => {

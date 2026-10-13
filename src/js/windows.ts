@@ -204,6 +204,7 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
 } = {}): Promise<number> {
     const d = display();
     if (!d) return 27;
+    await displayMessageWindow();
     const entries = lines.map(line => typeof line === 'string' ? { text: line } : line);
     if (pagerStyle === 'menu') {
         return await pageDisclosureWindow(d, entries, { marker, pagerStyle, restoreUnderlay });
@@ -371,7 +372,6 @@ export async function showChoiceWindow({
 }: ChoiceWindowOptions): Promise<number> {
     const d = display();
     if (!d) return 27;
-
     // tty_display_nhwindow() acknowledges unread prose before painting a menu.
     await displayMessageWindow();
     const underlayCursor = { col: d.cursorCol, row: d.cursorRow, visible: d.cursorVisible };

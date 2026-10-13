@@ -7,12 +7,22 @@ import { DAGGER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-void test('the inventory item action opens adjustment directly for that item', async () => {
+void test('the queued inventory adjustment asks only for the selected item destination', async () => {
     freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     const input = resetInputState();
     input.feed(`${dagger.invlet}i`);
-    const adjusting = rhack('i'.charCodeAt(0));
+    const inventory = rhack('i'.charCodeAt(0));
+    const menuComplete = await Promise.race([
+        inventory.then(() => true), input.waitUntilBlocked().then(() => false),
+    ]);
+    try {
+        assert.equal(menuComplete, true, 'the inventory menu closes before adjustment starts');
+    } finally {
+        if (!menuComplete) input.feed('\x1b');
+        await inventory;
+    }
+    const adjusting = rhack(0);
     const boundary = await Promise.race([
         input.waitUntilBlocked().then(() => true), adjusting.then(() => false),
     ]);

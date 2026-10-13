@@ -4,7 +4,7 @@ import { flushPendingTopline, pline } from './display.js';
 import { game } from './gstate.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { selectInventoryObject } from './invent.js';
-import { nhgetch } from './input.js';
+import { clearCommandKeys, nhgetch, takeCommandKey } from './input.js';
 import { promptKey } from './tty_prompts.js';
 import { rn2 } from './rng.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
@@ -12,6 +12,14 @@ import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
 // typed inventory letter or '*' may select. Downplayed items keep a command
 // available even when nothing is suggested.
 export async function chooseInventoryObject(verb, classify, { forcePrompt = false, emptyMessage = `You don't have anything to ${verb}.`, } = {}) {
+    const queuedKey = takeCommandKey();
+    if (queuedKey !== undefined) {
+        const object = game.inventory.find(candidate => candidate.invlet === String.fromCharCode(queuedKey)
+            && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
+        if (!object)
+            clearCommandKeys();
+        return object ?? null;
+    }
     if (game.flags?.fixinv === false)
         reassignInventoryLetters();
     const inventory = [...(game.inventory || [])]
@@ -153,7 +161,23 @@ export function compactInventoryLetters(letters) {
     }
     return compact;
 }
-export async function promptInventoryObject(prompt, eligible, { allowGold = false, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, retainPromptOnCancel = false, menuItems = eligible, } = {}) {
+export async function promptInventoryObject(prompt, eligible, { verb = 'use', classify = () => GETOBJ_SUGGEST, allowGold = false, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, retainPromptOnCancel = false, menuItems = eligible, } = {}) {
+    // getobj() checks CQ_CANNED before invoking tty_yn_function(). A queued
+    // choice neither acknowledges unread prose nor paints an item question.
+    const queuedKey = takeCommandKey();
+    if (queuedKey !== undefined) {
+        const letter = String.fromCharCode(queuedKey);
+        const object = eligible.find(candidate => candidate.invlet === letter
+            && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
+        if (object)
+            return { cancelled: false, object, gold: false, none: false, count: null };
+        if (allowNone && letter === '-')
+            return { cancelled: false, object: null, gold: false, none: true, count: null };
+        if (allowGold && letter === '$' && heroGoldAmount(game) > 0)
+            return { cancelled: false, object: null, gold: true, none: false, count: null };
+        clearCommandKeys();
+        return { cancelled: true, object: null, gold: false, none: false, count: null };
+    }
     let key = await askInventoryPrompt(prompt);
     let count = null;
     for (;;) {
@@ -211,6 +235,11 @@ export async function promptInventoryObject(prompt, eligible, { allowGold = fals
         const letter = String.fromCharCode(key);
         const object = eligible.find(candidate => candidate.invlet === letter);
         if (object) {
+            if (classify(object) === GETOBJ_EXCLUDE) {
+                await pline(object.oclass === 12 ? `You cannot ${verb} gold.`
+                    : `That is a silly thing to ${verb}.`);
+                return { cancelled: true, object: null, gold: false, none: false, count: null };
+            }
             if (count === 0) {
                 return {
                     cancelled: true, object: null, gold: false,

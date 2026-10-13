@@ -69,7 +69,6 @@ import { impactDrop } from './object_migration.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import { heroPassesWalls } from './hero_species.js';
 import { d, rn2, rnd } from './rng.js';
-import { stopRun } from './runmode.js';
 import { artifactById } from './artifacts.js';
 import {
     fallWithIronBall, heroIsPunished,
@@ -988,22 +987,13 @@ async function triggerRollingBoulderTrap(trap: Trap) {
 
 async function triggerBearTrap(trap: Trap, {
     failedUntrap = false, forceTrap = false,
-    viaSitting = false, tookPlunge = false,
+    viaSitting = false,
 } = {}) {
     requirePlayingGame(game);
     const hero = game.u;
     const levitating = hero.levitating || game.levitating;
     const flying = hero.flying || game.flying;
     const forced = forceTrap || failedUntrap;
-    const owner = trap.madeby_u ? 'your' : 'a';
-    if (!forced) {
-        if (levitating || (flying && !viaSitting && !tookPlunge)) {
-            if (trap.tseen) await plineWithContinuation(
-                `You ${levitating ? 'float' : 'fly'} over ${owner} ${trapName(trap.ttyp)}.`,
-            );
-            return false;
-        }
-    }
 
     const damage = d(2, 4);
     if (!forced && !viaSitting && (levitating || flying)) return false;
@@ -1230,7 +1220,7 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
     recursiveTrap = false,
 }: HeroTrapOptions = {}): Promise<HeroTrapResult> {
     if (!trap) return { died: false, shortCircuited: false };
-    stopRun();
+    endVoluntaryMultiTurn();
     requirePlayingGame(game);
     const hero = game.u;
     const pit = is_pit(trap.ttyp);
@@ -1307,7 +1297,7 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
         break;
     case BEAR_TRAP:
         died = await triggerBearTrap(trap, {
-            failedUntrap, forceTrap, viaSitting, tookPlunge,
+            failedUntrap, forceTrap, viaSitting,
         });
         break;
     case FIRE_TRAP:

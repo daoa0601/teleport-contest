@@ -234,6 +234,13 @@ export function objectName(
     return `${noun} named ${name}`.replace(/^the /i, '');
 }
 
+// C objnam.c:singular(otmp, xname) retains corpse species while describing
+// one item. Ordinary objectName() already omits the stack quantity.
+export function singularObjectName(object: ObjectNameView, state: GameState = game): string {
+    return object.otyp === CORPSE ? corpseName(object, { singular: true })
+        : objectName(object, state);
+}
+
 // C cxname()/xname(): contact feedback observes the object and retains its
 // quantity, poison, physical details, and personal name without a count prefix.
 export function objectCombatName(object: GameObject, {
@@ -518,11 +525,18 @@ export function armorObjectName(
     return armorPresentationName(noun, ordinaryName);
 }
 
-// C ansimpleoname(): no personal/call names, quantity prefix, or observation.
-export function simpleObjectNameWithArticle(object: ObjectNameView, state: GameState = game): string {
+// C simpleonames(): suppress personal/call names and the quantity prefix.
+export function simpleObjectName(object: ObjectNameView, state: GameState = game): string {
     const noun = minimalObjectName(object, state);
     const quantity = object.quan ?? object.quantity ?? 1;
-    if (quantity !== 1) return pluralizeObjectNoun(object, noun);
+    return quantity === 1 ? noun : pluralizeObjectNoun(object, noun);
+}
+
+// C ansimpleoname(): add an article to singular simple names.
+export function simpleObjectNameWithArticle(object: ObjectNameView, state: GameState = game): string {
+    const noun = simpleObjectName(object, state);
+    const quantity = object.quan ?? object.quantity ?? 1;
+    if (quantity !== 1) return noun;
     const uniqueType = object.otyp === FAKE_AMULET_OF_YENDOR ? AMULET_OF_YENDOR : object.otyp;
     if (OBJECT_UNIQUE[uniqueType] && noun === OBJECT_NAMES[uniqueType])
         return definiteName(noun, state);
