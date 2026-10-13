@@ -4134,14 +4134,7 @@ function specialDoorAt(context, mask, x, y) {
         return null;
     if (!IS_DOOR(loc.typ) && loc.typ !== SDOOR)
         loc.typ = DOOR;
-    const wallOrDoor = (candidate) => !!candidate
-        && (IS_WALL(candidate.typ) || IS_DOOR(candidate.typ)
-            || candidate.typ === SDOOR);
-    const wleft = wallOrDoor(level.at(doorX - 1, doorY));
-    const wright = wallOrDoor(level.at(doorX + 1, doorY));
-    const wup = wallOrDoor(level.at(doorX, doorY - 1));
-    const wdown = wallOrDoor(level.at(doorX, doorY + 1));
-    loc.horizontal = !!((wleft || wright) && !(wup && wdown));
+    setSpecialDoorOrientation(doorX, doorY);
     loc.doormask = mask;
     return { x: doorX, y: doorY };
 }
@@ -4225,13 +4218,7 @@ function specialIrregularRoom(context, x, y, rtype, lit, needfill) {
     room.irregular = true;
     room.needjoining = true;
     room.needfill = needfill;
-    for (let doorX = room.lx - 1; doorX <= room.hx + 1; doorX++) {
-        for (let doorY = room.ly - 1; doorY <= room.hy + 1; doorY++) {
-            const loc = level.at(doorX, doorY);
-            if (loc && (IS_DOOR(loc.typ) || loc.typ === SDOOR))
-                add_door(doorX, doorY, room);
-        }
-    }
+    addDoorsToSpecialRoom(room);
     return room;
 }
 function getSpecialLevelExtents() {
@@ -5086,11 +5073,73 @@ function addDoorsToSpecialRoom(room) {
         for (let y = room.ly - 1; y <= room.hy + 1; y++) {
             const loc = level.at(x, y);
             if (loc && (IS_DOOR(loc.typ) || loc.typ === SDOOR))
-                add_door(x, y, room);
+                maybeAddSpecialRoomDoor(x, y, room);
         }
     }
     for (const subroom of room.sbrooms || [])
         addDoorsToSpecialRoom(subroom);
+}
+// sp_lev.c:link_doors_rooms(). A later Lua room can create a door shared
+// with an earlier one, so link the completed map before stocking it.
+function linkSpecialLevelDoors() {
+    const level = requireGameLevel();
+    for (let y = 0; y < ROWNO; y++) {
+        for (let x = 0; x < COLNO; x++) {
+            const loc = level.requireAt(x, y);
+            if (!IS_DOOR(loc.typ) && loc.typ !== SDOOR)
+                continue;
+            setSpecialDoorOrientation(x, y);
+            for (const room of level.rooms.slice(0, level.nroom)) {
+                if (!isRoom(room))
+                    continue;
+                maybeAddSpecialRoomDoor(x, y, room);
+                for (const subroom of room.sbrooms ?? [])
+                    maybeAddSpecialRoomDoor(x, y, subroom);
+            }
+        }
+    }
+}
+function maybeAddSpecialRoomDoor(x, y, room) {
+    const level = requireGameLevel();
+    const roomNumber = room.roomnoidx + ROOMOFFSET;
+    const inRectangle = !room.irregular
+        && x >= room.lx - 1 && x <= room.hx + 1
+        && y >= room.ly - 1 && y <= room.hy + 1;
+    if (inRectangle || level.at(x, y)?.roomno === roomNumber
+        || specialDoorSharedWithRoom(x, y, room, roomNumber)) {
+        add_door(x, y, room);
+    }
+}
+function specialDoorSharedWithRoom(x, y, room, roomNumber) {
+    const level = requireGameLevel();
+    const loc = level.at(x, y);
+    if (!isok(x, y) || !loc || (loc.roomno === roomNumber && !loc.edge))
+        return false;
+    return (isok(x - 1, y) && x - 1 <= room.hx && level.at(x - 1, y)?.roomno === roomNumber)
+        || (isok(x + 1, y) && x + 1 >= room.lx && level.at(x + 1, y)?.roomno === roomNumber)
+        || (isok(x, y - 1) && y - 1 <= room.hy && level.at(x, y - 1)?.roomno === roomNumber)
+        || (isok(x, y + 1) && y + 1 >= room.ly && level.at(x, y + 1)?.roomno === roomNumber);
+}
+function setSpecialDoorOrientation(x, y) {
+    const level = requireGameLevel();
+    const wallOrDoor = (nx, ny) => {
+        const loc = level.at(nx, ny);
+        return isok(nx, ny) && !!loc
+            && (IS_WALL(loc.typ) || IS_DOOR(loc.typ) || loc.typ === SDOOR);
+    };
+    let left = wallOrDoor(x - 1, y), right = wallOrDoor(x + 1, y);
+    let up = wallOrDoor(x, y - 1), down = wallOrDoor(x, y + 1);
+    if (!left && !right && !up && !down) {
+        const joinsDoor = (nx, ny) => {
+            const loc = level.at(nx, ny);
+            return !isok(nx, ny) || !!loc && (IS_OBSTRUCTED(loc.typ) || loc.typ === IRONBARS);
+        };
+        left = joinsDoor(x - 1, y);
+        right = joinsDoor(x + 1, y);
+        up = joinsDoor(x, y - 1);
+        down = joinsDoor(x, y + 1);
+    }
+    level.requireAt(x, y).horizontal = (left || right) && !(up && down);
 }
 async function buildSpecialRoom(spec, parent = null, contents = null) {
     const level = requireGameLevel();
@@ -5242,16 +5291,7 @@ function specialRectangularRoom(context, x1, y1, x2, y2, rtype, lit, needfill) {
     room.needjoining = true;
     room.needfill = needfill;
     topologize(room);
-    // sp_lev.c:add_doors_to_room() runs as soon as each Lua region closes.
-    // For rectangular rooms inside_room() includes the one-cell perimeter,
-    // so every mapped door in that ring is linked in x-major/y-minor order.
-    for (let x = room.lx - 1; x <= room.hx + 1; x++) {
-        for (let y = room.ly - 1; y <= room.hy + 1; y++) {
-            const loc = level.at(x, y);
-            if (loc && (IS_DOOR(loc.typ) || loc.typ === SDOOR))
-                add_door(x, y, room);
-        }
-    }
+    addDoorsToSpecialRoom(room);
     return room;
 }
 async function specialShrinePriest(temple, altarX, altarY, altarAlignment, { sanctum = false } = {}) {
@@ -6575,6 +6615,7 @@ function createLuaLevelSession() {
             return roomFailed;
         },
         async finishSpecialLevel() {
+            linkSpecialLevelDoors();
             removeSpecialLevelBoundaries(mappedCells);
             if (currentLevel().checkInaccessibles)
                 await ensureWaysOut();
