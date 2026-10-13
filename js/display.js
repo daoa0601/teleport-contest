@@ -1304,6 +1304,12 @@ export function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false, attr
         decgfx = false;
     }
     const nextGlyph = glyph || { kind: 'effect' };
+    // reset_glyphmap() marks a corridor engraving which shares '#'
+    // with corridors; tty_print_glyph() makes that glyph inverse.
+    if (nextGlyph.glyph === cmapToGlyph(CmapSymbol.engrcorr) && ch === '#'
+        && game.flags.use_inverse !== false && game.iflags.use_inverse !== false
+        && game.iflags.wc_inverse !== false)
+        attr |= ATR_INVERSE;
     if (game.flags.color === false) {
         color = NO_COLOR;
         // reset_glyphmap() marks ice sharing the floor symbol with MG_BW_ICE.

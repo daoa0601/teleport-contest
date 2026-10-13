@@ -74,6 +74,8 @@ import { addCreatedObjectToMonsterInventory, addObjectToMonsterInventory, linkCr
 import { setupElementalBubbles } from './elemental.js';
 import { maybeGiveDomesticSaddle, putSaddleOnMonster } from './steed.js';
 import { inTown, roomForIndex, roomsAt } from './room.js';
+import { insideShopRoomAt } from './shk.js';
+import { convertSecretDoor } from './detect.js';
 import { occupied, somex, somey, somexy, somexyspace, } from './mkroom.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
 import { beginObjectBurn } from './light.js';
@@ -8084,13 +8086,35 @@ async function stockShopRoom(sroom) {
         || (shopIndex === 0 && rn2(5)))
         await addObjectToMonsterInventory(shopkeeper, await mksobj(SCR_CHARGING, true, false), game, { atFront: true });
     assignShopkeeperIdentity(shopkeeper, shopIndex);
-    const doorLoc = level.at(shopDoor.door.x, shopDoor.door.y);
-    if (doorLoc?.doormask === D_NODOOR)
+    const entrance = level.doors[sroom.fdoor];
+    if (!entrance)
+        throw new Error('A stocked shop has no entrance door.');
+    const doorLoc = level.requireAt(entrance.x, entrance.y);
+    if (doorLoc.doormask === D_NODOOR) {
         doorLoc.doormask = D_ISOPEN;
-    if (doorLoc?.typ === SDOOR)
-        doorLoc.typ = DOOR;
-    if (doorLoc && (doorLoc.doormask & D_TRAPPED))
+        newsym(entrance.x, entrance.y);
+    }
+    if (doorLoc.typ === SDOOR) {
+        convertSecretDoor(doorLoc);
+        newsym(entrance.x, entrance.y);
+    }
+    if (doorLoc.doormask & D_TRAPPED)
         doorLoc.doormask = D_LOCKED;
+    if (doorLoc.doormask === D_LOCKED) {
+        let x = entrance.x, y = entrance.y;
+        if (insideShopRoomAt(game, x + 1, y))
+            x--;
+        else if (insideShopRoomAt(game, x - 1, y))
+            x++;
+        if (insideShopRoomAt(game, entrance.x, y + 1))
+            y--;
+        else if (insideShopRoomAt(game, entrance.x, y - 1))
+            y++;
+        makeEngravingAt(x, y, 'Closed for inventory', null, 0, DUST);
+        const noticeLocation = level.requireAt(x, y);
+        if (noticeLocation.typ !== CORR && noticeLocation.typ !== ROOM)
+            noticeLocation.typ = specialLevelAt() || roomsAt(level, x, y, 0).length ? ROOM : CORR;
+    }
     const stockPositions = [];
     for (let x = sroom.lx; x <= sroom.hx; x++)
         for (let y = sroom.ly; y <= sroom.hy; y++)
