@@ -255,18 +255,25 @@ async function describeSelectedPosition(describe: PositionDescription | null | u
     return await describe?.(cursor.x, cursor.y) || fallback;
 }
 
-// C getpos.c:gather_locs()/gather_locs_interesting() with GLOC_VALID minus
-// the hero injection: predicate-true squares ordered by cmp_coord_distu()
-// (Chebyshev distance from the hero, then row, then column).  Unseen
-// squares stay eligible for cycling; only the '$' marking is gated.
-function gatherValidLocations(isValidLocation: ValidLocation, state: GameState = game): Position[] {
-    const ux = state.u.ux, uy = state.u.uy;
+// selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
+// consume display randomness in that order, independently of target cycling.
+function validMapSquares(isValidLocation: ValidLocation): Position[] {
     const spots = [];
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
             if (isValidLocation(x, y)) spots.push({ x, y });
         }
     }
+    return spots;
+}
+
+// C getpos.c:gather_locs()/gather_locs_interesting() with GLOC_VALID minus
+// the hero injection: predicate-true squares ordered by cmp_coord_distu()
+// (Chebyshev distance from the hero, then row, then column).  Unseen
+// squares stay eligible for cycling; only the '$' marking is gated.
+function gatherValidLocations(isValidLocation: ValidLocation, state: GameState = game): Position[] {
+    const ux = state.u.ux, uy = state.u.uy;
+    const spots = validMapSquares(isValidLocation);
     spots.sort((a, b) => {
         const distA = Math.max(Math.abs(ux - a.x), Math.abs(uy - a.y));
         const distB = Math.max(Math.abs(ux - b.x), Math.abs(uy - b.y));
@@ -280,7 +287,7 @@ function gatherValidLocations(isValidLocation: ValidLocation, state: GameState =
 // C getpos.c:getpos_sethilite(). Install after the caller's question and
 // before getpos's tutorial or instructions can flush these forced redraws.
 export function prepareMapPositionHighlights(isValidLocation: ValidLocation): void {
-    for (const { x, y } of gatherValidLocations(isValidLocation)) newsym_force(x, y);
+    for (const { x, y } of validMapSquares(isValidLocation)) newsym_force(x, y);
 }
 
 function getposCycleKind(key: number): { kind: GetposCycleKind; step: -1 | 1 } | null {
@@ -501,7 +508,7 @@ export async function selectMapPosition({
             for (const { x, y } of paintedSpots) newsym(x, y);
         }
         if (isValidLocation) {
-            for (const { x, y } of gatherValidLocations(isValidLocation)) newsym_force(x, y);
+            for (const { x, y } of validMapSquares(isValidLocation)) newsym_force(x, y);
         }
     }
 }
