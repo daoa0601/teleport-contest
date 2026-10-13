@@ -6912,7 +6912,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
     if (loc && heroIsBlind(game) && (IS_OBSTRUCTED(loc.typ) || loc.typ === IRONBARS
         || loc.typ === DOOR && (!!(loc.doormask & (D_CLOSED | D_LOCKED))
             || !!(dx && dy) && !heroPassesWalls(game)
-                && blocksDiagonalDoor(game.level.at(u.ux, u.uy), loc)))) {
+                && blocksDiagonalDoor(null, loc)))) {
         feel_location(newx, newy);
     }
     if (loc?.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))

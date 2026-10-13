@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { D_CLOSED, DOOR, ENGRAVE, ROOM, VWALL } from '../js/const.js';
+import { D_CLOSED, D_ISOPEN, D_NODOOR, DOOR, ENGRAVE, ROOM, VWALL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { feel_location } from '../js/display.js';
 import { makeEngravingAt } from '../js/engrave.js';
@@ -46,4 +46,26 @@ void test('touching an engraved floor reveals its engraving while blind', () => 
 
     assert.equal(engraving.erevealed, true);
     assert.equal(level.requireAt(11, 10).remembered_glyph?.kind, 'engraving');
+});
+
+void test('a rejected blind diagonal exit does not feel the doorless destination', async () => {
+    const level = freshObjectRoom({ recalculateVision: false, flags: { mention_walls: false } });
+    requirePlayingGame(game);
+    const current = level.requireAt(10, 10);
+    current.typ = DOOR;
+    current.doormask = D_ISOPEN;
+    const destination = level.requireAt(11, 9);
+    destination.typ = DOOR;
+    destination.doormask = D_NODOOR;
+    destination.seenv = 0;
+    setHeroBlindnessTurns(10);
+    vision_reset();
+    vision_recalc(0);
+
+    await rhack('u'.charCodeAt(0));
+
+    assert.equal(game.u.ux, 10);
+    assert.equal(game.u.uy, 10);
+    assert.equal(destination.seenv, 0);
+    assert.equal(destination.remembered_glyph, undefined);
 });
