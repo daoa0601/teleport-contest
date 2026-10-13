@@ -1844,6 +1844,8 @@ async function resolveDeferredHeroItemTheft(
             : ownedObjectName(object, game, { capitalized: false });
         await plineWithContinuation(`${subject} tries to ${verbs[draw(4)]} ${name} but gives up.`);
         if (draw(Math.trunc(game.inventory.filter(item => item.oclass !== 12).length / 5) + 2) === 0) {
+            if (!animal && !await reportMonsterTeleportRestriction(monster, { state: game }))
+                await randomMonsterRelocation(monster, { calls: action.calls, flags: RLOC_MSG });
             await makeMonsterFlee(monster, { announce: false });
             attack.attackerDone = true;
         }

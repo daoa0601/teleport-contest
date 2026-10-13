@@ -180,6 +180,39 @@ void test('a monkey can give up stealing boots even after removal has started', 
     assert.match(messages.join('\n'), /The monkey tries to take your shoes but gives up\./);
 });
 
+for (const restricted of [false, true]) {
+    void test(`a nymph refusing a paralyzed hero's armor ${restricted ? 'reports blocked teleportation' : 'teleports before fleeing'}`, async () => {
+        const level = freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        requirePlayingGame(game);
+        level.flags.noteleport = restricted;
+        const suit = await addInventoryObject(LEATHER_ARMOR);
+        wearHeroArmor(suit);
+        const thief = await nearbyThief();
+        game._helplessTurns = 4;
+        game._helplessReason = 'paralyzed';
+        const input = resetInputState();
+        installPagerInput(input, { expected: /nymph/, limit: 12 });
+        const messages: string[] = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+
+        await performMonsterHeroAttack(thief, game, {
+            random: limit => limit === 2 ? 0 : limit - 1, rollOne: () => 1,
+        });
+        await flushPendingTopline();
+
+        assert.ok(game.uarm === suit);
+        assert.equal(thief.minvent.includes(suit), false);
+        assert.equal(thief.mflee, 1);
+        if (restricted) {
+            assert.match(messages.join('\n'), /A mysterious force prevents the water nymph from teleporting!/);
+            assert.equal(thief.mx, 11);
+            assert.equal(thief.my, 10);
+        } else {
+            assert.ok(thief.mx !== 11 || thief.my !== 10, 'Refusal still attempts teleportation');
+        }
+    });
+}
+
 for (const female of [true, false]) {
     void test(`a cancelled nymph reports failed ${female ? 'charm' : 'seduction'} and ends her attack when retreat is blocked`, async () => {
         const level = freshObjectRoom({ flags: { female }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
