@@ -4,7 +4,7 @@ import { CORR, ROOM, TT_PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { vision_recalc, cansee, couldsee } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
-void test('a hero in a pit cannot see a pet two squares away', () => {
+void test('a hero in a pit sees only adjoining squares', () => {
     const level = freshObjectRoom({ left: 6, right: 18, top: 6, bottom: 14 });
     requirePlayingGame(game);
     game.u.utrap = 4;
@@ -15,7 +15,7 @@ void test('a hero in a pit cannot see a pet two squares away', () => {
     assert.equal(cansee(12, 10), false);
     assert.equal(level.requireAt(12, 10).typ, ROOM);
 });
-void test('night vision honors its range without seeing through an obstruction', () => {
+void test('night vision reveals unlit floor within its range', () => {
     const level = freshObjectRoom({ left: 6, right: 18, recalculateVision: false });
     requirePlayingGame(game);
     for (let x = 6; x <= 18; x++)

@@ -1622,6 +1622,13 @@ export function newsym(x, y) {
         map_location(x, y, true);
     }
     else if (loc.remembered_glyph) {
+        if (Is_rogue_level(game.u.uz) && loc.typ === ROOM && !loc.waslit
+            && loc.remembered_glyph.glyph === cmapToGlyph(CmapSymbol.room)) {
+            loc.remembered_glyph = {
+                ch: ' ', color: NO_COLOR, decgfx: false, kind: 'terrain',
+                terrainName: 'stone', glyph: cmapToGlyph(CmapSymbol.stone),
+            };
+        }
         // Out of sight but remembered — show remembered glyph
         show_glyph_cell(x, y, loc.remembered_glyph.ch, rememberedColor(loc.remembered_glyph, loc, x, y), loc.remembered_glyph.decgfx, objectGlyphAttr(loc.remembered_glyph), loc.remembered_glyph);
     }
