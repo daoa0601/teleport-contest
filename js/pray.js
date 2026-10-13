@@ -11,7 +11,7 @@ import { angryGods, godsUpset, godVoice } from './divine_wrath.js';
 import { grantPrayerFavor } from './divine_gifts.js';
 import { A_CON, A_NONE, A_WIS, ALTAR, AM_SHRINE, Amask2align, LUCKMIN, PARANOID_CONFIRM, PARANOID_PRAY, } from './const.js';
 import { adjustAttribute, attributeChangeMessage, exerciseAttribute } from './attrib.js';
-import { reviveCorpseImmediately } from './corpse_revival.js';
+import { reviveCorpseForHero } from './corpse_revival.js';
 import { loseHeroHp } from './hero_damage.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
@@ -292,7 +292,7 @@ async function reviveAltarPet() {
     if (!object)
         return;
     if (object.otyp === CORPSE)
-        await reviveCorpseImmediately(object);
+        await reviveCorpseForHero(object);
     else
         await animateStatue(object, hero.ux, hero.uy, { magic: true });
 }

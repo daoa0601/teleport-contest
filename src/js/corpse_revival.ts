@@ -40,7 +40,13 @@ import {
 import { d, rn2 } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { cansee } from './vision.js';
-import { objectWeight } from './weight.js';
+import { deleteObject, delobjCore } from './object_delete.js';
+import { useUpInventoryStack } from './hero_inventory.js';
+import { objectQuantity, splitObjectStack } from './object_stack.js';
+import { ownedObjectName } from './objnam.js';
+import { makePlural } from './object_grammar.js';
+import { costlySpot } from './shk.js';
+import { stolenValue } from './shop_loss.js';
 import { markQuestLeaderAlive } from './quest.js';
 import {
     bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE,
@@ -273,69 +279,23 @@ function revivalMessage(
     return null;
 }
 
-function clearHeroEquipment(corpse: GameObject, state: GameState) {
-    for (const slot of [
-        'uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmc', 'uarmh',
-        'uarms', 'uarmg', 'uarmf', 'uarmu', 'uleft', 'uright',
-        'uamul', 'ublindf',
-    ] as const) {
-        if (state[slot] === corpse) state[slot] = null;
-    }
-    corpse.owornmask = 0;
-    corpse.worn = false;
-    corpse.wielded = false;
-}
-
-function updateContainerWeights(container: GameObject | null | undefined, state: GameState) {
-    const seen = new Set<GameObject>();
-    let current = container;
-    while (current && !seen.has(current)) {
-        seen.add(current);
-        current.owt = objectWeight(current);
-        current = current.where === 'contained'
-            ? parentContainer(current, state) : null;
-    }
-}
-
 async function removeCorpse(
     corpse: GameObject, location: CorpseRevivalLocation | null, state: GameState,
-    entireStack = false,
 ) {
-    const quantity = corpse.quan ?? corpse.quantity ?? 1;
-    if (quantity > 1 && !entireStack) {
-        corpse.quan = quantity - 1;
-        corpse.quantity = quantity - 1;
-        corpse.owt = objectWeight(corpse);
+    if (corpse.where === 'inventory') {
+        await useUpInventoryStack(corpse, state);
         return;
     }
-
     if (corpse.where === 'floor') {
-        const pile = state.level?.objects?.[corpse.ox]?.[corpse.oy];
-        const index = pile?.indexOf(corpse) ?? -1;
-        if (pile && index >= 0) pile.splice(index, 1);
-    } else if (corpse.where === 'buried') {
-        const objects = state.level?.buriedObjects;
-        const index = objects?.indexOf(corpse) ?? -1;
-        if (objects && index >= 0) objects.splice(index, 1);
-    } else if (corpse.where === 'inventory') {
-        clearHeroEquipment(corpse, state);
-        const index = state.inventory?.indexOf(corpse) ?? -1;
-        if (index >= 0) state.inventory.splice(index, 1);
-    } else if (corpse.where === 'minvent') {
-        const carrier = location?.monsterCarrier || carryingMonster(corpse, state);
-        if (carrier) await removeObjectFromMonsterInventory(carrier, corpse, state);
-    } else if (corpse.where === 'contained') {
-        const container = location && isContainerLocation(location)
-            ? location.directContainer : parentContainer(corpse, state);
-        const index = container?.contents?.indexOf(corpse) ?? -1;
-        if (container?.contents && index >= 0) container.contents.splice(index, 1);
-        updateContainerWeights(container, state);
+        await delobjCore(corpse, true, state);
+        return;
     }
-    stopAllObjectTimers(corpse);
-    corpse.where = 'gone';
-    corpse.buried = false;
-    corpse.ox = corpse.oy = 0;
-    delete corpse.container;
+    if (corpse.where === 'minvent') {
+        const carrier = location?.monsterCarrier || carryingMonster(corpse, state);
+        if (!carrier) throw new Error('A revived monster-carried corpse has no carrier');
+        await removeObjectFromMonsterInventory(carrier, corpse, state);
+    }
+    await deleteObject(corpse, state);
 }
 
 function restoreCorpseNameAndHealth(monster: Monster, corpse: CorpseObject) {
@@ -511,7 +471,7 @@ async function stopCorpseMeal(corpse: GameObject, state: GameState) {
 }
 
 async function reviveCorpse(
-    corpse: GameObject, state: GameState, { announce = true } = {},
+    corpse: GameObject, state: GameState, { announce = true, byHero = false } = {},
 ): Promise<CorpseRevivalResult> {
     requireCorpseSpecies(corpse);
     const originalWhere = corpse.where;
@@ -536,24 +496,52 @@ async function reviveCorpse(
     }
 
     const monster = creation.monster;
-    await mergeGhostIntoBody(monster, corpse, state);
-    restoreCorpseNameAndHealth(monster, corpse);
+    const oneOf = objectQuantity(corpse) > 1;
+    const body = oneOf ? splitObjectStack(corpse, 1, state) : corpse;
+    if (!body) throw new Error('A revived corpse could not be separated from its stack');
+    requireCorpseSpecies(body);
+    if (byHero) await describeHeroRevival(body, monster, oneOf, state);
+    await mergeGhostIntoBody(monster, body, state);
+    restoreCorpseNameAndHealth(monster, body);
     monster.mrevived = 1;
     if (announce) {
         const message = revivalMessage(
-            corpse, monster, location, originalWhere, state,
+            body, monster, location, originalWhere, state,
         );
         if (message) messages.push(message);
     }
-    await removeCorpse(corpse, location, state);
+    await removeCorpse(body, location, state);
     newsym(monster.mx, monster.my);
 
     let trap: Trap | null = null;
     if (digsOut) trap = await maketrap(monster.mx, monster.my, PIT);
     return {
-        kind: 'revived', corpse, monster, trap,
+        kind: 'revived', corpse: body, monster, trap,
         buried: digsOut, originalWhere, location, messages,
     };
+}
+
+// C zap.c:revive(..., TRUE) announces and charges the body before consuming it.
+async function describeHeroRevival(
+    corpse: CorpseObject, monster: Monster, oneOf: boolean, state: GameState,
+): Promise<void> {
+    const keeper = costlySpot(corpse.ox, corpse.oy, state)?.resident;
+    const chargeable = keeper && (corpse.where === 'inventory' ? corpse.unpaid : !corpse.no_charge);
+    if (cansee(corpse.ox, corpse.oy)) {
+        const name = ownedObjectName(corpse, state, { capitalized: !oneOf });
+        const subject = oneOf ? `One of ${makePlural(name)}` : name;
+        await plineWithContinuation(`${subject} glows iridescently.`);
+    } else if (chargeable) {
+        await plineWithContinuation('A corpse is resuscitated.');
+    }
+    if (chargeable && keeper !== monster)
+        await stolenValue(corpse, corpse.ox, corpse.oy, !!keeper.mpeaceful, { silent: false, state });
+}
+
+export async function reviveCorpseForHero(corpse: GameObject, state: GameState = game): Promise<CorpseRevivalResult> {
+    const result = await reviveCorpse(corpse, state, { announce: false, byHero: true });
+    for (const message of result.messages) await plineWithContinuation(message);
+    return result;
 }
 
 export async function reviveCorpseImmediately(corpse: GameObject | null | undefined, state: GameState = game, { announce = true } = {}): Promise<CorpseRevivalResult | null> {

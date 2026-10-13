@@ -13,7 +13,7 @@ import { magicNegation } from '../js/magic_negation.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKey, resetInputState } from '../js/input.js';
-import { AMULET_OF_LIFE_SAVING, BOULDER, FIGURINE, LEATHER_GLOVES, LOADSTONE, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, FIGURINE, LEATHER_GLOVES, LOADSTONE, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -28,6 +28,8 @@ import { createMonsterAt } from './support/monsters.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { objectTimers } from '../js/object_timers.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { initializePet } from '../js/dog.js';
+import { saveMonsterTraits } from '../js/monster_traits.js';
 function prayerRoom({ hero = {}, flags = {}, ...room } = {}) {
     freshObjectRoom({
         ...room,
@@ -153,6 +155,28 @@ void test('#pray stops a cursed figurine\'s transformation when granting an inve
     await resolvePrayer();
     assert.equal(figurine.cursed, false);
     assert.equal(objectTimers(figurine).length, 0);
+});
+void test('#pray makes a former pet\'s corpse glow when reviving it on an altar', async () => {
+    prayerRoom();
+    requirePlayingGame(game);
+    const altar = game.level.requireAt(10, 10);
+    altar.typ = ALTAR;
+    altar.flags = Align2amask(0);
+    const pet = await createMonsterAt('little dog', 11, 10);
+    initializePet(pet);
+    const traits = saveMonsterTraits(pet);
+    game.level.monsters = game.level.monsters.filter(monster => monster !== pet);
+    const corpse = await floorObject(CORPSE, 10, 10, {
+        corpsenm: pet.mnum, oextra: { omonst: traits },
+    });
+    const input = resetInputState();
+    await runExtendedCommand('pray', 'y ');
+    await answerPrompts(finishPrayerOccupation(), input, [
+        { prompt: /You finish your prayer\.[\s\S]*--More--/, keys: ' ' },
+        { prompt: /little dog corpse glows iridescently\.[\s\S]*--More--/, keys: ' ' },
+    ]);
+    assert.equal(corpse.where, 'gone');
+    assert.ok(game.level.monsters.some(monster => monster.mnum === pet.mnum && monster.mtame));
 });
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {
     prayerRoom();

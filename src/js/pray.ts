@@ -15,7 +15,7 @@ import {
     PARANOID_CONFIRM, PARANOID_PRAY,
 } from './const.js';
 import { adjustAttribute, attributeChangeMessage, exerciseAttribute } from './attrib.js';
-import { reviveCorpseImmediately } from './corpse_revival.js';
+import { reviveCorpseForHero } from './corpse_revival.js';
 import { loseHeroHp } from './hero_damage.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
@@ -276,7 +276,7 @@ async function reviveAltarPet() {
         [CORPSE, STATUE].includes(object.otyp)
         && object.oextra?.omonst?.mtame && !object.oextra.omonst.isminion);
     if (!object) return;
-    if (object.otyp === CORPSE) await reviveCorpseImmediately(object);
+    if (object.otyp === CORPSE) await reviveCorpseForHero(object);
     else await animateStatue(object, hero.ux, hero.uy, { magic: true });
 }
 
