@@ -3,7 +3,7 @@
 import { game } from './gstate.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, clearMessageWindow, cls, docrt, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
+import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
 import { vision_recalc } from './vision.js';
 import { nhgetch } from './input.js';
 import { getLine } from './query.js';
@@ -1054,7 +1054,6 @@ async function editSortLoot() {
         game.flags.sortloot = mode;
 }
 async function editFruitOption() {
-    await cls();
     const name = await getLine('Set fruit to what?', (_ch, code) => code >= 32 && code < 127, { suppressStatus: true });
     if (!name)
         return;
