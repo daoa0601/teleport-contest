@@ -179,9 +179,10 @@ async function impactArtifactLight(object, worsen) {
     const removeCurse = !worsen && object.cursed;
     const blind = heroIsBlind();
     if (!blind) {
+        const phrase = ownedObjectAction(object, 'glow');
         const color = displayColorName(removeBlessing ? 'brown' : removeCurse ? 'amber'
             : worsen ? 'black' : 'light blue');
-        await plineWithContinuation(`${ownedObjectAction(object, 'glow')}${removeBlessing || removeCurse ? ` ${color}` : ` with ${withIndefiniteArticle(color)} aura`}.`);
+        await plineWithContinuation(`${phrase}${removeBlessing || removeCurse ? ` ${color}` : ` with ${withIndefiniteArticle(color)} aura`}.`);
         object.bknown = !heroIsHallucinating();
     }
     else if (!water.bknown || !water.dknown)
