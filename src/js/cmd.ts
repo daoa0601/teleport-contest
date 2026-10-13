@@ -6870,8 +6870,9 @@ async function openLockedDoor(door: MapLocation, x: number, y: number): Promise<
         && M_AP_TYPE(monster) !== M_AP_OBJECT) {
         if (tool.otyp === CREDIT_CARD
             && (monster.isshk || MONSTER_NAME[monster.mnum] === 'Oracle'))
-            await pline('"No checks, no credit, no problem."');
-        else await pline(`I don't think ${monsterName(monster)} would appreciate that.`);
+            await plineWithContinuation('"No checks, no credit, no problem."');
+        else
+            await plineWithContinuation(`I don't think ${monsterName(monster)} would appreciate that.`);
         return true;
     }
     await flushPendingTopline();

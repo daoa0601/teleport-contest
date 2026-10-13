@@ -2,9 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DOOR, D_CLOSED, D_LOCKED, TT_PIT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
+import { flush_screen } from '../js/display.js';
 import { artifactByName, discoverArtifact } from '../js/artifacts.js';
 import { placeMonsterAt } from '../js/monster_location.js';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { CREDIT_CARD } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -46,7 +47,7 @@ for (const doorState of [D_CLOSED, D_LOCKED]) {
         assert.equal(game.u.utrap, 3);
     });
 }
-void test('autounlock refuses a visible xorn on the door before asking to unlock', async () => {
+void test('a visible xorn refusal shares the message line with the locked door', async () => {
     const level = freshObjectRoom();
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
@@ -56,8 +57,27 @@ void test('autounlock refuses a visible xorn on the door before asking to unlock
     const input = resetInputState();
     pushKeys('l');
     await answerPrompts(rhack('o'.charCodeAt(0)), input, []);
-    assert.match(game._pending_message, /I don't think the xorn would appreciate that\./);
+    await flush_screen(1);
+    assert.equal(requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd(), "This door is locked.  I don't think the xorn would appreciate that.");
     assert.equal(game.context.move, 1, 'learning that the monster blocks the lock spends a turn');
+    assert.equal(Boolean(game._occupation), false);
+    assert.equal(door.doormask, D_LOCKED);
+});
+void test('a long visible monster refusal waits for the locked-door acknowledgment', async () => {
+    const level = freshObjectRoom();
+    const door = level.requireAt(11, 10);
+    door.typ = DOOR;
+    door.doormask = D_LOCKED;
+    await createMonsterAt('earth elemental', 11, 10);
+    await addInventoryObject(CREDIT_CARD);
+    const input = resetInputState();
+    pushKeys('l');
+    await answerPrompts(rhack('o'.charCodeAt(0)), input, [
+        { prompt: /This door is locked\.--More--/, keys: ' ' },
+    ]);
+    await flush_screen(1);
+    assert.equal(requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd(), "I don't think the earth elemental would appreciate that.");
+    assert.equal(game.context.move, 1);
     assert.equal(Boolean(game._occupation), false);
     assert.equal(door.doormask, D_LOCKED);
 });
@@ -79,7 +99,7 @@ void test('an unseen xorn on the door does not prevent autounlock', async () => 
     assert.equal(Boolean(game._occupation), true);
     assert.equal(door.doormask, D_LOCKED);
 });
-void test('the Oracle refuses a credit card at the door without an unlock prompt', async () => {
+void test('the Oracle credit-card refusal shares the message line with the locked door', async () => {
     const level = freshObjectRoom();
     const oracle = await createMonsterAt('Oracle', 12, 10);
     placeMonsterAt(oracle, 11, 10);
@@ -90,7 +110,8 @@ void test('the Oracle refuses a credit card at the door without an unlock prompt
     const input = resetInputState();
     pushKeys('l');
     await answerPrompts(rhack('o'.charCodeAt(0)), input, []);
-    assert.match(game._pending_message, /"No checks, no credit, no problem\."/);
+    await flush_screen(1);
+    assert.equal(requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd(), 'This door is locked.  "No checks, no credit, no problem."');
     assert.equal(game.context.move, 1);
     assert.equal(Boolean(game._occupation), false);
     assert.equal(door.doormask, D_LOCKED);
