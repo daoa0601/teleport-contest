@@ -7029,9 +7029,11 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
         }
         if (tacticsMovement)
             return { calls, dochugContext, movement: tacticsMovement };
-        if (monsterIsCovetous(monster))
-            setMonsterApparentHeroPosition(monster, state, random, calls);
     }
+    // dochug() refreshes perception after tactics, including when relocation
+    // feedback pauses the turn before it checks distance and attacks.
+    if (monsterIsCovetous(monster))
+        setMonsterApparentHeroPosition(monster, state, random, calls);
     let range = await checkMonsterHeroRange(monster, { state, random, rollOne });
     dochugContext.range = range;
     if (range.heroDied)

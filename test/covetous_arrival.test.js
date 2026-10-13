@@ -11,6 +11,32 @@ import { vision_recalc, vision_reset } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
+void test('a blind covetous lich can locate and attack the hero after teleporting', async () => {
+    freshObjectRoom({ left: 7, right: 35,
+        hero: { uac: -10, uhp: 100, uhpmax: 100, coldResistance: true } });
+    requirePlayingGame(game);
+    const lich = await createMonsterAt('master lich', 30, 10, NO_MINVENT);
+    lich.mstrategy = STRAT_APPEARMSG;
+    lich.mpeaceful = false;
+    lich.movement = 12;
+    lich.mspec_used = 100;
+    lich.mcansee = 0;
+    lich.mblinded = 100;
+    lich.mux = 0;
+    lich.muy = 0;
+    game._moveloopStarted = true;
+    game._heroTimePending = true;
+    game.u.umovement = 12;
+    initRng(7n);
+    const messages = [];
+    const input = resetInputState();
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /lich|cold/, limit: 10 });
+    await finishAtCommandInput(input, moveloop_core, /lich|cold|^$/);
+    assert.match(messages.join('\n'), /The master lich vanishes and reappears next to you\./);
+    assert.match(messages.join('\n'), /The master lich touches you!/);
+    assert.ok(game.u.uhp < 100, 'the returning lich should damage the hero on the same turn');
+});
 void test('a lich returning from unseen retreat stairs announces its arrival from that location', async () => {
     let returns = 0;
     for (let seed = 1; seed <= 20; seed++) {
