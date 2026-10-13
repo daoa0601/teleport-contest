@@ -13,6 +13,7 @@ import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { initRng } from '../js/rng.js';
+import { refreshProperty } from '../js/properties.js';
 import { cansee } from '../js/vision.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
@@ -176,6 +177,9 @@ for (const { seed, lifeSavedInside, holderHp } of [
         await wearHeroAccessory(amulet, 'uamul');
         game.u.uhp = 1;
         game.u.uhpmax = 200;
+        // Fumbling prevents dodging the pit that the blast leaves.
+        game.u.fumblingTurns = 10;
+        refreshProperty('fumbling');
         vortex.mhp = holderHp;
         vortex.mhpmax = 100;
         const spore = await createMonsterAt('gas spore', 9, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);

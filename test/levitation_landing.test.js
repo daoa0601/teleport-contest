@@ -116,7 +116,8 @@ void test('a swallowed levitator stays swallowed while floating down', async () 
 void test('a punished levitator lands on the ball and falls into its pit', async () => {
     freshObjectRoom({ gameplaySeed: 17 });
     requirePlayingGame(game);
-    addTrap(game.level, PIT, 11, 10, { tseen: true });
+    // An unseen pit cannot be avoided by C dotrap()'s known-trap roll.
+    addTrap(game.level, PIT, 11, 10);
     const ball = await floorObject(HEAVY_IRON_BALL, 11, 10);
     const chain = await knownObject(IRON_CHAIN);
     chain.ox = 10;

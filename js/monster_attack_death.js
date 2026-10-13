@@ -78,6 +78,7 @@ function fatalMonsterDescription(monster) {
 export async function finishMonsterAttackDeath(monster, { pagerOwned = false, attribution = { kind: 'done-in-by' }, deathType = null, } = {}) {
     const customCause = attribution.kind === 'death-inflicted-by';
     const announcesDeath = !customCause || attribution.announcesDeath;
+    const hpSaveSentinel = game.u.uhp === -1;
     const projectedFatalLine = !!game._pending_message
         && !game._suppressMessagesUntilInput;
     if (projectedFatalLine && announcesDeath) {
@@ -138,28 +139,39 @@ export async function finishMonsterAttackDeath(monster, { pagerOwned = false, at
             game.context.botl = true;
         }
     };
-    if (announcesDeath && game._suppressMessagesUntilInput) {
-        // tty update_topl() treats "You die" specially: it
-        // replaces the logically stopped topline and clears
-        // WIN_STOP rather than appending to the pline which
-        // triggered Escape.  In debug/explore mode an earlier
-        // actor's stopped pager yields directly to yn_function();
-        // a pager owned by this same fatal contact still reaches
-        // done()'s explicit message-window flush.
-        await pline('You die...');
-        game._suppressMessagesUntilInput = false;
-        commitFatalEvent();
-        if (pagerOwned)
-            await waitForCurrentMonsterMore('You die...');
+    const previousStatusDisabled = game._statusUpdatesDisabled;
+    if (hpSaveSentinel)
+        game._statusUpdatesDisabled = true;
+    try {
+        if (announcesDeath && game._suppressMessagesUntilInput) {
+            // tty update_topl() treats "You die" specially: it
+            // replaces the logically stopped topline and clears
+            // WIN_STOP rather than appending to the pline which
+            // triggered Escape.  In debug/explore mode an earlier
+            // actor's stopped pager yields directly to yn_function();
+            // a pager owned by this same fatal contact still reaches
+            // done()'s explicit message-window flush.
+            await pline('You die...');
+            game._suppressMessagesUntilInput = false;
+            commitFatalEvent();
+            if (pagerOwned)
+                await waitForCurrentMonsterMore('You die...');
+        }
+        else if (announcesDeath) {
+            await plineWithContinuation('You die...');
+            commitFatalEvent();
+            if (game.flags?.debug || game.flags?.explore)
+                await waitForCurrentMonsterMore('You die...');
+        }
+        else {
+            commitFatalEvent();
+        }
     }
-    else if (announcesDeath) {
-        await plineWithContinuation('You die...');
-        commitFatalEvent();
-        if (game.flags?.debug || game.flags?.explore)
-            await waitForCurrentMonsterMore('You die...');
-    }
-    else {
-        commitFatalEvent();
+    finally {
+        if (previousStatusDisabled === undefined)
+            delete game._statusUpdatesDisabled;
+        else
+            game._statusUpdatesDisabled = previousStatusDisabled;
     }
     if (game.flags?.debug || game.flags?.explore) {
         const die = await promptYesNo('Die?');

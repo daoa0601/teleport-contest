@@ -246,8 +246,6 @@ export async function advanceHeroVomiting({ state = game, publish = pline, rollD
     await exerciseAttribute(A_CON, false, state);
     hero.vomitingTurns = nextTurns;
     hero.vomiting = nextTurns > 0;
-    if (!hero.vomiting && vomited)
-        await publish('You feel much less nauseated now.');
     return { active: hero.vomiting, vomited, turns: nextTurns };
 }
 function sicknessMessage(hero) {

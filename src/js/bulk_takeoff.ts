@@ -202,7 +202,7 @@ async function offMessage(object: GameObject, state: GameState): Promise<void> {
     if (message) await pline(message);
 }
 
-async function canSelectOff(object: GameObject, slot: TakeoffSlot): Promise<boolean> {
+export async function canSelectOff(object: GameObject, slot: TakeoffSlot): Promise<boolean> {
     const weapon = takeoffSlotObject('uwep');
     const gloves = takeoffSlotObject('uarmg');
     const cloak = takeoffSlotObject('uarmc');

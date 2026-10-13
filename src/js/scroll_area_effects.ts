@@ -13,7 +13,7 @@ import {
 } from './display.js';
 import { explode } from './explosion.js';
 import { dropBoulderOnHero, dropBoulderOnMonster } from './falling_boulder.js';
-import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
+import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { finishHeroDeath as defaultHeroDeath } from './end.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -203,15 +203,18 @@ function canCenterCloud(x: number, y: number, state: PlayingGameState): boolean 
 
 async function chooseCenter(question: string, state: PlayingGameState): Promise<Position | null> {
     await pline(question);
+    const valid = (x: number, y: number) => canCenterCloud(x, y, state);
+    prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse) await showGetposTip(state);
+    if (firstUse) await pline('Move cursor to the desired position:');
     const selected = await selectMapPosition({
         start: { x: state.u.ux, y: state.u.uy },
         prompt: firstUse ? 'Move cursor to the desired position:'
             : state.flags.verbose ? `${question}  (For instructions type a '?')` : question,
         goal: 'the desired position', describe: farlookLocationDescription,
-        isValidLocation: (x, y) => (x !== state.u.ux || y !== state.u.uy)
-            && canCenterCloud(x, y, state),
+        isValidLocation: valid,
+        highlightHero: false,
     });
     clearMessageWindow();
     return selected;

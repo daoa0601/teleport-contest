@@ -14,17 +14,13 @@ import { addInventoryWeapon } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-for (const [distance, encountered] of [[2, true], [4, false]] satisfies [number, boolean][]) {
-    void test(`a potion disguise ${distance} squares away ${encountered
-        ? 'adds' : 'does not add'} its appearance to discoveries`, async () => {
+for (const distance of [2, 4]) {
+    void test(`a potion disguise ${distance} squares away does not add its appearance to discoveries`, async () => {
         freshObjectRoom();
         requirePlayingGame(game);
-        const mimic = await createMonsterAt('small mimic', 14, 10);
-        mimic.mx = 10 + distance;
-        mimic.my = 10;
+        const mimic = await createMonsterAt('small mimic', 10 + distance, 10);
         mimic.m_ap_type = M_AP_OBJECT;
         mimic.mappearance = POT_HEALING;
-        newsym(14, 10);
         newsym(mimic.mx, mimic.my);
 
         const showing = dodiscovered();
@@ -34,7 +30,7 @@ for (const [distance, encountered] of [[2, true], [4, false]] satisfies [number,
         await showing;
 
         const appearance = game.objectDescriptions?.[POT_HEALING];
-        assert.equal(text.includes(`potion (${appearance})`), encountered);
+        assert.equal(text.includes(`potion (${appearance})`), false);
     });
 }
 

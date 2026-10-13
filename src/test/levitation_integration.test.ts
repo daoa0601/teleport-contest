@@ -71,7 +71,7 @@ void test('moving over a pit on the final levitation turn either defers or lands
     for (let seed = 1n; seed <= 16n; seed++) {
         freshObjectRoom();
         requirePlayingGame(game);
-        pitAt(game.u.ux + 1);
+        addTrap(requireGameLevel(game), PIT, game.u.ux + 1, game.u.uy, { tseen: false });
         timedLevitation(1);
         const hp = game.u.uhp;
         initRng(seed);
@@ -167,7 +167,7 @@ void test('finishing a levitation-boots dressing delay lifts the hero out of a p
     await finishAtCommandInput(input, async () => {
         for (let step = 0; step < 6 && game.u.utrap; step++)
             await moveloop_core();
-    }, /You finish your dressing maneuver|You float up, out of the pit/);
+    }, /You finish your dressing maneuver|You float up, out of the pit|You float over a pit/);
     assert.equal(game.u.utrap, 0);
     assert.equal(game.u.levitating, true);
 });

@@ -2,9 +2,11 @@ import { loadScoreRecords } from '../js/score_records.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { finishLivingGame, finishOrdinaryQuit, SCORE_RECORD_STORAGE_KEY, } from '../js/end.js';
+import { doquit, finishLivingGame, finishOrdinaryQuit, SCORE_RECORD_STORAGE_KEY, } from '../js/end.js';
 import { game } from '../js/gstate.js';
-import { pushKey } from '../js/input.js';
+import { pushKey, resetInputState } from '../js/input.js';
+import { answerPrompts } from './support/input-boundaries.js';
+import { PanicTermination } from '../js/panic_termination.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
@@ -18,6 +20,42 @@ function gameReadyToEnd() {
     game.u.ulevel = 8;
     game.u.urexp = 100;
 }
+void test('wizard quit asks about a core dump before disclosures and q suppresses them', async () => {
+    gameReadyToEnd();
+    game.flags.debug = true;
+    game.flags.disclose = '';
+    const input = resetInputState();
+    await answerPrompts(doquit(), input, [
+        { prompt: /Really quit without saving\?/, keys: 'y' },
+        { prompt: /Dump core\? \[ynq\] \(q\)/, keys: 'q' },
+    ]);
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(game.program_state.stopprint, 1);
+    assert.equal(game.storage?.getItem(SCORE_RECORD_STORAGE_KEY), null);
+});
+void test('declining a wizard core dump continues to ordinary disclosures', async () => {
+    gameReadyToEnd();
+    game.flags.debug = true;
+    game.flags.disclose = '';
+    const input = resetInputState();
+    await answerPrompts(doquit(), input, [
+        { prompt: /Really quit without saving\?/, keys: 'y' },
+        { prompt: /Dump core\?/, keys: 'n' },
+        { prompt: /Do you want to see your attributes\?/, keys: 'q' },
+    ]);
+    assert.equal(game.program_state.gameover, true);
+});
+void test('requesting a wizard core dump terminates before ordinary scoring', async () => {
+    gameReadyToEnd();
+    game.flags.debug = true;
+    const input = resetInputState();
+    await assert.rejects(answerPrompts(doquit(), input, [
+        { prompt: /Really quit without saving\?/, keys: 'y' },
+        { prompt: /Dump core\?/, keys: 'y' },
+    ]), PanicTermination);
+    assert.equal(game.program_state.windows_exited, true);
+    assert.equal(game.storage?.getItem(SCORE_RECORD_STORAGE_KEY), null);
+});
 void test('final disclosure resolves a dead cat before calculating escape points', async () => {
     gameReadyToEnd();
     requireFixtureGame(game);

@@ -48,6 +48,7 @@ import { Is_astralevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
 import { clearHeroTrap } from './hero_traps.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
+import { seeTrap } from './trap.js';
 import { isRoom } from './map_types.js';
 import { hasShopkeeperData } from './shop_types.js';
 function requireLevel(state) {
@@ -840,7 +841,7 @@ export async function teleportMonsterFromTrap(monster, trap, { state = game, cal
     }
     if (event.visible) {
         await publish(`${subject} ${canSeeMonster(monster) ? 'seems disoriented.' : 'suddenly disappears!'}`);
-        trap.tseen = true;
+        seeTrap(trap, state);
     }
     return event;
 }
@@ -936,7 +937,7 @@ export async function teleportMonsterToRandomLevel(monster, trap, { state = game
     }
     if (seen) {
         await publish(`Suddenly, ${monsterName(monster, { state })} disappears out of sight.`);
-        trap.tseen = true;
+        seeTrap(trap, state);
     }
     if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT_CNTRL))
         monster.mconf = 1;

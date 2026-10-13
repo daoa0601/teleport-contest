@@ -401,7 +401,7 @@ void test('stashing a wielded artifact ends warning before the put message', asy
     monster.minvis = true;
     await setPrimaryWeapon(sting);
     await takeMessages(messages);
-    await applyInventoryObject(sack, `i${sting.invlet}\n`);
+    await applyInventoryObject(sack, `i)\n${sting.invlet}\n`);
     assert.equal(sting.container, sack);
     assert.equal(canSpotMonster(monster), false);
     const text = await takeMessages(messages);

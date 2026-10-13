@@ -14,13 +14,7 @@ import { objectQuantity } from './object_stack.js';
 import { heroIsBlind } from './senses.js';
 import { feelPetrifyingCorpse, formCanBecomeStoneGolem, willFeelPetrifyingCorpse, } from './stoning.js';
 export async function readFloorEngraving(x, y) {
-    const read = await readEngravingAt(x, y, {
-        showMore: async (message) => {
-            await plineWithContinuation(message);
-            return flushPendingTopline();
-        },
-        showLine: plineWithContinuation,
-    });
+    const read = await readEngravingAt(x, y, plineWithContinuation);
     if (read && game._runState)
         stopRun();
 }

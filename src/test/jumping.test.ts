@@ -56,6 +56,20 @@ void test('jump target selection suspends before movement and Escape spends no t
     assert.equal(game.u.uhunger, before);
 });
 
+void test('installing a knight jump selection redraws its valid squares before input', async () => {
+    const input = readyJump({ knight: true, flags: { tips: false, verbose: false } });
+    const jumping = jumpHero();
+    await input.waitUntilBlocked();
+    const display = requireGameDisplay(game);
+    const cursor = [display.cursorCol, display.cursorRow];
+    input.feed('\x1b');
+    await jumping;
+
+    // The bottommost legal knight moves from <10,10> are <9,12> and
+    // <11,12>. tty leaves its cursor after the last glyph it prints.
+    assert.deepEqual(cursor, [11, 13]);
+});
+
 void test('physical jump lands, pays nutrition, and installs its delay', async () => {
     const input = readyJump({ hero: { uhunger: 900 } });
     requireFixtureGame(game);

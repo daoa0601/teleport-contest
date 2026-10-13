@@ -1,3 +1,5 @@
+import { monsterHiddenConditions } from './monster_status.js';
+import { visibleRegionAt } from './regions.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
 import { isRoom } from './map_types.js';
 import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
@@ -64,8 +66,8 @@ import { blocksDiagonalDoor, blocksMove, escapeFromStickyMonster, heroBadRock, h
 import { commandExecutionKey, controlRushDirection, promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
-import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
-import { resetBulkTakeoff } from './takeoff_state.js';
+import { canSelectOff, continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
+import { resetBulkTakeoff, TAKEOFF_ORDER, takeoffSlotObject } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
@@ -208,7 +210,7 @@ import { continueHeroDigging, diggingTarget } from './hero_digging.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { wieldTool } from './wield_tool.js';
 import { doenhance, useHeroSkill, } from './skills.js';
-import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, tendedShop, } from './shk.js';
+import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, minimumShopPurchase, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, tendedShop, } from './shk.js';
 import { visiblePriestName, } from './priest.js';
 import { gameLogEvents } from './gamelog.js';
 import { killerObjectName } from './objnam.js';
@@ -1666,7 +1668,7 @@ async function doTerrainOverview() {
         const delta = farlookDelta(browseKey);
         if (delta) {
             moveGetposCursor(cursor, delta.dx, delta.dy);
-            browseMessage = farlookLocationDescription(cursor.x, cursor.y);
+            browseMessage = await farlookLocationDescription(cursor.x, cursor.y);
             continue;
         }
         await plineWithContinuation('Done.');
@@ -2337,7 +2339,8 @@ function inventoryActionCommand({ key, item }) {
                 : item === game.uquiver ? 'dowieldquiver' : 'donull',
         'c': 'docallcmd', 'd': 'dodrop', 'E': 'doengrave', 'f': 'dofire',
         'i': 'doorganize', 'P': 'dowear', 'Q': 'dowieldquiver', 'r': 'doread',
-        't': 'dothrow', 'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
+        'R': 'ia_dotakeoff', 't': 'dothrow', 'T': 'ia_dotakeoff',
+        'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
         '/': 'dowhatis', '\x1b': null, ' ': null, '\n': null, '\r': null,
     };
     return NATIVE_COMMANDS.find(command => command.handler === handlers[key]) ?? null;
@@ -2407,6 +2410,11 @@ async function runInventoryAction({ key, item }) {
         case 'r':
             queueCommandKeys(letter);
             await doread({ gotoLevel });
+            return;
+        case 'R':
+        case 'T':
+            queueCommandKeys(letter);
+            await removeWornItem('take off', true);
             return;
         case 't':
             await dothrow(item);
@@ -4078,7 +4086,7 @@ async function doextcmd() {
     }
     await runExtendedCommand(completeExtendedCommand(normalizedCommand) || normalizedCommand);
 }
-function wizardPositionDescription(x, y) {
+async function wizardPositionDescription(x, y) {
     if (x === game.u?.ux && y === game.u?.uy) {
         const species = game.u.umonnum;
         const polymorphName = heroIsPolymorphed(game) && species !== undefined
@@ -4109,7 +4117,7 @@ function wizardPositionDescription(x, y) {
         observeDistantObjectForNaming(object);
         return floorObjectDescription(object);
     }
-    return farlookLocationDescription(x, y) || 'unexplored area';
+    return await farlookLocationDescription(x, y) || 'unexplored area';
 }
 function roomAtPosition(x, y) {
     const roomno = game.level?.at(x, y)?.roomno ?? 0;
@@ -4221,8 +4229,8 @@ function travelLocationDescription(x, y) {
         return 'staircase up';
     return '';
 }
-function travelPositionDescription(x, y) {
-    const description = wizardPositionDescription(x, y);
+async function travelPositionDescription(x, y) {
+    const description = await wizardPositionDescription(x, y);
     if (x === game.u?.ux && y === game.u?.uy)
         return description;
     const loc = game.level?.at?.(x, y);
@@ -4232,7 +4240,7 @@ function travelPositionDescription(x, y) {
     const valid = !unexploredProjection && isValidTravelTarget(x, y);
     return valid ? description : `${description} (no travel path)`;
 }
-export function farlookLocationDescription(x, y) {
+export async function farlookLocationDescription(x, y) {
     const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
     if (monster && glyphAt(x, y)?.kind === 'monster') {
         const hallucinating = heroIsHallucinating(game);
@@ -4251,7 +4259,13 @@ export function farlookLocationDescription(x, y) {
                 condition = ', meditating';
         }
         const tail = monster.mx !== x || monster.my !== y;
-        return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}`;
+        // look_at_monster() gates hidden details on the selected square,
+        // which can be a worm tail outside the head's cloud.
+        const hidden = monster.mundetected || M_AP_TYPE(monster) || visibleRegionAt(game, x, y)
+            ? await monsterHiddenConditions(monster, game, { showAlternateMonster: false })
+            : [];
+        const hiddenText = hidden.length ? `, ${hidden.join(', ')}` : '';
+        return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}${hiddenText}`;
     }
     const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y && candidate.tseen);
     if (trap?.ttyp === DART_TRAP)
@@ -4336,7 +4350,7 @@ async function dojump() {
     const result = await jumpHero(0);
     game.context.move = result.spentTime ? 1 : 0;
 }
-function verboseFarlookDescription(x, y) {
+async function verboseFarlookDescription(x, y) {
     const loc = game.level?.at(x, y);
     if (loc?.typ === CORR)
         return `#\x1b[8Ccan be many things (corridor)`;
@@ -4385,7 +4399,6 @@ async function dotravel() {
     // after the pick key, but removes it from the logical topline transaction.
     // Silent travel can retain that row; a new attack must replace rather than
     // append to "staircase down".
-    game._retained_message = game._pending_message;
     game._pending_message = '';
     if (cursor.x === game.u.ux && cursor.y === game.u.uy) {
         game._travelTarget = null;
@@ -4424,18 +4437,26 @@ async function dotravel() {
 // Quick far-look is a zero-time modal command.  It shares getpos's cached
 // cursor with travel, paints a short automatic description after movement,
 // then restores the gameplay cursor while showing the verbose selection.
-async function doFarlook() {
+async function doFarlook(quick = true) {
+    const verbose = !!game.flags.verbose && !quick;
+    await plineWithContinuation(verbose
+        ? 'Please move the cursor to a monster, object or location.'
+        : 'Pick a monster, object or location.');
     const firstUse = shouldShowGetposTip();
-    if (firstUse) {
-        await pline('Pick a monster, object or location.');
+    if (firstUse)
         await showGetposTip();
+    if (verbose) {
+        const helpKey = game.commandBindings.specialKey('getpos.help');
+        if (helpKey === undefined)
+            throw new Error('Map selection requires a getpos.help binding');
+        await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
     }
+    if (firstUse)
+        await plineWithContinuation('Move cursor to a monster, object or location:');
     const cursor = await selectMapPosition({
         start: game._travelTarget
             ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
-        prompt: firstUse
-            ? 'Move cursor to a monster, object or location:'
-            : 'Pick a monster, object or location.',
+        prompt: game._pending_message || game._retained_message,
         goal: 'a monster, object or location',
         describe: farlookLocationDescription,
     });
@@ -4448,7 +4469,7 @@ async function doFarlook() {
     // description wraps and calls tty more() before do_look() can return.
     game._pending_message = '';
     game._retained_message = '';
-    await plineWithContinuation(verboseFarlookDescription(cursor.x, cursor.y));
+    await plineWithContinuation(await verboseFarlookDescription(cursor.x, cursor.y));
     game.context.move = 0;
 }
 async function restoreHelpMap() {
@@ -4491,7 +4512,7 @@ async function dowhatis() {
         await restoreHelpMap();
     const choice = String.fromCharCode(key);
     if (choice === '/') {
-        await doFarlook();
+        await doFarlook(false);
         return;
     }
     if (choice === 'i') {
@@ -4648,7 +4669,7 @@ export async function finishArmorRemoval(object, { silent = false } = {}) {
 }
 // C do_wear.c:dotakeoff()/doremring() share armor_or_accessory_off().
 // T suggests armor and R suggests accessories; either accepts the other kind.
-async function removeWornItem(action) {
+async function removeWornItem(action, itemAction = false) {
     const worn = (game.inventory || []).filter(object => object.worn);
     if (!worn.length) {
         await pline(action === 'remove'
@@ -4662,7 +4683,9 @@ async function removeWornItem(action) {
     const preferred = worn.filter(candidate => action === 'remove'
         ? candidate.oclass === 4 || candidate.oclass === 5 || isEyewear(candidate)
         : candidate.class === 'Armor' || candidate.oclass === 3);
-    if (preferred.length === 1) {
+    // C ia_dotakeoff() forces getobj() to consume the queued item letter,
+    // even if another accessible piece is the only normal suggestion.
+    if (preferred.length === 1 && !itemAction) {
         [object] = preferred;
     }
     else {
@@ -4680,16 +4703,24 @@ async function removeWornItem(action) {
         game.context.move = 0;
         return;
     }
-    resetBulkTakeoff();
-    if (object.cursed) {
-        object.bknown = true;
-        const plural = /gloves|boots|shoes|lenses/.test(object.name || '')
-            || objectQuantity(object) > 1;
-        game._pending_message = '';
-        await pline(`You can't.  ${plural ? 'They are' : 'It is'} cursed.`);
+    const cloak = game.uarmc;
+    const suit = game.uarm;
+    if (object === game.uskin || object === suit && cloak
+        || object === game.uarmu && (cloak || suit)) {
+        const coverings = [cloak, object === game.uarmu ? suit : null]
+            .filter(covering => covering != null).map(covering => armorSimpleName(covering));
+        await pline(object === game.uskin ? "You can't take that off; it's embedded."
+            : `You can't take that off without taking off your ${coverings.join(' and ')} first.`);
         game.context.move = 0;
         return;
     }
+    resetBulkTakeoff();
+    const slot = TAKEOFF_ORDER.find(candidate => takeoffSlotObject(candidate) === object);
+    if (!slot || !await canSelectOff(object, slot)) {
+        game.context.move = 0;
+        return;
+    }
+    resetBulkTakeoff();
     if (object === game.ublindf) {
         game._pending_message = '';
         const removed = await removeEyewear(object);
@@ -4945,9 +4976,9 @@ async function dowear() {
     else
         await putOnAccessoryObject(object);
 }
-// C refs: shk.c:dopay(), menu_pick_pay_items(), pay(), and update_bill().
-// The menu is a zero-time nested input transaction until at least one billed
-// object is actually purchased; payment then owns one elapsed hero action.
+// C refs: shk.c:dopay(), rouse_shk(), menu_pick_pay_items(), pay(), and update_bill().
+// An empty bill takes a turn when the keeper can respond. A payment menu
+// takes no time until a debt or billed item is paid.
 async function dopay() {
     game.multi = 0;
     const shopkeepers = (game.level?.monsters || [])
@@ -4971,6 +5002,25 @@ async function dopay() {
         game.context.move = 0;
         return;
     }
+    if (resident.msleeping || !resident.mcanmove) {
+        // Outstanding charges rouse the keeper before payment can proceed.
+        if (resident.eshk?.robbed || resident.eshk?.billct || resident.eshk?.debit) {
+            if (canSpotMonster(resident)) {
+                const recovery = resident.msleeping ? 'wakes up' : 'can move again';
+                await plineWithContinuation(`${shopkeeperName(resident, { capitalized: true })} ${recovery}.`);
+            }
+            resident.msleeping = 0;
+            resident.mfrozen = 0;
+            resident.mcanmove = 1;
+        }
+        else {
+            const name = shopkeeperName(resident, { capitalized: true });
+            const response = rn2(2) ? 'seems to be napping' : "doesn't respond";
+            await plineWithContinuation(`${name} ${response}.`);
+            game.context.move = 0;
+            return;
+        }
+    }
     let paid = false;
     const debt = Math.max(0, resident.eshk?.debit ?? 0);
     if (debt) {
@@ -4993,11 +5043,37 @@ async function dopay() {
         }
         paid = true;
     }
+    // pay_billed_items() checks the whole bill, including contained goods,
+    // before offering item selection. Stashed gold cannot fund this payment.
+    if (resident === shopkeeperForHero() && (resident.eshk?.billct ?? 0) > 0
+        && !heroGoldAmount(game) && !(resident.eshk?.credit ?? 0)) {
+        await plineWithContinuation(`You ${hiddenGold(game, true) ? 'seem to ' : ''}have no gold or credit${paid ? ' left' : ''}.`);
+        if (paid && resident.mpeaceful)
+            await plineWithContinuation(shopThankYouMessage(resident));
+        game.context.move = paid ? 1 : 0;
+        return;
+    }
+    if (resident === shopkeeperForHero()) {
+        const purchase = minimumShopPurchase(resident);
+        if (purchase && heroGoldAmount(game) + (resident.eshk?.credit ?? 0) < purchase.price) {
+            const items = purchase.multipleItems ? ' any of the items' : ' the item';
+            const bill = (resident.eshk?.billct ?? 0) > 1 ? "you've picked" : 'on your bill';
+            await plineWithContinuation(`You don't have enough gold to buy${items} ${bill}.`);
+            if (hiddenGold(game, true))
+                await plineWithContinuation('Maybe you have some gold stashed away?');
+            if (paid && resident.mpeaceful)
+                await plineWithContinuation(shopThankYouMessage(resident));
+            game.context.move = paid ? 1 : 0;
+            return;
+        }
+    }
     const billed = carriedShopBill(resident);
     if (!billed.length) {
         if (!paid) {
-            await pline(`You do not owe ${resident.eshk?.shknam || 'the shopkeeper'} anything.`);
-            game.context.move = 0;
+            await plineWithContinuation(`You do not owe ${resident.eshk?.shknam || 'the shopkeeper'} anything.`);
+            if (resident === shopkeeperForHero() && resident.mpeaceful && !heroGoldAmount(game))
+                await plineWithContinuation(`Moreover, you${hiddenGold(game, true) ? ' seem to' : ''} have no gold.`);
+            game.context.move = 1;
             return;
         }
         await plineWithContinuation(shopThankYouMessage(resident));
@@ -6715,6 +6791,13 @@ async function pushBoulder(boulder, x, y, dx, dy) {
     // honor `I` and cannot reveal the boulder which now occupies the square.
     unmap_invisible(targetX, targetY, false);
     await moveObject(boulder, targetX, targetY, game);
+    if (heroIsBlind(game)) {
+        feel_location(targetX, targetY);
+        feel_location(x, y);
+    }
+    else {
+        newsym(x, y);
+    }
     return true;
 }
 // C ref: hack.c:domove_fight_empty(). Forced attacks at the map edge and

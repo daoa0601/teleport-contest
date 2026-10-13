@@ -1,7 +1,7 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
 import { COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, ROWNO, } from './const.js';
-import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, newsym, pline, show_glyph_cell, terrain_glyph, } from './display.js';
+import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, show_glyph_cell, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -28,10 +28,11 @@ const DEFAULT_GETPOS_FEATURE_SYMBOLS = new Set([
 ]);
 // DECgraphics changes the active showsyms for eligible cmap entries.  C
 // accepts both each entry's defsym and its active showsym.  These are the
-// additional low-seven-bit input characters introduced by the DEC set; all
-// of its other eligible projections are already in the default set above.
+// additional input bytes introduced by the DEC set. The high bit belongs to
+// showsyms: an ordinary letter such as 's' is not the bottom-edge glyph.
 const DEC_GETPOS_FEATURE_SYMBOLS = new Set([
-    'g', 'y', 'z', 'x', 'q', 'o', 's',
+    '\xe7', '\xf9', '\xfa', '\xfb', '\xe0', '\xfe',
+    '\xf8', '\xf1', '\xef', '\xf3',
 ]);
 export function isGetposFeatureSymbol(ch, symset = '') {
     if (typeof ch !== 'string' || ch.length !== 1)
@@ -201,15 +202,12 @@ export async function getposHelpUntilDismissed(goal, { hasValidLocations = false
     while (![27, 32, 10, 13].includes(key));
     return key;
 }
-function describeSelectedPosition(describe, cursor, fallback) {
-    return describe?.(cursor.x, cursor.y) || fallback;
+async function describeSelectedPosition(describe, cursor, fallback) {
+    return await describe?.(cursor.x, cursor.y) || fallback;
 }
-// C getpos.c:gather_locs()/gather_locs_interesting() with GLOC_VALID minus
-// the hero injection: predicate-true squares ordered by cmp_coord_distu()
-// (Chebyshev distance from the hero, then row, then column).  Unseen
-// squares stay eligible for cycling; only the '$' marking is gated.
-function gatherValidLocations(isValidLocation, state = game) {
-    const ux = state.u.ux, uy = state.u.uy;
+// selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
+// consume display randomness in that order, independently of target cycling.
+function validMapSquares(isValidLocation) {
     const spots = [];
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
@@ -217,6 +215,15 @@ function gatherValidLocations(isValidLocation, state = game) {
                 spots.push({ x, y });
         }
     }
+    return spots;
+}
+// C getpos.c:gather_locs()/gather_locs_interesting() with GLOC_VALID minus
+// the hero injection: predicate-true squares ordered by cmp_coord_distu()
+// (Chebyshev distance from the hero, then row, then column).  Unseen
+// squares stay eligible for cycling; only the '$' marking is gated.
+function gatherValidLocations(isValidLocation, state = game) {
+    const ux = state.u.ux, uy = state.u.uy;
+    const spots = validMapSquares(isValidLocation);
     spots.sort((a, b) => {
         const distA = Math.max(Math.abs(ux - a.x), Math.abs(uy - a.y));
         const distB = Math.max(Math.abs(ux - b.x), Math.abs(uy - b.y));
@@ -227,6 +234,12 @@ function gatherValidLocations(isValidLocation, state = game) {
         return a.x - b.x;
     });
     return spots;
+}
+// C getpos.c:getpos_sethilite(). Install after the caller's question and
+// before getpos's tutorial or instructions can flush these forced redraws.
+export function prepareMapPositionHighlights(isValidLocation) {
+    for (const { x, y } of validMapSquares(isValidLocation))
+        newsym_force(x, y);
 }
 function getposCycleKind(key) {
     const kinds = ['mon', 'obj', 'door', 'unexplored', 'all'];
@@ -267,7 +280,7 @@ function matchesGetposCycle(kind, x, y) {
         'water', 'molten lava', 'wall of lava', 'floor of a room',
         'dark part of a room', 'corridor', 'lit corridor'].includes(terrain);
 }
-export async function selectMapPosition({ start, prompt, goal, describe, afterPaint = null, isValidLocation = null, preserveMap = false, force = true, }) {
+export async function selectMapPosition({ start, prompt, goal, describe, afterPaint = null, isValidLocation = null, highlightHero = true, preserveMap = false, force = true, }) {
     const cursor = { ...start };
     const savedDirection = { dx: game.u.dx, dy: game.u.dy, dz: game.u.dz };
     const movePrompt = `Move cursor to ${goal}:`;
@@ -277,7 +290,6 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
     // getpos_sethilite(NULL, NULL) resets them at its exit.
     const validity = { cycle: null };
     let markValid = false;
-    let paintedSpots = null;
     const targetCycles = new Map();
     const validLocations = () => {
         if (!validity.cycle) {
@@ -298,14 +310,19 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
         return validity.cycle;
     };
     try {
+        const initialMapCursor = isValidLocation && !game.flags.verbose
+            ? lastDirtyMapCursor() : null;
         for (;;) {
             // bgcolors off (this port's default): '$' alternates between no
             // marking and the S_goodpos overlay.  The cycle-only hero
             // injection never paints unless the predicate accepts the hero.
-            paintedSpots = isValidLocation && markValid
-                ? validLocations().marked.filter(({ x, y }) => cansee(x, y))
+            const paintedSpots = isValidLocation && markValid
+                ? validLocations().marked.filter(({ x, y }) => cansee(x, y)
+                    && (highlightHero || x !== game.u.ux || y !== game.u.uy))
                 : null;
             await paintGetposCursor(cursor, message, paintedSpots, preserveMap);
+            if (firstPaint && initialMapCursor)
+                game.nhDisplay?.setCursor(...initialMapCursor);
             if (afterPaint)
                 await afterPaint(cursor, firstPaint);
             firstPaint = false;
@@ -330,7 +347,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 game.u.dy = movement.dy;
                 const distance = fast || movement.mode !== 0 ? 8 : 1;
                 moveGetposCursor(cursor, movement.dx * distance, movement.dy * distance);
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             if (key === 18) {
@@ -354,7 +371,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 return null;
             }
             if (ch === ' ') {
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
@@ -371,7 +388,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     validity.cycle.index = 0;
                 for (const cycle of targetCycles.values())
                     cycle.index = 0;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             if (isValidLocation && (key === game.commandBindings.specialKey('getpos.valid.next')
@@ -388,7 +405,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     throw new Error('The selected valid location is missing');
                 cursor.x = spot.x;
                 cursor.y = spot.y;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             const target = getposCycleKind(key);
@@ -409,14 +426,14 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     throw new Error('The selected target location is missing');
                 cursor.x = spot.x;
                 cursor.y = spot.y;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             const feature = nextGetposFeature(cursor, ch);
             if (feature) {
                 cursor.x = feature.x;
                 cursor.y = feature.y;
-                message = describeSelectedPosition(describe, cursor, movePrompt);
+                message = await describeSelectedPosition(describe, cursor, movePrompt);
                 continue;
             }
             message = getposFeatureMissMessage(ch);
@@ -441,14 +458,11 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             delete hero.dz;
         else
             hero.dz = savedDirection.dz;
-        // exitgetpos(): getpos_sethilite(NULL, NULL) force-newsyms the old
-        // valid selection; tmp_at(DISP_END) newsyms only squares it drew.
-        if (paintedSpots) {
-            for (const { x, y } of paintedSpots)
-                newsym(x, y);
-            await flush_screen(1);
-            // exitgetpos() leaves the tty cursor at the last selection spot.
-            game.nhDisplay?.setCursor(cursor.x - 1, cursor.y + 1);
+        // exitgetpos() clears the validity callbacks and force-redraws their
+        // old selection once, also replacing any active '$' marks.
+        if (isValidLocation) {
+            for (const { x, y } of validMapSquares(isValidLocation))
+                newsym_force(x, y);
         }
     }
 }

@@ -18,10 +18,13 @@ import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import {
-    MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_ARMOR, is_pit,
+    MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE,
+    W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit,
 } from './const.js';
 import {
-    ARROW as FIRST_OBJECT, EGG, CHEST, GOLD_PIECE, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, STATUE, TIN,
+    ARROW as FIRST_OBJECT, EGG, CHEST, GOLD_PIECE, LARGE_BOX, MAGIC_MARKER,
+    HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES,
+    STATUE, TIN, TIN_OPENER, TOWEL,
 } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
@@ -30,6 +33,9 @@ import { getLine, promptYesNoAllQuit } from './query.js';
 import { isWeaponTool, objectUsesCharges } from './object_properties.js';
 import { ammunitionMatchesLauncher, isBlade, isTwoWeaponObject } from './weapon_type.js';
 import { heroCanUseTwoWeapons } from './two_weapon.js';
+import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
+import { heroHandName } from './body_parts.js';
+import { makePlural } from './object_grammar.js';
 import { objectIsVulnerableToErosion } from './object_erosion.js';
 import { discoverArtifact } from './artifacts.js';
 import { isContainer } from './container.js';
@@ -62,7 +68,7 @@ export interface InventoryDescriptionOptions {
     projectPrimaryHand?: boolean;
 }
 
-export type InventoryActionKey = '-' | 'c' | 'd' | 'E' | 'f' | 'i' | 'P' | 'Q' | 'r' | 't' | 'w' | 'x' | 'X' | '/'
+export type InventoryActionKey = '-' | 'c' | 'd' | 'E' | 'f' | 'i' | 'P' | 'Q' | 'r' | 'R' | 't' | 'T' | 'w' | 'x' | 'X' | '/'
     | '\x1b' | ' ' | '\n' | '\r';
 export interface InventoryAction { key: InventoryActionKey; item: GameObject }
 type IdentificationBeatitude = 'B' | 'U' | 'C' | 'X';
@@ -470,9 +476,14 @@ function itemActionEntries(item: GameObject, state: GameState) {
     }
     entries.push({ key: 'c', text: `Name ${stack ? 'this stack of' : 'this specific'} ${itemName}` });
     if (!alreadyWorn) entries.push({ key: 'd', text: `Drop this ${stack ? 'stack' : 'item'}` });
-    if ([2, 4, 11, 13].includes(item.oclass)
-        || [239, 245].includes(item.otyp)) {
-        const verb = isBlade(item) || item.oclass === 11 ? 'Engrave' : 'Write';
+    if (item.otyp === TOWEL) {
+        entries.push({ key: 'E', text: 'Wipe the floor with this towel' });
+    } else if (item.otyp === MAGIC_MARKER) {
+        entries.push({ key: 'E', text: 'Scribble graffiti on the floor' });
+    } else if ([2, 4, 11, 13].includes(item.oclass)) {
+        const engraves = isBlade(item) || item.oclass === 11
+            || (item.oclass === 4 || item.oclass === 13) && !!state.objectToughness?.[item.otyp];
+        const verb = engraves ? 'Engrave' : 'Write';
         const surface = surfaceName(state.u.ux, state.u.uy, state);
         entries.push({ key: 'E', text: `${verb} on the ${surface} with ${stack ? 'one of these items' : 'this item'}` });
     }
@@ -482,19 +493,36 @@ function itemActionEntries(item: GameObject, state: GameState) {
         entries.push({ key: 'f', text: `${shoot ? 'Shoot' : 'Throw'} ${stack ? 'one of these' : 'this'}${launcher}` });
     }
     entries.push({ key: 'i', text: 'Adjust inventory by assigning new letter' });
-    if (item.oclass === 4) entries.push({ key: 'P', text: 'Put this ring on' });
+    if (item.oclass === 4 && !alreadyWorn) entries.push({ key: 'P', text: 'Put this ring on' });
     if ([2, 13].includes(item.oclass) && item !== state.uquiver)
         entries.push({ key: 'Q', text: `Quiver this ${stack ? 'stack' : 'item'} for easy ${shoot ? 'shooting' : 'throwing'} with 'f'ire` });
     if (item.oclass === 10)
         entries.push({ key: 'r', text: 'Study this spellbook' });
+    if ((item.owornmask ?? 0) & W_ACCESSORY) {
+        const accessory = (item.owornmask ?? 0) & W_AMUL ? 'amulet'
+            : (item.owornmask ?? 0) & W_RING ? 'ring'
+                : (item.owornmask ?? 0) & W_TOOL ? 'eyewear' : 'accessory';
+        entries.push({ key: 'R', text: `Remove this ${accessory}` });
+    }
     if (!alreadyWorn) {
         const goldStack = stack && item.otyp === GOLD_PIECE;
         const quantity = stack ? goldStack ? 'them' : 'one of these' : 'this item';
         const fireAlias = item === state.uquiver && !goldStack ? " (same as 'f')" : '';
         entries.push({ key: 't', text: `${shoot ? 'Shoot' : 'Throw'} ${quantity}${fireAlias}` });
     }
-    if (item !== state.uwep)
-        entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'}${item.oclass === 2 || isWeaponTool(item) ? ' as your weapon' : ' in your hands'}` });
+    if ((item.owornmask ?? 0) & W_ARMOR)
+        entries.push({ key: 'T', text: 'Take off this armor' });
+    if (item !== state.uwep && !heroHasNoHands(state) && !heroIsVerySmall(state)) {
+        const weapon = item.oclass === 2 || isWeaponTool(item)
+            || item.otyp === TOWEL && item.spe > 0 || item.otyp === HEAVY_IRON_BALL;
+        if (weapon) {
+            entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'} as your weapon` });
+        } else if (item.otyp === TIN_OPENER) {
+            entries.push({ key: 'w', text: 'Wield the tin opener to easily open tins' });
+        } else if (!alreadyWorn) {
+            entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'} in your ${makePlural(heroHandName(state))}` });
+        }
+    }
     if (item === state.uwep) entries.push({ key: 'x', text: state.uswapwep
         ? 'Swap this with your alternate weapon' : 'Ready this as an alternate weapon' });
     else if (item === state.uswapwep)
@@ -512,8 +540,8 @@ function itemActionEntries(item: GameObject, state: GameState) {
 function inventoryActionKey(code: number): InventoryActionKey {
     const key = String.fromCharCode(code);
     switch (key) {
-    case '-': case 'c': case 'd': case 'E': case 'f': case 'i': case 'P': case 'Q': case 'r':
-    case 't': case 'w': case 'x': case 'X': case '/': case '\x1b': case ' ': case '\n': case '\r':
+    case '-': case 'c': case 'd': case 'E': case 'f': case 'i': case 'P': case 'Q': case 'r': case 'R':
+    case 't': case 'T': case 'w': case 'x': case 'X': case '/': case '\x1b': case ' ': case '\n': case '\r':
         return key;
     default:
         throw new RangeError(`Unexpected inventory action key ${code}`);

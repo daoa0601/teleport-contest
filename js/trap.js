@@ -21,7 +21,16 @@ import { objectMaterial } from './object_material.js';
 import { impossible } from './diagnostics.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2 } from './rng.js';
-import { canSeeMonster } from './display.js';
+import { canSeeMonster, newsym } from './display.js';
+// C trap.c:seetrap(). Discovering a trap refreshes the nonliving layer;
+// any object or monster still covering it keeps its usual display priority.
+export function seeTrap(trap, state = game) {
+    if (trap.tseen)
+        return;
+    trap.tseen = true;
+    if (state === game)
+        newsym(trap.tx, trap.ty);
+}
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
 const M1_HUMANOID = 0x00020000;

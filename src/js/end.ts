@@ -1,6 +1,7 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 
+import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { achievementEntries } from './achievements.js';
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
@@ -19,7 +20,7 @@ import {
 import { artifactById } from './artifacts.js';
 import {
     MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_GENO,
-    MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
@@ -38,7 +39,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
-    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, STARVING, STONING,
+    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, STARVING, STONING,
     Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd,
 } from './const.js';
 import {
@@ -52,6 +53,7 @@ import { heroIsBlind } from './senses.js';
 import { finishShopkeeperRepossession, settleShopkeepersOnExit } from './shop_settlement.js';
 import type { ShopExitOutcome } from './shop_settlement.js';
 import { payVaultGuardOnExit } from './vault_exit.js';
+import { currency } from './currency.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
 import { promptChoice, promptYesNo } from './query.js';
 import {
@@ -693,11 +695,16 @@ function deathSummaryLines(killer: string, { gold, score, depth, moves }: GameSu
     return [
         ...(tombstone ? ['', ...stone.map(([col, text]) => ' '.repeat(col) + text), '', ''] : []),
         `${goodbye} ${name} the ${role}...`, '',
-        `You ${deathVerb} in ${deathDungeon} on dungeon level ${depth} with ${score} points,`,
-        `and ${gold} pieces of gold, after ${moves} moves.`,
-        `You were level ${game.u?.ulevel || 1} with a maximum of ${game.u?.uhpmax || 1} hit points when you ${deathVerb}.`,
+        `You ${deathVerb} in ${deathDungeon} on dungeon level ${depth} with ${score} point${plur(score)},`,
+        `and ${gold} piece${plur(gold)} of gold, after ${moves} move${plur(moves)}.`,
+        `You were level ${game.u?.ulevel || 1} with a maximum of ${game.u?.uhpmax || 1} hit point${plur(game.u?.uhpmax || 1)} when you ${deathVerb}.`,
         '',
     ];
+}
+
+// C hacklib.c plur(): the summary lines in end.c pluralize every count.
+function plur(count: number): string {
+    return count === 1 ? '' : 's';
 }
 
 function roleGoodbye() {
@@ -720,13 +727,13 @@ function renderQuitSummaryPage({ gold, score, depth, moves }: GameSummary) {
     terminalLine(
         2, 0,
         `You quit in ${currentDungeonName()} on dungeon level ${
-            depth} with ${score} points,`,
+            depth} with ${score} point${plur(score)},`,
     );
-    terminalLine(3, 0, `and ${gold} pieces of gold, after ${moves} moves.`);
+    terminalLine(3, 0, `and ${gold} piece${plur(gold)} of gold, after ${moves} move${plur(moves)}.`);
     terminalLine(
         4, 0,
         `You were level ${game.u?.ulevel || 1} with a maximum of ${
-            game.u?.uhpmax || 1} hit points when you quit.`,
+            game.u?.uhpmax || 1} hit point${plur(game.u?.uhpmax || 1)} when you quit.`,
     );
     terminalLine(23, 0, '--More--');
     display?.setCursor(8, 23);
@@ -1270,6 +1277,11 @@ async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promis
     game.program_state.gameover = true;
     game.program_state.something_worth_saving = false;
     await doneObjectCleanup();
+    if (outcome === 'died' && deathType < PANICKED
+        && game.moves <= 1 && !game.program_state.stopprint) {
+        // done() has committed zero HP; this pline refreshes that status.
+        await plineWithContinuation(`Do not pass Go.  Do not collect 200 ${currency(200)}.`);
+    }
     game._canMakeBones = outcome === 'died' && deathType < GENOCIDED
         && canMakeBones();
 }
@@ -1308,6 +1320,14 @@ async function completeOrdinaryDeath({
     // removes the inventory. Repossessed gold has already left the hero.
     const summary = gameSummaryValues('died');
     game.u.urexp = summary.score;
+    const arise = game.u.ugrave_arise;
+    if (arise !== undefined && arise >= 0 && !game.program_state.stopprint) {
+        const revenant = MONSTER_NAME[arise] === 'green slime'
+            ? 'revenant persists' : 'body rises from the dead';
+        await plineWithContinuation(`Your ${revenant} as ${
+            withIndefiniteArticle(monsterTypeName(arise, !!game.flags.female))}...`);
+        await displayMessageWindow();
+    }
     await createBonesFromDeath(
         deathCause || deathCauseRecord(killer, deathVerb), promptYesNo,
     );
@@ -1339,6 +1359,18 @@ export async function doquit() {
         await flush_screen(1);
         game.context.move = 0;
         return;
+    }
+    if (game.flags.debug) {
+        const dump = await promptChoice('Dump core?', ['y', 'n', 'q'], 'q');
+        if (dump === 'y') {
+            game.program_state.windows_exited = true;
+            game.program_state.gameover = true;
+            game.context.move = 0;
+            // NH_abort() terminates the native process before done(QUIT).
+            // The engine exposes that termination to its host.
+            throw new PanicTermination('Wizard requested a core dump');
+        }
+        if (dump === 'q') stopDisclosure();
     }
     await finishOrdinaryQuit();
 }
@@ -1400,7 +1432,7 @@ export async function finishLivingGame(outcome: LivingOutcome) {
         const company = ['You', ...names].join(' and ');
         if (names.length) lines.push(company);
         const action = outcome === 'ascended' ? 'went to your reward' : 'escaped from the dungeon';
-        lines.push(`${names.length ? '' : 'You '}${action} with ${summary.score} point${summary.score === 1 ? '' : 's'},`);
+        lines.push(`${names.length ? '' : 'You '}${action} with ${summary.score} point${plur(summary.score)},`);
         lines.push(...await finalPossessionLines(possessions));
         lines.push(`and ${summary.gold} piece${summary.gold === 1 ? '' : 's'} of gold, after ${summary.moves} move${summary.moves === 1 ? '' : 's'}.`);
         lines.push(`You were level ${game.u.ulevel} with a maximum of ${game.u.uhpmax} hit points when you ${outcome}.`);
