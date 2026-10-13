@@ -1,8 +1,9 @@
 // Shared monster item feedback and cursed-wand precheck. C muse.c.
 import { BOLT_LIM, G_GONE, MM_NOMSG, QBUFSZ, WAND_BACKFIRE_CHANCE } from './const.js';
 import { impossible } from './diagnostics.js';
-import { canSeeMonster, canSenseMonster, flashGlyphAt, map_invisible, newsym, plineWithContinuation, randomDisplayMonsterName, transientMonsterGlyph, } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, cls, displayMessageWindow, displaySelf, docrt, flashGlyphAt, map_invisible, newsym, plineWithContinuation, randomDisplayMonsterName, show_glyph_cell, transientMonsterGlyph, } from './display.js';
 import { heroSpecies } from './hero_species.js';
+import { heroIsUnconscious } from './hero_sleep.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { inventoryItemDescription } from './invent.js';
 import { AD_RBRE } from './monster_attack_types.js';
@@ -10,7 +11,7 @@ import { MONSTER_GENO } from './monster_data.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { paralyzeMonster } from './mon.js';
 import { destroyObjectFromMonsterInventory, forgetObjectKnowledge } from './monster_inventory.js';
-import { monsterName, monsterReflexiveAction, monsterSubjectPronoun } from './monster_name.js';
+import { monsterName, monsterReflexiveAction, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { sameMonsterRace } from './monster_race.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
@@ -41,6 +42,26 @@ export async function presentMonsterQuaff(monster, object, { state, publish = pl
             await publish(message);
     }
     return seen;
+}
+// C muse.c:you_aggravate(). The temporary revelation is acknowledged before
+// the potion is consumed or another monster can act.
+export async function revealAggravatingMonster(monster, state) {
+    const owner = possessiveName(monsterName(monster, { state, article: 'your', suppressIt: true }));
+    await plineWithContinuation(`For some reason, ${owner} presence is known to you.`);
+    await cls();
+    const glyph = transientMonsterGlyph(monster);
+    show_glyph_cell(monster.mx, monster.my, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
+    displaySelf();
+    await plineWithContinuation(`You feel aggravated at ${monsterName(monster, { state, article: 'your', suppressIt: true })}.`);
+    await displayMessageWindow();
+    await docrt();
+    if (heroIsUnconscious(state)) {
+        state._helplessTurns = 1;
+        state._helplessDoneMessage = 'Aggravated, you are jolted into full consciousness.';
+    }
+    newsym(monster.mx, monster.my);
+    if (!canSpotMonster(monster))
+        map_invisible(monster.mx, monster.my);
 }
 // Return null when the selected item can still be used. An exploded wand
 // spends no action if its owner survives, but cancels the selected choice.

@@ -35,6 +35,7 @@ import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
+import { TER_MON } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
 import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
@@ -59,6 +60,8 @@ import { heroCanEnterIronBars } from './iron_bars_meal.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import { floorObjectDescription, } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
+import { itemizedShopBill, minimumShopPurchase, buyShopBillItem } from './shop_payment.js';
+import { paymentObjectDescription } from './object_description.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -73,13 +76,13 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
-import { chooseInventoryObject, compactInventoryLetters, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
+import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
 import { directionAssistPage, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
-import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
+import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
 import { dozap, } from './zap.js';
@@ -143,7 +146,7 @@ import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
-import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, monsterTypeName, } from './monster_data.js';
+import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
 import { nameToMonster } from './mondata.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
@@ -195,7 +198,7 @@ import { finishDestinationSpotEffects, finishTeleportArrival } from './location_
 import { dosacrifice } from './sacrifice.js';
 import { detachHeroGold, heroGoldAmount, heroGoldObject, setHeroGoldAmount } from './hero_gold.js';
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow, } from './gold_throw.js';
-import { heroIsBlind, heroIsHallucinating, } from './senses.js';
+import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating, } from './senses.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import { doquit, finishHeroDeath, vanquishedLines, listGenocided, } from './end.js';
 import { hasRecordedMonsterDeaths } from './monster_vitals.js';
@@ -213,7 +216,7 @@ import { continueHeroDigging, diggingTarget } from './hero_digging.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { wieldTool } from './wield_tool.js';
 import { doenhance, useHeroSkill, } from './skills.js';
-import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, minimumShopPurchase, objectTypeKnown, payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage, tendedShop, } from './shk.js';
+import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, objectTypeKnown, payShopDebt, shopkeeperForHero, shopThankYouMessage, tendedShop, } from './shk.js';
 import { visiblePriestName, } from './priest.js';
 import { gameLogEvents } from './gamelog.js';
 import { killerObjectName } from './objnam.js';
@@ -2533,9 +2536,7 @@ async function dochat() {
             return;
         }
         if (monster?.pet && monster.meating) {
-            await pline(`${monster.name
-                ? monster.name.charAt(0).toUpperCase() + monster.name.slice(1)
-                : `The ${monsterInstanceDisplayName(monster)}`} is eating noisily.`);
+            await pline(`${monsterName(monster, { capitalized: true })} is eating noisily.`);
         }
         else if (monster && await publishMonsterNoise(monster, game)) {
             game.context.move = 1;
@@ -3925,8 +3926,16 @@ function dipTargetDescription(object) {
 async function dodip() {
     const items = (game.inventory || []).filter((item) => typeof item.invlet === 'string' && item.invlet.length > 0)
         .sort((a, b) => a.invlet.localeCompare(b.invlet));
-    const letters = compactInventoryLetters(items.map(item => item.invlet).join(''));
-    const selection = await promptInventoryObject(`What do you want to dip? [${letters} or ?*] `, items, { allowMenu: true, retainPromptOnCancel: true });
+    const suggested = items.filter(item => item.oclass !== 12);
+    const letters = compactInventoryLetters(suggested.map(item => item.invlet).join(''));
+    const choices = letters ? `[${letters} or ?*]` : '[*]';
+    const selection = await promptInventoryObject(`What do you want to dip? ${choices} `, items, {
+        verb: 'dip',
+        classify: item => item.oclass === 12 ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST,
+        menuItems: suggested,
+        allowMenu: true,
+        retainPromptOnCancel: true,
+    });
     if (selection.cancelled || !selection.object) {
         game.context.move = 0;
         return;
@@ -4232,6 +4241,8 @@ async function doextcmd() {
                 continue;
             }
             game._pending_message = '';
+            game._retained_message = '';
+            game.nhDisplay?.clearRow(0);
             game.context.move = 0;
             return;
         }
@@ -4289,7 +4300,26 @@ async function wizardPositionDescription(x, y) {
             || `${race} ${(roleName || 'adventurer').toLowerCase()}`;
         const punishment = heroIsPunished()
             ? ', chained to a heavy iron ball' : '';
-        return `${form} called ${game.plname || 'player'}${punishment}`;
+        const blind = heroIsBlind(game);
+        const telepathy = unblindTelepathyRange() >= 0;
+        const detection = heroDetectsMonsters(game);
+        const invisible = propertyIsActive('invisible', game);
+        // self_lookat() includes invisibility while blind only when sensed.
+        const prefix = invisible && (!blind || telepathy || detection)
+            ? 'invisible ' : '';
+        const description = `${prefix}${form} called ${game.plname || 'player'}${punishment}`;
+        const unseen = invisible && !game.u.seeInvisible
+            && (game.u.seeInvisibleTurns ?? 0) === 0;
+        // lookat() treats touch while blind or swallowed as normal vision.
+        if (blind || game.u.uswallow || !(unseen || game.u.uundetected))
+            return description;
+        const senses = [
+            game.u.infravision ? 'infravision' : '',
+            telepathy ? 'telepathy' : '',
+            detection ? 'monster detection' : '',
+        ].filter(sense => sense.length > 0);
+        return senses.length > 0
+            ? `${description} [seen: ${senses.join(', ')}]` : description;
     }
     const loc = game.level?.at(x, y);
     if (!loc)
@@ -4432,7 +4462,15 @@ async function travelPositionDescription(x, y) {
     const valid = !unexploredProjection && isValidTravelTarget(x, y);
     return valid ? description : `${description} (no travel path)`;
 }
+// C pager.c:lookat() gives the sensed hero priority over the map glyph.
+// Terrain-only inspection deliberately omits that self description.
+function farlookDescribesHero(x, y) {
+    return x === game.u.ux && y === game.u.uy && canSpotHeroSelf()
+        && (!game.iflags.terrainmode || !!(game.iflags.terrainmode & TER_MON));
+}
 export async function farlookLocationDescription(x, y) {
+    if (farlookDescribesHero(x, y))
+        return wizardPositionDescription(x, y);
     const glyph = glyphAt(x, y);
     if (glyph?.kind === 'warning') {
         const index = glyph.glyph === undefined ? -1 : glyph.glyph - GlyphOffset.warning;
@@ -4551,6 +4589,24 @@ async function dojump() {
     game.context.move = result.spentTime ? 1 : 0;
 }
 async function verboseFarlookDescription(x, y) {
+    const glyph = glyphAt(x, y);
+    if (farlookDescribesHero(x, y) && glyph?.kind === 'monster'
+        && glyph.mnum !== undefined) {
+        // C do_screen_description() classifies the displayed glyph. With
+        // showrace, that can differ from the role named by self_lookat().
+        const species = glyph.mnum;
+        const symbol = monsterClassSymbol(species);
+        const explanation = MONSTER_CLASS_EXPLAIN[MONSTER_SYMBOL[species] ?? 0];
+        if (!explanation)
+            throw new Error(`Displayed species ${species} has no monster class description`);
+        const includesHero = symbol === '@' && !heroIsPolymorphed(game) && game.urace
+            && game.urace.name !== 'human' && game.urace.name !== 'elf';
+        // A blank also denotes stone, air, darkness, and unexplored squares.
+        // C collapses more than four meanings before appending self_lookat().
+        const classDescription = symbol === ' ' ? 'can be many things'
+            : withIndefiniteArticle(explanation) + (includesHero ? ' or you' : '');
+        return `${symbol}\x1b[8C${classDescription} (${await farlookLocationDescription(x, y)})`;
+    }
     const loc = game.level?.at(x, y);
     if (loc?.typ === CORR)
         return `#\x1b[8Ccan be many things (corridor)`;
@@ -5220,6 +5276,11 @@ async function dopay() {
             return;
         }
     }
+    if (resident !== shopkeeperForHero() && resident.mpeaceful && !resident.eshk?.robbed) {
+        await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
+        game.context.move = 1;
+        return;
+    }
     let paid = false;
     const debt = Math.max(0, resident.eshk?.debit ?? 0);
     if (debt) {
@@ -5266,10 +5327,10 @@ async function dopay() {
             return;
         }
     }
-    const billed = carriedShopBill(resident);
+    const billed = itemizedShopBill(resident);
     if (!billed.length) {
         if (!paid) {
-            await plineWithContinuation(`You do not owe ${resident.eshk?.shknam || 'the shopkeeper'} anything.`);
+            await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
             if (resident === shopkeeperForHero() && resident.mpeaceful && !heroGoldAmount(game))
                 await plineWithContinuation(`Moreover, you${hiddenGold(game, true) ? ' seem to' : ''} have no gold.`);
             game.context.move = 1;
@@ -5281,37 +5342,47 @@ async function dopay() {
     }
     for (const item of billed)
         observeObjectForNaming(item.object);
-    const sections = [{
-            heading: '',
-            items: billed.map((item, index) => ({
-                key: String.fromCharCode(97 + index),
-                text: `${item.price} Zm, ${floorObjectDescription(item.object)}`,
-                value: item,
-            })),
-        }];
+    const priceWidth = String(Math.max(...billed.map(item => item.price))).length;
+    const used = billed.filter(item => item.kind === 'used');
+    const intact = billed.filter(item => item.kind !== 'used');
+    const sections = [used, intact].filter(items => items.length).map(items => ({
+        heading: used.length ? `${items === used ? 'Used up' : 'Unpaid'} item${items.length > 1 ? 's' : ''}:` : '',
+        items: items.map(item => ({
+            key: String.fromCharCode(97 + billed.indexOf(item)),
+            text: `${String(item.price).padStart(priceWidth)} Zm, ${paymentObjectDescription(item.object, item.quantity)}`,
+            value: item,
+        })),
+    }));
     game._pending_message = '';
     await flush_screen(1);
     const selected = await showMultiSelectWindow({
         title: 'Pay for which items?', sections,
-        omitHeadings: true,
+        omitHeadings: !used.length,
     });
     if (!selected.length) {
         game.context.move = paid ? 1 : 0;
         return;
     }
     let paidForItem = false;
-    for (const item of selected) {
-        if (!settleCarriedShopBillItem(resident, item))
+    let finished = true;
+    // Native queued selection buys in bill order, regardless of selection order.
+    for (const item of billed.filter(item => selected.includes(item))) {
+        const result = await buyShopBillItem(resident, item);
+        if (result === 'stop') {
+            finished = false;
+            break;
+        }
+        if (result === 'skip')
             continue;
         paidForItem = true;
-        observeObjectForNaming(item.object);
-        await pline(`You bought ${floorObjectDescription(item.object)} for ${item.price} gold piece${item.price === 1 ? '' : 's'}.`);
+        await bot();
     }
     if (!paid && !paidForItem) {
         game.context.move = 0;
         return;
     }
-    await plineWithContinuation(shopThankYouMessage(resident));
+    if (finished && resident.mpeaceful)
+        await plineWithContinuation(shopThankYouMessage(resident));
     game.context.move = 1;
 }
 // C ref: cmd.c do_fight()/rhack().  F is a movement prefix whose next
@@ -6285,11 +6356,15 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     const launcher = game.uwep;
     const wieldingSling = !!launcher
         && OBJECT_SUBTYPE[launcher.otyp] === OBJECT_SUBTYPE[SLING];
-    const throwables = (game.inventory || []).filter(item => (item.oclass || objectClassForType(item.otyp))
-        === (wieldingSling ? 13 : 2)
-        && !(item === game.uwep && (item.quantity ?? item.quan ?? 1) === 1));
-    const inventoryLetters = throwables.map(item => item.invlet).join('');
-    const letters = `${heroGoldAmount(game) > 0 ? '$' : ''}${inventoryLetters}`;
+    if (!selectedItem && game.flags.fixinv === false)
+        reassignInventoryLetters();
+    // C getobj() sorts its candidates independently of the carried chain.
+    const throwables = (game.inventory || []).filter(item => {
+        const objectClass = item.oclass || objectClassForType(item.otyp);
+        return (objectClass === 12 || objectClass === (wieldingSling ? 13 : 2))
+            && !(item === game.uwep && (item.quantity ?? item.quan ?? 1) === 1);
+    }).sort((left, right) => inventoryLetterOrder(left.invlet) - inventoryLetterOrder(right.invlet));
+    const letters = throwables.map(item => item.invlet).join('');
     const prompt = letters
         ? `What do you want to throw? [${letters} or ?*] `
         : 'What do you want to throw? [*] ';

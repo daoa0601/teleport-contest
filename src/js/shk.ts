@@ -13,7 +13,7 @@ import type { Room } from './map_types.js';
 import type { MessagePublisher } from './display.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
 import type {
-    BilledShopkeeper, CarriedShopBillItem, CostlyShopSpot,
+    BilledShopkeeper, CostlyShopSpot,
     Shopkeeper, ShopRoom, ShopTransaction,
 } from './shop_types.js';
 import { SHOP_TYPES } from './shop_data.js';
@@ -157,84 +157,7 @@ export function shopkeeperForHero(state: GameState = game): Shopkeeper | null {
     return shopkeeperForRoom(state.u.ushops?.[0], state);
 }
 
-// C shk.c:make_itemized_bill()/cheapest_item(). Contents are sold together
-// through their outermost container; a partly used stack has separate costs
-// for its used-up and intact portions.
-export function minimumShopPurchase(
-    resident: Monster, state: GameState = game,
-): { price: number; multipleItems: boolean } | null {
-    if (!hasShopBill(resident) || !resident.eshk.bill.length) return null;
-    const objects = objectsInTimerGraph(state);
-    const containers = new Set<GameObject>();
-    const prices: number[] = [];
-    let multipleItems = resident.eshk.bill.length > 1;
-    for (const entry of resident.eshk.bill) {
-        const object = (entry.useup ? state.billObjects ?? [] : objects)
-            .find(candidate => candidate.o_id === entry.bo_id);
-        if (!object) continue;
-        if (object.where === 'onbill' || object.quan === 0) {
-            prices.push(entry.price * entry.bquan);
-            continue;
-        }
-        if (object.quan < entry.bquan) {
-            prices.push(entry.price * (entry.bquan - object.quan));
-            multipleItems = true;
-        }
-        if (object.container || object.contents?.length) {
-            let container = object;
-            let contentsKnown = true;
-            while (container.container) {
-                container = container.container;
-                if (!container.cknown) contentsKnown = false;
-            }
-            if (containers.has(container)) continue;
-            containers.add(container);
-            prices.push(unpaidObjectCost(container, state, 'contents'));
-            if (container !== object && !contentsKnown) multipleItems = true;
-        } else {
-            prices.push(entry.price * object.quan);
-        }
-    }
-    return prices.length ? { price: Math.min(...prices), multipleItems } : null;
-}
-
-export function carriedShopBill(resident: Monster | null | undefined, state: GameState = game): CarriedShopBillItem[] {
-    if (!resident?.eshk) return [];
-    const inventory = state?.inventory || [];
-    const usedObjects = state.billObjects || [];
-    return (resident.eshk.bill || []).map(entry => ({
-        entry,
-        object: inventory.find(object => object.o_id === entry.bo_id)
-            || usedObjects.find(object => object.o_id === entry.bo_id),
-        price: entry.price * (entry.bquan ?? 1),
-    })).filter((item): item is CarriedShopBillItem => item.object !== undefined);
-}
-
-// C refs: shk.c:pay(), sub_one_frombill(), and update_bill().  Gold is a
-// real object stack in C; paying less than the whole purse splits it and the
-// new stack identity consumes next_ident() before either stack is transferred.
-export function settleCarriedShopBillItem(
-    resident: Monster | null | undefined, item: CarriedShopBillItem,
-    state: GameState = game,
-): boolean {
-    const { entry, object, price } = item;
-    if (!hasShopBill(resident) || price <= 0
-        || heroGoldAmount(state) < price) return false;
-    const paid = detachHeroGold(state, price);
-    if (paid) paid.where = 'gone';
-    resident.gold = (resident.gold || 0) + price;
-    object.unpaid = false;
-    if (object.where === 'onbill') {
-        unlinkObject(object, state);
-        deallocateObject(object, state);
-    }
-    const last = resident.eshk.bill.pop();
-    if (last && entry !== last) copyBillEntry(entry, last);
-    resident.eshk.billct = resident.eshk.bill.length;
-    return true;
-}
-
-// Native bill compaction overwrites a slot; other references keep that slot's identity.
+// Native bill compaction preserves the overwritten slot's identity.
 function copyBillEntry(target: ShopBillEntry, source: ShopBillEntry): void {
     target.bo_id = source.bo_id;
     target.bquan = source.bquan;

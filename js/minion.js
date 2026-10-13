@@ -130,13 +130,11 @@ function lawfulLord() {
     return monsterIsGone(PM_ARCHON) ? lawfulMinion() : PM_ARCHON;
 }
 function summonerAlignment(monster) {
-    if (!monster)
-        return Math.sign(MONSTER_ALIGNMENT[PM_WIZARD_OF_YENDOR] ?? A_NONE);
-    if (monster.ispriest)
+    if (monster?.ispriest)
         return monster.epri?.shralign ?? monster.mextra?.epri?.shralign ?? A_NONE;
-    if (monster.isminion)
+    if (monster?.isminion)
         return monster.emin?.min_align ?? monster.mextra?.emin?.min_align ?? A_NONE;
-    const alignment = MONSTER_ALIGNMENT[monster.mnum] ?? A_NONE;
+    const alignment = MONSTER_ALIGNMENT[monster?.mnum ?? PM_WIZARD_OF_YENDOR] ?? A_NONE;
     return alignment === A_NONE ? A_NONE : Math.sign(alignment);
 }
 function summonedType(monster, alignment) {
@@ -227,7 +225,7 @@ export async function msummon(monster = null) {
         return { count: 0, created: [] };
     let count = 1;
     const flags = MONSTER_FLAGS2[mnum] ?? 0;
-    if (selection.mayDouble && !(flags & (M2_LORD | M2_PRINCE)) && !rn2(4))
+    if (selection.mayDouble && !rn2(4) && !(flags & (M2_LORD | M2_PRINCE)))
         count = 2;
     if (monsterIsGone(mnum)) {
         mnum = normalDemon(alignment);
@@ -252,7 +250,7 @@ export async function msummon(monster = null) {
         };
         created.push(summoned);
         if (count === 0 && canSeeMonster(summoned)) {
-            await pline(`${summonedMonsterName(summoned)} appears in a ${summonEnvironment(summoned)}!`);
+            await plineWithContinuation(`${summonedMonsterName(summoned)} appears in a ${summonEnvironment(summoned)}!`);
         }
     }
     return { count: created.length, created };

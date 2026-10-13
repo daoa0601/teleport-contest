@@ -195,6 +195,7 @@ async function hitWithDisintegration(context) {
         await disintegrateWornArmor(shirt, { state, publish });
     }
     state.u.ugrave_arise = context.nativeType === -24 ? -3 : NON_PM;
+    // zhitu() calls done(DIED) directly; only losehp() prints "You die...".
     const heroDied = await die({ killer: context.name || 'blast of disintegration', deathLineShown: true });
     return { resisted: false, damage: 0, heroDied };
 }

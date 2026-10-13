@@ -39,9 +39,10 @@ import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
 import { monsterGainLevelRiseDestination } from './monmove.js';
 import { RLOC_NOMSG, WATER } from './const.js';
-import { presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse } from './monster_item_use.js';
+import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster } from './monster_item_use.js';
 import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
+import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
 import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
@@ -57,6 +58,7 @@ import {
     monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
 } from './monster_perception.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
+import { finishScheduledLevelChange } from './level_change.js';
 import { findArtifact } from './artifacts.js';
 import { observeBucForNaming } from './object_knowledge.js';
 import { loseHeroExperience } from './exper.js';
@@ -140,7 +142,7 @@ import {
 } from './objnam.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
-    BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE,
+    BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR,
     STONE, ZAP_POS,
     STRAT_CLOSE, STRAT_WAITFORU,
     UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS,
@@ -240,8 +242,7 @@ import { autopickupAtHero } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
 import {
     applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass,
-    destroyWornArmor, objectErosionKind,
-    objectErosionMessage, wornArmorInDestroyOrder,
+    erodeWornArmor,
 } from './armor.js';
 import {
     nearCapacity,
@@ -552,6 +553,9 @@ async function enterTutorial() {
     game.u.uz = { ...target };
     game._specialLevelPrototype = 'tut-1';
     await mklev();
+    // goto_level() arrives through u_on_rndspot(), even when Lua restricts
+    // the region to a single square.
+    await placeHeroAtRandomArrival(game.level.downTeleportRegion);
     const tutorialLevel = game.level;
     const tutorialStairs = game.stairs;
     const tutorialPosition = {
@@ -2304,44 +2308,22 @@ async function resolveDeferredHeroDeathTouch(
 }
 
 async function resolveDeferredHeroDestroyArmor(
-    action: MonsterAction, heroAttack: HeroSpellAttack,
+    heroAttack: HeroSpellAttack,
 ): Promise<void> {
     const game = requireInitializedGame();
     if (!heroAttack?.deferredDestroyArmor) return;
     const antimagic = !!game.u?.antimagic;
     if (antimagic) {
+        await shieldeff(game.u.ux, game.u.uy, game);
+        monstersObserveHeroResistance(M_SEEN_MAGR, game);
         await plineWithContinuation('A field of force surrounds you!');
         heroAttack.deferredDestroyArmor = false;
         return;
     }
 
-    const armors = wornArmorInDestroyOrder();
-    const hitRoll = rn2(4);
-    action.calls.push('rn2(4)');
-    const hits = hitRoll + 1;
-    const changed = [];
-    for (let hit = 0; hit < hits && armors.length; hit++) {
-        const index = rn2(armors.length);
-        action.calls.push('rn2(' + armors.length + ')');
-        const armor = armors[index];
-        if (!armor)
-            throw new RangeError(`Armor selection ${index} is outside the ${armors.length} worn pieces.`);
-        const kind = objectErosionKind(armor);
-        if (!kind || armor.oerodeproof) continue;
-        const message = objectErosionMessage(armor, kind);
-        await plineWithContinuation(message);
-        if ((armor[kind.field] || 0) >= 3) {
-            await destroyWornArmor(armor);
-            changed.push({ armor, destroyed: true });
-            break;
-        }
-        armor[kind.field] = (armor[kind.field] || 0) + 1;
-        changed.push({ armor, destroyed: false });
-    }
-    if (!changed.length)
+    if (!await erodeWornArmor(game))
         await plineWithContinuation('Your skin itches.');
-    findArmorClass(game);
-    heroAttack.destroyedArmor = changed;
+    else monstersForgetHeroResistance(M_SEEN_MAGR, game);
     heroAttack.deferredDestroyArmor = false;
 }
 
@@ -2695,7 +2677,7 @@ async function presentMonsterAttackEffects(
                             );
                         if (heroAttack.deferredDestroyArmor)
                             await resolveDeferredHeroDestroyArmor(
-                                action, heroAttack,
+                                heroAttack,
                             );
                         if (heroAttack.deferredGeyserSpell)
                             resolveDeferredHeroGeyser(action, heroAttack);
@@ -3297,8 +3279,12 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
     let somebodyCanMove = false;
     // C iter_mons_safe() snapshots identities, not their remaining movement.
     monsterTurns: for (const actor of monstersInFmonOrder(level.monsters)) {
-        if (game.level !== level || game.u.utotype || game.program_state?.gameover)
+        if (game.level !== level || game.program_state?.gameover)
             return false;
+        if (game.u.utotype) {
+            somebodyCanMove = false;
+            break;
+        }
         if (!level.monsters.includes(actor) || (actor.mhp ?? 1) <= 0 || actor.mx === 0
             || (actor.mstate ?? MON_FLOOR) !== MON_FLOOR)
             continue;
@@ -3498,6 +3484,10 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
                     `${visibleMonsterSubject(monster)} briefly seems to be transparent.`,
                 );
             }
+            if (misc.kind === 'potion-invisibility') {
+                if (misc.object.cursed) await revealAggravatingMonster(monster, game);
+                await consumeMonsterItem(monster, misc.object, game);
+            }
         }
         if (movement?.usedMisc?.kind === 'bullwhip-disarm') {
             const misc = movement.usedMisc;
@@ -3601,6 +3591,13 @@ async function moveMonsters() {
         const somebodyCanMove = await executeMonsterTurns();
         // C mon.c:movemon() refreshes moving light sources after the pass.
         if (hasLightSources()) game.vision_full_recalc = 1;
+        // A monster's action can schedule travel, including removal of
+        // levitation gear above a trap. Finish it before world maintenance
+        // or command input; the departure monsters are now dormant.
+        if (game._scheduledLevelChange) {
+            await finishScheduledLevelChange();
+            return false;
+        }
         return somebodyCanMove;
     } finally {
         game.context.mon_moving = previousMonsterMoving;
@@ -3841,10 +3838,16 @@ export async function moveloop_core() {
             if (delayed.finishMessage)
                 await plineWithContinuation(delayed.finishMessage);
             await finishArmorRemoval(delayed.object, { silent: true });
+        }
+        g._delayedAction = null;
+        // C moveloop_core() completes travel caused by unmul() before find_ac().
+        // Arrival pagers retain the AC from before the armor was removed.
+        await finishScheduledLevelChange();
+        if (g.program_state.gameover) return;
+        if (delayed.kind === 'remove') {
             findArmorClass(g);
             g._armorClassDirty = false;
         }
-        g._delayedAction = null;
     } else if (g._delayedAction) {
         // A delayed action spends movement without reading another command.
         g.u.umoved = false;
@@ -3933,6 +3936,8 @@ export async function moveloop_core() {
         g.u.umoved = false;
         const moved = await continueRun(g);
         if (g.program_state.gameover) return;
+        await finishScheduledLevelChange();
+        if (g.program_state.gameover) return;
         if (moved) {
             g.u.umovement = (g.u.umovement ?? 12) - 12;
             g._heroTimePending = true;
@@ -3949,6 +3954,9 @@ export async function moveloop_core() {
     } else {
         await rhack(0);
     }
+    if (g.program_state.gameover) return;
+
+    await finishScheduledLevelChange();
     if (g.program_state.gameover) return;
 
     // Advance turn

@@ -2,6 +2,7 @@
 // C ref: teleport.c teleok(), safe_teleds(), teleds(), and tele_trap().
 
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { updateMonsterRegions } from './regions.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
@@ -643,6 +644,7 @@ export async function relocateMonsterTo(monster: Monster, x: number, y: number, 
     }
     monster.mtrack = [];
     placeMonsterAt(monster, x, y);
+    updateMonsterRegions(monster, state);
     if (monster.wormno)
         placeMonsterWormTailRandomly(monster, segments, { state, random });
 

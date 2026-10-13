@@ -426,7 +426,10 @@ export async function erodeWornArmor(state = game) {
         return damaged;
     if (damaged)
         await stopHeroOccupation(state, plineWithContinuation);
-    findArmorClass(state);
+    if (state.context.mon_moving)
+        state._armorClassDirty = true;
+    else
+        findArmorClass(state);
     return damaged;
 }
 export function objectErosionKind(object) {

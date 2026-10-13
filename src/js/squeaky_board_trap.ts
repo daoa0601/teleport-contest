@@ -8,7 +8,7 @@ import type { MessagePublisher } from './display.js';
 import { BOLT_LIM, COULD_SEE, squeakyBoardNoteWithArticle } from './const.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { monsterIsMindless } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { heroIsDeaf } from './senses.js';
@@ -84,7 +84,7 @@ export async function finishMonsterSqueakyBoard(
         );
     }
 
-    wakeMonstersNear(event.trap.tx, event.trap.ty, 40, state);
+    await wakeMonstersNearWithMessages(event.trap.tx, event.trap.ty, 40, state, publish);
     event.finished = true;
     return event;
 }

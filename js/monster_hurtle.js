@@ -20,6 +20,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { vision_recalc } from './vision.js';
 import { rn2, rnd } from './rng.js';
+import { updateMonsterRegions } from './regions.js';
 const M1_FLY = 0x00000001;
 const M1_AMORPHOUS = 0x00000004;
 const M1_WALLWALK = 0x00000008;
@@ -116,6 +117,7 @@ async function hurtleOneSquare(monster, dx, dy, { state, announce, nameMonster, 
         }
         return { moved: false, dead: !!monster.dead || monster.mhp <= 0, occupant };
     }
+    updateMonsterRegions(monster, state, { x: nextX, y: nextY });
     monster.mx = nextX;
     monster.my = nextY;
     newsym(oldX, oldY);

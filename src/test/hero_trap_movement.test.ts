@@ -336,7 +336,7 @@ void test('stepping into a magic portal moves the hero to its other end',
         await input.waitUntilBlocked();
         const text = requireGameDisplay(game).grid
             .map(row => row.map(cell => cell.ch).join('')).join('\n');
-        assert.match(text, /You activated a magic portal!--More--/);
+        assert.match(text, /You activated a magic portal!  You feel slightly dizzy.--More--/);
         input.feed(' ');
         await movement;
 

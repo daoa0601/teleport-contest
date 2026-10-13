@@ -159,11 +159,10 @@ function lawfulLord(): number | null {
 }
 
 function summonerAlignment(monster: Monster | null): number {
-    if (!monster) return Math.sign(MONSTER_ALIGNMENT[PM_WIZARD_OF_YENDOR] ?? A_NONE);
-    if (monster.ispriest) return monster.epri?.shralign ?? monster.mextra?.epri?.shralign ?? A_NONE;
-    if (monster.isminion)
+    if (monster?.ispriest) return monster.epri?.shralign ?? monster.mextra?.epri?.shralign ?? A_NONE;
+    if (monster?.isminion)
         return monster.emin?.min_align ?? monster.mextra?.emin?.min_align ?? A_NONE;
-    const alignment = MONSTER_ALIGNMENT[monster.mnum] ?? A_NONE;
+    const alignment = MONSTER_ALIGNMENT[monster?.mnum ?? PM_WIZARD_OF_YENDOR] ?? A_NONE;
     return alignment === A_NONE ? A_NONE : Math.sign(alignment);
 }
 
@@ -260,7 +259,7 @@ export async function msummon(monster: Monster | null = null): Promise<MonsterSu
 
     let count = 1;
     const flags = MONSTER_FLAGS2[mnum] ?? 0;
-    if (selection.mayDouble && !(flags & (M2_LORD | M2_PRINCE)) && !rn2(4)) count = 2;
+    if (selection.mayDouble && !rn2(4) && !(flags & (M2_LORD | M2_PRINCE))) count = 2;
     if (monsterIsGone(mnum)) {
         mnum = normalDemon(alignment);
         if (mnum == null) return { count: 0, created: [] };
@@ -283,7 +282,7 @@ export async function msummon(monster: Monster | null = null): Promise<MonsterSu
         };
         created.push(summoned);
         if (count === 0 && canSeeMonster(summoned)) {
-            await pline(
+            await plineWithContinuation(
                 `${summonedMonsterName(summoned)} appears in a ${summonEnvironment(summoned)}!`,
             );
         }

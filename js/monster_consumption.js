@@ -1,4 +1,4 @@
-import { isok } from './const.js';
+import { G_GENOD, isok } from './const.js';
 import { thawObject } from './container.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { applyFloorEffects } from './floor_effects.js';
@@ -21,6 +21,7 @@ import { prepareMonsterPetrification, turnGolemToStone } from './monster_stoning
 import { CARROT, CORPSE, EGG, GLOB_OF_GREEN_SLIME, ICE_BOX, OBJECT_WEIGHT, TIN } from './object_data.js';
 import { delobj } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
+import { splitObjectStack } from './object_stack.js';
 import { objectName, observeDistantObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
 import { unpunishHero } from './punishment.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
@@ -170,8 +171,18 @@ export async function consumeMonsterObject(monster, object, state = game, { publ
     if (corpse !== null)
         await grantMonsterCorpseIntrinsic(monster, corpse, state);
 }
+// C monmove.c:bee_eat_jelly(). A living queen leaves the meal untouched.
 export async function feedBeeRoyalJelly(monster, object, state) {
+    const queensGenocided = !!((state.mvitals?.[PM_QUEEN_BEE]?.mvflags ?? 0) & G_GENOD);
+    if (!queensGenocided && state.level?.monsters.some(candidate => candidate.mnum === PM_QUEEN_BEE && !candidate.dead && candidate.mhp > 0))
+        return false;
     const delay = object.blessed ? 3 : object.cursed ? 7 : 5;
+    if (object.quan > 1) {
+        const portion = splitObjectStack(object, 1, state);
+        if (!portion)
+            throw new Error('A bee could not split one lump of royal jelly');
+        object = portion;
+    }
     if (canSeeMonster(monster))
         await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} eats ${simpleObjectNameWithArticle(object, state)}.`);
     await delobj(object, state);
@@ -181,5 +192,6 @@ export async function feedBeeRoyalJelly(monster, object, state) {
         monster.mfrozen = delay;
         monster.mcanmove = 0;
     }
+    return true;
 }
 //# sourceMappingURL=monster_consumption.js.map

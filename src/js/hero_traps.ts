@@ -5,7 +5,7 @@
 import { heroIsHallucinating } from './senses.js';
 import { triggerHeroMagicTrapEffect } from './hero_magic_trap.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap, revealTrap } from './trap_lifecycle.js';
 import { maybeDestroyWeb } from './web_trap.js';
 import {
     currentAttribute, exerciseAttribute,
@@ -14,9 +14,9 @@ import { armorSimpleName, objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroFootName, heroHeadName, monsterFootName } from './body_parts.js';
 import {
     A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
-    FIRE_TRAP, DISMOUNT_POLY, In_quest, is_pit,
+    FIRE_TRAP, DISMOUNT_POLY, In_endgame, In_quest, is_pit,
     HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP,
-    LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP,
+    LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP,
     ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP,
     SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
@@ -39,7 +39,10 @@ import type { HeroHurtleOptions } from './hero_hurtle.js';
 import { buriedBallNear, buriedBallToPunishment } from './buried_object.js';
 import { loseHeroHp } from './hero_damage.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { refreshMovementProperties } from './properties.js';
+import { makeConfused } from './hero_mental_status.js';
+import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
+import { levelTeleport } from './level_teleport.js';
+import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { heroLiquidEffects } from './hack.js';
 import { dungeonDepth } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -82,9 +85,8 @@ import type { MonsterDeathOptions } from './monster_death.js';
 import { specialPrototypeAt } from './dungeon.js';
 import { setTrack } from './track.js';
 import {
-    bringLeashedFollowers, clearFixedTeleportDestination, heroTeleportDestinationOk,
-    heroTeleportTrapBlock, moveHeroByTeleport,
-    safeTeleportDestination,
+    bringLeashedFollowers, clearFixedTeleportDestination, heroControlsTeleport, heroTeleportDestinationOk,
+    heroTeleportTrapBlock, moveHeroByTeleport, teleportHero,
 } from './teleport.js';
 import { CLR_GREEN } from './terminal.js';
 import { cansee } from './vision.js';
@@ -98,7 +100,7 @@ import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNear, wakeMonstersNearWithMessages } from './monster_wake.js';
 import { ceilingName } from './terrain_name.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import {
@@ -121,6 +123,7 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { trapTriggeredByFloor } from './monmove.js';
 import { monsterLocomotion } from './monster_locomotion.js';
+import { askTeleportDestination } from './cmd.js';
 import { observeObject } from './object_knowledge.js';
 import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
 
@@ -675,7 +678,6 @@ async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['
                         vaultSquare.x, vaultSquare.y,
                     )) destination = vaultSquare;
             }
-            destination ||= safeTeleportDestination();
         } else if (trap.teledest
             && isok(trap.teledest.x, trap.teledest.y)) {
             setTrack(game);
@@ -692,10 +694,15 @@ async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['
             }
             destination = trap.teledest;
         } else {
-            destination = safeTeleportDestination();
+            await teleportHero({ chooseDestination: askTeleportDestination });
+            return true;
         }
 
-        if (!destination) return true;
+        if (!destination) {
+            // vault_tele() falls back to tele(), including teleport control.
+            await teleportHero({ chooseDestination: askTeleportDestination });
+            return true;
+        }
         const movement = await moveHeroByTeleport(destination.x, destination.y);
         await finishTeleport(movement);
         return true;
@@ -779,16 +786,49 @@ async function triggerProjectileTrap(trap: Trap) {
     newsym(trap.tx, trap.ty);
 }
 
+// C teleport.c:level_tele_trap(). The level prompt acknowledges the trap
+// announcement before accepting its first character.
+async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOptions['gotoLevel'],
+    intentional: boolean): Promise<void> {
+    revealTrap(trap);
+    const hero = game.u;
+    // C hack.c:u_locomotion() gives the hero's active movement properties
+    // precedence over the species' normal way of moving.
+    const locomotion = hero.levitating || game.levitating ? 'float'
+        : hero.flying || game.flying ? 'fly' : monsterLocomotion(heroMonsterForm(), 'step');
+    const verb = intentional ? 'trigger' : `${locomotion} onto`;
+    await plineWithContinuation(`You ${verb} a level teleport trap!`);
+    if (hero.antimagic && !intentional) await shieldeff(hero.ux, hero.uy);
+    if (hero.antimagic && !intentional || In_endgame(hero.uz)) {
+        await plineWithContinuation('You feel a wrenching sensation.');
+        return;
+    }
+    deleteTrap(trap);
+    newsym(hero.ux, hero.uy);
+    await levelTeleport({
+        gotoLevel: (...args) => { scheduleLevelChange(args, gotoLevel ?? changeLevel); },
+    });
+    if (game.program_state.gameover) return;
+    const controlled = heroControlsTeleport();
+    if (heroIsHallucinating(game) || controlled) {
+        await plineWithContinuation(`You briefly feel ${heroIsHallucinating(game) ? 'oriented' : 'centered'}.`);
+    } else {
+        await plineWithContinuation(`You feel ${(hero.confusionTurns ?? 0) > 0 || hero.confused ? 'even more ' : ''}disoriented.`);
+    }
+    if (!controlled) await makeConfused((hero.confusionTurns ?? 0) + 3, { talk: false });
+}
+
 async function triggerSqueakyBoard(
     trap: Trap,
-    { viaSitting = false, failedUntrap = false } = {},
+    { viaSitting = false, failedUntrap = false, forceTrap = false } = {},
 ) {
+    requirePlayingGame(game);
     const hero = game.u;
     const blind = !!game.blind || heroIsBlind(game);
     const deaf = !!game.deaf || heroIsDeaf(game);
     const flying = !!(hero.flying || game.flying);
     const airborne = !!(hero.levitating || game.levitating || flying);
-    const forced = failedUntrap || (flying && viaSitting);
+    const forced = forceTrap || failedUntrap || (flying && viaSitting);
     if (airborne && !forced) {
         if (!blind) {
             trap.tseen = true;
@@ -806,7 +846,7 @@ async function triggerSqueakyBoard(
         : `A board beneath you squeaks ${
             squeakyBoardNoteWithArticle(trap.tnote ?? -1) || 'a note'
         } loudly.`);
-    wakeMonstersNear(hero.ux, hero.uy, 40, game);
+    await wakeMonstersNearWithMessages(hero.ux, hero.uy, hero.ulevel * 20, game);
 }
 
 function heroPassesRocks() {
@@ -1212,12 +1252,15 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
     case TELEP_TRAP:
         shortCircuited = await triggerTeleportTrap(trap, finishTeleport);
         break;
+    case LEVEL_TELEP:
+        await triggerLevelTeleportTrap(trap, gotoLevel, viaSitting || forceTrap);
+        break;
     case ARROW_TRAP:
     case DART_TRAP:
         await triggerProjectileTrap(trap);
         break;
     case SQKY_BOARD:
-        await triggerSqueakyBoard(trap, { viaSitting, failedUntrap });
+        await triggerSqueakyBoard(trap, { viaSitting, failedUntrap, forceTrap });
         break;
     case ROCKTRAP:
         await triggerFallingRockTrap(trap);

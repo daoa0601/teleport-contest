@@ -618,7 +618,7 @@ void test('poison clouds act after old blindness expires for the turn', async ()
     game.u.blindTurns = 1;
     game.blind = true;
     game.level.regions = [{
-        kind: 'gas-cloud',
+        kind: 'gas-cloud', monsterIds: [],
         visible: true,
         damage: 8,
         ttl: 3,

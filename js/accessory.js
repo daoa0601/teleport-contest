@@ -216,7 +216,7 @@ export async function removeHeroAccessory(object, state = game) {
     return property;
 }
 // C setworn/setnotworn: remove the source without running Ring_off().
-export function clearHeroAccessory(object, state = game) {
+export function clearHeroAccessory(object, state = game, { deferArmorClass = false } = {}) {
     const position = ACCESSORY_SLOTS.find(({ slot }) => state[slot] === object || state.u[slot] === object);
     if (!position)
         return null;
@@ -231,13 +231,13 @@ export function clearHeroAccessory(object, state = game) {
     if (property)
         removeWornProperty(property, object, slot, state);
     if (slot !== 'uamul')
-        changeRingBonus(object, -1, state);
+        changeRingBonus(object, -1, state, deferArmorClass);
     if (object.otyp === AMULET_OF_STRANGULATION && heroIsStrangled(state)) {
         clearHeroStrangulation(state);
     }
     return property || null;
 }
-function changeRingBonus(ring, direction, state) {
+function changeRingBonus(ring, direction, state, deferArmorClass = false) {
     const attribute = RING_ATTRIBUTES.get(ring.otyp);
     if (attribute !== undefined) {
         const before = currentAttribute(attribute, state);
@@ -256,8 +256,12 @@ function changeRingBonus(ring, direction, state) {
     }
     else if (ring.otyp === RIN_PROTECTION) {
         learnRing(ring, ring.spe !== 0, state);
-        if (ring.spe)
-            findArmorClass(state);
+        if (ring.spe) {
+            if (deferArmorClass)
+                state._armorClassDirty = true;
+            else
+                findArmorClass(state);
+        }
     }
 }
 function learnRing(ring, observable, state) {

@@ -64,9 +64,8 @@ export function monsterCanBeBlindedByObject(
     );
 }
 
-export function applyMonsterBlindness(monster: Monster, rollOne: (sides: number) => number) {
+export function applyMonsterBlindness(monster: Monster, blindIncrement: number) {
     const wasSeeing = !!monster.mcansee;
-    const blindIncrement = rollOne(25) + 20;
     monster.mcansee = 0;
     monster.mblinded = Math.min(
         127, (monster.mblinded ?? 0) + blindIncrement,
@@ -119,7 +118,7 @@ export function blindMonsterWithThrownObject(
     if (!monsterCanBeBlindedByObject(
         monster, objectType, { heroInsideTarget, state },
     )) return null;
-    return applyMonsterBlindness(monster, rollOne);
+    return applyMonsterBlindness(monster, rollOne(25) + 20);
 }
 
 export function heroCanBeBlindedByVenom(state: GameState = game): boolean {

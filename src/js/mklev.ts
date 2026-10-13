@@ -1754,11 +1754,25 @@ async function makemon(
         if (!point) return null;
         x = point.x;
         y = point.y;
+    } else if (!game.in_mklev && x === game.u.ux && y === game.u.uy) {
+        const point = findMonsterNearPosition(mdat, x, y, {
+            ignoreWater: !!(mmflags & MM_IGNOREWATER), gpflags: GP_AVOID_MONPOS,
+        });
+        if (!point) return null;
+        x = point.x;
+        y = point.y;
+        requestedByHero = true;
     }
-    // C makemon() rejects an occupied explicit coordinate before choosing a
-    // species or allocating an id.  Callers which permit displacement choose
-    // the adjacent square before entering this constructor.
-    if (levelMonsterAt(x, y)) return null;
+    if (levelMonsterAt(x, y)) {
+        if (!(mmflags & MM_ADJACENTOK)) return null;
+        // The occupied-square branch has only the scary-square-aware search.
+        const flags = GP_AVOID_MONPOS | GP_CHECKSCARY
+            | (mmflags & MM_IGNOREWATER);
+        const point = findMonsterNearPositionCore(mdat, x, y, flags, game);
+        if (!point) return null;
+        x = point.x;
+        y = point.y;
+    }
     let mndx = mdat;
     if (mndx == null) {
         // C accepts the 51st result even if every preceding type was
@@ -2770,13 +2784,12 @@ function collectShuffledMonsterCoordinates(centerX: number, centerY: number, max
 }
 
 function findMonsterNearPositionCore(
-    mnum: number | null, centerX: number, centerY: number, checkScary: boolean,
-    ignoreWater: boolean, state: GameState,
+    mnum: number | null, centerX: number, centerY: number, gpflags: number,
+    state: GameState,
 ): Position | null {
     const species = mnum ?? state.u.umonster;
     if (species === undefined) throw new Error('monster placement requires a species or initialized hero body');
     const subject = { kind: 'species' as const, mnum: species };
-    const gpflags = (checkScary ? GP_CHECKSCARY : 0) | (ignoreWater ? MM_IGNOREWATER : 0);
     const nearby = collectShuffledMonsterCoordinates(centerX, centerY, 3);
     for (const pos of nearby) {
         if (goodPosition(pos.x, pos.y, subject, { state, gpflags }))
@@ -2799,12 +2812,15 @@ function findMonsterNearPositionCore(
 // from a later makemon()/make_familiar() construction failure.
 export function findMonsterNearPosition(
     mnum: number | null, centerX: number, centerY: number,
-    { ignoreWater = false, state = game }: { ignoreWater?: boolean; state?: GameState } = {},
+    { ignoreWater = false, gpflags = 0, state = game }: {
+        ignoreWater?: boolean; gpflags?: number; state?: GameState;
+    } = {},
 ): Position | null {
+    const flags = gpflags | (ignoreWater ? MM_IGNOREWATER : 0);
     return findMonsterNearPositionCore(
-        mnum, centerX, centerY, true, ignoreWater, state,
+        mnum, centerX, centerY, flags | GP_CHECKSCARY, state,
     ) || findMonsterNearPositionCore(
-        mnum, centerX, centerY, false, ignoreWater, state,
+        mnum, centerX, centerY, flags & ~GP_CHECKSCARY, state,
     );
 }
 
@@ -3422,7 +3438,7 @@ export function randomEngraving(): { pristine: string; text: string } {
     };
 }
 
-const BONES_VERSION = 11;
+const BONES_VERSION = 12;
 
 function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
@@ -3685,6 +3701,22 @@ async function renewBonesIdentities(level: GameMap, fruits: readonly Fruit[]): P
     eachObjectInBonesGraph(level, object =>
         repairObjectMonsterIds(object, monsterIds));
     eachTopLevelBonesObject(level, repairContainedObjects);
+    // C region.c:reset_region_mids(). Missing identities are removed by
+    // replacing their slot with the last member, as during region turns.
+    for (const region of level.regions) {
+        region.heroFault = false;
+        let index = 0;
+        while (index < region.monsterIds.length) {
+            const mapped = remappedMonsterId(region.monsterIds[index], monsterIds);
+            if (mapped !== undefined) {
+                region.monsterIds[index++] = mapped;
+            } else {
+                const last = region.monsterIds.pop();
+                if (last !== undefined && index < region.monsterIds.length)
+                    region.monsterIds[index] = last;
+            }
+        }
+    }
 }
 
 function restoreBonesObjects(level: GameMap): void {
@@ -5408,7 +5440,6 @@ export async function generateMinetown(active: ActiveSpecialLevel): Promise<void
         throw new RangeError(`unknown Minetown layout ${active?.variant}`);
     }
     active.file = `minetn-${active.variant}.lua`;
-    level.flags.is_maze_lev = true;
     level.flags.has_town = true;
     await generateSpecialAndFixup(generateLuaSpecialLevel, active);
     for (const room of level.rooms.slice(0, level.nroom))
@@ -5470,13 +5501,15 @@ async function specialShrinePriest(
         const y = altarY + dy;
         const loc = level.at(x, y);
         if (loc && SPACE_POS(loc.typ)
-            && !level.monsters.some(monster => monsterHasMapPosition(monster, game) && monster.mhp > 0
-                && monster.mx === x && monster.my === y)) {
+            && !(level.objects[x]?.[y] ?? []).some(object => object.otyp === BOULDER)) {
             priestX = x;
             priestY = y;
             break;
         }
     }
+
+    const occupant = monsterAtPosition(level, priestX, priestY);
+    if (occupant) await randomMonsterRelocation(occupant, { flags: RLOC_NOMSG });
 
     const priest = await makemon(
         sanctum ? PM_HIGH_CLERIC : PM_ALIGNED_CLERIC,
@@ -5776,16 +5809,8 @@ function luaSpecialAlignment(value = 'random') {
 
 function specialRoomAt(x: number, y: number, roomType: number): Room | null {
     const level = requireGameLevel();
-    const roomNumber = level.at(x, y)?.roomno ?? 0;
-    const direct = roomNumber >= ROOMOFFSET
-        ? level.rooms?.[roomNumber - ROOMOFFSET] : null;
-    if (direct && isRoom(direct) && direct.rtype === roomType) return direct;
-    return level.rooms
-        ?.slice(0, level.nroom)
-        .filter(isRoom)
-        .find(room => room.rtype === roomType
-            && x >= room.lx && x <= room.hx
-            && y >= room.ly && y <= room.hy) ?? null;
+    const roomNumber = roomsAt(level, x, y, roomType)[0];
+    return roomNumber === undefined ? null : roomForIndex(level, roomNumber - ROOMOFFSET);
 }
 
 function luaCoordinate(options: { coord?: DesOptions['coord']; x?: number | undefined; y?: number | undefined }): Position | null {
@@ -5813,7 +5838,9 @@ async function createLuaAltar(context: SpecialLevelContext, options: DesOptions)
     const altarType = options.type ?? 'altar';
     if (!['altar', 'shrine', 'sanctum'].includes(altarType))
         throw new Error(`unsupported Lua altar type ${altarType}`);
-    const temple = specialRoomAt(point.x, point.y, TEMPLE);
+    const temple = context._room
+        ? context._room.rtype === TEMPLE ? context._room : null
+        : specialRoomAt(point.x, point.y, TEMPLE);
     if (!temple || altarType === 'altar') return;
     const sanctum = altarType === 'sanctum';
     await specialShrinePriest(

@@ -443,7 +443,8 @@ export async function erodeWornArmor(state: GameState = game) {
     }
     if (state.program_state?.gameover) return damaged;
     if (damaged) await stopHeroOccupation(state, plineWithContinuation);
-    findArmorClass(state);
+    if (state.context.mon_moving) state._armorClassDirty = true;
+    else findArmorClass(state);
     return damaged;
 }
 
