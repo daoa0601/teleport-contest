@@ -3,7 +3,7 @@
 import { exerciseAttribute } from './attrib.js';
 import { heroLegName } from './body_parts.js';
 import { A_DEX } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation, type MessagePublisher } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { makePlural } from './object_grammar.js';
 import {
@@ -28,11 +28,11 @@ export async function speedUpHero(duration: number, state = game) {
     setPropertyTimeout('fast', propertyTimeout('fast', state) + duration, state);
 }
 
-export async function slowHero(state = game) {
+export async function slowHero(state = game, publish: MessagePublisher = plineWithContinuation) {
     requireLiveGame(state);
     setPropertyTimeout('fast', 0, state);
     removeIntrinsicProperty('fast', state);
-    await plineWithContinuation(state.u.fast || state.u.veryFast
+    await publish(state.u.fast || state.u.veryFast
         ? 'Your quickness feels less natural.' : 'You slow down.');
     await exerciseAttribute(A_DEX, false, state);
 }

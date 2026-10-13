@@ -10,7 +10,8 @@ import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_ACID, AD_CURS, AD_HEAL, AD_PLYS, AD_POLY, AD_SLEE, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { AD_ACID, AD_CURS, AD_HEAL, AD_PLYS, AD_POLY, AD_SLEE, AD_SLOW, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { heroHasRemovableSpeed, slowHero } from './hero_speed.js';
 import { resolveNurseContact } from './monster_nurse_contact.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { grantMonsterIntrinsic } from './monster_corpse_intrinsic.js';
@@ -50,6 +51,10 @@ export async function resolveMonsterContactEffect(monster, attack, { state, publ
         await resolveNurseContact(monster, attack, state, publish, random, rollOne, rollDice);
     else if (attack.damageType === AD_ACID)
         await splashHeroWithAcid(monster, attack, state, publish, random);
+    else if (attack.damageType === AD_SLOW) {
+        if (!attack.negated && heroHasRemovableSpeed(state) && random(4) === 0)
+            await slowHero(state, publish);
+    }
     else
         throw new Error(`Damage type ${attack.damageType} has no deferred contact effect`);
     attack.deferredPostHit = true;

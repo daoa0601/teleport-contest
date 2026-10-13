@@ -266,6 +266,7 @@ import {
     AD_SEDU,
     AD_SITM,
     AD_SLIM,
+    AD_SLOW,
     AD_SPEL,
     AD_STCK,
     AD_STON,
@@ -5989,9 +5990,11 @@ async function beginHeroAttackSlot(
     } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
         || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS
-        || damageType === AD_HEAL || damageType === AD_ACID)) {
-        const negated = damageType === AD_POLY
-            && (specialAttackNegated(monster, state.u, { state, random }) || !!monster.mspec_used);
+        || damageType === AD_HEAL || damageType === AD_ACID || damageType === AD_SLOW)) {
+        const negated = damageType === AD_SLOW
+            ? specialAttackNegated(monster, state.u, { state, random })
+            : damageType === AD_POLY
+                && (specialAttackNegated(monster, state.u, { state, random }) || !!monster.mspec_used);
         return {
             kind: 'hero-attack', roll, threshold, hit, damage, attackType, damageType,
             oldFormMnum, negated, deferredSpecialContact: true,
