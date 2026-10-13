@@ -1,17 +1,39 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
+import { discoverArtifact } from '../js/artifacts.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
+import { ddoinv } from '../js/invent.js';
 import { initRng } from '../js/rng.js';
 import { CORPSE, KATANA, UNICORN_HORN } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, artifactObject } from './support/game-objects.js';
+import { addInventoryItem } from '../js/u_init.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { requireScreenCell } from './support/screen.js';
+
+void test('lookup advice for the discovered Eyes of the Overworld treats one artifact as this', async () => {
+    freshObjectRoom();
+    const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
+    assert.ok(eyes.oartifact);
+    assert.ok(eyes.invlet);
+    discoverArtifact(eyes.oartifact);
+    const input = resetInputState();
+    input.feed(eyes.invlet);
+    const menu = ddoinv();
+    await input.waitUntilBlocked();
+    try {
+        const text = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+        assert.match(text, /\/ - Look up information about this/);
+    } finally {
+        input.feed('\x1b');
+        await menu;
+    }
+});
 
 for (const overlay of [true, false]) {
     void test(`dismissing a ${overlay ? 'corner' : 'full-screen'} encyclopedia entry ${overlay ? 'preserves' : 'refreshes'} a hallucinated monster${overlay ? '' : ' once'}`, async () => {

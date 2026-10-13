@@ -683,15 +683,18 @@ export function terrain_glyph(loc, x, y) {
     const appearance = terrainGlyphAppearance(loc, x, y);
     const typ = projectedTerrainType(loc);
     const symbol = terrainSymbolIndex(loc, x, y, typ, appearance);
+    return {
+        ...appearance, kind: 'terrain', terrainName: terrainGlyphName(loc, x, y, appearance),
+        glyph: typ === ALTAR ? altarToGlyph(loc.flags) : cmapToGlyph(symbol, currentWallGlyphOffset()),
+    };
+}
+// display.h:cmap_walls_to_glyph() applies to both real walls and disguises.
+function currentWallGlyphOffset() {
     const branch = game.dungeons[game.u.uz?.dnum ?? 0];
-    const wallOffset = branch?.dname === 'The Gnomish Mines' ? GlyphOffset.cmapMines
+    return branch?.dname === 'The Gnomish Mines' ? GlyphOffset.cmapMines
         : branch?.flags.hellish ? GlyphOffset.cmapGehennom
             : Is_knox_level(game.u.uz) ? GlyphOffset.cmapKnox
                 : In_sokoban(game.u.uz) ? GlyphOffset.cmapSokoban : GlyphOffset.cmapMain;
-    return {
-        ...appearance, kind: 'terrain', terrainName: terrainGlyphName(loc, x, y, appearance),
-        glyph: typ === ALTAR ? altarToGlyph(loc.flags) : cmapToGlyph(symbol, wallOffset),
-    };
 }
 function terrainSymbolIndex(loc, x, y, typ, appearance) {
     if ((IS_WALL(typ) && typ !== DBWALL) || typ === SDOOR) {
@@ -921,6 +924,28 @@ function monsterGlyphNumber(mnum, female, state) {
 function heroDisplayGlyph() {
     if (game.u?.m_ap_type === M_AP_OBJECT)
         return apparentObjectGlyph(game.u);
+    if (game.u.m_ap_type === M_AP_MONSTER) {
+        const appearance = game.u.mappearance;
+        if (!ismnum(appearance))
+            throw new Error('Hero monster disguise requires a valid species');
+        return displayMonsterGlyph(appearance, Upolyd(game.u) ? !!game.u.mfemale : !!game.flags.female);
+    }
+    if (game.u.m_ap_type === M_AP_FURNITURE) {
+        const appearance = game.u.mappearance;
+        const symbol = appearance === undefined ? undefined : MAP_SYMBOLS[appearance];
+        if (appearance === undefined || !symbol)
+            throw new Error('Hero furniture disguise requires a valid map symbol');
+        const rogue = Is_rogue_level(game.u.uz);
+        const decSymbol = !rogue && /^DECgraphics$/i.test(game.symset || '')
+            ? decFurnitureSymbols.get(appearance) : undefined;
+        const ch = rogue ? rogueFurnitureSymbols.get(appearance) ?? symbol.ch : decSymbol ?? symbol.ch;
+        const wallOffset = currentWallGlyphOffset();
+        const wallDisguise = appearance >= CmapSymbol.vwall && appearance <= CmapSymbol.trwall;
+        const color = decSymbol !== undefined && wallDisguise
+            ? decWallColors.get(wallOffset) ?? symbol.color : symbol.color;
+        return { ch, color, decgfx: decSymbol !== undefined,
+            kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, wallOffset) };
+    }
     // display.h:hero_glyph and you.h:Ugender select the current body's sex.
     // Hero glyph identity still changes when the tty symbol remains '@'.
     const polymorphed = Upolyd(game.u);
@@ -932,6 +957,34 @@ function heroDisplayGlyph() {
     return polymorphed ? glyph
         : { ...glyph, ch: game.flags.showrace ? glyph.ch : '@', color: CLR_WHITE };
 }
+// symbols.c:init_rogue_symbols() changes ordinary stairs and open doorways.
+// Branch stairs retain their default symbols.
+const rogueFurnitureSymbols = new Map([
+    [CmapSymbol.ndoor, '+'], [CmapSymbol.vodoor, '+'], [CmapSymbol.hodoor, '+'],
+    [CmapSymbol.upstair, '%'], [CmapSymbol.dnstair, '%'],
+]);
+// dat/symbols:DECgraphics overrides dungeon symbols independently of the
+// terrain type at the hero's location. Furniture mimicry uses these symbols.
+const decFurnitureSymbols = new Map([
+    [CmapSymbol.vwall, 'x'], [CmapSymbol.hwall, 'q'],
+    [CmapSymbol.tlcorn, 'l'], [CmapSymbol.trcorn, 'k'],
+    [CmapSymbol.blcorn, 'm'], [CmapSymbol.brcorn, 'j'],
+    [CmapSymbol.crwall, 'n'], [CmapSymbol.tuwall, 'v'],
+    [CmapSymbol.tdwall, 'w'], [CmapSymbol.tlwall, 'u'], [CmapSymbol.trwall, 't'],
+    [CmapSymbol.ndoor, '~'], [CmapSymbol.vodoor, 'a'], [CmapSymbol.hodoor, 'a'],
+    [CmapSymbol.bars, '|'], [CmapSymbol.tree, 'g'], [CmapSymbol.room, '~'],
+    [CmapSymbol.upladder, 'y'], [CmapSymbol.dnladder, 'z'],
+    [CmapSymbol.brupladder, 'y'], [CmapSymbol.brdnladder, 'z'],
+    [CmapSymbol.altar, '{'], [CmapSymbol.pool, '`'], [CmapSymbol.ice, '~'],
+    [CmapSymbol.lava, '`'], [CmapSymbol.lavawall, '`'],
+    [CmapSymbol.vodbridge, '~'], [CmapSymbol.hodbridge, '~'], [CmapSymbol.water, '`'],
+]);
+// display.c:reset_glyphmap() and map_glyphinfo() retain the glyph's color.
+// dat/symbols:DECgraphics assigns these colors to branch wall glyphs.
+const decWallColors = new Map([
+    [GlyphOffset.cmapMines, CLR_BROWN], [GlyphOffset.cmapGehennom, CLR_RED],
+    [GlyphOffset.cmapKnox, CLR_YELLOW], [GlyphOffset.cmapSokoban, CLR_BLUE],
+]);
 // C display.h:canspotself().  See-invisible does not make the hero's own
 // glyph opaque again; ordinary self projection depends on not being
 // invisible, while telepathy/detection can supply a sensory projection.
@@ -1522,7 +1575,7 @@ export function displaySelf() {
     const glyph = steed && monsterVisible(steed)
         ? displayMonsterGlyph(heroIsHallucinating() ? rn2Display(MONSTER_COLOR.length) : steed.mnum, !!steed.female, 'ridden')
         : heroDisplayGlyph();
-    show_glyph_cell(game.u.ux, game.u.uy, glyph.ch, glyph.color, false, 0, glyph);
+    show_glyph_cell(game.u.ux, game.u.uy, glyph.ch, glyph.color, glyph.decgfx ?? false, 0, glyph);
 }
 // C display.c:newsym_force(). A forced redraw prints even an unchanged glyph.
 export function newsym_force(x, y) {

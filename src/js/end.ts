@@ -39,7 +39,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
-    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, STARVING, STONING,
+    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, POISONING, STARVING, STONING,
     Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd,
 } from './const.js';
 import {
@@ -1309,6 +1309,12 @@ async function completeOrdinaryDeath({
     killer, possessionAnswer = null, deathVerb = 'died', deathCause = null,
     deathType = null,
 }: OrdinaryDeathOptions): Promise<void> {
+    // topten.c:formatkiller() uses "poisoned by" for the cause; only
+    // end.c:ends[POISONING] uses "were poisoned" in the final summary.
+    if (deathType === POISONING) {
+        deathCause ||= deathCauseRecord(killer).replace(/^killed by /, 'poisoned by ');
+        deathVerb = 'were poisoned';
+    }
     game._deathKiller = killer;
     const taken = await settleGameExit('died');
 
