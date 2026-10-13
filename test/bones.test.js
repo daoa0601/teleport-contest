@@ -25,6 +25,28 @@ import { freshPlayableRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
 const PM_GHOST = 287;
 const LEVEL = { dnum: 0, dlevel: 7 };
+for (const hero of ['Ada', 'Ad']) {
+    void test(`bones from Ada-Lovelace ${hero === 'Ada' ? 'are familiar to Ada' : 'are unfamiliar to Ad'}`, async () => {
+        const storage = memoryStorage();
+        freshBonesRoom(storage);
+        game.plname = 'Ada-Lovelace';
+        requireGameLevel().requireAt(15, 10).typ = FOUNTAIN;
+        assert.ok(saveBonesLevel());
+        freshConnectedLevels({ destinationDepth: 7, generateDestination: true });
+        game.plname = hero;
+        game.storage = storage;
+        game.flags.debug = true;
+        initRng(3n);
+        pushKeys('yn');
+        await gotoLevel({ dlevel: 7 });
+        assert.equal(requireGameLevel().requireAt(15, 10).typ, FOUNTAIN);
+        const familiarity = /sense of deja vu|been here before|place .*familiar/;
+        if (hero === 'Ada')
+            assert.match(game._pending_message, familiarity);
+        else
+            assert.doesNotMatch(game._pending_message, familiarity);
+    });
+}
 void test('bones from another hero do not make a newly entered level familiar', async () => {
     const storage = memoryStorage();
     freshBonesRoom(storage);

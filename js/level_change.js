@@ -197,8 +197,9 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
             await plineWithContinuation(postMessage);
         }
         let familiarMessage = '';
-        // bones_include_name() recognizes only this hero's ancestors.
-        if (game.level.bonesNames?.includes(game.plname)) {
+        // bones_include_name() matches through the hero name's trailing hyphen.
+        if (game.level.bonesNames?.some(name => name === game.plname
+            || name.startsWith(`${game.plname}-`))) {
             const perception = heroIsBlind(game) ? 'seems' : 'looks';
             const familiarMessages = heroIsHallucinating(game) ? [
                 `Whoa!  Everything ${perception} different.`,
