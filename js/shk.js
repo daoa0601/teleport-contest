@@ -1238,7 +1238,8 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
         }
         if (room.rtype !== OROOM || type === OROOM)
             continue;
-        if (!game.level.rooms.some(candidate => 'rtype' in candidate && candidate.rtype === type)) {
+        const remainingRooms = [...game.level.rooms, ...(game.level.subrooms ?? [])];
+        if (!remainingRooms.some(candidate => 'rtype' in candidate && candidate.rtype === type)) {
             switch (type) {
                 case COURT:
                     game.level.flags.has_court = false;

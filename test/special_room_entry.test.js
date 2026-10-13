@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ANTHOLE, COURT, OROOM, ROOMOFFSET, THRONE, ZOO } from '../js/const.js';
+import { ANTHOLE, BARRACKS, BEEHIVE, COURT, MAXNROFROOMS, MORGUE, OROOM, ROOMOFFSET, SWAMP, THRONE, ZOO, } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { checkSpecialRoom } from '../js/shk.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -47,4 +47,40 @@ void test('a court with a throne is announced as a throne room', async () => {
     await checkSpecialRoom();
     assert.equal(game._last_message, 'You enter an opulent throne room!');
 });
+for (const [type, flag] of [
+    [COURT, 'has_court'], [SWAMP, 'has_swamp'], [MORGUE, 'has_morgue'],
+    [ZOO, 'has_zoo'], [BARRACKS, 'has_barracks'], [BEEHIVE, 'has_beehive'],
+]) {
+    void test(`entering a ${flag} room retains the flag until its special subroom is entered`, async () => {
+        const level = freshObjectRoom();
+        const room = {
+            lx: 8, hx: 18, ly: 8, hy: 12, rtype: type,
+            needfill: 0, rlit: 1, doorct: 0, fdoor: 0, irregular: false,
+            needjoining: false, sbrooms: [], nsubrooms: 1, roomnoidx: 0,
+        };
+        const subroom = {
+            ...room, lx: 13, hx: 15, ly: 9, hy: 11,
+            sbrooms: [], nsubrooms: 0, roomnoidx: MAXNROFROOMS,
+        };
+        room.sbrooms = [subroom];
+        level.rooms = [room];
+        level.nroom = 1;
+        level.subrooms = [subroom];
+        level.nsubroom = 1;
+        level.flags[flag] = true;
+        level.requireAt(game.u.ux, game.u.uy).roomno = ROOMOFFSET;
+        level.requireAt(14, 10).roomno = ROOMOFFSET + MAXNROFROOMS;
+        game.u.urooms = [];
+        game.u.ushops = [];
+        await checkSpecialRoom();
+        assert.equal(room.rtype, OROOM);
+        assert.equal(subroom.rtype, type);
+        assert.equal(level.flags[flag], true, 'the unentered subroom still supplies ambient events');
+        game.u.ux = 14;
+        game.u.uy = 10;
+        await checkSpecialRoom();
+        assert.equal(subroom.rtype, OROOM);
+        assert.equal(level.flags[flag], false, 'the last room of this type has been entered');
+    });
+}
 //# sourceMappingURL=special_room_entry.test.js.map
