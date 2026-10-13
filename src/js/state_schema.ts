@@ -3,7 +3,7 @@
 
 import type { GameState } from './game_state.js';
 
-export const SAVE_VERSION = 25;
+export const SAVE_VERSION = 26;
 
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
@@ -106,6 +106,7 @@ const transientFields = {
     _statusDeafOverride: true,
     _statusGoldOverride: true,
     _statusHpOverride: true,
+    _statusHungerOverride: true,
     _statusProjectedAc: true,
     _statusUpdatesDisabled: true,
     _steedDismounting: true,

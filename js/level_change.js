@@ -1,4 +1,5 @@
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
+import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
@@ -12,14 +13,16 @@ import { flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt,
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { d, rnd, rn2 } from './rng.js';
 import { deliverMigratingObjects, impactDrop } from './object_migration.js';
-import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster, setShopResidency, } from './monster_migration.js';
+import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster, setShopResidency, sendMonsterToLimbo, } from './monster_migration.js';
 import { collectLevelFollowers } from './monster_followers.js';
 import { hideMonsterUnder, hideMonsterOnRestore } from './monster_hiding.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterWormHeads } from './monster_worm.js';
 import { mklev, place_lregion, u_on_downstairs, u_on_upstairs } from './mklev.js';
 import { dungeonBuildsUp, level_difficulty, specialPrototypeAt } from './dungeon.js';
-import { collectNearbyCoords } from './u_init.js';
+import { findNearbyMonsterPosition } from './teleport_rules.js';
+import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
+import { placeHeroOnLevel } from './hero_location.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { killGenocidedMonsters } from './mon.js';
 import { dismountHero, moveSteedWithHero } from './steed.js';
@@ -35,8 +38,7 @@ import { fixShopDamage } from './shop_damage.js';
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest, } from './quest.js';
 import { fumaroles } from './monmove.js';
 import { moveElementalBubbles } from './elemental.js';
-import { COLNO, ROWNO, CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, IS_POOL, IS_LAVA, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, } from './const.js';
-import { blocksMove } from './hack.js';
+import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, } from './const.js';
 import { resurrectWizard } from './wizard.js';
 export async function gotoLevel(targetDepth, { arrival = 'random', ladder = false, postMessage = '', preArrivalPager = '', } = {}) {
     requirePlayingGame(game);
@@ -119,6 +121,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         updateMonsterLastMove(game);
     if (!game._levelCache)
         game._levelCache = new Map();
+    rewindEngravingsForSave(oldLevel);
     game._levelCache.set(levelCacheKey(oldDepth), cachedLevelState(oldLevel, oldStairs));
     if (leavingTutorial) {
         for (const key of game._levelCache.keys()) {
@@ -146,6 +149,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         game.program_state.in_getlev = true;
         try {
             game.level = cached.level;
+            restoreEngravingPointers(cached.level);
             game.stairs = cached.stairs;
             restoreCachedLevelMetadata(cached);
             await restoreCachedMonsterState(cached);
@@ -278,6 +282,8 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     }
     if (!cached)
         await creditTouristNewLevel();
+    if (game.flags.checkpoint ?? true)
+        rewindEngravingsForSave(game.level);
     const levelAnnotation = game._levelAnnotations?.get?.(`${newDepth.dnum}:${newDepth.dlevel}`);
     if (levelAnnotation) {
         await pline(`You remember this level as ${levelAnnotation}.`);
@@ -373,7 +379,7 @@ async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow }) {
         await runDueTimers();
         if (game.program_state?.gameover)
             return true;
-        resolveHeroArrivalCollision();
+        await resolveHeroArrivalCollision();
         if (Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz))
             await moveElementalBubbles();
         else if (game.level.flags.fumaroles)
@@ -496,77 +502,38 @@ export async function placeHeroAtRandomArrival(region = null, up = false) {
     await place_lregion(area.lx, area.ly, area.hx, area.hy, excluded.lx, excluded.ly, excluded.hx, excluded.hy, up ? LR_UPTELE : LR_DOWNTELE, null);
     return { x: game.u.ux, y: game.u.uy };
 }
-function shuffledArrivalCoords(cx, cy, maxRadius = 3) {
-    const output = [];
-    for (let radius = 1; radius <= maxRadius; radius++) {
-        const ring = [];
-        const lowX = cx - radius, highX = cx + radius;
-        const lowY = cy - radius, highY = cy + radius;
-        for (let y = Math.max(lowY, 0); y <= highY && y < ROWNO; y++) {
-            for (let x = Math.max(lowX, 1); x <= highX && x < COLNO; x++) {
-                if (x !== lowX && x !== highX && y !== lowY && y !== highY)
-                    continue;
-                ring.push({ x, y });
-            }
-        }
-        for (let i = 0, remaining = ring.length; remaining > 1; i++, remaining--) {
-            const offset = rn2(remaining);
-            if (offset) {
-                const current = ring[i];
-                const selected = ring[i + offset];
-                if (!current || !selected)
-                    throw new Error('Arrival coordinate shuffle selected a missing position');
-                ring[i] = selected;
-                ring[i + offset] = current;
-            }
-        }
-        output.push(...ring);
-    }
-    return output;
-}
-function followerArrivalCellOk(follower, x, y) {
+// C do.c:u_collide_m(). A level arrival may overlap a resident or follower.
+// Move the hero to an adjacent legal square, or let the monster's own
+// placement rules choose its destination, including flight over liquids.
+async function resolveHeroArrivalCollision() {
     const level = requireGameLevel();
-    const loc = level.at(x, y);
-    if (!loc || blocksMove(x, y) || IS_POOL(loc.typ) || IS_LAVA(loc.typ))
-        return false;
-    return !level.monsters.some(monster => monsterHasMapPosition(monster, game) && monster !== follower
-        && !monster.dead && monster.mx === x && monster.my === y);
-}
-function heroArrivalCellOk(x, y) {
-    const level = requireGameLevel();
-    const loc = level.at(x, y);
-    if (!loc || blocksMove(x, y) || IS_POOL(loc.typ) || IS_LAVA(loc.typ))
-        return false;
-    return !level.monsters.some(monster => monsterHasMapPosition(monster, game) && !monster.dead
-        && monster.mx === x && monster.my === y);
-}
-// C ref: do.c u_collide_m().  mon_arrive(With_you) can deliberately place a
-// follower on the hero's intended stair.  goto_level() resolves that overlap
-// only after all followers and delivered objects are live.  enexto() collects
-// and shuffles all three rings before next2u() accepts an adjacent hero spot.
-function resolveHeroArrivalCollision() {
-    const collision = game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) && !monster.dead
-        && monster.mx === game.u?.ux && monster.my === game.u?.uy);
+    const collision = level.monsters.find(monster => monsterHasMapPosition(monster, game) && !monster.dead
+        && monster.mx === game.u.ux && monster.my === game.u.uy);
     if (!collision)
         return;
+    let movedHero = false;
     if (!rn2(2)) {
-        const destination = collectNearbyCoords(game.u.ux, game.u.uy, 3)
-            .find(({ x, y }) => heroArrivalCellOk(x, y));
-        if (destination
-            && Math.abs(destination.x - game.u.ux) <= 1
+        const destination = findNearbyMonsterPosition(game.u.umonnum, game.u.ux, game.u.uy);
+        if (destination && Math.abs(destination.x - game.u.ux) <= 1
             && Math.abs(destination.y - game.u.uy) <= 1) {
-            game.u.ux0 = game.u.ux;
-            game.u.uy0 = game.u.uy;
-            game.u.ux = destination.x;
-            game.u.uy = destination.y;
-            return;
+            await placeHeroOnLevel(destination.x, destination.y);
+            movedHero = true;
         }
     }
-    const destination = shuffledArrivalCoords(game.u.ux, game.u.uy)
-        .find(({ x, y }) => followerArrivalCellOk(collision, x, y));
-    if (destination) {
-        collision.mx = destination.x;
-        collision.my = destination.y;
-    }
+    if (!movedHero)
+        await moveMonsterNextToHero(collision, game, { flags: RLOC_NOMSG });
+    const remaining = level.monsters.find(monster => monsterHasMapPosition(monster, game) && !monster.dead
+        && monster.mx === game.u.ux && monster.my === game.u.uy);
+    if (!remaining)
+        return;
+    if (game.flags.debug)
+        await plineWithContinuation("(monster in hero's way)");
+    const relocated = await randomMonsterRelocation(remaining, { flags: RLOC_NOMSG });
+    const obstruction = level.monsters.find(monster => monsterHasMapPosition(monster, game)
+        && monster.mx === game.u.ux && monster.my === game.u.uy);
+    if (!relocated)
+        await sendMonsterToLimbo(remaining);
+    else if (obstruction)
+        await sendMonsterToLimbo(obstruction);
 }
 //# sourceMappingURL=level_change.js.map

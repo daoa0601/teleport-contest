@@ -106,18 +106,32 @@ function uniqueXMajorCells(cells: readonly Position[] | null | undefined): Posit
 export function createHarmlessGasCloudSelection(
     state: GameState | null | undefined, cells: readonly Position[], { ttl = -1 } = {},
 ): GasCloud | null {
+    return createGasCloudSelection(state, cells, ttl, 0);
+}
+
+function createGasCloudSelection(
+    state: GameState | null | undefined, cells: readonly Position[], ttl: number, damage: number,
+): GasCloud | null {
     if (!state?.level) return null;
     const region: GasCloud = {
         kind: 'gas-cloud',
         visible: true,
-        damage: 0,
+        damage,
         ttl,
         cells: uniqueXMajorCells(cells),
     };
     (state.level.regions ||= []).push(region);
     if (state.level === game.level) {
-        for (const cell of region.cells)
-            vision_note_blocker_change(cell.x, cell.y);
+        // C add_region() redraws the entire bounding box using the old sight
+        // buffer. Blocking changes are deferred to the next recalculation.
+        const xs = region.cells.map(cell => cell.x), ys = region.cells.map(cell => cell.y);
+        for (let x = Math.min(...xs); x <= Math.max(...xs); x++) {
+            for (let y = Math.min(...ys); y <= Math.max(...ys); y++) {
+                if (!isok(x, y)) continue;
+                if (regionContains(region, x, y)) vision_note_blocker_change(x, y);
+                if (cansee(x, y)) newsym(x, y);
+            }
+        }
     }
     return region;
 }
@@ -192,11 +206,9 @@ export async function createPoisonGasCloud(
         && x === state.u.ux && y === state.u.uy && cloudSize === 1
         && (!damage || heroGasTolerance(state) === GAS_OK);
     const cells = gasCloudCells(state, x, y, cloudSize, random);
-    const region = createHarmlessGasCloudSelection(state, cells, {
-        ttl: gasCloudTtl(cloudSize, cells.length, random),
-    });
+    const region = createGasCloudSelection(state, cells,
+        gasCloudTtl(cloudSize, cells.length, random), damage);
     if (!region) return null;
-    region.damage = damage;
     region.heroFault = !state.in_mklev && !state.context?.mon_moving;
     if (!state.in_mklev && !inside && !silentSingleCell
         && regionContains(region, state.u.ux, state.u.uy)) {

@@ -29,6 +29,12 @@ export interface MonsterMessageContext {
     earlierActorPager: boolean;
 }
 
+// C dynamic_multi_reason() retains the causing monster's identity for done_in_by().
+export interface MonsterHelplessnessReason {
+    monsterId: number;
+    text: string;
+}
+
 export interface ProgramState {
     beyond_savefile_load?: boolean | number;
     gameover?: boolean;
@@ -343,7 +349,7 @@ export interface GameState {
     rndencode?: number;
     seer_turn?: number;
     _helplessTurns?: number;
-    _helplessReason?: string | null;
+    _helplessReason?: string | MonsterHelplessnessReason | null;
     _helplessDoneMessage?: string | null;
     _helplessAfter?: 'end-mimic-meal' | 'hear-again' | 'unfaint' | 'finish-digestion' | null;
     _digestedMonsterSpecies?: number | null;
@@ -405,6 +411,7 @@ export interface GameState {
     _statusDeafOverride?: boolean;
     _statusGoldOverride?: number;
     _statusHpOverride?: number;
+    _statusHungerOverride?: number;
     _statusProjectedAc?: number;
     _armorClassDirty?: boolean;
     _armorClassDirtyAfterDelayedFrame?: boolean;

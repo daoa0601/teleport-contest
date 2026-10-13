@@ -1,16 +1,19 @@
 // Monster-attributed hero death and its terminal continuations.
 // C refs: end.c done_in_by()/done()/savelife(), tty message windows.
 import { game } from './gstate.js';
-import { M_AP_MONSTER, M_AP_TYPE, Upolyd, ismnum } from './const.js';
-import { flush_screen, pline, plineWithContinuation } from './display.js';
+import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
+import { canSpotMonster, flush_screen, pline, plineWithContinuation } from './display.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath, restoreHeroAfterDeath, } from './end.js';
 import { setHeroRemainsFromMonster } from './death_remains.js';
 import { nhgetch } from './input.js';
-import { MONSTER_NAME } from './monster_data.js';
-import { quietMonsterName } from './monster_name.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { monsterName } from './monster_name.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 import { promptYesNo } from './query.js';
-import { heroIsBlind } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { shopkeeperKillerName } from './shk.js';
+const G_UNIQ = 0x1000;
+const M2_PNAME = 0x00080000;
 async function waitForMonsterMore(message) {
     // urgent_pline() still traverses tty's ordinary topline continuation.
     // If an older line is pending, it may own a pager before this urgent line
@@ -20,6 +23,58 @@ async function waitForMonsterMore(message) {
     if (continuationDismissal === 27)
         return continuationDismissal;
     return waitForCurrentMonsterMore(message);
+}
+// C end.c:done_in_by(). Fatal attribution describes the real killer even
+// when its appearance, given name, or the hero's hallucination differs.
+function fatalMonsterDescription(monster) {
+    const current = monster.mnum;
+    const champion = ismnum(monster.cham) ? monster.cham : current;
+    const mimicker = M_AP_TYPE(monster) === M_AP_MONSTER;
+    const imitator = current !== champion || mimicker;
+    const givenName = MGIVENNAME(monster) || monster.name;
+    const ghost = current === MONSTER_NAME.indexOf('ghost');
+    const personal = (species) => !!((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME);
+    const unique = (species) => !!((MONSTER_GENO[species] ?? 0) & G_UNIQ);
+    const uniqueKiller = unique(current) && !(imitator && !mimicker)
+        && (current !== MONSTER_NAME.indexOf('high cleric') || monster.ispriest);
+    let article = uniqueKiller ? personal(current) ? '' : 'the ' : null;
+    if (ghost && givenName)
+        article = 'the ';
+    let name = monster.minvis ? 'invisible ' : '';
+    if (heroIsHallucinating(game) && canSpotMonster(monster))
+        name += 'hallucinogen-distorted ';
+    if (imitator) {
+        const vampire = ['vampire', 'vampire leader', 'Vlad the Impaler']
+            .some(species => champion === MONSTER_NAME.indexOf(species));
+        const apparentSpecies = mimicker ? monster.mappearance : current;
+        if (apparentSpecies === undefined || !ismnum(apparentSpecies))
+            throw new Error('A monster killer has an invalid monster disguise.');
+        const real = monsterTypeName(champion, monster.female);
+        const apparent = !mimicker && vampire && real.toLowerCase().includes('vampire')
+            && current === MONSTER_NAME.indexOf('vampire bat')
+            ? 'bat' : monsterTypeName(apparentSpecies, monster.female);
+        const shape = vampire || personal(apparentSpecies) ? apparent
+            : unique(apparentSpecies) && apparentSpecies !== MONSTER_NAME.indexOf('high cleric')
+                ? `the ${apparent}` : withIndefiniteArticle(apparent);
+        name += vampire ? `${real} in ${shape} form`
+            : `${real} ${mimicker ? 'disguised as' : 'imitating'} ${shape}`;
+    }
+    else if (ghost) {
+        name += `ghost${givenName ? ` of ${givenName}` : ''}`;
+    }
+    else if (monster.isshk) {
+        name += shopkeeperKillerName(monster);
+        article = '';
+    }
+    else if (monster.ispriest || monster.isminion) {
+        name += monsterName(monster, { article: 'none', exact: true, suppressSaddle: true });
+    }
+    else {
+        name += monsterTypeName(current, monster.female);
+        if (givenName)
+            name += ` ${monster.mextra?.ebones ? 'of' : 'called'} ${givenName}`;
+    }
+    return article === null ? withIndefiniteArticle(name) : article + name;
 }
 export async function finishMonsterAttackDeath(monster, { damage, pagerOwned = false, messageAfterPager = false, earlierActorPager = false, attribution = { kind: 'done-in-by' }, deathType = null, } = {}) {
     const customCause = attribution.kind === 'death-inflicted-by';
@@ -40,17 +95,20 @@ export async function finishMonsterAttackDeath(monster, { damage, pagerOwned = f
         await waitForCurrentMonsterMore();
     if (!retainStatus)
         delete game._statusHpOverride;
-    const shopkeeperKiller = !customCause && monster.isshk
-        && M_AP_TYPE(monster) !== M_AP_MONSTER
-        && !(ismnum(monster.cham) && monster.cham !== monster.mnum)
-        && monster.mnum !== MONSTER_NAME.indexOf('ghost');
-    const fatalKiller = customCause ? attribution.killer : shopkeeperKiller
-        ? shopkeeperKillerName(monster) : quietMonsterName(monster);
+    const fatalKiller = customCause ? attribution.killer : fatalMonsterDescription(monster);
     const fatalDeathCause = customCause
         ? attribution.deathCause ?? `killed by ${fatalKiller}`
-        : shopkeeperKiller ? `killed by ${fatalKiller}` : null;
-    if (!customCause)
+        : `${deathType === STONING ? 'petrified' : 'killed'} by ${fatalKiller}`;
+    if (!customCause) {
+        // done_in_by() removes redundant attribution only for the causing monster.
+        const reason = game._helplessReason;
+        if (reason && typeof reason !== 'string' && reason.monsterId === monster.m_id) {
+            const firstSpace = reason.text.indexOf(' ');
+            if (firstSpace >= 0)
+                game._helplessReason = { ...reason, text: reason.text.slice(0, firstSpace) };
+        }
         setHeroRemainsFromMonster(monster, game);
+    }
     // done_in_by() announces the death while HP still holds the lethal
     // (often negative) value; done() commits zero afterwards. The
     // life-saving transaction performs done()'s commit itself.

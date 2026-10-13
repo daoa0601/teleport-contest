@@ -506,12 +506,6 @@ export async function ddoinv() {
     const selected = inventory.find(item => item.invlet === String.fromCharCode(key));
     let action = null;
     if (selected) {
-        // C destroys the full-height inventory and redraws the map before
-        // opening its nested item-action menu, but does not run bot() until
-        // that nested window closes.  Keep both status rows blank for the
-        // complete action-menu input loop.
-        game.nhDisplay?.clearRow(22);
-        game.nhDisplay?.clearRow(23);
         const actionKey = await showItemActionMenu(selected);
         action = {
             key: inventoryActionKey(actionKey), item: selected,

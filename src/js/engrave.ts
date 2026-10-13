@@ -206,13 +206,39 @@ export function wipeEngravingAt(
     const wornText = wipeoutText(engraving.text || '', count);
     const leadingSpaces = wornText.length - wornText.replace(/^ +/, '').length;
     engraving.text = wornText.slice(leadingSpaces);
-    // Native advances the actual-text pointer past leading spaces. Keep the
-    // pristine text aligned so reading compares the same character position.
-    engraving.pristine = engraving.pristine.slice(leadingSpaces);
+    // Only the actual-text pointer advances; pristine text stays at its
+    // buffer start. Saving later rewinds the live actual-text pointer.
+    engraving.erasedPrefix = (engraving.erasedPrefix ?? '') + wornText.slice(0, leadingSpaces);
     if (!engraving.text) {
         level.engravings = level.engravings.filter((candidate) => candidate !== engraving);
     }
     return true;
+}
+
+// C engrave.c:save_engravings(). Writing resets the live pointer, including
+// checkpoint writes which leave the hero on the same level. Both actual
+// and remembered text return to their separate buffer starts.
+export function rewindEngravingsForSave(level: EngravingStore | null): void {
+    for (const engraving of level?.engravings ?? []) {
+        engraving.text = (engraving.erasedPrefix ?? '') + engraving.text;
+        delete engraving.erasedPrefix;
+        engraving.rememberedText = (engraving.rememberedPrefix ?? '') + engraving.rememberedText;
+        delete engraving.rememberedPrefix;
+    }
+}
+
+// C engrave.c:rest_engravings(). The three text buffers are saved separately.
+export function restoreEngravingPointers(level: EngravingStore | null): void {
+    for (const engraving of level?.engravings ?? []) {
+        const text = engraving.text.replace(/^ +/, '');
+        engraving.erasedPrefix = (engraving.erasedPrefix ?? '')
+            + engraving.text.slice(0, engraving.text.length - text.length);
+        engraving.text = text;
+        const rememberedText = engraving.rememberedText.replace(/^ +/, '');
+        engraving.rememberedPrefix = (engraving.rememberedPrefix ?? '')
+            + engraving.rememberedText.slice(0, engraving.rememberedText.length - rememberedText.length);
+        engraving.rememberedText = rememberedText;
+    }
 }
 
 // C engrave.c:u_wipe_engr().
@@ -276,7 +302,7 @@ function readingMessages(
     const punctuation =
         text.length >= 2 &&
         /[.!?]$/.test(text) &&
-        engraving.pristine[text.length - 1] === text[text.length - 1]
+        engraving.pristine[(engraving.erasedPrefix?.length ?? 0) + text.length - 1] === text[text.length - 1]
             ? ''
             : '.';
     const second = blind

@@ -99,6 +99,11 @@ export function shopkeeperInOwnShop(
         .includes(monster.eshk.shoproom);
 }
 
+// C tended_shop(): checking residency must not apply shop_keeper()'s surcharge.
+export function tendedShop(room: Room | null | undefined, state: GameState = game): boolean {
+    return shopkeeperInOwnShop(room?.resident, state);
+}
+
 // C end.c:done_in_by().  General shopkeeper names carry a gendered
 // honorific in killer identity; prefix-coded personal names (-, +, =) do
 // not.  formatkiller() later changes the descriptive comma to a semicolon,

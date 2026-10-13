@@ -52,10 +52,12 @@ import { senseBuriedObjects } from './buried_object.js';
 import { monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
+import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
+import { stumbleOntoMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
-import { observeDistantObjectForNaming, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
+import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { descendFromLevitation } from './levitation_commands.js';
@@ -109,7 +111,7 @@ import {
 } from './object_call.js';
 import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
-    bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster,
+    bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster,
     monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
     see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject,
@@ -366,6 +368,7 @@ import {
 import {
     chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown,
     payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage,
+    tendedShop,
 } from './shk.js';
 import {
     visiblePriestName,
@@ -407,8 +410,8 @@ import {
     ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR,
     D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE,
     IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT,
-    SPIKED_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
-    ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
+    SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
+    ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
     STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
     Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD,
     WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
@@ -3201,8 +3204,7 @@ async function doloot() {
         // its ynq question. tty update_topl() pages the former message before
         // it can install the prompt.
         await promptKey(`${lockedMessage}--More--`);
-        const toolName = lockToolPresentation(tool);
-        const answer = await promptYesNoQuit(`Unlock it with your ${toolName}?`);
+        const answer = await promptYesNoQuit(`Unlock it with ${lockToolName(tool)}?`);
         if (answer === 'y') {
             game._occupation = {
                 key: 'pick-lock',
@@ -5568,6 +5570,12 @@ async function doopen(): Promise<void> {
         return;
     }
 
+    if (game.u.utrap && game.u.utraptype === TT_PIT) {
+        await pline("You can't reach over the edge of the pit.");
+        game.context.move = 0;
+        return;
+    }
+
     const x = game.u.ux + DIR_DX[direction];
     const y = game.u.uy + DIR_DY[direction];
     const loc = game.level?.at(x, y);
@@ -5592,8 +5600,7 @@ async function doopen(): Promise<void> {
         return;
     }
     if (loc.doormask & D_LOCKED) {
-        await pline('This door is locked.');
-        game.context.move = 0;
+        game.context.move = Number(await openLockedDoor(loc, x, y));
         return;
     }
 
@@ -6964,10 +6971,40 @@ function autoUnlockTool(g: GameState = game): GameObject | null {
     return null;
 }
 
-function lockToolPresentation(tool: GameObject): string {
-    if (tool.otyp === SKELETON_KEY) return 'skeleton key';
-    if (tool.otyp === CREDIT_CARD) return 'credit card';
-    return 'lock pick';
+async function openLockedDoor(door: MapLocation, x: number, y: number): Promise<boolean> {
+    await pline('This door is locked.');
+    const tool = autoUnlockTool(game);
+    if (!tool) return false;
+    game.u.dz = 0;
+    const monster = monsterAtPosition(requireGameLevel(), x, y);
+    if (monster && canSeeMonster(monster)
+        && M_AP_TYPE(monster) !== M_AP_FURNITURE
+        && M_AP_TYPE(monster) !== M_AP_OBJECT) {
+        if (tool.otyp === CREDIT_CARD
+            && (monster.isshk || MONSTER_NAME[monster.mnum] === 'Oracle'))
+            await plineWithContinuation('"No checks, no credit, no problem."');
+        else
+            await plineWithContinuation(`I don't think ${monsterName(monster)} would appreciate that.`);
+        return true;
+    }
+    await flushPendingTopline();
+    const answer = await promptYesNoQuit(`Unlock it with ${lockToolName(tool)}?`);
+    if (answer !== 'y') return false;
+    const touch = await touchArtifactByHero(tool);
+    if (!touch.allowed || touch.died) return true;
+    game._occupation = {
+        key: 'pick-lock',
+        text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD
+            ? 'picking the lock' : 'unlocking the door',
+        remaining: 51, usedtime: 0, door, x, y, tool,
+        chance: lockPickChance(tool, game),
+    };
+    return true;
+}
+
+function lockToolName(tool: GameObject): string {
+    observeObjectForNaming(tool);
+    return ownedObjectName(tool, game, { capitalized: false });
 }
 
 function lockPickChance(tool: GameObject, g: GameState = game, container: GameObject | null = null): number {
@@ -6992,6 +7029,13 @@ function lockPickChance(tool: GameObject, g: GameState = game, container: GameOb
 // C ref: hack.c:dopush().  Move a floor boulder before committing the hero
 // into its old square; the first push owns Strength exercise and its message.
 async function pushBoulder(boulder: GameObject, x: number, y: number, dx: number, dy: number): Promise<boolean> {
+    const glyph = glyphAt(x, y);
+    if (heroIsBlind(game) && !(glyph?.kind === 'object' && glyph.otyp === BOULDER)) {
+        await pline('That feels like a boulder.');
+        map_object(boulder, true);
+        endVoluntaryMultiTurn(game);
+        return false;
+    }
     const targetX = x + dx;
     const targetY = y + dy;
     const targetObjects = game.level?.objects?.[targetX]?.[targetY] || [];
@@ -7242,6 +7286,26 @@ async function moveOutOfBounds(x: number, y: number): Promise<boolean> {
     return false;
 }
 
+// C hack.c:domove_bump_mon(). The m-prefix spends the step before the
+// destination monster can choose displacement or receive an attack.
+async function bumpIntoMonster(monster: Monster, x: number, y: number): Promise<boolean> {
+    if (!game.context.nopick || game.context.travel) return false;
+    const glyph = glyphAt(x, y);
+    if (!canSpotMonster(monster)
+        && glyph?.kind !== 'invisible' && glyph?.kind !== 'warning') return false;
+
+    if (M_AP_TYPE(monster)
+        && !(game.u.protectionFromShapeChangers || game.protectionFromShapeChangers)
+        && !canSenseMonster(monster)) {
+        await stumbleOntoMimic(monster);
+    } else if (monster.mpeaceful && !heroIsHallucinating(game)) {
+        await plineWithContinuation(`Pardon me, ${monsterName(monster, { article: 'none', exact: true })}.`);
+    } else {
+        await plineWithContinuation(`You move right into ${monsterName(monster)}.`);
+    }
+    return true;
+}
+
 async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Promise<boolean> {
     requirePlayingGame(game);
     const u = game.u;
@@ -7343,8 +7407,8 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         // after impaired_movement() has changed u.dx/u.dy; a Shift-run which
         // is redirected into the pet therefore stops before do_attack() and
         // its one-in-seven displacement refusal roll.
-        const safeMonster = !!(monster.pet || monster.mtame
-            || monster.mpeaceful)
+        const safeMonster = (game.flags.safe_dog ?? true) && !!monster.mpeaceful
+            && canSpotMonster(monster)
             && !game.context?.forcefight
             && !confused
             && !heroIsHallucinating(game)
@@ -7369,13 +7433,39 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         // step in attack_checks() while preventing another automatic run
         // step after the intervening monster phase.
         if (!safeMonster && game._runState) stopRun(game);
-        if (safeMonster) {
+        if (await bumpIntoMonster(monster, newx, newy)) return true;
+        if (beastChoosesHeroDisplacement(monster, game, newx, newy)) {
+            const ballChainMove = await beginBallAndChainMove(newx, newy);
+            if (ballChainMove?.blocked) {
+                if (ballChainMove.blockedMessage) await pline(ballChainMove.blockedMessage);
+                game.context.move = Number(ballChainMove.consumedTurn);
+                return ballChainMove.consumedTurn;
+            }
+            const oldx = u.ux, oldy = u.uy;
+            u.ux = newx;
+            u.uy = newy;
+            await settleBeastHeroDisplacement(monster, game);
+            if (game.program_state.gameover) return true;
+            return finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove });
+        }
+        if (safeMonster && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
             // C ref: hack.c do_attack()/domove(): a tame monster normally
             // yields to the hero, and ordinary peacefuls share the same
             // displacement path.  Only tame actors flee after refusal.
             const tame = !!(monster.pet || monster.mtame);
-            const yields = rn2(7) !== 0;
-            if (!yields && tame) {
+            const blocked = heroIsPunished() || rn2(7) === 0
+                || (!!monster.wormno && ['baby long worm', 'long worm', 'long worm tail']
+                    .includes(MONSTER_NAME[monster.mnum] ?? ''))
+                || (IS_OBSTRUCTED(game.level.requireAt(u.ux, u.uy).typ)
+                    && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000008));
+            const inShop = !blocked && roomsAt(game.level, monster.mx, monster.my, SHOPBASE)
+                .some(roomno => tendedShop(roomForRoomno(game.level, roomno), game));
+            if ((blocked || inShop) && monster.isshk
+                && !game.context.travel && !game.context.run) {
+                await dopay();
+                return true;
+            }
+            if ((blocked || inShop) && tame) {
                 const flight = await makeMonsterFlee(monster, {
                     turns: rnd(6), announce: false,
                 });
@@ -7387,10 +7477,17 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             const speciesName = monsterInstanceDisplayName(monster);
             const subject = tame ? tameName
                 : monster.name ? speciesName : `the ${speciesName}`;
-            if (!yields) {
+            if (blocked || inShop) {
                 const displayName = subject.charAt(0).toUpperCase()
                     + subject.slice(1);
-                await pline(`You stop.  ${displayName} is in the way!`);
+                await plineWithContinuation(`You stop.  ${displayName} is in the way!`);
+                stopRun(game);
+                return true;
+            }
+            if (monster.mfrozen || monster.msleeping || !monster.mcanmove
+                || ((MONSTER_MOVE[monster.mnum] ?? 0) === 0 && rn2(6))) {
+                await plineWithContinuation(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
+                stopRun(game);
                 return true;
             }
             // C domove_core() confirms a yielded step before either actor
@@ -7475,6 +7572,15 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
 
     if (!await heroCanMoveFromTrap(newx, newy)) return true;
 
+    // C test_move(DO_MOVE) learns obstructed terrain by touch before trying
+    // to pass through it, open a door, or reject a diagonal doorway entry.
+    if (loc && heroIsBlind(game) && (IS_OBSTRUCTED(loc.typ)
+        || loc.typ === DOOR && (!!(loc.doormask & (D_CLOSED | D_LOCKED))
+            || !!(dx && dy) && !heroPassesWalls(game)
+                && blocksDiagonalDoor(null, loc)))) {
+        feel_location(newx, newy);
+    }
+
     if (!await heroCanEnterIronBars(newx, newy, game)) return false;
 
     const oozingUnderDoor = heroOozesUnderDoor(loc);
@@ -7519,28 +7625,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         // later diagonal-door restriction, so a diagonal attempt still owns
         // this zero-time message.
         if (loc.doormask & D_LOCKED) {
-            const tool = autoUnlockTool(game);
-            if (!tool) {
-                await pline('This door is locked.');
-                return false;
-            }
-            await promptKey('This door is locked.--More--');
-            const toolName = lockToolPresentation(tool);
-            const answer = await promptYesNoQuit(`Unlock it with your ${toolName}?`);
-            if (answer === 'y') {
-                game._occupation = {
-                    key: 'pick-lock',
-                    text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD
-                        ? 'picking the lock' : 'unlocking the door',
-                    remaining: 51,
-                    usedtime: 0,
-                    door: loc,
-                    x: newx,
-                    y: newy,
-                    tool,
-                    chance: lockPickChance(tool, game),
-                };
-            }
+            await openLockedDoor(loc, newx, newy);
             game.context.move = 0;
             return false;
         }

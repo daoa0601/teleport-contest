@@ -8,7 +8,7 @@ import {
     W_ARMG, W_ARMS, W_WEP,
 } from './const.js';
 import {
-    observeObjectForNaming, observeDistantObjectForNaming,
+    objectName, observeObjectForNaming, observeDistantObjectForNaming,
 } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
@@ -339,7 +339,7 @@ export async function wieldMonsterWeapon(monster: Monster, state: GameState = ga
         const description = inventoryItemDescription(weapon);
         await publish(`${monsterSentenceSubject(monster)} wields ${description}${digging ? '.' : '!'}`);
         if (weapon.otyp === AKLYS)
-            await publish(`${monsterSentenceSubject(monster)} secures the tether on the aklys.`);
+            await publish(`${monsterSentenceSubject(monster)} secures the tether on the ${objectName(weapon, state)}.`);
         if (willWeld(weapon)) {
             const plural = (weapon.quan ?? weapon.quantity ?? 1) > 1;
             const hand = wieldingHand(monster, weapon);

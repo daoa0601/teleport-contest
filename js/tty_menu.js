@@ -189,11 +189,21 @@ export async function tty_display_nhwindow(window, how = PICK_NONE) {
     return result;
 }
 export async function tty_select_menu(window, how) {
+    const previousStatusDisabled = game._statusUpdatesDisabled;
+    game._statusUpdatesDisabled = true;
     try {
         return await tty_display_nhwindow(window, how);
     }
     finally {
-        await tty_dismiss_nhwindow(window);
+        try {
+            await tty_dismiss_nhwindow(window);
+        }
+        finally {
+            if (previousStatusDisabled === undefined)
+                delete game._statusUpdatesDisabled;
+            else
+                game._statusUpdatesDisabled = previousStatusDisabled;
+        }
     }
 }
 export async function tty_dismiss_nhwindow(window) {

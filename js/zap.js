@@ -608,7 +608,7 @@ function destructionMessage(object, damageType, count, quantity, carrier = null,
     })) : null;
     let name = owner ? `${owner} ${objectName(object, state)}`
         : ownedObjectName(object, state, { capitalized: !prefix });
-    if ((object.quan ?? object.quantity ?? 1) > 1)
+    if (owner && (object.quan ?? object.quantity ?? 1) > 1)
         name = makePlural(name);
     if (damageType === INVENTORY_DAMAGE.COLD) {
         return `${prefix}${name} ${one ? 'freezes and shatters' : 'freeze and shatter'}!`;

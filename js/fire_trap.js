@@ -15,8 +15,9 @@ import { burnAwayHeroSlime } from './hack.js';
 import { dist2 } from './hacklib.js';
 import { meltIce } from './ice.js';
 import { igniteItems } from './light.js';
-import { MONSTER_LEVEL, monsterTypeName } from './monster_data.js';
+import { MONSTER_LEVEL } from './monster_data.js';
 import { monsterHasFireResistance } from './monster_resistance.js';
+import { monsterName as perceivedMonsterName } from './monster_name.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { objectName } from './objnam.js';
 import { observeObject } from './object_knowledge.js';
@@ -98,12 +99,6 @@ async function burnFloorAndIce(box, couldSeeFire, publish) {
     if (isIceAt(hero.ux, hero.uy))
         await meltIce(hero.ux, hero.uy);
 }
-function ordinaryMonsterName(monster) {
-    return monster?.name || monsterTypeName(monster?.mnum, !!monster?.female);
-}
-function ordinaryMonsterSubject(monster) {
-    return monster?.name || `The ${ordinaryMonsterName(monster)}`;
-}
 async function finishMonsterFireDeath(monster, event, state, { publish, random, damageType }) {
     const death = await finishMonsterKilled(monster, state, {
         damageType,
@@ -129,14 +124,14 @@ export function beginMonsterFireTrap(monster, trap, state, { rollDice = d } = {}
         visible: visibility.inSight,
     };
 }
-export async function finishMonsterFireTrap(monster, event, state = game, { publish = plineWithContinuation, random = rn2, rollOne = rnd, monsterName = ordinaryMonsterName, describeMonster = ordinaryMonsterSubject, } = {}) {
+export async function finishMonsterFireTrap(monster, event, state = game, { publish = plineWithContinuation, random = rn2, rollOne = rnd, describeMonster = monster => perceivedMonsterName(monster, { state, capitalized: true }), } = {}) {
     if (event.finished)
         return event;
     const x = event.trap.tx;
     const y = event.trap.ty;
     const surface = surfaceName(x, y, state);
     if (event.inSight) {
-        await publish(`A tower of flame erupts from the ${surface} under ${monsterName(monster)}!`);
+        await publish(`A tower of flame erupts from the ${surface} under ${perceivedMonsterName(monster, { state })}!`);
     }
     else if (event.seeSquare) {
         await publish(`You see a tower of flame erupt from the ${surface}!`);
