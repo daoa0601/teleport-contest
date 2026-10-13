@@ -19,6 +19,34 @@ import { addTrap } from './support/level-state.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { nameToMonster } from '../js/mondata.js';
 import { removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
+import { performMonsterHeroAttack } from '../js/allmain.js';
+import { NO_MINVENT } from '../js/const.js';
+import { initRng } from '../js/rng.js';
+void test('a nearby orc can attack the steed and receive its immediate retaliation', async () => {
+    let steedFight = false;
+    for (let seed = 1; seed <= 8 && !steedFight; seed++) {
+        freshObjectRoom({ role: 'knight', hero: { ulevel: 30, uhp: 100, uhpmax: 100, uac: 100 } });
+        requirePlayingGame(game);
+        const horse = await createSaddledSteed('horse');
+        await runExtendedCommand('ride', 'l');
+        const orc = await createMonsterAt('goblin', 12, 10, NO_MINVENT);
+        orc.m_lev = 30;
+        orc.mhp = orc.mhpmax = 100;
+        horse.mhp = horse.mhpmax = 100;
+        horse.movement = 0;
+        orc.mux = game.u.ux;
+        orc.muy = game.u.uy;
+        pushKeys(' '.repeat(20));
+        initRng(BigInt(seed));
+        await performMonsterHeroAttack(orc, game);
+        if (horse.mhp < 100) {
+            assert.equal(game.u.uhp, 100, 'an attack on the steed leaves the rider unharmed');
+            assert.equal(horse.movement, 0, 'retaliation does not spend a movement ration');
+            steedFight = orc.mhp < 100;
+        }
+    }
+    assert.ok(steedFight, 'the steed must be able to retaliate during the attacker turn');
+});
 void test('an animal body cannot mount a saddled pony', async () => {
     freshObjectRoom({ role: 'knight' });
     requirePlayingGame(game);
