@@ -2,7 +2,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { NEED_PICK_OR_AXE, NO_MINVENT, W_ARMG, W_ARMS, W_WEP } from '../js/const.js';
+import { NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NO_MINVENT, W_ARMG, W_ARMS, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import { monsterCanCarryObject, monsterCanTouchObject } from '../js/monster_carry.js';
@@ -10,7 +10,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { selectHandToHandWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from '../js/monster_weapon.js';
 import {
-    BELL_OF_OPENING, CLUB, CRYSKNIFE, DAGGER, DWARVISH_MATTOCK, LEATHER_GLOVES, OBJECT_NAMES, PICK_AXE,
+    AKLYS, BELL_OF_OPENING, CLUB, CRYSKNIFE, DAGGER, DWARVISH_MATTOCK, LEATHER_GLOVES, OBJECT_NAMES, PICK_AXE,
     SMALL_SHIELD, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { artifactObject, knownObject, untimedCorpse } from './support/game-objects.js';
@@ -18,6 +18,23 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
+
+void test('a visible monster names an unidentified tethered weapon by its appearance', async () => {
+    freshObjectRoom();
+    const gnome = await createMonsterAt('gnome', 11, 10, NO_MINVENT);
+    const weapon = await knownObject(AKLYS, { known: false, typeKnown: false, dknown: false });
+    await addObjectToMonsterInventory(gnome, weapon);
+    gnome.weaponCheck = NEED_RANGED_WEAPON;
+    gnome.mux = game.u.ux;
+    gnome.muy = game.u.uy;
+    const messages: string[] = [];
+
+    await wieldMonsterWeapon(gnome, game, { publish: async message => { messages.push(message); } });
+
+    assert.equal(messages[1], 'The gnome secures the tether on the thonged club.');
+    assert.equal(weapon.dknown, true);
+    assert.equal(gnome.mw, weapon);
+});
 
 void test('a digging monster uses a mattock with free hands and a pick-axe with a shield', async () => {
     for (const shield of [false, true]) {
