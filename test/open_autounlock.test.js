@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DOOR, D_LOCKED } from '../js/const.js';
+import { DOOR, D_CLOSED, D_LOCKED, TT_PIT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { artifactByName } from '../js/artifacts.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -27,6 +27,23 @@ void test('opening a locked door offers the carried unlock tool after acknowledg
         assert.equal(game.context.move, answer === 'y' ? 1 : 0);
     }
 });
+for (const doorState of [D_CLOSED, D_LOCKED]) {
+    void test(`opening a ${doorState === D_LOCKED ? 'locked' : 'closed'} door from a pit refuses without spending a turn`, async () => {
+        const level = freshObjectRoom({ hero: { utrap: 3, utraptype: TT_PIT } });
+        const door = level.requireAt(11, 10);
+        door.typ = DOOR;
+        door.doormask = doorState;
+        await addInventoryObject(CREDIT_CARD);
+        const input = resetInputState();
+        pushKeys('l');
+        await answerPrompts(rhack('o'.charCodeAt(0)), input, []);
+        assert.match(game._pending_message, /You can't reach over the edge of the pit\./);
+        assert.equal(game.context.move, 0);
+        assert.equal(Boolean(game._occupation), false);
+        assert.equal(door.doormask, doorState);
+        assert.equal(game.u.utrap, 3);
+    });
+}
 const keyTouchAlignments = [0, -1];
 for (const alignment of keyTouchAlignments) {
     void test(`autounlock touches a foreign quest key before ${alignment === 0 ? 'rejecting it' : 'starting to unlock'}`, async () => {
