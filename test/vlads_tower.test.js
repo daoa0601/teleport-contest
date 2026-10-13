@@ -46,9 +46,10 @@ void test("Vlad's Tower keeps each floor's game rules", async () => {
     const bottom = await buildTower(3);
     requirePlayingGame(game);
     assert.equal(game.level.traps.length, 4);
-    assert.ok(bottom.explicitBranchRegion);
-    assert.equal(bottom.explicitBranchRegion.lx, bottom.explicitBranchRegion.hx);
-    assert.equal(bottom.explicitBranchRegion.ly, bottom.explicitBranchRegion.hy);
+    const branch = bottom.levelRegions?.find(region => region.type === 'branch');
+    assert.ok(branch);
+    assert.equal(branch.area.lx, branch.area.hx);
+    assert.equal(branch.area.ly, branch.area.hy);
     assert.equal(ladderCount(), 1);
 });
 //# sourceMappingURL=vlads_tower.test.js.map

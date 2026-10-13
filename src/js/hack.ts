@@ -41,7 +41,8 @@ import {
     heroFormClings, heroFormFlags, heroHidesOnCeiling, heroIsFlying,
 } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
-import { destroyLavaInventory, waterDamageChain } from './trap.js';
+import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain } from './trap.js';
+import { objectMaterial } from './object_material.js';
 import { dismountHero, steedIsGrounded } from './steed.js';
 import {
     heroCanTeleport, heroControlsTeleport,
@@ -360,15 +361,21 @@ function lavaName(location: MapLocation | null) {
     return location?.typ === LAVAWALL ? 'wall of lava' : 'molten lava';
 }
 
-async function burnLavaBoots(state: PlayingGameState, publish: MessagePublisher) {
+async function burnLavaBoots(
+    state: PlayingGameState, publish: MessagePublisher, protectedObject: GameObject | null,
+) {
     const boots = state.uarmf || state.u?.uarmf;
-    if (!boots || boots.oerodeproof
-        || (OBJECT_MATERIAL[boots.otyp] ?? 0) > 8) return false;
+    if (!boots || !(boots.in_use || (!boots.oerodeproof && objectMaterial(boots, state) <= 8)))
+        return false;
     const name = boots.name || OBJECT_NAMES[boots.otyp] || 'boots';
     await publish(`Your ${name} burst into flame!`);
     // destroyWornArmor() runs the full Boots_off-before-consume sequence; the
     // in_lava_effects counter raised around this whole entry suppresses the
     // nested float_down()/spoteffects() recursion (C trap.c:6863-6867).
+    if (boots === protectedObject) {
+        await removeWornHeroItem(boots, state);
+        return true;
+    }
     await destroyWornArmor(boots, state);
     boots.worn = false;
     boots.wornSlot = null;
@@ -491,7 +498,8 @@ async function finishLavaEffects({
     const waterWalkingBeforeBootsBurn = heroHasWaterWalking(state);
     const survives = fireResistant
         || (waterWalkingBeforeBootsBurn && damage < (hero.uhp ?? 0));
-    const bootsBurned = await burnLavaBoots(state, publish);
+    const protectedObject = survives ? null : await markLavaInventoryForDestruction(state, random);
+    const bootsBurned = await burnLavaBoots(state, publish, protectedObject);
     const waterWalking = heroHasWaterWalking(state);
 
     if (!fireResistant) {
@@ -518,7 +526,7 @@ async function finishLavaEffects({
         await destroyLavaInventory({
             state,
             publish,
-            random,
+            protectedObject,
             showMessages: !!willSurvive,
             previouslyAnnounced: bootsBurned ? 1 : 0,
         });

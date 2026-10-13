@@ -27,6 +27,8 @@ import {
     SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, TOWEL,
 } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
+import { objectMaterial } from './object_material.js';
+import { impossible } from './diagnostics.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2 } from './rng.js';
 import type { MessagePublisher } from './display.js';
@@ -44,7 +46,7 @@ type ArmorMask = typeof W_ARM | typeof W_ARMC | typeof W_ARMH
 interface LavaInventoryOptions {
     state?: GameState;
     publish?: MessagePublisher;
-    random?: RandomBelow;
+    protectedObject: GameObject | null;
     showMessages?: boolean;
     previouslyAnnounced?: number;
 }
@@ -122,7 +124,7 @@ const FIRE_RESISTANT_OBJECTS = new Set([
 
 function lavaCanBurnObject(object: GameObject | null | undefined, random: RandomBelow): boolean {
     if (!object || object.in_use || object.oerodeproof) return false;
-    const organic = (OBJECT_MATERIAL[object.otyp] ?? 0) <= 8;
+    const organic = objectMaterial(object) <= 8;
     if (!organic && object.oclass !== POTION_CLASS) return false;
     if (FIRE_RESISTANT_OBJECTS.has(object.otyp)
         || object.otyp === SCR_FIRE || object.otyp === SPE_FIREBALL)
@@ -130,16 +132,40 @@ function lavaCanBurnObject(object: GameObject | null | undefined, random: Random
     return !objectResistsDestruction(object, 0, 0, random);
 }
 
+// C trap.c:lava_effects() flags all doomed items before any death message.
+export async function markLavaInventoryForDestruction(
+    state: GameState, random: RandomBelow,
+): Promise<GameObject | null> {
+    let protectedObject: GameObject | null = null;
+    for (const object of state.inventory) {
+        if (object.in_use) {
+            if (!protectedObject) {
+                protectedObject = object;
+                object.in_use = false;
+            } else {
+                await impossible(`lava_effects: object #${object.o_id} is already in use; so is #${protectedObject.o_id}.`);
+            }
+            continue;
+        }
+        if (lavaCanBurnObject(object, random)) object.in_use = true;
+    }
+    return protectedObject;
+}
+
 export async function destroyLavaInventory({
     state = game,
     publish = async () => {},
-    random = rn2,
+    protectedObject,
     showMessages = false,
     previouslyAnnounced = 0,
-}: LavaInventoryOptions = {}): Promise<number> {
+}: LavaInventoryOptions): Promise<number> {
     let named = previouslyAnnounced;
     let unnamed = 0;
     for (const object of [...(state.inventory || [])]) {
+        if (object === protectedObject) {
+            object.in_use = true;
+            continue;
+        }
         if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
             if (showMessages && !state.blind
                 && !((state.u.blindTurns ?? 0) > 0)) {
@@ -150,7 +176,7 @@ export async function destroyLavaInventory({
             }
             continue;
         }
-        if (!lavaCanBurnObject(object, random)) continue;
+        if (!object.in_use) continue;
         const wasWorn = !!object.worn || !!object.owornmask;
         if (showMessages && wasWorn) {
             const name = object.name || OBJECT_NAMES[object.otyp] || 'item';

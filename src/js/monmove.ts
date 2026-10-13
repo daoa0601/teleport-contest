@@ -77,6 +77,7 @@ import { searchMonsterItems } from './monster_item_search.js';
 import type { MonsterApproach } from './monster_item_search.js';
 import { monsterCouldReachItem } from './monster_item_reach.js';
 import { consumeMonsterFloorObjects } from './monster_floor_consumption.js';
+import { digestGelatinousCubeInventory } from './monster_consumption.js';
 import { pickUpMonsterFloorObject } from './monster_pickup.js';
 import { digMonsterTunnel } from './monster_tunnel.js';
 import {
@@ -8497,6 +8498,19 @@ export async function takeMonsterTurn(
         };
     }
     const entryMnum = dochugContext.entryMnum;
+    if (entryMnum === MONSTER_NAME.indexOf('gelatinous cube')
+        && await digestGelatinousCubeInventory(monster, state, { random, rollOne, rollDice })) {
+        return {
+            calls, dochugContext,
+            movement: {
+                oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                moved: false, actionCompleted: true, digestedInventory: true,
+                postMoveStatus: MMOVE_NOTHING,
+                actorDied: !!monster.dead || monster.mhp <= 0,
+                heroDied: !!state.program_state.gameover,
+            },
+        };
+    }
     const entersMovement =
         !range.nearby ||
         monster.mflee ||

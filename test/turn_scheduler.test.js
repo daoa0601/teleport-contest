@@ -4,7 +4,7 @@ import test from 'node:test';
 import { installPagerInput, finishAtCommandInput } from './support/pager-input.js';
 import { planInput } from './support/planned-input.js';
 import assert from 'node:assert/strict';
-import { moveloop_core } from '../js/allmain.js';
+import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
 import { A_STR, IRONBARS, NEED_WEAPON, NEW_MOON, NO_MINVENT, NO_WEAPON_WANTED, PIT, POOL, STONE, W_WEP } from '../js/const.js';
@@ -13,7 +13,7 @@ import { initializePet } from '../js/dog.js';
 import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { AKLYS, AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, CLUB, DAGGER, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, SHIELD_OF_DRAIN_RESISTANCE, WAN_MAGIC_MISSILE, } from '../js/object_data.js';
+import { AKLYS, AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, CLUB, CORPSE, DAGGER, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, SHIELD_OF_DRAIN_RESISTANCE, WAN_MAGIC_MISSILE, } from '../js/object_data.js';
 import { startHeroSickness, startHeroVomiting, } from '../js/hero_illness.js';
 import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
@@ -25,6 +25,73 @@ import { addTrap } from './support/level-state.js';
 import { checkMonsterGearNextTurn } from '../js/monworn.js';
 import { canSeeMonster } from '../js/display.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { setHeroLycanthropy } from '../js/were.js';
+import { putHeroToSleep } from '../js/hero_sleep.js';
+import { takeMonsterTurn } from '../js/monmove.js';
+void test('digestion ends a polymorphed cube turn before the next monster attacks', async () => {
+    const remainingHp = [];
+    for (const digestBeforeScheduling of [true, false]) {
+        const input = freshTurnRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        requirePlayingGame(game);
+        const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
+        const cube = await createMonsterAt('gelatinous cube', 12, 10, NO_MINVENT);
+        for (const monster of [giant, cube]) {
+            monster.mpeaceful = 0;
+            monster.msleeping = 0;
+            monster.movement = 12;
+        }
+        const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('chameleon') });
+        await addObjectToMonsterInventory(cube, corpse);
+        installPagerInput(input, { expected: /turns into|hill giant/, limit: 8 });
+        initRng(11n);
+        // Native dochug() returns after digestion. Finishing that action
+        // before the actor scan must leave the next attack unchanged.
+        if (digestBeforeScheduling) {
+            await takeMonsterTurn(cube, game);
+            cube.movement = 0;
+        }
+        game._heroTimePending = true;
+        await finishAtCommandInput(input, moveloop_core, /turns into|hill giant/);
+        assert.equal(corpse.where, 'gone');
+        assert.equal(cube.mnum, MONSTER_NAME.indexOf('imp'));
+        assert.equal(cube.movement, 0);
+        assert.ok(game.u.uhp < 100, 'the giant must finish its attack after digestion');
+        remainingHp.push(game.u.uhp);
+    }
+    assert.equal(remainingHp[1], remainingHp[0], 'digestion must not add a curse attempt before the giant attacks');
+});
+void test('a queued were change waits until the hero wakes up', async () => {
+    const input = freshTurnRoom();
+    requirePlayingGame(game);
+    const beast = MONSTER_NAME.indexOf('werejackal');
+    const human = game.u.umonnum;
+    setHeroLycanthropy(beast);
+    putHeroToSleep(10);
+    game._pendingHeroShapeChange = 'were';
+    await moveloop_core();
+    await moveloop_core();
+    assert.equal(game._helplessTurns, 9);
+    assert.equal(game.u.umonnum, human, 'sleep must defer the queued transformation');
+    await finishHeroHelplessness('');
+    installPagerInput(input, { expected: /turn into|hear/, limit: 8 });
+    input.feed('.');
+    await moveloop_core();
+    assert.equal(game.u.umonnum, beast, 'the deferred transformation resumes after waking');
+});
+void test('an infected human changes into its were form during ordinary turn maintenance', async () => {
+    const input = freshTurnRoom({ seed: 81n });
+    requirePlayingGame(game);
+    game.datetime = '20010601120000';
+    const beast = MONSTER_NAME.indexOf('werejackal');
+    setHeroLycanthropy(beast);
+    installPagerInput(input, { expected: /turn into|hear|feel|starving|hungry/, limit: 40 });
+    for (let turn = 0; turn < 240 && game.u.umonnum !== beast; turn++) {
+        input.feed('.');
+        await moveloop_core();
+    }
+    assert.equal(game.u.umonnum, beast, 'ordinary turns must permit the native lycanthropy change');
+});
 void test('a Knight with movement left can act again without advancing global time', async () => {
     freshTurnRoom({ role: 'knight' });
     requirePlayingGame(game);

@@ -148,7 +148,7 @@ import {
     peekNextDueObjectTimer,
 } from './object_timers.js';
 import { roles } from './roles.js';
-import { initializeSourceStartup } from './startup.js';
+import { initializeRoleQuestGenders, initializeSourceStartup } from './startup.js';
 import {
     initialDungeonEntryText, recordGameLogEvent,
 } from './gamelog.js';
@@ -197,12 +197,13 @@ import {
 import {
     wakeMonstersNear, wakeMonstersNearWithMessages,
 } from './monster_wake.js';
-import { presentWereChange } from './were.js';
+import { applyHeroWereChange, presentWereChange } from './were.js';
+import { sessionIsNight } from './monster_sound.js';
 import { burnHeroArmorByFire } from './trap.js';
 import { sinkHeroIntoLava } from './hack.js';
 import { monsterTeleportRestricted,
 } from './teleport_rules.js';
-import { polymonHero, returnHeroToHumanForm } from './polyself.js';
+import { heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { healHeroLegs } from './hero_legs.js';
 import {
     advanceHeroSickness, advanceHeroVomiting, heroIsSick,
@@ -450,6 +451,15 @@ async function applyCalendarMessages() {
 // shuffle, presents the saved map, and applies real-world calendar effects.
 export async function restoregamePreamble() {
     const game = requireInitializedGame();
+    delete game._pendingHeroShapeChange;
+    const quest = game.quest_status;
+    const savedGenders = quest && { leader: quest.ldrgend, nemesis: quest.nemgend };
+    initializeRoleQuestGenders();
+    // C restgamestate() reloads q_score after role_init() rolls its genders.
+    if (quest && savedGenders) {
+        quest.ldrgend = savedGenders.leader;
+        quest.nemgend = savedGenders.nemesis;
+    }
     await l_nhcore_init();
     game._moveloopStarted = false;
     // pickup.c's oldcap is process-local (decl.c), not restored save state.
@@ -966,6 +976,9 @@ async function finishInitialTurnMaintenanceAfterRegions({
         }
     }
 
+    await advanceHeroShapeChange();
+    if (game.program_state.gameover) return { kind: 'complete', moveAmount };
+
     if (game.u?.searching && !game.level?.flags?.noautosearch
         && !heroHasInvoluntaryDelay(game)) {
         const search = await automaticSearch();
@@ -982,6 +995,31 @@ async function finishInitialTurnMaintenanceAfterRegions({
     return await finishInitialTurnMaintenanceAfterAutomaticSearch({
         sourceTurn, moveAmount,
     });
+}
+
+// C allmain.c:moveloop_core(). A selected change waits through involuntary
+// delays and Unchanging; losing the source of the change cancels it.
+async function advanceHeroShapeChange(): Promise<void> {
+    if (game.u.invulnerable) return;
+    const polymorph = propertyIsActive('polymorph', game);
+    const infection = game.u.ulycn;
+    const infected = infection !== undefined && infection >= 0 && infection < MONSTER_NAME.length;
+    if ((game._pendingHeroShapeChange === 'polymorph' && !polymorph)
+        || (game._pendingHeroShapeChange === 'were' && !infected))
+        delete game._pendingHeroShapeChange;
+
+    if (polymorph && rn2(100) === 0)
+        game._pendingHeroShapeChange = 'polymorph';
+    else if (infected && !Upolyd(game.u)
+        && rn2(80 - (sessionIsNight(game.datetime) ? 20 : 0)) === 0)
+        game._pendingHeroShapeChange = 'were';
+
+    if (!game._pendingHeroShapeChange || heroIsUnchanging(game)
+        || heroHasInvoluntaryDelay(game)) return;
+    await stopHeroOccupation(game);
+    if (game._pendingHeroShapeChange === 'polymorph') await polymorphHero();
+    else await applyHeroWereChange();
+    delete game._pendingHeroShapeChange;
 }
 
 function finishInitialTurnMaintenanceAfterTimeout({
@@ -3269,6 +3307,8 @@ async function executeMonsterTurns(messageContext: MonsterMessageContext): Promi
         }
         if (game.program_state?.gameover) return false;
         if (action.conflictFight) continue;
+        // C dochug() returns after gelcube_digests(), before attacks or cursing.
+        if (action.movement.digestedInventory) continue;
         // C dochug() returns immediately when item use spends the turn.
         if (action.movement?.usedDefense) continue;
         if (action.movement?.usedMisc?.kind === 'item-result'
@@ -3536,6 +3576,7 @@ async function moveMonsters() {
 
 // C ref: allmain.c newgame()
 export async function newgame() {
+    delete game._pendingHeroShapeChange;
     const g = game;
     const handednessRoll = await initializeSourceStartup();
 
@@ -3570,7 +3611,7 @@ export async function newgame() {
 
     // C does this before makedog() so that the starting pet is placed next
     // to the hero rather than next to the level-generation origin.
-    u_on_upstairs();
+    await u_on_upstairs();
     init_vision_globals();
     vision_reset();
     await checkSpecialRoom();
