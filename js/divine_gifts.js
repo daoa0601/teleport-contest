@@ -80,21 +80,19 @@ async function blessWieldedWeapon() {
         return;
     const damaged = weapon.oeroded || weapon.oeroded2;
     const repair = damaged ? ` and ${weapon.quan > 1 ? 'are' : 'is'} now as good as new` : '';
-    const name = ownedObjectName(weapon);
-    const glow = ownedObjectAction(weapon, 'softly glow');
     const changed = weapon.cursed || !weapon.blessed;
     if (weapon.cursed) {
         await pline(heroIsBlind(game)
-            ? `You feel the power of ${deityName(game.u.ualign.type)} over ${name}.`
-            : `${glow} ${displayColorName('amber')}${repair}.`);
+            ? `You feel the power of ${deityName(game.u.ualign.type)} over ${ownedObjectName(weapon, game, { capitalized: false })}.`
+            : `${ownedObjectAction(weapon, 'softly glow')} ${displayColorName('amber')}${repair}.`);
         uncurseObjectState(weapon);
         weapon.bknown = true;
     }
     else if (!weapon.blessed) {
         const color = heroIsBlind(game) ? null : displayColorName('light blue');
         await pline(color === null
-            ? `You feel the blessing of ${deityName(game.u.ualign.type)} over ${name}.`
-            : `${glow} with ${withIndefiniteArticle(color)} aura${repair}.`);
+            ? `You feel the blessing of ${deityName(game.u.ualign.type)} over ${ownedObjectName(weapon, game, { capitalized: false })}.`
+            : `${ownedObjectAction(weapon, 'softly glow')} with ${withIndefiniteArticle(color)} aura${repair}.`);
         blessObjectState(weapon);
         weapon.bknown = true;
     }

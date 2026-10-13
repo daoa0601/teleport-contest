@@ -13,7 +13,7 @@ import { magicNegation } from '../js/magic_negation.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKey, resetInputState } from '../js/input.js';
-import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, FIGURINE, LEATHER_GLOVES, LOADSTONE, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, DAGGER, FIGURINE, LEATHER_GLOVES, LOADSTONE, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -32,6 +32,7 @@ import { initializePet } from '../js/dog.js';
 import { saveMonsterTraits } from '../js/monster_traits.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 function prayerRoom({ hero = {}, flags = {}, ...room } = {}) {
     freshObjectRoom({
         ...room,
@@ -230,6 +231,16 @@ void test('divine lightning from #pray names the monster swallowing the hero', a
     assert.equal(game.level.monsters.includes(worm), false);
     assert.equal(game.u.uconduct.killer ?? 0, 0);
     assert.ok(!game.program_state.gameover);
+});
+void test('a blind hero feels the deity\'s blessing over the weapon during #pray', async () => {
+    prayerRoom({ hero: { permaBlind: true, uluck: 13, ualign: { type: 0, record: 20 } } });
+    requirePlayingGame(game);
+    const dagger = await addInventoryObject(DAGGER);
+    await setPrimaryWeapon(dagger);
+    initRng(9n);
+    const messages = await prayAndReadMessages();
+    assert.equal(dagger.blessed, true);
+    assert.ok(messages.some(message => message.includes('You feel the blessing of Ishtar over your dagger.')));
 });
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {
     prayerRoom();
