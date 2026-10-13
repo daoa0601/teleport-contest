@@ -480,6 +480,8 @@ function itemActionEntries(item, state, repairGold) {
     }
     if (item.oclass !== COIN_CLASS || repairGold)
         entries.push({ key: 'i', text: 'Adjust inventory by assigning new letter' });
+    if (stack && item.oclass !== COIN_CLASS)
+        entries.push({ key: 'I', text: 'Adjust inventory by splitting this stack' });
     if (item.oclass === 4 && !alreadyWorn)
         entries.push({ key: 'P', text: 'Put this ring on' });
     if ([2, 13].includes(item.oclass) && item !== state.uquiver)
@@ -537,6 +539,7 @@ function inventoryActionKey(code) {
         case 'E':
         case 'f':
         case 'i':
+        case 'I':
         case 'P':
         case 'Q':
         case 'r':
@@ -571,6 +574,15 @@ export async function ddoinv() {
     await flush_screen(1);
     game.context.move = 0;
     return action;
+}
+// C invent.c:display_used_invlets(). A split's original letter is omitted;
+// all remaining carried slots, including gold, stay visible.
+export async function selectUsedInventoryLetter(avoidLetter) {
+    const items = game.inventory.filter(item => item.invlet !== avoidLetter);
+    const result = await showInventoryWindow(inventorySections(items), {
+        title: 'Inventory letters used:', pickMode: PICK_ONE,
+    });
+    return result.key;
 }
 // C end.c:really_done() discovers every carried type and marks all of the
 // object's knowledge bits before disclose() calls display_inventory().

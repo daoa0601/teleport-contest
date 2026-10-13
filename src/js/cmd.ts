@@ -22,7 +22,7 @@ import { quaff } from './quaff.js';
 import { tameMonster } from './monster_taming.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { jumpHero } from './jumping.js';
-import { feel_location } from './display.js';
+import { clearMessageWindow, feel_location } from './display.js';
 // cmd.js — Command dispatch and movement.
 // C ref: cmd.c rhack(), hack.c domove().
 
@@ -132,9 +132,9 @@ import {
 } from './zap.js';
 import {
     bucAdjectiveForName, checkInventoryGold, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject,
-    inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject,
+    inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, selectUsedInventoryLetter,
 } from './invent.js';
-import { mergeObjectStacks } from './object_merge.js';
+import { mergable, mergeObjectStacks } from './object_merge.js';
 import type { InventoryAction } from './invent.js';
 import {
     castSpell, docast, dovspell,
@@ -2513,7 +2513,7 @@ function inventoryActionCommand({ key, item }: InventoryAction): NativeCommand |
             : item === game.uswapwep ? 'remarm_swapwep'
                 : item === game.uquiver ? 'dowieldquiver' : 'donull',
         'c': 'docallcmd', 'd': 'dodrop', 'e': 'doeat', 'E': 'doengrave', 'f': 'dofire',
-        'i': 'doorganize', 'P': 'dowear', 'Q': 'dowieldquiver', 'r': 'doread',
+        'i': 'doorganize', 'I': 'adjust_split', 'P': 'dowear', 'Q': 'dowieldquiver', 'r': 'doread',
         'R': 'ia_dotakeoff', 't': 'dothrow', 'T': 'ia_dotakeoff',
         'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
         '/': 'dowhatis', '\x1b': null, ' ': null, '\n': null, '\r': null,
@@ -2564,6 +2564,7 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
     case 'E': queueCommandKeys(letter); await doengrave(); return;
     case 'f': await dofire(); return;
     case 'i': queueCommandKeys(letter); await doadjust(); return;
+    case 'I': queueCommandKeys(letter); await adjustSplit(); return;
     case 'P': queueCommandKeys(letter); await dowear(); return;
     case 'Q': queueCommandKeys(letter); await doready(); return;
     case 'r': queueCommandKeys(letter); await doread({ gotoLevel }); return;
@@ -3327,6 +3328,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['annotate', doannotate],
     ['herecmdmenu', doherecmdmenu],
     ['adjust', doadjust],
+    ['altadjust', adjustSplit],
     ['levelchange', wizLevelChange],
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
@@ -3747,9 +3749,51 @@ async function domonability() {
     game.context.move = 0;
 }
 
+// C ref: invent.c:adjust_split(). The split remains linked beside its
+// original until the destination is chosen; cancelling merges it back.
+async function adjustSplit(): Promise<void> {
+    game.context.move = 0;
+    const object = await chooseInventoryObject('split', candidate =>
+        candidate.oclass === 12 ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST);
+    if (!object || object.quan < 2 || object.oclass === 12) return;
+    const amount = object.quan === 2 ? 1 : await readInventorySplitCount();
+    if (amount === null) {
+        await pline('Never mind.');
+        return;
+    }
+    if (amount < 1 || amount >= object.quan) {
+        await pline(`Amount to split from current stack must be ${amount < 1
+            ? 'at least 1' : `less than ${object.quan}`}.`);
+        return;
+    }
+    const split = splitObjectStack(object, amount, game);
+    if (!split) throw new Error('An admitted inventory stack could not be split');
+    await doadjust(split, object);
+}
+
+// C cmd.c:get_count(GC_ECHOFIRST): digits extend the count and either erase
+// key removes its last digit. A non-digit accepts only space or return.
+async function readInventorySplitCount(): Promise<number | null> {
+    await flushPendingTopline();
+    let key = await promptKey('Split off how many?', 1);
+    if (key < 48 || key > 57) return null;
+    let count = key - 48;
+    for (;;) {
+        clearMessageWindow();
+        key = await promptKey(`Count: ${count}`, 1);
+        if (key >= 48 && key <= 57) {
+            count = Math.min(Number.MAX_SAFE_INTEGER, count * 10 + key - 48);
+        } else if (key === 8 || key === 127) {
+            count = Math.trunc(count / 10);
+        } else {
+            clearMessageWindow();
+            return key === 32 || key === 10 || key === 13 ? count : null;
+        }
+    }
+}
+
 // C ref: invent.c:doorganize()/doorganize_core().
-// TODO: add ordinary stack splitting, collecting, merging, and the used-letter menu.
-async function doadjust() {
+async function doadjust(selected: GameObject | null = null, splitting: GameObject | null = null) {
     const inventory = (game.inventory || [])
         .filter((object: GameObject): object is GameObject & { invlet: string } =>
                 typeof object.invlet === 'string' && object.invlet.length > 0)
@@ -3764,9 +3808,9 @@ async function doadjust() {
         game.context.move = 0;
         return;
     }
-    if (game.flags.fixinv === false) reassignInventoryLetters();
-    const repairGold = await checkInventoryGold('adjust');
-    const object = await chooseInventoryObject('adjust', candidate =>
+    if (!selected && game.flags.fixinv === false) reassignInventoryLetters();
+    const repairGold = !selected && await checkInventoryGold('adjust');
+    let object = selected || await chooseInventoryObject('adjust', candidate =>
         candidate.oclass === 12 && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST,
         { forcePrompt: true });
     if (!object) {
@@ -3805,52 +3849,122 @@ async function doadjust() {
         game.context.move = 0;
         return;
     }
+    const adjusting = object;
     const occupied = new Set(
-        inventory.filter(candidate => candidate !== object)
+        inventory.filter(candidate => candidate !== adjusting && !mergable(candidate, adjusting))
             .map(candidate => candidate.invlet),
     );
     const recommended = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
         .split('')
-        .filter(letter => letter === object.invlet || !occupied.has(letter))
+        .filter(letter => letter === adjusting.invlet || !occupied.has(letter))
         .join('');
-    const destinationPrompt = `Adjust letter to what [${
+    const destinationPrompt = `${splitting ? `Split ${object.quan}` : 'Adjust letter'} to what [${
         compactInventoryLetters(recommended)}] (? see used letters)?`;
     // The source item's queued letter bypasses getobj's prompt, but the
     // destination uses tty_yn_function(), which acknowledges unread prose.
     await flushPendingTopline();
-    const key = await promptKey(destinationPrompt, 1);
-    const destination = String.fromCharCode(key);
-    if (key === 27 || key === 32 || key === 10 || key === 13) {
-        game._pending_message = '';
-        await pline('Never mind.');
-        game.context.move = 0;
-        return;
+    let destination = '';
+    for (let attempt = 0; attempt < 5; attempt++) {
+        let key = await promptKey(destinationPrompt, 1);
+        if (key === 63 || key === 42) {
+            key = await selectUsedInventoryLetter(splitting ? source : null);
+            if (!key) {
+                attempt--;
+                continue;
+            }
+        }
+        destination = String.fromCharCode(key);
+        if ([27, 32, 10, 13].includes(key) || splitting && destination === source) {
+            if (splitting) await rejoinObjectStack(splitting, object, game);
+            clearMessageWindow();
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
+        if (destination === '$') {
+            if (splitting) await rejoinObjectStack(splitting, object, game);
+            clearMessageWindow();
+            await pline("Only gold coins may be moved into the '$' slot.");
+            game.context.move = 0;
+            return;
+        }
+        if (/^[a-zA-Z]$/.test(destination) || destination === '#' && occupied.has('#')) break;
+        await plineWithContinuation('Select an inventory slot letter.');
+        await flushPendingTopline();
+        if (attempt === 4) {
+            if (splitting) await rejoinObjectStack(splitting, object, game);
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
     }
 
-    if (!/^[a-zA-Z]$/.test(destination)) {
-        // The source retries invalid destinations up to five times.  Keep
-        // this unclaimed branch zero-time without mutating the object.
-        game._pending_message = '';
-        await pline('Select an inventory slot letter.');
-        game.context.move = 0;
-        return;
+    let action = splitting ? 'Splitting:' : destination === source ? 'Collecting:' : 'Moving:';
+    let bumped: GameObject | null = null;
+    for (const candidate of inventory) {
+        if (candidate === object) continue;
+        const name = object.oextra?.oname ?? object.oname;
+        const candidateName = candidate.oextra?.oname ?? candidate.oname;
+        const permitsName = !candidateName || !!name && name === candidateName;
+        if (destination === source) {
+            if (permitsName) {
+                const merged = await mergeObjectStacks(candidate, object);
+                if (merged) object = merged;
+            }
+            continue;
+        }
+        if (candidate.invlet !== destination) continue;
+        const merged = permitsName ? await mergeObjectStacks(candidate, object) : null;
+        if (merged) {
+            object = merged;
+            action = 'Merging:';
+        } else if (!splitting) {
+            candidate.invlet = source;
+            action = 'Swapping:';
+        } else {
+            // A split takes the destination's name when otherwise compatible.
+            if (name && !object.oartifact) {
+                if (object.oextra) delete object.oextra.oname;
+                delete object.oname;
+            }
+            const splitMerge = await mergeObjectStacks(candidate, object);
+            if (splitMerge) {
+                object = splitMerge;
+                action = 'Splitting and merging:';
+            } else {
+                if (name) {
+                    if (object.oextra) object.oextra.oname = name;
+                    object.oname = name;
+                }
+                if (game.inventory.filter(item => item !== object && item.oclass !== 12).length >= 52) {
+                    await rejoinObjectStack(splitting, object, game);
+                    clearMessageWindow();
+                    await pline('Your pack is too full.');
+                    game.context.move = 0;
+                    return;
+                }
+                game.inventory.splice(game.inventory.indexOf(candidate), 1);
+                bumped = candidate;
+            }
+        }
+        break;
     }
-
-    const displaced = inventory.find(candidate =>
-        candidate !== object && candidate.invlet === destination);
-    if (displaced) displaced.invlet = source;
     object.invlet = destination;
+    if (bumped) {
+        assignInventoryLetter(bumped);
+        game.inventory.unshift(bumped);
+    }
     game.inventory.sort((a, b) =>
         inventoryLetterRank(a) - inventoryLetterRank(b));
     game._pending_message = '';
     observeObjectForNaming(object);
     await pline(
-        `${displaced ? 'Swapping:' : destination === source
-            ? 'Collecting:' : 'Moving:'} ${destination} - ${
+        `${action} ${destination} - ${
             inventoryItemDescription(object, {
                 primaryHandDetail: inventoryPrimaryHandDetail(object),
             })}.`,
     );
+    if (bumped) await plineWithContinuation(`Moving: ${bumped.invlet} - ${inventoryItemDescription(bumped)}.`);
     game.context.move = 0;
 }
 

@@ -70,7 +70,7 @@ export interface InventoryDescriptionOptions {
     projectPrimaryHand?: boolean;
 }
 
-export type InventoryActionKey = '-' | 'c' | 'd' | 'e' | 'E' | 'f' | 'i' | 'P' | 'Q' | 'r' | 'R' | 't' | 'T' | 'w' | 'x' | 'X' | '/'
+export type InventoryActionKey = '-' | 'c' | 'd' | 'e' | 'E' | 'f' | 'i' | 'I' | 'P' | 'Q' | 'r' | 'R' | 't' | 'T' | 'w' | 'x' | 'X' | '/'
     | '\x1b' | ' ' | '\n' | '\r';
 export interface InventoryAction { key: InventoryActionKey; item: GameObject }
 type IdentificationBeatitude = 'B' | 'U' | 'C' | 'X';
@@ -515,6 +515,8 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
     }
     if (item.oclass !== COIN_CLASS || repairGold)
         entries.push({ key: 'i', text: 'Adjust inventory by assigning new letter' });
+    if (stack && item.oclass !== COIN_CLASS)
+        entries.push({ key: 'I', text: 'Adjust inventory by splitting this stack' });
     if (item.oclass === 4 && !alreadyWorn) entries.push({ key: 'P', text: 'Put this ring on' });
     if ([2, 13].includes(item.oclass) && item !== state.uquiver)
         entries.push({ key: 'Q', text: `Quiver this ${stack ? 'stack' : 'item'} for easy ${shoot ? 'shooting' : 'throwing'} with 'f'ire` });
@@ -562,7 +564,7 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
 function inventoryActionKey(code: number): InventoryActionKey {
     const key = String.fromCharCode(code);
     switch (key) {
-    case '-': case 'c': case 'd': case 'e': case 'E': case 'f': case 'i': case 'P': case 'Q': case 'r': case 'R':
+    case '-': case 'c': case 'd': case 'e': case 'E': case 'f': case 'i': case 'I': case 'P': case 'Q': case 'r': case 'R':
     case 't': case 'T': case 'w': case 'x': case 'X': case '/': case '\x1b': case ' ': case '\n': case '\r':
         return key;
     default:
@@ -586,6 +588,16 @@ export async function ddoinv(): Promise<InventoryAction | null> {
     await flush_screen(1);
     game.context.move = 0;
     return action;
+}
+
+// C invent.c:display_used_invlets(). A split's original letter is omitted;
+// all remaining carried slots, including gold, stay visible.
+export async function selectUsedInventoryLetter(avoidLetter: string | null): Promise<number> {
+    const items = game.inventory.filter(item => item.invlet !== avoidLetter);
+    const result = await showInventoryWindow(inventorySections(items), {
+        title: 'Inventory letters used:', pickMode: PICK_ONE,
+    });
+    return result.key;
 }
 
 // C end.c:really_done() discovers every carried type and marks all of the
