@@ -15,7 +15,7 @@ import {
     A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
     FIRE_TRAP, DISMOUNT_POLY, In_quest, is_pit,
     HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP,
-    LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, ROCKTRAP,
+    LANDMINE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP,
     ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP,
     SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
@@ -127,6 +127,7 @@ import { monsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { observeObject } from './object_knowledge.js';
+import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
 
 export interface HeroTrapOptions extends Pick<HeroHurtleOptions, 'finishTeleport' | 'gotoLevel'> {
     viaSitting?: boolean;
@@ -1288,6 +1289,9 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
         break;
     case MAGIC_TRAP:
         await triggerMagicTrap(trap);
+        break;
+    case POLY_TRAP:
+        await triggerHeroPolymorphTrap(trap, viaSitting);
         break;
     case PIT:
     case SPIKED_PIT:
