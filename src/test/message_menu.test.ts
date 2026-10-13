@@ -5,6 +5,7 @@ import {
     bot, docrt, flush_screen, plineWithContinuation, showMessageMenu,
 } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { loseHeroHp } from '../js/hero_damage.js';
 import { resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -128,7 +129,7 @@ void test('a selectable singleton leaves status unchanged until the normal statu
     freshObjectRoom({ hero: { uhp: 12, uhpmax: 20 } });
     requirePlayingGame(game);
     await bot();
-    game.u.uhp = 7;
+    await loseHeroHp(5, 'a blow');
     const input = resetInputState();
     const selection = showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.');
 
@@ -149,7 +150,7 @@ void test('a nonselectable singleton is ordinary prose without a forced More pro
     freshObjectRoom({ hero: { uhp: 12, uhpmax: 20 } });
     requirePlayingGame(game);
     await bot();
-    game.u.uhp = 7;
+    await loseHeroHp(5, 'a blow');
     const input = resetInputState();
 
     const selected = await answerPrompts(
