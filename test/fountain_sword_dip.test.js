@@ -9,11 +9,35 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { LONG_SWORD } from '../js/object_data.js';
 import { artifactByName } from '../js/artifacts.js';
 import { initRng } from '../js/rng.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 const alignments = [1, 0];
+for (const level of ['air_level', 'water_level']) {
+    void test(`levitation on the ${level} prevents a fountain from judging the dipped sword`, async () => {
+        freshObjectRoom({ role: 'knight', hero: { ulevel: 5, ualign: { type: 1, record: 0 } } });
+        requirePlayingGame(game);
+        game[level] = { ...game.u.uz, flags: { town: false }, alignment: null };
+        const location = game.level.requireAt(game.u.ux, game.u.uy);
+        location.typ = FOUNTAIN;
+        game.level.flags.nfountains = 1;
+        grantIntrinsicProperty('levitation', 'outside');
+        const sword = await addInventoryObject(LONG_SWORD, { oeroded: 2, oeroded2: 1 });
+        resetInputState();
+        // A grounded knight receives Excalibur with this roll.
+        initRng(10n);
+        await runExtendedCommand('dip', sword.invlet + 'y' + ' '.repeat(30));
+        assert.equal(location.typ, FOUNTAIN);
+        assert.equal(game.level.flags.nfountains, 1);
+        assert.equal(!!sword.oartifact, false);
+        assert.equal(sword.oeroded, 2);
+        assert.equal(sword.oeroded2, 1);
+        assert.equal(game.context.move, 1);
+        assert.match(game._pending_message, /You are floating high above the fountain\./);
+    });
+}
 for (const alignment of alignments) {
     void test(`the Lady of the Lake judges a level-five knight with alignment ${alignment}`, async () => {
         freshObjectRoom({ hero: { ulevel: 5, ualign: { type: alignment, record: 0 } } });

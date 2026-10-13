@@ -72,7 +72,7 @@ import {
 } from './objnam.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
-import { descendFromLevitation } from './levitation_commands.js';
+import { descendFromLevitation, floatingAbove } from './levitation_commands.js';
 import { endVoluntaryMultiTurn, resetCommandVariables } from './command_state.js';
 import { propertyIsActive } from './properties.js';
 import {
@@ -3893,6 +3893,10 @@ async function doturn() {
 }
 
 async function dipFountain(object: DipTarget, loc: MapLocation) {
+    if (propertyIsActive('levitation')) {
+        await floatingAbove('fountain');
+        return;
+    }
     if (object !== 'hands' && await dipFountainSword(object, loc)) return;
     const result = object === 'hands' || object === game.uarmg ? await washHands()
         : await waterDamageObject(object, [], game, { force: true, publish: plineWithContinuation });
