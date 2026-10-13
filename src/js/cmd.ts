@@ -30,6 +30,7 @@ import { requireInitializedHero } from './hero_types.js';
 import { fruitName } from './fruit.js';
 import { encyclopediaEntries } from './encyclopedia.js';
 import { waterbodyName } from './terrain_name.js';
+import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
 import { flipThroughBook } from './book_flip.js';
@@ -4530,6 +4531,14 @@ export function farlookLocationDescription(x: number, y: number): string {
     if (trap?.ttyp === BEAR_TRAP) return 'bear trap';
     const loc = game.level?.at(x, y);
     if (!loc) return '';
+    const glyph = glyphAt(x, y);
+    // pager.c:lookat() recognizes liquid cmap glyphs, including memory,
+    // then waterbody_name() describes the current surface at that square.
+    if (glyph?.kind === 'terrain' && [
+        CmapSymbol.pool, CmapSymbol.water, CmapSymbol.lava,
+        CmapSymbol.lavawall, CmapSymbol.ice,
+    ].some(symbol => glyph.glyph === cmapToGlyph(symbol)))
+        return waterbodyName(x, y);
     if (loc.disp_glyph?.kind === 'nothing') return 'dark part of a room';
     // pager.c:do_screen_description() recognizes the concrete S_cloud glyph
     // before the generic '#' ambiguity list.  Moving elemental bubbles can
@@ -4563,14 +4572,12 @@ export function farlookLocationDescription(x: number, y: number): string {
     }
     if (loc.typ === FOUNTAIN) return 'fountain';
     if (loc.typ === SINK) return 'sink';
-    if (loc.typ === MOAT) return 'moat';
     if (loc.typ === STONE) return 'stone';
     if (IS_WALL(loc.typ)) return 'wall';
     if (loc.typ === DOOR)
         return loc.doormask === D_ISOPEN ? 'open door' : 'closed door';
     if (loc.typ === ROOM) return 'floor of a room';
     if (loc.typ === CORR) return 'corridor';
-    const glyph = glyphAt(x, y);
     return glyph?.kind === 'terrain' ? glyph.terrainName : travelLocationDescription(x, y);
 }
 
