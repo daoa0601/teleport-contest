@@ -1269,10 +1269,11 @@ function rememberFeltRoom(x, y, location) {
     const dark = (game.flags.dark_room ?? true) && game.flags.color !== false
         && !Is_rogue_level(game.u.uz);
     const floor = dark || location.waslit;
+    const dec = /^DECgraphics$/i.test(game.symset || '') && !Is_rogue_level(game.u.uz);
     const glyph = {
-        ch: floor ? /^DECgraphics$/i.test(game.symset || '') ? '~' : '.' : ' ',
+        ch: floor ? dec ? '~' : '.' : ' ',
         color: dark ? 16 : NO_COLOR,
-        decgfx: floor && /^DECgraphics$/i.test(game.symset || '') && !Is_rogue_level(game.u.uz),
+        decgfx: floor && dec,
         kind: 'terrain', terrainName: floor ? 'floor of a room' : 'stone',
         glyph: cmapToGlyph(dark ? CmapSymbol.darkroom : floor ? CmapSymbol.room : CmapSymbol.stone),
     };
