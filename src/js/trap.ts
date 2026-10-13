@@ -417,6 +417,7 @@ export async function waterDamageObject(
         if (random(2) !== 0) return 'greased';
         object.greased = false;
         if (carried) {
+            observeObjectForNaming(object, { state });
             await emit(`The grease on ${ownedObjectName(object, state, { capitalized: false })} washes off.`);
             described = true;
         }
@@ -494,7 +495,8 @@ export async function waterDamageObject(
         object.odiluted = true;
         return 'damaged';
     }
-    return erodeObject(object, 'rust', { state, publish: emit, random, luckRandom: luckRoll, grease: false });
+    return erodeObject(object, 'rust', { state, publish: emit, random, luckRandom: luckRoll,
+        grease: false, displayName: name });
 }
 
 export async function waterDamageChain(
