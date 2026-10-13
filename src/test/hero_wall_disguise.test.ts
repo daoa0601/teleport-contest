@@ -4,14 +4,15 @@ import { M_AP_FURNITURE } from '../js/const.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from '../js/glyph_numbers.js';
 import { flush_screen, glyphAt, newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { CLR_BLUE, CLR_BROWN, CLR_GRAY, CLR_RED, CLR_YELLOW, NO_COLOR } from '../js/terminal.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 
-for (const { branch, offset } of [
-    { branch: 'The Gnomish Mines', offset: GlyphOffset.cmapMines },
-    { branch: 'Gehennom', offset: GlyphOffset.cmapGehennom },
-    { branch: 'Fort Ludios', offset: GlyphOffset.cmapKnox },
-    { branch: 'Sokoban', offset: GlyphOffset.cmapSokoban },
+for (const { branch, offset, color } of [
+    { branch: 'The Gnomish Mines', offset: GlyphOffset.cmapMines, color: CLR_BROWN },
+    { branch: 'Gehennom', offset: GlyphOffset.cmapGehennom, color: CLR_RED },
+    { branch: 'Fort Ludios', offset: GlyphOffset.cmapKnox, color: CLR_YELLOW },
+    { branch: 'Sokoban', offset: GlyphOffset.cmapSokoban, color: CLR_BLUE },
 ]) {
     void test(`a hero wall disguise uses the ${branch} glyph range`, async () => {
         freshObjectRoom();
@@ -28,5 +29,58 @@ for (const { branch, offset } of [
 
         assert.equal(glyphAt(game.u.ux, game.u.uy)?.glyph, cmapToGlyph(CmapSymbol.hwall, offset));
         assert.equal(requireGameDisplay().grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch, '-');
+    });
+
+    void test(`a DECgraphics hero wall disguise uses ${branch} wall colors`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        game.dungeons = [createDungeon({ dname: branch, flags: { hellish: branch === 'Gehennom' } })];
+        if (branch === 'The Gnomish Mines') game.mines_dnum = game.u.uz.dnum;
+        if (branch === 'Fort Ludios') game.knox_level = createSpecialLevel(game.u.uz);
+        if (branch === 'Sokoban') game.sokoban_dnum = game.u.uz.dnum;
+        game.symset = 'DECgraphics';
+        game.u.m_ap_type = M_AP_FURNITURE;
+        game.u.mappearance = CmapSymbol.hwall;
+
+        newsym(game.u.ux, game.u.uy);
+        await flush_screen(1);
+
+        const cell = requireGameDisplay().grid[game.u.uy + 1]?.[game.u.ux - 1];
+        assert.equal(cell?.ch, '─');
+        assert.equal(cell?.color, color);
+    });
+}
+
+for (const { title, branch, appearance, ch, color, symset, useColor } of [
+    {
+        title: 'an ordinary Mines hero wall disguise remains gray', branch: 'The Gnomish Mines',
+        appearance: CmapSymbol.hwall, ch: '-', color: CLR_GRAY,
+        symset: '', useColor: true,
+    },
+    {
+        title: 'a DECgraphics open-door hero disguise stays brown in Gehennom', branch: 'Gehennom',
+        appearance: CmapSymbol.vodoor, ch: '▒', color: CLR_BROWN,
+        symset: 'DECgraphics', useColor: true,
+    },
+    {
+        title: 'a DECgraphics Mines hero wall disguise is uncolored when color is disabled', branch: 'The Gnomish Mines',
+        appearance: CmapSymbol.hwall, ch: '─', color: NO_COLOR,
+        symset: 'DECgraphics', useColor: false,
+    },
+]) {
+    void test(title, async () => {
+        freshObjectRoom({ flags: { color: useColor } });
+        requirePlayingGame(game);
+        game.dungeons = [createDungeon({ dname: branch, flags: { hellish: branch === 'Gehennom' } })];
+        game.symset = symset;
+        game.u.m_ap_type = M_AP_FURNITURE;
+        game.u.mappearance = appearance;
+
+        newsym(game.u.ux, game.u.uy);
+        await flush_screen(1);
+
+        const cell = requireGameDisplay().grid[game.u.uy + 1]?.[game.u.ux - 1];
+        assert.equal(cell?.ch, ch);
+        assert.equal(cell?.color, color);
     });
 }

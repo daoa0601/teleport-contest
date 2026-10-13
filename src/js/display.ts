@@ -924,8 +924,12 @@ function heroDisplayGlyph(): DisplayGlyph {
         const decSymbol = !rogue && /^DECgraphics$/i.test(game.symset || '')
             ? decFurnitureSymbols.get(appearance) : undefined;
         const ch = rogue ? rogueFurnitureSymbols.get(appearance) ?? symbol.ch : decSymbol ?? symbol.ch;
-        return { ch, color: symbol.color, decgfx: decSymbol !== undefined,
-            kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, currentWallGlyphOffset()) };
+        const wallOffset = currentWallGlyphOffset();
+        const wallDisguise = appearance >= CmapSymbol.vwall && appearance <= CmapSymbol.trwall;
+        const color = decSymbol !== undefined && wallDisguise
+            ? decWallColors.get(wallOffset) ?? symbol.color : symbol.color;
+        return { ch, color, decgfx: decSymbol !== undefined,
+            kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, wallOffset) };
     }
     // display.h:hero_glyph and you.h:Ugender select the current body's sex.
     // Hero glyph identity still changes when the tty symbol remains '@'.
@@ -961,6 +965,13 @@ const decFurnitureSymbols = new Map<number, string>([
     [CmapSymbol.altar, '{'], [CmapSymbol.pool, '`'], [CmapSymbol.ice, '~'],
     [CmapSymbol.lava, '`'], [CmapSymbol.lavawall, '`'],
     [CmapSymbol.vodbridge, '~'], [CmapSymbol.hodbridge, '~'], [CmapSymbol.water, '`'],
+]);
+
+// display.c:reset_glyphmap() and map_glyphinfo() retain the glyph's color.
+// dat/symbols:DECgraphics assigns these colors to branch wall glyphs.
+const decWallColors = new Map<GlyphOffset, number>([
+    [GlyphOffset.cmapMines, CLR_BROWN], [GlyphOffset.cmapGehennom, CLR_RED],
+    [GlyphOffset.cmapKnox, CLR_YELLOW], [GlyphOffset.cmapSokoban, CLR_BLUE],
 ]);
 
 // C display.h:canspotself().  See-invisible does not make the hero's own
