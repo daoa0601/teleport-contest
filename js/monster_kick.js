@@ -12,6 +12,7 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYM
 import { KICKING_BOOTS, OBJECT_BIMANUAL, OBJECT_MATERIAL, } from './object_data.js';
 import { rnd, rn2 } from './rng.js';
 import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted, } from './teleport_rules.js';
+import { relocateMonsterTo } from './teleport.js';
 import { invWeight, weightCapacity } from './weight.js';
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from './monmove.js';
 const M1_FLY = 0x00000001;
@@ -28,7 +29,8 @@ const S_EEL = 57;
 const PM_GRID_BUG = 116;
 const PM_SHADE = 288;
 const SILVER = 14;
-function nextOpenSquareNearHero(monster, state) {
+// C mon.c:maybe_mnexto() uses rloc_to() after choosing an accessible square.
+async function nextOpenSquareNearHero(monster, state) {
     for (let attempt = 0; attempt < 20; attempt++) {
         const destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, { state });
         if (!destination)
@@ -38,15 +40,7 @@ function nextOpenSquareNearHero(monster, state) {
         if (!couldsee(destination.x, destination.y)
             || (monster.mnum === PM_GRID_BUG && movesDiagonally))
             continue;
-        const oldx = monster.mx;
-        const oldy = monster.my;
-        monster.mx = destination.x;
-        monster.my = destination.y;
-        monster.mtrack = [];
-        unmap_invisible(oldx, oldy);
-        newsym(oldx, oldy);
-        newsym(monster.mx, monster.my);
-        return { oldx, oldy, x: monster.mx, y: monster.my };
+        return await relocateMonsterTo(monster, destination.x, destination.y, { state });
     }
     return null;
 }
@@ -158,9 +152,10 @@ export async function tryKickEvasion(monster, { clumsy = false, martial = false,
         await announce(`${nameMonster(monster)} blocks your ${clumsy ? 'clumsy ' : ''}kick.`);
         return true;
     }
-    const relocation = nextOpenSquareNearHero(monster, state);
-    if (!relocation)
+    const relocation = await nextOpenSquareNearHero(monster, state);
+    if (!relocation?.moved)
         return false;
+    unmap_invisible(relocation.oldx, relocation.oldy);
     await announce(`${nameMonster(monster)} ${evasionVerb(monster, state)}, ${clumsy ? 'easily' : 'nimbly'} evading your ${clumsy ? 'clumsy ' : ''}kick.`);
     return true;
 }

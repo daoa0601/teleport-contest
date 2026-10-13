@@ -40,6 +40,7 @@ import { rnd, rn2 } from './rng.js';
 import {
     findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
+import { relocateMonsterTo } from './teleport.js';
 import { invWeight, weightCapacity } from './weight.js';
 import {
     resumeDeferredMonsterTrap,
@@ -61,7 +62,8 @@ const PM_GRID_BUG = 116;
 const PM_SHADE = 288;
 const SILVER = 14;
 
-function nextOpenSquareNearHero(monster: Monster, state: GameState) {
+// C mon.c:maybe_mnexto() uses rloc_to() after choosing an accessible square.
+async function nextOpenSquareNearHero(monster: Monster, state: GameState) {
     for (let attempt = 0; attempt < 20; attempt++) {
         const destination = findNearbyMonsterPosition(
             monster.mnum, state.u.ux, state.u.uy, { state },
@@ -72,15 +74,7 @@ function nextOpenSquareNearHero(monster: Monster, state: GameState) {
         if (!couldsee(destination.x, destination.y)
             || (monster.mnum === PM_GRID_BUG && movesDiagonally)) continue;
 
-        const oldx = monster.mx;
-        const oldy = monster.my;
-        monster.mx = destination.x;
-        monster.my = destination.y;
-        monster.mtrack = [];
-        unmap_invisible(oldx, oldy);
-        newsym(oldx, oldy);
-        newsym(monster.mx, monster.my);
-        return { oldx, oldy, x: monster.mx, y: monster.my };
+        return await relocateMonsterTo(monster, destination.x, destination.y, { state });
     }
     return null;
 }
@@ -209,8 +203,9 @@ export async function tryKickEvasion(monster: Monster, {
         return true;
     }
 
-    const relocation = nextOpenSquareNearHero(monster, state);
-    if (!relocation) return false;
+    const relocation = await nextOpenSquareNearHero(monster, state);
+    if (!relocation?.moved) return false;
+    unmap_invisible(relocation.oldx, relocation.oldy);
     await announce(
         `${nameMonster(monster)} ${evasionVerb(monster, state)}, ${
             clumsy ? 'easily' : 'nimbly'

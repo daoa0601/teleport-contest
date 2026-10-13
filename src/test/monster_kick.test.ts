@@ -62,6 +62,32 @@ void test('a quick snake can slide away from a kick', async () => {
     assert.match(game._pending_message, /slides, nimbly evading your kick/);
 });
 
+for (const startsInside of [false, true]) {
+    void test(`evading a kick ${startsInside ? 'out of' : 'into'} gas changes the monster's exposure`, async () => {
+        const jackal = await installKickArena('jackal');
+        jackal.mhp = jackal.mhpmax = 100;
+        const cells = startsInside ? [{ x: 11, y: 10 }] : [
+            { x: 9, y: 9 }, { x: 10, y: 9 }, { x: 11, y: 9 },
+            { x: 9, y: 10 },
+            { x: 9, y: 11 }, { x: 10, y: 11 }, { x: 11, y: 11 },
+        ];
+        const cloud = createHarmlessGasCloudSelection(game, cells, { ttl: 10 });
+        assert.ok(cloud);
+        cloud.damage = 8;
+        initRng(7n);
+
+        await kickDirection('l', ' '.repeat(20));
+
+        assert.match(game._pending_message, /evading your kick/);
+        assert.ok(jackal.mx !== 11 || jackal.my !== 10, 'The jackal left its original square');
+        assert.equal(jackal.mhp, 100, 'Evasion avoids kick damage');
+        await runLevelRegions(game, { publish: async () => {} });
+
+        assert.equal(jackal.mhp < 100, !startsInside,
+            `The jackal ${startsInside ? 'outside' : 'inside'} the cloud has ${jackal.mhp} HP`);
+    });
+}
+
 void test('a heavy load can leave a clumsy kick harmless', async () => {
     const lichen = await installKickArena(158);
     requirePlayingGame(game);
