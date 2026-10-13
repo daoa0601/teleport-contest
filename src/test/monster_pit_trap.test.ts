@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { PIT, W_AMUL, W_WEP } from '../js/const.js';
+import { PIT, SPIKED_PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import {
@@ -15,6 +15,26 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { equipMonsterObject } from './support/monsters.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
+
+for (const seen of [false, true]) {
+    void test(`a monster falling into a ${seen ? 'known' : 'unknown'} spiked pit is announced as falling into a pit`, async () => {
+        const { monster, trap } = await freshMonsterTrapRoom(SPIKED_PIT, {
+            monster: { species: 'kitten', hitPoints: 20 }, trap: { tseen: seen },
+        });
+        requirePlayingGame(game);
+        const messages: string[] = [];
+
+        const action = await triggerImmediateMonsterTrap(monster, game);
+        await resumeDeferredMonsterTrap(action, game, {
+            rollOne: () => 3,
+            publish: message => { messages.push(message); },
+        });
+
+        assert.equal(messages[0], 'The kitten falls into a pit!');
+        assert.equal(monster.mhp, 17);
+        assert.equal(trap.tseen, true);
+    });
+}
 
 void test('a grounded monster falls into a pit', async () => {
     const { monster, trap } = await freshMonsterTrapRoom(PIT, {
