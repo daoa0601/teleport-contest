@@ -3077,24 +3077,6 @@ async function presentMonsterPostMove(
         if ('seeSquare' in event && event.seeSquare && event.kind !== 'vibrating-square')
             newsym(event.trap.tx, event.trap.ty);
     }
-    if (movement?.trap?.kind === 'magic-portal-migration'
-        && movement.trap.visible) {
-        movement.trap.trap.tseen = true;
-        await plineWithContinuation(
-            `Suddenly, the ${quietMonsterName(
-                monster,
-            )} disappears out of sight.`,
-        );
-    }
-    if (movement?.trap?.kind === 'level-fall-migration'
-        && movement.trap.visible) {
-        movement.trap.trap.tseen = true;
-        const fall = movement.trap.trap.ttyp === HOLE
-            ? 'falls into a hole' : 'falls through a trap door';
-        await plineWithContinuation(
-            `Suddenly, the ${quietMonsterName(monster)} ${fall}.`,
-        );
-    }
     if (deferredTrapDestination && !movement.postMoveDestinationPainted)
         newsym(movement.x, movement.y);
     await presentMonsterHiding(action);

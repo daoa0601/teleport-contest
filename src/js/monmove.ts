@@ -4577,6 +4577,19 @@ async function placeAndStackTrapMissile(
     return await stack_object(object, state);
 }
 
+// C teleport.c:mlevel_tele_trap() announces the exit while the monster
+// still occupies its square. The acknowledgement precedes seetrap() and
+// migrate_to_level(), so input observers must retain that monster too.
+async function announceTrapLevelDeparture(
+    monster: Monster, trap: Trap, state: PlayingGameState, publish: PublishMonsterMessage,
+): Promise<void> {
+    if (!canSeeMonster(monster) && monster !== state.u.usteed) return;
+    const effect = trap.ttyp === HOLE ? 'falls into a hole'
+        : trap.ttyp === TRAPDOOR ? 'falls through a trap door' : 'disappears out of sight';
+    await publish(`Suddenly, ${canonicalMonsterName(monster, { state })} ${effect}.`);
+    trap.tseen = true;
+}
+
 async function triggerMonsterTrap(
     monster: Monster,
     state: PlayingGameState,
@@ -4606,6 +4619,7 @@ async function triggerMonsterTrap(
         if (monster.pet || (monster.mtame ?? 0) > 0) return null;
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
+        await announceTrapLevelDeparture(monster, trap, state, publish);
         const event = await migrateMonsterOffLevel(monster, state, trap, {
             kind: 'magic-portal-migration',
             mode: MIGR_PORTAL,
@@ -4737,6 +4751,7 @@ async function triggerMonsterTrap(
         if (monster.mleashed) return null;
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
+        await announceTrapLevelDeparture(monster, trap, state, publish);
         const event = await migrateMonsterOffLevel(monster, state, trap, {
             kind: 'level-fall-migration',
             mode: MIGR_RANDOM,
