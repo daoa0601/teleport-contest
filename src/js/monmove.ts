@@ -5227,9 +5227,8 @@ export async function finishImmediateMonsterTrap(
 // C steal.c:steal().  Inventory stacks are candidates as objects rather than
 // by quantity.  Worn armor and accessories receive five tickets; weapons
 // (including the primary and alternate weapon) still receive one.  Keep
-// selection in the synchronous hitmu() slice so its rn2() stays before any
-// removal prose can suspend on tty --More--.
-function selectHeroItemForTheft(
+// selection after an animal's hit message and before removal prose.
+export function selectHeroItemForTheft(
     state: PlayingGameState,
     random: RandomBelow,
     calls: MonsterCallLog,
@@ -5266,20 +5265,24 @@ function selectHeroItemForTheft(
         candidates.push({ object, weight });
         total += weight;
     }
-    if (!total) return { object: null, total: 0, ticket: null };
+    if (!total) return null;
     let ticket = recordRandom(random, calls, total);
-    const initialTicket = ticket;
     for (const candidate of candidates) {
         ticket -= candidate.weight;
         if (ticket < 0) {
-            return {
-                object: candidate.object,
-                total,
-                ticket: initialTicket,
-            };
+            return theftEquipmentTarget(candidate.object, state);
         }
     }
-    return { object: null, total, ticket: initialTicket };
+    return null;
+}
+
+function theftEquipmentTarget(object: GameObject, state: PlayingGameState): GameObject {
+    if ((object === state.uleft || object === state.uright) && state.uarmg)
+        object = state.uarmg;
+    if (object === state.uarmg && state.uwep) return state.uwep;
+    if (object === state.uarm && state.uarmc) return state.uarmc;
+    if (object === state.uarmu) return state.uarmc || state.uarm || object;
+    return object;
 }
 
 // C do_wear.c:some_armor().  Torso priority is deterministic; each later
@@ -6079,7 +6082,6 @@ async function beginHeroAttackSlot(
         // hitmu() records the attack's declared zero dice before dispatching
         // AD_SITM through mhitm_ad_sedu().  A successful nymph theft ends the
         // aggressor's attack sequence, so do not retain its second claw slot.
-        const theft = selectHeroItemForTheft(state, random, calls);
         return {
             kind: 'hero-attack',
             roll,
@@ -6090,9 +6092,6 @@ async function beginHeroAttackSlot(
             damageType,
             effect: 'item-theft',
             deferredItemTheft: true,
-            stolenObject: theft.object,
-            theftWeight: theft.total,
-            theftTicket: theft.ticket,
         };
     } else if (hit && damageType === AD_LEGS) {
         // uhitm.c:mhitm_ad_legs().  The declared sting damage and chosen

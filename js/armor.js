@@ -874,6 +874,8 @@ export function armorOffMessage(object, state = game) {
 // interrupted removal leaves the item worn.
 export async function stopDonning(stolenObject = null, state = game) {
     const delayed = state._delayedAction;
+    if (delayed?.kind === 'steal')
+        return false;
     if (!delayed) {
         const progress = state.context.takeoff;
         const slot = progress?.current;
