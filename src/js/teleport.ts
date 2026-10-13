@@ -389,6 +389,7 @@ export async function teleportHeroAtWill({
 
     const energy = 5 * teleportSpellLevel();
     state.u.uen -= energy;
+    state.context.botl = true;
 
     const followersReady = await bringLeashedFollowers(state, random);
     if (!followersReady) {

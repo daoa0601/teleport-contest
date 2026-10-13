@@ -82,6 +82,7 @@ export async function castSpell(otyp, { atSelf = false, force = false, state = g
         return { spentTime: admission.spentTime, heroDied: !!state.program_state.gameover };
     }
     state.u.uen -= admission.energy;
+    state.context.botl = true;
     exerciseWisdom(true, state);
     const source = await mksobj(otyp, false, false);
     source.blessed = source.cursed = false;

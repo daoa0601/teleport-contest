@@ -543,6 +543,7 @@ export async function digActualHole(
                 hero.utrap = 2 + rn2(4); /* rn1(4, 2) */
                 hero.utraptype = TT_PIT;
                 refreshMovementProperties(state);
+                state.context.botl = true;
                 state.vision_full_recalc = 1; /* vision limits change */
             } else {
                 // C reset_utrap(TRUE): a newly airborne hero floats back up.

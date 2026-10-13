@@ -208,8 +208,10 @@ async function chooseStylus(state: GameState): Promise<GameObject | 'hands' | nu
             if (key === 27 && state.flags?.verbose !== false)
                 await pline('Never mind.');
             if (key === '-'.charCodeAt(0)) return 'hands';
-            return inventory.find(
+            const object = inventory.find(
                 object => object.invlet === String.fromCharCode(key)) ?? null;
+            if (object) state.context.botl = true;
+            return object;
         }
     }
     const letters = compactInventoryLetters(

@@ -160,6 +160,7 @@ async function invokeHealing(object, state, publish) {
     clearHeroSliming(state);
     if (curesBlindness)
         setHeroBlindnessTurns(cream, state);
+    state.context.botl = true;
 }
 async function invokeEnergyBoost(object, state, publish) {
     const hero = state.u;
@@ -174,6 +175,7 @@ async function invokeEnergyBoost(object, state, publish) {
         return;
     }
     hero.uen = (hero.uen ?? 0) + restored;
+    state.context.botl = true;
     await publish('You feel re-energized.');
 }
 async function invokeCreateAmmo(object, rollOne) {

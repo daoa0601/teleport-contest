@@ -206,6 +206,7 @@ export async function applyHeroGolemEffects(damageType: DamageType, damage: numb
         : species === 'iron golem' && damageType === AD_FIRE ? damage : 0;
     if (!healing || state.u.mh >= state.u.mhmax) return;
     state.u.mh = Math.min(state.u.mhmax, state.u.mh + healing);
+    state.context.botl = true;
     await publish('Strangely, you feel better than before.');
     await exerciseAttribute(A_STR, true, state);
 }

@@ -187,6 +187,7 @@ export function startHeroPetrification({
         || hero.stoneResistance) return false;
     hero.stonedTurns = turns;
     hero.stoned = turns > 0;
+    if (hero.stoned) state.context.botl = true;
     hero.stoneKiller = killer;
     hero.stoneKillerFormat = killerFormat;
     return hero.stoned;
@@ -195,6 +196,7 @@ export function startHeroPetrification({
 export function clearHeroPetrification(state: GameState = game): boolean {
     const hero = state.u;
     const wasPetrifying = heroIsPetrifying(state);
+    if (wasPetrifying) state.context.botl = true;
     hero.stonedTurns = 0;
     hero.stoned = false;
     delete hero.stoneKiller;
@@ -208,10 +210,7 @@ export async function fixHeroPetrification({ state = game }: { state?: GameState
     const message = heroIsHallucinating(state)
         ? `What a pity--you just ruined a future piece of ${currentAttribute(A_CHA, state) > 15 ? 'fine ' : ''}art!`
         : 'You feel limber!';
-    state.u.stonedTurns = 0;
-    state.u.stoned = false;
-    await plineWithContinuation(message);
-    clearHeroPetrification(state);
+    await setHeroPetrificationTimeout(0, { state, message });
     return true;
 }
 

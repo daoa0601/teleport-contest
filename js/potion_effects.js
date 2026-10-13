@@ -125,6 +125,7 @@ export async function applyPotionEffect(source, { state = game } = {}) {
             state.u.uenmax = Math.max(0, (state.u.uenmax || 0) + amount);
             state.u.uenpeak = Math.max(state.u.uenpeak || 0, state.u.uenmax);
             state.u.uen = Math.max(0, Math.min(state.u.uenmax, (state.u.uen || 0) + 3 * amount));
+            state.context.botl = true;
             await exerciseAttribute(A_WIS, true, state);
             break;
         }

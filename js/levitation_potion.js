@@ -84,6 +84,7 @@ export async function applyLevitationPotion(potion, { state = game, publish = pl
     }
     /* levitating blocks flying */
     refreshMovementProperties(state);
+    state.context.botl = true;
     return { nothingHappened: potionNothing };
 }
 //# sourceMappingURL=levitation_potion.js.map

@@ -301,6 +301,7 @@ export async function teleportHeroAtWill({ state = game, random = rn2, rollOne =
         return { moved: false, needsDestination: true, died: false };
     const energy = 5 * teleportSpellLevel();
     state.u.uen -= energy;
+    state.context.botl = true;
     const followersReady = await bringLeashedFollowers(state, random);
     if (!followersReady) {
         await publish('You shudder for a moment.');

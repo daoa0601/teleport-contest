@@ -112,6 +112,7 @@ export async function eatRoyalJelly(jelly, { state = game, publish = plineWithCo
     }
     await gainHeroStrength(jelly, 1, { state });
     const hitPointChange = rnd(20) * (jelly.cursed ? -1 : 1);
+    state.context.botl = true;
     if (heroIsPolymorphed(state)) {
         hero.mh += hitPointChange;
         if (hero.mh > hero.mhmax) {

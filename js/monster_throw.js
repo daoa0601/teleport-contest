@@ -135,7 +135,8 @@ export async function throwMonsterProjectile(source, object, { state = game, dx,
                     break;
             }
             else if (point.x === state.u.ux && point.y === state.u.uy) {
-                endVoluntaryMultiTurn(state);
+                if (state.multi)
+                    endVoluntaryMultiTurn(state);
                 shot.heroTarget = true;
                 shot.target = null;
                 if (await catchUnicornGift(missile, context)

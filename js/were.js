@@ -100,6 +100,7 @@ export async function useHeroWereSummon({ state = game, publish = plineWithConti
         return { used: false, spentTime: false, reason: 'energy' };
     }
     state.u.uen -= 10;
+    state.context.botl = true;
     await publish('You call upon your brethren for help!');
     await exerciseAttribute(A_WIS, true, state);
     const form = heroMonsterForm(state);

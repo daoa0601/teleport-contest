@@ -421,7 +421,9 @@ async function playLeatherDrum(familiar: boolean, mundane = false): Promise<Inst
         const verb = rn2(2) ? 'butcher' : rn2(2) ? 'manage' : 'pull off';
         const beat = DRUM_BEATS[rn2(DRUM_BEATS.length)];
         await plineWithContinuation(`You ${verb} a ${beat}.`);
-        return await awakenMonsters((game.u?.ulevel || 1) * 5);
+        const result = await awakenMonsters((game.u?.ulevel || 1) * 5);
+        game.context.botl = true;
+        return result;
     }
     if (!heroIsDeaf()) {
         await plineWithContinuation(
@@ -429,16 +431,13 @@ async function playLeatherDrum(familiar: boolean, mundane = false): Promise<Inst
         );
         game.u.deafTurns = (game.u.deafTurns ?? 0) + rn2(20) + 30;
         syncDeafness(game);
-        game._statusDeafOverride = false;
     } else {
         await plineWithContinuation('You pound on the drum.');
     }
     await exerciseAttribute(A_WIS, false);
-    try {
-        return await awakenMonsters((game.u?.ulevel || 1) * 40);
-    } finally {
-        delete game._statusDeafOverride;
-    }
+    const result = await awakenMonsters((game.u?.ulevel || 1) * 40);
+    game.context.botl = true;
+    return result;
 }
 
 function levelDescription() {

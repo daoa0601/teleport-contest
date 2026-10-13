@@ -248,6 +248,7 @@ async function invokeHealing(
     cureHeroSickness(state);
     clearHeroSliming(state);
     if (curesBlindness) setHeroBlindnessTurns(cream, state);
+    state.context.botl = true;
 }
 
 async function invokeEnergyBoost(
@@ -266,6 +267,7 @@ async function invokeEnergyBoost(
         return;
     }
     hero.uen = (hero.uen ?? 0) + restored;
+    state.context.botl = true;
     await publish('You feel re-energized.');
 }
 

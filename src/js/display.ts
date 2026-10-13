@@ -13,6 +13,9 @@ import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
+import { heroIsSick } from './hero_illness.js';
+import { heroIsSliming } from './slime.js';
+import { heroIsPetrifying } from './stoning.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN,
@@ -22,7 +25,7 @@ import {
     TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD,
     IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN,
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN,
-    SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7,
+    SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SICK_VOMITABLE, SICK_NONVOMITABLE,
     WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR,
     BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE,
     ENGRAVE, BURN, HEADSTONE,
@@ -58,6 +61,7 @@ import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.
 import { heroGoldAmount } from './hero_gold.js';
 import { encumbranceLabel, nearCapacity } from './weight.js';
 import { heroCanReachFloor } from './floor_reach.js';
+import { propertyIsActive } from './properties.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -153,7 +157,6 @@ function activeObjectSymbols() {
 }
 
 const M3_INFRAVISIBLE = 0x0200;
-const M1_FLY = 0x00000001;
 const M1_MINDLESS = 0x00010000;
 const TELEPATHY_RANGE = 8 * 8; // BOLT_LIM squared
 const HELM_OF_TELEPATHY = 100;
@@ -1994,6 +1997,7 @@ export async function docrt({ beforeGlow = null }: RedrawOptions = {}) {
         await see_monsters({ beforeGlow });
     } finally {
         game.program_state.in_docrt = false;
+        game.context.botl = true;
     }
 }
 
@@ -2150,15 +2154,13 @@ export function _statusLine2(refreshLoad = true) {
             : `Dlvl:${dungeonDepth(u.uz)}`;
     const polymorphed = (u.mtimedone ?? 0) > 0;
     // botl.c bounds the printed numbers without changing combat state.
-    const currentHp = game._statusHpOverride
-        ?? (polymorphed ? u.mh : u.uhp) ?? 0;
+    const currentHp = (polymorphed ? u.mh : u.uhp) ?? 0;
     const displayedHp = Math.max(0, Math.min(currentHp, 9999));
     const maximumHp = Math.min((polymorphed ? u.mhmax : u.uhpmax) ?? 0, 9999);
     const displayedPower = Math.min(u.uen ?? 0, 9999);
     const maximumPower = Math.min(u.uenmax ?? 0, 9999);
     const goldSymbol = Is_rogue_level(u.uz) ? '*' : '$';
-    const displayedAc = game._statusAcOverride
-        ?? game._statusProjectedAc ?? u.uac ?? 10;
+    const displayedAc = u.uac ?? 10;
     const displayedGold = game._statusGoldOverride
         ?? heroGoldAmount(game);
     let line = `${location} ${goldSymbol}:${displayedGold} HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`;
@@ -2170,19 +2172,24 @@ export function _statusLine2(refreshLoad = true) {
     }
     if (game.flags?.time)
         line += ` T:${game.moves ?? 1}`;
-    if (u.usteed) line += ' Ride';
-    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][game._statusHungerOverride ?? u.uhs ?? currentHungerState(game)];
+    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? currentHungerState(game)];
     if (hungerLabel) line += ` ${hungerLabel}`;
     const load = refreshLoad ? encumbranceLabel(nearCapacity(game)) : u._encumbrance;
     if (load) line += ` ${load}`;
+    // TTY places conditions after hunger and load, sorted by severity and name.
     if (u.strangled || (u.strangledTurns ?? 0) > 0) line += ' Strngl';
+    const sick = heroIsSick(game);
+    if (sick && ((u.sickType ?? 0) & SICK_VOMITABLE)) line += ' FoodPois';
+    if (heroIsSliming(game)) line += ' Slime';
+    if (heroIsPetrifying(game)) line += ' Stone';
+    if (sick && ((u.sickType ?? 0) & SICK_NONVOMITABLE)) line += ' TermIll';
     if (game.blind) line += ' Blind';
-    if (polymorphed
-        && ((MONSTER_FLAGS1[u.umonnum ?? -1] ?? 0) & M1_FLY)) line += ' Fly';
     if ((u.confusionTurns ?? 0) > 0) line += ' Conf';
-    if ((game._statusDeafOverride ?? game.deaf)) line += ' Deaf';
-    if (heroIsHallucinating(game))
-        line += ' Hallu';
+    if (game.deaf) line += ' Deaf';
+    if (propertyIsActive('flying', game)) line += ' Fly';
+    if (heroIsHallucinating(game)) line += ' Hallu';
+    if (propertyIsActive('levitation', game)) line += ' Lev';
+    if (u.usteed) line += ' Ride';
     if (u.stunned || (u.stunnedTurns ?? 0) > 0) line += ' Stun';
     return line;
 }
@@ -2219,20 +2226,13 @@ export function serialize_terminal_grid(display: Pick<GameDisplay, 'rows' | 'col
     return output;
 }
 
-function statusLines(update: boolean): readonly [string, string] {
-    // C botl.c:bot() reserves uhp == -1 for saving. It leaves both status
-    // rows untouched, even when real damage happens to produce that value.
-    if (!update || game._statusUpdatesDisabled || game.u.uhp === -1) {
-        const row = (index: number) => game.nhDisplay?.grid[index]
-            ?.map(cell => cell.ch).join('').trimEnd() ?? '';
-        return [row(22), row(23)];
-    }
-    // A map flush retains the displayed load until native code requests bot().
-    if (game.context.botl) {
-        game.u._encumbrance = encumbranceLabel(nearCapacity(game));
-        game.context.botl = false;
-    }
-    return [_statusLine1(), _statusLine2(false)];
+function displayedStatusLines(): readonly [string, string] {
+    const display = game.nhDisplay;
+    if (display?.statusVisible && !game._statusUpdatesDisabled)
+        return display.statusLines ?? ['', ''];
+    const row = (index: number) => game.nhDisplay?.grid[index]
+        ?.map(cell => cell.ch).join('').trimEnd() ?? '';
+    return [row(22), row(23)];
 }
 
 function writeStatusLines(display: GameDisplay, lines: readonly [string, string]): void {
@@ -2246,7 +2246,7 @@ function writeStatusLines(display: GameDisplay, lines: readonly [string, string]
 }
 
 // ── Build screen output ──
-function _buildScreenOutput(updateStatus = true) {
+function _buildScreenOutput() {
     const display = game?.nhDisplay;
     if (!display) return;
 
@@ -2268,7 +2268,7 @@ function _buildScreenOutput(updateStatus = true) {
     }
 
     // Row 22-23: status
-    const status = statusLines(updateStatus);
+    const status = displayedStatusLines();
     output += (blankMainWindow ? '' : status[0]) + '\n';
     output += blankMainWindow ? '' : status[1];
 
@@ -2313,12 +2313,14 @@ function writeMapRow(display: GameDisplay, y: number): void {
 
 // ── flush_screen ──
 export async function flush_screen(mode?: number) {
+    if (game.program_state.saving || game._suppressMapStatusForFlush) return;
     if (game.program_state?.windows_exited) return;
     // C display.c pauses map updates during level arrival. Message windows
     // still write their own rows while the old map remains on screen.
     if (mode === -1) game._mapFlushPaused = !game._mapFlushPaused;
     if (game._mapFlushPaused) return;
-    if (game.context.botl) refreshStatusLines();
+    if (game.context.botl || game.nhDisplay?.statusLines === null) refreshStatusLines();
+    else if (game.context.time_botl) timebot();
     const display = game.nhDisplay;
     const mapCursor: [number, number] | null = mode === 0 && display
         ? lastDirtyMapCursor() ?? [display.cursorCol, display.cursorRow] : null;
@@ -2342,6 +2344,7 @@ export function clearMapDisplay() {
 // ── cls ──
 export async function cls() {
     await flushPendingTopline();
+    game.context.botl = true;
     const display = game?.nhDisplay;
     if (display?.clearScreen) display.clearScreen();
     game._pending_message = '';
@@ -2368,7 +2371,10 @@ export function clearMessageWindow(coveredRows?: number) {
     }
     // docorner() asks bot() to restore covered status rows. getlin() keeps
     // status updates disabled through this cleanup, leaving those rows blank.
-    if (rows > ROWNO + 1) refreshStatusLines();
+    if (rows > ROWNO + 1) {
+        if (game._statusUpdatesDisabled) display.statusVisible = false;
+        refreshStatusLines();
+    }
     display.setCursor(0, 0);
 }
 
@@ -2379,12 +2385,30 @@ export async function bot() {
 
 function refreshStatusLines(): void {
     const display = game.nhDisplay;
-    if (!display || game._statusUpdatesDisabled || game.u.uhp === -1 || game.program_state.saving
+    if (!display || game._statusUpdatesDisabled || game.program_state.saving
         || game.program_state.windows_exited || game._suppressMapStatusForFlush) return;
-    game.u._encumbrance = encumbranceLabel(nearCapacity(game));
-    delete game._statusHungerOverride;
     game.context.botl = false;
-    writeStatusLines(display, statusLines(true));
+    game.context.time_botl = false;
+    if (game.u.uhp === -1) return;
+    game.u._encumbrance = encumbranceLabel(nearCapacity(game));
+    display.statusLines = [_statusLine1(), _statusLine2(false)];
+    display.statusVisible = true;
+    writeStatusLines(display, display.statusLines);
+}
+
+// C botl.c:stat_update_time() notifies only BL_TIME. Other fields keep the
+// values from the last bot(), even if game state changed during an occupation.
+export function timebot(): void {
+    if (game._statusUpdatesDisabled) return;
+    game.context.time_botl = false;
+    const display = game.nhDisplay;
+    if (!display?.statusLines || !game.flags.time
+        || game.program_state.saving || game.program_state.windows_exited
+        || game._suppressMapStatusForFlush) return;
+    const [first, second] = display.statusLines;
+    display.statusLines = [first, second.replace(/\bT:\d+\b/, `T:${game.moves}`)];
+    display.statusVisible = true;
+    writeStatusLines(display, display.statusLines);
 }
 
 // ── pline ──
@@ -2546,7 +2570,7 @@ async function pageTopline(
         // marker pushed onto a map row need native more()'s docorner cleanup.
         game._suppressMessagesUntilInput = false;
         game._retained_message = '';
-        if (lines.length > 1) _buildScreenOutput(false);
+        if (lines.length > 1) _buildScreenOutput();
         else display?.clearRow(0);
         display?.setCursor(0, 0);
         return key;
@@ -2555,7 +2579,7 @@ async function pageTopline(
     // erases a one-line message; WIN_NOSTOP only prevents output suppression.
     game._retained_message = '';
     if (lines.length > 1) {
-        _buildScreenOutput(false);
+        _buildScreenOutput();
         display?.setCursor(0, 0);
     } else if (key === 27) {
         display?.clearRow(0);

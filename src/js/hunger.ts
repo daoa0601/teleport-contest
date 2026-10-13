@@ -161,7 +161,6 @@ export async function updateHeroHunger(increasing: boolean, { state = game }: Hu
     const context = state.context;
     if (state._occupation?.key === 'eat-food' || context.forceSaveHungerState) {
         // newuhs() changes uhs here without requesting a status redraw.
-        state._statusHungerOverride ??= hero.uhs ?? NOT_HUNGRY;
         context.hungerStateBeforeMeal ??= hero.uhs ?? NOT_HUNGRY;
         hero.uhs = next;
         return;
@@ -202,6 +201,7 @@ export async function updateHeroHunger(increasing: boolean, { state = game }: Hu
         stopRun(state);
     }
     hero.uhs = next;
+    state.context.botl = true;
     await bot();
     if ((Upolyd(hero) ? hero.mh : hero.uhp) < 1)
         await dieFromHunger('exhaustion', state);
@@ -256,7 +256,10 @@ async function dieFromHunger(cause: 'starvation' | 'exhaustion', state: PlayingG
 // C eat.c:Hear_again()/unfaint(). allmain calls this after the awaited
 // recovery message, so neither hearing nor hunger changes before acknowledgment.
 export async function regainHearingAfterHelplessness({ state = game }: HungerOptions = {}) {
-    if (rn2(2) === 0) await makeDeaf(0, { state, talk: false });
+    if (rn2(2) === 0) {
+        await makeDeaf(0, { state, talk: false });
+        state.context.botl = true;
+    }
 }
 
 export async function recoverHeroFromFainting({ state = game }: HungerOptions = {}) {
@@ -289,6 +292,7 @@ export function restoreHeroNutrition(state: GameState = game) {
     requirePlayingGame(state);
     const hero = state.u;
     const before = nearCapacity(state);
+    state.context.botl = hero.uhs !== NOT_HUNGRY || (hero.atemp?.a[A_STR] ?? 0) < 0;
     hero.uhunger = 900;
     hero.uhs = NOT_HUNGRY;
     if (!hero.atemp || !(hero.atemp.a[A_STR] < 0)) return '';

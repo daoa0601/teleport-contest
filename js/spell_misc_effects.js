@@ -10,7 +10,7 @@ import { MONSTER_NAME, monsterEnfolds, monsterIsAnimal, monsterIsWhirly } from '
 import { SPE_PROTECTION } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { heroIsBlind } from './senses.js';
-import { clearHeroSliming, heroIsSliming } from './slime.js';
+import { heroIsSliming, setHeroSlimingTimeout } from './slime.js';
 import { liveSpellSkill } from './spell_casting_rules.js';
 export async function castProtection({ state = game } = {}) {
     requireLiveGame(state);
@@ -88,12 +88,7 @@ export async function castCureSickness({ state = game } = {}) {
     if (wasSick || !wasSlimed)
         await plineWithContinuation(`You are ${wasSick ? 'no longer' : 'not'} ill.`);
     if (wasSlimed) {
-        // make_slimed() updates status before prose, then clears its killer
-        // and any late slime disguise after the message returns.
-        state.u.slimedTurns = 0;
-        state.u.slimed = false;
-        await plineWithContinuation('The slime disappears!');
-        clearHeroSliming(state);
+        await setHeroSlimingTimeout(0, { state, message: 'The slime disappears!' });
     }
 }
 //# sourceMappingURL=spell_misc_effects.js.map

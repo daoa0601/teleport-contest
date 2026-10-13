@@ -14,7 +14,7 @@ import { delobj } from './object_delete.js';
 import { markJustPicked } from './just_picked.js';
 import { GOLD_PIECE } from './object_data.js';
 
-type GoldInventoryState = Pick<GameState, 'inventory' | 'uquiver' | 'moves'>;
+type GoldInventoryState = Pick<GameState, 'inventory' | 'uquiver' | 'moves' | 'context'>;
 
 interface GoldAddition {
     object: GameObject | null;
@@ -72,6 +72,7 @@ export function addHeroGoldObject(state: GoldInventoryState, incoming: GameObjec
     if (!incoming) return { object: heroGoldObject(state), merged: false };
     const amount = quantity(incoming);
     if (!amount) return { object: heroGoldObject(state), merged: false };
+    state.context.botl = true;
     const existing = heroGoldObject(state);
     if (existing && existing !== incoming) {
         const total = quantity(existing) + amount;
@@ -94,6 +95,7 @@ export function addHeroGoldObject(state: GoldInventoryState, incoming: GameObjec
 export function setHeroGoldAmount(state: GoldInventoryState, amount: number): GameObject | null {
     amount = Math.max(0, Math.trunc(amount ?? 0));
     let object = heroGoldObject(state);
+    if (amount !== heroGoldAmount(state)) state.context.botl = true;
     if (!amount) {
         if (object) {
             state.inventory = (state.inventory || [])
@@ -135,6 +137,7 @@ export function detachHeroGold(state: GameState, requested: number | null = null
     const detached = count < amount ? splitObjectStack(object, count, state) : object;
     if (!detached) throw new Error('A gold stack must yield the requested coins.');
     unlinkObject(detached, state);
+    state.context.botl = true;
     if (state.uquiver === detached) state.uquiver = null;
     detached.ready = false;
     detached.owornmask = 0;
