@@ -1,3 +1,5 @@
+import { slipOrTrip } from './fumbling.js';
+import { invWeight } from './weight.js';
 import { finishMonsterHideUnder } from './monster_hiding.js';
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
@@ -448,32 +450,6 @@ function appendTurnMessage(message) {
         ? `${game._pending_message}  ${message}` : message;
     game._last_message = game._pending_message;
 }
-// C ref: timeout.c:slip_or_trip(), empty-square/on-foot branch.  The object,
-// ice, and mounted branches have distinct naming, direction, and dismount
-// owners; keep this helper bounded to the branch exercised by ordinary
-// fumble boots on clear floor.
-function slipOrTripOnClearFloor({ deferMessage = false } = {}) {
-    const game = requireInitializedGame();
-    const hallucinating = heroIsHallucinating(game);
-    let message;
-    switch (rn2(4)) {
-        case 1:
-            message = `You trip over your own ${hallucinating ? 'elbows' : 'feet'}.`;
-            break;
-        case 2:
-            message = `You slip ${hallucinating ? 'on a banana peel' : 'and nearly fall'}.`;
-            break;
-        case 3:
-            message = 'You flounder.';
-            break;
-        default:
-            message = 'You stumble.';
-            break;
-    }
-    if (!deferMessage)
-        appendTurnMessage(message);
-    return message;
-}
 // C ref: allmain.c:interrupt_multi().  Count-prefixed ordinary commands use
 // positive `multi`; full HP or power recovery cancels that voluntary repeat,
 // but must not stop independent occupations such as eating, lock-picking, or
@@ -696,7 +672,7 @@ async function finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount
     await finishInitialTurnMaintenanceRng(sourceTurn);
     return { kind: 'complete', moveAmount };
 }
-function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
+async function finishFumblingExpiryAfterMessage(fumbled, publish) {
     const game = requireInitializedGame();
     if (fumbled) {
         // timeout.c reaches this through nomul(-2), which always calls
@@ -705,11 +681,19 @@ function finishFumblingExpiryAfterMessage({ fumbled = false } = {}) {
         endVoluntaryMultiTurn(game);
         game._helplessTurns = 2;
         game._helplessDoneMessage = '';
+        game._helplessReason = 'fumbling';
+        if (invWeight(game) > -500) {
+            if (!heroIsDeaf(game))
+                await publish('You make a lot of noise!');
+            await wakeMonstersNearWithMessages(game.u.ux, game.u.uy, game.u.ulevel * 20, game, publish);
+        }
     }
-    if (game.u?.fumblingFromArmor || game.u?.fumblingIntrinsic)
+    game.u.fumblingFromIce = false;
+    if (game.u?.fumblingFromArmor || game.u?.fumblingIntrinsic || propertyIsActive('fumbling', game))
         game.u.fumblingTurns = (game.u.fumblingTurns ?? 0) + rnd(20);
     game.u.fumbling = !!(game.u?.fumblingFromArmor
         || game.u?.fumblingIntrinsic
+        || propertyIsActive('fumbling', game)
         || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
 }
 async function finishInitialTurnMaintenanceAfterAutomaticSearch({ sourceTurn, moveAmount, }) {
@@ -1126,24 +1110,15 @@ async function finishInitialTurnMaintenanceAfterConfusion({ sourceTurn, moveAmou
                 || game.u?.levitation || game.levitating);
             const flying = !!(game.u?.flying || game.flying);
             if (game.u?.umoved && !levitating && !flying) {
-                const message = slipOrTripOnClearFloor({
-                    deferMessage: deferAmbientMessage,
-                });
-                // `You(...)` can suspend inside tty before nomul(), renewal,
-                // regeneration, or any later global-turn work.
-                if (deferAmbientMessage) {
-                    return {
-                        kind: 'timeout-message',
-                        timeoutKind: 'fumbling',
-                        message, sourceTurn, moveAmount,
-                        deferAmbientMessage, polymorphed,
-                        prayerTimeoutFreeze,
-                    };
-                }
-                finishFumblingExpiryAfterMessage({ fumbled: true });
+                const publish = deferAmbientMessage
+                    ? plineWithContinuation : async (message) => appendTurnMessage(message);
+                await slipOrTrip(publish);
+                if (game.program_state.gameover)
+                    return { kind: 'complete', moveAmount };
+                await finishFumblingExpiryAfterMessage(true, publish);
             }
             else {
-                finishFumblingExpiryAfterMessage();
+                await finishFumblingExpiryAfterMessage(false, plineWithContinuation);
             }
         }
     }
@@ -1332,14 +1307,10 @@ async function advanceWorldTurn() {
             refreshProperty('stunned', game);
             phase = await finishInitialTurnMaintenanceAfterStun(phase);
         }
-        else if (phase.timeoutKind === 'confusion') {
+        else {
             game.u.confusionTurns = 0;
             refreshProperty('confusion', game);
             phase = await finishInitialTurnMaintenanceAfterConfusion(phase);
-        }
-        else {
-            finishFumblingExpiryAfterMessage({ fumbled: true });
-            phase = await finishInitialTurnMaintenanceAfterFumbling(phase);
         }
     }
     if (game.program_state?.gameover)

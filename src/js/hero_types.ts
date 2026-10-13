@@ -169,6 +169,7 @@ export interface Hero extends HeroCoordinates, HeroPropertyState,
     intrinsicDisplacement?: boolean;
     displacedIntrinsic?: boolean;
     fumblingIntrinsic?: boolean;
+    fumblingFromIce?: boolean;
     halfPhysicalDamageFromArtifact?: boolean;
     halfGasDamage?: boolean;
     fixedAbilities?: boolean;

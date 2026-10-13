@@ -256,6 +256,7 @@ import {
 import { heroIsStrangled } from './hero_strangulation.js';
 import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
 import { disturbBuriedZombies } from './object_impact.js';
+import { checkSlipperyIce } from './fumbling.js';
 import { MONSTER_BODY_META } from './monster_data.js';
 import { heroCanOoze } from './monster_perception.js';
 import { isPoolAt } from './terrain_properties.js';
@@ -7245,6 +7246,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         u.uy = monster.my;
         return attackHostileMonster(monster, monster.mx, monster.my);
     }
+    checkSlipperyIce();
     // C hack.c:impaired_movement() always checks Confusion before deriving
     // the destination.  A nonzero rn2(5) keeps the requested direction; on
     // impairment, confdir(TRUE) chooses cardinals first and retries only an
