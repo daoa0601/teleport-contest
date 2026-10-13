@@ -4,7 +4,7 @@
 // NetHack stores blessed/cursed as boolean bits.  Older JavaScript inventory
 // producers can also attach a textual `buc` compatibility field, so every
 // shared transition must keep that projection synchronized.
-import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, BAG_OF_HOLDING, CORPSE, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
+import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, BAG_OF_HOLDING, CORPSE, FIGURINE, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { artifactById } from './artifacts.js';
 import { game, requireLiveGame } from './gstate.js';
 import { rn2 } from './rng.js';
@@ -14,6 +14,7 @@ import { bookCursed } from './spellbook_study.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, W_ARMG, W_ARMH, W_RING } from './const.js';
 import { bot } from './display.js';
 import { updateCarriedLuck } from './hero_inventory.js';
+import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const TOOL_CLASS = 6;
@@ -82,6 +83,10 @@ function updateBlessingEffects(object, state) {
     if (object?.otyp === BAG_OF_HOLDING)
         object.owt = objectWeight(object);
 }
+function stopFigurineTransformation(object) {
+    if (object.otyp === FIGURINE && object.timed)
+        stopObjectTimer(object, OBJECT_TIMER_KIND.FIG_TRANSFORM);
+}
 export function objectResistsDestruction(object, ordinaryChance, artifactChance, random = rn2) {
     if (!object)
         return false;
@@ -124,6 +129,7 @@ export function blessObjectState(object, state = game) {
     object.cursed = false;
     object.buc = 'blessed';
     updateBlessingEffects(object, state);
+    stopFigurineTransformation(object);
     return changed;
 }
 export function uncurseObjectState(object, state = game) {
@@ -133,6 +139,7 @@ export function uncurseObjectState(object, state = game) {
     object.cursed = false;
     object.buc = object.blessed ? 'blessed' : 'uncursed';
     updateBlessingEffects(object, state);
+    stopFigurineTransformation(object);
     return changed;
 }
 export function unblessObjectState(object, state = game) {

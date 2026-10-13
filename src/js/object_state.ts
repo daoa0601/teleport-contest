@@ -7,7 +7,7 @@
 
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
-    BAG_OF_HOLDING, CORPSE, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD,
+    BAG_OF_HOLDING, CORPSE, FIGURINE, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
 import { artifactById } from './artifacts.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -21,6 +21,7 @@ import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, W_ARMG, W_ARMH, W_RING } from
 import type { AttributeIndex } from './attrib.js';
 import { bot } from './display.js';
 import { updateCarriedLuck } from './hero_inventory.js';
+import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -81,6 +82,11 @@ function updateBlessingEffects(object: GameObject | null | undefined, state: Gam
     if (object?.otyp === BAG_OF_HOLDING) object.owt = objectWeight(object);
 }
 
+function stopFigurineTransformation(object: GameObject): void {
+    if (object.otyp === FIGURINE && object.timed)
+        stopObjectTimer(object, OBJECT_TIMER_KIND.FIG_TRANSFORM);
+}
+
 export function objectResistsDestruction(
     object: GameObject | null | undefined, ordinaryChance: number, artifactChance: number, random = rn2,
 ): boolean {
@@ -126,6 +132,7 @@ export function blessObjectState(object: GameObject | null | undefined, state: G
     object.cursed = false;
     object.buc = 'blessed';
     updateBlessingEffects(object, state);
+    stopFigurineTransformation(object);
     return changed;
 }
 
@@ -135,6 +142,7 @@ export function uncurseObjectState(object: GameObject | null | undefined, state:
     object.cursed = false;
     object.buc = object.blessed ? 'blessed' : 'uncursed';
     updateBlessingEffects(object, state);
+    stopFigurineTransformation(object);
     return changed;
 }
 
