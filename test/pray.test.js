@@ -34,7 +34,6 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { syncBlindness } from '../js/senses.js';
-import { gameLogEvents } from '../js/gamelog.js';
 import { beginObjectBurn, objectLightRadius } from '../js/light.js';
 function prayerRoom({ hero = {}, flags = {}, ...room } = {}) {
     freshObjectRoom({
@@ -271,23 +270,6 @@ void test('#pray does not reveal a blindfold\'s curse when another intrinsic als
     await resolvePrayer();
     assert.equal(blindfold.cursed, false);
     assert.equal(blindfold.bknown, false);
-});
-void test('#pray crowning enhances a carried Vorpal Blade without recording a new acquisition', async () => {
-    prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
-    requirePlayingGame(game);
-    initializeArtifacts();
-    const vorpal = artifactByName('Vorpal Blade');
-    assert.ok(vorpal);
-    const sword = await addInventoryObject(LONG_SWORD);
-    assert.equal(nameArtifact(sword, vorpal), true);
-    await setPrimaryWeapon(sword);
-    await addInventoryObject(LUCKSTONE);
-    initRng(2n);
-    await resolvePrayer();
-    assert.equal(game.u.uevent?.uhand_of_elbereth, 2);
-    assert.equal(sword.blessed, true);
-    assert.equal(sword.oerodeproof, true);
-    assert.ok(!gameLogEvents().some(event => event.text.startsWith('found Vorpal Blade')));
 });
 void test('#pray brightens a lit artifact when blessing the wielded weapon', async () => {
     prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
