@@ -82,7 +82,7 @@ import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js
 import { mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
-import { cleanupSpecialLevelMap } from './special_level_cleanup.js';
+import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
 import {
     A_CHA,
     COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER,
@@ -6665,6 +6665,7 @@ function createLuaLevelSession() {
             return roomFailed;
         },
         async finishSpecialLevel() {
+            removeSpecialLevelBoundaries(mappedCells);
             if (currentLevel().checkInaccessibles) await ensureWaysOut();
             await cleanupSpecialLevelMap();
             if (!requireGameLevel().flags.corrmaze)
