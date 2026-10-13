@@ -144,7 +144,7 @@ import { objectName, singularObjectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
+import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
@@ -207,6 +207,7 @@ import { heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, hero
 import { applyEyewear, isEyewear, removeEyewear, wearEyewear, } from './eyewear.js';
 import { useCreamPie } from './cream_pie.js';
 import { useFigurine } from './figurine_apply.js';
+import { checkHeroLeashes, useLeash } from './leash_apply.js';
 import { isRoyalJelly, useRoyalJelly, } from './royal_jelly.js';
 import { useBullwhip } from './bullwhip.js';
 import { useGrapplingHook } from './grappling_hook.js';
@@ -5717,6 +5718,10 @@ async function doapply(cannedInvlet = null) {
 // Return the surviving object for the native talking-artifact tail. Applied
 // stacks can split or disappear, so each destructive owner returns its object.
 async function applyTool(item, underlay) {
+    if (item.otyp === LEASH) {
+        game.context.move = await useLeash(item) ? 1 : 0;
+        return item;
+    }
     if (item.otyp === FIGURINE) {
         const result = await useFigurine(item);
         game.context.move = result.spentTime ? 1 : 0;
@@ -7104,6 +7109,9 @@ async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, b
         && !propertyIsActive('stealth', game)
         && (MONSTER_BODY_META[heroSpecies(game)]?.[0] ?? 0) >= 400)
         disturbBuriedZombies(u.ux, u.uy);
+    await checkHeroLeashes(oldx, oldy);
+    if (game.program_state.gameover)
+        return true;
     newsym(oldx, oldy);
     vision_recalc(1);
     await announceInvocationSquare();
