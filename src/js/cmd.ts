@@ -52,7 +52,10 @@ import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
-import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import {
+    minimalObjectName, objectNameIsPlural, observeDistantObjectForNaming,
+    observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle,
+} from './objnam.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { descendFromLevitation } from './levitation_commands.js';
@@ -297,7 +300,7 @@ import {
 } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
 import { heroArmName, heroHandName, heroNeckName } from './body_parts.js';
-import { withIndefiniteArticle, makePlural } from './object_grammar.js';
+import { armorUsesPairGrammar, withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { isWetTowel, willWeld } from './weapon_type.js';
 import { announceWeaponWeld, explainTwoWeaponEnd, refuseWeldedPrimary } from './weapon_feedback.js';
@@ -360,7 +363,7 @@ import {
     doenhance, useHeroSkill,
 } from './skills.js';
 import {
-    chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown,
+    carriedObjectOwner, chargeUnpaidUsage, checkSpecialRoom, carriedShopBill, objectTypeKnown,
     payShopDebt, settleCarriedShopBillItem, shopkeeperForHero, shopThankYouMessage,
 } from './shk.js';
 import {
@@ -426,6 +429,7 @@ const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
 const M2_ROCKTHROW = 0x08000000;
+const M1_HUMANOID = 0x00020000;
 const MAT_GEMSTONE = 20;
 const MAT_MINERAL = 21;
 
@@ -6014,14 +6018,20 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
     let spentTime = false;
     if (primary || alternate) {
         const quantity = item.quantity ?? item.quan ?? 1;
+        const noun = minimalObjectName(item, game);
+        const names = quantity === 1 ? noun : makePlural(noun);
+        const usePlural = objectNameIsPlural(item, game)
+            || item.otyp === LENSES || armorUsesPairGrammar(OBJECT_NAMES[item.otyp]);
+        let confirmation = primary
+            ? `You are wielding ${usePlural ? 'those' : 'that'}.  Ready ${usePlural ? 'them' : 'it'} instead?`
+            : `${usePlural ? 'Those are' : 'That is'} your ${wasTwoweap ? 'second' : 'alternate'} weapon.  Ready ${usePlural ? 'them' : 'it'} instead?`;
         let readyAll = true;
         if (quantity > 1 && hasFreeBasicInventoryLetter()
             && splittableForQuiver(item)) {
-            const plural = item.plural || makePlural(item.name || 'object');
             const slotDescription = primary
-                ? `You are wielding ${quantity} ${plural}.`
+                ? `You are wielding ${quantity} ${names}.`
                 : `${wasTwoweap ? 'You are dual wielding'
-                    : 'Your alternate weapon is'} ${quantity} ${plural}.`;
+                    : 'Your alternate weapon is'} ${quantity} ${names}.`;
             const partial = await promptYesNoQuit(
                 `${slotDescription}  Ready ${quantity - 1} of them?`,
             );
@@ -6032,13 +6042,15 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
             if (partial === 'y') {
                 item = splitStackForQuiver(item, quantity - 1);
                 readyAll = false;
-            }
+            } else confirmation = 'Ready all of them instead?';
         }
         if (readyAll) {
-            const answer = await promptYesNoQuit(
-                `Ready ${quantity > 1 ? 'all of them' : 'it'} instead?`,
-            );
+            const answer = await promptYesNoQuit(confirmation);
             if (answer !== 'y') {
+                const owner = carriedObjectOwner(item, game);
+                const remains = objectNameIsPlural(item, game) ? 'remain' : 'remains';
+                const slot = primary || wasTwoweap ? 'wielded' : 'as secondary weapon';
+                await plineWithContinuation(`${owner} ${names} ${remains} ${slot}.`);
                 game.context.move = 0;
                 return { item: null, spentTime: false, cancelled: false };
             }
@@ -6054,10 +6066,18 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
     if (verb !== 'fire') await setQuiverObject(item, game);
     observeObjectForNaming(item);
     const description = inventoryItemDescription(item);
-    await pline(verb === 'fire'
+    await plineWithContinuation(verb === 'fire'
         ? `You ready: ${item.invlet} - ${description}.`
         : `${item.invlet} - ${description}.`);
     if (verb === 'fire') await setQuiverObject(item, game);
+    if (spentTime) {
+        if (primary) {
+            const humanoid = !!((MONSTER_FLAGS1[heroSpecies(game)] ?? 0) & M1_HUMANOID);
+            const hands = game.uarmg ? 'empty handed'
+                : humanoid ? 'bare handed' : 'not wielding anything';
+            await plineWithContinuation(`You are now ${hands}.`);
+        } else await plineWithContinuation('You are no longer using two weapons at once.');
+    }
     game.context.move = spentTime ? 1 : 0;
     return { item, spentTime, cancelled: false };
 }
