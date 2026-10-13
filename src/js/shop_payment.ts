@@ -92,6 +92,7 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
         }
     }
     if (!container && !await checkPurchaseFunds(resident, item, state)) return 'stop';
+    const unpaidContainer = container && item.object.unpaid;
     // Only buy_container() suppresses "an unpaid" for a grouped purchase.
     const name = paymentObjectDescription(item.object, item.quantity, { state, purchasingContents: container });
     const feedback = `You ${item.kind === 'used' ? 'paid for' : 'bought'} ${name}${
@@ -128,7 +129,17 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
         await plineWithContinuation(`"You need to remove any unpaid items from that ${simpleObjectName(item.object, state)} and buy them separately."`);
         return 'stop';
     }
-    if (container) await plineWithContinuation(feedback);
+    if (container) {
+        // buy_container() names the container with its prior ownership, then
+        // clears both flags after the purchase summary has finished.
+        if (unpaidContainer) {
+            item.object.unpaid = true;
+            item.object.no_charge = true;
+        }
+        await plineWithContinuation(feedback);
+        item.object.unpaid = false;
+        item.object.no_charge = false;
+    }
     return 'paid';
 }
 
