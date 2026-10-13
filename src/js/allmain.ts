@@ -1841,7 +1841,8 @@ async function resolveDeferredHeroItemTheft(
         || !!(weaponMask & W_ACCESSORY);
     const wasWorn = occupiedSlots.length > 0
         || object.worn || weaponMask !== 0;
-    const subject = canSpotMonster(monster)
+    const seenBeforeRemoval = canSpotMonster(monster);
+    let subject = seenBeforeRemoval
         ? monsterName(monster, { state: game, capitalized: true })
         : animal ? 'Something' : 'Someone';
     const wornArmor = occupiedSlots.some(slot => slot.startsWith('uarm'));
@@ -1934,6 +1935,10 @@ async function resolveDeferredHeroItemTheft(
         attack.theftResolved = true;
         return true;
     }
+    // steal() refreshes its cached name when removing worn gear restores
+    // sight. The later retreat message in mhitm_ad_sedu() names the thief too.
+    if (!seenBeforeRemoval && (wornArmor || wasAccessory) && canSpotMonster(monster))
+        subject = monsterName(monster, { state: game, capitalized: true });
     if (object.unpaid)
         removeObjectAndContentsFromBill(object, game, { resident: currentShopResident(game) });
     const stolenName = ownedObjectName(object, game, { capitalized: false });
@@ -1962,7 +1967,8 @@ async function resolveDeferredHeroItemTheft(
     if (heroHasInvoluntaryDelay(game)) return true;
     if (animal) {
         if (canSeeMonster(monster))
-            await plineWithContinuation(`${subject} tries to run away with ${stolenName}.`);
+            await plineWithContinuation(`${monsterName(monster, { state: game,
+                capitalized: true })} tries to run away with ${stolenName}.`);
     } else if (!await reportMonsterTeleportRestriction(monster, { state: game })) {
         const relocation = await randomMonsterRelocation(monster, {
             calls: action.calls, flags: RLOC_MSG,

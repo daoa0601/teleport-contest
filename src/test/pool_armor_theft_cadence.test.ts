@@ -64,4 +64,3 @@ void test('crawl mode shows five frames for each unfinished armor-theft turn', a
     assert.ok(game.inventory.includes(suit), 'The suit is not stolen yet');
     assert.equal(frames, 5, 'One helpless world turn has one crawl display delay');
 });
-

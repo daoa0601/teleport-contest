@@ -49,4 +49,3 @@ for (const recovery of ['life saving', 'explore refusal'] as const) {
             'Recovery publishes a single survival announcement');
     });
 }
-
