@@ -444,7 +444,7 @@ async function evaporatePoolAt(x: number, y: number, state: GameState, publish: 
     } else if (visible) {
         message = 'Some water evaporates.';
     }
-    if (message) await publish(message);
+    if (message) await publish(message, { noRepeat: true });
 
     if (location.typ === ROOM) {
         revealStrandedSwimmer(x, y, state);

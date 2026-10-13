@@ -378,4 +378,22 @@ for (const lifeSaving of [false, true]) {
         }
     });
 }
+void test('the quit summary uses singular counts for one gold piece, one move, and one hit point', async () => {
+    const { state } = exitRoom();
+    state.u.uhpmax = 1;
+    state.u.uhp = 1;
+    state.moves = 1;
+    setHeroGoldAmount(state, 1);
+    const input = resetInputState();
+    let summary = '';
+    input.beforeRead = () => {
+        const screen = screenText();
+        if (screen.includes('You quit in'))
+            summary = screen;
+    };
+    installPagerInput(input, { expected: /Goodbye ExitTester|You quit|identified|points?/i, limit: 8 });
+    await finishOrdinaryQuit();
+    assert.match(summary, /and 1 piece of gold, after 1 move\./);
+    assert.match(summary, /with a maximum of 1 hit point when you quit\./);
+});
 //# sourceMappingURL=exit_settlement.test.js.map

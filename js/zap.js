@@ -376,7 +376,7 @@ async function evaporatePoolAt(x, y, state, publish, heroCaused) {
         message = 'Some water evaporates.';
     }
     if (message)
-        await publish(message);
+        await publish(message, { noRepeat: true });
     if (location.typ === ROOM) {
         revealStrandedSwimmer(x, y, state);
         newsym(x, y);

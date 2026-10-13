@@ -19,6 +19,7 @@ import { ARROW, DART, OBJECT_NAMES } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { rn2, rnd } from './rng.js';
 import { monsterTrapVisibility } from './trap.js';
+import { newsym } from './display.js';
 import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 

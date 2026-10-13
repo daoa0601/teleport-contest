@@ -27,6 +27,7 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL } from '.
 import { hurtleMonster, staggerVerb, willMonsterHurtle } from './monster_hurtle.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterName } from './monster_name.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { LOADSTONE } from './object_data.js';
 import { isBluntWeapon, isFlimsyObject } from './object_properties.js';
@@ -198,7 +199,7 @@ export async function tryKnockback(attacker: PhysicalActor, defender: PhysicalAc
         const blow = random(2) ? 'blow' : 'strike';
         await publish(`${subject} ${heroAttacks ? 'knock' : 'knocks'} ${object} ${how} with a ${strength} ${blow}!`);
     } else if (heroAttacks && target) {
-        await publish(`You feel ${nameMonster(target)} be knocked ${how}!`);
+        await publish(`You feel ${monsterName(target, { state, augmentIt: true })} be knocked ${how}!`);
     }
 
     if (heroAttacks || movingHero) state.u.ustuck = null;

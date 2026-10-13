@@ -16,7 +16,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('burning away worn levitation boots lands the hero in the pit below', async () => {
     freshObjectRoom();
     requireFixtureGame(game);
-    game.level.traps.push({ tx: 10, ty: 10, ttyp: PIT, tseen: true, once: false, launch: { x: 0, y: 0 } });
+    game.level.traps.push({ tx: 10, ty: 10, ttyp: PIT, tseen: false, once: false, launch: { x: 0, y: 0 } });
     const boots = await addInventoryObject(LEVITATION_BOOTS, { oeroded: 3 });
     pushKeys('                ');
     wearHeroArmor(boots);

@@ -359,7 +359,7 @@ for (const category of ['v', 'g'] as const) {
         { ask: true, style: 'bold', attr: ATR_BOLD },
     ]) {
         void test(`${ask ? 'prompted' : 'automatic'} ${category === 'v' ? 'vanquished' : 'genocided'} disclosure ${ask ? 'omits' : 'uses'} ${style} class heading attributes`, async () => {
-            freshPlayableRoom();
+            freshPlayableRoom({ moves: 40 });
             requirePlayingGame(game);
             if (style === 'bold') game.iflags.menu_headings = { attr, color: NO_COLOR };
             recordSpecies('newt', 1, category === 'g' ? G_GENOD : 0);

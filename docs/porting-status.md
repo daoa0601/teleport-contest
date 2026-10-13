@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–7 (`6b76d8c`)
+## Parallel batches 1–8 (`a4802ab`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -177,33 +177,48 @@ death-description fields), **burden-fix** (a merge had restored a `bot()` call
 after batch pickup that native `pickup()` lacks, showing "Burdened" a screen
 early in nine sessions).
 
+Batch 8: **rng-monsters-2** (monster-action random-call tails; pet swap refusal
+while punished), **public-msgs** (public-set messages: bear trap, alternate
+weapon, sitting, `#whatis`), **public-rng** (steed speed and combat, bones
+ancestors, Lua doors, endgame arrival), **rng-singles** (corpse timers, ice
+fumbling, buried zombie timers), **messages-5** (repeat-hit and knockback
+messages, encyclopedia lookup, `#adjust`, unread prose paging before prompts),
+**batch7-leftovers** (first-turn death feedback before bones creation, which
+removed an extra `next_ident()` call in 46 pool sessions; undead rise before the
+bones prompt; trap admission; repeated-hit adjacency; hallucinated liquid names).
+Units now also target first differences in the 2,500-session holdout-dev pool
+outside the eval sample, keeping the sample as the clean check.
+
 ## Verification
 
-`npm test` at `6b76d8c`: **7,949/7,949**. Merges require a fully green suite;
+`npm test` at `a4802ab`: **8,175/8,175**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 7 after burden-fix).
+(no screen regression in batch 8).
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
-| Public | 22/44 | 8,597/11,405 | 620,282/792,838 | 0 |
-| Native eval sample | 258/300 | 47,115/50,586 | 3,456,102/3,616,669 | 0 |
+| Public | 29/44 | 9,662/11,405 | 694,075/792,838 | 0 |
+| Native eval sample | 276/300 | 49,245/50,586 | 3,577,331/3,616,669 | 0 |
+| Holdout-dev pool | 2,040/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch7-6b76d8c-{eval,public}` in the verify
-worktree (baseline `base-06d7e73`: 143/300; batch 6: 241/300). No verified
-random call was lost; the ledgers now hold 175 eval and 120 public functions.
-The state oracle finds 275 sessions matching C state throughout; two
-hidden-state sessions remain.
+Runs: `.cache/generalization/batch8-a4802ab-{eval,public}` and
+`triage-a4802ab` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 7: 258/300, pool 1,959/2,500 at `13fe4e1`). No verified random
+call was lost; the ledgers now hold 199 eval and 140 public functions. The
+state oracle finds 287 sessions matching C state throughout; one hidden-state
+session remains.
 
 ## Next work
 
-In flight: rng-monsters-2 (monster-action random-call tails, pet swap with
-ball and chain), messages-5 (message and status details), public-msgs and
-public-rng (first differences in the public set, which has not moved since
-batch 5), rng-singles (corpse timers, ice fumbling, a missing xorn). Coverage
-shows that `read.c`, `potion.c`, and `pray.c` are barely exercised; add
-scenario recipes there.
+In flight: pool-naming (pet, terrain, armor and monster names in messages),
+pool-events (vault guard timing, special-room entry, missing event messages),
+status-timing (status conditions shown at C's `bot()` points), pool-rng
+(`obj_resists`, `mintrap`, `gethungry`, `dog_move`, `distfleeck`, `hitmu`),
+public-msgs-2 (farlook mimic suffixes, wizard quit prompts, look help).
+`.cache/agents/pool-13fe4e1-firsts.tsv` lists pool first differences. Coverage
+shows that `read.c`, `potion.c`, and `pray.c` are barely exercised.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,
