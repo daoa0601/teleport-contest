@@ -65,7 +65,10 @@ import { M_SEEN_REFL } from './const.js';
 import { seenResistanceForDamage } from './monster_perception.js';
 import { watchDigging } from './digging_watch.js';
 
-import { heroIsHallucinating } from './senses.js';
+import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
+import { objectDescription } from './object_description.js';
+import { observeObjectForNaming } from './objnam.js';
+import { senseWithTelepathy } from './display.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { d, rn2, rnd, rnl } from './rng.js';
@@ -5554,30 +5557,27 @@ async function beginHeroAttackSlot(
         ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL ||
             MONSTER_SYMBOL[monster.mnum] === S_EEL);
     if (hiddenUnder) {
-        const object = state?.level?.objects?.[monster.mx]?.[monster.my]?.[0];
-        const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
-        const what =
-            blind && object && !object.dknown
-                ? 'something'
-                : IS_POOL(state?.level?.at?.(monster.mx, monster.my)?.typ ?? STONE) &&
-                    !state?.u?.underwater
-                  ? 'the water'
-                  : object?.name || object?.description || 'something';
-        if (blind) map_invisible(monster.mx, monster.my);
+        if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
         monster.mundetected = 0;
-        return {
-            kind: 'hero-attack',
-            roll,
-            threshold,
-            hit,
-            attackType,
-            damageType,
-            attackIndex,
-            deferredRevealUnder: true,
-            revealUnderMessage: `${
-                blind ? 'Something' : `The ${MONSTER_NAME[monster.mnum]}`
-            } was hidden under ${what}!`,
-        };
+        if (!senseWithTelepathy(monster) && !heroDetectsMonsters(state)) {
+            const object = state.level?.objects[monster.mx]?.[monster.my]?.[0];
+            if (object) {
+                const unknownCover = heroIsBlind(state) && !object.dknown;
+                observeObjectForNaming(object, { state });
+                const what = unknownCover ? 'something'
+                    : IS_POOL(state.level?.at(monster.mx, monster.my)?.typ ?? STONE)
+                        && !state.u.underwater ? 'the water'
+                        : objectDescription(object, { state });
+                const name = canonicalMonsterName(monster, { state, article: 'a', capitalized: true });
+                return {
+                    kind: 'hero-attack', roll, threshold, hit,
+                    attackType, damageType, attackIndex,
+                    deferredRevealUnder: true,
+                    revealUnderMessage: `${name === 'It' ? 'Something' : name} was hidden under ${what}!`,
+                };
+            }
+            newsym(monster.mx, monster.my);
+        }
     }
     let damage = 0;
     const poisonAttribute = poisonAttackAttribute(damageType);

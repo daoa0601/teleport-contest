@@ -66,7 +66,7 @@ function unblindTelepathyRange() {
     const storedRange = game.u?.unblind_telepat_range ?? -1;
     return Math.max(liveRange || -1, storedRange);
 }
-function senseWithTelepathy(monster) {
+export function senseWithTelepathy(monster) {
     if (!monster
         || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS))
         return false;
