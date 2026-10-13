@@ -1163,9 +1163,12 @@ export async function finishOrdinaryDeath(options) {
     await completeOrdinaryDeath(options);
 }
 async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVerb = 'died', deathCause = null, deathType = null, }) {
-    // end.c:ends[POISONING] is used for disclosure and the final summary.
-    if (deathType === POISONING)
+    // topten.c:formatkiller() uses "poisoned by" for the cause; only
+    // end.c:ends[POISONING] uses "were poisoned" in the final summary.
+    if (deathType === POISONING) {
+        deathCause ||= deathCauseRecord(killer).replace(/^killed by /, 'poisoned by ');
         deathVerb = 'were poisoned';
+    }
     game._deathKiller = killer;
     const taken = await settleGameExit('died');
     const showSummary = await discloseGame({ killer, deathVerb, deathCause, possessionAnswer, taken });
