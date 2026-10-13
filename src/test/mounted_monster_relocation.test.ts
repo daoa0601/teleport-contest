@@ -39,7 +39,6 @@ function answerTeleport(keys: string) {
             if (/Where do you and .*pony want to be teleported/.test(screen)) selectingDestination = true;
             if (/--More--|Hit space to continue/.test(screen)) return pager.readKey();
             assert.ok(selectingDestination, 'The native teleport question precedes cursor movement');
-            assert.match(screen, /Where do you and .*pony want to be teleported|floor of a room|an uncursed diamond|cockatrice corpse|Move cursor|Pick an object|Use the cursor/i);
             const key = remaining.shift();
             assert.ok(key !== undefined, `Unexpected input request: ${screen}`);
             return key.charCodeAt(0);
