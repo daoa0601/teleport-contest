@@ -11,9 +11,9 @@ import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
-import { ARROW as FIRST_OBJECT, EGG, CHEST, GOLD_PIECE, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, } from './object_data.js';
+import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
-import { definiteName, objectCombatName, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
+import { definiteName, objectCombatName, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isWeaponTool, objectUsesCharges } from './object_properties.js';
@@ -488,8 +488,9 @@ function itemActionEntries(item, state, repairGold) {
         entries.push({ key: 'P', text: 'Put this ring on' });
     if ([2, 13].includes(item.oclass) && item !== state.uquiver)
         entries.push({ key: 'Q', text: `Quiver this ${stack ? 'stack' : 'item'} for easy ${shoot ? 'shooting' : 'throwing'} with 'f'ire` });
-    if (item.oclass === 10)
-        entries.push({ key: 'r', text: 'Study this spellbook' });
+    const reading = itemReadingText(item, state);
+    if (reading)
+        entries.push({ key: 'r', text: reading });
     if ((item.owornmask ?? 0) & W_ACCESSORY) {
         const accessory = (item.owornmask ?? 0) & W_AMUL ? 'amulet'
             : (item.owornmask ?? 0) & W_RING ? 'ring'
@@ -528,8 +529,35 @@ function itemActionEntries(item, state, repairGold) {
             && isTwoWeaponObject(state.uswapwep) && state.uswapwep && !OBJECT_BIMANUAL[state.uswapwep.otyp]))
         entries.push({ key: 'X', text: `Toggle two-weapon combat ${state.u.twoweap ? 'off' : 'on'}` });
     if (encyclopediaEntries(singularObjectName(item, state), state).length)
-        entries.push({ key: '/', text: 'Look up information about this' });
+        entries.push({ key: '/', text: `Look up information about ${objectNameIsPlural(item, state) ? 'these' : 'this'}` });
     return entries;
+}
+// C iactions.c:item_reading_classification(). Reading advice depends on
+// what the hero knows about the type, rather than the object's charges.
+function itemReadingText(item, state) {
+    const known = !!OBJECT_INITIAL_KNOWN[item.otyp] || !!item.typeKnown
+        || !!state._knownObjectTypes?.has(item.otyp);
+    if (item.otyp === FORTUNE_COOKIE)
+        return 'Read the message inside this cookie';
+    if (item.otyp === OBJECT_NAMES.indexOf('T-shirt'))
+        return 'Read the slogan on the shirt';
+    if (item.otyp === ALCHEMY_SMOCK)
+        return 'Read the slogan on the apron';
+    if (item.otyp === HAWAIIAN_SHIRT)
+        return 'Look at the pattern on the shirt';
+    if (item.oclass === SCROLL_CLASS) {
+        const magic = item.dknown && (item.otyp !== SCR_BLANK_PAPER || !known)
+            ? ' to activate its magic' : '';
+        return `Read this scroll${magic}`;
+    }
+    if (item.oclass !== SPBOOK_CLASS)
+        return null;
+    const novel = item.otyp === SPE_NOVEL;
+    const blank = item.otyp === SPE_BLANK_PAPER && known;
+    const tome = item.otyp === SPE_BOOK_OF_THE_DEAD && known;
+    const verb = novel || blank ? 'Read' : tome ? 'Examine' : 'Study';
+    const noun = novel ? simpleObjectName(item, state) : tome ? 'tome' : 'spellbook';
+    return `${verb} this ${noun}`;
 }
 function inventoryActionKey(code) {
     const key = String.fromCharCode(code);
