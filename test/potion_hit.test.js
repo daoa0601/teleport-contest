@@ -1385,7 +1385,7 @@ void test('vapor respects breathless forms with and without eyes', async () => {
         publish: async (message) => eyeMessages.push(message),
     });
     assert.equal(received?.received, true);
-    assert.deepEqual(eyeMessages, ['Your eyes sting!']);
+    assert.deepEqual(eyeMessages, ['Your optic nerves sting!']);
     game.u.umonnum = game.u.umonster;
     game.ublindf = await knownObject(TOWEL, { spe: 1 });
     const shieldedMessages = [];

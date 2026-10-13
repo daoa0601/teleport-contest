@@ -7,6 +7,8 @@ import { makeConfused } from './hero_mental_status.js';
 import { makeBlinded } from './sight_change.js';
 import { makeDeaf } from './hero_hearing.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
+import { heroEyeCount, heroEyeName } from './body_parts.js';
+import { makePlural, verbForSubject } from './object_grammar.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { A_CON, A_DEX, A_WIS, M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd, } from './const.js';
@@ -336,10 +338,29 @@ async function finishPotionVaporKnowledge(state, potion, identifiesType) {
     }
     return await tryCallObjectType(potion, state);
 }
+function cursedVaporEyeMessage(state) {
+    const eye = heroEyeName(state);
+    const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+    return `Your ${eyes} ${verbForSubject(eyes, 'sting')}!`;
+}
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Its final knowledge transaction either identifies an unambiguous effect or
 // asks for a type-wide call name before the caller frees the potion identity.
-export async function applySupportedPotionVapor({ state = game, potion, publish = plineWithContinuation, monsterCanSeeHero = null, }) {
+export async function applySupportedPotionVapor(options) {
+    const potion = options.potion;
+    const inUse = potion.in_use;
+    potion.in_use = true;
+    try {
+        return await applyPotionVaporEffect(options);
+    }
+    finally {
+        if (inUse === undefined)
+            delete potion.in_use;
+        else
+            potion.in_use = inUse;
+    }
+}
+async function applyPotionVaporEffect({ state = game, potion, publish = plineWithContinuation, monsterCanSeeHero = null, }) {
     if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp))
         return null;
     requirePlayingGame(state);
@@ -364,7 +385,7 @@ export async function applySupportedPotionVapor({ state = game, potion, publish 
     if (ABILITY_POTION_TYPES.has(potion.otyp)) {
         if (potion.cursed) {
             await publish(profile.breathless
-                ? 'Your eyes sting!'
+                ? cursedVaporEyeMessage(state)
                 : 'Ulch!  That potion smells terrible!');
         }
         else {

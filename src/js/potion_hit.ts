@@ -18,6 +18,8 @@ import { makeConfused } from './hero_mental_status.js';
 import { makeBlinded } from './sight_change.js';
 import { makeDeaf } from './hero_hearing.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
+import { heroEyeCount, heroEyeName } from './body_parts.js';
+import { makePlural, verbForSubject } from './object_grammar.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import {
@@ -536,10 +538,28 @@ async function finishPotionVaporKnowledge(state: GameState, potion: GameObject, 
     return await tryCallObjectType(potion, state);
 }
 
+function cursedVaporEyeMessage(state: GameState): string {
+    const eye = heroEyeName(state);
+    const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+    return `Your ${eyes} ${verbForSubject(eyes, 'sting')}!`;
+}
+
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Its final knowledge transaction either identifies an unambiguous effect or
 // asks for a type-wide call name before the caller frees the potion identity.
-export async function applySupportedPotionVapor({
+export async function applySupportedPotionVapor(options: PotionVaporOptions): Promise<PotionVaporResult | null> {
+    const potion = options.potion;
+    const inUse = potion.in_use;
+    potion.in_use = true;
+    try {
+        return await applyPotionVaporEffect(options);
+    } finally {
+        if (inUse === undefined) delete potion.in_use;
+        else potion.in_use = inUse;
+    }
+}
+
+async function applyPotionVaporEffect({
     state = game,
     potion,
     publish = plineWithContinuation,
@@ -571,7 +591,7 @@ export async function applySupportedPotionVapor({
     if (ABILITY_POTION_TYPES.has(potion.otyp)) {
         if (potion.cursed) {
             await publish(profile.breathless
-                ? 'Your eyes sting!'
+                ? cursedVaporEyeMessage(state)
                 : 'Ulch!  That potion smells terrible!');
         } else {
             abilityStart = restoreBaseAttributes(state, potion);
