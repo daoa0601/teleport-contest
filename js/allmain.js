@@ -7,7 +7,7 @@ import { finishMonsterHideUnder } from './monster_hiding.js';
 import { heroIsHallucinating } from './senses.js';
 import { mcalcmove } from './monster_speed.js';
 import { makeBlinded } from './sight_change.js';
-import { makeHallucinated } from './hero_mental_status.js';
+import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { advanceSpellProtection } from './spell_misc_effects.js';
 import { advanceDisplacementTimeout } from './hero_displacement.js';
@@ -1036,6 +1036,7 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({ sourceTurn, moveA
                 };
             }
             game.u.stunnedTurns = 0;
+            game.context.botl = true;
             refreshProperty('stunned', game);
             appendTurnMessage('You feel a bit steadier now.');
         }
@@ -1063,6 +1064,7 @@ function finishInitialTurnMaintenanceAfterStun({ sourceTurn, moveAmount, deferAm
                 };
             }
             game.u.confusionTurns = 0;
+            game.context.botl = true;
             refreshProperty('confusion', game);
             appendTurnMessage('You feel less confused now.');
         }
@@ -1312,15 +1314,14 @@ async function advanceWorldTurn() {
     if (game.program_state?.gameover)
         return;
     while (phase.kind === 'timeout-message') {
-        await plineWithContinuation(phase.message);
         if (phase.timeoutKind === 'stun') {
-            game.u.stunnedTurns = 0;
-            refreshProperty('stunned', game);
+            await makeStunned(0);
+            await stopHeroOccupation(game);
             phase = await finishInitialTurnMaintenanceAfterStun(phase);
         }
         else {
-            game.u.confusionTurns = 0;
-            refreshProperty('confusion', game);
+            await makeConfused(0);
+            await stopHeroOccupation(game);
             phase = await finishInitialTurnMaintenanceAfterConfusion(phase);
         }
     }

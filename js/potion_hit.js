@@ -3,6 +3,7 @@
 import { requirePlayingGame } from './gstate.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroIsUnaware } from './hero_sleep.js';
+import { makeConfused } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
@@ -199,10 +200,14 @@ function healingCuresBlindness(potion) {
 }
 function healHeroOnePoint(state) {
     const hero = state.u;
-    if (Upolyd(hero) && (hero.mh ?? 0) < (hero.mhmax ?? 0))
+    if (Upolyd(hero) && hero.mh < hero.mhmax) {
         hero.mh++;
-    if ((hero.uhp ?? 0) < (hero.uhpmax ?? 0))
+        state.context.botl = true;
+    }
+    if (hero.uhp < hero.uhpmax) {
         hero.uhp++;
+        state.context.botl = true;
+    }
 }
 function restoreBaseAttributes(state, potion) {
     const base = state.u?.acurr?.a;
@@ -217,6 +222,7 @@ function restoreBaseAttributes(state, potion) {
             if (current === undefined)
                 throw new Error(`Missing hero attribute ${index}`);
             base[index] = current + 1;
+            state.context.botl = true;
             if (!potion.blessed)
                 break;
         }
@@ -362,6 +368,8 @@ export async function applySupportedPotionVapor({ state = game, potion, publish 
         for (let point = 0; point < points; point++)
             healHeroOnePoint(state);
         if (healingCuresBlindness(potion)) {
+            if (state.blind || state.deaf)
+                state.context.botl = true;
             state.u.blindTurns = 0;
             state.u.deafTurns = 0;
             syncBlindness(state);
@@ -376,6 +384,7 @@ export async function applySupportedPotionVapor({ state = game, potion, publish 
             hero.mh = (hero.mh ?? 0) <= 5 ? 1 : hero.mh - 5;
         else
             hero.uhp = (hero.uhp ?? 0) <= 5 ? 1 : hero.uhp - 5;
+        state.context.botl = true;
         await exerciseAttribute(A_CON, false, state);
     }
     else if (potion.otyp === POT_HALLUCINATION) {
@@ -386,7 +395,9 @@ export async function applySupportedPotionVapor({ state = game, potion, publish 
         if ((hero.confusionTurns ?? 0) <= 0)
             await publish('You feel somewhat dizzy.');
         confusionDuration = rnd(5);
-        hero.confusionTurns = Math.min(TIMEOUT, Math.max(0, hero.confusionTurns ?? 0) + confusionDuration);
+        await makeConfused((hero.confusionTurns ?? 0) + confusionDuration, {
+            state, talk: false, publish,
+        });
     }
     else if (HELPLESS_POTION_TYPES.has(potion.otyp)) {
         identifiesType = true;
