@@ -281,6 +281,18 @@ async function rejectTightHeroDiagonal(dx, dy) {
     game.context.move = 0;
     return true;
 }
+// C test_move(DO_MOVE): yielding pets still require a legal hero step.
+async function rejectHeroDiagonalDoorway(dx, dy, destination) {
+    if (!dx || !dy || heroPassesWalls(game)
+        || !blocksDiagonalDoor(game.level?.at(game.u.ux, game.u.uy), destination))
+        return false;
+    const entering = blocksDiagonalDoor(null, destination);
+    if (game.flags.mention_walls || entering && (game.u.uinwater || game.underwater)) {
+        await pline(`You can't move diagonally ${entering ? 'into' : 'out of'} an intact doorway.`);
+    }
+    game.context.move = 0;
+    return true;
+}
 // C test_move(TEST_MOVE): confirmation tests obstacles without performing
 // auto-open, boulder pushing, or the hero's eventual movement.
 function heroCanConfirmStep(x, y) {
@@ -6841,6 +6853,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 return true;
             if (!await heroCanEnterIronBars(newx, newy, game))
                 return false;
+            if (await rejectHeroDiagonalDoorway(dx, dy, loc))
+                return false;
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
                 if (ballChainMove.blockedMessage)
@@ -7024,10 +7038,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
     // C ref: hack.c test_move().  Once the closed-door/autoopen path has had
     // its opportunity, intact open and doorless doorways only allow
     // orthogonal entry/exit.
-    if (dx && dy && !heroPassesWalls(game) && blocksDiagonalDoor(game.level?.at(u.ux, u.uy), loc)) {
-        game.context.move = 0;
+    if (await rejectHeroDiagonalDoorway(dx, dy, loc))
         return false;
-    }
     if (await rejectTightHeroDiagonal(dx, dy))
         return false;
     const boulder = heroPassesWalls(game) && !game.level.flags.sokoban_rules ? null
