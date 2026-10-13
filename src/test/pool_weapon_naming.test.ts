@@ -47,7 +47,7 @@ for (const [identified, name] of [[true, 'orcish dagger'], [false, 'crude dagger
 
         const spentTurn = await wieldMonsterWeapon(goblin, game, { publish: text => { messages.push(text); } });
 
-        assert.equal(messages.find(text => text.includes('is welded')), `The ${name} is welded to his hand!`);
+        assert.equal(messages.find(text => text.includes('is welded')), `The goblin's ${name} is welded to his hand!`);
         assert.equal(welded.dknown, true);
         assert.equal(welded.bknown, true);
         assert.equal(goblin.mw, welded);

@@ -8,7 +8,7 @@ import {
     W_ARMG, W_ARMS, W_WEP,
 } from './const.js';
 import {
-    objectName, observeObjectForNaming, observeDistantObjectForNaming,
+    objectName, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName,
 } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
@@ -323,7 +323,7 @@ export async function wieldMonsterWeapon(monster: Monster, state: GameState = ga
                 const description = inventoryItemDescription(weapon);
                 await publish(`${monsterSentenceSubject(monster)} tries to wield ${description}.`);
                 observeObjectForNaming(previous, { state });
-                await publish(`${namedWeapon(previous, state)} ${welded}!`);
+                await publish(`${ownedObjectName(previous, state)} ${welded}!`);
             }
             previous.bknown = true;
         }
