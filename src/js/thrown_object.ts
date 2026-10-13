@@ -486,7 +486,7 @@ export async function captureThrownObjectFlight(
                     newsym(transientCell.x, transientCell.y);
                 show_glyph_cell(
                     cell.x, cell.y, glyph.ch, glyph.color,
-                    glyph.decgfx, glyph.attr,
+                    glyph.decgfx, glyph.attr, glyph,
                 );
                 transientCell = cell;
                 transientCursor = lastDirtyMapCursor()

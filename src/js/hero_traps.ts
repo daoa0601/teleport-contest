@@ -33,7 +33,7 @@ import type { Monster } from './monster_types.js';
 import { isRoom } from './map_types.js';
 import type { Trap, Position, Room } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import type { GlyphAppearance } from './display.js';
+import type { DisplayGlyph } from './display.js';
 import type { HeroHurtleOptions } from './hero_hurtle.js';
 import { buriedBallNear, buriedBallToPunishment } from './buried_object.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -943,12 +943,12 @@ async function triggerSleepingGasTrap(trap: Trap) {
 }
 
 export async function animateRollingBoulderCell(
-    boulder: GameObject, glyph: GlyphAppearance, x: number, y: number, previous: Position | null,
+    boulder: GameObject, glyph: DisplayGlyph, x: number, y: number, previous: Position | null,
 ): Promise<Position | null> {
     if (previous) newsym(previous.x, previous.y);
     if (!cansee(x, y)) return null;
 
-    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr);
+    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr, glyph);
     // Keep the animation cursor after the last map cell the display changed.
     const frameCursor: [number, number] = previous
         ? lastDirtyMapCursor() ?? [x, y + 1]

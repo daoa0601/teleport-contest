@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { moveloop_core, restoregamePreamble } from '../js/allmain.js';
+import { ensureQuestStatus } from '../js/quest.js';
+import { convertQuestLine } from '../js/quest_pager.js';
 import { removeHeroArmor, wearHeroArmor } from '../js/armor.js';
 import { DUST } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
@@ -198,6 +200,23 @@ void test('restore skips initial pickup and preserves movement, pursuit track, a
     assert.equal(game._encumbranceLevel, 0);
     assert.equal(game.context.move, 0);
 });
+
+for (const gender of [0, 1]) {
+    void test(`restore preserves the ${gender === 0 ? 'male' : 'female'} Wizard nemesis pronouns`, async () => {
+        freshPlayableRoom({ role: 'wizard', flags: { verbose: true } });
+        preambleInput();
+        const quest = ensureQuestStatus();
+        quest.nemgend = gender;
+        quest.met_nemesis = true;
+
+        await restoregamePreamble();
+
+        assert.equal(quest.nemgend, gender);
+        assert.equal(quest.met_nemesis, true);
+        assert.equal(convertQuestLine('%nH guards %nj lair.'),
+            gender === 0 ? 'He guards his lair.' : 'She guards her lair.');
+    });
+}
 
 for (const restoring of [false, true]) {
     void test(`${restoring ? 'restored' : 'new'} carried load is reported before command input`, async () => {

@@ -21,7 +21,7 @@ import {
 } from './monster_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { objectMaterial } from './object_material.js';
-import { rn2, rnd } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -186,11 +186,7 @@ export function rollPhysicalWeaponDamage(
         rollOne = rnd,
         hatesBlessings = monsterHatesBlessings(monster),
         hatesSilver = monsterHatesSilver(monster),
-        rollDice = (count, sides) => {
-            let total = 0;
-            for (let die = 0; die < count; die++) total += rollOne(sides);
-            return total;
-        },
+        rollDice = d,
     }: PhysicalWeaponDamageOptions = {},
 ): number {
     if (object.otyp === CREAM_PIE) return 0;

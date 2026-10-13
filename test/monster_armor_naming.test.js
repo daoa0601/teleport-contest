@@ -12,6 +12,7 @@ import { initRng } from '../js/rng.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { requireScreenRow } from './support/screen.js';
 for (const [role, x, hallucinating, name] of [
     ['valkyrie', 14, false, 'a pair of boots called Work'],
     ['valkyrie', 11, false, 'a pair of shoes called Work'],
@@ -74,7 +75,11 @@ void test('seeing an artifact pickup does not identify the artifact', async () =
     const input = freshTurnRoom({ left: 10, right: 16, top: 10, bottom: 10 });
     requirePlayingGame(game);
     const messages = [];
-    input.beforeRead = () => { messages.push((game._screen_output.split('\n')[0] ?? '')); };
+    // Wrapped tty messages reach the terminal grid before the next map flush.
+    input.beforeRead = () => {
+        messages.push([0, 1].map(row => requireScreenRow(row)
+            .map(cell => cell.ch).join('').trimEnd()).join(' '));
+    };
     const monster = await createMonsterAt('archeologist', 15, 10, NO_MINVENT);
     monster.mpeaceful = 0;
     monster.msleeping = 0;

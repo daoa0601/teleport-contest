@@ -10,6 +10,7 @@ import { japaneseItemName, wishedObjectPresentation } from './objnam.js';
 import { setHeroSpecies } from './hero_species.js';
 import { seeMonsterCloseup } from './monster_observation.js';
 import { setMonsterGivenName } from './monster_given_name.js';
+import { setMonsterMalign } from './monster_alignment.js';
 import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
 import { mkobj, mksobj } from './mklev.js';
@@ -628,6 +629,7 @@ export async function makedog() {
         female,
         mtame: 10,
         mpeaceful: 1,
+        malign: 0,
         mcanmove: 1,
         mcansee: 1,
         mblinded: 0,
@@ -668,6 +670,8 @@ export async function makedog() {
         if (name)
             setMonsterGivenName(pet, name);
     }
+    // dog.c:initedog() assigns kill credit after making the pet peaceful.
+    setMonsterMalign(pet, g);
     if (!g.u.uconduct)
         g.u.uconduct = {};
     g.u.uconduct.pets = (g.u.uconduct.pets || 0) + 1;

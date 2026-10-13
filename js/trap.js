@@ -17,6 +17,8 @@ import { splitMonster } from './monster_clone.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, ICE_BOX, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES, OILSKIN_SACK, POT_ACID, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, TOWEL, } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
+import { objectMaterial } from './object_material.js';
+import { impossible } from './diagnostics.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2 } from './rng.js';
 import { canSeeMonster } from './display.js';
@@ -32,7 +34,7 @@ const FIRE_RESISTANT_OBJECTS = new Set([
 function lavaCanBurnObject(object, random) {
     if (!object || object.in_use || object.oerodeproof)
         return false;
-    const organic = (OBJECT_MATERIAL[object.otyp] ?? 0) <= 8;
+    const organic = objectMaterial(object) <= 8;
     if (!organic && object.oclass !== POTION_CLASS)
         return false;
     if (FIRE_RESISTANT_OBJECTS.has(object.otyp)
@@ -40,10 +42,33 @@ function lavaCanBurnObject(object, random) {
         return false;
     return !objectResistsDestruction(object, 0, 0, random);
 }
-export async function destroyLavaInventory({ state = game, publish = async () => { }, random = rn2, showMessages = false, previouslyAnnounced = 0, } = {}) {
+// C trap.c:lava_effects() flags all doomed items before any death message.
+export async function markLavaInventoryForDestruction(state, random) {
+    let protectedObject = null;
+    for (const object of state.inventory) {
+        if (object.in_use) {
+            if (!protectedObject) {
+                protectedObject = object;
+                object.in_use = false;
+            }
+            else {
+                await impossible(`lava_effects: object #${object.o_id} is already in use; so is #${protectedObject.o_id}.`);
+            }
+            continue;
+        }
+        if (lavaCanBurnObject(object, random))
+            object.in_use = true;
+    }
+    return protectedObject;
+}
+export async function destroyLavaInventory({ state = game, publish = async () => { }, protectedObject, showMessages = false, previouslyAnnounced = 0, }) {
     let named = previouslyAnnounced;
     let unnamed = 0;
     for (const object of [...(state.inventory || [])]) {
+        if (object === protectedObject) {
+            object.in_use = true;
+            continue;
+        }
         if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
             if (showMessages && !state.blind
                 && !((state.u.blindTurns ?? 0) > 0)) {
@@ -52,7 +77,7 @@ export async function destroyLavaInventory({ state = game, publish = async () =>
             }
             continue;
         }
-        if (!lavaCanBurnObject(object, random))
+        if (!object.in_use)
             continue;
         const wasWorn = !!object.worn || !!object.owornmask;
         if (showMessages && wasWorn) {
