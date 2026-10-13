@@ -1013,10 +1013,10 @@ export function transientMonsterGlyph(monster: Pick<Monster, 'mnum'> & Partial<P
 // transient glyph and does not mutate hero memory or object discovery state.
 // Hallucination consumes the display RNG once when the flight starts; callers
 // reuse the returned glyph for every animation cell.
-export function transientObjectGlyph(object: ObjectGlyphSource): GlyphAppearance {
+export function transientObjectGlyph(object: ObjectGlyphSource): DisplayGlyph {
     const glyph = objectGlyph(object);
     return {
-        ch: glyph.ch,
+        ...glyph,
         // tty does not emit explicit black/ordinary-gray foreground unless
         // dark-gray is enabled; those object glyphs use the default color.
         color: glyph.color === CLR_BLACK || glyph.color === CLR_GRAY

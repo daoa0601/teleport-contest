@@ -19,7 +19,7 @@ export function monsterProjectileDisplay(object: GameObject, state: PlayingGameS
     let first = true;
 
     function drawObject(position: Position): void {
-        show_glyph_cell(position.x, position.y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr);
+        show_glyph_cell(position.x, position.y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr, glyph);
     }
 
     async function flushFrame(): Promise<void> {

@@ -341,7 +341,7 @@ export async function captureThrownObjectFlight(object, flightPath, state = game
             if (cansee(cell.x, cell.y)) {
                 if (transientCell)
                     newsym(transientCell.x, transientCell.y);
-                show_glyph_cell(cell.x, cell.y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr);
+                show_glyph_cell(cell.x, cell.y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr, glyph);
                 transientCell = cell;
                 transientCursor = lastDirtyMapCursor()
                     ?? [cell.x, cell.y + 1];

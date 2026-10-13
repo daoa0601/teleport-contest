@@ -965,7 +965,7 @@ export function transientMonsterGlyph(monster) {
 export function transientObjectGlyph(object) {
     const glyph = objectGlyph(object);
     return {
-        ch: glyph.ch,
+        ...glyph,
         // tty does not emit explicit black/ordinary-gray foreground unless
         // dark-gray is enabled; those object glyphs use the default color.
         color: glyph.color === CLR_BLACK || glyph.color === CLR_GRAY

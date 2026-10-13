@@ -12,7 +12,7 @@ export function monsterProjectileDisplay(object, state, { tethered = false, } = 
     const trail = [];
     let first = true;
     function drawObject(position) {
-        show_glyph_cell(position.x, position.y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr);
+        show_glyph_cell(position.x, position.y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr, glyph);
     }
     async function flushFrame() {
         const cursor = lastDirtyMapCursor();
