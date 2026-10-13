@@ -20,7 +20,6 @@ import {
 import { setSlipperyHands } from './towel.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
 import { surfaceName } from './terrain_name.js';
-import { magicNegation } from './magic_negation.js';
 import { heroFormClings } from './polyself.js';
 import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';
 import { removeWornHeroItem } from './hero_equipment.js';
@@ -806,7 +805,6 @@ export function projectedArmorClass(state: GameState = game) {
 
 export function findArmorClass(state: GameState = game) {
     const hero = state.u;
-    hero._magicNegation = magicNegation(hero, state);
     const armorClass = projectedArmorClass(state);
     if (hero.uac !== armorClass) {
         hero.uac = armorClass;

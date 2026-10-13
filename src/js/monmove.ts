@@ -403,7 +403,7 @@ import { resolveMonsterCombatGaze } from './monster_combat_gaze.js';
 import { resolveMonsterCombatEngulf } from './monster_combat_engulf.js';
 import { tryMonsterPuddingSplit } from './monster_pudding_split.js';
 import { erodeAttackingWeapon } from './object_erosion.js';
-import { specialAttackNegated } from './magic_negation.js';
+import { magicNegation, specialAttackNegated } from './magic_negation.js';
 import {
     poisonAttackAttribute,
     poisonHeroFromMonster,
@@ -5832,7 +5832,7 @@ async function beginHeroAttackSlot(
         // draws even though an electric bite cannot knock the hero back.
         damage = rollDice(1, 1);
         calls.push('d(1,1)');
-        const armorProtection = state?.u?._magicNegation ?? 0;
+        const armorProtection = magicNegation(state.u, state);
         const negated = recordRandom(random, calls, 10) < 3 * armorProtection;
         if (!negated) {
             recordRandom(random, calls, 20);
@@ -5979,7 +5979,7 @@ async function beginHeroAttackSlot(
     } else if (hit && damageType === AD_STCK) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
-        const armorProtection = state?.u?._magicNegation ?? 0;
+        const armorProtection = magicNegation(state.u, state);
         const negated = !!monster.mcan || recordRandom(random, calls, 10) < 3 * armorProtection;
         return {
             kind: 'hero-attack',
@@ -6181,7 +6181,7 @@ async function beginHeroAttackSlot(
     } else if (hit && damageType === AD_SLIM) {
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
-        const armorProtection = state?.u?._magicNegation ?? 0;
+        const armorProtection = magicNegation(state.u, state);
         const cancelled = !!monster.mcan;
         const negated = cancelled || recordRandom(random, calls, 10) < 3 * armorProtection;
         return {
@@ -6290,7 +6290,7 @@ async function beginHeroAttackSlot(
         // earlier hit line through tty.
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
-        const armorProtection = state?.u?._magicNegation ?? 0;
+        const armorProtection = magicNegation(state.u, state);
         const negated = !!monster.mcan || recordRandom(random, calls, 10) < 3 * armorProtection;
         let drainedObject = null;
         if (!negated) {
@@ -6496,7 +6496,7 @@ export function resumeDeferredHeroColdSpecial(
 ) {
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredColdNegation) return action;
-    const armorProtection = state?.u?._magicNegation ?? 0;
+    const armorProtection = magicNegation(state.u, state);
     const cancelled = !!action.monster?.mcan;
     attack.coldOriginalDamage = attack.damage ?? 0;
     attack.negated = cancelled || recordRandom(random, action.calls, 10) < 3 * armorProtection;
@@ -6529,7 +6529,7 @@ export function resumeDeferredHeroFireSpecial(
 ) {
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredFireNegation) return action;
-    const armorProtection = state?.u?._magicNegation ?? 0;
+    const armorProtection = magicNegation(state.u, state);
     const cancelled = !!action.monster?.mcan;
     attack.fireOriginalDamage = attack.damage ?? 0;
     attack.negated = cancelled || recordRandom(random, action.calls, 10) < 3 * armorProtection;
@@ -6564,7 +6564,7 @@ export function resumeDeferredHeroElectricSpecial(
 ) {
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredElectricNegation) return action;
-    const armorProtection = state?.u?._magicNegation ?? 0;
+    const armorProtection = magicNegation(state.u, state);
     const cancelled = !!action.monster?.mcan;
     attack.electricOriginalDamage = attack.damage ?? 0;
     attack.negated = cancelled || recordRandom(random, action.calls, 10) < 3 * armorProtection;
