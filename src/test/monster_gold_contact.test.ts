@@ -31,4 +31,5 @@ void test('a leprechaun steals a small purse, keeps the gold, and flees without 
     assert.equal(leprechaun.mflee, 1);
     assert.equal(attack.damage, 2);
     assert.ok(messages.includes('Your purse feels lighter.'));
+    assert.ok(messages.includes('A mysterious force prevents the leprechaun from teleporting!'));
 });

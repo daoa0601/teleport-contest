@@ -11,7 +11,7 @@ import { makeMonsterFlee } from './monster_flee.js';
 import { monsterName } from './monster_name.js';
 import type { Monster } from './monster_types.js';
 import { isWeaponTool } from './object_properties.js';
-import { monsterTeleportRestricted } from './teleport_rules.js';
+import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { heroIsDeaf } from './senses.js';
 import { touchPetrifies } from './stoning.js';
 import { randomMonsterRelocation } from './teleport.js';
@@ -71,7 +71,7 @@ export async function resolveNurseContact(
         return;
     }
     if (random(33) === 0) {
-        if (!monsterTeleportRestricted(monster, state))
+        if (!await reportMonsterTeleportRestriction(monster, { state, publish }))
             await randomMonsterRelocation(monster, { state, random, rollOne, flags: RLOC_MSG });
         await makeMonsterFlee(monster, { state, turns: rollDice(3, 6), first: true,
             announce: false, publish, random, rollOne });

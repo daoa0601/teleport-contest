@@ -1,6 +1,6 @@
 // C steal.c:stealgold(), somegold(), and uhitm.c:mhitm_ad_sgld().
 import { heroFootName, monsterFootName } from './body_parts.js';
-import { RLOC_MSG } from './const.js';
+import { LARGEST_INT, RLOC_MSG } from './const.js';
 import { newsym, type MessagePublisher } from './display.js';
 import type { PlayingGameState } from './game_state.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
@@ -13,7 +13,7 @@ import type { Monster } from './monster_types.js';
 import { GOLD_PIECE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { unlinkObject } from './object_location.js';
-import { monsterTeleportRestricted } from './teleport_rules.js';
+import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { randomMonsterRelocation } from './teleport.js';
 import type { rn2, rnd } from './rng.js';
 
@@ -47,7 +47,7 @@ export async function stealHeroGold(
 }
 
 function someGold(amount: number, random: typeof rn2): number {
-    const gold = Math.min(amount, 0x7fff);
+    const gold = Math.min(amount, LARGEST_INT);
     if (gold < 50) return gold;
     const minimum = gold < 100 ? 25 : gold < 500 ? 50 : gold < 1000 ? 100
         : gold < 5000 ? 500 : gold < 10000 ? 1000 : 5000;
@@ -58,7 +58,7 @@ async function fleeWithGold(
     monster: Monster, state: PlayingGameState, publish: MessagePublisher,
     random: typeof rn2, rollOne: typeof rnd,
 ): Promise<void> {
-    if (!monsterTeleportRestricted(monster, state))
+    if (!await reportMonsterTeleportRestriction(monster, { state, publish }))
         await randomMonsterRelocation(monster, { state, random, rollOne, flags: RLOC_MSG });
     await makeMonsterFlee(monster, { state, announce: false, publish, random, rollOne });
 }
