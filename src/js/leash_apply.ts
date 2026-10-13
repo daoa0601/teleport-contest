@@ -8,7 +8,7 @@ import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from '
 import { MONSTER_FLAGS1, MONSTER_SOUND } from './monster_data.js';
 import { monsterCanBeLeashed, releaseMonsterLeash } from './monster_leash.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterLeashName, monsterName, possessiveName } from './monster_name.js';
 import { LEASH } from './object_data.js';
 import { promptDirection } from './tty_prompts.js';
 import { rn2, rnd } from './rng.js';
@@ -56,7 +56,7 @@ export async function useLeash(leash: GameObject): Promise<boolean> {
 async function useLeashOnMonster(leash: GameObject, monster: Monster, x: number, y: number, spotted: boolean) {
     const level = requireGameLevel();
     const name = () => monsterName(monster, { capitalized: true });
-    const petName = () => monsterName(monster, { article: 'none' });
+    const petName = () => monsterLeashName(monster);
     if (!spotted && level.requireAt(x, y).remembered_glyph?.kind !== 'invisible') {
         await pline(`You fail to ${leash.leashmon ? 'un' : ''}leash something.`);
         map_invisible(x, y);
