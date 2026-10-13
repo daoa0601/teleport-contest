@@ -5562,12 +5562,16 @@ async function beginHeroAttackSlot(
         if (!senseWithTelepathy(monster) && !heroDetectsMonsters(state)) {
             const object = state.level?.objects[monster.mx]?.[monster.my]?.[0];
             if (object) {
-                const unknownCover = heroIsBlind(state) && !object.dknown;
-                observeObjectForNaming(object, { state });
-                const what = unknownCover ? 'something'
-                    : IS_POOL(state.level?.at(monster.mx, monster.my)?.typ ?? STONE)
-                        && !state.u.underwater ? 'the water'
-                        : objectDescription(object, { state });
+                let what: string;
+                if (heroIsBlind(state) && !object.dknown) {
+                    what = 'something';
+                } else if (IS_POOL(state.level?.at(monster.mx, monster.my)?.typ ?? STONE)
+                    && !state.u.underwater) {
+                    what = 'the water';
+                } else {
+                    observeObjectForNaming(object, { state });
+                    what = objectDescription(object, { state });
+                }
                 const name = canonicalMonsterName(monster, { state, article: 'a', capitalized: true });
                 return {
                     kind: 'hero-attack', roll, threshold, hit,

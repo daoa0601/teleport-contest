@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/allmain.js';
-import { NO_MINVENT } from '../js/const.js';
+import { NO_MINVENT, POOL } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { hideMonsterUnder } from '../js/monster_hiding.js';
@@ -33,4 +33,31 @@ void test('a concealed attacker reveals itself and the object covering it', asyn
     assert.match(reveal, /^A pit viper was hidden under a towel!/);
     assert.equal(snake.mundetected, 0);
 });
+for (const underwater of [false, true]) {
+    void test(`an attacker reveals ${underwater ? 'its covering object to an underwater hero' : 'the water without identifying the submerged object'}`, async () => {
+        const level = freshObjectRoom({ hero: { underwater } });
+        requirePlayingGame(game);
+        if (underwater)
+            level.requireAt(10, 10).typ = POOL;
+        level.requireAt(11, 10).typ = POOL;
+        const eel = await createMonsterAt('giant eel', 11, 10, NO_MINVENT);
+        const towel = await floorObject(TOWEL, 11, 10, { dknown: false, bknown: false });
+        eel.mundetected = 1;
+        eel.mpeaceful = 0;
+        eel.mux = game.u.ux;
+        eel.muy = game.u.uy;
+        const input = resetInputState();
+        const attack = performMonsterHeroAttack(eel, game, {
+            random: () => 0, rollOne: () => 1, rollDice: () => 0,
+        });
+        await input.waitUntilBlocked();
+        const reveal = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
+        input.feed(' ');
+        installPagerInput(input, { expected: /giant eel|Something/, limit: 5 });
+        await attack;
+        assert.match(reveal, underwater ? /was hidden under a towel!/ : /was hidden under the water!/);
+        assert.equal(towel.dknown, underwater, 'appearance is learned only when the object is named');
+        assert.equal(eel.mundetected, 0);
+    });
+}
 //# sourceMappingURL=hidden_attacker_message.test.js.map
