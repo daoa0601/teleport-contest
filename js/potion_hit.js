@@ -828,12 +828,12 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     if (potion.otyp === POT_SICKNESS && monster.mnum !== PM_PESTILENCE) {
         const oldHp = monster.mhp;
         if (sicknessCannotHarmMonster(monster)) {
-            if (targetVisible)
+            if (targetSpotted)
                 await publish(`${sentenceSubject(monster)} looks unharmed.`);
         }
         else if (monster.mhp > 2) {
             monster.mhp = Math.trunc(monster.mhp / 2);
-            if (targetVisible)
+            if (targetSpotted)
                 await publish(`${sentenceSubject(monster)} looks rather ill.`);
         }
         if ((await wakeMonster?.(monster))?.heroDied)
@@ -858,7 +858,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         const oldHp = monster.mhp;
         if (monster.mhp > 2) {
             monster.mhp = Math.trunc(monster.mhp / 2);
-            if (targetVisible)
+            if (targetSpotted)
                 await publish(`${sentenceSubject(monster)} looks rather ill.`);
         }
         if ((await wakeMonster?.(monster))?.heroDied)
@@ -872,7 +872,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     const oldHp = monster.mhp;
     if (monster.mhp < monster.mhpmax) {
         monster.mhp = monster.mhpmax;
-        if (targetVisible)
+        if (targetSpotted)
             await publish(`${sentenceSubject(monster)} looks sound and hale again.`);
     }
     let curedBlindness = false;
@@ -880,7 +880,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         monster.mcansee = 1;
         monster.mblinded = 0;
         curedBlindness = true;
-        if (targetVisible
+        if (targetSpotted
             && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)) {
             await publish(`${sentenceSubject(monster)} can see again.`);
         }
