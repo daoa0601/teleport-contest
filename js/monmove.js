@@ -126,7 +126,7 @@ import { shopkeeperIsMuted } from './shop_loss.js';
 import { findMonsterArmorClass, nameMonsterForCreationArmorChecks, } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
-import { createHarmlessGasCloudSelection, createPoisonGasCloud, createSteamCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, } from './regions.js';
+import { createHarmlessGasCloudSelection, createPoisonGasCloud, createSteamCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
 import { heroIsDeaf, syncBlindness } from './senses.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
 import { monsterHasFireResistance } from './monster_resistance.js';
@@ -2287,6 +2287,8 @@ async function finishPetMovePlan(monster, state, plan, random, rollDice, rollOne
             ...inventoryAction,
         };
     }
+    if (nix !== oldx || niy !== oldy)
+        updateMonsterRegions(monster, state, { x: nix, y: niy });
     monster.mx = nix;
     monster.my = niy;
     if (nix !== oldx || niy !== oldy) {
@@ -2472,6 +2474,7 @@ async function movePet(monster, state, random, rollDice, rollOne, calls, resumeA
             }
         }
         if (edible) {
+            updateMonsterRegions(monster, state, { x: nx, y: ny });
             monster.mx = nx;
             monster.my = ny;
             if (!Array.isArray(monster.mtrack))
@@ -2947,6 +2950,8 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
             heroDied: !!state.program_state.gameover,
         }, status, 'dochug');
     }
+    if (selected)
+        updateMonsterRegions(monster, state, { x: nix, y: niy });
     if (selectedInfo & ALLOW_ROCK && monsterCanBreakBoulder(monster)) {
         await breakMonsterBoulder(monster, nix, niy, state, { random });
         return finishMovement({
@@ -5600,6 +5605,7 @@ function runCovetousHarassTactics(monster, state, random, calls, afterRetreat = 
     monster.mstrategy = strategy & ~STRAT_APPEARMSG;
     monster.mx = destination.x;
     monster.my = destination.y;
+    updateMonsterRegions(monster, state);
     monster.mtrack = [];
     return {
         oldx,

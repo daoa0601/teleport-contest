@@ -382,6 +382,7 @@ import {
     GAS_OK,
     monsterGasTolerance,
     visibleRegionAt,
+    updateMonsterRegions,
 } from './regions.js';
 import { heroIsDeaf, syncBlindness } from './senses.js';
 import {
@@ -3036,6 +3037,8 @@ async function finishPetMovePlan(
         };
     }
 
+    if (nix !== oldx || niy !== oldy)
+        updateMonsterRegions(monster, state, { x: nix, y: niy });
     monster.mx = nix;
     monster.my = niy;
     if (nix !== oldx || niy !== oldy) {
@@ -3243,6 +3246,7 @@ async function movePet(
             }
         }
         if (edible) {
+            updateMonsterRegions(monster, state, { x: nx, y: ny });
             monster.mx = nx;
             monster.my = ny;
             if (!Array.isArray(monster.mtrack)) monster.mtrack = [];
@@ -3813,6 +3817,7 @@ async function moveHostile(
             'dochug',
         );
     }
+    if (selected) updateMonsterRegions(monster, state, { x: nix, y: niy });
     if (selectedInfo & ALLOW_ROCK && monsterCanBreakBoulder(monster)) {
         await breakMonsterBoulder(monster, nix, niy, state, { random });
         return finishMovement(
@@ -6777,6 +6782,7 @@ function runCovetousHarassTactics(
     monster.mstrategy = strategy & ~STRAT_APPEARMSG;
     monster.mx = destination.x;
     monster.my = destination.y;
+    updateMonsterRegions(monster, state);
     monster.mtrack = [];
     return {
         oldx,

@@ -3422,7 +3422,7 @@ export function randomEngraving(): { pristine: string; text: string } {
     };
 }
 
-const BONES_VERSION = 11;
+const BONES_VERSION = 12;
 
 function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
@@ -3685,6 +3685,22 @@ async function renewBonesIdentities(level: GameMap, fruits: readonly Fruit[]): P
     eachObjectInBonesGraph(level, object =>
         repairObjectMonsterIds(object, monsterIds));
     eachTopLevelBonesObject(level, repairContainedObjects);
+    // C region.c:reset_region_mids(). Missing identities are removed by
+    // replacing their slot with the last member, as during region turns.
+    for (const region of level.regions) {
+        region.heroFault = false;
+        let index = 0;
+        while (index < region.monsterIds.length) {
+            const mapped = remappedMonsterId(region.monsterIds[index], monsterIds);
+            if (mapped !== undefined) {
+                region.monsterIds[index++] = mapped;
+            } else {
+                const last = region.monsterIds.pop();
+                if (last !== undefined && index < region.monsterIds.length)
+                    region.monsterIds[index] = last;
+            }
+        }
+    }
 }
 
 function restoreBonesObjects(level: GameMap): void {

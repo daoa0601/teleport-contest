@@ -10,6 +10,7 @@ import {
     canSeeMonster, newsym, plineWithContinuation,
 } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
+import { monsterAtPosition } from './monster_location.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -114,12 +115,20 @@ function createGasCloudSelection(
     state: GameState | null | undefined, cells: readonly Position[], ttl: number, damage: number,
 ): GasCloud | null {
     if (!state?.level) return null;
+    const orderedCells = uniqueXMajorCells(cells);
+    const monsterIds = new Set<number>();
+    for (const cell of orderedCells) {
+        if (!isok(cell.x, cell.y)) continue;
+        const monster = monsterAtPosition(state.level, cell.x, cell.y);
+        if (monster) monsterIds.add(monster.m_id);
+    }
     const region: GasCloud = {
         kind: 'gas-cloud',
         visible: true,
         damage,
         ttl,
-        cells: uniqueXMajorCells(cells),
+        cells: orderedCells,
+        monsterIds: [...monsterIds],
     };
     (state.level.regions ||= []).push(region);
     if (state.level === game.level) {
@@ -221,6 +230,26 @@ export async function createPoisonGasCloud(
 
 function regionContains(region: GasCloud, x: number, y: number): boolean {
     return region.cells?.some(cell => cell.x === x && cell.y === y);
+}
+
+// C m_in_out_region()/update_monster_region(). Membership changes at the
+// movement boundary; swapping with the hero does not cross this boundary.
+export function updateMonsterRegions(monster: Monster, state: GameState = game,
+    position: Position = { x: monster.mx, y: monster.my }): void {
+    for (const region of requireGameLevel(state).regions) {
+        const index = region.monsterIds.indexOf(monster.m_id);
+        if (regionContains(region, position.x, position.y)) {
+            if (index < 0) region.monsterIds.push(monster.m_id);
+        } else if (index >= 0) {
+            removeRegionMonster(region, index);
+        }
+    }
+}
+
+function removeRegionMonster(region: GasCloud, index: number): void {
+    const lastId = region.monsterIds.pop();
+    if (lastId !== undefined && index < region.monsterIds.length)
+        region.monsterIds[index] = lastId;
 }
 
 export function visibleRegionAt(state: GameState, x: number, y: number): GasCloud | null {
@@ -334,8 +363,9 @@ async function affectHeroWithGas(
     region: GasCloud, state: GameState,
     { publish, rollOne, wake, onHeroDeath }: RegionTurnHandlers,
 ): Promise<RegionEvent | null> {
-    if (region.damage < 1 || !regionContains(region, state.u.ux, state.u.uy))
-        return null;
+    if (!regionContains(region, state.u.ux, state.u.uy)) return null;
+    if (Upolyd(state.u)) maintainCloudForFog(region, state.u.umonnum);
+    if (region.damage < 1) return null;
     const tolerance = heroGasTolerance(state);
     if (tolerance === GAS_OK) return null;
 
@@ -373,8 +403,8 @@ async function affectMonsterWithGas(
     region: GasCloud, monster: Monster, state: GameState,
     { publish, rollOne, wake, onAnger, onMonsterDeath }: RegionTurnHandlers,
 ): Promise<RegionEvent | null> {
-    if (region.damage < 1 || monster.dead || (monster.mhp ?? 1) <= 0
-        || !regionContains(region, monster.mx, monster.my)) return null;
+    maintainCloudForFog(region, monster.mnum);
+    if (region.damage < 1) return null;
     if (monsterGasTolerance(monster, state) === GAS_OK) return null;
 
     const nearHero = (monster.mx - state.u.ux) ** 2
@@ -466,18 +496,8 @@ async function expireRegions(state: GameState, publish: MessagePublisher): Promi
         await publish('You see some gas clouds dissipate.');
 }
 
-function maintainCloudForFog(region: GasCloud, state: GameState): void {
-    if (region.kind !== 'gas-cloud') return;
-    const occupants: Position[] = [];
-    if ((state.u.mtimedone ?? 0) > 0 && state.u.umonnum === PM_FOG_CLOUD)
-        occupants.push({ x: state.u.ux, y: state.u.uy });
-    occupants.push(...requireGameLevel(state).monsters
-            .filter(monster => !monster.dead && monster.mnum === PM_FOG_CLOUD)
-            .map(monster => ({ x: monster.mx, y: monster.my })));
-    for (const occupant of occupants) {
-        if (regionContains(region, occupant.x, occupant.y) && region.ttl < 20)
-            region.ttl += 5;
-    }
+function maintainCloudForFog(region: GasCloud, species: number | undefined): void {
+    if (region.ttl < 20 && species === PM_FOG_CLOUD) region.ttl += 5;
 }
 
 export async function runLevelRegions(state: GameState | null | undefined, {
@@ -493,17 +513,25 @@ export async function runLevelRegions(state: GameState | null | undefined, {
     const events: RegionEvent[] = [];
     for (const region of state.level.regions) {
         if (region.ttl > 0) region.ttl--;
-        maintainCloudForFog(region, state);
         const hero = await affectHeroWithGas(region, state, {
             publish, rollOne, wake, onHeroDeath,
         });
         if (hero) events.push(hero);
         if (state.program_state?.gameover) break;
-        for (const monster of [...(state.level.monsters || [])]) {
+        let index = 0;
+        while (index < region.monsterIds.length) {
+            const id = region.monsterIds[index];
+            const monster = state.level.monsters.find(candidate => candidate.m_id === id);
+            if (!monster || monster.dead || monster.mhp <= 0) {
+                removeRegionMonster(region, index);
+                continue;
+            }
             const event = await affectMonsterWithGas(region, monster, state, {
                 publish, rollOne, wake, onAnger, onMonsterDeath,
             });
             if (event) events.push(event);
+            if (monster.dead || monster.mhp <= 0) removeRegionMonster(region, index);
+            else index++;
         }
     }
     return events;
