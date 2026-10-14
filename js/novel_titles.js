@@ -1,5 +1,6 @@
 // C do_name.c:noveltitle(). Title indices are persistent object identity.
 import { rn2 } from './rng.js';
+import { definiteName } from './objnam.js';
 export const NOVEL_TITLES = [
     "The Colour of Magic",
     "The Light Fantastic",
@@ -53,5 +54,25 @@ export function novelTitle(book) {
     if (title === undefined)
         throw new RangeError(`Unknown novel title index ${index}`);
     return title;
+}
+// C do_name.c:lookup_novel(). An unrecognized label keeps a novel's existing
+// title index; recognized spellings replace both its title and index.
+export function lookupNovelTitle(name, book) {
+    const theName = `T${definiteName(name).slice(1)}`;
+    const aliases = new Map([
+        ['the color of magic', 'The Colour of Magic'], ['sorcery', 'Sourcery'],
+        ['masquerade', 'Maskerade'],
+        ['the amazing maurice', 'The Amazing Maurice and His Educated Rodents'],
+        ['thud', 'Thud!'],
+    ]);
+    const requested = aliases.get(name.toLowerCase()) ?? aliases.get(theName.toLowerCase()) ?? name;
+    const fullName = definiteName(requested).toLowerCase();
+    const index = NOVEL_TITLES.findIndex(title => title.toLowerCase() === requested.toLowerCase()
+        || title.toLowerCase() === fullName);
+    if (index >= 0) {
+        book.novelidx = index;
+        return NOVEL_TITLES[index] ?? null;
+    }
+    return book.novelidx === undefined ? null : NOVEL_TITLES[book.novelidx] ?? null;
 }
 //# sourceMappingURL=novel_titles.js.map

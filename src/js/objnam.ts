@@ -32,6 +32,7 @@ import {
     FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP,
     SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE,
     POT_WATER, TIN, TOWEL, WAN_WISHING,
+    SPE_NOVEL,
     OBJECT_BASES, requireObjectData,
     OBJECT_DESCRIPTIONS,
     OBJECT_NAMES, OBJECT_PROB, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC,
@@ -51,6 +52,7 @@ import { lookupWishType, randomTypeByDescription } from './wish_lookup.js';
 import { parseWishText, type ParsedWish } from './wish_parse.js';
 import { applyWishProperties, finishWishWeight, lightWishedObject } from './wish_properties.js';
 import { applyWishSpecies, applyWishedTinVariety, substituteWishedGlob } from './wish_species.js';
+import { lookupNovelTitle } from './novel_titles.js';
 export { parseWishText } from './wish_parse.js';
 export type { ParsedWish } from './wish_parse.js';
 
@@ -890,7 +892,9 @@ export async function readObjectName(
             game.u.uconduct ||= {};
             game.u.uconduct.wisharti = (game.u.uconduct.wisharti || 0) + 1;
         } else if (!object.oartifact) {
-            object.oextra = { ...object.oextra, oname: personalName.slice(0, PL_PSIZ - 1) };
+            const name = object.otyp === SPE_NOVEL
+                ? lookupNovelTitle(personalName, object) ?? personalName : personalName;
+            object.oextra = { ...object.oextra, oname: name.slice(0, PL_PSIZ - 1) };
         }
     }
     let deniedArtifact = false;

@@ -18,7 +18,7 @@ import { promptYesNo } from './query.js';
 import { objectWeight } from './weight.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, } from './artifacts.js';
-import { CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, LENSES, ROCK, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROB, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
+import { CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, LENSES, ROCK, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROB, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
 import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './object_grammar.js';
 import { armorSimpleName } from './armor.js';
 import { isContainer } from './container.js';
@@ -31,6 +31,7 @@ import { lookupWishType, randomTypeByDescription } from './wish_lookup.js';
 import { parseWishText } from './wish_parse.js';
 import { applyWishProperties, finishWishWeight, lightWishedObject } from './wish_properties.js';
 import { applyWishSpecies, applyWishedTinVariety, substituteWishedGlob } from './wish_species.js';
+import { lookupNovelTitle } from './novel_titles.js';
 export { parseWishText } from './wish_parse.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -857,7 +858,9 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
             game.u.uconduct.wisharti = (game.u.uconduct.wisharti || 0) + 1;
         }
         else if (!object.oartifact) {
-            object.oextra = { ...object.oextra, oname: personalName.slice(0, PL_PSIZ - 1) };
+            const name = object.otyp === SPE_NOVEL
+                ? lookupNovelTitle(personalName, object) ?? personalName : personalName;
+            object.oextra = { ...object.oextra, oname: name.slice(0, PL_PSIZ - 1) };
         }
     }
     let deniedArtifact = false;
