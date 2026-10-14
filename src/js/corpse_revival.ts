@@ -30,6 +30,7 @@ import {
 } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
+import { removeMonsterFromGame } from './monster_departure.js';
 import { ownedObjectName } from './objnam.js';
 import { costlySpot } from './shk.js';
 import { stolenValue } from './shop_loss.js';
@@ -329,12 +330,7 @@ async function mergeGhostIntoBody(monster: Monster, corpse: GameObject, state: G
                 monster.mtame = ghost.mtame;
         }
         monster.mconf = 1;
-        ghost.dead = true;
-        ghost.mhp = 0;
-        const level = requireGameLevel(state);
-        level.monsters = level.monsters.filter(
-            candidate => candidate !== ghost,
-        );
+        await removeMonsterFromGame(ghost);
     }
     if (corpse.oextra) delete corpse.oextra.omid;
     delete corpse.omid;
