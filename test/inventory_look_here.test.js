@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { ALTAR, ICE, PIT, POOL } from '../js/const.js';
+import { ALTAR, ICE, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, POOL } from '../js/const.js';
 import { displayLiquidName } from '../js/display.js';
 import { initRng } from '../js/rng.js';
 import { trapName } from '../js/trap_name.js';
@@ -9,10 +9,35 @@ import { withIndefiniteArticle } from '../js/object_grammar.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
+import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 import { addTrap } from './support/level-state.js';
+import { createMonsterAt } from './support/monsters.js';
+for (const blind of [false, true]) {
+    void test(`${blind ? 'feeling' : 'looking'} while swallowed inspects the stomach before any floor features`, async (t) => {
+        const level = freshObjectRoom({ hero: { blindTurns: blind ? 10 : 0 } });
+        const worm = await createMonsterAt('purple worm', game.u.ux, game.u.uy, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
+        game.u.uswallow = 1;
+        game.u.ustuck = worm;
+        addTrap(level, PIT, game.u.ux, game.u.uy, { tseen: true });
+        const cloud = createHarmlessGasCloudSelection(game, [{ x: game.u.ux, y: game.u.uy }]);
+        assert.ok(cloud);
+        cloud.damage = 8;
+        const dagger = await floorObject(DAGGER, game.u.ux, game.u.uy, { dknown: false });
+        const input = resetInputState();
+        planInput(input, t, [{
+                prompt: blind ? /You try to feel what is lying in the purple worm's stomach\.--More--/
+                    : /You look around to see what is lying in the purple worm's stomach\.--More--/,
+                keys: ' ',
+            }]);
+        await rhack(':'.charCodeAt(0));
+        assert.equal(game._pending_message, `You ${blind ? 'feel' : 'see'} no objects here.`);
+        assert.equal(dagger.dknown, false);
+        assert.equal(game.context.move, blind ? 1 : 0);
+    });
+}
 void test('looking above a pool describes the water without revealing submerged objects', async (t) => {
     const level = freshObjectRoom({ hero: { levitationTurns: 10 } });
     level.requireAt(game.u.ux, game.u.uy).typ = POOL;

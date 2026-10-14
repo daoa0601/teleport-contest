@@ -58,6 +58,7 @@ import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './
 import { visibleRegionAt } from './regions.js';
 import { trapName } from './trap_name.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { lookInsideSwallower } from './swallowed_inventory.js';
 import { impossible } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './armor.js';
 import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop } from './shk.js';
@@ -817,6 +818,11 @@ export async function selectInventoryObject({
 }
 
 export async function dolook() {
+    if (game.u.uswallow && game.u.ustuck) {
+        await lookInsideSwallower(game.u.ustuck);
+        game.context.move = heroIsBlind() ? 1 : 0;
+        return;
+    }
     const x = game.u.ux, y = game.u.uy;
     const level = requireGameLevel();
     const underwater = game.underwater || game.u.uinwater;
