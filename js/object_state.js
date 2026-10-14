@@ -75,8 +75,10 @@ function drainWornBonuses(object, state) {
         else if (name === 'increase damage')
             state.u.udaminc = (state.u.udaminc ?? 0) - 1;
     }
-    if (ring && name === 'protection')
+    if (ring && name === 'protection') {
+        state._armorClassDirty = true;
         state.context.botl = true;
+    }
     if (name === 'helm of brilliance' && (worn & W_ARMH)
         && object === (state.uarmh || state.u.uarmh))
         attributes.push(A_INT, A_WIS);

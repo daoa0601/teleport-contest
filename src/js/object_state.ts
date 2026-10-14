@@ -79,7 +79,10 @@ function drainWornBonuses(object: GameObject, state: GameState): void {
         else if (name === 'increase accuracy') state.u.uhitinc = (state.u.uhitinc ?? 0) - 1;
         else if (name === 'increase damage') state.u.udaminc = (state.u.udaminc ?? 0) - 1;
     }
-    if (ring && name === 'protection') state.context.botl = true;
+    if (ring && name === 'protection') {
+        state._armorClassDirty = true;
+        state.context.botl = true;
+    }
     if (name === 'helm of brilliance' && (worn & W_ARMH)
         && object === (state.uarmh || state.u.uarmh)) attributes.push(A_INT, A_WIS);
     if (name === 'gauntlets of dexterity' && (worn & W_ARMG)
