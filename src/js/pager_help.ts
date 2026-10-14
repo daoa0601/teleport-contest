@@ -54,10 +54,10 @@ export async function whatdoes(): Promise<void> {
         whatdoesTipShown = true;
     }
     await flushPendingTopline();
-    let key = (await promptKey('What command?')) & 255;
+    let key = (await promptKey('What command? ')) & 255;
     if (!key) key = 27;
     if (key === 27 && game.iflags.altmeta) {
-        key = (await promptKey(']')) & 255;
+        key = (await promptKey('] ')) & 255;
         if (key !== 27) key |= 128;
     }
     clearMessageWindow();
