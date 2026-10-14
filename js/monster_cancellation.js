@@ -4,13 +4,11 @@ import { canSeeMonster, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { MONSTER_NAME } from './monster_data.js';
+import { monsterName, possessiveName } from './monster_name.js';
 import { normalizeMonsterShape } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { rn2 } from './rng.js';
 const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
-function monsterName(monster) {
-    return monster.name || MONSTER_NAME[monster.mnum] || 'monster';
-}
 export async function cancelMonster(monster, { state = game, attackLevel, random = rn2, allowKill = true, publish = plineWithContinuation, finishMonsterKill = finishHeroMonsterKill, }) {
     if (monsterResistsEffect(monster, attackLevel, random)) {
         return { cancelled: false, resisted: true, killed: false };
@@ -24,7 +22,7 @@ export async function cancelMonster(monster, { state = game, attackLevel, random
     const changedShape = shape.changed;
     const clayGolem = monster.mnum === PM_CLAY_GOLEM;
     if (clayGolem && canSeeMonster(monster)) {
-        await publish(`Some writing vanishes from the ${monsterName(monster)}'s head!`);
+        await publish(`Some writing vanishes from ${possessiveName(monsterName(monster, { state }))} head!`);
     }
     let killed = false;
     if (clayGolem && allowKill) {
