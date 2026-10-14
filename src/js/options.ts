@@ -945,7 +945,8 @@ async function editPickupTypes(preserveStatus = false): Promise<void> {
 // changes need bot(); map-affecting changes defer the full docrt until all
 // selected options and their compound handlers have finished.
 function applyBooleanVisualChange(name: BooleanOptionName): boolean {
-    if (name === 'showexp' || name === 'time') game.context.botl = true;
+    if (['showexp', 'time', 'showvers', 'weaponstatus', 'armorstatus', 'terrainstatus'].includes(name))
+        game.context.botl = true;
     if (name === 'dark_room' || name === 'lit_corridor') {
         vision_recalc(2);
         game.vision_full_recalc = 1;

@@ -26,6 +26,8 @@ export function renderStatusLine2(fields, columns) {
             line += ` ${load}`;
         for (const condition of fields.conditions)
             line += ` ${condition[conditionSize]}`;
+        for (const equipment of fields.equipment)
+            line += ` ${equipment}`;
         if (line.length <= columns - 1)
             return line;
     }

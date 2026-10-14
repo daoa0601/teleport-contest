@@ -17,6 +17,7 @@ import { rankOf } from './quest_pager.js';
 import { statusConditions } from './status_conditions.js';
 import { capacityIndex, renderStatusLine2 } from './status_layout.js';
 import type { StatusLine2Fields } from './status_layout.js';
+import { armorStatus, weaponStatus } from './status_equipment.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN,
@@ -2291,6 +2292,8 @@ function statusLine2Fields(refreshLoad: boolean): StatusLine2Fields | null {
         hunger: hungerLabel ?? '',
         capacity: refreshLoad ? nearCapacity(game) : capacityIndex(u._encumbrance),
         conditions: statusConditions(game),
+        equipment: [game.flags.weaponstatus ? weaponStatus(game) : '',
+            game.flags.armorstatus ? armorStatus(game) : ''].filter(text => text.length > 0),
     };
 }
 

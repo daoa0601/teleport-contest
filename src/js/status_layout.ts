@@ -11,6 +11,7 @@ export interface StatusLine2Fields {
     hunger: string;
     capacity: number;
     conditions: readonly ConditionText[];
+    equipment: readonly string[];
 }
 
 const capacityText: readonly (readonly string[])[] = [
@@ -39,6 +40,7 @@ export function renderStatusLine2(fields: StatusLine2Fields, columns: number): s
         const load = capacityText[capacitySize]?.[fields.capacity] ?? '';
         if (load || capacitySize > 0) line += ` ${load}`;
         for (const condition of fields.conditions) line += ` ${condition[conditionSize]}`;
+        for (const equipment of fields.equipment) line += ` ${equipment}`;
         if (line.length <= columns - 1) return line;
     }
     return line.slice(0, Math.max(0, columns - 1));
