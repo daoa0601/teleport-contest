@@ -13,16 +13,6 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { shopkeeperKillerName } from './shk.js';
 const G_UNIQ = 0x1000;
 const M2_PNAME = 0x00080000;
-async function waitForMonsterMore(message) {
-    // urgent_pline() still traverses tty's ordinary topline continuation.
-    // If an older line is pending, it may own a pager before this urgent line
-    // is installed.  display_nhwindow(WIN_MESSAGE, TRUE) then forces the new
-    // current line to own a second acknowledgement even when it fits.
-    const continuationDismissal = await plineWithContinuation(message);
-    if (continuationDismissal === 27)
-        return continuationDismissal;
-    return waitForCurrentMonsterMore(message);
-}
 // C end.c:done_in_by(). Fatal attribution describes the real killer even
 // when its appearance, given name, or the hero's hallucination differs.
 function fatalMonsterDescription(monster) {
@@ -82,11 +72,16 @@ export async function finishMonsterAttackDeath(monster, { pagerOwned = false, at
     const hpSaveSentinel = game.u.uhp === -1;
     const projectedFatalLine = !!game._pending_message
         && !game._suppressMessagesUntilInput;
-    if (projectedFatalLine && announcesDeath) {
+    if (projectedFatalLine && announcesDeath && deathType !== STONING) {
         // You("die...") flushes the raw injury before tty pages older prose.
         await flush_screen(1);
         await waitForCurrentMonsterMore();
     }
+    // Petrification can append to a short hit or page a longer one. Both
+    // happen in done_in_by(), before done() records zero HP for life saving.
+    const petrificationAnnounced = announcesDeath && deathType === STONING;
+    if (petrificationAnnounced)
+        await plineWithContinuation(fatalLine);
     const fatalKiller = customCause ? attribution.killer : fatalMonsterDescription(monster);
     const fatalDeathCause = customCause
         ? attribution.deathCause ?? `killed by ${fatalKiller}`
@@ -111,8 +106,11 @@ export async function finishMonsterAttackDeath(monster, { pagerOwned = false, at
         // message would overflow tty's top line.  Identification
         // (and its Wisdom exercise draw) precedes that pager.
         const medallionEffect = heroIsBlind(game) ? 'feels warm' : 'begins to glow';
-        const dismissal = await waitForMonsterMore(`${announcesDeath ? `${fatalLine}  ` : ''}But wait...  Your medallion ${medallionEffect}!`);
-        await pline('You feel much better!');
+        if (announcesDeath && !petrificationAnnounced)
+            await plineWithContinuation(fatalLine);
+        await plineWithContinuation('But wait...');
+        await plineWithContinuation(`Your medallion ${medallionEffect}!`);
+        const dismissal = await plineWithContinuation('You feel much better!');
         // ESC at tty --More-- sets WIN_STOP: the new overflow
         // message is still installed, but later messages in this
         // input transaction (starting with the crumble line) are
@@ -159,7 +157,8 @@ export async function finishMonsterAttackDeath(monster, { pagerOwned = false, at
                 await waitForCurrentMonsterMore(fatalLine);
         }
         else if (announcesDeath) {
-            await plineWithContinuation(fatalLine);
+            if (!petrificationAnnounced)
+                await plineWithContinuation(fatalLine);
             commitFatalEvent();
             if (game.flags?.debug || game.flags?.explore)
                 await waitForCurrentMonsterMore(fatalLine);
