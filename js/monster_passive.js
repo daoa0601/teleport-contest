@@ -6,12 +6,12 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { heroSpecies } from './hero_species.js';
-import { A_DEX, A_STR, A_WIS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, } from './const.js';
+import { A_DEX, A_STR, A_WIS, STONING, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, } from './const.js';
 import { canSeeMonster, displayLiquidName, plineWithContinuation, shieldeff, } from './display.js';
-import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { healMonster } from './mon.js';
+import { finishMonsterAttackDeath } from './monster_attack_death.js';
 import { observeObjectForNaming, ownedObjectAction } from './objnam.js';
 import { erodeArmor, erodeObject } from './object_erosion.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName, requireMonsterData, } from './monster_data.js';
@@ -22,16 +22,17 @@ import { AD_ACID, AD_COLD, AD_CORR, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PHYS,
 import { OBJECT_NAMES } from './object_data.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { hasWornProperty } from './properties.js';
-import { applyHeroGolemEffects, heroMonsterForm, } from './polyself.js';
+import { applyHeroGolemEffects, heroMonsterForm, polymonHero, } from './polyself.js';
 import { heroReflectionSource, heroReflectsRay } from './ray.js';
 import { d, rn2 } from './rng.js';
-import { contactIsProtected, resolveImmediatePetrification } from './stoning.js';
+import { contactIsProtected, formCanBecomeStoneGolem } from './stoning.js';
 const MR_FIRE = 0x01;
 const MR_COLD = 0x02;
 const MR_ELEC = 0x10;
 const MR_ACID = 0x40;
 const MR_STONE = 0x80;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
+const PM_STONE_GOLEM = MONSTER_NAME.indexOf('stone golem');
 export async function applyHeroContactPassive(monster, { hit, defenderSurvived = !monster.dead && monster.mhp > 0, attackType = AT_WEAP, weapon = null, weaponWasDestroyed = false, state = game, publish = plineWithContinuation, random = rn2, rollDice = d, die, } = {}) {
     const attack = passiveAttack(monster);
     if (!attack)
@@ -52,7 +53,7 @@ export async function applyHeroContactPassive(monster, { hit, defenderSurvived =
         die,
     };
     const immediate = await applyImmediatePassive(context);
-    if (immediate.heroDied) {
+    if (immediate.heroDied || immediate.stopped) {
         return {
             handled: damageType !== AD_PHYS,
             damageType,
@@ -147,13 +148,23 @@ async function applyStonePassive({ monster, hit, attackType, weapon, weaponWasDe
     if (!hit || contactIsProtected(contactType, wornMask, !!weapon || weaponWasDestroyed) || heroResists(state, 'stoneResistance', MR_STONE)) {
         return { heroDied: false };
     }
-    const result = await resolveImmediatePetrification({
-        state,
-        killer: monsterName(monster),
-        publish,
-        die: die ?? finishHeroDeath,
-    });
-    return { heroDied: result.died, transformed: result.transformed };
+    if (formCanBecomeStoneGolem(state.u.umonnum, state)) {
+        const result = await polymonHero(PM_STONE_GOLEM);
+        if (result.transformed || result.died)
+            return { heroDied: !!result.died, transformed: result.transformed };
+    }
+    if (die) {
+        await publish('You turn to stone...');
+        const heroDied = await die({
+            killer: monsterName(monster), deathVerb: 'turned to stone',
+            deathLineShown: true, deathType: STONING,
+        });
+        return { heroDied, stopped: true };
+    }
+    return {
+        heroDied: await finishMonsterAttackDeath(monster, { deathType: STONING }),
+        stopped: true,
+    };
 }
 async function applyMagicMissilePassive({ monster, damage, state, publish, die, }) {
     if (heroResistsMagic(state)) {

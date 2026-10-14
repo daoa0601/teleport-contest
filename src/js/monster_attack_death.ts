@@ -95,6 +95,7 @@ export async function finishMonsterAttackDeath(monster: Monster, {
 }: MonsterAttackDeathOptions = {}): Promise<boolean> {
     const customCause = attribution.kind === 'death-inflicted-by';
     const announcesDeath = !customCause || attribution.announcesDeath;
+    const fatalLine = deathType === STONING ? 'You turn to stone...' : 'You die...';
     const hpSaveSentinel = game.u.uhp === -1;
     const projectedFatalLine = !!game._pending_message
         && !game._suppressMessagesUntilInput;
@@ -128,7 +129,7 @@ export async function finishMonsterAttackDeath(monster: Monster, {
         // (and its Wisdom exercise draw) precedes that pager.
         const medallionEffect = heroIsBlind(game) ? 'feels warm' : 'begins to glow';
         const dismissal = await waitForMonsterMore(
-            `${announcesDeath ? 'You die...  ' : ''}But wait...  Your medallion ${medallionEffect}!`,
+            `${announcesDeath ? `${fatalLine}  ` : ''}But wait...  Your medallion ${medallionEffect}!`,
         );
         await pline('You feel much better!');
         // ESC at tty --More-- sets WIN_STOP: the new overflow
@@ -162,7 +163,7 @@ export async function finishMonsterAttackDeath(monster: Monster, {
     const previousStatusDisabled = game._statusUpdatesDisabled;
     if (hpSaveSentinel) game._statusUpdatesDisabled = true;
     try {
-        if (announcesDeath && game._suppressMessagesUntilInput) {
+        if (announcesDeath && game._suppressMessagesUntilInput && deathType !== STONING) {
             // tty update_topl() treats "You die" specially: it
             // replaces the logically stopped topline and clears
             // WIN_STOP rather than appending to the pline which
@@ -170,16 +171,16 @@ export async function finishMonsterAttackDeath(monster: Monster, {
             // actor's stopped pager yields directly to yn_function();
             // a pager owned by this same fatal contact still reaches
             // done()'s explicit message-window flush.
-            await pline('You die...');
+            await pline(fatalLine);
             game._suppressMessagesUntilInput = false;
             commitFatalEvent();
             if (pagerOwned)
-                await waitForCurrentMonsterMore('You die...');
+                await waitForCurrentMonsterMore(fatalLine);
         } else if (announcesDeath) {
-            await plineWithContinuation('You die...');
+            await plineWithContinuation(fatalLine);
             commitFatalEvent();
             if (game.flags?.debug || game.flags?.explore)
-                await waitForCurrentMonsterMore('You die...');
+                await waitForCurrentMonsterMore(fatalLine);
         } else {
             commitFatalEvent();
         }
@@ -198,6 +199,7 @@ export async function finishMonsterAttackDeath(monster: Monster, {
     }
     await finishOrdinaryDeath({
         killer: fatalKiller, deathCause: fatalDeathCause, deathType,
+        deathVerb: deathType === STONING ? 'were petrified' : 'died',
     });
     game.context.move = 0;
     return true;
