@@ -264,7 +264,8 @@ async function invokeBlindingRay(object, state, publish) {
         await doBlindingRay(object, direction, { state });
     }
     else if (direction.dz) {
-        await lightRoom(true, { radius: 0, source: object });
+        await lightRoom(true, { radius: 0, source: object,
+            finishMonsterKill: finishHeroMonsterKillOutcome });
         const spot = state.level?.at(state.u.ux, state.u.uy);
         await publish(!heroIsBlind(state) && spot?.lit && !spot.waslit
             ? 'It is lit here now.' : 'Nothing seems to happen.');

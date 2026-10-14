@@ -40,4 +40,18 @@ void test('cancelling a blinding ray costs no turn and makes Sunsword ready now'
     assert.equal(sword.age, game.moves);
     assert.equal(game._pending_message, 'Never mind.');
 });
+void test('invoking Sunsword upward lights only the hero map square', async () => {
+    const level = freshObjectRoom({ hero: { ualign: { type: 1, record: 10 } } });
+    requirePlayingGame(game);
+    level.requireAt(game.u.ux, game.u.uy).lit = false;
+    level.requireAt(game.u.ux, game.u.uy).waslit = false;
+    level.requireAt(game.u.ux + 1, game.u.uy).lit = false;
+    const sword = await artifactObject('Sunsword', { invlet: 'a', where: 'inventory', age: 0 });
+    game.inventory = [sword];
+    await invokeInventoryObject(sword, '<' + ' '.repeat(20));
+    assert.equal(level.requireAt(game.u.ux, game.u.uy).lit, true);
+    assert.equal(level.requireAt(game.u.ux + 1, game.u.uy).lit, false);
+    assert.equal(game._pending_message, 'It is lit here now.');
+    assert.equal(game.context.move, 1);
+});
 //# sourceMappingURL=artifact_invoke_ray.test.js.map

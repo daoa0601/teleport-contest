@@ -121,8 +121,13 @@ function swallowedLightMessage() {
         : `${subject} glistens.`;
 }
 function roomEffectCells(radius, lit) {
-    if (!Is_rogue_level(game.u?.uz))
+    if (!Is_rogue_level(game.u?.uz)) {
+        // Sunsword illuminates the hero's spot directly; do_clear_area
+        // rejects radius zero in both the native source and the port.
+        if (radius === 0)
+            return [{ x: game.u.ux, y: game.u.uy }];
         return clearAreaCells(game.u.ux, game.u.uy, radius);
+    }
     const roomno = game.level?.at?.(game.u.ux, game.u.uy)?.roomno;
     const room = roomForRoomno(game.level, roomno ?? 0);
     if (!room)
