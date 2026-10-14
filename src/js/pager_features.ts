@@ -9,7 +9,7 @@ import { findDrawbridgeAt } from './dbridge.js';
 import type { GlyphMetadata } from './display.js';
 import { glyphAt, terrain_glyph } from './display.js';
 import { game } from './gstate.js';
-import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
+import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { CHEST, LARGE_BOX } from './object_data.js';
 import { monsterAtPosition } from './monster_location.js';
 import { rn2 } from './rng.js';
@@ -42,6 +42,14 @@ export function mapFeatureDescription(x: number, y: number, glyph: GlyphMetadata
     if (glyph.kind === 'trap') return displayedTrapDescription(glyph.trapType, x, y);
     if (glyph.kind === 'invisible') return 'remembered, unseen, creature';
     if (glyph.kind === 'engraving') return 'engraving';
+    if (glyph.kind === 'effect' && glyph.glyph !== undefined) {
+        if (glyph.glyph >= GlyphOffset.zap && glyph.glyph < GlyphOffset.cmapC) return '';
+        if (glyph.glyph >= GlyphOffset.cmapC && glyph.glyph < GlyphOffset.swallow) {
+            if (glyph.glyph === cmapToGlyph(CmapSymbol.poisoncloud)) return 'poison cloud';
+            if (glyph.glyph === cmapToGlyph(CmapSymbol.goodpos)) return 'valid position';
+            return '';
+        }
+    }
     if (glyph.kind !== 'terrain') return 'unexplored area';
     const location = game.level?.at(x, y);
     if (!location) return 'unexplored area';
