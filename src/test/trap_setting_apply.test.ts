@@ -4,10 +4,10 @@ import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { BEAR_TRAP, LANDMINE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { BEARTRAP, LAND_MINE } from '../js/object_data.js';
+import { BEARTRAP, DAGGER, LAND_MINE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { stopHeroOccupation } from '../js/occupation.js';
-import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
+import { applyInventoryObject, dropInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createSaddledSteed } from './support/monsters.js';
@@ -64,6 +64,27 @@ void test('walking away from an interrupted trap discards progress even after re
     assert.match(game._pending_message, /begin setting/);
     await continueCountedCommand();
     assert.equal(level.traps.length, 0, 'returning must require the full preparation time');
+    assert.equal(mine.where, 'inventory');
+    await continueCountedCommand();
+    assert.equal(level.traps.length, 1);
+    assert.equal(mine.where, 'gone');
+});
+
+void test('dropping another item discards interrupted trap preparation', async () => {
+    const level = freshPlayableRoom({ hero: { acurr: { a: [18, 10, 10, 18, 10, 10] } } });
+    const mine = await addInventoryObject(LAND_MINE);
+    const dagger = await addInventoryObject(DAGGER);
+    await runExtendedCommand('apply', mine.invlet);
+    await continueCountedCommand();
+    await stopHeroOccupation();
+    resetInputState();
+
+    await dropInventoryObject(dagger);
+    await runExtendedCommand('apply', mine.invlet);
+    await continueCountedCommand();
+
+    assert.equal(dagger.where, 'floor');
+    assert.equal(level.traps.length, 0, 'dropping must require the full preparation time again');
     assert.equal(mine.where, 'inventory');
     await continueCountedCommand();
     assert.equal(level.traps.length, 1);
