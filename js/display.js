@@ -813,11 +813,9 @@ function terrainGlyphAppearance(loc, x, y) {
                 : { ch: '.', color: NO_COLOR, dec: false }; // D_NODOOR = floor
         case STAIRS:
         case LADDER: {
-            if (typ === STAIRS && rogue)
-                return { ch: '%', color: NO_COLOR, dec: false };
-            // Ordinary and branch stairs share their direction symbols.
             const symbol = stairSymbol(loc, x, y);
-            return { ch: symbol.ch, color: symbol.color, dec: false };
+            return { ...cmapSymbolAppearance(stairGlyphIndex(loc, x, y)),
+                color: rogue ? NO_COLOR : symbol.color };
         }
         case FOUNTAIN: return { ch: '{', color: CLR_BRIGHT_BLUE, dec: false };
         case THRONE: return { ch: '\\', color: CLR_YELLOW, dec: false };
@@ -935,15 +933,12 @@ function heroDisplayGlyph() {
         const symbol = appearance === undefined ? undefined : MAP_SYMBOLS[appearance];
         if (appearance === undefined || !symbol)
             throw new Error('Hero furniture disguise requires a valid map symbol');
-        const rogue = Is_rogue_level(game.u.uz);
-        const decSymbol = !rogue && /^DECgraphics$/i.test(game.symset || '')
-            ? decFurnitureSymbols.get(appearance) : undefined;
-        const ch = rogue ? rogueFurnitureSymbols.get(appearance) ?? symbol.ch : decSymbol ?? symbol.ch;
+        const display = cmapSymbolAppearance(appearance);
         const wallOffset = currentWallGlyphOffset();
         const wallDisguise = appearance >= CmapSymbol.vwall && appearance <= CmapSymbol.trwall;
-        const color = decSymbol !== undefined && wallDisguise
+        const color = display.dec && wallDisguise
             ? decWallColors.get(wallOffset) ?? symbol.color : symbol.color;
-        return { ch, color, decgfx: decSymbol !== undefined,
+        return { ch: display.ch, color, decgfx: display.dec,
             kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, wallOffset) };
     }
     // display.h:hero_glyph and you.h:Ugender select the current body's sex.
@@ -979,6 +974,18 @@ const decFurnitureSymbols = new Map([
     [CmapSymbol.lava, '`'], [CmapSymbol.lavawall, '`'],
     [CmapSymbol.vodbridge, '~'], [CmapSymbol.hodbridge, '~'], [CmapSymbol.water, '`'],
 ]);
+// symbols.c:assign_graphics() selects the active dungeon symbols. DEC
+// characters retain their alternate font so they do not match ASCII letters.
+export function cmapSymbolAppearance(symbol) {
+    const definition = MAP_SYMBOLS[symbol];
+    if (!definition)
+        throw new RangeError(`Unknown dungeon symbol ${symbol}`);
+    if (Is_rogue_level(game.u.uz))
+        return { ch: rogueFurnitureSymbols.get(symbol) ?? definition.ch, dec: false };
+    const decSymbol = /^DECgraphics$/i.test(game.symset ?? '')
+        ? decFurnitureSymbols.get(symbol) : undefined;
+    return { ch: decSymbol ?? definition.ch, dec: decSymbol !== undefined };
+}
 // display.c:reset_glyphmap() and map_glyphinfo() retain the glyph's color.
 // dat/symbols:DECgraphics assigns these colors to branch wall glyphs.
 const decWallColors = new Map([

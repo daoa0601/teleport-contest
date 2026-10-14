@@ -26,6 +26,7 @@ import { waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
+import { MAP_SYMBOLS } from './map_symbols.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
 import { flipThroughBook } from './book_flip.js';
@@ -90,7 +91,7 @@ import { directionAssistPage, promptDirection, promptKey, readDirectionKey, rest
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
-import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
+import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, cmapSymbolAppearance, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
 import { dozap, } from './zap.js';
@@ -4492,18 +4493,24 @@ async function dojump() {
 }
 function verboseFarlookDescription(x, y, description) {
     const glyph = glyphAt(x, y);
-    if (glyph?.kind === 'terrain' && glyph.terrainName.includes('staircase')) {
-        const direction = glyph.glyph === cmapToGlyph(CmapSymbol.upstair)
-            || glyph.glyph === cmapToGlyph(CmapSymbol.brupstair) ? 'up' : 'down';
-        // DECgraphics gives ladders their own symbols. With default
-        // graphics they share the staircase symbol and its ambiguity list.
-        const kinds = /^DECgraphics$/i.test(game.symset ?? '')
-            ? ['staircase'] : ['staircase', 'ladder'];
-        const descriptions = [
-            ...kinds.map(kind => `a ${kind} ${direction}`),
-            ...kinds.map(kind => `a branch ${kind} ${direction}`),
-        ];
-        return `${direction === 'up' ? '<' : '>'}\x1b[8C${descriptions.join(' or ')} (${description})`;
+    if (glyph?.kind === 'terrain'
+        && (glyph.terrainName.includes('staircase') || glyph.terrainName.includes('ladder'))) {
+        const symbolIndex = MAP_SYMBOLS.findIndex((_definition, index) => index >= CmapSymbol.upstair && index <= CmapSymbol.brdnladder
+            && glyph.glyph === cmapToGlyph(index));
+        if (symbolIndex < 0)
+            throw new Error(`Stair glyph ${glyph.glyph} has no dungeon symbol`);
+        const displayed = cmapSymbolAppearance(symbolIndex);
+        const descriptions = [];
+        // do_screen_description() lists meanings of the displayed symbol
+        // in defsyms[] order, then lookat() identifies the selected stairs.
+        for (let index = CmapSymbol.upstair; index <= CmapSymbol.brdnladder; index++) {
+            const candidate = cmapSymbolAppearance(index);
+            const definition = MAP_SYMBOLS[index];
+            if (definition && candidate.ch === displayed.ch && candidate.dec === displayed.dec)
+                descriptions.push(withIndefiniteArticle(definition.name));
+        }
+        const symbol = displayed.dec ? `\x0e${displayed.ch}\x0f` : displayed.ch;
+        return `${symbol}\x1b[8C${descriptions.join(' or ')} (${description})`;
     }
     if (farlookDescribesHero(x, y) && glyph?.kind === 'monster'
         && glyph.mnum !== undefined) {
