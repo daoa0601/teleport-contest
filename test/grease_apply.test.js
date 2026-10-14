@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { W_ARM, W_ARMC, W_ARMG } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { CAN_OF_GREASE, CLOAK_OF_PROTECTION, DAGGER, GAUNTLETS_OF_POWER, LEATHER_ARMOR } from '../js/object_data.js';
-import { applyInventoryObject } from './support/commands.js';
+import { CAN_OF_GREASE, CLOAK_OF_PROTECTION, DAGGER, GAUNTLETS_OF_POWER, LEATHER_ARMOR, POT_HEALING } from '../js/object_data.js';
+import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 void test('apply coats an inventory object and consumes one charge of grease', async () => {
@@ -63,4 +63,21 @@ void test('a dropped grease can slips from the fingers even when gloves are worn
     assert.equal(game._pending_message, 'The can of grease slips from your fingers.');
     assert.equal(grease.where, 'floor');
 });
+for (const blind of [false, true]) {
+    void test(`greasing an unseen potion ${blind ? 'keeps its appearance unknown while blind' : 'observes its appearance while sighted'}`, async () => {
+        freshPlayableRoom({ hero: { blind, blindTurns: blind ? 12 : 0 } });
+        game.objectDescriptions ||= [];
+        game.objectDescriptions[POT_HEALING] = 'pink';
+        const grease = await addInventoryObject(CAN_OF_GREASE, { spe: 3 });
+        const potion = await addInventoryObject(POT_HEALING, {
+            observed: false, dknown: false, known: false, typeKnown: false,
+        });
+        await runExtendedCommand('apply', `${grease.invlet}${potion.invlet}`);
+        assert.equal(game._pending_message, `You cover your ${blind ? 'potion' : 'pink potion'} with a thick layer of grease.`);
+        assert.equal(potion.dknown, !blind);
+        assert.equal(potion.greased, true);
+        assert.equal(grease.spe, 2);
+        assert.equal(game.context.move, 1);
+    });
+}
 //# sourceMappingURL=grease_apply.test.js.map
