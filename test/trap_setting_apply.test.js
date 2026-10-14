@@ -1,16 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
-import { BEAR_TRAP, LANDMINE } from '../js/const.js';
+import { BEAR_TRAP, LANDMINE, NO_MINVENT } from '../js/const.js';
+import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { BEARTRAP, DAGGER, LAND_MINE } from '../js/object_data.js';
+import { BEARTRAP, BOULDER, DAGGER, LAND_MINE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { applyInventoryObject, dropInventoryObject, runExtendedCommand } from './support/commands.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
-import { createSaddledSteed } from './support/monsters.js';
+import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 const trapTools = [[LAND_MINE, LANDMINE], [BEARTRAP, BEAR_TRAP]];
 for (const [objectType, trapType] of trapTools) {
     void test(`apply arms a carried ${objectType === LAND_MINE ? 'land mine' : 'bear trap'} through its occupation`, async () => {
@@ -74,6 +75,30 @@ void test('dropping another item discards interrupted trap preparation', async (
     await continueCountedCommand();
     assert.equal(dagger.where, 'floor');
     assert.equal(level.traps.length, 0, 'dropping must require the full preparation time again');
+    assert.equal(mine.where, 'inventory');
+    await continueCountedCommand();
+    assert.equal(level.traps.length, 1);
+    assert.equal(mine.where, 'gone');
+});
+void test('a refused pet swap discards interrupted trap preparation', async () => {
+    const level = freshPlayableRoom({ hero: { acurr: { a: [18, 10, 10, 18, 10, 10] } } });
+    const mine = await addInventoryObject(LAND_MINE);
+    await floorObject(BOULDER, 10, 10);
+    const kitten = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
+    initializePet(kitten);
+    await runExtendedCommand('apply', mine.invlet);
+    await continueCountedCommand();
+    await stopHeroOccupation();
+    resetInputState();
+    initRng(1n);
+    await rhack('l'.charCodeAt(0));
+    assert.match(game._pending_message, /doesn't want to swap places/);
+    assert.equal(game.u.ux, 10);
+    assert.equal(kitten.mx, 11);
+    assert.equal(game.context.move, 1);
+    await runExtendedCommand('apply', `${mine.invlet} `);
+    await continueCountedCommand();
+    assert.equal(level.traps.length, 0, 'a refused swap must require the full preparation time again');
     assert.equal(mine.where, 'inventory');
     await continueCountedCommand();
     assert.equal(level.traps.length, 1);

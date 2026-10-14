@@ -7720,6 +7720,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                 // C domove_core() resets occupations after restoring the
                 // hero's position, even when a peaceful refuses the swap.
                 resetBulkTakeoff();
+                resetTrapSetting();
                 await finishBallAndChainMove(ballChainMove);
                 if (ballChainMove?.causeDelay) await delayAfterDraggingBall();
                 return true;
