@@ -34,7 +34,7 @@ import {
     POT_WATER, TIN, TOWEL, WAN_WISHING,
     OBJECT_BASES, requireObjectData,
     OBJECT_DESCRIPTIONS,
-    OBJECT_NAMES, OBJECT_PROB, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED,
+    OBJECT_NAMES, OBJECT_PROB, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC,
     OBJECT_UNIQUE, OBJECT_USES_KNOWN,
     OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
     OBJECT_SUBTYPE, OBJECT_WEIGHT,
@@ -204,8 +204,8 @@ export function objectName(
         ? `ring called ${callName}` : `${appearance || 'unknown'} ring`;
     else if (oclass === POTION_CLASS) noun = callName
         ? `potion called ${callName}` : `${appearance || 'unknown'} potion`;
-    else if (oclass === SCROLL_CLASS) noun = callName ? `scroll called ${callName}` : appearance === 'unlabeled'
-        ? 'unlabeled scroll' : `scroll labeled ${appearance || 'unknown'}`;
+    else if (oclass === SCROLL_CLASS) noun = callName ? `scroll called ${callName}` : OBJECT_MAGIC[object.otyp]
+        ? `scroll labeled ${appearance || 'unknown'}` : `${appearance || trueName} scroll`;
     else if (oclass === SPBOOK_CLASS) noun = callName
         ? `${ordinaryName === 'novel' ? 'novel' : 'spellbook'} called ${callName}`
         : `${appearance || 'unknown'} ${ordinaryName === 'novel' ? 'book' : 'spellbook'}`;
