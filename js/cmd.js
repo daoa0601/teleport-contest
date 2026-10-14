@@ -8,6 +8,7 @@ import { wizIntrinsic } from './wizard_intrinsics.js';
 import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
 import { wizBury } from './wizard_bury.js';
+import { wizMigrateMonsters } from './wizard_migration.js';
 import { hurtleMonster } from './monster_hurtle.js';
 import { isRoom } from './map_types.js';
 import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
@@ -3199,6 +3200,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['wizsmell', () => wizSmell(farlookLocationDescription)],
     ['wizbury', wizBury],
     ['wiztelekinesis', wizTelekinesis],
+    ['migratemons', wizMigrateMonsters],
     ['wizkill', wizKill],
     ['wizidentify', wizIdentify],
     ['wizintrinsic', wizIntrinsic],

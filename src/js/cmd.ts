@@ -10,6 +10,7 @@ import { wizIntrinsic } from './wizard_intrinsics.js';
 import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
 import { wizBury } from './wizard_bury.js';
+import { wizMigrateMonsters } from './wizard_migration.js';
 import { hurtleMonster } from './monster_hurtle.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -3331,6 +3332,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizsmell', () => wizSmell(farlookLocationDescription)],
     ['wizbury', wizBury],
     ['wiztelekinesis', wizTelekinesis],
+    ['migratemons', wizMigrateMonsters],
     ['wizkill', wizKill],
     ['wizidentify', wizIdentify],
     ['wizintrinsic', wizIntrinsic],
