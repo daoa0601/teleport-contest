@@ -13,6 +13,7 @@ import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { changeBoxLockByMagic } from './box_magic.js';
 import { courtMonsterType, makemonAt } from './mklev.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
+import { observeObjectForNaming } from './objnam.js';
 import { heroIsDeaf } from './senses.js';
 import { objectWeight } from './weight.js';
 import { rn2, rnd } from './rng.js';
@@ -21,6 +22,7 @@ export async function reverseLoot() {
         let remaining = game.inventory.length;
         for (const object of game.inventory) {
             if (!rn2(remaining + 1)) {
+                observeObjectForNaming(object);
                 await pline(`You find old loot: ${object.invlet} - ${inventoryItemDescription(object, { primaryHandDetail: inventoryPrimaryHandDetail(object) })}.`);
                 return true;
             }
