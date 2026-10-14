@@ -5,7 +5,7 @@
 import { monsterHasMapPosition } from './monster_location.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { applyWandEffect } from './wand_effects.js';
-import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
+import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS } from './const.js';
 import { OBJECT_DIR } from './object_data.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { backfireWand, zappable } from './wand_charge.js';
@@ -15,7 +15,8 @@ import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './terrain_properties.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR, COLNO, CORR, DB_FLOOR, DB_ICE, DB_UNDER, DOOR, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, ZAP_POS, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, WM_MASK, W_NONDIGGABLE, W_RING } from './const.js';
-import { displayColorName, docrt, newsym, plineWithContinuation } from './display.js';
+import { displayColorName, displayLiquidName, docrt, newsym, plineWithContinuation } from './display.js';
+import { waterbodyName } from './terrain_name.js';
 import { game, requireLiveGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance } from './monster_resistance.js';
 import { SHOPBASE } from './const.js';
@@ -37,7 +38,7 @@ import { buryFloorObjectsAt } from './buried_object.js';
 import { fix_wall_spines, maketrap } from './mklev.js';
 import { monsterResistanceBits } from './monster_resistance.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import {
     DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_MATERIAL, OBJECT_NAMES,
@@ -51,7 +52,7 @@ import {
 } from './object_timers.js';
 import { applySupportedPotionVapor } from './potion_hit.js';
 import { heroHasNoHands } from './polyself.js';
-import { createPoisonGasCloud, createSteamCloud } from './regions.js';
+import { createPoisonGasCloud } from './regions.js';
 import { dryFountainAt } from './fountain.js';
 import { specialLevelAt } from './dungeon.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
@@ -66,7 +67,7 @@ import { closedRayDoor } from './ray.js';
 import { heroIsBlind } from './senses.js';
 import {
     killerObjectName, objectName, ownedObjectName, observeObjectForNaming,
-    observeDistantObjectForNaming,
+    observeDistantObjectForNaming, pluralizeObjectNoun,
 } from './objnam.js';
 import { delobj } from './object_delete.js';
 import { useUpFloorObject } from './floor_consumption.js';
@@ -245,10 +246,15 @@ async function removeBurnedFloorQuantity(object: GameObject, count: number, stat
     else await delobj(object, state);
 }
 
-function floorBurnMessage(object: GameObject, destroyed: number) {
-    const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
-    if (destroyed === 1) return `A ${name} burns.`;
-    return `${destroyed} ${makePlural(name)} burn.`;
+function floorBurnMessage(object: GameObject, destroyed: number, state: GameState) {
+    if (object.ox === state.u.ux && object.oy === state.u.uy)
+        observeObjectForNaming(object, { state });
+    else observeDistantObjectForNaming(object, state);
+    const name = objectName({ ...object, quan: 1, quantity: 1 }, state);
+    if (destroyed > 1)
+        return `${destroyed} ${pluralizeObjectNoun(object, name)} burn.`;
+    const subject = withIndefiniteArticle(name);
+    return `${subject.charAt(0).toUpperCase()}${subject.slice(1)} burns.`;
 }
 
 export async function burnFloorObjectsAt(
@@ -277,10 +283,10 @@ export async function burnFloorObjectsAt(
             if (random(3) === 0) destroyed++;
         }
         if (!destroyed) continue;
+        const feedback = giveFeedback ? floorBurnMessage(object, destroyed, state) : null;
         await removeBurnedFloorQuantity(object, destroyed, state, heroCaused, publish);
         burned += destroyed;
-        if (giveFeedback)
-            await publish(floorBurnMessage(object, destroyed));
+        if (feedback) await publish(feedback);
     }
 
     await igniteItems(pile, {
@@ -352,7 +358,7 @@ async function freezeLiquidAt(x: number, y: number, state: GameState, publish: M
     if (briefFreeze) {
         if (visible) {
             await publish(
-                `The ${lavaWall ? 'lava' : 'water'} freezes for a moment.`,
+                `The ${displayLiquidName(lavaWall ? 'lava' : 'water', state)} freezes for a moment.`,
             );
         } else if (!deaf) {
             await publish('You hear a soft crackling.');
@@ -360,6 +366,7 @@ async function freezeLiquidAt(x: number, y: number, state: GameState, publish: M
         return -1000;
     }
 
+    const waterbody = waterbodyName(x, y, state);
     const wasMoat = isMoatAt(x, y, state);
     if (location.typ === DRAWBRIDGE_UP) {
         location.drawbridgemask = (location.drawbridgemask ?? 0) & ~DB_UNDER;
@@ -382,9 +389,9 @@ async function freezeLiquidAt(x: number, y: number, state: GameState, publish: M
     await buryFloorObjectsAt(x, y, state, { publish });
     if (visible) {
         const message = lava
-            ? 'The lava cools and solidifies.'
-            : wasMoat ? 'The moat is bridged with ice!'
-                : 'The water freezes.';
+            ? `The ${displayLiquidName('lava', state)} cools and solidifies.`
+            : wasMoat ? `The ${waterbody} is bridged with ice!`
+                : `The ${displayLiquidName('water', state)} freezes.`;
         await publish(message, { noRepeat: true });
         newsym(x, y);
     } else if (!lava && !deaf) {
@@ -427,7 +434,11 @@ async function evaporatePoolAt(x: number, y: number, state: GameState, publish: 
     const visible = cansee(x, y);
     const deaf = !!(state.u?.deaf || state.deaf);
     const waterLevel = Is_waterlevel(state.u?.uz);
-    if (!waterLevel) createSteamCloud(state, x, y, rnd(5));
+    let enveloped = false;
+    if (!waterLevel) {
+        await createPoisonGasCloud(state, x, y, rnd(5), 0, rn2, publish);
+        enveloped = state._lastPlineKind === PLNMSG_ENVELOPED_IN_GAS;
+    }
 
     let message = !deaf ? 'You hear hissing gas.'
         : heroCaused ? 'That seemed remarkably uneventful.' : null;
@@ -444,7 +455,7 @@ async function evaporatePoolAt(x: number, y: number, state: GameState, publish: 
     } else if (visible) {
         message = 'Some water evaporates.';
     }
-    if (message) await publish(message, { noRepeat: true });
+    if (message && !enveloped) await publish(message, { noRepeat: true });
 
     if (location.typ === ROOM) {
         revealStrandedSwimmer(x, y, state);
@@ -487,7 +498,7 @@ export async function applyRayFloorFeatures(
     }
     if (state.program_state.gameover) return { absorbed: false, rangeChange };
     if (kind === RAY_FIRE && location.typ === FOUNTAIN) {
-        createSteamCloud(state, x, y, rnd(3), random);
+        await createPoisonGasCloud(state, x, y, rnd(3), 0, random, publish);
         if (visible) await publish('Steam billows from the fountain.');
         rangeChange--;
         await dryFountainAt(x, y, { causedByHero: heroBurnsObjects, state, publish, random });

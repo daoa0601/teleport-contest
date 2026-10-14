@@ -6,9 +6,8 @@ import {
 import { expelHero, holdingMonsterName } from './hero_expulsion.js';
 import { wakeMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import {
-    monsterIsWhirly, monsterTypeName,
-} from './monster_data.js';
+import { monsterIsWhirly } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import {
     adjustMonsterSpeed, monsterSpeedMessage,
 } from './monster_speed.js';
@@ -38,10 +37,8 @@ export async function affectMonsterSpeed(
         revealMonsterAppearance(monster);
         const speed = adjustMonsterSpeed(monster, kind === 'speed' ? 1 : -1);
         checkMonsterGearNextTurn(monster);
-        if (canSeeMonster(monster)) {
-            const subject = `The ${monsterTypeName(
-                monster.mnum, !!monster.female,
-            )}`;
+        if (speed.changed && speed.canDescribe && canSeeMonster(monster)) {
+            const subject = monsterName(monster, { state, capitalized: true });
             const message = monsterSpeedMessage(speed, subject);
             if (message) {
                 await pline(message);

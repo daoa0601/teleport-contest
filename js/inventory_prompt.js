@@ -164,7 +164,7 @@ export function compactInventoryLetters(letters) {
     }
     return compact;
 }
-export async function promptInventoryObject(prompt, eligible, { verb = 'use', classify = () => GETOBJ_SUGGEST, allowGold = false, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, menuItems = eligible, } = {}) {
+export async function promptInventoryObject(prompt, eligible, { verb, classify = () => GETOBJ_SUGGEST, allowGold = false, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, menuItems = eligible, }) {
     // getobj() checks CQ_CANNED before invoking tty_yn_function(). A queued
     // choice neither acknowledges unread prose nor paints an item question.
     const queuedKey = takeCommandKey();
@@ -181,7 +181,8 @@ export async function promptInventoryObject(prompt, eligible, { verb = 'use', cl
         clearCommandKeys();
         return { cancelled: true, object: null, gold: false, none: false, count: null };
     }
-    let key = await askInventoryPrompt(prompt);
+    const forcedMenu = allowMenu && game.flags.force_invmenu;
+    let key = forcedMenu ? menuItems.length ? 63 : 42 : await askInventoryPrompt(prompt);
     let count = null;
     for (;;) {
         if (!allowCount && key >= 48 && key <= 57) {
@@ -214,14 +215,23 @@ export async function promptInventoryObject(prompt, eligible, { verb = 'use', cl
             };
         }
         if (allowMenu && (key === 63 || key === 42)) {
+            const extraChoice = allowNone && (key === 42 || noneSuggested || menuItems.length === 0)
+                ? noneDescription : undefined;
             const selection = await selectInventoryObject({
                 ...(key === 63 ? { items: menuItems } : {}),
-                ...(allowNone && noneDescription
-                    && (key === 42 || noneSuggested || menuItems.length === 0)
-                    ? { extraChoice: noneDescription } : {}),
+                ...(forcedMenu ? {
+                    title: `What do you want to ${verb}?`,
+                    menuOptions: key === 42
+                        ? [{ key: '?', text: '(list likely candidates)' }]
+                        : menuItems.length < eligible.length || (allowNone && !extraChoice)
+                            ? [{ key: '*', text: '(list everything)' }] : [],
+                } : {}),
+                ...(extraChoice ? { extraChoice } : {}),
             });
             key = selection.key;
             if (key === 0) {
+                if (forcedMenu)
+                    return { cancelled: true, object: null, gold: false, none: false, count: null };
                 key = await askInventoryPrompt(prompt);
                 continue;
             }

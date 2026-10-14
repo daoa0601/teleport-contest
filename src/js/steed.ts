@@ -7,7 +7,7 @@ import {
     ACCESSIBLE, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE,
     DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN,
     DOOR, DIRECTION_KEYS, IS_OBSTRUCTED, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT,
-    M_AP_TYPMASK, P_RIDING,
+    M_AP_TYPMASK, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT,
     TRAP_EXPLANATIONS, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE,
     W_SADDLE, isok,
 } from './const.js';
@@ -20,7 +20,7 @@ import type { MessagePublisher } from './display.js';
 import type { DirectionVector } from './const.js';
 import { levitationAtWill, refreshMovementProperties } from './properties.js';
 import { floatHeroDown } from './terrain_movement.js';
-import { newsym, pline, plineWithContinuation } from './display.js';
+import { canSpotMonster, newsym, pline, plineWithContinuation } from './display.js';
 import { monsterSurvivesPool } from './mon.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
@@ -33,17 +33,25 @@ import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
     releaseMonsterLeash, releaseMonsterLeashWithFeedback,
 } from './monster_leash.js';
-import { BOULDER, SADDLE } from './object_data.js';
+import { BOULDER, SADDLE, OBJECT_DESCRIPTIONS } from './object_data.js';
 import { mksobj } from './mklev.js';
 import { fullyIdentifyObject } from './invent.js';
 import { applyMonsterEquipmentProperties } from './monster_equipment.js';
 import { objectMaterial } from './object_material.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { monsterAtPosition } from './monster_location.js';
+import { monsterName } from './monster_name.js';
+import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { heroHandName } from './body_parts.js';
+import { heroHasFreeHand } from './weapon_type.js';
+import { removeWornHeroItem } from './hero_equipment.js';
+import { freeInventoryObject } from './hero_inventory.js';
+import { propertyIsActive } from './properties.js';
 import { rn1, rn2, rnd, rnl } from './rng.js';
 import { useHeroSkill } from './skills.js';
 import { moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
-import { readDirectionKey } from './tty_prompts.js';
+import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { promptYesNo } from './query.js';
 import { vision_recalc } from './vision.js';
 import { heroLegName } from './body_parts.js';
@@ -420,6 +428,83 @@ async function wakeSteedForRiding(steed: Monster) {
         steed.mappearance = 0;
         newsym(steed.mx, steed.my);
     }
+}
+
+// C steed.c:use_saddle(). The command owns selection and the success roll;
+// putSaddleOnMonster owns the monster's inventory and equipment links.
+export async function useSaddle(saddle: GameObject): Promise<boolean> {
+    requirePlayingGame(game);
+    const hero = game.u;
+    if (!heroHasFreeHand(game)) {
+        await plineWithContinuation(`You have no free ${heroHandName(game)}.`);
+        return false;
+    }
+    if (hero.uswallow || hero.uinwater || game.underwater) {
+        await plineWithContinuation('Never mind.');
+        return false;
+    }
+    const direction = await promptDirection();
+    if (!direction) {
+        await plineWithContinuation('Never mind.');
+        return false;
+    }
+    if (!direction.dx && !direction.dy) {
+        await plineWithContinuation('Saddle yourself?  Very funny...');
+        return false;
+    }
+    const monster = monsterAtPosition(game.level, hero.ux + direction.dx, hero.uy + direction.dy);
+    if (!monster || !canSpotMonster(monster)) {
+        await plineWithContinuation('I see nobody there.');
+        return true;
+    }
+    const name = () => monsterName(monster, { capitalized: true });
+    if ((monster.misc_worn_check ?? 0) & W_SADDLE || monsterSaddle(monster)) {
+        await plineWithContinuation(`${name()} doesn't need another one.`);
+        return true;
+    }
+    if (touchPetrifies(monster.mnum) && !game.uarmg && !propertyIsActive('stoneResistance', game)) {
+        await plineWithContinuation(`You touch ${monsterName(monster)}.`);
+        await resolveImmediatePetrification({
+            killer: `attempting to saddle ${withIndefiniteArticle(monsterTypeName(monster.mnum, monster.female))}`,
+        });
+        if (game.program_state.gameover) return true;
+    }
+    if (MONSTER_NAME[monster.mnum] === 'amorous demon') {
+        await plineWithContinuation('Shame on you!');
+        await exerciseAttribute(A_WIS, false);
+        return true;
+    }
+    if (monster.isminion || monster.isshk || monster.ispriest || monster.isgd || monster.iswiz) {
+        await plineWithContinuation(`I think ${monsterName(monster)} would mind.`);
+        return true;
+    }
+    if (!monsterCanBeSaddled(monster)) {
+        await plineWithContinuation("You can't saddle such a creature.");
+        return true;
+    }
+    const tameness = monster.mtame ?? 0;
+    let chance = currentAttribute(A_DEX, game) + Math.trunc(currentAttribute(A_CHA, game) / 2)
+        + 2 * tameness + hero.ulevel * (tameness ? 20 : 5);
+    if (!monster.mtame) chance -= 10 * monster.m_lev;
+    if (game.urole.key === 'knight') chance += 20;
+    const skill = hero.weaponSkills?.[P_RIDING]?.skill ?? 0;
+    chance += skill === P_EXPERT ? 30 : skill === P_SKILLED ? 15 : skill === P_BASIC ? 0 : -20;
+    const description = (object: GameObject | null | undefined) => object
+        ? game.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp] : null;
+    if (hero.confused || (hero.confusionTurns ?? 0) > 0 || propertyIsActive('fumbling', game)
+        || hero.glib || (hero.glibTurns ?? 0) > 0) chance -= 20;
+    else if (description(game.uarmg) === 'riding gloves' || description(game.uarmf) === 'riding boots') chance += 10;
+    if (saddle.cursed) chance -= 50;
+    await wakeSteedForRiding(monster);
+    if (rn2(100) < chance) {
+        await plineWithContinuation(`You put the saddle on ${monsterName(monster)}.`);
+        if (saddle.owornmask) await removeWornHeroItem(saddle, game);
+        if (game.program_state.gameover) return true;
+        await freeInventoryObject(saddle, game);
+        if (game.program_state.gameover) return true;
+        await putSaddleOnMonster(saddle, monster);
+    } else await plineWithContinuation(`${name()} resists!`);
+    return true;
 }
 
 export async function putSaddleOnMonster(saddle: GameObject | null, monster: Monster): Promise<GameObject | null> {

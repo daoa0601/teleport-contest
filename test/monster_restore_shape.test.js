@@ -156,7 +156,9 @@ for (const bodyType of [CORPSE, STATUE]) {
         await wearHeroAccessory(ring, 'uleft');
         const input = resetInputState();
         const restored = bodyType === CORPSE
-            ? await answerPrompts(reviveCorpseByMagic(body), input, [])
+            ? await answerPrompts(reviveCorpseByMagic(body), input, [
+                { prompt: /The little dog turns into a chameleon![\s\S]*--More--/, keys: ' ' },
+            ])
             : await answerPrompts(animateStatue(body, 11, 10, { magic: true }), input, [
                 { prompt: /The little dog turns into a chameleon![\s\S]*--More--/, keys: ' ' },
             ]);
@@ -166,7 +168,7 @@ for (const bodyType of [CORPSE, STATUE]) {
         assert.equal(body.where, 'gone');
         if (bodyType === CORPSE) {
             await flush_screen(1);
-            assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /The little dog turns into a chameleon!/);
+            assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /corpse glows iridescently\./);
         }
     });
 }

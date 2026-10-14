@@ -148,6 +148,7 @@ export interface Monster extends MonsterPosition {
     symbol?: string;
     color?: number;
     mstrategy?: number;
+    mgoal?: Position;
     mtrapseen?: number;
     mtrack?: Position[];
     mtame?: number;

@@ -221,6 +221,7 @@ async function chooseStylus(state: GameState): Promise<GameObject | 'hands' | nu
     const selection = await promptInventoryObject(
         `What do you want to write with? [${choices} or ?*] `,
         inventory, {
+            verb: 'write with',
             allowMenu: true,
             allowNone: true,
             noneDescription: `your ${heroFingerTipName(state)}`,
