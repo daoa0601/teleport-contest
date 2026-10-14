@@ -352,6 +352,14 @@ export async function resetHeroTrap(message = true, state: GameState = game): Pr
     }
 }
 
+// hack.c:set_uinwater(). Entering or leaving water also changes terrain
+// properties and the optional terrain status, even on the same square.
+export async function setHeroInWater(inWater: boolean, state: GameState = game): Promise<void> {
+    if (!!state.u.uinwater === inWater) return;
+    state.u.uinwater = inWater ? 1 : 0;
+    await switchHeroTerrain(state);
+}
+
 export async function switchHeroTerrain(state: GameState = game): Promise<void> {
     const wasLevitating = propertyIsActive('levitation', state);
     const wasFlying = propertyIsActive('flying', state);
