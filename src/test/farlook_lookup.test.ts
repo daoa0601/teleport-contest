@@ -27,6 +27,19 @@ void test('ordinary farlook offers information about the hero and keeps looking 
     assert.equal(game.context.move, 0);
 });
 
+void test('the typed-name look command opens the encyclopedia without asking for more information', async () => {
+    freshObjectRoom({ flags: { tips: false } });
+    const input = resetInputState();
+
+    await answerPrompts(rhack('/'.charCodeAt(0)), input, [
+        { prompt: /What do you want to look at:/, keys: '?' },
+        { prompt: /Specify what\? \(type the word\)/, keys: '  fountain  \r' },
+        { prompt: /Fountain.*[\s\S]*--More--/, keys: ' ' },
+    ]);
+
+    assert.equal(game.context.move, 0);
+});
+
 for (const up of [false, true]) {
     void test(`farlook explains ordinary and branch staircases ${up ? 'up' : 'down'}`, async () => {
         const level = freshObjectRoom({ flags: { tips: false } });

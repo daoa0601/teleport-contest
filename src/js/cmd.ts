@@ -4908,6 +4908,10 @@ async function dowhatis(): Promise<void> {
         const item = game.inventory.find(item => item.invlet === String.fromCharCode(letter));
         if (item) await showEncyclopediaInformation(singularObjectName(item));
         else if (queuedLetter !== undefined) clearCommandKeys();
+    } else if (choice === '?') {
+        const typed = await getLine('Specify what? (type the word)', ch => ch >= ' ');
+        const name = typed?.trim().replace(/\s+/g, ' ');
+        if (name && name.length > 1) await showEncyclopediaInformation(name);
     }
     game.context.move = 0;
 }
