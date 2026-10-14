@@ -533,6 +533,17 @@ export function simpleObjectName(object, state = game) {
     return quantity === 1 ? noun : pluralizeObjectNoun(object, noun);
 }
 // C ansimpleoname(): add an article to singular simple names.
+// C the_unique_obj(): an unidentified imitation must look like the real Amulet.
+export function objectLooksUnique(object, state = game) {
+    const override = !!state.iflags.override_ID;
+    if (!object.dknown && !override)
+        return false;
+    const known = object.known || override;
+    if (object.otyp === FAKE_AMULET_OF_YENDOR && !known)
+        return true;
+    return !!OBJECT_UNIQUE[object.otyp] && (!!known || object.otyp === AMULET_OF_YENDOR);
+}
+// C ansimpleoname(): add an article to singular simple names.
 export function simpleObjectNameWithArticle(object, state = game) {
     const noun = simpleObjectName(object, state);
     const quantity = object.quan ?? object.quantity ?? 1;

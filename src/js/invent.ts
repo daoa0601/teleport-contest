@@ -34,7 +34,7 @@ import {
     STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE,
 } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
-import { definiteName, objectCombatName, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
+import { definiteName, objectCombatName, objectLooksUnique, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isGrayStone, isWeaponTool, objectUsesCharges } from './object_properties.js';
@@ -512,11 +512,11 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
     if (item.oclass !== COIN_CLASS && item.dknown && !item.oartifact && item.otyp !== SPE_NOVEL) {
         const named = !!(item.oextra?.oname || item.oname);
         entries.push({ key: 'c', text: `${named ? 'Rename or un-name' : 'Name'} ${
-            OBJECT_UNIQUE[item.otyp] ? 'the' : stack ? 'this stack of' : 'this specific'} ${itemName}` });
+            objectLooksUnique(item, state) ? 'the' : stack ? 'this stack of' : 'this specific'} ${itemName}` });
     }
     const callName = state._objectCallNames?.[item.otyp];
     if (item.dknown && objectTypeCallable(item, state) && (!objectTypeKnown(item, state) || callName)) {
-        const noun = OBJECT_UNIQUE[item.otyp] ? definiteName(itemName, state)
+        const noun = objectLooksUnique(item, state) ? definiteName(itemName, state)
             : stack ? itemName : makePlural(itemName);
         entries.push({ key: 'C', text: `${callName ? 'Re-call or un-call' : 'Call'} the type for ${noun}` });
     }

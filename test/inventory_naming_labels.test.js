@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';
-import { ARROW, FORTUNE_COOKIE } from '../js/object_data.js';
+import { AMULET_OF_YENDOR, ARROW, FAKE_AMULET_OF_YENDOR, FORTUNE_COOKIE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { planInput } from './support/planned-input.js';
 void test('the item action prompt describes the full arrow stack', async () => {
     freshObjectRoom();
     const arrows = await addInventoryObject(ARROW, { quan: 4 });
@@ -53,6 +54,19 @@ for (const quantity of [1, 4]) {
         assert.equal(namingLabel, quantity === 1
             ? 'c - Name this specific arrow'
             : 'c - Name this stack of arrows');
+    });
+}
+for (const type of [AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR]) {
+    void test(`the naming menu treats an unidentified ${type === AMULET_OF_YENDOR ? 'real' : 'fake'} Amulet as unique`, async (t) => {
+        freshObjectRoom();
+        const amulet = await addInventoryObject(type, { known: false, typeKnown: false });
+        const input = resetInputState();
+        planInput(input, t, [
+            { prompt: /Amulets/, keys: amulet.invlet },
+            { prompt: /c - Name the Amulet of Yendor/, keys: '\x1b' },
+        ]);
+        await rhack('i'.charCodeAt(0));
+        assert.equal(amulet.known, false);
     });
 }
 //# sourceMappingURL=inventory_naming_labels.test.js.map
