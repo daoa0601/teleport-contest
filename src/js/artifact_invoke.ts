@@ -9,7 +9,7 @@ import type { MessagePublisher } from './display.js';
 import type { PropertyName } from './property_types.js';
 import type { UntrapOptions } from './untrap.js';
 import { heroIsHallucinating } from './senses.js';
-import { I_SPECIAL, TIMEOUT, Upolyd, W_ARTI } from './const.js';
+import { I_SPECIAL, P_EXPERT, TIMEOUT, Upolyd, W_ARTI } from './const.js';
 import { newsym, pline } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
@@ -21,7 +21,7 @@ import {
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { showEnlightenment } from './insight.js';
 import { mksobj } from './mklev.js';
-import { ARROW } from './object_data.js';
+import { ARROW, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
 import {
     captureLevitationState,
     hasInvokedProperty,
@@ -45,6 +45,9 @@ import { MONSTER_NAME } from './monster_data.js';
 import { objectName, objectNameIsPlural } from './objnam.js';
 import { flashBurn } from './sight_change.js';
 import { promptDirection } from './tty_prompts.js';
+import { castSpell } from './spell.js';
+import { spellSkillType } from './spell_casting_rules.js';
+import { ensureHeroSkills } from './skills.js';
 
 type PropertyPowerName = 'conflict' | 'invisibility' | 'levitation';
 type PropertyArtifact = Artifact & { invokePower: PropertyPowerName };
@@ -83,6 +86,8 @@ const DIRECT_POWERS = [
     'untrap',
     'charge-object',
     'blinding-ray',
+    'snowstorm',
+    'firestorm',
 ] as const;
 
 function isDirectPower(power: ArtifactPower | null): power is (typeof DIRECT_POWERS)[number] {
@@ -343,6 +348,19 @@ async function invokeBlindingRay(object: GameObject, state: GameState, publish: 
     return true;
 }
 
+async function invokeStorm(power: 'snowstorm' | 'firestorm', state: GameState) {
+    const spell = power === 'snowstorm' ? SPE_CONE_OF_COLD : SPE_FIREBALL;
+    const skill = ensureHeroSkills(state)?.[spellSkillType(spell)];
+    if (!skill) throw new Error('Artifact storm requires initialized spell skills');
+    const previous = skill.skill;
+    skill.skill = P_EXPERT;
+    try {
+        await castSpell(spell, { force: true, state });
+    } finally {
+        skill.skill = previous;
+    }
+}
+
 export async function invokeArtifactPower(
     object: GameObject,
     artifact: Artifact | null | undefined,
@@ -365,6 +383,11 @@ export async function invokeArtifactPower(
     if (!ready) return { used: true, ready: false };
 
     switch (power) {
+        case 'snowstorm':
+        case 'firestorm':
+            await invokeStorm(power, state);
+            if (state.program_state.gameover) return { used: true, heroDied: true };
+            break;
         case 'blinding-ray': {
             const spentTime = await invokeBlindingRay(object, state, publish);
             if (state.program_state.gameover) return { used: true, heroDied: true };
