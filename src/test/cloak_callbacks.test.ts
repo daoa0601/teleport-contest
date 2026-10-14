@@ -6,6 +6,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { objectTypeKnown } from '../js/shk.js';
+import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -108,6 +109,28 @@ void test('an oilskin cloak announces its tight fit', async () => {
 
     assert.match(messages(), /The oilskin cloak fits very tightly\./);
 });
+
+for (const blind of [false, true]) {
+    void test(`wearing an unseen named oilskin cloak ${blind ? 'conceals its name while blind' : 'reveals its name in the fit message'}`, async () => {
+        freshObjectRoom({ hero: { blindTurns: 50 } });
+        const messages = captureMessages();
+        const cloak = await addInventoryObject(OBJECT_NAMES.indexOf('oilskin cloak'), {
+            observed: false, dknown: false, oname: 'Shelter',
+        });
+        if (!blind) setHeroBlindnessTurns(0);
+        assert.equal(cloak.dknown, false);
+        pushKeys(`${cloak.invlet}     `);
+
+        await rhack('W'.charCodeAt(0));
+
+        assert.equal(game.uarmc, cloak);
+        assert.match(messages(), blind
+            ? /The oilskin cloak fits very tightly\./
+            : /The oilskin cloak named Shelter fits very tightly\./);
+        if (blind) assert.doesNotMatch(messages(), /named Shelter/);
+        assert.equal(cloak.dknown, !blind);
+    });
+}
 
 function captureMessages(): () => string {
     const messages: string[] = [];

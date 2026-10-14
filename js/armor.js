@@ -691,8 +691,9 @@ async function applyHelmetOnEffects(object, state) {
         const helmet = equippedObject(state, 'uarmh');
         if (helmet && !helmet.cursed) {
             const blind = heroIsBlind(state);
+            observeObjectForNaming(helmet, { state });
             const action = blind ? 'vibrates' : `glows ${displayColorName('black', state)}`;
-            await plineWithContinuation(`The ${objectName(helmet)} ${action} for a moment.`);
+            await plineWithContinuation(`The ${objectName(helmet, state)} ${action} for a moment.`);
             curseObjectState(helmet, state);
             if (blind)
                 helmet.bknown = false;
@@ -773,7 +774,8 @@ async function applyCloakOnEffects(object, state) {
             }
             break;
         case OILSKIN_CLOAK:
-            await plineWithContinuation(`The ${objectName(object)} fits very tightly.`);
+            observeObjectForNaming(object, { state });
+            await plineWithContinuation(`The ${objectName(object, state)} fits very tightly.`);
             break;
         case ALCHEMY_SMOCK:
             grantWornProperty('acidResistance', object, 'uarmc', state);

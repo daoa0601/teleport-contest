@@ -6,8 +6,9 @@ import { rhack } from '../js/cmd.js';
 import { A_CHA, A_INT, A_WIS } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { OBJECT_NAMES } from '../js/object_data.js';
+import { DUNCE_CAP, HELM_OF_OPPOSITE_ALIGNMENT, OBJECT_NAMES } from '../js/object_data.js';
 import type { GameObject } from '../js/object_types.js';
+import { setHeroBlindnessTurns } from '../js/senses.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -58,6 +59,31 @@ void test('a blind hero loses beatitude knowledge when a dunce cap curses itself
     assert.match(messages, /vibrates for a moment/);
     assert.doesNotMatch(messages, /glows/);
 });
+
+for (const type of [DUNCE_CAP, HELM_OF_OPPOSITE_ALIGNMENT]) {
+    for (const blind of [false, true]) {
+        void test(`wearing an unseen named ${OBJECT_NAMES[type]} ${blind ? 'conceals its name while blind' : 'reveals its name in the glow message'}`, async () => {
+            freshObjectRoom({ hero: { blindTurns: 50 } });
+            const hat = await addInventoryObject(type, {
+                observed: false, dknown: false, known: false, oname: 'Scholar',
+            });
+            if (!blind) setHeroBlindnessTurns(0);
+            assert.equal(hat.dknown, false);
+
+            const messages = await dress('W', hat);
+
+            assert.equal(game.uarmh, hat);
+            assert.equal(hat.cursed, true);
+            if (blind) {
+                assert.match(messages, /vibrates for a moment\./);
+                assert.doesNotMatch(messages, /named Scholar/);
+            } else {
+                assert.match(messages, /named Scholar glows black for a moment\./);
+            }
+            assert.equal(hat.dknown, !blind);
+        });
+    }
+}
 
 async function dress(command: 'W' | 'T', object: GameObject): Promise<string> {
     assert.ok(object.invlet);
