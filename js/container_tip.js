@@ -258,7 +258,7 @@ async function tipContainer(source) {
         try {
             if (target) {
                 if (target.otyp === BAG_OF_HOLDING && magicBagExplodes(object)) {
-                    await explodeBag(target, object, game, true);
+                    await explodeBag(target, object, game, { tipping: true, triggerHeld: held });
                     break;
                 }
                 await addObjectToContainer(target, object);

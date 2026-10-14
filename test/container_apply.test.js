@@ -324,7 +324,8 @@ void test('putting one bag of holding inside another destroys both bags', async 
     assert.equal(game.inventory.includes(outer), false);
     assert.equal(game.inventory.includes(inner), false);
     assert.ok(game.u.uhp < hitPoints);
-    assert.equal(floorObjectsAt(requireGameLevel(), 10, 10).includes(club), true);
+    assert.equal(club.where, 'floor');
+    assert.equal(floorObjectsAt(requireGameLevel(), club.ox, club.oy).includes(club), true);
     assert.equal(game.context.move, 1);
 });
 void test('opening a quantum box resolves its cat once', async () => {

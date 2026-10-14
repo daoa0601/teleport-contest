@@ -9,7 +9,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { game } from './gstate.js';
 import { startGlobTimeout } from './glob.js';
-import { finishInventoryRemoval } from './hero_inventory.js';
+import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
 import { nhgetch } from './input.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
@@ -20,7 +20,10 @@ import { clearJustPicked } from './just_picked.js';
 import { liftObject } from './lift_object.js';
 import { endObjectBurn } from './light.js';
 import { addObjectToContainer } from './object_container.js';
-import { placeObject } from './floor_object.js';
+import { useUpFloorObject } from './floor_consumption.js';
+import { scatterFloorObjects } from './scatter.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { startCorpseTimeout } from './mklev.js';
 import { MONSTER_SIZE } from './monster_data.js';
 import { deleteObject } from './object_delete.js';
@@ -343,24 +346,36 @@ export function magicBagExplodes(object: GameObject, depth = 0): boolean {
         magicBagExplodes(content, depth + 1));
 }
 
-async function scatterBagContents(container: GameObject, state: GameState): Promise<void> {
+async function scatterBagContents(container: GameObject, state: GameState, held: boolean): Promise<void> {
+    container.in_use = true;
     const contents = [...(container.contents || [])];
-    container.contents = [];
     for (const object of contents) {
-        // C obj_extract_self(): a scattered content becomes truly free
-        // before its arbitrary release placement.
-        object.container = null;
-        object.where = 'free';
         if (rn2(13) === 0) {
-            await deleteObject(object, state);
+            unlinkObject(object, state);
+            await loseMagicBagItem(object, held, state, true);
             continue;
         }
-        await placeObject(object, state.u.ux, state.u.uy, state);
+        object.ox = state.u.ux;
+        object.oy = state.u.uy;
+        await scatterFloorObjects(object.ox, object.oy, 4, {
+            state, onlyObject: object, mayFracture: false,
+            publish: plineWithContinuation, heroCaused: !state.context.mon_moving,
+            finishMonsterKill: finishHeroMonsterKill,
+            finishMonsterDeath: async (monster, options = {}) => {
+                if (state.context.mon_moving)
+                    return await finishEnvironmentalMonsterDeath(monster, state, options);
+                if (options.deathMessage) await plineWithContinuation(options.deathMessage);
+                const death = await finishHeroMonsterKillOutcome(monster, monster.mx, monster.my,
+                    { showKillMessage: false, publish: plineWithContinuation });
+                return { survived: !death.killed, heroDied: death.heroDied };
+            },
+        });
     }
 }
 
 // C pickup.c:in_container() names the trigger before either bag blows up.
-export async function explodeBag(container: GameObject, trigger: GameObject, state: GameState, tipping = false): Promise<ContainerTransferResult> {
+export async function explodeBag(container: GameObject, trigger: GameObject, state: GameState,
+    { tipping = false, triggerHeld = true }: { tipping?: boolean; triggerHeld?: boolean } = {}): Promise<ContainerTransferResult> {
     observeObjectForNaming(trigger, { state });
     await plineWithContinuation(
         tipping ? `As ${objectDescription(trigger)} ${trigger.quan === 1 ? 'tumbles' : 'tumble'} inside, you are blasted by a magical explosion!`
@@ -368,11 +383,20 @@ export async function explodeBag(container: GameObject, trigger: GameObject, sta
         { urgent: true },
     );
     if (trigger.otyp === BAG_OF_HOLDING)
-        await scatterBagContents(trigger, state);
+        await scatterBagContents(trigger, state, triggerHeld);
     await deleteObject(trigger, state);
-    await scatterBagContents(container, state);
-    await deleteObject(container, state);
+    const held = container.where === 'inventory';
+    if (!held && costlySpot(container.ox, container.oy, state)) {
+        const noCharge = container.no_charge;
+        await addShopObjectToBill(container, state, { ininv: false, silent: true });
+        if (noCharge === undefined) delete container.no_charge;
+        else container.no_charge = noCharge;
+    }
+    await scatterBagContents(container, state, held);
+    if (held) await useUpInventoryStack(container, state);
+    else await useUpFloorObject(container, container.quan, { state });
     await loseHeroHp(d(6, 6), 'magical explosion', { state });
+    if (!tipping) await bot();
     return { moved: false, destroyedContainer: true, message: null };
 }
 
@@ -524,11 +548,14 @@ export async function putIntoContainer(
         return { moved: false, stop: true, message: null };
     if (object.lamplit) endObjectBurn(object, state, state.moves ?? 0);
     const floorShop = container.where !== 'inventory' && costlySpot(state.u.ux, state.u.uy, state);
+    const wasUnpaid = object.unpaid;
     if (floorShop && object.oclass !== 12)
         await sellHeroDroppedObject(object, state.u.ux, state.u.uy, state);
     if (container.otyp === ICE_BOX) freezeObject(object, state);
     else if (container.otyp === BAG_OF_HOLDING
         && magicBagExplodes(object)) {
+        if (wasUnpaid && floorShop)
+            await addShopObjectToBill(object, state, { ininv: false, silent: true });
         return await explodeBag(container, object, state);
     }
 
