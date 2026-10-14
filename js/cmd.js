@@ -7253,6 +7253,15 @@ async function bumpIntoMonster(monster, x, y) {
     }
     return true;
 }
+// C hack.c:u_rooted(). An immobile form may attack but cannot take a step.
+async function rootedHeroCannotMove() {
+    if (MONSTER_MOVE[heroSpecies(game)] !== 0)
+        return false;
+    const inPlace = game.u.levitating || Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz);
+    await plineWithContinuation(`You are rooted ${inPlace ? 'in place' : 'to the ground'}.`);
+    endVoluntaryMultiTurn(game);
+    return true;
+}
 async function domoveCore(dx, dy, explicitAttempt) {
     requirePlayingGame(game);
     const u = game.u;
@@ -7479,6 +7488,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
             }
             // C domove_core() confirms a yielded step before either actor
             // changes position or the hero tries to escape a current trap.
+            if (await rootedHeroCannotMove())
+                return true;
             if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy))
                 return false;
             if (u.utrap
@@ -7562,6 +7573,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
         stopRun(game);
         return true;
     }
+    if (await rootedHeroCannotMove())
+        return true;
     if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy))
         return false;
     if (!await heroCanMoveFromTrap(newx, newy))
