@@ -5181,10 +5181,7 @@ async function putOnArmorObject(object: GameObject): Promise<void> {
         const onMessage = objectWearMessage(object);
         for (const message of effectMessages)
             await plineWithContinuation(message);
-        if (onMessage) {
-            if (effectMessages.length) await plineWithContinuation(onMessage);
-            else await pline(onMessage);
-        }
+        if (onMessage) await plineWithContinuation(onMessage);
     }
     // C accessory_or_armor_on() discards interrupted 'A' after armor wear.
     resetBulkTakeoff();

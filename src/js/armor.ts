@@ -4,10 +4,10 @@
 import { heroDetectsMonsters, heroIsBlind } from './senses.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { game, requireLiveGame } from './gstate.js';
-import { corpseName, killerObjectName, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
+import { corpseName, killerObjectName, observeObjectForNaming, simpleObjectNameWithArticle, objectName } from './objnam.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
-import { plineWithContinuation } from './display.js';
+import { newsym, plineWithContinuation } from './display.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { objectResistsDestruction } from './object_state.js';
 import { erodeObject, erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
@@ -31,7 +31,7 @@ import { artifactEmitsLight, heroHasArtifactDefense } from './artifacts.js';
 import { heroResistsLifeDrain } from './monster_resistance.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
 import {
-    AMULET_OF_GUARDING, CLOAK_OF_DISPLACEMENT, CORPSE, GAUNTLETS_OF_POWER,
+    AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_POWER, MUMMY_WRAPPING,
     FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION,
     GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES,
     YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
@@ -57,10 +57,11 @@ export interface ArmorErosionDescription {
 type ArmorBonusSource = Pick<GameObject, 'otyp'>
     & Partial<Pick<GameObject, 'spe' | 'enchantment' | 'oeroded' | 'oeroded2'>>;
 
+import { monsterName } from './monster_name.js';
 import { MONSTER_NAME } from './monster_data.js';
 import {
     captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty,
-    propertyIsActive, refreshMovementProperties, removeWornProperty,
+    propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty,
 } from './properties.js';
 import {
     A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX,
@@ -112,6 +113,8 @@ export type ArmorSlot = keyof typeof ARMOR_MASKS;
 
 const AC_MAX = 99;
 const SPEED_BOOTS = 166;
+const CLOAK_OF_INVISIBILITY = OBJECT_NAMES.indexOf('cloak of invisibility');
+const OILSKIN_CLOAK = OBJECT_NAMES.indexOf('oilskin cloak');
 const GAUNTLETS_OF_DEXTERITY = OBJECT_NAMES.indexOf('gauntlets of dexterity');
 const HELM_OF_BRILLIANCE = OBJECT_NAMES.indexOf('helm of brilliance');
 
@@ -248,6 +251,7 @@ export function wearHeroArmor(object: GameObject, state: GameState = game): Armo
     object.wornSlot = slot;
     object.owornmask = (object.owornmask ?? 0) | ARMOR_MASKS[slot];
     applyWornArmorProperty(object, state);
+    if (object.otyp === MUMMY_WRAPPING) refreshProperty('invisible', state);
     return slot;
 }
 
@@ -266,7 +270,12 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
     if (object?.otyp === FEDORA && state.urole?.key === 'archeologist')
         state.u.uluck = Math.max(LUCKMIN, (state.u.uluck ?? 0) - 1);
     const removed = await clearHeroArmor(object, state, { ...options, cancelledDon });
-    if (removed && !cancelledDon) await announceDisplacementLoss(object, state);
+    if (removed) {
+        if (!cancelledDon) await announceDisplacementLoss(object, state);
+        await applyCloakOffEffects(object, state);
+        if (!cancelledDon && (object.otyp === ELVEN_CLOAK || object.otyp === ELVEN_BOOTS))
+            await toggleArmorStealth(object, false, state);
+    }
     if (losingGloves) {
         setSlipperyHands(0, state);
         await loseGloveProtection(object, state);
@@ -301,15 +310,7 @@ async function announceDisplacementLoss(object: GameObject, state: GameState = g
     if (propertyIsActive('displaced', state)
         || hero.displacedIntrinsic || hero.intrinsicDisplacement
         || hero.displacementBlocked || hero.displacedBlocked) return;
-    const blind = heroIsBlind(state);
-    const unseen = propertyIsActive('invisible', state) && !propertyIsActive('seeInvisible', state);
-    const visibleSelf = !blind && !hero.uswallow
-        && !unseen;
-    const unblindTelepathy = hasWornProperty('telepathy', state)
-        || hero.unblindTelepathy || (hero.unblind_telepat_range ?? -1) >= 0;
-    const blindTelepathy = blind
-        && (propertyIsActive('telepathy', state) || hero.blindTelepathy || hero.telepathy);
-    if (!(visibleSelf || unblindTelepathy || blindTelepathy || heroDetectsMonsters(state))) return;
+    if (!canObserveDisplacement(state)) return;
     learnObjectType(object.otyp, state);
     await plineWithContinuation('You feel that monsters no longer have difficulty pinpointing your location.');
 }
@@ -357,6 +358,8 @@ export async function clearHeroArmor(object: GameObject, state: GameState = game
             await plineWithContinuation(equipmentLightMessage(object, false, state));
     }
     await removeArmorProperties(object, state);
+    if (object.otyp === ALCHEMY_SMOCK) removeWornProperty('acidResistance', object, 'uarmc', state);
+    if (object.otyp === MUMMY_WRAPPING) refreshProperty('invisible', state);
 
     const hero = state.u;
     object._armorApplied = false;
@@ -622,6 +625,84 @@ function grantArmorProperty(object: GameObject, state: GameState, property: Prop
     }
 }
 
+function armorHasOtherPropertySource(property: PropertyName, object: GameObject, state: GameState): boolean {
+    const sources = state.u._propertySources?.[property];
+    const slot = armorSlotFor(object.otyp);
+    return hasIntrinsicProperty(property, null, state) || propertyTimeout(property, state) > 0
+        || !!sources?.invoked || !!sources?.carried.length
+        || !!sources?.worn.some(source => source.slot !== slot);
+}
+
+async function toggleArmorStealth(object: GameObject, on: boolean, state: GameState): Promise<void> {
+    if (armorHasOtherPropertySource('stealth', object, state) || propertyIsBlocked('stealth', state)
+        || state.u.usteed && !propertyIsActive('flying', state) && !propertyIsActive('levitation', state)) return;
+    learnObjectType(object.otyp, state);
+    if (on) {
+        const message = object.otyp === ELVEN_BOOTS
+            ? propertyIsActive('levitation', state) || propertyIsActive('flying', state)
+                ? 'You float imperceptibly.' : 'You walk very quietly.'
+            : 'You move very quietly.';
+        await plineWithContinuation(message);
+    } else {
+        const steed = state.u.usteed;
+        await plineWithContinuation(steed
+            ? `You and ${monsterName(steed, { state, article: 'your', suppressSaddle: true, suppressHallucination: true })} are noisy.`
+            : 'You sure are noisy.');
+    }
+}
+
+function canObserveDisplacement(state: GameState): boolean {
+    const blind = heroIsBlind(state);
+    const invisible = propertyIsActive('invisible', state) && !propertyIsActive('seeInvisible', state);
+    return !blind && !state.u.uswallow && !invisible
+        || hasWornProperty('telepathy', state) || !!state.u.unblindTelepathy
+        || (state.u.unblind_telepat_range ?? -1) >= 0
+        || blind && (propertyIsActive('telepathy', state) || !!state.u.blindTelepathy)
+        || heroDetectsMonsters(state);
+}
+
+async function applyCloakOnEffects(object: GameObject, initialDon: boolean, state: GameState): Promise<void> {
+    switch (object.otyp) {
+    case CLOAK_OF_PROTECTION: learnObjectType(object.otyp, state); break;
+    case CLOAK_OF_DISPLACEMENT:
+        if (!initialDon && !object._displacementWasActive && canObserveDisplacement(state)) {
+            learnObjectType(object.otyp, state);
+            await plineWithContinuation('You feel that monsters have difficulty pinpointing your location.');
+        }
+        break;
+    case MUMMY_WRAPPING:
+        if (armorHasOtherPropertySource('invisible', object, state) && !heroIsBlind(state)) {
+            newsym(state.u.ux, state.u.uy);
+            await plineWithContinuation(`You can ${propertyIsActive('seeInvisible', state) ? 'no longer see through yourself' : 'see yourself'}!`);
+        }
+        break;
+    case CLOAK_OF_INVISIBILITY:
+        if (!armorHasOtherPropertySource('invisible', object, state) && !heroIsBlind(state)) {
+            learnObjectType(object.otyp, state);
+            newsym(state.u.ux, state.u.uy);
+            await plineWithContinuation(`Suddenly you can${propertyIsActive('seeInvisible', state) ? ' see through' : 'not see'} yourself.`);
+        }
+        break;
+    case OILSKIN_CLOAK:
+        await plineWithContinuation(`The ${objectName(object)} fits very tightly.`);
+        break;
+    case ALCHEMY_SMOCK: grantWornProperty('acidResistance', object, 'uarmc', state); break;
+    default: break;
+    }
+}
+
+async function applyCloakOffEffects(object: GameObject, state: GameState): Promise<void> {
+    if (heroIsBlind(state)) return;
+    if (object.otyp === MUMMY_WRAPPING && propertyIsActive('invisible', state)) {
+        newsym(state.u.ux, state.u.uy);
+        await plineWithContinuation(`You can ${propertyIsActive('seeInvisible', state) ? 'see through yourself' : 'no longer see yourself'}.`);
+    } else if (object.otyp === CLOAK_OF_INVISIBILITY && !armorHasOtherPropertySource('invisible', object, state)) {
+        learnObjectType(object.otyp, state);
+        newsym(state.u.ux, state.u.uy);
+        await plineWithContinuation(`Suddenly you can ${propertyIsActive('seeInvisible', state) ? 'no longer see through yourself' : 'see yourself'}.`);
+    }
+}
+
 // C do_wear.c:Armor_on() -> dragon_armor_handling().  Dragon armor's AC is
 // active as soon as setworn() installs the slot, but these extrinsics and
 // their feedback are afternmv effects: they begin only when dressing reaches
@@ -663,20 +744,12 @@ export async function applyArmorOnEffects(object: GameObject, state: GameState =
         return [];
     }
 
-    if (object?.otyp === CLOAK_OF_DISPLACEMENT) {
-        // toggle_displacement() suppresses only its initial-don feedback.
-        if (initialDon) return [];
-        const heroCanObserve = (!state.blind
-                && !state.u?.uswallow
-                && !state.invisible
-                && !state.u?.invisible)
-            || !!state.u?.telepathy
-            || !!state.u?.detectMonsters;
-        if (!object._displacementWasActive && heroCanObserve) {
-            return [
-                'You feel that monsters have difficulty pinpointing your location.',
-            ];
-        }
+    if (object.otyp === ELVEN_CLOAK || object.otyp === ELVEN_BOOTS) {
+        if (!initialDon) await toggleArmorStealth(object, true, state);
+        return [];
+    }
+    if (armorSlotFor(object.otyp) === 'uarmc') {
+        await applyCloakOnEffects(object, initialDon, state);
         return [];
     }
 
