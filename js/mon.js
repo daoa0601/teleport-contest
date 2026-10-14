@@ -1,18 +1,15 @@
 // Monster body and terrain rules.
 // C ref: mon.c.
-import { prepareVaultGuardDeath } from './vault_guard.js';
-import { game, requireGameLevel } from './gstate.js';
+import { game } from './gstate.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { isLavaAt, isPoolAt, levelIsWaterLevel, monsterFliesOrFloats, monsterInAir } from './terrain_properties.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { RLOC_MSG, RLOC_NOMSG, FOUNTAIN, G_GENOD, MSLOW, STRAT_WAITFORU, WATER } from './const.js';
 import { dryFountainAt } from './fountain.js';
 import { canSeeMonster, newsym, plineWithContinuation, } from './display.js';
-import { lifeSaveMonster, preventMonsterDeath, wornMonsterLifeSaver, } from './mondeath.js';
+import { preventMonsterDeath } from './mondeath.js';
 import { splitMonster } from './monster_clone.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterYoungerForm, } from './monster_data.js';
-import { releaseMonsterInventory } from './monster_drop.js';
-import { finishShopkeeperDeparture } from './shop_damage.js';
-import { hasShopkeeperData } from './shop_types.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { monsterHasFireResistance } from './monster_resistance.js';
 import { EGG } from './object_data.js';
@@ -86,36 +83,8 @@ function eggSpeciesWasGenocided(egg, state) {
     return speciesWasGenocided(mnum, state)
         || speciesWasGenocided(monsterYoungerForm(mnum), state);
 }
-export async function killGenocidedMonster(monster, state) {
-    const lifeSaver = wornMonsterLifeSaver(monster);
-    if (lifeSaver) {
-        await lifeSaveMonster(monster, lifeSaver, {
-            genocided: true,
-        });
-    }
-    const x = monster.mx, y = monster.my;
-    monster.mhp = 0;
-    if (monster.isgd && !await prepareVaultGuardDeath(monster, state))
-        return { monster, dropped: [] };
-    const dropped = await releaseMonsterInventory(monster, state);
-    if (monster.isshk) {
-        if (!hasShopkeeperData(monster))
-            throw new Error('A shopkeeper must have shop data before departure.');
-        finishShopkeeperDeparture(monster, state);
-    }
-    monster.dead = true;
-    monster.mundetected = 0;
-    if (state.u?.usteed === monster)
-        state.u.usteed = null;
-    if (state.u?.ustuck === monster) {
-        state.u.ustuck = null;
-        state.u.uswallow = false;
-        state.u.uswldtim = 0;
-    }
-    const level = requireGameLevel(state);
-    level.monsters = level.monsters.filter(candidate => candidate !== monster);
-    newsym(x, y);
-    return { monster, dropped };
+export function killGenocidedMonster(monster, state) {
+    return finishEnvironmentalMonsterDeath(monster, state, { noCorpse: true });
 }
 // C mon.c:kill_genocided_monsters().  Genocide is not a hero kill: it drops
 // carried objects, creates no corpse or experience, and sterilizes eggs.
@@ -142,7 +111,10 @@ export async function killGenocidedMonsters(state = game) {
                 reshaped.push(monster);
             continue;
         }
-        killed.push(await killGenocidedMonster(monster, state));
+        const death = await killGenocidedMonster(monster, state);
+        killed.push(death);
+        if (death.heroDied)
+            return { killed, reshaped, heroDied: true };
     }
     const sterileEggs = [];
     for (const object of objectsInTimerGraph(state)) {
