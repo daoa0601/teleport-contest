@@ -1,11 +1,33 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { LA_DOWN, STAIRS } from '../js/const.js';
+import { CORR, GFILTER_AREA, LA_DOWN, STAIRS } from '../js/const.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { nhgetch } from '../js/input.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { answerPrompts } from './support/input-boundaries.js';
+for (const selection of ['a', '\x1b']) {
+    void test(`travel menu includes visible destinations outside the area filter when ${JSON.stringify(selection)} is selected`, async () => {
+        const input = freshTurnRoom({ flags: { tips: false } });
+        assert.ok(game.level);
+        for (let y = 8; y <= 12; y++)
+            game.level.requireAt(12, y).typ = CORR;
+        const stair = game.level.requireAt(14, 10);
+        stair.typ = STAIRS;
+        stair.ladder = LA_DOWN;
+        newsym(14, 10);
+        game.iflags.getloc_filter = GFILTER_AREA;
+        input.feed('m_');
+        await answerPrompts(rhack(0), input, [{
+                prompt: /a - staircase down/,
+                keys: selection,
+            }]);
+        assert.equal(game.iflags.getloc_filter, GFILTER_AREA, 'travel must preserve the configured area filter');
+        assert.equal(game.u.ux, selection === 'a' ? 11 : 10);
+        assert.equal(game.context.move, selection === 'a' ? 1 : 0);
+    });
+}
 for (const command of ['_', '#travel\n']) {
     void test(`cancelling ${JSON.stringify(command)} clears travel recall`, async () => {
         const input = freshTurnRoom({ flags: { tips: false } });

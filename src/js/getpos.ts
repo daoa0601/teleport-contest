@@ -2,7 +2,7 @@
 // display.c:tmp_at() for the valid-location marking overlay.
 
 import {
-    COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK,
+    COLNO, D_ISOPEN, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, LOOK_ONCE, LOOK_QUICK,
     LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, IS_WALL, TREE,
 } from './const.js';
 import {
@@ -462,23 +462,31 @@ function matchesGetposCycle(kind: Exclude<GetposCycleKind, 'valid'>, x: number, 
 
 // C getpos.c:getpos_menu(GLOC_INTERESTING), with GFILTER_VIEW for travel.
 export async function selectTravelMenuPosition(describe: PositionDescription): Promise<Position | null> {
-    const hero = game.u;
-    const spots = gatherValidLocations((x, y) => (x !== hero.ux || y !== hero.uy)
-        && cansee(x, y) && matchesGetposCycle('all', x, y));
-    if (!spots.length) {
-        await pline('You cannot see anything interesting.');
-        return null;
+    // cmd.c:dotravel() uses GFILTER_VIEW only for this menu, then restores
+    // the player's target filter even when no destination is selected.
+    const previousFilter = game.iflags.getloc_filter ?? GFILTER_NONE;
+    game.iflags.getloc_filter = GFILTER_VIEW;
+    try {
+        const hero = game.u;
+        const spots = gatherValidLocations((x, y) => (x !== hero.ux || y !== hero.uy)
+            && cansee(x, y) && matchesGetposCycle('all', x, y));
+        if (!spots.length) {
+            await pline('You cannot see anything interesting.');
+            return null;
+        }
+        const window = tty_create_nhwindow<Position>(NHW_MENU);
+        await tty_start_menu(window);
+        for (const spot of spots) {
+            const description = await describe(spot.x, spot.y);
+            if (description) tty_add_menu(window, { identifier: spot, text: description });
+        }
+        tty_end_menu(window, 'Pick an interesting thing in view for travel destination');
+        const result = await tty_select_menu(window, PICK_ONE);
+        await tty_destroy_nhwindow(window);
+        return result.selections[0]?.identifier ?? null;
+    } finally {
+        game.iflags.getloc_filter = previousFilter;
     }
-    const window = tty_create_nhwindow<Position>(NHW_MENU);
-    await tty_start_menu(window);
-    for (const spot of spots) {
-        const description = await describe(spot.x, spot.y);
-        if (description) tty_add_menu(window, { identifier: spot, text: description });
-    }
-    tty_end_menu(window, 'Pick an interesting thing in view for travel destination');
-    const result = await tty_select_menu(window, PICK_ONE);
-    await tty_destroy_nhwindow(window);
-    return result.selections[0]?.identifier ?? null;
 }
 
 export async function selectMapPosition({
