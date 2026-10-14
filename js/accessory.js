@@ -7,7 +7,7 @@ import { armorOffMessage, findArmorClass } from './armor.js';
 import { game, requireLiveGame } from './gstate.js';
 import { AMULET_OF_CHANGE, AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_PROPERTY, RIN_PROTECTION, } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
-import { refreshHeroSeeing } from './hero_seeing.js';
+import { refreshInvisibleMonsters } from './hero_seeing.js';
 import { showInvisibilityMessage } from './hero_invisibility.js';
 import { heroIsBlind } from './senses.js';
 import { objectTypeKnown } from './shk.js';
@@ -101,7 +101,7 @@ export async function wearHeroAccessory(object, slot, state = game) {
     if (property === 'warning')
         await see_monsters();
     if (property === 'seeInvisible') {
-        await refreshHeroSeeing({ state });
+        await refreshInvisibleMonsters({ state });
         if (propertyIsActive('invisible', state) && !wasSeeingInvisible && !heroIsBlind(state)) {
             newsym(state.u.ux, state.u.uy);
             await plineWithContinuation('Suddenly you are transparent, but there!');
@@ -222,7 +222,7 @@ export async function removeHeroAccessory(object, state = game) {
         await see_monsters();
     if (property === 'seeInvisible') {
         if (!propertyIsActive('seeInvisible', state))
-            await refreshHeroSeeing({ state });
+            await refreshInvisibleMonsters({ state });
         if (propertyIsActive('invisible', state) && !propertyIsActive('seeInvisible', state) && !heroIsBlind(state)) {
             newsym(state.u.ux, state.u.uy);
             await plineWithContinuation('Suddenly you cannot see yourself.');

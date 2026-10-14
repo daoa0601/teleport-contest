@@ -16,7 +16,7 @@ import {
     OBJECT_PROPERTY, RIN_PROTECTION,
 } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
-import { refreshHeroSeeing } from './hero_seeing.js';
+import { refreshInvisibleMonsters } from './hero_seeing.js';
 import { showInvisibilityMessage } from './hero_invisibility.js';
 import { heroIsBlind } from './senses.js';
 import { objectTypeKnown } from './shk.js';
@@ -121,7 +121,7 @@ export async function wearHeroAccessory(
     if (slot === 'uamul') await applyAmuletOnEffects(object, state, { wasFlying, wasInGas });
     if (property === 'warning') await see_monsters();
     if (property === 'seeInvisible') {
-        await refreshHeroSeeing({ state });
+        await refreshInvisibleMonsters({ state });
         if (propertyIsActive('invisible', state) && !wasSeeingInvisible && !heroIsBlind(state)) {
             newsym(state.u.ux, state.u.uy);
             await plineWithContinuation('Suddenly you are transparent, but there!');
@@ -229,7 +229,7 @@ export async function removeHeroAccessory(
     const property = clearHeroAccessory(object, state);
     if (property === 'warning') await see_monsters();
     if (property === 'seeInvisible') {
-        if (!propertyIsActive('seeInvisible', state)) await refreshHeroSeeing({ state });
+        if (!propertyIsActive('seeInvisible', state)) await refreshInvisibleMonsters({ state });
         if (propertyIsActive('invisible', state) && !propertyIsActive('seeInvisible', state) && !heroIsBlind(state)) {
             newsym(state.u.ux, state.u.uy);
             await plineWithContinuation('Suddenly you cannot see yourself.');

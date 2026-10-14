@@ -5,10 +5,12 @@ import { NO_MINVENT } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { OBJECT_NAMES } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { CORPSE, OBJECT_BASES, OBJECT_COLOR, OBJECT_NAMES, ROCK } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
+import { initRng, rn2Display } from '../js/rng.js';
 import { objectTypeKnown } from '../js/shk.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 
@@ -60,6 +62,36 @@ void test('an invisible hero discovers a see-invisible ring from becoming visibl
     await rhack('R'.charCodeAt(0));
     assert.match([...messages, game._pending_message].join(' '), /Suddenly you cannot see yourself\./);
 });
+
+for (const invisible of [false, true]) {
+    for (const command of ['P', 'R'] as const) {
+        const action = command === 'P' ? 'wear' : 'removal';
+        void test(`see-invisible ring ${action} redraws the hallucinated floor for ${invisible ? 'an invisible' : 'a visible'} hero`, async () => {
+            const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+            if (invisible) grantIntrinsicProperty('invisible', 'outside');
+            await floorObject(ROCK, game.u.ux, game.u.uy);
+            const ring = await addInventoryObject(OBJECT_NAMES.indexOf('see invisible'));
+            resetInputState().feed(`${ring.invlet}l                `);
+            if (command === 'R') await rhack('P'.charCodeAt(0));
+            const firstObject = OBJECT_BASES[2];
+            assert.ok(firstObject !== undefined);
+            initRng(17n);
+            // see_monsters() redraws the hero's floor once. Only an invisible
+            // hero gets the additional redraw beside the ring's effect message.
+            let appearance = rn2Display(OBJECT_COLOR.length - firstObject) + firstObject;
+            if (appearance === CORPSE) rn2Display(MONSTER_NAME.length);
+            if (invisible) appearance = rn2Display(OBJECT_COLOR.length - firstObject) + firstObject;
+            initRng(17n);
+
+            await rhack(command.charCodeAt(0));
+
+            const remembered = level.requireAt(game.u.ux, game.u.uy).remembered_glyph;
+            assert.ok(remembered?.kind === 'object');
+            assert.equal(remembered.otyp, appearance,
+                'The ring must not replace the floor appearance with an extra hallucinated redraw');
+        });
+    }
+}
 
 void test('a warning ring refreshes the displayed warning for a stationary invisible giant', async () => {
     freshObjectRoom();
