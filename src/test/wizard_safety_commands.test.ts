@@ -1,9 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
+import { nhgetch, resetInputState } from '../js/input.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+
+for (const [answer, mode] of [['n', 2], ['y', 1]] as const) {
+    void test(`accepting #debugfuzzer asks about impossible() and selects mode ${mode}`, async () => {
+        freshGameplayRoom({ flags: { debug: true, suppress_alert: '3.7.0' } });
+        const questions: string[] = [];
+        const input = resetInputState();
+        input.beforeRead = () => { questions.push(game._pending_message); };
+
+        await runExtendedCommand('debugfuzzer', `yes\n${answer}`);
+
+        assert.ok(questions.some(question => question.includes('Do you want to call panic() after impossible()?')),
+            'The second confirmation must choose how impossible() is handled');
+        assert.equal(game.flags.debug_fuzzer, mode);
+        assert.equal(game.iflags.debug_fuzzer, true);
+        assert.equal(game.context.move, 0);
+        // Once enabled, fuzzing supplies keys without consuming user input.
+        input.display = { readKey: () => { throw new Error('Fuzzing must not read the keyboard'); } };
+        const key = await nhgetch();
+        assert.ok(Number.isInteger(key) && key !== 0 && key >= -128 && key <= 127);
+    });
+}
 
 for (const [command, prompt] of [
     ['panic', 'Do you want to call panic() and end your game?'],

@@ -1,8 +1,8 @@
-// C wizcmds.c:wiz_panic()/wiz_fuzzer(). Crash and autonomous fuzzing are
-// unavailable in the browser runtime; declining their native prompts is safe.
+// C wizcmds.c:wiz_panic()/wiz_fuzzer(). Both confirmations take no time.
+import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC } from './diagnostics.js';
 import { plineWithContinuation } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { paranoidQuery } from './query.js';
+import { paranoidQuery, promptYesNo } from './query.js';
 export async function wizPanic() {
     requirePlayingGame(game);
     if (game.iflags.debug_fuzzer) {
@@ -19,8 +19,11 @@ export async function wizFuzzer() {
         await plineWithContinuation('The fuzz tester will make NetHack execute random keypresses.');
         await plineWithContinuation('There is no conventional way out of this mode.');
     }
-    if (await paranoidQuery(true, 'Do you want to start fuzz testing?'))
-        await plineWithContinuation('Fuzz testing is unavailable in this runtime.');
+    if (await paranoidQuery(true, 'Do you want to start fuzz testing?')) {
+        const answer = await promptYesNo('Do you want to call panic() after impossible()?');
+        game.flags.debug_fuzzer = answer === 'n' ? FUZZER_IMPOSSIBLE_CONTINUE : FUZZER_IMPOSSIBLE_PANIC;
+        game.iflags.debug_fuzzer = true;
+    }
     game.context.move = 0;
 }
 function fuzzerWarningSuppressed() {
