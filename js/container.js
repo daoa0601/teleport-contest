@@ -46,7 +46,7 @@ import { warnAboutRemovedPick } from './container_shop.js';
 import { heroGoldObject } from './hero_gold.js';
 import { sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shop_sell.js';
 import { restoreMenuUnderlay, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
-import { GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM, W_ACCESSORY, W_ARMOR, } from './const.js';
+import { GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM, W_ACCESSORY, W_ARMOR, } from './const.js';
 export const CONTAINER_TYPES = new Set([
     LARGE_BOX, CHEST, ICE_BOX, SACK, BAG_OF_HOLDING, OILSKIN_SACK, BAG_OF_TRICKS,
 ]);
@@ -690,7 +690,8 @@ async function showContents(container) {
     await showDisclosureOverlay(lines, { pagerStyle: 'text', restoreUnderlay: true });
 }
 function actionKeys() {
-    return game.flags?.lootabc
+    const menuStyle = game.flags.menu_style ?? MENU_FULL;
+    return game.flags.lootabc && (menuStyle === MENU_PARTIAL || menuStyle === MENU_FULL)
         ? { takeOut: 'a', putIn: 'b', both: 'c', reverse: 'd', stash: 'e' }
         : { takeOut: 'o', putIn: 'i', both: 'b', reverse: 'r', stash: 's' };
 }
@@ -699,6 +700,16 @@ async function chooseAction(container, held, usedTime, moreContainers) {
     const hasContents = !!container.contents?.length;
     const mayTakeOut = hasContents || !container.cknown;
     const mayPutIn = (game.inventory || []).some(object => object !== container);
+    const title = mayTakeOut
+        ? `Do what with ${containerReference(container, held)}?`
+        : `The ${containerNoun(container)} is empty.  Do what with it?`;
+    const menuStyle = game.flags.menu_style ?? MENU_FULL;
+    if (menuStyle === MENU_TRADITIONAL || menuStyle === MENU_COMBINATION) {
+        const visibleChoices = `:${mayTakeOut ? 'o' : ''}${mayPutIn ? 'i' : ''}`
+            + `${mayTakeOut ? 'b' : ''}${mayPutIn ? 'rs' : ''} ${moreContainers ? 'n' : ''}q`
+            + ((game.flags.cmdassist ?? true) ? ' or ?' : '');
+        return await promptChoice(title, [':', 'o', 'i', 'b', 'r', 's', 'n', 'q', '?'], moreContainers ? 'n' : 'q', { visibleChoices });
+    }
     if (!mayTakeOut && !mayPutIn)
         return keys.both;
     const entries = [{ key: ':', text: `Look inside the ${containerNoun(container)}` }];
@@ -722,9 +733,6 @@ async function chooseAction(container, held, usedTime, moreContainers) {
     entries.push({ key: 'q', marker: moreContainers ? '-' : '*', text: usedTime ? 'done' : 'do nothing' });
     const valid = [10, 13, 27, 32, 58, 63, 110, 113,
         ...Object.values(keys).map(key => key.charCodeAt(0))];
-    const title = mayTakeOut
-        ? `Do what with ${containerReference(container, held)}?`
-        : `The ${containerNoun(container)} is empty.  Do what with it?`;
     const chosen = await showChoiceWindow({
         title,
         entries,
