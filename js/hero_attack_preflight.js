@@ -8,7 +8,7 @@ import { IS_POOL, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, PARANOID
 import { canSeeMonster, canSenseMonster, canSpotMonster, glyphAt, map_invisible, newsym, plineWithContinuation, randomDisplayMonsterName, } from './display.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { game } from './gstate.js';
-import { revealMimic } from './mimic.js';
+import { stumbleOntoMimic } from './mimic.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData, } from './monster_data.js';
@@ -106,21 +106,6 @@ async function publishHiddenMonster(monster, state) {
             ? indefiniteName(visibleName) : 'something'} hiding under ${cover}!`);
     }
 }
-async function revealDisguisedMonster(monster, state) {
-    if ([M_AP_OBJECT, M_AP_FURNITURE].includes(M_AP_TYPE(monster))) {
-        await revealMimic(monster, state);
-        return;
-    }
-    const apparent = (monster.mappearance === undefined ? undefined
-        : MONSTER_NAME[monster.mappearance]) || 'monster';
-    const actual = monster.minvis
-        && !(state.u?.seeInvisible
-            || (state.u?.seeInvisibleTurns ?? 0) > 0)
-        ? 'a monster'
-        : indefiniteName(MONSTER_NAME[monster.mnum] || 'monster');
-    await plineWithContinuation(`Wait!  That ${apparent} is really ${actual}!`);
-    revealMonsterAppearance(monster);
-}
 function stormbringerOverridesConfirmation(weapon, state) {
     return artifactById(weapon?.oartifact, state)?.name === 'Stormbringer';
 }
@@ -157,7 +142,7 @@ export async function prepareAppliedWeaponAttack(monster, weapon, { state = game
             revealMonsterAppearance(monster);
             return { proceed: true, spentTime: false };
         }
-        await revealDisguisedMonster(monster, state);
+        await stumbleOntoMimic(monster, state);
         return { proceed: false, spentTime: true };
     }
     if (monster.mundetected

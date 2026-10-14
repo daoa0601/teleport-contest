@@ -20,7 +20,7 @@ import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import { revealMimic } from './mimic.js';
+import { stumbleOntoMimic } from './mimic.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
@@ -150,25 +150,6 @@ async function publishHiddenMonster(monster: Monster, state: GameState) {
     }
 }
 
-async function revealDisguisedMonster(monster: Monster, state: GameState) {
-    if ([M_AP_OBJECT, M_AP_FURNITURE].includes(M_AP_TYPE(monster))) {
-        await revealMimic(monster, state);
-        return;
-    }
-
-    const apparent = (monster.mappearance === undefined ? undefined
-        : MONSTER_NAME[monster.mappearance]) || 'monster';
-    const actual = monster.minvis
-        && !(state.u?.seeInvisible
-            || (state.u?.seeInvisibleTurns ?? 0) > 0)
-        ? 'a monster'
-        : indefiniteName(MONSTER_NAME[monster.mnum] || 'monster');
-    await plineWithContinuation(
-        `Wait!  That ${apparent} is really ${actual}!`,
-    );
-    revealMonsterAppearance(monster);
-}
-
 function stormbringerOverridesConfirmation(weapon: GameObject | null, state: GameState) {
     return artifactById(weapon?.oartifact, state)?.name === 'Stormbringer';
 }
@@ -215,7 +196,7 @@ export async function prepareAppliedWeaponAttack(
             revealMonsterAppearance(monster);
             return { proceed: true, spentTime: false };
         }
-        await revealDisguisedMonster(monster, state);
+        await stumbleOntoMimic(monster, state);
         return { proceed: false, spentTime: true };
     }
 
