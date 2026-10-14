@@ -9,7 +9,7 @@ import {
 import {
     MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
-import { A_CON, Is_airlevel } from './const.js';
+import { A_CON, Is_airlevel, LARGEST_INT } from './const.js';
 import { currentAttribute, currentStrength } from './attrib.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
@@ -64,7 +64,7 @@ export function objectWeight(object: WeightObject | null | undefined): number {
         && Number.isInteger(species) && species >= 0 && species < MONSTER_BODY_META.length) {
         const [bodyWeight = 0, nutrition = 0]
             = MONSTER_BODY_META[species] || [];
-        const fullWeight = Math.min(0x7fffffff, bodyWeight * count);
+        const fullWeight = Math.min(LARGEST_INT, bodyWeight * count);
         if (uneatenNutrition > 0) {
             return Math.max(1, nutrition > 0
                 ? Math.trunc(fullWeight * Math.min(uneatenNutrition, nutrition) / nutrition)

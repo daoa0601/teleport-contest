@@ -18,4 +18,12 @@ void test('a wish for three half-eaten newt corpses weighs fifteen units', async
     assert.equal(result.object.oeaten, 10);
     assert.equal(result.object.owt, 15);
 });
+void test('a wish for 23 half-eaten human corpses caps their full weight before scaling', async () => {
+    freshObjectRoom();
+    const result = await readObjectName('23 partly eaten human corpses', { wizardWish: true });
+    assert.ok(result && 'object' in result);
+    assert.equal(result.object.quan, 23);
+    assert.equal(result.object.oeaten, 200);
+    assert.equal(result.object.owt, 16383);
+});
 //# sourceMappingURL=mkobj_weight.test.js.map

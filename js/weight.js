@@ -2,7 +2,7 @@
 // C refs: hack.c weight_cap(), inv_weight(), calc_capacity(), near_capacity().
 import { BAG_OF_HOLDING, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, OBJECT_NUTRITION, OBJECT_WEIGHT, OILSKIN_SACK, SACK, STATUE, TALLOW_CANDLE, requireObjectData, } from './object_data.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_SYMBOL, } from './monster_data.js';
-import { A_CON, Is_airlevel } from './const.js';
+import { A_CON, Is_airlevel, LARGEST_INT } from './const.js';
 import { currentAttribute, currentStrength } from './attrib.js';
 export const UNENCUMBERED = 0;
 export const SLT_ENCUMBER = 1;
@@ -46,7 +46,7 @@ export function objectWeight(object) {
     if (object.otyp === CORPSE && species !== undefined
         && Number.isInteger(species) && species >= 0 && species < MONSTER_BODY_META.length) {
         const [bodyWeight = 0, nutrition = 0] = MONSTER_BODY_META[species] || [];
-        const fullWeight = Math.min(0x7fffffff, bodyWeight * count);
+        const fullWeight = Math.min(LARGEST_INT, bodyWeight * count);
         if (uneatenNutrition > 0) {
             return Math.max(1, nutrition > 0
                 ? Math.trunc(fullWeight * Math.min(uneatenNutrition, nutrition) / nutrition)
