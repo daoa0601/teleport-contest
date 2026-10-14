@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { HORN_OF_PLENTY } from '../js/object_data.js';
+import { setPropertyTimeout } from '../js/properties.js';
+import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -30,5 +32,21 @@ void test('an empty horn of plenty is discovered empty and still takes a turn', 
 
     assert.equal(horn.cknown, true);
     assert.equal(game._pending_message, 'Nothing happens.');
+    assert.equal(game.context.move, 1);
+});
+
+void test('a sighted fumbling hero sees the produced potion appearance before it slips', async () => {
+    const level = freshPlayableRoom();
+    const horn = await addInventoryObject(HORN_OF_PLENTY, { spe: 1 });
+    setPropertyTimeout('fumbling', 10);
+    initRng(17n);
+
+    await applyInventoryObject(horn, '    ');
+
+    const potion = level.objects[game.u.ux]?.[game.u.uy]?.find(object => object.oclass === 8);
+    assert.ok(potion, 'the horn must produce a potion and drop it at the hero');
+    assert.equal(potion.dknown, true);
+    assert.match(game._pending_message, /Oops!  The .+ potion slips to the floor!/);
+    assert.equal(horn.spe, 0);
     assert.equal(game.context.move, 1);
 });

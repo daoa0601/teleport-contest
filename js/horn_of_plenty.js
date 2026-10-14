@@ -8,7 +8,7 @@ import { consumeObjectCharge } from './object_charge.js';
 import { FOOD_RATION, HORN_OF_PLENTY, LUMP_OF_ROYAL_JELLY, OBJECT_MAGIC, POT_BOOZE, POT_OIL, POT_SICKNESS, POT_WATER } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { learnObjectType } from './object_knowledge.js';
-import { objectName } from './objnam.js';
+import { objectName, observeObjectForNaming } from './objnam.js';
 import { rn2 } from './rng.js';
 import { addShopObjectToBill } from './shk.js';
 import { objectWeight } from './weight.js';
@@ -48,6 +48,7 @@ export async function useHornOfPlenty(horn) {
     const previousPriceSuppression = game.iflags.suppress_price;
     game.iflags.suppress_price = true;
     try {
+        observeObjectForNaming(object);
         const name = object.quan > 1 ? `${object.quan} ${makePlural(objectName(object, game))}` : objectName(object, game);
         const action = `The ${name} ${object.quan > 1 ? 'slip' : 'slips'}`;
         const terrain = game.level.requireAt(game.u.ux, game.u.uy).typ;
