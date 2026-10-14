@@ -85,7 +85,9 @@ export function lookupWishType(parsed, { wizardWish = false, state = game, } = {
             ?? randomTypeByDescription(callName, FOOD_CLASS, 1, state);
         return result(type, FOOD_CLASS);
     }
-    const callRange = callName ? ranges.find(([range]) => range === name.toLowerCase()) : null;
+    // C recognizes called ranges before singularizing the object noun.
+    const callRange = callName
+        ? ranges.find(([range]) => range === parsed.calledNoun?.toLowerCase()) : null;
     if (callRange) {
         const calledType = randomTypeByDescription(callName, callRange[1], 1, state);
         const type = calledType ?? randomTypeByDescription(original, callRange[1], 1, state);

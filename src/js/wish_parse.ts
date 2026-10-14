@@ -46,6 +46,7 @@ export interface ParsedWish {
     fakeAmulet: boolean;
     personalName: string | null;
     callName: string | null;
+    calledNoun: string | null;
     description: string | null;
     gender: MonsterNameGender | null;
     monsterSpecies: number | null;
@@ -68,7 +69,7 @@ export function parseWishText(text: string): ParsedWish {
         lit: false, wetness: 0, unlabeled: false, poisoned: false,
         trapped: null, lock: null, partlyEaten: false, historic: false,
         diluted: false, empty: false, heavy: false, fakeAmulet: false,
-        personalName: null, callName: null, description: null,
+        personalName: null, callName: null, calledNoun: null, description: null,
         gender: null, monsterSpecies: null, directType: null,
         tinVariety: null, spinach: false, zombifying: false,
         looted: false, door: null, undiggable: false, unphaseable: false,
@@ -148,6 +149,7 @@ export function parseWishText(text: string): ParsedWish {
     if (called >= 0) {
         parsed.callName = remaining.slice(called + 8);
         remaining = remaining.slice(0, called);
+        parsed.calledNoun = remaining;
     }
     const label = / label(?:l)?ed /i.exec(remaining);
     if (label) {

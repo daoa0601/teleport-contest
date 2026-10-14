@@ -11,8 +11,8 @@ import { game, requireGameLevel } from '../js/gstate.js';
 import { mayDig } from '../js/hero_digging.js';
 import { mksobj } from '../js/mklev.js';
 import {
-    BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, OBJECT_NAMES, POT_HEALING, RED_DRAGON_SCALES,
-    SACK, SCR_LIGHT, SLIME_MOLD, SPEED_BOOTS, TIN,
+    BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, MAGIC_MARKER, OBJECT_NAMES, POT_HEALING, RED_DRAGON_SCALES,
+    SACK, SCR_LIGHT, SLIME_MOLD, SPEED_BOOTS, TALLOW_CANDLE, TIN, WAX_CANDLE,
 } from '../js/object_data.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
 import { readObjectName } from '../js/objnam.js';
@@ -136,6 +136,27 @@ void test('a plural range noun keeps its class when resolving a call name', asyn
 
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otyp, SPEED_BOOTS);
+});
+
+void test('a plural candle wish selects candles before considering a call name', async () => {
+    freshObjectRoom();
+    recordObjectCall(MAGIC_MARKER, 'peculiar');
+
+    const result = await readObjectName('candles called peculiar', { wizardWish: true });
+
+    assert.ok(result && !result.noWish);
+    assert.ok(result.object.otyp === TALLOW_CANDLE || result.object.otyp === WAX_CANDLE,
+        `Expected candles, received ${OBJECT_NAMES[result.object.otyp]}`);
+});
+
+void test('a singular candle range can resolve a call name from the tool class', async () => {
+    freshObjectRoom();
+    recordObjectCall(MAGIC_MARKER, 'peculiar');
+
+    const result = await readObjectName('candle called peculiar', { wizardWish: true });
+
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.otyp, MAGIC_MARKER);
 });
 
 void test('an explicit article requests one fruit even with a plural registered label', async () => {
