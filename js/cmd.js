@@ -100,7 +100,7 @@ import { lootCommand } from './container_loot.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { doOptions } from './options.js';
 import { blocksDiagonalDoor, blocksMove, escapeFromStickyMonster, heroBadRock, heroCanPassWallAt, heroLiquidEffects, heroShouldAvoidLiquid, heroTightDiagonalReason, } from './hack.js';
-import { commandExecutionKey, controlRushDirection, promptedDirectionKey, visibleCommandKey } from './command_keys.js';
+import { commandExecutionKey, controlRushDirection, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
 import { canSelectOff, continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
@@ -116,7 +116,7 @@ import { showKeyBindings, whatDoesCommand } from './command_help.js';
 import { availableExtendedCommands, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
 import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
-import { confusePromptDirection, directionAssistPage, promptDirection, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
+import { confusePromptDirection, promptDirection, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
@@ -271,7 +271,7 @@ import { disturbGrave } from './grave.js';
 import { deleteEngravingAt, maybeSmudgeEngravings, wipeHeroEngraving } from './engrave.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { removeHeroEquipment } from './hero_equipment.js';
-import { shouldShowGetposTip, showGetposTip, moveGetposCursor, selectMapPosition, } from './getpos.js';
+import { shouldShowGetposTip, showGetposTip, selectMapPosition, } from './getpos.js';
 import { chatWithQuestLeader, onQuestStart, okToQuest } from './quest.js';
 import { performPetRangedAttack, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from './monmove.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
@@ -1118,7 +1118,7 @@ export async function rhack(key) {
             await dispatchMovement(binding, movement);
             return;
         }
-        await executeCommandAction(binding, { cannedCommand, previousMessage });
+        await executeCommandAction(binding, { cannedCommand });
         return;
     }
 }
@@ -1197,7 +1197,7 @@ async function dispatchMovement(binding, prefixes) {
         game.context.nopick = true;
     if (game.multi > 0 || (mode && !prefixes.walk))
         startRun(hero.dx, hero.dy, game, mode);
-    const moved = await domove(hero.dx, hero.dy, !!game.context.nopick);
+    const moved = await domove(hero.dx, hero.dy);
     if (game.program_state.gameover)
         return;
     if (mode && !prefixes.walk && moved)
@@ -1225,7 +1225,7 @@ async function executeCommandAction(binding, options = {}) {
 }
 // Admission belongs to the caller. Keep the selected binding, including its
 // parameter, rather than looking up a possibly rebound key inside the action.
-async function runCommandHandler(binding, { cannedCommand = null, previousMessage = game._pending_message, } = {}) {
+async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
     const { key, command } = binding;
     const ch = key === null ? '' : String.fromCharCode(key);
     if (!cannedCommand && key === null && command) {
@@ -1272,7 +1272,7 @@ async function runCommandHandler(binding, { cannedCommand = null, previousMessag
         return;
     }
     if (key === 22 && game.flags?.debug) { // Ctrl-V: wiz_level_tele()
-        await wizLevelTeleport();
+        await wizLevelTeleport({ menuRequested: game.iflags.menu_requested });
         return;
     }
     if (key === 23 && game.flags?.debug) { // Ctrl-W: wiz_wish()
@@ -1304,7 +1304,7 @@ async function runCommandHandler(binding, { cannedCommand = null, previousMessag
         enqueueInventoryAction(await inventoryReport('inuse'));
     }
     else if (ch === 'O') {
-        await doOptions();
+        await doOptions(game.iflags.menu_requested);
     }
     else if (ch === 'Z') {
         await docast();
@@ -1627,13 +1627,6 @@ export async function drinkFountain(loc) {
         await plineWithContinuation(fountainMessage);
     await dryFountainAt(game.u.ux, game.u.uy);
     return false;
-}
-function farlookDelta(key) {
-    const movement = game.commandBindings.movementForKey(key);
-    if (!movement || movement.dz)
-        return null;
-    const distance = movement.mode === 0 ? 1 : 8;
-    return { dx: movement.dx * distance, dy: movement.dy * distance };
 }
 export async function travelStairs(up) {
     const level = requireGameLevel();

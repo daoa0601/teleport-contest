@@ -6,7 +6,7 @@ import {
     RLOC_ERR, RLOC_NOMSG,
     ACCESSIBLE, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE,
     DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN,
-    DOOR, DIRECTION_KEYS, IS_OBSTRUCTED, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT,
+    DOOR, IS_OBSTRUCTED, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT,
     M_AP_TYPMASK, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT,
     TRAP_EXPLANATIONS, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE,
     W_SADDLE, isok,
@@ -51,7 +51,7 @@ import { rn1, rn2, rnd, rnl } from './rng.js';
 import { useHeroSkill } from './skills.js';
 import { moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
-import { promptDirection, readDirectionKey } from './tty_prompts.js';
+import { promptDirection } from './tty_prompts.js';
 import { promptYesNo } from './query.js';
 import { vision_recalc } from './vision.js';
 import { heroLegName } from './body_parts.js';
