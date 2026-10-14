@@ -1,6 +1,6 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
-import { COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, STONE, VIBRATING_SQUARE, WEB, IS_WALL, TREE, } from './const.js';
+import { COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, SCORR, STONE, VIBRATING_SQUARE, WEB, IS_WALL, TREE, } from './const.js';
 import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, plineWithContinuation, show_glyph_cell, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
@@ -341,7 +341,7 @@ function getposArea(state) {
         const location = state.level?.at(tx, ty);
         if (!location?.seenv || tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO)
             return null;
-        if (location.typ === STONE || IS_WALL(location.typ) || location.typ === TREE)
+        if (location.typ === STONE || location.typ === SCORR || IS_WALL(location.typ) || location.typ === TREE)
             return 2;
         const symbol = getposGlyphSymbol(terrain_glyph(location, tx, ty).glyph);
         if (symbol === null)

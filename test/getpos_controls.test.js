@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { selectMapPosition } from '../js/getpos.js';
-import { CORR, DOOR, D_NODOOR, FOUNTAIN, STONE, VWALL } from '../js/const.js';
+import { CORR, DOOR, D_NODOOR, FOUNTAIN, SCORR, STONE, VWALL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { newsym } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
@@ -25,6 +25,22 @@ void test('area filtering cycles to targets across connected stone and walls', a
         isValidLocation: (x, y) => x === 13 && y === 10,
     });
     assert.equal(target?.x, 13, 'Known stone and walls belong to the same connected target area');
+    assert.equal(target?.y, 10);
+});
+void test('area filtering cycles to targets across connected secret corridors', async () => {
+    const level = freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { blindTurns: 5 } });
+    for (const [offset, typ] of [STONE, SCORR, SCORR, VWALL].entries()) {
+        const location = level.requireAt(10 + offset, 10);
+        location.typ = typ;
+        location.seenv = 255;
+    }
+    game.iflags.getloc_filter = 2;
+    resetInputState().feed('z.');
+    const target = await selectMapPosition({
+        start: { x: 10, y: 10 }, prompt: 'Pick a location.', goal: 'a location',
+        isValidLocation: (x, y) => x === 13 && y === 10,
+    });
+    assert.equal(target?.x, 13, 'Known secret corridors connect stone and wall targeting areas');
     assert.equal(target?.y, 10);
 });
 void test('getpos can use a menu to choose a shown monster', async () => {
