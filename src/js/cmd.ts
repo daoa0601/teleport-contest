@@ -88,8 +88,7 @@ import {
     floorObjectDescription,
 } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
-import { itemizedShopBill, minimumShopPurchase, buyShopBillItem } from './shop_payment.js';
-import { paymentObjectDescription } from './object_description.js';
+import { dopay } from './shop_pay_command.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -388,7 +387,7 @@ import {
 } from './skills.js';
 import {
     objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, objectTypeKnown,
-    payShopDebt, shopkeeperForHero, shopThankYouMessage,
+    shopkeeperForHero,
     tendedShop,
 } from './shk.js';
 import { gameLogEvents } from './gamelog.js';
@@ -5303,169 +5302,6 @@ async function dowear(): Promise<void> {
     }
     if (object.oclass === 3) await putOnArmorObject(object);
     else await putOnAccessoryObject(object);
-}
-
-// C refs: shk.c:dopay(), rouse_shk(), menu_pick_pay_items(), pay(), and update_bill().
-// An empty bill takes a turn when the keeper can respond. A payment menu
-// takes no time until a debt or billed item is paid.
-async function dopay(): Promise<void> {
-    game.multi = 0;
-    const shopkeepers = (game.level?.monsters || [])
-        .filter(monster => monster?.isshk && (monster.mhp ?? 1) > 0);
-    const adjacent = shopkeepers.filter(monster =>
-        distmin(monster.mx, monster.my, game.u?.ux, game.u?.uy) <= 1);
-    const resident = adjacent.length === 1
-        ? adjacent[0] : shopkeeperForHero();
-    const blind = !!game.blind || (game.u?.blindTurns ?? 0) > 0;
-    const blindTelepathy = !!(game.u?.blindTelepathy || game.u?.telepathy);
-    if (!resident) {
-        // shk.c:dopay() cannot conclude that there is no shopkeeper while a
-        // non-telepathic hero is blind.  An adjacent shopkeeper was selected
-        // above; otherwise the visibility failure precedes the no-resident
-        // message even when this level actually has no shopkeeper at all.
-        if (blind && !blindTelepathy) {
-            await pline("You can't see...");
-            game.context.move = 0;
-            return;
-        }
-        await pline('There appears to be no shopkeeper here to receive your payment.');
-        game.context.move = 0;
-        return;
-    }
-
-    if (resident.msleeping || !resident.mcanmove) {
-        // Outstanding charges rouse the keeper before payment can proceed.
-        if (resident.eshk?.robbed || resident.eshk?.billct || resident.eshk?.debit) {
-            if (canSpotMonster(resident)) {
-                const recovery = resident.msleeping ? 'wakes up' : 'can move again';
-                await plineWithContinuation(`${shopkeeperName(resident, { capitalized: true })} ${recovery}.`);
-            }
-            resident.msleeping = 0;
-            resident.mfrozen = 0;
-            resident.mcanmove = 1;
-        } else {
-            const name = shopkeeperName(resident, { capitalized: true });
-            const response = rn2(2) ? 'seems to be napping' : "doesn't respond";
-            await plineWithContinuation(`${name} ${response}.`);
-            game.context.move = 0;
-            return;
-        }
-    }
-
-    if (resident !== shopkeeperForHero() && resident.mpeaceful && !resident.eshk?.robbed) {
-        await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
-        game.context.move = 1;
-        return;
-    }
-
-    let paid = false;
-    const debt = Math.max(0, resident.eshk?.debit ?? 0);
-    if (debt) {
-        await pline(
-            `You owe ${shopkeeperName(resident)} ${debt} zorkmid${
-                debt === 1 ? '' : 's'
-            } for the use of merchandise.`,
-        );
-        const payment = payShopDebt(resident, game);
-        if (!payment.paid) {
-            await pline("But you don't have enough gold or credit.");
-            game.context.move = 1;
-            return;
-        }
-        if (payment.creditUsed === payment.debt) {
-            await pline('Your debt is covered by your credit.');
-        } else if (payment.creditUsed) {
-            await pline('That debt is partially offset by your credit.');
-            await pline('You pay the remainder.');
-        } else {
-            await pline('You pay that debt.');
-        }
-        paid = true;
-    }
-
-    // pay_billed_items() checks the whole bill, including contained goods,
-    // before offering item selection. Stashed gold cannot fund this payment.
-    if (resident === shopkeeperForHero() && (resident.eshk?.billct ?? 0) > 0
-        && !heroGoldAmount(game) && !(resident.eshk?.credit ?? 0)) {
-        await plineWithContinuation(`You ${hiddenGold(game, true) ? 'seem to ' : ''}have no gold or credit${paid ? ' left' : ''}.`);
-        if (paid && resident.mpeaceful)
-            await plineWithContinuation(shopThankYouMessage(resident));
-        game.context.move = paid ? 1 : 0;
-        return;
-    }
-
-    if (resident === shopkeeperForHero()) {
-        const purchase = minimumShopPurchase(resident);
-        if (purchase && heroGoldAmount(game) + (resident.eshk?.credit ?? 0) < purchase.price) {
-            const items = purchase.multipleItems ? ' any of the items' : ' the item';
-            const bill = (resident.eshk?.billct ?? 0) > 1 ? "you've picked" : 'on your bill';
-            await plineWithContinuation(`You don't have enough gold to buy${items} ${bill}.`);
-            if (hiddenGold(game, true))
-                await plineWithContinuation('Maybe you have some gold stashed away?');
-            if (paid && resident.mpeaceful)
-                await plineWithContinuation(shopThankYouMessage(resident));
-            game.context.move = paid ? 1 : 0;
-            return;
-        }
-    }
-
-    const billed = itemizedShopBill(resident);
-    if (!billed.length) {
-        if (!paid) {
-            await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
-            if (resident === shopkeeperForHero() && resident.mpeaceful && !heroGoldAmount(game))
-                await plineWithContinuation(`Moreover, you${hiddenGold(game, true) ? ' seem to' : ''} have no gold.`);
-            game.context.move = 1;
-            return;
-        }
-        await plineWithContinuation(shopThankYouMessage(resident));
-        game.context.move = 1;
-        return;
-    }
-
-    for (const item of billed) observeObjectForNaming(item.object);
-    const priceWidth = String(Math.max(...billed.map(item => item.price))).length;
-    const used = billed.filter(item => item.kind === 'used');
-    const intact = billed.filter(item => item.kind !== 'used');
-    const sections = [used, intact].filter(items => items.length).map(items => ({
-        heading: used.length ? `${items === used ? 'Used up' : 'Unpaid'} item${items.length > 1 ? 's' : ''}:` : '',
-        items: items.map(item => ({
-            key: String.fromCharCode(97 + billed.indexOf(item)),
-            text: `${String(item.price).padStart(priceWidth)} Zm, ${paymentObjectDescription(item.object, item.quantity)}`,
-            value: item,
-        })),
-    }));
-    game._pending_message = '';
-    await flush_screen(1);
-    const selected = await showMultiSelectWindow({
-        title: 'Pay for which items?', sections,
-        omitHeadings: !used.length,
-    });
-    if (!selected.length) {
-        game.context.move = paid ? 1 : 0;
-        return;
-    }
-
-    let paidForItem = false;
-    let finished = true;
-    // Native queued selection buys in bill order, regardless of selection order.
-    for (const item of billed.filter(item => selected.includes(item))) {
-        const result = await buyShopBillItem(resident, item);
-        if (result === 'stop') {
-            finished = false;
-            break;
-        }
-        if (result === 'skip') continue;
-        paidForItem = true;
-        await bot();
-    }
-    if (!paid && !paidForItem) {
-        game.context.move = 0;
-        return;
-    }
-    if (finished && resident.mpeaceful)
-        await plineWithContinuation(shopThankYouMessage(resident));
-    game.context.move = 1;
 }
 
 // C ref: cmd.c do_fight()/rhack().  F is a movement prefix whose next
