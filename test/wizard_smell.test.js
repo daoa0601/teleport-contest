@@ -7,27 +7,34 @@ import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-void test('#wizsmell advertises the configured targeting help key', async () => {
-    freshObjectRoom({ flags: { debug: true, tips: false, verbose: true } });
-    game.commandBindings.bindSpecialKey('!'.charCodeAt(0), 'getpos.help');
-    const prompts = [];
-    const input = resetInputState();
-    input.beforeRead = () => { prompts.push(game._pending_message); };
-    installPagerInput(input, { expected: /smell|instructions/, limit: 2 });
-    const pager = input.display;
-    assert.ok(pager);
-    input.display = {
-        async readKey() {
-            const screen = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
-            return screen.includes('--More--') ? pager.readKey() : 27;
-        },
-    };
-    await runExtendedCommand('wizsmell');
-    const prompt = prompts.at(-1);
-    assert.ok(prompt, 'The smell command must reach target selection');
-    assert.match(prompt, /\(For instructions type a '!'\)/);
-    assert.equal(game.context.move, 0);
-});
+import { startLuaCore } from './support/lua-game.js';
+for (const tips of [false, true]) {
+    void test(`#wizsmell advertises the configured targeting help key with tips ${tips ? 'enabled' : 'disabled'}`, async (t) => {
+        freshObjectRoom({ flags: { debug: true, tips, verbose: true } });
+        if (tips)
+            await startLuaCore(t);
+        game.commandBindings.bindSpecialKey('!'.charCodeAt(0), 'getpos.help');
+        const prompts = [];
+        const input = resetInputState();
+        input.beforeRead = () => { prompts.push(game._pending_message); };
+        installPagerInput(input, { expected: /smell|instructions|cursor/, limit: 4 });
+        const pager = input.display;
+        assert.ok(pager);
+        input.display = {
+            async readKey() {
+                const screen = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+                return screen.includes('--More--') ? pager.readKey() : 27;
+            },
+        };
+        await runExtendedCommand('wizsmell');
+        const prompt = prompts.at(-1);
+        assert.ok(prompt, 'The smell command must reach target selection');
+        assert.match(prompt, /\(For instructions type a '!'\)/);
+        if (tips)
+            assert.match(prompt, /Move cursor to a monster:/);
+        assert.equal(game.context.move, 0);
+    });
+}
 void test('#wizsmell sniffs an unseen monster and removes a stale invisible marker from an empty square', async () => {
     const level = freshObjectRoom({ flags: { debug: true, tips: false } });
     requirePlayingGame(game);
